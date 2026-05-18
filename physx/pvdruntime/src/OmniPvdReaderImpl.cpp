@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -99,7 +99,7 @@ bool OMNI_PVD_CALL OmniPvdReaderImpl::startReading(OmniPvdVersionType& majorVers
 		else if (majorVersion == mMajorVersion)
 		{
 			if (minorVersion > mMinorVersion)
-			{				
+			{
 				mLog.outputLine("[parser] minor version too new\n");
 				return false;
 			}
@@ -110,7 +110,7 @@ bool OMNI_PVD_CALL OmniPvdReaderImpl::startReading(OmniPvdVersionType& majorVers
 					mLog.outputLine("[parser] patch too new\n");
 					return false;
 				}
-			}			
+			}
 		}
 		mIsReadingStarted = true;
 		return true;
@@ -118,7 +118,7 @@ bool OMNI_PVD_CALL OmniPvdReaderImpl::startReading(OmniPvdVersionType& majorVers
 	else {
 		return false;
 	}
-	
+
 }
 
 static OmniPvdDataType::Enum readDataType(OmniPvdReadStream& stream)
@@ -162,7 +162,7 @@ OmniPvdCommand::Enum OMNI_PVD_CALL OmniPvdReaderImpl::getNextCommand()
 		{
 			return cmdType;
 		}
-	}	
+	}
 	if (mStream) {
 		OmniPvdCommandStorageType command;
 		if (mStream->readBytes(&command, sizeof(OmniPvdCommandStorageType)))
@@ -332,8 +332,8 @@ OmniPvdCommand::Enum OMNI_PVD_CALL OmniPvdReaderImpl::getNextCommand()
 
 					mCmdMessageParsed = true;
 
-					mLog.outputLine("[parser] message (contextHandle: %d, message: %s, file: %s, line: %d, type: %d)\n", 
-						mCmdContextHandle, 
+					mLog.outputLine("[parser] message (contextHandle: %d, message: %s, file: %s, line: %d, type: %d)\n",
+						mCmdContextHandle,
 						mCmdMessage, mCmdMessageFile, mCmdMessageLine, mCmdMessageType
 					);
 				}
@@ -491,7 +491,7 @@ void OmniPvdReaderImpl::readLongDataFromStream(uint32_t streamByteLen)
 // except for those parameters that are "stateful" which are left commented out.
 ////////////////////////////////////////////////////////////////////////////////
 void OmniPvdReaderImpl::resetCommandParams()
-{	
+{
 	////////////////////////////////////////////////////////////////////////////////
 	// Stateful: Depends on the version of the stream reader
 	////////////////////////////////////////////////////////////////////////////////
@@ -514,7 +514,7 @@ void OmniPvdReaderImpl::resetCommandParams()
 	mCmdClassHandle = OMNI_PVD_INVALID_HANDLE;
 	mCmdBaseClassHandle = OMNI_PVD_INVALID_HANDLE;
 	mCmdAttributeHandle = OMNI_PVD_INVALID_HANDLE;
-		
+
 	mCmdClassName[0] = 0;
 	mCmdAttributeName[0] = 0;
 	mCmdObjectName[0] = 0;
@@ -530,7 +530,7 @@ void OmniPvdReaderImpl::resetCommandParams()
 	////////////////////////////////////////////////////////////////////////////////
 	//mCmdAttributeDataType = OmniPvdDataType::eINT8; // int 8 is 0
 	////////////////////////////////////////////////////////////////////////////////
-	
+
 	mCmdAttributeDataLen = 0;
 	mCmdAttributeNbElements = 0;
 	mCmdEnumValue = 0;

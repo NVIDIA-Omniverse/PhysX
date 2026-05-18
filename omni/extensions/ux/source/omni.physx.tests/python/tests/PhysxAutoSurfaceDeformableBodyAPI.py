@@ -1,7 +1,9 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
-from omni.physx import get_physx_interface, get_physx_cooking_interface, get_physx_cooking_private_interface
+
+from omni.physx import get_physx_interface, get_physx_cooking_interface
+from omni.physx.scripts.ifaces import get_physx_cooking_private_interface
 from omni.physxtests import utils
 from omni.physxtests.utils.physicsBase import PhysicsMemoryStageBaseAsyncTestCase, TestCategory, PhysicsBaseAsyncTestCase
 from omni.physx.scripts import deformableMeshUtils, deformableUtils, physicsUtils
@@ -690,4 +692,3 @@ class PhysxAutoSurfaceDeformableBodyAPITestStage(PhysicsBaseAsyncTestCase):
         post_point = sim_mesh.GetPointsAttr().Get()[0]
         epsilon = 0.001
         self.assertTrue(initial_point[2] - post_point[2] > epsilon)
-

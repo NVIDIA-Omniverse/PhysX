@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -32,11 +32,8 @@
 
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxVec4.h"
-
-#include "PxSparseGridParams.h"
-
 #include "foundation/PxArray.h"
-
+#include "PxSparseGridParams.h"
 #include "PxIsosurfaceExtraction.h"
 
 #include "PxgSparseGridStandalone.h"
@@ -68,7 +65,8 @@ namespace physx
 		PxU32* mTriIndices;
 
 		//public:
-		PxgSharedIsosurfaceExtractor() : mEnabled(true), mKernelLauncher(), mNumVerticesNumIndices(NULL), mOwnsOutputGPUBuffers(false),
+		PxgSharedIsosurfaceExtractor() :
+			mEnabled(true), mKernelLauncher(), mNumVerticesNumIndices(NULL), mOwnsOutputGPUBuffers(false),
 			mVertices(NULL), mNormals(NULL), mTriIndices(NULL)
 		{}
 
@@ -101,21 +99,13 @@ namespace physx
 		virtual void allocateGPUBuffers();
 
 	public:
-		PxgSparseGridIsosurfaceExtractor() : mShared()
-		{}
-
-		PxgSparseGridIsosurfaceExtractor(PxgKernelLauncher& cudaContextManager, const PxSparseGridParams sparseGridParams,
-			const PxIsosurfaceParams& isosurfaceParams, PxU32 maxNumParticles, PxU32 maxNumVertices, PxU32 maxNumTriangles) : mShared()
-		{
-			initialize(cudaContextManager, sparseGridParams, isosurfaceParams, maxNumParticles, maxNumVertices, maxNumTriangles);
-		}
-
+		PxgSparseGridIsosurfaceExtractor() : mShared() {}
 
 		virtual void setResultBufferDevice(PxVec4* vertices, PxU32* triIndices, PxVec4* normals);
 
 		virtual ~PxgSparseGridIsosurfaceExtractor() { }
 
-		void initialize(PxgKernelLauncher& cudaContextManager, const PxSparseGridParams sparseGridParams,
+		bool initialize(PxgKernelLauncher& kernelLauncher, const PxSparseGridParams sparseGridParams,
 			const PxIsosurfaceParams& isosurfaceParams, PxU32 maxNumParticles, PxU32 maxNumVertices, PxU32 maxNumTriangles);
 
 		virtual void release();
@@ -211,20 +201,13 @@ namespace physx
 		virtual void allocateGPUBuffers();
 
 	public:
-		PxgDenseGridIsosurfaceExtractor() : mShared()
-		{}
-
-		PxgDenseGridIsosurfaceExtractor(PxgKernelLauncher& cudaContextManager, const PxBounds3& worldBounds,
-			PxReal cellSize, const PxIsosurfaceParams& isosurfaceParams, PxU32 maxNumParticles, PxU32 maxNumVertices, PxU32 maxNumTriangles) : mShared()
-		{
-			initialize(cudaContextManager, worldBounds, cellSize, isosurfaceParams, maxNumParticles, maxNumVertices, maxNumTriangles);
-		}
+		PxgDenseGridIsosurfaceExtractor() : mShared() {}
 
 		virtual void setResultBufferDevice(PxVec4* vertices, PxU32* triIndices, PxVec4* normals);
 
 		virtual ~PxgDenseGridIsosurfaceExtractor() { }
 
-		void initialize(PxgKernelLauncher& cudaContextManager, const PxBounds3& worldBounds,
+		bool initialize(PxgKernelLauncher& kernelLauncher, const PxBounds3& worldBounds,
 			PxReal cellSize, const PxIsosurfaceParams& isosurfaceParams, PxU32 maxNumParticles, PxU32 maxNumVertices, PxU32 maxNumTriangles);
 
 		virtual void release();

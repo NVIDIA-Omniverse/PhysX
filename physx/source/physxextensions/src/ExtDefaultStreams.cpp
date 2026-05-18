@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -54,20 +54,12 @@ PxDefaultMemoryOutputStream::~PxDefaultMemoryOutputStream()
 		mAllocator.deallocate(mData);
 }
 
-PxU32 PxDefaultMemoryOutputStream::write(const void* src, PxU32 size)
+PxU64 PxDefaultMemoryOutputStream::write(const void* src, PxU64 size)
 {
-	PxU64 expectedSize = PxU64(mSize) + PxU64(size);
-
-	// if expectedSize is bigger than 32 bits (overflow), return 0
-	if (expectedSize > PX_MAX_U32)
-	{
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Unable to write to stream because max capacity is PX_MAX_U32\n");
-		return 0;
-	}
-
+	PxU64 expectedSize = mSize + size;
 	if(expectedSize > mCapacity)
 	{
-		mCapacity = PxMax(PxNextPowerOfTwo((PxU32)expectedSize), 4096u);
+		mCapacity = PxMax(PxNextPowerOfTwo(expectedSize), uint64_t(4096));
 
 		PxU8* newData = reinterpret_cast<PxU8*>(mAllocator.allocate(mCapacity,"PxDefaultMemoryOutputStream",__FILE__,__LINE__));
 		PX_ASSERT(newData!=NULL);
@@ -85,32 +77,32 @@ PxU32 PxDefaultMemoryOutputStream::write(const void* src, PxU32 size)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PxDefaultMemoryInputData::PxDefaultMemoryInputData(PxU8* data, PxU32 length) :
+PxDefaultMemoryInputData::PxDefaultMemoryInputData(const PxU8* data, PxU64 length) :
 	mSize	(length),
 	mData	(data),
 	mPos	(0)
 {
 }
 
-PxU32 PxDefaultMemoryInputData::read(void* dest, PxU32 count)
+PxU64 PxDefaultMemoryInputData::read(void* dest, PxU64 count)
 {
-	PxU32 length = PxMin<PxU32>(count, mSize-mPos);
+	PxU64 length = PxMin<PxU64>(count, mSize-mPos);
 	PxMemCopy(dest, mData+mPos, length);
 	mPos += length;
 	return length;
 }
 
-PxU32 PxDefaultMemoryInputData::getLength() const
+PxU64 PxDefaultMemoryInputData::getLength() const
 {
 	return mSize;
 }
 
-void PxDefaultMemoryInputData::seek(PxU32 offset)
+void PxDefaultMemoryInputData::seek(PxU64 offset)
 {
-	mPos = PxMin<PxU32>(mSize, offset);
+	mPos = PxMin<PxU64>(mSize, offset);
 }
 
-PxU32 PxDefaultMemoryInputData::tell() const
+PxU64 PxDefaultMemoryInputData::tell() const
 {
 	return mPos;
 }
@@ -137,9 +129,9 @@ PxDefaultFileOutputStream::~PxDefaultFileOutputStream()
 	mFile = NULL;
 }
 
-PxU32 PxDefaultFileOutputStream::write(const void* src, PxU32 count)
+PxU64 PxDefaultFileOutputStream::write(const void* src, PxU64 count)
 {
-	return mFile ? PxU32(fwrite(src, 1, count, mFile)) : 0;
+	return mFile ? fwrite(src, 1, count, mFile) : 0;
 }
 
 bool PxDefaultFileOutputStream::isValid()
@@ -157,7 +149,7 @@ PxDefaultFileInputData::PxDefaultFileInputData(const char* filename)
 	if(mFile)
 	{
 		fseek(mFile, 0, SEEK_END);
-		mLength = PxU32(ftell(mFile));
+		mLength = ftell(mFile);
 		fseek(mFile, 0, SEEK_SET);
 	}
 	else
@@ -172,27 +164,27 @@ PxDefaultFileInputData::~PxDefaultFileInputData()
 		fclose(mFile);
 }
 
-PxU32 PxDefaultFileInputData::read(void* dest, PxU32 count)
+PxU64 PxDefaultFileInputData::read(void* dest, PxU64 count)
 {
 	PX_ASSERT(mFile);
 	const size_t size = fread(dest, 1, count, mFile);
 	// there should be no assert here since by spec of PxInputStream we can read fewer bytes than expected
-	return PxU32(size);
+	return size;
 }
 
-PxU32 PxDefaultFileInputData::getLength() const
+PxU64 PxDefaultFileInputData::getLength() const
 {
 	return mLength;
 }
 
-void PxDefaultFileInputData::seek(PxU32 pos)
+void PxDefaultFileInputData::seek(PxU64 pos)
 {
 	fseek(mFile, long(pos), SEEK_SET);
 }
 
-PxU32 PxDefaultFileInputData::tell() const
+PxU64 PxDefaultFileInputData::tell() const
 {
-	return PxU32(ftell(mFile));
+	return ftell(mFile);
 }
 
 bool PxDefaultFileInputData::isValid() const

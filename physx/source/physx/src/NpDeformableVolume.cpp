@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -82,6 +82,8 @@ namespace physx
 NpDeformableVolume::NpDeformableVolume(PxCudaContextManager& cudaContextManager) :
 	NpActorTemplate	(PxConcreteType::eDEFORMABLE_VOLUME, PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE, NpType::eDEFORMABLE_VOLUME),
 	mShape			(NULL),
+	mSimulationMesh(NULL),
+	mAuxData		(NULL),
 	mCudaContextManager(&cudaContextManager),
 	mMemoryManager(NULL),
 	mDeviceMemoryAllocator(NULL)
@@ -91,6 +93,8 @@ NpDeformableVolume::NpDeformableVolume(PxCudaContextManager& cudaContextManager)
 NpDeformableVolume::NpDeformableVolume(PxBaseFlags baseFlags, PxCudaContextManager& cudaContextManager) :
 	NpActorTemplate	(baseFlags), 
 	mShape			(NULL),
+	mSimulationMesh(NULL),
+	mAuxData		(NULL),
 	mCudaContextManager(&cudaContextManager),
 	mMemoryManager(NULL),
 	mDeviceMemoryAllocator(NULL)
@@ -141,7 +145,11 @@ PxBounds3 NpDeformableVolume::getWorldBounds(float inflation) const
 
 	PX_SIMD_GUARD;
 
-	const PxBounds3 bounds = getNpScene()->getScScene().getBoundsArray().getBounds(sim->getShapeSim().getElementID());
+	NP_CHECK_SCENE_CORRUPTION_AND_RETURN_VAL(getNpScene(), PxBounds3::empty())
+
+	const PxU32 boundsIndex = sim->getShapeSim().getElementID();
+	const Bp::BoundsArray& boundsArray = getNpScene()->getScScene().getBoundsArray();
+	const PxBounds3 bounds = boundsArray.getBounds(boundsIndex);
 	PX_ASSERT(bounds.isValid());
 
 	// PT: unfortunately we can't just scale the min/max vectors, we need to go through center/extents.
@@ -345,7 +353,7 @@ void NpDeformableVolume::setWakeCounter(PxReal wakeCounterValue)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setWakeCounter() not allowed while simulation is running. Call will be ignored.")
 
-		mCore.setWakeCounter(wakeCounterValue);
+	mCore.setWakeCounter(wakeCounterValue);
 	//UPDATE_PVD_PROPERTIES_OBJECT()
 }
 
@@ -357,6 +365,11 @@ PxReal NpDeformableVolume::getWakeCounter() const
 
 bool NpDeformableVolume::isSleeping() const
 {
+	NpScene* npScene = getNpScene();
+	// The rest of the function is incorrect if sleeping is disabled, return false immediately
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eDISABLE_SLEEPING))
+		return false;
+
 	Sc::DeformableVolumeSim* sim = mCore.getSim();
 	if (sim)
 	{
@@ -413,9 +426,12 @@ bool NpDeformableVolume::attachShape(PxShape& shape)
 
 void NpDeformableVolume::detachShape()
 {
-	PX_CHECK_MSG(getNpSceneFromActor(*this) == NULL, 
+	PX_CHECK_MSG(getNpSceneFromActor(*this) == NULL,
 		"Detaching a shape from a PxDeformableVolume is currenly only allowed as long as it is not part of a scene. "
 		"Please remove the deformable volume from its scene first.");
+
+	if (!mShape)
+		return;
 
 	PX_ASSERT(mDeviceMemoryAllocator);
 
@@ -431,8 +447,7 @@ void NpDeformableVolume::detachShape()
 		core.positionInvMass = NULL;
 	}
 
-	if (mShape)
-		mShape->onActorDetach();
+	mShape->onActorDetach();
 	mShape = NULL;
 }
 
@@ -634,6 +649,9 @@ bool NpDeformableVolume::attachSimulationMesh(PxTetrahedronMesh& simulationMesh,
 
 void NpDeformableVolume::detachSimulationMesh()
 {
+	if (!mSimulationMesh)
+		return;
+
 	PX_ASSERT(mDeviceMemoryAllocator);
 
 	Dy::DeformableVolumeCore& core = mCore.getCore();

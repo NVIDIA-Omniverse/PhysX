@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import sys
 import os
 from functools import partial
@@ -36,7 +37,6 @@ from omni.physx.bindings._physx import (
     SETTING_OMNIPVD_IS_RECORDING,
     SETTING_LOG_ROBOTICS,
     SETTING_LOG_SCENEMULTIGPU,
-    SETTING_DISABLE_SLEEPING,
     SETTING_ENABLE_SYNCHRONOUS_KERNEL_LAUNCHES    
 )
 from omni.physx.bindings._physx import PhysxPropertyQueryRigidBodyResponse, PhysxPropertyQueryColliderResponse, PhysxPropertyQueryResult
@@ -263,6 +263,8 @@ class PhysxDebugWindow(ui.Window):
             ["CullBox", "Cull Box", False],
             ["MBPRegions", "MBP Regions", False],
             ["SDFs", "SDFs", False],
+            ["SplinesSurfaceVelocitySegments", "SplinesSurfaceVelocitySegments", False],
+            ["SplinesSurfaceVelocity", "SplinesSurfaceVelocity", False],
         ]
 
     def on_shutdown(self):
@@ -644,12 +646,6 @@ class PhysxDebugWindow(ui.Window):
                 with ui.HStack(height=LINE_HEIGHT):
                     ui.Label("Solver Type", width=LABEL_WIDTH)
                     ui.ComboBox(-1, *solver_keys, width=200).model.add_item_changed_fn(solver_cb_item_changed)
-                with ui.HStack(height=LINE_HEIGHT):
-                    settings = carb.settings.get_settings()
-                    ui.Label("Disable Sleeping", width=LABEL_WIDTH)
-                    rob_model = ui.SimpleBoolModel(settings.get(SETTING_DISABLE_SLEEPING))
-                    rob_model.add_value_changed_fn(lambda val: settings.set(SETTING_DISABLE_SLEEPING, val.as_bool))
-                    _build_checkbox(rob_model)
                 with ui.HStack(height=LINE_HEIGHT):
                     settings = carb.settings.get_settings()
                     ui.Label("Enable Synchronous CUDA Kernel Launches", width=LABEL_WIDTH * 1.3)

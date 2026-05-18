@@ -12,7 +12,7 @@
 :: See the License for the specific language governing permissions and
 :: limitations under the License.
 
-set PM_PACKMAN_VERSION=7.32
+set PM_PACKMAN_VERSION=7.34
 
 :: Specify where packman command is rooted
 set PM_INSTALL_PATH=%~dp0..
@@ -22,7 +22,7 @@ if defined PM_PACKAGES_ROOT goto ENSURE_DIR
 
 :: If the folder isn't set we assume that the best place for it is on the drive that we are currently
 :: running from
-set PM_DRIVE=%CD:~0,2%
+set PM_DRIVE=%PM_INSTALL_PATH:~0,2%
 
 set PM_PACKAGES_ROOT=%PM_DRIVE%\packman-repo
 
@@ -59,7 +59,7 @@ if defined PM_PYTHON_EXT (
 	goto PACKMAN
 )
 
-set PM_PYTHON_VERSION=3.10.18-nv1-windows-x86_64
+set PM_PYTHON_VERSION=3.10.19-nv2-windows-x86_64
 set PM_PYTHON_BASE_DIR=%PM_PACKAGES_ROOT%\python
 set PM_PYTHON_DIR=%PM_PYTHON_BASE_DIR%\%PM_PYTHON_VERSION%
 set PM_PYTHON=%PM_PYTHON_DIR%\python.exe

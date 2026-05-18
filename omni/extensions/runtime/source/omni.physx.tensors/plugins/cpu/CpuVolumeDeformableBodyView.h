@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -35,6 +35,9 @@ public:
     virtual bool setSimulationNodalVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     virtual bool getSimulationNodalKinematicTargets(const TensorDesc* dstTensor) const override;
     virtual bool setSimulationNodalKinematicTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
+    virtual bool setSimulationNodalPositionsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    virtual bool setSimulationNodalVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    virtual bool setSimulationNodalKinematicTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     // rest shape
     virtual bool getRestElementIndices(const TensorDesc* dstTensor) const override;

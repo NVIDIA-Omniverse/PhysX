@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -26,31 +26,6 @@ struct ImmediateShared;
 
 struct ImmediateNode
 {
-    static omni::graph::core::NameToken const kSourcePrimPathToken;
-    static omni::graph::core::NameToken const kSourcePrimTypeToken;
-    static omni::graph::core::NameToken const kSourcePrimTypeMeshToken;
-    static omni::graph::core::NameToken const kPointsToken;
-    static omni::graph::core::NameToken const kFaceVertexCountsToken;
-    static omni::graph::core::NameToken const kFaceVertexIndicesToken;
-    static omni::graph::core::NameToken const kHolesIndicesToken;
-    static omni::graph::core::NameToken const kOrientationToken;
-    static omni::graph::core::NameToken const kRightHandedToken;
-    static omni::graph::core::NameToken const kWorldMatrixToken;
-    static omni::graph::core::NameToken const kPhysicsCollisionApproximation;
-    static omni::graph::core::NameToken const kBoundingBoxMin;
-    static omni::graph::core::NameToken const kBoundingBoxMax;
-    static omni::graph::core::NameToken const kBoundingBoxTransform;
-    static omni::graph::core::NameToken const kMeshKey;
-    static omni::graph::core::NameToken const kCookedDataCRC;
-    static omni::graph::core::NameToken const kCollisionApproximationConvexHull;
-    static omni::graph::core::NameToken const kXFormOpTranslate;
-    static omni::graph::core::NameToken const kXFormOpRotateXYZ;
-    static omni::graph::core::NameToken const kXFormOpScale;
-    static omni::graph::core::NameToken const kXFormOpOrder;
-    static omni::graph::core::NameToken const kNormals;
-    static omni::graph::core::NameToken const kPrimVarsSt;
-    static omni::graph::core::NameToken const kExtent;
-
     // Access the shared globals
     static ImmediateShared& getGlobals();
 

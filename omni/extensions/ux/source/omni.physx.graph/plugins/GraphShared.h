@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -21,10 +21,6 @@ namespace physx
 {
 namespace graph
 {
-
-const omni::graph::core::NameToken asNameToken(const uint64_t PxPath);
-
-uint64_t toPhysX(const NameToken name);
 
 // Extracts all paths from a relationship bundle and appends them as Tokens to the given array
 bool appendRelationshipPrimPathsToNameTokenArray(omni::graph::core::ogn::OmniGraphDatabase& db,

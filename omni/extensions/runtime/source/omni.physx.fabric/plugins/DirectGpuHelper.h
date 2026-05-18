@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -21,6 +21,10 @@ class PxScene;
 
 namespace omni
 {
+namespace cubric
+{
+struct Adapter;
+}
 namespace physx
 {
 struct IPhysxSimulation;
@@ -34,7 +38,7 @@ public:
     void attach(unsigned long usdStageId);
     void detach();
 
-    void registerRigidBody(const omni::fabric::PathC& primPath, const carb::Float3& scale);
+    void registerRigidBody(const omni::fabric::Path& primPath, const carb::Float3& scale);
 
     void update(omni::fabric::StageReaderWriter& srw, bool forceUpdate);
 
@@ -74,20 +78,23 @@ private:
 
     bool registerScene(::physx::PxScene* scene);
 
-    void updateRigidBodies(omni::fabric::StageReaderWriter& srw, bool updateTransforms, bool updateVelocities, bool fullFabricGpuInterop);
     void fetchRigidBodyData(omni::fabric::StageReaderWriter& srw, bool updateTransforms, bool updateVelocities, bool fullFabricGpuInterop);
+    void applyRigidBodiesToFabric_CPU(omni::fabric::StageReaderWriter& srw, bool updateTransforms, bool updateVelocities);
+    void applyRigidBodiesToFabric_GPU(omni::fabric::StageReaderWriter& srw, bool updateTransforms, bool updateVelocities);
+    bool updateXForms_GPU(omni::fabric::StageReaderWriter& srw);
+    void updateXForms_CPU(omni::fabric::StageReaderWriter& srw);
+    void updateRigidBodies(omni::fabric::StageReaderWriter& srw, bool updateTransforms, bool updateVelocities, bool fullFabricGpuInterop);
 
-    omni::fabric::TokenC mRigidBodySchemaToken;
+    omni::fabric::Token mRigidBodySchemaToken;
 
-    omni::fabric::TokenC mWorldMatrixToken;
-    omni::fabric::TokenC mLocalMatrixToken;
+    omni::fabric::Token mWorldMatrixToken;
 
-    omni::fabric::TokenC mLinVelToken;
-    omni::fabric::TokenC mAngVelToken;
+    omni::fabric::Token mLinVelToken;
+    omni::fabric::Token mAngVelToken;
 
-    omni::fabric::TokenC mRigidBodyWorldPositionToken;
-    omni::fabric::TokenC mRigidBodyWorldOrientationToken;
-    omni::fabric::TokenC mRigidBodyWorldScaleToken;
+    omni::fabric::Token mRigidBodyWorldPositionToken;
+    omni::fabric::Token mRigidBodyWorldOrientationToken;
+    omni::fabric::Token mRigidBodyWorldScaleToken;
 
     omni::fabric::Type mTypeAppliedSchema;
     omni::fabric::Type mTypeFloat3;
@@ -98,10 +105,11 @@ private:
     ::physx::PxScene* mScene = nullptr;
 
     omni::physx::IPhysxSimulation* mPhysxSimulationInterface;
+    omni::cubric::Adapter* mCubricAdapter = nullptr;
 
-    std::unordered_map<omni::fabric::PathC, RigidBodyData> mRigidBodies;
+    std::unordered_map<omni::fabric::Path, RigidBodyData> mRigidBodies;
     // mInitialScales only stores the dynamic rbs
-    std::unordered_map<omni::fabric::PathC, carb::Float3> mInitialScales;
+    std::unordered_map<omni::fabric::Path, carb::Float3> mInitialScales;
 
     uint32_t mNumRds = 0;
     uint32_t mNumArtis = 0;
@@ -153,7 +161,9 @@ private:
 
     FabricMapper mFabricMapperRb;
     FabricMapper mFabricMapperArticulation;
-    uint64_t mFabricTopologyVersion = 0;
+    uint64_t mFabricTopologyVersion;
+    uint64_t mFabricConnectivityVersion;
+    bool isTopologyConnectivityInitialized = false;
     fabric::UsdStageId mUsdStageId;
 
     CUstream mCopyStream = 0;

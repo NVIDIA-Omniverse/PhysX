@@ -22,22 +22,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
 #ifndef PXG_SOFTBODY_H
 #define PXG_SOFTBODY_H
 
-#include "PxsHeapMemoryAllocator.h"
-#include "foundation/PxUserAllocated.h"
-#include "foundation/PxVec4.h"
-#include "PxgCudaBuffer.h"
-#include "cutil_math.h"
-#include "PxDeformableVolume.h"
-#include "PxDeformableVolumeFlag.h"
+#include "foundation/PxMat33.h"
+#include "foundation/PxBounds3.h"
 #include "PxSoftBodyFlag.h" // deprecated
-#include "PxgSimulationCoreDesc.h"
+#include <vector_types.h>
 
 #define MAX_SELF_COLLISION_CONTACTS		1000
 #define NUM_BLOCK_PER_SOFTBODY_SOLVE_TETRA	2
@@ -52,12 +47,17 @@ namespace physx
 		class BVTetrahedronMesh;
 		class TetrahedronMesh;
 		class DeformableVolumeAuxData;
-	};
+	}
 
+	namespace Cm
+	{
+		class VirtualAllocatorCallback;
+	}
 
 	struct PxgMat33Block;
 	struct PxgSpatialVectorBlock;
 	class PxgNonRigidFilterPair;
+	struct PxgAllocatorDesc;
 
 #if PX_VC 
 #pragma warning(push)   
@@ -84,7 +84,7 @@ namespace physx
 
 		// AD: We only use this for the host mirror as the GPU-side are PxgCudaBuffers and we only assign the pointers. 
 		// Make sure to pass the right allocator in here!
-		void deallocate(PxsHeapMemoryAllocator* allocator); 
+		void deallocate(Cm::VirtualAllocatorCallback& hostAlloc); 
 
 		void*					mTetMeshData;
 		PxU8*					mTetMeshSurfaceHint;
@@ -181,52 +181,7 @@ namespace physx
 #pragma warning(pop)   
 #endif
 
-	class PxgSoftBodyBuffer : public PxUserAllocated
-	{
-	public:
-
-		PxgSoftBodyBuffer(PxgHeapMemoryAllocatorManager* heapMemoryManager);
-
-		PxgCudaBuffer						tetMeshData;
-		PxgTypedCudaBuffer<PxU8>			tetMeshSurfaceHint;
-		PxgTypedCudaBuffer<uint4>			tetIndices;
-		PxgTypedCudaBuffer<PxU32>			tetIndicesRemapTable;
-		PxgTypedCudaBuffer<PxMat33>			tetStresses;
-		PxgTypedCudaBuffer<PxReal>			tetStressCoefficient;
-		PxgTypedCudaBuffer<PxMat33>			tetRestPoses;
-		PxgTypedCudaBuffer<float4>			tetRotations;
-
-		PxgTypedCudaBuffer<uint4>			tetIndicesGM;
-		PxgTypedCudaBuffer<float4>			pPostion_InvMassGM;
-		PxgTypedCudaBuffer<bool>			vertsAreDeformed;
-		PxgTypedCudaBuffer<bool>			vertsCantDeform;
-		PxgTypedCudaBuffer<PxgMat33Block>	tetRestPosesGM;
-		PxgTypedCudaBuffer<PxgMat33Block>	origTetRestPosesGM;
-		PxgTypedCudaBuffer<float4>			tetRotationsGM;
-		PxgTypedCudaBuffer<PxU32>			orderedTetGM;
-		PxgTypedCudaBuffer<PxU32>			jacobiVertIndicesGM;
-		PxgTypedCudaBuffer<PxgSpatialVectorBlock>	tetMultipliersGM;
-
-		PxgTypedCudaBuffer<float4>			pDeltaVGM;
-
-		PxgTypedCudaBuffer<float4>			pBarycentricGM;
-		PxgTypedCudaBuffer<PxU32>			pRemapGM;
-		PxgTypedCudaBuffer<PxU32>			tetRemapColToSim;
-		PxgTypedCudaBuffer<PxU32>			tetAccumulatedRemapColToSim;
-		PxgTypedCudaBuffer<PxU8>			surfaceVertsHint;
-		PxgTypedCudaBuffer<PxU32>			surfaceVertToTetRemap;
-		PxgTypedCudaBuffer<float4>			pDeltaPosGM;
-		PxgTypedCudaBuffer<float4>			pPosition_InvMassGMCP;
-		PxgTypedCudaBuffer<float4>			pVelocity_InvMassGMCP;
-		PxgTypedCudaBuffer<PxU32>			remapOutputGMCP;
-		PxgTypedCudaBuffer<PxU32>			accumulatedPartitionsGMCP;
-		PxgTypedCudaBuffer<PxU32>			accumulatedCopiesGMCP;
-		PxgTypedCudaBuffer<uint4>			pullIndices;
-		PxgTypedCudaBuffer<PxU16>			orderedMaterialIndices;
-		PxgTypedCudaBuffer<PxU16>			materialIndices;
-		PxgTypedCudaBuffer<PxBounds3>		packedNodeBounds; //for refit
-		PxgTypedCudaBuffer<PxgNonRigidFilterPair> filterPairs;
-	};
+	class PxgSoftBodyBuffer;
 
 	class PxgSoftBodyUtil
 	{
@@ -234,7 +189,7 @@ namespace physx
 		static PxU32 computeTetMeshByteSize(const Gu::BVTetrahedronMesh* tetMesh);
 		static PxU32 loadOutTetMesh(void* mem, const Gu::BVTetrahedronMesh* tetMesh);
 		static void initialTetData(PxgSoftBody& softbody, const Gu::BVTetrahedronMesh* colTetMesh, const Gu::TetrahedronMesh* simTetMesh, 
-			const Gu::DeformableVolumeAuxData* softBodyAuxData, const PxU16* materialsHandles, PxsHeapMemoryAllocator* alloc);
+			const Gu::DeformableVolumeAuxData* softBodyAuxData, const PxU16* materialsHandles, Cm::VirtualAllocatorCallback& hostAlloc);
 		static void computeBasisMatrix(PxMat33* restPoses, const Gu::DeformableVolumeMesh* tetMesh);
 
 	};

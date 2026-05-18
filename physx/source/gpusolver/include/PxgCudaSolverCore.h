@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,6 +33,8 @@
 
 namespace physx
 {
+	template <typename IterData> struct PxgSolverSharedDesc;
+
 	// PT: TODO: rename to PxgPGSSolverCore ?
 	class PxgCudaSolverCore : public PxgSolverCore
 	{
@@ -52,7 +54,7 @@ namespace physx
 		//This is the new articulation block constraint format!
 		//It shares the original rigid body contact/constraint format but adds in
 		//an additional buffer for the response vectors
-		PxgTypedCudaBuffer<PxgArticulationBlockResponse>		mArtiConstraintBlockResponse;
+		PxgTypedCudaBuffer<struct PxgArticulationBlockResponse>	mArtiConstraintBlockResponse;
 
 		PxgTypedCudaBuffer<Dy::ThresholdStreamElement>		mForceThresholdStream;
 		PxgTypedCudaBuffer<Dy::ThresholdStreamElement>		mTmpForceThresholdStream;
@@ -77,7 +79,7 @@ namespace physx
 		PxgTypedCudaBuffer<PxU32>		mIslandIds;
 		PxgTypedCudaBuffer<PxU32>		mIslandStaticTouchCount;
 		
-		PxgSolverSharedDesc<IterativeSolveData>*	mSharedDesc;
+		PxgSolverSharedDesc<struct IterativeSolveData>*	mSharedDesc;
 
 		void radixSort(const PxU32 nbPasses);
 
@@ -88,7 +90,7 @@ namespace physx
 		bool mFrictionEveryIteration;
 
 		PxgCudaSolverCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, PxgGpuContext* dynamicContext, 
-			PxgHeapMemoryAllocatorManager* heapMemoryManager, const PxGpuDynamicsMemoryConfig& init,
+			PxgAllocatorDesc& allocDesc, const PxGpuDynamicsMemoryConfig& init,
 			const bool frictionEveryIteration);
 		~PxgCudaSolverCore();
 
@@ -140,14 +142,14 @@ namespace physx
 				PxU32 totalNumJoints,
 				const PxU32* islandIds, const PxU32* nodeInteractionCounts, PxU32 nbNodes, const PxU32* islandStaticTouchCount, PxU32 nbIslands);
 
-		void gpuMemDmaUpBodyData(PxPinnedArray<PxgSolverBodyData>& solverBodyDataPool,
-			PxPinnedArray<PxgSolverTxIData>& solverTxIDataPool,
+		void gpuMemDmaUpBodyData(Cm::PinnableArray<PxgSolverBodyData>& solverBodyDataPool,
+			Cm::PinnableArray<PxgSolverTxIData>& solverTxIDataPool,
 			const PxU32 numSolverBodies,
 			const PxU32 totalNumRigidBatches, const PxU32 totalNumArticBatches,
 			const PxU32 nbSlabs, const PxU32 nbStaticSlabs, const PxU32 maxNumStaticPartitions);
 
 		void allocateSolverBodyBuffers(const PxU32 numSolverBodies,
-			PxPinnedArray<PxNodeIndex>& islandNodeIndices,
+			Cm::PinnableArray<PxNodeIndex>& islandNodeIndices,
 			const PxU32 numActiveActiculations, const PxU32 maxArticulationLinks);
 
 		void gpuMemDMAUp(PxgPinnedHostLinearMemoryAllocator& hostAllocator, const PxgConstraintPrePrepData& data,
@@ -172,7 +174,7 @@ namespace physx
 
 		void gpuMemDMAbackSolverData(PxU8* forceBufferPool, PxU32 forceBufferOffset, PxU32 forceBufferUpperPartSize,
 			PxU32 forceBufferLowerPartSize, Dy::ThresholdStreamElement* changedElems, bool hasForceThresholds, Dy::ConstraintWriteback* constraintWriteBack,
-			const PxU32 writeBackSize, bool copyAllToHost, Dy::ErrorAccumulator*& contactError);
+			const PxU32 writeBackSize, bool copyAllToHost);
 
 		void syncDmaBack(PxU32& nbChangedThresholdElements);
 
@@ -188,13 +190,12 @@ namespace physx
 		void nonRigidConstraintPrepare(PxU32 nbArticulations);
 
 		void solveContactMultiBlockParallel(PxgIslandContext* islandContexts, const PxU32 numIslands, const PxU32 maxPartitions, 
-			PxInt32ArrayPinned& constraintsPerPartition, PxInt32ArrayPinned& artiConstraintsPerPartition, const PxVec3& gravity, const bool solveArticulationContactLast,
-			PxReal* posIterResidualSharedMem, PxU32 posIterResidualSharedMemSize, Dy::ErrorAccumulator* posIterError, PxPinnedArray<Dy::ErrorAccumulator>& artiContactPosIterError, 
-			PxPinnedArray<Dy::ErrorAccumulator>& perArticulationInternalError);
+			Cm::PinnableArray<PxU32>& constraintsPerPartition, Cm::PinnableArray<PxU32>& artiConstraintsPerPartition,
+			const PxVec3& gravity, const bool solveArticulationContactLast);
 
 		void writeBackBlock(PxU32 a, PxgIslandContext& context);
 
-		void solvePartitions(PxgIslandContext* islandContexts, PxInt32ArrayPinned& constraintsPerPartition, PxInt32ArrayPinned& artiConstraintsPerPartition,
+		void solvePartitions(PxgIslandContext* islandContexts, Cm::PinnableArray<PxU32>& constraintsPerPartition, Cm::PinnableArray<PxU32>& artiConstraintsPerPartition,
 			PxU32 islandIndex, bool doFriction, bool anyArticulationConstraints);
 
 		void accumulatedForceThresholdStream(PxU32 maxNodes);

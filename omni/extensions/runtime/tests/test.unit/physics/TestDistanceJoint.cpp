@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -74,8 +74,7 @@ TEST_CASE_TEMPLATE("Distance Joint Tests",T, USDChange, FabricChange)
         CHECK((distanceJoint->getDistanceJointFlags() & PxDistanceJointFlag::eSPRING_ENABLED) == false);
 
         changeTemplate.setAttributeValue(jointPath, changeToken, true);
-        changeTemplate.broadcastChanges();
-
+        
         physxSim->simulate(1.0f/60.0f,1.0f/60.0f);
         physxSim->checkResults();
 
@@ -102,7 +101,6 @@ TEST_CASE_TEMPLATE("Distance Joint Tests",T, USDChange, FabricChange)
         CHECK(distanceJoint->getStiffness() == 10.0f);
 
         changeTemplate.setAttributeValue(jointPath, changeToken, 20.0f);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(1.0f/60.0f,1.0f/60.0f);
         physxSim->checkResults();
@@ -130,7 +128,6 @@ TEST_CASE_TEMPLATE("Distance Joint Tests",T, USDChange, FabricChange)
         CHECK(distanceJoint->getDamping() == 10.0f);
 
         changeTemplate.setAttributeValue(jointPath, changeToken, 20.0f);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(1.0f/60.0f,1.0f/60.0f);
         physxSim->checkResults();
@@ -157,8 +154,7 @@ TEST_CASE_TEMPLATE("Distance Joint Tests",T, USDChange, FabricChange)
         CHECK(distanceJoint->getMinDistance() == 0.0f);
         CHECK((distanceJoint->getDistanceJointFlags() & PxDistanceJointFlag::eMIN_DISTANCE_ENABLED) == true);
 
-        changeTemplate.setAttributeValue(jointPath, changeToken, 2.0f);
-        changeTemplate.broadcastChanges();
+        changeTemplate.setAttributeValue(jointPath, changeToken, 2.0f);        
 
         physxSim->simulate(1.0f/60.0f,1.0f/60.0f);
         physxSim->checkResults();
@@ -167,7 +163,6 @@ TEST_CASE_TEMPLATE("Distance Joint Tests",T, USDChange, FabricChange)
         CHECK((distanceJoint->getDistanceJointFlags() & PxDistanceJointFlag::eMIN_DISTANCE_ENABLED) == true);
 
         changeTemplate.setAttributeValue(jointPath, changeToken, -1.0f);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(1.0f/60.0f,1.0f/60.0f);
         physxSim->checkResults();
@@ -195,7 +190,6 @@ TEST_CASE_TEMPLATE("Distance Joint Tests",T, USDChange, FabricChange)
         CHECK((distanceJoint->getDistanceJointFlags() & PxDistanceJointFlag::eMAX_DISTANCE_ENABLED) == true);
 
         changeTemplate.setAttributeValue(jointPath, changeToken, 20.0f);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(1.0f/60.0f,1.0f/60.0f);
         physxSim->checkResults();
@@ -204,7 +198,6 @@ TEST_CASE_TEMPLATE("Distance Joint Tests",T, USDChange, FabricChange)
         CHECK((distanceJoint->getDistanceJointFlags() & PxDistanceJointFlag::eMAX_DISTANCE_ENABLED) == true);
 
         changeTemplate.setAttributeValue(jointPath, changeToken, -1.0f);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(1.0f/60.0f,1.0f/60.0f);
         physxSim->checkResults();

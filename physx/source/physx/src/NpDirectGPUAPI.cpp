@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -71,10 +71,7 @@ bool NpDirectGPUAPI::getRigidDynamicData(void* PX_RESTRICT data, const PxRigidDy
 	if (!data || !gpuIndices)
 		return outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxDirectGPUAPI::getRigidDynamicData(): data and/or gpuIndices has to be valid pointer.");
 
-	const float elapsedTime = mNpScene.getElapsedTime();
-	const float oneOverDt = elapsedTime != 0.0f ? 1.0f/elapsedTime : 0.0f;
-
-	return mNpScene.getScScene().getSimulationController()->getRigidDynamicData(data, gpuIndices, dataType, nbElements, oneOverDt, startEvent, finishEvent);
+	return mNpScene.getScScene().getSimulationController()->getRigidDynamicData(data, gpuIndices, dataType, nbElements, startEvent, finishEvent);
 }
 
 bool NpDirectGPUAPI::setRigidDynamicData(const void* PX_RESTRICT data, const PxRigidDynamicGPUIndex* PX_RESTRICT gpuIndices, PxRigidDynamicGPUAPIWriteType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent)

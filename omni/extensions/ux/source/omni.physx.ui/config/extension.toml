@@ -6,7 +6,7 @@ keywords = ["physics", "physx", "ui"]
 category = "simulation"
 authors = ["PhysX"]
 
-version = "107.3.0-oss.0"
+version = "110.0.7"
 
 icon = "data/icon.png"
 preview_image = "data/preview.png"
@@ -22,8 +22,8 @@ usd = true
 [dependencies]
 "omni.ui" = {}
 "omni.kit.renderer.imgui" = {}
-"omni.usdphysics.ui" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.usdphysics.ui" = { version = "110.0.7", exact = true }
+"omni.physx" = { version = "110.0.7", exact = true }
 "omni.timeline" = {}
 "omni.debugdraw" = {}
 "omni.kit.window.property" = {}
@@ -35,7 +35,8 @@ usd = true
 "omni.kit.property.usd" = {}
 "omni.usd" = {}
 "omni.kit.commands" = {}
-"omni.physx.commands" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.commands" = { version = "110.0.7", exact = true }
+"omni.physics.stageupdate" = { version = "110.0.7", exact = true }
 "omni.kit.notification_manager" = {}
 "omni.client" = {}
 "omni.ui.scene" = {}

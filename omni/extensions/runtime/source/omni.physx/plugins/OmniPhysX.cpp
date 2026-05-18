@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -21,7 +21,6 @@
 #include "usdLoad/Scene.h"
 
 #include "particles/PhysXParticlePost.h"
-#include "particles/FabricParticles.h"
 
 #include <common/utilities/MemoryMacros.h>
 
@@ -96,19 +95,13 @@ void OmniPhysX::physXAttach(long int stageId, bool loadPhysics)
         return;
     }
 
-    mIStageReaderWriter = carb::getFramework()->tryAcquireInterface<omni::fabric::IStageReaderWriter>();
+    mIStageReaderWriter = carb::getCachedInterface<omni::fabric::IStageReaderWriter>();    
     createInternalPhysXDatabase();
 
     mStage = stage;
     mStageId = stageId;
 
     SimulationCallbacks::getSimulationCallbacks()->reset();
-
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    SAFE_DELETE_SINGLE(mFabricParticles);
-    mFabricParticles = new FabricParticles;
-    mFabricParticles->attachStage(stageId);
-#endif
 
     if (mPhysXStats)
     {
@@ -155,14 +148,6 @@ void OmniPhysX::physXDetach()
 
     mStage = nullptr;
     mStageId = 0u;
-
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    if (mFabricParticles)
-    {
-        mFabricParticles->detachStage();
-        SAFE_DELETE_SINGLE(mFabricParticles);
-    }
-#endif
 }
 
 void OmniPhysX::resetSimulation()
@@ -202,14 +187,6 @@ void OmniPhysX::resetSimulation()
     omniPhysX.sendSimulationEvent(SimulationEvent::eStopped);
     omniPhysX.setSimulationStarted(false);
     omniPhysX.setSimulationRunning(false);
-
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    FabricParticles* fabricParticles = omniPhysX.getFabricParticles();
-    if (fabricParticles)
-    {
-        fabricParticles->reset();
-    }
-#endif
 }
 
 static void readPersistentSettings()
@@ -219,12 +196,7 @@ static void readPersistentSettings()
     omniPhysX.setGpuPipelineOverride(iSettings->getAsInt(kSettingOverrideGPU));
     omniPhysX.getPhysXSetup().setThreadCount(iSettings->getAsInt(kSettingNumThreads));
     omniPhysX.getPhysXSetup().setMaxNumberOfPhysXErrors(iSettings->getAsInt(kSettingMaxNumberOfPhysXErrors));
-    cookingdataasync::CookingDataAsync* cookingDataAsync = omniPhysX.getPhysXSetup().getCookingDataAsync();
-    if(cookingDataAsync)
-    {
-        cookingDataAsync->setLocalMeshCacheEnabled(iSettings->getAsBool(kSettingUseLocalMeshCache));
-        cookingDataAsync->setLocalMeshCacheSize(iSettings->getAsInt(kSettingLocalMeshCacheSizeMB));
-    }
+
 }
 
 void enableLogChannel(const omni::log::LogChannelData& channel, bool enable)
@@ -247,7 +219,7 @@ void OmniPhysX::onStartup()
 
     // Add physics systems
     carb::Framework* framework = carb::getFramework();
-    mIStageReaderWriter = framework->tryAcquireInterface<omni::fabric::IStageReaderWriter>();
+    mIStageReaderWriter = carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
 
     mIDictionary = carb::getCachedInterface<carb::dictionary::IDictionary>();
 
@@ -319,6 +291,8 @@ void OmniPhysX::onStartup()
     enableLogChannel(kRoboticsLogChannel, mISettings->getAsBool(kSettingLogRobotics));
     enableLogChannel(kSceneMultiGPULogChannel, mISettings->getAsBool(kSettingLogSceneMultiGPU));
     subscribeToSettingsChangeEvents();
+
+    createInternalPhysXDatabase();
     mWasStarted = true;
 
     createInternalPhysXDatabase();
@@ -390,6 +364,10 @@ void OmniPhysX::onShutdown()
 
 OmniPhysX& OmniPhysX::getInstance()
 {
+    if (!gOmniPhysXInstance)
+    {
+        gOmniPhysXInstance = ICE_NEW(OmniPhysX);
+    }
     return *gOmniPhysXInstance;
 }
 
@@ -400,7 +378,10 @@ const OmniPhysX* OmniPhysX::getInstanceCheck()
 
 void OmniPhysX::createOmniPhysXInstance()
 {
-    gOmniPhysXInstance = ICE_NEW(OmniPhysX);
+    if (!gOmniPhysXInstance)
+    {
+        gOmniPhysXInstance = ICE_NEW(OmniPhysX);
+    }
 }
 
 void OmniPhysX::subscribeToSettingsChangeEvents()
@@ -411,16 +392,7 @@ void OmniPhysX::subscribeToSettingsChangeEvents()
         OmniPhysX& omniPhysX = OmniPhysX::getInstance();
         OmniCachedSettings& cachedSettings = omniPhysX.getCachedSettings();
         // We must delay local mesh creation to make sure that its async pump has finished processing tasks
-        cachedSettings.localMeshCacheEnabled = omniPhysX.getISettings()->getAsBool(kSettingUseLocalMeshCache);
-        cachedSettings.localMeshCacheSize = omniPhysX.getISettings()->getAsInt(kSettingLocalMeshCacheSizeMB);
-        cachedSettings.delayedInitLocalMeshCache = true;
     };
-    // set local mesh cache change callbacks
-    subID = mISettings->subscribeToNodeChangeEvents(kSettingUseLocalMeshCache, localMeshCacheChangedLambda, nullptr);
-    mSubscribedSettings.push_back(subID);
-
-    subID = mISettings->subscribeToNodeChangeEvents(kSettingLocalMeshCacheSizeMB, localMeshCacheChangedLambda, nullptr);
-    mSubscribedSettings.push_back(subID);
 
     subID = mISettings->subscribeToNodeChangeEvents(
         kSettingLogRobotics,
@@ -446,6 +418,7 @@ void OmniPhysX::subscribeToSettingsChangeEvents()
             OmniPhysX& omniPhysX = OmniPhysX::getInstance();
             carb::dictionary::IDictionary* dict = carb::getCachedInterface<carb::dictionary::IDictionary>();
             omniPhysX.mCachedSettings.viewportGizmoScale = dict->getAsFloat(changedItem);
+            omniPhysX.setDebugVisualizationDirty(true);
         },
         nullptr);
     mCachedSettings.viewportGizmoScale = mISettings->getAsFloat(kViewportGizmoScalePath);
@@ -474,6 +447,17 @@ void OmniPhysX::subscribeToSettingsChangeEvents()
     mSubscribedSettings.push_back(subID);
 
     subID = mISettings->subscribeToNodeChangeEvents(
+        kSettingUpdateToUsdUsingXformCommonAPI,
+        [](const carb::dictionary::Item* changedItem, carb::dictionary::ChangeEventType eventType, void* userData) {
+            OmniPhysX& omniPhysX = OmniPhysX::getInstance();
+            carb::dictionary::IDictionary* dict = carb::getCachedInterface<carb::dictionary::IDictionary>();
+            omniPhysX.mCachedSettings.updateToUsdUsingXformCommonAPI = dict->getAsBool(changedItem);
+        },
+        nullptr);
+    mCachedSettings.updateToUsdUsingXformCommonAPI = mISettings->getAsBool(kSettingUpdateToUsdUsingXformCommonAPI);
+    mSubscribedSettings.push_back(subID);
+
+    subID = mISettings->subscribeToNodeChangeEvents(
         kSettingUpdateVelocitiesToUsd,
         [](const carb::dictionary::Item* changedItem, carb::dictionary::ChangeEventType eventType, void* userData) {
             OmniPhysX& omniPhysX = OmniPhysX::getInstance();
@@ -482,17 +466,6 @@ void OmniPhysX::subscribeToSettingsChangeEvents()
         },
         nullptr);
     mCachedSettings.updateVelocitiesToUsd = mISettings->getAsBool(kSettingUpdateVelocitiesToUsd);
-    mSubscribedSettings.push_back(subID);
-
-    subID = mISettings->subscribeToNodeChangeEvents(
-    kSettingUpdateResidualsToUsd,
-    [](const carb::dictionary::Item* changedItem, carb::dictionary::ChangeEventType eventType, void* userData) {
-        OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        carb::dictionary::IDictionary* dict = carb::getCachedInterface<carb::dictionary::IDictionary>();
-        omniPhysX.mCachedSettings.updateResidualsToUsd = dict->getAsBool(changedItem);
-    },
-    nullptr);
-    mCachedSettings.updateResidualsToUsd = mISettings->getAsBool(kSettingUpdateResidualsToUsd);
     mSubscribedSettings.push_back(subID);
 
     subID = mISettings->subscribeToNodeChangeEvents(
@@ -550,16 +523,6 @@ void OmniPhysX::subscribeToSettingsChangeEvents()
     mCachedSettings.simulateEmptyScene = mISettings->getAsBool(kSettingSimulateEmptyScene);
     mSubscribedSettings.push_back(subID);
 
-    subID = mISettings->subscribeToNodeChangeEvents(
-        kSettingDisableSleeping,
-        [](const carb::dictionary::Item* changedItem, carb::dictionary::ChangeEventType eventType, void* userData) {
-            OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-            carb::dictionary::IDictionary* dict = carb::getCachedInterface<carb::dictionary::IDictionary>();
-            omniPhysX.mCachedSettings.disableSleeping = dict->getAsBool(changedItem);
-        },
-        nullptr);
-    mCachedSettings.disableSleeping = mISettings->getAsBool(kSettingDisableSleeping);
-    mSubscribedSettings.push_back(subID);
 
     subID = mISettings->subscribeToNodeChangeEvents(
         kSettingSynchronousKernelLaunches,

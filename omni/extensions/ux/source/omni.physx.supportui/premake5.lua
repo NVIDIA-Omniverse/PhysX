@@ -26,7 +26,6 @@ project ("omni.physx.supportui.plugin")
     extension_usd_deps(targetDeps_dir, hostDeps_dir)
     extension_physxsdk_deps(targetDeps_dir, physxVersion)
     extension_omniui_deps()
-    extension_imgui_deps()
     targetdir (targetDir.."/"..ext_dir.."/bin")
     dependson { "prebuild", "carb.physics-usd.plugin", "foundation" }
     includedirs {
@@ -35,7 +34,6 @@ project ("omni.physx.supportui.plugin")
         targetDeps_dir.."/client-library/include",
         kit_sdk_dir.."/dev/fabric/include",
         targetDeps_dir.."/gsl/include",   -- Support for gsl::span
-        "%{target_deps}/rtx_plugins/include",
         runtime_include_dir }
     filter { "configurations:debug" }
         runtime "Debug"
@@ -54,6 +52,7 @@ project ("omni.physx.supportui.plugin")
         links { "rt" }
     filter {}
     links { "physxSchema", "omni.usd", "carb", "foundation",  "omni.ui", "omni.ui.scene"}
+    extension_imgui_deps()
     files { "python/**.py" }
     vpaths { ['python/*'] = "python/**.py" }
 

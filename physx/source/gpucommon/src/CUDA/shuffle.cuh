@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,22 +33,25 @@
 #include "PxgCommonDefines.h"
 //#include "nputils.cuh"
 
-static __device__ __forceinline__
-physx::PxVec3 shuffle(const physx::PxU32 syncMask, const physx::PxVec3& v, int i, physx::PxU32 width = WARP_SIZE)
+namespace physx
 {
-	return physx::PxVec3(__shfl_sync(syncMask, v.x, i, width), __shfl_sync(syncMask, v.y, i, width), __shfl_sync(syncMask, v.z, i, width));
+
+static __device__ __forceinline__
+PxVec3 shuffle(const PxU32 syncMask, const PxVec3& v, int i, PxU32 width = WARP_SIZE)
+{
+	return PxVec3(__shfl_sync(syncMask, v.x, i, width), __shfl_sync(syncMask, v.y, i, width), __shfl_sync(syncMask, v.z, i, width));
 }
 
 static __device__ __forceinline__
-float4 shuffle(const physx::PxU32 syncMask, const float4& v, const int lane)
+float4 shuffle(const PxU32 syncMask, const float4& v, const int lane)
 {
 	return make_float4(__shfl_sync(syncMask, v.x, lane), __shfl_sync(syncMask, v.y, lane), __shfl_sync(syncMask, v.z, lane), __shfl_sync(syncMask, v.w, lane));
 }
 
 static __device__ __forceinline__
-physx::PxVec3 warpShuffleMin(physx::PxVec3 v)
+PxVec3 warpShuffleMin(PxVec3 v)
 {
-	for (physx::PxU32 reductionRadius = 1; reductionRadius < WARP_SIZE; reductionRadius <<= 1)
+	for (PxU32 reductionRadius = 1; reductionRadius < WARP_SIZE; reductionRadius <<= 1)
 	{
 		v.x = fminf(v.x, __shfl_xor_sync(FULL_MASK, v.x, reductionRadius));
 		v.y = fminf(v.y, __shfl_xor_sync(FULL_MASK, v.y, reductionRadius));
@@ -59,9 +62,9 @@ physx::PxVec3 warpShuffleMin(physx::PxVec3 v)
 }
 
 static __device__ __forceinline__
-physx::PxVec3 warpShuffleMax(physx::PxVec3 v)
+PxVec3 warpShuffleMax(PxVec3 v)
 {
-	for (physx::PxU32 reductionRadius = 1; reductionRadius < WARP_SIZE; reductionRadius <<= 1)
+	for (PxU32 reductionRadius = 1; reductionRadius < WARP_SIZE; reductionRadius <<= 1)
 	{
 		v.x = fmaxf(v.x, __shfl_xor_sync(FULL_MASK, v.x, reductionRadius));
 		v.y = fmaxf(v.y, __shfl_xor_sync(FULL_MASK, v.y, reductionRadius));
@@ -106,5 +109,6 @@ physx::PxVec3 warpShuffleMax(physx::PxVec3 v)
 //	return lowestSetIndex(__ballot_sync(FULL_MASK, minV == v)&mask);
 //}
 
+} // namespace physx
 
 #endif //SHUFFLE_CUH

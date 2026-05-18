@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -84,7 +84,7 @@ PxDeformableSurface* createPhysxDeformableSurface(
     {
         GfVec3f restPos = { femClothDesc.restPoints[i].x, femClothDesc.restPoints[i].y,
                                  femClothDesc.restPoints[i].z };
-        restPositions[i] = collisionToWorld.Transform(restPos);
+        restPositions[i] = pxr::GfVec3f(collisionToWorld.Transform(restPos));
     }
 
     // cook triangle mesh
@@ -130,8 +130,7 @@ PxDeformableSurface* createPhysxDeformableSurface(
     // PxFEMParameters: same setting as softBody
     params.velocityDamping = femClothDesc.velocityDamping;
     params.settlingThreshold = femClothDesc.settlingThreshold;
-    const bool disableSleeping = OmniPhysX::getInstance().getCachedSettings().disableSleeping;
-    params.sleepThreshold = disableSleeping ? 0.0f : femClothDesc.sleepThreshold;
+    params.sleepThreshold = femClothDesc.sleepThreshold;
     params.sleepDamping = femClothDesc.sleepDamping;
 
     return deformableSurface;
@@ -425,7 +424,8 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableBodyDeprecated(const usdparse
 {
     if (!checkScenes())
     {
-        PhysXUsdPhysicsInterface::reportLoadError(ErrorCode::eError, "No physics scene created, please add physics scene into stage!");
+        PhysXUsdPhysicsInterface::reportLoadError(
+            usdparser::ErrorCode::eError, "No physics scene created, please add physics scene into stage!");
         return kInvalidObjectId;
     }
 
@@ -437,7 +437,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableBodyDeprecated(const usdparse
     if (!physxScene || !physxScene->isFullGpuPipelineAvailable())
     {
         PhysXUsdPhysicsInterface::reportLoadError(
-            ErrorCode::eError,
+            usdparser::ErrorCode::eError,
             "Deformable Body feature is only supported on GPU. Please enable GPU dynamics flag in Property/Scene of physics scene!");
         return kInvalidObjectId;
     }
@@ -631,8 +631,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableBodyDeprecated(const usdparse
         PxFEMParameters params;
         params.velocityDamping = softBodyDesc.velocityDamping;
         params.settlingThreshold = softBodyDesc.settlingThreshold;
-        const bool disableSleeping = OmniPhysX::getInstance().getCachedSettings().disableSleeping;
-        params.sleepThreshold = disableSleeping ? 0.0f : softBodyDesc.sleepThreshold;
+        params.sleepThreshold = softBodyDesc.sleepThreshold;
         params.sleepDamping = softBodyDesc.sleepDamping;
 
         float restOffset = softBody->getShape()->getRestOffset();
@@ -985,7 +984,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableSurfaceVelocitiesDeprecated(const
 static PxVec3 toPhysX(const carb::Float3& p, const GfMatrix4d& m)
 {
     GfVec3f pos = { p.x, p.y, p.z };
-    GfVec3f position = m.Transform(pos);
+    GfVec3f position = pxr::GfVec3f(m.Transform(pos));
     return toPhysX(position);
 }
 
@@ -993,7 +992,8 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableSurfaceDeprecated(const usdpa
 {
     if (!checkScenes())
     {
-        PhysXUsdPhysicsInterface::reportLoadError(ErrorCode::eError, "No physics scene created, please add physics scene into stage!");
+        PhysXUsdPhysicsInterface::reportLoadError(
+            usdparser::ErrorCode::eError, "No physics scene created, please add physics scene into stage!");
         return kInvalidObjectId;
     }
 
@@ -1007,7 +1007,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableSurfaceDeprecated(const usdpa
     if (!physxScene || !physxScene->isFullGpuPipelineAvailable())
     {
         PhysXUsdPhysicsInterface::reportLoadError(
-            ErrorCode::eError,
+            usdparser::ErrorCode::eError,
             "Deformable Surface feature is only supported on GPU. Please enable GPU dynamics flag in Property/Scene of physics scene!");
         return kInvalidObjectId;
     }
@@ -1247,7 +1247,7 @@ bool PhysXUsdPhysicsInterface::updateKinematicVertexTargetsFromSkinDeprecated(co
                     {
                         PxVec3 p = evaluateBarycentric(collisionVertexToSkinTriVertexIndices[i],
                                                        collisionVertexToSkinTriBarycentrics[i], skinPoints);
-                        GfVec3f s = transformTimeSampled.Transform(GfVec3f(p.x, p.y, p.z));
+                        GfVec3f s = pxr::GfVec3f(transformTimeSampled.Transform(GfVec3f(p.x, p.y, p.z)));
                         kinematicTarget[i] = PxConfigureSoftBodyKinematicTarget(toPhysX(s), true);
                     }
                     internalDeformableBody->uploadKinematicTargets(softBody->getSoftBodyFlag());
@@ -1258,7 +1258,7 @@ bool PhysXUsdPhysicsInterface::updateKinematicVertexTargetsFromSkinDeprecated(co
                     for (size_t i = 0; i < skinPointsSize; ++i)
                     {
                         const GfVec3f& source = reinterpret_cast<const GfVec3f&>(skinPoints[i]);
-                        GfVec3f s = transformTimeSampled.Transform(source);
+                        GfVec3f s = pxr::GfVec3f(transformTimeSampled.Transform(source));
                         kinematicTarget[i] = PxConfigureSoftBodyKinematicTarget(toPhysX(s), true);
                     }
                     internalDeformableBody->uploadKinematicTargets(softBody->getSoftBodyFlag());

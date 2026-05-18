@@ -1,25 +1,8 @@
 //
 // Copyright 2016 Pixar
 //
-// Licensed under the Apache License, Version 2.0 (the "Apache License")
-// with the following modification; you may not use this file except in
-// compliance with the Apache License and the following modification to it:
-// Section 6. Trademarks. is deleted and replaced with:
-//
-// 6. Trademarks. This License does not grant permission to use the trade
-//    names, trademarks, service marks, or product names of the Licensor
-//    and its affiliates, except as required to comply with Section 4(c) of
-//    the License and to reproduce the content of the NOTICE file.
-//
-// You may obtain a copy of the Apache License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the Apache License with the above modification is
-// distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied. See the Apache License for the specific
-// language governing permissions and limitations under the Apache License.
+// Licensed under the terms set forth in the LICENSE.txt file available at
+// https://openusd.org/license.
 //
 #include ".//tokens.h"
 
@@ -249,7 +232,9 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
     physxMaterialFrictionCombineMode("physxMaterial:frictionCombineMode", TfToken::Immortal),
     physxMaterialRestitutionCombineMode("physxMaterial:restitutionCombineMode", TfToken::Immortal),
     physxMimicJoint("physxMimicJoint", TfToken::Immortal),
+    physxMimicJoint_MultipleApplyTemplate_DampingRatio("physxMimicJoint:__INSTANCE_NAME__:dampingRatio", TfToken::Immortal),
     physxMimicJoint_MultipleApplyTemplate_Gearing("physxMimicJoint:__INSTANCE_NAME__:gearing", TfToken::Immortal),
+    physxMimicJoint_MultipleApplyTemplate_NaturalFrequency("physxMimicJoint:__INSTANCE_NAME__:naturalFrequency", TfToken::Immortal),
     physxMimicJoint_MultipleApplyTemplate_Offset("physxMimicJoint:__INSTANCE_NAME__:offset", TfToken::Immortal),
     physxMimicJoint_MultipleApplyTemplate_ReferenceJoint("physxMimicJoint:__INSTANCE_NAME__:referenceJoint", TfToken::Immortal),
     physxMimicJoint_MultipleApplyTemplate_ReferenceJointAxis("physxMimicJoint:__INSTANCE_NAME__:referenceJointAxis", TfToken::Immortal),
@@ -304,10 +289,6 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
     physxPhysicsDistanceJointSpringDamping("physxPhysicsDistanceJoint:springDamping", TfToken::Immortal),
     physxPhysicsDistanceJointSpringEnabled("physxPhysicsDistanceJoint:springEnabled", TfToken::Immortal),
     physxPhysicsDistanceJointSpringStiffness("physxPhysicsDistanceJoint:springStiffness", TfToken::Immortal),
-    physxResidualReportingMaxResidualPositionIteration("physxResidualReporting:maxResidualPositionIteration", TfToken::Immortal),
-    physxResidualReportingMaxResidualVelocityIteration("physxResidualReporting:maxResidualVelocityIteration", TfToken::Immortal),
-    physxResidualReportingRmsResidualPositionIteration("physxResidualReporting:rmsResidualPositionIteration", TfToken::Immortal),
-    physxResidualReportingRmsResidualVelocityIteration("physxResidualReporting:rmsResidualVelocityIteration", TfToken::Immortal),
     physxRigidBodyAngularDamping("physxRigidBody:angularDamping", TfToken::Immortal),
     physxRigidBodyCfmScale("physxRigidBody:cfmScale", TfToken::Immortal),
     physxRigidBodyContactSlopCoefficient("physxRigidBody:contactSlopCoefficient", TfToken::Immortal),
@@ -331,11 +312,11 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
     physxSceneBounceThreshold("physxScene:bounceThreshold", TfToken::Immortal),
     physxSceneBroadphaseType("physxScene:broadphaseType", TfToken::Immortal),
     physxSceneCollisionSystem("physxScene:collisionSystem", TfToken::Immortal),
+    physxSceneDisableSleeping("physxScene:disableSleeping", TfToken::Immortal),
     physxSceneEnableCCD("physxScene:enableCCD", TfToken::Immortal),
     physxSceneEnableEnhancedDeterminism("physxScene:enableEnhancedDeterminism", TfToken::Immortal),
     physxSceneEnableExternalForcesEveryIteration("physxScene:enableExternalForcesEveryIteration", TfToken::Immortal),
     physxSceneEnableGPUDynamics("physxScene:enableGPUDynamics", TfToken::Immortal),
-    physxSceneEnableResidualReporting("physxScene:enableResidualReporting", TfToken::Immortal),
     physxSceneEnableSceneQuerySupport("physxScene:enableSceneQuerySupport", TfToken::Immortal),
     physxSceneEnableStabilization("physxScene:enableStabilization", TfToken::Immortal),
     physxSceneFrictionCorrelationDistance("physxScene:frictionCorrelationDistance", TfToken::Immortal),
@@ -362,6 +343,7 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
     physxSceneQuasistaticEnableQuasistatic("physxSceneQuasistatic:enableQuasistatic", TfToken::Immortal),
     physxSceneReportKinematicKinematicPairs("physxScene:reportKinematicKinematicPairs", TfToken::Immortal),
     physxSceneReportKinematicStaticPairs("physxScene:reportKinematicStaticPairs", TfToken::Immortal),
+    physxSceneSolveArticulationContactLast("physxScene:solveArticulationContactLast", TfToken::Immortal),
     physxSceneSolverType("physxScene:solverType", TfToken::Immortal),
     physxSceneTimeStepsPerSecond("physxScene:timeStepsPerSecond", TfToken::Immortal),
     physxSceneUpdateType("physxScene:updateType", TfToken::Immortal),
@@ -398,10 +380,6 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
     physxTriangleMeshCollisionWeldTolerance("physxTriangleMeshCollision:weldTolerance", TfToken::Immortal),
     physxTriangleMeshSimplificationCollisionMetric("physxTriangleMeshSimplificationCollision:metric", TfToken::Immortal),
     physxTriangleMeshSimplificationCollisionWeldTolerance("physxTriangleMeshSimplificationCollision:weldTolerance", TfToken::Immortal),
-    physxTriggerEnterScriptType("physxTrigger:enterScriptType", TfToken::Immortal),
-    physxTriggerLeaveScriptType("physxTrigger:leaveScriptType", TfToken::Immortal),
-    physxTriggerOnEnterScript("physxTrigger:onEnterScript", TfToken::Immortal),
-    physxTriggerOnLeaveScript("physxTrigger:onLeaveScript", TfToken::Immortal),
     physxTriggerTriggeredCollisions("physxTrigger:triggeredCollisions", TfToken::Immortal),
     physxVehicleAckermannSteeringMaxSteerAngle("physxVehicleAckermannSteering:maxSteerAngle", TfToken::Immortal),
     physxVehicleAckermannSteeringStrength("physxVehicleAckermannSteering:strength", TfToken::Immortal),
@@ -545,7 +523,6 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
     rotZ("rotZ", TfToken::Immortal),
     SAP("SAP", TfToken::Immortal),
     SAT("SAT", TfToken::Immortal),
-    scriptFile("scriptFile", TfToken::Immortal),
     sdf("sdf", TfToken::Immortal),
     simulationOwner("simulationOwner", TfToken::Immortal),
     solidRestOffset("solidRestOffset", TfToken::Immortal),
@@ -612,7 +589,6 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
     PhysxPhysicsInstancer("PhysxPhysicsInstancer", TfToken::Immortal),
     PhysxPhysicsJointInstancer("PhysxPhysicsJointInstancer", TfToken::Immortal),
     PhysxPhysicsRackAndPinionJoint("PhysxPhysicsRackAndPinionJoint", TfToken::Immortal),
-    PhysxResidualReportingAPI("PhysxResidualReportingAPI", TfToken::Immortal),
     PhysxRigidBodyAPI("PhysxRigidBodyAPI", TfToken::Immortal),
     PhysxSceneAPI("PhysxSceneAPI", TfToken::Immortal),
     PhysxSceneQuasistaticAPI("PhysxSceneQuasistaticAPI", TfToken::Immortal),
@@ -876,7 +852,9 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
         physxMaterialFrictionCombineMode,
         physxMaterialRestitutionCombineMode,
         physxMimicJoint,
+        physxMimicJoint_MultipleApplyTemplate_DampingRatio,
         physxMimicJoint_MultipleApplyTemplate_Gearing,
+        physxMimicJoint_MultipleApplyTemplate_NaturalFrequency,
         physxMimicJoint_MultipleApplyTemplate_Offset,
         physxMimicJoint_MultipleApplyTemplate_ReferenceJoint,
         physxMimicJoint_MultipleApplyTemplate_ReferenceJointAxis,
@@ -931,10 +909,6 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
         physxPhysicsDistanceJointSpringDamping,
         physxPhysicsDistanceJointSpringEnabled,
         physxPhysicsDistanceJointSpringStiffness,
-        physxResidualReportingMaxResidualPositionIteration,
-        physxResidualReportingMaxResidualVelocityIteration,
-        physxResidualReportingRmsResidualPositionIteration,
-        physxResidualReportingRmsResidualVelocityIteration,
         physxRigidBodyAngularDamping,
         physxRigidBodyCfmScale,
         physxRigidBodyContactSlopCoefficient,
@@ -958,11 +932,11 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
         physxSceneBounceThreshold,
         physxSceneBroadphaseType,
         physxSceneCollisionSystem,
+        physxSceneDisableSleeping,
         physxSceneEnableCCD,
         physxSceneEnableEnhancedDeterminism,
         physxSceneEnableExternalForcesEveryIteration,
         physxSceneEnableGPUDynamics,
-        physxSceneEnableResidualReporting,
         physxSceneEnableSceneQuerySupport,
         physxSceneEnableStabilization,
         physxSceneFrictionCorrelationDistance,
@@ -989,6 +963,7 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
         physxSceneQuasistaticEnableQuasistatic,
         physxSceneReportKinematicKinematicPairs,
         physxSceneReportKinematicStaticPairs,
+        physxSceneSolveArticulationContactLast,
         physxSceneSolverType,
         physxSceneTimeStepsPerSecond,
         physxSceneUpdateType,
@@ -1025,10 +1000,6 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
         physxTriangleMeshCollisionWeldTolerance,
         physxTriangleMeshSimplificationCollisionMetric,
         physxTriangleMeshSimplificationCollisionWeldTolerance,
-        physxTriggerEnterScriptType,
-        physxTriggerLeaveScriptType,
-        physxTriggerOnEnterScript,
-        physxTriggerOnLeaveScript,
         physxTriggerTriggeredCollisions,
         physxVehicleAckermannSteeringMaxSteerAngle,
         physxVehicleAckermannSteeringStrength,
@@ -1172,7 +1143,6 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
         rotZ,
         SAP,
         SAT,
-        scriptFile,
         sdf,
         simulationOwner,
         solidRestOffset,
@@ -1239,7 +1209,6 @@ PhysxSchemaTokensType::PhysxSchemaTokensType() :
         PhysxPhysicsInstancer,
         PhysxPhysicsJointInstancer,
         PhysxPhysicsRackAndPinionJoint,
-        PhysxResidualReportingAPI,
         PhysxRigidBodyAPI,
         PhysxSceneAPI,
         PhysxSceneQuasistaticAPI,

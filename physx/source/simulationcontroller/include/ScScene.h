@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -136,8 +136,6 @@ namespace Sc
 	class ArticulationSpatialTendonCore;
 	class ArticulationFixedTendonCore;
 	class ArticulationMimicJointCore;
-	class LLArticulationPool;
-	class LLArticulationRCPool;
 	class LLDeformableSurfacePool;
 	class LLDeformableVolumePool;
 	class LLParticleSystemPool;
@@ -383,7 +381,11 @@ namespace Sc
 					void						addArticulationSimControl(ArticulationCore& core);
 					void						removeArticulationSimControl(ArticulationCore& core);
 
-					void						updateBodySim(BodySim& sim);
+#if PX_SUPPORT_GPU_PHYSX
+					void						gpu_updateBodySim(BodySim& sim);
+#else
+	PX_FORCE_INLINE	void						gpu_updateBodySim(BodySim&)	{}
+#endif
 
 	PX_FORCE_INLINE	PxU32						getNbArticulations() const	{ return mArticulations.size();			}
 	PX_FORCE_INLINE	ArticulationCore* const*	getArticulations()			{ return mArticulations.getEntries();	}
@@ -530,8 +532,8 @@ namespace Sc
 					void						removeBody(BodySim&);
 
 					//lists of actors woken up or put to sleep last simulate
-					void                        onBodyWakeUp(BodySim* body);
-					void                        onBodySleep(BodySim* body);
+					void						onBodyWakeUp(BodySim* body);
+					void						onBodySleep(BodySim* body);
 
 	PX_FORCE_INLINE	bool						isValid() const	{ return (mLLContext != NULL);	}
 
@@ -540,9 +542,6 @@ namespace Sc
 					PxU32						createAggregate(void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint, PxU32 envID);
 
 					void						deleteAggregate(PxU32 id);
-
-					Dy::FeatherstoneArticulation*	createLLArticulation(ArticulationSim* sim);
-					void							destroyLLArticulation(Dy::FeatherstoneArticulation&);
 
 		PX_FORCE_INLINE	PxPool2<ConstraintInteraction, 4096>&	getConstraintInteractionPool()			{ return mConstraintInteractionPool;	}
 	public:
@@ -570,8 +569,6 @@ namespace Sc
 		PX_FORCE_INLINE	NPhaseCore*					getNPhaseCore()							const	{ return mNPhaseCore;					}
 
 						void						checkConstraintBreakage();
-						void						collectSolverResidual();
-						PxSceneResidual				getSolverResidual()						const;
 
 		PX_FORCE_INLINE	PxArray<TriggerPairExtraData>&		
 													getTriggerBufferExtraData()						{ return *mTriggerBufferExtraData;		}
@@ -610,10 +607,10 @@ namespace Sc
 #endif
 
 		PX_FORCE_INLINE	void						setSpeculativeCCDRigidBody(PxU32 index)				{ mSpeculativeCCDRigidBodyBitMap.growAndSet(index); }
-		PX_FORCE_INLINE void						resetSpeculativeCCDRigidBody(PxU32 index)			{ if(index < mSpeculativeCCDRigidBodyBitMap.size()) mSpeculativeCCDRigidBodyBitMap.reset(index); }
+		PX_FORCE_INLINE void						resetSpeculativeCCDRigidBody(PxU32 index)			{ mSpeculativeCCDRigidBodyBitMap.boundedReset(index); }
 
 		PX_FORCE_INLINE	void						setSpeculativeCCDArticulationLink(PxU32 index)		{ mSpeculativeCDDArticulationBitMap.growAndSet(index); }
-		PX_FORCE_INLINE void						resetSpeculativeCCDArticulationLink(PxU32 index)	{ if(index < mSpeculativeCDDArticulationBitMap.size()) mSpeculativeCDDArticulationBitMap.reset(index); }
+		PX_FORCE_INLINE void						resetSpeculativeCCDArticulationLink(PxU32 index)	{ mSpeculativeCDDArticulationBitMap.boundedReset(index); }
 
 		PX_FORCE_INLINE	PxU64						getContextId() const { return mContextId; }
 		PX_FORCE_INLINE bool						isUsingGpuDynamicsOrBp() const { return mUseGpuBp || mUseGpuDynamics; }
@@ -720,8 +717,8 @@ namespace Sc
 					PxsMemoryManager*			mMemoryManager;
 
 #if PX_SUPPORT_GPU_PHYSX
-					PxsKernelWranglerManager*				mGpuWranglerManagers;
-					PxsHeapMemoryAllocatorManager*			mHeapMemoryAllocationManager;
+					PxsKernelWranglerManager*		mGpuWranglerManagers;
+					PxsHeapMemoryAllocatorManager*	mHeapMemoryAllocationManager;
 #endif
 
 					PxsSimulationController*	mSimulationController;
@@ -744,22 +741,22 @@ namespace Sc
 		//containers:
 		// Those ones contain shape ptrs from Actor, i.e. compound level, not subparts
 
-					PxCoalescedHashSet<ConstraintCore*>		mConstraints;
+					PxCoalescedHashSet<ConstraintCore*>	mConstraints;
 												
-					Bp::BoundsArray*						mBoundsArray;
-					PxFloatArrayPinnedSafe*					mContactDistance;
-					bool									mHasContactDistanceChanged;
-					SqBoundsManager*						mSqBoundsManager;
+					Bp::BoundsArray*					mBoundsArray;
+					Cm::PinnableArray<PxReal>*			mContactDistance;
+					bool								mHasContactDistanceChanged;
+					SqBoundsManager*					mSqBoundsManager;
 
-					PxArray<BodySim*>				mCcdBodies;
-					PxArray<PxTriggerPair>			mTriggerBufferAPI;
-					PxArray<TriggerPairExtraData>*	mTriggerBufferExtraData;
+					PxArray<BodySim*>					mCcdBodies;
+					PxArray<PxTriggerPair>				mTriggerBufferAPI;
+					PxArray<TriggerPairExtraData>*		mTriggerBufferExtraData;
 
-					PxCoalescedHashSet<ArticulationCore*> mArticulations;
-					PxCoalescedHashSet<ArticulationSim*> mDirtyArticulationSims;
+					PxCoalescedHashSet<ArticulationCore*>	mArticulations;
+					PxCoalescedHashSet<ArticulationSim*>	mDirtyArticulationSims;
 
-					PxArray<ConstraintCore*>	mBrokenConstraints;
-					PxCoalescedHashSet<ConstraintSim*> mActiveBreakableConstraints;
+					PxArray<ConstraintCore*>			mBrokenConstraints;
+					PxCoalescedHashSet<ConstraintSim*>	mActiveBreakableConstraints;
 
 					// pools for joint buffers
 					// The pools below currently cover all the internal cases
@@ -821,7 +818,6 @@ namespace Sc
 					Cm::PreallocatingPool<BodySim>*		mBodySimPool;
 					PxPool2<ConstraintSim, 4096>		mConstraintSimPool;
 					PxPool2<ArticulationJointSim, 4096>	mArticulationJointSimPool;
-					LLArticulationRCPool*				mLLArticulationRCPool;
 
 					PxHashMap<PxPair<const ActorSim*, const ActorSim*>, ConstraintCore*> mConstraintMap;
 														
@@ -1004,7 +1000,6 @@ namespace Sc
 				public:
 					// For OmniPVD. To notify NpScene that actor's sleeping state has changed.
 					typedef void(*SleepingStateChangedCallback)(PxRigidDynamic&, bool);
-					PxSceneResidual				 mResidual;
 					SleepingStateChangedCallback mOnSleepingStateChanged;
 
 // PT: moved all the GPU-related code & data here in an attempt to clearly separate the CPU/GPU bits
@@ -1136,7 +1131,6 @@ namespace Sc
 #if !USE_SPLIT_SECOND_PASS_ISLAND_GEN
 					PxU64								mPadding;
 #endif
-					PxU64								mPadding2;
 					PX_ALIGN(16, PxsDeformableSurfaceMaterialManager	mDeformableSurfaceMaterialManager);
 					PX_ALIGN(16, PxsDeformableVolumeMaterialManager		mDeformableVolumeMaterialManager);
 					PX_ALIGN(16, PxsPBDMaterialManager		mPBDMaterialManager);

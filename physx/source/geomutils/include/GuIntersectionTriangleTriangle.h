@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -39,10 +39,10 @@ namespace Gu
 	/**
 	Tests if a two triangles intersect
 
-	\param a1				[in] Fist point of the first triangle
+	\param a1				[in] First point of the first triangle
 	\param b1				[in] Second point of the first triangle
 	\param c1				[in] Third point of the first triangle
-	\param a2				[in] Fist point of the second triangle
+	\param a2				[in] First point of the second triangle
 	\param b2				[in] Second point of the second triangle
 	\param c2				[in] Third point of the second triangle
 	\param ignoreCoplanar	[in] True to filter out coplanar triangles

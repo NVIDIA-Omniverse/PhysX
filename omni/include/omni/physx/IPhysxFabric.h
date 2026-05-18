@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -17,11 +17,11 @@ static constexpr char kSettingFabricUpdateVelocities[] = "/physics/fabricUpdateV
 static constexpr char kSettingFabricUpdateJointStates[] = "/physics/fabricUpdateJointStates";
 static constexpr char kSettingFabricUpdatePoints[] = "/physics/fabricUpdatePoints";
 static constexpr char kSettingFabricUseGPUInterop[] = "/physics/fabricUseGPUInterop";
-static constexpr char kSettingFabricUpdateResiduals[] = "/physics/fabricUpdateResiduals";
+static constexpr char kSettingCubricEnableCAS[] = "/physics/cubricEnableCAS";
 
 struct IPhysxFabric
 {
-    CARB_PLUGIN_INTERFACE("omni::physx::IPhysxFabric", 1, 0)
+    CARB_PLUGIN_INTERFACE("omni::physx::IPhysxFabric", 2, 0)
 
     /// Attach USD stage.
     /// Note: previous stage will be detached.

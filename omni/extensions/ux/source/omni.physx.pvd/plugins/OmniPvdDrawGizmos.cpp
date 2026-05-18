@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -19,9 +19,10 @@
 
 using namespace pxr;
 
+extern OmniPVDDebugVizData* gOmniPVDDebugVizData;
+
 namespace
 {
-    OmniPVDDebugVizData gOmniPVDDebugVizData;
     omni::kit::StageUpdateNode* gStageUpdateNode = nullptr;
 
     SdfLayerRefPtr gOmniPvdAnonLayer = nullptr;
@@ -521,21 +522,21 @@ namespace
                 const GfVec3f rv(0.0f, -tanQAngle0 * s, tanQAngle1 * c);
                 const float rv2 = rv.GetLengthSq();
                 const GfQuatf q = GfQuatf(1.0f - rv2, 0.0f, 2.0f * rv[1], 2.0f * rv[2]) * (1.0f / (1.0f + rv2));
-                a = GfRotation(q).TransformDir(GfVec3f(1.0f, 0.0f, 0.0f));
+                a = pxr::GfVec3f(GfRotation(q).TransformDir(GfVec3f(1.0f, 0.0f, 0.0f)));
             }
             else if (axis == AngularAxis::eSWING1)
             {
                 const GfVec3f rv(tanQAngle1 * c, 0.0f, -tanQAngle0 * s);
                 const float rv2 = rv.GetLengthSq();
                 const GfQuatf q = GfQuatf(1.0f - rv2, 2.0f * rv[0], 0.0f, 2.0f * rv[2]) * (1.0f / (1.0f + rv2));
-                a = GfRotation(q).TransformDir(GfVec3f(0.0f, 1.0f, 0.0f));
+                a = pxr::GfVec3f(GfRotation(q).TransformDir(GfVec3f(0.0f, 1.0f, 0.0f)));
             }
             else if (axis == AngularAxis::eSWING2)
             {
                 const GfVec3f rv(tanQAngle1 * c, -tanQAngle0 * s, 0.0f);
                 const float rv2 = rv.GetLengthSq();
                 const GfQuatf q = GfQuatf(1.0f - rv2, 2.0f * rv[1], 2.0f * rv[0], 0.0f) * (1.0f / (1.0f + rv2));
-                a = GfRotation(q).TransformDir(GfVec3f(0.0f, 0.0f, 1.0f));
+                a = pxr::GfVec3f(GfRotation(q).TransformDir(GfVec3f(0.0f, 0.0f, 1.0f)));
             }
 
             const GfVec3f v0(transform.Transform(GfVec3d(a[0] * coneScale, a[1] * coneScale, a[2] * coneScale)));
@@ -920,6 +921,78 @@ namespace
         return (visible == UsdGeomTokens->inherited);
     }
 
+    ////////////////////////////////////////////////////////////////////////////////
+    // gatherPrimsForCache: Gathers prim paths WITHOUT visibility filtering
+    // Used for building the cache - visibility is checked separately at draw time
+    // This is the key optimization: avoids full stage traversal on every frame
+    ////////////////////////////////////////////////////////////////////////////////
+    void gatherPrimsForCache(std::vector<SdfPath>* actors, std::vector<SdfPath>* joints, std::vector<SdfPath>* jointsRc, ActorMap* actorMap, UsdPrim prim)
+    {        
+        static TfToken handleToken("omni:pvdi:handle");
+        const SdfPath& path = prim.GetPath();
+        UsdAttribute classAttr = prim.GetAttribute(classToken);
+        std::string className;
+        classAttr.Get(&className);
+
+        if (OmniPvdGizmoUtils::resolveActorType(className) != OmniPvdGizmoUtils::OmniPvdActorType::UndefinedActorType)
+        {
+            if (actors)
+            {
+                actors->push_back(path);
+            }
+            if (actorMap)
+            {                    
+                UsdAttribute handleAttr = prim.GetAttribute(handleToken);
+                uint64_t handle;
+                handleAttr.Get(&handle);
+                actorMap->insert(std::pair<uint64_t, SdfPath>(handle, path));
+            }
+        }
+        else if (OmniPvdGizmoUtils::resolveJointType(className) != OmniPvdGizmoUtils::OmniPvdJointType::UndefinedJointType)
+        {
+            if (joints)
+            {
+                joints->push_back(path);
+            }
+        }
+        else if (className == "PxArticulationJointReducedCoordinate")
+        {
+            if (jointsRc)
+            {
+                jointsRc->push_back(path);
+            }
+        }
+        else if (actors && actorMap && (OmniPvdGizmoUtils::resolveGeometricSelectableType(className) != OmniPvdGizmoUtils::OmniPvdGeometricSelectableType::UndefinedGeometricSelectableType))
+        {
+            // Go up towards the actor and add it in
+            prim = prim.GetParent();
+            bool rootActorNotFound = true;
+            while (prim && rootActorNotFound)
+            {
+                classAttr = prim.GetAttribute(classToken);
+                classAttr.Get(&className);
+                if (OmniPvdGizmoUtils::resolveActorType(className) != OmniPvdGizmoUtils::OmniPvdActorType::UndefinedActorType)
+                {
+                    UsdAttribute handleAttr = prim.GetAttribute(handleToken);
+                    uint64_t handle;
+                    handleAttr.Get(&handle);
+                    auto actorIt = actorMap->find(handle);
+                    if (actorIt == actorMap->end())
+                    {                            
+                        const SdfPath& path = prim.GetPath();
+                        actors->push_back(path);
+                        actorMap->insert(std::pair<uint64_t, SdfPath>(handle, path));
+                    }
+                    rootActorNotFound = false;
+                }
+                else
+                {
+                    prim = prim.GetParent();
+                }
+            }
+        }
+    }
+
     void gatherPrims(std::vector<SdfPath>* actors, std::vector<SdfPath>* joints, std::vector<SdfPath>* jointsRc, ActorMap* actorMap, UsdPrim prim, double timeCode)
     {        
         static TfToken handleToken("omni:pvdi:handle");
@@ -1085,8 +1158,22 @@ void crossVec(float* r, float *a, float* b)
     r[2] = a[0] * b[1] - a[1] * b[0];
 }
 
+void normalizeVec(float* v)
+{
+    const float len = sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+    if (len > 0.0001f)
+    {
+        const float invLen = 1.0f / len;
+        v[0] *= invLen;
+        v[1] *= invLen;
+        v[2] *= invLen;
+    }
+}
+
 void applyGizmosDrawCall(float, float, const omni::kit::StageUpdateSettings*, void*)
 {
+    OmniPVDDebugVizData& omniPVDDebugVizData = *gOmniPVDDebugVizData;
+
     const uint32_t colPastelRed_4_5 = composeColourARBG(225, 42, 31);
     const uint32_t colPastelRed_5_6 = composeColourARBG(255, 109, 65);
     const uint32_t colPastelRed_3_3 = composeColourARBG(198, 21, 117);
@@ -1115,9 +1202,9 @@ void applyGizmosDrawCall(float, float, const omni::kit::StageUpdateSettings*, vo
     ////////////////////////////////////////////////////////////////////////////////
     omni::usd::UsdContext* leContext = omni::usd::UsdContext::getContext();
     UsdStageRefPtr stage = leContext->getStage();
-    if (!stage || gOmniPVDDebugVizData.getClosingState())
+    if (!stage || omniPVDDebugVizData.getClosingState())
     {
-        gOmniPVDDebugVizData.releaseDebugViz();
+        omniPVDDebugVizData.releaseDebugViz();
         return;
     }
 
@@ -1126,12 +1213,12 @@ void applyGizmosDrawCall(float, float, const omni::kit::StageUpdateSettings*, vo
     ////////////////////////////////////////////////////////////////////////////////
     uint64_t stageDirtyEvent;
     {
-        std::lock_guard<carb::tasking::MutexWrapper> lock(*gOmniPVDDebugVizData.mNextStateMutex);
-        stageDirtyEvent = gOmniPVDDebugVizData.mStageDirtyEvent;
+        std::lock_guard<carb::tasking::MutexWrapper> lock(omniPVDDebugVizData.mNextStateMutex);
+        stageDirtyEvent = omniPVDDebugVizData.mStageDirtyEvent;
     }
-    double timeCode = floor(gOmniPVDDebugVizData.mTimeline->getCurrentTime() * stage->GetTimeCodesPerSecond());
+    double timeCode = floor(omniPVDDebugVizData.mTimeline->getCurrentTime() * stage->GetTimeCodesPerSecond());
 
-    if ((timeCode == gOmniPVDDebugVizData.mProcessedTimeCode) && (gOmniPVDDebugVizData.mProcessedStageDirtyEvent == stageDirtyEvent))
+    if ((timeCode == omniPVDDebugVizData.mProcessedTimeCode) && (omniPVDDebugVizData.mProcessedStageDirtyEvent == stageDirtyEvent))
     {
         ////////////////////////////////////////////////////////////////////////////////
         // Nothing new to process
@@ -1139,8 +1226,8 @@ void applyGizmosDrawCall(float, float, const omni::kit::StageUpdateSettings*, vo
         return;
     }
 
-    gOmniPVDDebugVizData.mProcessedTimeCode = timeCode;
-    gOmniPVDDebugVizData.mProcessedStageDirtyEvent = stageDirtyEvent;
+    omniPVDDebugVizData.mProcessedTimeCode = timeCode;
+    omniPVDDebugVizData.mProcessedStageDirtyEvent = stageDirtyEvent;
 
     ////////////////////////////////////////////////////////////////////////////////
     // Is it an OmniPVD USD Stage : Is there a Prim called "/scenes" or "/Scenes"?
@@ -1154,7 +1241,7 @@ void applyGizmosDrawCall(float, float, const omni::kit::StageUpdateSettings*, vo
     }
     if (!scenesPrim)
     {
-        gOmniPVDDebugVizData.releaseDebugViz();
+        omniPVDDebugVizData.releaseDebugViz();
         return;
     }
 
@@ -1177,11 +1264,11 @@ void applyGizmosDrawCall(float, float, const omni::kit::StageUpdateSettings*, vo
     ////////////////////////////////////////////////////////////////////////////////
     if (scenes.size() < 1)
     {
-        gOmniPVDDebugVizData.releaseDebugViz();
+        omniPVDDebugVizData.releaseDebugViz();
         return;
     }
 
-    gOmniPVDDebugVizData.updateGizmoVizModes();
+    omniPVDDebugVizData.updateGizmoVizModes();
 
     ////////////////////////////////////////////////////////////////////////////////
     // For all gizmos scan them for which update modality they are binned for
@@ -1195,23 +1282,23 @@ void applyGizmosDrawCall(float, float, const omni::kit::StageUpdateSettings*, vo
     //   draw gizmos for all Prims that are visible and selected
     ////////////////////////////////////////////////////////////////////////////////
 
-    OmniPVDDebugLines& contactPointGizmos = gOmniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eContactPoint];
-    OmniPVDDebugLines& contactNormalGizmos = gOmniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eContactNormal];
-    OmniPVDDebugLines& contactErrorPointGizmos = gOmniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eContactErrorPoint];
-    OmniPVDDebugLines& contactDistanceGizmos = gOmniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eContactDistance];
-    OmniPVDDebugLines& restDistanceGizmos = gOmniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eRestDistance];
-    OmniPVDDebugLines& boundingBoxGizmos = gOmniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eBoundingBox];
-    OmniPVDDebugLines& jointGizmos = gOmniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eJoint];
-    OmniPVDDebugLines& coordinateSystemGizmos = gOmniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eCoordinateSystem];
-    OmniPVDDebugLines& centerOfMassGizmos = gOmniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eCenterOfMass];
-    OmniPVDDebugLines& velocityGizmos = gOmniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eVelocity];
-    OmniPVDDebugLines& transparencyGizmos = gOmniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eTransparency];
+    OmniPVDDebugLines& contactPointGizmos = omniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eContactPoint];
+    OmniPVDDebugLines& contactNormalGizmos = omniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eContactNormal];
+    OmniPVDDebugLines& contactErrorPointGizmos = omniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eContactErrorPoint];
+    OmniPVDDebugLines& contactDistanceGizmos = omniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eContactDistance];
+    OmniPVDDebugLines& restDistanceGizmos = omniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eRestDistance];
+    OmniPVDDebugLines& boundingBoxGizmos = omniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eBoundingBox];
+    OmniPVDDebugLines& jointGizmos = omniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eJoint];
+    OmniPVDDebugLines& coordinateSystemGizmos = omniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eCoordinateSystem];
+    OmniPVDDebugLines& centerOfMassGizmos = omniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eCenterOfMass];
+    OmniPVDDebugLines& velocityGizmos = omniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eVelocity];
+    OmniPVDDebugLines& transparencyGizmos = omniPVDDebugVizData.mGizmos[OmniPVDDebugGizmoSelection::eTransparency];
     
-    float contactGizmoScale = gOmniPVDDebugVizData.mGizmoScale * contactPointGizmos.mScale;
-    float centerOfMassGizmoScale = gOmniPVDDebugVizData.mGizmoScale * centerOfMassGizmos.mScale;
-    float jointGizmoScale = gOmniPVDDebugVizData.mGizmoScale * jointGizmos.mScale;
-    float coordinateSystemGizmoScale = gOmniPVDDebugVizData.mGizmoScale * coordinateSystemGizmos.mScale;
-    float velocityGizmoScale = gOmniPVDDebugVizData.mGizmoScale * velocityGizmos.mScale;
+    float contactGizmoScale = omniPVDDebugVizData.mGizmoScale * contactPointGizmos.mScale;
+    float centerOfMassGizmoScale = omniPVDDebugVizData.mGizmoScale * centerOfMassGizmos.mScale;
+    float jointGizmoScale = omniPVDDebugVizData.mGizmoScale * jointGizmos.mScale;
+    float coordinateSystemGizmoScale = omniPVDDebugVizData.mGizmoScale * coordinateSystemGizmos.mScale;
+    float velocityGizmoScale = omniPVDDebugVizData.mGizmoScale * velocityGizmos.mScale;
     float transparencyGizmoScale = transparencyGizmos.mScale;
 
     OmniPVDDebugVizMode::Enum boundingBoxesVizMode = boundingBoxGizmos.mRenderedVizMode;
@@ -1222,12 +1309,29 @@ void applyGizmosDrawCall(float, float, const omni::kit::StageUpdateSettings*, vo
     OmniPVDDebugVizMode::Enum transparencyVizMode = transparencyGizmos.mRenderedVizMode;
     OmniPVDDebugVizMode::Enum velocityVizMode = velocityGizmos.mRenderedVizMode;    
     
+    ////////////////////////////////////////////////////////////////////////////////
+    // PERFORMANCE OPTIMIZATION: Early exit if no gizmos are enabled
+    // This avoids all the expensive visibility checking and prim gathering when
+    // no debug visualization is actually needed.
+    ////////////////////////////////////////////////////////////////////////////////
+    const bool anyGizmoEnabled = 
+        (boundingBoxesVizMode != OmniPVDDebugVizMode::eNone) ||
+        (centerOfMassVizMode != OmniPVDDebugVizMode::eNone) ||
+        (contactVizMode != OmniPVDDebugVizMode::eNone) ||
+        (coordinateSystemVizMode != OmniPVDDebugVizMode::eNone) ||
+        (jointsVizMode != OmniPVDDebugVizMode::eNone) ||
+        (transparencyVizMode != OmniPVDDebugVizMode::eNone) ||
+        (velocityVizMode != OmniPVDDebugVizMode::eNone);
+    
+    if (!anyGizmoEnabled)
+    {
+        // No gizmos enabled - release any existing debug viz and return early
+        omniPVDDebugVizData.releaseDebugViz();
+        return;
+    }
 
-    std::vector<SdfPath> actorsAll;
     std::vector<SdfPath> actorsSelected;
-    std::vector<SdfPath> jointsAll;
     std::vector<SdfPath> jointsSelected;
-    std::vector<SdfPath> jointsRcAll;
     std::vector<SdfPath> jointsRcSelected;
 
     const bool gatherActorsAll =        
@@ -1246,27 +1350,119 @@ void applyGizmosDrawCall(float, float, const omni::kit::StageUpdateSettings*, vo
         (transparencyVizMode == OmniPVDDebugVizMode::eSelected) ||
         (velocityVizMode == OmniPVDDebugVizMode::eSelected);
 
-
-
     bool gatherJointsAll = jointsVizMode == OmniPVDDebugVizMode::eAll;
     bool gatherJointsSelected = jointsVizMode == OmniPVDDebugVizMode::eSelected;
     bool gatherActorRefs = gatherJointsAll || gatherJointsSelected;
 
-    ActorMap actorMap;
+    ////////////////////////////////////////////////////////////////////////////////
+    // PERFORMANCE OPTIMIZATION: Use cached prim data instead of full stage traversal
+    // The prim hierarchy doesn't change between frames in OVD files - only attribute
+    // values change. This caching dramatically speeds up frame stepping for large scenes.
+    // 
+    // Cache strategy:
+    // - Cache all potential actor/joint paths and the actor handle->path map ONCE
+    // - On each frame, filter cached paths by visibility (much faster than full traversal)
+    //
+    // THREAD SAFETY: The cache can be invalidated from event handler threads while
+    // being accessed here from the render thread. We use mutex protection and make
+    // local copies of the cache data to avoid race conditions.
+    ////////////////////////////////////////////////////////////////////////////////
     ActorMap actorMapSelected;
-    if (gatherActorsAll || gatherJointsAll || gatherActorRefs)
+    std::vector<SdfPath> actorsAll;
+    std::vector<SdfPath> jointsAll;
+    std::vector<SdfPath> jointsRcAll;
+    
+    // Local copies of cache data for thread-safe access
+    std::vector<SdfPath> cachedActorPaths;
+    std::vector<SdfPath> cachedJointPaths;
+    std::vector<SdfPath> cachedJointRcPaths;
+    ActorMap cachedActorMap;
+    bool cacheIsValid = false;
+    
+    // Lock mutex and either build cache or copy existing cache data
     {
-        UsdPrimRange range = stage->Traverse();
-        for (UsdPrimRange::const_iterator iter = range.begin(); iter != range.end(); ++iter)
+        std::lock_guard<carb::tasking::MutexWrapper> lock(omniPVDDebugVizData.mNextStateMutex);
+        
+        // Check if we need to rebuild the cache (only on stage open/close)
+        if (!omniPVDDebugVizData.mPrimCache.isValid && (gatherActorsAll || gatherJointsAll || gatherActorRefs))
         {
-            const UsdPrim prim = *iter;
-            if (prim)
+            // Build the cache by traversing the stage ONCE (without visibility filtering)
+            // Visibility is checked separately per frame using the cached paths
+            omniPVDDebugVizData.mPrimCache.clear();
+            UsdPrimRange range = stage->Traverse();
+            for (UsdPrimRange::const_iterator iter = range.begin(); iter != range.end(); ++iter)
             {
-                gatherPrims(gatherActorsAll ? &actorsAll : nullptr,
-                            gatherJointsAll ? &jointsAll : nullptr,
-                            gatherJointsAll ? &jointsRcAll : nullptr,
-                            gatherActorRefs ? &actorMap : nullptr,
-                            prim, timeCode);
+                const UsdPrim prim = *iter;
+                if (prim)
+                {
+                    // Cache all actors, joints, and actor references WITHOUT visibility filtering
+                    // This ensures all potential prims are cached regardless of their initial visibility
+                    gatherPrimsForCache(&omniPVDDebugVizData.mPrimCache.actorPaths,
+                                        &omniPVDDebugVizData.mPrimCache.jointPaths,
+                                        &omniPVDDebugVizData.mPrimCache.jointRcPaths,
+                                        &omniPVDDebugVizData.mPrimCache.actorMap,
+                                        prim);
+                }
+            }
+            omniPVDDebugVizData.mPrimCache.isValid = true;
+        }
+        
+        // Make local copies of the cache data while holding the lock
+        // This allows us to release the lock quickly and work with local data
+        cacheIsValid = omniPVDDebugVizData.mPrimCache.isValid;
+        if (cacheIsValid)
+        {
+            if (gatherActorsAll || gatherActorRefs)
+            {
+                cachedActorPaths = omniPVDDebugVizData.mPrimCache.actorPaths;
+                cachedActorMap = omniPVDDebugVizData.mPrimCache.actorMap;
+            }
+            if (gatherJointsAll)
+            {
+                cachedJointPaths = omniPVDDebugVizData.mPrimCache.jointPaths;
+                cachedJointRcPaths = omniPVDDebugVizData.mPrimCache.jointRcPaths;
+            }
+        }
+    }
+    // Mutex released here - now work with local copies
+    
+    // Use the cached actor map (handle->path mapping doesn't depend on visibility)
+    const ActorMap& actorMap = cachedActorMap;
+    
+    // For actor/joint paths, we need to re-filter by visibility for the current timeCode
+    // This is much faster than a full stage traversal since we only check cached paths
+    if (gatherActorsAll && cacheIsValid)
+    {
+        actorsAll.reserve(cachedActorPaths.size());
+        for (const SdfPath& path : cachedActorPaths)
+        {
+            UsdPrim prim = stage->GetPrimAtPath(path);
+            if (prim && isVisiblePrim(prim, timeCode))
+            {
+                actorsAll.push_back(path);
+            }
+        }
+    }
+    
+    if (gatherJointsAll && cacheIsValid)
+    {
+        jointsAll.reserve(cachedJointPaths.size());
+        for (const SdfPath& path : cachedJointPaths)
+        {
+            UsdPrim prim = stage->GetPrimAtPath(path);
+            if (prim && isVisiblePrim(prim, timeCode))
+            {
+                jointsAll.push_back(path);
+            }
+        }
+        
+        jointsRcAll.reserve(cachedJointRcPaths.size());
+        for (const SdfPath& path : cachedJointRcPaths)
+        {
+            UsdPrim prim = stage->GetPrimAtPath(path);
+            if (prim && isVisiblePrim(prim, timeCode))
+            {
+                jointsRcAll.push_back(path);
             }
         }
     }
@@ -1299,10 +1495,10 @@ void applyGizmosDrawCall(float, float, const omni::kit::StageUpdateSettings*, vo
     const float lineWidth = 2.0f;
     const float lineWidthNorm = 1.5f;
     stage->SetInterpolationType(UsdInterpolationType::UsdInterpolationTypeHeld);
-    gOmniPVDDebugVizData.initInterfaces();
-    if (!gOmniPVDDebugVizData.mHasInterfaces)
+    omniPVDDebugVizData.initInterfaces();
+    if (!omniPVDDebugVizData.mHasInterfaces)
     {
-        gOmniPVDDebugVizData.releaseDebugViz();
+        omniPVDDebugVizData.releaseDebugViz();
         return;
     }
     
@@ -1432,8 +1628,10 @@ void applyGizmosDrawCall(float, float, const omni::kit::StageUpdateSettings*, vo
                                 upVec[0] = 0.0f; upVec[1] = 1.0f; upVec[2] = 0.0f; // (0,1,0)
                                 crossVec(tanVec0, dirf, upVec);
                             }
+                            normalizeVec(tanVec0);
                             float tanVec1[3];
                             crossVec(tanVec1, dirf, tanVec0);
+                            normalizeVec(tanVec1);
 
                             ////////////////////////////////////////////////////////////////////////////////
                             // Now draw the rotated base:
@@ -1561,8 +1759,10 @@ void applyGizmosDrawCall(float, float, const omni::kit::StageUpdateSettings*, vo
                                         upVec[0] = 0.0f; upVec[1] = 1.0f; upVec[2] = 0.0f; // (0,1,0)
                                         crossVec(tanVec0, dirf, upVec);
                                     }
+                                    normalizeVec(tanVec0);
                                     float tanVec1[3];
                                     crossVec(tanVec1, dirf, tanVec0);
+                                    normalizeVec(tanVec1);
 
                                     ////////////////////////////////////////////////////////////////////////////////
                                     // Now draw the rotated base:
@@ -1966,15 +2166,11 @@ void applyGizmosDrawCall(float, float, const omni::kit::StageUpdateSettings*, vo
     }
 }
 
-void initGizmoMutex()
-{
-    gOmniPVDDebugVizData.initMutex();
-}
-
 void applyGizmos()
 {
-    gOmniPVDDebugVizData.initEventSubs();
-    gOmniPVDDebugVizData.tickStageDirty();
+    OmniPVDDebugVizData& omniPVDDebugVizData = *gOmniPVDDebugVizData;
+    omniPVDDebugVizData.initEventSubs();
+    omniPVDDebugVizData.tickStageDirty();
 
     omni::kit::StageUpdatePtr stageUpdate = omni::kit::getStageUpdate();
     omni::kit::StageUpdateNodeDesc desc = { 0 };
@@ -1993,6 +2189,8 @@ void applyGizmos()
 
 void selectGizmo(uint32_t selectedGizmo, uint32_t selectionState)
 {
+    OmniPVDDebugVizData& omniPVDDebugVizData = *gOmniPVDDebugVizData;
+
     if (selectedGizmo >= OmniPVDDebugGizmoType::eNbrEnums)
     {
         return;
@@ -2007,41 +2205,41 @@ void selectGizmo(uint32_t selectedGizmo, uint32_t selectionState)
     {
     case OmniPVDDebugGizmoType::eBoundingBox:
     {
-        gOmniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eBoundingBox, selectionStateEnum);
+        omniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eBoundingBox, selectionStateEnum);
         break;
     }
     case OmniPVDDebugGizmoType::eContact:
     {
-        gOmniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eContactPoint, selectionStateEnum);
-        gOmniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eContactErrorPoint, selectionStateEnum);
-        gOmniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eContactNormal, selectionStateEnum);
-        gOmniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eContactDistance, selectionStateEnum);
-        gOmniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eRestDistance, selectionStateEnum);
+        omniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eContactPoint, selectionStateEnum);
+        omniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eContactErrorPoint, selectionStateEnum);
+        omniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eContactNormal, selectionStateEnum);
+        omniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eContactDistance, selectionStateEnum);
+        omniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eRestDistance, selectionStateEnum);
         break;
     }
     case OmniPVDDebugGizmoType::eCenterOfMass:
     {
-        gOmniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eCenterOfMass, selectionStateEnum);
+        omniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eCenterOfMass, selectionStateEnum);
         break;
     }
     case OmniPVDDebugGizmoType::eVelocity:
     {
-        gOmniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eVelocity, selectionStateEnum);
+        omniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eVelocity, selectionStateEnum);
         break;
     }
     case OmniPVDDebugGizmoType::eCoordinateSystem:
     {
-        gOmniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eCoordinateSystem, selectionStateEnum);
+        omniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eCoordinateSystem, selectionStateEnum);
         break;
     }
     case OmniPVDDebugGizmoType::eJoint:
     {
-        gOmniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eJoint, selectionStateEnum);
+        omniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eJoint, selectionStateEnum);
         break;
     }
     case OmniPVDDebugGizmoType::eTransparency:
     {
-        gOmniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eTransparency, selectionStateEnum);
+        omniPVDDebugVizData.setGizmoVizMode(OmniPVDDebugGizmoSelection::eTransparency, selectionStateEnum);
         break;
     }
     default:
@@ -2050,15 +2248,17 @@ void selectGizmo(uint32_t selectedGizmo, uint32_t selectionState)
     }
     }
 
-    if (gOmniPVDDebugVizData.mTimelineEvtSub &&
-        gOmniPVDDebugVizData.mStageEvtSub[0].get() != carb::eventdispatcher::kInvalidObserver)
+    if (omniPVDDebugVizData.mTimelineEvtSub &&
+        omniPVDDebugVizData.mStageEvtSub[0].get() != carb::eventdispatcher::kInvalidObserver)
     {
-        gOmniPVDDebugVizData.tickStageDirty();
+        omniPVDDebugVizData.tickStageDirty();
     }
 }
 
 void setGizmoScale(uint32_t selectedGizmo, float scale)
 {
+    OmniPVDDebugVizData& omniPVDDebugVizData = *gOmniPVDDebugVizData;
+
     if (selectedGizmo >= OmniPVDDebugGizmoType::eNbrEnums)
     {
         return;
@@ -2069,41 +2269,41 @@ void setGizmoScale(uint32_t selectedGizmo, float scale)
     {
     case OmniPVDDebugGizmoType::eBoundingBox:
     {
-        gOmniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eBoundingBox, scale);
+        omniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eBoundingBox, scale);
         break;
     }
     case OmniPVDDebugGizmoType::eContact:
     {
-        gOmniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eContactPoint, scale);
-        gOmniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eContactErrorPoint, scale);
-        gOmniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eContactNormal, scale);
-        gOmniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eContactDistance, scale);
-        gOmniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eRestDistance, scale);
+        omniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eContactPoint, scale);
+        omniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eContactErrorPoint, scale);
+        omniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eContactNormal, scale);
+        omniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eContactDistance, scale);
+        omniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eRestDistance, scale);
         break;
     }
     case OmniPVDDebugGizmoType::eCenterOfMass:
     {
-        gOmniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eCenterOfMass, scale);
+        omniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eCenterOfMass, scale);
         break;
     }
     case OmniPVDDebugGizmoType::eVelocity:
     {
-        gOmniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eVelocity, scale);
+        omniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eVelocity, scale);
         break;
     }
     case OmniPVDDebugGizmoType::eCoordinateSystem:
     {
-        gOmniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eCoordinateSystem, scale);
+        omniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eCoordinateSystem, scale);
         break;
     }
     case OmniPVDDebugGizmoType::eJoint:
     {
-        gOmniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eJoint, scale);
+        omniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eJoint, scale);
         break;
     }
     case OmniPVDDebugGizmoType::eTransparency:
     {
-        gOmniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eTransparency, scale);
+        omniPVDDebugVizData.setGizmoScale(OmniPVDDebugGizmoSelection::eTransparency, scale);
         break;
     }
     default:
@@ -2112,16 +2312,16 @@ void setGizmoScale(uint32_t selectedGizmo, float scale)
     }
     }
 
-    if (gOmniPVDDebugVizData.mTimelineEvtSub &&
-        gOmniPVDDebugVizData.mStageEvtSub[0].get() != carb::eventdispatcher::kInvalidObserver)
+    if (omniPVDDebugVizData.mTimelineEvtSub &&
+        omniPVDDebugVizData.mStageEvtSub[0].get() != carb::eventdispatcher::kInvalidObserver)
     {
-        gOmniPVDDebugVizData.tickStageDirty();
+        omniPVDDebugVizData.tickStageDirty();
     }
 }
 
 void setGizmoScale(float scale)
 {
-    gOmniPVDDebugVizData.setGizmoScale(scale);
+    gOmniPVDDebugVizData->setGizmoScale(scale);
 }
 
 void cleanupDebugViz()
@@ -2135,9 +2335,9 @@ void cleanupDebugViz()
         }
         gStageUpdateNode = nullptr;
     }
-    gOmniPVDDebugVizData.releaseEventSubs();
-    gOmniPVDDebugVizData.releaseDebugViz();
-    gOmniPVDDebugVizData.releaseInterfaces();
+
+    OmniPVDDebugVizData& omniPVDDebugVizData = *gOmniPVDDebugVizData;
+    omniPVDDebugVizData.releaseEventSubs();
+    omniPVDDebugVizData.releaseDebugViz();
+    omniPVDDebugVizData.releaseInterfaces();
 }
-
-

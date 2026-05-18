@@ -28,15 +28,23 @@ project ("omni.physx.fabric.plugin")
     dependson { "prebuild", "omni.physx.plugin" }
     includedirs {
         targetDeps_dir.."/carb_sdk_plugins/include",
-        targetDeps_dir.."/rtx_plugins/include",
         targetDeps_dir.."/client-library/include",
-        targetDeps_dir.."/gsl/include",   -- Support for std::span 
+        targetDeps_dir.."/gsl/include",   -- Support for std::span
         kit_sdk_dir.."/dev/fabric/include",
         kit_sdk_includes,
-        
+
     }
 
-    links { "cuda", "cudart_static", "carb" }
+    kit_version_num = read_kit_sdk_version()
+
+    defines { "KIT_SDK_VERSION="..kit_version_num }
+
+    -- NOTE: "cuda" intentionally NOT linked -- all cu* driver API calls go through
+    -- IOptionalCuda (runtime-loaded shim in foundation). This eliminates the
+    -- DT_NEEDED libcuda.so.1 entry, allowing the plugin to load on CPU-only machines.
+    -- cudart_static is a static archive (.a) that embeds into the .so without
+    -- creating DT_NEEDED; CUDA runtime API calls from .cu files work via this.
+    links { "cudart_static", "carb" }
 
     filter { "configurations:debug" }
         runtime "Debug"
@@ -64,10 +72,17 @@ project ("omni.physx.fabric.plugin")
     files { "python/**.py" }
     vpaths { ['python/*'] = "python/**.py" }
 
-project ("omni.physx.fabric.python")
-    carboniteBindingsPython {
-        name = "_physxFabric",
-        folder = "bindings",
-        namespace = "omni" 
-    }
-    targetdir (targetDir.."/"..ext_dir.."/omni/physxfabric/bindings")
+    -- SdfApplyListOrdering inconsistent dll linkage warning
+    filter { "files:plugins/FabricManager.cpp", "system:windows"}
+        buildoptions { "/wd4273" }
+    filter {}
+
+if not _OPTIONS["no-runtime-pybind"] then
+    project ("omni.physx.fabric.python")
+        carboniteBindingsPython {
+            name = "_physxFabric",
+            folder = "bindings",
+            namespace = "omni" 
+        }
+        targetdir (targetDir.."/"..ext_dir.."/omni/physxfabric/bindings")
+end

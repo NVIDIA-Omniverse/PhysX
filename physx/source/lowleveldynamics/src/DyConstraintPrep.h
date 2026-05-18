@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,6 +33,7 @@
 
 #include "DySolverConstraintDesc.h"
 #include "foundation/PxArray.h"
+#include "foundation/PxVec4.h"
 #include "PxConstraint.h"
 
 namespace physx
@@ -51,7 +52,6 @@ namespace Cm
 
 namespace Dy
 {
-
 	static const PxU32 MAX_CONSTRAINT_ROWS = 20;
 
 	struct SolverConstraintShaderPrepDesc
@@ -65,19 +65,18 @@ namespace Dy
 	SolverConstraintPrepState::Enum setupSolverConstraint4
 		(SolverConstraintShaderPrepDesc* PX_RESTRICT constraintShaderDescs,
 		PxSolverConstraintPrepDesc* PX_RESTRICT constraintDescs,
-			const PxReal dt, const PxReal recipdt, PxU32& totalRows,
-			 PxConstraintAllocator& allocator, bool residualReportingEnabled);
+			const PxReal dt, const PxReal recipdt, const PxReal biasCoefficient, PxU32& totalRows,
+			 PxConstraintAllocator& allocator);
 
 	SolverConstraintPrepState::Enum setupSolverConstraint4
 		(PxSolverConstraintPrepDesc* PX_RESTRICT constraintDescs,
-		const PxReal dt, const PxReal recipdt, PxU32& totalRows,
-		PxConstraintAllocator& allocator, PxU32 maxRows, bool residualReportingEnabled);
+		const PxReal dt, const PxReal recipdt, const PxReal biasCoefficient, PxU32& totalRows,
+		PxConstraintAllocator& allocator, PxU32 maxRows);
 
 	PxU32 SetupSolverConstraint(SolverConstraintShaderPrepDesc& shaderDesc,
 								PxSolverConstraintPrepDesc& prepDesc,
 								   PxConstraintAllocator& allocator,
-								   PxReal dt, PxReal invdt);
-
+								   PxReal dt, PxReal invdt, PxReal biasCoefficient);
 
 	class ConstraintHelper
 	{
@@ -86,7 +85,7 @@ namespace Dy
 		static PxU32 setupSolverConstraint(
 			PxSolverConstraintPrepDesc& prepDesc,
 			PxConstraintAllocator& allocator,
-			PxReal dt, PxReal invdt);
+			PxReal dt, PxReal invdt, PxReal biasCoefficient);
 	};
 
 	template<class PrepDescT>

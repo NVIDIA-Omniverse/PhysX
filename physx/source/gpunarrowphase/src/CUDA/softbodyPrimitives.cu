@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -43,14 +43,14 @@
 
 #include "PxgContactManager.h"
 #include "PxgConvexConvexShape.h"
+#include "PxgDeformableContactInfo.h"
 #include "PxgFEMCloth.h"
-#include "PxgSoftBodyCore.h"
 #include "PxgNpKernelIndices.h"
 #include "PxgParticleSystem.h"
 #include "PxgSimulationCoreDesc.h"
 #include "PxgSoftBody.h"
 
-#include "PxsTransformCache.h"
+#include "PxsCachedTransform.h"
 
 #include "convexNpCommon.h"
 #include "cudaNpCommon.h"
@@ -2274,6 +2274,7 @@ void sb_other_contact_remap_to_simLaunch(
 
 
 extern "C" __global__
+__launch_bounds__(512, 1)
 void sb_fem_contact_remap_to_simLaunch(
 	const PxgSoftBody* PX_RESTRICT softbodies,
 	float4*						outBarycentric0,							//output

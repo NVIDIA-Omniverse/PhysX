@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import math
 
 import carb
@@ -10,7 +11,7 @@ from pxr import Usd, UsdGeom, Gf
 
 from omni.kit.window.popup_dialog import MessageDialog
 
-from omni.kit.property.physx.widgets import REMOVE_BUTTON_STYLE
+from omni.kit.property.physics.widgets import REMOVE_BUTTON_STYLE
 
 from ..helpers import UI
 

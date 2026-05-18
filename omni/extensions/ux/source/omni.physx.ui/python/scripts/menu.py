@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import os
 import webbrowser
 import carb
@@ -48,7 +49,7 @@ class PhysicsMenu:
         self._usd_context = omni.usd.get_context()
         self._selected_prim_paths = []
         self._developer_mode = carb.settings.get_settings().get("physics/developmentMode")
-        self._deformable_beta_enabled = carb.settings.get_settings().get(pxb.SETTING_ENABLE_DEFORMABLE_BETA)
+        self._deformable_deprecated_enabled = carb.settings.get_settings().get(pxb.SETTING_ENABLE_DEFORMABLE_DEPRECATED)
         if self._developer_mode:
             print("Physics Development Mode Active")
         self._menu_ext_dicts = {"Create": [], "Add": [], "Remove": []}
@@ -182,7 +183,7 @@ class PhysicsMenu:
 
         deformable_beta_dict = {
             "name": {
-                "Deformable (beta)": [
+                "Deformable": [
                     {
                         "name": "Surface",
                         "enabled_fn": [lambda *_: self._show_surface_deformable()],
@@ -205,7 +206,7 @@ class PhysicsMenu:
             "enabled_fn": [lambda *_: True],
         }
 
-        if self._deformable_beta_enabled:
+        if not self._deformable_deprecated_enabled:
             create_menu_dict["name"]["Physics"].append(deformable_beta_dict)
         else:
             create_menu_dict["name"]["Physics"].append(deformable_attachment_deprecated_dict)
@@ -375,12 +376,12 @@ class PhysicsMenu:
         callbacks.append(lambda stage, path: commands.AddRigidBodyMaterialCommand.execute(stage, path))
         index += 1
 
-        if self._deformable_beta_enabled:
-            fields.append(OptionsDialog.FieldDef(index, "Deformable Material (beta)", False))
+        if not self._deformable_deprecated_enabled:
+            fields.append(OptionsDialog.FieldDef(index, "Deformable Material", False))
             callbacks.append(lambda stage, path: commands.AddDeformableMaterialCommand.execute(stage, path))
             index += 1
 
-            fields.append(OptionsDialog.FieldDef(index, "Surface Deformable Material (beta)", False))
+            fields.append(OptionsDialog.FieldDef(index, "Surface Deformable Material", False))
             callbacks.append(lambda stage, path: commands.AddSurfaceDeformableMaterialCommand.execute(stage, path))
             index += 1
         else:

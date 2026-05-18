@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import carb.settings
 from pxr import Tf
@@ -15,6 +16,8 @@ from omni.kit.window.filepicker import FilePickerDialog
 from omni.kit.commands import execute
 from omni.physx.scripts import utils
 import omni.kit.undo
+from functools import lru_cache
+import carb.windowing
 
 dialog = None
 
@@ -407,3 +410,12 @@ def register_stage_update_node(display_name, priority=8, **kwargs): # priority d
     nodes = stage_update.get_stage_update_nodes()
     stage_update.set_stage_update_node_order(len(nodes) - 1, priority)
     return stage_update_node
+
+
+@lru_cache()
+def get_windowing() -> carb.windowing.IWindowing:
+    try:
+        return carb.windowing.acquire_windowing_interface()
+    except RuntimeError:
+        # OVC: RuntimeError: Failed to acquire interface: card::windowing::IWindowing
+        return

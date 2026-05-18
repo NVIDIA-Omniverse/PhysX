@@ -22,13 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #include "PxNodeIndex.h"
-#include "PxgCudaMemoryAllocator.h"
-#include "PxsHeapMemoryAllocator.h"
 #include "PxsContactManagerState.h"
 #include "common/PxProfileZone.h"
 #include "cudaNpCommon.h"
@@ -100,41 +98,43 @@
 
 using namespace physx;
 using namespace Gu;
+using namespace Cm;
 
 PxgGpuNarrowphaseCore::PxgGpuNarrowphaseCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, const PxGpuDynamicsMemoryConfig& gpuDynamicsConfig,
-	void* contactStreamBase, void* patchStreamBase, void* forceAndIndiceStreamBase, IG::IslandSim* islandSim, CUstream solverStream, PxgHeapMemoryAllocatorManager* heapMemoryManager,
+	void* contactStreamBase, void* patchStreamBase, void* forceAndIndiceStreamBase, IG::IslandSim* islandSim, CUstream solverStream, PxgAllocatorDesc& allocDesc,
 	PxgNphaseImplementationContext* nphaseImplContext) :
-	mPairManagementBuffers(heapMemoryManager),
-	mGpuTransformCache(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mGpuContactDistance(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mLostFoundPairsOutputData(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mLostFoundPairsCms(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mGpuPairManagementData(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mRSDesc(heapMemoryManager->mMappedMemoryAllocators),
-	mRadixSortDescBuf(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mTempGpuRigidIndiceBuf(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mTempGpuShapeIndiceBuf(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mRadixCountTotalBuf(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mPatchAndContactCountersOnDevice(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mPatchAndContactCountersReadback(NULL),
-	mGpuShapesManager(heapMemoryManager),
-	mGpuMaterialManager(heapMemoryManager),
-	mGpuFEMMaterialManager(heapMemoryManager),
-	mGpuFEMClothMaterialManager(heapMemoryManager),
-	mGpuPBDMaterialManager(heapMemoryManager),
-	mIntermStackAlloc(*heapMemoryManager->mDeviceMemoryAllocators, gpuDynamicsConfig.collisionStackSize),
+	mPairManagementBuffers(allocDesc.deviceAlloc),
+	mGpuTransformCache(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuContactDistance(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mLostFoundPairsOutputData(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE),
+	mLostFoundPairsCms(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE),
+	mPairManagementData(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuPairManagementData(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mRSDesc(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE),
+	mRadixSortDescBuf(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mTempGpuRigidIndiceBuf(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mTempGpuShapeIndiceBuf(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mRadixCountTotalBuf(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mPatchAndContactCountersOnDevice(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mPatchAndContactCountersReadback(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuShapesManager(allocDesc),
+	mGpuMaterialManager(allocDesc),
+	mGpuFEMMaterialManager(allocDesc),
+	mGpuFEMClothMaterialManager(allocDesc),
+	mGpuPBDMaterialManager(allocDesc),
+	mIntermStackAlloc(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE, gpuDynamicsConfig.collisionStackSize),
 	mSolverStream(solverStream),
 	mGpuKernelWranglerManager(gpuKernelWrangler),
 	mCudaContextManager(cudaContextManager),
 	mCudaContext(cudaContextManager->getCudaContext()),
-	mHeapMemoryManager(heapMemoryManager),
-	mCopyMan(heapMemoryManager),
-	mCopyManBp(heapMemoryManager),
-	mGeometryManager(heapMemoryManager),
+	mCopyMan(allocDesc.hostMappedAlloc),
+	mCopyManBp(allocDesc.hostMappedAlloc),
+	mGeometryManager(allocDesc),
 	mIslandSim(islandSim),
 	mNphaseImplContext(nphaseImplContext),
-	mGpuMultiManifold(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mGpuManifold(heapMemoryManager, PxsHeapStats::eNARROWPHASE)
+	mMaxConvexMeshTempMemoryMapped(allocDesc.hostMappedAlloc, PxsHeapStats::eNARROWPHASE, Cm::PinnableAllocatorFallback::eDISABLED),
+	mGpuMultiManifold(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuManifold(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE)
 #if PX_ENABLE_SIM_STATS
 	, mGpuDynamicsRigidContactCountStats(0),
 	mGpuDynamicsRigidPatchCountStats(0),
@@ -142,17 +142,24 @@ PxgGpuNarrowphaseCore::PxgGpuNarrowphaseCore(PxgCudaKernelWranglerManager* gpuKe
 #else
 	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
 #endif
-{	
+{
+	if(mGpuShapesManager.mAllocFailed || mCopyMan.mAllocFailed || mCopyManBp.mAllocFailed || 
+		mGpuMaterialManager.mAllocFailed || mGpuFEMMaterialManager.mAllocFailed || mGpuFEMClothMaterialManager.mAllocFailed ||
+		mGpuPBDMaterialManager.mAllocFailed)
+	{
+		mCudaContext->setAbortMode(true);
+	}
+
 	mTotalLostFoundPatches = 0;
 	mTotalLostFoundPairs = 0;
 	mTotalNumPairs = 0;
 
 	for (PxU32 i = 0; i < GPU_BUCKET_ID::eCount; ++i)
 	{
-		mRemovedIndices[i] = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(RemovedIndicesArray), "RemovedIndicesArray"), RemovedIndicesArray(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)));
+		mRemovedIndices[i] = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(RemovedIndicesArray), "RemovedIndicesArray"), RemovedIndicesArray(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE));
 
-		mContactManagers[i] = PX_NEW(PxgMirroredContactManagerPair)(i, PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators));
-		mGpuContactManagers[i] = PX_NEW(PxgGpuContactManagerPair)(i, heapMemoryManager);
+		mContactManagers[i] = PX_NEW(PxgMirroredContactManagerPair)(i, allocDesc.hostAlloc);
+		mGpuContactManagers[i] = PX_NEW(PxgGpuContactManagerPair)(i, allocDesc);
 	}
 
 	PxgPersistentContactManifold emptyManifold;
@@ -196,14 +203,20 @@ PxgGpuNarrowphaseCore::PxgGpuNarrowphaseCore(PxgCudaKernelWranglerManager* gpuKe
 
 	mPairManagementBuffers.mBlockAccumulationArray.allocate(sizeof(PxU32) * PxgNarrowPhaseGridDims::REMOVE_CONTACT_MANAGERS, PX_FL);
 
+	mPairManagementData.resize(GPU_BUCKET_ID::eCount);
 	for (PxU32 i = GPU_BUCKET_ID::eConvex; i < GPU_BUCKET_ID::eCount; ++i)
 	{
-		mGpuContactManagers[i]->allocateLostAndTotalReportedPairsCount(mHeapMemoryManager->mMappedMemoryAllocators);
-		mPairManagementData[i] = reinterpret_cast<PxgPairManagementData*>(mHeapMemoryManager->mMappedMemoryAllocators->allocate(sizeof(PxgPairManagementData), PxsHeapStats::eNARROWPHASE, PX_FL));
+		PxgGpuContactManagerPair& gpuContactManagers = *mGpuContactManagers[i];
+		if(!gpuContactManagers.mContactManagers.mLostAndTotalReportedPairsCountMapped.isValid() ||
+		   !gpuContactManagers.mNewContactManagers.mLostAndTotalReportedPairsCountMapped.isValid())
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL,
+				"PxgNarrowphaseCore: failed to allocate pinned host counters for lost/total reported pairs");
+			mCudaContext->setAbortMode(true);
+		}
 	}
 
 	mPatchAndContactCountersOnDevice.allocateElements(1, PX_FL);
-	mPatchAndContactCountersReadback = reinterpret_cast<PxgPatchAndContactCounters*>(mHeapMemoryManager->mMappedMemoryAllocators->allocate(sizeof(PxgPatchAndContactCounters), PxsHeapStats::eNARROWPHASE, PX_FL));
 
 	mGeometryManager.addBoxHull();
 
@@ -220,8 +233,16 @@ PxgGpuNarrowphaseCore::PxgGpuNarrowphaseCore(PxgCudaKernelWranglerManager* gpuKe
 
 	mGpuShapesManager.initialize(mCudaContext, mStream);
 
-	mMaxConvexMeshTempMemory = reinterpret_cast<PxU32*>(heapMemoryManager->mMappedMemoryAllocators->allocate(sizeof(PxU32), PxsHeapStats::eNARROWPHASE, PX_FL));
-	*mMaxConvexMeshTempMemory = 0;
+	if(!mMaxConvexMeshTempMemoryMapped.isValid())
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL,
+								"PxgNarrowphaseCore: failed to allocate pinned host for max convex mesh temp memory counter");
+		mCudaContext->setAbortMode(true);
+	}
+	else
+	{
+		mMaxConvexMeshTempMemoryMapped.get() = 0;
+	}
 
 	cudaContextManager->releaseContext();
 }
@@ -235,27 +256,12 @@ PxgGpuNarrowphaseCore::~PxgGpuNarrowphaseCore()
 
 	for (PxU32 i = 0; i < GPU_BUCKET_ID::eCount; ++i)
 	{
-		if (i >= GPU_BUCKET_ID::eConvex)
-		{
-			if (mPairManagementData[i])
-				mHeapMemoryManager->mMappedMemoryAllocators->deallocate(mPairManagementData[i]);
-
-			if (mGpuContactManagers[i]->mContactManagers.mLostAndTotalReportedPairsCountPinned)
-				mHeapMemoryManager->mMappedMemoryAllocators->deallocate(mGpuContactManagers[i]->mContactManagers.mLostAndTotalReportedPairsCountPinned);
-
-			if (mGpuContactManagers[i]->mNewContactManagers.mLostAndTotalReportedPairsCountPinned)
-				mHeapMemoryManager->mMappedMemoryAllocators->deallocate(mGpuContactManagers[i]->mNewContactManagers.mLostAndTotalReportedPairsCountPinned);
-		}
-
 		mRemovedIndices[i]->~RemovedIndicesArray();
 		PX_FREE(mRemovedIndices[i]);
 
 		PX_DELETE(mContactManagers[i]);
 		PX_DELETE(mGpuContactManagers[i]);
 	}
-
-	mHeapMemoryManager->mMappedMemoryAllocators->deallocate(mMaxConvexMeshTempMemory);
-	mHeapMemoryManager->mMappedMemoryAllocators->deallocate(mPatchAndContactCountersReadback);
 
 	mCudaContextManager->releaseContext();
 
@@ -334,7 +340,7 @@ void PxgGpuNarrowphaseCore::compactLostFoundPairs(PxgGpuContactManagers& gpuMana
 	PxsContactManagerOutputCounts* lostFoundOutputs = (PxsContactManagerOutputCounts*)gpuManagers.mLostFoundPairsOutputData.getDevicePtr();
 	PxsContactManager** lostFoundCms = (PxsContactManager**)gpuManagers.mLostFoundPairsCms.getDevicePtr();
 	PxU32* blockAccumArray = (PxU32*)gpuManagers.mBlockAccumulationArray.getDevicePtr();
-	uint2* lostAndTotalReportedPairsCount = reinterpret_cast<uint2*>(getMappedDevicePtr(mCudaContext, gpuManagers.mLostAndTotalReportedPairsCountPinned));
+	uint2* lostAndTotalReportedPairsCount = reinterpret_cast<uint2*>(getMappedDevicePtr(mCudaContext, gpuManagers.mLostAndTotalReportedPairsCountMapped.data()));
 	PxsContactManager** cmArray = (PxsContactManager**)gpuManagers.mCpuContactManagerMapping.getDevicePtr();
 
 	{
@@ -1021,7 +1027,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreTetmeshGjkEpaGpu(
 	const PxReal* restDistanced = reinterpret_cast<PxReal*>(gpuManagers.mRestDistances.getDevicePtr());
 	PX_ASSERT(transformCache);
 	PxgSoftBodyCore* softBodyCore = mGpuContext->mGpuSoftBodyCore;
-	PxgFEMContactWriter writer(softBodyCore);
+	PxgFEMContactWriter writer = softBodyCore->createContactWriter();
 
 	CUstream softbodyStream = softBodyCore->getStream();
 
@@ -1101,7 +1107,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreClothmeshGjkEpaGpu(
 
 	PxgFEMClothCore* femClothCore = mGpuContext->mGpuFEMClothCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = femClothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = femClothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream femClothStream = femClothCore->getStream();
@@ -1161,7 +1167,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreClothmeshGjkEpaGpu(
 	CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 	CUdeviceptr filterPairs = simulationCore->getRigidClothFilters();
 	const PxU32 nbFilterPairs = simulationCore->getNbRigidClothFilters();
-	PxgFEMContactWriter writer(femClothCore);
+	PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 	// convex core contact generation
 	{
@@ -1465,19 +1471,19 @@ void PxgGpuNarrowphaseCore::testSDKTriMeshTriMeshGpu(PxgGpuContactManagers& gpuM
 	mIntermStackAlloc.mMutex.unlock();
 }
 
-static void fetchLostFoundPatchData(PxgGpuContactManagers& gpuContactManagers, PxPinnedArray<PxsContactManagerOutputCounts>& lostFoundPairsOutputData, 
-	PxPinnedArray<PxsContactManager*>& lostFoundPairsCms, PxCudaContext* cudaContext, CUstream stream, PxU32& touchChangeOffset, PxU32& patchChangeOffset)
+static void fetchLostFoundPatchData(PxgGpuContactManagers& gpuContactManagers, PinnableArray<PxsContactManagerOutputCounts>& lostFoundPairsOutputData, 
+	PinnableArray<PxsContactManager*>& lostFoundPairsCms, PxCudaContext* cudaContext, CUstream stream, PxU32& touchChangeOffset, PxU32& patchChangeOffset)
 {
-	if (gpuContactManagers.mLostAndTotalReportedPairsCountPinned->x)
+	if (gpuContactManagers.mLostAndTotalReportedPairsCountMapped.isValid() && gpuContactManagers.mLostAndTotalReportedPairsCountMapped.get().x)
 	{
-		const PxU32 count = gpuContactManagers.mLostAndTotalReportedPairsCountPinned->x;
+		const PxU32 count = gpuContactManagers.mLostAndTotalReportedPairsCountMapped.get().x;
 
 		PX_ASSERT(lostFoundPairsOutputData.size() >= (touchChangeOffset + count));
 		PX_ASSERT(lostFoundPairsCms.size() >= touchChangeOffset + count);
 
 		PxsContactManagerOutputCounts* p = &lostFoundPairsOutputData[touchChangeOffset];
 		PxsContactManager** p2 = &lostFoundPairsCms[touchChangeOffset];
-		
+
 		// AD: DtoH memcopy marker, needs to be safe in case we skip!
 		cudaContext->memcpyDtoHAsync(p, 
 			gpuContactManagers.mLostFoundPairsOutputData.getDevicePtr(),
@@ -1491,7 +1497,12 @@ static void fetchLostFoundPatchData(PxgGpuContactManagers& gpuContactManagers, P
 		touchChangeOffset += count;
 	}
 
-	PxU32 count = gpuContactManagers.mLostAndTotalReportedPairsCountPinned->y - gpuContactManagers.mLostAndTotalReportedPairsCountPinned->x;
+	PxU32 count = 0;
+	if (gpuContactManagers.mLostAndTotalReportedPairsCountMapped.isValid())
+	{
+		count = gpuContactManagers.mLostAndTotalReportedPairsCountMapped.get().y - gpuContactManagers.mLostAndTotalReportedPairsCountMapped.get().x;
+	}
+
 	if (count)
 	{
 		PX_ASSERT(lostFoundPairsOutputData.size() >= patchChangeOffset);
@@ -1499,16 +1510,16 @@ static void fetchLostFoundPatchData(PxgGpuContactManagers& gpuContactManagers, P
 
 		PxsContactManagerOutputCounts* p = &lostFoundPairsOutputData[patchChangeOffset];
 		PxsContactManager** p2 = &lostFoundPairsCms[patchChangeOffset];
-		
+
 		// AD: DtoH memcopy marker, needs to be safe in case we skip!
 		cudaContext->memcpyDtoHAsync(p, 
-			gpuContactManagers.mLostFoundPairsOutputData.getDevicePtr() + gpuContactManagers.mLostAndTotalReportedPairsCountPinned->x * sizeof(PxsContactManagerOutputCounts),
+			gpuContactManagers.mLostFoundPairsOutputData.getDevicePtr() + gpuContactManagers.mLostAndTotalReportedPairsCountMapped.get().x * sizeof(PxsContactManagerOutputCounts),
 			sizeof(PxsContactManagerOutputCounts) * count, stream);
 
 
 		// AD: DtoH memcopy marker, needs to be safe in case we skip!
 		cudaContext->memcpyDtoHAsync(p2, 
-			gpuContactManagers.mLostFoundPairsCms.getDevicePtr() + gpuContactManagers.mLostAndTotalReportedPairsCountPinned->x * sizeof(PxsContactManager*),
+			gpuContactManagers.mLostFoundPairsCms.getDevicePtr() + gpuContactManagers.mLostAndTotalReportedPairsCountMapped.get().x * sizeof(PxsContactManager*),
 			sizeof(PxsContactManager*) * count, stream);
 
 		patchChangeOffset += count;
@@ -1600,21 +1611,22 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 	mTotalLostFoundPatches = 0;
 	mTotalNumPairs = numTests;
 
+	PxgPatchAndContactCounters& patchAndContactCountersReadback = mPatchAndContactCountersReadback.get();
 	if (numTests != 0)
 	{
 		// This copies back the sizes and overflow status of the contact stream.
 		// After this, we know all the sizes.
 
-		// AD: DtoH memcopy marker, needs to be safe in case we skip!
-		mCudaContext->memcpyDtoHAsync(mPatchAndContactCountersReadback, mPatchAndContactCountersOnDevice.getDevicePtr(), sizeof(PxgPatchAndContactCounters), mStream);
+		// AD: DtoH memcopy marker, needs to be safe in case we skip!	
+		mCudaContext->memcpyDtoHAsync(&patchAndContactCountersReadback, mPatchAndContactCountersOnDevice.getDevicePtr(), sizeof(PxgPatchAndContactCounters), mStream);
 
 		// set to 0 to be safe.
 		if (mCudaContext->isInAbortMode())
 		{
-			mPatchAndContactCountersReadback->contactsBytes = 0;
-			mPatchAndContactCountersReadback->patchesBytes = 0;
-			mPatchAndContactCountersReadback->forceAndIndiceBytes = 0;
-			mPatchAndContactCountersReadback->overflowError = 0;
+			patchAndContactCountersReadback.contactsBytes = 0;
+			patchAndContactCountersReadback.patchesBytes = 0;
+			patchAndContactCountersReadback.forceAndIndiceBytes = 0;
+			patchAndContactCountersReadback.overflowError = 0;
 		}
 
 		{
@@ -1623,33 +1635,39 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 			// it looks like we're only syncing here because of the overflow messages? is it ok to skip this sync if we don't run this block because there are no pairs?
 			CUresult result = mCudaContext->streamSynchronize(mStream);
 			if (result != CUDA_SUCCESS)
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Synchronizing GPU Narrowphase failed! %d\n", result);
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Synchronizing GPU Narrowphase failed! %u\n", result);
 		}	
 
-		PxU32 err = mPatchAndContactCountersReadback->getOverflowError();
+		PxU32 err = patchAndContactCountersReadback.getOverflowError();
 		if (err)
 		{
 			if (err & PxgPatchAndContactCounters::CONTACT_BUFFER_OVERFLOW)
 			{
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Contact buffer overflow detected, please increase its size to at least %i in the scene desc!\n", mPatchAndContactCountersReadback->contactsBytes/sizeof(PxContact));
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Contact buffer overflow detected, please increase its size to at least %u in the scene desc!\n",
+					patchAndContactCountersReadback.contactsBytes/sizeof(PxContact));
 			}
 
 			if (err & PxgPatchAndContactCounters::PATCH_BUFFER_OVERFLOW)
 			{
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Patch buffer overflow detected, please increase its size to at least %i in the scene desc!\n", mPatchAndContactCountersReadback->patchesBytes/sizeof(PxContactPatch));
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Patch buffer overflow detected, please increase its size to at least %u in the scene desc!\n",
+					patchAndContactCountersReadback.patchesBytes/sizeof(PxContactPatch));
 			}
 		}
 
+		PxU32 maxConvexMeshTempMemory = mMaxConvexMeshTempMemoryMapped.isValid() ? mMaxConvexMeshTempMemoryMapped.get() : 0;
+
 		// AD: todo verify that we catch all the overflows with this.
-		if (*mMaxConvexMeshTempMemory > mCollisionStackSizeBytes)
+			if(maxConvexMeshTempMemory > mCollisionStackSizeBytes)
 		{
-			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "PxGpuDynamicsMemoryConfig::collisionStackSize buffer overflow detected, please increase its size to at least %i in the scene desc! Contacts have been dropped.\n", *mMaxConvexMeshTempMemory);
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+				"PxGpuDynamicsMemoryConfig::collisionStackSize buffer overflow detected, please increase its size to at least %u in the scene desc! Contacts have been dropped.\n",
+				maxConvexMeshTempMemory);
 		}
 
 #if PX_ENABLE_SIM_STATS
-		mGpuDynamicsRigidContactCountStats = PxMax(PxU32(mPatchAndContactCountersReadback->contactsBytes / sizeof(PxContact)), mGpuDynamicsRigidContactCountStats);
-		mGpuDynamicsRigidPatchCountStats = PxMax(PxU32(mPatchAndContactCountersReadback->patchesBytes / sizeof(PxContactPatch)), mGpuDynamicsRigidPatchCountStats);
-		mGpuDynamicsCollisionStackSizeStats = PxMax(*mMaxConvexMeshTempMemory, mGpuDynamicsCollisionStackSizeStats); // AD: this does not include the non-rigid stack usages yet!
+		mGpuDynamicsRigidContactCountStats = PxMax(PxU32(patchAndContactCountersReadback.contactsBytes / sizeof(PxContact)), mGpuDynamicsRigidContactCountStats);
+		mGpuDynamicsRigidPatchCountStats = PxMax(PxU32(patchAndContactCountersReadback.patchesBytes / sizeof(PxContactPatch)), mGpuDynamicsRigidPatchCountStats);
+		mGpuDynamicsCollisionStackSizeStats = PxMax(maxConvexMeshTempMemory, mGpuDynamicsCollisionStackSizeStats); // AD: this does not include the non-rigid stack usages yet!
 
 		// update simulation statistics:
 		mNphaseImplContext->getContext().getSimStats().mGpuDynamicsRigidContactCount = mGpuDynamicsRigidContactCountStats;
@@ -1660,8 +1678,8 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 #else
 		PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
 #endif
-
-		*mMaxConvexMeshTempMemory = 0;
+		if(mMaxConvexMeshTempMemoryMapped.isValid())
+			mMaxConvexMeshTempMemoryMapped.get() = 0;
 	}
 
 	{
@@ -1734,18 +1752,18 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 
 			CUresult result =  mCudaContext->streamSynchronize(mStream);
 			if (result != CUDA_SUCCESS)
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Fetching GPU Narrowphase failed! %d\n", result);
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Fetching GPU Narrowphase failed! %u\n", result);
 		}
 		
 		//KS - no need for atomics - we now fetch all results at once!
 		//FD: if there is an overflow, the counter value may exceed the limit, though the contacts\patches should be dropped
-		mPatchAndContactCountersReadback->contactsBytes = PxMin(mPatchAndContactCountersReadback->contactsBytes, contactStreamPool->mDataStreamSize);
-		mPatchAndContactCountersReadback->patchesBytes = PxMin(mPatchAndContactCountersReadback->patchesBytes, patchStreamPool->mDataStreamSize);
-		mPatchAndContactCountersReadback->forceAndIndiceBytes = PxMin(mPatchAndContactCountersReadback->forceAndIndiceBytes, forceStreamPool->mDataStreamSize);
+		patchAndContactCountersReadback.contactsBytes = PxMin(patchAndContactCountersReadback.contactsBytes, contactStreamPool->mDataStreamSize);
+		patchAndContactCountersReadback.patchesBytes = PxMin(patchAndContactCountersReadback.patchesBytes, patchStreamPool->mDataStreamSize);
+		patchAndContactCountersReadback.forceAndIndiceBytes = PxMin(patchAndContactCountersReadback.forceAndIndiceBytes, forceStreamPool->mDataStreamSize);
 
-		contactStreamPool->mSharedDataIndexGPU = mPatchAndContactCountersReadback->contactsBytes;
-		patchStreamPool->mSharedDataIndexGPU = mPatchAndContactCountersReadback->patchesBytes;
-		forceStreamPool->mSharedDataIndexGPU = mPatchAndContactCountersReadback->forceAndIndiceBytes;
+		contactStreamPool->mSharedDataIndexGPU = patchAndContactCountersReadback.contactsBytes;
+		patchStreamPool->mSharedDataIndexGPU = patchAndContactCountersReadback.patchesBytes;
+		forceStreamPool->mSharedDataIndexGPU = patchAndContactCountersReadback.forceAndIndiceBytes;
 
 		mGpuContext->getFrictionPatchStreamPool().mSharedDataIndexGPU = patchStreamPool->mSharedDataIndexGPU * sizeof(PxFrictionPatch) / sizeof(PxContactPatch);
 	}
@@ -1838,8 +1856,8 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 	// finally we copy the GPU contact stream data to the CPU.
 	if (!mGpuContext->getEnableDirectGPUAPI() || mGpuContext->getSimulationController()->getEnableOVDCollisionReadback())
 	{
-		PxU32 numNewContactBytes = mPatchAndContactCountersReadback->contactsBytes;
-		PxU32 numNewPatchBytes = mPatchAndContactCountersReadback->patchesBytes;
+		PxU32 numNewContactBytes = patchAndContactCountersReadback.contactsBytes;
+		PxU32 numNewPatchBytes = patchAndContactCountersReadback.patchesBytes;
 
 		////Copy contact/patch stream. TODO - defer this so that we don't sync on it
 		if (numNewContactBytes)
@@ -1991,6 +2009,8 @@ void PxgGpuNarrowphaseCore::testSDKSphereTriMeshSATGpu(PxgGpuContactManagers& gp
 
 		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SPHERE_TRIMESH_CORE);
 
+		void* mappedMaxConvexMeshTempMemory = getMappedDevicePtr(mCudaContext, mMaxConvexMeshTempMemoryMapped.data());
+
 		PxCudaKernelParam kernelParams[] =
 		{
 			PX_CUDA_KERNEL_PARAM(cmInputs),
@@ -2016,7 +2036,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereTriMeshSATGpu(PxgGpuContactManagers& gp
 
 			PX_CUDA_KERNEL_PARAM(gpuTempContactStack),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactIndex),
-			PX_CUDA_KERNEL_PARAM(mMaxConvexMeshTempMemory),
+			PX_CUDA_KERNEL_PARAM(mappedMaxConvexMeshTempMemory),
 			PX_CUDA_KERNEL_PARAM(gpuStackShift),
 			PX_CUDA_KERNEL_PARAM(numTests)
 		};
@@ -2294,6 +2314,8 @@ void PxgGpuNarrowphaseCore::testSDKSphereHeightfieldGpu(PxgGpuContactManagers& g
 
 		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SPHERE_HEIGHTFIELD_CORE);
 
+		void* mappedMaxConvexMeshTempMemory = getMappedDevicePtr(mCudaContext, mMaxConvexMeshTempMemoryMapped.data());
+
 		PxCudaKernelParam kernelParams[] =
 		{
 			PX_CUDA_KERNEL_PARAM(cmInputs),
@@ -2316,7 +2338,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereHeightfieldGpu(PxgGpuContactManagers& g
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactStack),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactIndex),
-			PX_CUDA_KERNEL_PARAM(mMaxConvexMeshTempMemory),
+			PX_CUDA_KERNEL_PARAM(mappedMaxConvexMeshTempMemory),
 			PX_CUDA_KERNEL_PARAM(gpuStackShift),
 			PX_CUDA_KERNEL_PARAM(numTests)
 		};
@@ -2598,6 +2620,8 @@ void PxgGpuNarrowphaseCore::testSDKConvexTriMeshSATGpu(PxgGpuContactManagers& gp
 			
 		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_CORE);
 
+		void* mappedMaxConvexMeshTempMemory = getMappedDevicePtr(mCudaContext, mMaxConvexMeshTempMemoryMapped.data());
+
 		PxCudaKernelParam kernelParams[] =
 		{
 			PX_CUDA_KERNEL_PARAM(cmInputs),
@@ -2622,7 +2646,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexTriMeshSATGpu(PxgGpuContactManagers& gp
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactStack),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactIndex),
-			PX_CUDA_KERNEL_PARAM(mMaxConvexMeshTempMemory),
+			PX_CUDA_KERNEL_PARAM(mappedMaxConvexMeshTempMemory),
 			PX_CUDA_KERNEL_PARAM(gpuStackShift),
 			PX_CUDA_KERNEL_PARAM(numTests)
 		};
@@ -2902,6 +2926,8 @@ void PxgGpuNarrowphaseCore::testSDKConvexHeightfieldGpu(PxgGpuContactManagers& g
 
 		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_HEIGHTFIELD_CORE);
 
+		void* mappedMaxConvexMeshTempMemory = getMappedDevicePtr(mCudaContext, mMaxConvexMeshTempMemoryMapped.data());
+
 		PxCudaKernelParam kernelParams[] =
 		{
 			PX_CUDA_KERNEL_PARAM(cmInputs),
@@ -2924,7 +2950,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexHeightfieldGpu(PxgGpuContactManagers& g
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactStack),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactIndex),
-			PX_CUDA_KERNEL_PARAM(mMaxConvexMeshTempMemory),
+			PX_CUDA_KERNEL_PARAM(mappedMaxConvexMeshTempMemory),
 			PX_CUDA_KERNEL_PARAM(gpuStackShift),
 			PX_CUDA_KERNEL_PARAM(numTests)
 		};
@@ -3338,7 +3364,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 	//contact gen is done at soft body stream
 	CUstream softbodyStream = softBodyCore->getStream();
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = softBodyCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = softBodyCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	const PxU32 stackSizeBytes = mCollisionStackSizeBytes;
@@ -3418,7 +3444,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 		PX_PROFILE_ZONE("PxgGpuNarrowphaseCore.testSDKParticleSoftbody.contactGen", 0);
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), softbodyStream);
 
-		PxgFEMContactWriter writer(softBodyCore, true);
+		PxgFEMContactWriter writer = softBodyCore->createContactWriter(true);
 
 		CUfunction sbCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_PS_CG); //sb_psContactGenLaunch
 
@@ -3548,7 +3574,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleFemCloth(PxgGpuContactManagers& gpuMa
 	
 	CUstream clothStream = clothCore->getStream();
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = clothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = clothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUdeviceptr gpuMidphasePairsNumOnDevice = reinterpret_cast<CUdeviceptr>(stackAlloc.allocateAligned(sizeof(PxU32), sizeof(PxU32)));
@@ -3623,7 +3649,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleFemCloth(PxgGpuContactManagers& gpuMa
 	{
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), clothStream);
 
-		PxgFEMContactWriter writer(clothCore, true);
+		PxgFEMContactWriter writer = clothCore->createContactWriter(true);
 
 		CUfunction clothCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_PS_CG);
 
@@ -4196,7 +4222,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 	PxgSimulationCore* simulationCore = mNphaseImplContext->getSimulationCore();
 	PxgSoftBodyCore* softBodyCore = mGpuContext->mGpuSoftBodyCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = softBodyCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = softBodyCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream softbodyStream = softBodyCore->getStream();
@@ -4282,7 +4308,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 		CUdeviceptr pairs = simulationCore->getRigidSoftBodyFilters();
 		const PxU32 nbPairs = simulationCore->getNbRigidSoftBodyFilters();
 
-		PxgFEMContactWriter writer(softBodyCore);
+		PxgFEMContactWriter writer = softBodyCore->createContactWriter();
 
 		CUfunction sbCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_PRIMITIVES_CG);
 
@@ -4432,7 +4458,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodies(PxgGpuContactManagers& gpuManagers
 
 	mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), softbodyStream);
 
-	PxgSoftBodyContactWriter writer(softBodyCore);
+	PxgSoftBodyContactWriter writer = softBodyCore->createSoftBodyContactWriter();
 
 	CUresult result;
 
@@ -4552,7 +4578,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 	//OK. If we sync the soft bodies and particles here, we don't get crashes!
 	synchronizeStreams(mCudaContext, femClothCore->getStream(), softbodyStream);
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = softBodyCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = softBodyCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUdeviceptr gpuMidphasePairsNumOnDevice = reinterpret_cast<CUdeviceptr>(stackAlloc.allocateAligned(sizeof(PxU32), sizeof(PxU32)));
@@ -4582,7 +4608,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 
 	CUresult result;
 
-	PxgSoftBodyContactWriter writer(softBodyCore, femClothCore);
+	PxgSoftBodyContactWriter writer = softBodyCore->createClothVsSoftBodyContactWriter(femClothCore->mMaxContacts);
 
 	//!
 	//! softbody tet - cloth triangle collision
@@ -4867,7 +4893,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodySdfTrimesh(PxgGpuContactManagers& gpu
 	//initialize gpu variables
 	CUdeviceptr softBodiesd = simulationCore->getSoftBodyBuffer().getDevicePtr();
 
-	PxgFEMContactWriter writer(softBodyCore);
+	PxgFEMContactWriter writer = softBodyCore->createContactWriter();
 
 	CUresult result;
 
@@ -5011,7 +5037,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyTrimesh(PxgGpuContactManagers& gpuMan
 	PxgSimulationCore* simulationCore = mNphaseImplContext->getSimulationCore();
 	PxgSoftBodyCore* softBodyCore = mGpuContext->mGpuSoftBodyCore; 
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = softBodyCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = softBodyCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream softbodyStream = softBodyCore->getStream();
@@ -5123,7 +5149,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyTrimesh(PxgGpuContactManagers& gpuMan
 		CUdeviceptr pairs = simulationCore->getRigidSoftBodyFilters();
 		const PxU32 nbPairs = simulationCore->getNbRigidSoftBodyFilters();
 
-		PxgFEMContactWriter writer(softBodyCore);
+		PxgFEMContactWriter writer = softBodyCore->createContactWriter();
 
 		CUfunction sbmeshContactGenkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_MESH_CG);
 
@@ -5317,7 +5343,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyHeightfield(PxgGpuContactManagers& gp
 
 	PxgSoftBodyCore* softbodyCore = mGpuContext->mGpuSoftBodyCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = softbodyCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = softbodyCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream softbodyStream = softbodyCore->getStream();
@@ -5435,7 +5461,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyHeightfield(PxgGpuContactManagers& gp
 	{
 		CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 		
-		PxgFEMContactWriter writer(softBodyCore);
+		PxgFEMContactWriter writer = softBodyCore->createContactWriter();
 
 		CUfunction sbHFContactGenkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_HF_CG);
 
@@ -5617,7 +5643,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothSphere(PxgGpuContactManagers& gpuMana
 
 	PxgFEMClothCore* femClothCore = mGpuContext->mGpuFEMClothCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = femClothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = femClothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream femClothStream = femClothCore->getStream();
@@ -5731,7 +5757,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothSphere(PxgGpuContactManagers& gpuMana
 	CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 	const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-	PxgFEMContactWriter writer(femClothCore);
+	PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 	if (1)	//contact gen
 	{
@@ -5848,7 +5874,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothPlane(PxgGpuContactManagers& gpuManag
 		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-		PxgFEMContactWriter writer(femClothCore);
+		PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 		CUfunction fcVertCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_PLANE_VERTEX_CG);
 		PxCudaKernelParam vertKernelParams[] =
@@ -5920,7 +5946,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothBox(PxgGpuContactManagers& gpuManager
 
 	PxgFEMClothCore* femClothCore = mGpuContext->mGpuFEMClothCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = femClothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = femClothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream femClothStream = femClothCore->getStream();
@@ -5990,7 +6016,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothBox(PxgGpuContactManagers& gpuManager
 		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 		CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_BOX_TRIANGLE_CG);
 
-		PxgFEMContactWriter writer(femClothCore);
+		PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -6085,7 +6111,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothBox(PxgGpuContactManagers& gpuManager
 		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-		PxgFEMContactWriter writer(femClothCore);
+		PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 		CUfunction fcBoxVertCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_BOX_VERTEX_COLLISION);
 		PxCudaKernelParam vertKernelParams[] =
@@ -6157,7 +6183,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothConvexes(PxgGpuContactManagers& gpuMa
 
 	PxgFEMClothCore* femClothCore = mGpuContext->mGpuFEMClothCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = femClothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = femClothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream femClothStream = femClothCore->getStream();
@@ -6257,7 +6283,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothConvexes(PxgGpuContactManagers& gpuMa
 		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-		PxgFEMContactWriter writer(femClothCore);
+		PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 		CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_CONVEX_CG);
 		PxCudaKernelParam kernelParams[] =
@@ -6409,7 +6435,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothConvexes(PxgGpuContactManagers& gpuMa
 		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-		PxgFEMContactWriter writer(femClothCore);
+		PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 		CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_CONVEX_VERTEX_COLLISION);
 		PxCudaKernelParam kernelParams[] =
@@ -6502,7 +6528,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothSdfTrimesh(PxgGpuContactManagers& gpu
 	CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 	const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-	PxgFEMContactWriter writer(femClothCore);
+	PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 	CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_SDF_MESH_CG);
 	PxCudaKernelParam kernelParams[] =
@@ -6554,7 +6580,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 	
 	PxgFEMClothCore* femClothCore = mGpuContext->mGpuFEMClothCore;
 	
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = femClothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = femClothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream femClothStream = femClothCore->getStream();
@@ -6664,7 +6690,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 			CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 			const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-			PxgFEMContactWriter writer(femClothCore);
+			PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_MESH_CG);
 			PxCudaKernelParam kernelParams[] =
@@ -6806,7 +6832,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 
 			CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 			
-			PxgFEMContactWriter writer(femClothCore);
+			PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_MESH_VERTEX_CG);
 			PxCudaKernelParam kernelParams[] =
@@ -6883,7 +6909,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothHeightfield(PxgGpuContactManagers& gp
 
 	PxgFEMClothCore* femClothCore = mGpuContext->mGpuFEMClothCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = femClothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = femClothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream femClothStream = femClothCore->getStream();
@@ -7000,7 +7026,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothHeightfield(PxgGpuContactManagers& gp
 
 			CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 			
-			PxgFEMContactWriter writer(femClothCore);
+			PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_HF_CG);
 			PxCudaKernelParam kernelParams[] =
@@ -7151,7 +7177,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothHeightfield(PxgGpuContactManagers& gp
 
 			CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 			
-			PxgFEMContactWriter writer(femClothCore);
+			PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_HF_VERTEX_CG);
 			PxCudaKernelParam kernelParams[] =
@@ -7539,6 +7565,10 @@ void PxgGpuNarrowphaseCore::registerShape(const PxNodeIndex& nodeIndex, const Px
 		const RefcountedRecordsMap::Entry* e = mShapesMap->find((size_t)&shapeCore);
 
 		mGpuShapesManager.registerShapeInstance(nodeIndex, transformCacheID, actor);
+		if(mGpuShapesManager.mAllocFailed)
+		{
+			mCudaContext->setAbortMode(true);
+		}
 
 		if (!e)
 		{
@@ -7557,6 +7587,10 @@ void PxgGpuNarrowphaseCore::registerShape(const PxNodeIndex& nodeIndex, const Px
 			mCudaContextManager->acquireContext();
 			rec.idx = mGpuShapesManager.registerShape(newShape);
 			mCudaContextManager->releaseContext();
+			if(mGpuShapesManager.mAllocFailed)
+			{
+				mCudaContext->setAbortMode(true);
+			}
 
 			mShapesMap->insert((size_t)&shapeCore, rec);
 
@@ -7693,6 +7727,10 @@ void PxgGpuNarrowphaseCore::unregisterShape(const PxsShapeCore& shapeCore, const
 void PxgGpuNarrowphaseCore::registerAggregate(const PxU32 transformCacheID)
 {
 	mGpuShapesManager.registerShapeInstance(PxNodeIndex(PX_INVALID_NODE), transformCacheID, NULL, true);
+	if(mGpuShapesManager.mAllocFailed)
+	{
+		mCudaContext->setAbortMode(true);
+	}
 }
 
 template <typename MaterialCore, typename MaterialData>
@@ -7702,7 +7740,7 @@ PxU32 PxgGpuNarrowphaseCore::registerMaterialInternal(const MaterialCore& materi
 	const RefcountedRecordsMap::Entry* me = materialsMap->find(sdkMaterialIndex);
 
 	const MaterialData& data = materialCore;
-	PxU32 shapeId = 0xffffffff;
+	PxU32 materialId = PX_INVALID_U32;
 	if (!me)
 	{
 		RefcountedRecord rec;
@@ -7711,17 +7749,24 @@ PxU32 PxgGpuNarrowphaseCore::registerMaterialInternal(const MaterialCore& materi
 		//this might involve reallocating the materials array, so we do need the context
 		mCudaContextManager->acquireContext();
 
-		shapeId = materialManager.registerMaterial(reinterpret_cast<const PxU8*>(&data), sizeof(MaterialData));
-		rec.idx = shapeId;
-		
+		materialId = materialManager.registerMaterial(reinterpret_cast<const PxU8*>(&data), sizeof(MaterialData));
+
 		mCudaContextManager->releaseContext();
 
+		if(materialId == PX_INVALID_U32)
+		{
+			mCudaContextManager->getCudaContext()->setAbortMode(true);
+		}
+
+		//write invalid index to map in case of allocation failure
+		rec.idx = materialId;
 		materialsMap->insert(sdkMaterialIndex, rec);
+		
 	}
 	else
 	{
 		RefcountedRecord& rec = (*materialsMap)[sdkMaterialIndex];
-		shapeId = rec.idx;
+		materialId = rec.idx;
 		//we support setting materials to shapes before they are added to the scene. Should be done on the same frame.
 		if (rec.refCnt == 0)
 		{
@@ -7731,14 +7776,14 @@ PxU32 PxgGpuNarrowphaseCore::registerMaterialInternal(const MaterialCore& materi
 		++rec.refCnt;
 	}
 
-	return shapeId;
+	return materialId;
 }
 
 template <typename MaterialCore, typename MaterialData>
 void PxgGpuNarrowphaseCore::updateMaterialInternal(const MaterialCore& materialCore, RefcountedRecordsMap* materialsMap, PxgMaterialManager& materialManager)
 {
 	const PxU16 sdkMaterialIndex = materialCore.mMaterialIndex;
-	PX_ASSERT(materialsMap->find(sdkMaterialIndex));
+	PX_ASSERT(materialsMap->find(sdkMaterialIndex) || materialManager.mAllocFailed);
 
 	RefcountedRecord& rec = (*materialsMap)[sdkMaterialIndex];
 	PX_ASSERT(rec.refCnt);
@@ -7752,7 +7797,7 @@ template <typename MaterialCore>
 void PxgGpuNarrowphaseCore::unregisterMaterialInternal(const MaterialCore& materialCore, RefcountedRecordsMap* materialsMap, PxgMaterialManager& materialManager)
 {
 	const PxU16 sdkMaterialIndex = materialCore.mMaterialIndex;
-	PX_ASSERT(materialsMap->find(sdkMaterialIndex));
+	PX_ASSERT(materialsMap->find(sdkMaterialIndex) || materialManager.mAllocFailed);
 
 	RefcountedRecord& rec = (*materialsMap)[sdkMaterialIndex];
 	PX_ASSERT(rec.refCnt);
@@ -7770,10 +7815,10 @@ PxU16 PxgGpuNarrowphaseCore::mapMaterialIndexInternal(PxU16 sdkMaterialIndex, Re
 	PxgMaterialManager& materialManager, PxU32 materialDataByteSize)
 {
 	const RefcountedRecordsMap::Entry* me = materialsMap->find(sdkMaterialIndex);
-
+	PxU16 gpuIndex = PX_INVALID_U16;
 	if (me)
 	{
-		return PxTo16(me->second.idx);
+		gpuIndex = (me->second.idx == PX_INVALID_U32) ? PX_INVALID_U16 : PxTo16(me->second.idx);
 	}
 	else
 	{
@@ -7786,12 +7831,19 @@ PxU16 PxgGpuNarrowphaseCore::mapMaterialIndexInternal(PxU16 sdkMaterialIndex, Re
 
 		PxsMaterialData dummy;
 		rec.idx = materialManager.registerMaterial(reinterpret_cast<const PxU8*>(&dummy), materialDataByteSize);
+		
 		mCudaContextManager->releaseContext();
 
-		materialsMap->insert(sdkMaterialIndex, rec);
+		if(rec.idx == PX_INVALID_U32)
+		{
+			mCudaContextManager->getCudaContext()->setAbortMode(true);
+		}
 
-		return PxTo16(rec.idx);
+		//write invalid index to map in case of allocation failure
+		materialsMap->insert(sdkMaterialIndex, rec);
+		gpuIndex = (rec.idx == PX_INVALID_U32) ? PX_INVALID_U16 : PxTo16(rec.idx);
 	}
+	return gpuIndex;
 }
 
 //we expect no removals before adds, this should be handled at a higher level
@@ -7864,12 +7916,12 @@ void PxgGpuNarrowphaseCore::unregisterParticleMaterial(const PxsPBDMaterialCore&
 
 void PxgGpuNarrowphaseCore::registerContactManagerInternal(PxsContactManager* cm, const Sc::ShapeInteraction* shapeInteraction, PxgContactManagerInput* input, PxsContactManagerOutput& output, PxgNewContactManagers& newContactManagers)
 {
-	PxPinnedArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
-	PxPinnedArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
-	PxPinnedArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
-	PxPinnedArray<const Sc::ShapeInteraction*>& itSI = newContactManagers.mShapeInteractions;
-	PxFloatArrayPinned& itR = newContactManagers.mRestDistances;
-	PxPinnedArray<PxsTorsionalFrictionData>& itTor = newContactManagers.mTorsionalProperties;
+	PinnableArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
+	PinnableArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
+	PinnableArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
+	PinnableArray<const Sc::ShapeInteraction*>& itSI = newContactManagers.mShapeInteractions;
+	PinnableArray<PxReal>& itR = newContactManagers.mRestDistances;
+	PinnableArray<PxsTorsionalFrictionData>& itTor = newContactManagers.mTorsionalProperties;
 	
 	PxcNpWorkUnit& workUnit = cm->getWorkUnit();
 
@@ -7892,7 +7944,7 @@ void PxgGpuNarrowphaseCore::registerContactManagerInternal(PxsContactManager* cm
 		workUnit.mStatusFlags |= PxcNpWorkUnitStatusFlag::eREFRESHED_WITH_TOUCH;
 }
 
-void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* cm, PxInt32ArrayPinned& removedIndices, PxgNewContactManagers& newContactManagers)
+void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* cm, PinnableArray<PxU32>& removedIndices, PxgNewContactManagers& newContactManagers)
 {
 	PxcNpWorkUnit& unit = cm->getWorkUnit();
 	PxU32 index = unit.mNpIndex;
@@ -7909,12 +7961,12 @@ void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* 
 		index &= ~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK;
 		index = PxgContactManagers::computeIndexFromId(index);
 			
-		PxPinnedArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
-		PxPinnedArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
-		PxPinnedArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
-		PxPinnedArray<const Sc::ShapeInteraction*>& itSI = newContactManagers.mShapeInteractions;
-		PxFloatArrayPinned& itR = newContactManagers.mRestDistances;
-		PxPinnedArray<PxsTorsionalFrictionData>& itTor = newContactManagers.mTorsionalProperties;
+		PinnableArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
+		PinnableArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
+		PinnableArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
+		PinnableArray<const Sc::ShapeInteraction*>& itSI = newContactManagers.mShapeInteractions;
+		PinnableArray<PxReal>& itR = newContactManagers.mRestDistances;
+		PinnableArray<PxsTorsionalFrictionData>& itTor = newContactManagers.mTorsionalProperties;
 	
 		itInputs.replaceWithLast(index);
 		itOutputs.replaceWithLast(index);
@@ -7940,7 +7992,7 @@ void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* 
 
 
 void PxgGpuNarrowphaseCore::refreshContactManagerInternal(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs, const Sc::ShapeInteraction** shapeInteractions, PxgContactManagerInput& input, PxgNewContactManagers& newContactManagers, 
-	PxInt32ArrayPinned& removedIndices)
+	PinnableArray<PxU32>& removedIndices)
 {
 	PxcNpWorkUnit& unit = cm->getWorkUnit();
 	PxU32 index = unit.mNpIndex;
@@ -7963,12 +8015,12 @@ void PxgGpuNarrowphaseCore::refreshContactManagerInternal(PxsContactManager* cm,
 		index &= ~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK;
 		index = PxgContactManagers::computeIndexFromId(index);
 			
-		PxPinnedArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
-		PxPinnedArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
-		PxPinnedArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
-		PxPinnedArray<const Sc::ShapeInteraction*>& itSI = newContactManagers.mShapeInteractions;
-		PxFloatArrayPinned& itR = newContactManagers.mRestDistances;
-		PxPinnedArray<PxsTorsionalFrictionData>& itTor = newContactManagers.mTorsionalProperties;
+		PinnableArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
+		PinnableArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
+		PinnableArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
+		PinnableArray<const Sc::ShapeInteraction*>& itSI = newContactManagers.mShapeInteractions;
+		PinnableArray<PxReal>& itR = newContactManagers.mRestDistances;
+		PinnableArray<PxsTorsionalFrictionData>& itTor = newContactManagers.mTorsionalProperties;
 
 		output = itOutputs[index];
 
@@ -8057,7 +8109,7 @@ void PxgGpuNarrowphaseCore::releaseContext()
 
 void PxgGpuNarrowphaseCore::removeLostPairsGpu(const PxU32 bucketID, const PxU16 stage5KernelID, const bool copyManifold)
 {
-	removeLostPairsGpuInternal<PxgPairManagementData, PxgPersistentContactManifold>(*mPairManagementData[bucketID],
+	removeLostPairsGpuInternal<PxgPairManagementData, PxgPersistentContactManifold>(mPairManagementData[bucketID],
 		mGpuPairManagementData.getDevicePtr(), mContactManagers[bucketID]->mContactManagers, mGpuContactManagers[bucketID]->mContactManagers, *mRemovedIndices[bucketID], mPairManagementBuffers,
 		stage5KernelID, copyManifold);
 }
@@ -8162,12 +8214,12 @@ void PxgGpuNarrowphaseCore::prepareTempContactManagers(PxgGpuContactManagers& gp
 	gpuManagers.mTempRunsumArray.allocate(2 * nbNewManagers * sizeof(PxU32), PX_FL);
 	gpuManagers.mTempRunsumArray2.allocate(2 * nbNewManagers * sizeof(PxU32), PX_FL);
 	
-	PxPinnedArray<PxgContactManagerInput>& itInputs = newManagers.mGpuInputContactManagers;
-	PxPinnedArray<PxsContactManagerOutput>& itOutputs = newManagers.mGpuOutputContactManagers;
-	PxPinnedArray<PxsContactManager*>& itCms = newManagers.mCpuContactManagerMapping;
-	PxPinnedArray<const Sc::ShapeInteraction*>& itSI = newManagers.mShapeInteractions;
-	PxFloatArrayPinned& itR = newManagers.mRestDistances;
-	PxPinnedArray<PxsTorsionalFrictionData>& itTor = newManagers.mTorsionalProperties;
+	PinnableArray<PxgContactManagerInput>& itInputs = newManagers.mGpuInputContactManagers;
+	PinnableArray<PxsContactManagerOutput>& itOutputs = newManagers.mGpuOutputContactManagers;
+	PinnableArray<PxsContactManager*>& itCms = newManagers.mCpuContactManagerMapping;
+	PinnableArray<const Sc::ShapeInteraction*>& itSI = newManagers.mShapeInteractions;
+	PinnableArray<PxReal>& itR = newManagers.mRestDistances;
+	PinnableArray<PxsTorsionalFrictionData>& itTor = newManagers.mTorsionalProperties;
 	
 	mCudaContext->memcpyHtoDAsync(gpuManagers.mContactManagerInputData.getDevicePtr(), itInputs.begin(), sizeof(PxgContactManagerInput) * nbNewManagers, mStream);
 	mCudaContext->memcpyHtoDAsync(gpuManagers.mContactManagerOutputData.getDevicePtr(), itOutputs.begin(), sizeof(PxsContactManagerOutput) * nbNewManagers, mStream);
@@ -8219,12 +8271,12 @@ void PxgGpuNarrowphaseCore::prepareTempContactManagers(PxgGpuContactManagers& gp
 	gpuManagers.mTempRunsumArray.allocate(2 * nbNewManagers * sizeof(PxU32), PX_FL);
 	gpuManagers.mTempRunsumArray2.allocate(2 * nbNewManagers * sizeof(PxU32), PX_FL);
 
-	PxPinnedArray<PxgContactManagerInput>& itInputs = newManagers.mGpuInputContactManagers;
-	PxPinnedArray<PxsContactManagerOutput>& itOutputs = newManagers.mGpuOutputContactManagers;
-	PxPinnedArray<PxsContactManager*>& itCms = newManagers.mCpuContactManagerMapping;
-	PxPinnedArray<const Sc::ShapeInteraction*>& itSI = newManagers.mShapeInteractions;
-	PxFloatArrayPinned& itR = newManagers.mRestDistances;
-	PxPinnedArray<PxsTorsionalFrictionData>& itTor = newManagers.mTorsionalProperties;
+	PinnableArray<PxgContactManagerInput>& itInputs = newManagers.mGpuInputContactManagers;
+	PinnableArray<PxsContactManagerOutput>& itOutputs = newManagers.mGpuOutputContactManagers;
+	PinnableArray<PxsContactManager*>& itCms = newManagers.mCpuContactManagerMapping;
+	PinnableArray<const Sc::ShapeInteraction*>& itSI = newManagers.mShapeInteractions;
+	PinnableArray<PxReal>& itR = newManagers.mRestDistances;
+	PinnableArray<PxsTorsionalFrictionData>& itTor = newManagers.mTorsionalProperties;
 
 	mCudaContext->memcpyHtoDAsync(gpuManagers.mContactManagerInputData.getDevicePtr(), itInputs.begin(), sizeof(PxgContactManagerInput) * nbNewManagers, mStream);
 	mCudaContext->memcpyHtoDAsync(gpuManagers.mContactManagerOutputData.getDevicePtr(), itOutputs.begin(), sizeof(PxsContactManagerOutput) * nbNewManagers, mStream);
@@ -8290,8 +8342,8 @@ void PxgGpuNarrowphaseCore::prepareTempContactManagersInternal(PxgNewContactMana
 	PX_UNUSED(flushPool);
 	PX_PROFILE_ZONE("GpuNarrowPhase.prepareInputs", 0);
 
-	PxPinnedArray<PxgContactManagerInput>& itInputs = newManagers.mGpuInputContactManagers;
-	PxPinnedArray<PxsContactManager*>& itCms = newManagers.mCpuContactManagerMapping;
+	PinnableArray<PxgContactManagerInput>& itInputs = newManagers.mGpuInputContactManagers;
+	PinnableArray<PxsContactManager*>& itCms = newManagers.mCpuContactManagerMapping;
 
 	const PxU32 nbPerTask = 256;
 
@@ -8314,13 +8366,13 @@ void PxgGpuNarrowphaseCore::prepareTempContactManagersTasks(Cm::FlushPool& flush
 	}
 }
 
-void PxgGpuNarrowphaseCore::removeLostPairsInternal(PxInt32ArrayPinned& removedIndices, PxgContactManagers& contactManagers)
+void PxgGpuNarrowphaseCore::removeLostPairsInternal(PinnableArray<PxU32>& removedIndices, PxgContactManagers& contactManagers)
 {
-	PxPinnedArray<PxgContactManagerInput>& itInputs = contactManagers.mGpuInputContactManagers;
-	PxPinnedArray<PxsContactManager*>& itCms = contactManagers.mCpuContactManagerMapping;
-	PxPinnedArray<const Sc::ShapeInteraction*>& itSI = contactManagers.mShapeInteractions;
-	PxFloatArrayPinned& itR = contactManagers.mRestDistances;
-	PxPinnedArray<PxsTorsionalFrictionData>& itTor = contactManagers.mTorsionalProperties;
+	PinnableArray<PxgContactManagerInput>& itInputs = contactManagers.mGpuInputContactManagers;
+	PinnableArray<PxsContactManager*>& itCms = contactManagers.mCpuContactManagerMapping;
+	PinnableArray<const Sc::ShapeInteraction*>& itSI = contactManagers.mShapeInteractions;
+	PinnableArray<PxReal>& itR = contactManagers.mRestDistances;
+	PinnableArray<PxsTorsionalFrictionData>& itTor = contactManagers.mTorsionalProperties;
 	
 	const PxU32 finalSize = contactManagers.mCpuContactManagerMapping.size() - removedIndices.size();
 
@@ -8399,7 +8451,7 @@ bool validateInputPairs(PxgContactManagers& gpuConvexConvexManagers, PxgGpuConta
 
 	cudaContext->memcpyDtoH(tempInputArray.begin(), gpuContactManagers.mContactManagerInputData.getDevicePtr(), sizeof(PxgContactManagerInput)* count);
 
-	PxPinnedArray<PxgContactManagerInput>& iter = gpuConvexConvexManagers.mGpuInputContactManagers;
+	PinnableArray<PxgContactManagerInput>& iter = gpuConvexConvexManagers.mGpuInputContactManagers;
 
 	for (PxU32 i = 0; i < count; ++i)
 	{
@@ -8494,7 +8546,7 @@ void PxgGpuNarrowphaseCore::removeLostPairs()
 
 template <typename ManagementData, typename Manifold>
 void PxgGpuNarrowphaseCore::removeLostPairsGpuInternal(ManagementData& cpuBuffer, CUdeviceptr gpuBuffer,
-	PxgContactManagers& contactManagers, PxgGpuContactManagers& gpuContactManagers, PxInt32ArrayPinned& removedIndices, PxgGpuPairManagementBuffers& pairManagementBuffers,
+	PxgContactManagers& contactManagers, PxgGpuContactManagers& gpuContactManagers, PinnableArray<PxU32>& removedIndices, PxgGpuPairManagementBuffers& pairManagementBuffers,
 	PxU16 stage5KernelID, const bool copyManifold)
 {
 	if (removedIndices.size() > 0)
@@ -8571,13 +8623,13 @@ void PxgGpuNarrowphaseCore::updateContactDistance(const PxReal* contactDistances
 	}
 }
 
-void PxgGpuNarrowphaseCore::adjustNpIndices(PxgNewContactManagers& newContactManagers, PxPinnedArray<PxgContactManagerInput>& itMainInputs,
-	PxPinnedArray<PxsContactManager*>& itCms, PxPinnedArray<const Sc::ShapeInteraction*>& itSIs, 
-	PxFloatArrayPinned& itR, PxPinnedArray<PxsTorsionalFrictionData>& itTor,
-	PxPinnedArray<PxgContactManagerInput>& itNewInputs,
-	PxPinnedArray<PxsContactManager*>& itNewCms,
-	PxPinnedArray<const Sc::ShapeInteraction*>& itNewSIs, PxFloatArrayPinned& itNewR,
-	PxPinnedArray<PxsTorsionalFrictionData>& itNewTor)
+void PxgGpuNarrowphaseCore::adjustNpIndices(PxgNewContactManagers& newContactManagers, PinnableArray<PxgContactManagerInput>& itMainInputs,
+	PinnableArray<PxsContactManager*>& itCms, PinnableArray<const Sc::ShapeInteraction*>& itSIs, 
+	PinnableArray<PxReal>& itR, PinnableArray<PxsTorsionalFrictionData>& itTor,
+	PinnableArray<PxgContactManagerInput>& itNewInputs,
+	PinnableArray<PxsContactManager*>& itNewCms,
+	PinnableArray<const Sc::ShapeInteraction*>& itNewSIs, PinnableArray<PxReal>& itNewR,
+	PinnableArray<PxsTorsionalFrictionData>& itNewTor)
 {
 	for(PxU32 i = 0; i < newContactManagers.mCpuContactManagerMapping.size(); ++i)
 	{
@@ -8616,17 +8668,17 @@ void PxgGpuNarrowphaseCore::appendContactManagers(PxsContactManagerOutput* /*cmO
 		appendContactManagersGpu(mContactManagers[i]->getNbFirstPassTests(), mContactManagers[i]->getNbSecondPassTests(),
 			mGpuContactManagers[i]->mContactManagers, mGpuContactManagers[i]->mNewContactManagers, BUCKET_ManifoldSize[i]);
 	
-		PxPinnedArray<PxgContactManagerInput>& itMainInputs = mContactManagers[i]->mContactManagers.mGpuInputContactManagers;
-		PxPinnedArray<PxsContactManager*>&  itCms = mContactManagers[i]->mContactManagers.mCpuContactManagerMapping;
-		PxPinnedArray<const Sc::ShapeInteraction*>&  itSIs = mContactManagers[i]->mContactManagers.mShapeInteractions;
-		PxFloatArrayPinned& itR = mContactManagers[i]->mContactManagers.mRestDistances;
-		PxPinnedArray<PxsTorsionalFrictionData>& itTor = mContactManagers[i]->mContactManagers.mTorsionalProperties;
+		PinnableArray<PxgContactManagerInput>& itMainInputs = mContactManagers[i]->mContactManagers.mGpuInputContactManagers;
+		PinnableArray<PxsContactManager*>&  itCms = mContactManagers[i]->mContactManagers.mCpuContactManagerMapping;
+		PinnableArray<const Sc::ShapeInteraction*>&  itSIs = mContactManagers[i]->mContactManagers.mShapeInteractions;
+		PinnableArray<PxReal>& itR = mContactManagers[i]->mContactManagers.mRestDistances;
+		PinnableArray<PxsTorsionalFrictionData>& itTor = mContactManagers[i]->mContactManagers.mTorsionalProperties;
 
-		PxPinnedArray<PxgContactManagerInput>& itNewInputs = mContactManagers[i]->mNewContactManagers.mGpuInputContactManagers;
-		PxPinnedArray<PxsContactManager*>& itNewCms = mContactManagers[i]->mNewContactManagers.mCpuContactManagerMapping;
-		PxPinnedArray<const Sc::ShapeInteraction*>& itNewSIs = mContactManagers[i]->mNewContactManagers.mShapeInteractions;
-		PxFloatArrayPinned& itNewR = mContactManagers[i]->mNewContactManagers.mRestDistances;
-		PxPinnedArray<PxsTorsionalFrictionData>& itNewTor = mContactManagers[i]->mNewContactManagers.mTorsionalProperties;
+		PinnableArray<PxgContactManagerInput>& itNewInputs = mContactManagers[i]->mNewContactManagers.mGpuInputContactManagers;
+		PinnableArray<PxsContactManager*>& itNewCms = mContactManagers[i]->mNewContactManagers.mCpuContactManagerMapping;
+		PinnableArray<const Sc::ShapeInteraction*>& itNewSIs = mContactManagers[i]->mNewContactManagers.mShapeInteractions;
+		PinnableArray<PxReal>& itNewR = mContactManagers[i]->mNewContactManagers.mRestDistances;
+		PinnableArray<PxsTorsionalFrictionData>& itNewTor = mContactManagers[i]->mNewContactManagers.mTorsionalProperties;
 
 		adjustNpIndices(mContactManagers[i]->mNewContactManagers, itMainInputs, itCms, itSIs, itR, itTor, itNewInputs, itNewCms, itNewSIs, itNewR, itNewTor);
 	}
@@ -8883,15 +8935,15 @@ void PxgGpuNarrowphaseCore::prepareGpuNarrowphase(PxsTransformCache& cache, cons
 
 	uploadDataChunksToGpu();
 
-	mPatchAndContactCountersReadback->contactsBytes = 0;
-	mPatchAndContactCountersReadback->patchesBytes = 0;
-	mPatchAndContactCountersReadback->forceAndIndiceBytes = 0;
+	mPatchAndContactCountersReadback.get().contactsBytes = 0;
+	mPatchAndContactCountersReadback.get().patchesBytes = 0;
+	mPatchAndContactCountersReadback.get().forceAndIndiceBytes = 0;
 
 	CUresult result = mCudaContext->memsetD8Async(mPatchAndContactCountersOnDevice.getDevicePtr(), 0, 
 		sizeof(PxgPatchAndContactCounters), mStream);
 
 	if(result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,"prepareGpuNarrowphase GPU error! code %d \n", result);
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,"prepareGpuNarrowphase GPU error! code %u \n", result);
 
 	mGpuShapesManager.mHasShapeInstanceChanged = false;
 }

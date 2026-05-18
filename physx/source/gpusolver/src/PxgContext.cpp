@@ -22,18 +22,22 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "PxgContext.h"
+#include "PxgNarrowphaseCore.h"
 #include "cudamanager/PxCudaContext.h"
 #include "common/PxProfileZone.h"
 #include "PxgIslandContext.h"
 #include "PxgSolverCore.h"
 #include "PxvSimStats.h"
 #include "DyConstraintPrep.h"
+#include "PxgArticulation.h"
 #include "PxgArticulationCore.h"
+#include "PxgBodySimManager.h"
+#include "PxgSimulationController.h"
 #include "PxgSoftBodyCore.h"
 #include "PxgFEMClothCore.h"
 #include "DyDeformableSurface.h"
@@ -337,49 +341,46 @@ namespace physx
 	}
 
 	PxgGpuContext::PxgGpuContext(Cm::FlushPool& flushPool, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
-		bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
-		PxReal maxBiasCoefficient, PxvSimStats& simStats, PxgHeapMemoryAllocatorManager* heapMemoryManager, PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled, bool isTGS) :
-		Dy::Context(islandManager, heapMemoryManager->mMappedMemoryAllocators, simStats, enableStabilization,
-			useEnhancedDeterminism, solveArticulationContactLast, maxBiasCoefficient, lengthScale, contextID, isResidualReportingEnabled),
+		PxReal maxBiasCoefficient, PxvSimStats& simStats, PxgAllocatorDesc& allocDesc, PxReal lengthScale, PxU64 contextID, bool isTGS, PxSceneFlags sceneFlags) :
+		Dy::Context(islandManager, allocDesc.hostAlloc, allocDesc.hostMappedAlloc,
+					simStats, maxBiasCoefficient, lengthScale, contextID, sceneFlags),
 		mTotalEdges(0), mTotalPreviousEdges(0),
 		mFlushPool(flushPool), 
 		mSolvedThisFrame(false),
-		mIncrementalPartition(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators), maxNumPartitions, contextID),
-		mActiveNodeIndex(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mSolverBodyPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mBody2WorldPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mLinkAndJointAndRootStateDataPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArticulationSleepDataPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mInternalResidualPerArticulationVelIter(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mInternalResidualPerArticulationPosIter(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		m1dConstraintBatchIndices(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mContactConstraintBatchIndices(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArti1dConstraintBatchIndices(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArtiContactConstraintBatchIndices(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mConstraintsPerPartition(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArtiConstraintsPerPartition(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mSolverBodyDataPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mSolverBodySleepDataPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mSolverTxIDataPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
+		mIncrementalPartition(allocDesc.hostAlloc, maxNumPartitions, contextID),
+		mActiveNodeIndex(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mSolverBodyPool(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mBody2WorldPool(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mLinkAndJointAndRootStateDataPool(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mArticulationSleepDataPool(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		m1dConstraintBatchIndices(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mContactConstraintBatchIndices(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mArti1dConstraintBatchIndices(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mArtiContactConstraintBatchIndices(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mConstraintsPerPartition(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mArtiConstraintsPerPartition(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mSolverBodyDataPool(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mSolverBodySleepDataPool(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mSolverTxIDataPool(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
 		mCachedPositionIterations(0), mCachedVelocityIterations(0),
-		mArtiStaticContactCounts(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArtiStaticJointCounts(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArtiStaticContactIndices(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArtiStaticJointIndices(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArtiSelfContactCounts(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArtiSelfJointCounts(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArtiSelfContactIndices(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArtiSelfJointIndices(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mRigidStaticContactCounts(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mRigidStaticJointCounts(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mRigidStaticContactIndices(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mRigidStaticJointIndices(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mNodeIndicesStagingBuffer(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mIslandIds(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mIslandStaticTouchCounts(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
+		mArtiStaticContactCounts(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mArtiStaticJointCounts(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mArtiStaticContactIndices(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mArtiStaticJointIndices(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mArtiSelfContactCounts(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mArtiSelfJointCounts(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mArtiSelfContactIndices(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mArtiSelfJointIndices(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mRigidStaticContactCounts(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mRigidStaticJointCounts(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mRigidStaticContactIndices(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mRigidStaticJointIndices(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mNodeIndicesStagingBuffer(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mIslandIds(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
+		mIslandStaticTouchCounts(allocDesc.hostAlloc, PxsHeapStats::eSOLVER),
 		mIsTGS(isTGS),
 		mIsExternalForcesEveryTgsIterationEnabled(false),
-		mEnableDirectGPUAPI(enableDirectGPUAPI),
+		mEnableDirectGPUAPI(sceneFlags & PxSceneFlag::eENABLE_DIRECT_GPU_API),
 		mRecomputeArticulationBlockFormat(false),
 		mEnforceConstraintWriteBackToHostCopy(false),
 
@@ -417,9 +418,6 @@ namespace physx
 		mGpuSolverCore->releaseStreams();
 
 		mGpuSolverCore->releaseContext();
-
-		PX_DELETE(mThresholdStream);
-		PX_DELETE(mForceChangedThresholdStream);
 
 		PX_DELETE(mGpuArticulationCore);
 		PX_DELETE(mGpuSolverCore);
@@ -478,13 +476,13 @@ namespace physx
 			if (jointManager.getCpuNbRigidConstraints() > 0)
 			{
 				mGpuSolverCore->gpuMemDMAUpJointData(jointManager.getCpuRigidConstraintData(), jointManager.getCpuRigidConstraintRows(), jointManager.getCpuRigidConstraintData().size(), jointManager.getGpuNbRigidConstraints(),
-					PxU32(jointManager.mNbCpuRigidConstraintRows));
+					PxU32(jointManager.getNbCpuRigidConstraintRows()));
 			}
 
 			if (jointManager.getCpuNbArtiConstraints() > 0)
 			{
 				mGpuSolverCore->gpuMemDMAUpArtiJointData(jointManager.getCpuArtiConstraintData(), jointManager.getCpuArtiConstraintRows(), jointManager.getCpuArtiConstraintData().size(), jointManager.getGpuNbArtiConstraints(),
-					PxU32(jointManager.mNbCpuArtiConstraintRows));
+					PxU32(jointManager.getNbCpuArtiConstraintRows()));
 			}
 		}
 
@@ -571,7 +569,7 @@ namespace physx
 		}
 	}
 
-	void PxgGpuContext::doConstraintSolveGPU(PxU32 maxNodes, PxBitMapPinned& changedHandleMap)
+	void PxgGpuContext::doConstraintSolveGPU(PxU32 maxNodes, Cm::PinnableBitMap& changedHandleMap)
 	{
 		/**
 		* Things to do in here:
@@ -582,13 +580,9 @@ namespace physx
 
 		mGpuArticulationCore->syncStream();
 
-		mConstraintPositionIterResidualPoolGpu.resize(mConstraintWriteBackPool.size());
-
 		mGpuSolverCore->solveContactMultiBlockParallel(mIslandContextPool, mNumIslandContextPool,
-			mIncrementalPartition.getCombinedSlabMaxNbPartitions(), mConstraintsPerPartition, mArtiConstraintsPerPartition, mGravity, mSolveArticulationContactLast,
-			mConstraintPositionIterResidualPoolGpu.begin(), mConstraintPositionIterResidualPoolGpu.size(), &mTotalContactError.mPositionIterationErrorAccumulator,
-			mArticulationContactErrorPosIter, mInternalResidualPerArticulationPosIter);
-		mContactErrorPosIter = &mTotalContactError.mPositionIterationErrorAccumulator;
+			mIncrementalPartition.getCombinedSlabMaxNbPartitions(), mConstraintsPerPartition, mArtiConstraintsPerPartition,
+			mGravity, mSolveArticulationContactLast);
 
 		if (mHasForceThresholds)
 			mGpuSolverCore->accumulatedForceThresholdStream(maxNodes + 1);
@@ -599,9 +593,9 @@ namespace physx
 		mGpuSolverCore->gpuMemDMAbackSolverData(mForceStreamPool.mDataStream,
 			mForceStreamPool.mDataStreamSize - mForceStreamPool.mSharedDataIndex,
 			(PxU32)mForceStreamPool.mSharedDataIndex, (PxU32)mForceStreamPool.mSharedDataIndexGPU,
-			mForceChangedThresholdStream->begin(), mIncrementalPartition.hasForceThresholds(),
+			mForceChangedThresholdStream.begin(), mIncrementalPartition.hasForceThresholds(),
 			mConstraintWriteBackPool.begin(), mConstraintWriteBackPool.size(), 
-			(!mEnableDirectGPUAPI || getSimulationController()->getEnableOVDCollisionReadback()), mContactErrorVelIter);
+			(!mEnableDirectGPUAPI || getSimulationController()->getEnableOVDCollisionReadback()));
 
 
 		mGpuSolverCore->integrateCoreParallel(offset, mSolverBodyPool.size());
@@ -610,13 +604,9 @@ namespace physx
 
 		mSimulationController->update(changedHandleMap);
 
-		if (isResidualReportingEnabled())
-			mArticulationContactErrorVelIter.resize(1);
-
 		if (!mEnableDirectGPUAPI || getSimulationController()->getEnableOVDReadback())
 		{
-			mGpuArticulationCore->gpuMemDMAbackArticulation(mLinkAndJointAndRootStateDataPool, mArticulationSleepDataPool,
-				mInternalResidualPerArticulationVelIter, mArticulationContactErrorVelIter);
+			mGpuArticulationCore->gpuMemDMAbackArticulation(mLinkAndJointAndRootStateDataPool, mArticulationSleepDataPool);
 		}
 
 		mGpuSolverCore->gpuMemDMAbackSolverBodies(reinterpret_cast<float4*>(mSolverBodyPool.begin()), mSolverBodyPool.size(), mBody2WorldPool,
@@ -694,8 +684,6 @@ namespace physx
 
 		//see PxgArticulationLinkJointRootStateData
 		PxU8* mLinkAndJointAndRootStates;
-		Dy::ErrorAccumulator* mInternalResidualPerArticulationVelIter;
-		Dy::ErrorAccumulator* mInternalResidualPerArticulationPosIter;
 
 		PxgSolverBodySleepData*	mSleepData;
 		PxU32 mNbArticulations;
@@ -709,15 +697,13 @@ namespace physx
 
 	public:
 
-		PxgPostSolveArticulationTask(PxNodeIndex* nodeIndices, PxU8* linkAndJointAndRootStates, Dy::ErrorAccumulator* internalResidualPerArticulationPosIter, 
-			Dy::ErrorAccumulator* internalResidualPerArticulationVelIter, PxgSolverBodySleepData* sleepData, PxU32 nbArticulation,
+		PxgPostSolveArticulationTask(PxNodeIndex* nodeIndices, PxU8* linkAndJointAndRootStates,
+			PxgSolverBodySleepData* sleepData, PxU32 nbArticulation,
 			PxU32 articulationStartIndex,
 			IG::SimpleIslandManager* islandManager, const PxU32 batchStartIndex, const PxU32 maxLinks, const PxU32 maxDofs,
 			const PxReal dt, const PxU32 totalArticulationCount) :
 			Cm::Task(0), mNodeIndices(nodeIndices),
-			mLinkAndJointAndRootStates(linkAndJointAndRootStates),			
-			mInternalResidualPerArticulationVelIter(internalResidualPerArticulationVelIter),
-			mInternalResidualPerArticulationPosIter(internalResidualPerArticulationPosIter),
+			mLinkAndJointAndRootStates(linkAndJointAndRootStates),
 			mSleepData(sleepData),
 			mNbArticulations(nbArticulation),
 			mArticulationStartIndex(articulationStartIndex),
@@ -750,12 +736,6 @@ namespace physx
 			
 				Dy::FeatherstoneArticulation& articulation = *getArticulationFromIG(sim, nodeIndex);
 				Dy::ArticulationData& artiData = articulation.getArticulationData();
-
-				articulation.mInternalErrorAccumulatorPosIter = mInternalResidualPerArticulationPosIter[a];
-				articulation.mInternalErrorAccumulatorVelIter = mInternalResidualPerArticulationVelIter[a];
-
-				articulation.mContactErrorAccumulatorPosIter = mInternalResidualPerArticulationPosIter[a + mArticulationCount];
-				articulation.mContactErrorAccumulatorVelIter = mInternalResidualPerArticulationVelIter[a + mArticulationCount];
 
 				artiData.setDt(mDt);
 
@@ -796,6 +776,17 @@ namespace physx
 				{
 					mIslandManager->getAccurateIslandSim().deactivateNode_ForGPUSolver(nodeIndex);
 					mIslandManager->getSpeculativeIslandSim().deactivateNode_ForGPUSolver(nodeIndex);
+					
+					// Zero all velocities when naturally going to sleep (matches CPU behavior)
+					// This is required by the API documentation for sleep behavior
+					const Cm::UnAlignedSpatialVector memZero = Cm::UnAlignedSpatialVector::Zero();
+					for (PxU32 i = 0; i < numLinks; ++i)
+					{
+						sLinkVelocities[i] = memZero;
+					}
+					
+					// Zero joint velocities
+					PxMemZero(sJointVelocities, sizeof(PxReal) * numDofs);
 				}
 
 				Dy::ArticulationLink* links = artiData.getLinks();
@@ -874,14 +865,14 @@ namespace physx
 
 		PxU32 nbThresholdElems = 0;
 		mGpuSolverCore->syncDmaBack(nbThresholdElems);
-		mForceChangedThresholdStream->forceSize_Unsafe(nbThresholdElems);
+		mForceChangedThresholdStream.forceSize_Unsafe(nbThresholdElems); 
 
 		if (!mEnableDirectGPUAPI || getSimulationController()->getEnableOVDReadback())
 		{
 			//TODO - multi-thread this!
 			const PxU32 offset = 1 + mKinematicCount;
 
-			PxPinnedArray<PxgSolverBody>& solverBodyIter = mSolverBodyPool;
+			Cm::PinnableArray<PxgSolverBody>& solverBodyIter = mSolverBodyPool;
 
 			float4* bodyVelocities = reinterpret_cast<float4*>(solverBodyIter.begin());
 			PxAlignedTransform* body2Worlds = mBody2WorldPool.begin();
@@ -910,7 +901,7 @@ namespace physx
 			for (PxU32 i = 0; i < mArticulationCount; i += articulationBatchSize)
 			{
 				PxgPostSolveArticulationTask* task = PX_PLACEMENT_NEW(mFlushPool.allocate(sizeof(PxgPostSolveArticulationTask)), PxgPostSolveArticulationTask)(nodeIndices,
-					mLinkAndJointAndRootStateDataPool.begin(), mInternalResidualPerArticulationPosIter.begin(), mInternalResidualPerArticulationVelIter.begin(),
+					mLinkAndJointAndRootStateDataPool.begin(),
 					mArticulationSleepDataPool.begin(), PxMin(articulationBatchSize, mArticulationCount - i), mArticulationStartIndex, &mIslandManager, i,
 					maxLinks, maxDofs, mDt, mArticulationCount);
 
@@ -1266,6 +1257,11 @@ namespace physx
 
 	void PxgGpuContext::doConstraintPrePrepCommon(physx::PxBaseTask* continuation)
 	{
+		if (getNarrowphaseCore()->mCudaContext->isInAbortMode())
+		{
+			return;
+		}
+
 		mGpuSolverCore->acquireContext();
 
 		m1dConstraintBatchIndices.forceSize_Unsafe(0);
@@ -1317,12 +1313,12 @@ namespace physx
 
 		mHasForceThresholds = mIncrementalPartition.hasForceThresholds();
 
-		const PxInt32ArrayPinned& startSlabIter = mIncrementalPartition.getStartSlabPerPartition();
-		const PxInt32ArrayPinned& articstartSlabIter = mIncrementalPartition.getArticStartSlabPerPartition();
+		const Cm::PinnableArray<PxU32>& startSlabIter = mIncrementalPartition.getStartSlabPerPartition();
+		const Cm::PinnableArray<PxU32>& articstartSlabIter = mIncrementalPartition.getArticStartSlabPerPartition();
 
-		PxgJointManager& jointManager = static_cast<PxgSimulationController*>(mSimulationController)->getJointManager();
-		const PxPinnedArray<PxgConstraintPrePrep>& rigidPreprepIter = jointManager.getGpuRigidJointPrePrep();
-		const PxPinnedArray<PxgConstraintPrePrep>& artiPreprepIter = jointManager.getGpuArtiJointPrePrep();
+		PxgJointManager& jointManager = getSimulationController()->getJointManager();
+		const Cm::PinnableArray<PxgConstraintPrePrep>& rigidPreprepIter = jointManager.getGpuRigidJointPrePrep();
+		const Cm::PinnableArray<PxgConstraintPrePrep>& artiPreprepIter = jointManager.getGpuArtiJointPrePrep();
 
 		//The code below iterates over all partitions, producing tasks to fill in data.
 
@@ -1602,7 +1598,7 @@ namespace physx
 		cData.frictionOffsetThreshold = mFrictionOffsetThreshold;
 		cData.correlationDistance = mCorrelationDistance;
 		cData.ccdMaxSeparation = mCCDSeparationThreshold;
-		cData.biasCoefficient = mIslandContextPool->mBiasCoefficient;
+		cData.biasCoefficients = mIslandContextPool->mBiasCoefficients;
 		cData.gravity = mGravity;
 
 		PxgBodySimManager& bodySimManager = getSimulationController()->getBodySimManager();
@@ -1755,7 +1751,7 @@ namespace physx
 			PxgCpuJointPrePrepTask* task = reinterpret_cast<PxgCpuJointPrePrepTask*>(mFlushPool.allocate(sizeof(PxgCpuJointPrePrepTask)));
 			task = PX_PLACEMENT_NEW(task, PxgCpuJointPrePrepTask)(*getSimulationController(), a, nbToProcess, gpuRigidJointOutputOffset,
 				cpuRigidConstraints.begin(), jointManager.getCpuRigidConstraintData().begin(), jointManager.getCpuRigidConstraintRows().begin(),
-				&jointManager.mNbCpuRigidConstraintRows);
+				&jointManager.getNbCpuRigidConstraintRowsRef());
 
 			task->setContinuation(continuation);
 			task->removeReference();
@@ -1768,8 +1764,8 @@ namespace physx
 			const PxU32 nbToProcess = PxMin(nbCpuArtiConstraints - a, nbJointsPerTask);
 			PxgCpuJointPrePrepTask* task = reinterpret_cast<PxgCpuJointPrePrepTask*>(mFlushPool.allocate(sizeof(PxgCpuJointPrePrepTask)));
 			task = PX_PLACEMENT_NEW(task, PxgCpuJointPrePrepTask)(*getSimulationController(), a, nbToProcess, gpuArtiJointOutputOffset,
-				cpuArtiConstraints.begin(), jointManager.getCpuArtiConstraintData().begin(),
-				jointManager.getCpuArtiConstraintRows().begin(), &jointManager.mNbCpuArtiConstraintRows);
+				cpuArtiConstraints.begin(), jointManager.getCpuArtiConstraintData().begin(), jointManager.getCpuArtiConstraintRows().begin(),
+				&jointManager.getNbCpuArtiConstraintRowsRef());
 
 			task->setContinuation(continuation);
 			task->removeReference();
@@ -2000,19 +1996,18 @@ void PxgGpuContext::doPreIntegrationGPU()
 
 	mGpuSolverCore->preIntegration(offset, mSolverBodyPool.size(), mDt, mGravity);
 
-	if(mIsTGS)
-		mIslandContextPool->mBiasCoefficient = PxMin(0.9f, 2.0f * PxSqrt(1.0f / mIslandContextPool->mNumPositionIterations));
+	mIslandContextPool->mBiasCoefficients.set(true, mIsTGS, mIslandContextPool->mNumPositionIterations);
 }
 
 void PxgGpuContext::doArticulationGPU()
 {
 	if(mIsTGS)
 	{
-		mGpuArticulationCore->computeUnconstrainedVelocities(mArticulationStartIndex, mArticulationCount, mDt, mGravity, 1.0f/mLengthScale, mIsExternalForcesEveryTgsIterationEnabled, mRecomputeArticulationBlockFormat);
+		mGpuArticulationCore->computeUnconstrainedVelocities(mArticulationStartIndex, mArticulationCount, mDt, mGravity, 1.0f/mLengthScale, mIsExternalForcesEveryTgsIterationEnabled, mRecomputeArticulationBlockFormat, mIsSleepingDisabled);
 	}
 	else
 	{
-		mGpuArticulationCore->computeUnconstrainedVelocities(mArticulationStartIndex, mArticulationCount, mDt, mGravity, 1.0f/mLengthScale, false, mRecomputeArticulationBlockFormat);
+		mGpuArticulationCore->computeUnconstrainedVelocities(mArticulationStartIndex, mArticulationCount, mDt, mGravity, 1.0f/mLengthScale, false, mRecomputeArticulationBlockFormat, mIsSleepingDisabled);
 		mGpuArticulationCore->setupInternalConstraints(mArticulationCount, mDt, mDt, 1.0f / mDt, false);
 	}
 }
@@ -2143,7 +2138,7 @@ static PX_FORCE_INLINE bool needsSolve(IG::IslandSim& islandSim, PxU32 bodyCount
 
 void PxgGpuContext::update(	Cm::FlushPool& flushPool, PxBaseTask* continuation, PxBaseTask* postPartitioningTask, PxBaseTask* /*lostTouchTask*/,
 							PxvNphaseImplementationContext* nphase, PxU32 /*maxPatchesPerCM*/, PxU32 /*maxArticulationLinks*/, PxReal dt,
-							const PxVec3& gravity, PxBitMapPinned& /*changedHandleMap*/)
+							const PxVec3& gravity, Cm::PinnableBitMap& /*changedHandleMap*/)
 {
 	mGpuSolverCore->acquireContext();
 
@@ -2220,21 +2215,8 @@ void PxgGpuContext::update(	Cm::FlushPool& flushPool, PxBaseTask* continuation, 
 			mArticulationSleepDataPool.reserve(articulationCount);
 		}
 
-		if (articulationCount*2 > mInternalResidualPerArticulationVelIter.capacity())
-		{
-			mInternalResidualPerArticulationVelIter.forceSize_Unsafe(0);
-			mInternalResidualPerArticulationVelIter.reserve(articulationCount*2);
-		}
-		if (articulationCount*2 > mInternalResidualPerArticulationPosIter.capacity())
-		{
-			mInternalResidualPerArticulationPosIter.forceSize_Unsafe(0);
-			mInternalResidualPerArticulationPosIter.reserve(articulationCount*2);
-		}
-
 		mLinkAndJointAndRootStateDataPool.forceSize_Unsafe(totalLinkJointRootStateByteSize);
 		mArticulationSleepDataPool.forceSize_Unsafe(articulationCount);
-		mInternalResidualPerArticulationVelIter.forceSize_Unsafe(articulationCount * 2);
-		mInternalResidualPerArticulationPosIter.forceSize_Unsafe(articulationCount * 2);
 
 		//1: Allocate buffers for all bodies (kinematic + dynamic)
 		if ((kinematicCount + bodyCount + 1) > mSolverBodyPool.capacity())
@@ -2348,24 +2330,35 @@ void PxgGpuContext::update(	Cm::FlushPool& flushPool, PxBaseTask* continuation, 
 
 void PxgGpuContext::updatePostPartitioning(PxBaseTask* lostTouchTask, PxvNphaseImplementationContext* /*nphase*/,
 	PxU32 maxPatchesPerCM, PxU32 /*maxArticulationLinks*/,
-	PxReal /*dt*/, const PxVec3& /*gravity*/, PxBitMapPinned& changedHandleMap)
+	PxReal /*dt*/, const PxVec3& /*gravity*/, Cm::PinnableBitMap& changedHandleMap)
 {
+	IG::IslandSim& islandSim = mIslandManager.getAccurateIslandSim();
+	mLostTouchTask = lostTouchTask;
+
+	if (getNarrowphaseCore()->mCudaContext->isInAbortMode())
+	{
+		if(needsSolve(islandSim, mBodyCount, mArticulationCount))
+		{
+			// Resolve task dependencies setup in PxgGpuContext::update
+			mGpuTask.getContinuation()->removeReference();
+		}
+		return;
+	}
+
 	mGpuSolverCore->acquireContext();
 
-	IG::IslandSim& islandSim = mIslandManager.getAccurateIslandSim();
-
-	const PxPinnedArray<PartitionIndexData>& partitionIndexDataIter = mIncrementalPartition.getPartitionIndexArray();
-	const PxPinnedArray<PartitionNodeData>& partitionNodeData = mIncrementalPartition.getPartitionNodeArray();
-	const PxPinnedArray<PxgSolverConstraintManagerConstants>& solverConstantData = mIncrementalPartition.getSolverConstants();
-	const PxInt32ArrayPinned& partitionStartBatchIndexIter = mIncrementalPartition.getStartSlabPerPartition();
-	const PxInt32ArrayPinned& partitionArticStartBatchIndexIter = mIncrementalPartition.getArticStartSlabPerPartition();
-	const PxInt32ArrayPinned& partitionJointBatchCountIter = mIncrementalPartition.getNbJointsPerPartition();
-	const PxInt32ArrayPinned& partitionArtiJointBatchCountIter = mIncrementalPartition.getNbArticJointsPerPartition();
+	const Cm::PinnableArray<PartitionIndexData>& partitionIndexDataIter = mIncrementalPartition.getPartitionIndexArray();
+	const Cm::PinnableArray<PartitionNodeData>& partitionNodeData = mIncrementalPartition.getPartitionNodeArray();
+	const Cm::PinnableArray<PxgSolverConstraintManagerConstants>& solverConstantData = mIncrementalPartition.getSolverConstants();
+	const Cm::PinnableArray<PxU32>& partitionStartBatchIndexIter = mIncrementalPartition.getStartSlabPerPartition();
+	const Cm::PinnableArray<PxU32>& partitionArticStartBatchIndexIter = mIncrementalPartition.getArticStartSlabPerPartition();
+	const Cm::PinnableArray<PxU32>& partitionJointBatchCountIter = mIncrementalPartition.getNbJointsPerPartition();
+	const Cm::PinnableArray<PxU32>& partitionArtiJointBatchCountIter = mIncrementalPartition.getNbArticJointsPerPartition();
 
 	const PxArray<PxU32>& npIndexArrayIter = mIncrementalPartition.getNpIndexArray();
-	PxInt32ArrayPinned& npIndexArrayStagingBuffer = mNodeIndicesStagingBuffer;
-	PxInt32ArrayPinned& islandIds = mIslandIds;
-	PxInt32ArrayPinned& islandStaticTouchCounts = mIslandStaticTouchCounts;
+	Cm::PinnableArray<PxU32>& npIndexArrayStagingBuffer = mNodeIndicesStagingBuffer;
+	Cm::PinnableArray<PxU32>& islandIds = mIslandIds;
+	Cm::PinnableArray<PxU32>& islandStaticTouchCounts = mIslandStaticTouchCounts;
 
 	const PxU32 nbConstraints = islandSim.getNbActiveEdges(IG::Edge::eCONSTRAINT);
 
@@ -2417,14 +2410,28 @@ void PxgGpuContext::updatePostPartitioning(PxBaseTask* lostTouchTask, PxvNphaseI
 		mNumContactManagers = nbPatches + bodyManager.mTotalStaticRBContacts;
 		mNum1DConstraints = nbConstraints + bodyManager.mTotalStaticRBJoints;
 
-		mThresholdStream->forceSize_Unsafe(0);
-		mThresholdStream->reserve(PxNextPowerOfTwo(mNumContactManagers));
+		mThresholdStream.forceSize_Unsafe(0);
+		mThresholdStream.reserve(PxNextPowerOfTwo(mNumContactManagers));
 
-		mForceChangedThresholdStream->forceSize_Unsafe(0);
-		mForceChangedThresholdStream->reserve(PxNextPowerOfTwo(mNumContactManagers));
+		mForceChangedThresholdStream.forceSize_Unsafe(0);
+		if(!mForceChangedThresholdStream.reserve(PxNextPowerOfTwo(mNumContactManagers)))
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgGpuContext: failed to allocate pinned threshold stream.");
+			getNarrowphaseCore()->mCudaContext->setAbortMode(true);
+			mGpuSolverCore->releaseContext();
+			if (needsSolve(islandSim, bodyCount, articulationCount))
+			{
+				// Resolve task dependencies setup in PxgGpuContext::update
+				mGpuTask.getContinuation()->removeReference();
+			}
+			return;
+		}
 
 		//Set up constraint batches
 		//If there is no work to do then we can do nothing at all.
+
+		if (mEnableDirectGPUAPI)
+			getSimulationController()->initDirectGPUAPIState();
 
 		// AD: this only works because we have the same if when setting up the task chain.
 		// it's also in a somewhat weird place. We should analyze the dependencies, is all of the work we're doing up to here actually
@@ -2437,6 +2444,8 @@ void PxgGpuContext::updatePostPartitioning(PxBaseTask* lostTouchTask, PxvNphaseI
 
 		//printf("NbarticBatches = %i, NbRigidBatches = %i\n", mIncrementalPartition.mNbArtiContactBatches, mIncrementalPartition.mNbContactBatches);
 	}
+
+	mLostTouchTask->addReference();
 
 	PxU32 descCount = 0;
 
@@ -2458,9 +2467,6 @@ void PxgGpuContext::updatePostPartitioning(PxBaseTask* lostTouchTask, PxvNphaseI
 	context.mDescStartIndex = descCount;
 	descCount += currentDescIndex;
 
-	lostTouchTask->addReference();
-	mLostTouchTask = lostTouchTask;
-
 	npIndexArrayStagingBuffer.forceSize_Unsafe(0);
 	npIndexArrayStagingBuffer.reserve(npIndexArrayIter.size());
 	npIndexArrayStagingBuffer.forceSize_Unsafe(npIndexArrayIter.size());
@@ -2478,7 +2484,7 @@ void PxgGpuContext::updatePostPartitioning(PxBaseTask* lostTouchTask, PxvNphaseI
 	PxMemCopy(islandIds.begin(), islandSim.getIslandIds(), sizeof(PxU32) * islandSim.getNbNodes());
 	PxMemCopy(islandStaticTouchCounts.begin(), islandSim.getIslandStaticTouchCount(), sizeof(PxU32) * islandSim.getNbIslands());
 
-	const PxInt32ArrayPinned& nodeInteractions = mIncrementalPartition.getNodeInteractionCountArray();
+	const Cm::PinnableArray<PxU32>& nodeInteractions = mIncrementalPartition.getNodeInteractionCountArray();
 
 	mGpuSolverCore->gpuMemDMAUpContactData(mContactStreamAllocators[mCurrentContactStream],
 		PxToU32(mContactStreamPool.mSharedDataIndex),

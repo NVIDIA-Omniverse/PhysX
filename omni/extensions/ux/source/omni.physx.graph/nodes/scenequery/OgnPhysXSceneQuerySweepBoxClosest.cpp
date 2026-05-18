@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -7,6 +7,7 @@
 #include <OgnPhysXSceneQuerySweepBoxClosestDatabase.h>
 
 #include <omni/fabric/FabricUSD.h>
+#include <omni/fabric/usd/PathConversion.h>
 #include <pxr/usd/sdf/path.h>
 
 #include "../plugins/SceneQueryShared.h"
@@ -160,16 +161,21 @@ public:
         db.outputs.hit() = bHit;
         if(bHit)
         {
+            omni::graph::core::BackendId backendId;
+            omni::graph::core::GraphObj graphObj = db.abi_context().iContext->getGraph(db.abi_context());
+            graphObj.iGraph->getBackendId(graphObj, backendId);
+            omni::fabric::FabricId fabricId(backendId.id);
+
             db.outputs.colliderPrim().resize(1);
-            db.outputs.colliderPrim()[0] = static_cast<omni::fabric::PathC>(hit.collision);
+            db.outputs.colliderPrim()[0] = omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, omni::fabric::handleToSdfPath(hit.collision));
             db.outputs.bodyPrim().resize(1);
-            db.outputs.bodyPrim()[0] = static_cast<omni::fabric::PathC>(hit.rigidBody);
+            db.outputs.bodyPrim()[0] = omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, omni::fabric::handleToSdfPath(hit.rigidBody));
             db.outputs.position() = hit.position;
             db.outputs.normal() = hit.normal;
             db.outputs.distance() = hit.distance;
             db.outputs.faceIndex() = hit.faceIndex;
             db.outputs.materialPrim().resize(1);
-            db.outputs.materialPrim()[0] = static_cast<omni::fabric::PathC>(hit.material);
+            db.outputs.materialPrim()[0] = omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, omni::fabric::handleToSdfPath(hit.material));
         }
         else
         {
@@ -183,4 +189,3 @@ public:
 };
 
 REGISTER_OGN_NODE()
-

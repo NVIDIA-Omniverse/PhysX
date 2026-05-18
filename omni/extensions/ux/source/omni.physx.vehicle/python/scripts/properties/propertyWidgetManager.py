@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from .propertyWidgetVehicle import (
     PropertyWidgetVehicleControllerSettings,
     PropertyWidgetVehicleAuthoring
@@ -42,13 +43,13 @@ class PropertyWidgetManager:
         self._physxVehicleInterface = None
 
     def _register_widgets(self):
-        from omni.kit.property.physx import register_widget
+        from omni.kit.property.physics import register_widget
 
         for widget in self._widgets:
             register_widget(widget.name, widget)
 
     def _unregister_widgets(self):
-        from omni.kit.property.physx import unregister_widget
+        from omni.kit.property.physics import unregister_widget
 
         for widget in self._widgets:
             unregister_widget(widget.name)

@@ -22,11 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #include "PxgFEMCore.h"
+#include "PxgSimulationCoreDesc.h"
+#include "PxNodeIndex.h"
 #include "cudamanager/PxCudaContext.h"
 #include "cudamanager/PxCudaContextManager.h"
 #include "PxgKernelWrangler.h"
@@ -34,7 +36,6 @@
 #include "PxgKernelIndices.h"
 #include "PxgRadixSortKernelIndices.h"
 #include "PxgSoftBodyCoreKernelIndices.h"
-#include "PxgCudaMemoryAllocator.h"
 #include "PxgCudaHelpers.h"
 
 #define FEM_GPU_DEBUG 0
@@ -42,59 +43,56 @@
 using namespace physx;
 
 PxgFEMCore::PxgFEMCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
-	PxgHeapMemoryAllocatorManager* heapMemoryManager, PxgSimulationController* simController, PxgGpuContext* gpuContext,
+	PxgAllocatorDesc& allocDesc, PxgSimulationController* simController, PxgGpuContext* gpuContext,
 	const PxU32 maxContacts, const PxU32 collisionStackSize, bool isTGS, PxsHeapStats::Enum statType) :
-	PxgNonRigidCore(gpuKernelWrangler, cudaContextManager, heapMemoryManager, simController, gpuContext, maxContacts, collisionStackSize, statType),
-	mRigidContactPointBuf(heapMemoryManager, statType),
-	mRigidContactNormalPenBuf(heapMemoryManager, statType),
-	mRigidContactBarycentricBuf(heapMemoryManager, statType),
-	mRigidContactInfoBuf(heapMemoryManager, statType),
-	mRigidTotalContactCountBuf(heapMemoryManager, statType),
-	mRigidPrevContactCountBuf(heapMemoryManager, statType),
-	mRigidSortedContactPointBuf(heapMemoryManager, statType),
-	mRigidSortedContactNormalPenBuf(heapMemoryManager, statType),
-	mRigidSortedContactBarycentricBuf(heapMemoryManager, statType),
-	mRigidSortedRigidIdBuf(heapMemoryManager, statType),
-	mRigidSortedContactInfoBuf(heapMemoryManager, statType),
-	mFemRigidReferenceCount(heapMemoryManager, statType),
-	mFemContactPointBuffer(heapMemoryManager, statType),
-	mFemContactNormalPenBuffer(heapMemoryManager, statType),
-	mFemContactBarycentric0Buffer(heapMemoryManager, statType),
-	mFemContactBarycentric1Buffer(heapMemoryManager, statType),
-	mVolumeContactOrVTContactInfoBuffer(heapMemoryManager, statType),
-	mEEContactInfoBuffer(heapMemoryManager, statType),
-	mVolumeContactOrVTContactCountBuffer(heapMemoryManager, statType),
-	mEEContactCountBuffer(heapMemoryManager, statType),
-	mPrevFemContactCountBuffer(heapMemoryManager, statType),
-	mSpeculativeCCDContactOffset(heapMemoryManager, statType),
-	mParticleContactPointBuffer(heapMemoryManager, statType),
-	mParticleContactNormalPenBuffer(heapMemoryManager, statType),
-	mParticleContactBarycentricBuffer(heapMemoryManager, statType),
-	mParticleContactInfoBuffer(heapMemoryManager, statType),
-	mParticleTotalContactCountBuffer(heapMemoryManager, statType),
-	mPrevParticleContactCountBuffer(heapMemoryManager, statType),
-	mParticleSortedContactPointBuffer(heapMemoryManager, statType),
-	mParticleSortedContactBarycentricBuffer(heapMemoryManager, statType),
-	mParticleSortedContactNormalPenBuffer(heapMemoryManager, statType),
-	mParticleSortedContactInfoBuffer(heapMemoryManager, statType),
-	mRigidConstraintBuf(heapMemoryManager, statType),
-	mFemConstraintBuf(heapMemoryManager, statType),
-	mParticleConstraintBuf(heapMemoryManager, statType),
-	mRigidFEMAppliedForcesBuf(heapMemoryManager, statType),
-	mFemAppliedForcesBuf(heapMemoryManager, statType),
-	mParticleAppliedFEMForcesBuf(heapMemoryManager, statType),
-	mParticleAppliedParticleForcesBuf(heapMemoryManager, statType),
-	mRigidDeltaVelBuf(heapMemoryManager, statType),
-	mTempBlockDeltaVelBuf(heapMemoryManager, statType),
-	mTempBlockRigidIdBuf(heapMemoryManager, statType),
-	mTempCellsHistogramBuf(heapMemoryManager, statType),
-	mTempBlockCellsHistogramBuf(heapMemoryManager, statType),
-	mTempHistogramCountBuf(heapMemoryManager, statType),
+	PxgNonRigidCore(gpuKernelWrangler, cudaContextManager, allocDesc, simController, gpuContext, maxContacts, collisionStackSize, statType),
+	mRigidContactPointBuf(allocDesc.deviceAlloc, statType),
+	mRigidContactNormalPenBuf(allocDesc.deviceAlloc, statType),
+	mRigidContactBarycentricBuf(allocDesc.deviceAlloc, statType),
+	mRigidContactInfoBuf(allocDesc.deviceAlloc, statType),
+	mRigidTotalContactCountBuf(allocDesc.deviceAlloc, statType),
+	mRigidPrevContactCountBuf(allocDesc.deviceAlloc, statType),
+	mRigidSortedContactPointBuf(allocDesc.deviceAlloc, statType),
+	mRigidSortedContactNormalPenBuf(allocDesc.deviceAlloc, statType),
+	mRigidSortedContactBarycentricBuf(allocDesc.deviceAlloc, statType),
+	mRigidSortedRigidIdBuf(allocDesc.deviceAlloc, statType),
+	mRigidSortedContactInfoBuf(allocDesc.deviceAlloc, statType),
+	mFemRigidReferenceCount(allocDesc.deviceAlloc, statType),
+	mFemContactPointBuffer(allocDesc.deviceAlloc, statType),
+	mFemContactNormalPenBuffer(allocDesc.deviceAlloc, statType),
+	mFemContactBarycentric0Buffer(allocDesc.deviceAlloc, statType),
+	mFemContactBarycentric1Buffer(allocDesc.deviceAlloc, statType),
+	mVolumeContactOrVTContactInfoBuffer(allocDesc.deviceAlloc, statType),
+	mEEContactInfoBuffer(allocDesc.deviceAlloc, statType),
+	mVolumeContactOrVTContactCountBuffer(allocDesc.deviceAlloc, statType),
+	mEEContactCountBuffer(allocDesc.deviceAlloc, statType),
+	mPrevFemContactCountBuffer(allocDesc.deviceAlloc, statType),
+	mSpeculativeCCDContactOffset(allocDesc.deviceAlloc, statType),
+	mParticleContactPointBuffer(allocDesc.deviceAlloc, statType),
+	mParticleContactNormalPenBuffer(allocDesc.deviceAlloc, statType),
+	mParticleContactBarycentricBuffer(allocDesc.deviceAlloc, statType),
+	mParticleContactInfoBuffer(allocDesc.deviceAlloc, statType),
+	mParticleTotalContactCountBuffer(allocDesc.deviceAlloc, statType),
+	mPrevParticleContactCountBuffer(allocDesc.deviceAlloc, statType),
+	mParticleSortedContactPointBuffer(allocDesc.deviceAlloc, statType),
+	mParticleSortedContactBarycentricBuffer(allocDesc.deviceAlloc, statType),
+	mParticleSortedContactNormalPenBuffer(allocDesc.deviceAlloc, statType),
+	mParticleSortedContactInfoBuffer(allocDesc.deviceAlloc, statType),
+	mRigidConstraintBuf(allocDesc.deviceAlloc, statType),
+	mFemConstraintBuf(allocDesc.deviceAlloc, statType),
+	mParticleConstraintBuf(allocDesc.deviceAlloc, statType),
+	mRigidFEMAppliedForcesBuf(allocDesc.deviceAlloc, statType),
+	mFemAppliedForcesBuf(allocDesc.deviceAlloc, statType),
+	mParticleAppliedFEMForcesBuf(allocDesc.deviceAlloc, statType),
+	mParticleAppliedParticleForcesBuf(allocDesc.deviceAlloc, statType),
+	mRigidDeltaVelBuf(allocDesc.deviceAlloc, statType),
+	mTempBlockDeltaVelBuf(allocDesc.deviceAlloc, statType),
+	mTempBlockRigidIdBuf(allocDesc.deviceAlloc, statType),
+	mTempCellsHistogramBuf(allocDesc.deviceAlloc, statType),
+	mTempBlockCellsHistogramBuf(allocDesc.deviceAlloc, statType),
+	mTempHistogramCountBuf(allocDesc.deviceAlloc, statType),
 	mIsTGS(isTGS),
-	mRigidContactCountPrevTimestep(NULL),
-	mVolumeContactorVTContactCountPrevTimestep(NULL),
-	mEEContactCountPrevTimestep(NULL),
-	mParticleContactCountPrevTimestep(NULL)
+	mContactCountsPrevTimestep(allocDesc.hostAlloc, statType)
 #if PX_ENABLE_SIM_STATS
 	, mContactCountStats(0)
 #else
@@ -103,20 +101,16 @@ PxgFEMCore::PxgFEMCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaCo
 {
 	mCudaContextManager->acquireContext();
 
-	mRigidContactCountPrevTimestep = PX_PINNED_MEMORY_ALLOC(PxU32, *mCudaContextManager, 1);
-	mVolumeContactorVTContactCountPrevTimestep = PX_PINNED_MEMORY_ALLOC(PxU32, *mCudaContextManager, 1);
-	mEEContactCountPrevTimestep = PX_PINNED_MEMORY_ALLOC(PxU32, *mCudaContextManager, 1);
-	mParticleContactCountPrevTimestep = PX_PINNED_MEMORY_ALLOC(PxU32, *mCudaContextManager, 1);
-	*mRigidContactCountPrevTimestep = 0;
-	*mVolumeContactorVTContactCountPrevTimestep = 0;
-	*mEEContactCountPrevTimestep = 0;
-	*mParticleContactCountPrevTimestep = 0;
+	mContactCountsPrevTimestep.resize(ContactCounts::eCOUNT, 0);
 
 	//fem vs rigid contact buffer
 	mRigidContactPointBuf.allocateElements(maxContacts, PX_FL);
 	mRigidContactNormalPenBuf.allocateElements(maxContacts, PX_FL);
 	mRigidContactBarycentricBuf.allocateElements(maxContacts, PX_FL);
 	mRigidContactInfoBuf.allocateElements(maxContacts, PX_FL);
+
+	// Initialize rigid contact info buffer to zero (no contacts)
+	mCudaContextManager->getCudaContext()->memsetD8(mRigidContactInfoBuf.getDevicePtr(), static_cast<unsigned char>(0x0), mRigidContactInfoBuf.getSize());
 
 	mRigidSortedContactPointBuf.allocateElements(maxContacts, PX_FL);
 	mRigidSortedContactNormalPenBuf.allocateElements(maxContacts, PX_FL);
@@ -182,12 +176,6 @@ PxgFEMCore::PxgFEMCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaCo
 PxgFEMCore::~PxgFEMCore()
 {
 	mCudaContextManager->acquireContext();
-
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mRigidContactCountPrevTimestep);
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mVolumeContactorVTContactCountPrevTimestep);
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mEEContactCountPrevTimestep);
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mParticleContactCountPrevTimestep);
-
 	mCudaContext->eventDestroy(mFinalizeEvent);
 	mFinalizeEvent = NULL;
 	mCudaContextManager->releaseContext();
@@ -195,12 +183,12 @@ PxgFEMCore::~PxgFEMCore()
 
 void PxgFEMCore::copyContactCountsToHost()
 {
-	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), mRigidContactCountPrevTimestep, reinterpret_cast<PxU32*>(getRigidContactCount().getDevicePtr()), 1, mStream);
-	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), mVolumeContactorVTContactCountPrevTimestep, reinterpret_cast<PxU32*>(getVolumeContactOrVTContactCount().getDevicePtr()), 1, mStream);
-	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), mEEContactCountPrevTimestep, reinterpret_cast<PxU32*>(getEEContactCount().getDevicePtr()), 1, mStream);
-	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), mParticleContactCountPrevTimestep, reinterpret_cast<PxU32*>(getParticleContactCount().getDevicePtr()), 1, mStream);
+	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), &mContactCountsPrevTimestep[ContactCounts::eRIGID], reinterpret_cast<PxU32*>(getRigidContactCount().getDevicePtr()), 1, mStream);
+	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), &mContactCountsPrevTimestep[ContactCounts::eVOLUME_CONTACTOR_VT], reinterpret_cast<PxU32*>(getVolumeContactOrVTContactCount().getDevicePtr()), 1, mStream);
+	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), &mContactCountsPrevTimestep[ContactCounts::eEDGE_EDGE], reinterpret_cast<PxU32*>(getEEContactCount().getDevicePtr()), 1, mStream);
+	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), &mContactCountsPrevTimestep[ContactCounts::ePARTICLE], reinterpret_cast<PxU32*>(getParticleContactCount().getDevicePtr()), 1, mStream);
 
-	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), mStackSizeNeededPinned, mStackSizeNeededOnDevice.getTypedPtr(), 1, mStream);
+	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), mStackSizeNeededPinned.data(), mStackSizeNeededOnDevice.getTypedPtr(), 1, mStream);
 }
 
 void PxgFEMCore::reserveRigidDeltaVelBuf(PxU32 newCapacity)
@@ -332,4 +320,40 @@ void PxgFEMCore::accumulateRigidDeltas(PxgDevicePointer<PxgPrePrepDesc> prePrepD
 		PX_UNUSED(bob);
 #endif
 	}
+}
+
+PxgFEMContactWriter PxgFEMCore::createContactWriter(bool useParticleForSorting)
+{
+	//Ensure a rigid index has the same size as an encoded particle index
+	PX_COMPILE_TIME_ASSERT(sizeof(PxNodeIndex) == sizeof(PxU64));
+
+	PxgFEMContactWriter writer;
+	if (useParticleForSorting)
+	{
+		writer.outPoint = getParticleContacts().getTypedPtr();
+		writer.outNormalPen = getParticleNormalPens().getTypedPtr();
+		writer.outBarycentric = getParticleBarycentrics().getTypedPtr();
+		writer.outContactInfo = getParticleContactInfos().getTypedPtr();
+		writer.totalContactCount = getParticleContactCount().getTypedPtr();
+
+		writer.contactByX = getContactSortedByParticle().getTypedPtr();
+		writer.tempContactByX = getTempContactByParticle().getTypedPtr();
+		writer.contactIndexSortedByX = getContactRemapSortedByParticle().getTypedPtr();
+		writer.contactSortedByX = NULL; //Does not exist for particles
+	}
+	else
+	{
+		writer.outPoint = getRigidContacts().getTypedPtr();
+		writer.outNormalPen = getRigidNormalPens().getTypedPtr();
+		writer.outBarycentric = getRigidBarycentrics().getTypedPtr();
+		writer.outContactInfo = getRigidContactInfos().getTypedPtr();
+		writer.totalContactCount = getRigidContactCount().getTypedPtr();
+
+		writer.contactByX = reinterpret_cast<PxU64*>(getContactByRigid().getTypedPtr());
+		writer.tempContactByX = getTempContactByRigid().getTypedPtr();
+		writer.contactIndexSortedByX = getContactRemapSortedByRigid().getTypedPtr();
+		writer.contactSortedByX = reinterpret_cast<PxU32*>(getContactSortedByRigid().getTypedPtr());
+	}
+	writer.maxNumContacts = mMaxContacts;
+	return writer;
 }

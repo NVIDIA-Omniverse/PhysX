@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -847,7 +847,7 @@ void VehicleController::updateReverse(const Cache& cache, float timeStep)
                     {
                         if (driveState.currentGear == sReverseGear)
                         {
-                            setTargetGear(::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR);
+                            setTargetGear(::physx::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR);
                             mAutoReverseInProgress = 1;
                         }
                         else

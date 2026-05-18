@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -41,7 +41,7 @@
 #include "PxsRigidBody.h"
 #include "PxgArticulation.h"
 #include "PxgAggregate.h"
-#include "PxgAABBManager.h"
+#include "PxgBoundTransformUpdate.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -52,9 +52,10 @@ extern "C" __host__ void initSimulationControllerKernels1() {}
 extern "C" __global__ void mergeTransformCacheAndBoundArrayChanges(
     PxBounds3* PX_RESTRICT deviceBounds,
     PxsCachedTransform* PX_RESTRICT deviceTransforms,
+	PxgUpdateActorDataDesc* updateActorDesc,
     const PxBounds3* PX_RESTRICT boundsArray,
     const PxsCachedTransform* PX_RESTRICT transformsArray,
-    const PxBoundTransformUpdate* PX_RESTRICT changes,
+    const PxgBoundTransformUpdate* PX_RESTRICT changes,
     const PxU32 numChanges
 ) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -68,6 +69,12 @@ extern "C" __global__ void mergeTransformCacheAndBoundArrayChanges(
         } else {
             deviceBounds[indexTo] = deviceBounds[indexFrom];
             deviceTransforms[indexTo] = deviceTransforms[indexFrom];
+            // Handle cases where bounds are reinserted (e.g., during kinematic/dynamic switch).
+            // In such cases, DirectGPUAPI indexing within updateActorDesc becomes invalid.
+            // To maintain consistency, transfer the mUpdated flag from indexFrom to indexTo,
+            // and reset the source flag to 0.
+            updateActorDesc->mUpdated[indexTo] = updateActorDesc->mUpdated[indexFrom];
+            updateActorDesc->mUpdated[indexFrom] = 0;
         }
     }
 }

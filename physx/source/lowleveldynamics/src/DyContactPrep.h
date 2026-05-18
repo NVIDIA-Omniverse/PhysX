@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -88,6 +88,7 @@ bool createFinalizeSolverContacts(	PxSolverContactDesc& contactDesc,
 									PxReal bounceThresholdF32,
 									PxReal frictionOffsetThreshold,
 									PxReal correlationDistance,
+									const PxReal biasCoefficient,
 									PxConstraintAllocator& constraintAllocator,
 									Cm::SpatialVectorF* Z);
 
@@ -98,6 +99,7 @@ bool createFinalizeSolverContacts(	PxSolverContactDesc& contactDesc,
 									PxReal bounceThresholdF32,
 									PxReal frictionOffsetThreshold,
 									PxReal correlationDistance,
+									const PxReal biasCoefficient,
 									PxConstraintAllocator& constraintAllocator,
 									Cm::SpatialVectorF* Z);
 
@@ -109,6 +111,7 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4(	PxsContactManager
 																 PxReal bounceThresholdF32,
 																 PxReal frictionOffsetThreshold,
 																 PxReal correlationDistance,
+																 const PxReal biasCoefficient,
 																 PxConstraintAllocator& constraintAllocator);
 
 SolverConstraintPrepState::Enum createFinalizeSolverContacts4(	Dy::CorrelationBuffer& c,
@@ -118,49 +121,8 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4(	Dy::CorrelationBu
 																PxReal bounceThresholdF32,
 																PxReal	frictionOffsetThreshold,
 																PxReal correlationDistance,
+																const PxReal biasCoefficient,
 																PxConstraintAllocator& constraintAllocator);
-
-bool createFinalizeSolverContactsCoulomb1D(PxSolverContactDesc& contactDesc,
-											 PxsContactManagerOutput& output,
-											 ThreadContext& threadContext,
-											 const PxReal invDtF32,
-											 const PxReal dtF32,
-											 PxReal bounceThresholdF32,
-											 PxReal frictionOffsetThreshold,
-											 PxReal correlationDistance,
-											 PxConstraintAllocator& constraintAllocator,
-											 Cm::SpatialVectorF* Z);
-
-bool createFinalizeSolverContactsCoulomb2D(PxSolverContactDesc& contactDesc,
-											PxsContactManagerOutput& output,
-											ThreadContext& threadContext,
-											const PxReal invDtF32,
-											const PxReal dtF32,
-											PxReal bounceThresholdF32,
-											PxReal frictionOffsetThreshold,
-											PxReal correlationDistance,
-											PxConstraintAllocator& constraintAllocator,
-											Cm::SpatialVectorF* Z);
-
-SolverConstraintPrepState::Enum createFinalizeSolverContacts4Coulomb1D(	PxsContactManagerOutput** outputs,
-																		ThreadContext& threadContext,
-																		 PxSolverContactDesc* blockDescs,
-																		 const PxReal invDtF32,
-																		 const PxReal dtF32,
-																		 PxReal bounceThresholdF32,
-																		 PxReal frictionOffsetThreshold,
-																		 PxReal correlationDistance,
-																		 PxConstraintAllocator& constraintAllocator);
-
-SolverConstraintPrepState::Enum createFinalizeSolverContacts4Coulomb2D(PxsContactManagerOutput** outputs,
-																		ThreadContext& threadContext,
-																		PxSolverContactDesc* blockDescs,
-																		const PxReal invDtF32,
-																		const PxReal dtF32,
-																		PxReal bounceThresholdF32,
-																		PxReal frictionOffsetThreshold,
-																		PxReal correlationDistance,
-																		PxConstraintAllocator& constraintAllocator);
 
 PxU32 getContactManagerConstraintDesc(const PxsContactManagerOutput& cmOutput, const PxsContactManager& cm, PxSolverConstraintDesc& desc);
 

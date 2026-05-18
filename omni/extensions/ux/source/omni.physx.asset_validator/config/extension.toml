@@ -6,7 +6,7 @@ readme = "docs/README.md"
 repository = ""
 keywords = ["physics"]
 category = "simulation"
-version = "107.3.0-oss.0"
+version = "110.0.7"
 preview_image = "data/icons/icon.png"
 icon = "data/icons/icon.png"
 
@@ -16,7 +16,7 @@ python = true
 usd = true
 
 [dependencies]
-"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx" = { version = "110.0.7", exact = true }
 "omni.usd.libs" = {}
 "omni.asset_validator.core" = {}
 "omni.asset_validator.ui" = { optional = true }

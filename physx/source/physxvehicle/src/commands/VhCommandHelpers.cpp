@@ -22,16 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "vehicle2/commands/PxVehicleCommandParams.h"
-#include "vehicle2/commands/PxVehicleCommandHelpers.h"
+#include "vehicle/commands/PxVehicleCommandParams.h"
+#include "vehicle/commands/PxVehicleCommandHelpers.h"
 
 namespace physx
-{
-namespace vehicle2
 {
 static float interpolate(const PxReal* speedVals, const PxReal* responseVals, const PxU16 nb, const PxReal speed)
 {
@@ -156,5 +154,4 @@ PxReal PxVehicleNonLinearResponseCompute
 	return PxVehicleLinearResponseCompute(normalisedResponse, wheelId, responseParams);
 }
 
-} // namespace vehicle2
 } // namespace physx

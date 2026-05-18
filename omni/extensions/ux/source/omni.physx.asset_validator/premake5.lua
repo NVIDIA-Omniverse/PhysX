@@ -1,5 +1,5 @@
 local ext_name = "omni.physx.asset_validator"
-local ext_dir = extsPhysics_dir.."/"..ext_name
+local ext_dir = extsPhysics_repo_dir.."/"..ext_name
 
 define_physics_test_experience(ext_name, {dir = "extsPhysicsRepo"})
 define_etm_test_experience(ext_name)
@@ -55,6 +55,11 @@ project ("omni.physx.asset_validator")
     links { "carb", "physxSchema" }
     files { "python/**.py" }
     vpaths { ['python/*'] = "python/**.py" }
+
+    -- SdfApplyListOrdering inconsistent dll linkage warning
+    filter { "files:plugins/BackwardCompatibility.cpp", "system:windows"}
+        buildoptions { "/wd4273" }
+    filter {}
 
 project ("omni.physx.asset_validator.python")
     carboniteBindingsPython {

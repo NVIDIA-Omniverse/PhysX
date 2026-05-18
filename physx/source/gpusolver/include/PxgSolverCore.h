@@ -22,20 +22,20 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PXG_SOLVER_CORE_H
 #define PXG_SOLVER_CORE_H
 
-#include "foundation/PxPinnedArray.h"
+#include "CmPinnableArray.h"
 #include "foundation/PxUserAllocated.h"
 #include "PxgConstraint.h"
 #include "PxgSolverCoreDesc.h"
 #include "PxvNphaseImplementationContext.h"
 #include "PxgCudaBuffer.h"
-#include "PxScene.h"
+#include "DyCpuGpuBiasCoefficient.h"
 
 namespace physx
 {
@@ -43,6 +43,11 @@ namespace physx
 	{
 		struct ConstraintWriteback;
 	}
+
+	struct PxgRadixSortDesc;
+	class PxgCudaKernelWranglerManager;
+	class PxgGpuContext;
+	struct PxgAllocatorDesc;
 
 	struct PxgConstraintPrePrepData
 	{
@@ -99,7 +104,7 @@ namespace physx
 		PxReal frictionOffsetThreshold;
 		PxReal correlationDistance;
 		PxReal ccdMaxSeparation;
-		PxReal biasCoefficient;
+		Dy::BiasCoefficientCollection biasCoefficients;
 		PxVec3 gravity;
 	};
 
@@ -133,7 +138,7 @@ namespace physx
 	class PxgRadixSortBuffers
 	{
 		public:
-						PxgRadixSortBuffers(PxgHeapMemoryAllocatorManager* heapMemoryManager);
+						PxgRadixSortBuffers(PxgHeapMemoryAllocator& deviceAlloc);
 
 		void			constructRadixSortDesc(PxgRadixSortDesc* rsDesc)	const;
 		void			allocate(PxU32 totalContactBatches);
@@ -153,7 +158,6 @@ namespace physx
 		PxCudaContextManager*			mCudaContextManager;
 		PxCudaContext*					mCudaContext;
 		PxgGpuContext*					mGpuContext;
-		PxgHeapMemoryAllocatorManager*  mHeapMemoryManager;
 		
 		//PxgSimulationController*		mSimulationController;
 		/*PxgArticulationCore*			mArticulationCore;*/
@@ -186,7 +190,7 @@ namespace physx
 	public:
 
 		PxgSolverCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
-			PxgGpuContext* dynamicContext, PxgHeapMemoryAllocatorManager* heapMemoryManager);
+			PxgGpuContext* dynamicContext, PxgAllocatorDesc& allocDesc);
 
 		virtual ~PxgSolverCore(){}
 
@@ -229,14 +233,14 @@ namespace physx
 				PxU32 totalNumJoints,
 				const PxU32* islandIds, const PxU32* nodeInteractionCounts, PxU32 nbNodes, const PxU32* islandStaticTouchCount, PxU32 nbIslands) = 0;
 
-		virtual void gpuMemDmaUpBodyData(PxPinnedArray<PxgSolverBodyData>& solverBodyDataPool,
-			PxPinnedArray<PxgSolverTxIData>& solverTxIDataPool,
+		virtual void gpuMemDmaUpBodyData(Cm::PinnableArray<PxgSolverBodyData>& solverBodyDataPool,
+			Cm::PinnableArray<PxgSolverTxIData>& solverTxIDataPool,
 			const PxU32 numSolverBodies,
 			const PxU32 totalNumRigidBatches, const PxU32 totalNumArticBatches,
 			const PxU32 nbSlabs, const PxU32 nbStaticSlabs, const PxU32 maxNumStaticPartitions) = 0;
 
 		virtual void allocateSolverBodyBuffers(const PxU32 numSolverBodies,
-			PxPinnedArray<PxNodeIndex>& islandNodeIndices,
+			Cm::PinnableArray<PxNodeIndex>& islandNodeIndices,
 			const PxU32 numActiveActiculations, const PxU32 maxArticulationLinks) = 0;
 
 		virtual void gpuMemDMAUp(PxgPinnedHostLinearMemoryAllocator& hostAllocator, const PxgConstraintPrePrepData& data,
@@ -262,7 +266,7 @@ namespace physx
 
 		virtual void gpuMemDMAbackSolverData(PxU8* forceBufferPool, PxU32 forceBufferOffset, PxU32 forceBufferUpperPartSize,
 			PxU32 forceBufferLowerPartSize, Dy::ThresholdStreamElement* changedElems, bool hasForceThresholds, Dy::ConstraintWriteback* constraintWriteBack,
-			const PxU32 writeBackSize, bool copyAllToHost, Dy::ErrorAccumulator*& contactError) = 0;
+			const PxU32 writeBackSize, bool copyAllToHost) = 0;
 
 
 		virtual void syncDmaBack(PxU32& nbChangedThresholdElements) = 0;
@@ -284,9 +288,8 @@ namespace physx
 		virtual void nonRigidConstraintPrepare(PxU32 nbParticulations) = 0;
 
 		virtual void solveContactMultiBlockParallel(PxgIslandContext* islandContexts, const PxU32 numIslands, const PxU32 maxPartitions,
-			PxInt32ArrayPinned& constraintsPerPartition, PxInt32ArrayPinned& artiConstraintsPerPartition, const PxVec3& gravity, const bool solveArticulationContactLast,
-			PxReal* posIterResidualSharedMem, PxU32 posIterResidualSharedMemSize, Dy::ErrorAccumulator* posIterError, PxPinnedArray<Dy::ErrorAccumulator>& artiContactPosIterError,
-			PxPinnedArray<Dy::ErrorAccumulator>& perArticulationInternalError) = 0;
+			Cm::PinnableArray<PxU32>& constraintsPerPartition, Cm::PinnableArray<PxU32>& artiConstraintsPerPartition, const PxVec3& gravity,
+			const bool solveArticulationContactLast) = 0;
 
 		virtual void accumulatedForceThresholdStream(PxU32 maxNodes) = 0;
 		virtual void integrateCoreParallel( const PxU32 offset, const PxU32 nbSolverBodies) = 0;
@@ -314,10 +317,10 @@ namespace physx
 		void allocateFrictionCounts(PxU32 totalEdges);
 
 		void gpuMemDMAbackSolverBodies(float4* solverBodyPool, PxU32 nbSolverBodies,
-			PxPinnedArray<PxAlignedTransform>& body2WorldPool,
-			PxPinnedArray<PxgSolverBodySleepData>& solverBodySleepDataPool, bool enableDirectGPUAPI);
+			Cm::PinnableArray<PxAlignedTransform>& body2WorldPool,
+			Cm::PinnableArray<PxgSolverBodySleepData>& solverBodySleepDataPool, bool enableDirectGPUAPI);
 
-		void allocateSolverBodyBuffersCommon(PxU32 numSolverBodies, PxPinnedArray<PxNodeIndex>& islandNodeIndices);
+		void allocateSolverBodyBuffersCommon(PxU32 numSolverBodies, Cm::PinnableArray<PxNodeIndex>& islandNodeIndices);
 
 		void constructConstraintPrePrepDesc(PxgPrePrepDesc& preDesc, PxU32 numBatches, PxU32 numStaticBatches, PxU32 numArticBatches, PxU32 numArticStaticBatches, PxU32 numArticSelfBatches,
 			const PxgPartitionData& pData, PxContact* cpuCompressedcontactsBase, PxContactPatch* cpuCompressedPatchesBase, PxReal* cpuForceBufferBase,
@@ -330,16 +333,16 @@ namespace physx
 
 		void constructSolverDesc(PxgSolverCoreDesc& scDesc, PxU32 numIslands, PxU32 numSolverBodies, PxU32 numConstraintBatchHeader, PxU32 numArticConstraints, PxU32 numSlabs, bool enableStabilization);
 
-		void gpuMemDMAUpJointData(const PxPinnedArray<PxgConstraintData>& cpuJointDataPool, const PxPinnedArray<Px1DConstraint>& cpuJointRowPool,
+		void gpuMemDMAUpJointData(const Cm::PinnableArray<PxgConstraintData>& cpuJointDataPool, const Cm::PinnableArray<Px1DConstraint>& cpuJointRowPool,
 			PxU32 nbCpuJoints, PxU32 nbGpuJoints, PxU32 totalCpuRows);
 
-		void gpuMemDMAUpArtiJointData(const PxPinnedArray<PxgConstraintData>& artiJointDataPool, const PxPinnedArray<Px1DConstraint>& artiJointRowPool,
+		void gpuMemDMAUpArtiJointData(const Cm::PinnableArray<PxgConstraintData>& artiJointDataPool, const Cm::PinnableArray<Px1DConstraint>& artiJointRowPool,
 			PxU32 nbCpuArtiJoints, PxU32 nbGpuArtiJoints, PxU32 totalArtiRows);
 
 		void constraintPrePrepParallel(PxU32 nbConstraintBatches, PxU32 nbD6Joints, PxU32 numBodies);
 		
-		void precomputeReferenceCount(PxgIslandContext* islandContext, PxU32 islandIndex, PxInt32ArrayPinned& constraintsPerPartition,
-			PxInt32ArrayPinned& artiConstraintsPerPartition, bool isTGS, PxReal minPen = 0.0f, PxReal elapsedTime = 0.0f);
+		void precomputeReferenceCount(PxgIslandContext* islandContext, PxU32 islandIndex, Cm::PinnableArray<PxU32>& constraintsPerPartition,
+			Cm::PinnableArray<PxU32>& artiConstraintsPerPartition, bool isTGS, PxReal minPen = 0.0f, PxReal elapsedTime = 0.0f);
 		
 		void resetVelocities(bool isTGS);
 
@@ -468,7 +471,8 @@ namespace physx
 		CUstream			mStream;
 		CUstream			mStream2;
 
-		PxU32*				mPinnedEvent;
+		// needs to be device mapped memory
+		PxU32*				mEventMapped;
 
 		CUevent				mEventDmaBack;
 

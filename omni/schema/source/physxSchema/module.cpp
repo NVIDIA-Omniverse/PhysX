@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 #include "pxr/pxr.h"
 #include "pxr/base/tf/pyModule.h"
 
@@ -47,7 +50,6 @@ TF_WRAP_MODULE
     TF_WRAP(PhysxSchemaPhysxPhysicsInstancer);
     TF_WRAP(PhysxSchemaPhysxPhysicsJointInstancer);
     TF_WRAP(PhysxSchemaPhysxPhysicsRackAndPinionJoint);
-    TF_WRAP(PhysxSchemaPhysxResidualReportingAPI);
     TF_WRAP(PhysxSchemaPhysxRigidBodyAPI);
     TF_WRAP(PhysxSchemaPhysxSDFMeshCollisionAPI);
     TF_WRAP(PhysxSchemaPhysxSceneAPI);

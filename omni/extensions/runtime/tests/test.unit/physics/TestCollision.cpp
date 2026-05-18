@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -92,7 +92,6 @@ TEST_CASE_TEMPLATE("Collision Tests", T, USDChange, FabricChange)
 
         // disable collision API -> shape should be disabled
         changeTemplate.setAttributeValue(boxPath, changeToken, false);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -126,7 +125,6 @@ TEST_CASE_TEMPLATE("Collision Tests", T, USDChange, FabricChange)
 
         // disable collision API -> shapes should now be disabled
         changeTemplate.setAttributeValue(concaveMeshPath, changeToken, false);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -161,7 +159,6 @@ TEST_CASE_TEMPLATE("Collision Tests", T, USDChange, FabricChange)
         // change val
         val = 10.0f;
         changeTemplate.setAttributeValue(boxPath, changeToken, val);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -193,7 +190,6 @@ TEST_CASE_TEMPLATE("Collision Tests", T, USDChange, FabricChange)
         // change val
         val = 10.0f;
         changeTemplate.setAttributeValue(concaveMeshPath, changeToken, val);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -223,7 +219,6 @@ TEST_CASE_TEMPLATE("Collision Tests", T, USDChange, FabricChange)
         // change val
         val = 0.1f;
         changeTemplate.setAttributeValue(boxPath, changeToken, val);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -250,7 +245,6 @@ TEST_CASE_TEMPLATE("Collision Tests", T, USDChange, FabricChange)
         // change val, just make sure this is LESS than contactOffset
         val = 0.1f;
         changeTemplate.setAttributeValue(concaveMeshPath, changeToken, val);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -280,7 +274,6 @@ TEST_CASE_TEMPLATE("Collision Tests", T, USDChange, FabricChange)
         // change val
         val = 1.0f;
         changeTemplate.setAttributeValue(boxPath, changeToken, val);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -313,7 +306,6 @@ TEST_CASE_TEMPLATE("Collision Tests", T, USDChange, FabricChange)
         // change val
         val = 1.0f;
         changeTemplate.setAttributeValue(concaveMeshPath, changeToken, val);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -343,7 +335,6 @@ TEST_CASE_TEMPLATE("Collision Tests", T, USDChange, FabricChange)
         // change val
         val = 1.0f;
         changeTemplate.setAttributeValue(boxPath, changeToken, val);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -376,7 +367,6 @@ TEST_CASE_TEMPLATE("Collision Tests", T, USDChange, FabricChange)
         // change val
         val = 1.0f;
         changeTemplate.setAttributeValue(concaveMeshPath, changeToken, val);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 

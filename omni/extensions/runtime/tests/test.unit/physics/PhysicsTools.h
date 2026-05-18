@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -40,16 +40,6 @@ public:
     void operator=(const ScopedFabricActivation&) = delete;
 
     omni::physx::IPhysxFabric* mIPhysxFabric = nullptr;
-};
-
-class ScopedPopulationActivation
-{
-public:
-    ScopedPopulationActivation();
-    ~ScopedPopulationActivation();
-
-    ScopedPopulationActivation(const ScopedPopulationActivation&) = delete;
-    void operator=(const ScopedPopulationActivation&) = delete;
 };
 
 class ScopedOmniPhysicsActivation

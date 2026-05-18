@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -109,6 +109,7 @@ public:
                          const pxr::SdfPath& path,
                          usdparser::ObjectId objectId,
                          const Transform& transform,
+                         bool fabricChange,
                          bool resetVelocity = true,
                          bool scaleProvided = true);
 

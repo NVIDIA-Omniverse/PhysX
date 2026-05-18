@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -16,6 +16,8 @@
 
 #include <carb/logging/Log.h>
 #include <omni/physx/IPhysx.h>
+
+#include <omni/physics/tensors/TensorUtils.h>
 
 using namespace physx;
 
@@ -111,6 +113,47 @@ bool CpuSurfaceDeformableBodyView::getCollisionNodalPositions(const TensorDesc* 
     CARB_LOG_ERROR("CpuSimulationView::getCollisionNodalPositions is not implemented yet");
     return false;
 };
+
+// ---------------------------------------------------------------------------
+// Mask support (wrappers around indexed setters)
+// ---------------------------------------------------------------------------
+
+using omni::physics::tensors::MaskResult;
+using omni::physics::tensors::resolveMaskToIndices;
+using omni::physics::tensors::makeIndexTensorDesc;
+
+bool CpuSurfaceDeformableBodyView::setSimulationNodalPositionsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setSimulationNodalPositions(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setSimulationNodalPositions(srcTensor, &idx);
+}
+
+bool CpuSurfaceDeformableBodyView::setSimulationNodalVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setSimulationNodalVelocities(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setSimulationNodalVelocities(srcTensor, &idx);
+}
+
+bool CpuSurfaceDeformableBodyView::setSimulationNodalKinematicTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setSimulationNodalKinematicTargets(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setSimulationNodalKinematicTargets(srcTensor, &idx);
+}
 
 } // namespace tensors
 } // namespace physx

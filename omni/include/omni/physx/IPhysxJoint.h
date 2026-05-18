@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -24,7 +24,7 @@ struct JointStateData
                               //!< necessary)
     float initialVelocity[6]; //!< Initial Joint velocity at simulation start (already converted to degrees if
                               //!< necessary)
-    uint64_t fabricTokenC[6]; //!< The corresponding axis usd token
+    uint64_t tfTokenHandle[6]; //!< The corresponding axis usd token
 };
 
 

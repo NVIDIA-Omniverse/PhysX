@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from pxr import Gf, Sdf, Vt, UsdGeom, Usd, UsdPhysics, UsdLux, PhysxSchema
 from omni.physxtests.utils.physicsBase import PhysicsBaseAsyncTestCase, TestCategory
 from omni.physxtests import utils
@@ -8,6 +9,7 @@ from omni.physxcommands import AddGroundPlaneCommand, SetRigidBodyCommand
 from omni.physx import get_physx_interface
 import omni.kit.test
 from omni.physx import get_physx_cooking_interface
+from omni.physx.scripts.ifaces import get_physx_attachment_private_interface
 import carb
 from pxr.UsdGeom import Cylinder
 from omni.physx.scripts import physicsUtils
@@ -52,7 +54,7 @@ class PhysxAttachmentInterfacePoissonSamplingTestAsync(PhysicsBaseAsyncTestCase)
                                   stage=self._stage, path=self._deformable_body_material_path,
                                   youngsModulus=5000.0)
 
-        self._physxattachment = omni.physx.acquire_physx_attachment_private_interface()
+        self._physxattachment = get_physx_attachment_private_interface()
         self._rest_coll_points = []
         self._coll_indices = []
 
@@ -189,4 +191,3 @@ class PhysxAttachmentInterfacePoissonSamplingTestAsync(PhysicsBaseAsyncTestCase)
             self.assertTrue(len(points) == len(existing_points) - 3)
 
         self._physxattachment.release_surface_sampler(handler)
-

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -157,6 +157,29 @@ bool BaseSoftBodyMaterialView::setYoungsModulus(const TensorDesc* srcTensor, con
     return true;
 }
 
+// ---------------------------------------------------------------------------
+// Mask support
+//
+// NOTE: Material views always operate via CPU-side PxMaterial API calls, even when
+// the simulation runs on GPU (see BaseDeformableMaterialView.cpp for full rationale).
+// The device check is hardcoded to -1 (CPU), matching the existing indexed setters.
+// ---------------------------------------------------------------------------
+
+using omni::physics::tensors::MaskResult;
+using omni::physics::tensors::resolveMaskToIndices;
+using omni::physics::tensors::makeIndexTensorDesc;
+
+bool BaseSoftBodyMaterialView::setYoungsModulusMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setYoungsModulus(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setYoungsModulus(srcTensor, &idx);
+}
+
 bool BaseSoftBodyMaterialView::getPoissonsRatio(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
@@ -226,6 +249,17 @@ bool BaseSoftBodyMaterialView::setPoissonsRatio(const TensorDesc* srcTensor, con
     }
 
     return true;
+}
+
+bool BaseSoftBodyMaterialView::setPoissonsRatioMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setPoissonsRatio(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setPoissonsRatio(srcTensor, &idx);
 }
 
 bool BaseSoftBodyMaterialView::getDynamicFriction(const TensorDesc* dstTensor) const
@@ -301,6 +335,17 @@ bool BaseSoftBodyMaterialView::setDynamicFriction(const TensorDesc* srcTensor, c
     return true;
 }
 
+bool BaseSoftBodyMaterialView::setDynamicFrictionMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setDynamicFriction(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setDynamicFriction(srcTensor, &idx);
+}
+
 bool BaseSoftBodyMaterialView::getDamping(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
@@ -371,6 +416,17 @@ bool BaseSoftBodyMaterialView::setDamping(const TensorDesc* srcTensor, const Ten
     }
 
     return true;
+}
+
+bool BaseSoftBodyMaterialView::setDampingMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setDamping(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setDamping(srcTensor, &idx);
 }
 
 
@@ -444,6 +500,17 @@ bool BaseSoftBodyMaterialView::setDampingScale(const TensorDesc* srcTensor, cons
     }
 
     return true;
+}
+
+bool BaseSoftBodyMaterialView::setDampingScaleMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setDampingScale(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setDampingScale(srcTensor, &idx);
 }
 
 

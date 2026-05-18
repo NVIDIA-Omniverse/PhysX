@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,7 +30,7 @@
 
 OmniPvdFileWriteStreamImpl::OmniPvdFileWriteStreamImpl()
 {
-	mFileName = 0;	
+	mFileName = 0;
 	resetFileParams();
 }
 
@@ -50,16 +50,14 @@ OmniPvdFileWriteStreamImpl::~OmniPvdFileWriteStreamImpl()
 void OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::setFileName(const char* fileName)
 {
 	if (!fileName) return;
-	int n = (int)strlen(fileName) + 1;
-	if (n < 2) return;
+	const size_t maxLen = 4096; // Some reasonable filename cap
+	size_t len = strnlen(fileName, maxLen);
+	if (len == 0) return;
 	delete[] mFileName;
-	mFileName = new char[n];
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-	strcpy_s(mFileName, n, fileName);
-#else
-	strcpy(mFileName, fileName);
-#endif		
-	mFileName[n - 1] = 0;
+	// +1 for null terminator
+	mFileName = new char[len + 1];
+	memcpy(mFileName, fileName, len);
+	mFileName[len] = '\0';
 }
 
 bool OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::openFile()
@@ -97,7 +95,7 @@ bool OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::closeFile()
 	else
 	{
 		returnOK = false;
-	}	
+	}
 	resetFileParams();
 	return returnOK;
 }

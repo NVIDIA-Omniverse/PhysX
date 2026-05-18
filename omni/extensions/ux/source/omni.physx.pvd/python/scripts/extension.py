@@ -1,12 +1,14 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.ext
 import carb
 import carb.profiler
 from carb.eventdispatcher import get_eventdispatcher
 from omni import ui
 from omni.physxpvd.bindings import _physxPvd
+from omni.physxpvd.bindings._physxPvd import IPhysXPvd, release_physx_pvd_interface, release_physx_pvd_interface_scripting
 import omni.usd
 from pprint import pprint
 from datetime import datetime
@@ -128,7 +130,16 @@ class OmniPVDGizmoType(IntEnum):
     eJoint = 5
     eTransparency = 6
 
-import datetime
+
+def _get_interface(func, acq):
+    if not hasattr(func, "iface"):
+        func.iface = acq()
+    return func.iface
+
+
+def get_physx_pvd_interface() -> IPhysXPvd:
+    from omni.physxpvd.bindings._physxPvd import acquire_physx_pvd_interface
+    return _get_interface(get_physx_pvd_interface, acquire_physx_pvd_interface)
 
 
 def set_style(style):
@@ -815,22 +826,6 @@ class OmniPVdObjectTreeWindow(ui.Window):
                     self._delegate._tree = self._tree
                     self._tree.set_selection_changed_fn(self._delegate.on_selection_of_item)
 
-    def _setVisibleChildren(self, prim):
-        if not prim:
-            return
-        if prim.HasAttribute("omni:pvdi:viz"):
-            if not prim.GetAttribute("omni:pvdi:viz").Get(self.cached_time):
-                UsdGeom.Imageable(prim).MakeInvisible()
-            else:
-                UsdGeom.Imageable(prim).MakeVisible()
-                children_iterator = prim.GetChildren()
-                for child_prim in children_iterator:
-                    self._setVisibleChildren(child_prim)
-        else:
-            children_iterator = prim.GetChildren()
-            for child_prim in children_iterator:
-                self._setVisibleChildren(child_prim)
-
     def _updatedFromEvent(self):
         if not hasattr(self, "_model"):
             return
@@ -843,9 +838,12 @@ class OmniPVdObjectTreeWindow(ui.Window):
         if stage:
             stage.SetInterpolationType(Usd.InterpolationTypeHeld)
             self.cached_time = self.get_time()
-            with Sdf.ChangeBlock():
-                self._setVisibleChildren(stage.GetPrimAtPath("/Scenes"))
-                self._setVisibleChildren(stage.GetPrimAtPath("/Shared"))
+            # PERFORMANCE OPTIMIZATION: Use C++ implementation for visibility update
+            # This is much faster than Python recursion for large scenes
+            # Note: C++ implementation uses SdfChangeBlock internally to batch changes
+            from omni.physxpvd.bindings._physxPvd import acquire_physx_pvd_interface
+            pvd_interface = acquire_physx_pvd_interface()
+            pvd_interface.update_ovd_visibility(self.cached_time)
             self._model._expanded_select_items = []
             selected_prim_paths = usd_context.get_selection().get_selected_prim_paths()
             for path in selected_prim_paths:
@@ -938,10 +936,14 @@ class MessagesModel(ui.AbstractItemModel):
         self._import_ovd_fn = import_ovd_fn
         self._messageItems = []
 
+    def on_shutdown(self):
+        self.clear()
+        self._import_ovd_fn = None
+
     def reset(self):
         self._import_ovd_fn(True)
 
-        physxPvdInterface = _physxPvd.acquire_physx_pvd_interface()
+        physxPvdInterface = get_physx_pvd_interface()
         messages = physxPvdInterface.get_messages()
 
         for message in messages:
@@ -1047,17 +1049,17 @@ class OmniPvdMessagesWindow(ui.Window):
 
     def mybuild(self):
         with self.frame:
-            if not hasattr(self, '_style'):
+            if self._style is None:
                 self._style = carb.settings.get_settings().get_as_string("/persistent/app/window/uiStyle") or "NvidiaDark"
                 self._style_data = set_style(self._style)
                 self.frame.set_style(self._style_data)
 
-            if not hasattr(self, '_model'):
+            if self._model is None:
                 self._model = MessagesModel(self._import_ovd_fn)
             else:
                 self._model.reset()
 
-            if not hasattr(self, '_delegate'):
+            if self._delegate is None:
                 self._delegate = OmniPVDMessageDelegate()
             else:
                 self._delegate.reset()
@@ -1125,13 +1127,17 @@ class OmniPvdMessagesWindow(ui.Window):
         super().__init__("OVD Messages", ui.DockPreference.LEFT_BOTTOM, width=640, height=480)
         self.deferred_dock_in("Content", ui.DockPolicy.DO_NOTHING)
         self._usd_context = omni.usd.get_context()
+        self._import_ovd_fn = None
+        self._model = None
+        self._style = None
+        self._delegate = None
 
         self.frame.set_build_fn(self.mybuild)
         self.frame.rebuild()
 
         @carb.profiler.profile
         def on_stage_event_closed():
-            physxPvdInterface = _physxPvd.acquire_physx_pvd_interface()
+            physxPvdInterface = get_physx_pvd_interface()
             physxPvdInterface.clear_messages()
             if hasattr(self, '_model'):
                 if self._model is not None:
@@ -1150,7 +1156,14 @@ class OmniPvdMessagesWindow(ui.Window):
         ]
 
     def on_shutdown(self):
+        if self._model:
+            self._model.on_shutdown()
+            self._model = None
+
         self._stage_event_sub = None
+        self._import_ovd_fn = None
+        self._style = None
+        self._delegate = None
 
     def traverse_stage(self):
         return
@@ -1250,13 +1263,6 @@ class PhysxPvdExtension(omni.ext.IExt):
         frameMode = carb.settings.get_settings().get_as_int(SETTING_OMNIPVD_TIMELINE_FRAME_MODE)
 
         stage = omni.usd.get_context().get_stage()
-        print(f"startTimeCode{int(stage.GetStartTimeCode())}")
-        print(f"stopTimeCode{int(stage.GetEndTimeCode())}")
-        print(f"startFrameId{startFrameId}")
-        print(f"stopFrameId{stopFrameId}")
-        print(f"startSimStepId{startSimStepId}")
-        print(f"stopSimStepId{stopSimStepId}")
-        print(f"frameMode{frameMode}")
 
     def _build_omnipvd_ui(self):
         def define_recording_dir():
@@ -1322,6 +1328,20 @@ class PhysxPvdExtension(omni.ext.IExt):
 
         def on_stage_event_omnipvd_enable():
             self._ovdLoaded = False
+            
+            # Invalidate handle caches on stage open
+            # This ensures the caches get rebuilt for the new stage
+            try:
+                from omni.physxpvd.scripts.property_widget.usd_helpers import invalidate_handle_cache
+                invalidate_handle_cache()  # Python cache
+            except Exception:
+                pass
+            try:
+                from omni.physxpvd.bindings._physxPvd import acquire_physx_pvd_interface
+                pvd_interface = acquire_physx_pvd_interface()
+                pvd_interface.invalidate_handle_cache()  # C++ cache
+            except Exception:
+                pass
 
             # check the stage if OmniPVD stage?
             is_OVD_stage = False
@@ -1504,12 +1524,14 @@ class PhysxPvdExtension(omni.ext.IExt):
             distantLight.CreateAngleAttr(0.53)
             distantLight.CreateSpecularAttr().Set(0.0)
 
+            metersPerStageUnit = 1
+            tolerancesScaleDefined = False
+
             stage.SetEditTarget(stage.GetSessionLayer())
 
             cam = UsdGeom.Camera.Define(stage, "/OmniverseKit_Persp")
             if cam:
                 # Fix for the camera clipping range using the physx tolerances scale
-                clipRangeWasSet = false = False
                 physxInstancePrim = stage.GetPrimAtPath("/Scenes/PxPhysics/PxPhysics_1")
                 if physxInstancePrim:
                     if physxInstancePrim.HasAttribute("omni:pvd:tolerancesScale"):
@@ -1517,13 +1539,17 @@ class PhysxPvdExtension(omni.ext.IExt):
                         if tolerancesScale:
                             metersPerStageUnit = 1 / tolerancesScale[0]
                             cam.CreateClippingRangeAttr(Gf.Vec2f(0.01/metersPerStageUnit, 1000000))
-                            clipRangeWasSet = True
+                            
+                            tolerancesScaleDefined = True
                             # Set the default global gizmo slider scale, which works like a multiplier
                             carb.settings.get_settings().set(SETTING_OMNIPVD_GIZMO_GLOBAL_SCALE, 1.0/metersPerStageUnit)
-                if not clipRangeWasSet:
+                if not tolerancesScaleDefined:
                     cam.CreateClippingRangeAttr(Gf.Vec2f(0.000001, 1000000))
 
             stage.SetEditTarget(stage.GetRootLayer())
+
+            if tolerancesScaleDefined:
+                UsdGeom.SetStageMetersPerUnit(stage, metersPerStageUnit)
 
             resolution = vp_utils.get_active_viewport().resolution
             viewport_api = get_active_viewport()
@@ -1552,7 +1578,7 @@ class PhysxPvdExtension(omni.ext.IExt):
 
         if loadMessages:
             if self._ovdLoaded:
-                self._physxPvdInterface.load_ovd(ovdFile)
+                get_physx_pvd_interface().load_ovd(ovdFile)
         else:
             omni.usd.get_context().close_stage()
 
@@ -1576,9 +1602,11 @@ class PhysxPvdExtension(omni.ext.IExt):
             # if stage.usda does NOT exist in the directory
             #   convert ovd to usda into the cache dir (or not might do it in memory)
             ################################################################################
-            self._physxPvdInterface.ovd_to_usd(ovdFile, fullCacheDirPath, self._omniPvdUpAxis, self._omniPvdUSDType)
+            get_physx_pvd_interface().ovd_to_usd(ovdFile, fullCacheDirPath, self._omniPvdUpAxis, self._omniPvdUSDType)
 
             self._ovdLoaded = self._open_cached_stage(cacheStagePath)
+            if self._ovdLoaded:
+                carb.settings.get_settings().set(SETTING_OMNIPVD_IMPORTED_OVD, ovdFile)
 
     def _import_ovd_file(self, loadMessages=False):
         def on_choose(fp_dialog, fileName, dirPath):
@@ -1647,7 +1675,7 @@ class PhysxPvdExtension(omni.ext.IExt):
                 # Set the OmniPVD output dir here, needs new var, outputdir or similar
                 carb.settings.get_settings().set(SETTING_OMNIPVD_OVD_FOR_BAKING, dirpath + filename)
                 daString = carb.settings.get_settings().get(SETTING_OMNIPVD_OVD_FOR_BAKING)
-                self._physxPvdInterface.ovd_to_usd_over(daString)
+                get_physx_pvd_interface().ovd_to_usd_over(daString)
 
             cleanup_fp_dialog(fp_dialog)
 
@@ -2373,7 +2401,6 @@ class PhysxPvdExtension(omni.ext.IExt):
     def on_startup(self, ext_id):
         self._ext_path = omni.kit.app.get_app().get_extension_manager().get_extension_path(ext_id)
         self._icons_path =  icon_folder = f"{os.path.join(self._ext_path, PhysxPvdExtension.icons_folder)}"
-        print(f"icon_path{self._icons_path}")
         ################################################################################
         # Preload library plugin dependencies, to make them discoverable
         ################################################################################
@@ -2383,10 +2410,10 @@ class PhysxPvdExtension(omni.ext.IExt):
             ctypes.WinDLL(omnipvd_dll_path)
 
         ################################################################################
-        # Acquire the instance reference pointer (for the sake of testing)
+        # Acquire the instance reference pointer to pre-cache the interface
         ################################################################################
         PhysxPvdExtension.instance = self
-        self._physxPvdInterface = _physxPvd.acquire_physx_pvd_interface()
+        self._physxPvdInterface = get_physx_pvd_interface()
 
         ################################################################################
         # Create the OmniPVD import/conversion menu
@@ -2415,7 +2442,7 @@ class PhysxPvdExtension(omni.ext.IExt):
                 default_prim_handler,
             ]
             self._propertyWidgetOmniPvd = PropertyWidgetOmniPvd(prim_handlers)
-            from omni.kit.property.physx import register_widget
+            from omni.kit.property.physics import register_widget
             register_widget(self._propertyWidgetOmniPvd.name, self._propertyWidgetOmniPvd)
             self._propertyWidgetOmniPvd.on_startup()
 
@@ -2441,15 +2468,9 @@ class PhysxPvdExtension(omni.ext.IExt):
         ################################################################################
         if self._propertyWidgetOmniPvd:
             self._propertyWidgetOmniPvd.on_shutdown()
-            from omni.kit.property.physx import unregister_widget
+            from omni.kit.property.physics import unregister_widget
             unregister_widget(self._propertyWidgetOmniPvd.name)
             self._propertyWidgetOmniPvd = None
-
-        ################################################################################
-        # Release the pvd interface
-        ################################################################################
-        _physxPvd.release_physx_pvd_interface(self._physxPvdInterface)
-        self._physxPvdInterface = None
 
         ################################################################################
         # Remove the OVD asset importer from the Kit file menu
@@ -2465,11 +2486,6 @@ class PhysxPvdExtension(omni.ext.IExt):
         self._menu = None
 
         ################################################################################
-        # Remove the reference to the OmniPVD extension
-        ################################################################################
-        PhysxPvdExtension.instance = None
-
-        ################################################################################
         # Shut down the OVD Tree
         ################################################################################
         if (self._treeView):
@@ -2479,5 +2495,17 @@ class PhysxPvdExtension(omni.ext.IExt):
         self._timelineSub = None
         self._settings_subs = []
         self._stage_event_sub_ovd = None
+
+        ################################################################################
+        # Release the pvd interface
+        ################################################################################
+        release_physx_pvd_interface(self._physxPvdInterface)
+        release_physx_pvd_interface_scripting(self._physxPvdInterface) # OM-60917
+        self._physxPvdInterface = None
+
+        ################################################################################
+        # Remove the reference to the OmniPVD extension
+        ################################################################################
+        PhysxPvdExtension.instance = None
 
 safe_import_tests("omni.physxpvd.scripts.tests")

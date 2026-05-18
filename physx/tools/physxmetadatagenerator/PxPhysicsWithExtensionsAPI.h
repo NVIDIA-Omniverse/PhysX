@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 #ifndef PX_PHYSICS_NXPHYSICSWITHEXTENSIONS_API
@@ -104,6 +104,7 @@ static DisabledPropertyEntry gDisabledProperties[] = {
 	DisabledPropertyEntry( "PxPrismaticJoint", "ClassName" ),
 	DisabledPropertyEntry( "PxSphericalJoint", "ClassName" ),
 	DisabledPropertyEntry( "PxD6Joint", "ClassName" ),
+	DisabledPropertyEntry( "PxD6Joint", "LinearLimit" ),
 	DisabledPropertyEntry( "PxJointLimitParameters", "IsValid" ),
 	DisabledPropertyEntry( "PxJointLimitParameters", "IsSoft" ),
 	DisabledPropertyEntry( "PxJointLinearLimit", "IsValid" ),
@@ -118,8 +119,6 @@ static DisabledPropertyEntry gDisabledProperties[] = {
 	DisabledPropertyEntry( "PxHeightFieldDesc", "IsValid" ),
 //	DisabledPropertyEntry( "PxConstraint", "IsValid" ),
 //	DisabledPropertyEntry( "PxTolerancesScale", "IsValid" ),
-	DisabledPropertyEntry( "PxConstraint", "SolverResidual" ),
-	DisabledPropertyEntry( "PxArticulationReducedCoordinate", "SolverResidual" ),
     DisabledPropertyEntry( "PxConstraint", "GPUIndex"),
     DisabledPropertyEntry( "PxD6Joint", "GPUIndex"),
 };

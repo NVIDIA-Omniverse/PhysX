@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -149,8 +149,8 @@ public:
     AttachmentType mAttachmentType{ eUndefined };
     AttachmentActor mAttachmentActor[2];
 
-    ::physx::PxDeformableAttachment* mDeformableAttachment;
-    ::physx::PxDeformableElementFilter* mDeformableFilter;
+    ::physx::PxDeformableAttachment* mDeformableAttachment{ nullptr };
+    ::physx::PxDeformableElementFilter* mDeformableFilter{ nullptr };
 
     AttachmentShapeRemovedEvent mAttachmentShapeRemovedEvent;
 

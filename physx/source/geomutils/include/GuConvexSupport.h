@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -36,6 +36,8 @@
 #include "foundation/PxTransform.h"
 #include "foundation/PxMathUtils.h"
 #include "GuRefGjkEpa.h"
+
+#define PXC_SAME_NORMAL (0.999f)
 
 namespace physx
 {
@@ -938,7 +940,7 @@ namespace physx
 				for (PxU32 i = 0; i < mNumPatches; ++i)
 				{
 					Patch& patch = mPatches[i];
-					if (patch.normal.dot(normal) >= SAME_NORMAL)
+					if (patch.normal.dot(normal) >= PXC_SAME_NORMAL)
 					{
 						addPatchPoint(i, Point::make(position, depth));
 						return;
@@ -949,8 +951,6 @@ namespace physx
 			}
 
 		protected:
-
-			PxReal SAME_NORMAL = 0.999f; // see PXC_SAME_NORMAL
 
 			struct Patch
 			{

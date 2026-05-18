@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -162,6 +162,29 @@ bool BaseParticleMaterialView::setFriction(const TensorDesc* srcTensor, const Te
     return true;
 }
 
+// ---------------------------------------------------------------------------
+// Mask support
+//
+// NOTE: Material views always operate via CPU-side PxMaterial API calls, even when
+// the simulation runs on GPU (see BaseDeformableMaterialView.cpp for full rationale).
+// The device check is hardcoded to -1 (CPU), matching the existing indexed setters.
+// ---------------------------------------------------------------------------
+
+using omni::physics::tensors::MaskResult;
+using omni::physics::tensors::resolveMaskToIndices;
+using omni::physics::tensors::makeIndexTensorDesc;
+
+bool BaseParticleMaterialView::setFrictionMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setFriction(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setFriction(srcTensor, &idx);
+}
+
 bool BaseParticleMaterialView::getDamping(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
@@ -232,6 +255,17 @@ bool BaseParticleMaterialView::setDamping(const TensorDesc* srcTensor, const Ten
     }
 
     return true;
+}
+
+bool BaseParticleMaterialView::setDampingMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setDamping(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setDamping(srcTensor, &idx);
 }
 
 bool BaseParticleMaterialView::getGravityScale(const TensorDesc* dstTensor) const
@@ -306,6 +340,17 @@ bool BaseParticleMaterialView::setGravityScale(const TensorDesc* srcTensor, cons
     return true;
 }
 
+bool BaseParticleMaterialView::setGravityScaleMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setGravityScale(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setGravityScale(srcTensor, &idx);
+}
+
 bool BaseParticleMaterialView::getLift(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
@@ -378,6 +423,17 @@ bool BaseParticleMaterialView::setLift(const TensorDesc* srcTensor, const Tensor
     return true;
 }
 
+bool BaseParticleMaterialView::setLiftMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setLift(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setLift(srcTensor, &idx);
+}
+
 bool BaseParticleMaterialView::getDrag(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
@@ -448,6 +504,17 @@ bool BaseParticleMaterialView::setDrag(const TensorDesc* srcTensor, const Tensor
     }
 
     return true;
+}
+
+bool BaseParticleMaterialView::setDragMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setDrag(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setDrag(srcTensor, &idx);
 }
 
 }

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -6,7 +6,6 @@
 
 #include "UsdPCH.h"
 
-#include <carb/scripting/IScripting.h>
 #include <PxPhysicsAPI.h>
 #include <omni/physx/TriggerEvent.h>
 
@@ -19,21 +18,6 @@ namespace usdparser
 class AttachedStage;
 }
 
-struct TriggerScript
-{
-    TriggerScript() : mScript(nullptr), mScriptPath(nullptr)
-    {
-    }
-
-    TriggerScript(carb::scripting::Script* sc, const char* path) : mScript(sc), mScriptPath(path)
-    {
-    }
-
-    carb::scripting::Script* mScript;
-    const char* mScriptPath;
-};
-
-
 struct InvokedTrigger
 {
     const ::physx::PxShape* mTriggerShape;
@@ -41,7 +25,6 @@ struct InvokedTrigger
     TriggerEventType::Enum mTriggerEvent;
 };
 
-using TriggerScriptMap = std::map<pxr::TfToken, std::pair<std::string, carb::scripting::Script*>>;
 using InvokedTriggers = std::vector<InvokedTrigger>;
 using TriggerCollisionMap =
     std::unordered_multimap<pxr::SdfPath, std::pair<const ::physx::PxShape*, size_t>, pxr::SdfPath::Hash>;
@@ -98,29 +81,17 @@ private:
     void processTriggerStateApiEnterEvent(const pxr::SdfPath& triggerPath,
                                           const pxr::SdfPath& otherPath,
                                           const ::physx::PxShape* otherShape);
-    void processTriggerApiEnterEvent(const usdparser::AttachedStage& attachedStage,
-                                     const pxr::SdfPath& triggerPath,
-                                     const pxr::SdfPath& otherPath);
     void processTriggerStateApiLeaveEvent(const pxr::SdfPath& triggerPath,
                                           const pxr::SdfPath& otherPath,
                                           const ::physx::PxShape* otherShape);
-    void processTriggerApiLeaveEvent(const usdparser::AttachedStage& attachedStage,
-                                     const pxr::SdfPath& triggerPath,
-                                     const pxr::SdfPath& otherPath);
     void processNativeEvent(const usdparser::AttachedStage& attachedStage,
                             const pxr::SdfPath& triggerColliderPath,
                             const pxr::SdfPath& otherColliderPath,
                             TriggerEventType::Enum eventType,
                             const pxr::SdfPath& triggerBodyPath,
                             const pxr::SdfPath& otherBodyPath);
-    TriggerScript getTriggerScript(const pxr::TfToken& scriptName);
-    TriggerScript addTriggerScript(const pxr::TfToken& scriptName, const char* scriptPathName);
 
 private:
-    carb::scripting::IScripting* mScripting;
-    carb::scripting::Context* mContextPython;
-
-    TriggerScriptMap mTriggerScriptMap;
     InvokedTriggers mInvokedTriggers;
 
     TriggerUsdOutputMap mTriggerOutputMap;

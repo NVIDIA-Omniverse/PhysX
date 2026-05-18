@@ -1,0 +1,51 @@
+[package]
+title = "Physics IsaacSim ready extension"
+description="Adds support for multiphysics workflows for IsaacSim ready assets."
+authors = ["PhysX"]
+changelog="docs/CHANGELOG.md"
+readme = "docs/README.md"
+repository = ""
+keywords = ["physics", "ui"]
+category = "simulation"
+version = "110.0.7"
+icon = "data/images/icon.png"
+preview_image = "data/images/preview.png"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.usd" = {}
+"omni.ui" = { optional = true }
+"usdrt.scenegraph" = {}
+"omni.usdphysics.ui" = { version = "110.0.7", exact = true, optional = true }
+"omni.kit.window.preferences" = { optional = true }
+"omni.kit.widget.settings" = { optional = true }
+"omni.kit.notification_manager" = { optional = true }
+"omni.physics" = { version = "110.0.7", exact = true }
+"omni.kit.property.physics" = { version = "110.0.7", exact = true, optional = true }
+
+[[python.module]]
+name = "omni.physics.isaacsimready"
+
+[settings]
+exts."omni.physics.isaacsimready".capability_check_enabled = true
+exts."omni.physics.isaacsimready".capability_check_window_enabled = false
+exts."omni.physics.isaacsimready".variant_manager_enabled = true
+
+[[test]]
+dependencies = [
+    "omni.kit.viewport.window",
+    "omni.kit.viewport.utility",
+    "omni.kit.test",
+    "omni.kit.ui_test",
+    "omni.kit.mainwindow",
+]
+
+args = [
+    "--/persistent/app/viewport/displayOptions=0",
+    "--/app/window/dpiScaleOverride=1.0",
+    "--/app/window/scaleToMonitor=false",
+]

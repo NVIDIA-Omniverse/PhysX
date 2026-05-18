@@ -17,7 +17,7 @@ repo_build.prebuild_link {
     { "python/scripts", ext_dir.."/omni/physxui/scripts" },
     { "python/tests", ext_dir.."/omni/physxui/tests" },    
     { repo_root_dir.."/data/icons/omni.physx.ui", ext_dir.."/icons" },
-    { repo_root_dir.."/extensions/common/python/windowmenuitem", ext_dir.."/omni/physxuicommon/windowmenuitem" },
+    { repo_root_dir.."/extensions/runtime/source/common/python/windowmenuitem", ext_dir.."/omni/physxuicommon/windowmenuitem" },
 }
 
 project ("omni.physxui.plugin")
@@ -26,13 +26,11 @@ project ("omni.physxui.plugin")
     rtti "On"
     extension_usd_deps(targetDeps_dir, hostDeps_dir)
     extension_omniui_deps()
-    extension_imgui_deps()
     targetdir (targetDir.."/"..ext_dir.."/bin/")
     dependson { "prebuild", "carb.physics-usd.plugin", "omni.physx.plugin", "foundation" }
     language "C++"
-    includedirs {   
+    includedirs {
         targetDeps_dir.."/carbonite/include",
-        targetDeps_dir.."/rtx_plugins/include",
         targetDeps_dir.."/gsl/include",   -- Support for std::span
         kit_sdk_dir.."/dev/fabric/include",
         targetDeps_dir.."/client-library/include",
@@ -44,6 +42,7 @@ project ("omni.physxui.plugin")
         kit_sdk_dir.."/plugins",
     }
     links { "physicsSchemaTools", "physxSchema", "omni.usd", "foundation", "omni.ui", "omni.ui.scene", "carb" }
+    extension_imgui_deps()
 
     filter { "configurations:debug" }
         runtime "Debug"

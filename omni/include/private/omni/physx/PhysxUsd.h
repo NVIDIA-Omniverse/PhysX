@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -496,12 +496,12 @@ struct PhysxSceneDesc : PhysxObjectDesc
     bool reportKineStatic;
     SceneUpdateType sceneUpdateType;
     bool supportSceneQueries;
-    bool enableResidualReporting;
-    bool reportResiduals;
     bool solveArticulationContactLast;
 
     bool enableQuasistatic;
     pxr::SdfPathSet quasistaticActors;
+
+    bool disableSleeping;
 
     uint64_t gpuTempBufferCapacity;
     uint32_t gpuMaxRigidContactCount;
@@ -571,6 +571,7 @@ struct PhysxShapeDesc : PhysxObjectDesc
     carb::Float3 localScale;
     std::vector<ObjectId> materials;
     pxr::SdfPath rigidBody;
+    pxr::SdfPath sourceGprim;
     ObjectId collisionGroup;
     bool collisionEnabled;
 
@@ -818,6 +819,11 @@ struct StaticPhysxRigidBodyDesc : PhysxRigidBodyDesc
     {
         type = eStaticBody;
     }
+
+    // we need to anotate bodies that were created for colliders
+    // below a node, this should be prohibited, but its used, need
+    // to write validation against this
+    pxr::SdfPath sourceGPrimPath;
 };
 
 struct DynamicPhysxRigidBodyDesc : PhysxRigidBodyDesc
@@ -990,7 +996,6 @@ struct PhysxArticulationDesc : PhysxObjectDesc
     float sleepThreshold;
     float stabilizationThreshold;
     bool selfCollision;
-    bool reportResiduals;
     std::unordered_set<pxr::SdfPath, pxr::SdfPath::Hash> articulatedJoints;
     std::unordered_set<pxr::SdfPath, pxr::SdfPath::Hash> articulatedBodies;
     ObjectId sceneId;
@@ -1183,8 +1188,6 @@ struct PhysxJointDesc : public PhysxObjectDesc
     bool enableCollision;
     bool excludedFromArticulation;
     bool validBodyTransformations;
-
-    bool enableResidualReporting;
 };
 
 struct FixedPhysxJointDesc : public PhysxJointDesc
@@ -1365,9 +1368,11 @@ struct PhysxDeformableBodyDesc : public PhysxObjectDesc
     pxr::SdfPath simMeshPath;
     ObjectId simMeshMaterial;
     pxr::TfToken simMeshBindPoseToken;
+    bool simMeshLeftHandedOrientation;
 
     pxr::SdfPath collisionMeshPath;
     pxr::TfToken collisionMeshBindPoseToken;
+    bool collisionMeshLeftHandedOrientation;
     ObjectId collisionGroup;
 
     pxr::SdfPathVector skinGeomPaths;

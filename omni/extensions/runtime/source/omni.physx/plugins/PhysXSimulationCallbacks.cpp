@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -335,7 +335,7 @@ void physxRemoveSimulationFlags(uint32_t outputType, uint32_t flags, const uint6
 
 SimulationCallbacks::SimulationCallbacks()
 
-    : mTransformationWriteFn(nullptr), mVelocityWriteFn(nullptr), mResidualWriteFn(nullptr), mTransformUpdateFn(nullptr),
+    : mTransformationWriteFn(nullptr), mVelocityWriteFn(nullptr), mTransformUpdateFn(nullptr),
     mUserData(nullptr), mGlobalSimulationFlags(0)
 {
 }
@@ -350,7 +350,6 @@ void SimulationCallbacks::init(const ISimulationCallback& cb)
 {
     mTransformationWriteFn = cb.transformationWriteFn;
     mVelocityWriteFn = cb.velocityWriteFn;
-    mResidualWriteFn = cb.residualWriteFn;
     mTransformUpdateFn = cb.transformationUpdateFn;
     mUserData = cb.userData;
 }
@@ -359,7 +358,6 @@ void SimulationCallbacks::reset()
 {
     mTransformationWriteFn = nullptr;
     mVelocityWriteFn = nullptr;
-    mResidualWriteFn = nullptr;
     mTransformUpdateFn = nullptr;
     mGlobalSimulationFlags = 0;
     mActorSimulationFlags = 0;

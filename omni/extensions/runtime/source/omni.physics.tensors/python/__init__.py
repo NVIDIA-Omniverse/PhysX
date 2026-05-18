@@ -1,8 +1,13 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
-from omni.physics.tensors import acquire_tensor_api
 
-from .extension import *
-from .api import create_simulation_view
-from .api import reset
+# Import from bindings directly to avoid circular import when used outside Kit
+from omni.physics.tensors.bindings._physicsTensors import acquire_tensor_api
+from .api import create_simulation_view, reset
+
+# Kit extension lifecycle - only needed inside Kit
+try:
+    from .extension import Extension
+except ImportError:
+    pass

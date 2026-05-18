@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_PVD_COMM_STREAM_TYPES_H
 #define PX_PVD_COMM_STREAM_TYPES_H
@@ -170,7 +170,7 @@ struct EventStreamifier : public PvdEventSerializer
 		uint32_t len = 0;
 		String temp = nonNull(val);
 		if(*temp)
-			len = static_cast<uint32_t>(strlen(temp) + 1);
+			len = static_cast<uint32_t>(strnlen(temp, UINT32_MAX - 1) + 1);
 		write(len);
 		write(val, len);
 	}

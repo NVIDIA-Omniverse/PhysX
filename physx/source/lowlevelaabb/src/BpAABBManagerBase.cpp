@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,21 +31,22 @@
 
 using namespace physx;
 using namespace Bp;
+using namespace Cm;
 
-AABBManagerBase::AABBManagerBase(	BroadPhase& bp, BoundsArray& boundsArray, PxFloatArrayPinnedSafe& contactDistance,
-									PxU32 maxNbAggregates, PxU32 maxNbShapes, PxVirtualAllocator& allocator, PxU64 contextID,
+AABBManagerBase::AABBManagerBase(	BroadPhase& bp, BoundsArray& boundsArray, PinnableArray<PxReal>& contactDistance,
+									PxU32 maxNbAggregates, PxU32 maxNbShapes, VirtualAllocatorCallback& allocator, PxU64 contextID,
 									PxPairFilteringMode::Enum kineKineFilteringMode, PxPairFilteringMode::Enum staticKineFilteringMode) :
-	mAddedHandleMap			(allocator.getCallback()),
-	mRemovedHandleMap		(allocator.getCallback()),
-	mChangedHandleMap		(allocator.getCallback()),
-	mGroups					(allocator.getCallback()),
-	mEnvIDs					(allocator.getCallback()),
+	mAddedHandleMap			(allocator),
+	mRemovedHandleMap		(allocator),
+	mChangedHandleMap		(allocator),
+	mGroups					(allocator),
+	mEnvIDs					(allocator),
 	mContactDistance		(contactDistance),
-	mVolumeData				(allocator.getCallback()),
+	mVolumeData				(allocator),
 	mFilters				(kineKineFilteringMode == PxPairFilteringMode::eKILL, staticKineFilteringMode == PxPairFilteringMode::eKILL),
-	mAddedHandles			(allocator.getCallback()),
-	mUpdatedHandles			(allocator.getCallback()),
-	mRemovedHandles			(allocator.getCallback()),
+	mAddedHandles			(allocator),
+	mUpdatedHandles			(allocator),
+	mRemovedHandles			(allocator),
 	mBroadPhase				(bp),
 	mBoundsArray			(boundsArray),
 	mUsedSize				(0),

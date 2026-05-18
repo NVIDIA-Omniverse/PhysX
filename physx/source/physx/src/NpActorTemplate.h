@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -68,12 +68,12 @@ public:
 	// The rule is: If an API method is used somewhere in here, it has to be redeclared, else GCC whines
 
 	// PxActor
-	virtual		void				release()	= 0;
-	virtual		PxActorType::Enum	getType()	const = 0;
+	virtual		void				release() PX_OVERRIDE	= 0;
+	virtual		PxActorType::Enum	getType()	const PX_OVERRIDE = 0;
 	virtual		PxScene*			getScene()	const	PX_OVERRIDE PX_FINAL;
 	virtual		void				setName(const char*)	PX_OVERRIDE PX_FINAL;
 	virtual		const char*			getName()	const	PX_OVERRIDE PX_FINAL;
-	virtual		PxBounds3			getWorldBounds(float inflation=1.01f)	const = 0;
+	virtual		PxBounds3			getWorldBounds(float inflation=1.01f)	const PX_OVERRIDE = 0;
 	virtual		void				setActorFlag(PxActorFlag::Enum flag, bool value)	PX_OVERRIDE;
 	virtual		void				setActorFlags(PxActorFlags inFlags)	PX_OVERRIDE;
 	virtual		PxActorFlags		getActorFlags()	const	PX_OVERRIDE PX_FINAL;
@@ -197,6 +197,7 @@ PX_FORCE_INLINE void NpActorTemplate<APIClass>::setActorFlagInternal(PxActorFlag
 		a.scSetActorFlags( a.getActorFlags() | flag );
 	else
 		a.scSetActorFlags( a.getActorFlags() & (~PxActorFlags(flag)) );
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxActor, flags, static_cast<PxActor&>(*this), a.getActorFlags())
 }
 
 template<class APIClass>

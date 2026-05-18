@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -38,7 +38,6 @@
 #define DY_MIN_RESPONSE 1e-12f
 #define DY_ARTICULATION_MIN_RESPONSE 1e-12f
 #define DY_ARTICULATION_CFM	2e-4f
-#define DY_ARTICULATION_PGS_BIAS_COEFFICIENT 0.8f
 
 namespace physx
 {
@@ -161,9 +160,8 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeFrictionImpulse
 (PxReal frictionImpulse, const PxReal staticFrictionImpulse, const PxReal dynamicFrictionImpulse, const PxReal viscousFrictionCoefficient, const PxReal jointVel)
 {
 	if (PxAbs(frictionImpulse) > staticFrictionImpulse)
-		{
-			frictionImpulse = PxClamp(frictionImpulse, -dynamicFrictionImpulse - viscousFrictionCoefficient * PxAbs(jointVel), dynamicFrictionImpulse + viscousFrictionCoefficient * PxAbs(jointVel));
-		}
+		frictionImpulse = PxClamp(frictionImpulse, -dynamicFrictionImpulse - viscousFrictionCoefficient * PxAbs(jointVel), dynamicFrictionImpulse + viscousFrictionCoefficient * PxAbs(jointVel));
+
 	return frictionImpulse;
 }
 
@@ -257,12 +255,10 @@ PX_CUDA_CALLABLE PX_INLINE PxPair<PxReal, PxReal> computeBoundsForPositiveImpuls
     bound1 = (velDeviation - max) / denom1;
     bound2 = (velDeviation + max) / denom2;
 
-    if (denom1 >= 0.0f) {
+    if (denom1 >= 0.0f)
 		return PxPair<PxReal, PxReal>(PxMax(0.0f, bound1), PxMin(bound2, impulse));
-	}
-	else {
+	else
 		return PxPair<PxReal, PxReal>(0.0f, PxMin(PxMin(bound1, bound2), impulse));
-	}
 }
 
 /**
@@ -352,7 +348,7 @@ PX_CUDA_CALLABLE PX_INLINE PxReal clampDriveImpulse(
 PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeLimitImpulse
 (const PxReal dt, const PxReal recipDt, const bool  isVelIter, 
  const PxReal response, const PxReal recipResponse, const PxReal erp,
- const PxReal errorLow, const PxReal errorHigh,  
+ const PxReal errorLow, const PxReal errorHigh,
  const PxReal jointPDelta,
  PxReal& lowImpulse_, PxReal& highImpulse_, PxReal& jointV_)
 {
@@ -379,16 +375,23 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeLimitImpulse
 	if (currErrLow < tolerance || nextErrLow < tolerance)
 	{
 		PxReal newJointV = jointV;
-		limited = true;
 		if (currErrLow < tolerance)
 		{
+			//Only apply an impulse to resolve the bias on pos iters.
+			//Any subsequent vel iter will attempt to bring the dof vel to zero in the 
+			//code block that follows (if !limited) if this dof had already received an 
+			//impulse to resolve the limit bias.
 			if (!isVelIter)
+			{
+				limited = true;
 				newJointV = -currErrLow * recipDt * erp;
+			}
 		}
 		else
 		{
 			// Currently we're not in violation of the limit but would be after this time step given the current velocity.
 			// To prevent that future violation, we want the current velocity to only take us right to the limit, not across it 
+			limited = true;
 			newJointV = -currErrLow * recipDt;
 		}
 
@@ -396,27 +399,38 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeLimitImpulse
 		// However, we ignored the current velocity, which may already take us further away from the limit than the newJointV.
 		// Therefore, we additionally have to check now that the impulse we're applying is only repulsive overall.
 
-		const PxReal deltaV = newJointV - jointV;
-		deltaF = PxMax(lowImpulse + deltaV * recipResponse, 0.f) - lowImpulse; // accumulated limit impulse must be repulsive
-		lowImpulse += deltaF;
-		newLow = true;
+		if(limited)
+		{
+			const PxReal deltaV = newJointV - jointV;
+			deltaF = PxMax(lowImpulse + deltaV * recipResponse, 0.f) - lowImpulse; // accumulated limit impulse must be repulsive
+			lowImpulse += deltaF;
+			newLow = true;
+		}
 	}
 	else if (currErrHigh < tolerance || nextErrHigh < tolerance)
 	{
 		PxReal newJointV = jointV;
-		limited = true;
 		if (currErrHigh < tolerance)
 		{
 			if (!isVelIter)
+			{
+				limited = true;
 				newJointV = currErrHigh * recipDt * erp;
+			}
 		}
 		else
+		{
+			limited = true;
 			newJointV = currErrHigh * recipDt;
+		}
 
-		const PxReal deltaV = newJointV - jointV;
-		deltaF = PxMin(highImpulse + deltaV * recipResponse, 0.f) - highImpulse;
-		highImpulse += deltaF;
-		newHigh = true;
+		if(limited)
+		{
+			const PxReal deltaV = newJointV - jointV;
+			deltaF = PxMin(highImpulse + deltaV * recipResponse, 0.f) - highImpulse;
+			highImpulse += deltaF;
+			newHigh = true;
+		}
 	}
 
 	if (!limited)
@@ -427,6 +441,7 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeLimitImpulse
 		// The pull-back impulse is the smaller of
 		//     a) The impulse needed to bring the joint velocity to zero.
 		//     b) The opposite impulse of the already applied joint limit impulse, thereby cancelling out the accumulated effect of the limit.
+		//Note: if the limit was not breached, lowImpulse and highImpulse will both be 0 and deltaF will also be 0. 
 
 		const PxReal impulseForZeroVel = -jointV * recipResponse; 
 		if (jointV > 0.f) // moving away from the lower limit
@@ -492,9 +507,9 @@ delta spatial velocity from parent link to child link.
 \return The propagated spatial impulse in the world frame.
 */
 PX_CUDA_CALLABLE PX_FORCE_INLINE Cm::SpatialVectorF propagateImpulseW
-(const PxVec3& parentToChild, 
- const Cm::SpatialVectorF& YChildW, 
- const PxReal* jointDofImpulse, const Cm::SpatialVectorF* jointDofISInvStISW, const Cm::UnAlignedSpatialVector* jointDofMotionMatrixW, const PxU8 dofCount, 
+(const PxVec3& parentToChild,
+ const Cm::SpatialVectorF& YChildW,
+ const PxReal* jointDofImpulse, const Cm::SpatialVectorF* jointDofISInvStISW, const Cm::UnAlignedSpatialVector* jointDofMotionMatrixW, const PxU8 dofCount,
  PxReal* jointDofQMinusStY)
 {
 	//See Mirtich Figure 5.7 page 141
@@ -546,14 +561,13 @@ propagateVelocityW().
 \note See Mirtich p121 and equations for propagating forces/applying accelerations and
 	p141 for propagating velocities/applying impulses.
 */
-PX_CUDA_CALLABLE PX_FORCE_INLINE  Cm::SpatialVectorF propagateAccelerationW(
+PX_CUDA_CALLABLE PX_FORCE_INLINE Cm::SpatialVectorF propagateAccelerationW(
 	const PxVec3& parentToChild, const Cm::SpatialVectorF& parentLinkAccelerationW, 
 	const InvStIs& invStISW, const Cm::UnAlignedSpatialVector* motionMatrixW, const Cm::SpatialVectorF* IsW, const PxReal* QMinusSTZ, const PxU32 dofCount, 
 	PxReal* jointAcceleration)
 {
 	//parentToChild satisfies parent = child + parentToChild.
 	Cm::SpatialVectorF motionAccelerationW = translateSpatialVector(-parentToChild, parentLinkAccelerationW); //parent velocity change
-
 
 	//[Q_i - (s^T * Z_i^A + I_i^A * c_i)] - s^T * I_i^A * translated(vParent)
 	//Alternatively we compute I_i^A * s == s^T * I_i^A
@@ -723,6 +737,111 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE void computeMimicJointImpulses
 	const PxReal lambda = -(b + Jv) * effectiveInertia;
 	jointImpA = lambda;
 	jointImpB = gearRatio * lambda;
+}
+
+struct TendonImplicitSpringParams
+{
+	PX_CUDA_CALLABLE PX_FORCE_INLINE TendonImplicitSpringParams(const PxReal biasCoef, const PxReal velMult, const PxReal impMult, const PxReal limitBiasCoef, const PxReal limitIMpMult)
+	: biasCoefficient(biasCoef), 
+      velMultiplier(velMult), 
+      impulseMultiplier(impMult), 
+      limitBiasCoefficient(limitBiasCoef), 
+      limitImpulseMultiplier(limitIMpMult)
+	{
+	}
+
+	PX_CUDA_CALLABLE PX_FORCE_INLINE TendonImplicitSpringParams()
+	: biasCoefficient(0.0f), velMultiplier(0.0f), impulseMultiplier(0.0f), limitBiasCoefficient(0.0f), limitImpulseMultiplier(0.0f)
+	{
+	}
+
+	PxReal biasCoefficient;
+	PxReal velMultiplier;
+	PxReal impulseMultiplier;
+	PxReal limitBiasCoefficient; 
+	PxReal limitImpulseMultiplier;
+};
+
+PX_CUDA_CALLABLE PX_FORCE_INLINE void computeSpringParams
+(const PxReal stepDt, const bool isTGSSolver,
+ const PxReal unitResponse, 
+ const PxReal stiffness, const PxReal damping, 
+ PxReal& biasCoefficient, PxReal& velMultiplier, PxReal& impulseMultiplier)
+{
+	const PxReal a = stepDt * (stepDt*stiffness + damping);
+	const PxReal x = unitResponse > 0.f ? 1.0f / (1.0f + a * unitResponse) : 0.f;
+	biasCoefficient = (-stiffness * x * stepDt);
+	velMultiplier = -x * a;
+	impulseMultiplier = isTGSSolver ? 1.f : 1.f - x;
+}
+
+/**
+\brief Compute the parameters for implicit tendon springs (1 spring for rest length, 1 spring for limit).
+\param[in] dt is the timestep that will be used to forward integrate the spring position bias.
+\param[in] isTGSSolver is true if TGS solver is active, false if PGS solver is active.
+\param[in] unitResponse is the multiplier that converts impulse to velocity change.
+\param[in] stiffness is the stiffness of the rest length spring (force per unit position bias)
+\param[in] damping is the damping of the rest length spring (force per unit velocity bias)
+\param[in] limitStiffness is the stiffness of the limit spring (force per unit position bias)
+\return The params used to compute the impulse arising from current tendon state. 
+\see computeTendonImpulse
+*/
+PX_CUDA_CALLABLE PX_FORCE_INLINE TendonImplicitSpringParams computeTendonSpringParams
+(const PxReal dt, const bool isTGSSolver, 
+ const PxReal unitResponse, 
+ const PxReal stiffness, const PxReal damping, 
+ const PxReal limitStiffness)
+{
+	TendonImplicitSpringParams params;
+
+	computeSpringParams(
+		dt, isTGSSolver,
+		unitResponse,
+		stiffness, damping,
+		params.biasCoefficient, params.velMultiplier, params.impulseMultiplier);
+			
+	PxReal limitVelMultiplier = 0.0f;
+	computeSpringParams(
+		dt, isTGSSolver,
+		unitResponse, 
+		limitStiffness, damping,
+ 		params.limitBiasCoefficient, limitVelMultiplier, params.limitImpulseMultiplier);
+
+	return params;
+}
+
+/**
+\brief Compute the tendon impulse for the rest length spring and for the limit spring and compute the change in total impulse.
+\param[in] recipCoefficient is a multiplier used to scale (restLengthError * biasCoefficient + tendonSpeed * velMultiplier)
+\param[in] tendonImplicitSpringParams are the params for the implicit springs of the tendon.
+\param[in] restLengthError is the bias of the rest length spring
+\param[in] tendonSpeed is the speed of the tendon
+\param[in] limitError is the bias of the limit spring
+\param[in] accumulatedRestLengthImpulse is the accumualted impulse applied to the rest length spring
+\param[in] accumulatedLimitImpulse is the accumualted impulse applied to the limit spring
+\param[out] restLengthImpulse is the new impulse to apply to the rest length spring
+\param[out] limitImpulse is the new impulse to apply to the limit spring
+\param[out] deltaF is the change in total impulse
+\see computeTendonSpringParams
+\note restLengthImpulse = ((restLengthError*biasCoefficient*) + (tendonSpeed*velMultiplier))*recipCoefficient + accumulatedRestLengthImpulse*impulseMultiplier
+\note accumulatedLimitImpulse = ((limitError*limitBiasCoefficient*)*recipCoefficient + accumulatedLimitImpulse*limitImpulseMultiplier
+*/
+PX_CUDA_CALLABLE PX_FORCE_INLINE void computeTendonImpulse
+(const PxReal recipCoefficient,
+ const TendonImplicitSpringParams& tendonImplicitSpringParams,
+ const PxReal restLengthError, const PxReal tendonSpeed, const PxReal limitError, 
+ const PxReal accumulatedRestLengthImpulse, const PxReal accumulatedLimitImpulse,
+ PxReal& restLengthImpulse, PxReal& limitImpulse, PxReal& deltaF)
+{		
+	restLengthImpulse = 
+			(restLengthError * tendonImplicitSpringParams.biasCoefficient + tendonSpeed * tendonImplicitSpringParams.velMultiplier) * recipCoefficient
+			+ accumulatedRestLengthImpulse * tendonImplicitSpringParams.impulseMultiplier;
+
+	limitImpulse = 
+			limitError * tendonImplicitSpringParams.limitBiasCoefficient * recipCoefficient
+			+ accumulatedLimitImpulse * tendonImplicitSpringParams.limitImpulseMultiplier;
+
+	deltaF = (restLengthImpulse - accumulatedRestLengthImpulse) + (limitImpulse - accumulatedLimitImpulse);
 }
 
 /**

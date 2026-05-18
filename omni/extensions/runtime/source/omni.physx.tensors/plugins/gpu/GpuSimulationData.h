@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -199,6 +199,23 @@ struct GpuRigidContactFilterIdPair
     struct LessThan
     {
         bool operator()(const GpuRigidContactFilterIdPair& a, const GpuRigidContactFilterIdPair& b) const
+        {
+            return a.actor < b.actor;
+        }
+    };
+};
+
+// This is almost identical to the GpuRigidContactFilterIdPair struct, but it's used for the actor-to-pathId lookup for raw contact data.
+// Since we need pathId to be uint64_t, we can't use the GpuRigidContactFilterIdPair struct.
+// TODO: Use template to avoid code duplication?
+struct GpuActorPathIdPair
+{
+    ::physx::PxActor* actor = nullptr;
+    uint64_t pathId = 0;
+
+    struct LessThan
+    {
+        __host__ __device__ bool operator()(const GpuActorPathIdPair& a, const GpuActorPathIdPair& b) const
         {
             return a.actor < b.actor;
         }
@@ -427,6 +444,10 @@ struct GpuSimulationData
     ::physx::PxGpuContactPair* mGpuContactPairsDev = nullptr;
     ::physx::PxU32* mGpuContactPairCountDev = nullptr;
     ::physx::PxU32 mNumContactPairs = 0;
+
+    // Actor-to-pathId lookup for raw contact data (shared by all contact views)
+    GpuActorPathIdPair* mActorPathLookupDev = nullptr;
+    ::physx::PxU32 mNumActorPathPairs = 0;
 
     // soft bodies
     // maps soft body global indices to softBody gpu records

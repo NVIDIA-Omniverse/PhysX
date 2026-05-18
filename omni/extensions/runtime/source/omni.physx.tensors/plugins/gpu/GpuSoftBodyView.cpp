@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #include <string>
@@ -241,6 +241,10 @@ GpuSoftBodyView::~GpuSoftBodyView()
         CHECK_CUDA(cudaFree(mSbRecordsDev));
         CHECK_CUDA(cudaFree(materialModelsDev));
         CHECK_CUDA(cudaFree(materialPropertiesDev));
+        if (mMaskIndicesDev)
+            CHECK_CUDA(cudaFree(mMaskIndicesDev));
+        if (mMaskAllocPolicy.mBuffer)
+            CHECK_CUDA(cudaFree(mMaskAllocPolicy.mBuffer));
 
         mSimKinematicTargets.releaseDeviceMem();
         mSimNodalValues.releaseDeviceMem();
@@ -266,10 +270,10 @@ void GpuSoftBodyView::copySoftBodyData(PxSoftBodyGpuDataFlag::Enum flag,
 {
     PxScene* scene = mGpuSimData->mScene;
     CUevent signalEvent = mGpuSimData->mCopyEvents[copyEvent];
-    CHECK_CU(cuStreamWaitEvent(nullptr, signalEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(signalEvent), 0, nullptr));
     scene->copySoftBodyData(
         mBuffersD, (void*)mBufferSizesD, (void*)mSbIndicesD, flag, size, mMaxBufferSize, signalEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, signalEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(signalEvent), 0, nullptr));
 }
 
 bool GpuSoftBodyView::submitPxValues(const TensorDesc* srcTensor,
@@ -354,11 +358,10 @@ bool GpuSoftBodyView::submitPxValues(const TensorDesc* srcTensor,
             return false;
         }
         CUevent waitEvent = mGpuSimData->mApplyWaitEvents[ApplyEvent::eSbSimNodalValueBuffer];
-        CHECK_CU(cuEventRecord(waitEvent, nullptr));
-        CHECK_CU(cuEventSynchronize(waitEvent));
+        CHECK_CU(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(waitEvent), uintptr_t(0), nullptr));
+        CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(waitEvent), nullptr));
         PxScene* scene = mGpuSimData->mScene;
         SYNCHRONIZE_CUDA();
-        // cuCtxSynchronize(); // TODO: (why) is this necessary?
         scene->applySoftBodyData((void**)tmpNodalBuffer.buffersD, (void*)tmpNodalBuffer.bufferSizesD, (void*)SbIndicesD,
                                  dataType, numIndices, tmpNodalBuffer.maxBufferSize, waitEvent);
         CHECK_CUDA(cudaStreamSynchronize(nullptr));
@@ -501,6 +504,105 @@ bool GpuSoftBodyView::setSimNodalVelocities(const TensorDesc* srcTensor, const T
 bool GpuSoftBodyView::setSimKinematicTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
     return submitPxValues(srcTensor, indexTensor, PxSoftBodyGpuDataFlag::eSIM_POSITION_INV_MASS, "kinematicTargets", __FUNCTION__, true, true);
+}
+
+// ---------------------------------------------------------------------------
+// Mask support (mask -> compact indices -> existing indexed setters)
+// ---------------------------------------------------------------------------
+
+bool GpuSoftBodyView::resolveMask(const TensorDesc* maskTensor, PxU32& outK) const
+{
+    if (!maskTensor || !maskTensor->data)
+    {
+        CARB_LOG_ERROR("mask tensor is null or has no data in %s", __FUNCTION__);
+        return false;
+    }
+
+    if (!checkTensorDevice(*maskTensor, mDevice, "mask", __FUNCTION__))
+        return false;
+
+    if (maskTensor->dtype != omni::physics::tensors::TensorDataType::eUint8)
+    {
+        CARB_LOG_ERROR("mask tensor must be uint8 in %s", __FUNCTION__);
+        return false;
+    }
+
+    if (getTensorTotalSize(*maskTensor) != getCount())
+    {
+        CARB_LOG_ERROR("mask tensor size (%llu) must equal view count (%u) in %s",
+                       (unsigned long long)getTensorTotalSize(*maskTensor), getCount(), __FUNCTION__);
+        return false;
+    }
+
+    const PxU32 N = getCount();
+
+    // Acquire PhysX CUDA context before any device calls (cudaMalloc, thrust)
+    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
+
+    if (!mMaskIndicesDev || N > mMaskIndicesCapacity)
+    {
+        if (mMaskIndicesDev)
+            CHECK_CUDA(cudaFree(mMaskIndicesDev));
+        mMaskIndicesDev = nullptr;
+        mMaskIndicesCapacity = 0;
+
+        if (cudaMalloc(&mMaskIndicesDev, N * sizeof(PxU32)) != cudaSuccess)
+        {
+            CARB_LOG_ERROR("Failed to allocate mask indices buffer in %s", __FUNCTION__);
+            return false;
+        }
+        mMaskIndicesCapacity = N;
+    }
+
+    if (!compactMaskToIndices(mMaskAllocPolicy, mMaskIndicesDev,
+                              static_cast<const uint8_t*>(maskTensor->data), N, outK))
+        return false;
+    return true;
+}
+
+bool GpuSoftBodyView::setSimNodalPositionsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    PxU32 K;
+    if (!resolveMask(maskTensor, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return setSimNodalPositions(srcTensor, nullptr);
+    TensorDesc idx{};
+    idx.device = mDevice;
+    idx.dtype = omni::physics::tensors::TensorDataType::eUint32;
+    idx.numDims = 1;
+    idx.dims[0] = (int)K;
+    idx.data = mMaskIndicesDev;
+    return setSimNodalPositions(srcTensor, &idx);
+}
+
+bool GpuSoftBodyView::setSimNodalVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    PxU32 K;
+    if (!resolveMask(maskTensor, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return setSimNodalVelocities(srcTensor, nullptr);
+    TensorDesc idx{};
+    idx.device = mDevice;
+    idx.dtype = omni::physics::tensors::TensorDataType::eUint32;
+    idx.numDims = 1;
+    idx.dims[0] = (int)K;
+    idx.data = mMaskIndicesDev;
+    return setSimNodalVelocities(srcTensor, &idx);
+}
+
+bool GpuSoftBodyView::setSimKinematicTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    PxU32 K;
+    if (!resolveMask(maskTensor, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return setSimKinematicTargets(srcTensor, nullptr);
+    TensorDesc idx{};
+    idx.device = mDevice;
+    idx.dtype = omni::physics::tensors::TensorDataType::eUint32;
+    idx.numDims = 1;
+    idx.dims[0] = (int)K;
+    idx.data = mMaskIndicesDev;
+    return setSimKinematicTargets(srcTensor, &idx);
 }
 
 bool GpuSoftBodyView::getSimNodalPositions(const TensorDesc* dstTensor) const

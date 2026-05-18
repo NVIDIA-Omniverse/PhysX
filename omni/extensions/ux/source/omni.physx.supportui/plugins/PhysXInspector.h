@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -47,6 +47,7 @@ public:
     void commitAuthoringState();
     void enableAuthoringMode();
     void enableNoticeHandler(bool enable);
+    void handlePhysicsObjectsReleased();
     void refreshAllInspectorModelsStructure();
     void refreshAllInspectorModelsValues();
     void refreshAllInspectorModelsOverrides();
@@ -124,6 +125,7 @@ private:
     bool mCmdUpdateModels = false;
     bool mCmdZeroStep = false;
     bool mSilenceUsdChangeEvents = false;
+    uint32_t mIgnorePhysicsObjectsReleased = 0;
     omni::physx::IPhysx* mPhysXInterface = nullptr;
     omni::physx::IPhysxPrivate* mPhysXPrivateInterface = nullptr;
     pxr::UsdStageRefPtr mStage;

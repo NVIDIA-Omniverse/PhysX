@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -31,7 +31,6 @@
 #include "foundation/PxVec4.h"
 #include "foundation/PxBounds3.h"
 #include "foundation/PxMathUtils.h"
-#include "PxgParticleSystemCore.h"
 #include "PxgParticleSystem.h"
 #include "PxgParticleSystemCoreKernelIndices.h"
 #include "PxgBodySim.h"
@@ -51,7 +50,7 @@
 
 #include "PxgArticulation.h"
 #include "PxgArticulationCoreDesc.h"
-#include "PxgFEMCore.h"
+#include "PxgFEMCloth.h"
 #include "PxsPBDMaterialCore.h"
 
 #include "particleSystem.cuh"
@@ -680,7 +679,7 @@ void ps_updateBoundSecondPassLaunch(
 }
 
 //Each block deal with one volume
-extern "C" __global__ void ps_update_volume_bound(
+extern "C" __global__ __launch_bounds__(PxgParticleSystemKernelBlockDim::UPDATEBOUND, 1) void ps_update_volume_bound(
 	const PxgParticleSystem* PX_RESTRICT particleSystems,
 	const PxU32* PX_RESTRICT activeParticleSystemIndices)
 {
@@ -4040,7 +4039,7 @@ extern "C" __global__ void ps_solveVelocityLaunch(
 	}
 }
 
-extern "C" __global__ void ps_updateRemapVertsLaunch(
+extern "C" __global__ __launch_bounds__(PxgParticleSystemKernelBlockDim::UPDATEBOUND, 1) void ps_updateRemapVertsLaunch(
 	const PxgParticleSystem* PX_RESTRICT particleSystems, 
 	const PxU32* PX_RESTRICT activeParticleSystems)
 {
@@ -4134,7 +4133,7 @@ extern "C" __global__ void ps_initializeSpringsLaunch(
 	}
 }
 
-extern "C" __global__ void ps_solveSpringsLaunch(
+extern "C" __global__ __launch_bounds__(PxgParticleSystemKernelBlockDim::ACCUMULATE_DELTA, 1) void ps_solveSpringsLaunch(
 	const PxgParticleSystem* PX_RESTRICT particleSystems, 
 	const PxU32* PX_RESTRICT activeParticleSystems,
 	const PxReal invDt, 
@@ -5621,7 +5620,7 @@ extern "C" __global__ void ps_solveRigidAttachmentsLaunch(
 			solverBodyIndex = prePrepDesc->solverBodyIndices[rigidId.index()];
 		}
 		else if (invMass1 == 0.f)
-			continue; //Constrainint an infinte mass particle to an infinite mass rigid body. Won't work so skip!
+			continue; //Constraining an infinite mass particle to an infinite mass rigid body. Won't work so skip!
 
 		float4 linearVelocity = initialVel[solverBodyIndex] + solverBodyDeltaVel[solverBodyIndex];
 		float4 angularVelocity = initialVel[solverBodyIndex + numSolverBodies] + solverBodyDeltaVel[solverBodyIndex + numSolverBodies];
@@ -5701,7 +5700,7 @@ extern "C" __global__ void ps_solveRigidAttachmentsTGSLaunch(
 			solverBodyIndex = prePrepDesc->solverBodyIndices[rigidId.index()];
 		}
 		else if (invMass1 == 0.f)
-			continue; //Constrainint an infinte mass particle to an infinite mass rigid body. Won't work so skip!
+			continue; //Constraining an infinite mass particle to an infinite mass rigid body. Won't work so skip!
 
 		float4 v0 = solverBodyVel[solverBodyIndex];
 		float4 v1 = solverBodyVel[solverBodyIndex + numSolverBodies];

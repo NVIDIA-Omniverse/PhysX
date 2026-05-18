@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -52,10 +52,21 @@ void USDReplicator::clone(const SdfPath& envPath, const SdfPath& sourceEnvPath, 
     }
 }
 
-void USDReplicator::replicate(uint64_t sourceEnvPath, uint32_t numReplication)
+void USDReplicator::setupScenePartition(const pxr::SdfPath& envPath, uint32_t envIndex)
+{
+    // Set the envIds through partition primvar primvars:omni:scenePartition
+    UsdPrim prim = mStage->GetPrimAtPath(envPath);
+    if (prim)
+    {
+        UsdAttribute partitionAttr = prim.CreateAttribute(TfToken("primvars:omni:scenePartition"), SdfValueTypeNames->Token);
+        partitionAttr.Set(VtValue(TfToken("env_partition_" + std::to_string(envIndex))));
+    }
+}
+
+void USDReplicator::replicate(uint64_t sourceEnvPath, uint32_t numReplication, bool useEnvIds)
 {
     auto iReplicator = carb::getCachedInterface<omni::physx::IPhysxReplicator>();
-    iReplicator->replicate(mStageId, sourceEnvPath, numReplication, false, false);
+    iReplicator->replicate(mStageId, sourceEnvPath, numReplication, useEnvIds, false);
 }
 
 void populateFabricFromUsdStage(IFabricUsd* fabricUsd, FabricId fabricId, StageReaderWriterId stageInProgress, pxr::UsdStageRefPtr& usdStage)
@@ -68,7 +79,7 @@ void populateFabricFromUsdStage(IFabricUsd* fabricUsd, FabricId fabricId, StageR
     StageReaderWriter stage(stageInProgress);
 
     pxr::UsdPrimRange primRange = usdStage->Traverse();
-    std::set<omni::fabric::TokenC> filter = {};
+    std::set<omni::fabric::Token> filter = {};
     for (auto iter = primRange.begin(), end = primRange.end(); iter != end; ++iter)
     {
         // collision groups/friction tables can have multiple targets in rels, which are not supported by fabric
@@ -81,10 +92,14 @@ void populateFabricFromUsdStage(IFabricUsd* fabricUsd, FabricId fabricId, StageR
             bool resetXf;
             xf.GetLocalTransformation(&localMat, &resetXf);
             const GfMatrix4d worldMat = xf.ComputeLocalToWorldTransform(UsdTimeCode::Default());
-            GfMatrix4d* localFabricMat = stage.getOrCreateAttributeWr<GfMatrix4d>(omni::fabric::asInt(xf.GetPrim().GetPrimPath()), fabricTransform, matrixType);
+            GfMatrix4d* localFabricMat = stage.getOrCreateAttributeWr<GfMatrix4d>(
+                omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, xf.GetPrim().GetPrimPath()), fabricTransform,
+                matrixType);
             *localFabricMat = localMat;
 
-            GfMatrix4d* worldFabricMat = stage.getOrCreateAttributeWr<GfMatrix4d>(omni::fabric::asInt(xf.GetPrim().GetPrimPath()), fabricWorldTransform, matrixType);
+            GfMatrix4d* worldFabricMat = stage.getOrCreateAttributeWr<GfMatrix4d>(
+                omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, xf.GetPrim().GetPrimPath()), fabricWorldTransform,
+                matrixType);
             *worldFabricMat = worldMat;
         }
     }
@@ -105,7 +120,7 @@ void FabricReplicator::init(long stageId, carb::Framework* framework)
     auto iStageReaderWriter = carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
     auto iSimStageWithHistory = carb::getCachedInterface<omni::fabric::ISimStageWithHistory>();
 
-    iSimStageWithHistory->getOrCreate(mStageId, 1, { 1, 30 }, omni::fabric::GpuComputeType::eCuda);
+    iSimStageWithHistory->getOrCreate(mStageId, 1, { 1, 30 }, omni::fabric::GpuComputeType::eNone);    
     iStageReaderWriter->create(mStageId, 0);
 
     auto stageReaderWriterId = iStageReaderWriter->get(mStageId);
@@ -116,22 +131,37 @@ void FabricReplicator::init(long stageId, carb::Framework* framework)
     iFabricUsd->setEnableChangeNotifies(fabricId, false);
 
     auto populationUtils = omni::core::createType<usdrt::population::IUtils>();
+    mUsdNoticeEnabled = populationUtils->getEnableUsdNoticeHandling(mStageId);
     populationUtils->setEnableUsdNoticeHandling(mStageId, fabricId, true);
 
     // Fill the stage in progress with USD values
     populationUtils->populateFromUsd(
-        stageReaderWriterId, mStageId, omni::fabric::asInt(PXR_NS::SdfPath::AbsoluteRootPath()), nullptr, 0.0);
+        stageReaderWriterId, mStageId,
+        omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, PXR_NS::SdfPath::AbsoluteRootPath()), nullptr, 0.0);
 }
 
 void FabricReplicator::destroy()
 {
-    mStage = nullptr;
     mSettings->setBool(kSettingUpdateToUsd, mUpdateUsd);
-    auto iSimStageWithHistory = carb::getCachedInterface<omni::fabric::ISimStageWithHistory>();
+
     auto iStageReaderWriter = carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
+    auto stageReaderWriterId = iStageReaderWriter->get(mStageId);
+
+    omni::fabric::FabricId fabricId = iStageReaderWriter->getFabricId(stageReaderWriterId);
+
+    auto iFabricUsd = carb::getCachedInterface<omni::fabric::IFabricUsd>();
+    iFabricUsd->setEnableChangeNotifies(fabricId, true);
+
+    auto populationUtils = omni::core::createType<usdrt::population::IUtils>();
+    populationUtils->setEnableUsdNoticeHandling(mStageId, fabricId, mUsdNoticeEnabled);
+
+
+    auto iSimStageWithHistory = carb::getCachedInterface<omni::fabric::ISimStageWithHistory>();    
 
     iStageReaderWriter->flushToRingBuffer(mStageId);
     iSimStageWithHistory->release(mStageId);
+
+    mStage = nullptr;
 }
 
 void copyFabricPrim(const usdrt::SdfPath& sourcePathUsdrt,
@@ -140,13 +170,13 @@ void copyFabricPrim(const usdrt::SdfPath& sourcePathUsdrt,
                     const GfVec3d& offsetVec,
                     const omni::fabric::Token& worldToken)
 {
-    const omni::fabric::PathC sourcePath(sourcePathUsdrt);
-    const omni::fabric::PathC targetPath(targetPathUsdrt);
+    const omni::fabric::Path sourcePath(sourcePathUsdrt);
+    const omni::fabric::Path targetPath(targetPathUsdrt);
 
     const omni::fabric::Token sourcePrimType = stageRW.getPrimTypeName(sourcePath);
 
     stageRW.createPrim(targetPath);
-    if (sourcePrimType != omni::fabric::kUninitializedToken)
+    if (sourcePrimType != omni::fabric::Token())
         stageRW.setPrimTypeName(targetPath, sourcePrimType);
     stageRW.copyAttributes(sourcePath, targetPath);
 
@@ -191,7 +221,7 @@ void FabricReplicator::clone(const pxr::SdfPath& envPathPxr,
     }
 
     isrwLegacy->batchClone(iStageReaderWriter->getFabricId(stageInProgress), omni::fabric::Path(sourceEnvPath.GetText()),
-                           { (const omni::fabric::PathC*)list_of_clones.data(), list_of_clones.size() });
+                           { (const omni::fabric::Path*)list_of_clones.data(), list_of_clones.size() });
 
     for (uint32_t i = 1; i < numEnvs; i++)
     {
@@ -205,7 +235,7 @@ void FabricReplicator::clone(const pxr::SdfPath& envPathPxr,
         const pxr::GfVec3d offsetVec(x, y, 0.0);
 
         pxr::GfMatrix4d* localPose =
-            stageRw.getAttributeWr<pxr::GfMatrix4d>(omni::fabric::PathC(curEnvPath), fabricTransform);
+            stageRw.getAttributeWr<pxr::GfMatrix4d>(omni::fabric::Path(curEnvPath), fabricTransform);
         if (localPose)
         {
             const GfVec3d currentPos = localPose->ExtractTranslation();
@@ -222,8 +252,33 @@ void FabricReplicator::clone(const pxr::SdfPath& envPathPxr,
     }
 }
 
-void FabricReplicator::replicate(uint64_t sourceEnvPath, uint32_t numReplication)
+void FabricReplicator::replicate(uint64_t sourceEnvPath, uint32_t numReplication, bool useEnvIds)
 {
     auto iReplicator = carb::getCachedInterface<omni::physx::IPhysxReplicator>();
-    iReplicator->replicate(mStageId.id, sourceEnvPath, numReplication, false, true);
+    iReplicator->replicate(mStageId.id, sourceEnvPath, numReplication, useEnvIds, true);
+}
+
+void FabricReplicator::setupScenePartition(const pxr::SdfPath& envPathPxr, uint32_t envIndex)
+{
+    // Set the envIds through partition primvar primvars:omni:scenePartition
+    omni::fabric::IStageReaderWriter* iStageReaderWriter = carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
+    omni::fabric::StageReaderWriterId stageInProgress = iStageReaderWriter->get(mStageId);
+
+    const usdrt::SdfPath envPath(envPathPxr.GetText());
+
+    omni::fabric::StageReaderWriter stageRw(stageInProgress);
+
+    const omni::fabric::Token partitionToken(kScenePartitionPrimvar);
+    const omni::fabric::Token partitionTokenValue("env_partition_" + std::to_string(envIndex));
+
+    const omni::fabric::Type tokenType =
+        omni::fabric::Type(omni::fabric::BaseDataType::eToken, 1, 0, omni::fabric::AttributeRole::eNone);
+
+    omni::fabric::Token* tokenToWrite = stageRw.getOrCreateAttributeWr<omni::fabric::Token>(
+        omni::fabric::Path(envPath), partitionToken, tokenType);
+    
+    if (tokenToWrite)
+    {
+        *tokenToWrite = partitionTokenValue;
+    }
 }

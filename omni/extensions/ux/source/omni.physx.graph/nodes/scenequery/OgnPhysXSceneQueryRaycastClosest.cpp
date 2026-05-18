@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -120,21 +120,33 @@ public:
 
         // Write the outputs.
         db.outputs.hit() = bHit;
-        if(bHit)
+
+        omni::graph::core::BackendId backendId;
+        omni::graph::core::GraphObj graphObj = db.abi_context().iContext->getGraph(db.abi_context());
+        graphObj.iGraph->getBackendId(graphObj, backendId);
+        omni::fabric::FabricId fabricId(backendId.id);
+
+        if (bHit)
         {
             db.outputs.colliderPrim().resize(1);
-            db.outputs.colliderPrim()[0] = static_cast<omni::fabric::PathC>(hit.collision);
-            if(GetIsDeprecatedAttributeConnected(db, outputs::colliderPrimPath.m_token)) db.outputs.colliderPrimPath() = asNameToken(hit.collision);
+            db.outputs.colliderPrim()[0] = omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, omni::fabric::handleToSdfPath(hit.collision));
+            if (GetIsDeprecatedAttributeConnected(db, outputs::colliderPrimPath.m_token))
+                db.outputs.colliderPrimPath() = omni::fabric::StageReaderWriterUsd(fabricId).registerToken(
+                    omni::fabric::handleToSdfPath(hit.collision).GetText());
             db.outputs.bodyPrim().resize(1);
-            db.outputs.bodyPrim()[0] = static_cast<omni::fabric::PathC>(hit.rigidBody);
-            if(GetIsDeprecatedAttributeConnected(db, outputs::bodyPrimPath.m_token)) db.outputs.bodyPrimPath() = asNameToken(hit.rigidBody);
+            db.outputs.bodyPrim()[0] = omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, omni::fabric::handleToSdfPath(hit.rigidBody));
+            if (GetIsDeprecatedAttributeConnected(db, outputs::bodyPrimPath.m_token))
+                db.outputs.bodyPrimPath() = omni::fabric::StageReaderWriterUsd(fabricId).registerToken(
+                    omni::fabric::handleToSdfPath(hit.rigidBody).GetText());
             db.outputs.position() = hit.position;
             db.outputs.normal() = hit.normal;
             db.outputs.distance() = hit.distance;
             db.outputs.faceIndex() = hit.faceIndex;
             db.outputs.materialPrim().resize(1);
-            db.outputs.materialPrim()[0] = static_cast<omni::fabric::PathC>(hit.material);
-            if(GetIsDeprecatedAttributeConnected(db, outputs::materialPath.m_token)) db.outputs.materialPath() = asNameToken(hit.material);
+            db.outputs.materialPrim()[0] = omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, omni::fabric::handleToSdfPath(hit.material));
+            if (GetIsDeprecatedAttributeConnected(db, outputs::materialPath.m_token))
+                db.outputs.materialPath() = omni::fabric::StageReaderWriterUsd(fabricId).registerToken(
+                    omni::fabric::handleToSdfPath(hit.material).GetText());
         }
         else
         {
@@ -148,4 +160,3 @@ public:
 };
 
 REGISTER_OGN_NODE()
-

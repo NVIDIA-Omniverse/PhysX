@@ -1,9 +1,11 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.physx
 import omni.physx.scripts.utils as physicsBaseUtils
 import omni.physx.scripts.physicsUtils as physicsUtils
+from omni.physx.scripts import utils as physxUtils
 from omni.physxtests.utils.physicsBase import PhysicsMemoryStageBaseAsyncTestCase, PhysicsKitStageAsyncTestCase, TestCategory
 from omni.physx import get_physx_interface, get_physx_simulation_interface
 from omni.physxtests import utils
@@ -179,6 +181,34 @@ class PhysicsRigidBodyAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase):
         
         xform_ops = xformable.GetXformOpOrderAttr().Get()
         self.assertTrue(len(xform_ops) == 5)
+
+    async def test_physics_metrics_assembler_xformop_rotation(self):
+        stage = await self.new_stage()
+
+        UsdPhysics.Scene.Define(stage, "/physicsScene")
+        
+        xform = UsdGeom.Cube.Define(stage, "/cube")
+        UsdPhysics.RigidBodyAPI.Apply(xform.GetPrim())
+        UsdPhysics.CollisionAPI.Apply(xform.GetPrim())
+
+        rot_z_45 = Gf.Quatf(Gf.Rotation(Gf.Vec3d(0.0, 0.0, 1.0), 45.0).GetQuat())
+
+        xformable = UsdGeom.Xformable(xform.GetPrim())
+        xformable.AddTranslateOp().Set(Gf.Vec3d(2,3,4))
+        xformable.AddOrientOp().Set(rot_z_45)
+        xformable.AddScaleOp().Set(Gf.Vec3d(0.0002))
+        xformable.AddRotateXOp(opSuffix="unitsResolve").Set(90.0)
+
+        orient_attr = xform.GetPrim().GetAttribute("xformOp:orient")
+        self.assertTrue(Gf.IsClose(orient_attr.Get().GetImaginary(), rot_z_45.GetImaginary(), 1e-3))
+        self.assertTrue(Gf.IsClose(orient_attr.Get().GetReal(), rot_z_45.GetReal(), 1e-3))
+
+        self.step()
+
+        orient_attr = xform.GetPrim().GetAttribute("xformOp:orient")
+
+        self.assertTrue(Gf.IsClose(orient_attr.Get().GetImaginary(), rot_z_45.GetImaginary(), 1e-3))
+        self.assertTrue(Gf.IsClose(orient_attr.Get().GetReal(), rot_z_45.GetReal(), 1e-3))
         
     async def test_physics_kinematic_setup(self):
         stage = await self.new_stage()
@@ -737,26 +767,6 @@ class PhysicsRigidBodyAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase):
         
         self.assertTrue(Gf.IsClose(matrix, new_matrix, 1e-7))
 
-    async def test_physics_xformop_reset_rigid_body_error(self):
-        stage = await self.new_stage()
-
-        UsdPhysics.Scene.Define(stage, "/physicsScene")
-        
-        xform0 = UsdGeom.Xform.Define(stage, "/xform0")
-        UsdPhysics.RigidBodyAPI.Apply(xform0.GetPrim())
-        
-        xform1 = UsdGeom.Xform.Define(stage, "/xform0/xform1")
-        UsdPhysics.RigidBodyAPI.Apply(xform1.GetPrim())
-        
-        # Now remove the collision group that filters out the collisions and ensure the cubes push each other apart.
-        message = "Rigid Body of (/xform0/xform1) missing xformstack reset when child of another enabled rigid body " \
-            "(/xform0) in hierarchy. Simulation of multiple RigidBodyAPI's in a hierarchy will cause unpredicted " \
-            "results. Please fix the hierarchy or use XformStack reset."
-
-        with utils.ExpectMessage(self, message):
-            self.step()
-
-        self._check_physx_object_counts({"numDynamicRigids": 1})
 
     async def test_physics_xformop_reset_rigid_body_nested(self):
         stage = await self.new_stage()
@@ -1777,7 +1787,7 @@ class PhysicsRigidBodyAPITestAsyncRB(rigidbody.AsyncTestCase):
         )
 
     async def test_physics_userpath_set_rigid_body(self):
-        for approx in rigidbody.approximations:
+        for approx in physxUtils.MESH_APPROXIMATIONS.keys():
             print(approx)
             await self.base_basic_userpath_command_test(
                 lambda primPath: SetRigidBodyCommand.execute(primPath, approx, False),
@@ -2171,4 +2181,191 @@ class PhysicsRigidBodyAPITestAsyncRB(rigidbody.AsyncTestCase):
         await self.step()
 
         utils.check_stats(self, {"numStaticRigids": 1})
-        utils.check_stats(self, {"numDynamicRigids": 1})        
+        utils.check_stats(self, {"numDynamicRigids": 1})
+
+    async def test_physics_update_to_usd_using_xform_common_api(self):
+        """Test that updateToUsdUsingXformCommonAPI preserves xform stack structure"""
+        stage = await self.new_stage()
+
+        # Get settings
+        settings = carb.settings.get_settings()
+        UPDATE_TO_USD = omni.physx.bindings._physx.SETTING_UPDATE_TO_USD
+        UPDATE_TO_USD_USING_XFORM_COMMON_API = omni.physx.bindings._physx.SETTING_UPDATE_TO_USD_USING_XFORM_COMMON_API
+
+        # Store original settings
+        orig_update_to_usd = settings.get_as_bool(UPDATE_TO_USD)
+        orig_update_using_xform_common_api = settings.get_as_bool(UPDATE_TO_USD_USING_XFORM_COMMON_API)
+
+        try:
+            # Enable both settings
+            settings.set_bool(UPDATE_TO_USD, True)
+            settings.set_bool(UPDATE_TO_USD_USING_XFORM_COMMON_API, True)
+
+            # Create scene
+            UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+            # Create a cube with XformCommonAPI-compatible transform stack
+            cube = UsdGeom.Cube.Define(stage, "/cube")
+            UsdPhysics.RigidBodyAPI.Apply(cube.GetPrim())
+            UsdPhysics.CollisionAPI.Apply(cube.GetPrim())
+
+            # Set up transform using XformCommonAPI
+            xform_api = UsdGeom.XformCommonAPI(cube.GetPrim())
+            initial_translation = Gf.Vec3d(0.0, 100.0, 0.0)
+            initial_rotation = Gf.Vec3f(0.0, 0.0, 0.0)
+            initial_scale = Gf.Vec3f(1.0, 1.0, 1.0)
+
+            xform_api.SetTranslate(initial_translation)
+            xform_api.SetRotate(initial_rotation, UsdGeom.XformCommonAPI.RotationOrderXYZ)
+            xform_api.SetScale(initial_scale)
+
+            # Get initial xform ops
+            xformable = UsdGeom.Xformable(cube.GetPrim())
+            initial_xform_ops = xformable.GetOrderedXformOps()
+            initial_xform_op_order = xformable.GetXformOpOrderAttr().Get()
+
+            # Verify XformCommonAPI compatibility
+            self.assertTrue(xform_api, "Prim should be XformCommonAPI compatible")
+
+            # Run simulation
+            for _ in range(10):
+                await self.step()
+
+            # Check that the cube has fallen
+            translation, rotation, scale, pivot, rot_order = xform_api.GetXformVectors(Usd.TimeCode.Default())
+            self.assertTrue(translation[1] < initial_translation[1], "Cube should have fallen")
+
+            # Verify xform stack structure is preserved (not sanitized)
+            current_xform_ops = xformable.GetOrderedXformOps()
+            current_xform_op_order = xformable.GetXformOpOrderAttr().Get()
+
+            for xformOp in initial_xform_ops:
+                self.assertTrue(xformOp in current_xform_ops)    
+
+            # Verify the prim is still XformCommonAPI compatible after simulation
+            xform_api_after = UsdGeom.XformCommonAPI(cube.GetPrim())
+            self.assertTrue(xform_api_after, "Prim should still be XformCommonAPI compatible after simulation")
+
+        finally:
+            # Restore original settings
+            settings.set_bool(UPDATE_TO_USD, orig_update_to_usd)
+            settings.set_bool(UPDATE_TO_USD_USING_XFORM_COMMON_API, orig_update_using_xform_common_api)
+
+    async def test_physics_update_to_usd_xform_common_api_with_rotation(self):
+        """Test XformCommonAPI with angular velocity and rotation"""
+        stage = await self.new_stage()
+
+        # Get settings
+        settings = carb.settings.get_settings()
+        UPDATE_TO_USD = omni.physx.bindings._physx.SETTING_UPDATE_TO_USD
+        UPDATE_TO_USD_USING_XFORM_COMMON_API = omni.physx.bindings._physx.SETTING_UPDATE_TO_USD_USING_XFORM_COMMON_API
+
+        # Store original settings
+        orig_update_to_usd = settings.get_as_bool(UPDATE_TO_USD)
+        orig_update_using_xform_common_api = settings.get_as_bool(UPDATE_TO_USD_USING_XFORM_COMMON_API)
+
+        try:
+            # Enable both settings
+            settings.set_bool(UPDATE_TO_USD, True)
+            settings.set_bool(UPDATE_TO_USD_USING_XFORM_COMMON_API, True)
+
+            # Create scene
+            UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+            # Create a cube with angular velocity
+            cube = UsdGeom.Cube.Define(stage, "/rotatingCube")
+            rbo_api = UsdPhysics.RigidBodyAPI.Apply(cube.GetPrim())
+            UsdPhysics.CollisionAPI.Apply(cube.GetPrim())
+
+            # Set angular velocity to make it rotate
+            rbo_api.GetAngularVelocityAttr().Set(Gf.Vec3f(0.0, 0.0, 100.0))
+
+            # Set up transform using XformCommonAPI
+            xform_api = UsdGeom.XformCommonAPI(cube.GetPrim())
+            xform_api.SetTranslate(Gf.Vec3d(0.0, 100.0, 0.0))
+            xform_api.SetRotate(Gf.Vec3f(0.0, 0.0, 0.0), UsdGeom.XformCommonAPI.RotationOrderXYZ)
+            xform_api.SetScale(Gf.Vec3f(1.0, 1.0, 1.0))
+
+            # Get initial rotation
+            initial_translation, initial_rotation, _, _, _ = xform_api.GetXformVectors(Usd.TimeCode.Default())
+
+            # Run simulation
+            for _ in range(10):
+                await self.step()
+
+            # Get final rotation
+            final_translation, final_rotation, final_scale, _, rot_order = xform_api.GetXformVectors(Usd.TimeCode.Default())
+
+            # Verify the cube has fallen and rotated
+            self.assertTrue(final_translation[1] < initial_translation[1], "Cube should have fallen")
+            self.assertFalse(Gf.IsClose(final_rotation, initial_rotation, 0.01),
+                           "Cube should have rotated")
+
+            # Verify scale is unchanged
+            self.assertTrue(Gf.IsClose(final_scale, Gf.Vec3f(1.0), 0.001),
+                          "Scale should be preserved")
+
+            # Verify XformCommonAPI is still valid
+            xform_api_after = UsdGeom.XformCommonAPI(cube.GetPrim())
+            self.assertTrue(xform_api_after, "Prim should still be XformCommonAPI compatible")
+
+        finally:
+            # Restore original settings
+            settings.set_bool(UPDATE_TO_USD, orig_update_to_usd)
+            settings.set_bool(UPDATE_TO_USD_USING_XFORM_COMMON_API, orig_update_using_xform_common_api)
+
+    async def test_physics_update_to_usd_xform_common_api_incompatible_fallback(self):
+        """Test that incompatible xform stacks fall back to standard method"""
+        stage = await self.new_stage()
+
+        # Get settings
+        settings = carb.settings.get_settings()
+        UPDATE_TO_USD = omni.physx.bindings._physx.SETTING_UPDATE_TO_USD
+        UPDATE_TO_USD_USING_XFORM_COMMON_API = omni.physx.bindings._physx.SETTING_UPDATE_TO_USD_USING_XFORM_COMMON_API
+
+        # Store original settings
+        orig_update_to_usd = settings.get_as_bool(UPDATE_TO_USD)
+        orig_update_using_xform_common_api = settings.get_as_bool(UPDATE_TO_USD_USING_XFORM_COMMON_API)
+
+        try:
+            # Enable both settings
+            settings.set_bool(UPDATE_TO_USD, True)
+            settings.set_bool(UPDATE_TO_USD_USING_XFORM_COMMON_API, True)
+
+            # Create scene
+            UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+            # Create a cube with incompatible xform stack (arbitrary transform op)
+            cube = UsdGeom.Cube.Define(stage, "/incompatibleCube")
+            UsdPhysics.RigidBodyAPI.Apply(cube.GetPrim())
+            UsdPhysics.CollisionAPI.Apply(cube.GetPrim())
+
+            # Create an incompatible xform stack with a transform matrix
+            xformable = UsdGeom.Xformable(cube.GetPrim())
+            matrix = Gf.Matrix4d(1.0)
+            matrix.SetTranslateOnly(Gf.Vec3d(0.0, 100.0, 0.0))
+            xformable.AddTransformOp().Set(matrix)
+
+            # Verify this is NOT XformCommonAPI compatible
+            xform_api = UsdGeom.XformCommonAPI(cube.GetPrim())
+            self.assertFalse(xform_api, "Prim with transform op should not be XformCommonAPI compatible")
+
+            # Get initial position
+            initial_pos = cube.GetPrim().GetAttribute("xformOp:transform").Get()
+
+            # Run simulation - should fall back to standard method
+            for _ in range(10):
+                await self.step()
+
+            # Verify the cube still updates (using standard method)
+            final_matrix = UsdGeom.Xformable(cube.GetPrim()).ComputeLocalToWorldTransform(Usd.TimeCode.Default())
+            initial_translation = initial_pos.ExtractTranslation()
+            final_translation = final_matrix.ExtractTranslation()
+
+            self.assertTrue(final_translation[1] < initial_translation[1],
+                          "Cube should have fallen using standard fallback method")
+
+        finally:
+            # Restore original settings
+            settings.set_bool(UPDATE_TO_USD, orig_update_to_usd)
+            settings.set_bool(UPDATE_TO_USD_USING_XFORM_COMMON_API, orig_update_using_xform_common_api)

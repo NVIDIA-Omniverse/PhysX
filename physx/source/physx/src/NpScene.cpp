@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -170,7 +170,11 @@ NpScene::NpScene(const PxSceneDesc& desc, NpPhysics& physics) :
 	mBuildFrozenActors			(false),
 	mCorruptedState				(false),
 	mScene						(desc, getContextId()),
+#if PX_SUPPORT_GPU_PHYSX
 	mDirectGPUAPI				(NULL),
+	mGpuAccelerationsCopyPending(false),  // Start false - nothing to copy until first simulate
+	mDirectGpuAccelGetterWarningIssued(false),
+#endif
 #if PX_SUPPORT_PVD
 	mScenePvdClient				(*this),
 #endif
@@ -268,8 +272,9 @@ NpScene::~NpScene()
 #endif
 	mScene.release();
 
+#if PX_SUPPORT_GPU_PHYSX
 	PX_DELETE(mDirectGPUAPI);
-
+#endif
 	// unlock the lock taken in release(), must unlock before 
 	// mRWLock is destroyed otherwise behavior is undefined
 	if (unlock)
@@ -503,7 +508,9 @@ bool NpScene::addActor(PxActor& actor, const PxBVH* bvh)
 	if (scene)
 		return outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::addActor(): Actor already assigned to a scene. Call will be ignored!");
 
-	return addActorInternal(actor, bvh);	
+	bool success = addActorInternal(actor, bvh);
+	NP_CHECK_SCENE_CUDA_ABORT_AND_SET_CORRUPTION(this);
+	return success;
 }
 
 bool NpScene::addActorInternal(PxActor& actor, const PxBVH* bvh)
@@ -596,6 +603,8 @@ bool NpScene::addActorsInternal(PxActor*const* PX_RESTRICT actors, PxU32 nbActor
 	if(getSimulationStage() != Sc::SimulationStage::eCOMPLETE)
 		return outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::addActors() not allowed while simulation is running. Call will be ignored.");
 
+	NP_CHECK_CORRUPTION_AND_RETURN_VAL(false)
+
 	Sc::Scene& scScene = mScene;
 	PxU32 actorsDone;
 
@@ -649,6 +658,16 @@ bool NpScene::addActorsInternal(PxActor*const* PX_RESTRICT actors, PxU32 nbActor
 				updateScStateAndSetupSq(this, getSQAPI(), a, a, a.getShapeManager(), true, shapeBounds.begin(), ps);
 				a.addConstraintsToScene();
 				OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxScene, actors, static_cast<PxScene &>(*this), static_cast<PxActor &>(a))
+				
+				// If sleeping is disabled in the scene, wake up the actor when added
+				if(getFlags() & PxSceneFlag::eDISABLE_SLEEPING)
+				{
+					if(!(a.getCore().getFlags() & PxRigidBodyFlag::eKINEMATIC))
+					{
+						PxReal wakeCounterResetValue = getWakeCounterResetValueInternal();
+						a.scWakeUpInternal(wakeCounterResetValue);
+					}
+				}
 			}
 			else
 				addRigidDynamic(a, NULL, ps);
@@ -682,15 +701,16 @@ bool NpScene::addActorsInternal(PxActor*const* PX_RESTRICT actors, PxU32 nbActor
 	{
 		for(PxU32 j=0;j<actorsDone;j++)
 			removeActorInternal(*actors[j], false, true);
-		return false;
 	}
-	return true;
+
+	NP_CHECK_SCENE_CUDA_ABORT_AND_SET_CORRUPTION(this)
+	return actorsDone == nbActors;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 template<typename T>
-static PX_FORCE_INLINE void removeFromRigidActorListT(T& rigidActor, PxArray<T*>& rigidActorList, Cm::IDPool& idPool, PxArray<NpScene::Acceleration>* accels)
+static PX_FORCE_INLINE void removeFromRigidActorListT(T& rigidActor, PxArray<T*>& rigidActorList, Cm::IDPool& idPool)
 {
 	const PxU32 index = rigidActor.getRigidActorArrayIndex();
 	PX_ASSERT(index != 0xFFFFFFFF);
@@ -698,8 +718,6 @@ static PX_FORCE_INLINE void removeFromRigidActorListT(T& rigidActor, PxArray<T*>
 
 	const PxU32 size = rigidActorList.size() - 1;
 	rigidActorList.replaceWithLast(index);
-	if(accels && index < accels->size())
-		accels->replaceWithLast(index);
 	if(size && size != index)
 	{
 		T& swappedActor = *rigidActorList[index];
@@ -712,7 +730,7 @@ static PX_FORCE_INLINE void removeFromRigidActorListT(T& rigidActor, PxArray<T*>
 
 void NpScene::removeFromRigidDynamicList(NpRigidDynamic& rigidDynamic)
 {
-	removeFromRigidActorListT(rigidDynamic, mRigidDynamics, mRigidActorIndexPool, &mRigidDynamicsAccelerations);
+	removeFromRigidActorListT(rigidDynamic, mRigidDynamics, mRigidActorIndexPool);
 #if PX_SUPPORT_OMNI_PVD
 	if (getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API)
 	{
@@ -723,13 +741,13 @@ void NpScene::removeFromRigidDynamicList(NpRigidDynamic& rigidDynamic)
 
 void NpScene::removeFromRigidStaticList(NpRigidStatic& rigidStatic)
 {
-	removeFromRigidActorListT(rigidStatic, mRigidStatics, mRigidActorIndexPool, NULL);
+	removeFromRigidActorListT(rigidStatic, mRigidStatics, mRigidActorIndexPool);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 template<class ActorT>
-static void removeActorT(NpScene* npScene, ActorT& actor, PxArray<ActorT*>& actors, bool wakeOnLostTouch, PxArray<NpScene::Acceleration>* accels)
+static void removeActorT(NpScene* npScene, ActorT& actor, PxArray<ActorT*>& actors, bool wakeOnLostTouch)
 {
 	const PxActorFlags actorFlags = actor.getCore().getActorFlags();
 
@@ -744,7 +762,7 @@ static void removeActorT(NpScene* npScene, ActorT& actor, PxArray<ActorT*>& acto
 	actor.getShapeManager().teardownAllSceneQuery(npScene->getSQAPI(), actor);
 
 	npScene->scRemoveActor(actor, wakeOnLostTouch, noSim);
-	removeFromRigidActorListT(actor, actors, npScene->mRigidActorIndexPool, accels);
+	removeFromRigidActorListT(actor, actors, npScene->mRigidActorIndexPool);
 
 	OMNI_PVD_REMOVE(OMNI_PVD_CONTEXT_HANDLE, PxScene, actors, static_cast<PxScene &>(*npScene), static_cast<PxActor &>(actor))
 }
@@ -775,12 +793,12 @@ void NpScene::removeActors(PxActor*const* PX_RESTRICT actors, PxU32 nbActors, bo
 		if(type == PxConcreteType::eRIGID_STATIC)
 		{
 			NpRigidStatic& actor = *static_cast<NpRigidStatic*>(actors[actorsDone]);
-			removeActorT(this, actor, mRigidStatics, wakeOnLostTouch, NULL);
+			removeActorT(this, actor, mRigidStatics, wakeOnLostTouch);
 		}
 		else if(type == PxConcreteType::eRIGID_DYNAMIC)
 		{			
 			NpRigidDynamic& actor = *static_cast<NpRigidDynamic*>(actors[actorsDone]);	
-			removeActorT(this, actor, mRigidDynamics, wakeOnLostTouch, &mRigidDynamicsAccelerations);
+			removeActorT(this, actor, mRigidDynamics, wakeOnLostTouch);
 		}
 		else
 		{
@@ -888,6 +906,21 @@ static PX_FORCE_INLINE bool addRigidActorT(T& rigidActor, PxArray<T*>& rigidActo
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxActor, worldBounds, static_cast<PxActor &>(rigidActor), rigidActor.getWorldBounds())
 	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxScene, actors, static_cast<PxScene &>(*scene), static_cast<PxActor &>(rigidActor))
 
+	// If sleeping is disabled in the scene, wake up the actor when added
+	if(!isNoSimActor && (scene->getFlags() & PxSceneFlag::eDISABLE_SLEEPING))
+	{
+		PxRigidActor* actor = static_cast<PxRigidActor*>(&rigidActor);
+		if(actor->getConcreteType() == PxConcreteType::eRIGID_DYNAMIC)
+		{
+			NpRigidDynamic* rigidDynamic = static_cast<NpRigidDynamic*>(actor);
+			if(!(rigidDynamic->getCore().getFlags() & PxRigidBodyFlag::eKINEMATIC))
+			{
+				PxReal wakeCounterResetValue = scene->getWakeCounterResetValueInternal();
+				rigidDynamic->scWakeUpInternal(wakeCounterResetValue);
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -987,10 +1020,14 @@ bool NpScene::addArticulation(PxArticulationReducedCoordinate& articulation)
 	if(getSimulationStage() != Sc::SimulationStage::eCOMPLETE && articulation.getConcreteType() == PxConcreteType::eARTICULATION_REDUCED_COORDINATE)
 		return outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::addArticulation(): this call is not allowed while the simulation is running. Call will be ignored!");
 
-	if(!npa.getNpScene())
-		return addArticulationInternal(articulation);
-	else
+	if(npa.getNpScene())
 		return outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::addArticulation(): Articulation already assigned to a scene. Call will be ignored!");
+
+	NP_CHECK_CORRUPTION_AND_RETURN_VAL(false)
+
+	bool ret = addArticulationInternal(articulation);
+	NP_CHECK_SCENE_CUDA_ABORT_AND_SET_CORRUPTION(this)
+	return ret;
 }
 
 static void checkArticulationLink(NpScene* scene, NpArticulationLink* link)
@@ -1193,8 +1230,6 @@ bool NpScene::addArticulationMimicJointInternal(NpArticulationReducedCoordinate*
 	return true;
 }
 
-
-
 bool NpScene::addArticulationInternal(PxArticulationReducedCoordinate& npa)
 {
 	// Add root link first
@@ -1280,6 +1315,13 @@ bool NpScene::addArticulationInternal(PxArticulationReducedCoordinate& npa)
 		npaRC.wakeUpInternal(true, false);
 	}
 
+	// If sleeping is disabled in the scene, wake up the articulation when added
+	if(getFlags() & PxSceneFlag::eDISABLE_SLEEPING)
+	{
+		if(npaRC.isSleeping())
+			npaRC.wakeUp();
+	}
+
 	mArticulations.insert(&npa);
 
 	//add loop joints
@@ -1338,7 +1380,6 @@ bool NpScene::addArticulationInternal(PxArticulationReducedCoordinate& npa)
 
 				if (jointType != PxArticulationJointType::eFIX)
 				{
-
 					PxArticulationMotion::Enum motionX = joint->getMotion(PxArticulationAxis::eX);
 					PxArticulationMotion::Enum motionY = joint->getMotion(PxArticulationAxis::eY);
 					PxArticulationMotion::Enum motionZ = joint->getMotion(PxArticulationAxis::eZ);
@@ -1359,7 +1400,6 @@ bool NpScene::addArticulationInternal(PxArticulationReducedCoordinate& npa)
 						child->setInboundJointDof(0);
 					}
 				}
-
 
 				linkStack[stackSize] = child;
 				stackSize++;
@@ -1477,9 +1517,14 @@ bool NpScene::addDeformableSurface(PxDeformableSurface& deformableSurface)
 
 	// Add deformable surface
 	NpDeformableSurface& npSurface = static_cast<NpDeformableSurface&>(deformableSurface);
-	scAddDeformableSurface(this, npSurface);
 
 	NpShape* npShape = static_cast<NpShape*>(npSurface.getShape());
+	if (!npShape)
+		return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__,
+			"PxScene::addActor(): Deformable surface does not have a shape attached, will not be added to scene!");
+
+	scAddDeformableSurface(this, npSurface);
+
 	Sc::ShapeCore* shapeCore = &npShape->getCore();
 	npSurface.getCore().attachShapeCore(shapeCore);
 
@@ -1531,9 +1576,14 @@ bool NpScene::addDeformableVolume(PxDeformableVolume& deformableVolume)
 			"PxScene::addActor(): Deformable volume exceeds maximum number of deformable volumes per scene (PX_MAX_NB_DEFORMABLE_VOLUME)!");
 
 	NpDeformableVolume& npVolume = static_cast<NpDeformableVolume&>(deformableVolume);
-	scAddDeformableVolume(npVolume);
 
 	NpShape* npShape = static_cast<NpShape*>(npVolume.getShape());
+	if (!npShape)
+		return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__,
+			"PxScene::addActor(): Deformable volume does not have a shape attached, will not be added to scene!");
+
+	scAddDeformableVolume(npVolume);
+
 	Sc::ShapeCore* shapeCore = &npShape->getCore();
 	npVolume.getCore().attachShapeCore(shapeCore);
 	npVolume.getCore().attachSimulationMesh(deformableVolume.getSimulationMesh(), deformableVolume.getDeformableVolumeAuxData());
@@ -1865,7 +1915,6 @@ void NpScene::removeArticulationMimicJoints(PxArticulationReducedCoordinate& art
 	}
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 
 void NpScene::scAddAggregate(NpAggregate& agg)
@@ -1874,8 +1923,8 @@ void NpScene::scAddAggregate(NpAggregate& agg)
 
 	agg.setNpScene(this);
 
-	const PxU32 aggregateID = mScene.createAggregate(&agg, agg.getMaxNbShapesFast(), agg.getFilterHint(), agg.getEnvID());
-	agg.setAggregateID(aggregateID);
+	const Bp::AggregateHandle aggregateHandle = mScene.createAggregate(&agg, agg.getMaxNbShapesFast(), agg.getFilterHint(), agg.getEnvID());
+	agg.setAggregateHandle(aggregateHandle);
 #if PX_SUPPORT_PVD
 	//Sending pvd events after all aggregates's actors are inserted into scene
 	mScenePvdClient.createPvdInstance(&agg);
@@ -1886,7 +1935,7 @@ void NpScene::scRemoveAggregate(NpAggregate& agg)
 {
 	PX_ASSERT(!isAPIWriteForbidden());
 
-	mScene.deleteAggregate(agg.getAggregateID());
+	mScene.deleteAggregate(agg.getAggregateHandle());
 	agg.setNpScene(NULL);
 #if PX_SUPPORT_PVD
 	mScenePvdClient.releasePvdInstance(&agg);
@@ -1901,6 +1950,8 @@ bool NpScene::addAggregate(PxAggregate& aggregate)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(this, "PxScene::addAggregate() not allowed while simulation is running. Call will be ignored.", false)
 
 	PX_SIMD_GUARD;
+
+	NP_CHECK_CORRUPTION_AND_RETURN_VAL(false)
 
 	NpAggregate& np = static_cast<NpAggregate&>(aggregate);
 
@@ -1933,6 +1984,7 @@ bool NpScene::addAggregate(PxAggregate& aggregate)
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxAggregate, scene, aggregate, static_cast<PxScene const*>(this));
 	OMNI_PVD_WRITE_SCOPE_END
 
+	NP_CHECK_SCENE_CUDA_ABORT_AND_SET_CORRUPTION(this)
 	return true;
 }
 
@@ -2520,6 +2572,8 @@ PxU32 NpScene::addBroadPhaseRegion(const PxBroadPhaseRegion& region, bool popula
 		return 0xffffffff;
 	}
 
+	NP_CHECK_CORRUPTION_AND_RETURN_VAL(0xffffffff)
+
 	Bp::AABBManagerBase* aabbManager = mScene.getAABBManager();
 	Bp::BroadPhase* bp = aabbManager->getBroadPhase();
 	return bp->addRegion(region, populateRegion, aabbManager->getBoundsArray().begin(), aabbManager->getContactDistances());
@@ -2579,7 +2633,10 @@ bool NpScene::resetFiltering(PxActor& actor)
 	NP_WRITE_CHECK(this);
 	PX_CHECK_AND_RETURN_VAL(NpActor::getNpSceneFromActor(actor) && (NpActor::getNpSceneFromActor(actor) == this), "PxScene::resetFiltering(): Actor must be in a scene.", false);
 
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(this, "PxScene::resetFiltering() not allowed while simulation is running. Call will be ignored.", false)
+	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(
+		this, "PxScene::resetFiltering() not allowed while simulation is running. Call will be ignored.", false)
+
+	NP_CHECK_CORRUPTION_AND_RETURN_VAL(false)
 
 	bool status;
 	switch(actor.getConcreteType())
@@ -2615,6 +2672,8 @@ bool NpScene::resetFiltering(PxActor& actor)
 		default:
 			status = outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxScene::resetFiltering(): only PxRigidActor supports this operation!");
 	}
+
+	NP_CHECK_SCENE_CUDA_ABORT_AND_SET_CORRUPTION(this)
 	return status;
 }
 
@@ -2726,6 +2785,17 @@ void NpScene::updateDirtyShaders()
 	}
 }
 
+#if PX_SUPPORT_GPU_PHYSX
+void NpScene::checkAbortModeAndSetCorruptedState()
+{
+	PxCudaContextManager* cudaContextManager = getCudaContextManager();
+	if(cudaContextManager && cudaContextManager->getCudaContext())
+	{
+		mCorruptedState |= cudaContextManager->getCudaContext()->isInAbortMode();
+	}
+}
+#endif
+
 // PT: TODO
 // - classes like PxsMaterialManager are already typedef of templated types so maybe we don't need them here
 
@@ -2809,7 +2879,7 @@ bool NpScene::simulateOrCollide(PxReal elapsedTime, PxBaseTask* completionTask, 
 		// and perform API reads,triggering an error
 		NP_WRITE_CHECK(this);
 
-		NP_CHECK_SCENE_CORRUPTION;
+		NP_CHECK_SCENE_CORRUPTION_ERROR;
 
 		PX_PROFILE_START_CROSSTHREAD("Basic.simulate", getContextId());
 
@@ -2855,6 +2925,14 @@ bool NpScene::simulateOrCollide(PxReal elapsedTime, PxBaseTask* completionTask, 
 		mScene.setScratchBlock(scratchBlock, scratchBlockSize);
 
 		mElapsedTime = elapsedTime;
+
+#if PX_SUPPORT_GPU_PHYSX
+		// PdHC: Pre-compute whether lazy GPU acceleration copy will be needed this frame
+		// This caches all the flag checks so getter only checks one flag
+		mGpuAccelerationsCopyPending = (mScene.getFlags() & PxSceneFlag::eENABLE_BODY_ACCELERATIONS) 
+			&& mScene.isUsingGpuDynamics()
+			&& !(mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API);
+#endif
 		if (simStage == Sc::SimulationStage::eCOLLIDE)
 			mScene.setElapsedTime(elapsedTime);
 
@@ -2914,7 +2992,7 @@ bool NpScene::advance(PxBaseTask* completionTask)
 {
 	NP_WRITE_CHECK(this);
 
-	NP_CHECK_SCENE_CORRUPTION;
+	NP_CHECK_SCENE_CORRUPTION_ERROR;
 
 	if (!checkGpuErrorsPreSim(false))
 		return false;
@@ -2960,8 +3038,7 @@ bool NpScene::checkCollisionInternal(bool block)
 
 bool NpScene::fetchCollision(bool block)
 {
-	if (mCorruptedState)
-		return true;
+	NP_CHECK_CORRUPTION_AND_RETURN_VAL(true)
 
 	if(getSimulationStage() != Sc::SimulationStage::eCOLLIDE)
 		return outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::fetchCollision: fetchCollision() should be called after collide() and before advance()!");
@@ -2987,8 +3064,8 @@ bool NpScene::fetchCollision(bool block)
 
 bool NpScene::checkSceneStateAndCudaErrors(bool isCollide /*= false*/)
 {
-	if (mCorruptedState) // silent because this case means we already reported errors in previous fetch* calls.
-		return false;
+	// silent because this case means we already reported errors in previous fetch* calls.
+	NP_CHECK_CORRUPTION_AND_RETURN_VAL(false)
 
 #if PX_SUPPORT_GPU_PHYSX
 	if (mCudaContextManager && mScene.isUsingGpuDynamicsOrBp())
@@ -3654,6 +3731,8 @@ void NpScene::shiftOrigin(const PxVec3& shift)
 	
 	PX_SIMD_GUARD;
 
+	NP_CHECK_CORRUPTION_AND_RETURN
+
 	shiftRigidActors(mRigidDynamics, shift);	// PT: TODO: we don't need to re-test the type all the time in shiftRigidActors...
 	shiftRigidActors(mRigidStatics, shift);
 
@@ -3753,6 +3832,183 @@ PxDirectGPUAPI& NpScene::getDirectGPUAPI()
 	return *p;
 #endif
 }
+
+#if PX_SUPPORT_GPU_PHYSX
+namespace
+{
+	// Mirror of PxgRigidBodyAcceleration from PxgSimulationCore.h
+	// Must match layout exactly - verified by static_assert below
+	PX_ALIGN_PREFIX(16)
+	struct GpuRigidBodyAcceleration
+	{
+		PxVec3	linear;
+		PxReal	_padLinear;
+		PxVec3	angular;
+		PxReal	_padAngular;
+	}
+	PX_ALIGN_SUFFIX(16);
+
+	static_assert(sizeof(GpuRigidBodyAcceleration) == 32, "GpuRigidBodyAcceleration size must match PxgRigidBodyAcceleration");
+	static_assert(alignof(GpuRigidBodyAcceleration) == 16, "GpuRigidBodyAcceleration alignment must match PxgRigidBodyAcceleration");
+
+	// Shared copy logic used by both single-threaded path and parallel tasks
+	static void copyGpuAccelerationsRange(NpRigidDynamic** rigidDynamics, PxU32 startIndex, PxU32 numBodies,
+										  const GpuRigidBodyAcceleration* gpuAccels)
+	{
+		for(PxU32 i = 0; i < numBodies; i++)
+		{
+			NpRigidDynamic* current = rigidDynamics[startIndex + i];
+			Sc::BodyCore& core = current->getCore();
+
+			// Skip kinematics - their accelerations are computed in ScKinematicUpdateTask
+			if(!(core.getFlags() & PxRigidBodyFlag::eKINEMATIC))
+			{
+				const PxU32 gpuIndex = current->getGPUIndex();
+				if(gpuIndex != PX_INVALID_NODE)
+				{
+					const GpuRigidBodyAcceleration& accel = gpuAccels[gpuIndex];
+					core.setComputedAccelerations(accel.linear, accel.angular);
+				}
+			}
+		}
+	}
+
+	class GpuAccelerationCopyTask : public Cm::Task
+	{
+	public:
+		static const PxU32 MaxBodiesPerTask = 256;
+
+		GpuAccelerationCopyTask(PxU64 contextId, NpRigidDynamic** rigidDynamics, PxU32 startIndex, PxU32 numBodies,
+								const GpuRigidBodyAcceleration* gpuAccels, PxSync* completionSync, volatile PxI32* taskCounter) :
+			Cm::Task			(contextId),
+			mRigidDynamics		(rigidDynamics),
+			mStartIndex			(startIndex),
+			mNumBodies			(numBodies),
+			mGpuAccels			(gpuAccels),
+			mCompletionSync		(completionSync),
+			mTaskCounter		(taskCounter)
+		{
+		}
+
+		virtual void runInternal() PX_OVERRIDE
+		{
+			copyGpuAccelerationsRange(mRigidDynamics, mStartIndex, mNumBodies, mGpuAccels);
+		}
+
+		virtual void release() PX_OVERRIDE
+		{
+			// Decrement task counter and signal completion when all tasks are done
+			if(PxAtomicDecrement(mTaskCounter) == 0)
+				mCompletionSync->set();
+
+			Cm::Task::release();
+		}
+
+		virtual const char* getName() const PX_OVERRIDE { return "NpScene.gpuAccelerationCopy"; }
+
+	private:
+		NpRigidDynamic**					mRigidDynamics;
+		const PxU32							mStartIndex;
+		const PxU32							mNumBodies;
+		const GpuRigidBodyAcceleration*		mGpuAccels;
+		PxSync*								mCompletionSync;
+		volatile PxI32*						mTaskCounter;
+	};
+}
+
+void NpScene::ensureGpuAccelerationsCopied()
+{
+	// Fast path: check single pre-computed flag (set at simulate() start)
+	// All condition checks (GPU dynamics, accelerations enabled, not DirectGPU) are cached
+	if(!mGpuAccelerationsCopyPending)
+		return;
+
+	// Get GPU accelerations buffer
+	const PxsSimulationController* simController = mScene.getSimulationController();
+	if(!simController)
+		return;
+	const GpuRigidBodyAcceleration* gpuAccels =
+		reinterpret_cast<const GpuRigidBodyAcceleration*>(simController->getRigidBodyAccelerations());
+	if(!gpuAccels)
+		return;
+
+	const PxU32 size = mRigidDynamics.size();
+	if(size == 0)
+	{
+		mGpuAccelerationsCopyPending = false;
+		return;
+	}
+
+	NpRigidDynamic** rigidDynamics = mRigidDynamics.begin();
+
+	// For small counts, use single-threaded path to avoid task overhead
+	const PxU32 minBodiesForParallel = GpuAccelerationCopyTask::MaxBodiesPerTask;
+	if(size <= minBodiesForParallel || !mTaskManager)
+	{
+		copyGpuAccelerationsRange(rigidDynamics, 0, size, gpuAccels);
+		mGpuAccelerationsCopyPending = false;
+		return;
+	}
+
+	// Parallel path: divide work among CPU threads
+	PxCpuDispatcher* cpuDispatcher = mTaskManager->getCpuDispatcher();
+	const PxU32 numWorkers = cpuDispatcher ? cpuDispatcher->getWorkerCount() : 0;
+
+	// Guard: if no valid dispatcher or no workers, fall back to single-threaded path
+	// to avoid division by zero and potential deadlock
+	if(numWorkers == 0)
+	{
+		copyGpuAccelerationsRange(rigidDynamics, 0, size, gpuAccels);
+		mGpuAccelerationsCopyPending = false;
+		return;
+	}
+
+	// Limit tasks to worker count for efficiency, with max bodies per task
+	const PxU32 bodiesPerTask = PxMax(GpuAccelerationCopyTask::MaxBodiesPerTask, (size + numWorkers - 1) / numWorkers);
+
+	// Calculate number of tasks needed (capped by MaxTasks for stack allocation)
+	static const PxU32 MaxTasks = 64;
+	PxU32 numTasks = PxMin((size + bodiesPerTask - 1) / bodiesPerTask, MaxTasks);
+
+	// Recalculate bodies per task based on actual number of tasks
+	const PxU32 actualBodiesPerTask = (size + numTasks - 1) / numTasks;
+
+	// Stack-allocated task storage
+	PX_ALIGN(16, PxU8 taskMemory[MaxTasks * sizeof(GpuAccelerationCopyTask)]);
+	PxSync completionSync;
+	volatile PxI32 taskCounter = PxI32(numTasks);
+
+	PxU32 startIndex = 0;
+	for(PxU32 t = 0; t < numTasks; t++)
+	{
+		const PxU32 remaining = size - startIndex;
+		const PxU32 taskBodies = PxMin(remaining, actualBodiesPerTask);
+
+		GpuAccelerationCopyTask* task = PX_PLACEMENT_NEW(
+			taskMemory + t * sizeof(GpuAccelerationCopyTask),
+			GpuAccelerationCopyTask)(getContextId(), rigidDynamics, startIndex, taskBodies,
+									 gpuAccels, &completionSync, &taskCounter);
+
+		task->setContinuation(*mTaskManager, NULL);
+		task->removeReference();
+
+		startIndex += taskBodies;
+	}
+
+	// Wait for all tasks to complete
+	completionSync.wait();
+
+	mGpuAccelerationsCopyPending = false;
+}
+
+bool NpScene::warnOnceDirectGpuAccelGetter()
+{
+	if(mDirectGpuAccelGetterWarningIssued)
+		return false;
+	mDirectGpuAccelGetterWarningIssued = true;
+	return true;
+}
+#endif
 
 PxsSimulationController* NpScene::getSimulationController()
 {

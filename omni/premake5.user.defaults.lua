@@ -19,7 +19,6 @@ omniPhysXTensorsOptimize = true
 omniPhysXGraphOptimize = true
 omniPhysXCookingOptimize = true
 omniPhysXFoundationOptimize = true
-omniPhysXClashDetectionOptimize = true
 omniPhysXAssetValidatorOptimize = true
 testUnitOptimize = true
 omniPhysicsOptimize = true

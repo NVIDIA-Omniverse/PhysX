@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -108,12 +108,13 @@ namespace
         return false;
     }
 
-    bool findDeformableMeshPaths(SdfPath& simMeshPath, SdfPath& collMeshPath, SdfPathSet& skinGeomPaths,
+    bool findDeformableMeshPaths(ProxyInfoType::Enum& type, SdfPath& simMeshPath, SdfPath& collMeshPath, SdfPathSet& skinGeomPaths,
                                  const SdfPath actualDeformableBodyPath)
     {
         simMeshPath = SdfPath();
         collMeshPath = SdfPath();
         skinGeomPaths.clear();
+        type = ProxyInfoType::eNone;
 
         TfType volumeSimType = UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(OmniPhysicsDeformableAPITokens->VolumeDeformableSimAPI);
         TfType surfaceSimType = UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(OmniPhysicsDeformableAPITokens->SurfaceDeformableSimAPI);
@@ -123,8 +124,8 @@ namespace
         }
 
         UsdPrim bodyPrim = gStage->GetPrimAtPath(actualDeformableBodyPath);
-        UsdPrimRange prims(bodyPrim, pxr::UsdPrimAllPrimsPredicate);
-        for (pxr::UsdPrimRange::const_iterator it = prims.begin(); it != prims.end(); ++it)
+        UsdPrimRange prims(bodyPrim, UsdPrimAllPrimsPredicate);
+        for (UsdPrimRange::const_iterator it = prims.begin(); it != prims.end(); ++it)
         {
             UsdPrim prim = *it;
             if (!prim.IsA<UsdGeomPointBased>())
@@ -143,7 +144,14 @@ namespace
                 }
             }
 
-            bool isSim = prim.HasAPI(volumeSimType) || prim.HasAPI(surfaceSimType);
+            bool isVolumeSim = prim.HasAPI(volumeSimType);
+            bool isSurfaceSim = prim.HasAPI(surfaceSimType);
+            if (isVolumeSim)
+                type = ProxyInfoType::eVolumeDeformableMesh;
+            else if (isSurfaceSim)
+                type = ProxyInfoType::eSurfaceDeformableMesh;
+
+            bool isSim = isVolumeSim || isSurfaceSim;
             bool isColl = isEnabledCollision(prim);
 
             if (isSim)
@@ -356,29 +364,25 @@ namespace
 
     using TargetPathPair = std::array<SdfPath, 2>;
 
-    TargetPathPair getAttachmentTargets(const SdfPath attachmentPath)
+    TargetPathPair getTargets(const TfType type, const SdfPath path)
     {
-        TfType attachmentType = UsdSchemaRegistry::GetTypeFromSchemaTypeName(OmniPhysicsDeformableTypeTokens->Attachment);
-
         TargetPathPair dstTargets;
         SdfPathVector srcTargets;
         SdfPath targetPath;
 
-        const UsdPrim& attachmentPrim = gStage->GetPrimAtPath(attachmentPath);
-        if (attachmentPrim)
+        const UsdPrim& prim = gStage->GetPrimAtPath(path);
+        if (prim)
         {
             UsdRelationship rel;
-            if (attachmentPrim.IsA(attachmentType))
+            if (prim.IsA(type))
             {
-                //attachment.GetVtxSrcRel().GetTargets(&srcTargets);
-                rel = attachmentPrim.GetRelationship(OmniPhysicsDeformableAttrTokens->src0);  // TODO: Is this correct?
+                rel = prim.GetRelationship(OmniPhysicsDeformableAttrTokens->src0);
                 if (rel)
                     rel.GetTargets(&srcTargets);
                 targetPath = srcTargets.size() == 1 ? srcTargets[0] : SdfPath();
                 dstTargets[0] = targetPath;
 
-                //attachment.GetXformSrcRel().GetTargets(&srcTargets);
-                rel = attachmentPrim.GetRelationship(OmniPhysicsDeformableAttrTokens->src1);  // TODO: Is this correct?
+                rel = prim.GetRelationship(OmniPhysicsDeformableAttrTokens->src1);
                 if (rel)
                     rel.GetTargets(&srcTargets);
                 targetPath = srcTargets.size() == 1 ? srcTargets[0] : SdfPath();
@@ -389,14 +393,28 @@ namespace
         return dstTargets;
     }
 
+    TargetPathPair getAttachmentTargets(const SdfPath attachmentPath)
+    {
+        TfType attachmentType = UsdSchemaRegistry::GetTypeFromSchemaTypeName(OmniPhysicsDeformableTypeTokens->Attachment);
+
+        return getTargets(attachmentType, attachmentPath);
+    }
+
+    TargetPathPair getCollisionFilterTargets(const SdfPath collisionFilterPath)
+    {
+        TfType collisionFilterType = UsdSchemaRegistry::GetTypeFromSchemaTypeName(OmniPhysicsDeformableTypeTokens->ElementCollisionFilter);
+
+        return getTargets(collisionFilterType, collisionFilterPath);
+    }
+
     SdfPath getProxyAttachmentPathFromRoot(SdfPath proxyRootPath)
     {
         return appendPath(proxyRootPath, std::string("_attachment"));
     }
 
-    SdfPath getProxyCollFilterPathFromRoot(SdfPath proxyRootPath)
+    SdfPath getProxyCollisionFilterPathFromRoot(SdfPath proxyRootPath)
     {
-        return appendPath(proxyRootPath, std::string("_coll_filter"));
+        return appendPath(proxyRootPath, std::string("_collision_filter"));
     }
 
     void updatePrototypeScale(const SdfPath& pointInstancerPath, const GfMatrix4d& targetToWorld)
@@ -436,6 +454,7 @@ namespace
     ON_ATTRIBUTE_CHANGE_WRAPPER(onAttributeChange_DeformableBodyTopology)
     ON_ATTRIBUTE_CHANGE_WRAPPER(onAttributeChange_DeformableAttachmentTargetPoints)
     ON_ATTRIBUTE_CHANGE_WRAPPER(onAttributeChange_DeformableAttachmentTopology)
+    ON_ATTRIBUTE_CHANGE_WRAPPER(onAttributeChange_DeformableCollisionFilterTopology)
 
 }
 
@@ -462,6 +481,12 @@ DeformableBodyVisualizationManager::DeformableBodyVisualizationManager(ProxyVisu
     mProxyManager.registerAttribute(OmniPhysicsDeformableAttrTokens->localPositionsSrc1, *this, &::onAttributeChange_DeformableAttachmentTopology);
     mProxyManager.registerAttribute(OmniPhysicsDeformableAttrTokens->tetIndicesSrc1, *this, &::onAttributeChange_DeformableAttachmentTopology);
     mProxyManager.registerAttribute(OmniPhysicsDeformableAttrTokens->tetCoordsSrc1, *this, &::onAttributeChange_DeformableAttachmentTopology);
+    mProxyManager.registerAttribute(OmniPhysicsDeformableAttrTokens->src0, *this, &::onAttributeChange_DeformableCollisionFilterTopology);
+    mProxyManager.registerAttribute(OmniPhysicsDeformableAttrTokens->src1, *this, &::onAttributeChange_DeformableCollisionFilterTopology);
+    mProxyManager.registerAttribute(OmniPhysicsDeformableAttrTokens->groupElemCounts0, *this, &::onAttributeChange_DeformableCollisionFilterTopology);
+    mProxyManager.registerAttribute(OmniPhysicsDeformableAttrTokens->groupElemCounts1, *this, &::onAttributeChange_DeformableCollisionFilterTopology);
+    mProxyManager.registerAttribute(OmniPhysicsDeformableAttrTokens->groupElemIndices0, *this, &::onAttributeChange_DeformableCollisionFilterTopology);
+    mProxyManager.registerAttribute(OmniPhysicsDeformableAttrTokens->groupElemIndices1, *this, &::onAttributeChange_DeformableCollisionFilterTopology);
 }
 
 void DeformableBodyVisualizationManager::onAttributeChange_DeformableBodyPoints(SdfPath path, TfToken attributeName)
@@ -490,7 +515,7 @@ void DeformableBodyVisualizationManager::onAttributeChange_DeformableBodyTopolog
 
 void DeformableBodyVisualizationManager::onAttributeChange_DeformableAttachmentTargetPoints(SdfPath targetPath, TfToken attributeName)
 {
-    if (mTargetToInfo.count(targetPath) > 0 && mProxyManager.getProxyInfo(targetPath))
+    if (mTargetToAttachmentInfo.count(targetPath) > 0 && mProxyManager.getProxyInfo(targetPath))
     {
         mBufferTargetPathsToUpdateGeometry.insert(targetPath);
     }
@@ -501,6 +526,14 @@ void DeformableBodyVisualizationManager::onAttributeChange_DeformableAttachmentT
     if (mActualAttachments.count(attachmentPath) > 0)
     {
         mBufferAttachmentPathsToUpdate.insert(attachmentPath);
+    }
+}
+
+void DeformableBodyVisualizationManager::onAttributeChange_DeformableCollisionFilterTopology(SdfPath collisionFilterPath, TfToken attributeName)
+{
+    if (mActualCollisionFilters.count(collisionFilterPath) > 0)
+    {
+        mBufferCollisionFilterPathsToUpdate.insert(collisionFilterPath);
     }
 }
 
@@ -528,9 +561,11 @@ void DeformableBodyVisualizationManager::setMode(VisualizerMode mode)
         {
             clearDeformableBodies(true);
             clearAttachments();
+            clearCollisionFilters();
         }
         mBufferModeDirtyDeformable = true;
         mBufferModeDirtyAttachments = true;
+        mBufferModeDirtyCollisionFilters = true;
     }
 }
 
@@ -544,12 +579,14 @@ void DeformableBodyVisualizationManager::displayDeformableAttachments(bool enabl
 {
     mDisplayDeformableAttachments = enable;
     mBufferModeDirtyAttachments = true;
+    mBufferModeDirtyCollisionFilters = true;
 }
 
 void DeformableBodyVisualizationManager::release()
 {
     clearDeformableBodies(false);
     clearAttachments();
+    clearCollisionFilters();
 }
 
 bool DeformableBodyVisualizationManager::needsStageParse(UsdStageWeakPtr stage)
@@ -581,12 +618,18 @@ bool DeformableBodyVisualizationManager::needsStageParse(UsdStageWeakPtr stage)
             return true;
     }
 
+    {
+        const std::vector<usdrt::SdfPath> paths = usdrtStage->GetPrimsWithTypeName(usdrt::TfToken("OmniPhysicsElementCollisionFilter"));
+        if (!paths.empty())
+            return true;
+    }
+
     return false;
 }
 
 void DeformableBodyVisualizationManager::handlePrimResync(SdfPath path)
 {
-    if (!isActive())
+    if (!isActive() || !gStage)
         return;
 
     TfType bodyType = UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(OmniPhysicsDeformableAPITokens->DeformableBodyAPI);
@@ -597,7 +640,7 @@ void DeformableBodyVisualizationManager::handlePrimResync(SdfPath path)
         mBufferDeformablePathsToRemove.erase(path);
         mBufferDeformablePathsToUpdate.insert(path);
     }
-    else if (gStage)
+    else
     {
         const UsdPrim& prim = gStage->GetPrimAtPath(path);
         if (prim && prim.HasAPI(bodyType))
@@ -606,13 +649,13 @@ void DeformableBodyVisualizationManager::handlePrimResync(SdfPath path)
         }
     }
 
-    // check for updates
+    // check for attachment updates
     if (mActualAttachments.count(path))
     {
         mBufferAttachmentPathsToRemove.erase(path);
         mBufferAttachmentPathsToUpdate.insert(path);
     }
-    else if (gStage)
+    else
     {
         TfType vtxXformAttachmentType = UsdSchemaRegistry::GetTypeFromSchemaTypeName(OmniPhysicsDeformableTypeTokens->VtxXformAttachment);
         TfType vtxTetAttachmentType = UsdSchemaRegistry::GetTypeFromSchemaTypeName(OmniPhysicsDeformableTypeTokens->VtxTetAttachment);
@@ -637,7 +680,7 @@ void DeformableBodyVisualizationManager::handlePrimResync(SdfPath path)
                 mBufferTargetPathsToUpdateTransform.insert(path);
             }
         }
-        else if (mTargetToInfo.count(path))
+        else if (mTargetToAttachmentInfo.count(path))
         {
             //target api got removed
             const SdfPathSet& targetAttachments = mTargetToActualAttachments[path];
@@ -647,6 +690,51 @@ void DeformableBodyVisualizationManager::handlePrimResync(SdfPath path)
                 {
                     mBufferAttachmentPathsToRemove.erase(targetAttachment);
                     mBufferAttachmentPathsToUpdate.insert(targetAttachment);
+                }
+            }
+        }
+    }
+
+    // check for collision filter updates
+    if (mActualCollisionFilters.count(path))
+    {
+        mBufferCollisionFilterPathsToRemove.erase(path);
+        mBufferCollisionFilterPathsToUpdate.insert(path);
+    }
+    else
+    {
+        TfType elementCollisionFilterType = UsdSchemaRegistry::GetTypeFromSchemaTypeName(OmniPhysicsDeformableTypeTokens->ElementCollisionFilter);
+        const UsdPrim prim = gStage->GetPrimAtPath(path);
+        if (prim && prim.IsA(elementCollisionFilterType))
+        {
+            mBufferCollisionFilterPathsToAdd.insert(path);
+        }
+        else if (prim && (prim.IsA<UsdGeomXformable>() || prim.HasAPI(bodyType)))
+        {          
+            //stale targets might have become valid again
+            SdfPathToSdfPathSetMap::const_iterator tit = mTargetToActualCollisionFilters.find(path);
+            if (tit != mTargetToActualCollisionFilters.cend())
+            {
+                const SdfPathSet& targetCollisionFilters = tit->second;
+                for (SdfPath targetCollisionFilter : targetCollisionFilters)
+                {
+                    mBufferCollisionFilterPathsToRemove.erase(targetCollisionFilter);
+                    mBufferCollisionFilterPathsToUpdate.insert(targetCollisionFilter);
+                }
+                // could be a tranform related attribute removal
+                mBufferCollisionFilterTargetPathsToUpdateTransform.insert(path);
+            }
+        }
+        else if (mTargetToCollisionFilterInfo.count(path))
+        {
+            //target api got removed
+            const SdfPathSet& targetCollisionFilters = mTargetToActualCollisionFilters[path];
+            for (SdfPath targetCollisionFilter : targetCollisionFilters)
+            {
+                if (getCollisionFilterProxyInfo(targetCollisionFilter))
+                {
+                    mBufferCollisionFilterPathsToRemove.erase(targetCollisionFilter);
+                    mBufferCollisionFilterPathsToUpdate.insert(targetCollisionFilter);
                 }
             }
         }
@@ -680,7 +768,7 @@ void DeformableBodyVisualizationManager::handlePrimRemove(SdfPath path)
         mBufferAttachmentPathsToUpdateGeometry.erase(path);
     }
 
-    // notification for targets that were removed.
+    // notification for attachment targets that were removed.
     {
         auto it = mTargetToActualAttachments.find(path);
         if (it != mTargetToActualAttachments.end())
@@ -689,6 +777,26 @@ void DeformableBodyVisualizationManager::handlePrimRemove(SdfPath path)
             for (SdfPath actualAttachment : actualAttachments)
             {
                 mProxyManager.bufferUpdateActive(actualAttachment);
+            }
+        }
+    }
+
+    mBufferCollisionFilterPathsToAdd.erase(path);
+    if (mActualCollisionFilters.count(path))
+    {
+        mBufferCollisionFilterPathsToRemove.insert(path);
+        mBufferCollisionFilterPathsToUpdate.erase(path);
+    }
+
+    // notification for collision filter targets that were removed.
+    {
+        auto it = mTargetToActualCollisionFilters.find(path);
+        if (it != mTargetToActualCollisionFilters.end())
+        {
+            SdfPathSet& actualCollisionFilters = it->second;
+            for (SdfPath actualCollisionFilter : actualCollisionFilters)
+            {
+                mProxyManager.bufferUpdateActive(actualCollisionFilter);
             }
         }
     }
@@ -710,6 +818,12 @@ void DeformableBodyVisualizationManager::handleTransformChange(SdfPath path)
         {
             mBufferAttachmentPathsToUpdateVizAttribute.insert(attachmentPath);
         }
+    }
+
+    tit = mTargetToActualCollisionFilters.find(path);
+    if (tit != mTargetToActualCollisionFilters.cend())
+    {
+        mBufferCollisionFilterTargetPathsToUpdateTransform.insert(path);
     }
 }
 
@@ -768,15 +882,41 @@ void DeformableBodyVisualizationManager::updateTracking()
         removeAttachment(path);
     }
 
+    // track new collision filter paths
+    for (SdfPath path : mBufferCollisionFilterPathsToAdd)
+    {
+        addCollisionFilter(path);
+    }
+
+    for (SdfPath path : mBufferCollisionFilterPathsToUpdate)
+    {
+        updateCollisionFilter(path);
+    }
+
+    // delete removed collision filters:
+    for (SdfPath path : mBufferCollisionFilterPathsToRemove)
+    {
+        removeCollisionFilter(path);
+    }
+
     //always update transforms for kinematics -
     //now let's just update for all xformables, since viz code should be agnostic to
     //colliders or rigid bodies
-    for (auto targetIt : mTargetToInfo)
+    for (auto targetIt : mTargetToAttachmentInfo)
     {
         AttachmentTargetInfo* targetInfo = targetIt.second;
         if (targetInfo && targetInfo->type == AttachmentTargetInfo::Type::eXformable)
         {
             mBufferTargetPathsToUpdateTransform.insert(targetIt.first);
+        }
+    }
+
+    for (auto targetIt : mTargetToCollisionFilterInfo)
+    {
+        CollisionFilterTargetInfo* targetInfo = targetIt.second;
+        if (targetInfo && targetInfo->type == CollisionFilterTargetInfo::Type::eXformable)
+        {
+            mBufferCollisionFilterTargetPathsToUpdateTransform.insert(targetIt.first);
         }
     }
 }
@@ -800,6 +940,14 @@ void DeformableBodyVisualizationManager::updateModeDirty()
     if (mBufferModeDirtyAttachments)
     {
         for (const SdfPath& actualPath : mActualAttachments)
+        {
+            mProxyManager.bufferUpdateActive(actualPath);
+        }
+    }
+
+    if (mBufferModeDirtyCollisionFilters)
+    {
+        for (const SdfPath& actualPath : mActualCollisionFilters)
         {
             mProxyManager.bufferUpdateActive(actualPath);
         }
@@ -838,9 +986,14 @@ bool IsTriMeshValid(const UsdPrim& prim)
 bool DeformableBodyVisualizationManager::checkCompleteness(ProxyInfo& proxyInfo)
 {
     bool isAttachment = (proxyInfo.type == ProxyInfoType::eVtxXformAttachment || proxyInfo.type == ProxyInfoType::eVtxTetAttachment);
+    bool isCollisionFilter = (proxyInfo.type == ProxyInfoType::eElementCollisionFilter);
     if (isAttachment)
     {
         return checkAttachmentsCompleteness(proxyInfo);
+    }
+    else if (isCollisionFilter)
+    {
+        return checkCollisionFiltersCompleteness(proxyInfo);
     }
     else
     {
@@ -989,6 +1142,10 @@ uint32_t DeformableBodyVisualizationManager::updateActiveProxies(ProxyInfo& prox
     {
             numActiveProxies = updateActiveProxiesAttachments(proxyInfo, actualPath, isActive() && mDisplayDeformableAttachments, mVisualizationScale);
     }
+    else if (proxyInfo.type == ProxyInfoType::eElementCollisionFilter)
+    {
+            numActiveProxies = updateActiveProxiesCollisionFilters(proxyInfo, actualPath, isActive() && mDisplayDeformableAttachments);
+    }
 
     return numActiveProxies;
 }
@@ -1036,12 +1193,17 @@ void DeformableBodyVisualizationManager::updateProxyProperties(UsdGeomXformCache
 
     for (SdfPath targetPath : mBufferTargetPathsToUpdateTransform)
     {
-        updateTargetTransform(targetPath, xformCache);
+        updateAttachmentTargetTransform(targetPath, xformCache);
     }
 
     for (SdfPath targetPath : mBufferTargetPathsToUpdateGeometry)
     {
-        updateTargetGeometry(targetPath);
+        updateAttachmentTargetGeometry(targetPath);
+    }
+
+    for (SdfPath targetPath : mBufferCollisionFilterTargetPathsToUpdateTransform)
+    {
+        updateCollisionFilterTargetTransform(targetPath, xformCache);
     }
 
     for (SdfPath attachmentPath : mBufferAttachmentPathsToUpdateGeometry)
@@ -1169,6 +1331,7 @@ void DeformableBodyVisualizationManager::clearBuffers()
     mBufferModeDirtyDeformable = false;
 
     clearAttachmentsBuffers();
+    clearCollisionFiltersBuffers();
 }
 
 UsdPrim DeformableBodyVisualizationManager::createDeformableBodyProxyPrim(SdfPath proxyPath, ProxyInfoType::Enum type)
@@ -1209,54 +1372,18 @@ void DeformableBodyVisualizationManager::releaseDeformableMeshVisualizer(SdfPath
     mProxyToDeformableMeshVisualizerMap.erase(proxyPath);
 }
 
-bool isSurfaceDeformable(SdfPath simMeshPath)
-{
-    bool result = false;
-
-    TfType surfaceSimType = UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(OmniPhysicsDeformableAPITokens->SurfaceDeformableSimAPI);
-    const UsdPrim prim = gStage->GetPrimAtPath(simMeshPath);
-    if (prim && prim.HasAPI(surfaceSimType))
-    {
-        result = true;
-    }
-
-    return result;
-}
-
-bool isVolumeDeformable(SdfPath simMeshPath)
-{
-    bool result = false;
-
-    TfType volumeSimType = UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(OmniPhysicsDeformableAPITokens->VolumeDeformableSimAPI);
-    const UsdPrim prim = gStage->GetPrimAtPath(simMeshPath);
-    if (prim && prim.HasAPI(volumeSimType))
-    {
-        result = true;
-    }
-
-    return result;
-}
-
 DeformableBodyVisualizationManager::DeformableMeshProxyInfo* DeformableBodyVisualizationManager::createDeformableMeshProxyInfo(
-    SdfPath actualMeshPath, SdfPath actualDeformableBodyPath)
+    const SdfPath actualMeshPath, const SdfPath actualDeformableBodyPath, const ProxyInfoType::Enum& type)
 {
     DeformableMeshProxyInfo* proxyInfo = new DeformableMeshProxyInfo();
     proxyInfo->client = this;
-
-    const SdfPath simMeshPath = getSimMeshPathFromMap(actualDeformableBodyPath);
-    if (isSurfaceDeformable(simMeshPath))
-        proxyInfo->type = ProxyInfoType::eSurfaceDeformableMesh;
-    else if (isVolumeDeformable(simMeshPath))
-        proxyInfo->type = ProxyInfoType::eVolumeDeformableMesh;
-    else
-        proxyInfo->type = ProxyInfoType::eNone;
-
+    proxyInfo->type = type;
     proxyInfo->actualMeshPath = actualMeshPath;
     proxyInfo->actualDeformableBodyPath = actualDeformableBodyPath;
     return proxyInfo;
 }
 
-DeformableBodyVisualizationManager::DeformableMeshProxyInfo* DeformableBodyVisualizationManager::getDeformableMeshProxyInfo(SdfPath actualPath)
+DeformableBodyVisualizationManager::DeformableMeshProxyInfo* DeformableBodyVisualizationManager::getDeformableMeshProxyInfo(const SdfPath actualPath)
 {
     ProxyInfo* proxyInfo = mProxyManager.getProxyInfo(actualPath);
     return (proxyInfo && (proxyInfo->type == ProxyInfoType::eVolumeDeformableMesh || proxyInfo->type == ProxyInfoType::eSurfaceDeformableMesh)) ? static_cast<DeformableMeshProxyInfo*>(proxyInfo) : nullptr;
@@ -1273,7 +1400,8 @@ void DeformableBodyVisualizationManager::addDeformableBody(const SdfPath actualD
     SdfPath simMeshPath;
     SdfPath collMeshPath;
     SdfPathSet skinGeomPaths;
-    findDeformableMeshPaths(simMeshPath, collMeshPath, skinGeomPaths, actualDeformableBodyPath);
+    ProxyInfoType::Enum type;
+    findDeformableMeshPaths(type, simMeshPath, collMeshPath, skinGeomPaths, actualDeformableBodyPath);
 
     mDeformableBodyToActualSimMeshMap[actualDeformableBodyPath] = simMeshPath;
     mDeformableBodyToActualCollMeshMap[actualDeformableBodyPath] = collMeshPath;
@@ -1282,7 +1410,7 @@ void DeformableBodyVisualizationManager::addDeformableBody(const SdfPath actualD
     if (simMeshPath.IsEmpty() || collMeshPath.IsEmpty())
         return;
 
-    DeformableMeshProxyInfo* simMeshProxyInfo = createDeformableMeshProxyInfo(simMeshPath, actualDeformableBodyPath);
+    DeformableMeshProxyInfo* simMeshProxyInfo = createDeformableMeshProxyInfo(simMeshPath, actualDeformableBodyPath, type);
     if (simMeshProxyInfo)
     {
         mProxyManager.addProxy(simMeshPath, *simMeshProxyInfo);
@@ -1297,7 +1425,7 @@ void DeformableBodyVisualizationManager::addDeformableBody(const SdfPath actualD
     if (collMeshPath != simMeshPath)
     {
         // Create another DeformableMeshProxyInfo when collision mesh is different from simulation mesh
-        DeformableMeshProxyInfo* collMeshProxyInfo = createDeformableMeshProxyInfo(collMeshPath, actualDeformableBodyPath);
+        DeformableMeshProxyInfo* collMeshProxyInfo = createDeformableMeshProxyInfo(collMeshPath, actualDeformableBodyPath, type);
         if (collMeshProxyInfo)
         {
             mProxyManager.addProxy(collMeshPath, *collMeshProxyInfo);
@@ -1330,7 +1458,7 @@ void DeformableBodyVisualizationManager::updateDeformableBody(const SdfPath actu
 }
 
 void DeformableBodyVisualizationManager::removeDeformableBody(const SdfPath actualDeformableBodyPath, bool updateActual)
-{
+{ 
     const SdfPath simMeshPath = getSimMeshPathFromMap(actualDeformableBodyPath);
     DeformableMeshProxyInfo* simMeshProxyInfo = getDeformableMeshProxyInfo(simMeshPath);
 
@@ -1606,7 +1734,6 @@ void DeformableBodyVisualizationManager::updateTopology(const SdfPath actualDefo
         return;
 
     // get attributes:
-    UsdAttribute pointsAttr;
     UsdAttribute indsAttr;
     VtArray<GfVec3f> points;
     VtArray<GfVec3i> allIndices_3i;
@@ -1615,6 +1742,10 @@ void DeformableBodyVisualizationManager::updateTopology(const SdfPath actualDefo
 
     GfVec3f color;
     DeformableMeshVisualizer* visualizer = nullptr;
+    VtArray<GfVec3i> filteredSurfaceFaceVertexIndices;
+    std::unordered_set<uint32_t> allFilterTriIds;
+    VtArray<GfVec3i> surfaceFaceVertexIndices;
+    TargetPathPair targetPaths;
 
     if (simMeshProxyInfo->type == ProxyInfoType::eVolumeDeformableMesh)
     {
@@ -1650,7 +1781,16 @@ void DeformableBodyVisualizationManager::updateTopology(const SdfPath actualDefo
             if (collMeshPrim && collMeshPrim.IsA<UsdGeomTetMesh>())
             {
                 indsAttr = UsdGeomTetMesh(collMeshPrim).GetTetVertexIndicesAttr();
-                indsAttr.Get(&allIndices_4i);
+                if (indsAttr)
+                {
+                    indsAttr.Get(&allIndices_4i);
+                }
+
+                UsdAttribute surfaceFaceVertexIndicesAttr = UsdGeomTetMesh(collMeshPrim).GetSurfaceFaceVertexIndicesAttr();
+                if (surfaceFaceVertexIndicesAttr)
+                {
+                    surfaceFaceVertexIndicesAttr.Get(&surfaceFaceVertexIndices);
+                }
 
                 if (showDefaultPose())
                 {
@@ -1672,6 +1812,26 @@ void DeformableBodyVisualizationManager::updateTopology(const SdfPath actualDefo
                 SdfPath proxyCollMeshPath = getProxyCollMeshPath(rootPath);
                 visualizer = getDeformableMeshVisualizer(proxyCollMeshPath);
                 color = kColorCollision;
+            }
+
+            VtArray<uint32_t> filterTriIds[2];
+            allFilterTriIds.clear();
+            const SdfPathSet& targetCollisionFilters = mTargetToActualCollisionFilters[collMeshPath];
+            for (SdfPath targetCollisionFilter : targetCollisionFilters)
+            {             
+                getFilteredElementIndices(targetPaths, filterTriIds, targetCollisionFilter);
+
+                int slot = (targetPaths[0] == collMeshPath) ? 0 : 1;
+                allFilterTriIds.insert(filterTriIds[slot].begin(), filterTriIds[slot].end());
+            }
+
+            filteredSurfaceFaceVertexIndices.clear();
+            for (uint32_t tri : allFilterTriIds)
+            {
+                if (tri < surfaceFaceVertexIndices.size())
+                {
+                    filteredSurfaceFaceVertexIndices.push_back(surfaceFaceVertexIndices[tri]);
+                }                
             }
         }
         else if (showProxyRestShape())
@@ -1732,6 +1892,12 @@ void DeformableBodyVisualizationManager::updateTopology(const SdfPath actualDefo
                 indsAttr = collMesh.GetFaceVertexIndicesAttr();
                 indsAttr.Get(&allIndices_int);
 
+                surfaceFaceVertexIndices.reserve(allIndices_int.size()/3);
+                for (int i = 0; i < allIndices_int.size() / 3; ++i)
+                {
+                    surfaceFaceVertexIndices.push_back(GfVec3i(allIndices_int[3*i], allIndices_int[3 * i + 1], allIndices_int[3 * i + 2]));
+                }
+
                 if (showDefaultPose())
                 {
                     getGeomPoints(collMeshPrim, &points);
@@ -1752,6 +1918,26 @@ void DeformableBodyVisualizationManager::updateTopology(const SdfPath actualDefo
                 SdfPath proxyCollMeshPath = getProxyCollMeshPath(rootPath);
                 visualizer = getDeformableMeshVisualizer(proxyCollMeshPath);
                 color = kColorCollision;
+            }
+
+            VtArray<uint32_t> filterTriIds[2];
+            allFilterTriIds.clear();
+            const SdfPathSet& targetCollisionFilters = mTargetToActualCollisionFilters[collMeshPath];
+            for (SdfPath targetCollisionFilter : targetCollisionFilters)
+            {
+                getFilteredElementIndices(targetPaths, filterTriIds, targetCollisionFilter);
+
+                int slot = (targetPaths[0] == collMeshPath) ? 0 : 1;
+                allFilterTriIds.insert(filterTriIds[slot].begin(), filterTriIds[slot].end());
+            }
+
+            filteredSurfaceFaceVertexIndices.clear();
+            for (uint32_t tri : allFilterTriIds)
+            {
+                if (tri < surfaceFaceVertexIndices.size())
+                {
+                    filteredSurfaceFaceVertexIndices.push_back(surfaceFaceVertexIndices[tri]);
+                }
             }
         }
         else if (showProxyRestShape())
@@ -1825,25 +2011,57 @@ void DeformableBodyVisualizationManager::updateTopology(const SdfPath actualDefo
 
     if (valid)
     {
-        VtArray<int32_t> filterVertIndices;
         visualizer->setIndices(allIndices_int);
+        visualizer->setPoints(points);
+        visualizer->updateTopology();
 
         VtArray<GfVec3f> colors(allIndices_int.size(), color);
-        for (uint32_t index : filterVertIndices)
+
+        if (mDisplayDeformableAttachments)
         {
-            colors[index] = kColorFilter;
+            VtArray<uint32_t> filterVertIndices;
+            DeformableTetMeshVisualizer* tetMeshVisualizer = dynamic_cast<DeformableTetMeshVisualizer*>(visualizer);
+            DeformableTriMeshVisualizer* triMeshVisualizer = dynamic_cast<DeformableTriMeshVisualizer*>(visualizer);
+            if (tetMeshVisualizer)
+            {
+                // Volume deformable
+                std::unordered_set<uint32_t> filteredTetIds = tetMeshVisualizer->getFilteredTetIds(filteredSurfaceFaceVertexIndices);
+
+                for (uint32_t tetId : filteredTetIds)
+                {
+                    for (uint32_t i = 0; i < 4; ++i)
+                    {
+                        uint32_t index = tetId * 4 + i;
+                        if (index < colors.size())
+                            colors[index] = kColorFilter;
+                    }
+                }
+            }
+            else if (triMeshVisualizer)
+            {
+                // Surface deformable
+                std::unordered_set<uint32_t> filteredTriIds = triMeshVisualizer->getFilteredTriIds(filteredSurfaceFaceVertexIndices);
+
+                for (uint32_t triId : filteredTriIds)
+                {
+                    for (uint32_t i = 0; i < 3; ++i)
+                    {
+                        uint32_t index = triId * 3 + i;
+                        if (index < colors.size())
+                            colors[index] = kColorFilter;
+                    }
+                }
+            }
         }
 
         visualizer->setColors(colors);
-        visualizer->setPoints(points);
-        visualizer->updateTopology();
     }
     else
     {
-        visualizer->setIndices(VtArray<int32_t>());
-        visualizer->setColors(VtArray<GfVec3f>());
+        visualizer->setIndices(VtArray<int32_t>());      
         visualizer->setPoints(VtArray<GfVec3f>());
         visualizer->updateTopology();
+        visualizer->setColors(VtArray<GfVec3f>());
     }
 }
 
@@ -1975,6 +2193,32 @@ SdfPathSet DeformableBodyVisualizationManager::getSkinGeomPathsFromMap(const Sdf
         return it->second;
     }
     return {};
+}
+
+void DeformableBodyVisualizationManager::getFilteredElementIndices(TargetPathPair& targetPaths, VtArray<uint32_t>(&filterTriIds)[2],
+    const SdfPath targetCollisionFilter)
+{
+    if (!gStage)
+        return;
+
+    UsdPrim collisionFilterPrim = gStage->GetPrimAtPath(targetCollisionFilter);
+    if (collisionFilterPrim)
+    {
+        targetPaths = getCollisionFilterTargets(targetCollisionFilter);
+
+        UsdAttribute groupElemIndicesAttrs[2] = {
+            collisionFilterPrim.GetAttribute(OmniPhysicsDeformableAttrTokens->groupElemIndices0),
+            collisionFilterPrim.GetAttribute(OmniPhysicsDeformableAttrTokens->groupElemIndices1)
+        };
+
+        for (int slot = 0; slot < 2; ++slot)
+        {
+            if (groupElemIndicesAttrs[slot])
+            {
+                groupElemIndicesAttrs[slot].Get(&filterTriIds[slot]);
+            }
+        }
+    }
 }
 
 DeformableMeshVisualizer* DeformableBodyVisualizationManager::getDeformableMeshVisualizer(const SdfPath proxyTetPath)
@@ -2145,7 +2389,7 @@ uint32_t DeformableBodyVisualizationManager::updateActiveProxiesAttachments(Prox
     if (proxyInfo.type == ProxyInfoType::eVtxXformAttachment || proxyInfo.type == ProxyInfoType::eVtxTetAttachment)
     {
         AttachmentProxyInfo& attachmentProxyInfo = static_cast<AttachmentProxyInfo&>(proxyInfo);
-        if (isActive)
+        if (gStage && isActive)
         {
             attachmentProxyInfo.proxyRootPath = mProxyManager.createProxyRootPrim(actualPath);
 
@@ -2153,7 +2397,7 @@ uint32_t DeformableBodyVisualizationManager::updateActiveProxiesAttachments(Prox
             UsdPrim proxyAttachmentPrim = gStage->GetPrimAtPath(proxyAttachmentPath);
             if (!proxyAttachmentPrim)
             {
-                proxyAttachmentPrim = createAttachmentProxyPrim(proxyAttachmentPath, proxyInfo.type);
+                proxyAttachmentPrim = createProxyPrim(proxyAttachmentPath, proxyInfo.type);
                 mProxyManager.addProxyPrim(actualPath, proxyAttachmentPath);
 
                 for (int slot = 0; slot < 2; ++slot)
@@ -2212,6 +2456,231 @@ void DeformableBodyVisualizationManager::clearAttachmentsBuffers()
     mBufferModeDirtyAttachments = false;
 }
 
+void DeformableBodyVisualizationManager::updateCollisionFilterTargetTransform(const SdfPath targetPath, UsdGeomXformCache& xformCache)
+{
+    // get target prim
+    UsdPrim targetPrim = gStage->GetPrimAtPath(targetPath);
+    if (!targetPrim)
+        return;  // no need to update if there is no target prim
+
+    if (mTargetToCollisionFilterInfo.count(targetPath))
+    {
+        const SdfPathSet& targetCollisionFilters = mTargetToActualCollisionFilters[targetPath];
+
+        for (SdfPath collisionFilterPath : targetCollisionFilters)
+        {
+            TfType collisionFilterType = UsdSchemaRegistry::GetTypeFromSchemaTypeName(OmniPhysicsDeformableTypeTokens->ElementCollisionFilter);
+            const UsdPrim& collisionFilterPrim = gStage->GetPrimAtPath(collisionFilterPath);
+            if (!collisionFilterPrim || (!collisionFilterPrim.IsA(collisionFilterType)))
+                continue;
+
+            CollisionFilterProxyInfo* collisionFilterInfo = getCollisionFilterProxyInfo(collisionFilterPath);
+            CARB_ASSERT(collisionFilterInfo && collisionFilterInfo->actualTargets[0] == targetPath || collisionFilterInfo->actualTargets[1] == targetPath);
+            if (collisionFilterInfo)
+            {
+                int32_t slot = collisionFilterInfo->actualTargets[0] == targetPath ? 0 : 1;
+
+                const SdfPath proxyCollisionFilterPath = getProxyCollisionFilterPath(collisionFilterPath);
+                if (!proxyCollisionFilterPath.IsEmpty())
+                {
+                    SdfPath targetXformPath = getProxyTargetPath(proxyCollisionFilterPath, slot);
+
+                    // get transformation with cache:
+                    const GfMatrix4d targetToWorld = xformCache.GetLocalToWorldTransform(targetPrim);
+
+                    UsdGeomXform targetXform = UsdGeomXform::Get(gStage, targetXformPath);
+                    UsdAttribute localToWorldAttr = targetXform.GetPrim().GetAttribute(transformMatrixAttrName);
+                    CARB_ASSERT(localToWorldAttr);
+                    localToWorldAttr.Set(targetToWorld);
+                }
+            }
+        }
+    }
+}
+
+void DeformableBodyVisualizationManager::clearCollisionFilters()
+{
+    if (gStage)
+    {
+        omni::usd::UsdUtils::ScopedLayerEdit scopedSessionLayerEdit(gStage, gStage->GetSessionLayer());
+
+        while (mActualCollisionFilters.size())
+        {
+            removeCollisionFilter(*mActualCollisionFilters.begin());
+        }
+    }
+
+    mActualCollisionFilters.clear();
+    mTargetToActualCollisionFilters.clear();
+
+    for (SdfPathToCollisionFilterTargetInfoMap::const_iterator it = mTargetToCollisionFilterInfo.cbegin(); it != mTargetToCollisionFilterInfo.cend(); ++it)
+    {
+        releaseTargetInfo(it->second);
+    }
+    mTargetToCollisionFilterInfo.clear();
+
+    clearCollisionFiltersBuffers();
+}
+
+bool DeformableBodyVisualizationManager::checkCollisionFiltersCompleteness(ProxyInfo& proxyInfo)
+{
+    if (!gStage)
+        return false;
+
+    if (proxyInfo.type != ProxyInfoType::eElementCollisionFilter)
+        return false;
+
+    CollisionFilterProxyInfo& collisionFilterProxyInfo = static_cast<CollisionFilterProxyInfo&>(proxyInfo);
+
+    const UsdPrim collisionFilterPrim = gStage->GetPrimAtPath(collisionFilterProxyInfo.actualCollisionFilterPath);
+
+    if (!collisionFilterPrim)
+        return false;
+
+    const TargetPathPair& actualTargets = collisionFilterProxyInfo.actualTargets;
+    if (actualTargets[0].IsEmpty() || actualTargets[1].IsEmpty())
+        return false;
+
+    if (!gStage->GetPrimAtPath(actualTargets[0]) || !gStage->GetPrimAtPath(actualTargets[1]))
+        return false;
+
+    TfType collisionFilterType = UsdSchemaRegistry::GetTypeFromSchemaTypeName(OmniPhysicsDeformableTypeTokens->ElementCollisionFilter);
+    if (proxyInfo.type == ProxyInfoType::eElementCollisionFilter)
+    {
+        if (!collisionFilterPrim.IsA(collisionFilterType))
+            return false;
+
+        CollisionFilterTargetInfo::Type targetType0 = collisionFilterProxyInfo.collisionFilterTargetInfos[0]->type;
+        CollisionFilterTargetInfo::Type targetType1 = collisionFilterProxyInfo.collisionFilterTargetInfos[1]->type;
+        if (targetType0 == CollisionFilterTargetInfo::eNone || targetType1 == CollisionFilterTargetInfo::eNone)
+            return false;
+
+        UsdAttribute groupElemCounts0Attr = collisionFilterPrim.GetAttribute(OmniPhysicsDeformableAttrTokens->groupElemCounts0);
+        UsdAttribute groupElemCounts1Attr = collisionFilterPrim.GetAttribute(OmniPhysicsDeformableAttrTokens->groupElemCounts1);
+        UsdAttribute groupElemIndices0Attr = collisionFilterPrim.GetAttribute(OmniPhysicsDeformableAttrTokens->groupElemIndices0);
+        UsdAttribute groupElemIndices1Attr = collisionFilterPrim.GetAttribute(OmniPhysicsDeformableAttrTokens->groupElemIndices1);
+        if (!groupElemCounts0Attr || !groupElemCounts1Attr || !groupElemIndices0Attr || !groupElemIndices1Attr)
+            return false;
+
+        VtArray<uint32_t> groupElemCounts0;
+        VtArray<uint32_t> groupElemCounts1;
+        groupElemCounts0Attr.Get(&groupElemCounts0);
+        groupElemCounts1Attr.Get(&groupElemCounts1);
+
+        // Check if groupElemCounts0 has the same size as groupElemCounts1 or is empty
+        if (!groupElemCounts0.empty() && !groupElemCounts1.empty() && (groupElemCounts0.size() != groupElemCounts1.size()))
+            return false;
+
+        VtArray<uint32_t> groupElemIndices0;
+        VtArray<uint32_t> groupElemIndices1;
+        groupElemIndices0Attr.Get(&groupElemIndices0);
+        groupElemIndices1Attr.Get(&groupElemIndices1);
+
+        size_t totalGroupElements0 = 0;
+        for (uint32_t count : groupElemCounts0) {
+            totalGroupElements0 += count;
+        }
+
+        size_t totalGroupElements1 = 0;
+        for (uint32_t count : groupElemCounts1) {
+            totalGroupElements1 += count;
+        }
+
+        // Check if groupElemCounts0 and groupElemIndices0 are consistent
+        if (totalGroupElements0 != groupElemIndices0.size())
+            return false;
+
+        // Check if groupElemCounts1 and groupElemIndices1 are consistent
+        if (totalGroupElements1 != groupElemIndices1.size())
+            return false;
+    }
+
+    return true;
+}
+
+uint32_t DeformableBodyVisualizationManager::updateActiveProxiesCollisionFilters(ProxyInfo& proxyInfo, SdfPath actualPath, bool isActive)
+{
+    uint32_t numActiveProxies = 0;
+
+    if (proxyInfo.type == ProxyInfoType::eElementCollisionFilter)
+    {
+        CollisionFilterProxyInfo& collisionFilterProxyInfo = static_cast<CollisionFilterProxyInfo&>(proxyInfo);
+        if (gStage && isActive)
+        {
+            collisionFilterProxyInfo.proxyRootPath = mProxyManager.createProxyRootPrim(actualPath);
+
+            const SdfPath proxyCollisionFilterPath = getProxyCollisionFilterPathFromRoot(collisionFilterProxyInfo.proxyRootPath);
+            UsdPrim proxyCollisionFilterPrim = gStage->GetPrimAtPath(proxyCollisionFilterPath);
+            if (!proxyCollisionFilterPrim)
+            {
+                proxyCollisionFilterPrim = createProxyPrim(proxyCollisionFilterPath, proxyInfo.type);
+                mProxyManager.addProxyPrim(actualPath, proxyCollisionFilterPath);
+
+                for (int slot = 0; slot < 2; ++slot)
+                {
+                    const SdfPath proxyTargetPath = getProxyTargetPath(proxyCollisionFilterPath, slot);
+                    UsdPrim proxyTargetPrim = gStage->GetPrimAtPath(proxyTargetPath);
+                    if (proxyTargetPrim)
+                    {
+                        const SdfPath targetPath = collisionFilterProxyInfo.actualTargets[slot];
+                        mProxyManager.addProxyPrim(targetPath, proxyTargetPath);
+                        mBufferCollisionFilterTargetPathsToUpdateTransform.insert(targetPath);
+                        updateBufferDeformablePathsToUpdateTopology(targetPath);
+                    }
+                }
+            }
+
+            numActiveProxies++;
+        }
+        else
+        {
+            const SdfPath proxyCollisionFilterPath = getProxyCollisionFilterPathFromRoot(collisionFilterProxyInfo.proxyRootPath);
+            if (!proxyCollisionFilterPath.IsEmpty())
+            {
+                mProxyManager.removeProxyPrim(actualPath, proxyCollisionFilterPath);
+
+                for (int slot = 0; slot < 2; ++slot)
+                {
+                    const SdfPath proxyTargetPath = getProxyTargetPath(proxyCollisionFilterPath, slot);
+                    if (!proxyTargetPath.IsEmpty())
+                    {
+                        const SdfPath targetPath = collisionFilterProxyInfo.actualTargets[slot];
+                        mProxyManager.removeProxyPrim(targetPath, proxyTargetPath);
+                        updateBufferDeformablePathsToUpdateTopology(targetPath);
+                    }
+                }
+            }
+        }
+    }
+
+    return numActiveProxies;
+}
+
+void DeformableBodyVisualizationManager::clearCollisionFiltersBuffers()
+{
+    mBufferCollisionFilterPathsToAdd.clear();
+    mBufferCollisionFilterPathsToUpdate.clear();
+    mBufferCollisionFilterPathsToRemove.clear();
+
+    mBufferCollisionFilterTargetPathsToUpdateTransform.clear();
+
+    mBufferModeDirtyCollisionFilters = false;
+}
+
+void DeformableBodyVisualizationManager::updateBufferDeformablePathsToUpdateTopology(const SdfPath targetPath)
+{
+    if (!gStage)
+        return;
+
+    // Update mBufferDeformablePathsToUpdateTopology if the input path is a collision mesh path of a volume/surface deformable
+    const SdfPath actualDeformableBodyPath = mActualObjectToDeformableBodyMap[targetPath];
+    const UsdPrim collMeshPrim = gStage->GetPrimAtPath(targetPath);
+    if (!actualDeformableBodyPath.IsEmpty() && collMeshPrim && collMeshPrim.HasAPI<UsdPhysicsCollisionAPI>())
+    {
+        mBufferDeformablePathsToUpdateTopology.insert(actualDeformableBodyPath);
+    }
+}
+
 void DeformableBodyVisualizationManager::addAttachment(const SdfPath attachmentPath)
 {
     if (mActualAttachments.count(attachmentPath) == 0)
@@ -2257,48 +2726,36 @@ void DeformableBodyVisualizationManager::removeAttachment(const SdfPath attachme
     if (mActualAttachments.find(attachmentPath) == mActualAttachments.end())
         return;
 
-    TargetPathPair targetPaths = getAttachmentTargets(attachmentPath);
-    
-    for (uint32_t slot = 0; slot < 2; ++slot)
-    {
-        SdfPath targetPath = targetPaths[slot];
-        if (targetPath.IsEmpty())
-            continue;
-
-        SdfPathToSdfPathSetMap::iterator tit = mTargetToActualAttachments.find(targetPath);
-        if (tit != mTargetToActualAttachments.end())
-        {
-            SdfPathSet& targetAttachments = tit->second;
-            if (targetAttachments.size() == 1)
-            {
-                mTargetToActualAttachments.erase(targetPath);
-                AttachmentTargetInfo* proxyInfo = getTargetInfo(targetPath);
-                if (proxyInfo)
-                {
-                    mTargetToInfo.erase(targetPath);
-                }           
-            }
-            else
-            {
-                targetAttachments.erase(attachmentPath);
-            }
-        }
-    }
-
     AttachmentProxyInfo* attachmentProxyInfo = getAttachmentProxyInfo(attachmentPath);
     if (attachmentProxyInfo)
     {
         for (uint32_t slot = 0; slot < 2; ++slot)
         {
             SdfPath targetPath = attachmentProxyInfo->actualTargets[slot];
-            SdfPathToTargetInfoMap::const_iterator tit = mTargetToInfo.find(targetPath);
-            if (tit != mTargetToInfo.cend())
+            if (targetPath.IsEmpty())
+                continue;
+
+            SdfPathToSdfPathSetMap::iterator tit = mTargetToActualAttachments.find(targetPath);
+            if (tit != mTargetToActualAttachments.end())
             {
-                AttachmentTargetInfo* targetInfo = tit->second;
+                SdfPathSet& targetAttachments = tit->second;
+                if (targetAttachments.size() == 1)
+                {
+                    mTargetToActualAttachments.erase(targetPath);
+                }
+                else
+                {
+                    targetAttachments.erase(attachmentPath);
+                }
+            }
+
+            AttachmentTargetInfo* targetInfo = getAttachmentTargetInfo(targetPath);
+            if (targetInfo)
+            {
                 if (targetInfo->numAttachments == 1)
                 {
-                    releaseTargetInfo(tit->second);
-                    mTargetToInfo.erase(tit);
+                    releaseTargetInfo(targetInfo);
+                    mTargetToAttachmentInfo.erase(targetPath);
                 }
                 else
                 {
@@ -2336,6 +2793,115 @@ void DeformableBodyVisualizationManager::updateAttachment(const SdfPath attachme
     {
         removeAttachment(attachmentPath);
         addAttachment(attachmentPath);
+    }
+}
+
+void DeformableBodyVisualizationManager::addCollisionFilter(const SdfPath collisionFilterPath)
+{
+    if (mActualCollisionFilters.count(collisionFilterPath) == 0)
+    {
+        // update tracking
+        mActualCollisionFilters.insert(collisionFilterPath);
+
+        CollisionFilterProxyInfo* collisionFilterProxyInfo = createCollisionFilterProxyInfo(collisionFilterPath);
+        if (!collisionFilterProxyInfo)
+            return;
+
+        TargetPathPair targetPaths = getCollisionFilterTargets(collisionFilterPath);
+
+        for (uint32_t slot = 0; slot < 2; ++slot)
+        {
+            SdfPath targetPath = targetPaths[slot];
+            if (!targetPath.IsEmpty())
+            {
+                SdfPathToSdfPathSetMap::iterator tit = mTargetToActualCollisionFilters.find(targetPath);
+                if (tit != mTargetToActualCollisionFilters.end())
+                {
+                    SdfPathSet& targetCollisionFilters = tit->second;
+                    targetCollisionFilters.insert(collisionFilterPath);
+                }
+                else
+                {
+                    SdfPathSet targetCollisionFilters;
+                    targetCollisionFilters.insert(collisionFilterPath);
+                    mTargetToActualCollisionFilters.insert({ targetPath, targetCollisionFilters });
+                }
+            }
+        }
+
+        mProxyManager.addProxy(collisionFilterPath, *collisionFilterProxyInfo);
+
+        // update events
+        mProxyManager.bufferUpdateActive(collisionFilterPath);
+    }
+}
+
+void DeformableBodyVisualizationManager::removeCollisionFilter(const SdfPath collisionFilterPath)
+{
+    if (mActualCollisionFilters.find(collisionFilterPath) == mActualCollisionFilters.end())
+        return;
+
+    CollisionFilterProxyInfo* collisionFilterProxyInfo = getCollisionFilterProxyInfo(collisionFilterPath);
+    if (collisionFilterProxyInfo)
+    {
+        for (uint32_t slot = 0; slot < 2; ++slot)
+        {
+            SdfPath targetPath = collisionFilterProxyInfo->actualTargets[slot];
+            if (targetPath.IsEmpty())
+                continue;
+
+            SdfPathToSdfPathSetMap::iterator tit = mTargetToActualCollisionFilters.find(targetPath);
+            if (tit != mTargetToActualCollisionFilters.end())
+            {
+                SdfPathSet& targetCollisionFilters = tit->second;
+                if (targetCollisionFilters.size() == 1)
+                {
+                    mTargetToActualCollisionFilters.erase(targetPath);
+                }
+                else
+                {
+                    targetCollisionFilters.erase(collisionFilterPath);
+                }
+            }
+
+            CollisionFilterTargetInfo* targetInfo = getCollisionFilterTargetInfo(targetPath);
+            if (targetInfo)
+            {
+                if (targetInfo->numCollisionFilters == 1)
+                {
+                    releaseTargetInfo(targetInfo);
+                    mTargetToCollisionFilterInfo.erase(targetPath);
+                }
+                else
+                {
+                    targetInfo->numCollisionFilters--;
+                }
+            }
+
+            auto it = mActualObjectToDeformableBodyMap.find(targetPath);
+            if (it != mActualObjectToDeformableBodyMap.end())
+            {
+                mBufferDeformablePathsToUpdateTopology.insert(it->second);
+            }
+        }
+    }
+
+    // update events  
+    mProxyManager.bufferUpdateActive(collisionFilterPath);
+
+    mActualCollisionFilters.erase(collisionFilterPath);
+
+    mProxyManager.removeProxy(collisionFilterPath, collisionFilterProxyInfo);
+}
+
+void DeformableBodyVisualizationManager::updateCollisionFilter(const SdfPath collisionFilterPath)
+{
+    const UsdPrim collisionFilterPrim = gStage->GetPrimAtPath(collisionFilterPath);
+
+    if (collisionFilterPrim)
+    {
+        removeCollisionFilter(collisionFilterPath);
+        addCollisionFilter(collisionFilterPath);
     }
 }
 
@@ -2460,6 +3026,19 @@ void DeformableBodyVisualizationManager::updateSessionPointInstancerRadius(const
     }
 }
 
+SdfPath DeformableBodyVisualizationManager::getProxyCollisionFilterPath(const SdfPath collisionFilterPath)
+{
+    SdfPath proxyCollisionFilterPath;
+
+    CollisionFilterProxyInfo* collisionFilterProxyInfo = getCollisionFilterProxyInfo(collisionFilterPath);
+    if (collisionFilterProxyInfo)
+    {
+        proxyCollisionFilterPath = getProxyCollisionFilterPathFromRoot(collisionFilterProxyInfo->proxyRootPath);
+    }
+
+    return proxyCollisionFilterPath;
+}
+
 bool isVtxXformAttachment(SdfPath attachmentPath)
 {
     bool result = false;
@@ -2488,30 +3067,44 @@ bool isVtxTetAttachment(SdfPath attachmentPath)
     return result;
 }
 
-UsdPrim DeformableBodyVisualizationManager::createAttachmentProxyPrim(SdfPath proxyAttachmentPath, ProxyInfoType::Enum type)
+bool isElementCollisionFilter(SdfPath collisionFilterPath)
 {
-    UsdGeomScope proxyAttachmentScope = UsdGeomScope::Define(gStage, proxyAttachmentPath);
-    CARB_ASSERT(proxyAttachmentScope);
-    omni::kit::EditorUsd::setNoDelete(proxyAttachmentScope.GetPrim(), true);
-    omni::kit::EditorUsd::setHideInStageWindow(proxyAttachmentScope.GetPrim(), true);
+    bool result = false;
+
+    TfType elementCollisionFilterType = UsdSchemaRegistry::GetTypeFromSchemaTypeName(OmniPhysicsDeformableTypeTokens->ElementCollisionFilter);
+    const UsdPrim prim = gStage->GetPrimAtPath(collisionFilterPath);
+    if (prim && prim.IsA(elementCollisionFilterType))
+    {
+        result = true;
+    }
+
+    return result;
+}
+
+UsdPrim DeformableBodyVisualizationManager::createProxyPrim(SdfPath proxyPath, ProxyInfoType::Enum type)
+{
+    UsdGeomScope proxyScope = UsdGeomScope::Define(gStage, proxyPath);
+    CARB_ASSERT(proxyScope);
+    omni::kit::EditorUsd::setNoDelete(proxyScope.GetPrim(), true);
+    omni::kit::EditorUsd::setHideInStageWindow(proxyScope.GetPrim(), true);
 
     for (int slot = 0; slot < 2; ++slot)
     {
-        const SdfPath targetAttachmentPath = getProxyTargetPath(proxyAttachmentPath, slot);
-        UsdGeomXform targetAttachmentXform = UsdGeomXform::Get(gStage, targetAttachmentPath);
-        if (!targetAttachmentXform)
+        const SdfPath proxyTargetPath = getProxyTargetPath(proxyPath, slot);
+        UsdGeomXform proxyTargetXform = UsdGeomXform::Get(gStage, proxyTargetPath);
+        if (!proxyTargetXform)
         {
-            targetAttachmentXform = UsdGeomXform::Define(gStage, targetAttachmentPath);
-            omni::kit::EditorUsd::setNoDelete(targetAttachmentXform.GetPrim(), true);
-            omni::kit::EditorUsd::setHideInStageWindow(targetAttachmentXform.GetPrim(), true);
+            proxyTargetXform = UsdGeomXform::Define(gStage, proxyTargetPath);
+            omni::kit::EditorUsd::setNoDelete(proxyTargetXform.GetPrim(), true);
+            omni::kit::EditorUsd::setHideInStageWindow(proxyTargetXform.GetPrim(), true);
 
             UsdGeomXformOp opTransform;
-            opTransform = targetAttachmentXform.AddTransformOp();
+            opTransform = proxyTargetXform.AddTransformOp();
             opTransform.Set(GfMatrix4d(1.0)); // workaround for hydra update not working if op value is set in later update.
         }
     }
 
-    return proxyAttachmentScope.GetPrim();
+    return proxyScope.GetPrim();
 }
 
 DeformableBodyVisualizationManager::AttachmentProxyInfo* DeformableBodyVisualizationManager::createAttachmentProxyInfo(SdfPath attachmentPath)
@@ -2536,15 +3129,15 @@ DeformableBodyVisualizationManager::AttachmentProxyInfo* DeformableBodyVisualiza
         SdfPath targetPath = targetPaths[slot];
         if (!targetPath.IsEmpty())
         {
-            SdfPathToTargetInfoMap::iterator tit = mTargetToInfo.find(targetPath);
-            if (tit == mTargetToInfo.end())
+            SdfPathToTargetInfoMap::iterator tit = mTargetToAttachmentInfo.find(targetPath);
+            if (tit == mTargetToAttachmentInfo.end())
             {
                 //new target
-                AttachmentTargetInfo* info = createTargetInfo(targetPath);
+                AttachmentTargetInfo* info = createAttachmentTargetInfo(targetPath);
                 if (info)
                 {
                     attachmentProxyInfo->targetInfos[slot] = info;
-                    mTargetToInfo.insert({ targetPath, info });
+                    mTargetToAttachmentInfo.insert({ targetPath, info });
                     info->numAttachments = 1;
                 }
             }
@@ -2570,6 +3163,59 @@ DeformableBodyVisualizationManager::AttachmentProxyInfo* DeformableBodyVisualiza
     return (proxyInfo && (proxyInfo->type == ProxyInfoType::eVtxXformAttachment || proxyInfo->type == ProxyInfoType::eVtxTetAttachment)) ? static_cast<AttachmentProxyInfo*>(proxyInfo) : nullptr;
 }
 
+DeformableBodyVisualizationManager::CollisionFilterProxyInfo* DeformableBodyVisualizationManager::createCollisionFilterProxyInfo(SdfPath collisionFilterPath)
+{
+    if (!gStage)
+        return nullptr;
+
+    CollisionFilterProxyInfo* collisionFilterProxyInfo = new CollisionFilterProxyInfo();
+    collisionFilterProxyInfo->client = this;
+
+    if (isElementCollisionFilter(collisionFilterPath))
+        collisionFilterProxyInfo->type = ProxyInfoType::eElementCollisionFilter;
+    else
+        collisionFilterProxyInfo->type = ProxyInfoType::eNone;
+
+    TargetPathPair targetPaths = getCollisionFilterTargets(collisionFilterPath);
+
+    for (uint32_t slot = 0; slot < 2; ++slot)
+    {
+        SdfPath targetPath = targetPaths[slot];
+        if (!targetPath.IsEmpty())
+        {
+            SdfPathToCollisionFilterTargetInfoMap::iterator tit = mTargetToCollisionFilterInfo.find(targetPath);
+            if (tit == mTargetToCollisionFilterInfo.end())
+            {
+                //new target
+                CollisionFilterTargetInfo* info = createCollisionFilterTargetInfo(targetPath);
+                if (info)
+                {
+                    collisionFilterProxyInfo->collisionFilterTargetInfos[slot] = info;
+                    mTargetToCollisionFilterInfo.insert({ targetPath, info });
+                    info->numCollisionFilters = 1;
+                }
+            }
+            else
+            {
+                collisionFilterProxyInfo->collisionFilterTargetInfos[slot] = tit->second;
+                tit->second->numCollisionFilters++;
+            }
+        }
+
+        collisionFilterProxyInfo->actualTargets[slot] = targetPath;
+    }
+
+    collisionFilterProxyInfo->actualCollisionFilterPath = collisionFilterPath;
+
+    return collisionFilterProxyInfo;
+}
+
+DeformableBodyVisualizationManager::CollisionFilterProxyInfo* DeformableBodyVisualizationManager::getCollisionFilterProxyInfo(SdfPath collisionFilterPath)
+{
+    ProxyInfo* proxyInfo = mProxyManager.getProxyInfo(collisionFilterPath);
+    return (proxyInfo && (proxyInfo->type == ProxyInfoType::eElementCollisionFilter)) ? static_cast<CollisionFilterProxyInfo*>(proxyInfo) : nullptr;
+}
+
 VtArray<int> convertInt4ArrayIntArray(const VtArray<GfVec4i>& int4Array)
 {
     VtArray<int32_t> result;
@@ -2586,7 +3232,7 @@ VtArray<int> convertInt4ArrayIntArray(const VtArray<GfVec4i>& int4Array)
     return result;
 }
 
-DeformableBodyVisualizationManager::AttachmentTargetInfo* DeformableBodyVisualizationManager::createTargetInfo(const SdfPath targetPath)
+DeformableBodyVisualizationManager::AttachmentTargetInfo* DeformableBodyVisualizationManager::createAttachmentTargetInfo(const SdfPath targetPath)
 {
     AttachmentTargetInfo* targetInfo = new AttachmentTargetInfo();
     UsdPrim targetPrim = gStage->GetPrimAtPath(targetPath);
@@ -2660,16 +3306,16 @@ DeformableBodyVisualizationManager::AttachmentTargetInfo* DeformableBodyVisualiz
     return targetInfo;
 }
 
-void DeformableBodyVisualizationManager::releaseTargetInfo(AttachmentTargetInfo* targetInfo)
+void DeformableBodyVisualizationManager::releaseTargetInfo(BaseTargetInfo* targetInfo)
 {
     if (targetInfo)
         delete targetInfo;
 }
 
-DeformableBodyVisualizationManager::AttachmentTargetInfo* DeformableBodyVisualizationManager::getTargetInfo(SdfPath targetPath)
+DeformableBodyVisualizationManager::AttachmentTargetInfo* DeformableBodyVisualizationManager::getAttachmentTargetInfo(SdfPath targetPath)
 {
-    auto it = mTargetToInfo.find(targetPath);
-    if (it != mTargetToInfo.end())
+    auto it = mTargetToAttachmentInfo.find(targetPath);
+    if (it != mTargetToAttachmentInfo.end())
     {
         return it->second;
     }
@@ -2690,8 +3336,8 @@ float DeformableBodyVisualizationManager::getPointScale(const SdfPath attachment
         for (uint32_t slot = 0; slot < 2; ++slot)
         {
             const SdfPath targetPath = attachmentInfo->actualTargets[slot];
-            auto it = mTargetToInfo.find(attachmentInfo->actualTargets[slot]);
-            if (it != mTargetToInfo.end())
+            auto it = mTargetToAttachmentInfo.find(attachmentInfo->actualTargets[slot]);
+            if (it != mTargetToAttachmentInfo.end())
             {
                 const AttachmentTargetInfo& targetInfo = *it->second;
                 UsdPrim targetPrim = gStage->GetPrimAtPath(targetPath);
@@ -2758,6 +3404,45 @@ float DeformableBodyVisualizationManager::getPointScale(const UsdPrim& targetMes
         scale = std::sqrt(scaleArea / restPoints.size()) * kEdgeToPointScale;
     }
     return scale;
+}
+
+DeformableBodyVisualizationManager::CollisionFilterTargetInfo* DeformableBodyVisualizationManager::createCollisionFilterTargetInfo(const SdfPath targetPath)
+{
+    CollisionFilterTargetInfo* targetInfo = new CollisionFilterTargetInfo();
+    UsdPrim targetPrim = gStage->GetPrimAtPath(targetPath);
+    if (targetPrim && targetPrim.HasAPI<UsdPhysicsCollisionAPI>())
+    {
+        if (targetPrim.IsA<UsdGeomTetMesh>())
+        {
+            // element indices represents surface triangle indices for UsdGeomTetMesh
+            targetInfo->type = CollisionFilterTargetInfo::eVolumeDeformableBody;
+        }
+        else if (targetPrim.IsA<UsdGeomMesh>())
+        {
+            // element indices represents triangle indices for UsdGeomMesh
+            targetInfo->type = CollisionFilterTargetInfo::eSurfaceDeformableBody;
+        }
+        else if (targetPrim.IsA<UsdGeomXformable>())
+        {
+            targetInfo->type = CollisionFilterTargetInfo::eXformable;
+        }
+    }
+    if (targetInfo->type == CollisionFilterTargetInfo::eNone)
+    {
+        delete targetInfo;
+        return nullptr;
+    }
+    return targetInfo;
+}
+
+DeformableBodyVisualizationManager::CollisionFilterTargetInfo* DeformableBodyVisualizationManager::getCollisionFilterTargetInfo(SdfPath targetPath)
+{
+    auto it = mTargetToCollisionFilterInfo.find(targetPath);
+    if (it != mTargetToCollisionFilterInfo.end())
+    {
+        return it->second;
+    }
+    return nullptr;
 }
 
 uint32_t DeformableBodyVisualizationManager::updateVolumeDeformableTargetAttachmentSamplePoints(UsdGeomPointInstancer& samplePointInstancer, const SdfPath attachmentPath, const SdfPath& simMeshPath,
@@ -2862,8 +3547,8 @@ void DeformableBodyVisualizationManager::updateAttachmentGeometry(const SdfPath 
             return;
 
         UsdPrim targetPrim = gStage->GetPrimAtPath(targetPath);
-        auto it = mTargetToInfo.find(targetPath);
-        if (targetPrim && it != mTargetToInfo.end())
+        auto it = mTargetToAttachmentInfo.find(targetPath);
+        if (targetPrim && it != mTargetToAttachmentInfo.end())
         {
             const AttachmentTargetInfo& targetInfo = *it->second;
             if (targetInfo.type == AttachmentTargetInfo::eXformable)
@@ -2923,14 +3608,14 @@ void DeformableBodyVisualizationManager::updateAttachmentGeometry(const SdfPath 
     }
 }
 
-void DeformableBodyVisualizationManager::updateTargetTransform(const SdfPath targetPath, UsdGeomXformCache& xformCache)
+void DeformableBodyVisualizationManager::updateAttachmentTargetTransform(const SdfPath targetPath, UsdGeomXformCache& xformCache)
 {
     // get target prim
     UsdPrim targetPrim = gStage->GetPrimAtPath(targetPath);
     if (!targetPrim)
         return;  // no need to update if there is no target prim
 
-    if (mTargetToInfo.count(targetPath))
+    if (mTargetToAttachmentInfo.count(targetPath))
     {
         const SdfPathSet& targetAttachments = mTargetToActualAttachments[targetPath];
 
@@ -2969,7 +3654,7 @@ void DeformableBodyVisualizationManager::updateTargetTransform(const SdfPath tar
     }
 }
 
-void DeformableBodyVisualizationManager::updateTargetGeometry(const SdfPath targetPath)
+void DeformableBodyVisualizationManager::updateAttachmentTargetGeometry(const SdfPath targetPath)
 {
     // get target prim
     UsdPrim targetPrim = gStage->GetPrimAtPath(targetPath);
@@ -2980,8 +3665,8 @@ void DeformableBodyVisualizationManager::updateTargetGeometry(const SdfPath targ
     TfType surfaceSimType = UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(OmniPhysicsDeformableAPITokens->SurfaceDeformableSimAPI);
     CARB_ASSERT(targetPrim.HasAPI(volumeSimType) || targetPrim.HasAPI(surfaceSimType));
 
-    SdfPathToTargetInfoMap::const_iterator tit = mTargetToInfo.find(targetPath);
-    if (tit != mTargetToInfo.cend())
+    SdfPathToTargetInfoMap::const_iterator tit = mTargetToAttachmentInfo.find(targetPath);
+    if (tit != mTargetToAttachmentInfo.cend())
     {
         const AttachmentTargetInfo& targetInfo = *tit->second;
         const SdfPathSet& targetAttachments = mTargetToActualAttachments[targetPath];
@@ -3061,11 +3746,11 @@ void DeformableBodyVisualizationManager::clearAttachments()
     mActualAttachments.clear();
     mTargetToActualAttachments.clear();
 
-    for (SdfPathToTargetInfoMap::const_iterator it = mTargetToInfo.cbegin(); it != mTargetToInfo.cend(); ++it)
+    for (SdfPathToTargetInfoMap::const_iterator it = mTargetToAttachmentInfo.cbegin(); it != mTargetToAttachmentInfo.cend(); ++it)
     {
         releaseTargetInfo(it->second);
     }
-    mTargetToInfo.clear();
+    mTargetToAttachmentInfo.clear();
 
     clearAttachmentsBuffers();
 }

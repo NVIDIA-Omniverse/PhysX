@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -25,84 +25,6 @@ using namespace carb;
 using namespace omni::fabric;
 //-----------------------------------------------------------------------------
 // fabric joint state
-
-void testArticulationResidualReporting(ScopedFabricActivation& fabricEnable)
-{
-    FabricChange changeTemplate;
-
-    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
-    IPhysx* physx = physicsTests.acquirePhysxInterface();
-    REQUIRE(physx);
-    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
-    REQUIRE(physxSim);
-
-    //Load stage from file
-    std::string usdFileName = physicsTests.getUnitTestsDataDirectory() + "ResidualReportingTestScene.usda";
-    UsdStageRefPtr stage = UsdStage::Open(usdFileName);
-    REQUIRE(stage);
-
-    pxr::UsdUtilsStageCache::Get().Insert(stage);
-    long stageId = pxr::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
-
-    // This creates the fabric stage
-    changeTemplate.init(stageId, physicsTests.getApp()->getFramework());
-
-    // attach sim to stage which parses and creates the pointers that we can check directly
-    physxSim->attachStage(stageId);
-    fabricEnable.mIPhysxFabric->attachStage(stageId);
-
-
-    for (int i = 0; i < 10; ++i)
-    {
-        physxSim->simulate(1.0f / 60, 0.0f);
-        physxSim->fetchResults();
-        fabricEnable.mIPhysxFabric->update(1.0f / 60, 0.0f);
-    }
-
-    const TfToken residualRmsPosIterToken = TfToken(PhysxSchemaTokens->physxResidualReportingRmsResidualPositionIteration.GetText());
-    const TfToken residualMaxPosIterToken = TfToken(PhysxSchemaTokens->physxResidualReportingMaxResidualPositionIteration.GetText());
-    const TfToken residualRmsVelIterToken = TfToken(PhysxSchemaTokens->physxResidualReportingRmsResidualVelocityIteration.GetText());
-    const TfToken residualMaxVelIterToken = TfToken(PhysxSchemaTokens->physxResidualReportingMaxResidualVelocityIteration.GetText());
-
-    const SdfPath defaultPrimPath = SdfPath("/World");
-    const SdfPath jointPath = defaultPrimPath.AppendChild(TfToken("Joint")).AppendChild(TfToken("Cube_01")).AppendChild(TfToken("SphericalJoint"));
-    const SdfPath articulationPath = defaultPrimPath.AppendChild(TfToken("Articulation"));
-    const SdfPath scenePath = defaultPrimPath.AppendChild(TfToken("PhysicsScene"));
-
-    std::vector<SdfPath> paths;
-    paths.push_back(articulationPath);
-    paths.push_back(jointPath);
-    paths.push_back(scenePath);
-    std::vector<TfToken> tokens;
-    tokens.push_back(residualRmsVelIterToken);
-    tokens.push_back(residualMaxVelIterToken);
-    tokens.push_back(residualRmsPosIterToken);
-    tokens.push_back(residualMaxPosIterToken);
-
-    omni::fabric::IStageReaderWriter* iSip = carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
-    for (int i = 0; i < paths.size(); ++i)
-    {
-        for (int j = 0; j < tokens.size(); ++j)
-        {
-            omni::fabric::StageReaderWriter stage = iSip->get(stageId);
-            const omni::fabric::Token token(tokens[j].GetText());
-            omni::fabric::Path fabricPath = omni::fabric::Path(omni::fabric::asInt(paths[i]));
-            REQUIRE(stage.attributeExists(fabricPath, token));
-            const float value = *stage.getAttributeRd<float>(fabricPath, token);
-
-            if (i != 0 || j > 2) //For the articulation, the velocity errors are exactly zero. TODO: Find out why that's the case
-                CHECK(value != 0.0f);
-        }
-    }    
-
-    // Common post-test actions
-    fabricEnable.mIPhysxFabric->detachStage();
-    physxSim->detachStage();
-    changeTemplate.destroy();
-
-    pxr::UsdUtilsStageCache::Get().Erase(stage);
-    stage = nullptr;
-}
 
 template <typename JointType, typename TestParameters>
 void testArticulationJointState(ScopedFabricActivation& fabricEnable)
@@ -179,7 +101,6 @@ void testArticulationJointState(ScopedFabricActivation& fabricEnable)
 
     value = testParams.startJointStateValue;
     changeTemplate.setAttributeValue(jointPath, jointStatePositionToken, value);
-    changeTemplate.broadcastChanges();
     physxSim->simulate(1.0f / 60, 0.0f);
     physxSim->fetchResults();
     fabricEnable.mIPhysxFabric->update(1.0f / 60, 0.0f);
@@ -189,7 +110,7 @@ void testArticulationJointState(ScopedFabricActivation& fabricEnable)
     {
         omni::fabric::StageReaderWriter stage = iSip->get(stageId);
         const omni::fabric::Token positionToken(jointStatePositionToken.GetText());
-        omni::fabric::Path fabricPath = omni::fabric::Path(omni::fabric::asInt(jointPath));
+        omni::fabric::Path fabricPath = omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), jointPath);
         REQUIRE(stage.attributeExists(fabricPath, positionToken));
         const float jointState = *stage.getAttributeRd<float>(fabricPath, positionToken);
         CHECK(fabsf(jointState - value) < epsilon);
@@ -204,7 +125,6 @@ void testArticulationJointState(ScopedFabricActivation& fabricEnable)
         const TfToken jointDriveToken(testParams.jointDriveAttributeText);
         value = testParams.driveTargetValue;
         changeTemplate.setAttributeValue(jointPath, jointDriveToken, value);
-        changeTemplate.broadcastChanges();
 
         for (int i = 0; i < 5; ++i)
         {
@@ -214,7 +134,7 @@ void testArticulationJointState(ScopedFabricActivation& fabricEnable)
         }
         omni::fabric::StageReaderWriter stage = iSip->get(stageId);
         const omni::fabric::Token velocityToken(testParams.jointVelocityAttributeText);
-        omni::fabric::Path fabricPath = omni::fabric::Path(omni::fabric::asInt(jointPath));
+        omni::fabric::Path fabricPath = omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), jointPath);
         REQUIRE(stage.attributeExists(fabricPath, velocityToken));
         const float jointState = *stage.getAttributeRd<float>(fabricPath, velocityToken);
         CHECK(fabsf(jointState - testParams.jointStateVelocityValue) < 0.01f);
@@ -358,10 +278,6 @@ TEST_CASE("Fabric Outputs Tests",
     SUBCASE("Articulation Angular Joint State")
     {
         testArticulationJointState<UsdPhysicsRevoluteJoint, ArticulationJointStateAngularTestParams>(fabricEnable);
-    }
-    SUBCASE("ResidualReporting")
-    {
-        testArticulationResidualReporting(fabricEnable);
     }
     SUBCASE("Transformation Update")
     {

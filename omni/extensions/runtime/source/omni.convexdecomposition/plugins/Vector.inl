@@ -371,3 +371,4 @@ inline const bool InsideTriangle(const Vec2<T>& a, const Vec2<T>& b, const Vec2<
     return ((aCROSSbp >= 0.0) && (bCROSScp >= 0.0) && (cCROSSap >= 0.0));
 }
 }
+

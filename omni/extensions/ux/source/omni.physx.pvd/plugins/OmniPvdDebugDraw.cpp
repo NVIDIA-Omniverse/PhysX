@@ -1,6 +1,7 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
+
 #include "UsdPCH.h"
 
 #include <carb/Framework.h>
@@ -287,7 +288,7 @@ OmniPVDDebugVizData::OmniPVDDebugVizData()
 
 OmniPVDDebugVizData::~OmniPVDDebugVizData()
 {
-    releaseMutex();
+
 }
 
 void OmniPVDDebugVizData::reset()
@@ -311,22 +312,10 @@ void OmniPVDDebugVizData::reset()
     mStageDirtyEvent = 1;
     mProcessedStageDirtyEvent = 0;
     mProcessedTimeCode = -1000000.0;
+    
+    // Clear the prim cache on reset
+    mPrimCache.clear();
 }
-
-void OmniPVDDebugVizData::initMutex()
-{
-    if (!mNextStateMutex)
-    {
-        mNextStateMutex = new carb::tasking::MutexWrapper();
-    }
-}
-
-void OmniPVDDebugVizData::releaseMutex()
-{
-    delete mNextStateMutex;
-    mNextStateMutex = nullptr;
-}
-
 
 void OmniPVDDebugVizData::initInterfaces()
 {
@@ -397,11 +386,15 @@ void OmniPVDDebugVizData::initEventSubs()
                                  usdContext->stageEventName(omni::usd::StageEventType::eOpened),
                                  [this](const auto&) {
                                      setClosingState(false);
+                                     invalidatePrimCache(); // New stage - must rebuild cache
                                      tickStageDirty();
                                  }),
                 ed->observeEvent(kObserverName, carb::eventdispatcher::kDefaultOrder,
                                  usdContext->stageEventName(omni::usd::StageEventType::eClosing),
-                                 [this](const auto&) { setClosingState(true); }),
+                                 [this](const auto&) { 
+                                     setClosingState(true);
+                                     invalidatePrimCache(); // Clear cache on stage close
+                                 }),
                 ed->observeEvent(kObserverName, carb::eventdispatcher::kDefaultOrder,
                                  usdContext->stageEventName(omni::usd::StageEventType::eSelectionChanged),
                                  [this](const auto&) {
@@ -434,34 +427,34 @@ void OmniPVDDebugVizData::releaseDebugViz()
 
 void OmniPVDDebugVizData::tickStageDirty()
 {
-    std::lock_guard<carb::tasking::MutexWrapper> lock(*mNextStateMutex);
+    std::lock_guard<carb::tasking::MutexWrapper> lock(mNextStateMutex);
     mStageDirtyEvent++;
 }
 
 void OmniPVDDebugVizData::setGizmoVizMode(OmniPVDDebugGizmoSelection::Enum gizmo, OmniPVDDebugVizMode::Enum selection)
 {
-    std::lock_guard<carb::tasking::MutexWrapper> lock(*mNextStateMutex);
+    std::lock_guard<carb::tasking::MutexWrapper> lock(mNextStateMutex);
     mGizmos[gizmo].setVizMode(selection);
     mStageDirtyEvent++;
 }
 
 void OmniPVDDebugVizData::setGizmoScale(OmniPVDDebugGizmoSelection::Enum gizmo, float scale)
 {
-    std::lock_guard<carb::tasking::MutexWrapper> lock(*mNextStateMutex);
+    std::lock_guard<carb::tasking::MutexWrapper> lock(mNextStateMutex);
     mGizmos[gizmo].setScale(scale);
     mStageDirtyEvent++;
 }
 
 void OmniPVDDebugVizData::setGizmoScale(float scale)
 {
-    std::lock_guard<carb::tasking::MutexWrapper> lock(*mNextStateMutex);
+    std::lock_guard<carb::tasking::MutexWrapper> lock(mNextStateMutex);
     mGizmoScale = scale;
     mStageDirtyEvent++;
 }
 
 void OmniPVDDebugVizData::updateGizmoVizModes()
 {
-    std::lock_guard<carb::tasking::MutexWrapper> lock(*mNextStateMutex);
+    std::lock_guard<carb::tasking::MutexWrapper> lock(mNextStateMutex);
     const int nbrGizmos = OmniPVDDebugGizmoSelection::eNbrEnums;
     for (int i = 0; i < nbrGizmos; i++)
     {
@@ -471,12 +464,18 @@ void OmniPVDDebugVizData::updateGizmoVizModes()
 
 bool OmniPVDDebugVizData::getClosingState()
 {
-    std::lock_guard<carb::tasking::MutexWrapper> lock(*mNextStateMutex);
+    std::lock_guard<carb::tasking::MutexWrapper> lock(mNextStateMutex);
     return mIsClosing;
 }
 
 void OmniPVDDebugVizData::setClosingState(bool closing)
 {
-    std::lock_guard<carb::tasking::MutexWrapper> lock(*mNextStateMutex);
+    std::lock_guard<carb::tasking::MutexWrapper> lock(mNextStateMutex);
     mIsClosing = closing;
+}
+
+void OmniPVDDebugVizData::invalidatePrimCache()
+{
+    std::lock_guard<carb::tasking::MutexWrapper> lock(mNextStateMutex);
+    mPrimCache.clear();
 }

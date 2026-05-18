@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -54,6 +54,8 @@ void artiSolveBlockPartition(PxgSolverCoreDesc* PX_RESTRICT solverDesc, const Px
 
 	const PxgIslandContext& island = solverDesc->islandContextPool[islandIndex];
 
+	const PxReal rigidContactBiasCoefficient = island.mBiasCoefficients.rigidContact;
+
 	//PxgBodySim* gBodySims = sharedDesc->bodySims;
 	PxgArticulationBlockData* gArticulations = artiDesc->mArticulationBlocks;
 
@@ -65,7 +67,7 @@ void artiSolveBlockPartition(PxgSolverCoreDesc* PX_RESTRICT solverDesc, const Px
 
 	PxU32 startIndex = partitionIndex == 0 ? island.mArtiBatchStartIndex : solverDesc->artiConstraintsPerPartition[partitionIndex + startPartitionIndex - 1];
 	//PxU32 startIndex = solverDesc->constraintsPerPartition[partitionIndex + startPartitionIndex];
-	
+
 	const PxU32 articulationBatchOffset = solverDesc->islandContextPool->mBatchCount;
 
 	//const PxU32 nbArticulations = artiDesc->nbArticulations;
@@ -80,9 +82,6 @@ void artiSolveBlockPartition(PxgSolverCoreDesc* PX_RESTRICT solverDesc, const Px
 	const uint threadIndexInWarp = threadIdx.x;
 
 	uint k = startIndex + globalWarpIndex + articulationBatchOffset;	
-
-	PxgErrorAccumulator error;
-	const bool accumulateError = solverDesc->contactErrorAccumulator.mCounter >= 0;
 
 	if (k < endIndex)
 	{
@@ -190,7 +189,7 @@ void artiSolveBlockPartition(PxgSolverCoreDesc* PX_RESTRICT solverDesc, const Px
 			solveExtContactsBlock(batch, vel0, vel1, doFriction, msIterativeData.blockContactHeaders,
 			                      msIterativeData.blockFrictionHeaders, msIterativeData.blockContactPoints,
 			                      msIterativeData.blockFrictions, msIterativeData.artiResponse, impulse0, impulse1,
-			                      threadIndexInWarp, accumulateError ? &error : NULL, curRef0, curRef1);
+			                      threadIndexInWarp, rigidContactBiasCoefficient, curRef0, curRef1);
 		}
 		else
 		{
@@ -198,7 +197,7 @@ void artiSolveBlockPartition(PxgSolverCoreDesc* PX_RESTRICT solverDesc, const Px
 			solveExt1DBlock(batch, vel0, vel1, threadIndexInWarp, msIterativeData.blockJointConstraintHeaders,
 			                msIterativeData.blockJointConstraintRowsCon, msIterativeData.blockJointConstraintRowsMod,
 			                &responses[responseIndex], impulse0, impulse1,
-			                solverDesc->contactErrorAccumulator.mCounter >= 0, curRef0, curRef1);
+			                curRef0, curRef1);
 		}
 
 		//Pull impulse from threads 6-12
@@ -260,7 +259,4 @@ void artiSolveBlockPartition(PxgSolverCoreDesc* PX_RESTRICT solverDesc, const Px
 			//	impulse1.top.x, impulse1.top.y, impulse1.top.z, impulse1.bottom.x, impulse1.bottom.y, impulse1.bottom.z);
 		}		
 	}
-
-	if (accumulateError)
-		error.accumulateErrorGlobalFullWarp(solverDesc->contactErrorAccumulator, threadIndexInWarp);
 }

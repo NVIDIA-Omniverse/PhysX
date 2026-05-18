@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -34,6 +34,9 @@
 #define ETD_CONVEX_EDGE_01  (1 << 3)	// PT: important value, don't change
 #define ETD_CONVEX_EDGE_12  (1 << 4)	// PT: important value, don't change
 #define ETD_CONVEX_EDGE_20  (1 << 5)	// PT: important value, don't change
+
+namespace physx
+{
 
 __device__ __forceinline__ bool selectNormal(const PxReal u,
 	const PxReal v, PxU8 triFlags)
@@ -472,5 +475,7 @@ __device__ __forceinline__ void generateEEContacts(const PxVec3& a, const PxVec3
 	if (numContacts < 2)
 		generateEE(p, q, sqInflatedRadius, normal, a, c, outContacts, outPens, numContacts);
 }
+
+} // namespace physx
 
 #endif

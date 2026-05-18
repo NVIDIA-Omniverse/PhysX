@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -13,6 +13,8 @@ namespace omni
 
 namespace physx
 {
+
+static constexpr char kScenePartitionPrimvar[] = "primvars:omni:scenePartition";
 
 /// Replication attach function, called when a stage is attached or about to be fully parsed.
 ///

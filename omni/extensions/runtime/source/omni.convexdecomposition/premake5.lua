@@ -54,12 +54,14 @@ project "omni.convexdecomposition.plugin"
 
     filter {}
 
-project "omni.convexdecomposition.python"
-    carboniteBindingsPython {
-        name = "_convexdecomposition",
-        folder = "bindings",
-        namespace = "omni" }
-    targetdir (targetDir.."/"..ext_dir.."/omni/convexdecomposition/bindings")
-    includedirs {
-        runtime_include_dir
-    }
+if not _OPTIONS["no-runtime-pybind"] then
+    project "omni.convexdecomposition.python"
+        carboniteBindingsPython {
+            name = "_convexdecomposition",
+            folder = "bindings",
+            namespace = "omni" }
+        targetdir (targetDir.."/"..ext_dir.."/omni/convexdecomposition/bindings")
+        includedirs {
+            runtime_include_dir
+        }
+end

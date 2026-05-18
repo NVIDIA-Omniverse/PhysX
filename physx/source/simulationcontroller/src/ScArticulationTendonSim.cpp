@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -59,8 +59,7 @@ void Sc::ArticulationSpatialTendonSim::setStiffness(const PxReal stiffness)
 {
 	mLLTendon.mStiffness = stiffness;
 
-	Dy::FeatherstoneArticulation* llArticulation = static_cast<Dy::FeatherstoneArticulation*>(mArtiSim->getLowLevelArticulation());
-	llArticulation->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
+	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
 }
 
 PxReal Sc::ArticulationSpatialTendonSim::getStiffness() const
@@ -72,8 +71,7 @@ void Sc::ArticulationSpatialTendonSim::setDamping(const PxReal damping)
 {
 	mLLTendon.mDamping = damping;
 
-	Dy::FeatherstoneArticulation* llArticulation = static_cast<Dy::FeatherstoneArticulation*>(mArtiSim->getLowLevelArticulation());
-	llArticulation->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
+	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
 }
 
 PxReal Sc::ArticulationSpatialTendonSim::getDamping() const
@@ -85,8 +83,7 @@ void Sc::ArticulationSpatialTendonSim::setLimitStiffness(const PxReal stiffness)
 {
 	mLLTendon.mLimitStiffness = stiffness;
 
-	Dy::FeatherstoneArticulation* llArticulation = static_cast<Dy::FeatherstoneArticulation*>(mArtiSim->getLowLevelArticulation());
-	llArticulation->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
+	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
 }
 
 PxReal Sc::ArticulationSpatialTendonSim::getLimitStiffness() const
@@ -98,8 +95,7 @@ void Sc::ArticulationSpatialTendonSim::setOffset(const PxReal offset)
 {
 	mLLTendon.mOffset = offset;
 
-	Dy::FeatherstoneArticulation* llArticulation = static_cast<Dy::FeatherstoneArticulation*>(mArtiSim->getLowLevelArticulation());
-	llArticulation->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
+	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
 }
 
 PxReal Sc::ArticulationSpatialTendonSim::getOffset() const
@@ -116,8 +112,7 @@ void Sc::ArticulationSpatialTendonSim::setAttachmentCoefficient(ArticulationAtta
 
 	attachment.coefficient = coefficient;
 
-	Dy::FeatherstoneArticulation* llArticulation = static_cast<Dy::FeatherstoneArticulation*>(mArtiSim->getLowLevelArticulation());
-	llArticulation->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
+	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
 }
 
 void Sc::ArticulationSpatialTendonSim::setAttachmentRelativeOffset(ArticulationAttachmentCore& core, const PxVec3& offset)
@@ -128,8 +123,7 @@ void Sc::ArticulationSpatialTendonSim::setAttachmentRelativeOffset(ArticulationA
 
 	attachment.relativeOffset = offset;
 
-	Dy::FeatherstoneArticulation* llArticulation = static_cast<Dy::FeatherstoneArticulation*>(mArtiSim->getLowLevelArticulation());
-	llArticulation->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
+	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
 }
 
 void Sc::ArticulationSpatialTendonSim::setAttachmentLimits(ArticulationAttachmentCore& core, const PxReal lowLimit, const PxReal highLimit)
@@ -141,8 +135,7 @@ void Sc::ArticulationSpatialTendonSim::setAttachmentLimits(ArticulationAttachmen
 	attachment.lowLimit = lowLimit;
 	attachment.highLimit = highLimit;
 
-	Dy::FeatherstoneArticulation* llArticulation = static_cast<Dy::FeatherstoneArticulation*>(mArtiSim->getLowLevelArticulation());
-	llArticulation->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
+	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
 }
 
 void Sc::ArticulationSpatialTendonSim::setAttachmentRestLength(ArticulationAttachmentCore& core, const PxReal restLength)
@@ -151,15 +144,11 @@ void Sc::ArticulationSpatialTendonSim::setAttachmentRestLength(ArticulationAttac
 	Dy::ArticulationAttachment& attachment = mLLTendon.getAttachment(index);
 	attachment.restLength = restLength;
 
-	Dy::FeatherstoneArticulation* llArticulation = static_cast<Dy::FeatherstoneArticulation*>(mArtiSim->getLowLevelArticulation());
-	llArticulation->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
-
+	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
 }
-
 
 void Sc::ArticulationSpatialTendonSim::addAttachment(ArticulationAttachmentCore& core)
 {
-
 	const PxU32 index = mLLTendon.getNewID();
 
 	Dy::ArticulationAttachment& attachment = mLLTendon.getAttachment(index);
@@ -233,8 +222,7 @@ void Sc::ArticulationFixedTendonSim::setStiffness(const PxReal stiffness)
 {
 	mLLTendon.mStiffness = stiffness;
 
-	Dy::FeatherstoneArticulation* llArticulation = static_cast<Dy::FeatherstoneArticulation*>(mArtiSim->getLowLevelArticulation());
-	llArticulation->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
+	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
 }
 
 PxReal Sc::ArticulationFixedTendonSim::getStiffness() const
@@ -246,8 +234,7 @@ void Sc::ArticulationFixedTendonSim::setDamping(const PxReal damping)
 {
 	mLLTendon.mDamping = damping;
 
-	Dy::FeatherstoneArticulation* llArticulation = static_cast<Dy::FeatherstoneArticulation*>(mArtiSim->getLowLevelArticulation());
-	llArticulation->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
+	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
 }
 
 PxReal Sc::ArticulationFixedTendonSim::getDamping() const
@@ -259,8 +246,7 @@ void Sc::ArticulationFixedTendonSim::setLimitStiffness(const PxReal stiffness)
 {
 	mLLTendon.mLimitStiffness = stiffness;
 
-	Dy::FeatherstoneArticulation* llArticulation = static_cast<Dy::FeatherstoneArticulation*>(mArtiSim->getLowLevelArticulation());
-	llArticulation->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
+	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
 }
 
 PxReal Sc::ArticulationFixedTendonSim::getLimitStiffness() const

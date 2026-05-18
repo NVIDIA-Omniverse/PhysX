@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -39,7 +39,6 @@
 #include "PxgConstraint.h"
 #include "PxgConstraintBlock.h"
 #include "PxgIslandContext.h"
-#include "PxgSolverContext.h"
 #include "cutil_math.h"
 #include "PxgSolverCoreDesc.h"
 #include "DyThresholdTable.h"
@@ -50,14 +49,14 @@
 #include "PxgIntrinsics.h"
 #include "stdio.h"
 #include "assert.h"
-#include "solverResidual.cuh"
 #include "constraintPrepShared.cuh"
 
 #include "solverBlockCommon.cuh"
 #include "PxgDynamicsConfiguration.h"
 #include "DyCpuGpu1dConstraint.h"
 
-using namespace physx;
+namespace physx
+{
 
 PX_FORCE_INLINE static __device__ uint32_t nextPowerOfTwo(uint32_t x)
 {
@@ -110,11 +109,9 @@ PX_FORCE_INLINE static __device__ void resetSlabCount(PxU32 index, PxU32 numSlab
 // Refer to "Mass Splitting for Jitter-Free Parallel Rigid Body Simulation" for the general mass-splitting concept.
 static __device__ void solve1DBlock(const PxgBlockConstraintBatch& batch, PxVec3& b0LinVel, PxVec3& b0AngVel, PxVec3& b1LinVel, PxVec3& b1AngVel, const PxU32 threadIndex,
 	const PxgBlockSolverConstraint1DHeader* PX_RESTRICT headers, PxgBlockSolverConstraint1DCon* PX_RESTRICT rowsCon,
-	PxgBlockSolverConstraint1DMod* PX_RESTRICT rowsMod, bool residualReportingEnabled,
+	PxgBlockSolverConstraint1DMod* PX_RESTRICT rowsMod,
 	PxReal ref0 = 1.f, PxReal ref1 = 1.f)
 {
-	using namespace physx;
-
 	const PxgBlockSolverConstraint1DHeader* PX_RESTRICT  header = &headers[batch.mConstraintBatchIndex];
 	PxgBlockSolverConstraint1DCon* PX_RESTRICT baseCon = &rowsCon[batch.startConstraintIndex];
 	PxgBlockSolverConstraint1DMod* PX_RESTRICT baseMod = &rowsMod[batch.startConstraintIndex];
@@ -155,7 +152,7 @@ static __device__ void solve1DBlock(const PxgBlockConstraintBatch& batch, PxVec3
 
 		const PxReal unitResponse = resp0 + resp1;
 
-		//https://omniverse-jirasw.nvidia.com/browse/PX-4383
+		// JIRA: PX-4383
 		const PxReal minRowResponse = DY_MIN_RESPONSE;
 		const PxReal recipResponse = Dy::computeRecipUnitResponse(unitResponse, minRowResponse);
 
@@ -185,8 +182,6 @@ static __device__ void solve1DBlock(const PxgBlockConstraintBatch& batch, PxVec3
 		const float deltaF = clampedForce - appliedForce;//FSub(clampedForce, appliedForce);
 
 		cmod.appliedForce[threadIndex] = clampedForce;
-		if(residualReportingEnabled)
-			cmod.residual[threadIndex] = PxgErrorAccumulator::calculateResidual(deltaF, vMul);
 
 		linVel0 = linVel0 + clinVel0*(deltaF*invMass0);//V3ScaleAdd(clinVel0, FMul(deltaF, invMass0), linVel0);			
 		linVel1 = linVel1 - clinVel1*(deltaF*invMass1);//V3NegScaleSub(clinVel1, FMul(deltaF, invMass1), linVel1);
@@ -195,12 +190,10 @@ static __device__ void solve1DBlock(const PxgBlockConstraintBatch& batch, PxVec3
 
 	}
 
-
 	b0LinVel = linVel0;
 	b0AngVel = angVel0;
 	b1LinVel = linVel1;
 	b1AngVel = angVel1;
-	
 }
 
 // Mass-splitting version of 1D constraints; mass-related terms are computed at every sub-timestep. See "setupArtiSolverConstraintBlockGPU".
@@ -213,13 +206,10 @@ static __device__ void solveExt1DBlock(const PxgBlockConstraintBatch& batch,
 	PxgBlockSolverConstraint1DCon* PX_RESTRICT rowsCon,
 	PxgBlockSolverConstraint1DMod* PX_RESTRICT rowsMod,
 	PxgArticulationBlockResponse* PX_RESTRICT artiResponse,
-	Cm::UnAlignedSpatialVector& impluse0,
-	Cm::UnAlignedSpatialVector& impluse1,
-	bool residualReportingEnabled,
+	Cm::UnAlignedSpatialVector& impulse0,
+	Cm::UnAlignedSpatialVector& impulse1,
 	PxReal ref0 = 1.f, PxReal ref1 = 1.f)
 {
-	using namespace physx;
-
 	const PxgBlockSolverConstraint1DHeader* PX_RESTRICT  header = &headers[batch.mConstraintBatchIndex];
 	PxgBlockSolverConstraint1DCon* PX_RESTRICT baseCon = &rowsCon[batch.startConstraintIndex];
 	PxgBlockSolverConstraint1DMod* PX_RESTRICT baseMod = &rowsMod[batch.startConstraintIndex];
@@ -229,10 +219,10 @@ static __device__ void solveExt1DBlock(const PxgBlockConstraintBatch& batch,
 	PxVec3 angVel0 = vel0.top;
 	PxVec3 angVel1 = vel1.top;
 
-	PxVec3 li0 = impluse0.bottom;
-	PxVec3 li1 = impluse1.bottom;
-	PxVec3 ai0 = impluse0.top;
-	PxVec3 ai1 = impluse1.top;
+	PxVec3 li0 = impulse0.bottom;
+	PxVec3 li1 = impulse1.bottom;
+	PxVec3 ai0 = impulse0.top;
+	PxVec3 ai1 = impulse1.top;
 
 	float invMass0 = ref0 * header->invMass0D0[threadIndex];
 	float invMass1 = ref1 * header->invMass1D1[threadIndex];
@@ -269,7 +259,7 @@ static __device__ void solveExt1DBlock(const PxgBlockConstraintBatch& batch,
 
 		const PxReal unitResponse = resp0 + resp1 + cfm;
 
-		//https://omniverse-jirasw.nvidia.com/browse/PX-4383
+		// JIRA: PX-4383
 		const PxReal minRowResponse = DY_MIN_RESPONSE;
 		const PxReal recipResponse = Dy::computeRecipUnitResponse(unitResponse, minRowResponse);
 
@@ -298,8 +288,6 @@ static __device__ void solveExt1DBlock(const PxgBlockConstraintBatch& batch,
 		const float deltaF = clampedForce - appliedForce;//FSub(clampedForce, appliedForce);
 
 		cmod.appliedForce[threadIndex] = clampedForce;
-		if(residualReportingEnabled)
-			cmod.residual[threadIndex] = PxgErrorAccumulator::calculateResidual(deltaF, vMul);
 
 		li0 = clinVel0 * deltaF + li0;
 		ai0 = cangVel0 * deltaF + ai0;
@@ -321,13 +309,12 @@ static __device__ void solveExt1DBlock(const PxgBlockConstraintBatch& batch,
 	vel0.top = angVel0; vel0.bottom = linVel0;
 	vel1.top = angVel1; vel1.bottom = linVel1;
 
-	impluse0.top = li0 * invMass0; impluse0.bottom = ai0 * invInertiaScale0;
-	impluse1.top = li1 * invMass1; impluse1.bottom = ai1 * invInertiaScale1;
+	impulse0.top = li0 * invMass0; impulse0.bottom = ai0 * invInertiaScale0;
+	impulse1.top = li1 * invMass1; impulse1.bottom = ai1 * invInertiaScale1;
 }
 
 static __device__ void conclude1DBlock(const PxgBlockConstraintBatch& batch, const PxU32 threadIndex, const PxgBlockSolverConstraint1DHeader* PX_RESTRICT headers, PxgBlockSolverConstraint1DMod* PX_RESTRICT rowsMod)
 {
-	using namespace physx;
 	const PxgBlockSolverConstraint1DHeader* PX_RESTRICT  header = &headers[batch.mConstraintBatchIndex];
 	PxgBlockSolverConstraint1DMod* PX_RESTRICT base = &rowsMod[batch.startConstraintIndex];
 
@@ -346,10 +333,8 @@ static __device__ void conclude1DBlock(const PxgBlockConstraintBatch& batch, con
 // Refer to "Mass Splitting for Jitter-Free Parallel Rigid Body Simulation" for the general mass-splitting concept.
 static __device__ void solveContactBlock(const PxgBlockConstraintBatch& batch, PxVec3& b0LinVel, PxVec3& b0AngVel, PxVec3& b1LinVel, PxVec3& b1AngVel, bool doFriction, const PxU32 threadIndex,
 	PxgBlockSolverContactHeader* contactHeaders, PxgBlockSolverFrictionHeader* frictionHeaders, PxgBlockSolverContactPoint* contactPoints, PxgBlockSolverContactFriction* frictionPoints,
-	PxgErrorAccumulator* error, PxReal ref0 = 1.f, PxReal ref1 = 1.f)
+	const PxReal biasCoefficient, PxReal ref0 = 1.f, PxReal ref1 = 1.f)
 {
-	using namespace physx;
-
 	PxVec3 linVel0 = b0LinVel;
 	PxVec3 linVel1 = b1LinVel;
 	PxVec3 angVel0 = b0AngVel;
@@ -381,7 +366,6 @@ static __device__ void solveContactBlock(const PxgBlockConstraintBatch& batch, P
 		const PxVec3 normal = PxVec3(normal_staticFriction.x, normal_staticFriction.y, normal_staticFriction.z);
 
 		const float restitution = contactHeader->restitution[threadIndex];
-		const float p8 = 0.8f;
 		const PxU8 flags = contactHeader->flags[threadIndex];
 
 		const PxVec3 delLinVel0 = normal * invMassA;
@@ -455,11 +439,10 @@ static __device__ void solveContactBlock(const PxgBlockConstraintBatch& batch, P
 
 				float velMultiplier = recipResponse;
 				float impulseMul = 1.0f;
-				float unbiasedError = 0.0f;
 				float biasedErr = 0.0f;
 
 				computeContactCoefficients(flags, restitution, unitResponse, recipResponse, targetVelocity, coeff0,
-				                           coeff1, velMultiplier, impulseMul, unbiasedError, biasedErr);
+				                           coeff1, velMultiplier, impulseMul, biasedErr);
 
 				//Compute the normal velocity of the constraint.
 				const float v0 = linVel0.dot(normal) + angVel0.dot(raXn);//V3MulAdd(linVel0, normal, V3Mul(angVel0, raXn));
@@ -477,9 +460,6 @@ static __device__ void solveContactBlock(const PxgBlockConstraintBatch& batch, P
 				linVel1 -= delLinVel1 * deltaF;
 				angVel0 += raXn * (deltaF * angDom0);
 				angVel1 -= rbXn * (deltaF * angDom1);
-
-				if(error)
-					error->accumulateErrorLocal(deltaF, velMultiplier);
 
 				Pxstcg(&c.appliedForce[threadIndex], newForce);
 
@@ -525,7 +505,7 @@ static __device__ void solveContactBlock(const PxgBlockConstraintBatch& batch, P
 				const PxVec3 rbXn = PxVec3(rbXn_targetVelW.x, rbXn_targetVelW.y, rbXn_targetVelW.z);
 
 				const float resp = ref0 * resp0 + ref1 * resp1;
-				const float velMultiplier = (resp > 0.f) ? (p8 / resp) : 0.f;
+				const float velMultiplier = (resp > 0.f) ? (biasCoefficient / resp) : 0.f;
 
 				const float bias = raXn_extraCoeff.w;
 
@@ -550,9 +530,6 @@ static __device__ void solveContactBlock(const PxgBlockConstraintBatch& batch, P
 
 				float deltaF = newAppliedForce - appliedForce;//FSub(newAppliedForce, appliedForce);
 
-				if (error)
-					error->accumulateErrorLocal(deltaF, velMultiplier);
-
 				linVel0 += delLinVel0 * deltaF;
 				linVel1 -= delLinVel1 * deltaF;
 				angVel0 += raXn * (deltaF * angDom0);
@@ -563,7 +540,6 @@ static __device__ void solveContactBlock(const PxgBlockConstraintBatch& batch, P
 			}
 			Pxstcg(&frictionHeader->broken[threadIndex], broken);
 		}
-
 	}
 
 	// Write back
@@ -580,8 +556,6 @@ static __device__ bool checkActiveContactBlock(const PxgBlockConstraintBatch& ba
 	const PxVec3& angVel0, const PxVec3& linVel1, const PxVec3& angVel1, const PxU32 threadIndex,
 	PxgBlockSolverContactHeader* contactHeaders, PxgBlockSolverContactPoint* contactPoints)
 {
-	using namespace physx;
-
 	{
 		PxgBlockSolverContactHeader* PX_RESTRICT contactHeader = &contactHeaders[batch.mConstraintBatchIndex];
 		const uint numNormalConstr = Pxldcg(contactHeader->numNormalConstr[threadIndex]);
@@ -649,11 +623,10 @@ static __device__ bool checkActiveContactBlock(const PxgBlockConstraintBatch& ba
 
 				float velMultiplier = recipResponse;
 				float impulseMul = 1.0f;
-				float unbiasedError = 0.0f;
 				float biasedErr = 0.0f;
 
 				computeContactCoefficients(flags, restitution, unitResponse, recipResponse, targetVelocity, coeff0,
-					coeff1, velMultiplier, impulseMul, unbiasedError, biasedErr);
+					coeff1, velMultiplier, impulseMul, biasedErr);
 
 				//Compute the normal velocity of the constraint.
 				const float v0 = linVel0.dot(normal) + angVel0.dot(raXn);//V3MulAdd(linVel0, normal, V3Mul(angVel0, raXn));
@@ -682,8 +655,6 @@ static __device__ bool checkActiveContactBlock(const PxgBlockConstraintBatch& ba
 static __device__ void concludeContactBlock(const PxgBlockConstraintBatch& batch, const PxU32 threadIndex, PxgBlockSolverContactHeader* contactHeaders, PxgBlockSolverFrictionHeader* frictionHeaders, 
 	PxgBlockSolverContactPoint* contactPoints, PxgBlockSolverContactFriction* frictions)
 {
-
-	using namespace physx;
 
 	{
 		const PxgBlockSolverContactHeader* contactHeader = &contactHeaders[batch.mConstraintBatchIndex];
@@ -719,8 +690,6 @@ static __device__ void concludeContactBlock(const PxgBlockConstraintBatch& batch
 		}
 	}
 }
-
-
 
 static __device__ void writeBackContactBlock(const PxgBlockConstraintBatch& batch, const PxU32 threadIndex,
 											 const PxgSolverBodyData* bodies, Dy::ThresholdStreamElement* thresholdStream,
@@ -812,7 +781,6 @@ static __device__ void writeBack1DBlock(const PxgBlockConstraintBatch& batch, co
 		PxgConstraintWriteback& writeback = constraintWriteBacks[forceWritebackOffset];
 	
 		PxVec3 linVel(0), angVel(0);
-		PxReal constraintErrorSq = 0.0f;
 		for (PxU32 i = 0; i < numRows; ++i)
 		{
 			PxgBlockSolverConstraint1DCon& con = conBase[i];
@@ -827,23 +795,19 @@ static __device__ void writeBack1DBlock(const PxgBlockConstraintBatch& batch, co
 				linVel += lin0 * appliedForce;
 				angVel += ang0WriteBack *appliedForce;
 			}
-
-			PxReal err = mod.residual[threadIndex];
-			constraintErrorSq += err * err;
 		}
 
 		const float4 body0WorldOffset_linBreakImpulse = header->body0WorldOffset_linBreakImpulse[threadIndex];
 		const PxVec3 body0WorldOffset(body0WorldOffset_linBreakImpulse.x, body0WorldOffset_linBreakImpulse.y, body0WorldOffset_linBreakImpulse.z);
 		angVel -= body0WorldOffset.cross(linVel);
 
-
 		const PxU32 broken = breakable ? PxU32((linVel.magnitude() > body0WorldOffset_linBreakImpulse.w) || (angVel.magnitude() > header->angBreakImpulse[threadIndex])) : 0;
-		writeback.angularImpulse_residual = make_float4(angVel.x, angVel.y, angVel.z, constraintErrorSq);
+		writeback.angularImpulse = make_float4(angVel.x, angVel.y, angVel.z, 0.f);
 		writeback.linearImpulse_broken = make_float4(linVel.x, linVel.y, linVel.z, broken ? -0.0f : 0.0f);
-
 	}
-
 }
 
+
+} // namespace physx
 
 #endif

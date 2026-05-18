@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -42,9 +42,10 @@
 #include "PxRigidBody.h"
 #include "assert.h"
 
-using namespace physx;
+namespace physx
+{
 
-static __device__ void initFrictionPatch(physx::PxgBlockFrictionPatch& p, const PxU32 threadIndex, const physx::PxVec3& body0Normal, const physx::PxVec3& body1Normal)
+static __device__ void initFrictionPatch(PxgBlockFrictionPatch& p, const PxU32 threadIndex, const PxVec3& body0Normal, const PxVec3& body1Normal)
 {
 	p.body0Normal[threadIndex] = make_float4(body0Normal.x, body0Normal.y, body0Normal.z, 0.f);
 	p.body1Normal[threadIndex] = make_float4(body1Normal.x, body1Normal.y, body1Normal.z, 0.f);
@@ -52,12 +53,10 @@ static __device__ void initFrictionPatch(physx::PxgBlockFrictionPatch& p, const 
 	p.broken[threadIndex] = 0;
 }
 
-static __device__ void correlatePatches(PxgBlockFrictionPatch& frictionPatch, const physx::PxgBlockContactPoint* contacts, const PxU32 nbContacts,
-							const PxVec3& normal, const physx::PxAlignedTransform& bodyFrame0, const physx::PxAlignedTransform& bodyFrame1,
-							float normalTolerance, const PxU32 threadIndex)
+static __device__ void correlatePatches(PxgBlockFrictionPatch& frictionPatch, const PxU32 nbContacts,
+							const PxVec3& normal, const PxAlignedTransform& bodyFrame0, const PxAlignedTransform& bodyFrame1,
+							const PxU32 threadIndex)
 {
-	using namespace physx;
-
 	if(nbContacts > 0)
 	{
 		//printf("NbContacts = %i\n", nbContacts);
@@ -74,15 +73,13 @@ static __device__ void correlatePatches(PxgBlockFrictionPatch& frictionPatch, co
 }
 
 static __device__ void growPatches(PxgBlockFrictionPatch& fp, PxgBlockFrictionAnchorPatch& fAnchor,
-	const physx::PxgBlockContactPoint* contacts, const PxU32 numContacts,
-				const physx::PxAlignedTransform& bodyFrame0,
-				 const physx::PxAlignedTransform& bodyFrame1,
+	const PxgBlockContactPoint* contacts, const PxU32 numContacts,
+				const PxAlignedTransform& bodyFrame0,
+				 const PxAlignedTransform& bodyFrame1,
 				 float frictionOffsetThreshold,
 				 const PxU32 threadIndex,
 				 const PxReal anchorSqDistance)
 {
-	using namespace physx;
-
 	PxBounds3 pointBounds = PxBounds3::empty();
 	for (PxU32 i = 0; i < numContacts; ++i)
 	{
@@ -330,9 +327,9 @@ static __device__ void setupFinalizeSolverConstraintsBlock(PxgBlockContactData& 
 									const PxReal invDtF32,
 									const PxReal dtF32,
 									PxReal bounceThresholdF32,
+									const PxReal biasCoefficient,
 									const PxU32 threadIndex,
 									PxU32 forceWritebackBufferOffset,
-									const bool perPointFriction,
 									PxgBlockSolverContactHeader* PX_RESTRICT contactHeader,
 									PxgBlockSolverFrictionHeader* PX_RESTRICT frictionHeader,
 									PxgBlockSolverContactPoint* PX_RESTRICT contactConstraints,
@@ -341,7 +338,6 @@ static __device__ void setupFinalizeSolverConstraintsBlock(PxgBlockContactData& 
 									const PxReal ccdMaxSeparationThreshold,
 									const PxReal solverOffsetSlop)
 {
-	using namespace physx;
 	// NOTE II: the friction patches are sparse (some of them have no contact patches, and
 	// therefore did not get written back to the cache) but the patch addresses are dense,
 	// corresponding to valid patches
@@ -363,7 +359,6 @@ static __device__ void setupFinalizeSolverConstraintsBlock(PxgBlockContactData& 
 	bool isCCD = (data0.flags | data1.flags) & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD;
 	const PxReal ccdMaxSeparation = isCCD ? ccdMaxSeparationThreshold : PX_MAX_F32;
 
-
 	const float maxPenBias = fmaxf(initialAngVel0_penBiasClamp.w, initialAngVel1_penBiasClamp.w);//FMax(FLoad(data0.penBiasClamp), FLoad(data1.penBiasClamp));
 
 	const PxVec3 linVel0(initialLinVel0_invMassW.x, initialLinVel0_invMassW.y, initialLinVel0_invMassW.z);//V3LoadU(data0.initialLinVel);
@@ -376,10 +371,9 @@ static __device__ void setupFinalizeSolverConstraintsBlock(PxgBlockContactData& 
 	const PxMat33 invSqrtInertia1 = sqrtInvInertia1;
 
 	const float invDt = invDtF32;
-	const float p8 = 0.8f;
 	const float bounceThreshold = bounceThresholdF32;
 
-	const float invDtp8 = invDt * p8;//FMul(invDt, p8);
+	const float invDtWithBiasCoefficient = invDt * biasCoefficient;
 
 	const float4 lin0X_ang0Y_lin1Z_ang1W = contactData.mInvMassScale[threadIndex].lin0X_ang0Y_lin1Z_ang1W;
 
@@ -469,7 +463,7 @@ static __device__ void setupFinalizeSolverConstraintsBlock(PxgBlockContactData& 
 			const float penetration = separation - restDistance;
 			const bool isSeparated = (penetration >= 0.0f);
 			const float penetrationInvDt = penetration * invDt;
-			const float penetrationInvDtPt8 = fmaxf(maxPenBias, penetration*invDtp8);
+			const float penetrationInvDtWithBiasCoefficient = fmaxf(maxPenBias, penetration * invDtWithBiasCoefficient);
 
 			const bool collidingWithVrel = ((-vrel) > penetrationInvDt);
 			const bool isGreater2 = ((restitution > 0.f) && (bounceThreshold > vrel)) && collidingWithVrel;
@@ -495,7 +489,7 @@ static __device__ void setupFinalizeSolverConstraintsBlock(PxgBlockContactData& 
 			{
 				// To recover full scaledBias, unbiasedErr, and biasedErr, velMultiplier needs to be multiplied by velMultiplier.
 				// See also "computeContactCoefficients".
-				float scaledBias = isSeparated ? penetrationInvDt : penetrationInvDtPt8;
+				float scaledBias = isSeparated ? penetrationInvDt : penetrationInvDtWithBiasCoefficient;
 				if (ccdSeparationCondition && isGreater2)
 					scaledBias = 0.f;
 
@@ -563,10 +557,10 @@ static __device__ void setupFinalizeSolverConstraintsBlock(PxgBlockContactData& 
 
 			frictionHeader->broken[threadIndex] = 0;
 
-			
-
 			frictionHeader->frictionNormals[0][threadIndex] = make_float4(t0.x, t0.y, t0.z, 0.f);
 			frictionHeader->frictionNormals[1][threadIndex] = make_float4(t1.x, t1.y, t1.z, 0.f);
+
+			const bool hasTargetVelocity = flags & PxgSolverContactFlags::eHAS_TARGET_VELOCITY;
 			
 			for(PxU32 j = 0; j < aCount; j++)
 			{
@@ -584,7 +578,7 @@ static __device__ void setupFinalizeSolverConstraintsBlock(PxgBlockContactData& 
 
 				const PxVec3 error = (ra + bodyFrame0p) - (rb + bodyFrame1p);//V3Sub(V3Add(ra, bodyFrame0p), V3Add(rb, bodyFrame1p));
 
-				PxU32 index = perPointFriction ? frictionPatch.contactID[j][threadIndex] : 0;
+				PxU32 index = hasTargetVelocity ? frictionPatch.contactID[j][threadIndex] : 0;
 
 				const float4 targetVel4 = contacts[index].targetVel_maxImpulseW[threadIndex];
 				const PxVec3 tvel(targetVel4.x, targetVel4.y, targetVel4.z);
@@ -670,6 +664,55 @@ static __device__ void setupFinalizeSolverConstraintsBlock(PxgBlockContactData& 
 }
 
 
+static PX_FORCE_INLINE __device__ void processFrictionPatch(
+	PxgBlockContactData* contactData,
+	const PxgMaterialContactData& materialContactData,
+	const PxgBlockContactPoint* PX_RESTRICT contactPoints,
+	PxgBlockFrictionPatch& frictionPatch,
+	const PxgBlockFrictionPatch* PX_RESTRICT prevFrictionPatches,
+	PxgBlockFrictionAnchorPatch& fAnchor,
+	const PxgBlockFrictionAnchorPatch* PX_RESTRICT prevFrictionAnchors,
+	const PxgBlockFrictionIndex* PX_RESTRICT prevFrictionIndices,
+	const PxAlignedTransform& bodyFrame0,
+	const PxAlignedTransform& bodyFrame1,
+	PxReal frictionOffsetThreshold,
+	PxReal correlationDistance,
+	const PxU32 threadIndex,
+	PxU32 totalEdges,
+	PxU32 prevFrictionStartIndex)
+{
+	const PxU32 nbContacts = materialContactData.mNumContacts;
+
+	const float4 normal4 = contactData->normal_restitutionW[threadIndex];
+	const PxVec3 normal(normal4.x, normal4.y, normal4.z);
+
+	correlatePatches(frictionPatch, nbContacts, normal,
+		bodyFrame0, bodyFrame1, threadIndex);
+
+	PxU8 flags = materialContactData.mSolverFlags;
+	const bool disableStrongFriction = flags & PxgSolverContactFlags::eDISABLE_STRONG_FRICTION;
+	const bool disableFriction = flags & PxgSolverContactFlags::eDISABLE_FRICTION;
+
+	//KS - ensure that the friction patch broken bit is set to 0
+	frictionPatch.broken[threadIndex] = 0;
+	PxReal patchExtents;
+
+	//Mark the friction patch as not broken!
+	frictionPatch.broken[threadIndex] = 0;
+
+	__syncwarp(); //Ensure writes from correlation are visible
+
+	if (!(disableStrongFriction || disableFriction))
+	{
+		getFrictionPatches(frictionPatch, fAnchor, prevFrictionIndices, prevFrictionStartIndex, prevFrictionPatches, prevFrictionAnchors, materialContactData.prevFrictionPatchCount, bodyFrame0, bodyFrame1, correlationDistance, threadIndex, totalEdges, patchExtents,
+			nbContacts);
+	}
+
+	if (!disableFriction)
+		growPatches(frictionPatch, fAnchor, contactPoints, nbContacts, bodyFrame0, bodyFrame1, frictionOffsetThreshold + materialContactData.restDistance, threadIndex, patchExtents);
+}
+
+
 static __device__ void  createFinalizeSolverContactsBlockGPU(	PxgBlockContactData* contactData,
 												const PxgBlockContactPoint* PX_RESTRICT contactPoints,
 												PxgBlockFrictionPatch& frictionPatch,
@@ -692,6 +735,7 @@ static __device__ void  createFinalizeSolverContactsBlockGPU(	PxgBlockContactDat
 												PxReal bounceThresholdF32,
 												PxReal frictionOffsetThreshold,
 												PxReal correlationDistance,
+												const PxReal biasCoefficient,
 												const PxU32 threadIndex,
 												PxU32 forceWritebackBufferOffset,
 												PxgBlockSolverContactHeader* PX_RESTRICT contactHeader,
@@ -706,41 +750,16 @@ static __device__ void  createFinalizeSolverContactsBlockGPU(	PxgBlockContactDat
 	//Load the body datas in using warp-wide programming...Each solver body data is 128 bytes long, so we can load both bodies in with 2 lots of 128 byte coalesced reads. 
 
 	const float4 data_ = reinterpret_cast<float4&>(contactData->contactData[threadIndex]);
-	const PxgMaterialContactData data = reinterpret_cast<const PxgMaterialContactData&>(data_);
+	const PxgMaterialContactData materialContactData = reinterpret_cast<const PxgMaterialContactData&>(data_);
 
-	const PxU32 nbContacts = data.mNumContacts;	
+	processFrictionPatch(contactData, materialContactData, contactPoints,
+		frictionPatch, prevFrictionPatches, fAnchor, prevFrictionAnchors, prevFrictionIndices,
+		bodyFrame0, bodyFrame1, frictionOffsetThreshold, correlationDistance,
+		threadIndex, totalEdges, prevFrictionStartIndex);
 
-	const float4 normal4 = contactData->normal_restitutionW[threadIndex];
-	const PxVec3 normal(normal4.x, normal4.y, normal4.z);
-
-	correlatePatches(frictionPatch, contactPoints, nbContacts, normal,
-		bodyFrame0, bodyFrame1, PXC_SAME_NORMAL, threadIndex);
-
-	PxU8 flags = data.mSolverFlags;
-	bool perPointFriction =  flags & (PxgSolverContactFlags::ePER_POINT_FRICTION);
-	bool disableFriction = flags & PxgSolverContactFlags::eDISABLE_FRICTION;
-
-	//KS - ensure that the friction patch broken bit is set to 0
-	frictionPatch.broken[threadIndex] = 0;
-	PxReal patchExtents;
-
-	//Mark the friction patch as not broken!
-	frictionPatch.broken[threadIndex] = 0;
-
-	__syncwarp(); //Ensure writes from correlation are visible
-
-	if (!(perPointFriction || disableFriction))// || (solverBodyData0.islandNodeIndex & 2) || (solverBodyData1.islandNodeIndex & 2)))
-	{
-		getFrictionPatches(frictionPatch, fAnchor, prevFrictionIndices, prevFrictionStartIndex, prevFrictionPatches, prevFrictionAnchors, data.prevFrictionPatchCount, bodyFrame0, bodyFrame1, correlationDistance, threadIndex, totalEdges, patchExtents,
-			nbContacts);
-	}
-
-	if(!disableFriction)
-		growPatches(frictionPatch, fAnchor, contactPoints, nbContacts, bodyFrame0, bodyFrame1, frictionOffsetThreshold + data.restDistance, threadIndex, patchExtents);
-
-	setupFinalizeSolverConstraintsBlock(*contactData, contactPoints, nbContacts, frictionPatch, fAnchor, bodyFrame0, bodyFrame1, solverBodyData0, solverBodyData1, 
+	setupFinalizeSolverConstraintsBlock(*contactData, contactPoints, materialContactData.mNumContacts, frictionPatch, fAnchor, bodyFrame0, bodyFrame1, solverBodyData0, solverBodyData1, 
 		initLinVel0, initAngVel0, initLinVel1, initAngVel1, sqrtInvInertia0, sqrtInvInertia1, invDtF32, dtF32,
-		bounceThresholdF32, threadIndex, forceWritebackBufferOffset, perPointFriction, contactHeader, frictionHeader, contactConstraints, frictionConstraints, data, ccdMaxSeparation, solverOffsetSlop);
+		bounceThresholdF32, biasCoefficient, threadIndex, forceWritebackBufferOffset, contactHeader, frictionHeader, contactConstraints, frictionConstraints, materialContactData, ccdMaxSeparation, solverOffsetSlop);
 
 
 }
@@ -770,7 +789,6 @@ static __device__ void setupFinalizeSolverConstraintsBlockTGS(PxgBlockContactDat
 	const PxReal biasCoefficient,
 	const PxU32 threadIndex,
 	PxU32 forceWritebackBufferOffset,
-	const bool perPointFriction,
 	PxgTGSBlockSolverContactHeader* PX_RESTRICT contactHeader,
 	PxgTGSBlockSolverFrictionHeader* PX_RESTRICT frictionHeader,
 	PxgTGSBlockSolverContactPoint* PX_RESTRICT contactConstraints,
@@ -779,7 +797,6 @@ static __device__ void setupFinalizeSolverConstraintsBlockTGS(PxgBlockContactDat
 	const PxReal solverOffsetSlop,
 	const float2 torsionalFrictionData)
 {
-	using namespace physx;
 	// NOTE II: the friction patches are sparse (some of them have no contact patches, and
 	// therefore did not get written back to the cache) but the patch addresses are dense,
 	// corresponding to valid patches
@@ -811,10 +828,9 @@ static __device__ void setupFinalizeSolverConstraintsBlockTGS(PxgBlockContactDat
 	const PxMat33 invSqrtInertia1 = sqrtInvInertia1;
 
 	const float invStepDt = invStepDtF32;
-	const float p8 = PxMin(0.8f, biasCoefficient);
 	const float bounceThreshold = bounceThresholdF32;
 
-	const float invDtp8 = invStepDt * p8;//FMul(invDt, p8);
+	const float invDtWithBiasCoefficient = invStepDt * biasCoefficient;
 
 	const float4 lin0X_ang0Y_lin1Z_ang1W = contactData.mInvMassScale[threadIndex].lin0X_ang0Y_lin1Z_ang1W;
 
@@ -868,7 +884,7 @@ static __device__ void setupFinalizeSolverConstraintsBlockTGS(PxgBlockContactDat
 		PxReal maxPenetration = PX_MAX_F32;
 
 		contactHeader->restitutionXdt[threadIndex] = restitution * stepDt;
-		contactHeader->p8[threadIndex] = p8;
+		contactHeader->biasCoefficient[threadIndex] = biasCoefficient;
 
 		for (PxU32 j = 0; j<contactCount; j++)
 		{
@@ -938,7 +954,7 @@ static __device__ void setupFinalizeSolverConstraintsBlockTGS(PxgBlockContactDat
 			else
 			{
 				velMultiplier = recipResponse;//FSel(FIsGrtr(unitResponse, zero), FRecip(unitResponse), zero);
-				scaledBias = isSeparated ? -invStepDt : -invDtp8;
+				scaledBias = isSeparated ? -invStepDt : -invDtWithBiasCoefficient;
 			}
 
 			solverContact->resp0[threadIndex] = resp0;
@@ -948,20 +964,19 @@ static __device__ void setupFinalizeSolverConstraintsBlockTGS(PxgBlockContactDat
 
 			const bool isGreater2 = ((restitution > 0.f) && (bounceThreshold > vrel)) && ((-vrel) > penetrationInvDt);
 
-			float targetVelocity = cTargetVel + (isGreater2 ? (-vrel)*restitution : 0.f);//FAdd(cTargetVel, FSel(isGreater2, FMul(FNeg(sumVRel), restitution), zero));
+			float targetVelocity = cTargetVel + (isGreater2 ? (-vrel)*restitution : 0.f);
 
+			if (isGreater2)
+			{
+				PxReal ratio = totalDt + penetration/vrel;
+				penetration += targetVelocity * ratio;
+			}
 		
 			//Now add on bias for any kinematic velocities...
 			if(isKinematic0)
 				targetVelocity -= (norVel0 + angNorVel0);
 			if(isKinematic1)
 				targetVelocity += (norVel1 + angNorVel1);
-
-			if (isGreater2)
-			{
-				PxReal ratio = totalDt +  penetration/vrel;
-				penetration += targetVelocity * ratio;
-			}
 
 			solverContact->raXn_extraCoeff[threadIndex] = make_float4(raXnSqrtInertia.x, raXnSqrtInertia.y, raXnSqrtInertia.z, contactCoeff);
 			solverContact->rbXn_targetVelW[threadIndex] = make_float4(rbXnSqrtInertia.x, rbXnSqrtInertia.y, rbXnSqrtInertia.z, targetVelocity);
@@ -1015,12 +1030,13 @@ static __device__ void setupFinalizeSolverConstraintsBlockTGS(PxgBlockContactDat
 
 			frictionHeader->broken[threadIndex] = 0;
 
-			
-
 			frictionHeader->frictionNormals[0][threadIndex] = make_float4(t0.x, t0.y, t0.z, 0.f);
 			frictionHeader->frictionNormals[1][threadIndex] = make_float4(t1.x, t1.y, t1.z, 0.f);
 
-			frictionHeader->biasCoefficient[threadIndex] = invStepDt;
+			const bool hasTargetVelocity = flags & PxgSolverContactFlags::eHAS_TARGET_VELOCITY;
+			const bool disableStrongFriction = flags & PxgSolverContactFlags::eDISABLE_STRONG_FRICTION;
+
+			frictionHeader->biasCoefficient[threadIndex] = !disableStrongFriction ? invStepDt : 0.0f;
 
 			for (PxU32 j = 0; j < aCount; j++)
 			{
@@ -1038,7 +1054,7 @@ static __device__ void setupFinalizeSolverConstraintsBlockTGS(PxgBlockContactDat
 
 				const PxVec3 error = (ra + bodyFrame0p) - (rb + bodyFrame1p);//V3Sub(V3Add(ra, bodyFrame0p), V3Add(rb, bodyFrame1p));
 
-				PxU32 index = perPointFriction ? frictionPatch.contactID[j][threadIndex] : 0;
+				PxU32 index = hasTargetVelocity ? frictionPatch.contactID[j][threadIndex] : 0;
 
 				const float4 targetVel4 = contacts[index].targetVel_maxImpulseW[threadIndex];
 				const PxVec3 tvel(targetVel4.x, targetVel4.y, targetVel4.z);
@@ -1199,45 +1215,23 @@ static __device__ void  createFinalizeSolverContactsBlockGPUTGS(PxgBlockContactD
 	//Load the body datas in using warp-wide programming...Each solver body data is 128 bytes long, so we can load both bodies in with 2 lots of 128 byte coalesced reads. 
 
 	const float4 data_ = reinterpret_cast<float4&>(contactData->contactData[threadIndex]);
-	const PxgMaterialContactData data = reinterpret_cast<const PxgMaterialContactData&>(data_);
+	const PxgMaterialContactData materialContactData = reinterpret_cast<const PxgMaterialContactData&>(data_);
 
-	const PxU32 nbContacts = data.mNumContacts;
+	processFrictionPatch(contactData, materialContactData, contactPoints,
+		frictionPatch, prevFrictionPatches, fAnchor, prevFrictionAnchors, prevFrictionIndices,
+		bodyFrame0, bodyFrame1, frictionOffsetThreshold, correlationDistance,
+		threadIndex, totalEdges, prevFrictionStartIndex);
 
-	const float4 normal4 = contactData->normal_restitutionW[threadIndex];
-	const PxVec3 normal(normal4.x, normal4.y, normal4.z);
-
-	correlatePatches(frictionPatch, contactPoints, nbContacts, normal,
-		bodyFrame0, bodyFrame1, PXC_SAME_NORMAL, threadIndex);
-
-	PxU8 flags = data.mSolverFlags;
-	bool perPointFriction = flags & (PxgSolverContactFlags::ePER_POINT_FRICTION);
-	bool disableFriction = flags & PxgSolverContactFlags::eDISABLE_FRICTION;
-
-	//KS - for now, we disable friction correlation
-	PxReal patchExtents;
-
-	//Mark the friction patch as not broken!
-	frictionPatch.broken[threadIndex] = 0;
-
-	__syncwarp(); //Ensure writes from correlation are visible
-
-	if (!(perPointFriction || disableFriction))// || (solverBodyData0.islandNodeIndex & 2) || (solverBodyData1.islandNodeIndex & 2)))
-	{
-		getFrictionPatches(frictionPatch, fAnchor, prevFrictionIndices, prevFrictionStartIndex, prevFrictionPatches, prevFrictionAnchors, data.prevFrictionPatchCount, bodyFrame0, bodyFrame1, correlationDistance, threadIndex, totalEdges, patchExtents,
-			nbContacts);
-	}
-
-	if (!disableFriction)
-		growPatches(frictionPatch, fAnchor, contactPoints, nbContacts, bodyFrame0, bodyFrame1, frictionOffsetThreshold + data.restDistance, threadIndex, patchExtents);
-
-	setupFinalizeSolverConstraintsBlockTGS(*contactData, contactPoints, nbContacts, frictionPatch, fAnchor, bodyFrame0, bodyFrame1, solverBodyData0, solverBodyData1,
+	setupFinalizeSolverConstraintsBlockTGS(*contactData, contactPoints, materialContactData.mNumContacts, frictionPatch, fAnchor, bodyFrame0, bodyFrame1, solverBodyData0, solverBodyData1,
 		initLinVel0, initAngVel0, initLinVel1, initAngVel1, sqrtInvInertia0, sqrtInvInertia1, invDtF32, stepDt, totalDt, invTotalDt,
-		bounceThresholdF32, biasCoefficient, threadIndex, forceWritebackBufferOffset, perPointFriction, contactHeader, frictionHeader, 
-		contactConstraints, frictionConstraints, data, solverOffsetSlop, torsionalFrictionData);
+		bounceThresholdF32, biasCoefficient, threadIndex, forceWritebackBufferOffset, contactHeader, frictionHeader, 
+		contactConstraints, frictionConstraints, materialContactData, solverOffsetSlop, torsionalFrictionData);
 
 
 }
 
 
+
+} // namespace physx
 
 #endif

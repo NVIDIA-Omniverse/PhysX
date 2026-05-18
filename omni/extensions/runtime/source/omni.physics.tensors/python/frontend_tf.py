@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 """TensorFlow frontend for data-oriented interface"""
 
 import os
@@ -127,15 +128,6 @@ class FrontendTensorflow(FrontendBase):
         # modify them, but if they want to pass the buffer to the API, they will need to pass tf.identity(var.value()).
         # Using the tf.identity operation on the underlying tensor is a way to "pin" its location in memory.
         # TODO: To be revisited for a cleaner or more efficient solution.
-        #
-        # TF Tensor vs. Variable:
-        # https://stackoverflow.com/questions/40866675/implementation-difference-between-tensorflow-variable-and-tensorflow-tensor
-        #
-        # Why it's not possible to assign to tf.Tensor:
-        # https://github.com/tensorflow/tensorflow/issues/33131
-        #
-        # This seems related:
-        # https://stackoverflow.com/questions/41289882/do-input-output-tensors-to-tensorflows-opkernelcompute-function-change-th
 
         tensor = tf.zeros(shape, dtype=tf_dtype)
         # tensor = tf.Variable(tf.zeros(shape, dtype=tf_dtype))

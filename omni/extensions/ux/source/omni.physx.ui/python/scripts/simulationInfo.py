@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from enum import IntEnum, auto
 from functools import partial
 import carb.input
@@ -22,7 +23,6 @@ class SimulationInfoWindow(ui.Window):
     SETTING_FABRIC_UPDATE_TRANSFORMATIONS = "/physics/fabricUpdateTransformations"
     SETTING_FABRIC_UPDATE_POINTS = "physics/fabricUpdatePoints"
     SETTING_FABRIC_USE_GPU_INTEROP = "physics/fabricUseGPUInterop"
-    SETTING_OMNI_HYDRA_USE_SCENE_GRAPH_INSTANCING = "persistent/omnihydra/useSceneGraphInstancing"
     WARNING_COLOR = cl.yellow
     ENABLED_COLOR = cl.lightgreen
     WINDOW_STYLE = {
@@ -78,7 +78,6 @@ class SimulationInfoWindow(ui.Window):
             sub_setting(ph.SETTING_RESET_ON_STOP),
             sub_setting(ph.SETTING_OVERRIDE_GPU),
             sub_setting(ph.SETTING_PVD_ENABLED),
-            sub_setting(self.SETTING_OMNI_HYDRA_USE_SCENE_GRAPH_INSTANCING),
             sub_setting(self.SETTING_FABRIC_ENABLED),
             sub_setting(self.SETTING_FABRIC_UPDATE_TRANSFORMATIONS),
             sub_setting(self.SETTING_FABRIC_UPDATE_POINTS),
@@ -120,9 +119,6 @@ class SimulationInfoWindow(ui.Window):
     def _setting_changed(self, item, event_type):
         if event_type == carb.settings.ChangeEventType.CHANGED:
             self.frame.rebuild() if self.frame is not None else self.build()
-
-    def enable_scene_graph_instancing(self):
-        self._settings.set_bool(self.SETTING_OMNI_HYDRA_USE_SCENE_GRAPH_INSTANCING, True)
 
     def set_simulation_output(self, output: TargetOutput):
         self.toggle_fabric_ext(output != TargetOutput.USD)  # need to enable Fabric extension?
@@ -201,19 +197,6 @@ class SimulationInfoWindow(ui.Window):
                 )
                 ui.Spacer(width=5)
 
-        def build_hydra_section():
-            ui.Label(
-                "For rigid bodies with instanced geometries, enable scene graph instancing\n"
-                "in omni.hydra.ui extension. Then reload the stage.",
-                width=0,
-                style={"color": self.WARNING_COLOR}
-            )
-            ui.Button(
-                "Enable scene graph instancing now",
-                style={"background_color": self.WARNING_COLOR, "color": cl.black, "margin_width": 0},
-                mouse_pressed_fn=lambda x, y, b, m: self.enable_scene_graph_instancing()
-            )
-
         def build_simulation_output_section():
             def fabric_mode_cpu_gpu():
                 if self._settings.get_as_bool(self.SETTING_FABRIC_USE_GPU_INTEROP):
@@ -252,23 +235,12 @@ class SimulationInfoWindow(ui.Window):
                 lambda: self._settings.get_as_bool(ph.SETTING_RESET_ON_STOP),
                 lambda enable: self._settings.set_bool(ph.SETTING_RESET_ON_STOP, enable))
 
-        instancing_used = False
-        if not self._settings.get_as_bool(self.SETTING_OMNI_HYDRA_USE_SCENE_GRAPH_INSTANCING):
-            stage = omni.usd.get_context().get_stage()
-            if stage:
-                masters = stage.GetPrototypes()
-                if len(masters) > 0:
-                    instancing_used = True
-
         if not self.docked:
             self.width = -1
             self.height = -1
 
         with self.frame:
             with ui.VStack(height=0, spacing=1):
-                if instancing_used:
-                    build_section("Instancing is Used", build_hydra_section)
-                    ui.Spacer(width=0, height=3)
                 build_section("Simulation Output", build_simulation_output_section)
                 ui.Spacer(width=0, height=3)
                 build_section("More Simulation Settings", build_more_simulation_settings_section)

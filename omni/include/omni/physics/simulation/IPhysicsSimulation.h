@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -20,32 +20,43 @@ namespace physics
 
 struct IPhysicsSimulation
 {
-    CARB_PLUGIN_INTERFACE("omni::physics::IPhysicsSimulation", 0, 1)
+    CARB_PLUGIN_INTERFACE("omni::physics::IPhysicsSimulation", 0, 3)
 
-    /// Attach USD stage. This will run the physics parser
+    /// Initialize physics simulation with a USD stage. This will run the physics parser
     /// and will populate the simulation with the corresponding simulation objects.
     ///
-    /// Note: previous stage will be detached.
+    /// Note: previous stage will be closed.
     ///
     /// \param[in] id USD stageId (can be retrieved from a stagePtr -
     /// pxr::UsdUtilsStageCache::Get().GetId(stagePtr).ToLongInt())
-    ///\return True if stage was successfully attached.
-    bool(CARB_ABI* attachStage)(long id);
+    ///\return True if stage was successfully initialized.
+    bool(CARB_ABI* initialize)(long id);
 
-    /// Detach USD stage, this will remove all objects from the simulation
+    /// Close the simulation, this will remove all objects from the simulation
     ///
-    void(CARB_ABI* detachStage)();
+    void(CARB_ABI* close)();
 
     /// Gets the currently attached USD stage.
     ///
     /// \return USD stageId, 0 means no stage is attached.
     long(CARB_ABI* getAttachedStage)();
 
-    /// Execute physics simulation
+    /// Execute physics simulation asynchronously
     ///
     /// The simulation will simulate the exact elapsedTime passed. No substepping will happen.
     /// It is the caller's responsibility to provide reasonable elapsedTime.
     /// In general it is recommended to use fixed size time steps with a maximum of 1/60 of a second
+    ///
+    /// \param[in] elapsedTime Simulation time in seconds.
+    /// \param[in] currentTime Current time, might be used for time sampled transformations to apply.
+    void(CARB_ABI* simulateAsync)(float elapsedTime, float currentTime);
+
+    /// Execute physics simulation synchronously
+    ///
+    /// The simulation will simulate the exact elapsedTime passed and wait for results before returning.
+    /// No substepping will happen. It is the caller's responsibility to provide reasonable elapsedTime.
+    /// In general it is recommended to use fixed size time steps with a maximum of 1/60 of a second
+    /// After the simulation step results are written out as if fetchResults was called.
     ///
     /// \param[in] elapsedTime Simulation time in seconds.
     /// \param[in] currentTime Current time, might be used for time sampled transformations to apply.
@@ -79,8 +90,10 @@ struct IPhysicsSimulation
 
     /// Check if fabric change tracking for physics listener is paused or not
     ///
+    /// \param simulationId simulation id for simulation to query
+    ///
     /// return True if change tracking is paused
-    bool(CARB_ABI* isChangeTrackingPaused)();
+    bool(CARB_ABI* isChangeTrackingPaused)(SimulationId simulationId);
 
     /// Subscribe to physics simulation contact report events.
     ///
@@ -97,6 +110,7 @@ struct IPhysicsSimulation
 
     /// Get physics simulation time steps per second.
     ///
+    /// \param simulationId simulation id for simulation to query
     /// \param stageId stage id
     /// \param scenePath returns the time steps for given scene if 0 is passed returns the first found scene stepping
     /// \return Current time steps per second
@@ -116,39 +130,6 @@ struct IPhysicsSimulation
     /// \return Number of steps since the currently active simulation started or 0 if there is no active simulation.
     uint64_t(CARB_ABI* getSimulationStepCount)(SimulationId simulationId);
 
-    /// Applies a force (or impulse) defined in the global coordinate frame, acting at a particular
-    /// point in global coordinates, to the actor.
-    /// \param[in] stageId    USD stageId
-    /// \param[in] path		  Body USD path encoded to uint64_t
-    /// \param[in] force      Force / impulse to add, defined in the global frame.
-    /// \param[in] pos        Position in the global frame to add the force at.
-    /// \param[in] mode       The mode to use when applying the force/impulse
-    void(CARB_ABI* addForceAtPos)(
-        uint64_t stageId, uint64_t path, const carb::Float3& force, const carb::Float3& pos, ForceModeType::Enum mode);
-
-    /// Applies a torque (or impulse) at the center of mass
-    /// \param[in] stageId    USD stageId
-    /// \param[in] path		  Body USD path encoded to uint64_t
-    /// \param[in] force      Torque to add to the body center of mass
-    void(CARB_ABI* addTorque)(uint64_t stageId, uint64_t path, const carb::Float3& torque);
-
-    /// Wakes up body on given path
-    /// \param[in] stageId    USD stageId
-    /// \param[in] path		  Body USD path encoded to uint64_t
-    void(CARB_ABI* wakeUp)(uint64_t stageId, uint64_t path);
-
-    /// Puts to sleep body on given path
-    /// \param[in] stageId    USD stageId
-    /// \param[in] path		  Body USD path encoded to uint64_t
-    void(CARB_ABI* putToSleep)(uint64_t stageId, uint64_t path);
-
-    /// Checks whether a body sleeps
-    /// \param[in] stageId    USD stageId
-    /// \param[in] path		  Body USD path encoded to uint64_t
-    /// \return True if body is asleep
-    bool(CARB_ABI* isSleeping)(uint64_t stageId, uint64_t path);
-
-
     /// Subscribe to physics pre/post step events.
     ///
     /// \note Subscriptions cannot be changed in the onUpdate callback
@@ -166,6 +147,18 @@ struct IPhysicsSimulation
     ///
     /// subscriptionId SubscriptionId obtained via @ref subscribePhysicsOnStepEvents.
     void(CARB_ABI* unsubscribePhysicsOnStepEvents)(SubscriptionId subscriptionId);
+
+    /// Check if simulation is capable of simulating given schema types or schema APIs
+    /// \param simulationId Simulation ID to check the capabilities for.
+    /// \param schemaNames List of schema names to check, can be a schema API name or a schema type name.
+    /// \param schemaNamesCount The number of schema names to check.
+    /// \param isCapable Output parameter - array of booleans to indicate if simulation is capable of simulating given
+    /// schema names. The array size has to be equal to the number of schema names to check.
+    /// \return True if the operation was successful and the simulation is able to check the capabilities.
+    bool(CARB_ABI* isCapableOfSimulating)(SimulationId simulationId,
+                                          const char** schemaNames,
+                                          size_t schemaNamesCount,
+                                          bool* isCapable);
 };
 
 } // namespace physics

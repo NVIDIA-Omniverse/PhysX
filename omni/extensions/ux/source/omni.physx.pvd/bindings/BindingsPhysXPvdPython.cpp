@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -174,5 +174,94 @@ PYBIND11_MODULE(_physxPvd, m)
         omniPVD->clearMessages();
     },
     docString);
+
+    m.def("release_physx_pvd_interface_scripting", [](IPhysXPvd* omniPVD) {
+        carb::getFramework()->releaseInterfaceWithClient("carb.scripting-python.plugin", omniPVD);
+    }); // OM-60917
+
+    docString = R"(
+        Update visibility of OVD prims for the given time code.
+        This is a C++ implementation of the recursive visibility update for better performance.
+        It traverses /Scenes and /Shared prims and sets visibility based on omni:pvdi:viz attribute.
+
+        Args:
+            time_code : The time code to evaluate visibility at
+    )";
+    physxPvd.def("update_ovd_visibility", [](IPhysXPvd* omniPVD, double timeCode)
+    {
+        omniPVD->updateOvdVisibility(timeCode);
+    },
+    docString, py::arg("time_code"));
+
+    docString = R"(
+        Build and cache the handle-to-path mapping by traversing the stage once.
+        This is much faster than Python stage traversal.
+        Call this once when stage opens, then use get_handle_prim_names_batch for lookups.
+    )";
+    physxPvd.def("build_handle_cache", [](IPhysXPvd* omniPVD)
+    {
+        omniPVD->buildHandleCache();
+    },
+    docString);
+
+    docString = R"(
+        Invalidate the handle cache. Call this when stage closes.
+    )";
+    physxPvd.def("invalidate_handle_cache", [](IPhysXPvd* omniPVD)
+    {
+        omniPVD->invalidateHandleCache();
+    },
+    docString);
+
+    docString = R"(
+        Batch resolve multiple handles to prim names in one call.
+
+        Args:
+            handles : List of object handles to look up
+            time_code : The time code to check visibility at
+
+        Returns:
+            Tuple of (names_list, is_actionable_list)
+            - names_list: List of prim names ("NULL" for handle 0, "INVALID" if not found)
+            - is_actionable_list: List of booleans indicating if each prim is actionable
+    )";
+    physxPvd.def("get_handle_prim_names_batch", [](IPhysXPvd* omniPVD, py::list handles, double timeCode)
+    {
+        size_t numHandles = handles.size();
+        if (numHandles == 0)
+        {
+            return py::make_tuple(py::list(), py::list());
+        }
+        
+        // Convert Python list to C++ array
+        std::vector<uint64_t> handleArray(numHandles);
+        for (size_t i = 0; i < numHandles; ++i)
+        {
+            handleArray[i] = handles[i].cast<uint64_t>();
+        }
+        
+        // Allocate output buffers
+        // Note: std::vector<bool> is a specialization that doesn't support .data(),
+        // so we use a raw bool array instead
+        std::vector<char> namesBuffer(numHandles * 256);
+        std::unique_ptr<bool[]> actionableBuffer(new bool[numHandles]);
+        
+        // Call batch function
+        omniPVD->getHandlePrimNamesBatch(handleArray.data(), numHandles, timeCode,
+                                         namesBuffer.data(), actionableBuffer.get());
+        
+        // Convert results to Python lists
+        py::list namesList;
+        py::list actionableList;
+        for (size_t i = 0; i < numHandles; ++i)
+        {
+            const char* name = namesBuffer.data() + (i * 256);
+            namesList.append(py::str(name));
+            actionableList.append(actionableBuffer[i]);
+        }
+        
+        return py::make_tuple(namesList, actionableList);
+    },
+    docString, py::arg("handles"), py::arg("time_code"));
 }
 } // namespace

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -1025,7 +1025,6 @@ void setPxScene_SolverArticulationBatchSize( PxScene* inObj, PxU32 inArg){ inObj
 PxU32 getPxScene_SolverArticulationBatchSize( const PxScene* inObj ) { return inObj->getSolverArticulationBatchSize(); }
 PxReal getPxScene_WakeCounterResetValue( const PxScene* inObj ) { return inObj->getWakeCounterResetValue(); }
 PxGpuDynamicsMemoryConfig getPxScene_GpuDynamicsConfig( const PxScene* inObj ) { return inObj->getGpuDynamicsConfig(); }
-PxSceneResidual getPxScene_SolverResidual( const PxScene* inObj ) { return inObj->getSolverResidual(); }
 void setPxScene_DeformableSurfaceGpuPostSolveCallback( PxScene* inObj, PxPostSolveCallback * inArg){ inObj->setDeformableSurfaceGpuPostSolveCallback( inArg ); }
 void setPxScene_DeformableVolumeGpuPostSolveCallback( PxScene* inObj, PxPostSolveCallback * inArg){ inObj->setDeformableVolumeGpuPostSolveCallback( inArg ); }
 inline void * getPxSceneUserData( const PxScene* inOwner ) { return inOwner->userData; }
@@ -1074,7 +1073,6 @@ PX_PHYSX_CORE_API PxSceneGeneratedInfo::PxSceneGeneratedInfo()
 	, SolverArticulationBatchSize( "SolverArticulationBatchSize", setPxScene_SolverArticulationBatchSize, getPxScene_SolverArticulationBatchSize)
 	, WakeCounterResetValue( "WakeCounterResetValue", getPxScene_WakeCounterResetValue)
 	, GpuDynamicsConfig( "GpuDynamicsConfig", getPxScene_GpuDynamicsConfig)
-	, SolverResidual( "SolverResidual", getPxScene_SolverResidual)
 	, DeformableSurfaceGpuPostSolveCallback( "DeformableSurfaceGpuPostSolveCallback", setPxScene_DeformableSurfaceGpuPostSolveCallback)
 	, DeformableVolumeGpuPostSolveCallback( "DeformableVolumeGpuPostSolveCallback", setPxScene_DeformableVolumeGpuPostSolveCallback)
 	, UserData( "UserData", setPxSceneUserData, getPxSceneUserData )
@@ -1115,7 +1113,6 @@ PX_PHYSX_CORE_API PxSceneGeneratedValues::PxSceneGeneratedValues( const PxScene*
 		,SolverArticulationBatchSize( getPxScene_SolverArticulationBatchSize( inSource ) )
 		,WakeCounterResetValue( getPxScene_WakeCounterResetValue( inSource ) )
 		,GpuDynamicsConfig( getPxScene_GpuDynamicsConfig( inSource ) )
-		,SolverResidual( getPxScene_SolverResidual( inSource ) )
 		,UserData( inSource->userData )
 {
 	PX_UNUSED(inSource);

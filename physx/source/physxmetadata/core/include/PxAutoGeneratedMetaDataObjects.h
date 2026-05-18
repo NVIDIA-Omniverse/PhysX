@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -2487,8 +2487,8 @@ template<> struct PxEnumTraits< physx::PxPruningStructureType::Enum > { PxEnumTr
 		{ "eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS ) },
 		{ "eENABLE_DIRECT_GPU_API", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_DIRECT_GPU_API ) },
 		{ "eENABLE_BODY_ACCELERATIONS", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_BODY_ACCELERATIONS ) },
-		{ "eENABLE_SOLVER_RESIDUAL_REPORTING", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING ) },
 		{ "eSOLVE_ARTICULATION_CONTACT_LAST", static_cast<PxU32>( physx::PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST ) },
+		{ "eDISABLE_SLEEPING", static_cast<PxU32>( physx::PxSceneFlag::eDISABLE_SLEEPING ) },
 		{ "eMUTABLE_FLAGS", static_cast<PxU32>( physx::PxSceneFlag::eMUTABLE_FLAGS ) },
 		{ NULL, 0 }
 	};
@@ -2625,7 +2625,6 @@ template<> struct PxEnumTraits< physx::PxSoftBodyGpuDataFlag::Enum > { PxEnumTra
 		PxU32 SolverArticulationBatchSize;
 		PxReal WakeCounterResetValue;
 		PxGpuDynamicsMemoryConfig GpuDynamicsConfig;
-		PxSceneResidual SolverResidual;
 		void * UserData;
 		PxSimulationStatistics SimulationStatistics;
 		 PX_PHYSX_CORE_API PxSceneGeneratedValues( const PxScene* inSource );
@@ -2664,7 +2663,6 @@ template<> struct PxEnumTraits< physx::PxSoftBodyGpuDataFlag::Enum > { PxEnumTra
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, SolverArticulationBatchSize, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, WakeCounterResetValue, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, GpuDynamicsConfig, PxSceneGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, SolverResidual, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, UserData, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, SimulationStatistics, PxSceneGeneratedValues)
 	struct PxSceneGeneratedInfo
@@ -2714,7 +2712,6 @@ template<> struct PxEnumTraits< physx::PxSoftBodyGpuDataFlag::Enum > { PxEnumTra
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_SolverArticulationBatchSize, PxScene, PxU32, PxU32 > SolverArticulationBatchSize;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_WakeCounterResetValue, PxScene, PxReal > WakeCounterResetValue;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_GpuDynamicsConfig, PxScene, PxGpuDynamicsMemoryConfig > GpuDynamicsConfig;
-		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_SolverResidual, PxScene, PxSceneResidual > SolverResidual;
 		PxWriteOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_DeformableSurfaceGpuPostSolveCallback, PxScene, PxPostSolveCallback * > DeformableSurfaceGpuPostSolveCallback;
 		PxWriteOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_DeformableVolumeGpuPostSolveCallback, PxScene, PxPostSolveCallback * > DeformableVolumeGpuPostSolveCallback;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_UserData, PxScene, void *, void * > UserData;
@@ -2741,7 +2738,7 @@ template<> struct PxEnumTraits< physx::PxSoftBodyGpuDataFlag::Enum > { PxEnumTra
 			inStartIndex = PxSceneSQSystemGeneratedInfo::visitInstanceProperties( inOperator, inStartIndex );
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 48; }
+		static PxU32 instancePropertyCount() { return 47; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount()
 				+ PxSceneSQSystemGeneratedInfo::totalPropertyCount(); }
 		template<typename TOperator>
@@ -2792,12 +2789,11 @@ template<> struct PxEnumTraits< physx::PxSoftBodyGpuDataFlag::Enum > { PxEnumTra
 			inOperator( SolverArticulationBatchSize, inStartIndex + 40 );; 
 			inOperator( WakeCounterResetValue, inStartIndex + 41 );; 
 			inOperator( GpuDynamicsConfig, inStartIndex + 42 );; 
-			inOperator( SolverResidual, inStartIndex + 43 );; 
-			inOperator( DeformableSurfaceGpuPostSolveCallback, inStartIndex + 44 );; 
-			inOperator( DeformableVolumeGpuPostSolveCallback, inStartIndex + 45 );; 
-			inOperator( UserData, inStartIndex + 46 );; 
-			inOperator( SimulationStatistics, inStartIndex + 47 );; 
-			return 48 + inStartIndex;
+			inOperator( DeformableSurfaceGpuPostSolveCallback, inStartIndex + 43 );; 
+			inOperator( DeformableVolumeGpuPostSolveCallback, inStartIndex + 44 );; 
+			inOperator( UserData, inStartIndex + 45 );; 
+			inOperator( SimulationStatistics, inStartIndex + 46 );; 
+			return 47 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxScene>

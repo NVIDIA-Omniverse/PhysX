@@ -40,14 +40,13 @@ project ("omni.physx.cct.plugin")
     rtti "On"
     extension_usd_deps(targetDeps_dir, hostDeps_dir)
     targetdir (targetDir.."/"..ext_dir.."/bin")
-    dependson { "prebuild", "carb.physics-usd.plugin", "omni.physx.plugin" }
+    dependson { "prebuild", "carb.physics-usd.plugin", "omni.physx.plugin", ogn_info["ogn_project"] }
     add_ogn_dependencies(ogn_info)
     removelinks {"ar","gf","arch","plug","sdf","tf","usd","vt","usdUtils"}
     includedirs {
         runtime_include_dir,
         targetDeps_dir.."/carbonite/include",
         targetDeps_dir.."/"..physxVersion.."/include",
-        targetDeps_dir.."/rtx_plugins/include",
         kit_sdk_includes,
     }
     filter { "system:windows" }

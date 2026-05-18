@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,7 +35,6 @@
 #include "PxgConstraint.h"
 #include "PxgConstraintBlock.h"
 #include "PxgIslandContext.h"
-#include "PxgSolverContext.h"
 #include "cutil_math.h"
 #include "PxgSolverCoreDesc.h"
 #include "solverBlock.cuh"
@@ -376,6 +375,8 @@ void solveBlockPartition(
 {	
 	const PxgIslandContext& island = solverDesc->islandContextPool[islandIndex];
 
+	const PxReal rigidContactBiasCoefficient = island.mBiasCoefficients.rigidContact;
+
 	const PxU32 startPartitionIndex = island.mStartPartitionIndex;
 
 	PxU32 startIndex = partitionIndex == 0 ? island.mBatchStartIndex : solverDesc->constraintsPerPartition[partitionIndex + startPartitionIndex - 1];
@@ -404,9 +405,6 @@ void solveBlockPartition(
 	}
 
 	__syncthreads();
-
-	bool residualAccumulationEnabled = solverDesc->contactErrorAccumulator.mCounter >= 0;
-	PxgErrorAccumulator error;
 
 	//for(uint k = startIndex + warpIndex; k < endIndex; k+=blockStride)
 	uint k = startIndex + warpIndex;
@@ -467,11 +465,11 @@ void solveBlockPartition(
 
 			if (batch.constraintType == PxgSolverConstraintDesc::eCONTACT)
 				solveContactBlock(batch, lv0, av0, lv1, av1, doFriction, threadIndexInWarp, iterativeData.blockContactHeaders, iterativeData.blockFrictionHeaders,
-					iterativeData.blockContactPoints, iterativeData.blockFrictions, residualAccumulationEnabled ? &error : NULL, 
+					iterativeData.blockContactPoints, iterativeData.blockFrictions, rigidContactBiasCoefficient,
 					curRef0, curRef1);
 			else
 				solve1DBlock(batch, lv0, av0, lv1, av1, threadIndexInWarp, iterativeData.blockJointConstraintHeaders, iterativeData.blockJointConstraintRowsCon,
-					iterativeData.blockJointConstraintRowsMod, solverDesc->contactErrorAccumulator.mCounter >= 0, curRef0, curRef1);
+					iterativeData.blockJointConstraintRowsMod, curRef0, curRef1);
 
 
 			const PxU32 remapA = batch.remappedBodyAIndex[threadIndexInWarp];
@@ -519,11 +517,6 @@ void solveBlockPartition(
 #else
 
 #endif
-	}
-
-	if (residualAccumulationEnabled)
-	{
-		error.accumulateErrorGlobalFullWarp(solverDesc->contactErrorAccumulator, threadIndexInWarp);
 	}
 }
 
@@ -906,16 +899,6 @@ extern "C" __global__ void dmaBackChangedElems(const PxgSolverCoreDesc* solverDe
 	}
 }
 
-extern "C" __global__ void dmaConstraintResidual(const PxgConstraintWriteback* writebacks, PxReal* residuals, PxU32 count)
-{
-	PxU32 globalThreadIdx = threadIdx.x + blockIdx.x * blockDim.x;
-
-	if (globalThreadIdx < count)
-	{
-		residuals[globalThreadIdx] = writebacks[globalThreadIdx].angularImpulse_residual.w;
-	}
-}
-
 extern "C" __global__
 //__launch_bounds__(PxgKernelBlockDim::SOLVE_BLOCK_PARTITION, 16)
 void solveStaticBlock(
@@ -923,6 +906,7 @@ void solveStaticBlock(
 	const PxU32 islandIndex, const PxU32 nbStaticSlabs, const PxU32 maxStaticPartitions, bool doFriction)
 {
 	const PxgIslandContext& island = solverDesc->islandContextPool[islandIndex];
+	const PxReal rigidContactBiasCoefficient = island.mBiasCoefficients.rigidContact;
 	const IterativeSolveData& iterativeData = sharedDesc->iterativeData;
 
 	float4* PX_RESTRICT bodyVelocities = iterativeData.solverBodyVelPool;
@@ -947,9 +931,6 @@ void solveStaticBlock(
 	const uint bodyIndex = globalThreadIdx % numDynamicBodiesRounded;
 	const PxU32 slabIdx = (globalThreadIdx / numDynamicBodiesRounded);
 	const PxU32 startIndex = slabIdx * maxStaticPartitions;
-
-	bool residualAccumulationEnabled = solverDesc->contactErrorAccumulator.mCounter >= 0;
-	PxgErrorAccumulator error;
 
 	if (globalThreadIdx < nbDynamicBodiesToSolve)
 	{
@@ -993,7 +974,7 @@ void solveStaticBlock(
 
 					// For interaction with static objects, mass-splitting is not used; thus, reference counts are 1.
 					solve1DBlock(batch, lv0, av0, lv1, av1, idx, iterativeData.blockJointConstraintHeaders, iterativeData.blockJointConstraintRowsCon,
-						iterativeData.blockJointConstraintRowsMod, solverDesc->contactErrorAccumulator.mCounter >= 0, 1.f, 1.f);
+						iterativeData.blockJointConstraintRowsMod, 1.f, 1.f);
 				}
 
 				for (PxU32 i = 0; i < contactCount; ++i)
@@ -1006,7 +987,7 @@ void solveStaticBlock(
 
 					// For interaction with static objects, mass-splitting is not used; thus, reference counts are 1.
 					solveContactBlock(batch, lv0, av0, lv1, av1, doFriction, idx, iterativeData.blockContactHeaders, iterativeData.blockFrictionHeaders,
-						iterativeData.blockContactPoints, iterativeData.blockFrictions, residualAccumulationEnabled ? &error : NULL, 
+						iterativeData.blockContactPoints, iterativeData.blockFrictions, rigidContactBiasCoefficient,
 						1.f, 1.f);
 				}
 
@@ -1030,10 +1011,6 @@ void solveStaticBlock(
 
 			}
 		}
-	}
-	if (residualAccumulationEnabled)
-	{
-		error.accumulateErrorGlobalFullWarp(solverDesc->contactErrorAccumulator, threadIndexInWarp);
 	}
 }
 

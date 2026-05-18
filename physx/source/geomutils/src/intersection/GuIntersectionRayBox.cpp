@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,35 +33,12 @@
 
 using namespace physx;
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
-*	Computes a ray-AABB intersection.
-*	Original code by Andrew Woo, from "Graphics Gems", Academic Press, 1990
-*	Optimized code by Pierre Terdiman, 2000 (~20-30% faster on my Celeron 500)
-*	Epsilon value added by Klaus Hartmann. (discarding it saves a few cycles only)
-*
-*	Hence this version is faster as well as more robust than the original one.
-*
-*	Should work provided:
-*	1) the integer representation of 0.0f is 0x00000000
-*	2) the sign bit of the float is the most significant one
-*
-*	Report bugs: p.terdiman@codercorner.com
-*
-*	\param		aabb		[in] the axis-aligned bounding box
-*	\param		origin		[in] ray origin
-*	\param		dir			[in] ray direction
-*	\param		coord		[out] impact coordinates
-*	\return		true if ray intersects AABB
-*/
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define RAYAABB_EPSILON 0.00001f
 bool Gu::rayAABBIntersect(const PxVec3& minimum, const PxVec3& maximum, const PxVec3& origin, const PxVec3& _dir, PxVec3& coord)
 {
 	PxIntBool Inside = PxIntTrue;
 	PxVec3 MaxT(-1.0f, -1.0f, -1.0f);
 	const PxReal* dir = &_dir.x;
-	const PxU32* idir = reinterpret_cast<const PxU32*>(dir);
 	// Find candidate planes.
 	for(PxU32 i=0;i<3;i++)
 	{
@@ -71,8 +48,7 @@ bool Gu::rayAABBIntersect(const PxVec3& minimum, const PxVec3& maximum, const Px
 			Inside		= PxIntFalse;
 
 			// Calculate T distances to candidate planes
-			if(idir[i])
-//			if(PX_IR(dir[i]))
+			if(dir[i] != 0.0f)
 				MaxT[i] = (minimum[i] - origin[i]) / dir[i];
 		}
 		else if(origin[i] > maximum[i])
@@ -81,8 +57,7 @@ bool Gu::rayAABBIntersect(const PxVec3& minimum, const PxVec3& maximum, const Px
 			Inside		= PxIntFalse;
 
 			// Calculate T distances to candidate planes
-			if(idir[i])
-//			if(PX_IR(dir[i]))
+			if(dir[i] != 0.0f)
 				MaxT[i] = (maximum[i] - origin[i]) / dir[i];
 		}
 	}
@@ -96,13 +71,13 @@ bool Gu::rayAABBIntersect(const PxVec3& minimum, const PxVec3& maximum, const Px
 
 	// Get largest of the maxT's for final choice of intersection
 	PxU32 WhichPlane = 0;
-	if(MaxT[1] > MaxT[WhichPlane])	WhichPlane = 1;
-	if(MaxT[2] > MaxT[WhichPlane])	WhichPlane = 2;
+	if(MaxT[1] > MaxT[WhichPlane])
+		WhichPlane = 1;
+	if(MaxT[2] > MaxT[WhichPlane])
+		WhichPlane = 2;
 
 	// Check final candidate actually inside box
-	const PxU32* tmp = reinterpret_cast<const PxU32*>(&MaxT[WhichPlane]);
-	if((*tmp)&PX_SIGN_BITMASK)
-//	if(PX_IR(MaxT[WhichPlane])&PX_SIGN_BITMASK)
+	if(MaxT[WhichPlane] < 0.0f)
 		return false;
 
 	for(PxU32 i=0;i<3;i++)
@@ -121,41 +96,11 @@ bool Gu::rayAABBIntersect(const PxVec3& minimum, const PxVec3& maximum, const Px
 	return true;	// ray hits box
 }
 
-
-
-/**
-*	Computes a ray-AABB intersection.
-*	Original code by Andrew Woo, from "Graphics Gems", Academic Press, 1990
-*	Optimized code by Pierre Terdiman, 2000 (~20-30% faster on my Celeron 500)
-*	Epsilon value added by Klaus Hartmann. (discarding it saves a few cycles only)
-*  Return of intersected face code and parameter by Adam!  Also modified behavior for ray starts inside AABB. 2004 :-p
-*
-*	Hence this version is faster as well as more robust than the original one.
-*
-*	Should work provided:
-*	1) the integer representation of 0.0f is 0x00000000
-*	2) the sign bit of the float is the most significant one
-*
-*	Report bugs: p.terdiman@codercorner.com
-*
-*	\param		minimum		[in] the smaller corner of the bounding box
-*	\param		maximum		[in] the larger corner of the bounding box
-*	\param		origin		[in] ray origin
-*	\param		_dir		[in] ray direction
-*	\param		coord		[out] impact coordinates
-*	\param		t			[out] t such that coord = origin + dir * t
-*	\return					false if ray does not intersect AABB, or ray origin is inside AABB. Else:
-							1 + coordinate index of box axis that was hit 
-
-	Note: sign bit that determines if the minimum (0) or maximum (1) of the axis was hit is equal to sign(coord[returnVal-1]).
-*/
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 PxU32 Gu::rayAABBIntersect2(const PxVec3& minimum, const PxVec3& maximum, const PxVec3& origin, const PxVec3& _dir, PxVec3& coord, PxReal & t)
 {
 	PxIntBool Inside = PxIntTrue;
 	PxVec3 MaxT(-1.0f, -1.0f, -1.0f);
 	const PxReal* dir = &_dir.x;
-	const PxU32* idir = reinterpret_cast<const PxU32*>(dir);
 	// Find candidate planes.
 	for(PxU32 i=0;i<3;i++)
 	{
@@ -165,8 +110,7 @@ PxU32 Gu::rayAABBIntersect2(const PxVec3& minimum, const PxVec3& maximum, const 
 			Inside		= PxIntFalse;
 
 			// Calculate T distances to candidate planes
-			if(idir[i])
-//			if(PX_IR(dir[i]))
+			if(dir[i] != 0.0f)
 				MaxT[i] = (minimum[i] - origin[i]) / dir[i];
 		}
 		else if(origin[i] > maximum[i])
@@ -175,8 +119,7 @@ PxU32 Gu::rayAABBIntersect2(const PxVec3& minimum, const PxVec3& maximum, const 
 			Inside		= PxIntFalse;
 
 			// Calculate T distances to candidate planes
-			if(idir[i])
-//			if(PX_IR(dir[i]))
+			if(dir[i] != 0.0f)
 				MaxT[i] = (maximum[i] - origin[i]) / dir[i];
 		}
 	}
@@ -191,13 +134,13 @@ PxU32 Gu::rayAABBIntersect2(const PxVec3& minimum, const PxVec3& maximum, const 
 
 	// Get largest of the maxT's for final choice of intersection
 	PxU32 WhichPlane = 0;
-	if(MaxT[1] > MaxT[WhichPlane])	WhichPlane = 1;
-	if(MaxT[2] > MaxT[WhichPlane])	WhichPlane = 2;
+	if(MaxT[1] > MaxT[WhichPlane])
+		WhichPlane = 1;
+	if(MaxT[2] > MaxT[WhichPlane])
+		WhichPlane = 2;
 
 	// Check final candidate actually inside box
-	const PxU32* tmp = reinterpret_cast<const PxU32*>(&MaxT[WhichPlane]);
-	if((*tmp)&PX_SIGN_BITMASK)
-//	if(PX_IR(MaxT[WhichPlane])&PX_SIGN_BITMASK)
+	if(MaxT[WhichPlane] < 0.0f)
 		return 0;
 
 	for(PxU32 i=0;i<3;i++)
@@ -206,10 +149,11 @@ PxU32 Gu::rayAABBIntersect2(const PxVec3& minimum, const PxVec3& maximum, const 
 		{
 			coord[i] = origin[i] + MaxT[WhichPlane] * dir[i];
 #ifdef RAYAABB_EPSILON
-			if(coord[i] < minimum[i] - RAYAABB_EPSILON || coord[i] > maximum[i] + RAYAABB_EPSILON)	return 0;
+			if(coord[i] < minimum[i] - RAYAABB_EPSILON || coord[i] > maximum[i] + RAYAABB_EPSILON)
 #else
-			if(coord[i] < minimum[i] || coord[i] > maximum[i])	return 0;
+			if(coord[i] < minimum[i] || coord[i] > maximum[i])
 #endif
+				return 0;
 		}
 	}
 	t = MaxT[WhichPlane];

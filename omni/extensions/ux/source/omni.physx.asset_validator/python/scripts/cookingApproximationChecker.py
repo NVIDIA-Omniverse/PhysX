@@ -1,15 +1,15 @@
-# SPDX-FileCopyrightText: Copyright (c) 2024-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
 __all__ = ["CookingApproximationChecker"]
 
-from omni.asset_validator.core import BaseRuleChecker, registerRule, Suggestion
-from omni.asset_validator.core.complianceChecker import is_omni_path
+from omni.asset_validator.core import BaseRuleChecker, registerRule, Suggestion, is_omni_path
 from .. import get_physx_asset_validator_interface
 from pxr import Usd, UsdPhysics, UsdUtils, PhysicsSchemaTools, UsdGeom
 import carb
-from omni.physx import get_physx_interface, get_physx_simulation_interface, get_physx_cooking_private_interface
+from omni.physx import get_physx_interface, get_physx_simulation_interface
+from omni.physx.scripts.ifaces import get_physx_cooking_private_interface
 import omni.physx.bindings._physx as physx_bindings
 import asyncio
 
@@ -63,10 +63,8 @@ class CookingApproximationChecker(BaseRuleChecker):
         # NOTE: CheckStage may be invoked on an asyncio thread, so it's important avoiding writing to USD
         saved_update_to_usd = settings.get(physx_bindings.SETTING_UPDATE_TO_USD)
         saved_ujitso_collision_cooking = settings.get(physx_bindings.SETTING_UJITSO_COLLISION_COOKING)
-        saved_use_local_mesh_cache = settings.get(physx_bindings.SETTING_USE_LOCAL_MESH_CACHE)
         settings.set(physx_bindings.SETTING_UPDATE_TO_USD, False)
         settings.set(physx_bindings.SETTING_UJITSO_COLLISION_COOKING, False)
-        settings.set(physx_bindings.SETTING_USE_LOCAL_MESH_CACHE, False)
 
         get_physx_simulation_interface().attach_stage(stage_id)
 
@@ -115,7 +113,6 @@ class CookingApproximationChecker(BaseRuleChecker):
         get_physx_simulation_interface().detach_stage()
         settings.set(physx_bindings.SETTING_UPDATE_TO_USD, saved_update_to_usd)
         settings.set(physx_bindings.SETTING_UJITSO_COLLISION_COOKING, saved_ujitso_collision_cooking)
-        settings.set(physx_bindings.SETTING_USE_LOCAL_MESH_CACHE, saved_use_local_mesh_cache)
 
 
 @registerRule("Omni:Physx")

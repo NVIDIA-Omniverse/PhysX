@@ -24,9 +24,7 @@
 
 #include ".//UsdTools.h"
 #include "pxr/pxr.h"
-
-#include <boost/python/def.hpp>
-
+#include "pxr/external/boost/python.hpp"
 #include "pxr/base/tf/fileUtils.h"
 
 #include <string>
@@ -35,23 +33,23 @@
 using std::string;
 using std::vector;
 
-using namespace boost::python;
-
 PXR_NAMESPACE_USING_DIRECTIVE
 
-static boost::python::tuple 
+using namespace pxr_boost::python;
+
+static pxr_boost::python::tuple 
 _encodeSdfPath(const SdfPath& path) {
 	uint32_t part0;
 	uint32_t part1;
 	encodeSdfPath(path, part0, part1);
-	return boost::python::make_tuple(int(part0), int(part1));
+	return pxr_boost::python::make_tuple(int(part0), int(part1));
 }
 
-static boost::python::tuple 
+static pxr_boost::python::tuple 
 _getMassSpaceInertia(const GfMatrix3f& matrix) {
 	GfQuatf pa;
 	GfVec3f diagonal = getMassSpaceInertia(matrix, pa);		
-	return boost::python::make_tuple(diagonal, pa);
+	return pxr_boost::python::make_tuple(diagonal, pa);
 }
 
 void wrapUsdTools() {

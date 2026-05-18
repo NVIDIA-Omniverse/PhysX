@@ -1,5 +1,5 @@
 [package]
-version = "107.3.0-oss.0"
+version = "110.0.7"
 authors = ["PhysX"]
 
 title = "Tensor Interface for Physics Simulations"
@@ -21,7 +21,7 @@ usd = true
 
 [dependencies]
 "omni.usd.libs" = {}
-"omni.usd.schema.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.usd.schema.physx" = { version = "110.0.7", exact = true }
 
 [[native.plugin]]
 path = "bin/*.plugin"

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -544,14 +544,22 @@ static bool findTriggerContacts(TriggerInteraction* tri, bool toBeDeleted, bool 
 		const PxU32 elementID0 = primitive0->getElementID();
 		const PxU32 elementID1 = primitive1->getElementID();
 
-		const PxTransform& globalPose0 = transformCache.getTransformCache(elementID0).transform;
+#if PX_SUPPORT_GPU_PHYSX
+		if(transformCache.hadAllocationFailure())
+		{
+			overlap = false;
+		}
+		else
+#endif
+		{
+			const PxTransform& globalPose0 = transformCache.getTransformCache(elementID0).transform;
+			const PxTransform& globalPose1 = transformCache.getTransformCache(elementID1).transform;
 
-		const PxTransform& globalPose1 = transformCache.getTransformCache(elementID1).transform;
-
-		PX_ASSERT(overlapFunc);
-		overlap = overlapFunc(	primitive0->getCore().getGeometry(), globalPose0,
-								primitive1->getCore().getGeometry(), globalPose1,
-								&tri->getTriggerCache(), UNUSED_OVERLAP_THREAD_CONTEXT);
+			PX_ASSERT(overlapFunc);
+			overlap = overlapFunc(	primitive0->getCore().getGeometry(), globalPose0,
+									primitive1->getCore().getGeometry(), globalPose1,
+									&tri->getTriggerCache(), UNUSED_OVERLAP_THREAD_CONTEXT);
+		}
 	}
 
 	const bool hadOverlap = tri->lastFrameHadContacts();

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -102,24 +102,24 @@ TEST_CASE("Simulator Interaction Tests",
     {
         // Test initial state
         REQUIRE_FALSE(mockInteraction.m_isResetOnStopDisabled);
-        REQUIRE_FALSE(interaction->isDisabledResetOnStop());
+        REQUIRE_FALSE(interaction->isDisabledResetOnStop(simId));
 
         // Test disable
         interaction->disableResetOnStop(true);
         REQUIRE(mockInteraction.m_isResetOnStopDisabled);
-        REQUIRE(interaction->isDisabledResetOnStop());
+        REQUIRE(interaction->isDisabledResetOnStop(simId));
 
         // Test enable
         interaction->disableResetOnStop(false);
         REQUIRE_FALSE(mockInteraction.m_isResetOnStopDisabled);
-        REQUIRE_FALSE(interaction->isDisabledResetOnStop());
+        REQUIRE_FALSE(interaction->isDisabledResetOnStop(simId));
 
         // Test multiple toggles
         for (int i = 0; i < 5; i++) {
             bool expected = (i % 2) == 0;
             interaction->disableResetOnStop(expected);
             REQUIRE(mockInteraction.m_isResetOnStopDisabled == expected);
-            REQUIRE(interaction->isDisabledResetOnStop() == expected);
+            REQUIRE(interaction->isDisabledResetOnStop(simId) == expected);
         }
     }
 

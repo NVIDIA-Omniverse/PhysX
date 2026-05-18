@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,51 +31,16 @@
 
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxUserAllocated.h"
+#include "PxsHeapStats.h"
 
 namespace physx
 {
-	struct PxsHeapStats
+#if PX_SUPPORT_GPU_PHYSX
+
+	namespace Cm
 	{
-		enum Enum
-		{
-			eOTHER = 0,
-			eBROADPHASE,
-			eNARROWPHASE,
-			eSOLVER,
-			eARTICULATION,
-			eSIMULATION,
-			eSIMULATION_ARTICULATION,
-			eSIMULATION_PARTICLES,
-			eSIMULATION_SOFTBODY,
-			eSIMULATION_FEMCLOTH,
-			eSHARED_PARTICLES,
-			eSHARED_SOFTBODY,
-			eSHARED_FEMCLOTH,
-			eHEAPSTATS_COUNT
-		};
-
-		PxU64 stats[eHEAPSTATS_COUNT];
-
-		PxsHeapStats()
-		{
-			for (PxU32 i = 0; i < eHEAPSTATS_COUNT; i++)
-			{
-				stats[i] = 0;
-			}
-		}
-	};
-
-	// PT: TODO: consider dropping this class
-	class PxsHeapMemoryAllocator : public PxVirtualAllocatorCallback, public PxUserAllocated
-	{
-	public:
-		virtual ~PxsHeapMemoryAllocator(){}
-
-		// PxVirtualAllocatorCallback
-		//virtual void* allocate(size_t size, int group, const char* file, int line) = 0;
-		//virtual void deallocate(void* ptr) = 0;
-		//~PxVirtualAllocatorCallback
-	};
+		class VirtualAllocatorCallback;
+	}
 
 	class PxsHeapMemoryAllocatorManager : public PxUserAllocated
 	{
@@ -86,8 +51,10 @@ namespace physx
 		virtual PxsHeapStats getDeviceHeapStats() const = 0;
 		virtual void flushDeferredDeallocs() = 0;
 
-		PxsHeapMemoryAllocator* mMappedMemoryAllocators;
+		Cm::VirtualAllocatorCallback* mPinnedHostMemoryAllocator;
+		Cm::VirtualAllocatorCallback* mPinnedHostMappedMemoryAllocator;
 	};
+#endif
 }
 
 #endif

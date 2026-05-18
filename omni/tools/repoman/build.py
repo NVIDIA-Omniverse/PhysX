@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import os
 import platform
 import atexit
@@ -121,6 +122,7 @@ def before_run_callback(options, platform_host, settings):
 
             print(f"Using PhysX SDK from source: {options.devphysx}")
             settings["repo_build"]["premake"]["extra_args"].append(f"--devphysx={options.devphysx}")
+
             setupUserDepFile(options.devphysx)
 
     if options.nopch:
@@ -134,6 +136,13 @@ def before_run_callback(options, platform_host, settings):
     if options.devschema:
         print("Using local physics schema.")
         settings["repo_build"]["premake"]["extra_args"].append("--devschema")
+        shell_ext = ".bat" if platform.system() == "Windows" else ".sh"
+        settings["repo_build"]["post_build"]["commands"].append(
+            ["${root}/tools/packman/python"+shell_ext, "${root}/schema/tools/gen_unit_database.py", "${root}/_build/"+platform_host+"/${config}/schema/lib/python/PhysicsSchemaTools"]
+        )
+        settings["repo_build"]["post_build"]["commands"].append(
+            ["${root}/tools/packman/python"+shell_ext, "${root}/schema/tools/gen_unit_database.py", "${root}/_build/"+platform_host+"/${config}/extsPhysics/omni.usd.schema.physx/pxr/PhysicsSchemaTools"]
+        )
     else:
         repo_root = settings["repo"]["folders"]["root"]
         schema_dep = f"{repo_root}/deps/schema-deps.packman.xml"

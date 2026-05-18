@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -32,9 +32,7 @@
 #include "DyFeatherstoneArticulation.h"
 #include "PxgArticulationCore.h"
 #include "PxgArticulationCoreDesc.h"
-#include "PxgHeapMemAllocator.h"
 #include "PxgCudaSolverCore.h"
-#include "PxgCudaMemoryAllocator.h"
 #include "PxgNarrowphaseCore.h"
 #include "PxgSimulationController.h"
 #include "PxgSimulationCore.h"
@@ -100,29 +98,32 @@ namespace physx
 #endif
 	}
 
-	PxgArticulationCore::PxgArticulationCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, PxgHeapMemoryAllocatorManager* heapMemoryManager) :
+	PxgArticulationCore::PxgArticulationCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
+											 PxgAllocatorDesc& allocDesc) :
 		mGpuKernelWranglerManager(gpuKernelWrangler), mCudaContextManager(cudaContextManager), mCudaContext(cudaContextManager->getCudaContext()),
-		mArticulationCoreDescd(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mArticulationOutputDescd(heapMemoryManager, PxsHeapStats::eARTICULATION),
+		mArticulationCoreDesc(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION),
+		mArticulationOutputDesc(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION),
+		mArticulationCoreDescd(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mArticulationOutputDescd(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
 		mNbActiveArticulation(0),
-		mDeltaVs(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mSlabHasChanges(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mSlabDirtyMasks(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mPathToRootPerPartition(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mDirtyLinksPerPartition(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mImpulseScalePerPartition(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempContactUniqueIndicesBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempConstraintUniqueIndicesBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempContactHeaderBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempConstraintHeaderBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempSelfContactUniqueIndicesBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempSelfConstraintUniqueIndicesBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempSelfContactHeaderBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempSelfConstraintHeaderBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
+		mDeltaVs(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mSlabHasChanges(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mSlabDirtyMasks(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mPathToRootPerPartition(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mDirtyLinksPerPartition(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mImpulseScalePerPartition(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempContactUniqueIndicesBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempConstraintUniqueIndicesBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempContactHeaderBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempConstraintHeaderBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempSelfContactUniqueIndicesBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempSelfConstraintUniqueIndicesBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempSelfContactHeaderBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempSelfConstraintHeaderBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
 		mNeedsKinematicUpdate(false)
 #if PX_SUPPORT_OMNI_PVD		
-		,mOvdDataBuffer(heapMemoryManager->mMappedMemoryAllocators)
-		,mOvdIndexBuffer(heapMemoryManager->mMappedMemoryAllocators)
+		,mOvdDataBuffer(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION)
+		,mOvdIndexBuffer(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION)
 #endif
 	{
 		PxScopedCudaLock _lock(*mCudaContextManager);
@@ -136,18 +137,12 @@ namespace physx
 		mCudaContext->eventCreate(&mComputeUnconstrainedEvent, CU_EVENT_DISABLE_TIMING);
 
 		mArticulationCoreDescd.allocate(sizeof(PxgArticulationCoreDesc), PX_FL);
-		mArticulationCoreDesc = PX_PINNED_MEMORY_ALLOC(PxgArticulationCoreDesc, *mCudaContextManager, 1);
-
 		mArticulationOutputDescd.allocate(sizeof(PxgArticulationOutputDesc), PX_FL);
-		mArticulationOutputDesc = PX_PINNED_MEMORY_ALLOC(PxgArticulationOutputDesc, *mCudaContextManager, 1);
 	}
 
 	PxgArticulationCore::~PxgArticulationCore()
 	{
 		PxScopedCudaLock lock(*mCudaContextManager);
-
-		PX_PINNED_MEMORY_FREE(*mCudaContextManager, mArticulationCoreDesc);
-		PX_PINNED_MEMORY_FREE(*mCudaContextManager, mArticulationOutputDesc);
 
 		//destroy stream
 		mCudaContext->streamDestroy(mStream);
@@ -199,21 +194,22 @@ namespace physx
 
 		//KS - this is a bit sucky. We already DMAd up this buffer, but now we need to do it again to get the updated deltaV impulse buffer.
 		//The previous one may have been reallocated
-		mArticulationCoreDesc->impulses = reinterpret_cast<Cm::UnAlignedSpatialVector*>(mDeltaVs.getDevicePtr());
-		mArticulationCoreDesc->slabHasChanges = reinterpret_cast<uint2*>(mSlabHasChanges.getDevicePtr());
-		mArticulationCoreDesc->slabDirtyMasks = reinterpret_cast<uint4*>(mSlabDirtyMasks.getDevicePtr());
-		mArticulationCoreDesc->nbSlabs = nbSlabs;
-		mArticulationCoreDesc->nbPartitions = nbPartitions;
+		PxgArticulationCoreDesc* desc = getArticulationCoreDesc();
+		desc->impulses = reinterpret_cast<Cm::UnAlignedSpatialVector*>(mDeltaVs.getDevicePtr());
+		desc->slabHasChanges = reinterpret_cast<uint2*>(mSlabHasChanges.getDevicePtr());
+		desc->slabDirtyMasks = reinterpret_cast<uint4*>(mSlabDirtyMasks.getDevicePtr());
+		desc->nbSlabs = nbSlabs;
+		desc->nbPartitions = nbPartitions;
 		
-		mArticulationCoreDesc->mPathToRootsPerPartition = reinterpret_cast<PxgArticulationBitFieldStackData*>(mPathToRootPerPartition.getDevicePtr());
-		mArticulationCoreDesc->mImpulseHoldingLink = reinterpret_cast<PxU32*>(mDirtyLinksPerPartition.getDevicePtr());
-		mArticulationCoreDesc->mPartitionAverageScale = reinterpret_cast<PxReal*>(mImpulseScalePerPartition.getDevicePtr());
+		desc->mPathToRootsPerPartition = reinterpret_cast<PxgArticulationBitFieldStackData*>(mPathToRootPerPartition.getDevicePtr());
+		desc->mImpulseHoldingLink = reinterpret_cast<PxU32*>(mDirtyLinksPerPartition.getDevicePtr());
+		desc->mPartitionAverageScale = reinterpret_cast<PxReal*>(mImpulseScalePerPartition.getDevicePtr());
 
-		mCudaContext->memcpyHtoDAsync(mArticulationCoreDescd.getDevicePtr(), mArticulationCoreDesc, sizeof(PxgArticulationCoreDesc), stream);
+		mCudaContext->memcpyHtoDAsync(mArticulationCoreDescd.getDevicePtr(), desc, sizeof(PxgArticulationCoreDesc), stream);
 	}
 
 	void PxgArticulationCore::gpuMemDmaUpArticulationDesc(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity,
-		const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled)
+		const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, const bool isSleepingDisabled)
 	{
 		CUstream stream = mStream; //*mSolverStream
 		//CUstream stream = *mSolverStream;
@@ -242,60 +238,62 @@ namespace physx
 		mTempSelfConstraintHeaderBlockBuffer.allocateElements(numBlocks, PX_FL);
 
 		//bodySim has the index to the link buffer and joint buffer
-		mArticulationCoreDesc->mBodySimBufferDeviceData = simulationCore->getBodySimBufferDeviceData().getPointer();
-		mArticulationCoreDesc->articulationSleepData = reinterpret_cast<PxgSolverBodySleepData*>(simulationCore->getArticulationSleepDataBuffer().getDevicePtr());
-		mArticulationCoreDesc->islandNodeIndices = reinterpret_cast<PxNodeIndex*>(islandNodeIndicesd);
-		mArticulationCoreDesc->articulations = reinterpret_cast<PxgArticulation*>(articulationd);
+		PxgArticulationCoreDesc* desc = getArticulationCoreDesc();
+		desc->mBodySimBufferDeviceData = simulationCore->getBodySimBufferDeviceData().getPointer();
+		desc->articulationSleepData = reinterpret_cast<PxgSolverBodySleepData*>(simulationCore->getArticulationSleepDataBuffer().getDevicePtr());
+		desc->islandNodeIndices = reinterpret_cast<PxNodeIndex*>(islandNodeIndicesd);
+		desc->articulations = reinterpret_cast<PxgArticulation*>(articulationd);
 
-		mArticulationCoreDesc->articulationOffset = offset;
-		mArticulationCoreDesc->nbArticulations = nbArticulations;
-		mArticulationCoreDesc->dt = dt;
-		mArticulationCoreDesc->gravity = gravity;
-		mArticulationCoreDesc->invLengthScale = invLengthScale;
-		mArticulationCoreDesc->isExternalForcesEveryTgsIterationEnabled = isExternalForcesEveryTgsIterationEnabled;
-		mArticulationCoreDesc->impulses = reinterpret_cast<Cm::UnAlignedSpatialVector*>(mDeltaVs.getDevicePtr());
-		mArticulationCoreDesc->slabHasChanges = reinterpret_cast<uint2*>(mSlabHasChanges.getDevicePtr());
+		desc->articulationOffset = offset;
+		desc->nbArticulations = nbArticulations;
+		desc->dt = dt;
+		desc->gravity = gravity;
+		desc->invLengthScale = invLengthScale;
+		desc->isExternalForcesEveryTgsIterationEnabled = isExternalForcesEveryTgsIterationEnabled;
+		desc->isSleepingDisabled = isSleepingDisabled;
+		desc->impulses = reinterpret_cast<Cm::UnAlignedSpatialVector*>(mDeltaVs.getDevicePtr());
+		desc->slabHasChanges = reinterpret_cast<uint2*>(mSlabHasChanges.getDevicePtr());
 		//mArticulationCoreDesc->nbSlabs = nbSlabs;
 		//mArticulationCoreDesc->nbPartitions = nbPartitions;
 
-		mArticulationCoreDesc->mArticulationBlocks = reinterpret_cast<PxgArticulationBlockData*>(simulationCore->getArticulationBatchData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationLinkBlocks = reinterpret_cast<PxgArticulationBlockLinkData*>(simulationCore->getArticulationBatchLinkData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationTraversalStackBlocks = reinterpret_cast<PxgArticulationTraversalStackData*>(simulationCore->getArticulationTraversalStackData().getDevicePtr());
-		mArticulationCoreDesc->mTempPathToRootBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldStackData*>(simulationCore->getTempPathToRootBitFieldStackData().getDevicePtr());
-		mArticulationCoreDesc->mTempSharedBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldStackData*>(simulationCore->getTempSharedBitFieldStackData().getDevicePtr());
-		mArticulationCoreDesc->mTempRootBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldStackData*>(simulationCore->getTempRootBitFieldStackData().getDevicePtr());
-		mArticulationCoreDesc->mPathToRootBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldData*>(simulationCore->getPathToRootBitFieldStackData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationDofBlocks = reinterpret_cast<PxgArticulationBlockDofData*>(simulationCore->getArticulationBatchDofData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationMimicJointBlocks =  reinterpret_cast<PxgArticulationBlockMimicJointData*>(simulationCore->getArticulationBatchMimicJointData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationSpatialTendonBlocks = reinterpret_cast<PxgArticulationBlockSpatialTendonData*>(simulationCore->getArticulationBatchSpatialTendonData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationSpatialTendonConstraintBlocks = reinterpret_cast<PxgArticulationInternalTendonConstraintData*>(simulationCore->getArticulationBatchSpatialTendonConstraintData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationAttachmentBlocks = reinterpret_cast<PxgArticulationBlockAttachmentData*>(simulationCore->getArticulationBatchAttachmentData().getDevicePtr());
+		desc->mArticulationBlocks = reinterpret_cast<PxgArticulationBlockData*>(simulationCore->getArticulationBatchData().getDevicePtr());
+		desc->mArticulationLinkBlocks = reinterpret_cast<PxgArticulationBlockLinkData*>(simulationCore->getArticulationBatchLinkData().getDevicePtr());
+		desc->mArticulationTraversalStackBlocks = reinterpret_cast<PxgArticulationTraversalStackData*>(simulationCore->getArticulationTraversalStackData().getDevicePtr());
+		desc->mTempPathToRootBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldStackData*>(simulationCore->getTempPathToRootBitFieldStackData().getDevicePtr());
+		desc->mTempSharedBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldStackData*>(simulationCore->getTempSharedBitFieldStackData().getDevicePtr());
+		desc->mTempRootBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldStackData*>(simulationCore->getTempRootBitFieldStackData().getDevicePtr());
+		desc->mPathToRootBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldData*>(simulationCore->getPathToRootBitFieldStackData().getDevicePtr());
+		desc->mArticulationDofBlocks = reinterpret_cast<PxgArticulationBlockDofData*>(simulationCore->getArticulationBatchDofData().getDevicePtr());
+		desc->mArticulationMimicJointBlocks =  reinterpret_cast<PxgArticulationBlockMimicJointData*>(simulationCore->getArticulationBatchMimicJointData().getDevicePtr());
+		desc->mArticulationSpatialTendonBlocks = reinterpret_cast<PxgArticulationBlockSpatialTendonData*>(simulationCore->getArticulationBatchSpatialTendonData().getDevicePtr());
+		desc->mArticulationSpatialTendonConstraintBlocks = reinterpret_cast<PxgArticulationInternalTendonConstraintData*>(simulationCore->getArticulationBatchSpatialTendonConstraintData().getDevicePtr());
+		desc->mArticulationAttachmentBlocks = reinterpret_cast<PxgArticulationBlockAttachmentData*>(simulationCore->getArticulationBatchAttachmentData().getDevicePtr());
 		
-		mArticulationCoreDesc->mArticulationFixedTendonBlocks = reinterpret_cast<PxgArticulationBlockFixedTendonData*>(simulationCore->getArticulationBatchFixedTendonData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationFixedTendonConstraintBlocks = reinterpret_cast<PxgArticulationInternalTendonConstraintData*>(simulationCore->getArticulationBatchFixedTendonConstraintData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationTendonJointBlocks = reinterpret_cast<PxgArticulationBlockTendonJointData*>(simulationCore->getArticulationBatchTendonJointData().getDevicePtr());
+		desc->mArticulationFixedTendonBlocks = reinterpret_cast<PxgArticulationBlockFixedTendonData*>(simulationCore->getArticulationBatchFixedTendonData().getDevicePtr());
+		desc->mArticulationFixedTendonConstraintBlocks = reinterpret_cast<PxgArticulationInternalTendonConstraintData*>(simulationCore->getArticulationBatchFixedTendonConstraintData().getDevicePtr());
+		desc->mArticulationTendonJointBlocks = reinterpret_cast<PxgArticulationBlockTendonJointData*>(simulationCore->getArticulationBatchTendonJointData().getDevicePtr());
 
-		mArticulationCoreDesc->mMaxLinksPerArticulation = simulationCore->getMaxArticulationLinks();
-		mArticulationCoreDesc->mMaxDofsPerArticulation = simulationCore->getMaxArticulationDofs();
-		mArticulationCoreDesc->mMaxMimicJointsPerArticulation = simulationCore->getMaxArticulationMimicJoints();
-		mArticulationCoreDesc->mMaxSpatialTendonsPerArticulation = simulationCore->getMaxArticuationSpatialTendons();
-		mArticulationCoreDesc->mMaxAttachmentPerArticulation = simulationCore->getMaxArticuationAttachments();
-		mArticulationCoreDesc->mMaxFixedTendonsPerArticulation = simulationCore->getMaxArticuationFixedTendons();
-		mArticulationCoreDesc->mMaxTendonJointPerArticulation = simulationCore->getMaxArticuationTendonJoints();
-		mArticulationCoreDesc->solverBodyIndices = solverCore->getSolverBodyIndices().getPointer();
+		desc->mMaxLinksPerArticulation = simulationCore->getMaxArticulationLinks();
+		desc->mMaxDofsPerArticulation = simulationCore->getMaxArticulationDofs();
+		desc->mMaxMimicJointsPerArticulation = simulationCore->getMaxArticulationMimicJoints();
+		desc->mMaxSpatialTendonsPerArticulation = simulationCore->getMaxArticuationSpatialTendons();
+		desc->mMaxAttachmentPerArticulation = simulationCore->getMaxArticuationAttachments();
+		desc->mMaxFixedTendonsPerArticulation = simulationCore->getMaxArticuationFixedTendons();
+		desc->mMaxTendonJointPerArticulation = simulationCore->getMaxArticuationTendonJoints();
+		desc->solverBodyIndices = solverCore->getSolverBodyIndices().getPointer();
 
-		mArticulationCoreDesc->mTempContactUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempContactUniqueIndicesBlockBuffer.getDevicePtr());
-		mArticulationCoreDesc->mTempConstraintUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempConstraintUniqueIndicesBlockBuffer.getDevicePtr());
-		mArticulationCoreDesc->mTempContactHeaderBlock = reinterpret_cast<PxU32*>(mTempContactHeaderBlockBuffer.getDevicePtr());
-		mArticulationCoreDesc->mTempConstraintHeaderBlock = reinterpret_cast<PxU32*>(mTempConstraintHeaderBlockBuffer.getDevicePtr());
+		desc->mTempContactUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempContactUniqueIndicesBlockBuffer.getDevicePtr());
+		desc->mTempConstraintUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempConstraintUniqueIndicesBlockBuffer.getDevicePtr());
+		desc->mTempContactHeaderBlock = reinterpret_cast<PxU32*>(mTempContactHeaderBlockBuffer.getDevicePtr());
+		desc->mTempConstraintHeaderBlock = reinterpret_cast<PxU32*>(mTempConstraintHeaderBlockBuffer.getDevicePtr());
 		
-		mArticulationCoreDesc->mTempSelfContactUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempSelfContactUniqueIndicesBlockBuffer.getDevicePtr());
-		mArticulationCoreDesc->mTempSelfConstraintUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempSelfConstraintUniqueIndicesBlockBuffer.getDevicePtr());
-		mArticulationCoreDesc->mTempSelfContactHeaderBlock = reinterpret_cast<PxU32*>(mTempSelfContactHeaderBlockBuffer.getDevicePtr());
-		mArticulationCoreDesc->mTempSelfConstraintHeaderBlock = reinterpret_cast<PxU32*>(mTempSelfConstraintHeaderBlockBuffer.getDevicePtr());
+		desc->mTempSelfContactUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempSelfContactUniqueIndicesBlockBuffer.getDevicePtr());
+		desc->mTempSelfConstraintUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempSelfConstraintUniqueIndicesBlockBuffer.getDevicePtr());
+		desc->mTempSelfContactHeaderBlock = reinterpret_cast<PxU32*>(mTempSelfContactHeaderBlockBuffer.getDevicePtr());
+		desc->mTempSelfConstraintHeaderBlock = reinterpret_cast<PxU32*>(mTempSelfConstraintHeaderBlockBuffer.getDevicePtr());
 
 		//DMA descriptor up
-		mCudaContext->memcpyHtoDAsync(mArticulationCoreDescd.getDevicePtr(), mArticulationCoreDesc, sizeof(PxgArticulationCoreDesc), stream);
+		mCudaContext->memcpyHtoDAsync(mArticulationCoreDescd.getDevicePtr(), desc, sizeof(PxgArticulationCoreDesc), stream);
 	}
 
 	void PxgArticulationCore::createStaticContactAndConstraintsBatch(const PxU32 nbArticulations)
@@ -400,7 +398,7 @@ namespace physx
 		}
 	}
 
-	PxU32 PxgArticulationCore::computeUnconstrainedVelocities(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, bool recomputeBlockFormat)
+	PxU32 PxgArticulationCore::computeUnconstrainedVelocities(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, bool recomputeBlockFormat, const bool isSleepingDisabled)
 	{
 		mNbActiveArticulation = nbArticulations;
 
@@ -418,7 +416,7 @@ namespace physx
 			//CUstream stream = *mSolverStream;
 
 			//layoutDeltaVBuffer(offset, nbArticulations, nbSlabs, /**mSolverStream*/mStream);
-			gpuMemDmaUpArticulationDesc(offset, nbArticulations, dt, gravity, invLengthScale, isExternalForcesEveryTgsIterationEnabled);
+			gpuMemDmaUpArticulationDesc(offset, nbArticulations, dt, gravity, invLengthScale, isExternalForcesEveryTgsIterationEnabled, isSleepingDisabled);
 
 			KernelWrangler* wrangler = mGpuKernelWranglerManager->getKernelWrangler();
 
@@ -624,8 +622,9 @@ namespace physx
 	// solvePartitions).
 
 	void PxgArticulationCore::propagateRigidBodyImpulsesAndSolveInternalConstraints(const PxReal dt, const PxReal invDt, const bool velocityIteration,
-		const PxReal elapsedTime, const PxReal biasCoefficient, const Dy::ArticulationConstraintProcessingConfigGPU& articulationConstraintProcessingConfig,  PxU32* staticContactUniqueIds, PxU32* staticJointUniqueIds, 
-		CUdeviceptr sharedDesc, bool doFriction, bool isTGS, bool residualReportingEnabled, bool isExternalForcesEveryTgsIterationEnabled)
+		const PxReal elapsedTime, const PxReal articulationBiasCoefficient, const PxReal rigidContactBiasCoefficient, 
+		const Dy::ArticulationConstraintProcessingConfigGPU& articulationConstraintProcessingConfig,  PxU32* staticContactUniqueIds, PxU32* staticJointUniqueIds, 
+		CUdeviceptr sharedDesc, bool doFriction, bool isTGS, bool isExternalForcesEveryTgsIterationEnabled)
 	{
 #if ARTI_GPU_DEBUG
 		PX_PROFILE_ZONE("GpuArticulationCore.solveInternalConstraints", 0);
@@ -662,6 +661,7 @@ namespace physx
 					CUDA_KERNEL_PARAM(elapsedTime),
 					CUDA_KERNEL_PARAM(sharedDesc),
 					CUDA_KERNEL_PARAM(doFriction),
+					CUDA_KERNEL_PARAM(rigidContactBiasCoefficient),
 				};
 
 				// In the first kernel called, propagate rigid body impulses as well.
@@ -677,7 +677,7 @@ namespace physx
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
 					CUDA_KERNEL_PARAM(artiCoreDescptr),
-					CUDA_KERNEL_PARAM(biasCoefficient),
+					CUDA_KERNEL_PARAM(articulationBiasCoefficient),
 					CUDA_KERNEL_PARAM(dt),
 					CUDA_KERNEL_PARAM(invDt),
 					CUDA_KERNEL_PARAM(velocityIteration),
@@ -703,12 +703,12 @@ namespace physx
 					CUDA_KERNEL_PARAM(invDt),
 					CUDA_KERNEL_PARAM(velocityIteration),
 					CUDA_KERNEL_PARAM(elapsedTime),
-					CUDA_KERNEL_PARAM(biasCoefficient),
+					CUDA_KERNEL_PARAM(articulationBiasCoefficient),
+					CUDA_KERNEL_PARAM(rigidContactBiasCoefficient),
 					CUDA_KERNEL_PARAM(staticContactUniqueIds),
 					CUDA_KERNEL_PARAM(staticJointUniqueIds),
 					CUDA_KERNEL_PARAM(sharedDesc),
 					CUDA_KERNEL_PARAM(doFriction),
-					CUDA_KERNEL_PARAM(residualReportingEnabled),
 					CUDA_KERNEL_PARAM(isExternalForcesEveryTgsIterationEnabled),
 					CUDA_KERNEL_PARAM(articulationConstraintProcessingConfig.mDoFrictionDrivePosLimit),
 					CUDA_KERNEL_PARAM(articulationConstraintProcessingConfig.mDoVelLimit),
@@ -954,7 +954,7 @@ namespace physx
 
 				const PxU32 gridDimX = num1TBlocks;
 				const PxU32 gridDimY = 1;
-				const PxU32 gridDimZ = (mArticulationCoreDesc->mMaxLinksPerArticulation + nbThreadsZ - 1) / nbThreadsZ;
+				const PxU32 gridDimZ = (getArticulationCoreDesc()->mMaxLinksPerArticulation + nbThreadsZ - 1) / nbThreadsZ;
 				const PxU32 blockDimX = numThreadsPerWarp;
 				const PxU32 blockDimY = numWarpsPerBlock;
 				const PxU32 blockDimZ = nbThreadsZ;
@@ -999,9 +999,8 @@ namespace physx
 	}
 
 	void PxgArticulationCore::gpuMemDMAbackArticulation(
-		PxInt8ArrayPinned& linkAndJointAndRootStateData,
-		PxPinnedArray<PxgSolverBodySleepData>& sleepPool, PxPinnedArray<Dy::ErrorAccumulator>& internalResidualPerArticulation, 
-		PxPinnedArray<Dy::ErrorAccumulator>& contactResidual)
+		Cm::PinnableArray<PxU8>& linkAndJointAndRootStateData,
+		Cm::PinnableArray<PxgSolverBodySleepData>& sleepPool)
 	{
 		const PxU32 numThreadsPerWarp = 32;
 		PxU32 numWarpsPerBlock = PxgArticulationCoreKernelBlockDim::COMPUTE_UNCONSTRAINED_VELOCITES / numThreadsPerWarp;
@@ -1009,21 +1008,13 @@ namespace physx
 
 		if (numBlocks)
 		{
-			mArticulationOutputDesc->linkAndJointAndRootStateData = linkAndJointAndRootStateData.begin();
-			mArticulationOutputDesc->sleepData = sleepPool.begin();
-			if (contactResidual.size())
-			{
-				mArticulationOutputDesc->errorAccumulator = internalResidualPerArticulation.begin();
-				mArticulationOutputDesc->contactResidualAccumulator = contactResidual.begin();
-			}
-			else
-			{
-				mArticulationOutputDesc->errorAccumulator = NULL;
-				mArticulationOutputDesc->contactResidualAccumulator = NULL;
-			}
+			PxgArticulationOutputDesc& outDesc = mArticulationOutputDesc.get();
+			outDesc.linkAndJointAndRootStateData = linkAndJointAndRootStateData.begin();
+			outDesc.sleepData = sleepPool.begin();
 
 			//dma output desc to gpu
-			mCudaContext->memcpyHtoDAsync(mArticulationOutputDescd.getDevicePtr(), mArticulationOutputDesc, sizeof(PxgArticulationOutputDesc), *mSolverStream);
+			mCudaContext->memcpyHtoDAsync(mArticulationOutputDescd.getDevicePtr(), &outDesc, sizeof(PxgArticulationOutputDesc),
+										  *mSolverStream);
 
 			PX_PROFILE_ZONE("GpuArticulationCore.gpuMemDMAbackArticulation", 0);
 
@@ -1712,7 +1703,7 @@ namespace physx
 			// grid that loops is probably better.
 
 			// but we still clamp if the number of articulations in the scene is smaller than what we would launch otherwise.
-			const PxU32 numBlockNeeded = (mArticulationCoreDesc->nbArticulations + numWarpPerBlock - 1) / numWarpPerBlock;
+			const PxU32 numBlockNeeded = (mArticulationCoreDesc.get().nbArticulations + numWarpPerBlock - 1) / numWarpPerBlock;
 			const PxU32 gridDim = PxMin<PxU32>(PxgArticulationCoreKernelGridDim::UPDATE_KINEMATIC, numBlockNeeded);
 
 			const CUresult result = mCudaContext->launchKernel(updateKinematicKernelFunction, gridDim, 1, 1, numThreadPerWarp, numWarpPerBlock, 1, 0, mStream, EPILOG);
@@ -1762,7 +1753,7 @@ namespace physx
 					CUDA_KERNEL_PARAM(nbElements),
 					CUDA_KERNEL_PARAM(maxLinks),
 					CUDA_KERNEL_PARAM(maxDofs),
-					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
+					CUDA_KERNEL_PARAM(mArticulationCoreDesc.get().articulations),
 				};
 
 				const CUresult result = mCudaContext->launchKernel(kernelFunction, blocks, 1, 1, threadsPerWarp, warpsPerBlock, 1, 0, mStream, EPILOG);
@@ -1771,8 +1762,6 @@ namespace physx
 			}
 			break;
 
-			// This enum has been deprecated, replaced with PxArticulationGPUAPIComputeType::eMASS_MATRICES
-			case PxArticulationGPUAPIComputeType::eGENERALIZED_MASS_MATRICES:
 			case PxArticulationGPUAPIComputeType::eMASS_MATRICES:
 			{
 				// Needed in case joint positions have been changed before the call
@@ -1783,7 +1772,6 @@ namespace physx
 				const PxU32 threadsPerWarp = 32;
 				const PxU32 warpsPerBlock = 8;
 				const PxU32 blocks = (nbElements + warpsPerBlock - 1) / warpsPerBlock;
-				const bool rootMotion = (operation == PxArticulationGPUAPIComputeType::eMASS_MATRICES);
 
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
@@ -1791,8 +1779,7 @@ namespace physx
 					CUDA_KERNEL_PARAM(data),
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(maxDofs),
-					CUDA_KERNEL_PARAM(rootMotion),
-					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
+					CUDA_KERNEL_PARAM(mArticulationCoreDesc.get().articulations),
 				};
 
 				const CUresult result = mCudaContext->launchKernel(kernelFunction, blocks, 1, 1, threadsPerWarp, warpsPerBlock, 1, 0, mStream, EPILOG);
@@ -1801,8 +1788,6 @@ namespace physx
 			}
 			break;
 
-			// This enum has been deprecated, replaced with PxArticulationGPUAPIComputeType::eGRAVITY_COMPENSATION
-			case PxArticulationGPUAPIComputeType::eGENERALIZED_GRAVITY_FORCES:
 			case PxArticulationGPUAPIComputeType::eGRAVITY_COMPENSATION:
 			{
 				// Needed in case joint positions have been changed before the call
@@ -1813,7 +1798,6 @@ namespace physx
 				const PxU32 threadsPerWarp = 32;
 				const PxU32 warpsPerBlock = 8;
 				const PxU32 blocks = (nbElements + warpsPerBlock - 1) / warpsPerBlock;
-				const bool rootMotion = (operation == PxArticulationGPUAPIComputeType::eGRAVITY_COMPENSATION);
 
 				const PxVec3 gravity = mGpuContext->getGravity();
 
@@ -1823,8 +1807,7 @@ namespace physx
 					CUDA_KERNEL_PARAM(data),
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(maxDofs),
-					CUDA_KERNEL_PARAM(rootMotion),
-					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
+					CUDA_KERNEL_PARAM(mArticulationCoreDesc.get().articulations),
 					CUDA_KERNEL_PARAM(gravity),
 				};
 
@@ -1834,8 +1817,6 @@ namespace physx
 			}
 			break;
 
-			// This enum has been deprecated, replaced with PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION
-			case PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_FORCES:
 			case PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION:
 			{
 				// Needed in case joint positions have been changed before the call
@@ -1847,7 +1828,6 @@ namespace physx
 				const PxU32 threadsPerWarp = 32;
 				const PxU32 warpsPerBlock = 8;
 				const PxU32 blocks = (nbElements + warpsPerBlock - 1) / warpsPerBlock;
-				const bool rootMotion = (operation == PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION);
 
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
@@ -1855,8 +1835,7 @@ namespace physx
 					CUDA_KERNEL_PARAM(data),
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(maxDofs),
-					CUDA_KERNEL_PARAM(rootMotion),
-					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
+					CUDA_KERNEL_PARAM(mArticulationCoreDesc.get().articulations),
 				};
 
 				const CUresult result = mCudaContext->launchKernel(kernelFunction, blocks, 1, 1, threadsPerWarp, warpsPerBlock, 1, 0, mStream, EPILOG);
@@ -1880,10 +1859,11 @@ namespace physx
 
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
+					CUDA_KERNEL_PARAM(nbElements),
 					CUDA_KERNEL_PARAM(data),
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(rootFrame),
-					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
+					CUDA_KERNEL_PARAM(mArticulationCoreDesc.get().articulations),
 				};
 
 				const CUresult result = mCudaContext->launchKernel(kernelFunction, blocks, 1, 1, threadsPerWarp, warpsPerBlock, 1, 0, mStream, EPILOG);
@@ -1909,7 +1889,7 @@ namespace physx
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(nbElements),
 					CUDA_KERNEL_PARAM(maxDofs),
-					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
+					CUDA_KERNEL_PARAM(mArticulationCoreDesc.get().articulations),
 				};
 
 				const CUresult result = mCudaContext->launchKernel(kernelFunction, blocks, 1, 1, threadsPerWarp, warpsPerBlock, 1, 0, mStream, EPILOG);

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -450,13 +450,13 @@ public:
 	\param[in] minVelocityIters Minimal number of velocity iterations the solver should perform for this body. <b>Range:</b> [1,255]
 	\see PxDeformableBody.setSolverIterationCounts()
 	*/
-	PX_DEPRECATED virtual		void	setSolverIterationCounts(PxU32 minPositionIters, PxU32 minVelocityIters = 1) = 0;
+	PX_DEPRECATED virtual		void	setSolverIterationCounts(PxU32 minPositionIters, PxU32 minVelocityIters = 1) PX_OVERRIDE = 0;
 
 	/**
 	\brief Deprecated
 	\see PxDeformableBody.setSolverIterationCount()
 	*/
-	PX_DEPRECATED virtual		void	getSolverIterationCounts(PxU32& minPositionIters, PxU32& minVelocityIters) const = 0;
+	PX_DEPRECATED virtual		void	getSolverIterationCounts(PxU32& minPositionIters, PxU32& minVelocityIters) const PX_OVERRIDE = 0;
 
 	/**
 	\brief Creates a collision filter between a particle and a tetrahedron in the deformable volume's collision mesh.

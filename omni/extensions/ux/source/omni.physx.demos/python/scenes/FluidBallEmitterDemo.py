@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import math
 from pxr import Usd, UsdLux, UsdGeom, Sdf, Gf, Vt, UsdPhysics, PhysxSchema
 from omni.physx.scripts import utils
@@ -328,6 +329,7 @@ class FluidBallEmitterDemo(demo.AsyncDemoBase):
 
     def release_session_layer(self):
         #remove session_sub_layer to clear out runtime changes
+        self._session_sub_layer.Clear()
         self._stage.GetSessionLayer().subLayerPaths.remove(self._session_sub_layer.identifier)
         self._stage.SetEditTarget(self._stage.GetRootLayer())
         self._session_sub_layer = None

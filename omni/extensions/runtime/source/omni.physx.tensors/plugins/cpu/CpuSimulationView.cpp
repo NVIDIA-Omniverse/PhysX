@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -137,21 +137,18 @@ CpuSoftBodyMaterialView* CpuSimulationView::createSoftBodyMaterialView(const cha
 
 CpuVolumeDeformableBodyView* CpuSimulationView::createVolumeDeformableBodyView(const char* pattern)
 {
-    if (!pattern || !*pattern)
-    {
-        CARB_LOG_ERROR("Empty pattern not allowed");
-        return nullptr;
-    }
+    return createVolumeDeformableBodyView(std::vector<std::string>{ pattern });
+}
 
+CpuVolumeDeformableBodyView* CpuSimulationView::createVolumeDeformableBodyView(const std::vector<std::string>& patterns)
+{
     std::vector<DeformableBodyEntry> entries;
-    findMatchingVolumeDeformableBodies(pattern, entries);
-
+    processVolumeDeformableBodyEntries(patterns, entries);
     if (entries.empty())
     {
-        CARB_LOG_ERROR("Pattern '%s' did not match any volume deformable bodies\n", pattern);
+        CARB_LOG_ERROR("Provided pattern list did not match any volume deformable bodies\n");
         return nullptr;
     }
-
     CpuVolumeDeformableBodyView* view = new CpuVolumeDeformableBodyView(this, entries);
     mVolumeDeformableBodyViews.push_back(view);
     return view;
@@ -159,21 +156,18 @@ CpuVolumeDeformableBodyView* CpuSimulationView::createVolumeDeformableBodyView(c
 
 CpuSurfaceDeformableBodyView* CpuSimulationView::createSurfaceDeformableBodyView(const char* pattern)
 {
-    if (!pattern || !*pattern)
-    {
-        CARB_LOG_ERROR("Empty pattern not allowed");
-        return nullptr;
-    }
+    return createSurfaceDeformableBodyView(std::vector<std::string>{ pattern });
+}
 
+CpuSurfaceDeformableBodyView* CpuSimulationView::createSurfaceDeformableBodyView(const std::vector<std::string>& patterns)
+{
     std::vector<DeformableBodyEntry> entries;
-    findMatchingSurfaceDeformableBodies(pattern, entries);
-
+    processSurfaceDeformableBodyEntries(patterns, entries);
     if (entries.empty())
     {
-        CARB_LOG_ERROR("Pattern '%s' did not match any surface deformable bodies\n", pattern);
+        CARB_LOG_ERROR("Provided pattern list did not match any surface deformable bodies\n");
         return nullptr;
     }
-
     CpuSurfaceDeformableBodyView* view = new CpuSurfaceDeformableBodyView(this, entries);
     mSurfaceDeformableBodyViews.push_back(view);
     return view;
@@ -181,21 +175,18 @@ CpuSurfaceDeformableBodyView* CpuSimulationView::createSurfaceDeformableBodyView
 
 CpuDeformableMaterialView* CpuSimulationView::createDeformableMaterialView(const char* pattern)
 {
-    if (!pattern || !*pattern)
-    {
-        CARB_LOG_ERROR("Empty pattern not allowed");
-        return nullptr;
-    }
+    return createDeformableMaterialView(std::vector<std::string>{ pattern });
+}
 
+CpuDeformableMaterialView* CpuSimulationView::createDeformableMaterialView(const std::vector<std::string>& patterns)
+{
     std::vector<DeformableMaterialEntry> entries;
-    findMatchingDeformableMaterials(pattern, entries);
-
+    processDeformableMaterialEntries(patterns, entries);
     if (entries.empty())
     {
-        CARB_LOG_ERROR("Pattern '%s' did not match any volume deformable body material\n", pattern);
+        CARB_LOG_ERROR("Provided pattern list did not match any deformable materials\n");
         return nullptr;
     }
-
     CpuDeformableMaterialView* view = new CpuDeformableMaterialView(this, entries);
     mDeformableMaterialViews.push_back(view);
     return view;

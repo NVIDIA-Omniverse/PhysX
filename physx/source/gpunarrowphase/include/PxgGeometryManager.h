@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -72,9 +72,9 @@
 namespace physx
 {
 
-class PxgHeapMemoryAllocatorManager;
-class PxgHeapMemoryAllocator;
 class PxCudaContext;
+class PxgHeapMemoryAllocator;
+struct PxgAllocatorDesc;
 
 namespace Gu
 {
@@ -165,7 +165,7 @@ private:
 		};
 	};
 public:
-	PxgCopyManager::CopyDesc         mCopyDesc;            //!< Copy descriptor for upload to GPU. lives until copy completed.
+	PxgCopyDesc                      mCopyDesc;            //!< Copy descriptor for upload to GPU. lives until copy completed.
 	PxU32                            mHullOrTrimeshIdx;    //!< Index into mGeometrydata
 	UploadGeometryType::Enum         mType;                //!< Geometry type: see UploadGeometryType. Needed for deferred pinned memory allocation.
 	PxU32                            mNumPolyVertices;     //!< Number of polygon vertices in case this is a convex hull
@@ -179,7 +179,7 @@ class PxgGeometryManager
 	using UploadGeometryType = ScheduledCopyData::UploadGeometryType;
 
 public:
-	PxgGeometryManager(PxgHeapMemoryAllocatorManager* heapMemoryManager);
+	PxgGeometryManager(PxgAllocatorDesc& allocDesc);
 
 	virtual ~PxgGeometryManager();
 
@@ -199,10 +199,10 @@ public:
 private:
 	PxU32 							addGeometryInternal(PxU64 byteSize, const void* geomPtr, UploadGeometryType::Enum type, PxU32 numPolyVertices = 0);
 
-	PxgHeapMemoryAllocator*									mDeviceMemoryAllocator; //device memory
-	PxgHeapMemoryAllocator*									mPinnedMemoryAllocator; //mapped memory
-	void*													mPinnedMemoryBasePtr;   //stores the pointer to the current pinned memory allocation.
-	PxU64													mPinnedHostMemoryRequirements; // accumulates pinned memory requirements for copies.
+	PxgHeapMemoryAllocator&									mDeviceAlloc;
+	Cm::VirtualAllocatorCallback&							mHostMappedAlloc;
+	PxU8*													mHostMemoryMapped;   //stores the pointer to the current pinned memory allocation.
+	PxU64													mHostMemoryRequirements; // accumulates pinned memory requirements for copies.
 	
 	PxArray<ScheduledCopyData>								mScheduledCopies;       // copies in current step, cleared after scheduleCopyHtoD
 

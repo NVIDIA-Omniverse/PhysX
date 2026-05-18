@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -41,7 +41,8 @@
 #define OUT_OF_BOUNDS -1
 #define SUBGRID_CENTER_IDX 13
 
-using namespace physx;
+namespace physx
+{
 
 PX_FORCE_INLINE __device__ __host__ int clampValue(int f, int a, int b)
 {
@@ -315,4 +316,6 @@ PX_FORCE_INLINE __device__ int4 getCellIndexFromParticleAndTransformToLocalCoord
 {
 	return getCellIndexFromPosition(p, data.mGridParams, data.mUniqueHashkeyPerSubgrid, data.mNumSubgridsInUse);
 }
+
+} // namespace physx
 

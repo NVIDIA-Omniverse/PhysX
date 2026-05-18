@@ -10,7 +10,7 @@ description="USD PhysX schema"
 keywords = ["physics", "usd"]
 toggleable = false
 
-version = "107.3.0-oss.0"
+version = "110.0.7"
 authors = ["PhysX"]
 
 repository = ""

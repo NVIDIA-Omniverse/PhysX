@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,55 +31,39 @@
 
 #include "PxgBodySimManager.h"
 #include "PxgJointManager.h"
-#include "PxsSimulationController.h"
-#include "PxgHeapMemAllocator.h"
-#include "CmTask.h"
 #include "PxgArticulationLink.h"
-#include "DyArticulationJointCore.h"
-#include "PxgArticulation.h"
-#include "PxgArticulationTendon.h"
-#include "PxgSimulationCoreDesc.h"
 #include "PxgSoftBody.h"
 #include "PxgFEMCloth.h"
-#include "PxgParticleSystem.h"
-#include "PxArticulationTendonData.h"
+#include "PxgAllocatorDesc.h"
+#include "PxgSimulationCoreDesc.h"
+
+#include "PxsSimulationController.h"
+#include "CmTask.h"
+
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxSimpleTypes.h"
-
-#include "BpAABBManagerBase.h"
-#include "PxgAABBManager.h"
-#include "PxsTransformCache.h"
-#include "PxgNarrowphaseCore.h"
-#define PXG_SC_DEBUG	0
 
 namespace physx
 {
 	//this is needed to force PhysXSimulationControllerGpu linkage as Static Library!
 	void createPxgSimulationController();
 
-	namespace shdfnd
-	{
-		class PxVirtualAllocatorCallback;
-	}
-
-	namespace Dy
-	{
-		class ParticleSystemCore;
-	}
-
 	namespace Bp
 	{
 		class BroadPhase;
 	}
 
+	class PxsKernelWranglerManager;
+
 	class PxgSimulationCore;
+	class PxgParticleSystemCore;
 	class PxgPBDParticleSystemCore;
 	class PxgSoftBodyCore;
 	class PxgFEMClothCore;
+	class PxgCudaBuffer;
+	class PxgBoundsArray;
 	class PxgGpuContext;
 	class PxgNphaseImplementationContext;
-	struct PxsCachedTransform;
-
 	class PxgSimulationController;
 	class PxgCudaKernelWranglerManager;
 	class PxgCudaBroadPhaseSap;
@@ -87,25 +71,25 @@ namespace physx
 	struct SoftBodyAttachmentAndFilterData
 	{
 	public:
-		PxPinnedArray<PxgFEMRigidAttachment>* rigidAttachments;
-		PxPinnedArray<PxgRigidFilterPair>* rigidFilterPairs;
+		Cm::PinnableArray<PxgFEMRigidAttachment>* rigidAttachments;
+		Cm::PinnableArray<PxgRigidFilterPair>* rigidFilterPairs;
 		bool dirtyRigidAttachments;
-		PxInt32ArrayPinned* activeRigidAttachments;
+		Cm::PinnableArray<PxU32>* activeRigidAttachments;
 		bool dirtyActiveRigidAttachments;
-		PxPinnedArray<PxgFEMFEMAttachment>* softBodyAttachments;
+		Cm::PinnableArray<PxgFEMFEMAttachment>* softBodyAttachments;
 		bool dirtySoftBodyAttachments;
-		PxInt32ArrayPinned* activeSoftBodyAttachments;
+		Cm::PinnableArray<PxU32>* activeSoftBodyAttachments;
 		bool dirtyActiveSoftBodyAttachments;
 		PxArray<Dy::DeformableVolume*>* dirtyDeformableVolumeForFilterPairs;
-		PxPinnedArray<PxgFEMFEMAttachment>* clothAttachments;
-		PxPinnedArray<PxgNonRigidFilterPair>* clothFilterPairs;
+		Cm::PinnableArray<PxgFEMFEMAttachment>* clothAttachments;
+		Cm::PinnableArray<PxgNonRigidFilterPair>* clothFilterPairs;
 		bool dirtyClothAttachments;
-		PxInt32ArrayPinned* activeClothAttachments;
+		Cm::PinnableArray<PxU32>* activeClothAttachments;
 		bool dirtyActiveClothAttachments;
-		PxPinnedArray<PxgFEMFEMAttachment>* particleAttachments;
-		PxPinnedArray<PxgNonRigidFilterPair>* particleFilterPairs;
+		Cm::PinnableArray<PxgFEMFEMAttachment>* particleAttachments;
+		Cm::PinnableArray<PxgNonRigidFilterPair>* particleFilterPairs;
 		bool dirtyParticleAttachments;
-		PxInt32ArrayPinned* activeParticleAttachments;
+		Cm::PinnableArray<PxU32>* activeParticleAttachments;
 		bool dirtyActiveParticleAttachments;
 	};
 	
@@ -363,19 +347,19 @@ namespace physx
 	class AttachmentManager
 	{
 	public:
-		PxPinnedArray<Attachment>	mAttachments;
-		PxInt32ArrayPinned	mActiveAttachments;
-		PxHashMap<PxU32, PxU32> mHandleToAttachmentMapping;
-		PxHashMap<PxU32, PxU32>	mHandleToActiveIndex;
-		PxArray<PxU32> mHandles;
+		Cm::PinnableArray<Attachment>	mAttachments;
+		Cm::PinnableArray<PxU32>		mActiveAttachments;
+		PxHashMap<PxU32, PxU32>			mHandleToAttachmentMapping;
+		PxHashMap<PxU32, PxU32>			mHandleToActiveIndex;
+		PxArray<PxU32>					mHandles;
 
 		PxU32 mBaseHandle;
 		bool mAttachmentsDirty;
 		bool mActiveAttachmentsDirty;
 
-		AttachmentManager(PxgHeapMemoryAllocatorManager* manager) : 
-			mAttachments(manager->mMappedMemoryAllocators),
-			mActiveAttachments(manager->mMappedMemoryAllocators),
+		AttachmentManager(Cm::VirtualAllocatorCallback& hostAlloc, PxU32 statType) :
+			mAttachments(hostAlloc, statType),
+			mActiveAttachments(hostAlloc, statType),
 			mBaseHandle(0),
 			mAttachmentsDirty(false),
 			mActiveAttachmentsDirty(false)
@@ -451,7 +435,7 @@ namespace physx
 	public:
 		PxgSimulationController(PxsKernelWranglerManager* gpuWranglerManagers, PxCudaContextManager* cudaContextManager,
 			PxgGpuContext* dynamicContext, PxgNphaseImplementationContext* npContext, Bp::BroadPhase* bp, bool useGpuBroadphase,
-			PxsSimulationControllerCallback* callback, PxgHeapMemoryAllocatorManager* heapMemoryManager,
+			PxsSimulationControllerCallback* callback, PxgAllocatorDesc& allocDesc,
 			PxU32 maxSoftBodyContacts, PxU32 maxFemClothContacts, PxU32 maxParticleContacts, PxU32 collisionStackSizeBytes, bool enableBodyAccelerations);
 
 		virtual ~PxgSimulationController();
@@ -584,15 +568,18 @@ namespace physx
 		virtual void preIntegrateAndUpdateBound(PxBaseTask* continuation, const PxVec3 gravity, const PxReal dt)	PX_OVERRIDE;
 		virtual void updateParticleSystemsAndSoftBodies()	PX_OVERRIDE;
 		virtual void sortContacts()	PX_OVERRIDE;
-		virtual void update(PxBitMapPinned& changedHandleMap)	PX_OVERRIDE;
+		virtual void update(Cm::PinnableBitMap& changedHandleMap)	PX_OVERRIDE;
 		virtual void mergeChangedAABBMgHandle()	PX_OVERRIDE;
-		virtual void gpuDmabackData(PxsTransformCache& cache, Bp::BoundsArray& boundArray, PxBitMapPinned&  changedAABBMgrHandles, bool enableDirectGPUAPI)	PX_OVERRIDE;
+		virtual void gpuDmabackData(PxsTransformCache& cache, Bp::BoundsArray& boundArray, Cm::PinnableBitMap& changedAABBMgrHandles, bool enableDirectGPUAPI)	PX_OVERRIDE;
 		virtual void updateScBodyAndShapeSim(PxsTransformCache& cache, Bp::BoundsArray& boundArray, PxBaseTask* continuation)	PX_OVERRIDE;
+		
+		virtual const void* getRigidBodyAccelerations() const PX_OVERRIDE;
+
 		virtual void updateArticulation(Dy::FeatherstoneArticulation* articulation, const PxNodeIndex& nodeIndex)	PX_OVERRIDE;
 		virtual void updateArticulationJoint(Dy::FeatherstoneArticulation* articulation, const PxNodeIndex& nodeIndex)	PX_OVERRIDE;
 		virtual void updateArticulationExtAccel(Dy::FeatherstoneArticulation* articulation, const PxNodeIndex& nodeIndex)	PX_OVERRIDE;
 		virtual void updateArticulationAfterIntegration(PxsContext* /*llContext*/, Bp::AABBManagerBase* /*aabbManager*/,
-			PxArray<Sc::BodySim*>& /*ccdBodies*/, PxBaseTask* /*continuation*/, IG::IslandSim& /*islandSim*/, float /*dt*/) PX_OVERRIDE	{}
+			PxArray<Sc::BodySim*>& /*ccdBodies*/, PxBaseTask* /*continuation*/, IG::IslandSim& /*islandSim*/, float /*dt*/, bool /*isSleepingDisabled*/) PX_OVERRIDE	{}
 		virtual PxU32* getActiveBodies()	PX_OVERRIDE;
 		virtual PxU32* getDeactiveBodies()	PX_OVERRIDE;
 		virtual void** getRigidBodies()	PX_OVERRIDE;
@@ -608,7 +595,7 @@ namespace physx
 		virtual void	setBounds(Bp::BoundsArray* boundArray)	PX_OVERRIDE;
 		virtual void	reserve(const PxU32 nbBodies)	PX_OVERRIDE;
 
-		PX_INLINE PxU32   getArticulationRemapIndex(const PxU32 nodeIndex) { return mBodySimManager.getArticulationRemapIndex(nodeIndex); }
+		virtual PX_INLINE PxU32   getArticulationRemapIndex(const PxU32 nodeIndex) PX_OVERRIDE { return mBodySimManager.getArticulationRemapIndex(nodeIndex); }
 		
 		virtual void	setDeformableSurfaceGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback) PX_OVERRIDE PX_FINAL;
 		virtual void	setDeformableVolumeGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback) PX_OVERRIDE PX_FINAL;
@@ -622,7 +609,7 @@ namespace physx
 		// end deprecated direct-GPU API
 
 		// new direct-GPU API
-		virtual bool	getRigidDynamicData(void* data, const PxRigidDynamicGPUIndex* gpuIndices, PxRigidDynamicGPUAPIReadType::Enum dataType, PxU32 nbElements, float oneOverDt, CUevent startEvent, CUevent finishEvent) const PX_OVERRIDE PX_FINAL;
+		virtual bool	getRigidDynamicData(void* data, const PxRigidDynamicGPUIndex* gpuIndices, PxRigidDynamicGPUAPIReadType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent) const PX_OVERRIDE PX_FINAL;
 		virtual bool 	setRigidDynamicData(const void* data, const PxRigidDynamicGPUIndex* gpuIndices, PxRigidDynamicGPUAPIWriteType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent) PX_OVERRIDE PX_FINAL;
 		
 		virtual bool 	getArticulationData(void* data, const PxArticulationGPUIndex* gpuIndices, PxArticulationGPUAPIReadType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent) const PX_OVERRIDE PX_FINAL;
@@ -636,12 +623,13 @@ namespace physx
 
 		virtual bool	getD6JointData(void* data, const PxD6JointGPUIndex* gpuIndices, PxD6JointGPUAPIReadType::Enum dataType, PxU32 nbElements, PxF32 oneOverDt, CUevent startEvent, CUevent finishEvent) const PX_OVERRIDE PX_FINAL;
 
+		void		 initDirectGPUAPIState();
 		// end new direct-GPU API
 
 		virtual	PxU32	getInternalShapeIndex(const PxsShapeCore& shapeCore)	PX_OVERRIDE PX_FINAL;
 
 		virtual void	syncParticleData()	PX_OVERRIDE;
-		virtual void    updateBoundsAndShapes(Bp::AABBManagerBase& aabbManager, bool useDirectApi)	PX_OVERRIDE;
+		virtual void	updateBoundsAndShapes(Bp::AABBManagerBase& aabbManager, bool useDirectApi)	PX_OVERRIDE;
 
 		PX_FORCE_INLINE PxgSimulationCore* getSimulationCore() { return mSimulationCore; }
 		PX_FORCE_INLINE PxgJointManager& getJointManager() { return mJointManager; }
@@ -754,11 +742,7 @@ namespace physx
 		void mergeBoundsAndTransformsChanges(PxgBoundsArray& directGPUBoundsArray,
 																	  PxsTransformCache& transformCache,
 																	  PxgCudaBuffer& gpuTransformCache, PxU32 boundsArraySize, PxU32 totalTransformCacheSize,
-																		 PxU32 numChanges, CUstream npStream);
-
-#if PXG_SC_DEBUG
-		void validateCacheAndBounds(PxBoundsArrayPinned& boundArray, PxCachedTransformArrayPinned& cachedTransform);
-#endif
+																		 PxU32 numChanges, CUdeviceptr updatedActorDescd, CUstream npStream);
 
 		PxgPostCopyToShapeSimTask								mPostCopyShapeSimTask;
 		PxgPostCopyToBodySimTask								mPostCopyBodySimTask;
@@ -774,85 +758,85 @@ namespace physx
 		PxgGpuContext*											mDynamicContext;
 		PxgNphaseImplementationContext*							mNpContext;
 
-		PxPinnedArray<PxgBodySim>								mNewBodySimPool;
-		PxPinnedArray<PxgArticulationLink>						mLinksPool;
-		PxFloatArrayPinned										mLinkWakeCounterPool;
-		PxPinnedArray<Cm::UnAlignedSpatialVector>				mLinkAccelPool;
-		PxPinnedArray<PxgArticulationLinkProp>					mLinkPropPool;
-		PxPinnedArray<PxgArticulationLinkSleepData>				mLinkSleepDataPool;
-		PxPinnedArray<ArticulationBitField>						mLinkChildPool;
-		PxInt32ArrayPinned										mLinkParentPool;
-		PxPinnedArray<PxTransform>								mLinkBody2WorldPool;
-		PxPinnedArray<PxTransform>								mLinkBody2ActorPool;
+		Cm::PinnableArray<PxgBodySim>							mNewBodySimPool;
+		Cm::PinnableArray<PxgArticulationLink>					mLinksPool;
+		Cm::PinnableArray<PxReal>								mLinkWakeCounterPool;
+		Cm::PinnableArray<Cm::UnAlignedSpatialVector>			mLinkAccelPool;
+		Cm::PinnableArray<PxgArticulationLinkProp>				mLinkPropPool;
+		Cm::PinnableArray<PxgArticulationLinkSleepData>			mLinkSleepDataPool;
+		Cm::PinnableArray<ArticulationBitField>					mLinkChildPool;
+		Cm::PinnableArray<PxU32>								mLinkParentPool;
+		Cm::PinnableArray<PxTransform>							mLinkBody2WorldPool;
+		Cm::PinnableArray<PxTransform>							mLinkBody2ActorPool;
 		
-		PxPinnedArray<Dy::ArticulationJointCore>				mJointPool;
-		PxPinnedArray<Dy::ArticulationJointCoreData>			mJointDataPool;
-		PxPinnedArray<PxgArticulationSimUpdate>					mLinkJointIndexPool; //this record the start index of the link for an articulation in an array
-		PxPinnedArray<PxgArticulation>							mArticulationPool;
-		PxPinnedArray<PxGpuSpatialTendonData>					mSpatialTendonParamPool;
-		PxPinnedArray<PxgArticulationTendon>					mSpatialTendonPool;
-		PxPinnedArray<PxgArticulationTendonElementFixedData>	mAttachmentFixedPool;
-		PxPinnedArray<PxGpuTendonAttachmentData>				mAttachmentModPool;
-		PxInt32ArrayPinned										mTendonAttachmentMapPool; //store each start index of the attachment to the corresponding tendons
-		PxPinnedArray<PxGpuFixedTendonData>						mFixedTendonParamPool;
-		PxPinnedArray<PxgArticulationTendon>					mFixedTendonPool;
-		PxPinnedArray<PxgArticulationTendonElementFixedData>	mTendonJointFixedDataPool;
-		PxPinnedArray<PxGpuTendonJointCoefficientData>			mTendonJointCoefficientDataPool;
-		PxInt32ArrayPinned										mTendonTendonJointMapPool; //store each start index of the attachment to the corresponding tendons
+		Cm::PinnableArray<Dy::ArticulationJointCore>				mJointPool;
+		Cm::PinnableArray<Dy::ArticulationJointCoreData>			mJointDataPool;
+		Cm::PinnableArray<PxgArticulationSimUpdate>					mLinkJointIndexPool; //this record the start index of the link for an articulation in an array
+		Cm::PinnableArray<PxgArticulation>							mArticulationPool;
+		Cm::PinnableArray<PxGpuSpatialTendonData>					mSpatialTendonParamPool;
+		Cm::PinnableArray<PxgArticulationTendon>					mSpatialTendonPool;
+		Cm::PinnableArray<PxgArticulationTendonElementFixedData>	mAttachmentFixedPool;
+		Cm::PinnableArray<PxGpuTendonAttachmentData>				mAttachmentModPool;
+		Cm::PinnableArray<PxU32>									mTendonAttachmentMapPool; //store each start index of the attachment to the corresponding tendons
+		Cm::PinnableArray<PxGpuFixedTendonData>						mFixedTendonParamPool;
+		Cm::PinnableArray<PxgArticulationTendon>					mFixedTendonPool;
+		Cm::PinnableArray<PxgArticulationTendonElementFixedData>	mTendonJointFixedDataPool;
+		Cm::PinnableArray<PxGpuTendonJointCoefficientData>			mTendonJointCoefficientDataPool;
+		Cm::PinnableArray<PxU32>									mTendonTendonJointMapPool; //store each start index of the attachment to the corresponding tendons
 
-		PxInt32ArrayPinned										mPathToRootPool;
+		Cm::PinnableArray<PxU32>									mPathToRootPool;
 
-		PxPinnedArray<Dy::ArticulationMimicJointCore>			mMimicJointPool;
+		Cm::PinnableArray<Dy::ArticulationMimicJointCore>			mMimicJointPool;
 
-		PxPinnedArray<PxgArticulationSimUpdate>					mArticulationUpdatePool;	//Articulation update headers
-		PxFloatArrayPinned										mArticulationDofDataPool;	//Articulation dof information (jointV, jointP etc.)
-		PxPinnedArray<PxgSoftBody>								mNewSoftBodyPool;
-		PxArray<PxgSoftBodyData>								mNewSoftBodyDataPool;
-		PxPinnedArray<PxgSoftBody>								mSoftBodyPool;
-		PxArray<PxgSoftBodyData>								mSoftBodyDataPool;
-		PxInt32ArrayPinned										mSoftBodyElementIndexPool;
-		PxArray<PxU32>											mNewSoftBodyNodeIndexPool;
-		PxArray<PxU32>											mNewSoftBodyElementIndexPool;
-		PxArray<PxU32>											mSoftBodyNodeIndexPool;
-		PxArray<PxU32>											mNewTetMeshByteSizePool;
+		Cm::PinnableArray<PxgArticulationSimUpdate>					mArticulationUpdatePoolMapped;	//Articulation update headers
+		Cm::PinnableArray<PxReal>									mArticulationDofDataPoolMapped;	//Articulation dof information (jointV, jointP etc.)
+		Cm::PinnableArray<PxgSoftBody>								mNewSoftBodyPool;
+		PxArray<PxgSoftBodyData>									mNewSoftBodyDataPool;
+		Cm::PinnableArray<PxgSoftBody>								mSoftBodyPool;
+		PxArray<PxgSoftBodyData>									mSoftBodyDataPool;
+		Cm::PinnableArray<PxU32>									mSoftBodyElementIndexPool;
+		PxArray<PxU32>												mNewSoftBodyNodeIndexPool;
+		PxArray<PxU32>												mNewSoftBodyElementIndexPool;
+		PxArray<PxU32>												mSoftBodyNodeIndexPool;
+		PxArray<PxU32>												mNewTetMeshByteSizePool;
 
-		AttachmentManager<PxgFEMFEMAttachment>					mParticleSoftBodyAttachments;
-		PxPinnedArray<PxgNonRigidFilterPair>					mSoftBodyParticleFilterPairs;
-		PxArray<PxU32>											mSoftBodyParticleFilterRefs;
+		AttachmentManager<PxgFEMFEMAttachment>						mParticleSoftBodyAttachments;
+		Cm::PinnableArray<PxgNonRigidFilterPair>					mSoftBodyParticleFilterPairs;
+		PxArray<PxU32>												mSoftBodyParticleFilterRefs;
 
-		AttachmentManager<PxgFEMRigidAttachment>				mRigidSoftBodyAttachments;
-		PxPinnedArray<PxgRigidFilterPair>						mSoftBodyRigidFilterPairs;
-		PxArray<PxU32>											mSoftBodyRigidFilterRefs;
+		AttachmentManager<PxgFEMRigidAttachment>					mRigidSoftBodyAttachments;
+		Cm::PinnableArray<PxgRigidFilterPair>						mSoftBodyRigidFilterPairs;
+		PxArray<PxU32>												mSoftBodyRigidFilterRefs;
 
-		AttachmentManager<PxgFEMFEMAttachment>					mSoftBodySoftBodyAttachments;
-		PxArray <Dy::DeformableVolume*>							mDirtyDeformableVolumeForFilterPairs;
+		AttachmentManager<PxgFEMFEMAttachment>						mSoftBodySoftBodyAttachments;
+		PxArray <Dy::DeformableVolume*>								mDirtyDeformableVolumeForFilterPairs;
 
-		AttachmentManager<PxgFEMFEMAttachment>					mSoftBodyClothAttachments;
-		PxPinnedArray<PxgNonRigidFilterPair>					mSoftBodyClothTetVertFilterPairs;
-		PxArray<PxU32>											mSoftBodyClothTetVertFilterRefs;
+		AttachmentManager<PxgFEMFEMAttachment>						mSoftBodyClothAttachments;
+		Cm::PinnableArray<PxgNonRigidFilterPair>					mSoftBodyClothTetVertFilterPairs;
+		PxArray<PxU32>												mSoftBodyClothTetVertFilterRefs;
 
-		AttachmentManager<PxgFEMFEMAttachment>					mClothClothAttachments;
-		PxPinnedArray<PxgNonRigidFilterPair>					mClothClothVertTriFilterPairs;
-		PxArray<PxU32>											mClothClothVertTriFilterRefs;
+		AttachmentManager<PxgFEMFEMAttachment>						mClothClothAttachments;
+		Cm::PinnableArray<PxgNonRigidFilterPair>					mClothClothVertTriFilterPairs;
+		PxArray<PxU32>												mClothClothVertTriFilterRefs;
 
-		PxPinnedArray<PxgFEMCloth>								mNewFEMClothPool;
-		PxArray<PxgFEMClothData>								mNewFEMClothDataPool;
-		PxPinnedArray<PxgFEMCloth>								mFEMClothPool;
-		PxArray<PxgFEMClothData>								mFEMClothDataPool;
-		PxInt32ArrayPinned										mFEMClothElementIndexPool;
-		PxArray<PxU32>											mNewFEMClothNodeIndexPool;
-		PxArray<PxU32>											mNewFEMClothElementIndexPool;
-		PxArray<PxU32>											mFEMClothNodeIndexPool;
-		PxArray<PxU32>											mNewTriangleMeshByteSizePool;
+		Cm::PinnableArray<PxgFEMCloth>								mNewFEMClothPool;
+		PxArray<PxgFEMClothData>									mNewFEMClothDataPool;
+		Cm::PinnableArray<PxgFEMCloth>								mFEMClothPool;
+		PxArray<PxgFEMClothData>									mFEMClothDataPool;
+		Cm::PinnableArray<PxU32>									mFEMClothElementIndexPool;
+		PxArray<PxU32>												mNewFEMClothNodeIndexPool;
+		PxArray<PxU32>												mNewFEMClothElementIndexPool;
+		PxArray<PxU32>												mFEMClothNodeIndexPool;
+		PxArray<PxU32>												mNewTriangleMeshByteSizePool;
 
-		AttachmentManager<PxgFEMRigidAttachment>				mClothRigidAttachments;
-		PxPinnedArray<PxgRigidFilterPair>						mClothRigidFilterPairs;
-		PxArray<PxU32>											mClothRigidFilterRefs;
+		AttachmentManager<PxgFEMRigidAttachment>					mClothRigidAttachments;
+		Cm::PinnableArray<PxgRigidFilterPair>						mClothRigidFilterPairs;
+		PxArray<PxU32>												mClothRigidFilterRefs;
 
-		PxInt32ArrayPinned										mFrozenPool;
-		PxInt32ArrayPinned										mUnfrozenPool;
-		PxInt32ArrayPinned										mActivatePool;
-		PxInt32ArrayPinned										mDeactivatePool;
+		Cm::PinnableArray<PxU32>									mFrozenPool;
+		Cm::PinnableArray<PxU32>									mUnfrozenPool;
+		Cm::PinnableArray<PxU32>									mActivatePool;
+		Cm::PinnableArray<PxU32>									mDeactivatePool;
 
 		PxU32													mNbFrozenShapes;
 		PxU32													mNbUnfrozenShapes;
@@ -869,7 +853,7 @@ namespace physx
 
 		PxgCudaKernelWranglerManager*							mGpuWranglerManager;
 		PxCudaContextManager*									mCudaContextManager;
-		PxgHeapMemoryAllocatorManager*							mHeapMemoryManager;
+		PxgAllocatorDesc										mAllocDesc;
 		PxgCudaBroadPhaseSap*									mBroadPhase;
 		PxU32													mMaxLinks;
 		PxU32													mMaxDofs;

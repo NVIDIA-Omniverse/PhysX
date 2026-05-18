@@ -1,11 +1,18 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 """Numpy frontend for data-oriented interface"""
 
 import numpy as np
 
-import omni.physics.tensors
+# Import types directly from bindings to avoid module-level access issues outside Kit
+from omni.physics.tensors.bindings._physicsTensors import (
+    float32, float64,
+    int8, int16, int32, int64,
+    uint8, uint16, uint32, uint64,
+    TensorDesc,
+)
 
 from .frontend_base import *
 
@@ -14,31 +21,31 @@ class FrontendNumpy(FrontendBase):
 
     DTYPE_TO_NUMPY = dict(
         [
-            (omni.physics.tensors.float32, np.float32),
-            (omni.physics.tensors.float64, np.float64),
-            (omni.physics.tensors.int8, np.int8),
-            (omni.physics.tensors.int16, np.int16),
-            (omni.physics.tensors.int32, np.int32),
-            (omni.physics.tensors.int64, np.int64),
-            (omni.physics.tensors.uint8, np.uint8),
-            (omni.physics.tensors.uint16, np.uint16),
-            (omni.physics.tensors.uint32, np.uint32),
-            (omni.physics.tensors.uint64, np.uint64),
+            (float32, np.float32),
+            (float64, np.float64),
+            (int8, np.int8),
+            (int16, np.int16),
+            (int32, np.int32),
+            (int64, np.int64),
+            (uint8, np.uint8),
+            (uint16, np.uint16),
+            (uint32, np.uint32),
+            (uint64, np.uint64),
         ]
     )
 
     DTYPE_FROM_NUMPY = dict(
         [
-            (np.float32, omni.physics.tensors.float32),
-            (np.float64, omni.physics.tensors.float64),
-            (np.int8, omni.physics.tensors.int8),
-            (np.int16, omni.physics.tensors.int16),
-            (np.int32, omni.physics.tensors.int32),
-            (np.int64, omni.physics.tensors.int64),
-            (np.uint8, omni.physics.tensors.uint8),
-            (np.uint16, omni.physics.tensors.uint16),
-            (np.uint32, omni.physics.tensors.uint32),
-            (np.uint64, omni.physics.tensors.uint64),
+            (np.float32, float32),
+            (np.float64, float64),
+            (np.int8, int8),
+            (np.int16, int16),
+            (np.int32, int32),
+            (np.int64, int64),
+            (np.uint8, uint8),
+            (np.uint16, uint16),
+            (np.uint32, uint32),
+            (np.uint64, uint64),
         ]
     )
 
@@ -49,7 +56,7 @@ class FrontendNumpy(FrontendBase):
     def create_tensor(self, shape, dtype, device=None):
         np_dtype = FrontendNumpy.DTYPE_TO_NUMPY[dtype]
         tensor = np.zeros(shape, dtype=np_dtype)
-        desc = omni.physics.tensors.TensorDesc()
+        desc = TensorDesc()
         desc.dtype = dtype
         desc.shape = shape
         # desc.data_address = tensor.__array_interface__["data"][0]
@@ -58,7 +65,7 @@ class FrontendNumpy(FrontendBase):
         return tensor, desc
 
     def get_tensor_desc(self, tensor):
-        desc = omni.physics.tensors.TensorDesc()
+        desc = TensorDesc()
         desc.dtype = FrontendNumpy.DTYPE_FROM_NUMPY[tensor.dtype.type]
         desc.shape = tensor.shape
         # desc.data_address = tensor.__array_interface__["data"][0]

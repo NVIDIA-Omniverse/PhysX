@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import omni.kit.test
 import omni.kit.commands
@@ -8,7 +9,8 @@ from pxr import Gf, Sdf, UsdGeom, UsdUtils, Usd, UsdPhysics, UsdLux, PhysxSchema
 import omni.physx
 from omni.physxcommands import AddGroundPlaneCommand, SetRigidBodyCommand
 from omni.physxtests import utils
-from omni.physx import get_physx_interface, get_physx_cooking_interface, get_physx_cooking_private_interface, get_physx_simulation_interface
+from omni.physx import get_physx_interface, get_physx_cooking_interface, get_physx_simulation_interface
+from omni.physx.scripts.ifaces import get_physx_cooking_private_interface
 from omni.physx.scripts import physicsUtils, deformableUtils
 import unittest
 from omni.physxtests.utils.physicsBase import PhysicsBaseAsyncTestCase, TestCategory

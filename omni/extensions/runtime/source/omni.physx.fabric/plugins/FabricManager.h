@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -6,6 +6,8 @@
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
+
+#include <carb/tasking/ITasking.h>
 
 #include "DirectGpuHelper.h"
 #include "DeformableBodyManagerDeprecated.h"
@@ -68,11 +70,11 @@ struct PointIntancerData
     pxr::VtArray<pxr::GfQuath> orientations;
 };
 
-using TransformationCache = std::unordered_map<uint64_t, FabricRigidBodyData>;
-using JointStateCache = std::unordered_map<uint64_t, omni::physx::JointStateData>;
+using TransformationCache = std::unordered_map<omni::fabric::Path, FabricRigidBodyData>;
+using JointStateCache = std::unordered_map<omni::fabric::Path, omni::physx::JointStateData>;
 using PathSet = std::unordered_set<pxr::SdfPath, pxr::SdfPath::Hash>;
-using WheelMap = std::unordered_map<uint64_t, usdparser::ObjectId>;
-using PointInstanceProtoCache = std::unordered_map<uint64_t, ProtoInstanceData>;
+using WheelMap = std::unordered_map<omni::fabric::Path, usdparser::ObjectId>;
+using PointInstanceProtoCache = std::unordered_map<omni::fabric::Path, ProtoInstanceData>;
 using PointInstancerCache = std::unordered_map<pxr::SdfPath, PointIntancerData, pxr::SdfPath::Hash>;
 
 struct FabricUsdNoticeListener : public pxr::TfWeakBase
@@ -98,6 +100,42 @@ struct FabricSoftBodyData
     size_t numCollVerts = 0;
     pxr::UsdPrim prim;
     pxr::GfMatrix4d initialPrimToParent;
+};
+
+class SimulationEventListener final : public carb::events::IEventListener
+{
+public:
+    SimulationEventListener(std::function<void(carb::events::IEvent* e)> eventCallback) :
+        mEventCallback(eventCallback)
+    {
+    }
+
+    std::size_t addRef() override
+    {
+        return ++mRefCount;
+    }
+
+    std::size_t release() override
+    {
+        if (mRefCount)
+        {
+            --mRefCount;
+        }
+
+        return mRefCount;
+    }
+
+    void onEvent(carb::events::IEvent* e) override
+    {
+        if (mEventCallback)
+        {
+            mEventCallback(e);
+        }
+    }
+
+private:
+    std::size_t mRefCount{ 0 };
+    std::function<void(carb::events::IEvent* e)> mEventCallback{ nullptr };
 };
 
 class FabricManager
@@ -130,7 +168,7 @@ public:
 
     static ::physx::PxCudaContextManager* getCudaContextManager();
 
-    bool getInitialTransformation(const omni::fabric::PathC& path,
+    bool getInitialTransformation(const omni::fabric::Path& path,
                                   carb::Float3& translation,
                                   carb::Float4& orientation,
                                   carb::Float3& scale);
@@ -172,9 +210,6 @@ private:
                                   const pxr::UsdPrim& prim,
                                   omni::fabric::IStageReaderWriter* iStageReaderWriter,
                                   omni::fabric::StageReaderWriterId stageInProgress);
-    void initializeResiduals(const pxr::UsdPrim& prim,
-                             omni::fabric::IStageReaderWriter* iStageReaderWriter,
-                             omni::fabric::StageReaderWriterId stageInProgress);
 
     void parsePointInstancers(pxr::UsdStageWeakPtr usdStage,
                               usdrt::UsdStageRefPtr usdrtStage,
@@ -190,9 +225,20 @@ private:
                               pxr::UsdGeomXformCache& xfCache);
 
 private:
+    void updateBucketsTransformations(const omni::fabric::PrimBucketList& primBuckets,
+                                      omni::fabric::StageReaderWriter& stage,
+                                      omni::physx::IPhysx* iPhysX,
+                                      carb::tasking::ITasking* tasking,
+                                      omni::fabric::USDHierarchy& usdHierarchy,
+                                      pxr::UsdGeomXformCache& xformCache, bool updateLocalMatrix);
+
+private:
     omni::physx::IPhysxSimulation* mPhysXSimulation;
     omni::fabric::UsdStageId mStageId;
     omni::physx::IPhysx* mPhysX;
+
+    SimulationEventListener* mSimulationEventListener{ nullptr };
+    carb::events::ISubscriptionPtr mSimEvtSub;
     bool mUpdate;
     TransformationCache mInitialTransformation;
     JointStateCache mInitialJointStates;
@@ -204,28 +250,24 @@ private:
     bool mPtrDirty;
     bool mKinematicBodyTransformationUpdateEnabled;
 
-    omni::fabric::TokenC mWorldMatrixToken;
-    omni::fabric::TokenC mLocalMatrixToken;
-    omni::fabric::TokenC mWorldForceToken;
-    omni::fabric::TokenC mWorldTorqueToken;
-    omni::fabric::TokenC mPointsToken;
-    omni::fabric::TokenC mInitPointsToken;
-    omni::fabric::TokenC mPhysXPtrToken;
-    omni::fabric::TokenC mPhysXPtrInstancedToken;
+    omni::fabric::Token mWorldMatrixToken;
+    omni::fabric::Token mLocalMatrixToken;
+    omni::fabric::Token mWorldForceToken;
+    omni::fabric::Token mWorldTorqueToken;
+    omni::fabric::Token mPointsToken;
+    omni::fabric::Token mInitPointsToken;
+    omni::fabric::Token mPhysXPtrToken;
+    omni::fabric::Token mPhysXPtrInstancedToken;
 
-    omni::fabric::TokenC mLinVelToken;
-    omni::fabric::TokenC mAngVelToken;
+    omni::fabric::Token mLinVelToken;
+    omni::fabric::Token mAngVelToken;
 
-    omni::fabric::TokenC mDynamicBodyToken;
+    omni::fabric::Token mDynamicBodyToken;
+    omni::fabric::Token mNestedBodyToken;
 
-    omni::fabric::TokenC mResidualRmsPosIterToken;
-    omni::fabric::TokenC mResidualMaxPosIterToken;
-    omni::fabric::TokenC mResidualRmsVelIterToken;
-    omni::fabric::TokenC mResidualMaxVelIterToken;
-
-    omni::fabric::TokenC mRigidBodyWorldPositionToken;
-    omni::fabric::TokenC mRigidBodyWorldOrientationToken;
-    omni::fabric::TokenC mRigidBodyWorldScaleToken;
+    omni::fabric::Token mRigidBodyWorldPositionToken;
+    omni::fabric::Token mRigidBodyWorldOrientationToken;
+    omni::fabric::Token mRigidBodyWorldScaleToken;
 
     omni::fabric::Type mFloat1Type;
     omni::fabric::Type mFloat3Type;
@@ -244,13 +286,11 @@ private:
     omni::physx::SubscriptionId mSubscriptionObjId;
 
     DirectGpuHelper mDirectGpuHelper;
-#if !CARB_AARCH64
     DeformableBodyManagerDeprecated mDeformableBodyManagerDeprecated;
     DeformableSurfaceManagerDeprecated mDeformableSurfaceManagerDeprecated;
     ParticleManagerDeprecated mParticleManagerDeprecated;
     VolumeDeformableBodyManager mVolumeDeformableBodyManager;
     SurfaceDeformableBodyManager mSurfaceDeformableBodyManager;
-#endif
 };
 } // namespace physx
 } // namespace omni

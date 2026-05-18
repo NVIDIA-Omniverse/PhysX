@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,7 +30,7 @@
 #define SC_ELEMENT_SIM_H
 
 #include "PxFiltering.h"
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 #include "ScActorSim.h"
 #include "ScInteraction.h"
 #include "BpAABBManager.h"
@@ -105,11 +105,11 @@ namespace Sc
 
 						bool					removeFromAABBMgr();
 
-		PX_FORCE_INLINE	void					initID()
+		PX_FORCE_INLINE	bool					initID()
 												{
 													Scene& scene = getScene();
 													mElementID = scene.getElementIDPool().createID();
-													scene.getBoundsArray().initEntry(mElementID);
+													return scene.getBoundsArray().initEntry(mElementID);
 												}
 
 		PX_FORCE_INLINE	void					releaseID()

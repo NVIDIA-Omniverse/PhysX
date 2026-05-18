@@ -22,20 +22,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef DY_SOLVER_CORE_H
 #define DY_SOLVER_CORE_H
 
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 #include "foundation/PxArray.h"
 #include "foundation/PxThread.h"
 #include "foundation/PxUserAllocated.h"
 #include "CmSpatialVector.h"
 #include "DySolverConstraintDesc.h"
-#include "DyResidualAccumulator.h"
 // PT: it is not wrong to include DyPGS.h here because the SolverCore class is actually only used by PGS.
 // (for patch friction). TGS doesn't use the same architecture / class hierarchy.
 #include "DyPGS.h"
@@ -52,7 +51,6 @@ struct PxsBodyCore;
 namespace Dy
 {
 struct ThresholdStreamElement;
-struct ArticulationSolverDesc;
 
 #define PX_PROFILE_SOLVE_STALLS 0
 #if PX_PROFILE_SOLVE_STALLS
@@ -153,7 +151,7 @@ struct SolverIslandParams
 	PxSolverBodyData* bodyDataList;
 	PxU32 bodyListSize;
 	PxU32 solverBodyOffset;	// PT: not really needed by the solvers themselves, only by the integration code
-	ArticulationSolverDesc* articulationListStart;
+	FeatherstoneArticulation** articulationListStart;
 	PxU32 articulationListSize;
 	const PxSolverConstraintDesc* constraintList;
 	const PxConstraintBatchHeader* constraintBatchHeaders;
@@ -185,12 +183,11 @@ struct SolverIslandParams
 
 	PxU32 mMaxArticulationLinks;	// PT: not really needed by the solvers themselves
 	Cm::SpatialVectorF* deltaV;		// PT: only used by the single-threaded solver for temporarily storing velocities during propagation
-	Dy::ErrorAccumulatorEx* errorAccumulator; //only used by the single-threaded solver
 };
 
 void solveNoContactsCase(	PxU32 bodyListSize, const PxSolverBody* PX_RESTRICT bodyListStart, Cm::SpatialVector* PX_RESTRICT motionVelocityArray,
-							PxU32 articulationListSize, ArticulationSolverDesc* PX_RESTRICT articulationListStart, Cm::SpatialVectorF* PX_RESTRICT deltaV,
-							PxU32 positionIterations, PxU32 velocityIterations, PxF32 dt, PxF32 invDt, bool residualReportingActive, bool solveArticulationContactLast);
+							PxU32 articulationListSize, FeatherstoneArticulation** PX_RESTRICT articulationListStart, Cm::SpatialVectorF* PX_RESTRICT deltaV,
+							PxU32 positionIterations, PxU32 velocityIterations, PxF32 dt, PxF32 invDt, PxReal articulationBiasCoefficient, bool solveArticulationContactLast);
 
 void saveMotionVelocities(PxU32 nbBodies, const PxSolverBody* PX_RESTRICT solverBodies, Cm::SpatialVector* PX_RESTRICT motionVelocityArray);
 

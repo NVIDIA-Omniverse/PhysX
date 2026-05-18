@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -11,7 +11,6 @@
 #include <carb/PluginUtils.h>
 #include <carb/settings/ISettings.h>
 #include <omni/fabric/IFabric.h>
-
 #include <omni/physx/IPhysx.h>
 #include <omni/physx/IPhysxSimulation.h>
 #include <omni/physx/IPhysxFabric.h>
@@ -41,6 +40,9 @@ class ExtensionImpl;
 const struct carb::PluginImplDesc kPluginImpl = { "omni.physx.fabric.plugin", "PhysX", "NVIDIA",
                                                   carb::PluginHotReload::eDisabled, "dev" };
 CARB_PLUGIN_IMPL(kPluginImpl, omni::physx::IPhysxFabric)
+// Note: omni::cubric::IAdapter is intentionally NOT listed here -- it is GPU-only and
+// optionally acquired at runtime via tryAcquireInterface in DirectGpuHelper.
+// This allows fabric to load and work on CPU-only machines without cubric.
 CARB_PLUGIN_IMPL_DEPS(carb::settings::ISettings,
                       omni::physx::IPhysxSimulation,
                       omni::physx::IPhysx,
@@ -157,7 +159,6 @@ void setupDefaultSettings()
     gSettings->setDefaultBool(kSettingFabricUpdateTransformations, true);
     gSettings->setDefaultBool(kSettingFabricUpdateVelocities, true);
     gSettings->setDefaultBool(kSettingFabricUpdateJointStates, true);
-    gSettings->setDefaultBool(kSettingFabricUpdateResiduals, true);
     gSettings->setDefaultBool(kSettingFabricUpdatePoints, true);
     gSettings->setDefaultBool(kSettingFabricUseGPUInterop, false);
 }

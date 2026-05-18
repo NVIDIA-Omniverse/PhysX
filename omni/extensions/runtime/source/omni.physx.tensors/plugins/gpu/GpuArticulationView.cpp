@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -218,6 +218,10 @@ GpuArticulationView::~GpuArticulationView()
         CHECK_CUDA(cudaFree(mSpatialTendonRecordsDev));
         CHECK_CUDA(cudaFree(mDirtyArtiGpuIndicesDev));
         CHECK_CUDA(cudaFree(cMassLocalPosePosDev));
+        if (mMaskIndicesDev)
+            CHECK_CUDA(cudaFree(mMaskIndicesDev));
+        if (mMaskAllocPolicy.mBuffer)
+            CHECK_CUDA(cudaFree(mMaskAllocPolicy.mBuffer));
 
 
     }
@@ -259,7 +263,7 @@ bool GpuArticulationView::getLinkTransforms(const TensorDesc* dstTensor) const
                                                  copyEvent);
 
 
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
 
     SYNCHRONIZE_CUDA();
 
@@ -314,8 +318,8 @@ static bool getVelAcc(const TensorDesc* dstTensor,
     scene->getDirectGPUAPI().getArticulationData(
         (void*)linkDataAngularDev, artiGpuIndicesDev, linkAngularType, numArtis, nullptr, artiCopyEventAng);
 
-    CHECK_CU(cuStreamWaitEvent(nullptr, artiCopyEventLin, 0));
-    CHECK_CU(cuStreamWaitEvent(nullptr, artiCopyEventAng, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(artiCopyEventLin), 0, nullptr));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(artiCopyEventAng), 0, nullptr));
 
     SYNCHRONIZE_CUDA();
 
@@ -379,7 +383,7 @@ bool GpuArticulationView::getRootTransforms(const TensorDesc* dstTensor) const
     scene->getDirectGPUAPI().getArticulationData((void*) mGpuSimData->mLinkOrRootTransformsDev, mArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIReadType::eROOT_GLOBAL_POSE, numArtis, nullptr,
                                                  copyEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
 
     SYNCHRONIZE_CUDA();
 
@@ -444,12 +448,12 @@ bool GpuArticulationView::setRootTransforms(const TensorDesc* srcTensor, const T
     }
 
     // CHECK_CUDA(cudaStreamSynchronize(nullptr));
-    CHECK_CU(cuEventRecord(mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiRootTransforms], nullptr));
+    CHECK_CU(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiRootTransforms]), uintptr_t(0), nullptr));
     scene->getDirectGPUAPI().setArticulationData((void*) mGpuSimData->mLinkOrRootTransformsDev, mDirtyArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIWriteType::eROOT_GLOBAL_POSE, numIndices,
                                                  mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiRootTransforms],
                                                  mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootTransforms]);
-    CHECK_CU(cuEventSynchronize(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootTransforms]));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootTransforms]), nullptr));
     SYNCHRONIZE_CUDA();
 
     return true;
@@ -492,11 +496,11 @@ bool GpuArticulationView::getRootVelocities(const TensorDesc* dstTensor) const
                                                  nullptr, artiCopyEventAng);
     if (artiCopyEventLin)
     {
-        CHECK_CU(cuStreamWaitEvent(nullptr, artiCopyEventLin, 0));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(artiCopyEventLin), 0, nullptr));
     }
     if (artiCopyEventAng)
     {
-        CHECK_CU(cuStreamWaitEvent(nullptr, artiCopyEventAng, 0));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(artiCopyEventAng), 0, nullptr));
     }
     SYNCHRONIZE_CUDA();
 
@@ -560,8 +564,8 @@ bool GpuArticulationView::setRootVelocities(const TensorDesc* srcTensor, const T
         return false;
     }
     // CHECK_CUDA(cudaStreamSynchronize(nullptr));
-    CHECK_CU(cuEventRecord(mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiRootLinVelocities], nullptr));
-    CHECK_CU(cuEventRecord(mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiRootAngVelocities], nullptr));
+    CHECK_CU(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiRootLinVelocities]), uintptr_t(0), nullptr));
+    CHECK_CU(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiRootAngVelocities]), uintptr_t(0), nullptr));
     scene->getDirectGPUAPI().setArticulationData((void*) mGpuSimData->mLinkOrRootLinearVelAccDev, mDirtyArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIWriteType::eROOT_LINEAR_VELOCITY, numIndices,
                                                  mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiRootLinVelocities],
@@ -571,8 +575,8 @@ bool GpuArticulationView::setRootVelocities(const TensorDesc* srcTensor, const T
                                                  mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiRootAngVelocities],
                                                  mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootAngVelocities]);
 
-    CHECK_CU(cuEventSynchronize(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootLinVelocities]));
-    CHECK_CU(cuEventSynchronize(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootAngVelocities]));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootLinVelocities]), nullptr));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootAngVelocities]), nullptr));
 
     SYNCHRONIZE_CUDA();
     return true;
@@ -613,7 +617,7 @@ bool GpuArticulationView::getDofAttribute(const char* attribName,
     scene->getDirectGPUAPI().getArticulationData(
         (void*) mGpuSimData->mDofScalarsDev, mArtiGpuIndicesDev, attribFlag, numArtis, nullptr, syncEvent);
 
-    CHECK_CU(cuStreamWaitEvent(nullptr, syncEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(syncEvent), 0, nullptr));
 
     SYNCHRONIZE_CUDA();
 
@@ -685,10 +689,10 @@ bool GpuArticulationView::setDofAttribute(const char* attribName,
         CARB_LOG_ERROR("Failed to submit %s attribute", attribName);
         return false;
     }
-    CHECK_CU(cuEventRecord(mApplyWaitEvents, nullptr));
+    CHECK_CU(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mApplyWaitEvents), uintptr_t(0), nullptr));
     scene->getDirectGPUAPI().setArticulationData(
         (void*) mGpuSimData->mDofScalarsDev, mDirtyArtiGpuIndicesDev, attribFlag, numIndices, mApplyWaitEvents, mApplySignalEvents);
-    CHECK_CU(cuEventSynchronize(mApplySignalEvents));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mApplySignalEvents), nullptr));
 
     SYNCHRONIZE_CUDA();
 
@@ -924,7 +928,7 @@ bool GpuArticulationView::applyForcesAndTorquesAtPosition(const TensorDesc* srcF
         scene->getDirectGPUAPI().getArticulationData((void*) mGpuSimData->mLinkOrRootTransformsDev, mArtiGpuIndicesDev,
                                                      PxArticulationGPUAPIReadType::eLINK_GLOBAL_POSE, numArtis, nullptr,
                                                      artiCopyEvent);
-        CHECK_CU(cuStreamWaitEvent(nullptr, artiCopyEvent, 0));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(artiCopyEvent), 0, nullptr));
     }
 
     // will keep this until direct GPU API for articulation link mass properties is available
@@ -952,22 +956,22 @@ bool GpuArticulationView::applyForcesAndTorquesAtPosition(const TensorDesc* srcF
     SYNCHRONIZE_CUDA();
     if (validForceTensor)
     {
-        CHECK_CU(cuEventRecord(mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkForces], nullptr));
+        CHECK_CU(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkForces]), uintptr_t(0), nullptr));
         scene->getDirectGPUAPI().setArticulationData((void*) mGpuSimData->mLinkForcesDev, mDirtyArtiGpuIndicesDev,
                                                      PxArticulationGPUAPIWriteType::eLINK_FORCE, numIndices,
                                                      mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkForces],
                                                      mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkForces]);
-        CHECK_CU(cuEventSynchronize(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkForces]));
+        CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkForces]), nullptr));
         mGpuSimData->mLinkForcesApplied = true;
     }
     if (validPositionTensor || validTorqueTensor)
     {
-        CHECK_CU(cuEventRecord(mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkTorques], nullptr));
+        CHECK_CU(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkTorques]), uintptr_t(0), nullptr));
         scene->getDirectGPUAPI().setArticulationData((void*) mGpuSimData->mLinkTorquesDev, mDirtyArtiGpuIndicesDev,
                                                      PxArticulationGPUAPIWriteType::eLINK_TORQUE, numIndices,
                                                      mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkTorques],
                                                      mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkTorques]);
-        CHECK_CU(cuEventSynchronize(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkTorques]));
+        CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkTorques]), nullptr));
         mGpuSimData->mLinkTorquesApplied = true;
     }
     SYNCHRONIZE_CUDA();
@@ -1007,6 +1011,7 @@ bool GpuArticulationView::getJacobians(const TensorDesc* dstTensor) const
 
     PxScene* scene = mGpuSimData->mScene;
 
+    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
     SYNCHRONIZE_CUDA();
 
     CUevent copyEvent = mGpuSimData->mCopyEvents[CopyEvent::eArtiJacobians];
@@ -1014,10 +1019,8 @@ bool GpuArticulationView::getJacobians(const TensorDesc* dstTensor) const
     scene->getDirectGPUAPI().computeArticulationData((void*)mGpuSimData->mJacobianDataDev, mArtiGpuIndicesDev,
                                                      PxArticulationGPUAPIComputeType::eDENSE_JACOBIANS, getCount(),
                                                      nullptr, copyEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
     SYNCHRONIZE_CUDA();
-
-    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
     if (!fetchArtiJacobian(static_cast<float*>(dstTensor->data), mGpuSimData->mJacobianDataDev,
                            getCount() * jacobianRows * jacobianCols, jacobianRows * jacobianCols,
                            mGpuSimData->mJacobianMaxRows * mGpuSimData->mJacobianMaxCols))
@@ -1025,67 +1028,6 @@ bool GpuArticulationView::getJacobians(const TensorDesc* dstTensor) const
         CARB_LOG_ERROR("Failed to fetch Jacobian tensor");
         return false;
     }
-    CHECK_CUDA(cudaStreamSynchronize(nullptr));
-
-    return true;
-}
-
-// DEPRECATED
-bool GpuArticulationView::getMassMatrices(const TensorDesc* dstTensor) const
-{
-    CARB_LOG_WARN("DEPRECATED: Please use getGeneralizedMassMatrices instead.");
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    uint32_t massMatrixRows = 0;
-    uint32_t massMatrixCols = 0;
-
-    // this will fail if view is not homogeneous
-    if (!getMassMatrixShape(&massMatrixRows, &massMatrixCols))
-    {
-        return false;
-    }
-
-    uint32_t massMatrixSize = massMatrixRows * massMatrixCols;
-
-    if (!checkTensorDevice(*dstTensor, mDevice, "Mass Matrix", __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, "Mass Matrix", __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, getCount() * massMatrixSize, "Mass Matrix", __FUNCTION__))
-    {
-        return false;
-    }
-
-    PxScene* scene = mGpuSimData->mScene;
-
-    SYNCHRONIZE_CUDA();
-
-    CUevent copyEvent = mGpuSimData->mCopyEvents[CopyEvent::eArtiMassMatrices];
-
-    scene->getDirectGPUAPI().computeArticulationData((void*)mGpuSimData->mMassMatrixDataDev, mArtiGpuIndicesDev,
-                                                     PxArticulationGPUAPIComputeType::eGENERALIZED_MASS_MATRICES,
-                                                     getCount(), nullptr, copyEvent);
-
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
-
-    SYNCHRONIZE_CUDA();
-
-    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
-    SYNCHRONIZE_CUDA();
-
-    if (!fetchArtiMassMatrices(static_cast<float*>(dstTensor->data), mGpuSimData->mMassMatrixDataDev,
-                                                 getCount() * massMatrixSize, massMatrixSize,
-                                                 mGpuSimData->mMaxDofs * mGpuSimData->mMaxDofs))
-    {
-        CARB_LOG_ERROR("Failed to fetch generalized mass matrices attribute");
-        return false;
-    }
-
     CHECK_CUDA(cudaStreamSynchronize(nullptr));
 
     return true;
@@ -1109,16 +1051,11 @@ bool GpuArticulationView::getGeneralizedMassMatrices(const TensorDesc* dstTensor
     uint32_t massMatrixCols = 0;
 
     // this will fail if view is not homogeneous
-    if (!getMassMatrixShape(&massMatrixRows, &massMatrixCols))
+    if (!getGeneralizedMassMatrixShape(&massMatrixRows, &massMatrixCols))
     {
         return false;
     }
 
-    if (!isFixedBase)
-    {
-        massMatrixRows += 6;
-        massMatrixCols += 6;
-    }
     uint32_t massMatrixSize = massMatrixRows * massMatrixCols;
 
     if (!checkTensorDevice(*dstTensor, mDevice, "Mass Matrix", __FUNCTION__) ||
@@ -1130,6 +1067,7 @@ bool GpuArticulationView::getGeneralizedMassMatrices(const TensorDesc* dstTensor
 
     PxScene* scene = mGpuSimData->mScene;
 
+    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
     SYNCHRONIZE_CUDA();
 
     CUevent copyEvent = mGpuSimData->mCopyEvents[CopyEvent::eArtiMassMatrices];
@@ -1138,11 +1076,8 @@ bool GpuArticulationView::getGeneralizedMassMatrices(const TensorDesc* dstTensor
                                                      PxArticulationGPUAPIComputeType::eMASS_MATRICES,
                                                      getCount(), nullptr, copyEvent);
 
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
 
-    SYNCHRONIZE_CUDA();
-
-    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
     SYNCHRONIZE_CUDA();
 
     if (!fetchArtiMassMatrices(static_cast<float*>(dstTensor->data), mGpuSimData->mMassMatrixDataDev,
@@ -1177,6 +1112,8 @@ bool GpuArticulationView::getArticulationMassCenter(const TensorDesc* dstTensor,
     }
 
     PxScene* scene = mGpuSimData->mScene;
+    
+    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
     SYNCHRONIZE_CUDA();
 
     CUevent copyEvent = mGpuSimData->mCopyEvents[CopyEvent::eArtiMassCenter];
@@ -1225,23 +1162,25 @@ bool GpuArticulationView::getArticulationCentroidalMomentum(const TensorDesc* ds
 	const PxU32 startSimBiasForceBlock = simCentroidalMomentumMatricesBlockSize * getCount();
 
     PxScene* scene = mGpuSimData->mScene;
+    
+    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
     SYNCHRONIZE_CUDA();
 
     CUevent copyEventMass = mGpuSimData->mCopyEvents[CopyEvent::eArtiMassMatrices];
     scene->getDirectGPUAPI().computeArticulationData(
         (void*)mGpuSimData->mCentroidalMomentumDataDev, mArtiGpuIndicesDev,
         PxArticulationGPUAPIComputeType::eMASS_MATRICES, getCount(), nullptr, copyEventMass);
-    CHECK_CU(cuEventSynchronize(copyEventMass));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(copyEventMass), nullptr));
     CUevent copyEventCoriolis = mGpuSimData->mCopyEvents[CopyEvent::eArtiMassMatrices];
     scene->getDirectGPUAPI().computeArticulationData(
         (void*)(mGpuSimData->mCentroidalMomentumDataDev + simStartCoriolisForces), mArtiGpuIndicesDev,
         PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION, getCount(), nullptr, copyEventCoriolis);
-    CHECK_CU(cuEventSynchronize(copyEventCoriolis));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(copyEventCoriolis), nullptr));
     CUevent copyEvent = mGpuSimData->mCopyEvents[CopyEvent::eArtiCoriolisCentrifugal];
     scene->getDirectGPUAPI().computeArticulationData(
         (void*)mGpuSimData->mCentroidalMomentumDataDev, mArtiGpuIndicesDev,
         PxArticulationGPUAPIComputeType::eCENTROIDAL_MOMENTUM_MATRICES, getCount(), nullptr, copyEvent);
-    CHECK_CU(cuEventSynchronize(copyEvent));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(copyEvent), nullptr));
 
     if (!fetchArtiCentroidalMomentumMatrices(static_cast<float*>(dstTensor->data),
                                              mGpuSimData->mCentroidalMomentumDataDev + simStartCentroidalMomentumMatrix,
@@ -1252,54 +1191,6 @@ bool GpuArticulationView::getArticulationCentroidalMomentum(const TensorDesc* ds
         CARB_LOG_ERROR("Failed to fetch centroidal momentum data");
         return false;
     }
-    CHECK_CUDA(cudaStreamSynchronize(nullptr));
-
-    return true;
-}
-
-// DEPRECATED
-bool GpuArticulationView::getCoriolisAndCentrifugalForces(const TensorDesc* dstTensor) const
-{
-    CARB_LOG_WARN("DEPRECATED: Please use getCoriolisAndCentrifugalCompensationForces instead.");
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    if (!checkTensorDevice(*dstTensor, mDevice, "Coriolis and centrifugal forces", __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, "Coriolis and centrifugal forces", __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, getCount() * mMaxDofs, "Coriolis and centrifugal forces", __FUNCTION__))
-    {
-        return false;
-    }
-
-    PxScene* scene = mGpuSimData->mScene;
-
-    SYNCHRONIZE_CUDA();
-
-    CUevent copyEvent = mGpuSimData->mCopyEvents[CopyEvent::eArtiCoriolisCentrifugal];
-
-    scene->getDirectGPUAPI().computeArticulationData((void*)mGpuSimData->mCoriolisGravityDataDev, mArtiGpuIndicesDev,
-                                                     PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_FORCES,
-                                                     getCount(), nullptr, copyEvent);
-
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
-
-    SYNCHRONIZE_CUDA();
-
-    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
-    SYNCHRONIZE_CUDA();
-    if (!fetchArtiDofAttributeGravityAndCoriolis(static_cast<float*>(dstTensor->data), mGpuSimData->mCoriolisGravityDataDev,
-                                                 getCount() * mMaxDofs, mMaxDofs, mGpuSimData->mMaxDofs, mDofRecordsDev, false))
-    {
-        CARB_LOG_ERROR("Failed to fetch coriolis and centrifugal forces attribute");
-        return false;
-    }
-
     CHECK_CUDA(cudaStreamSynchronize(nullptr));
 
     return true;
@@ -1332,17 +1223,17 @@ bool GpuArticulationView::getCoriolisAndCentrifugalCompensationForces(const Tens
 
     SYNCHRONIZE_CUDA();
 
+    // [GW] FIX: Add CUDA context guard BEFORE calling computeArticulationData
+    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
+
     CUevent copyEvent = mGpuSimData->mCopyEvents[CopyEvent::eArtiCoriolisCentrifugal];
 
     scene->getDirectGPUAPI().computeArticulationData((void*)mGpuSimData->mCoriolisGravityDataDev, mArtiGpuIndicesDev,
                                                      PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION,
                                                      getCount(), nullptr, copyEvent);
 
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
 
-    SYNCHRONIZE_CUDA();
-
-    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
     SYNCHRONIZE_CUDA();
 
     if (!fetchArtiDofAttributeGravityAndCoriolis(static_cast<float*>(dstTensor->data), mGpuSimData->mCoriolisGravityDataDev,
@@ -1352,50 +1243,6 @@ bool GpuArticulationView::getCoriolisAndCentrifugalCompensationForces(const Tens
         return false;
     }
 
-    CHECK_CUDA(cudaStreamSynchronize(nullptr));
-
-    return true;
-}
-
-// DEPRECATED
-bool GpuArticulationView::getGeneralizedGravityForces(const TensorDesc* dstTensor) const
-{
-    CARB_LOG_WARN("DEPRECATED: Please use getGravityCompensationForces instead.");
-    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
-    GPUAPI_CHECK_READY(mGpuSimData, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    if (!checkTensorDevice(*dstTensor, mDevice, "generalized gravity forces", __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, "generalized gravity forces", __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, getCount() * mMaxDofs, "generalized gravity forces", __FUNCTION__))
-    {
-        return false;
-    }
-
-    PxScene* scene = mGpuSimData->mScene;
-
-    SYNCHRONIZE_CUDA();
-
-    CUevent copyEvent = mGpuSimData->mCopyEvents[CopyEvent::eArtiGeneralizedGravity];
-    scene->getDirectGPUAPI().computeArticulationData((void*)mGpuSimData->mCoriolisGravityDataDev, mArtiGpuIndicesDev,
-                                                     PxArticulationGPUAPIComputeType::eGENERALIZED_GRAVITY_FORCES,
-                                                     getCount(), nullptr, copyEvent);
-
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
-
-    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
-    SYNCHRONIZE_CUDA();
-    if (!fetchArtiDofAttributeGravityAndCoriolis(static_cast<float*>(dstTensor->data), mGpuSimData->mCoriolisGravityDataDev,
-                                                 getCount() * mMaxDofs, mMaxDofs, mGpuSimData->mMaxDofs, mDofRecordsDev, 0))
-    {
-        CARB_LOG_ERROR("Failed to fetch generalized gravity forces forces attribute");
-        return false;
-    }
     CHECK_CUDA(cudaStreamSynchronize(nullptr));
 
     return true;
@@ -1426,6 +1273,7 @@ bool GpuArticulationView::getGravityCompensationForces(const TensorDesc* dstTens
 
     PxScene* scene = mGpuSimData->mScene;
 
+    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
     SYNCHRONIZE_CUDA();
 
     CUevent copyEvent = mGpuSimData->mCopyEvents[CopyEvent::eArtiGeneralizedGravity];
@@ -1434,11 +1282,8 @@ bool GpuArticulationView::getGravityCompensationForces(const TensorDesc* dstTens
                                                      PxArticulationGPUAPIComputeType::eGRAVITY_COMPENSATION,
                                                      getCount(), nullptr, copyEvent);
 
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
 
-    SYNCHRONIZE_CUDA();
-
-    PhysxCudaContextGuard ctxGuarg(mGpuSimData->mCudaContextManager);
     SYNCHRONIZE_CUDA();
 
     if (!fetchArtiDofAttributeGravityAndCoriolis(static_cast<float*>(dstTensor->data), mGpuSimData->mCoriolisGravityDataDev,
@@ -1483,8 +1328,8 @@ bool GpuArticulationView::getLinkIncomingJointForce(const TensorDesc* dstTensor)
                                                  PxArticulationGPUAPIReadType::eLINK_GLOBAL_POSE, numArtis, nullptr,
                                                  copyEventTransforms);
 
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEventTransforms, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEventTransforms), 0, nullptr));
     SYNCHRONIZE_CUDA();
 
     if (!fetchArtiLinkIncomingJointForce(static_cast<PhysxGpuSpatialForces*>(dstTensor->data),
@@ -1531,8 +1376,8 @@ bool GpuArticulationView::getDofProjectedJointForces(const TensorDesc* dstTensor
     scene->getDirectGPUAPI().getArticulationData((void*) mGpuSimData->mLinkOrRootTransformsDev, mArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIReadType::eLINK_GLOBAL_POSE, numArtis, nullptr,
                                                  copyEventTransforms);
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEventTransforms, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEventTransforms), 0, nullptr));
     SYNCHRONIZE_CUDA();
 
     if (!fetchDofProjectionForce(static_cast<float*>(dstTensor->data), mGpuSimData->mLinkIncomingJointForceDev,
@@ -1573,7 +1418,7 @@ bool GpuArticulationView::getFixedTendonStiffnesses(const TensorDesc* dstTensor)
     scene->getDirectGPUAPI().getArticulationData((void*)mGpuSimData->mFixedTendonPropertiesDev, mArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIReadType::eFIXED_TENDON, numArtis, nullptr,
                                                  copyEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
     SYNCHRONIZE_CUDA();
 
     if (!fetchFixedTendonStiffness(static_cast<float*>(dstTensor->data), mGpuSimData->mFixedTendonPropertiesDev,
@@ -1613,7 +1458,7 @@ bool GpuArticulationView::getFixedTendonDampings(const TensorDesc* dstTensor) co
     scene->getDirectGPUAPI().getArticulationData((void*)mGpuSimData->mFixedTendonPropertiesDev, mArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIReadType::eFIXED_TENDON, numArtis, nullptr,
                                                  copyEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
     SYNCHRONIZE_CUDA();
 
     if (!fetchFixedTendonDamping(static_cast<float*>(dstTensor->data), mGpuSimData->mFixedTendonPropertiesDev,
@@ -1653,7 +1498,7 @@ bool GpuArticulationView::getFixedTendonLimitStiffnesses(const TensorDesc* dstTe
     scene->getDirectGPUAPI().getArticulationData((void*)mGpuSimData->mFixedTendonPropertiesDev, mArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIReadType::eFIXED_TENDON, numArtis, nullptr,
                                                  copyEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
     SYNCHRONIZE_CUDA();
 
     if (!fetchFixedTendonLimitStiffness(static_cast<float*>(dstTensor->data), mGpuSimData->mFixedTendonPropertiesDev,
@@ -1693,7 +1538,7 @@ bool GpuArticulationView::getFixedTendonLimits(const TensorDesc* dstTensor) cons
     scene->getDirectGPUAPI().getArticulationData((void*)mGpuSimData->mFixedTendonPropertiesDev, mArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIReadType::eFIXED_TENDON, numArtis, nullptr,
                                                  copyEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
     SYNCHRONIZE_CUDA();
 
     if (!fetchFixedTendonLimits(static_cast<float*>(dstTensor->data), mGpuSimData->mFixedTendonPropertiesDev,
@@ -1733,7 +1578,7 @@ bool GpuArticulationView::getFixedTendonfixedSpringRestLengths(const TensorDesc*
     scene->getDirectGPUAPI().getArticulationData((void*)mGpuSimData->mFixedTendonPropertiesDev, mArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIReadType::eFIXED_TENDON, numArtis, nullptr,
                                                  copyEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
     SYNCHRONIZE_CUDA();
 
     if (!fetchFixedTendonRestLength(static_cast<float*>(dstTensor->data), mGpuSimData->mFixedTendonPropertiesDev,
@@ -1773,7 +1618,7 @@ bool GpuArticulationView::getFixedTendonOffsets(const TensorDesc* dstTensor) con
     scene->getDirectGPUAPI().getArticulationData((void*)mGpuSimData->mFixedTendonPropertiesDev, mArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIReadType::eFIXED_TENDON, numArtis, nullptr,
                                                  copyEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
     SYNCHRONIZE_CUDA();
 
     if (!fetchFixedTendonOffset(static_cast<float*>(dstTensor->data), mGpuSimData->mFixedTendonPropertiesDev,
@@ -1813,7 +1658,7 @@ bool GpuArticulationView::getSpatialTendonStiffnesses(const TensorDesc* dstTenso
     scene->getDirectGPUAPI().getArticulationData((void*)mGpuSimData->mSpatialTendonPropertiesDev, mArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIReadType::eSPATIAL_TENDON, numArtis, nullptr,
                                                  copyEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
     SYNCHRONIZE_CUDA();
 
     if (!fetchSpatialTendonStiffness(static_cast<float*>(dstTensor->data), mGpuSimData->mSpatialTendonPropertiesDev,
@@ -1853,7 +1698,7 @@ bool GpuArticulationView::getSpatialTendonDampings(const TensorDesc* dstTensor) 
     scene->getDirectGPUAPI().getArticulationData((void*)mGpuSimData->mSpatialTendonPropertiesDev, mArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIReadType::eSPATIAL_TENDON, numArtis, nullptr,
                                                  copyEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
     SYNCHRONIZE_CUDA();
 
     if (!fetchSpatialTendonDamping(static_cast<float*>(dstTensor->data), mGpuSimData->mSpatialTendonPropertiesDev,
@@ -1893,7 +1738,7 @@ bool GpuArticulationView::getSpatialTendonLimitStiffnesses(const TensorDesc* dst
     scene->getDirectGPUAPI().getArticulationData((void*)mGpuSimData->mSpatialTendonPropertiesDev, mArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIReadType::eSPATIAL_TENDON, numArtis, nullptr,
                                                  copyEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
     SYNCHRONIZE_CUDA();
 
     if (!fetchSpatialTendonLimitStiffness(static_cast<float*>(dstTensor->data),
@@ -1934,7 +1779,7 @@ bool GpuArticulationView::getSpatialTendonOffsets(const TensorDesc* dstTensor) c
     scene->getDirectGPUAPI().getArticulationData((void*)mGpuSimData->mSpatialTendonPropertiesDev, mArtiGpuIndicesDev,
                                                  PxArticulationGPUAPIReadType::eSPATIAL_TENDON, numArtis, nullptr,
                                                  copyEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, copyEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(copyEvent), 0, nullptr));
     SYNCHRONIZE_CUDA();
 
     if (!fetchSpatialTendonOffset(static_cast<float*>(dstTensor->data), mGpuSimData->mSpatialTendonPropertiesDev,
@@ -2069,7 +1914,7 @@ bool GpuArticulationView::setFixedTendonProperties(const TensorDesc* stiffnesses
         (void*) mGpuSimData->mFixedTendonPropertiesDev, mDirtyArtiGpuIndicesDev, PxArticulationGPUAPIWriteType::eFIXED_TENDON,
         numIndices, mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiTendonProperties],
         mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiTendonProperties]);
-    CHECK_CU(cuEventSynchronize(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiTendonProperties]));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiTendonProperties]), nullptr));
 
     SYNCHRONIZE_CUDA();
     return true;
@@ -2170,11 +2015,183 @@ bool GpuArticulationView::setSpatialTendonProperties(const TensorDesc* stiffness
         (void*) mGpuSimData->mSpatialTendonPropertiesDev, mDirtyArtiGpuIndicesDev, PxArticulationGPUAPIWriteType::eSPATIAL_TENDON,
         numIndices, mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiTendonProperties],
         mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiTendonProperties]);
-    CHECK_CU(cuEventSynchronize(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiTendonProperties]));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiTendonProperties]), nullptr));
 
     SYNCHRONIZE_CUDA();
     return true;
 }
+
+// ---------------------------------------------------------------------------
+// Mask support
+// ---------------------------------------------------------------------------
+
+bool GpuArticulationView::resolveMask(const TensorDesc* maskTensor, PxU32& outK) const
+{
+    if (!maskTensor || !maskTensor->data)
+    {
+        CARB_LOG_ERROR("mask tensor is null or has no data in %s", __FUNCTION__);
+        return false;
+    }
+
+    if (!checkTensorDevice(*maskTensor, mDevice, "mask", __FUNCTION__))
+        return false;
+
+    if (maskTensor->dtype != omni::physics::tensors::TensorDataType::eUint8)
+    {
+        CARB_LOG_ERROR("mask tensor must be uint8 in %s", __FUNCTION__);
+        return false;
+    }
+
+    if (getTensorTotalSize(*maskTensor) != getCount())
+    {
+        CARB_LOG_ERROR("mask tensor size (%llu) must equal view count (%u) in %s",
+                       (unsigned long long)getTensorTotalSize(*maskTensor), getCount(), __FUNCTION__);
+        return false;
+    }
+
+    const PxU32 N = getCount();
+
+    // Acquire PhysX CUDA context before any device calls (cudaMalloc, thrust)
+    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
+
+    // Lazy-allocate (or grow) cached indices buffer
+    if (!mMaskIndicesDev || N > mMaskIndicesCapacity)
+    {
+        if (mMaskIndicesDev)
+            CHECK_CUDA(cudaFree(mMaskIndicesDev));
+        mMaskIndicesDev = nullptr;
+        mMaskIndicesCapacity = 0;
+
+        if (cudaMalloc(&mMaskIndicesDev, N * sizeof(PxU32)) != cudaSuccess)
+        {
+            CARB_LOG_ERROR("Failed to allocate mask indices buffer in %s", __FUNCTION__);
+            return false;
+        }
+        mMaskIndicesCapacity = N;
+    }
+
+    if (!compactMaskToIndices(mMaskAllocPolicy, mMaskIndicesDev,
+                              static_cast<const uint8_t*>(maskTensor->data), N, outK))
+        return false;
+    return true;
+}
+
+// Full-body macro for simple 2-param masked setters: resolve mask, build index desc, forward.
+// IsConst should be empty or 'const'. Hand-write methods with non-standard signatures below.
+#define GPU_ARTI_MASKED_SETTER(MethodName, IsConst)                                         \
+bool GpuArticulationView::MethodName##Masked(const TensorDesc* src, const TensorDesc* mask) IsConst \
+{                                                                                           \
+    PxU32 K;                                                                                \
+    if (!resolveMask(mask, K)) return false;                                                \
+    if (K == 0) return true;                                                                \
+    if (K == getCount()) return MethodName(src, nullptr);                                   \
+    TensorDesc idx{};                                                                       \
+    idx.device = mDevice;                                                                   \
+    idx.dtype  = omni::physics::tensors::TensorDataType::eUint32;                           \
+    idx.numDims = 1;                                                                        \
+    idx.dims[0] = (int)K;                                                                   \
+    idx.data   = mMaskIndicesDev;                                                           \
+    return MethodName(src, &idx);                                                           \
+}
+
+// Non-const masked setters
+GPU_ARTI_MASKED_SETTER(setRootTransforms, )
+GPU_ARTI_MASKED_SETTER(setRootVelocities, )
+GPU_ARTI_MASKED_SETTER(setDofPositions, )
+GPU_ARTI_MASKED_SETTER(setDofVelocities, )
+GPU_ARTI_MASKED_SETTER(setDofActuationForces, )
+GPU_ARTI_MASKED_SETTER(setDofPositionTargets, )
+GPU_ARTI_MASKED_SETTER(setDofVelocityTargets, )
+GPU_ARTI_MASKED_SETTER(setDofLimits, )
+GPU_ARTI_MASKED_SETTER(setDofStiffnesses, )
+GPU_ARTI_MASKED_SETTER(setDofDampings, )
+GPU_ARTI_MASKED_SETTER(setDofMaxForces, )
+GPU_ARTI_MASKED_SETTER(setDofDriveModelProperties, )
+GPU_ARTI_MASKED_SETTER(setDofFrictionCoefficients, )
+GPU_ARTI_MASKED_SETTER(setDofFrictionProperties, )
+GPU_ARTI_MASKED_SETTER(setDofMaxVelocities, )
+GPU_ARTI_MASKED_SETTER(setDofArmatures, )
+GPU_ARTI_MASKED_SETTER(setMasses, )
+GPU_ARTI_MASKED_SETTER(setCOMs, )
+GPU_ARTI_MASKED_SETTER(setInertias, )
+GPU_ARTI_MASKED_SETTER(setDisableGravities, )
+
+// Const masked setters (materials/shapes)
+GPU_ARTI_MASKED_SETTER(setMaterialProperties, const)
+GPU_ARTI_MASKED_SETTER(setRestOffsets, const)
+GPU_ARTI_MASKED_SETTER(setContactOffsets, const)
+
+#undef GPU_ARTI_MASKED_SETTER
+
+// Helper macro to build a TensorDesc for the compacted index buffer (used by hand-written methods below)
+#define GPU_ARTI_MASK_IDX_DESC(K)                                       \
+    TensorDesc idx{};                                                   \
+    idx.device = mDevice;                                               \
+    idx.dtype  = omni::physics::tensors::TensorDataType::eUint32;       \
+    idx.numDims = 1;                                                    \
+    idx.dims[0] = (int)(K);                                             \
+    idx.data   = mMaskIndicesDev;
+
+// Hand-written: applyForcesAndTorquesAtPositionMasked (5-param signature)
+bool GpuArticulationView::applyForcesAndTorquesAtPositionMasked(const TensorDesc* force,
+                                                                 const TensorDesc* torque,
+                                                                 const TensorDesc* position,
+                                                                 const TensorDesc* mask,
+                                                                 const bool isGlobal)
+{
+    PxU32 K;
+    if (!resolveMask(mask, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return applyForcesAndTorquesAtPosition(force, torque, position, nullptr, isGlobal);
+    GPU_ARTI_MASK_IDX_DESC(K);
+    return applyForcesAndTorquesAtPosition(force, torque, position, &idx, isGlobal);
+}
+
+// Hand-written: setCompliantMaterialPropertiesMasked (extra srcCombine param)
+bool GpuArticulationView::setCompliantMaterialPropertiesMasked(const TensorDesc* src,
+                                                                const TensorDesc* srcCombine,
+                                                                const TensorDesc* mask) const
+{
+    PxU32 K;
+    if (!resolveMask(mask, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return setCompliantMaterialProperties(src, srcCombine, nullptr);
+    GPU_ARTI_MASK_IDX_DESC(K);
+    return setCompliantMaterialProperties(src, srcCombine, &idx);
+}
+
+// Hand-written: tendon setters (multi-param signatures)
+bool GpuArticulationView::setFixedTendonPropertiesMasked(const TensorDesc* stiffnesses,
+                                                          const TensorDesc* dampings,
+                                                          const TensorDesc* limitStiffnesses,
+                                                          const TensorDesc* limits,
+                                                          const TensorDesc* restLengths,
+                                                          const TensorDesc* offsets,
+                                                          const TensorDesc* mask) const
+{
+    PxU32 K;
+    if (!resolveMask(mask, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return setFixedTendonProperties(stiffnesses, dampings, limitStiffnesses, limits, restLengths, offsets, nullptr);
+    GPU_ARTI_MASK_IDX_DESC(K);
+    return setFixedTendonProperties(stiffnesses, dampings, limitStiffnesses, limits, restLengths, offsets, &idx);
+}
+
+bool GpuArticulationView::setSpatialTendonPropertiesMasked(const TensorDesc* stiffnesses,
+                                                            const TensorDesc* dampings,
+                                                            const TensorDesc* limitStiffnesses,
+                                                            const TensorDesc* offsets,
+                                                            const TensorDesc* mask) const
+{
+    PxU32 K;
+    if (!resolveMask(mask, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return setSpatialTendonProperties(stiffnesses, dampings, limitStiffnesses, offsets, nullptr);
+    GPU_ARTI_MASK_IDX_DESC(K);
+    return setSpatialTendonProperties(stiffnesses, dampings, limitStiffnesses, offsets, &idx);
+}
+
+#undef GPU_ARTI_MASK_IDX_DESC
 
 } // namespace tensors
 } // namespace physx

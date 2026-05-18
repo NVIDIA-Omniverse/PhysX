@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -62,6 +62,10 @@ using ReleasePhysicsObjectsFn = std::function<void()>;
 /// keeping the stage attached.
 using ResetSimulationFn = std::function<void()>;
 
+/// Start simulation, this function is called when the simulation is started. 
+/// It can be used to store the initial transformations for example
+using StartSimulationFn = std::function<void()>;
+
 struct StageUpdateFns
 {
     StageUpdateFns()
@@ -74,7 +78,8 @@ struct StageUpdateFns
           handleRaycast(nullptr),
           forceLoadPhysicsFromUSD(nullptr),
           releasePhysicsObjects(nullptr),
-          resetSimulation(nullptr)
+          resetSimulation(nullptr),
+          startSimulation(nullptr)
     {
     }
 
@@ -88,6 +93,7 @@ struct StageUpdateFns
     ForceLoadPhysicsFromUSDFn forceLoadPhysicsFromUSD;
     ReleasePhysicsObjectsFn releasePhysicsObjects;
     ResetSimulationFn resetSimulation;
+    StartSimulationFn startSimulation;
 };
 
 } // namespace physics

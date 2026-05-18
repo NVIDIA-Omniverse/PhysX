@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -119,9 +119,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
         if (!getValue<float>(attachedStage, objectRecord->mPath, property, timeCode, data))
             return true;
 
-        const bool disableSleeping = OmniPhysX::getInstance().getCachedSettings().disableSleeping;
-        const float sleepThreshold = disableSleeping ? 0.0f : data;
-        deformableBody->setSleepThreshold(sleepThreshold);
+        deformableBody->setSleepThreshold(data);
     }
     else if (property == PhysxAdditionAttrTokens.Get()->settlingThreshold)
     {
@@ -129,9 +127,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
         if (!getValue<float>(attachedStage, objectRecord->mPath, property, timeCode, data))
             return true;
 
-        const bool disableSleeping = OmniPhysX::getInstance().getCachedSettings().disableSleeping;
-        const float settlingThreshold = disableSleeping ? 0.0f : data;
-        deformableBody->setSettlingThreshold(settlingThreshold);
+        deformableBody->setSettlingThreshold(data);
     }
     else if (property == PhysxAdditionAttrTokens.Get()->maxDepenetrationVelocity)
     {

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -43,6 +43,7 @@
 #include "mesh/GuTriangleMesh.h"
 #include "hf/GuHeightField.h"
 #include "PxgNphaseImplementationContext.h"
+#include "PxgNarrowphaseCore.h"
 #include "PxgSolverCore.h"
 
 //FDTODO: those incudes should eventually disappear as we get rid of the copy-pasted stuff
@@ -51,7 +52,6 @@
 #include "PxgSimulationCore.h"
 #include "PxgParticleSystemCore.h"
 #include "PxgArticulationCore.h"
-
 #include "cudamanager/PxCudaContextManager.h"
 
 #include "GuConvexGeometry.h"
@@ -64,6 +64,7 @@
 
 using namespace physx;
 using namespace Gu;
+using namespace Cm;
 
 #define PXG_ENABLE_GPU_NP 1
 
@@ -77,8 +78,11 @@ void PxgCMGpuDiscreteUpdateBase::processContactManagers(PxgContactManagers& mana
 {
 	PxRenderOutput renderOutput(mContext->mContext.getRenderBuffer());
 
-	managersGPU.mLostAndTotalReportedPairsCountPinned->y = 0;
-	managersGPU.mLostAndTotalReportedPairsCountPinned->x = 0;
+	if (managersGPU.mLostAndTotalReportedPairsCountMapped.isValid())
+	{
+		managersGPU.mLostAndTotalReportedPairsCountMapped.get().y = 0;
+		managersGPU.mLostAndTotalReportedPairsCountMapped.get().x = 0;
+	}
 
 	const PxU32 numTests = managers.mCpuContactManagerMapping.size();
 
@@ -438,13 +442,13 @@ void PxgCMGpuDiscreteSecondPassUpdateTask::runInternal()
 PxgNphaseImplementationContext::PxgNphaseImplementationContext(
 	PxsContext& context, PxsKernelWranglerManager* gpuKernelWrangler, PxvNphaseImplementationFallback* fallbackForUnsupportedCMs,
 	const PxGpuDynamicsMemoryConfig& gpuDynamicsConfig, void* contactStreamBase,  void* patchStreamBase, void* forceAndIndiceStreamBase,
-	PxBoundsArrayPinned& bounds,  IG::IslandSim* islandSim, physx::Dy::Context* dynamicsContext, PxgHeapMemoryAllocatorManager* heapMemoryManager, bool useGPUBP) :
+	Bp::BoundsArray& bounds,  IG::IslandSim* islandSim, physx::Dy::Context* dynamicsContext, PxgAllocatorDesc& allocDesc, bool useGPUBP) :
 	PxvNphaseImplementationContext	(context),
 	mFallbackForUnsupportedCMs		(fallbackForUnsupportedCMs),
 	mUpdateCMsFirstPassTask			(this),
 	mUpdateCMsSecondPassTask		(this),
 	mUpdateFallbackPairs			(this),
-	mContactManagerOutputs			(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
+	mContactManagerOutputs			(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE),
 	mTotalNbPairs					(0),
 	mBounds							(bounds),
 	mUseGPUBP						(useGPUBP)
@@ -457,7 +461,7 @@ PxgNphaseImplementationContext::PxgNphaseImplementationContext(
 		mGpuDynamicContext = static_cast<PxgGpuContext*>(dynamicsContext);
 		CUstream stream = mGpuDynamicContext->getGpuSolverCore()->getStream();
 		mGpuNarrowphaseCore = PX_NEW(PxgGpuNarrowphaseCore)(static_cast<PxgCudaKernelWranglerManager*>(gpuKernelWrangler), context.getCudaContextManager(), gpuDynamicsConfig,
-															contactStreamBase, patchStreamBase, forceAndIndiceStreamBase, islandSim, stream, heapMemoryManager, this);
+															contactStreamBase, patchStreamBase, forceAndIndiceStreamBase, islandSim, stream, allocDesc, this);
 
 		mGpuDynamicContext->mGpuNpCore = mGpuNarrowphaseCore;
 		mGpuNarrowphaseCore->mGpuContext = mGpuDynamicContext;
@@ -615,8 +619,8 @@ void PxgNphaseImplementationContext::processResults()
 			maxPatches = PxMax(maxPatches, mMaxPatches);
 
 			//Only process the array of found/lost touch events (let's confirm that this works...)
-			PxPinnedArray<PxsContactManager*>& lostFoundIndIterator = mGpuNarrowphaseCore->getLostFoundPairsCms();
-			PxPinnedArray<PxsContactManagerOutputCounts>& itChangedOutputs = mGpuNarrowphaseCore->getLostFoundPairsOutput();
+			PinnableArray<PxsContactManager*>& lostFoundIndIterator = mGpuNarrowphaseCore->getLostFoundPairsCms();
+			PinnableArray<PxsContactManagerOutputCounts>& itChangedOutputs = mGpuNarrowphaseCore->getLostFoundPairsOutput();
 
 			PxU32 nbLostFoundPairs = mGpuNarrowphaseCore->getTotalNbLostFoundPairs();
 

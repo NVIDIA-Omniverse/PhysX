@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #include "UsdPCH.h"
@@ -9,6 +9,8 @@
 #include <omni/physx/IPhysxSettings.h>
 #include <omni/usd/UsdContextIncludes.h>
 #include <omni/usd/UsdContext.h>
+
+#include <omni/fabric/usd/PathConversion.h>
 
 using namespace omni::physx::graph;
 using namespace ::physx;
@@ -126,11 +128,11 @@ bool ImmediateMeshCache::computeCookedDataCRCForMeshInputView(const MeshInputVie
     cookingRequest.dataInputMode = meshInputView.meshView.usePrimID ?
                                        omni::physx::PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID :
                                        omni::physx::PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW;
-    cookingRequest.primId = meshInputView.meshView.primId;
+    cookingRequest.primId = omni::fabric::fabricPathToHandle(meshInputView.meshView.primId);
     cookingRequest.primStageId = meshInputView.meshView.primStageId;
     cookingRequest.primMeshView = meshInputView.meshView.cookingMeshView;
     cookingRequest.primMeshMetersPerUnit = meshInputView.meshCollision.metersPerUnit;
-    if (meshInputView.meshCollision.collisionApproximation == ImmediateNode::kCollisionApproximationConvexHull.token)
+    if (meshInputView.meshCollision.collisionApproximation == omni::fabric::fabricTokenToHandle(omni::fabric::Token::createImmortal("convexHull")))
     {
         cookingRequest.dataType = omni::physx::PhysxCookingDataType::eCONVEX_MESH;
     }
@@ -158,7 +160,7 @@ bool ImmediateMeshCache::computeCookedDataCRCForMeshInputView(const MeshInputVie
         }
     };
 
-    if (meshInputView.meshCollision.collisionApproximation == ImmediateNode::kCollisionApproximationConvexHull.token)
+    if (meshInputView.meshCollision.collisionApproximation == omni::fabric::fabricTokenToHandle(omni::fabric::Token::createImmortal("convexHull")))
     {
         omni::physx::ConvexMeshCookingParams convexMeshParams;
         convexMeshParams.signScale = meshInputView.meshView.signScale;
@@ -204,7 +206,7 @@ bool ImmediateMeshCache::queryApproximationGeneric(MeshDefinitionView request,
     cookingRequest.dataInputMode = request.meshView.usePrimID ?
                                        omni::physx::PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID :
                                        omni::physx::PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW;
-    cookingRequest.primId = request.meshView.primId;
+    cookingRequest.primId = omni::fabric::fabricPathToHandle(request.meshView.primId);
     cookingRequest.primStageId = request.meshView.primStageId;
 
     cookingRequest.primMeshView = request.meshView.cookingMeshView;

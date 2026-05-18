@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,6 +31,7 @@
 
 #include "PxAggregate.h"
 #include "NpBase.h"
+#include "BpVolumeData.h"
 
 namespace physx
 {
@@ -70,8 +71,8 @@ public:
 		PX_FORCE_INLINE	PxU32					getMaxNbShapesFast()	const	{ return mMaxNbShapes;	}
 		PX_FORCE_INLINE	PxU32					getCurrentSizeFast()	const	{ return mNbActors;		}
 		PX_FORCE_INLINE	PxActor*				getActorFast(PxU32 i)	const	{ return mActors[i];	}
-		PX_FORCE_INLINE PxU32					getAggregateID()		const	{ return mAggregateID;	}
-		PX_FORCE_INLINE void					setAggregateID(PxU32 cid)		{ mAggregateID = cid;	}
+		PX_FORCE_INLINE Bp::AggregateHandle		getAggregateHandle()	const	{ return mAggregateHandle;	}
+		PX_FORCE_INLINE void					setAggregateHandle(Bp::AggregateHandle h)	{ mAggregateHandle = h;		}
 
 		PX_FORCE_INLINE	bool					getSelfCollideFast()	const	{ return PxGetAggregateSelfCollisionBit(mFilterHint)!=0;	}
 		PX_FORCE_INLINE	PxAggregateFilterHint	getFilterHint()			const	{ return mFilterHint;	}
@@ -85,7 +86,7 @@ public:
 						void					incShapeCount();
 						void					decShapeCount();
 private:
-						PxU32					mAggregateID;
+						Bp::AggregateHandle		mAggregateHandle;
 						PxU32					mMaxNbActors;
 						PxU32					mMaxNbShapes;
 						PxAggregateFilterHint	mFilterHint;

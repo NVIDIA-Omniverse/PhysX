@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #include "UsdPCH.h"
@@ -363,8 +363,14 @@ public:
         state.errorPrinted = false;
         state.warningPrinted = false;
 
+        omni::graph::core::BackendId backendId;
+        omni::graph::core::GraphObj graphObj = db.abi_context().iContext->getGraph(db.abi_context());
+        graphObj.iGraph->getBackendId(graphObj, backendId);
+        omni::fabric::FabricId fabricId(backendId.id);
+
         std::vector<NameToken> newNames(numOverlaps);
-        omni::physx::graph::createPrimName(context.iToken->getHandle("prim"), 0, { newNames.data(), newNames.size() });
+        omni::physx::graph::createPrimName(omni::fabric::StageReaderWriterUsd(fabricId).registerToken("prim"), 0,
+                                           { newNames.data(), newNames.size() });
 
         IBundle2* facesOutputBundle = db.outputs.faceIndices().abi_bundleInterface();
         facesOutputBundle->clearContents();
@@ -374,8 +380,8 @@ public:
             newNames.data(), newNames.size(), childBundles.data());
         const auto& bundleContext = db.outputs.faceIndices().abi_bundleInterface()->getContext();
         auto& overlaps = db.outputs.overlaps();
-        static NameToken const kFaces0 = omni::fabric::asInt(pxr::TfToken("faces0", pxr::TfToken::Immortal));
-        static NameToken const kFaces1 = omni::fabric::asInt(pxr::TfToken("faces1", pxr::TfToken::Immortal));
+        static NameToken const kFaces0 = omni::fabric::Token::createImmortal("faces0");
+        static NameToken const kFaces1 = omni::fabric::Token::createImmortal("faces1");
         for (size_t idx = 0; idx < numOverlaps; ++idx)
         {
             const MeshIntersectionFacesResult& result = state.phaseFindIntersectingTriangles.results[idx];
@@ -401,7 +407,7 @@ public:
 
             ogn::BundleContents<ogn::kOgnOutput, ogn::kCpu> outputChildBundle(bundleContext, childHandle);
             ogn::RuntimeAttribute<ogn::kOgnOutput, ogn::kCpu> sourcePrimPathAttribute = outputChildBundle.addAttribute(
-                ImmediateNode::kSourcePrimPathToken, Type(BaseDataType::eToken, 1, 0, AttributeRole::eNone));
+                omni::fabric::Token::createImmortal("sourcePrimPath"), Type(BaseDataType::eToken, 1, 0, AttributeRole::eNone));
             *sourcePrimPathAttribute.getCpu<NameToken>() = newNames[idx];
 
             state.writeBundleIndicesArray(db, kFaces0, outputChildBundle, result.intersectingFaces0);

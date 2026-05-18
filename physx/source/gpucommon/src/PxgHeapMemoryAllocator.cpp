@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -30,7 +30,8 @@
 #include "foundation/PxAllocator.h"
 #include "foundation/PxMath.h"
 #include "common/PxProfileZone.h"
-#include "PxsMemoryManager.h"
+#include "PxgMemoryManager.h"
+#include "cudamanager/PxCudaTypes.h"
 
 using namespace physx;
 
@@ -147,15 +148,23 @@ BlockHeader* Block::findBuddy(const PxU32 offsetToFind, const PxU32 rootIndex)
 	return header;
 }
 
-PxgHeapMemoryAllocator::PxgHeapMemoryAllocator(const PxU32 byteSize, PxVirtualAllocatorCallback* allocator) : mBlockHeaderPool(PxAllocatorTraits<BlockHeader>::Type(), 128)
+PxgHeapMemoryAllocator::PxgHeapMemoryAllocator(const PxU32 byteSize, PxgCudaAllocatorCallbackBase& allocator)
+: mBlockHeaderPool(PxAllocatorTraits<BlockHeader>::Type(), 128)
 {
-	PX_ASSERT(PxIsPowerOfTwo(byteSize));
-	PX_ASSERT(byteSize >= 128);
+	if(byteSize > 0)
+	{
+		PX_ASSERT(PxIsPowerOfTwo(byteSize));
+		PX_ASSERT(byteSize >= 128);
+	}
 	mAllocationSize = byteSize;
-	mAllocator = allocator;
+	mAllocator = &allocator;
 
 	PX_PROFILE_ZONE("PxgHeapMemoryAllocator::initialization", 0);
-	void* memory = mAllocator->allocate(mAllocationSize, 0, PX_FL);
+	void* memory = NULL;
+	if(byteSize)
+	{
+		memory = mAllocator->allocate(mAllocationSize, 0, PX_FL);
+	}
 	
 	// AD: the allocation above can fail.
 	if (memory)
@@ -493,33 +502,53 @@ PxU64 PxgHeapMemoryAllocator::getTotalSize()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PxgHeapMemoryAllocatorManager::PxgHeapMemoryAllocatorManager(PxU32 heapCapacity, PxsMemoryManager* memoryManager)
+PxgHeapMemoryAllocatorManager::PxgHeapMemoryAllocatorManager(PxU32 heapCapacity, PxgMemoryManager& memoryManager)
 {
-	mDeviceMemoryAllocators = PX_NEW(PxgHeapMemoryAllocator)(heapCapacity, memoryManager->getDeviceMemoryAllocator());
-	mMappedMemoryAllocators = PX_NEW(PxgHeapMemoryAllocator)(heapCapacity, memoryManager->getHostMemoryAllocator());
+	mDeviceMemoryAllocator = PX_NEW(PxgHeapMemoryAllocator)(heapCapacity, *memoryManager.getCudaDeviceMemoryAllocator());
+
+	const bool debugMode = (heapCapacity == 0);
+	if(debugMode) 
+	{
+		const PxU32 defaultFlags = CU_MEMHOSTALLOC_PORTABLE;
+		const PxU32 mappedFlags = CU_MEMHOSTALLOC_PORTABLE | CU_MEMHOSTALLOC_DEVICEMAP;
+		mPinnedHostMemoryAllocator = PX_NEW(PxgHeapMemoryAllocator)(heapCapacity, *memoryManager.getCudaHostMemoryAllocator(defaultFlags));
+		mPinnedHostMappedMemoryAllocator = PX_NEW(PxgHeapMemoryAllocator)(heapCapacity, *memoryManager.getCudaHostMemoryAllocator(mappedFlags));
+	}
+	else
+	{
+		const PxU32 flags = CU_MEMHOSTALLOC_PORTABLE | CU_MEMHOSTALLOC_DEVICEMAP;
+		mPinnedHostMemoryAllocator = PX_NEW(PxgHeapMemoryAllocator)(heapCapacity, *memoryManager.getCudaHostMemoryAllocator(flags));
+		mPinnedHostMappedMemoryAllocator = mPinnedHostMemoryAllocator;
+	}
 }
 
 PxgHeapMemoryAllocatorManager::~PxgHeapMemoryAllocatorManager()
 {
-	PX_DELETE(mDeviceMemoryAllocators);
-	PX_DELETE(mMappedMemoryAllocators);
+	PX_DELETE(mDeviceMemoryAllocator);
+
+	if(mPinnedHostMappedMemoryAllocator != mPinnedHostMemoryAllocator)
+	{
+		PX_DELETE(mPinnedHostMappedMemoryAllocator);
+	}
+	
+	PX_DELETE(mPinnedHostMemoryAllocator);
 }
 
 PxU64 PxgHeapMemoryAllocatorManager::getDeviceMemorySize() const
 {
-	return mDeviceMemoryAllocators ? mDeviceMemoryAllocators->getTotalSize() : 0;
+	return mDeviceMemoryAllocator ? mDeviceMemoryAllocator->getTotalSize() : 0;
 }
 
 PxsHeapStats PxgHeapMemoryAllocatorManager::getDeviceHeapStats() const
 {
-	if(mDeviceMemoryAllocators)
-		return mDeviceMemoryAllocators->getHeapStats();
+	if(mDeviceMemoryAllocator)
+		return mDeviceMemoryAllocator->getHeapStats();
 	else
 		return PxsHeapStats();
 }
 
 void PxgHeapMemoryAllocatorManager::flushDeferredDeallocs()
 {
-	if (mDeviceMemoryAllocators) // this should actually never be null...
-		mDeviceMemoryAllocators->flushDeferredDeallocs();
+	if (mDeviceMemoryAllocator) // this should actually never be null...
+		mDeviceMemoryAllocator->flushDeferredDeallocs();
 }

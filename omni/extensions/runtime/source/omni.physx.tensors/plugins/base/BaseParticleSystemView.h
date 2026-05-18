@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -33,15 +33,19 @@ public:
 
     bool getSolidRestOffset(const TensorDesc* dstTensor) const;
     bool setSolidRestOffset(const TensorDesc* srcTensor, const TensorDesc* indexTensor);
+    bool setSolidRestOffsetMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     bool getFluidRestOffset(const TensorDesc* dstTensor) const;
     bool setFluidRestOffset(const TensorDesc* srcTensor, const TensorDesc* indexTensor);
+    bool setFluidRestOffsetMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     bool getParticleContactOffset(const TensorDesc* dstTensor) const;
     bool setParticleContactOffset(const TensorDesc* srcTensor, const TensorDesc* indexTensor);
+    bool setParticleContactOffsetMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     bool getWind(const TensorDesc* dstTensor) const;
     bool setWind(const TensorDesc* srcTensor, const TensorDesc* indexTensor);
+    bool setWindMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     //
     // helpers

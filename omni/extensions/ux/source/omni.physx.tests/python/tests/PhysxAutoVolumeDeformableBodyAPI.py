@@ -1,7 +1,9 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
-from omni.physx import get_physx_interface, get_physx_cooking_interface, get_physx_cooking_private_interface
+
+from omni.physx import get_physx_interface, get_physx_cooking_interface
+from omni.physx.scripts.ifaces import get_physx_cooking_private_interface
 from omni.physxtests import utils
 from omni.physxtests.utils.physicsBase import PhysicsMemoryStageBaseAsyncTestCase, TestCategory, PhysicsBaseAsyncTestCase
 from omni.physx.scripts import deformableMeshUtils, deformableUtils, physicsUtils
@@ -153,6 +155,23 @@ def check_skin_attrs(test, stage, skin_paths, expect_bindpose=True):
         prim = stage.GetPrimAtPath(skin_path)
         check_pose_points(test, prim, "bindPose", expect_bindpose)
 
+def setup_simmesh(stage, path, transform: Gf.Transform, add_collision: bool = False):
+    simmesh = UsdGeom.TetMesh.Define(stage, path)
+    simmesh.AddTransformOp().Set(transform.GetMatrix())
+    set_tetmesh_data(simmesh)
+    # add sim api
+    simmesh.GetPrim().ApplyAPI("OmniPhysicsVolumeDeformableSimAPI")
+    simmesh.GetPrim().GetAttribute("omniphysics:restShapePoints").Set(simmesh.GetPointsAttr().Get())
+    simmesh.GetPrim().GetAttribute("omniphysics:restTetVtxIndices").Set(simmesh.GetTetVertexIndicesAttr().Get())
+
+    # add collision
+    if add_collision:
+        collision = UsdPhysics.CollisionAPI.Apply(simmesh.GetPrim())
+        surfaceFaceVertexIndices = UsdGeom.TetMesh.ComputeSurfaceFaces(simmesh, Usd.TimeCode.Default())
+        simmesh.GetSurfaceFaceVertexIndicesAttr().Set(surfaceFaceVertexIndices)
+
+    return simmesh
+
 
 #debug class:
 #class PhysxAutoVolumeDeformableBodyAPITestDebugStage(PhysicsBaseAsyncTestCase):
@@ -226,6 +245,69 @@ class PhysxAutoVolumeDeformableBodyAPITestMemoryStage(PhysicsMemoryStageBaseAsyn
         post_point = sim_mesh.GetPointsAttr().Get()[0]
         epsilon = 0.001
         self.assertTrue(initial_point[2] - post_point[2] > epsilon)
+
+    async def test_physx_volume_deformable_skin_meshes(self):
+        stage = await self.new_stage()
+
+        UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+        xform0 = setup_xform(stage, "/xform0", create_transform(translate = Gf.Vec3d(0.0, 0.0, 5.0)))
+        xform0_skin_mesh = setup_cube_trimesh(stage, "/xform0/skin_mesh", create_transform(scale = Gf.Vec3d(2.0)), 10)
+
+        success = deformableUtils.create_auto_volume_deformable_hierarchy(stage,
+            root_prim_path = "/xform0",
+            simulation_tetmesh_path = "/xform0/sim_mesh",
+            collision_tetmesh_path = "/xform0/coll_mesh",
+            cooking_src_mesh_path = "/xform0/skin_mesh",
+            simulation_hex_mesh_enabled = False,
+            cooking_src_simplification_enabled = True
+        )
+        self.assertTrue(success)
+
+        success = get_physx_cooking_interface().cook_auto_deformable_body("/xform0")
+        self.assertTrue(success)
+
+        xform1 = setup_xform(stage, "/xform1", create_transform(translate = Gf.Vec3d(5.0, 0.0, 5.0)))
+        xform1_skin_mesh = setup_cube_trimesh(stage, "/xform1/skin_mesh", create_transform(scale = Gf.Vec3d(2.0)), 10)
+
+        success = deformableUtils.create_auto_volume_deformable_hierarchy(stage,
+            root_prim_path = "/xform1",
+            simulation_tetmesh_path = "/xform1/sim_mesh",
+            collision_tetmesh_path = "/xform1/coll_mesh",
+            cooking_src_mesh_path = "/xform1/skin_mesh",
+            simulation_hex_mesh_enabled = False,
+            cooking_src_simplification_enabled = True
+        )
+        self.assertTrue(success)
+
+        success = get_physx_cooking_interface().cook_auto_deformable_body("/xform1")
+        self.assertTrue(success)
+
+        xform2 = setup_xform(stage, "/xform2", create_transform(translate = Gf.Vec3d(0.0, 5.0, 5.0)))
+        xform2.GetPrim().ApplyAPI("OmniPhysicsDeformableBodyAPI")
+
+        # sim tetmesh
+        tetmesh_transform = create_transform(translate = Gf.Vec3d(0.01), scale = Gf.Vec3d(2.0))
+        xform2_sim_mesh = setup_simmesh(stage, "/xform2/simMesh", tetmesh_transform, add_collision = True)
+
+        # test instantiation
+        epsilon = 0.001
+
+        xform0_sim_mesh = UsdGeom.TetMesh(stage.GetPrimAtPath("/xform0/sim_mesh"))
+        xform0_initial_point = xform0_sim_mesh.GetPointsAttr().Get()[0]
+        xform1_sim_mesh = UsdGeom.TetMesh(stage.GetPrimAtPath("/xform1/sim_mesh"))
+        xform1_initial_point = xform1_sim_mesh.GetPointsAttr().Get()[0]
+        xform2_initial_point = xform2_sim_mesh.GetPointsAttr().Get()[0]
+
+        # step and check that it's fallen a bit under gravity
+        self.step(1)
+
+        xform0_post_point = xform0_sim_mesh.GetPointsAttr().Get()[0]
+        self.assertTrue(xform0_initial_point[2] - xform0_post_point[2] > epsilon)
+        xform1_post_point = xform1_sim_mesh.GetPointsAttr().Get()[0]
+        self.assertTrue(xform1_initial_point[2] - xform1_post_point[2] > epsilon)
+        xform2_post_point = xform2_sim_mesh.GetPointsAttr().Get()[0]
+        self.assertTrue(xform2_initial_point[2] - xform2_post_point[2] > epsilon)
 
 
     async def test_physx_volume_deformable_runtime_remove_body(self):

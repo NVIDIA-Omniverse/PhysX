@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -30,7 +30,7 @@ using namespace ::physx;
 static void resetLocalMeshCaches(IPhysxCookingServicePrivate* physxCookingPrivate)
 {
     // Reset old cache and LocalDataStore using the cooking interface
-    physxCookingPrivate->resetLocalMeshCacheContents();
+    physxCookingPrivate->resetMeshCacheContents();
 
     // "Reset" the OmniHub cache using settings to regenerate dev key so that it won't use its previous cache contents
     carb::settings::ISettings* settings = carb::getCachedInterface<carb::settings::ISettings>();
@@ -82,7 +82,6 @@ struct CookingServiceTestParameters
         REQUIRE(physxCooking);
         REQUIRE(physxCookingPrivate);
         // Always start with empty cache
-        physxCookingPrivate->setLocalMeshCacheEnabled(true);
         resetLocalMeshCaches(physxCookingPrivate);
         pxFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, pxAllocator, pxErrorCallback);
         stage = UsdStage::CreateInMemory();
@@ -119,7 +118,7 @@ struct CookingServiceTestParameters
             iStageReaderWriter->create(primStageId, 0);
             auto stageReaderWriterId = iStageReaderWriter->get(primStageId);
             auto fabricId = iStageReaderWriter->getFabricId(stageReaderWriterId);
-            std::set<omni::fabric::TokenC> filter = {};
+            std::set<omni::fabric::Token> filter = {};
             iFabricUsd->prefetchPrimToFabric(
                 fabricId, meshPath, usdMesh.GetPrim(), filter, false, true, pxr::UsdTimeCode::Default());
             stage->RemovePrim(meshPath);
@@ -394,14 +393,16 @@ void testCookingServiceParametricImplementation(const PhysxCookingDataType::Enum
         }
         else
         {
-            // Here we are in second run and we expect local or ujitso cache hit
+            // Here we are in second run with cache enabled
+            // Only UJITSO cache provides cache hits now (local cache has been removed)
             if (usingUjitso)
             {
                 CHECK(result.resultSource == PhysxCookingComputeResult::eRESULT_CACHE_HIT_UJITSO);
             }
             else
             {
-                CHECK(result.resultSource == PhysxCookingComputeResult::eRESULT_CACHE_HIT_LOCAL);
+                // Without UJITSO, there's no cache available, so it's always a miss
+                CHECK(result.resultSource == PhysxCookingComputeResult::eRESULT_CACHE_MISS);
             }
         }
     };
@@ -640,7 +641,6 @@ static void testMultiThreadedParametric(const bool asynchronous, const bool cach
     auto physxCooking = physicsTests.acquirePhysxCookingServiceInterface();
     auto physxCookingPrivate = physicsTests.acquirePhysxCookingServicePrivateInterface();
     // Always start with empty cache (we can't do this on single thread)
-    physxCookingPrivate->setLocalMeshCacheEnabled(true);
     resetLocalMeshCaches(physxCookingPrivate);
 
     // Setup a shared stage, PxPhysics and PxFoundation
@@ -804,7 +804,6 @@ void testCookingServiceContextAndCancellations()
     REQUIRE(physxCooking);
     REQUIRE(physxCookingPrivate);
     // Always start with empty cache
-    physxCookingPrivate->setLocalMeshCacheEnabled(true);
     resetLocalMeshCaches(physxCookingPrivate);
 
     PhysxCookingAsyncContextParameters asyncParams1;
@@ -924,7 +923,6 @@ void testCookingEmptyMesh()
     REQUIRE(physxCooking);
     REQUIRE(physxCookingPrivate);
     // Always start with empty cache
-    physxCookingPrivate->setLocalMeshCacheEnabled(true);
     resetLocalMeshCaches(physxCookingPrivate);
 
     bool gotCorrectResult = false;
@@ -1096,209 +1094,6 @@ private:
     size_t m_resizeGrowth;
     size_t m_nextParamsNum;
 };
-
-void testCookingCacheChange()
-{
-    carb::tasking::ITasking* tasking = carb::getCachedInterface<carb::tasking::ITasking>();
-
-    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
-    IPhysxCookingServicePrivate* physxCookingPrivate = physicsTests.acquirePhysxCookingServicePrivateInterface();
-    // Always start with empty cache (we can't do this on single thread)
-    physxCookingPrivate->setLocalMeshCacheEnabled(true);
-    resetLocalMeshCaches(physxCookingPrivate);
-
-    ThreadingHelper helper(tasking, physicsTests);
-    typedef carb::tasking::Future<> Task;
-
-    /**************************************************************************************************************
-     * 1) Make sure a cache change with no processes running executes quickly
-     **************************************************************************************************************/
-
-    // Set local cache size
-    uint32_t newCacheSize = 100;
-    physxCookingPrivate->setLocalMeshCacheSize(newCacheSize);
-
-    // It should quickly take effect
-    tasking->sleep_for(std::chrono::milliseconds(10));
-    CHECK(physxCookingPrivate->getLocalMeshCacheSize() == newCacheSize);
-
-    uint32_t oldCacheSize = newCacheSize;
-
-
-    /**************************************************************************************************************
-     * 2) Run several long-running tasks and request a cache change.  Make sure the change does not happen
-     * quickly.
-     **************************************************************************************************************/
-
-    // Container of our long-running tasks
-    std::vector<Task> tasks;
-
-    // Create a few long-running tasks
-    tasks.push_back(helper.createTask(PhysxCookingDataType::eSDF_TRIANGLE_MESH, true));
-    tasks.push_back(helper.createTask(PhysxCookingDataType::eSDF_TRIANGLE_MESH, true));
-    tasks.push_back(helper.createTask(PhysxCookingDataType::eSDF_TRIANGLE_MESH, true));
-
-    // Wait for tasks to start up
-    // Note, in debug it takes at least 3ms for the first task to start
-    tasking->sleep_for(std::chrono::milliseconds(10));
-
-    // Now request a cache size change
-    physxCookingPrivate->setLocalMeshCacheSize(++newCacheSize);
-
-    // Before the cooking finishes, the cache size should not have changed
-    CHECK(physxCookingPrivate->getLocalMeshCacheSize() == oldCacheSize);
-
-
-    /**************************************************************************************************************
-     * 3) Wait for the long-running tasks to finish.  While waiting, make sure the cache change does not take
-     * effect until all the tasks are complete.
-     **************************************************************************************************************/
-
-    // (cache size changed) => (task count == 0)
-    bool cacheSizeChangedImpliesTasksDone = true; // Check this condition after tasks complete
-
-    // Now wait for all tasks to complete
-    constexpr int maxIter = 6000; // Wait this many iterations max
-    for (int count = maxIter; tasks.size() && count--;)
-    {
-        const uint32_t currentCacheSize = physxCookingPrivate->getLocalMeshCacheSize();
-        const bool cacheSizeChanged = currentCacheSize != oldCacheSize;
-        for (auto it = tasks.begin(); it != tasks.end();)
-        {
-            Task& task = *it;
-            // Give the task plenty of time to end so we know that resources will have been returned
-            if (!task.valid() || task.wait_for(std::chrono::milliseconds(10)))
-                it = tasks.erase(it);
-            else
-                ++it;
-        }
-
-        if (cacheSizeChanged && tasks.size())
-            cacheSizeChangedImpliesTasksDone = false;
-    }
-
-    CHECK(tasks.empty()); // If not empty then the tasks didn't complete in the maxIter iterations
-
-    // Make sure the cache change did not take effect before the tasks completed
-    CHECK(cacheSizeChangedImpliesTasksDone);
-
-    // Check to see if the cache size has updated
-    CHECK(physxCookingPrivate->getLocalMeshCacheSize() == newCacheSize);
-
-    oldCacheSize = newCacheSize;
-
-
-    /**************************************************************************************************************
-     * 4) Run a long task and in the meanwhile make several cache change requests.  Once the task completes
-     * the last change should take effect.
-     **************************************************************************************************************/
-
-    // Create a new long-running task and hammer the requests
-    Task task = helper.createTask(PhysxCookingDataType::eSDF_TRIANGLE_MESH, true);
-    tasking->sleep_for(std::chrono::milliseconds(10));
-    physxCookingPrivate->setLocalMeshCacheSize(++newCacheSize);
-    physxCookingPrivate->setLocalMeshCacheSize(++newCacheSize);
-    physxCookingPrivate->setLocalMeshCacheSize(++newCacheSize);
-
-    // The request should not have taken yet
-    CHECK(physxCookingPrivate->getLocalMeshCacheSize() == oldCacheSize);
-
-    cacheSizeChangedImpliesTasksDone = true;
-    bool cacheSizeChangedToLastValue = true;
-
-    // Wait for it to complete
-    bool taskDone = false;
-    for (int count = maxIter; !taskDone && count--;)
-    {
-        const uint32_t currentCacheSize = physxCookingPrivate->getLocalMeshCacheSize();
-        const bool cacheSizeChanged = currentCacheSize != oldCacheSize;
-        taskDone = !task.valid() || task.wait_for(std::chrono::milliseconds(10));
-        if (cacheSizeChanged && !taskDone)
-        {
-            cacheSizeChangedImpliesTasksDone = false;
-            if (currentCacheSize != newCacheSize)
-                cacheSizeChangedToLastValue = false;
-        }
-    }
-
-    CHECK(taskDone); // If false then the tasks didn't complete in the maxIter iterations
-
-    // Now the param should be the last set one
-    if (physxCookingPrivate->getLocalMeshCacheSize() != newCacheSize)
-        cacheSizeChangedToLastValue = false;
-
-    CHECK(cacheSizeChangedImpliesTasksDone);
-    CHECK(cacheSizeChangedToLastValue);
-
-    oldCacheSize = newCacheSize;
-
-
-    /**************************************************************************************************************
-     * 5.1) Run a long task and in the meanwhile make a cache change request followed by a fast task.  The
-     * long task should always finish first.
-     *
-     * 5.2) Same as (5.1) except now we follow the fast task creation with another request which has parameters
-     * equal to that for the current resources, so nothing needs to be done.  Now the fast task should finish first.
-     *
-     * 5.3) Repeat (5.1) except we make the second task synchronous, to make sure the infinite timeout doesn't cause
-     * a freeze-up.
-     *
-     * 5.4) Repeat (5.2) except we make the second task synchronous.
-     **************************************************************************************************************/
-
-    for (int run : { 1, 2, 3, 4 })
-    {
-        // Create a new long-running task
-        Task task0 = helper.createTask(PhysxCookingDataType::eSDF_TRIANGLE_MESH, true);
-        tasking->sleep_for(std::chrono::milliseconds(10));
-
-        // Request a cache change
-        physxCookingPrivate->setLocalMeshCacheSize(++newCacheSize);
-        tasking->sleep_for(std::chrono::milliseconds(10));
-
-        // On even runs, revert the cache change immediately
-        if (!(run % 2))
-            physxCookingPrivate->setLocalMeshCacheSize(--newCacheSize);
-
-        // Create a fast task
-        const bool async = run <= 2; // The first two runs are async, 2nd two sync
-        Task task1 = helper.createTask(PhysxCookingDataType::eCONVEX_MESH, async);
-
-        // Wait until they complete; make sure the order is correct
-        int taskFinishOrder = 0; // 1 => task0 before task1, -1 => task1 before task0, 0 => unknown
-        bool tasksDone = false;
-        for (int count = maxIter; !tasksDone && count--;)
-        {
-            const bool task0Done = !task0.valid() || task0.wait_for(std::chrono::milliseconds(10));
-            const bool task1Done = !task1.valid() || task1.wait_for(std::chrono::milliseconds(10));
-            tasksDone = task0Done && task1Done;
-            if (!taskFinishOrder && task0Done != task1Done)
-                taskFinishOrder = (int)task0Done - (int)task1Done;
-        }
-
-        CHECK(tasksDone); // If false then the tasks didn't complete in the maxIter iterations
-
-        CHECK(physxCookingPrivate->getLocalMeshCacheSize() == newCacheSize);
-
-        switch (run)
-        {
-        case 1:
-            CHECK(taskFinishOrder > 0);
-            break;
-        case 2:
-            CHECK(taskFinishOrder < 0);
-            break;
-        case 3:
-            CHECK(taskFinishOrder > 0);
-            break;
-        case 4:
-            CHECK(taskFinishOrder < 0);
-            break;
-        }
-    }
-
-    oldCacheSize = newCacheSize; // Putting this here in case more tests follow
-}
 
 void testAll()
 {

@@ -1,0 +1,23 @@
+# Standard KIT metadata about the package for the job, providing information about what the feature accomplishes so
+# it can be made visible to Users in Omniverse applications:
+[package]
+title = "Physx Cooking Programmatic Trigger Job"
+description = "Entry point to handle a Programmatic event."
+category = "jobs"
+version = "1.0.0"
+authors = ["Eric Arnold"]
+keywords = ["job"]
+
+[job.physx-cooking-programmatic-event]
+name = "physx-cooking-programmatic-event"
+task_function = "command_runner.handle_programmatic_event"
+args = [
+    "--enable omni.services.command.runner",
+    "--/exts/omni.services.command.runner/config_file_path=omni.physx.cooking://config/programmatic_config.json",
+]
+job_type = "kit-service"
+command = "${kit}/kit${exe_ext}"
+headless = true
+env = {}
+log_to_stdout = true
+job_spec_path = "omni.services.command.runner"

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -52,7 +52,7 @@ static void physxJointGetJointStateData(usdparser::ObjectId id, JointStateData* 
                 jointStateData->convertToDegrees[i] = intJoint->mJointStates[i].convertToDegrees;
                 jointStateData->initialPosition[i] = intJoint->mJointStates[i].initialState.position;
                 jointStateData->initialVelocity[i] = intJoint->mJointStates[i].initialState.velocity;
-                jointStateData->fabricTokenC[i] = omni::fabric::asInt(intJoint->mJointStates[i].usdToken).token;
+                jointStateData->tfTokenHandle[i] = omni::fabric::tfTokenToHandle(intJoint->mJointStates[i].usdToken);
             }
         }
     }

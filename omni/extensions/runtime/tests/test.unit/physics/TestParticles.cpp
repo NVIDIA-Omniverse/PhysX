@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -1050,7 +1050,7 @@ TEST_CASE("Particles Tests",
 
         StageReaderWriter srw = fabricTemplate.iStageReaderWriter->get(fabricTemplate.mStageId);
 
-        omni::fabric::PathC primPath = omni::fabric::asInt(pointsSetPath);
+        omni::fabric::Path primPath =  omni::fabric::convertToPathType<omni::fabric::Path>(srw.getFabricId(), pointsSetPath);
 
         fabricTemplate.iStageReaderWriter->createAttribute(srw.getId(), primPath, tokenPositionInvMasses, (omni::fabric::TypeC)float4ArrayType);
         fabricTemplate.iStageReaderWriter->createAttribute(srw.getId(), primPath, tokenVelocities, (omni::fabric::TypeC)float4ArrayType);
@@ -1075,9 +1075,9 @@ TEST_CASE("Particles Tests",
         fabricTemplate.iStageReaderWriter->setArrayAttributeSize(srw.getId(), primPath, tokenPositionInvMasses, numParticlesPointsSet);
         fabricTemplate.iStageReaderWriter->setArrayAttributeSize(srw.getId(), primPath, tokenVelocities, numParticlesPointsSet);
 
-        const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(typeAppliedSchema, tokenParticleSet) };
-        const omni::fabric::set<AttrNameAndType_v2> requiredAny = { AttrNameAndType_v2(float4ArrayType, tokenPositionInvMasses),
-                                                                 AttrNameAndType_v2(float4ArrayType, tokenVelocities) };
+        const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenParticleSet) };
+        const omni::fabric::set<AttrNameAndType> requiredAny = { AttrNameAndType(float4ArrayType, tokenPositionInvMasses),
+                                                                 AttrNameAndType(float4ArrayType, tokenVelocities) };
 
         PrimBucketList primBuckets = srw.findPrims(requiredAll, requiredAny);
         size_t bucketCount = primBuckets.bucketCount();
@@ -1285,4 +1285,3 @@ TEST_CASE("Particles Tests",
     pxr::UsdUtilsStageCache::Get().Erase(stage);
     stage = nullptr;
 }
-

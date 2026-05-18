@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -55,7 +55,9 @@ struct InternalActorFlag
         eHAS_TIME_SAMPLED_XFORM = 1 << 10,
         eHAS_EXTRA_TRANSFORM = 1 << 11,
         eEXTRA_TRANSFORM_PRE_OP = 1 << 12,
-        eFAST_TRANSFORM = 1 << 13
+        eFAST_TRANSFORM = 1 << 13,
+        eNESTED_BODY = 1 << 14,
+        eUSE_XFORM_COMMON_API = 1 << 15
     };
 };
 
@@ -98,6 +100,8 @@ public:
     int mID;
     uint32_t mFlags;
 
+    pxr::SdfPath mSourceGPrimPath;
+
     pxr::GfMatrix4d mParentWorldTransfInv;
     pxr::GfMatrix4d mExtraTransfInv;
 
@@ -125,7 +129,7 @@ public:
     void* mMirrorMemory;
 
 private:
-    void initializeDynamicActor();
+    void initializeDynamicActor(bool runtimeInitialization = false);
 
     bool mSurfaceVelocityEnabled;
     bool mSplinesSurfaceVelocityEnabled;

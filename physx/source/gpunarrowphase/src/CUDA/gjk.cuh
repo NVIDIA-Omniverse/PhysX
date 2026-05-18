@@ -22,12 +22,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef __GJK_CUH__
 #define __GJK_CUH__
+
+namespace physx
+{
 
 namespace squawk
 {
@@ -328,8 +331,8 @@ restart:
 			else 			f = 0x2111,		pointV = supportVertexV;			// REGION: new vertex
 			break;
 		}
-		case 2:	f = squawk::closestPointTri(simplexV, supportVertexV, pointV);	break; // no worries for 2 & 3: only (0,1,2) are affected by permute, and they're already used
-		case 3:	f = squawk::closestPointTet(simplexV, supportVertexV, pointV);	break;
+		case 2:	f = closestPointTri(simplexV, supportVertexV, pointV);	break; // no worries for 2 & 3: only (0,1,2) are affected by permute, and they're already used
+		case 3:	f = closestPointTet(simplexV, supportVertexV, pointV);	break;
 		}
 
 		cm = magnitude(pointV);
@@ -416,7 +419,10 @@ restart:
 
 	return schlock::GjkResult::eCLOSE;
 }
-}
+} // namespace squawk
+
+} // namespace physx
+
 #undef DEGENERATE_SIZE_FLAG
 
 #endif

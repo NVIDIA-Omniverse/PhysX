@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -141,7 +141,7 @@ namespace physx
 	typedef ConvexTriContacts SphereTriContacts;
 	typedef ConvexTriNormalAndIndex SphereTriNormalAndIndex;
 	typedef ConvexTriIntermediateData SphereTriIntermediateData;
-}
+}  // namespace physx
 
 
 #if PX_CUDA_COMPILER
@@ -171,9 +171,15 @@ namespace physx
 		int sBv32Nodes[320]; //10 depth of the bv32 tree
 	}PX_ALIGN_SUFFIX(16);
 	PX_COMPILE_TIME_ASSERT(sizeof(MidphaseScratch) <= WARP_SIZE * 16 * sizeof(PxU32));
-}
+
+} // namespace physx
 
 #include "schlockShared.h"
+#include "epa.cuh"
+#include "gjk.cuh"
+
+namespace physx
+{
 
 //0 is primitive, 1 is tetrahedron world space
 struct TetCollideScratch
@@ -205,9 +211,6 @@ struct TetCollideScratch
 		__syncwarp();
 	}
 };
-
-#include "epa.cuh"
-#include "gjk.cuh"
 
 __device__ static schlock::GjkResult::Enum tetPrimitivesCollide2(
 		squawk::EpaScratch& ss_epa_scratch,
@@ -299,7 +302,7 @@ __device__ static schlock::GjkResult::Enum tetPrimitivesCollide2(
 	return result;
 }
 
-
+} // namespace physx
 
 #endif
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -30,9 +30,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-//See comment for gMimicJointNaturalFrequencyAttributeName and remove accordingly.
-#include <omni/physx/PhysxTokens.h>
 
 CARB_BINDINGS("carb.physx.python")
 
@@ -390,12 +387,8 @@ PYBIND11_MODULE(_physx, m)
     ADD_SETTING("SETTING_EXPOSE_PRIM_PATH_NAMES", kSettingExposePrimPathNames);
     ADD_SETTING("SETTING_FORCE_PARSE_ONLY_SINGLE_SCENE", kSettingForceParseOnlySingleScene);
     ADD_SETTING("SETTING_SIMULATE_EMPTY_SCENE", kSettingSimulateEmptyScene);
-    ADD_SETTING("SETTING_DISABLE_SLEEPING", kSettingDisableSleeping);
     ADD_SETTING("SETTING_ENABLE_SYNCHRONOUS_KERNEL_LAUNCHES", kSettingSynchronousKernelLaunches);
     ADD_SETTING("SETTING_DISABLE_CONTACT_PROCESSING", kSettingDisableContactProcessing);
-
-    ADD_SETTING("SETTING_USE_LOCAL_MESH_CACHE", kSettingUseLocalMeshCache);
-    ADD_SETTING("SETTING_LOCAL_MESH_CACHE_SIZE_MB", kSettingLocalMeshCacheSizeMB);
 
     ADD_SETTING("SETTING_UJITSO_COOKING_DEV_KEY", kSettingUjitsoCookingDevKey);
     ADD_SETTING("SETTING_UJITSO_COLLISION_COOKING", kSettingUjitsoCollisionCooking);
@@ -404,10 +397,10 @@ PYBIND11_MODULE(_physx, m)
 
     // Stage settings
     ADD_SETTING("SETTING_UPDATE_TO_USD", kSettingUpdateToUsd);
+    ADD_SETTING("SETTING_UPDATE_TO_USD_USING_XFORM_COMMON_API", kSettingUpdateToUsdUsingXformCommonAPI);
     ADD_SETTING("SETTING_UPDATE_VELOCITIES_TO_USD", kSettingUpdateVelocitiesToUsd);
     ADD_SETTING("SETTING_OUTPUT_VELOCITIES_LOCAL_SPACE", kSettingOutputVelocitiesLocalSpace);
     ADD_SETTING("SETTING_UPDATE_PARTICLES_TO_USD", kSettingUpdateParticlesToUsd);
-    ADD_SETTING("SETTING_UPDATE_RESIDUALS_TO_USD", kSettingUpdateResidualsToUsd);
 
     ADD_SETTING("SETTING_MIN_FRAME_RATE", kSettingMinFrameRate);
     ADD_SETTING("SETTING_JOINT_BODY_TRANSFORM_CHECK_TOLERANCE", kSettingJointBodyTransformCheckTolerance);
@@ -443,8 +436,6 @@ PYBIND11_MODULE(_physx, m)
     ADD_SETTING("SETTING_DISPLAY_SIMULATION_OUTPUT", kSettingDisplaySimulationOutput);
     ADD_SETTING("SETTING_AUTO_POPUP_SIMULATION_OUTPUT_WINDOW", kSettingAutoPopupSimulationOutputWindow);
 
-    ADD_SETTING("SETTING_DISPLAY_SIMULATION_DATA_VISUALIZER", kSettingDisplaySimulationDataVisualizer);
-
     ADD_SETTING("SETTING_DISPLAY_TENDONS", kSettingDisplayTendons);
 
     // DEPRECATED
@@ -460,7 +451,7 @@ PYBIND11_MODULE(_physx, m)
     ADD_SETTING("SETTING_DISPLAY_DEFORMABLE_MESH_TYPE", kSettingDisplayDeformableMeshType);
     ADD_SETTING("SETTING_DISPLAY_DEFORMABLE_ATTACHMENTS", kSettingDisplayDeformableAttachments);
 
-    ADD_SETTING("SETTING_ENABLE_DEFORMABLE_BETA", kSettingEnableDeformableBeta);
+    ADD_SETTING("SETTING_ENABLE_DEFORMABLE_DEPRECATED", kSettingEnableDeformableDeprecated);
 
     ADD_SETTING("SETTING_DISPLAY_PARTICLES", kSettingDisplayParticles);
     ADD_SETTING("SETTING_VISUALIZATION_GAP", kSettingVisualizationGap);
@@ -509,15 +500,7 @@ PYBIND11_MODULE(_physx, m)
 
     // Custom attributes
     m.attr("METADATA_ATTRIBUTE_NAME_LOCALSPACEVELOCITIES") = py::str(kLocalSpaceVelocitiesMetadataAttributeName);
-
-    m.attr("MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTX") = py::str(gMimicJointNaturalFrequencyAttributeName[0]);
-    m.attr("MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTY") = py::str(gMimicJointNaturalFrequencyAttributeName[1]);
-    m.attr("MIMIC_JOINT_ATTRIBUTE_NAME_NATURAL_FREQUENCY_ROTZ") = py::str(gMimicJointNaturalFrequencyAttributeName[2]);
-
-    m.attr("MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTX") = py::str(gMimicJointDampingRatioAttributeName[0]);
-    m.attr("MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTY") = py::str(gMimicJointDampingRatioAttributeName[1]);
-    m.attr("MIMIC_JOINT_ATTRIBUTE_NAME_DAMPING_RATIO_ROTZ") = py::str(gMimicJointDampingRatioAttributeName[2]);
-
+ 
     // codeless schema API and attributes
 
     m.attr("PERF_ENV_API") = py::str(pxr::PhysxAdditionAPITokens->DrivePerformanceEnvelopeAPI);
@@ -659,6 +642,9 @@ PYBIND11_MODULE(_physx, m)
             )")
         .value("DETACHED_FROM_STAGE", eDetachedFromStage,
            R"(When physx stage detachment (deinitialization) finished.
+            )")
+        .value("PHYSICS_OBJECTS_RELEASED", ePhysicsObjectsReleased,
+           R"(When physics objects are released before a force reload from USD.
             )");
 
     py::enum_<ErrorEvent>(m, "ErrorEvent", R"(
@@ -2017,6 +2003,9 @@ PYBIND11_MODULE(_physx, m)
 
         Args:
             mesh: UsdGeom.Mesh path encoded into two integers. Use PhysicsSchemaTools.encodeSdfPath to get those.
+                Its also possible to provide a UsdPrim with mesh merge collisionAPI, however the approximation must
+                be a convexHull in that case.
+
             reportFn: Report function where SceneQueryHits will be reported, return True to continue traversal, False to stop traversal
             anyHit: Boolean defining whether overlap should report only bool hit (0 no hit, 1 hit found).
 
@@ -2042,6 +2031,8 @@ PYBIND11_MODULE(_physx, m)
 
         Args:
             mesh: UsdGeom.Mesh path encoded into two integers. Use PhysicsSchemaTools.encodeSdfPath to get those.
+                Its also possible to provide a UsdPrim with mesh merge collisionAPI, however the approximation must
+                be a convexHull in that case.
 
         Returns:
             Returns True if overlap was found.
@@ -2065,6 +2056,9 @@ PYBIND11_MODULE(_physx, m)
 
         Args:
             gprim: UsdGeom.GPrim path encoded into two integers. Use PhysicsSchemaTools.encodeSdfPath to get those.
+                Its also possible to provide a UsdPrim with mesh merge collisionAPI, however the approximation must
+                be a convexHull in that case.
+
             reportFn: Report function where SceneQueryHits will be reported, return True to continue traversal, False to stop traversal
             anyHit: Boolean defining whether overlap should report only bool hit (0 no hit, 1 hit found).
 
@@ -2090,6 +2084,8 @@ PYBIND11_MODULE(_physx, m)
 
         Args:
             gprim: UsdGeom.GPrim path encoded into two integers. Use PhysicsSchemaTools.encodeSdfPath to get those.
+                Its also possible to provide a UsdPrim with mesh merge collisionAPI, however the approximation must
+                be a convexHull in that case.
 
         Returns:
             Returns True if overlap was found.
@@ -2355,6 +2351,14 @@ PYBIND11_MODULE(_physx, m)
             else if (strstr(parameter, "SDFs"))
             {
                 visPar = eSDF;
+            }
+            else if (strstr(parameter, "SplinesSurfaceVelocitySegments"))
+            {
+                visPar = eSplinesSurfaceVelocitySegments;
+            }
+            else if (strstr(parameter, "SplinesSurfaceVelocity"))
+            {
+                visPar = eSplinesSurfaceVelocity;
             }
 
             self->setVisualizationParameter(visPar, value);

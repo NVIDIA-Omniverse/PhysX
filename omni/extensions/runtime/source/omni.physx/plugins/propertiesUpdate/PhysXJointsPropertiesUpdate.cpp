@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -1215,6 +1215,142 @@ bool omni::physx::updateJointStateVelocity(AttachedStage& attachedStage, omni::p
     return updateJointStateInternal(attachedStage, objectId, property, timeCode, false);
 }
 
+template <bool isHighLimit>
+void computeArticulationJointLimitValueAndAxis
+(const PxArticulationJointReducedCoordinate& joint, const InternalJoint& intJoint, const float& data, const std::string& propertyString,
+ PxArticulationAxis::Enum& axis, float& limitToSet)
+{
+    axis = PxArticulationAxis::eCOUNT;
+    limitToSet = data;
+    switch (joint.getJointType())
+    {
+        case PxArticulationJointType::eREVOLUTE:
+        case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
+            axis = PxArticulationAxis::eTWIST;
+            limitToSet = degToRad(data);
+            break;
+        case PxArticulationJointType::ePRISMATIC:
+            axis = PxArticulationAxis::eX;
+            limitToSet = data;
+            break;
+        case PxArticulationJointType::eSPHERICAL:
+            if (usdparser::eJointD6 == intJoint.mJointType)
+            {
+                const bool validAxis = getD6ArticulationAxisFromLimit(propertyString, axis);
+                axis = validAxis ? axis : PxArticulationAxis::eCOUNT;
+                limitToSet = degToRad(data);
+            }
+            else 
+            {
+                 // case USD spherical joint
+                 // - limit high is called on ConeAngle1Limit change on PxArticulationAxis::eSWING2
+                 // - limit low is called on ConeAngle0Limit change on PxArticulationAxis::eSWING1
+                axis = isHighLimit ? PxArticulationAxis::eSWING2 : PxArticulationAxis::eSWING1;
+                limitToSet = (data >= 0.0f) ? degToRad(data) : FLT_MAX;
+            }
+            break;
+        case PxArticulationJointType::eFIX:
+        case PxArticulationJointType::eUNDEFINED:
+            break;
+        default:
+            break;
+    }
+}
+
+template <bool isHighLimit>
+void updateArticulationJointLimit
+(const PxArticulationAxis::Enum axis, const float limitToSet,
+ PxArticulationJointReducedCoordinate* joint, const InternalJoint* intJoint)
+{
+    switch (joint->getJointType())
+    {
+    case PxArticulationJointType::eREVOLUTE:
+    case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
+    case PxArticulationJointType::ePRISMATIC:
+        if(isHighLimit)
+            intJoint->updateArticulationJointLimitHigh(joint, axis, limitToSet);
+        else   
+            intJoint->updateArticulationJointLimitLow(joint, axis, limitToSet);
+        break;
+    case PxArticulationJointType::eSPHERICAL:
+    {
+        if (intJoint->mJointType == usdparser::eJointD6)
+        {
+            if(isHighLimit)
+                intJoint->updateArticulationJointLimitHigh(joint, axis, limitToSet);
+            else
+                intJoint->updateArticulationJointLimitLow(joint, axis, limitToSet);
+        }
+        else  
+        {
+            // case USD spherical joint
+            // - limit high is called on ConeAngle1Limit change on PxArticulationAxis::eSWING2
+            // - limit low is called on ConeAngle0Limit change on PxArticulationAxis::eSWING1
+            joint->setLimitParams(axis, PxArticulationLimit(-limitToSet, limitToSet));
+        }
+    }
+        break;
+    case PxArticulationJointType::eFIX:
+    case PxArticulationJointType::eUNDEFINED:
+        break;
+    default:
+        break;
+    }
+}
+
+template<bool isHighLimit>
+bool emitArticulationJointLimitWarnings(const PxArticulationJointReducedCoordinate& joint, const char* jointPrimPath, const PxArticulationAxis::Enum axis)
+{
+    //Check if we have a valid axis.
+    //Emit a warning if we have an invalid axis.
+    //An invalid axis arises if we have
+    //1. an unknown axis on a spherical joint type
+    //2. a fixed joint type
+    //3. an undefined joint type
+    if(PxArticulationAxis::eCOUNT == axis)
+    {
+        const char jointTypeNames[3][16] = {"spherical", "fixed", "undefined"};
+        const PxArticulationJointType::Enum jointType = joint.getJointType();
+        PxU32 jointTypeNameId = 2;
+        if(jointType == PxArticulationJointType::eSPHERICAL)
+            jointTypeNameId = 0;
+        else if(jointType == PxArticulationJointType::eFIX)
+            jointTypeNameId = 1;
+        const char* jointTypeName = jointTypeNames[jointTypeNameId];
+
+        const char highOrLow[2][16] = {"high", "low"};
+
+        OMNI_LOG_WARN(
+            "Cannot update articulation joint %s limit on %s joint due to illegal joint axis: %s",
+            isHighLimit ? highOrLow[0] : highOrLow[1], jointTypeName, jointPrimPath);
+        return true;
+    }
+
+    //Check that the joint is already configured as limited.
+    //We do not support runtime changes to the joint motion type (free, limited, locked).
+    //Emit a warning if the user is trying to change the joint motion type at runtime.
+    const PxArticulationMotion::Enum motion = joint.getMotion(axis);
+    if(PxArticulationMotion::eLIMITED != motion)
+    {
+        if(isHighLimit)
+        {
+            OMNI_LOG_WARN(
+                "Cannot update articulation joint high limit because the joint was not initially configured with limits: (%s)",
+                 jointPrimPath);
+        }
+        else
+        {
+            OMNI_LOG_WARN(
+                "Cannot update articulation joint low limit because the joint was not initially configured with limits: (%s)",
+                 jointPrimPath);
+        }
+        return true;
+    }
+
+    //No warnings emitted.
+    return false;
+}
+
 bool omni::physx::updateLimitHigh(AttachedStage& attachedStage, ObjectId objectId, const pxr::TfToken& property, const pxr::UsdTimeCode& timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
@@ -1246,63 +1382,21 @@ bool omni::physx::updateLimitHigh(AttachedStage& attachedStage, ObjectId objectI
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint && intJoint)
         {
+            //Work out which axis is being addressed by the limit change.
+            //Convert to radians as required.
+            PxArticulationAxis::Enum axis = PxArticulationAxis::eCOUNT;
+            float limitToSet = data;
+            computeArticulationJointLimitValueAndAxis<true>(*joint, *intJoint, data, property.GetString(), axis, limitToSet);
+
+            //If we emit a warning then we should not continue with the limit update. 
+            if(emitArticulationJointLimitWarnings<true>(*joint, objectRecord->mPath.GetText(), axis))
+                return true;
+            
             PxArticulationReducedCoordinate& articulation = joint->getChildArticulationLink().getArticulation();
             if (articulation.getScene())
                 articulation.wakeUp();
 
-            switch (joint->getJointType())
-            {
-            case PxArticulationJointType::eREVOLUTE:
-            case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
-            {
-                const float angleInDeg = data;
-                data = degToRad(angleInDeg);
-                if(joint->getMotion(PxArticulationAxis::eTWIST) == PxArticulationMotion::eLIMITED && isfinite(angleInDeg))
-                {
-                    intJoint->updateArticulationJointLimitHigh(joint, PxArticulationAxis::eTWIST, data);
-                }
-                else
-                {
-                    OMNI_LOG_WARN(
-                        kRoboticsLogChannel,
-                        "Cannot change high limit to %2.f on %s during simulation. This change requires a simulation restart.",
-                        angleInDeg, objectRecord->mPath.GetText());
-                }
-            }
-            break;
-            case PxArticulationJointType::ePRISMATIC:
-            {
-                intJoint->updateArticulationJointLimitHigh(joint, PxArticulationAxis::eX, data);
-            }
-            break;
-            case PxArticulationJointType::eSPHERICAL:
-            {
-                data = degToRad(data);
-                if (intJoint->mJointType == usdparser::eJointD6)
-                {
-                    PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                    const bool validAxis = getD6ArticulationAxisFromLimit(property.GetString(), axis);
-                    if (validAxis)
-                    {
-                        intJoint->updateArticulationJointLimitHigh(joint, axis, data);
-                    }
-                }
-                else  // case USD spherical joint - limit high is called on ConeAngle1Limit change on PxArticulationAxis::eSWING2
-                {
-                    if (data >= 0.0f)
-                    {
-                        joint->setLimitParams(::physx::PxArticulationAxis::eSWING2, PxArticulationLimit(-data, data));
-                    }
-                    else
-                    {
-                        joint->setLimitParams(::physx::PxArticulationAxis::eSWING2, PxArticulationLimit(-FLT_MAX, FLT_MAX));
-                    }
-                }
-            }
-            case PxArticulationJointType::eFIX:
-            case PxArticulationJointType::eUNDEFINED:
-                break;
-            }
+            updateArticulationJointLimit<true>(axis, limitToSet, joint, intJoint);
         }
     }
     else if (internalType == ePTJoint)
@@ -1451,61 +1545,21 @@ bool omni::physx::updateLimitLow(AttachedStage& attachedStage, ObjectId objectId
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint && intJoint)
         {
+            //Work out which axis is being addressed by the limit change.
+            //Convert the new limit value radians as required.
+            PxArticulationAxis::Enum axis;
+            float limitToSet = data;
+            computeArticulationJointLimitValueAndAxis<false>(*joint, *intJoint, data, property.GetString(), axis, limitToSet);
+
+            //If we emit a warning then we should not continue with the limit update. 
+            if(emitArticulationJointLimitWarnings<false>(*joint, objectRecord->mPath.GetText(), axis))
+                return true;
+
             PxArticulationReducedCoordinate& articulation = joint->getChildArticulationLink().getArticulation();
             if (articulation.getScene())
                 articulation.wakeUp();
 
-            switch (joint->getJointType())
-            {
-            case PxArticulationJointType::eREVOLUTE:
-            case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
-            {
-                const float angleInDeg = data;
-                data = degToRad(angleInDeg);
-                if(joint->getMotion(PxArticulationAxis::eTWIST) == PxArticulationMotion::eLIMITED && isfinite(angleInDeg))
-                {
-                    intJoint->updateArticulationJointLimitLow(joint, PxArticulationAxis::eTWIST, data);
-                }
-                else
-                {
-                    OMNI_LOG_WARN(
-                        kRoboticsLogChannel,
-                        "Cannot change low limit to %2.f on %s during simulation. This change requires a simulation restart.",
-                        angleInDeg, objectRecord->mPath.GetText());
-                }
-            }
-            break;
-            case PxArticulationJointType::ePRISMATIC:
-            {
-                intJoint->updateArticulationJointLimitLow(joint, PxArticulationAxis::eX, data);
-            }
-            break;
-            case PxArticulationJointType::eSPHERICAL:
-                data = degToRad(data);
-                if (intJoint->mJointType == usdparser::eJointD6)
-                {
-                    PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                    const bool validAxis = getD6ArticulationAxisFromLimit(property.GetString(), axis);
-                    if (validAxis)
-                    {
-                        intJoint->updateArticulationJointLimitLow(joint, axis, data);
-                    }
-                }
-                else  // case USD spherical joint - limit low is called on ConeAngle0Limit change on PxArticulationAxis::eSWING1
-                {
-                    if (data >= 0.0f)
-                    {
-                        joint->setLimitParams(::physx::PxArticulationAxis::eSWING1, PxArticulationLimit(-data, data));
-                    }
-                    else
-                    {
-                        joint->setLimitParams(::physx::PxArticulationAxis::eSWING1, PxArticulationLimit(-FLT_MAX, FLT_MAX));
-                    }
-                }
-            case PxArticulationJointType::eFIX:
-            case PxArticulationJointType::eUNDEFINED:
-                break;
-            }
+            updateArticulationJointLimit<false>(axis, limitToSet, joint, intJoint);
         }
     }
     else if (internalType == ePTJoint)

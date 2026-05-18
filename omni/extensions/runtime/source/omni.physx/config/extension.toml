@@ -2,7 +2,7 @@
 title = "PhysX Core"
 description="PhysX 5 integration code."
 
-version = "107.3.0-oss.0"
+version = "110.0.7"
 authors = ["PhysX"]
 
 repository = ""
@@ -22,18 +22,15 @@ usd = true
 
 [dependencies]
 "omni.usd.libs" = {}
-"omni.usd.schema.physx" = { version = "107.3.0-oss.0", exact = true }
-"omni.usdphysics" = { version = "107.3.0-oss.0", exact = true }
+"omni.usd.schema.physx" = { version = "110.0.7", exact = true }
+"omni.usdphysics" = { version = "110.0.7", exact = true }
 "usdrt.scenegraph" = {}
 "omni.gpucompute.plugins" = {}
-"omni.physx.cooking" = { version = "107.3.0-oss.1", exact = true }
-"omni.physx.foundation" = { version = "107.3.0-oss.1", exact = true }
+"omni.physx.cooking" = { version = "110.0.7", exact = true }
+"omni.physx.foundation" = { version = "110.0.7", exact = true }
 
 [[python.module]]
 name = "omni.physx"
-
-[[python.module]]
-name = "omni.physx.scripts"
 
 [[native.plugin]]
 path = "bin/omni.physx.plugin"

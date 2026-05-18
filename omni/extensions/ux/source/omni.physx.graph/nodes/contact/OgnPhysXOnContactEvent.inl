@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -142,7 +142,8 @@ public:
 
             for(size_t n = 0; n < inputBodies.size(); n++)
             {
-                uint64_t nPhysxPath = toPhysX(inputBodies[n]);
+                const pxr::SdfPath bodyPath(inputBodies[n].getText());
+                const uint64_t nPhysxPath = omni::fabric::sdfPathToHandle(bodyPath);
                 state.m_nPhysxPaths.insert(nPhysxPath);
                 subscribePaths[n] = nPhysxPath;
             }
@@ -250,14 +251,29 @@ public:
             CARB_ASSERT(state.m_nPhysxPaths.find(state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].actor1) != state.m_nPhysxPaths.end());
             bSwap = true;
         }
-
-        db.outputs.contactingBody() = asNameToken(bSwap ? state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].actor0 : state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].actor1);
-        db.outputs.inputBody() = asNameToken(bSwap ? state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].actor1 : state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].actor0);
+        omni::graph::core::BackendId backendId;
+        omni::graph::core::GraphObj graphObj = db.abi_context().iContext->getGraph(db.abi_context());
+        graphObj.iGraph->getBackendId(graphObj, backendId);
+        omni::fabric::FabricId fabricId(backendId.id);
+        
+        db.outputs.contactingBody() =
+            omni::fabric::StageReaderWriterUsd(fabricId).registerToken(omni::fabric::handleToSdfPath(
+                          bSwap ? state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].actor0 :
+                                  state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].actor1).GetText());
+        db.outputs.inputBody() = omni::fabric::StageReaderWriterUsd(fabricId).registerToken(omni::fabric::handleToSdfPath(
+                          bSwap ? state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].actor1 :
+                                  state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].actor0).GetText());
 
         #if PHYSX_OGN_ON_CONTACT_EVENT_REPORT_FULL_DATA
 
-            db.outputs.contactingCollider() = asNameToken(bSwap ? state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].collider0 : state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].collider1);
-            db.outputs.inputBodyCollider() = asNameToken(bSwap ? state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].collider1 : state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].collider0);
+            db.outputs.contactingCollider() =
+            omni::fabric::StageReaderWriterUsd(fabricId).registerToken(omni::fabric::handleToSdfPath(
+                          bSwap ? state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].collider0 :
+                                  state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].collider1).GetText());
+        db.outputs.inputBodyCollider() =
+            omni::fabric::StageReaderWriterUsd(fabricId).registerToken(omni::fabric::handleToSdfPath(
+                          bSwap ? state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].collider1 :
+                                  state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].collider0).GetText());
 
             int nNumContacts = state.m_contactReportData.mContactHeaders[state.m_nContactHeaderArrayIndex].numContactData;
             db.outputs.contactingFaces().resize(nNumContacts);

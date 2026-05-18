@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import functools
 from typing import Callable, List
 import carb.settings
@@ -11,8 +12,36 @@ from omni.kit.viewport.menubar.core import SelectableMenuItem
 class PhysicsViewportMenuHelper:
        # some helper functions
 
+    # Class-level storage for additional menu items registered by other extensions
+    _additional_menu_builders = []
+
     def __init__(self):
         self.settings = carb.settings.acquire_settings_interface()
+
+    @classmethod
+    def register_additional_menu_builder(cls, builder_fn):
+        """
+        Register a function that will be called to build additional menu items.
+        The builder function receives (settings, helper) as arguments and should
+        create menu items using the omni.ui context.
+        """
+        if builder_fn not in cls._additional_menu_builders:
+            cls._additional_menu_builders.append(builder_fn)
+
+    @classmethod
+    def unregister_additional_menu_builder(cls, builder_fn):
+        """Unregister a previously registered menu builder function."""
+        if builder_fn in cls._additional_menu_builders:
+            cls._additional_menu_builders.remove(builder_fn)
+
+    def build_additional_menu_items(self):
+        """Build all registered additional menu items."""
+        for builder_fn in self._additional_menu_builders:
+            try:
+                builder_fn(self.settings, self)
+            except Exception as e:
+                import carb
+                carb.log_error(f"Error building additional menu item: {e}")
 
     def create_menu_simple_bool_item(self, text, setting) -> CategoryStateItem:
         # also set default value with whatever we have in the settings

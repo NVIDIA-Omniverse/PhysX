@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXBroadphaseGpu common
@@ -46,6 +46,8 @@ SET(PHYXGPU_BROADPHASE_HEADERS
 	${PHYSX_SOURCE_DIR}/gpubroadphase/include/PxgIntegerAABB.h
 	${PHYSX_SOURCE_DIR}/gpubroadphase/include/PxgSapBox1D.h
 	${PHYSX_SOURCE_DIR}/gpubroadphase/include/PxgAggregate.h
+	${PHYSX_SOURCE_DIR}/gpubroadphase/include/PxgAggregateBuffer.h
+	${PHYSX_SOURCE_DIR}/gpubroadphase/include/PxgBoundTransformUpdate.h
 	${PHYSX_SOURCE_DIR}/gpubroadphase/include/PxgAABBManager.h
 	${PHYSX_SOURCE_DIR}/gpubroadphase/include/PxgAggregateDesc.h
 )

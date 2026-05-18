@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import math
 import numpy as np
 import carb
@@ -9,6 +10,8 @@ import omni
 from pxr import Sdf, UsdPhysics, Gf, UsdGeom, PhysxSchema, UsdShade
 from omni.physx.scripts import utils, physicsUtils
 from usdrt import Gf as usdrt_Gf
+import omni.usd
+from pxr import UsdUtils
 
 import omni.physxdemos as demo
 
@@ -372,7 +375,9 @@ class FrankaDemoBase(demo.AsyncDemoBase):
 
         scene.CreateGravityDirectionAttr().Set(Gf.Vec3f(0.0, 0.0, -1.0))
         scene.CreateGravityMagnitudeAttr().Set(self._gravity_magnitude)
-        utils.set_physics_scene_asyncsimrender(scene.GetPrim())
+        
+        # disable async because it is not safe to use Numpy from async callbacks
+        utils.set_physics_scene_asyncsimrender(scene.GetPrim(), False)
         physxSceneAPI = PhysxSchema.PhysxSceneAPI.Apply(scene.GetPrim())
         physxSceneAPI.GetTimeStepsPerSecondAttr().Set(self._time_steps_per_second)
 
@@ -409,7 +414,8 @@ class FrankaDemoBase(demo.AsyncDemoBase):
             self._reset_hydra_instancing_on_shutdown = True
 
     def on_tensor_start(self, tensorApi):
-        sim = tensorApi.create_simulation_view("numpy")
+        stage_id = UsdUtils.StageCache.Get().GetId(omni.usd.get_context().get_stage()).ToLongInt()
+        sim = tensorApi.create_simulation_view("numpy", stage_id)
         sim.set_subspace_roots("/World/envs/*")
         # franka view
         self._frankas_view = sim.create_articulation_view("/World/envs/*/franka")

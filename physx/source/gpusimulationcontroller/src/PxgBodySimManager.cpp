@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "PxgBodySimManager.h"
 #include "PxvDynamics.h"
@@ -121,7 +121,6 @@ void PxgBodySimManager::addArticulation(Dy::FeatherstoneArticulation* articulati
 #else
 	PX_UNUSED(OmniPVDRecordDirectGPUAPI);
 #endif
-	//articulation->setGpuRemapId(index.remapIndex);
 
 	mTotalNumBodies = PxMax(mTotalNumBodies, nodeIndex + 1);
 	mTotalNumArticulations = PxMax(mTotalNumArticulations, index.remapIndex + 1);

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved. 
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved. 
 
 #ifndef SC_SHAPESIM_BASE_H
 #define SC_SHAPESIM_BASE_H
@@ -35,9 +35,17 @@ namespace physx
 {
 	namespace Sc
 	{
-		PX_FORCE_INLINE PxU32 isBroadPhase(PxShapeFlags flags) { return PxU32(flags) & PxU32(PxShapeFlag::eTRIGGER_SHAPE | PxShapeFlag::eSIMULATION_SHAPE); }
-
 		class ShapeCore;
+
+		struct UpdateCachedParams
+		{
+			PX_FORCE_INLINE	UpdateCachedParams(PxsTransformCache& cache, Bp::BoundsArray& bounds, PxU32 flags = 0) :
+				mTransformCache(cache), mBoundsArray(bounds), mTransformFlags(flags)	{}
+
+			PxsTransformCache&	mTransformCache;
+			Bp::BoundsArray&	mBoundsArray;
+			PxU32				mTransformFlags;
+		};
 
 		class ShapeSimBase : public ElementSim
 		{
@@ -96,8 +104,8 @@ namespace physx
 							void					createSqBounds();
 							void					destroySqBounds();
 
-							void					updateCached(PxU32 transformCacheFlags, PxBitMapPinned* shapeChangedMap);
-							void					updateCached(PxsTransformCache& transformCache, Bp::BoundsArray& boundsArray);
+							void					updateCached_NotThreadSafe(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap);
+							void					updateCached_ThreadSafe(const UpdateCachedParams& params);
 							void					updateBPGroup();
 		protected:
 

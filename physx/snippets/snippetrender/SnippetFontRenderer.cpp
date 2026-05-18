@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -122,7 +122,7 @@ void GLFontRenderer::print_(float x, float y, float fontSize, const char* pStrin
 	if(!m_isInit)
 		m_isInit = init();
 
-	unsigned int num = (unsigned int)(strlen(pString));
+	unsigned int num = (unsigned int)(strnlen(pString, UINT32_MAX - 1));
 	if(m_isInit && num > 0)
 	{
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -181,7 +181,7 @@ void GLFontRenderer::print_(float x, float y, float fontSize, const char* pStrin
 				float glyphWidth = (float)GLFontGlyphWidth[c]+1;
 				if(forceMonoSpace)
 					glyphWidth = (float)monoSpaceWidth;
-				
+
 				glyphWidth = glyphWidth*(fontSize/(((float)OGL_FONT_TEXTURE_WIDTH)/OGL_FONT_CHARS_PER_ROW))-0.01f;
 
 				const float cxUV = float((c)%OGL_FONT_CHARS_PER_ROW)/OGL_FONT_CHARS_PER_ROW+0.008f;
@@ -217,14 +217,14 @@ void GLFontRenderer::print_(float x, float y, float fontSize, const char* pStrin
 
 				pTextureCoordList[textureCoordIndex++] = cxUV+glyphWidthUV;
 				pTextureCoordList[textureCoordIndex++] = cyUV+glyphHeightUV;
-				
+
 				pVertList[vertIndex++] = x+fontSize+translate;
 				pVertList[vertIndex++] = y+0+translateDown;
 				pVertList[vertIndex++] = 0;
 
 				pTextureCoordList[textureCoordIndex++] = cxUV+glyphWidthUV;
 				pTextureCoordList[textureCoordIndex++] = cyUV;
-				
+
 				pVertList[vertIndex++] = x+fontSize+translate;
 				pVertList[vertIndex++] = y+fontSize+translateDown;
 				pVertList[vertIndex++] = 0;
@@ -233,7 +233,7 @@ void GLFontRenderer::print_(float x, float y, float fontSize, const char* pStrin
 			}
 		}
 
-		glEnableClientState(GL_VERTEX_ARRAY);		
+		glEnableClientState(GL_VERTEX_ARRAY);
 //		glVertexPointer(3, GL_FLOAT, num*6, pVertList);
 		glVertexPointer(3, GL_FLOAT, 3*4, pVertList);
 
@@ -258,10 +258,10 @@ void GLFontRenderer::print_(float x, float y, float fontSize, const char* pStrin
 		}
 		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
-		
+
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_LIGHTING);
-		glDisable(GL_TEXTURE_2D);	
+		glDisable(GL_TEXTURE_2D);
 		glDisable(GL_BLEND);
 		glEnable(GL_CULL_FACE);
 	}

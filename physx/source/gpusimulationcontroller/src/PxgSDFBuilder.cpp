@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -102,7 +102,7 @@ PxgLinearBVHBuilderGPU::PxgLinearBVHBuilderGPU(PxgKernelLauncher& kernelLauncher
 	mTotalInvEdges = PX_DEVICE_MEMORY_ALLOC(PxVec3, *ccm, 1);
 }
 
-void PxgLinearBVHBuilderGPU::allocateOrResize(PxgBVH& bvh, PxU32 numItems)
+bool PxgLinearBVHBuilderGPU::allocateOrResize(PxgBVH& bvh, PxU32 numItems)
 {
 	const PxU32 maxNodes = 2 * numItems;
 
@@ -132,13 +132,30 @@ void PxgLinearBVHBuilderGPU::allocateOrResize(PxgBVH& bvh, PxU32 numItems)
 		mRangeRights = PX_DEVICE_MEMORY_ALLOC(PxI32, *ccm, nodesToAlloc);
 		mNumChildren = PX_DEVICE_MEMORY_ALLOC(PxI32, *ccm, nodesToAlloc);
 
-		mMaxTreeDepth = PX_PINNED_MEMORY_ALLOC(PxI32, *ccm, 1);
+		mMaxTreeDepth = PX_PINNED_MEMORY_ALLOC_FLAGS(PxU32, *ccm, 1, CU_MEMHOSTALLOC_PORTABLE | CU_MEMHOSTALLOC_DEVICEMAP);
+		if(!mMaxTreeDepth)
+		{
+			mKernelLauncher.getCudaContextManager()->getCudaContext()->setAbortMode(true);
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgLinearBVHBuilderGPU: failed to allocate pinned host buffers");
+		}
+		else
+		{
+			*mMaxTreeDepth = 0;
+		}
 
 		mMaxItems = itemsToAlloc;
 
 		mSort.release();
 		mSort.initialize(&mKernelLauncher, numItems);
 	}
+
+	if(mKernelLauncher.getCudaContextManager()->getCudaContext()->isInAbortMode())
+	{
+		releaseBVH(bvh);
+		release();
+		return false;
+	}
+	return true;
 }
 
 void PxgLinearBVHBuilderGPU::release()
@@ -165,7 +182,8 @@ void PxgLinearBVHBuilderGPU::release()
 	
 void PxgLinearBVHBuilderGPU::buildFromTriangles(PxgBVH& bvh, const PxVec3* vertices, const PxU32* triangleIndices, const PxI32* itemPriorities, PxI32 numItems, PxBounds3* totalBounds, CUstream stream, PxReal boxMargin)
 {
-	allocateOrResize(bvh, numItems);
+	if(!allocateOrResize(bvh, numItems))
+		return;
 
 	//Since maxNodes is 2*numItems, the second half of bvh.mNodeLowers and bvh.mNodeUppers
 	//Can be used as scratch memory until the BuildHierarchy kernel gets launched
@@ -180,17 +198,20 @@ void PxgLinearBVHBuilderGPU::buildFromTriangles(PxgBVH& bvh, const PxVec3* verti
 
 	prepareHierarchConstruction(bvh, itemLowers, itemUppers, itemPriorities, numItems, totalBounds, stream);
 
+	PxCudaContextManager* ccm = mKernelLauncher.getCudaContextManager();
+	PxU32* maxTreeDepthMapped = reinterpret_cast<PxU32*>(ccm->getMappedDevicePtr(mMaxTreeDepth));
+
 	kNumThreadsPerBlock = PxgBVHKernelBlockDim::BUILD_HIERARCHY;
 	kNumBlocks = (numItems + kNumThreadsPerBlock - 1) / kNumThreadsPerBlock;
 	mKernelLauncher.launchKernelPtr(PxgKernelIds::bvh_BuildHierarchy, kNumBlocks, kNumThreadsPerBlock, 0, stream,
-		&numItems, &bvh.mRootNode, &mMaxTreeDepth, &mDeltas, &mNumChildren, &mRangeLefts, &mRangeRights, &bvh.mNodeLowers, &bvh.mNodeUppers);
+		&numItems, &bvh.mRootNode, &maxTreeDepthMapped, &mDeltas, &mNumChildren, &mRangeLefts, &mRangeRights, &bvh.mNodeLowers, &bvh.mNodeUppers);
 }
 
 void PxgLinearBVHBuilderGPU::buildTreeAndWindingClustersFromTriangles(PxgBVH& bvh, PxgWindingClusterApproximation* windingNumberClustersD, const PxVec3* vertices, const PxU32* triangleIndices, const PxI32* itemPriorities,
 	PxI32 numItems, PxBounds3* totalBounds, CUstream stream, PxReal boxMargin, bool skipAllocate)
 {
-	if (!skipAllocate)
-		allocateOrResize(bvh, numItems);
+	if(!skipAllocate && !allocateOrResize(bvh, numItems))
+		return;
 
 	//Since maxNodes is 2*numItems, the second half of bvh.mNodeLowers and bvh.mNodeUppers
 	//Can be used as scratch memory until the BuildHierarchy kernel gets launched
@@ -206,8 +227,11 @@ void PxgLinearBVHBuilderGPU::buildTreeAndWindingClustersFromTriangles(PxgBVH& bv
 
 	prepareHierarchConstruction(bvh, itemLowers, itemUppers, itemPriorities, numItems, totalBounds, stream);
 
+	PxCudaContextManager* ccm = mKernelLauncher.getCudaContextManager();
+	PxU32* maxTreeDepthMapped = reinterpret_cast<PxU32*>(ccm->getMappedDevicePtr(mMaxTreeDepth));
+
 	mKernelLauncher.launchKernelPtr(PxgKernelIds::bvh_BuildHierarchyAndWindingClusters, kNumBlocks, kNumThreadsPerBlock, 0, stream,
-		&numItems, &bvh.mRootNode, &mMaxTreeDepth, &mDeltas, &mNumChildren, &mRangeLefts, &mRangeRights, &bvh.mNodeLowers, &bvh.mNodeUppers,
+		&numItems, &bvh.mRootNode, &maxTreeDepthMapped, &mDeltas, &mNumChildren, &mRangeLefts, &mRangeRights, &bvh.mNodeLowers, &bvh.mNodeUppers,
 		&windingNumberClustersD, &vertices, &triangleIndices);
 
 #if EXTENDED_DEBUG
@@ -242,13 +266,16 @@ void PxgLinearBVHBuilderGPU::buildFromLeaveBounds(PxgBVH& bvh, const PxVec4* ite
 	const PxU32 kNumThreadsPerBlock = PxgBVHKernelBlockDim::BUILD_HIERARCHY;
 	const PxU32 kNumBlocks = (numItems + kNumThreadsPerBlock - 1) / kNumThreadsPerBlock;
 
-	if (!skipAllocate)
-		allocateOrResize(bvh, numItems);
+	if(!skipAllocate && !allocateOrResize(bvh, numItems))
+		return;
 
 	prepareHierarchConstruction(bvh, itemLowers, itemUppers, itemPriorities, numItems, totalBounds, stream);
 
+	PxCudaContextManager* ccm = mKernelLauncher.getCudaContextManager();
+	PxU32* maxTreeDepthMapped = reinterpret_cast<PxU32*>(ccm->getMappedDevicePtr(mMaxTreeDepth));
+
 	mKernelLauncher.launchKernelPtr(PxgKernelIds::bvh_BuildHierarchy, kNumBlocks, kNumThreadsPerBlock, 0, stream,
-		&numItems, &bvh.mRootNode, &mMaxTreeDepth, &mDeltas, &mNumChildren, &mRangeLefts, &mRangeRights, &bvh.mNodeLowers, &bvh.mNodeUppers);
+		&numItems, &bvh.mRootNode, &maxTreeDepthMapped, &mDeltas, &mNumChildren, &mRangeLefts, &mRangeRights, &bvh.mNodeLowers, &bvh.mNodeUppers);
 }
 
 void PxgLinearBVHBuilderGPU::prepareHierarchConstruction(PxgBVH& bvh, const PxVec4* itemLowers, const PxVec4* itemUppers, const PxI32* itemPriorities, PxI32 numItems, PxBounds3* totalBounds, CUstream stream)
@@ -402,15 +429,9 @@ void PxgSDFBuilder::fixHoles(PxU32 width, PxU32 height, PxU32 depth, PxReal* sdf
 	{
 		PxgBVH pointCloudBvh = PxgBVH();
 		PxgLinearBVHBuilderGPU treeBuilder(mKernelLauncher);
-		treeBuilder.allocateOrResize(pointCloudBvh, numPointsInCloud);
-
-		// abort here if the allocations fail above.
-		if (ccm->getCudaContext()->isInAbortMode())
+		if(!treeBuilder.allocateOrResize(pointCloudBvh, numPointsInCloud))
 		{
-			treeBuilder.releaseBVH(pointCloudBvh);
-			treeBuilder.release();
 			PX_DEVICE_MEMORY_FREE(*ccm, atomicCounter);
-
 			return;
 		}
 
@@ -427,7 +448,8 @@ void PxgSDFBuilder::fixHoles(PxU32 width, PxU32 height, PxU32 depth, PxReal* sdf
 		mKernelLauncher.launchKernelPtr(PxgKernelIds::sdf_ApplyHoleCorrections, kNumBlocks, kNumThreadsPerBlock, 0, stream,
 			&sdfDataD, &width, &height, &depth, &sampler, &pointCloudUppers, &numPointsInCloud);
 
-		treeBuilder.buildFromLeaveBounds(pointCloudBvh, pointCloudLowers, pointCloudUppers, NULL, numPointsInCloud, &totalBounds, stream, true);
+		const bool skipAlloc = true; // hence, we don't need to worry about failing allocation
+		treeBuilder.buildFromLeaveBounds(pointCloudBvh, pointCloudLowers, pointCloudUppers, NULL, numPointsInCloud, &totalBounds, stream, skipAlloc);
 
 #if EXTENDED_DEBUG
 		bool debugTree = false;
@@ -495,21 +517,15 @@ PxReal* PxgSDFBuilder::buildDenseSDF(const PxVec3* vertices, PxU32 numVertices, 
 
 	PxReal* windingNumbersD = NULL;
 
+	//checking abort mode instead of return value to catch failures of allocs above
 	treeBuilder.allocateOrResize(gpuMesh.mBvh, gpuMesh.mNumTriangles);
-
-	if (ccm->getCudaContext()->isInAbortMode())
+	if(ccm->getCudaContext()->isInAbortMode())
 	{
 		PxGetFoundation().error(PxErrorCode::eABORT, PX_FL, "GPU SDF cooking failed!\n");
-
 		PX_DEVICE_MEMORY_FREE(*ccm, gpuMesh.mVertices);
 		PX_DEVICE_MEMORY_FREE(*ccm, gpuMesh.mTriangles);
 		PX_DEVICE_MEMORY_FREE(*ccm, windingNumberClustersD);
-
-		treeBuilder.releaseBVH(gpuMesh.mBvh);
-		treeBuilder.release();
-
 		PX_DEVICE_MEMORY_FREE(*ccm, sdfDataD);
-
 		return NULL;
 	}
 
@@ -520,7 +536,9 @@ PxReal* PxgSDFBuilder::buildDenseSDF(const PxVec3* vertices, PxU32 numVertices, 
 	PxgCudaHelpers::copyHToDAsync(*ccm->getCudaContext(), gpuMesh.mVertices, vertices, numVertices, stream);
 	PxgCudaHelpers::copyHToDAsync(*ccm->getCudaContext(), gpuMesh.mTriangles, indicesOrig, numTriangleIndices, stream);
 
-	treeBuilder.buildTreeAndWindingClustersFromTriangles(gpuMesh.mBvh, windingNumberClustersD, gpuMesh.mVertices, gpuMesh.mTriangles, NULL, gpuMesh.mNumTriangles, &totalBounds, stream, 1e-5f, true);
+	const bool skipAlloc = true;  // hence, we don't need to worry whether the allocation was successful
+	treeBuilder.buildTreeAndWindingClustersFromTriangles(gpuMesh.mBvh, windingNumberClustersD, gpuMesh.mVertices, gpuMesh.mTriangles,
+															NULL, gpuMesh.mNumTriangles, &totalBounds, stream, 1e-5f, skipAlloc);
 
 	const PxVec3 extents(maxExtents - minExtents);
 	const PxVec3 cellSize(extents.x / width, extents.y / height, extents.z / depth);
@@ -570,8 +588,8 @@ PxReal* PxgSDFBuilder::buildDenseSDF(const PxVec3* vertices, PxU32 numVertices, 
 	}
 #endif
 
+	// this might fail allocation, but we are done afterwards anyways
 	fixHoles(width, height, depth, sdfDataD, cellSize, minExtents, maxExtents, sampler, stream);
-
 	ccm->getCudaContext()->streamSynchronize(stream);
 
 	PX_DEVICE_MEMORY_FREE(*ccm, gpuMesh.mVertices);

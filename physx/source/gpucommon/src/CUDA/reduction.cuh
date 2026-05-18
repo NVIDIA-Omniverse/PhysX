@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -37,7 +37,8 @@
 #include "assert.h"
 #include "utils.cuh"
 
-using namespace physx;
+namespace physx
+{
 
 struct MinOpFloat
 {
@@ -750,5 +751,7 @@ static __device__ PxU32 binarySearch(const T* PX_RESTRICT data, const PxU32 numE
 
 	return left ? left - 1 : 0;
 }
+
+} // namespace physx
 
 #endif //CU_REDUCTION_CU

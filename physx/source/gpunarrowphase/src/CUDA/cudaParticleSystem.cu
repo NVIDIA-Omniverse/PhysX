@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,6 +35,7 @@
 #include "foundation/PxTransform.h"
 #include "foundation/PxVec3.h"
 
+#include "geometry/PxConvexCoreGeometry.h"
 #include "geometry/PxGeometry.h"
 #include "geometry/PxHeightFieldSample.h"
 #include "geometry/PxMeshScale.h"
@@ -50,7 +51,6 @@
 #include "PxgContactManager.h"
 #include "PxgConvexConvexShape.h"
 #include "PxgParticleSystem.h"
-#include "PxgParticleSystemCore.h"
 #include "PxgParticleSystemCoreKernelIndices.h"
 #include "PxgSimulationCoreDesc.h"
 #include "PxgSolverBody.h"
@@ -58,8 +58,9 @@
 
 #include "PxsContactManagerState.h"
 #include "PxsMaterialCore.h"
-#include "PxsTransformCache.h"
+#include "PxsCachedTransform.h"
 
+#include "cudaNpCommon.h"
 #include "PxgCommonDefines.h"
 #include "copy.cuh"
 #include "cuda.h"
@@ -165,13 +166,16 @@ extern "C" __global__ void __launch_bounds__(PxgParticleSystemKernelBlockDim::BO
 			PxBounds3 bound1 = bounds[particleCacheRef];
 
 			PxBounds3 overlapBound = combine(bound0, bound1);
-			overlapBound.fattenFast(cDistance);
+			if (overlapBound.isValid())
+			{
+				overlapBound.fattenFast(cDistance);
 
-			int3 gridPosMin, gridPosMax;
-			calcGridRange(gridPosMin, gridPosMax, overlapBound, cellWidth);
+				int3 gridPosMin, gridPosMax;
+				calcGridRange(gridPosMin, gridPosMax, overlapBound, cellWidth);
 
-			uint3 rangeSize = calcWrappedGridRangeSize(gridPosMin, gridPosMax, wrappedGridSize);
-			cellNumCount = rangeSize.x * rangeSize.y * rangeSize.z;
+				uint3 rangeSize = calcWrappedGridRangeSize(gridPosMin, gridPosMax, wrappedGridSize);
+				cellNumCount = rangeSize.x * rangeSize.y * rangeSize.z;
+			}
 		}
 
 		PxU32 offset = warpScan<AddOpPxU32, PxU32>(FULL_MASK, cellNumCount) - cellNumCount;

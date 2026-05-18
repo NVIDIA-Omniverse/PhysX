@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -87,11 +87,11 @@ struct PhysXVehicleBaseDataMemoryOffsets
     static const size_t kInvalidOffset = static_cast<size_t>(0xffffffffFFFFFFFF);
 };
 
-class PhysXVehicleBase : public ::physx::vehicle2::PxVehicleRigidBodyComponent,
-                         public ::physx::vehicle2::PxVehicleSuspensionComponent,
-                         public ::physx::vehicle2::PxVehicleTireComponent,
-                         public ::physx::vehicle2::PxVehicleWheelComponent,
-                         public ::physx::vehicle2::PxVehiclePVDComponent
+class PhysXVehicleBase : public ::physx::PxVehicleRigidBodyComponent,
+                         public ::physx::PxVehicleSuspensionComponent,
+                         public ::physx::PxVehicleTireComponent,
+                         public ::physx::PxVehicleWheelComponent,
+                         public ::physx::PxVehiclePVDComponent
 {
 private:
     struct SuspensionLegacyParams
@@ -102,7 +102,7 @@ private:
 protected:
     PhysXVehicleBase()
         : mPvdObjectHandles(nullptr),
-          mSubstepGroupId(::physx::vehicle2::PxVehicleComponentSequence::eINVALID_SUBSTEP_GROUP)
+          mSubstepGroupId(::physx::PxVehicleComponentSequence::eINVALID_SUBSTEP_GROUP)
     {
     }
 
@@ -111,12 +111,12 @@ protected:
     }
 
     virtual void getDataForRigidBodyComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleRigidBodyParams*& rigidBodyParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForce>& suspensionForces,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForce>& tireForces,
-        const ::physx::vehicle2::PxVehicleAntiRollTorque*& antiRollTorque,
-        ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState) override
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleRigidBodyParams*& rigidBodyParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForce>& suspensionForces,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForce>& tireForces,
+        const ::physx::PxVehicleAntiRollTorque*& antiRollTorque,
+        ::physx::PxVehicleRigidBodyState*& rigidBodyState) override
     {
         axleDescription = &mAxleDescription;
         rigidBodyParams = &mRigidBodyParams;
@@ -127,22 +127,22 @@ protected:
     }
 
     virtual void getDataForSuspensionComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleRigidBodyParams*& rigidBodyParams,
-        const ::physx::vehicle2::PxVehicleSuspensionStateCalculationParams*& suspensionStateCalculationParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& steerResponseStates,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionParams>& suspensionParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceParams>&
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleRigidBodyParams*& rigidBodyParams,
+        const ::physx::PxVehicleSuspensionStateCalculationParams*& suspensionStateCalculationParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& steerResponseStates,
+        const ::physx::PxVehicleRigidBodyState*& rigidBodyState,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionParams>& suspensionParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceParams>&
             suspensionComplianceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForceParams>& suspensionForceParams,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleAntiRollForceParams>& antiRollForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleRoadGeometryState>& wheelRoadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleSuspensionState>& suspensionStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleSuspensionComplianceState>& suspensionComplianceStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleSuspensionForce>& suspensionForces,
-        ::physx::vehicle2::PxVehicleAntiRollTorque*& antiRollTorque) override
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForceParams>& suspensionForceParams,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleAntiRollForceParams>& antiRollForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleRoadGeometryState>& wheelRoadGeomStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleSuspensionState>& suspensionStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleSuspensionComplianceState>& suspensionComplianceStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleSuspensionForce>& suspensionForces,
+        ::physx::PxVehicleAntiRollTorque*& antiRollTorque) override
     {
         axleDescription = &mAxleDescription;
         rigidBodyParams = &mRigidBodyParams;
@@ -162,26 +162,26 @@ protected:
     }
 
     virtual void getDataForTireComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& steerResponseStates,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelActuationState>& actuationStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionParams>& suspensionParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForceParams>& tireForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleRoadGeometryState>& roadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionState>& suspensionStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceState>&
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& steerResponseStates,
+        const ::physx::PxVehicleRigidBodyState*& rigidBodyState,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelActuationState>& actuationStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionParams>& suspensionParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForceParams>& tireForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleRoadGeometryState>& roadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionState>& suspensionStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceState>&
             suspensionComplianceStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForce>& suspensionForces,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1DStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleTireGripState>& tireGripStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleTireDirectionState>& tireDirectionStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleTireSpeedState>& tireSpeedStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleTireSlipState>& tireSlipStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleTireCamberAngleState>& tireCamberAngleStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleTireStickyState>& tireStickyStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleTireForce>& tireForces) override
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForce>& suspensionForces,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1DStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleTireGripState>& tireGripStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleTireDirectionState>& tireDirectionStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleTireSpeedState>& tireSpeedStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleTireSlipState>& tireSlipStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleTireCamberAngleState>& tireCamberAngleStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleTireStickyState>& tireStickyStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleTireForce>& tireForces) override
     {
         axleDescription = &mAxleDescription;
         steerResponseStates.setData(mSteerCommandResponseStates);
@@ -205,17 +205,17 @@ protected:
     }
 
     virtual void getDataForWheelComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& steerResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionParams>& suspensionParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelActuationState>& actuationStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionState>& suspensionStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceState>&
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& steerResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionParams>& suspensionParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelActuationState>& actuationStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionState>& suspensionStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceState>&
             suspensionComplianceStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireSpeedState>& tireSpeedStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleWheelLocalPose>& wheelLocalPoses) override
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireSpeedState>& tireSpeedStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleWheelLocalPose>& wheelLocalPoses) override
     {
         axleDescription = &mAxleDescription;
         steerResponseStates.setData(mSteerCommandResponseStates);
@@ -230,68 +230,68 @@ protected:
     }
 
     virtual void getDataForPVDComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleRigidBodyParams*& rbodyParams,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rbodyState,
-        const ::physx::vehicle2::PxVehicleSuspensionStateCalculationParams*& suspStateCalcParams,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleBrakeCommandResponseParams>&
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleRigidBodyParams*& rbodyParams,
+        const ::physx::PxVehicleRigidBodyState*& rbodyState,
+        const ::physx::PxVehicleSuspensionStateCalculationParams*& suspStateCalcParams,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleBrakeCommandResponseParams>&
             brakeResponseParams,
-        const ::physx::vehicle2::PxVehicleSteerCommandResponseParams*& steerResponseParams,
-        const ::physx::vehicle2::PxVehicleAckermannParams*& ackermannParams,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelActuationState>& wheelActuationStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelLocalPose>& wheelLocalPoses,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleRoadGeometryState>& roadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionParams>& suspParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceParams>& suspCompParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForceParams>& suspForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionState>& suspStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceState>& suspCompStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForce>& suspForces,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForceParams>& tireForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireDirectionState>& tireDirectionStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireSpeedState>& tireSpeedStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireSlipState>& tireSlipStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireStickyState>& tireStickyStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireGripState>& tireGripStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireCamberAngleState>& tireCamberStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForce>& tireForces,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleAntiRollForceParams>& antiRollForceParams,
-        const ::physx::vehicle2::PxVehicleAntiRollTorque*& antiRollTorque,
-        const ::physx::vehicle2::PxVehicleCommandState*& commandState,
-        const ::physx::vehicle2::PxVehicleDirectDriveThrottleCommandResponseParams*& directDriveThrottleResponseParams,
-        const ::physx::vehicle2::PxVehicleDirectDriveTransmissionCommandState*& directDriveTransmissionState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& directDrivethrottleResponseState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
-        const ::physx::vehicle2::PxVehicleClutchParams*& clutchParams,
-        const ::physx::vehicle2::PxVehicleEngineParams*& engineParams,
-        const ::physx::vehicle2::PxVehicleGearboxParams*& gearboxParams,
-        const ::physx::vehicle2::PxVehicleAutoboxParams*& autoboxParams,
-        const ::physx::vehicle2::PxVehicleMultiWheelDriveDifferentialParams*& multiWheelDiffParams,
-        const ::physx::vehicle2::PxVehicleFourWheelDriveDifferentialParams*& fourWheelDiffParams,
-        const ::physx::vehicle2::PxVehicleTankDriveDifferentialParams*& tankDiffParams,
-        const ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState*& engineDriveTransmissionState,
-        const ::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState*& tankDriveTransmissionState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseState*& clutchResponseState,
-        const ::physx::vehicle2::PxVehicleEngineDriveThrottleCommandResponseState*& engineDriveThrottleResponseState,
-        const ::physx::vehicle2::PxVehicleEngineState*& engineState,
-        const ::physx::vehicle2::PxVehicleGearboxState*& gearboxState,
-        const ::physx::vehicle2::PxVehicleAutoboxState*& autoboxState,
-        const ::physx::vehicle2::PxVehicleDifferentialState*& diffState,
-        const ::physx::vehicle2::PxVehicleClutchSlipState*& clutchSlipState,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams>&
+        const ::physx::PxVehicleSteerCommandResponseParams*& steerResponseParams,
+        const ::physx::PxVehicleAckermannParams*& ackermannParams,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelActuationState>& wheelActuationStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelLocalPose>& wheelLocalPoses,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleRoadGeometryState>& roadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionParams>& suspParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceParams>& suspCompParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForceParams>& suspForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionState>& suspStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceState>& suspCompStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForce>& suspForces,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForceParams>& tireForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireDirectionState>& tireDirectionStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireSpeedState>& tireSpeedStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireSlipState>& tireSlipStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireStickyState>& tireStickyStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireGripState>& tireGripStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireCamberAngleState>& tireCamberStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForce>& tireForces,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleAntiRollForceParams>& antiRollForceParams,
+        const ::physx::PxVehicleAntiRollTorque*& antiRollTorque,
+        const ::physx::PxVehicleCommandState*& commandState,
+        const ::physx::PxVehicleDirectDriveThrottleCommandResponseParams*& directDriveThrottleResponseParams,
+        const ::physx::PxVehicleDirectDriveTransmissionCommandState*& directDriveTransmissionState,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& directDrivethrottleResponseState,
+        const ::physx::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
+        const ::physx::PxVehicleClutchParams*& clutchParams,
+        const ::physx::PxVehicleEngineParams*& engineParams,
+        const ::physx::PxVehicleGearboxParams*& gearboxParams,
+        const ::physx::PxVehicleAutoboxParams*& autoboxParams,
+        const ::physx::PxVehicleMultiWheelDriveDifferentialParams*& multiWheelDiffParams,
+        const ::physx::PxVehicleFourWheelDriveDifferentialParams*& fourWheelDiffParams,
+        const ::physx::PxVehicleTankDriveDifferentialParams*& tankDiffParams,
+        const ::physx::PxVehicleEngineDriveTransmissionCommandState*& engineDriveTransmissionState,
+        const ::physx::PxVehicleTankDriveTransmissionCommandState*& tankDriveTransmissionState,
+        const ::physx::PxVehicleClutchCommandResponseState*& clutchResponseState,
+        const ::physx::PxVehicleEngineDriveThrottleCommandResponseState*& engineDriveThrottleResponseState,
+        const ::physx::PxVehicleEngineState*& engineState,
+        const ::physx::PxVehicleGearboxState*& gearboxState,
+        const ::physx::PxVehicleAutoboxState*& autoboxState,
+        const ::physx::PxVehicleDifferentialState*& diffState,
+        const ::physx::PxVehicleClutchSlipState*& clutchSlipState,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXSuspensionLimitConstraintParams>&
             physxConstraintParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams>&
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXMaterialFrictionParams>&
             physxMaterialFrictionParams,
-        const ::physx::vehicle2::PxVehiclePhysXActor*& physxActor,
-        const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryParams*& physxRoadGeomQryParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXConstraintState>& physxConstraintStates,
-        const ::physx::vehicle2::PxVehiclePhysXSteerState*& physxSteerState,
-        ::physx::vehicle2::PxVehiclePvdObjectHandles*& objectHandles) override
+        const ::physx::PxVehiclePhysXActor*& physxActor,
+        const ::physx::PxVehiclePhysXRoadGeometryQueryParams*& physxRoadGeomQryParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXConstraintState>& physxConstraintStates,
+        const ::physx::PxVehiclePhysXSteerState*& physxSteerState,
+        ::physx::PxVehiclePvdObjectHandles*& objectHandles) override
     {
         axleDescription = &mAxleDescription;
         rbodyParams = &mRigidBodyParams;
@@ -362,11 +362,11 @@ protected:
                        float vehicleMass,
                        const ::physx::PxVec3& vehicleMassSpaceInertiaTensor,
                        const ::physx::PxTransform& vehicleMassFrame,
-                       const ::physx::vehicle2::PxVehicleFrame&,
+                       const ::physx::PxVehicleFrame&,
                        const float lengthScale,
                        const float gravityMagnitude);
 
-    static void adjustFixedSizeLookupTable(::physx::vehicle2::PxVehicleFixedSizeLookupTable<::physx::PxReal, 3>& table,
+    static void adjustFixedSizeLookupTable(::physx::PxVehicleFixedSizeLookupTable<::physx::PxReal, 3>& table,
                                            const uint32_t index,
                                            const float value)
     {
@@ -395,7 +395,7 @@ protected:
 
     static void setSuspensionComplianceAngle(const pxr::GfVec2f* angleEntries,
                                              const uint32_t entryCount,
-                                             ::physx::vehicle2::PxVehicleFixedSizeLookupTable<::physx::PxReal, 3>& table)
+                                             ::physx::PxVehicleFixedSizeLookupTable<::physx::PxReal, 3>& table)
     {
         CARB_ASSERT(entryCount <= 3);
 
@@ -411,7 +411,7 @@ protected:
     static void setSuspensionCompliancePoints(const pxr::GfVec4f* pointEntries,
                                               const uint32_t entryCount,
                                               const ::physx::PxVec3& scale,
-                                              ::physx::vehicle2::PxVehicleFixedSizeLookupTable<::physx::PxVec3, 3>& table)
+                                              ::physx::PxVehicleFixedSizeLookupTable<::physx::PxVec3, 3>& table)
     {
         CARB_ASSERT(entryCount <= 3);
 
@@ -455,16 +455,16 @@ public:
 
     void createPvdObjectHandles(::physx::PxAllocatorCallback&, const uint32_t maxNbMaterialFrictionEntries);
 
-    const ::physx::vehicle2::PxVehiclePvdObjectHandles* getPvdObjectHandles() const
+    const ::physx::PxVehiclePvdObjectHandles* getPvdObjectHandles() const
     {
         return mPvdObjectHandles;
     }
 
     virtual PhysXVehicleType::Enum getType() const = 0;
 
-    virtual void simulateBegin(const float dt, const ::physx::vehicle2::PxVehicleSimulationContext& context) = 0;
-    virtual void simulate(const float dt, const ::physx::vehicle2::PxVehicleSimulationContext& context);
-    virtual void simulateEnd(const float dt, const ::physx::vehicle2::PxVehicleSimulationContext& context) = 0;
+    virtual void simulateBegin(const float dt, const ::physx::PxVehicleSimulationContext& context) = 0;
+    virtual void simulate(const float dt, const ::physx::PxVehicleSimulationContext& context);
+    virtual void simulateEnd(const float dt, const ::physx::PxVehicleSimulationContext& context) = 0;
 
     inline const ::physx::PxTransform& getWheelLocalPose(const uint32_t wheelIndex) const
     {
@@ -482,13 +482,13 @@ public:
     void updateMassProperties(const float mass,
                               const ::physx::PxVec3& massSpaceInertiaTensor,
                               const ::physx::PxTransform* vehicleMassFrameChange,
-                              const ::physx::vehicle2::PxVehicleAxes::Enum upAxis,
+                              const ::physx::PxVehicleAxes::Enum upAxis,
                               const bool updateSprungMassRelatedValues,
                               const bool updateMaxDroopValues,
                               const bool updateRestLoad,
                               const bool updateLatStiffY);
 
-    bool updateSprungMassProperties(const ::physx::vehicle2::PxVehicleAxes::Enum upAxis,
+    bool updateSprungMassProperties(const ::physx::PxVehicleAxes::Enum upAxis,
                                     const bool updateMaxDroopValues,
                                     const bool updateRestLoad,
                                     const bool updateLatStiffY,
@@ -548,7 +548,7 @@ public:
     inline void setWheelRotationSpeed(const uint32_t wheelIndex, const float rotationSpeed)
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
-        ::physx::vehicle2::PxVehicleWheelRigidBody1dState& wrbs = mWheelRigidBody1dStates[wheelIndex];
+        ::physx::PxVehicleWheelRigidBody1dState& wrbs = mWheelRigidBody1dStates[wheelIndex];
         wrbs.rotationSpeed = rotationSpeed;
         wrbs.correctedRotationSpeed = rotationSpeed;
     }
@@ -574,10 +574,10 @@ public:
     inline bool isWheelOnGround(const uint32_t wheelIndex) const
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
-        return ::physx::vehicle2::PxVehicleIsWheelOnGround(mSuspensionStates[wheelIndex]);
+        return ::physx::PxVehicleIsWheelOnGround(mSuspensionStates[wheelIndex]);
     }
 
-    inline const ::physx::vehicle2::PxVehicleRoadGeometryState& getRoadGeometryState(const uint32_t wheelIndex) const
+    inline const ::physx::PxVehicleRoadGeometryState& getRoadGeometryState(const uint32_t wheelIndex) const
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
         return mRoadGeomStates[wheelIndex];
@@ -652,7 +652,7 @@ public:
     inline void setSuspensionCamberAtRest(const uint32_t wheelIndex, const float camberAtRest)
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
-        ::physx::vehicle2::PxVehicleFixedSizeLookupTable<::physx::PxReal, 3>& camberTable =
+        ::physx::PxVehicleFixedSizeLookupTable<::physx::PxReal, 3>& camberTable =
             mSuspensionComplianceParams[wheelIndex].wheelCamberAngle;
         adjustFixedSizeLookupTable(camberTable, 1, camberAtRest);
     }
@@ -661,7 +661,7 @@ public:
     inline void setSuspensionCamberAtMaxCompression(const uint32_t wheelIndex, const float camberAtMaxCompression)
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
-        ::physx::vehicle2::PxVehicleFixedSizeLookupTable<::physx::PxReal, 3>& camberTable =
+        ::physx::PxVehicleFixedSizeLookupTable<::physx::PxReal, 3>& camberTable =
             mSuspensionComplianceParams[wheelIndex].wheelCamberAngle;
         adjustFixedSizeLookupTable(camberTable, 2, camberAtMaxCompression);
     }
@@ -670,7 +670,7 @@ public:
     inline void setSuspensionCamberAtMaxDroop(const uint32_t wheelIndex, const float camberAtMaxDroop)
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
-        ::physx::vehicle2::PxVehicleFixedSizeLookupTable<::physx::PxReal, 3>& camberTable =
+        ::physx::PxVehicleFixedSizeLookupTable<::physx::PxReal, 3>& camberTable =
             mSuspensionComplianceParams[wheelIndex].wheelCamberAngle;
         adjustFixedSizeLookupTable(camberTable, 0, camberAtMaxDroop);
     }
@@ -689,7 +689,7 @@ public:
     inline void setSuspensionToeAngle(const uint32_t wheelIndex, const float toeAngle)
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
-        ::physx::vehicle2::PxVehicleFixedSizeLookupTable<::physx::PxReal, 3>& toeTable =
+        ::physx::PxVehicleFixedSizeLookupTable<::physx::PxReal, 3>& toeTable =
             mSuspensionComplianceParams[wheelIndex].wheelToeAngle;
         if (toeTable.nbDataPairs == 1)
         {
@@ -828,40 +828,40 @@ public:
     inline const ::physx::PxVec3& getTireLongitudinalDirection(const uint32_t wheelIndex) const
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
-        return mTireDirectionStates[wheelIndex].directions[::physx::vehicle2::PxVehicleTireDirectionModes::eLONGITUDINAL];
+        return mTireDirectionStates[wheelIndex].directions[::physx::PxVehicleTireDirectionModes::eLONGITUDINAL];
     }
 
     inline const ::physx::PxVec3& getTireLateralDirection(const uint32_t wheelIndex) const
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
-        return mTireDirectionStates[wheelIndex].directions[::physx::vehicle2::PxVehicleTireDirectionModes::eLATERAL];
+        return mTireDirectionStates[wheelIndex].directions[::physx::PxVehicleTireDirectionModes::eLATERAL];
     }
 
     inline const float getTireLongitudinalSlip(const uint32_t wheelIndex) const
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
-        return mTireSlipStates[wheelIndex].slips[::physx::vehicle2::PxVehicleTireDirectionModes::eLONGITUDINAL];
+        return mTireSlipStates[wheelIndex].slips[::physx::PxVehicleTireDirectionModes::eLONGITUDINAL];
     }
 
     inline const float getTireLateralSlip(const uint32_t wheelIndex) const
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
-        return mTireSlipStates[wheelIndex].slips[::physx::vehicle2::PxVehicleTireDirectionModes::eLATERAL];
+        return mTireSlipStates[wheelIndex].slips[::physx::PxVehicleTireDirectionModes::eLATERAL];
     }
 
     inline ::physx::PxVec3 getTireForce(const uint32_t wheelIndex) const
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
-        return mTireForces[wheelIndex].forces[::physx::vehicle2::PxVehicleTireDirectionModes::eLONGITUDINAL] +
-               mTireForces[wheelIndex].forces[::physx::vehicle2::PxVehicleTireDirectionModes::eLATERAL];
+        return mTireForces[wheelIndex].forces[::physx::PxVehicleTireDirectionModes::eLONGITUDINAL] +
+               mTireForces[wheelIndex].forces[::physx::PxVehicleTireDirectionModes::eLATERAL];
     }
 
-    inline const ::physx::vehicle2::PxVehicleTireSlipParams& getTireSlipParams() const
+    inline const ::physx::PxVehicleTireSlipParams& getTireSlipParams() const
     {
         return mTireSlipParams;
     }
 
-    inline const ::physx::vehicle2::PxVehicleTireStickyParams& getTireStickyParams() const
+    inline const ::physx::PxVehicleTireStickyParams& getTireStickyParams() const
     {
         return mTireStickyParams;
     }
@@ -883,34 +883,34 @@ public:
 
     inline void setTireLongitudinalStickyThresholdSpeed(const float value)
     {
-        mTireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLONGITUDINAL].thresholdSpeed =
+        mTireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLONGITUDINAL].thresholdSpeed =
             value;
     }
 
     inline void setTireLongitudinalStickyThresholdTime(const float value)
     {
-        mTireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLONGITUDINAL].thresholdTime =
+        mTireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLONGITUDINAL].thresholdTime =
             value;
     }
 
     inline void setTireLongitudinalStickyDamping(const float value)
     {
-        mTireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLONGITUDINAL].damping = value;
+        mTireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLONGITUDINAL].damping = value;
     }
 
     inline void setTireLateralStickyThresholdSpeed(const float value)
     {
-        mTireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLATERAL].thresholdSpeed = value;
+        mTireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLATERAL].thresholdSpeed = value;
     }
 
     inline void setTireLateralStickyThresholdTime(const float value)
     {
-        mTireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLATERAL].thresholdTime = value;
+        mTireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLATERAL].thresholdTime = value;
     }
 
     inline void setTireLateralStickyDamping(const float value)
     {
-        mTireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLATERAL].damping = value;
+        mTireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLATERAL].damping = value;
     }
 
     inline void setSuspensionFramePosition(const uint32_t wheelIndex,
@@ -954,7 +954,7 @@ public:
         mSuspensionStateCalculationParams.limitSuspensionExpansionVelocity = limit;
     }
 
-    virtual float getForwardVelocity(const ::physx::vehicle2::PxVehicleFrame&) const;
+    virtual float getForwardVelocity(const ::physx::PxVehicleFrame&) const;
 
     virtual void disableWheel(const uint32_t wheelIndex);
 
@@ -963,44 +963,44 @@ public:
 
 
 protected:
-    ::physx::vehicle2::PxVehicleComponentSequence mComponentSequence;
+    ::physx::PxVehicleComponentSequence mComponentSequence;
 
-    ::physx::vehicle2::PxVehicleAxleDescription mAxleDescription;
+    ::physx::PxVehicleAxleDescription mAxleDescription;
 
     ::physx::PxReal* mBrakeCommandResponseStates;
     ::physx::PxReal* mSteerCommandResponseStates;
 
-    ::physx::vehicle2::PxVehicleSuspensionParams* mSuspensionParams;
-    ::physx::vehicle2::PxVehicleSuspensionState* mSuspensionStates;
-    ::physx::vehicle2::PxVehicleSuspensionStateCalculationParams mSuspensionStateCalculationParams;
-    ::physx::vehicle2::PxVehicleSuspensionComplianceParams* mSuspensionComplianceParams;
-    ::physx::vehicle2::PxVehicleSuspensionComplianceState* mSuspensionComplianceStates;
-    ::physx::vehicle2::PxVehicleSuspensionForceParams* mSuspensionForceParams;
-    ::physx::vehicle2::PxVehicleSuspensionForce* mSuspensionForces;
+    ::physx::PxVehicleSuspensionParams* mSuspensionParams;
+    ::physx::PxVehicleSuspensionState* mSuspensionStates;
+    ::physx::PxVehicleSuspensionStateCalculationParams mSuspensionStateCalculationParams;
+    ::physx::PxVehicleSuspensionComplianceParams* mSuspensionComplianceParams;
+    ::physx::PxVehicleSuspensionComplianceState* mSuspensionComplianceStates;
+    ::physx::PxVehicleSuspensionForceParams* mSuspensionForceParams;
+    ::physx::PxVehicleSuspensionForce* mSuspensionForces;
 
-    ::physx::vehicle2::PxVehicleRoadGeometryState* mRoadGeomStates;
+    ::physx::PxVehicleRoadGeometryState* mRoadGeomStates;
 
-    ::physx::vehicle2::PxVehicleTireSlipParams mTireSlipParams;
-    ::physx::vehicle2::PxVehicleTireSlipState* mTireSlipStates;
-    ::physx::vehicle2::PxVehicleTireGripState* mTireGripStates;
-    ::physx::vehicle2::PxVehicleTireDirectionState* mTireDirectionStates;
-    ::physx::vehicle2::PxVehicleTireSpeedState* mTireSpeedStates;
-    ::physx::vehicle2::PxVehicleTireCamberAngleState* mTireCamberAngleStates;
-    ::physx::vehicle2::PxVehicleTireStickyState* mTireStickyStates;
-    ::physx::vehicle2::PxVehicleTireForceParams* mTireForceParams;
-    ::physx::vehicle2::PxVehicleTireForce* mTireForces;
+    ::physx::PxVehicleTireSlipParams mTireSlipParams;
+    ::physx::PxVehicleTireSlipState* mTireSlipStates;
+    ::physx::PxVehicleTireGripState* mTireGripStates;
+    ::physx::PxVehicleTireDirectionState* mTireDirectionStates;
+    ::physx::PxVehicleTireSpeedState* mTireSpeedStates;
+    ::physx::PxVehicleTireCamberAngleState* mTireCamberAngleStates;
+    ::physx::PxVehicleTireStickyState* mTireStickyStates;
+    ::physx::PxVehicleTireForceParams* mTireForceParams;
+    ::physx::PxVehicleTireForce* mTireForces;
 
-    ::physx::vehicle2::PxVehicleWheelParams* mWheelParams;
-    ::physx::vehicle2::PxVehicleWheelRigidBody1dState* mWheelRigidBody1dStates;
-    ::physx::vehicle2::PxVehicleWheelLocalPose* mWheelLocalPoses;
-    ::physx::vehicle2::PxVehicleWheelActuationState* mWheelActuationStates;
+    ::physx::PxVehicleWheelParams* mWheelParams;
+    ::physx::PxVehicleWheelRigidBody1dState* mWheelRigidBody1dStates;
+    ::physx::PxVehicleWheelLocalPose* mWheelLocalPoses;
+    ::physx::PxVehicleWheelActuationState* mWheelActuationStates;
 
-    ::physx::vehicle2::PxVehicleRigidBodyParams mRigidBodyParams;
-    ::physx::vehicle2::PxVehicleRigidBodyState mRigidBodyState;
+    ::physx::PxVehicleRigidBodyParams mRigidBodyParams;
+    ::physx::PxVehicleRigidBodyState mRigidBodyState;
 
     SuspensionLegacyParams* mSuspensionLegacyParams; // deprecated (remove once maxDroop/maxCompression is gone)
 
-    ::physx::vehicle2::PxVehiclePvdObjectHandles* mPvdObjectHandles;
+    ::physx::PxVehiclePvdObjectHandles* mPvdObjectHandles;
 
     float mSubstepThresholdLongitudinalSpeed;
     uint8_t mLowForwardSpeedSubstepCount;
@@ -1008,7 +1008,7 @@ protected:
     uint8_t mSubstepGroupId;
     uint32_t mWheelCapacity; // the number of wheels including disabled ones
 
-    ::physx::vehicle2::PxVehicleTireStickyParams mTireStickyParams;
+    ::physx::PxVehicleTireStickyParams mTireStickyParams;
 };
 
 
@@ -1023,9 +1023,9 @@ struct PhysXActorVehicleBaseDataMemoryOffsets : PhysXVehicleBaseDataMemoryOffset
 };
 
 class PhysXActorVehicleBase : public PhysXVehicleBase,
-                              public ::physx::vehicle2::PxVehiclePhysXActorEndComponent,
-                              public ::physx::vehicle2::PxVehiclePhysXConstraintComponent,
-                              public ::physx::vehicle2::PxVehiclePhysXRoadGeometrySceneQueryComponent
+                              public ::physx::PxVehiclePhysXActorEndComponent,
+                              public ::physx::PxVehiclePhysXConstraintComponent,
+                              public ::physx::PxVehiclePhysXRoadGeometrySceneQueryComponent
 {
 protected:
     PhysXActorVehicleBase() : PhysXVehicleBase()
@@ -1034,15 +1034,15 @@ protected:
     virtual ~PhysXActorVehicleBase();
 
     virtual void getDataForPhysXActorEndComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxTransform>& wheelShapeLocalPoses,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelLocalPose>& wheelLocalPoses,
-        const ::physx::vehicle2::PxVehicleGearboxState*& gearState,
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleRigidBodyState*& rigidBodyState,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxTransform>& wheelShapeLocalPoses,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelLocalPose>& wheelLocalPoses,
+        const ::physx::PxVehicleGearboxState*& gearState,
         const ::physx::PxReal*& throttle,
-        ::physx::vehicle2::PxVehiclePhysXActor*& physxActor) override
+        ::physx::PxVehiclePhysXActor*& physxActor) override
     {
         axleDescription = &mAxleDescription;
         rigidBodyState = &mRigidBodyState;
@@ -1057,18 +1057,18 @@ protected:
     }
 
     virtual void getDataForPhysXConstraintComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionParams>& suspensionParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams>&
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleRigidBodyState*& rigidBodyState,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionParams>& suspensionParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXSuspensionLimitConstraintParams>&
             suspensionLimitParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionState>& suspensionStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceState>&
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionState>& suspensionStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceState>&
             suspensionComplianceStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleRoadGeometryState>& wheelRoadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireDirectionState>& tireDirectionStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireStickyState>& tireStickyStates,
-        ::physx::vehicle2::PxVehiclePhysXConstraints*& constraints) override
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleRoadGeometryState>& wheelRoadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireDirectionState>& tireDirectionStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireStickyState>& tireStickyStates,
+        ::physx::PxVehiclePhysXConstraints*& constraints) override
     {
         axleDescription = &mAxleDescription;
         rigidBodyState = &mRigidBodyState;
@@ -1083,16 +1083,16 @@ protected:
     }
 
     virtual void getDataForPhysXRoadGeometrySceneQueryComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryParams*& roadGeomParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& steerResponseStates,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionParams>& suspensionParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams>&
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehiclePhysXRoadGeometryQueryParams*& roadGeomParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& steerResponseStates,
+        const ::physx::PxVehicleRigidBodyState*& rigidBodyState,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionParams>& suspensionParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXMaterialFrictionParams>&
             materialFrictionParams,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleRoadGeometryState>& roadGeometryStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState>&
+        ::physx::PxVehicleArrayData<::physx::PxVehicleRoadGeometryState>& roadGeometryStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehiclePhysXRoadGeometryQueryState>&
             physxRoadGeometryStates) override
     {
         axleDescription = &mAxleDescription;
@@ -1107,68 +1107,68 @@ protected:
     }
 
     virtual void getDataForPVDComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleRigidBodyParams*& rbodyParams,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rbodyState,
-        const ::physx::vehicle2::PxVehicleSuspensionStateCalculationParams*& suspStateCalcParams,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleBrakeCommandResponseParams>&
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleRigidBodyParams*& rbodyParams,
+        const ::physx::PxVehicleRigidBodyState*& rbodyState,
+        const ::physx::PxVehicleSuspensionStateCalculationParams*& suspStateCalcParams,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleBrakeCommandResponseParams>&
             brakeResponseParams,
-        const ::physx::vehicle2::PxVehicleSteerCommandResponseParams*& steerResponseParams,
-        const ::physx::vehicle2::PxVehicleAckermannParams*& ackermannParams,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelActuationState>& wheelActuationStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelLocalPose>& wheelLocalPoses,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleRoadGeometryState>& roadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionParams>& suspParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceParams>& suspCompParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForceParams>& suspForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionState>& suspStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceState>& suspCompStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForce>& suspForces,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForceParams>& tireForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireDirectionState>& tireDirectionStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireSpeedState>& tireSpeedStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireSlipState>& tireSlipStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireStickyState>& tireStickyStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireGripState>& tireGripStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireCamberAngleState>& tireCamberStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForce>& tireForces,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleAntiRollForceParams>& antiRollForceParams,
-        const ::physx::vehicle2::PxVehicleAntiRollTorque*& antiRollTorque,
-        const ::physx::vehicle2::PxVehicleCommandState*& commandState,
-        const ::physx::vehicle2::PxVehicleDirectDriveThrottleCommandResponseParams*& directDriveThrottleResponseParams,
-        const ::physx::vehicle2::PxVehicleDirectDriveTransmissionCommandState*& directDriveTransmissionState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& directDrivethrottleResponseState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
-        const ::physx::vehicle2::PxVehicleClutchParams*& clutchParams,
-        const ::physx::vehicle2::PxVehicleEngineParams*& engineParams,
-        const ::physx::vehicle2::PxVehicleGearboxParams*& gearboxParams,
-        const ::physx::vehicle2::PxVehicleAutoboxParams*& autoboxParams,
-        const ::physx::vehicle2::PxVehicleMultiWheelDriveDifferentialParams*& multiWheelDiffParams,
-        const ::physx::vehicle2::PxVehicleFourWheelDriveDifferentialParams*& fourWheelDiffParams,
-        const ::physx::vehicle2::PxVehicleTankDriveDifferentialParams*& tankDiffParams,
-        const ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState*& engineDriveTransmissionState,
-        const ::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState*& tankDriveTransmissionState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseState*& clutchResponseState,
-        const ::physx::vehicle2::PxVehicleEngineDriveThrottleCommandResponseState*& engineDriveThrottleResponseState,
-        const ::physx::vehicle2::PxVehicleEngineState*& engineState,
-        const ::physx::vehicle2::PxVehicleGearboxState*& gearboxState,
-        const ::physx::vehicle2::PxVehicleAutoboxState*& autoboxState,
-        const ::physx::vehicle2::PxVehicleDifferentialState*& diffState,
-        const ::physx::vehicle2::PxVehicleClutchSlipState*& clutchSlipState,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams>&
+        const ::physx::PxVehicleSteerCommandResponseParams*& steerResponseParams,
+        const ::physx::PxVehicleAckermannParams*& ackermannParams,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelActuationState>& wheelActuationStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelLocalPose>& wheelLocalPoses,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleRoadGeometryState>& roadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionParams>& suspParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceParams>& suspCompParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForceParams>& suspForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionState>& suspStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceState>& suspCompStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForce>& suspForces,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForceParams>& tireForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireDirectionState>& tireDirectionStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireSpeedState>& tireSpeedStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireSlipState>& tireSlipStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireStickyState>& tireStickyStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireGripState>& tireGripStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireCamberAngleState>& tireCamberStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForce>& tireForces,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleAntiRollForceParams>& antiRollForceParams,
+        const ::physx::PxVehicleAntiRollTorque*& antiRollTorque,
+        const ::physx::PxVehicleCommandState*& commandState,
+        const ::physx::PxVehicleDirectDriveThrottleCommandResponseParams*& directDriveThrottleResponseParams,
+        const ::physx::PxVehicleDirectDriveTransmissionCommandState*& directDriveTransmissionState,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& directDrivethrottleResponseState,
+        const ::physx::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
+        const ::physx::PxVehicleClutchParams*& clutchParams,
+        const ::physx::PxVehicleEngineParams*& engineParams,
+        const ::physx::PxVehicleGearboxParams*& gearboxParams,
+        const ::physx::PxVehicleAutoboxParams*& autoboxParams,
+        const ::physx::PxVehicleMultiWheelDriveDifferentialParams*& multiWheelDiffParams,
+        const ::physx::PxVehicleFourWheelDriveDifferentialParams*& fourWheelDiffParams,
+        const ::physx::PxVehicleTankDriveDifferentialParams*& tankDiffParams,
+        const ::physx::PxVehicleEngineDriveTransmissionCommandState*& engineDriveTransmissionState,
+        const ::physx::PxVehicleTankDriveTransmissionCommandState*& tankDriveTransmissionState,
+        const ::physx::PxVehicleClutchCommandResponseState*& clutchResponseState,
+        const ::physx::PxVehicleEngineDriveThrottleCommandResponseState*& engineDriveThrottleResponseState,
+        const ::physx::PxVehicleEngineState*& engineState,
+        const ::physx::PxVehicleGearboxState*& gearboxState,
+        const ::physx::PxVehicleAutoboxState*& autoboxState,
+        const ::physx::PxVehicleDifferentialState*& diffState,
+        const ::physx::PxVehicleClutchSlipState*& clutchSlipState,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXSuspensionLimitConstraintParams>&
             physxConstraintParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams>&
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXMaterialFrictionParams>&
             physxMaterialFrictionParams,
-        const ::physx::vehicle2::PxVehiclePhysXActor*& physxActor,
-        const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryParams*& physxRoadGeomQryParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXConstraintState>& physxConstraintStates,
-        const ::physx::vehicle2::PxVehiclePhysXSteerState*& physxSteerState,
-        ::physx::vehicle2::PxVehiclePvdObjectHandles*& objectHandles) override
+        const ::physx::PxVehiclePhysXActor*& physxActor,
+        const ::physx::PxVehiclePhysXRoadGeometryQueryParams*& physxRoadGeomQryParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXConstraintState>& physxConstraintStates,
+        const ::physx::PxVehiclePhysXSteerState*& physxSteerState,
+        ::physx::PxVehiclePvdObjectHandles*& objectHandles) override
     {
         PhysXVehicleBase::getDataForPVDComponent(
             axleDescription, rbodyParams, rbodyState, suspStateCalcParams, brakeResponseParams, steerResponseParams,
@@ -1200,13 +1200,13 @@ protected:
         ::physx::PxPhysics& pxPhysics,
         const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
         const std::vector<::physx::PxShape*>& wheelShapeMapping,
-        const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+        const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
         const std::vector<uint32_t>& wheelIndexToDataMap,
-        const ::physx::vehicle2::PxVehicleFrame&,
+        const ::physx::PxVehicleFrame&,
         const float gravityMagnitude);
 
 public:
-    void simulateEnd(const float dt, const ::physx::vehicle2::PxVehicleSimulationContext&) override;
+    void simulateEnd(const float dt, const ::physx::PxVehicleSimulationContext&) override;
 
     inline ::physx::PxRigidDynamic* getRigidDynamicActor()
     {
@@ -1233,7 +1233,7 @@ public:
     }
 
     inline void setTireMaterialFrictionTable(
-        const uint32_t wheelIndex, const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams* materialFrictionTable)
+        const uint32_t wheelIndex, const ::physx::PxVehiclePhysXMaterialFrictionParams* materialFrictionTable)
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
         mPhysxMaterialFrictionParams[wheelIndex] = materialFrictionTable;
@@ -1252,19 +1252,19 @@ public:
     }
     void removeWheelShape(const ::physx::PxShape*);
 
-    inline ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryType::Enum getRoadGeometryQueryType() const
+    inline ::physx::PxVehiclePhysXRoadGeometryQueryType::Enum getRoadGeometryQueryType() const
     {
         return mPhysxRoadGeometryQueryParams.roadGeometryQueryType;
     }
 
-    inline const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState& getPhysXRoadGeometryQueryState(
+    inline const ::physx::PxVehiclePhysXRoadGeometryQueryState& getPhysXRoadGeometryQueryState(
         const uint32_t wheelIndex) const
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
         return mPhysxRoadGeometryQueryStates[wheelIndex];
     }
 
-    virtual float getForwardVelocity(const ::physx::vehicle2::PxVehicleFrame&) const override;
+    virtual float getForwardVelocity(const ::physx::PxVehicleFrame&) const override;
 
     virtual void disableWheel(const uint32_t wheelIndex) override;
 
@@ -1273,24 +1273,24 @@ public:
 
 
 protected:
-    ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryParams mPhysxRoadGeometryQueryParams;
-    const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams** mPhysxMaterialFrictionParams;
-    ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState* mPhysxRoadGeometryQueryStates;
+    ::physx::PxVehiclePhysXRoadGeometryQueryParams mPhysxRoadGeometryQueryParams;
+    const ::physx::PxVehiclePhysXMaterialFrictionParams** mPhysxMaterialFrictionParams;
+    ::physx::PxVehiclePhysXRoadGeometryQueryState* mPhysxRoadGeometryQueryStates;
 
-    ::physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams* mPhysxSuspensionLimitConstraintParams;
-    ::physx::vehicle2::PxVehicleConstraintConnector* mPhysxConstraintConnectors;
-    ::physx::vehicle2::PxVehiclePhysXConstraints mPhysxConstraints;
+    ::physx::PxVehiclePhysXSuspensionLimitConstraintParams* mPhysxSuspensionLimitConstraintParams;
+    ::physx::PxVehicleConstraintConnector* mPhysxConstraintConnectors;
+    ::physx::PxVehiclePhysXConstraints mPhysxConstraints;
 
-    ::physx::vehicle2::PxVehiclePhysXActor mPhysxActor;
+    ::physx::PxVehiclePhysXActor mPhysxActor;
 
     ::physx::PxTransform* mPhysxWheelShapeLocalPoses;
 };
 
 
-class PhysXVehicleRawWheelControlBeginComponent : public ::physx::vehicle2::PxVehicleComponent
+class PhysXVehicleRawWheelControlBeginComponent : public ::physx::PxVehicleComponent
 {
 public:
-    PhysXVehicleRawWheelControlBeginComponent() : ::physx::vehicle2::PxVehicleComponent()
+    PhysXVehicleRawWheelControlBeginComponent() : ::physx::PxVehicleComponent()
     {
     }
 
@@ -1299,16 +1299,16 @@ public:
     }
 
     virtual void getDataForPhysXVehicleRawWheelControlBeginComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& steerCommandResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& throttleCommandResponseStates,
-        ::physx::vehicle2::PxVehiclePhysXActor*& physxActor,
-        ::physx::vehicle2::PxVehiclePhysXSteerState*& physxSteerStates,
-        ::physx::vehicle2::PxVehiclePhysXConstraints*& physxConstraints,
-        ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates) = 0;
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& steerCommandResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& throttleCommandResponseStates,
+        ::physx::PxVehiclePhysXActor*& physxActor,
+        ::physx::PxVehiclePhysXSteerState*& physxSteerStates,
+        ::physx::PxVehiclePhysXConstraints*& physxConstraints,
+        ::physx::PxVehicleRigidBodyState*& rigidBodyState,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates) = 0;
 
-    virtual bool update(const ::physx::PxReal dt, const ::physx::vehicle2::PxVehicleSimulationContext& context) override;
+    virtual bool update(const ::physx::PxReal dt, const ::physx::PxVehicleSimulationContext& context) override;
 };
 
 struct PhysXVehicleRawWheelControlDataMemoryOffsets : PhysXActorVehicleBaseDataMemoryOffsets
@@ -1319,8 +1319,8 @@ struct PhysXVehicleRawWheelControlDataMemoryOffsets : PhysXActorVehicleBaseDataM
 
 class PhysXVehicleRawWheelControl : public PhysXActorVehicleBase,
                                     public PhysXVehicleRawWheelControlBeginComponent,
-                                    public ::physx::vehicle2::PxVehicleDirectDriveActuationStateComponent,
-                                    public ::physx::vehicle2::PxVehicleDirectDrivetrainComponent
+                                    public ::physx::PxVehicleDirectDriveActuationStateComponent,
+                                    public ::physx::PxVehicleDirectDrivetrainComponent
 {
 public:
     PhysXVehicleRawWheelControl() : PhysXActorVehicleBase()
@@ -1333,14 +1333,14 @@ protected:
     }
 
     virtual void getDataForPhysXVehicleRawWheelControlBeginComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& steerCommandResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& throttleCommandResponseStates,
-        ::physx::vehicle2::PxVehiclePhysXActor*& physxActor,
-        ::physx::vehicle2::PxVehiclePhysXSteerState*& physxSteerStates,
-        ::physx::vehicle2::PxVehiclePhysXConstraints*& physxConstraints,
-        ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates) override
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& steerCommandResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& throttleCommandResponseStates,
+        ::physx::PxVehiclePhysXActor*& physxActor,
+        ::physx::PxVehiclePhysXSteerState*& physxSteerStates,
+        ::physx::PxVehiclePhysXConstraints*& physxConstraints,
+        ::physx::PxVehicleRigidBodyState*& rigidBodyState,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates) override
     {
         axleDescription = &mAxleDescription;
         steerCommandResponseStates.setData(mSteerCommandResponseStates);
@@ -1353,10 +1353,10 @@ protected:
     }
 
     virtual void getDataForDirectDriveActuationStateComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& brakeResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& throttleResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleWheelActuationState>& actuationStates) override
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& brakeResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& throttleResponseStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleWheelActuationState>& actuationStates) override
     {
         axleDescription = &mAxleDescription;
         brakeResponseStates.setData(mBrakeCommandResponseStates);
@@ -1365,13 +1365,13 @@ protected:
     }
 
     virtual void getDataForDirectDrivetrainComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& brakeResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& throttleResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelActuationState>& actuationStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForce>& tireForces,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates) override
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& brakeResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& throttleResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelActuationState>& actuationStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForce>& tireForces,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates) override
     {
         axleDescription = &mAxleDescription;
         brakeResponseStates.setData(mBrakeCommandResponseStates);
@@ -1383,68 +1383,68 @@ protected:
     }
 
     virtual void getDataForPVDComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleRigidBodyParams*& rbodyParams,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rbodyState,
-        const ::physx::vehicle2::PxVehicleSuspensionStateCalculationParams*& suspStateCalcParams,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleBrakeCommandResponseParams>&
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleRigidBodyParams*& rbodyParams,
+        const ::physx::PxVehicleRigidBodyState*& rbodyState,
+        const ::physx::PxVehicleSuspensionStateCalculationParams*& suspStateCalcParams,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleBrakeCommandResponseParams>&
             brakeResponseParams,
-        const ::physx::vehicle2::PxVehicleSteerCommandResponseParams*& steerResponseParams,
-        const ::physx::vehicle2::PxVehicleAckermannParams*& ackermannParams,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelActuationState>& wheelActuationStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelLocalPose>& wheelLocalPoses,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleRoadGeometryState>& roadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionParams>& suspParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceParams>& suspCompParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForceParams>& suspForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionState>& suspStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceState>& suspCompStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForce>& suspForces,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForceParams>& tireForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireDirectionState>& tireDirectionStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireSpeedState>& tireSpeedStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireSlipState>& tireSlipStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireStickyState>& tireStickyStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireGripState>& tireGripStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireCamberAngleState>& tireCamberStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForce>& tireForces,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleAntiRollForceParams>& antiRollForceParams,
-        const ::physx::vehicle2::PxVehicleAntiRollTorque*& antiRollTorque,
-        const ::physx::vehicle2::PxVehicleCommandState*& commandState,
-        const ::physx::vehicle2::PxVehicleDirectDriveThrottleCommandResponseParams*& directDriveThrottleResponseParams,
-        const ::physx::vehicle2::PxVehicleDirectDriveTransmissionCommandState*& directDriveTransmissionState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& directDrivethrottleResponseState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
-        const ::physx::vehicle2::PxVehicleClutchParams*& clutchParams,
-        const ::physx::vehicle2::PxVehicleEngineParams*& engineParams,
-        const ::physx::vehicle2::PxVehicleGearboxParams*& gearboxParams,
-        const ::physx::vehicle2::PxVehicleAutoboxParams*& autoboxParams,
-        const ::physx::vehicle2::PxVehicleMultiWheelDriveDifferentialParams*& multiWheelDiffParams,
-        const ::physx::vehicle2::PxVehicleFourWheelDriveDifferentialParams*& fourWheelDiffParams,
-        const ::physx::vehicle2::PxVehicleTankDriveDifferentialParams*& tankDiffParams,
-        const ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState*& engineDriveTransmissionState,
-        const ::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState*& tankDriveTransmissionState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseState*& clutchResponseState,
-        const ::physx::vehicle2::PxVehicleEngineDriveThrottleCommandResponseState*& engineDriveThrottleResponseState,
-        const ::physx::vehicle2::PxVehicleEngineState*& engineState,
-        const ::physx::vehicle2::PxVehicleGearboxState*& gearboxState,
-        const ::physx::vehicle2::PxVehicleAutoboxState*& autoboxState,
-        const ::physx::vehicle2::PxVehicleDifferentialState*& diffState,
-        const ::physx::vehicle2::PxVehicleClutchSlipState*& clutchSlipState,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams>&
+        const ::physx::PxVehicleSteerCommandResponseParams*& steerResponseParams,
+        const ::physx::PxVehicleAckermannParams*& ackermannParams,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelActuationState>& wheelActuationStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelLocalPose>& wheelLocalPoses,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleRoadGeometryState>& roadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionParams>& suspParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceParams>& suspCompParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForceParams>& suspForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionState>& suspStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceState>& suspCompStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForce>& suspForces,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForceParams>& tireForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireDirectionState>& tireDirectionStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireSpeedState>& tireSpeedStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireSlipState>& tireSlipStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireStickyState>& tireStickyStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireGripState>& tireGripStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireCamberAngleState>& tireCamberStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForce>& tireForces,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleAntiRollForceParams>& antiRollForceParams,
+        const ::physx::PxVehicleAntiRollTorque*& antiRollTorque,
+        const ::physx::PxVehicleCommandState*& commandState,
+        const ::physx::PxVehicleDirectDriveThrottleCommandResponseParams*& directDriveThrottleResponseParams,
+        const ::physx::PxVehicleDirectDriveTransmissionCommandState*& directDriveTransmissionState,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& directDrivethrottleResponseState,
+        const ::physx::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
+        const ::physx::PxVehicleClutchParams*& clutchParams,
+        const ::physx::PxVehicleEngineParams*& engineParams,
+        const ::physx::PxVehicleGearboxParams*& gearboxParams,
+        const ::physx::PxVehicleAutoboxParams*& autoboxParams,
+        const ::physx::PxVehicleMultiWheelDriveDifferentialParams*& multiWheelDiffParams,
+        const ::physx::PxVehicleFourWheelDriveDifferentialParams*& fourWheelDiffParams,
+        const ::physx::PxVehicleTankDriveDifferentialParams*& tankDiffParams,
+        const ::physx::PxVehicleEngineDriveTransmissionCommandState*& engineDriveTransmissionState,
+        const ::physx::PxVehicleTankDriveTransmissionCommandState*& tankDriveTransmissionState,
+        const ::physx::PxVehicleClutchCommandResponseState*& clutchResponseState,
+        const ::physx::PxVehicleEngineDriveThrottleCommandResponseState*& engineDriveThrottleResponseState,
+        const ::physx::PxVehicleEngineState*& engineState,
+        const ::physx::PxVehicleGearboxState*& gearboxState,
+        const ::physx::PxVehicleAutoboxState*& autoboxState,
+        const ::physx::PxVehicleDifferentialState*& diffState,
+        const ::physx::PxVehicleClutchSlipState*& clutchSlipState,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXSuspensionLimitConstraintParams>&
             physxConstraintParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams>&
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXMaterialFrictionParams>&
             physxMaterialFrictionParams,
-        const ::physx::vehicle2::PxVehiclePhysXActor*& physxActor,
-        const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryParams*& physxRoadGeomQryParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXConstraintState>& physxConstraintStates,
-        const ::physx::vehicle2::PxVehiclePhysXSteerState*& physxSteerState,
-        ::physx::vehicle2::PxVehiclePvdObjectHandles*& objectHandles) override
+        const ::physx::PxVehiclePhysXActor*& physxActor,
+        const ::physx::PxVehiclePhysXRoadGeometryQueryParams*& physxRoadGeomQryParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXConstraintState>& physxConstraintStates,
+        const ::physx::PxVehiclePhysXSteerState*& physxSteerState,
+        ::physx::PxVehiclePvdObjectHandles*& objectHandles) override
     {
         PhysXActorVehicleBase::getDataForPVDComponent(
             axleDescription, rbodyParams, rbodyState, suspStateCalcParams, brakeResponseParams, steerResponseParams,
@@ -1472,9 +1472,9 @@ public:
         ::physx::PxPhysics& pxPhysics,
         const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
         const std::vector<::physx::PxShape*>& wheelShapeMapping,
-        const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+        const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
         const std::vector<uint32_t>& wheelIndexToDataMap,
-        const ::physx::vehicle2::PxVehicleFrame&,
+        const ::physx::PxVehicleFrame&,
         const float gravityMagnitude);
     void setComponentSequence();
 
@@ -1484,15 +1484,15 @@ public:
         const usdparser::VehicleDesc&,
         const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
         const std::vector<::physx::PxShape*>& wheelShapeMapping,
-        const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+        const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
         const std::vector<uint32_t>& wheelIndexToDataMap,
-        const ::physx::vehicle2::PxVehicleFrame&,
+        const ::physx::PxVehicleFrame&,
         const float gravityMagnitude,
         ::physx::PxAllocatorCallback*);
 
     virtual void release(OmniPvdWriter*, ::physx::PxAllocatorCallback*) override;
 
-    void simulateBegin(const float dt, const ::physx::vehicle2::PxVehicleSimulationContext&) override;
+    void simulateBegin(const float dt, const ::physx::PxVehicleSimulationContext&) override;
 
     virtual PhysXVehicleType::Enum getType() const override
     {
@@ -1507,7 +1507,7 @@ public:
 
 
 protected:
-    ::physx::vehicle2::PxVehiclePhysXSteerState* mPhysxSteerStates;
+    ::physx::PxVehiclePhysXSteerState* mPhysxSteerStates;
 
     ::physx::PxReal* mThrottleCommandResponseStates;
 };
@@ -1521,7 +1521,7 @@ struct PhysXVehicleManagedWheelControlMemoryOffsets : PhysXActorVehicleBaseDataM
 };
 
 class PhysXVehicleManagedWheelControl : public PhysXActorVehicleBase,
-                                        public ::physx::vehicle2::PxVehiclePhysXActorBeginComponent
+                                        public ::physx::PxVehiclePhysXActorBeginComponent
 {
 protected:
     static constexpr uint32_t sBrakingSystemMaxCount = 2;
@@ -1547,18 +1547,18 @@ protected:
     }
 
     virtual void getDataForPhysXActorBeginComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleCommandState*& commands,
-        const ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState*& transmissionCommands,
-        const ::physx::vehicle2::PxVehicleGearboxParams*& gearParams,
-        const ::physx::vehicle2::PxVehicleGearboxState*& gearState,
-        const ::physx::vehicle2::PxVehicleEngineParams*& engineParams,
-        ::physx::vehicle2::PxVehiclePhysXActor*& physxActor,
-        ::physx::vehicle2::PxVehiclePhysXSteerState*& physxSteerState,
-        ::physx::vehicle2::PxVehiclePhysXConstraints*& physxConstraints,
-        ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
-        ::physx::vehicle2::PxVehicleEngineState*& engineState) override
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleCommandState*& commands,
+        const ::physx::PxVehicleEngineDriveTransmissionCommandState*& transmissionCommands,
+        const ::physx::PxVehicleGearboxParams*& gearParams,
+        const ::physx::PxVehicleGearboxState*& gearState,
+        const ::physx::PxVehicleEngineParams*& engineParams,
+        ::physx::PxVehiclePhysXActor*& physxActor,
+        ::physx::PxVehiclePhysXSteerState*& physxSteerState,
+        ::physx::PxVehiclePhysXConstraints*& physxConstraints,
+        ::physx::PxVehicleRigidBodyState*& rigidBodyState,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
+        ::physx::PxVehicleEngineState*& engineState) override
     {
         axleDescription = &mAxleDescription;
         commands = &mCommandState;
@@ -1576,68 +1576,68 @@ protected:
     }
 
     virtual void getDataForPVDComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleRigidBodyParams*& rbodyParams,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rbodyState,
-        const ::physx::vehicle2::PxVehicleSuspensionStateCalculationParams*& suspStateCalcParams,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleBrakeCommandResponseParams>&
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleRigidBodyParams*& rbodyParams,
+        const ::physx::PxVehicleRigidBodyState*& rbodyState,
+        const ::physx::PxVehicleSuspensionStateCalculationParams*& suspStateCalcParams,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleBrakeCommandResponseParams>&
             brakeResponseParams,
-        const ::physx::vehicle2::PxVehicleSteerCommandResponseParams*& steerResponseParams,
-        const ::physx::vehicle2::PxVehicleAckermannParams*& ackermannParams,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelActuationState>& wheelActuationStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelLocalPose>& wheelLocalPoses,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleRoadGeometryState>& roadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionParams>& suspParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceParams>& suspCompParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForceParams>& suspForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionState>& suspStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceState>& suspCompStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForce>& suspForces,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForceParams>& tireForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireDirectionState>& tireDirectionStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireSpeedState>& tireSpeedStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireSlipState>& tireSlipStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireStickyState>& tireStickyStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireGripState>& tireGripStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireCamberAngleState>& tireCamberStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForce>& tireForces,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleAntiRollForceParams>& antiRollForceParams,
-        const ::physx::vehicle2::PxVehicleAntiRollTorque*& antiRollTorque,
-        const ::physx::vehicle2::PxVehicleCommandState*& commandState,
-        const ::physx::vehicle2::PxVehicleDirectDriveThrottleCommandResponseParams*& directDriveThrottleResponseParams,
-        const ::physx::vehicle2::PxVehicleDirectDriveTransmissionCommandState*& directDriveTransmissionState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& directDrivethrottleResponseState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
-        const ::physx::vehicle2::PxVehicleClutchParams*& clutchParams,
-        const ::physx::vehicle2::PxVehicleEngineParams*& engineParams,
-        const ::physx::vehicle2::PxVehicleGearboxParams*& gearboxParams,
-        const ::physx::vehicle2::PxVehicleAutoboxParams*& autoboxParams,
-        const ::physx::vehicle2::PxVehicleMultiWheelDriveDifferentialParams*& multiWheelDiffParams,
-        const ::physx::vehicle2::PxVehicleFourWheelDriveDifferentialParams*& fourWheelDiffParams,
-        const ::physx::vehicle2::PxVehicleTankDriveDifferentialParams*& tankDiffParams,
-        const ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState*& engineDriveTransmissionState,
-        const ::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState*& tankDriveTransmissionState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseState*& clutchResponseState,
-        const ::physx::vehicle2::PxVehicleEngineDriveThrottleCommandResponseState*& engineDriveThrottleResponseState,
-        const ::physx::vehicle2::PxVehicleEngineState*& engineState,
-        const ::physx::vehicle2::PxVehicleGearboxState*& gearboxState,
-        const ::physx::vehicle2::PxVehicleAutoboxState*& autoboxState,
-        const ::physx::vehicle2::PxVehicleDifferentialState*& diffState,
-        const ::physx::vehicle2::PxVehicleClutchSlipState*& clutchSlipState,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams>&
+        const ::physx::PxVehicleSteerCommandResponseParams*& steerResponseParams,
+        const ::physx::PxVehicleAckermannParams*& ackermannParams,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelActuationState>& wheelActuationStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelLocalPose>& wheelLocalPoses,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleRoadGeometryState>& roadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionParams>& suspParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceParams>& suspCompParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForceParams>& suspForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionState>& suspStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceState>& suspCompStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForce>& suspForces,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForceParams>& tireForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireDirectionState>& tireDirectionStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireSpeedState>& tireSpeedStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireSlipState>& tireSlipStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireStickyState>& tireStickyStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireGripState>& tireGripStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireCamberAngleState>& tireCamberStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForce>& tireForces,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleAntiRollForceParams>& antiRollForceParams,
+        const ::physx::PxVehicleAntiRollTorque*& antiRollTorque,
+        const ::physx::PxVehicleCommandState*& commandState,
+        const ::physx::PxVehicleDirectDriveThrottleCommandResponseParams*& directDriveThrottleResponseParams,
+        const ::physx::PxVehicleDirectDriveTransmissionCommandState*& directDriveTransmissionState,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& directDrivethrottleResponseState,
+        const ::physx::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
+        const ::physx::PxVehicleClutchParams*& clutchParams,
+        const ::physx::PxVehicleEngineParams*& engineParams,
+        const ::physx::PxVehicleGearboxParams*& gearboxParams,
+        const ::physx::PxVehicleAutoboxParams*& autoboxParams,
+        const ::physx::PxVehicleMultiWheelDriveDifferentialParams*& multiWheelDiffParams,
+        const ::physx::PxVehicleFourWheelDriveDifferentialParams*& fourWheelDiffParams,
+        const ::physx::PxVehicleTankDriveDifferentialParams*& tankDiffParams,
+        const ::physx::PxVehicleEngineDriveTransmissionCommandState*& engineDriveTransmissionState,
+        const ::physx::PxVehicleTankDriveTransmissionCommandState*& tankDriveTransmissionState,
+        const ::physx::PxVehicleClutchCommandResponseState*& clutchResponseState,
+        const ::physx::PxVehicleEngineDriveThrottleCommandResponseState*& engineDriveThrottleResponseState,
+        const ::physx::PxVehicleEngineState*& engineState,
+        const ::physx::PxVehicleGearboxState*& gearboxState,
+        const ::physx::PxVehicleAutoboxState*& autoboxState,
+        const ::physx::PxVehicleDifferentialState*& diffState,
+        const ::physx::PxVehicleClutchSlipState*& clutchSlipState,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXSuspensionLimitConstraintParams>&
             physxConstraintParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams>&
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXMaterialFrictionParams>&
             physxMaterialFrictionParams,
-        const ::physx::vehicle2::PxVehiclePhysXActor*& physxActor,
-        const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryParams*& physxRoadGeomQryParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXConstraintState>& physxConstraintStates,
-        const ::physx::vehicle2::PxVehiclePhysXSteerState*& physxSteerState,
-        ::physx::vehicle2::PxVehiclePvdObjectHandles*& objectHandles) override
+        const ::physx::PxVehiclePhysXActor*& physxActor,
+        const ::physx::PxVehiclePhysXRoadGeometryQueryParams*& physxRoadGeomQryParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXConstraintState>& physxConstraintStates,
+        const ::physx::PxVehiclePhysXSteerState*& physxSteerState,
+        ::physx::PxVehiclePvdObjectHandles*& objectHandles) override
     {
         PhysXActorVehicleBase::getDataForPVDComponent(
             axleDescription, rbodyParams, rbodyState, suspStateCalcParams, brakeResponseParams, steerResponseParams,
@@ -1669,9 +1669,9 @@ protected:
         ::physx::PxPhysics& pxPhysics,
         const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
         const std::vector<::physx::PxShape*>& wheelShapeMapping,
-        const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+        const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
         const std::vector<uint32_t>& wheelIndexToDataMap,
-        const ::physx::vehicle2::PxVehicleFrame&,
+        const ::physx::PxVehicleFrame&,
         const float gravityMagnitude);
 
     inline uint8_t* getWheelIndexListIncludingCountEntry(const uint32_t type) const
@@ -1689,7 +1689,7 @@ protected:
     }
 
 public:
-    void simulateBegin(const float dt, const ::physx::vehicle2::PxVehicleSimulationContext&) override;
+    void simulateBegin(const float dt, const ::physx::PxVehicleSimulationContext&) override;
 
     inline float getBrake(const uint32_t brakesIndex) const
     {
@@ -1756,7 +1756,7 @@ public:
         uint32_t internalBrakesIndex = mExternalToInternalBrakesIndex[brakesIndex];
         if (internalBrakesIndex != sInvalidInternalBrakesIndex)
         {
-            ::physx::vehicle2::PxVehicleBrakeCommandResponseParams& brakeCommandResponseParams =
+            ::physx::PxVehicleBrakeCommandResponseParams& brakeCommandResponseParams =
                 mBrakeCommandResponseParams[internalBrakesIndex];
 
             uint32_t currentCount;
@@ -1858,12 +1858,12 @@ public:
 
 
 protected:
-    ::physx::vehicle2::PxVehiclePhysXSteerState mPhysxSteerState;
+    ::physx::PxVehiclePhysXSteerState mPhysxSteerState;
 
-    ::physx::vehicle2::PxVehicleBrakeCommandResponseParams* mBrakeCommandResponseParams;
-    ::physx::vehicle2::PxVehicleSteerCommandResponseParams mSteerCommandResponseParams;
-    ::physx::vehicle2::PxVehicleAckermannParams* mAckermannParams; // if Ackermann correction is requested, else nullptr
-    ::physx::vehicle2::PxVehicleCommandState mCommandState;
+    ::physx::PxVehicleBrakeCommandResponseParams* mBrakeCommandResponseParams;
+    ::physx::PxVehicleSteerCommandResponseParams mSteerCommandResponseParams;
+    ::physx::PxVehicleAckermannParams* mAckermannParams; // if Ackermann correction is requested, else nullptr
+    ::physx::PxVehicleCommandState mCommandState;
 
     // The following array will contain multiple lists of wheel index sets and data will be arranged as follows:
     // [validEntryCount, index{0} index{1}, index{validEntryCount-1}, ..., index{wheelCount-1}, validEntryCount,
@@ -1887,9 +1887,9 @@ struct PhysXVehicleDirectDriveDataMemoryOffsets : PhysXVehicleManagedWheelContro
 };
 
 class PhysXVehicleDirectDrive : public PhysXVehicleManagedWheelControl,
-                                public ::physx::vehicle2::PxVehicleDirectDriveCommandResponseComponent,
-                                public ::physx::vehicle2::PxVehicleDirectDriveActuationStateComponent,
-                                public ::physx::vehicle2::PxVehicleDirectDrivetrainComponent
+                                public ::physx::PxVehicleDirectDriveCommandResponseComponent,
+                                public ::physx::PxVehicleDirectDriveActuationStateComponent,
+                                public ::physx::PxVehicleDirectDrivetrainComponent
 {
 public:
     PhysXVehicleDirectDrive() : PhysXVehicleManagedWheelControl()
@@ -1902,15 +1902,15 @@ protected:
     }
 
     virtual void getDataForPhysXActorEndComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxTransform>& wheelShapeLocalPoses,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelLocalPose>& wheelLocalPoses,
-        const ::physx::vehicle2::PxVehicleGearboxState*& gearState,
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleRigidBodyState*& rigidBodyState,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxTransform>& wheelShapeLocalPoses,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelLocalPose>& wheelLocalPoses,
+        const ::physx::PxVehicleGearboxState*& gearState,
         const ::physx::PxReal*& throttle,
-        ::physx::vehicle2::PxVehiclePhysXActor*& physxActor) override
+        ::physx::PxVehiclePhysXActor*& physxActor) override
     {
         axleDescription = &mAxleDescription;
         rigidBodyState = &mRigidBodyState;
@@ -1925,10 +1925,10 @@ protected:
     }
 
     virtual void getDataForDirectDriveActuationStateComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& brakeResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& throttleResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleWheelActuationState>& actuationStates) override
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& brakeResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& throttleResponseStates,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleWheelActuationState>& actuationStates) override
     {
         axleDescription = &mAxleDescription;
         brakeResponseStates.setData(mBrakeCommandResponseStates);
@@ -1937,18 +1937,18 @@ protected:
     }
 
     void getDataForDirectDriveCommandResponseComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleBrakeCommandResponseParams>&
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleBrakeCommandResponseParams>&
             brakeResponseParams,
-        const ::physx::vehicle2::PxVehicleDirectDriveThrottleCommandResponseParams*& throttleResponseParams,
-        const ::physx::vehicle2::PxVehicleSteerCommandResponseParams*& steerResponseParams,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleAckermannParams>& ackermannParams,
-        const ::physx::vehicle2::PxVehicleCommandState*& commands,
-        const ::physx::vehicle2::PxVehicleDirectDriveTransmissionCommandState*& transmissionCommands,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& throttleResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& steerResponseStates) override
+        const ::physx::PxVehicleDirectDriveThrottleCommandResponseParams*& throttleResponseParams,
+        const ::physx::PxVehicleSteerCommandResponseParams*& steerResponseParams,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleAckermannParams>& ackermannParams,
+        const ::physx::PxVehicleCommandState*& commands,
+        const ::physx::PxVehicleDirectDriveTransmissionCommandState*& transmissionCommands,
+        const ::physx::PxVehicleRigidBodyState*& rigidBodyState,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& throttleResponseStates,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& steerResponseStates) override
     {
         axleDescription = &mAxleDescription;
         brakeResponseParams.setDataAndCount(mBrakeCommandResponseParams, mCommandState.nbBrakes);
@@ -1967,13 +1967,13 @@ protected:
     }
 
     virtual void getDataForDirectDrivetrainComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& brakeResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& throttleResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelActuationState>& actuationStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForce>& tireForces,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates) override
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& brakeResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& throttleResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelActuationState>& actuationStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForce>& tireForces,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates) override
     {
         axleDescription = &mAxleDescription;
         brakeResponseStates.setData(mBrakeCommandResponseStates);
@@ -1985,68 +1985,68 @@ protected:
     }
 
     virtual void getDataForPVDComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleRigidBodyParams*& rbodyParams,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rbodyState,
-        const ::physx::vehicle2::PxVehicleSuspensionStateCalculationParams*& suspStateCalcParams,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleBrakeCommandResponseParams>&
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleRigidBodyParams*& rbodyParams,
+        const ::physx::PxVehicleRigidBodyState*& rbodyState,
+        const ::physx::PxVehicleSuspensionStateCalculationParams*& suspStateCalcParams,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleBrakeCommandResponseParams>&
             brakeResponseParams,
-        const ::physx::vehicle2::PxVehicleSteerCommandResponseParams*& steerResponseParams,
-        const ::physx::vehicle2::PxVehicleAckermannParams*& ackermannParams,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelActuationState>& wheelActuationStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelLocalPose>& wheelLocalPoses,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleRoadGeometryState>& roadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionParams>& suspParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceParams>& suspCompParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForceParams>& suspForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionState>& suspStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceState>& suspCompStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForce>& suspForces,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForceParams>& tireForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireDirectionState>& tireDirectionStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireSpeedState>& tireSpeedStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireSlipState>& tireSlipStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireStickyState>& tireStickyStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireGripState>& tireGripStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireCamberAngleState>& tireCamberStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForce>& tireForces,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleAntiRollForceParams>& antiRollForceParams,
-        const ::physx::vehicle2::PxVehicleAntiRollTorque*& antiRollTorque,
-        const ::physx::vehicle2::PxVehicleCommandState*& commandState,
-        const ::physx::vehicle2::PxVehicleDirectDriveThrottleCommandResponseParams*& directDriveThrottleResponseParams,
-        const ::physx::vehicle2::PxVehicleDirectDriveTransmissionCommandState*& directDriveTransmissionState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& directDrivethrottleResponseState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
-        const ::physx::vehicle2::PxVehicleClutchParams*& clutchParams,
-        const ::physx::vehicle2::PxVehicleEngineParams*& engineParams,
-        const ::physx::vehicle2::PxVehicleGearboxParams*& gearboxParams,
-        const ::physx::vehicle2::PxVehicleAutoboxParams*& autoboxParams,
-        const ::physx::vehicle2::PxVehicleMultiWheelDriveDifferentialParams*& multiWheelDiffParams,
-        const ::physx::vehicle2::PxVehicleFourWheelDriveDifferentialParams*& fourWheelDiffParams,
-        const ::physx::vehicle2::PxVehicleTankDriveDifferentialParams*& tankDiffParams,
-        const ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState*& engineDriveTransmissionState,
-        const ::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState*& tankDriveTransmissionState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseState*& clutchResponseState,
-        const ::physx::vehicle2::PxVehicleEngineDriveThrottleCommandResponseState*& engineDriveThrottleResponseState,
-        const ::physx::vehicle2::PxVehicleEngineState*& engineState,
-        const ::physx::vehicle2::PxVehicleGearboxState*& gearboxState,
-        const ::physx::vehicle2::PxVehicleAutoboxState*& autoboxState,
-        const ::physx::vehicle2::PxVehicleDifferentialState*& diffState,
-        const ::physx::vehicle2::PxVehicleClutchSlipState*& clutchSlipState,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams>&
+        const ::physx::PxVehicleSteerCommandResponseParams*& steerResponseParams,
+        const ::physx::PxVehicleAckermannParams*& ackermannParams,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelActuationState>& wheelActuationStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelLocalPose>& wheelLocalPoses,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleRoadGeometryState>& roadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionParams>& suspParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceParams>& suspCompParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForceParams>& suspForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionState>& suspStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceState>& suspCompStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForce>& suspForces,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForceParams>& tireForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireDirectionState>& tireDirectionStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireSpeedState>& tireSpeedStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireSlipState>& tireSlipStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireStickyState>& tireStickyStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireGripState>& tireGripStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireCamberAngleState>& tireCamberStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForce>& tireForces,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleAntiRollForceParams>& antiRollForceParams,
+        const ::physx::PxVehicleAntiRollTorque*& antiRollTorque,
+        const ::physx::PxVehicleCommandState*& commandState,
+        const ::physx::PxVehicleDirectDriveThrottleCommandResponseParams*& directDriveThrottleResponseParams,
+        const ::physx::PxVehicleDirectDriveTransmissionCommandState*& directDriveTransmissionState,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& directDrivethrottleResponseState,
+        const ::physx::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
+        const ::physx::PxVehicleClutchParams*& clutchParams,
+        const ::physx::PxVehicleEngineParams*& engineParams,
+        const ::physx::PxVehicleGearboxParams*& gearboxParams,
+        const ::physx::PxVehicleAutoboxParams*& autoboxParams,
+        const ::physx::PxVehicleMultiWheelDriveDifferentialParams*& multiWheelDiffParams,
+        const ::physx::PxVehicleFourWheelDriveDifferentialParams*& fourWheelDiffParams,
+        const ::physx::PxVehicleTankDriveDifferentialParams*& tankDiffParams,
+        const ::physx::PxVehicleEngineDriveTransmissionCommandState*& engineDriveTransmissionState,
+        const ::physx::PxVehicleTankDriveTransmissionCommandState*& tankDriveTransmissionState,
+        const ::physx::PxVehicleClutchCommandResponseState*& clutchResponseState,
+        const ::physx::PxVehicleEngineDriveThrottleCommandResponseState*& engineDriveThrottleResponseState,
+        const ::physx::PxVehicleEngineState*& engineState,
+        const ::physx::PxVehicleGearboxState*& gearboxState,
+        const ::physx::PxVehicleAutoboxState*& autoboxState,
+        const ::physx::PxVehicleDifferentialState*& diffState,
+        const ::physx::PxVehicleClutchSlipState*& clutchSlipState,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXSuspensionLimitConstraintParams>&
             physxConstraintParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams>&
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXMaterialFrictionParams>&
             physxMaterialFrictionParams,
-        const ::physx::vehicle2::PxVehiclePhysXActor*& physxActor,
-        const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryParams*& physxRoadGeomQryParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXConstraintState>& physxConstraintStates,
-        const ::physx::vehicle2::PxVehiclePhysXSteerState*& physxSteerState,
-        ::physx::vehicle2::PxVehiclePvdObjectHandles*& objectHandles) override
+        const ::physx::PxVehiclePhysXActor*& physxActor,
+        const ::physx::PxVehiclePhysXRoadGeometryQueryParams*& physxRoadGeomQryParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXConstraintState>& physxConstraintStates,
+        const ::physx::PxVehiclePhysXSteerState*& physxSteerState,
+        ::physx::PxVehiclePvdObjectHandles*& objectHandles) override
     {
         PhysXVehicleManagedWheelControl::getDataForPVDComponent(
             axleDescription, rbodyParams, rbodyState, suspStateCalcParams, brakeResponseParams, steerResponseParams,
@@ -2080,9 +2080,9 @@ public:
         ::physx::PxPhysics& pxPhysics,
         const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
         const std::vector<::physx::PxShape*>& wheelShapeMapping,
-        const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+        const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
         const std::vector<uint32_t>& wheelIndexToDataMap,
-        const ::physx::vehicle2::PxVehicleFrame&,
+        const ::physx::PxVehicleFrame&,
         const float gravityMagnitude);
     void setComponentSequence();
 
@@ -2092,9 +2092,9 @@ public:
         const usdparser::VehicleDesc&,
         const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
         const std::vector<::physx::PxShape*>& wheelShapeMapping,
-        const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+        const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
         const std::vector<uint32_t>& wheelIndexToDataMap,
-        const ::physx::vehicle2::PxVehicleFrame&,
+        const ::physx::PxVehicleFrame&,
         const float gravityMagnitude,
         ::physx::PxAllocatorCallback*);
 
@@ -2111,11 +2111,11 @@ public:
     inline void setDriveMode(int mode)
     {
         if (mode > 0)
-            mTransmissionCommandState.gear = ::physx::vehicle2::PxVehicleDirectDriveTransmissionCommandState::eFORWARD;
+            mTransmissionCommandState.gear = ::physx::PxVehicleDirectDriveTransmissionCommandState::eFORWARD;
         else if (mode < 0)
-            mTransmissionCommandState.gear = ::physx::vehicle2::PxVehicleDirectDriveTransmissionCommandState::eREVERSE;
+            mTransmissionCommandState.gear = ::physx::PxVehicleDirectDriveTransmissionCommandState::eREVERSE;
         else
-            mTransmissionCommandState.gear = ::physx::vehicle2::PxVehicleDirectDriveTransmissionCommandState::eNEUTRAL;
+            mTransmissionCommandState.gear = ::physx::PxVehicleDirectDriveTransmissionCommandState::eNEUTRAL;
     }
 
     inline void setPeakDriveTorque(const float peakTorque)
@@ -2154,9 +2154,9 @@ public:
 
 
 protected:
-    ::physx::vehicle2::PxVehicleDirectDriveTransmissionCommandState mTransmissionCommandState;
+    ::physx::PxVehicleDirectDriveTransmissionCommandState mTransmissionCommandState;
 
-    ::physx::vehicle2::PxVehicleDirectDriveThrottleCommandResponseParams mThrottleCommandResponseParams;
+    ::physx::PxVehicleDirectDriveThrottleCommandResponseParams mThrottleCommandResponseParams;
     ::physx::PxReal* mThrottleCommandResponseStates;
 };
 
@@ -2170,11 +2170,11 @@ struct PhysXVehicleEngineDriveDataMemoryOffsets : PhysXVehicleManagedWheelContro
 };
 
 class PhysXVehicleEngineDrive : public PhysXVehicleManagedWheelControl,
-                                public ::physx::vehicle2::PxVehicleEngineDriveCommandResponseComponent,
-                                public ::physx::vehicle2::PxVehicleMultiWheelDriveDifferentialStateComponent,
-                                public ::physx::vehicle2::PxVehicleTankDriveDifferentialStateComponent,
-                                public ::physx::vehicle2::PxVehicleEngineDriveActuationStateComponent,
-                                public ::physx::vehicle2::PxVehicleEngineDrivetrainComponent
+                                public ::physx::PxVehicleEngineDriveCommandResponseComponent,
+                                public ::physx::PxVehicleMultiWheelDriveDifferentialStateComponent,
+                                public ::physx::PxVehicleTankDriveDifferentialStateComponent,
+                                public ::physx::PxVehicleEngineDriveActuationStateComponent,
+                                public ::physx::PxVehicleEngineDrivetrainComponent
 {
 private:
     enum
@@ -2193,8 +2193,8 @@ private:
 
     struct Autobox
     {
-        ::physx::vehicle2::PxVehicleAutoboxParams mParams;
-        ::physx::vehicle2::PxVehicleAutoboxState mState;
+        ::physx::PxVehicleAutoboxParams mParams;
+        ::physx::PxVehicleAutoboxState mState;
     };
 
 public:
@@ -2208,18 +2208,18 @@ protected:
     }
 
     virtual void getDataForPhysXActorBeginComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleCommandState*& commands,
-        const ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState*& transmissionCommands,
-        const ::physx::vehicle2::PxVehicleGearboxParams*& gearParams,
-        const ::physx::vehicle2::PxVehicleGearboxState*& gearState,
-        const ::physx::vehicle2::PxVehicleEngineParams*& engineParams,
-        ::physx::vehicle2::PxVehiclePhysXActor*& physxActor,
-        ::physx::vehicle2::PxVehiclePhysXSteerState*& physxSteerState,
-        ::physx::vehicle2::PxVehiclePhysXConstraints*& physxConstraints,
-        ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
-        ::physx::vehicle2::PxVehicleEngineState*& engineState) override
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleCommandState*& commands,
+        const ::physx::PxVehicleEngineDriveTransmissionCommandState*& transmissionCommands,
+        const ::physx::PxVehicleGearboxParams*& gearParams,
+        const ::physx::PxVehicleGearboxState*& gearState,
+        const ::physx::PxVehicleEngineParams*& engineParams,
+        ::physx::PxVehiclePhysXActor*& physxActor,
+        ::physx::PxVehiclePhysXSteerState*& physxSteerState,
+        ::physx::PxVehiclePhysXConstraints*& physxConstraints,
+        ::physx::PxVehicleRigidBodyState*& rigidBodyState,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
+        ::physx::PxVehicleEngineState*& engineState) override
     {
         axleDescription = &mAxleDescription;
         commands = &mCommandState;
@@ -2237,15 +2237,15 @@ protected:
     }
 
     virtual void getDataForPhysXActorEndComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxTransform>& wheelShapeLocalPoses,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelLocalPose>& wheelLocalPoses,
-        const ::physx::vehicle2::PxVehicleGearboxState*& gearState,
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleRigidBodyState*& rigidBodyState,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxTransform>& wheelShapeLocalPoses,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelLocalPose>& wheelLocalPoses,
+        const ::physx::PxVehicleGearboxState*& gearState,
         const ::physx::PxReal*& throttle,
-        ::physx::vehicle2::PxVehiclePhysXActor*& physxActor) override
+        ::physx::PxVehiclePhysXActor*& physxActor) override
     {
         axleDescription = &mAxleDescription;
         rigidBodyState = &mRigidBodyState;
@@ -2260,25 +2260,25 @@ protected:
     }
 
     virtual void getDataForEngineDriveCommandResponseComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleBrakeCommandResponseParams>&
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleBrakeCommandResponseParams>&
             brakeResponseParams,
-        const ::physx::vehicle2::PxVehicleSteerCommandResponseParams*& steerResponseParams,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleAckermannParams>& ackermannParams,
-        const ::physx::vehicle2::PxVehicleGearboxParams*& gearboxParams,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
-        const ::physx::vehicle2::PxVehicleEngineParams*& engineParams,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rigidBodyState,
-        const ::physx::vehicle2::PxVehicleEngineState*& engineState,
-        const ::physx::vehicle2::PxVehicleAutoboxParams*& autoboxParams,
-        const ::physx::vehicle2::PxVehicleCommandState*& commands,
-        const ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState*& transmissionCommands,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
-        ::physx::vehicle2::PxVehicleEngineDriveThrottleCommandResponseState*& throttleResponseState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
-        ::physx::vehicle2::PxVehicleGearboxState*& gearboxResponseState,
-        ::physx::vehicle2::PxVehicleClutchCommandResponseState*& clutchResponseState,
-        ::physx::vehicle2::PxVehicleAutoboxState*& autoboxState) override
+        const ::physx::PxVehicleSteerCommandResponseParams*& steerResponseParams,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleAckermannParams>& ackermannParams,
+        const ::physx::PxVehicleGearboxParams*& gearboxParams,
+        const ::physx::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
+        const ::physx::PxVehicleEngineParams*& engineParams,
+        const ::physx::PxVehicleRigidBodyState*& rigidBodyState,
+        const ::physx::PxVehicleEngineState*& engineState,
+        const ::physx::PxVehicleAutoboxParams*& autoboxParams,
+        const ::physx::PxVehicleCommandState*& commands,
+        const ::physx::PxVehicleEngineDriveTransmissionCommandState*& transmissionCommands,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
+        ::physx::PxVehicleEngineDriveThrottleCommandResponseState*& throttleResponseState,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
+        ::physx::PxVehicleGearboxState*& gearboxResponseState,
+        ::physx::PxVehicleClutchCommandResponseState*& clutchResponseState,
+        ::physx::PxVehicleAutoboxState*& autoboxState) override
     {
         axleDescription = &mAxleDescription;
         brakeResponseParams.setDataAndCount(mBrakeCommandResponseParams, mCommandState.nbBrakes);
@@ -2304,9 +2304,9 @@ protected:
     }
 
     virtual void getDataForMultiWheelDriveDifferentialStateComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleMultiWheelDriveDifferentialParams*& differentialParams,
-        ::physx::vehicle2::PxVehicleDifferentialState*& differentialState) override
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleMultiWheelDriveDifferentialParams*& differentialParams,
+        ::physx::PxVehicleDifferentialState*& differentialState) override
     {
         CARB_ASSERT(mDifferentialType == DifferentialType::eMULTI_WHEEL);
 
@@ -2316,33 +2316,33 @@ protected:
     }
 
     virtual void getDataForTankDriveDifferentialStateComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState*& transmissionCommands,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        const ::physx::vehicle2::PxVehicleTankDriveDifferentialParams*& differentialParams,
-        ::physx::vehicle2::PxVehicleDifferentialState*& differentialState,
-        ::physx::vehicle2::PxVehicleWheelConstraintGroupState*& constraintGroupState) override
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleTankDriveTransmissionCommandState*& transmissionCommands,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        const ::physx::PxVehicleTankDriveDifferentialParams*& differentialParams,
+        ::physx::PxVehicleDifferentialState*& differentialState,
+        ::physx::PxVehicleWheelConstraintGroupState*& constraintGroupState) override
     {
         CARB_ASSERT(mDifferentialType == DifferentialType::eTANK);
 
         axleDescription = &mAxleDescription;
         transmissionCommands =
-            static_cast<::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState*>(mTransmissionCommandState);
+            static_cast<::physx::PxVehicleTankDriveTransmissionCommandState*>(mTransmissionCommandState);
         wheelParams.setData(mWheelParams);
-        differentialParams = static_cast<::physx::vehicle2::PxVehicleTankDriveDifferentialParams*>(mDifferentialParams);
+        differentialParams = static_cast<::physx::PxVehicleTankDriveDifferentialParams*>(mDifferentialParams);
         differentialState = &mDifferentialState;
         constraintGroupState = mConstraintGroupState;
     }
 
     virtual void getDataForEngineDriveActuationStateComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleGearboxParams*& gearboxParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& brakeResponseStates,
-        const ::physx::vehicle2::PxVehicleEngineDriveThrottleCommandResponseState*& throttleResponseState,
-        const ::physx::vehicle2::PxVehicleGearboxState*& gearboxState,
-        const ::physx::vehicle2::PxVehicleDifferentialState*& differentialState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseState*& clutchResponseState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleWheelActuationState>& actuationStates) override
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleGearboxParams*& gearboxParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& brakeResponseStates,
+        const ::physx::PxVehicleEngineDriveThrottleCommandResponseState*& throttleResponseState,
+        const ::physx::PxVehicleGearboxState*& gearboxState,
+        const ::physx::PxVehicleDifferentialState*& differentialState,
+        const ::physx::PxVehicleClutchCommandResponseState*& clutchResponseState,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleWheelActuationState>& actuationStates) override
     {
         axleDescription = &mAxleDescription;
         gearboxParams = &mGearboxParams;
@@ -2355,22 +2355,22 @@ protected:
     }
 
     virtual void getDataForEngineDrivetrainComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        const ::physx::vehicle2::PxVehicleEngineParams*& engineParams,
-        const ::physx::vehicle2::PxVehicleClutchParams*& clutchParams,
-        const ::physx::vehicle2::PxVehicleGearboxParams*& gearboxParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::PxReal>& brakeResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelActuationState>& actuationStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForce>& tireForces,
-        const ::physx::vehicle2::PxVehicleEngineDriveThrottleCommandResponseState*& throttleResponseState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseState*& clutchResponseState,
-        const ::physx::vehicle2::PxVehicleDifferentialState*& differentialState,
-        const ::physx::vehicle2::PxVehicleWheelConstraintGroupState*& constraintGroupState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
-        ::physx::vehicle2::PxVehicleEngineState*& engineState,
-        ::physx::vehicle2::PxVehicleGearboxState*& gearboxState,
-        ::physx::vehicle2::PxVehicleClutchSlipState*& clutchSlipState) override
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        const ::physx::PxVehicleEngineParams*& engineParams,
+        const ::physx::PxVehicleClutchParams*& clutchParams,
+        const ::physx::PxVehicleGearboxParams*& gearboxParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxReal>& brakeResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelActuationState>& actuationStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForce>& tireForces,
+        const ::physx::PxVehicleEngineDriveThrottleCommandResponseState*& throttleResponseState,
+        const ::physx::PxVehicleClutchCommandResponseState*& clutchResponseState,
+        const ::physx::PxVehicleDifferentialState*& differentialState,
+        const ::physx::PxVehicleWheelConstraintGroupState*& constraintGroupState,
+        ::physx::PxVehicleArrayData<::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
+        ::physx::PxVehicleEngineState*& engineState,
+        ::physx::PxVehicleGearboxState*& gearboxState,
+        ::physx::PxVehicleClutchSlipState*& clutchSlipState) override
     {
         axleDescription = &mAxleDescription;
         wheelParams.setData(mWheelParams);
@@ -2391,68 +2391,68 @@ protected:
     }
 
     virtual void getDataForPVDComponent(
-        const ::physx::vehicle2::PxVehicleAxleDescription*& axleDescription,
-        const ::physx::vehicle2::PxVehicleRigidBodyParams*& rbodyParams,
-        const ::physx::vehicle2::PxVehicleRigidBodyState*& rbodyState,
-        const ::physx::vehicle2::PxVehicleSuspensionStateCalculationParams*& suspStateCalcParams,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleBrakeCommandResponseParams>&
+        const ::physx::PxVehicleAxleDescription*& axleDescription,
+        const ::physx::PxVehicleRigidBodyParams*& rbodyParams,
+        const ::physx::PxVehicleRigidBodyState*& rbodyState,
+        const ::physx::PxVehicleSuspensionStateCalculationParams*& suspStateCalcParams,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleBrakeCommandResponseParams>&
             brakeResponseParams,
-        const ::physx::vehicle2::PxVehicleSteerCommandResponseParams*& steerResponseParams,
-        const ::physx::vehicle2::PxVehicleAckermannParams*& ackermannParams,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelParams>& wheelParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelActuationState>& wheelActuationStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleWheelLocalPose>& wheelLocalPoses,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleRoadGeometryState>& roadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionParams>& suspParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceParams>& suspCompParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForceParams>& suspForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionState>& suspStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionComplianceState>& suspCompStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleSuspensionForce>& suspForces,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForceParams>& tireForceParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireDirectionState>& tireDirectionStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireSpeedState>& tireSpeedStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireSlipState>& tireSlipStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireStickyState>& tireStickyStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireGripState>& tireGripStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireCamberAngleState>& tireCamberStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehicleTireForce>& tireForces,
-        ::physx::vehicle2::PxVehicleSizedArrayData<const ::physx::vehicle2::PxVehicleAntiRollForceParams>& antiRollForceParams,
-        const ::physx::vehicle2::PxVehicleAntiRollTorque*& antiRollTorque,
-        const ::physx::vehicle2::PxVehicleCommandState*& commandState,
-        const ::physx::vehicle2::PxVehicleDirectDriveThrottleCommandResponseParams*& directDriveThrottleResponseParams,
-        const ::physx::vehicle2::PxVehicleDirectDriveTransmissionCommandState*& directDriveTransmissionState,
-        ::physx::vehicle2::PxVehicleArrayData<::physx::PxReal>& directDrivethrottleResponseState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
-        const ::physx::vehicle2::PxVehicleClutchParams*& clutchParams,
-        const ::physx::vehicle2::PxVehicleEngineParams*& engineParams,
-        const ::physx::vehicle2::PxVehicleGearboxParams*& gearboxParams,
-        const ::physx::vehicle2::PxVehicleAutoboxParams*& autoboxParams,
-        const ::physx::vehicle2::PxVehicleMultiWheelDriveDifferentialParams*& multiWheelDiffParams,
-        const ::physx::vehicle2::PxVehicleFourWheelDriveDifferentialParams*& fourWheelDiffParams,
-        const ::physx::vehicle2::PxVehicleTankDriveDifferentialParams*& tankDiffParams,
-        const ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState*& engineDriveTransmissionState,
-        const ::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState*& tankDriveTransmissionState,
-        const ::physx::vehicle2::PxVehicleClutchCommandResponseState*& clutchResponseState,
-        const ::physx::vehicle2::PxVehicleEngineDriveThrottleCommandResponseState*& engineDriveThrottleResponseState,
-        const ::physx::vehicle2::PxVehicleEngineState*& engineState,
-        const ::physx::vehicle2::PxVehicleGearboxState*& gearboxState,
-        const ::physx::vehicle2::PxVehicleAutoboxState*& autoboxState,
-        const ::physx::vehicle2::PxVehicleDifferentialState*& diffState,
-        const ::physx::vehicle2::PxVehicleClutchSlipState*& clutchSlipState,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXSuspensionLimitConstraintParams>&
+        const ::physx::PxVehicleSteerCommandResponseParams*& steerResponseParams,
+        const ::physx::PxVehicleAckermannParams*& ackermannParams,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& brakeResponseStates,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& steerResponseStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelParams>& wheelParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelActuationState>& wheelActuationStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelRigidBody1dState>& wheelRigidBody1dStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleWheelLocalPose>& wheelLocalPoses,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleRoadGeometryState>& roadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionParams>& suspParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceParams>& suspCompParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForceParams>& suspForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionState>& suspStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionComplianceState>& suspCompStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleSuspensionForce>& suspForces,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForceParams>& tireForceParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireDirectionState>& tireDirectionStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireSpeedState>& tireSpeedStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireSlipState>& tireSlipStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireStickyState>& tireStickyStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireGripState>& tireGripStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireCamberAngleState>& tireCamberStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehicleTireForce>& tireForces,
+        ::physx::PxVehicleSizedArrayData<const ::physx::PxVehicleAntiRollForceParams>& antiRollForceParams,
+        const ::physx::PxVehicleAntiRollTorque*& antiRollTorque,
+        const ::physx::PxVehicleCommandState*& commandState,
+        const ::physx::PxVehicleDirectDriveThrottleCommandResponseParams*& directDriveThrottleResponseParams,
+        const ::physx::PxVehicleDirectDriveTransmissionCommandState*& directDriveTransmissionState,
+        ::physx::PxVehicleArrayData<::physx::PxReal>& directDrivethrottleResponseState,
+        const ::physx::PxVehicleClutchCommandResponseParams*& clutchResponseParams,
+        const ::physx::PxVehicleClutchParams*& clutchParams,
+        const ::physx::PxVehicleEngineParams*& engineParams,
+        const ::physx::PxVehicleGearboxParams*& gearboxParams,
+        const ::physx::PxVehicleAutoboxParams*& autoboxParams,
+        const ::physx::PxVehicleMultiWheelDriveDifferentialParams*& multiWheelDiffParams,
+        const ::physx::PxVehicleFourWheelDriveDifferentialParams*& fourWheelDiffParams,
+        const ::physx::PxVehicleTankDriveDifferentialParams*& tankDiffParams,
+        const ::physx::PxVehicleEngineDriveTransmissionCommandState*& engineDriveTransmissionState,
+        const ::physx::PxVehicleTankDriveTransmissionCommandState*& tankDriveTransmissionState,
+        const ::physx::PxVehicleClutchCommandResponseState*& clutchResponseState,
+        const ::physx::PxVehicleEngineDriveThrottleCommandResponseState*& engineDriveThrottleResponseState,
+        const ::physx::PxVehicleEngineState*& engineState,
+        const ::physx::PxVehicleGearboxState*& gearboxState,
+        const ::physx::PxVehicleAutoboxState*& autoboxState,
+        const ::physx::PxVehicleDifferentialState*& diffState,
+        const ::physx::PxVehicleClutchSlipState*& clutchSlipState,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXSuspensionLimitConstraintParams>&
             physxConstraintParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams>&
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXMaterialFrictionParams>&
             physxMaterialFrictionParams,
-        const ::physx::vehicle2::PxVehiclePhysXActor*& physxActor,
-        const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryParams*& physxRoadGeomQryParams,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
-        ::physx::vehicle2::PxVehicleArrayData<const ::physx::vehicle2::PxVehiclePhysXConstraintState>& physxConstraintStates,
-        const ::physx::vehicle2::PxVehiclePhysXSteerState*& physxSteerState,
-        ::physx::vehicle2::PxVehiclePvdObjectHandles*& objectHandles) override
+        const ::physx::PxVehiclePhysXActor*& physxActor,
+        const ::physx::PxVehiclePhysXRoadGeometryQueryParams*& physxRoadGeomQryParams,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXRoadGeometryQueryState>& physxRoadGeomStates,
+        ::physx::PxVehicleArrayData<const ::physx::PxVehiclePhysXConstraintState>& physxConstraintStates,
+        const ::physx::PxVehiclePhysXSteerState*& physxSteerState,
+        ::physx::PxVehiclePvdObjectHandles*& objectHandles) override
     {
         PhysXVehicleManagedWheelControl::getDataForPVDComponent(
             axleDescription, rbodyParams, rbodyState, suspStateCalcParams, brakeResponseParams, steerResponseParams,
@@ -2481,9 +2481,9 @@ protected:
         {
             CARB_ASSERT(mDifferentialType == DifferentialType::eTANK);
             tankDiffParams =
-                static_cast<const ::physx::vehicle2::PxVehicleTankDriveDifferentialParams*>(mDifferentialParams);
+                static_cast<const ::physx::PxVehicleTankDriveDifferentialParams*>(mDifferentialParams);
             tankDriveTransmissionState =
-                static_cast<const ::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState*>(
+                static_cast<const ::physx::PxVehicleTankDriveTransmissionCommandState*>(
                     mTransmissionCommandState);
         }
         clutchResponseState = &mClutchCommandResponseState;
@@ -2504,9 +2504,9 @@ public:
         ::physx::PxPhysics& pxPhysics,
         const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
         const std::vector<::physx::PxShape*>& wheelShapeMapping,
-        const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+        const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
         const std::vector<uint32_t>& wheelIndexToDataMap,
-        const ::physx::vehicle2::PxVehicleFrame&,
+        const ::physx::PxVehicleFrame&,
         const float gravityMagnitude);
     void setComponentSequence();
 
@@ -2516,9 +2516,9 @@ public:
         const usdparser::VehicleDesc&,
         const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
         const std::vector<::physx::PxShape*>& wheelShapeMapping,
-        const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+        const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
         const std::vector<uint32_t>& wheelIndexToDataMap,
-        const ::physx::vehicle2::PxVehicleFrame&,
+        const ::physx::PxVehicleFrame&,
         const float gravityMagnitude,
         ::physx::PxAllocatorCallback*);
 
@@ -2538,7 +2538,7 @@ public:
     {
         if (mAutobox)
             return (mTransmissionCommandState->targetGear ==
-                    ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR);
+                    ::physx::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR);
         else
             return false;
     }
@@ -2547,7 +2547,7 @@ public:
     {
         mTransmissionCommandState->targetGear = targetGear;
 
-        if ((targetGear != ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR) &&
+        if ((targetGear != ::physx::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR) &&
             shiftImmediately)
         {
             mGearboxState.currentGear = targetGear;
@@ -2647,8 +2647,8 @@ public:
     {
         CARB_ASSERT(mDifferentialType == DifferentialType::eTANK);
 
-        ::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState* tankDriveTransmissionCommandState =
-            static_cast<::physx::vehicle2::PxVehicleTankDriveTransmissionCommandState*>(mTransmissionCommandState);
+        ::physx::PxVehicleTankDriveTransmissionCommandState* tankDriveTransmissionCommandState =
+            static_cast<::physx::PxVehicleTankDriveTransmissionCommandState*>(mTransmissionCommandState);
 
         tankDriveTransmissionCommandState->thrusts[thrustIndex] = thrust;
     }
@@ -2662,24 +2662,24 @@ public:
 
 
 protected:
-    ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState* mTransmissionCommandState;
+    ::physx::PxVehicleEngineDriveTransmissionCommandState* mTransmissionCommandState;
 
-    ::physx::vehicle2::PxVehicleGearboxParams mGearboxParams;
-    ::physx::vehicle2::PxVehicleGearboxState mGearboxState;
+    ::physx::PxVehicleGearboxParams mGearboxParams;
+    ::physx::PxVehicleGearboxState mGearboxState;
     Autobox* mAutobox;
 
-    ::physx::vehicle2::PxVehicleClutchParams mClutchParams;
-    ::physx::vehicle2::PxVehicleClutchCommandResponseParams mClutchCommandResponseParams;
-    ::physx::vehicle2::PxVehicleClutchCommandResponseState mClutchCommandResponseState;
-    ::physx::vehicle2::PxVehicleClutchSlipState mClutchSlipState;
-    ::physx::vehicle2::PxVehicleEngineDriveThrottleCommandResponseState mThrottleCommandResponseState;
+    ::physx::PxVehicleClutchParams mClutchParams;
+    ::physx::PxVehicleClutchCommandResponseParams mClutchCommandResponseParams;
+    ::physx::PxVehicleClutchCommandResponseState mClutchCommandResponseState;
+    ::physx::PxVehicleClutchSlipState mClutchSlipState;
+    ::physx::PxVehicleEngineDriveThrottleCommandResponseState mThrottleCommandResponseState;
 
-    ::physx::vehicle2::PxVehicleMultiWheelDriveDifferentialParams* mDifferentialParams;
-    ::physx::vehicle2::PxVehicleDifferentialState mDifferentialState;
-    ::physx::vehicle2::PxVehicleWheelConstraintGroupState* mConstraintGroupState; // for tanks only
+    ::physx::PxVehicleMultiWheelDriveDifferentialParams* mDifferentialParams;
+    ::physx::PxVehicleDifferentialState mDifferentialState;
+    ::physx::PxVehicleWheelConstraintGroupState* mConstraintGroupState; // for tanks only
 
-    ::physx::vehicle2::PxVehicleEngineParams mEngineParams;
-    ::physx::vehicle2::PxVehicleEngineState mEngineState;
+    ::physx::PxVehicleEngineParams mEngineParams;
+    ::physx::PxVehicleEngineState mEngineState;
 
     uint8_t mDifferentialType;
 };
@@ -2694,11 +2694,11 @@ public:
         const usdparser::VehicleDesc& vehicleDesc,
         const std::vector<::physx::PxTransform>& wheelShapeLocalPoses,
         const std::vector<::physx::PxShape*>& wheelShapeMapping,
-        const std::vector<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
+        const std::vector<const ::physx::PxVehiclePhysXMaterialFrictionParams*>& tireMaterialFrictionTables,
         const std::vector<uint32_t>& wheelIndexToDataMap, // defines for each wheel which entries to pick
                                                           // in the parsed data and arrays like wheelShapeLocalPoses
                                                           // etc.
-        const ::physx::vehicle2::PxVehicleFrame& frame,
+        const ::physx::PxVehicleFrame& frame,
         const float gravityMagnitude,
         ::physx::PxAllocatorCallback*);
 };

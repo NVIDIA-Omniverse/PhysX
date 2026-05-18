@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -23,7 +23,6 @@ using namespace pxr;
 using namespace physx;
 using namespace omni::physx::internal;
 using namespace omni::physx::usdparser;
-using namespace carb::scripting;
 
 namespace omni
 {
@@ -31,11 +30,8 @@ namespace physx
 {
 
 TriggerManager::TriggerManager()
-    : mScripting(nullptr), mContextPython(nullptr)
 {
     carb::Framework* framework = carb::getFramework();
-    mScripting = carb::getCachedInterface<carb::scripting::IScripting>();
-    mContextPython = mScripting->createContext();
 }
 
 void TriggerManager::release()
@@ -43,40 +39,6 @@ void TriggerManager::release()
     clearTriggers();
     mTriggerSubscriptions.clear();
     mTriggerSubscriptionsMap.clear();
-
-    // A.B. this started to crash :-(
-    //mScripting->destroyContext(mContextPython);
-    mContextPython = nullptr;
-    mScripting = nullptr;
-}
-
-TriggerScript TriggerManager::getTriggerScript(const TfToken& scriptName)
-{
-    TriggerScriptMap::iterator it = mTriggerScriptMap.find(scriptName);
-    if (it != mTriggerScriptMap.end())
-    {
-        return TriggerScript(it->second.second, it->second.first.c_str());
-    }
-
-    return TriggerScript();
-}
-
-TriggerScript TriggerManager::addTriggerScript(const TfToken& scriptName, const char* scriptPathName)
-{
-    TriggerScriptMap::iterator it = mTriggerScriptMap.find(scriptName);
-    if (it != mTriggerScriptMap.end())
-    {
-        return TriggerScript(it->second.second, it->second.first.c_str());
-    }
-    else
-    {
-        Script* script = mScripting->createScriptFromFile(scriptPathName);
-        if (script)
-        {
-            mTriggerScriptMap[scriptName] = std::make_pair(std::string(scriptPathName), script);
-        }
-        return TriggerScript(script, scriptPathName);
-    }
 }
 
 void TriggerManager::onTriggerEnterEvent(const usdparser::AttachedStage& attachedStage, const ::physx::PxShape* triggerShape, const ::physx::PxShape* otherShape)
@@ -93,8 +55,7 @@ void TriggerManager::onTriggerEnterEvent(const usdparser::AttachedStage& attache
         return;
     if (!(otherRecord && (otherType == ePTShape || otherType == ePTCompoundShape)))
         return;
-
-    processTriggerApiEnterEvent(attachedStage, triggerRecord->mPath, otherRecord->mPath);
+    
     processTriggerStateApiEnterEvent(triggerRecord->mPath, otherRecord->mPath, otherShape);
     if (triggerShape->getActor() && otherShape->getActor()
         && (size_t)triggerShape->getActor()->userData < db.getRecords().size()
@@ -104,60 +65,6 @@ void TriggerManager::onTriggerEnterEvent(const usdparser::AttachedStage& attache
         const InternalDatabase::Record& otherBodyRecord = db.getRecords()[(size_t)otherShape->getActor()->userData];
         processNativeEvent(attachedStage, triggerRecord->mPath, otherRecord->mPath, TriggerEventType::eTRIGGER_ON_ENTER,
             triggerBodyRecord.mPath, otherBodyRecord.mPath);
-    }
-}
-
-void TriggerManager::processTriggerApiEnterEvent(const usdparser::AttachedStage& attachedStage, const pxr::SdfPath& triggerPath, const pxr::SdfPath& otherPath)
-{
-    // A.B. this should be buffered up
-    const PhysxSchemaPhysxTriggerAPI physxTriggerAPI = PhysxSchemaPhysxTriggerAPI::Get(attachedStage.getStage(), triggerPath);
-    if (physxTriggerAPI)
-    {
-        if (physxTriggerAPI.GetOnEnterScriptAttr() && physxTriggerAPI.GetOnEnterScriptAttr().HasAuthoredValue())
-        {
-            TfToken scriptType;
-            physxTriggerAPI.GetEnterScriptTypeAttr().Get(&scriptType);
-
-            TfToken enterScript;
-            physxTriggerAPI.GetOnEnterScriptAttr().Get(&enterScript);
-            TriggerScript script = getTriggerScript(enterScript);
-            if (scriptType == PhysxSchemaTokens.Get()->scriptFile && !script.mScript)
-            {
-                std::string scriptTextName = std::string(enterScript.GetText());
-                std::string resolvedScriptPath =
-                    carb::tokens::resolveString(carb::getCachedInterface<carb::tokens::ITokens>(), scriptTextName);
-                if (resolvedScriptPath == "")
-                    return;
-                script = addTriggerScript(enterScript, resolvedScriptPath.c_str());
-            }
-            if (script.mScript)
-            {
-                size_t newArgc = 5;
-                std::vector<const char*> newArgv(newArgc);
-                std::string stageIdstr = std::to_string(attachedStage.getStageId());
-                newArgv[0] = stageIdstr.c_str();
-                newArgv[1] = triggerPath.GetText();
-                newArgv[2] = otherPath.GetText();
-                std::string enterEvent("EnterEvent");
-                newArgv[3] = enterEvent.c_str();
-                newArgv[4] = script.mScriptPath;
-
-                const bool res = mScripting->executeScriptWithArgs(
-                    mContextPython, script.mScript, &newArgv[0], newArgc,
-                    carb::scripting::kOutputFlagCaptureStdout | carb::scripting::kOutputFlagCaptureStderr);
-
-                if (res)
-                {
-                    std::cout << mScripting->getLastStdout(mContextPython);
-                    std::cout << mScripting->getLastStderr(mContextPython);
-                }
-                else
-                {
-                    CARB_LOG_WARN("Trigger enter event: failed to run a script %s", script.mScriptPath);
-                    std::cout << mScripting->getLastExecutionError(mContextPython).message;
-                }
-            }
-        }
     }
 }
 
@@ -198,8 +105,7 @@ void TriggerManager::onTriggerLeaveEvent(const usdparser::AttachedStage& attache
         return;
     if (!(otherRecord && (otherType == ePTShape || otherType == ePTCompoundShape || otherType == ePTRemoved)))
         return;
-
-    processTriggerApiLeaveEvent(attachedStage, triggerRecord->mPath, otherRecord->mPath);
+    
     processTriggerStateApiLeaveEvent(triggerRecord->mPath, otherRecord->mPath, otherShape);
 
     PhysXType triggerBodyType = ePTRemoved;
@@ -218,59 +124,6 @@ void TriggerManager::onTriggerLeaveEvent(const usdparser::AttachedStage& attache
     processNativeEvent(attachedStage, triggerRecord->mPath, otherRecord->mPath, TriggerEventType::eTRIGGER_ON_LEAVE,
         triggerBodyRecord->mPath,
                        otherBodyRecord ? otherBodyRecord->mPath : SdfPath());
-}
-
-void TriggerManager::processTriggerApiLeaveEvent(const usdparser::AttachedStage& attachedStage, const pxr::SdfPath& triggerPath, const pxr::SdfPath& otherPath)
-{
-    const PhysxSchemaPhysxTriggerAPI physxTriggerAPI = PhysxSchemaPhysxTriggerAPI::Get(attachedStage.getStage(), triggerPath);
-    if (physxTriggerAPI)
-    {
-        if (physxTriggerAPI.GetOnLeaveScriptAttr() && physxTriggerAPI.GetOnLeaveScriptAttr().HasAuthoredValue())
-        {
-            TfToken scriptType;
-            physxTriggerAPI.GetLeaveScriptTypeAttr().Get(&scriptType);
-
-            TfToken leaveScript;
-            physxTriggerAPI.GetOnLeaveScriptAttr().Get(&leaveScript);
-            TriggerScript script = getTriggerScript(leaveScript);
-            if (scriptType == PhysxSchemaTokens.Get()->scriptFile && !script.mScript)
-            {
-                std::string scriptTextName = std::string(leaveScript.GetText());
-                std::string resolvedScriptPath =
-                    carb::tokens::resolveString(carb::getCachedInterface<carb::tokens::ITokens>(), scriptTextName);
-                if (resolvedScriptPath == "")
-                    return;
-                script = addTriggerScript(leaveScript, resolvedScriptPath.c_str());
-            }
-            if (script.mScript)
-            {
-                size_t newArgc = 5;
-                std::vector<const char*> newArgv(newArgc);
-                std::string stageIdstr = std::to_string(attachedStage.getStageId());
-                newArgv[0] = stageIdstr.c_str();
-                newArgv[1] = triggerPath.GetText();
-                newArgv[2] = otherPath.GetText();
-                std::string enterEvent("LeaveEvent");
-                newArgv[3] = enterEvent.c_str();
-                newArgv[4] = script.mScriptPath;
-
-                const bool res = mScripting->executeScriptWithArgs(
-                    mContextPython, script.mScript, &newArgv[0], newArgc,
-                    carb::scripting::kOutputFlagCaptureStdout | carb::scripting::kOutputFlagCaptureStderr);
-
-                if (res)
-                {
-                    std::cout << mScripting->getLastStdout(mContextPython);
-                    std::cout << mScripting->getLastStderr(mContextPython);
-                }
-                else
-                {
-                    CARB_LOG_WARN("Trigger leave event: failed to run a script %s", script.mScriptPath);
-                    std::cout << mScripting->getLastExecutionError(mContextPython).message;
-                }
-            }
-        }
-    }
 }
 
 void TriggerManager::processTriggerStateApiLeaveEvent(const pxr::SdfPath& triggerPath, const pxr::SdfPath& otherPath, const ::physx::PxShape* otherShape)
@@ -367,58 +220,21 @@ void TriggerManager::fireTriggerEvents(const usdparser::AttachedStage& attachedS
     }
 }
 
+
 void TriggerManager::preloadTrigger(const pxr::UsdPrim& triggerPrim, bool usdOutput)
 {
-    const PhysxSchemaPhysxTriggerAPI physxTriggerAPI = PhysxSchemaPhysxTriggerAPI::Get(triggerPrim.GetStage(), triggerPrim.GetPrimPath());
-    if (physxTriggerAPI)
-    {
-        TfToken scriptType;
-        physxTriggerAPI.GetEnterScriptTypeAttr().Get(&scriptType);
-        if ((scriptType == PhysxSchemaTokens.Get()->scriptFile) && physxTriggerAPI.GetOnEnterScriptAttr() && physxTriggerAPI.GetOnEnterScriptAttr().HasAuthoredValue())
-        {
-            TfToken enterScript;
-            physxTriggerAPI.GetOnEnterScriptAttr().Get(&enterScript);
-            std::string scriptTextName = std::string(enterScript.GetText());
-            std::string resolvedScriptPath =
-                carb::tokens::resolveString(carb::getCachedInterface<carb::tokens::ITokens>(), scriptTextName);
-            if (resolvedScriptPath == "")
-                return;
-            addTriggerScript(enterScript, resolvedScriptPath.c_str());
-        }
-
-        physxTriggerAPI.GetLeaveScriptTypeAttr().Get(&scriptType);
-        if ((scriptType == PhysxSchemaTokens.Get()->scriptFile) && physxTriggerAPI.GetOnLeaveScriptAttr() && physxTriggerAPI.GetOnLeaveScriptAttr().HasAuthoredValue())
-        {
-            TfToken leaveScript;
-            physxTriggerAPI.GetOnLeaveScriptAttr().Get(&leaveScript);
-            std::string scriptTextName = std::string(leaveScript.GetText());
-            std::string resolvedScriptPath =
-                carb::tokens::resolveString(carb::getCachedInterface<carb::tokens::ITokens>(), scriptTextName);
-            if (resolvedScriptPath == "")
-                return;
-            addTriggerScript(leaveScript, resolvedScriptPath.c_str());
-        }
-    }
-
     if (usdOutput)
     {
         UsdOutput usdOutput;
         usdOutput.dirty = false;
-        usdOutput.triggerStateAPI = PhysxSchemaPhysxTriggerStateAPI::Get(triggerPrim.GetStage(), triggerPrim.GetPrimPath());
+        usdOutput.triggerStateAPI =
+            PhysxSchemaPhysxTriggerStateAPI::Get(triggerPrim.GetStage(), triggerPrim.GetPrimPath());
         mTriggerOutputMap[triggerPrim.GetPrimPath()] = usdOutput;
     }
 }
 
 void TriggerManager::clearTriggers()
 {
-    TriggerScriptMap::iterator it = mTriggerScriptMap.begin();
-    while (it != mTriggerScriptMap.end())
-    {
-        mScripting->destroyScript(it->second.second);
-        it++;
-    }
-
-    mTriggerScriptMap.clear();
     mInvokedTriggers.clear();
 
     for (TriggerUsdOutputMap::reference ref : mTriggerOutputMap)
@@ -431,7 +247,6 @@ void TriggerManager::clearTriggers()
     }
 
     mTriggerOutputMap.clear();
-
 }
 
 omni::physx::SubscriptionId TriggerManager::registerNativeCallback(TriggerSubscriptionEntry triggerSubscription)

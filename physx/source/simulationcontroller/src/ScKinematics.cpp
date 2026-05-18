@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,6 +35,7 @@
 
 using namespace physx;
 using namespace Sc;
+using namespace Cm;
 
 //PX_IMPLEMENT_OUTPUT_ERROR
 
@@ -106,14 +107,15 @@ class ScKinematicUpdateTask : public Cm::Task
 	Sc::BodyCore*const*	mKinematics;
 	const PxU32			mNbKinematics;
 	const PxReal		mOneOverDt;
+	const bool			mComputeAccelerations;
 
 	PX_NOCOPY(ScKinematicUpdateTask)
 public:
 
 	static const PxU32 NbKinematicsPerTask = 1024;
 	
-	ScKinematicUpdateTask(Sc::BodyCore*const* kinematics, PxU32 nbKinematics, PxReal oneOverDt, PxU64 contextID) :
-		Cm::Task(contextID), mKinematics(kinematics), mNbKinematics(nbKinematics), mOneOverDt(oneOverDt)
+	ScKinematicUpdateTask(Sc::BodyCore*const* kinematics, PxU32 nbKinematics, PxReal oneOverDt, bool computeAccelerations, PxU64 contextID) :
+		Cm::Task(contextID), mKinematics(kinematics), mNbKinematics(nbKinematics), mOneOverDt(oneOverDt), mComputeAccelerations(computeAccelerations)
 	{
 	}
 
@@ -122,6 +124,7 @@ public:
 		Sc::BodyCore*const*	kinematics = mKinematics;
 		PxU32 nb = mNbKinematics;
 		const float oneOverDt = mOneOverDt;
+		const bool computeAccelerations = mComputeAccelerations;
 
 		while(nb--)
 		{
@@ -130,6 +133,11 @@ public:
 			PX_ASSERT(b->getSim()->isActive());
 
 			b->getSim()->calculateKinematicVelocity(oneOverDt);
+			
+			// PdHC: Compute acceleration after velocity is updated (multithreaded)
+			// This uses mPrevLinVel/mPrevAngVel (from last frame) and the freshly computed velocity
+			if(computeAccelerations)
+				b->updateAccelerations(oneOverDt);
 		}
 	}
 
@@ -161,12 +169,16 @@ void Sc::Scene::kinematicsSetup(PxBaseTask* continuation)
 
 	Cm::FlushPool& flushPool = mLLContext->getTaskPool();
 
+	// PdHC: Compute accelerations in this task for all paths (kinematics don't go through ScAfterIntegrationTask)
+	// This is multithreaded and avoids single-threaded work in fetchResults
+	const bool computeAccelerations = (mPublicFlags & PxSceneFlag::eENABLE_BODY_ACCELERATIONS);
+
 	// PT: TASK-CREATION TAG
 	// PT: TODO: better load balancing? This will be single threaded for less than 1K kinematics
 	for(PxU32 i = 0; i < nbKinematics; i += ScKinematicUpdateTask::NbKinematicsPerTask)
 	{
 		ScKinematicUpdateTask* task = PX_PLACEMENT_NEW(flushPool.allocate(sizeof(ScKinematicUpdateTask)), ScKinematicUpdateTask)
-			(kinematics + i, PxMin(ScKinematicUpdateTask::NbKinematicsPerTask, nbKinematics - i), mOneOverDt, mContextId);
+			(kinematics + i, PxMin(ScKinematicUpdateTask::NbKinematicsPerTask, nbKinematics - i), mOneOverDt, computeAccelerations, mContextId);
 
 		task->setContinuation(continuation);
 		task->removeReference();
@@ -288,17 +300,16 @@ namespace
 {
 class ScKinematicShapeUpdateTask : public Cm::Task
 {
-	Sc::BodyCore*const*		mKinematics;
-	const PxU32				mNbKinematics;
-	PxsTransformCache&		mCache;
-	Bp::BoundsArray&		mBoundsArray;
+	Sc::BodyCore*const*			mKinematics;
+	const PxU32					mNbKinematics;
+	const UpdateCachedParams	mParams;
 
 	PX_NOCOPY(ScKinematicShapeUpdateTask)
 public:
 	static const PxU32 NbKinematicsShapesPerTask = 1024;
 
 	ScKinematicShapeUpdateTask(Sc::BodyCore*const* kinematics, PxU32 nbKinematics, PxsTransformCache& cache, Bp::BoundsArray& boundsArray, PxU64 contextID) :
-		Cm::Task(contextID), mKinematics(kinematics), mNbKinematics(nbKinematics), mCache(cache), mBoundsArray(boundsArray)
+		Cm::Task(contextID), mKinematics(kinematics), mNbKinematics(nbKinematics), mParams(cache, boundsArray)
 	{
 	}
 
@@ -311,7 +322,7 @@ public:
 			PX_ASSERT(b->getSim()->isKinematic());
 			PX_ASSERT(b->getSim()->isActive());
 
-			b->getSim()->updateCached(mCache, mBoundsArray);
+			b->getSim()->updateCached_ThreadSafe(mParams);
 		}
 	}
 
@@ -372,7 +383,7 @@ void Sc::Scene::updateKinematicCached(PxBaseTask* continuation)
 	}
 
 	{
-		PxBitMapPinned& changedAABBMap = mAABBManager->getChangedAABBMgActorHandleMap();
+		PinnableBitMap& changedAABBMap = mAABBManager->getChangedAABBMgActorHandleMap();
 		mLLContext->getTransformCache().setChangedState();
 		mBoundsArray->setChangedState();
 		for (PxU32 i = 0; i < nbKinematics; ++i)

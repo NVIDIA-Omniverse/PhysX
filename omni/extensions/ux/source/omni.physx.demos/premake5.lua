@@ -13,6 +13,40 @@ define_physics_test_experience("omni.physx.demos",
   }
 )
 
+-- extra fsd testing suite - fsd on/fabric on
+define_physics_test_experience("omni.physx.demos",
+  {
+    dir="extsPhysicsRepo",
+    suite="fsddemos",
+    suffix=".fsdon-fabric",
+    test_args={
+      "--", -- push the args below as unprocessed args through exttest processing
+      "--/exts/omni.kit.test/runTestsFilter='*test_physics_visual_demos*'",
+      "--/exts/omni.kit.test/excludeTests/0='*PhysxXAssetDemosTest*'",
+      "--/app/useFabricSceneDelegate=true",
+      "--/physics/fabricEnabled=true",
+      "--enable omni.physx.fabric"
+    }
+  }
+)
+
+-- extra fsd testing suites - fsd off/fabric on
+define_physics_test_experience("omni.physx.demos",
+  {
+    dir="extsPhysicsRepo",
+    suite="fsddemos",
+    suffix=".fsdoff-fabric",
+    test_args={
+      "--", -- push the args below as unprocessed args through exttest processing
+      "--/exts/omni.kit.test/runTestsFilter='*test_physics_visual_demos*'",
+      "--/exts/omni.kit.test/excludeTests/0='*PhysxXAssetDemosTest*'",
+      "--/app/useFabricSceneDelegate=false",
+      "--/physics/fabricEnabled=true",
+      "--enable omni.physx.fabric"
+    }
+  }
+)
+
 -- demos with external assets, fix path to s3
 define_physics_test_experience("omni.physx.demos", 
   {

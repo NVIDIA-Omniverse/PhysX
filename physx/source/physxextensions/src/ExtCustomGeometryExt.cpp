@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -233,6 +233,8 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 				immediate::PxGenerateContacts(&pGeom0, &pGeom1, &pose, &pose1, &contactCache, 1, contactRecorder,
 					contactDistance, meshContactMargin, toleranceLength, contactCacheAllocator);
 			}
+			for (PxU32 i = 0; i < contactBuffer.count; ++i)
+				contactBuffer.contacts[i].internalFaceIndex1 = 0;
 		}
 		break;
 	}
@@ -262,6 +264,8 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 				immediate::PxGenerateContacts(&pGeom0, &pGeom1, &pose, &pose1, &contactCache, 1, contactRecorder,
 					contactDistance, meshContactMargin, toleranceLength, contactCacheAllocator);
 			}
+			for (PxU32 i = 0; i < contactBuffer.count; ++i)
+				contactBuffer.contacts[i].internalFaceIndex1 = 0;
 		}
 		break;
 	}
@@ -291,7 +295,7 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 			TriangleSupport triSupport(tri.verts[0], tri.verts[1], tri.verts[2], meshMargin);
 			if (PxGjkQueryExt::generateContacts(*this, triSupport, pose0, identityPose, contactDistance, toleranceLength, contactBuffer))
 			{
-				contactBuffer.contacts[contactBuffer.count - 1].internalFaceIndex1 = triangles[i];
+				const PxU32 firstContact = contactBuffer.count - 1;
 				PxGeometryHolder substituteGeom; PxTransform preTransform;
 				if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0))
 				{
@@ -301,6 +305,8 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 					PxTransform pose = pose0.transform(preTransform);
 					PxGeometryQuery::generateTriangleContacts(geom, pose, tri.verts, triangles[i], contactDistance, meshMargin, toleranceLength, contactBuffer);
 				}
+				for (PxU32 j = firstContact; j < contactBuffer.count; ++j)
+					contactBuffer.contacts[j].internalFaceIndex1 = triangles[i];
 			}
 			if (hasAdjacency)
 			{
@@ -625,6 +631,17 @@ PxVec3 PxCustomGeometryExt::CylinderCallbacks::supportLocal(const PxVec3& dir) c
 	return PxVec3(0);
 }
 
+PxBounds3 PxCustomGeometryExt::CylinderCallbacks::getLocalBounds(const PxGeometry&) const
+{
+	const float h = height * 0.5f;
+	const float r = radius;
+	PxBounds3 localBounds(PxVec3(-r), PxVec3(r));
+	localBounds.minimum[axis] = -h;
+	localBounds.maximum[axis] = h;
+	localBounds.fattenSafe(margin);
+	return localBounds;
+}
+
 void PxCustomGeometryExt::CylinderCallbacks::computeMassProperties(const PxGeometry& /*geometry*/, PxMassProperties& massProperties) const
 {
 	if (margin == 0)
@@ -676,7 +693,7 @@ void PxCustomGeometryExt::CylinderCallbacks::computeMassProperties(const PxGeome
 
 bool PxCustomGeometryExt::CylinderCallbacks::useSubstituteGeometry(PxGeometryHolder& geom, PxTransform& preTransform, const PxContactPoint& p, const PxTransform& pose0) const
 {
-	// here I check if we contact with the cylender bases or the lateral surface
+	// here I check if we contact with the cylinder bases or the lateral surface
 	// where more than 1 contact point can be generated.
 	PxVec3 locN = pose0.rotateInv(p.normal);
 	float nAng = acosf(PxClamp(-locN[axis], -1.0f, 1.0f));

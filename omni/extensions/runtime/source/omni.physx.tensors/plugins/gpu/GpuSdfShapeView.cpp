@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -164,9 +164,9 @@ bool GpuSdfShapeView::getSdfAndGradients(const TensorDesc* dstTensor,
 
 
     CUevent signalEvent = mGpuSimData->mCopyEvents[CopyEvent::eSdfData];
-    CHECK_CU(cuStreamWaitEvent(nullptr, signalEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(signalEvent), 0, nullptr));
     mGpuSimData->mScene->getDirectGPUAPI().evaluateSDFDistances(dstSDFVals, mShapeIndicesD, samplePointsPerShape, samplePointCountsD, (PxU32)mShapeIndices.size(), mMaxNumPoints, NULL, signalEvent);
-    CHECK_CU(cuEventSynchronize(signalEvent));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(signalEvent), nullptr));
     // CHECK_CUDA(cudaStreamSynchronize(nullptr));
     SYNCHRONIZE_CUDA();
     return true;

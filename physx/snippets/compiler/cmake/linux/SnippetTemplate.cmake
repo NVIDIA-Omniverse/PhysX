@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build Snippet linux template
@@ -46,14 +46,7 @@ SET(SNIPPET_PLATFORM_SOURCES
 SET(SNIPPET_PLATFORM_INCLUDES
 )
 
-# gwoolery: aarch64 requires glut library to be lower case, for whatever reason
-IF(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-	SET(GLUT_LIB "glut")
-ELSE()
-	SET(GLUT_LIB "GLUT")
-ENDIF()
-
-SET(SNIPPET_PLATFORM_LINKED_LIBS SnippetRender GL GLU ${GLUT_LIB} X11 rt pthread dl -Wl,-rpath='${ORIGIN}')
+SET(SNIPPET_PLATFORM_LINKED_LIBS SnippetRender OpenGL::GL OpenGL::GLU GLUT::GLUT X11 rt pthread dl -Wl,-rpath='${ORIGIN}')
 
 IF(PX_GENERATE_GPU_STATIC_LIBRARIES)
 	LIST(APPEND SNIPPET_PLATFORM_LINKED_LIBS PhysXGpu)

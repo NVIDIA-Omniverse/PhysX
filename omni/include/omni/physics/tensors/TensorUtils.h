@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -26,7 +26,8 @@ public:
         size_t count = 0;
         for (auto it = dims.begin(); it != dims.end(); ++it)
         {
-            // eek?
+            // Defensive: TensorDesc supports up to kMaxDimensions. If a caller passes
+            // more dims (not expected in normal use), ignore the extras.
             if (count >= size_t(kMaxDimensions))
             {
                 break;
@@ -210,6 +211,17 @@ inline bool checkTensorInt8(const TensorDesc& tensor, const char* tensorName, co
     return true;
 }
 
+inline bool checkTensorInt64(const TensorDesc& tensor, const char* tensorName, const char* funcName)
+{
+    if (tensor.dtype != TensorDataType::eInt64 && tensor.dtype != TensorDataType::eUint64)
+    {
+        CARB_LOG_ERROR("Incompatible data type of %s tensor in function %s: expected 64-bit integer, received %s",
+                       tensorName, funcName, getTensorDtypeCstr(tensor));
+        return false;
+    }
+    return true;
+}
+
 inline bool checkTensorSizeExact(const TensorDesc& tensor, size_t expectedSize, const char* tensorName, const char* funcName)
 {
     size_t totalSize = getTensorTotalSize(tensor);
@@ -268,6 +280,78 @@ inline bool checkTensorSizeMinimum(const TensorDesc& tensor,
         return false;
     }
     return true;
+}
+
+// ---------------------------------------------------------------------------
+// Shared CPU-side mask-to-indices resolution.
+//
+// Validates a uint8 mask tensor (device must match expectedDevice) and populates
+// outIndices with the positions of non-zero elements. Used by all CPU-side
+// masked setters and by base material views.
+//
+// Returns:
+//   MaskResult::Error   - validation failed (error already logged)
+//   MaskResult::Empty   - mask is all zeros, nothing to write
+//   MaskResult::All     - mask is all ones, caller should use the unindexed path
+//   MaskResult::Partial - outIndices contains the selected indices
+// ---------------------------------------------------------------------------
+enum class MaskResult { Error, Empty, All, Partial };
+
+inline MaskResult resolveMaskToIndices(const TensorDesc* maskTensor,
+                                       uint32_t viewCount,
+                                       int expectedDevice,
+                                       std::vector<uint32_t>& outIndices,
+                                       const char* funcName)
+{
+    if (!maskTensor || !maskTensor->data)
+    {
+        CARB_LOG_ERROR("mask tensor is null or has no data in %s", funcName);
+        return MaskResult::Error;
+    }
+
+    if (!checkTensorDevice(*maskTensor, expectedDevice, "mask", funcName))
+        return MaskResult::Error;
+
+    if (maskTensor->dtype != TensorDataType::eUint8)
+    {
+        CARB_LOG_ERROR("mask tensor must be uint8 in %s", funcName);
+        return MaskResult::Error;
+    }
+
+    if (getTensorTotalSize(*maskTensor) != viewCount)
+    {
+        CARB_LOG_ERROR("mask tensor size (%llu) must equal view count (%u) in %s",
+                       (unsigned long long)getTensorTotalSize(*maskTensor), viewCount, funcName);
+        return MaskResult::Error;
+    }
+
+    const uint8_t* mask = static_cast<const uint8_t*>(maskTensor->data);
+    outIndices.clear();
+    outIndices.reserve(viewCount);
+    for (uint32_t i = 0; i < viewCount; ++i)
+    {
+        if (mask[i])
+            outIndices.push_back(i);
+    }
+
+    if (outIndices.empty())
+        return MaskResult::Empty;
+    if (outIndices.size() == viewCount)
+        return MaskResult::All;
+    return MaskResult::Partial;
+}
+
+// Build a 1D uint32 TensorDesc pointing at an index vector. The caller must keep
+// the vector alive for the lifetime of the returned TensorDesc.
+inline TensorDesc makeIndexTensorDesc(std::vector<uint32_t>& indices, int device)
+{
+    TensorDesc idx{};
+    idx.device = device;
+    idx.dtype = TensorDataType::eUint32;
+    idx.numDims = 1;
+    idx.dims[0] = static_cast<int>(indices.size());
+    idx.data = indices.data();
+    return idx;
 }
 
 } // namespace tensors

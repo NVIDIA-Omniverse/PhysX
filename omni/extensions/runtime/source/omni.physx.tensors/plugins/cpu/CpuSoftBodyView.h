@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -50,6 +50,9 @@ public:
     bool setSimNodalPositions(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setSimNodalVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setSimKinematicTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
+    bool setSimNodalPositionsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setSimNodalVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setSimKinematicTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
 private:
     CpuSimulationDataPtr mCpuSimData;

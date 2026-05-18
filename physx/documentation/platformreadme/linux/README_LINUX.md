@@ -14,6 +14,7 @@
 * Clang for linux x86-64
 * glibc, version 2.31 or higher (Note: GLIBC versions are typically not backwards compatible)
 * NVIDIA CUDA Toolkit 12.8 (Not required for CPU only builds)
+  * Ensure `nvcc` is on `PATH` (typically `/usr/local/cuda/bin`), or export `CUDACXX` to the nvcc binary, e.g. `export CUDACXX=/usr/local/cuda-12.8/bin/nvcc`. Otherwise CMake will fail with `No CMAKE_CUDA_COMPILER could be found`.
 
 ### Compilers and C++ Standard:
   * We support the following Ubuntu LTS releases and compilers:
@@ -51,6 +52,7 @@ Compile errors on unsupported compilers or platforms are frequently caused by ad
 
 * freeglut3
 * libglu1
+* libgl-dev
 * libxdamage-dev
 * libxmu6
 

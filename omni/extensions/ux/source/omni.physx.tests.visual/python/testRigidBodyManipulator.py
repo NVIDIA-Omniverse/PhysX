@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.kit.viewport.utility.camera_state import ViewportCameraState
 from omni.physxtestsvisual.utils import TestCase, settings
 from omni.physxtests.utils.physicsBase import TestCategory
@@ -92,7 +93,7 @@ class PhysxRigidBodyManipulatorTest(TestCase):
             await self.wait(10)
             omni.timeline.get_timeline_interface().pause()
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_rigid_body_manipulation_move",
                 use_distant_light=True,
@@ -110,7 +111,7 @@ class PhysxRigidBodyManipulatorTest(TestCase):
 
             await self.wait(1)
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_rigid_body_manipulation_reset",
                 use_distant_light=True,
@@ -139,7 +140,7 @@ class PhysxRigidBodyManipulatorTest(TestCase):
             await ui_test.input.emulate_mouse(MouseEventType.LEFT_BUTTON_UP)
             await self.wait(10)
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_rigid_body_manipulation_rotate",
                 use_distant_light=True,

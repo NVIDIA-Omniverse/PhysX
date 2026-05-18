@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -174,7 +174,7 @@ void DebugVisualizationVehicle::updateVehicle(const pxr::UsdPrim& prim,
             // the center-of-mass frame is relative to the actor/vehicle frame (including scale),
             // thus scale needs to be applied (using TransformAffine(), the scale will get factored
             // in)
-            vehicleRefPosWorld = vehiclePoseWorld.TransformAffine(centerOfMassPosLocal);
+            vehicleRefPosWorld = pxr::GfVec3f(vehiclePoseWorld.TransformAffine(centerOfMassPosLocal));
 
             pxr::UsdAttribute principalAxesAttr = massAPI.GetPrincipalAxesAttr();
             pxr::GfQuatf centerOfMassOrientLocal;
@@ -246,9 +246,9 @@ void DebugVisualizationVehicle::updateVehicle(const pxr::UsdPrim& prim,
                 }
             }
 
-            const pxr::GfVec3f suspFramePosWorld = vehicleRefPosWorld + (vehicleRefOrientWorld.TransformDir(suspFramePosLocal));
+            const pxr::GfVec3f suspFramePosWorld = vehicleRefPosWorld + pxr::GfVec3f(vehicleRefOrientWorld.TransformDir(suspFramePosLocal));
 
-            const pxr::GfVec3f suspDirWorld = vehicleRefOrientWorld.TransformDir(suspDirLocal);
+            const pxr::GfVec3f suspDirWorld = pxr::GfVec3f(vehicleRefOrientWorld.TransformDir(suspDirLocal));
 
             float suspTravelDistance;
             if (wheelAttDesc.suspension->travelDistance > 0.0f)
@@ -286,7 +286,7 @@ void DebugVisualizationVehicle::updateVehicle(const pxr::UsdPrim& prim,
                 const pxr::GfVec3f wheelPosWorld(trw.GetTranslation());
                 const pxr::GfRotation wheelRotWorld = trw.GetRotation();
 
-                const pxr::GfVec3f suspPosWorld = wheelPosWorld + (wheelRotWorld.TransformDir(invWheelFramePosLocal));
+                const pxr::GfVec3f suspPosWorld = wheelPosWorld + pxr::GfVec3f(wheelRotWorld.TransformDir(invWheelFramePosLocal));
 
                 const float currentSuspDeltaUnclamped = (suspPosWorld - suspFramePosWorld) * suspDirWorld;
                 currentSuspDelta = CARB_CLAMP(currentSuspDeltaUnclamped, 0.0f, suspTravelDistance);

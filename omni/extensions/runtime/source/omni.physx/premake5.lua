@@ -22,13 +22,7 @@ project ("omni.physx.plugin")
     staticruntime "Off"
     rtti "On"
     targetdir (targetDir.."/"..ext_dir.."/bin")
-    if os.target() == "windows" and _OPTIONS["devphysx"] then
-        fastuptodate "Off"
-        dependson { "prebuild", "carb.physics-usd.plugin", "foundation", "PhysX", 
-        "PhysXExtensions", "PhysXGpu", "PhysXVehicle2", "PhysXCharacterKinematic", "PVDRuntime", }
-    else
-        dependson { "prebuild", "carb.physics-usd.plugin", "foundation" }
-    end
+    dependson { "prebuild", "carb.physics-usd.plugin", "foundation" }
     extension_usd_deps(targetDeps_dir, hostDeps_dir)
     extension_physxsdk_deps(targetDeps_dir, physxVersion)
     add_cuda_deps(targetDeps_dir)
@@ -81,16 +75,23 @@ project ("omni.physx.plugin")
     files { "python/**.py" }
     vpaths { ['python/*'] = "python/**.py" }
 
-project ("omni.physx.python")
-    carboniteBindingsPython {
-        name = "_physx",
-        folder = "bindings",
-        namespace = "omni" }
-    extension_usd_deps(targetDeps_dir, hostDeps_dir)
-    links { "physicsSchemaTools", "physxSchema" }
-    includedirs {
-        targetDeps_dir.."/carbonite/include",
-    }
-    targetdir (targetDir.."/"..ext_dir.."/omni/physx/bindings")
-    link_boost_for_windows_wdefault()
+    -- SdfApplyListOrdering inconsistent dll linkage warning
+    filter { "files:plugins/usdLoad/PointInstancer.cpp", "system:windows"}
+        buildoptions { "/wd4273" }
+    filter {}
+
+if not _OPTIONS["no-runtime-pybind"] then
+    project ("omni.physx.python")
+        carboniteBindingsPython {
+            name = "_physx",
+            folder = "bindings",
+            namespace = "omni" }
+        extension_usd_deps(targetDeps_dir, hostDeps_dir)
+        links { "physicsSchemaTools", "physxSchema" }
+        includedirs {
+            targetDeps_dir.."/carbonite/include",
+        }
+        targetdir (targetDir.."/"..ext_dir.."/omni/physx/bindings")
+        link_boost_for_windows_wdefault()
+end
 

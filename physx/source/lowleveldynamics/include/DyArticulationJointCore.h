@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -88,13 +88,15 @@ namespace physx
 			PX_FORCE_INLINE	void	setLimit(PxArticulationAxis::Enum axis, const PxArticulationLimit& limit)	{ limits[axis] = limit;					}
 			PX_FORCE_INLINE	void	setDrive(PxArticulationAxis::Enum axis, const PxArticulationDrive& drive)	{ drives[axis] = drive;					}
 			PX_FORCE_INLINE	void	setJointType(PxArticulationJointType::Enum type)							{ jointType = PxU8(type);				}
-			PX_FORCE_INLINE	void	setMaxJointVelocity(const PxReal maxJointV)								{ 
+			PX_FORCE_INLINE	void	setMaxJointVelocity(const PxReal maxJointV)
+			{ 
 				for(PxU32 i = 0; i < PxArticulationAxis::eCOUNT; i++)
 				{
 					maxJointVelocity[i] = maxJointV;
 				}
 			}
-			PX_FORCE_INLINE	void	setMaxJointVelocity(PxArticulationAxis::Enum axis, const PxReal maxJointV)								{ 
+			PX_FORCE_INLINE	void	setMaxJointVelocity(PxArticulationAxis::Enum axis, const PxReal maxJointV)
+			{ 
 				maxJointVelocity[axis] = maxJointV;
 			}
 			PX_FORCE_INLINE	void	setFrictionCoefficient(const PxReal coefficient)							{ frictionCoefficient = coefficient;	}
@@ -111,8 +113,7 @@ namespace physx
 
 				parentPose			= parentFrame;
 				childPose			= childFrame;
-				jointOffset			= 0;
-				jCalcUpdateFrames		= true;
+				jCalcUpdateFrames	= true;
 
 				setFrictionCoefficient(0.05f);
 				setMaxJointVelocity(100.0f);
@@ -148,7 +149,6 @@ namespace physx
 					computeMotionMatrix(motionMatrix, jointAxis, dofs);
 
 					jCalcUpdateFrames = false;
-
 				}
 			}
 
@@ -156,6 +156,12 @@ namespace physx
 																	  const Cm::UnAlignedSpatialVector* jointAxis,
 																	  const PxU32 dofs)
 			{
+				// PT: the joint axes are computed like this:
+				// Cm::UnAlignedSpatialVector axis = Cm::UnAlignedSpatialVector::Zero();
+				// axis[i] = 1.f;
+				// So we could store and pass a simple index in [0;6] instead of the full spatial vector, and then
+				// use specialized rotateAndNormalize() functions that have advantage of zeros.
+
 				const PxVec3 childOffset = -childPose.p;
 
 				switch (jointType)
@@ -184,7 +190,6 @@ namespace physx
 				}
 				case PxArticulationJointType::eSPHERICAL:
 				{
-
 					for (PxU32 ind = 0; ind < dofs; ++ind)
 					{
 						const Cm::UnAlignedSpatialVector& jJointAxis = jointAxis[ind];
@@ -231,17 +236,16 @@ namespace physx
 				}
 
 				frictionCoefficient = other.frictionCoefficient;
-				jointOffset = other.jointOffset;
 				jCalcUpdateFrames = other.jCalcUpdateFrames;
 				jointType = other.jointType;
 			}
 
-			PX_FORCE_INLINE	void	setParentPose(const PxTransform& t)										{ parentPose = t;			jCalcUpdateFrames = true;				}
-			PX_FORCE_INLINE	void	setChildPose(const PxTransform& t)										{ childPose = t;			jCalcUpdateFrames = true;				}
-			PX_FORCE_INLINE	void	setMotion(PxArticulationAxis::Enum axis, PxArticulationMotion::Enum m)	{ motion[axis] = PxU8(m);}
-			PX_FORCE_INLINE	void	setTargetP(PxArticulationAxis::Enum axis, PxReal value)					{ targetP[axis] = value; }
-			PX_FORCE_INLINE	void	setTargetV(PxArticulationAxis::Enum axis, PxReal value)					{ targetV[axis] = value; }
-			PX_FORCE_INLINE	void	setArmature(PxArticulationAxis::Enum axis, PxReal value)				{ armature[axis] = value;}
+			PX_FORCE_INLINE	void	setParentPose(const PxTransform& t)										{ parentPose = t;	jCalcUpdateFrames = true;	}
+			PX_FORCE_INLINE	void	setChildPose(const PxTransform& t)										{ childPose = t;	jCalcUpdateFrames = true;	}
+			PX_FORCE_INLINE	void	setMotion(PxArticulationAxis::Enum axis, PxArticulationMotion::Enum m)	{ motion[axis] = PxU8(m);	}
+			PX_FORCE_INLINE	void	setTargetP(PxArticulationAxis::Enum axis, PxReal value)					{ targetP[axis] = value;	}
+			PX_FORCE_INLINE	void	setTargetV(PxArticulationAxis::Enum axis, PxReal value)					{ targetV[axis] = value;	}
+			PX_FORCE_INLINE	void	setArmature(PxArticulationAxis::Enum axis, PxReal value)				{ armature[axis] = value;	}
 
 			// attachment points, don't change the order, otherwise it will break GPU code
 			PxTransform						parentPose;								//28		28
@@ -261,16 +265,13 @@ namespace physx
 			PxJointFrictionParams			frictionParams[PxArticulationAxis::eCOUNT]; //72	396
 			PxReal							maxJointVelocity[PxArticulationAxis::eCOUNT]; // 24			420
 
-			//this is the dof offset for the joint in the cache. 
-			PxU32							jointOffset;							//4			424
+			PxU8							dofIds[PxArticulationAxis::eCOUNT];		//6			426
+			PxU8							motion[PxArticulationAxis::eCOUNT];		//6			432
+			PxU8							invDofIds[PxArticulationAxis::eCOUNT];	//6			438
 
-			PxU8							dofIds[PxArticulationAxis::eCOUNT];		//6			430
-			PxU8							motion[PxArticulationAxis::eCOUNT];		//6			436
-			PxU8							invDofIds[PxArticulationAxis::eCOUNT];	//6			442
-
-			bool							jCalcUpdateFrames;						//1			443
-			PxU8							jointType;								//1			444
-			PxReal padding[1];														//4		````448
+			bool							jCalcUpdateFrames;						//1			439
+			PxU8							jointType;								//1			440
+			PxReal							padding[2];								//8			448
 		}PX_ALIGN_SUFFIX(16);
 	}
 }

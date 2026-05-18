@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -40,15 +40,7 @@ struct SimulationOutputType
 
         \note Currently not used
         */
-        ePOINTS,
-
-        /**
-        \brief Solver residuals
-
-        \note Solver residuals reported on a physics scene, articulation and joints, reported when class
-        "PhysxResidualReportingAPI" is present.
-        */
-        eRESIDUALS
+        ePOINTS
     };
 };
 
@@ -147,23 +139,6 @@ using TransformUpdateNotificationFn =
 using VelocityUpdateNotificationFn =
     std::function<void(uint64_t sdfPath, const carb::Float3& linVelocity, const carb::Float3& angVelocity, void* userData)>;
 
-/// Residual reporting notification function issued for all PhysxResidualReportingAPIs.
-///
-/// \note SimulationOutputFlag::eNOTIFY_UPDATE should be set for SimulationOutputType::eRESIDUALS
-///
-/// \param[in] sdfPath SdfPath stored as Uint64_t for the prim that changed transformation
-/// \param[in] positionIterationResidualMax Maximum position interation residual
-/// \param[in] positionIterationResidualRms Rms position interation residual
-/// \param[in] velocityIterationResidualMax Maximum velocity interation residual
-/// \param[in] velocityIterationResidualRms Rms velocity interation residual
-/// \param[in] userData User data passed to ISimulationCallback struct
-using ResidualUpdateNotificationFn = std::function<void(uint64_t sdfPath,
-                                                        float positionIterationResidualMax,
-                                                        float positionIterationResidualRms,
-                                                        float velocityIterationResidualMax,
-                                                        float velocityIterationResidualRms,
-                                                        void* userData)>;
-
 /// Physics transformation update callback. Called after fetch results, when transformations are available for read.
 ///
 /// \param[in] timeStep Time step used for simulation
@@ -176,7 +151,6 @@ struct ISimulationCallback
 {
     TransformUpdateNotificationFn transformationWriteFn = { nullptr };
     VelocityUpdateNotificationFn velocityWriteFn = { nullptr };
-    ResidualUpdateNotificationFn residualWriteFn = { nullptr };
     TransformUpdateFn transformationUpdateFn = { nullptr };
 
     void* userData = { nullptr };
@@ -185,7 +159,7 @@ struct ISimulationCallback
 
 struct IPhysxSimulation
 {
-    CARB_PLUGIN_INTERFACE("omni::physx::IPhysxSimulation", 3, 0)
+    CARB_PLUGIN_INTERFACE("omni::physx::IPhysxSimulation", 4, 0)
 
     /// Attach USD stage. This will run the physics parser
     /// and will populate the PhysX SDK with the corresponding simulation objects.

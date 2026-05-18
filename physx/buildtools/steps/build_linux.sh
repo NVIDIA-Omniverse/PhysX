@@ -41,28 +41,6 @@ build() {
     popd
 }
 
-# Function to handle file copying for linux-aarch64-carbonite and linux-carbonite debug builds
-copy_vhacd_files() {
-    CONFIG=$1
-    if [[ "$CONFIG" == "debug" ]]; then
-        if [[ "$PRESET" == "linux-aarch64-carbonite" ]]; then
-            TARGET_PATH="install/$PRESET/VHACD/bin/linux.aarch64/debug/"
-            SRC_PATH="bin/linux.aarch64/debug/"
-        elif [[ "$PRESET" == "linux-carbonite" ]]; then
-            TARGET_PATH="install/$PRESET/VHACD/bin/linux.x86_64/debug/"
-            SRC_PATH="bin/linux.x86_64/debug/"
-        fi
-        mkdir -p "$TARGET_PATH" || error_exit "Failed to create directory $TARGET_PATH"
-        
-        # Check if VHACD files exist before attempting to copy
-        if ls "$SRC_PATH"*VHACD* 1> /dev/null 2>&1; then
-            cp "$SRC_PATH"*VHACD* "$TARGET_PATH" || error_exit "Failed to copy VHACD files"
-        else
-            echo "Warning: No VHACD files found in $SRC_PATH. Skipping copy operation."
-        fi
-    fi
-}
-
 # Define build function for linux-aarch64-carbonite and linux-carbonite (with install)
 build_with_install() {
     CONFIG=$1
@@ -70,8 +48,6 @@ build_with_install() {
     pushd "$BUILD_DIR" || error_exit "Directory not found for build: $BUILD_DIR"
     make -j$JOBS install || error_exit "Build and install failed for $PRESET-$CONFIG"
     popd
-
-    copy_vhacd_files $CONFIG
 }
 
 # Build process based on the preset and configuration
@@ -86,19 +62,20 @@ if [[ "$PRESET" == "linux-aarch64-carbonite" || "$PRESET" == "linux-carbonite" ]
         build_with_install $BUILD_CONFIG
     fi
 
-    # Additional installations not specific to any build
+    # Copy license files for the PhysX install package
     INSTALL_PATH="install/$PRESET"
 
     pushd "$(dirname "$0")/../.." || error_exit "Failed to enter base directory"
-    mkdir -p "$INSTALL_PATH/PhysX/PACKAGE-LICENSES/" "$INSTALL_PATH/VHACD/" "$INSTALL_PATH/VHACD/include/" "$INSTALL_PATH/VHACD/PACKAGE-LICENSES/" || error_exit "Failed to create installation directories"
 
-    cp "documentation/license/PACKAGE-LICENSES/LICENSE.md" "$INSTALL_PATH/PhysX/PACKAGE-LICENSES/physxsdk-LICENSE.md" || error_exit "Failed to copy PhysX license"
-    cp "documentation/license/PACKAGE-LICENSES/vhacd-LICENSE.md" "$INSTALL_PATH/VHACD/PACKAGE-LICENSES/vhacd-LICENSE.md" || error_exit "Failed to copy VHACD license"
+    if [ -d "documentation/license/PACKAGE-LICENSES" ]; then
+        mkdir -p "$INSTALL_PATH/PhysX/PACKAGE-LICENSES/" || error_exit "Failed to create installation directories"
 
-    cp "documentation/license/physxsdk-PACKAGE-INFO.yaml" "$INSTALL_PATH/PhysX/PACKAGE-INFO.yaml" || error_exit "Failed to copy PhysX package info"
-    cp "documentation/license/vhacd-PACKAGE-INFO.yaml" "$INSTALL_PATH/VHACD/PACKAGE-INFO.yaml" || error_exit "Failed to copy VHACD package info"
+        cp "documentation/license/PACKAGE-LICENSES/LICENSE.md" "$INSTALL_PATH/PhysX/PACKAGE-LICENSES/physxsdk-LICENSE.md" || error_exit "Failed to copy PhysX license"
+        cp "documentation/license/physxsdk-PACKAGE-INFO.yaml" "$INSTALL_PATH/PhysX/PACKAGE-INFO.yaml" || error_exit "Failed to copy PhysX package info"
+    else
+        echo "Skipping license packaging (files not present)."
+    fi
 
-    cp "externals/VHACD/public/"* "$INSTALL_PATH/VHACD/include/" || error_exit "Failed to copy VHACD include files"
     popd
 else
     # Build without install for other presets

@@ -1,12 +1,11 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.kit.undo
 from omni.physx.scripts import physicsUtils
 from omni.physxtests import utils
 from omni.physxtests.utils.physicsBase import PhysicsKitStageAsyncTestCase
-
-approximations = ["none", "convexHull", "convexDecomposition", "meshSimplification", "convexMeshSimplification"]
 
 
 class AsyncTestCase(PhysicsKitStageAsyncTestCase):

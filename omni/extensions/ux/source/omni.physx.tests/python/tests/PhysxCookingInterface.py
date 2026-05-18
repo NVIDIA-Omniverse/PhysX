@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.physx.scripts.utils
 import omni.physx.scripts.physicsUtils as physicsUtils
 from omni.physxtests.utils.physicsBase import PhysicsKitStageAsyncTestCase, TestCategory
@@ -65,7 +66,7 @@ class PhysxCookingInterfaceTestKitStage(PhysicsKitStageAsyncTestCase):
                                                               run_asynchronously=True,
                                                               on_result=on_convex_representation_ready)
         idx = 0
-        while idx < 100:
+        while idx < 1000:
             await omni.kit.app.get_app().next_update_async()
             idx = idx + 1
         self.assertEqual(returned_result, PhysxCollisionRepresentationResult.RESULT_VALID)

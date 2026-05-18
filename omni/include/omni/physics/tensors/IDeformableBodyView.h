@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -42,10 +42,14 @@ public:
     virtual uint32_t getMaxSimulationNodesPerBody() const = 0;
     virtual bool getSimulationNodalPositions(const TensorDesc* dstTensor) const = 0;
     virtual bool setSimulationNodalPositions(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    // Masked variant: srcTensor is full [N,...], maskTensor is uint8[N] where nonzero = selected.
+    virtual bool setSimulationNodalPositionsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
     virtual bool getSimulationNodalVelocities(const TensorDesc* dstTensor) const = 0;
     virtual bool setSimulationNodalVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    virtual bool setSimulationNodalVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
     virtual bool getSimulationNodalKinematicTargets(const TensorDesc* dstTensor) const = 0;
     virtual bool setSimulationNodalKinematicTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    virtual bool setSimulationNodalKinematicTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     // rest shape - elements correspond 1:1 to simulation elements
     virtual bool getRestElementIndices(const TensorDesc* dstTensor) const = 0;

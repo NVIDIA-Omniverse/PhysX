@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.physx.scripts import physicsUtils
 from pxr import UsdLux, UsdGeom, Gf, UsdPhysics, PhysxSchema, Sdf
 import omni.physxdemos as demo
@@ -9,6 +10,7 @@ from omni.physx.scripts.physicsUtils import *
 import omni.kit.commands
 import omni.kit.app
 import omni.usd
+import carb
 
 
 class ForceDemo(demo.Base):
@@ -46,7 +48,8 @@ class ForceDemo(demo.Base):
     def create(self, stage, Enable_Flow_Flame, manual_animation=False):
         self._defaultPrimPath, scene = demo.setup_physics_scene(self, stage)
         self._room = demo.get_demo_room(self, stage, zoom = 0.5)
-        self._flow_was_enabled = False
+        self._flow_was_enabled = None
+        self._flow_is_enabled = False
 
         # Shuttle body
         shuttleActorPath = self._defaultPrimPath + "/shuttleActor"
@@ -115,21 +118,25 @@ class ForceDemo(demo.Base):
         # flow flame:
         if Enable_Flow_Flame:
             # make sure extension is on
-            self._setup_flow()
+            try:
+                self._setup_flow()
+            except Exception as e:
+                carb.log_warn(str(e))
 
-            # create Fire preset
-            omni.kit.commands.execute(
-                "FlowCreatePresets",
-                paths=[self._defaultPrimPath + "/shuttleActor"],
-                preset_name="Fire",
-                layer=1
-            )
-            
-            # enable flow rendering
-            omni.kit.commands.execute("ChangeSetting", path="rtx/flow/enabled", value=True)
-            omni.kit.commands.execute("ChangeSetting", path="rtx/flow/rayTracedReflectionsEnabled", value=True)
-            omni.kit.commands.execute("ChangeSetting", path="rtx/flow/rayTracedTranslucencyEnabled", value=True)
-            omni.kit.commands.execute("ChangeSetting", path="rtx/flow/pathTracingEnabled", value=True)
+            if self._flow_is_enabled:
+                # create Fire preset
+                omni.kit.commands.execute(
+                    "FlowCreatePresets",
+                    paths=[self._defaultPrimPath + "/shuttleActor"],
+                    preset_name="Fire",
+                    layer=1
+                )
+                
+                # enable flow rendering
+                omni.kit.commands.execute("ChangeSetting", path="rtx/flow/enabled", value=True)
+                omni.kit.commands.execute("ChangeSetting", path="rtx/flow/rayTracedReflectionsEnabled", value=True)
+                omni.kit.commands.execute("ChangeSetting", path="rtx/flow/rayTracedTranslucencyEnabled", value=True)
+                omni.kit.commands.execute("ChangeSetting", path="rtx/flow/pathTracingEnabled", value=True)
         
         # clear selection
         prim_path_list = []
@@ -137,8 +144,9 @@ class ForceDemo(demo.Base):
 
     def _setup_flow(self):
         self._flow_was_enabled = demo.utils.enable_extension_with_check("omni.flowusd")
+        self._flow_is_enabled = True
 
     def on_shutdown(self):
-        if not self._flow_was_enabled:
+        if self._flow_was_enabled is not None and not self._flow_was_enabled:
             demo.utils.disable_extension("omni.flowusd")
         super().on_shutdown()

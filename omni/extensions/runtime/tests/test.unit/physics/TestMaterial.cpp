@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -447,7 +447,8 @@ TEST_CASE_TEMPLATE("RigidBodyMaterialChangeTests", T, USDChange, FabricChange)
 
         value = 0.9f;
         changeTemplate.setAttributeValue(basePhysicsMaterialPath, changeToken, value);
-        changeTemplate.broadcastChanges();
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
 
         // same ptr should be returned - no reparsing
         PxMaterial* newMat = getPhysxBaseDerivedFromPathChecked<PxMaterial>(basePhysicsMaterialPath, ePTMaterial);
@@ -481,7 +482,8 @@ TEST_CASE_TEMPLATE("RigidBodyMaterialChangeTests", T, USDChange, FabricChange)
 
         value = 0.9f;
         changeTemplate.setAttributeValue(basePhysicsMaterialPath, changeToken, value);
-        changeTemplate.broadcastChanges();
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
 
         // same ptr should be returned - no reparsing
         PxMaterial* newMat = getPhysxBaseDerivedFromPathChecked<PxMaterial>(basePhysicsMaterialPath, ePTMaterial);
@@ -515,7 +517,8 @@ TEST_CASE_TEMPLATE("RigidBodyMaterialChangeTests", T, USDChange, FabricChange)
 
         value = 0.9f;
         changeTemplate.setAttributeValue(basePhysicsMaterialPath, changeToken, value);
-        changeTemplate.broadcastChanges();
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
 
         // same ptr should be returned - no reparsing
         PxMaterial* newMat = getPhysxBaseDerivedFromPathChecked<PxMaterial>(basePhysicsMaterialPath, ePTMaterial);
@@ -569,7 +572,6 @@ TEST_CASE_TEMPLATE("RigidBodyMaterialChangeTests", T, USDChange, FabricChange)
         value = 0.003f;
         float changeMass = value * size * size * size;
         changeTemplate.setAttributeValue(basePhysicsMaterialPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         usdMaterial.CreateDensityAttr().Set(value);  // make sure density in USD is synced
 
         // mass update is not in change listener so we need an update
@@ -606,7 +608,9 @@ TEST_CASE_TEMPLATE("RigidBodyMaterialChangeTests", T, USDChange, FabricChange)
         CHECK_EQ(PxCombineMode::eMIN, mat->getFrictionCombineMode());
 
         changeTemplate.setAttributeValue(basePhysicsMaterialPath, changeToken, PhysxSchemaTokens->multiply);
-        changeTemplate.broadcastChanges();
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
+
 
         // same ptr should be returned - no reparsing
         PxMaterial* newMat = getPhysxBaseDerivedFromPathChecked<PxMaterial>(basePhysicsMaterialPath, ePTMaterial);
@@ -637,7 +641,9 @@ TEST_CASE_TEMPLATE("RigidBodyMaterialChangeTests", T, USDChange, FabricChange)
         CHECK_EQ(PxCombineMode::eMIN, mat->getRestitutionCombineMode());
 
         changeTemplate.setAttributeValue(basePhysicsMaterialPath, changeToken, PhysxSchemaTokens->multiply);
-        changeTemplate.broadcastChanges();
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
+
 
         // same ptr should be returned - no reparsing
         PxMaterial* newMat = getPhysxBaseDerivedFromPathChecked<PxMaterial>(basePhysicsMaterialPath, ePTMaterial);
@@ -668,7 +674,8 @@ TEST_CASE_TEMPLATE("RigidBodyMaterialChangeTests", T, USDChange, FabricChange)
         CHECK_EQ(PxCombineMode::eMIN, mat->getDampingCombineMode());
 
         changeTemplate.setAttributeValue(basePhysicsMaterialPath, changeToken, PhysxSchemaTokens->multiply);
-        changeTemplate.broadcastChanges();
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
 
         // same ptr should be returned - no reparsing
         PxMaterial* newMat = getPhysxBaseDerivedFromPathChecked<PxMaterial>(basePhysicsMaterialPath, ePTMaterial);
@@ -719,7 +726,8 @@ TEST_CASE_TEMPLATE("RigidBodyMaterialChangeTests", T, USDChange, FabricChange)
         CHECK_EQ(compliantFlagSetExpect, mat->getRestitution() < 0.0f);
 
         changeTemplate.setAttributeValue(basePhysicsMaterialPath, changeToken, changeSetValue);
-        changeTemplate.broadcastChanges();
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
 
         // same ptr should be returned - no reparsing
         PxMaterial* newMat = getPhysxBaseDerivedFromPathChecked<PxMaterial>(basePhysicsMaterialPath, ePTMaterial);
@@ -758,7 +766,8 @@ TEST_CASE_TEMPLATE("RigidBodyMaterialChangeTests", T, USDChange, FabricChange)
 
         // disable via change:
         changeTemplate.setAttributeValue(basePhysicsMaterialPath, changeToken, 0.0f);
-        changeTemplate.broadcastChanges();
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
 
         // same ptr should be returned - no reparsing
         PxMaterial* newMat = getPhysxBaseDerivedFromPathChecked<PxMaterial>(basePhysicsMaterialPath, ePTMaterial);
@@ -767,7 +776,8 @@ TEST_CASE_TEMPLATE("RigidBodyMaterialChangeTests", T, USDChange, FabricChange)
 
         // reenable via change:
         changeTemplate.setAttributeValue(basePhysicsMaterialPath, changeToken, stiffness);
-        changeTemplate.broadcastChanges();
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
 
         CHECK_EQ(-stiffness, mat->getRestitution());
     }
@@ -801,7 +811,8 @@ TEST_CASE_TEMPLATE("RigidBodyMaterialChangeTests", T, USDChange, FabricChange)
 
         // disable via change:
         changeTemplate.setAttributeValue(basePhysicsMaterialPath, changeToken, false);
-        changeTemplate.broadcastChanges();
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
 
         // same ptr should be returned - no reparsing
         PxMaterial* newMat = getPhysxBaseDerivedFromPathChecked<PxMaterial>(basePhysicsMaterialPath, ePTMaterial);
@@ -810,7 +821,8 @@ TEST_CASE_TEMPLATE("RigidBodyMaterialChangeTests", T, USDChange, FabricChange)
 
         // reenable via change:
         changeTemplate.setAttributeValue(basePhysicsMaterialPath, changeToken, true);
-        changeTemplate.broadcastChanges();
+        physxSim->simulate(0.01f, 0.0f);
+        physxSim->fetchResults();
         CHECK_EQ(mat->getFlags().isSet(PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING), true);
     }
 

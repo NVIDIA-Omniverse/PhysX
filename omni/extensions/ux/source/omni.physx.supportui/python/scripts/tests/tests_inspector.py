@@ -1,9 +1,13 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import omni.usd
 import omni.physxsupportui.bindings._physxSupportUi as pxsupportui
+from omni.physxsupportui.bindings._physxSupportUi import PhysXInspectorModelState
+from omni.physx import get_physx_interface
+from omni.physxsupportui import get_physx_supportui_private_interface
 from pxr import Usd, UsdGeom, Sdf, Gf, UsdPhysics, PhysxSchema
 from omni.physxtests import utils
 import omni.ui as ui
@@ -41,6 +45,9 @@ class PhysicsInspectorTests(TestCase):
         self._stage = None
         await utils.new_stage_setup()
 
+    def _get_inspector_state(self):
+        return get_physx_supportui_private_interface().get_inspector_state()
+
     async def test_inspector_basic(self):
         self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, False)
         self._create_articulation("/World", self._stage)
@@ -62,7 +69,7 @@ class PhysicsInspectorTests(TestCase):
         await self.setup_viewport_test(1000, 800)
         await ui_wait(20)
         all_tests_passed = True
-        all_tests_passed = all_tests_passed and await self.do_visual_test(
+        all_tests_passed &= await self.do_visual_test(
             img_name="",
             img_suffix="test_inspector_basic",
             use_distant_light=True,
@@ -82,7 +89,7 @@ class PhysicsInspectorTests(TestCase):
         # Move the joint somewhere using the inspector
         await ui_test.emulate_mouse_move_and_click(slider.position + ui_test.Vec2(20, 10))
         await self.step(num_steps=30)
-        all_tests_passed = all_tests_passed and await self.do_visual_test(
+        all_tests_passed &= await self.do_visual_test(
             img_name="",
             img_suffix="test_inspector_basic_simulation",
             use_distant_light=True,
@@ -94,7 +101,7 @@ class PhysicsInspectorTests(TestCase):
         await self.step(num_steps = 0, stop_timeline_after=True)
 
         # Now we should be back to the same state as just before entering simulation
-        all_tests_passed = all_tests_passed and await self.do_visual_test(
+        all_tests_passed &= await self.do_visual_test(
             img_name="",
             img_suffix="test_inspector_basic_simulation_after",
             use_distant_light=True,
@@ -103,6 +110,48 @@ class PhysicsInspectorTests(TestCase):
         )
 
         self.assertTrue(all_tests_passed)
+        await self.new_stage()
+
+    async def test_inspector_force_load_switches_to_running_state(self):
+        self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, False)
+        self._create_articulation("/World", self._stage)
+        scene: UsdPhysics.Scene = UsdPhysics.Scene.Define(self._stage, "/physics_scene")
+        scene.CreateGravityMagnitudeAttr().Set(0.0)
+        self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, True)
+        await ui_wait(10)
+        await self._select_and_focus_inspector_window("/World", 1)
+
+        self.assertEqual(self._get_inspector_state(), PhysXInspectorModelState.AUTHORING)
+
+        get_physx_interface().force_load_physics_from_usd()
+        await ui_wait(10)
+
+        self.assertTrue(self._settings.get_as_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED))
+        self.assertEqual(self._get_inspector_state(), PhysXInspectorModelState.RUNNING_SIMULATION)
+        get_physx_interface().reset_simulation()
+        await ui_wait(10)
+        self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, False)
+        await ui_wait(10)
+        await self.new_stage()
+
+    async def test_inspector_reset_to_authoring_start_keeps_authoring_state(self):
+        self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, False)
+        self._create_articulation("/World", self._stage)
+        scene: UsdPhysics.Scene = UsdPhysics.Scene.Define(self._stage, "/physics_scene")
+        scene.CreateGravityMagnitudeAttr().Set(0.0)
+        self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, True)
+        await ui_wait(10)
+        await self._select_and_focus_inspector_window("/World", 1)
+
+        self.assertEqual(self._get_inspector_state(), PhysXInspectorModelState.AUTHORING)
+
+        get_physx_supportui_private_interface().reset_inspector_to_authoring_start()
+        await ui_wait(10)
+
+        self.assertTrue(self._settings.get_as_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED))
+        self.assertEqual(self._get_inspector_state(), PhysXInspectorModelState.AUTHORING)
+        self._settings.set_bool(pxsupportui.SETTINGS_PHYSICS_INSPECTOR_ENABLED, False)
+        await ui_wait(10)
         await self.new_stage()
 
     def _viewport_focus_selection(self):

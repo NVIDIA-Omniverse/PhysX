@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -57,6 +57,8 @@ struct PxgSimulationCoreKernelBlockDim
 		RIGID_DYNAMIC_SET_ANGVEL 					= 	256,
 		RIGID_DYNAMIC_SET_FORCE						=	256,
 		RIGID_DYNAMIC_SET_TORQUE					=	256,
+		RIGID_DYNAMIC_COMPUTE_ACCELERATIONS			=   256,
+		RIGID_DYNAMIC_COPY_PREVIOUS_VELOCITIES		=	256,
 		D6_JOINT_GET_FORCE							=	256,
 		D6_JOINT_GET_TORQUE							=	256
 	};
@@ -77,7 +79,9 @@ struct PxgSimulationCoreKernelGridDim
 		UPDATE_AABBMGR_HANDLES						=	64,
 		COMPUTE_FROZEN_UNFROZEN_HISTOGRAM			=	32,	//this has to be 32 because we are doing warp scan
 		OUTPUT_FROZEN_UNFROZEN_HISTOGRAM			=	32, //this has to be 32
-		CREATE_FROZEN_UNFROZEN_ARRAY				=	64
+		CREATE_FROZEN_UNFROZEN_ARRAY				=	64,
+		RIGID_DYNAMIC_COMPUTE_ACCELERATIONS			=	256,
+		RIGID_DYNAMIC_COPY_PREVIOUS_VELOCITIES		=	256
 	};
 };
 

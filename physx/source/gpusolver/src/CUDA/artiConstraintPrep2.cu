@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -34,10 +34,10 @@
 #include "PxgConstraintPrep.h"
 #include "PxgSolverConstraintDesc.h"
 #include "PxgArticulationCoreDesc.h"
-
 #include "PxgSolverCoreDesc.h"
 #include "PxgSolverFlags.h"
 #include "PxgSolverConstraintBlock1D.h"
+#include "PxgCommonDefines.h"
 
 #include "DyCpuGpu1dConstraint.h"
 #include "DyCpuGpuArticulation.h"
@@ -135,8 +135,7 @@ static __device__ void createPxgSolverExtBody(const PxNodeIndex& nodeIndex, cons
 
 static __device__ Cm::UnAlignedSpatialVector createImpulseResponseVector(const physx::PxgSolverExtBody2& b, const Cm::UnAlignedSpatialVector& impulse)
 {
-	
-	if (b.islandNodeIndex.isArticulation() || b.isKinematic)
+	if (b.islandNodeIndex.isArticulation() || b.islandNodeIndex.isStaticBody() || b.isKinematic)
 	{
 		//We do not alter the impulse. vector - no need because the velocity of the actor is in world space (unscaled)!
 		return impulse;
@@ -180,7 +179,6 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 	const PxReal biasCoefficient,
 	const PxU32 threadIndex,
 	PxU32 forceWritebackBufferOffset,
-	const bool perPointFriction,
 	PxgContactBlockParams& params,
 	PxgArticulationBlockResponse* PX_RESTRICT articulationResponses,
 	const PxgMaterialContactData& data,
@@ -217,10 +215,9 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 	//printf("%i: MaxPenBias = %f\n", threadIndex, maxPenBias);
 
 	const float invDt = invDtF32;
-	const float p8 = 0.8f;
 	const float bounceThreshold = bounceThresholdF32;
 
-	const float invDtp8 = invDt * p8;//FMul(invDt, p8);
+	const float invDtWithBiasCoefficient = invDt * biasCoefficient;
 
 	const float4 lin0X_ang0Y_lin1Z_ang1W = contactData.mInvMassScale[threadIndex].lin0X_ang0Y_lin1Z_ang1W;
 
@@ -340,7 +337,7 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 			const float penetration = separation - restDistance;
 			const bool isSeparated = (penetration >= 0.0f);
 			const float penetrationInvDt = penetration * invDt;
-			const float penetrationInvDtPt8 = fmaxf(maxPenBias, penetration*invDtp8);
+			const float penetrationInvDtWithBiasCoefficient = fmaxf(maxPenBias, penetration * invDtWithBiasCoefficient);
 
 			const bool collidingWithVrel = ((-vrel) > penetrationInvDt);
 			const bool isGreater2 = (restitution > 0.f) && (bounceThreshold > vrel) && collidingWithVrel;
@@ -379,7 +376,7 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 			}
 			else
 			{
-				float scaledBias = isSeparated ? penetrationInvDt : penetrationInvDtPt8;
+				float scaledBias = isSeparated ? penetrationInvDt : penetrationInvDtWithBiasCoefficient;
 				if(ccdSeparationCondition && isGreater2)
 					scaledBias = 0.f;
 
@@ -474,6 +471,8 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 			params.blockFrictionHeader->frictionNormals[0][threadIndex] = make_float4(t0.x, t0.y, t0.z, 0.f);
 			params.blockFrictionHeader->frictionNormals[1][threadIndex] = make_float4(t1.x, t1.y, t1.z, 0.f);
 
+			const bool hasTargetVelocity = flags & PxgSolverContactFlags::eHAS_TARGET_VELOCITY;
+
 			for (PxU32 j = 0; j < aCount; j++)
 			{
 				PxgBlockSolverContactFriction* PX_RESTRICT f0 = &params.blockFrictions[2 * j];
@@ -490,7 +489,7 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 
 				const PxVec3 error = (ra + bodyFrame0p) - (rb + bodyFrame1p);//V3Sub(V3Add(ra, bodyFrame0p), V3Add(rb, bodyFrame1p));
 
-				PxU32 index = perPointFriction ? frictionPatch.contactID[j][threadIndex] : 0;
+				PxU32 index = hasTargetVelocity ? frictionPatch.contactID[j][threadIndex] : 0;
 
 				const float4 targetVel4 = contacts[index].targetVel_maxImpulseW[threadIndex];
 				const PxVec3 tvel(targetVel4.x, targetVel4.y, targetVel4.z);
@@ -628,7 +627,6 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 	const PxReal biasCoefficient,
 	const PxU32 threadIndex,
 	PxU32 forceWritebackBufferOffset,
-	const bool perPointFriction,
 	PxgTGSContactBlockParams& params,
 	PxgArticulationBlockResponse* PX_RESTRICT articulationResponses,
 	const PxgMaterialContactData& data,
@@ -662,10 +660,9 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 	const float maxPenBias = fmaxf(b0.penBiasClamp, b1.penBiasClamp);
 	//printf("%i: MaxPenBias = %f\n", threadIndex, maxPenBias);
 
-	const float p8 = PxMin(0.8f, biasCoefficient);
 	const float bounceThreshold = bounceThresholdF32;
 
-	const float invDtp8 = invDt * p8;//FMul(invDt, p8);
+	const float invDtWithBiasCoefficient = invDt * biasCoefficient;
 
 	const float4 lin0X_ang0Y_lin1Z_ang1W = contactData.mInvMassScale[threadIndex].lin0X_ang0Y_lin1Z_ang1W;
 
@@ -717,11 +714,12 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 		const PxReal linNorVel = norVel0 - norVel1;
 		const PxReal damping = contactData.damping[threadIndex];
 
-		params.blockFrictionHeader->biasCoefficient[threadIndex] = invDt;
+		const bool disableStrongFriction = flags & PxgSolverContactFlags::eDISABLE_STRONG_FRICTION;
+		params.blockFrictionHeader->biasCoefficient[threadIndex] = !disableStrongFriction ? invDt : 0.0f;
 
 		params.blockContactHeader->restitutionXdt[threadIndex] = restitution * stepDt;
 		params.blockContactHeader->cfm[threadIndex] = cfm;
-		params.blockContactHeader->p8[threadIndex] = p8;
+		params.blockContactHeader->biasCoefficient[threadIndex] = biasCoefficient;
 
 		PxgArticulationBlockResponse* PX_RESTRICT artiResponse = articulationResponses;
 
@@ -818,7 +816,7 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 			else
 			{
 				velMultiplier = recipResponse;
-				scaledBias = isSeparated ? -invDt : -invDtp8;
+				scaledBias = isSeparated ? -invDt : -invDtWithBiasCoefficient;
 			}
 
 			solverContact->resp0[threadIndex] = resp0;
@@ -826,15 +824,17 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 
 			minPen = PxMin(penetration, minPen);
 
-			//const float penetrationInvDtPt8 = fmaxf(maxPenBias, penetration*invDtp8);//FMax(maxPenBias, FMul(penetration, invDtp8));
-
-			//printf("%i: Velmultipler =  %f, penetrationInvDtPt8 = %f, invDt %f, vrel %f\n", threadIndex, velMultiplier, penetrationInvDt, invTotalDt, vrel);
-
 			const bool isGreater2 = ((restitution > 1e-5f) && (bounceThreshold > vrel)) && ((-vrel) > penetrationInvDt);
 
 			float totalError = penetration;
 
-			float targetVelocity = cTargetVel + isGreater2 ? (-vrel)*restitution : 0.f;//FAdd(cTargetVel, FSel(isGreater2, FMul(FNeg(sumVRel), restitution), zero));
+			float targetVelocity = cTargetVel + (isGreater2 ? (-vrel)*restitution : 0.f);
+
+			if (isGreater2)
+			{
+				const PxReal ratio = totalDt + penetration/vrel;
+				totalError += ratio * targetVelocity;
+			}
 
 			const PxReal deltaF = fmaxf((targetVelocity + (-penetrationInvDt - vrel)) * velMultiplier, 0.f);
 			normalForce += deltaF;
@@ -843,12 +843,6 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 				targetVelocity -= vrel1;
 			if (b1.isKinematic)
 				targetVelocity += vrel2;
-
-			if (isGreater2)
-			{
-				const PxReal ratio = totalDt + penetration/vrel;
-				totalError += ratio * targetVelocity;
-			}
 
 			solverContact->raXn_extraCoeff[threadIndex] = make_float4(response0.top.x, response0.top.y, response0.top.z, compliantContactCoeff);
 			solverContact->rbXn_targetVelW[threadIndex] = make_float4(-response1.top.x, -response1.top.y, -response1.top.z, targetVelocity);
@@ -920,6 +914,8 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 			params.blockFrictionHeader->frictionNormals[0][threadIndex] = make_float4(t0.x, t0.y, t0.z, 0.f);
 			params.blockFrictionHeader->frictionNormals[1][threadIndex] = make_float4(t1.x, t1.y, t1.z, 0.f);
 
+			const bool hasTargetVelocity = flags & PxgSolverContactFlags::eHAS_TARGET_VELOCITY;
+
 			const PxVec3 relTr = bodyFrame0p - bodyFrame1p;
 
 			for (PxU32 j = 0; j < aCount; j++)
@@ -938,7 +934,7 @@ static __device__ void setupFinalizeExtSolverConstraintsBlock(PxgBlockContactDat
 
 				//const PxVec3 error = (ra + bodyFrame0p) - (rb + bodyFrame1p);//V3Sub(V3Add(ra, bodyFrame0p), V3Add(rb, bodyFrame1p));
 
-				PxU32 index = perPointFriction ? frictionPatch.contactID[j][threadIndex] : 0;
+				PxU32 index = hasTargetVelocity ? frictionPatch.contactID[j][threadIndex] : 0;
 
 				const float4 targetVel4 = contacts[index].targetVel_maxImpulseW[threadIndex];
 				const PxVec3 tvel(targetVel4.x, targetVel4.y, targetVel4.z);
@@ -1139,52 +1135,20 @@ static __device__ void artiCreateFinalizeSolverContactsBlockGPU(PxgBlockContactD
 	const float2 torsionalFrictionData,
 	const PxReal totalDt)
 {
-	//Load the body datas in using warp-wide programming...Each solver body data is 128 bytes long, so we can load both bodies in with 2 lots of 128 byte coalesced reads. 
+	//Load the body datas in using warp-wide programming...Each solver body data is 128 bytes long, so we can load both bodies in with 2 lots of 128 byte coalesced reads.
 
-	//printf("PxgMaterialContactData\n");
 	const float4 data_ = reinterpret_cast<float4&>(contactData->contactData[threadIndex]);
-	const PxgMaterialContactData data = reinterpret_cast<const PxgMaterialContactData&>(data_);
+	const PxgMaterialContactData materialContactData = reinterpret_cast<const PxgMaterialContactData&>(data_);
 
-	const PxU32 nbContacts = data.mNumContacts;
+	processFrictionPatch(contactData, materialContactData, contactPoints,
+		frictionPatch, prevFrictionPatches, fAnchor, prevFrictionAnchors, prevFrictionIndices,
+		body0.body2World, body1.body2World, frictionOffsetThreshold, correlationDistance,
+		threadIndex, totalEdges, prevFrictionStartIndex);
 
-	const float4 normal4 = contactData->normal_restitutionW[threadIndex];
-	const PxVec3 normal(normal4.x, normal4.y, normal4.z);
-
-	
-	//printf("warpIndex %i idx %i Prepping %i contacts\n", warpIndex, threadIndex, nbContacts);
-
-	//printf("correlatePatches\n");
-
-	correlatePatches(frictionPatch, contactPoints, nbContacts, normal,
-		body0.body2World, body1.body2World, PXC_SAME_NORMAL, threadIndex);
-
-	PxU8 flags = data.mSolverFlags;
-	bool perPointFriction = flags & (PxgSolverContactFlags::ePER_POINT_FRICTION);
-	bool disableFriction = flags & PxgSolverContactFlags::eDISABLE_FRICTION;
-
-	//KS - ensure that the friction patch broken bit is set to 0
-	frictionPatch.broken[threadIndex] = 0;
-	PxReal patchExtents;
-
-	__syncwarp(); //Ensure writes from correlation are visible
-
-
-	//printf("getFrictionPatches\n");
-	if (!(perPointFriction || disableFriction))// || (solverBodyData0.islandNodeIndex & 2) || (solverBodyData1.islandNodeIndex & 2)))
-	{
-		getFrictionPatches(frictionPatch, fAnchor, prevFrictionIndices, prevFrictionStartIndex, prevFrictionPatches, 
-			prevFrictionAnchors, data.prevFrictionPatchCount, body0.body2World, body1.body2World, correlationDistance, threadIndex, totalEdges, patchExtents,
-			nbContacts);
-	}
-
-	if (!disableFriction)
-		growPatches(frictionPatch, fAnchor, contactPoints, nbContacts, body0.body2World, body1.body2World, frictionOffsetThreshold + data.restDistance, threadIndex, patchExtents);
-
-	//printf("setupFinalizeSolverConstraintsBlock\n");
-	setupFinalizeExtSolverConstraintsBlock(*contactData, contactPoints, nbContacts,
+	setupFinalizeExtSolverConstraintsBlock(*contactData, contactPoints, materialContactData.mNumContacts,
 		frictionPatch, fAnchor, body0, body1, invDt, dt, invTotalDt,
-		bounceThresholdF32, biasCoefficient, threadIndex, forceWritebackBufferOffset, perPointFriction,
-		params, response, data, ccdMaxSeparation, solverOffsetSlop, torsionalFrictionData, totalDt);
+		bounceThresholdF32, biasCoefficient, threadIndex, forceWritebackBufferOffset,
+		params, response, materialContactData, ccdMaxSeparation, solverOffsetSlop, torsionalFrictionData, totalDt);
 
 }
 
@@ -1362,7 +1326,7 @@ __device__ void artiContactConstraintBlockPrepare(
 			//if (i<nbContactBatches)
 			artiCreateFinalizeSolverContactsBlockGPU(&contactData, baseContact, frictionPatch, prevFrictionPatches, fAnchor, prevFrictionAnchors, prevFrictionIndices,
 				b0, b1, invDt, dt, invTotalDt, constraintPrepDesc->bounceThresholdF32, constraintPrepDesc->frictionOffsetThreshold, constraintPrepDesc->correlationDistance,
-				constraintPrepDesc->biasCoefficient, threadIndexInWarp, offset, params, &responses[responseIndex], totalPreviousEdges, edgeIndex, constraintPrepDesc->ccdMaxSeparation, offsetSlop,
+				constraintPrepDesc->biasCoefficients.rigidContact, threadIndexInWarp, offset, params, &responses[responseIndex], totalPreviousEdges, edgeIndex, constraintPrepDesc->ccdMaxSeparation, offsetSlop,
 				unit.mTorsionalFrictionData[threadIndexInWarp], totalDt);
 
 			frictionPatch.patchIndex[threadIndexInWarp] = unit.mFrictionPatchIndex[threadIndexInWarp];
@@ -1430,6 +1394,7 @@ static __device__ PxU32 setUpArti1DConstraintBlock(
 	PxgBlockSolverConstraint1DMod* PX_RESTRICT constraintsMod,
 	PxgArticulationBlockResponse* PX_RESTRICT articulationResponses,
 	float dt, float recipdt, 
+	float biasCoefficient,
 	PxgSolverExtBody2& b0, PxgSolverExtBody2& b1,
 	const physx::PxgSolverBodyPrepData* bodyData0, 
 	const physx::PxgSolverBodyPrepData* bodyData1,
@@ -1437,7 +1402,7 @@ static __device__ PxU32 setUpArti1DConstraintBlock(
 {
 	using namespace physx;
 
-	const PxReal erp = 1.0f;
+	const PxReal erp = biasCoefficient;
 	PxU32 outCount = 0;
 	
 	PxgArticulationBlockResponse* PX_RESTRICT artiResponse = articulationResponses;
@@ -1609,7 +1574,7 @@ static __device__ PxU32 setUpArti1DConstraintBlock(
 {
 	using namespace physx;
 
-	const PxReal erp = 0.5f * biasCoefficient;
+	const PxReal erp = biasCoefficient;
 	
 	PxU32 outCount = 0;
 
@@ -1680,7 +1645,7 @@ static __device__ PxU32 setUpArti1DConstraintBlock(
 			Dy::computeJointSpeedTGS(vel0, b0.isKinematic, vel1, b1.isKinematic, jointSpeedForRestitutionBounce, initJointSpeed);
 		}
 
-		//https://omniverse-jirasw.nvidia.com/browse/PX-4383
+		// JIRA: PX-4383
 		const PxReal minRowResponse = DY_ARTICULATION_MIN_RESPONSE;
 	
 		intializeTGSBlock1D(
@@ -1763,7 +1728,8 @@ static __device__ void setupArtiSolverConstraintBlockGPU(
 	preprocessRowsBlock(sortedRowIndices[threadIdx.x + threadIdx.y * blockDim.x], constraintData, rowVelocities, rowParameters, threadIndexInWarp);
 
 	params.jointHeader->rowCounts[threadIndexInWarp] = setUpArti1DConstraintBlock(sortedRowIndices[threadIdx.x + threadIdx.y * blockDim.x], constraintData,
-		rowVelocities, rowParameters, params.jointCon, params.jointMod, artiResponses, params.dt, params.invDt, b0, b1, bodyData0, bodyData1, threadIndexInWarp);
+		rowVelocities, rowParameters, params.jointCon, params.jointMod, artiResponses, params.dt, params.invDt, params.biasCoefficient,
+		b0, b1, bodyData0, bodyData1, threadIndexInWarp);
 }
 
 //TGS
@@ -1841,6 +1807,7 @@ __device__ void fillJointBlockParams(PxgSolverSharedDesc<IterativeSolveData>* sh
 	params.jointMod = &solveData.blockJointConstraintRowsMod[startConstraintIndex];
 	params.dt = sharedDesc->dt;
 	params.invDt = sharedDesc->invDtF32;
+	params.biasCoefficient = constraintPrepDesc->biasCoefficients.joint;
 }
 
 //TGS
@@ -1855,7 +1822,7 @@ __device__ void fillJointBlockParams(PxgSolverSharedDesc<IterativeSolveDataTGS>*
 	params.invDt = sharedDesc->stepInvDtF32;
 	params.invTotalDt = sharedDesc->invDtF32;
 	params.lengthScale = sharedDesc->lengthScale;
-	params.biasCoefficient = constraintPrepDesc->biasCoefficient;
+	params.biasCoefficient = constraintPrepDesc->biasCoefficients.joint;
 }
 
 template<typename JointParams, typename IterativeData>

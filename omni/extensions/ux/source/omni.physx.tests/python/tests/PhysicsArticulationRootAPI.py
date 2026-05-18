@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.physx.scripts.utils as physxUtils
 import omni.physx.scripts.physicsUtils as physicsUtils
 from omni.physxtests.utils.physicsBase import PhysicsMemoryStageBaseAsyncTestCase, TestCategory
@@ -431,4 +432,3 @@ class PhysicsArticulationRootAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestC
             self.step(10)
             current_velocity = rigidBodyAPI.GetVelocityAttr().Get()
             self.assertAlmostEqual(current_velocity[0], target_velocity, delta=1.0)
-

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -33,18 +33,23 @@ public:
 
     bool getFriction(const TensorDesc* dstTensor) const;
     bool setFriction(const TensorDesc* srcTensor, const TensorDesc* indexTensor);
+    bool setFrictionMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     bool getDamping(const TensorDesc* dstTensor) const;
     bool setDamping(const TensorDesc* srcTensor, const TensorDesc* indexTensor);
+    bool setDampingMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     bool getGravityScale(const TensorDesc* dstTensor) const;
     bool setGravityScale(const TensorDesc* srcTensor, const TensorDesc* indexTensor);
+    bool setGravityScaleMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     bool getLift(const TensorDesc* dstTensor) const;
     bool setLift(const TensorDesc* srcTensor, const TensorDesc* indexTensor);
+    bool setLiftMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     bool getDrag(const TensorDesc* dstTensor) const;
     bool setDrag(const TensorDesc* srcTensor, const TensorDesc* indexTensor);
+    bool setDragMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     //
     // helpers

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -193,6 +193,55 @@ bool BaseDeformableMaterialView::getPoissonsRatio(const TensorDesc* dstTensor) c
 bool BaseDeformableMaterialView::setPoissonsRatio(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
     return setProperty(srcTensor, indexTensor, &PxDeformableMaterial::setPoissons, "PoissonRatio", __FUNCTION__);
+}
+
+// ---------------------------------------------------------------------------
+// Mask support
+//
+// NOTE: Material views always operate via CPU-side PxMaterial API calls, even when
+// the simulation runs on GPU. Both CpuDeformableMaterialView and GpuDeformableMaterialView
+// inherit from this base class without overriding. The device check below is hardcoded
+// to -1 (CPU), matching the existing indexed setters. This is a pre-existing pattern
+// in the tensorAPI - material properties are not part of the DirectGPU pipeline.
+//
+// Uses shared resolveMaskToIndices() / makeIndexTensorDesc() from TensorUtils.h.
+// ---------------------------------------------------------------------------
+
+using omni::physics::tensors::MaskResult;
+using omni::physics::tensors::resolveMaskToIndices;
+using omni::physics::tensors::makeIndexTensorDesc;
+
+bool BaseDeformableMaterialView::setDynamicFrictionMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setDynamicFriction(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setDynamicFriction(srcTensor, &idx);
+}
+
+bool BaseDeformableMaterialView::setYoungsModulusMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setYoungsModulus(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setYoungsModulus(srcTensor, &idx);
+}
+
+bool BaseDeformableMaterialView::setPoissonsRatioMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setPoissonsRatio(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setPoissonsRatio(srcTensor, &idx);
 }
 
 

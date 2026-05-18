@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build LowLevelDynamics common
@@ -58,7 +58,6 @@ SET(LLDYNAMICS_INCLUDES
 	${LLDYNAMICS_BASE_DIR}/include/DyArticulationJointCore.h
 	${LLDYNAMICS_BASE_DIR}/include/DyParticleSystemCore.h
 	${LLDYNAMICS_BASE_DIR}/include/DyParticleSystem.h
-	${LLDYNAMICS_BASE_DIR}/include/DyResidualAccumulator.h
 	${LLDYNAMICS_BASE_DIR}/include/DyIslandManager.h
 )
 SOURCE_GROUP("include" FILES ${LLDYNAMICS_INCLUDES})
@@ -66,6 +65,7 @@ SOURCE_GROUP("include" FILES ${LLDYNAMICS_INCLUDES})
 SET(LLDYNAMICS_SHARED
 	${LLDYNAMICS_BASE_DIR}/shared/DyCpuGpuArticulation.h
 	${LLDYNAMICS_BASE_DIR}/shared/DyCpuGpu1dConstraint.h
+    ${LLDYNAMICS_BASE_DIR}/shared/DyCpuGpuBiasCoefficient.h
 )
 SOURCE_GROUP("shared" FILES ${LLDYNAMICS_SHARED})
 
@@ -96,9 +96,6 @@ SET(LLDYNAMICS_SOURCE
 	${LLDYNAMICS_BASE_DIR}/src/DyTGSContactPrep.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyTGSContactPrepBlock.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyArticulationContactPrep.h
-	${LLDYNAMICS_BASE_DIR}/src/DyArticulationPImpl.h
-	${LLDYNAMICS_BASE_DIR}/src/DyArticulationUtils.h
-	${LLDYNAMICS_BASE_DIR}/src/DyFeatherstoneArticulationLink.h
 	${LLDYNAMICS_BASE_DIR}/src/DyBodyCoreIntegrator.h
 	${LLDYNAMICS_BASE_DIR}/src/DyConstraintPartition.h
 	${LLDYNAMICS_BASE_DIR}/src/DyConstraintPrep.h

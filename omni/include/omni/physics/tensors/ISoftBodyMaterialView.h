@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -21,18 +21,24 @@ public:
 
     virtual bool getYoungsModulus(const TensorDesc* dstTensor) const = 0;
     virtual bool setYoungsModulus(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    // Masked variant: srcTensor is full [N,...], maskTensor is uint8[N] where nonzero = selected.
+    virtual bool setYoungsModulusMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     virtual bool getPoissonsRatio(const TensorDesc* dstTensor) const = 0;
     virtual bool setPoissonsRatio(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    virtual bool setPoissonsRatioMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     virtual bool getDynamicFriction(const TensorDesc* dstTensor) const = 0;
     virtual bool setDynamicFriction(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    virtual bool setDynamicFrictionMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     virtual bool getDamping(const TensorDesc* dstTensor) const = 0;
     virtual bool setDamping(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    virtual bool setDampingMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     virtual bool getDampingScale(const TensorDesc* dstTensor) const = 0;
     virtual bool setDampingScale(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    virtual bool setDampingScaleMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     virtual bool check() const = 0;
     virtual void release() = 0;

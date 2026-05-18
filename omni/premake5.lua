@@ -8,8 +8,7 @@ workspace "Physics"
 
 -- FIXME: disabled to build on newer gccs on gitlab
 filter { "system:linux" }
-   disablewarnings { "class-memaccess", "range-loop-construct", "maybe-uninitialized", "reorder", "strict-aliasing", "switch", "sign-compare", "narrowing", "attributes", "enum-compare", "format", "uninitialized", "pointer-arith", "nonnull-compare", "parentheses", "delete-incomplete", "unused-variable", "unused-but-set-variable", "unused-function", "changes-meaning", "error=overloaded-virtual" }
-    
+   disablewarnings { "class-memaccess", "range-loop-construct", "maybe-uninitialized", "reorder", "strict-aliasing", "switch", "sign-compare", "narrowing", "attributes", "enum-compare", "format", "uninitialized", "pointer-arith", "nonnull-compare", "parentheses", "delete-incomplete", "unused-variable", "unused-but-set-variable", "unused-function" }
 filter {}
 
 filter { "system:linux" }
@@ -17,19 +16,18 @@ filter { "system:linux" }
 filter {}
 
 if _OPTIONS["devschema"] then
+    staticruntime "Off"
     dofile("schema/premake5-local.lua")
-    local shell_ext=".sh"
-    if os.target() == "windows" then
-        shell_ext=".bat"
-    end    
-    postbuildcommands {root.."/tools/packman/python"..shell_ext.." "..root.."/schema/tools/gen_unit_database.py "..local_schema_dir.."/lib/python/PhysicsSchemaTools"}
 end
 
-group "common"
-    dofile ("extensions/common/premake5.lua")
+group "runtime"
+    include("extensions/runtime/premake5-local.lua")
 
-include("extensions/runtime/premake5-local.lua")
-include("extensions/ux/premake5-local.lua")
+group "common"
+    include ("extensions/runtime/source/common/premake5.lua")
+
+group "ux"
+    include ("extensions/ux/premake5-local.lua")
 
 filter { "system:windows" }
     disablewarnings { "4244", "4305", "4996" }

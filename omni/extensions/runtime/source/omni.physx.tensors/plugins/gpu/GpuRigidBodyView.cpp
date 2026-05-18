@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -194,7 +194,10 @@ GpuRigidBodyView::~GpuRigidBodyView()
         CHECK_CUDA(cudaFree(mArtiDirtyFlagsDev));
         CHECK_CUDA(cudaFree(mArtiLinksDirtyFlagsDev));
         CHECK_CUDA(cudaFree(cMassLocalPosePosDev));
-
+        if (mMaskIndicesDev)
+            CHECK_CUDA(cudaFree(mMaskIndicesDev));
+        if (mMaskAllocPolicy.mBuffer)
+            CHECK_CUDA(cudaFree(mMaskAllocPolicy.mBuffer));
     }
 }
 
@@ -273,12 +276,12 @@ bool GpuRigidBodyView::getTransforms(const TensorDesc* dstTensor) const
 
     if (rdCopyEvent)
     {
-        CHECK_CU(cuStreamWaitEvent(nullptr, rdCopyEvent, 0));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(rdCopyEvent), 0, nullptr));
     }
 
     if (artiCopyEvent)
     {
-        CHECK_CU(cuStreamWaitEvent(nullptr, artiCopyEvent, 0));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(artiCopyEvent), 0, nullptr));
     }
 
     SYNCHRONIZE_CUDA();
@@ -340,20 +343,20 @@ static bool getVelAcc(const TensorDesc* dstTensor,
 
     if (rdCopyEventLin)
     {
-        CHECK_CU(cuStreamWaitEvent(nullptr, rdCopyEventLin, 0));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(rdCopyEventLin), 0, nullptr));
     }
     if (rdCopyEventAng)
     {
-        CHECK_CU(cuStreamWaitEvent(nullptr, rdCopyEventAng, 0));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(rdCopyEventAng), 0, nullptr));
     }
 
     if (artiCopyEventLin)
     {
-        CHECK_CU(cuStreamWaitEvent(nullptr, artiCopyEventLin, 0));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(artiCopyEventLin), 0, nullptr));
     }
     if (artiCopyEventAng)
     {
-        CHECK_CU(cuStreamWaitEvent(nullptr, artiCopyEventAng, 0));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(artiCopyEventAng), 0, nullptr));
     }
 
     SYNCHRONIZE_CUDA();
@@ -504,8 +507,8 @@ bool GpuRigidBodyView::setTransforms(const TensorDesc* srcTensor, const TensorDe
                                                      mGpuSimData->mApplyWaitEvents[ApplyEvent::eRdData],
                                                      mGpuSimData->mApplySignalEvents[ApplyEvent::eRdData]);
 
-    CHECK_CU(cuEventSynchronize(mGpuSimData->mApplySignalEvents[ApplyEvent::eRdData]));
-    CHECK_CU(cuEventSynchronize(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootTransforms]));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eRdData]), nullptr));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootTransforms]), nullptr));
     SYNCHRONIZE_CUDA();
 
     return true;
@@ -600,10 +603,10 @@ bool GpuRigidBodyView::setVelocities(const TensorDesc* srcTensor, const TensorDe
             PxRigidDynamicGPUAPIWriteType::eANGULAR_VELOCITY, numDirtyRdIndices,
             mGpuSimData->mApplyWaitEvents[ApplyEvent::eRdAngVelocities], mGpuSimData->mApplySignalEvents[ApplyEvent::eRdAngVelocities]);
     }
-    CHECK_CU(cuEventSynchronize(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootLinVelocities]));
-    CHECK_CU(cuEventSynchronize(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootAngVelocities]));
-    CHECK_CU(cuEventSynchronize(mGpuSimData->mApplySignalEvents[ApplyEvent::eRdLinVelocities]));
-    CHECK_CU(cuEventSynchronize(mGpuSimData->mApplySignalEvents[ApplyEvent::eRdAngVelocities]));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootLinVelocities]), nullptr));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiRootAngVelocities]), nullptr));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eRdLinVelocities]), nullptr));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eRdAngVelocities]), nullptr));
     SYNCHRONIZE_CUDA();
 
     return true;
@@ -639,12 +642,12 @@ void GpuRigidBodyView::copyActorAndLinksTransorms()
 
     if (rdCopyEvent)
     {
-        CHECK_CU(cuStreamWaitEvent(nullptr, rdCopyEvent, 0));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(rdCopyEvent), 0, nullptr));
     }
 
     if (artiCopyEvent)
     {
-        CHECK_CU(cuStreamWaitEvent(nullptr, artiCopyEvent, 0));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(artiCopyEvent), 0, nullptr));
     }
 
     SYNCHRONIZE_CUDA();
@@ -780,12 +783,12 @@ bool GpuRigidBodyView::applyForcesAndTorquesAtPosition(const TensorDesc* srcForc
 
         if (rdCopyEvent)
         {
-            CHECK_CU(cuStreamWaitEvent(nullptr, rdCopyEvent, 0));
+            CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(rdCopyEvent), 0, nullptr));
         }
 
         if (artiCopyEvent)
         {
-            CHECK_CU(cuStreamWaitEvent(nullptr, artiCopyEvent, 0));
+            CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(artiCopyEvent), 0, nullptr));
         }
     }
 
@@ -838,8 +841,8 @@ bool GpuRigidBodyView::applyForcesAndTorquesAtPosition(const TensorDesc* srcForc
             mGpuSimData->mLinkForcesApplied = true;
         }
         // Need to synchronize before memset, becasue above the dirty indices may be in use on a different stream
-        CHECK_CU(cuStreamWaitEvent(nullptr, mGpuSimData->mApplySignalEvents[ApplyEvent::eRdForces], 0));
-        CHECK_CU(cuStreamWaitEvent(nullptr, mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkForces], 0));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eRdForces]), 0, nullptr));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkForces]), 0, nullptr));
 
         CHECK_CUDA(cudaStreamSynchronize(nullptr));
     }
@@ -879,14 +882,140 @@ bool GpuRigidBodyView::applyForcesAndTorquesAtPosition(const TensorDesc* srcForc
                 mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkTorques]);
             mGpuSimData->mLinkTorquesApplied = true;
         }
-        CHECK_CU(cuStreamWaitEvent(nullptr, mGpuSimData->mApplySignalEvents[ApplyEvent::eRdTorques], 0));
-        CHECK_CU(cuStreamWaitEvent(nullptr, mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkTorques], 0));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eRdTorques]), 0, nullptr));
+        CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkTorques]), 0, nullptr));
         CHECK_CUDA(cudaStreamSynchronize(nullptr));
     }
     SYNCHRONIZE_CUDA();
 
     return true;
 }
+
+bool GpuRigidBodyView::resolveMask(const TensorDesc* maskTensor, PxU32& outK) const
+{
+    if (!maskTensor || !maskTensor->data)
+    {
+        CARB_LOG_ERROR("mask tensor is null or has no data in %s", __FUNCTION__);
+        return false;
+    }
+
+    if (!checkTensorDevice(*maskTensor, mDevice, "mask", __FUNCTION__))
+        return false;
+
+    if (maskTensor->dtype != omni::physics::tensors::TensorDataType::eUint8)
+    {
+        CARB_LOG_ERROR("mask tensor must be uint8 in %s", __FUNCTION__);
+        return false;
+    }
+
+    if (getTensorTotalSize(*maskTensor) != getCount())
+    {
+        CARB_LOG_ERROR("mask tensor size (%llu) must equal view count (%u) in %s",
+                       (unsigned long long)getTensorTotalSize(*maskTensor), getCount(), __FUNCTION__);
+        return false;
+    }
+
+    const PxU32 N = getCount();
+
+    // Acquire PhysX CUDA context before any device calls (cudaMalloc, thrust)
+    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
+
+    // Lazy-allocate (or grow) cached indices buffer
+    if (!mMaskIndicesDev || N > mMaskIndicesCapacity)
+    {
+        if (mMaskIndicesDev)
+            CHECK_CUDA(cudaFree(mMaskIndicesDev));
+        mMaskIndicesDev = nullptr;
+        mMaskIndicesCapacity = 0;
+
+        if (cudaMalloc(&mMaskIndicesDev, N * sizeof(PxU32)) != cudaSuccess)
+        {
+            CARB_LOG_ERROR("Failed to allocate mask indices buffer in %s", __FUNCTION__);
+            return false;
+        }
+        mMaskIndicesCapacity = N;
+    }
+
+    if (!compactMaskToIndices(mMaskAllocPolicy, mMaskIndicesDev,
+                              static_cast<const uint8_t*>(maskTensor->data), N, outK))
+        return false;
+    return true;
+}
+
+// Macro for simple 2-param masked setters: resolve mask -> build index TensorDesc -> forward.
+// IsConst should be empty or 'const'. Hand-write methods with non-standard signatures below.
+#define GPU_RB_MASKED_SETTER(MethodName, IsConst)                                       \
+bool GpuRigidBodyView::MethodName##Masked(const TensorDesc* src, const TensorDesc* mask) IsConst \
+{                                                                                       \
+    PxU32 K;                                                                            \
+    if (!resolveMask(mask, K)) return false;                                            \
+    if (K == 0) return true;                                                            \
+    if (K == getCount()) return MethodName(src, nullptr);                               \
+    TensorDesc idx{};                                                                   \
+    idx.device = mDevice;                                                               \
+    idx.dtype  = omni::physics::tensors::TensorDataType::eUint32;                       \
+    idx.numDims = 1;                                                                    \
+    idx.dims[0] = (int)K;                                                               \
+    idx.data   = mMaskIndicesDev;                                                       \
+    return MethodName(src, &idx);                                                       \
+}
+
+// Non-const masked setters
+GPU_RB_MASKED_SETTER(setKinematicTargets, )
+GPU_RB_MASKED_SETTER(setTransforms, )
+GPU_RB_MASKED_SETTER(setVelocities, )
+GPU_RB_MASKED_SETTER(applyForces, )
+GPU_RB_MASKED_SETTER(setMasses, )
+GPU_RB_MASKED_SETTER(setCOMs, )
+GPU_RB_MASKED_SETTER(setInertias, )
+GPU_RB_MASKED_SETTER(setDisableGravities, )
+GPU_RB_MASKED_SETTER(setDisableSimulations, )
+
+// Const masked setters
+GPU_RB_MASKED_SETTER(setMaterialProperties, const)
+GPU_RB_MASKED_SETTER(setRestOffsets, const)
+GPU_RB_MASKED_SETTER(setContactOffsets, const)
+
+#undef GPU_RB_MASKED_SETTER
+
+// Hand-written: applyForcesAndTorquesAtPositionMasked (5-param signature)
+bool GpuRigidBodyView::applyForcesAndTorquesAtPositionMasked(const TensorDesc* srcForceTensor,
+                                                              const TensorDesc* srcTorqueTensor,
+                                                              const TensorDesc* srcPositionTensor,
+                                                              const TensorDesc* mask,
+                                                              const bool isGlobal)
+{
+    PxU32 K;
+    if (!resolveMask(mask, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return applyForcesAndTorquesAtPosition(srcForceTensor, srcTorqueTensor, srcPositionTensor, nullptr, isGlobal);
+    TensorDesc idx{};
+    idx.device = mDevice;
+    idx.dtype = omni::physics::tensors::TensorDataType::eUint32;
+    idx.numDims = 1;
+    idx.dims[0] = (int)K;
+    idx.data = mMaskIndicesDev;
+    return applyForcesAndTorquesAtPosition(srcForceTensor, srcTorqueTensor, srcPositionTensor, &idx, isGlobal);
+}
+
+// Hand-written: setCompliantMaterialPropertiesMasked (extra srcCombine param)
+bool GpuRigidBodyView::setCompliantMaterialPropertiesMasked(const TensorDesc* src,
+                                                             const TensorDesc* srcCombine,
+                                                             const TensorDesc* mask) const
+{
+    PxU32 K;
+    if (!resolveMask(mask, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return setCompliantMaterialProperties(src, srcCombine, nullptr);
+    TensorDesc idx{};
+    idx.device = mDevice;
+    idx.dtype = omni::physics::tensors::TensorDataType::eUint32;
+    idx.numDims = 1;
+    idx.dims[0] = (int)K;
+    idx.data = mMaskIndicesDev;
+    return setCompliantMaterialProperties(src, srcCombine, &idx);
+}
+
 } // namespace tensors
 } // namespace physx
 } // namespace omni

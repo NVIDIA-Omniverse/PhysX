@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -402,11 +402,13 @@ struct DeformableBodyDesc : BodyDesc
     pxr::SdfPath simMeshPath;
     pxr::SdfPath simMeshMaterialPath;
     pxr::TfToken simMeshBindPoseToken;
+    bool simMeshLeftHandedOrientation;
 
     pxr::SdfPathVector collisionGeomPaths; // all collision point based geometries
     pxr::SdfPathVector collisionGeomMaterialPaths; // same size as collisionGeomPaths
     pxr::TfTokenVector collisionGeomBindPoseTokens; // same size as collisionGeomPaths
     pxr::TfTokenVector collisionGeomSelfCollisionFilterPoseTokens; // same size as collisionGeomPaths
+    std::vector<bool> collisionGeomLeftHandedOrientations;
 
     pxr::SdfPathVector skinGeomPaths; // all skin point based geometries
     pxr::SdfPathVector skinGeomMaterialPaths; // same size as skinGeomPaths

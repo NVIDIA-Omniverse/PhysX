@@ -17,7 +17,7 @@ keywords = [
 ]
 category = "Simulation"
 
-version = "107.3.0-oss.0"
+version = "110.0.7"
 
 changelog = "docs/CHANGELOG.md"
 readme = "docs/README.md"
@@ -32,15 +32,15 @@ usd = true
 [dependencies]
 "omni.ui" = {}
 "omni.kit.renderer.imgui" = {}
-"omni.physx" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.ui" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.commands" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.tests" = { version = "107.3.0-oss.0", exact = true, optional = true }
+"omni.physx" = { version = "110.0.7", exact = true }
+"omni.physx.ui" = { version = "110.0.7", exact = true }
+"omni.physx.commands" = { version = "110.0.7", exact = true }
+"omni.physx.tests" = { version = "110.0.7", exact = true, optional = true }
 "omni.debugdraw" = {}
 "omni.kit.viewport.utility" = {}
 "omni.kit.viewport.registry" = {}
 "omni.kit.window.preferences" = {}
-"omni.kit.window.toolbar" = {}
+"omni.kit.widget.toolbar" = {}
 "omni.kit.widget.stage" = {}             # because of rb selection mode
 "omni.kit.widget.layers" = {}            # because of rb selection mode
 "omni.kit.context_menu" = {}
@@ -66,7 +66,7 @@ dependencies = [
     "omni.physx.tests",
     "omni.physx.tests.visual",
     "omni.kit.ui_test",
-    "omni.kit.property.physx",
+    "omni.kit.property.physics",
     "omni.hydra.rtx",
 ]
 args = [

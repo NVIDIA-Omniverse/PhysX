@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import math
 import os
 import sys, traceback
@@ -20,6 +21,8 @@ from  . import warp_utils as wp_utils
 
 from pxr import Usd, Gf, Sdf, UsdGeom, UsdUtils, UsdLux, UsdShade
 from pxr import UsdPhysics, PhysxSchema
+
+from omni.physxtests import utils
 
 import omni.physx.bindings._physx as physx_bindings
 
@@ -140,6 +143,97 @@ class GridTestBase(GridScenarioBase):
     def on_physics_step(self, sim, stepno, dt):
         """Called after every physics simulation step"""
 
+class TestArtJointFreeMotionToLimitMotion(GridTestBase):
+    def __init__(self, test_case, device_params):
+        # set up stage
+        grid_params = GridParams(16, 5)
+        sim_params = SimParams()
+        sim_params.gravity_dir = Gf.Vec3f(0.0, 0.0, 0.0)
+        sim_params.gravity_mag = 0.0
+        super().__init__(test_case, grid_params, sim_params, device_params)
+
+        rigidBodyPaths = ["rigidBody0", "/envTemplate/SimpleArticulation/rigidBody1"]
+        d6JointPath = "/envTemplate/SimpleArticulation/d6Joint"
+        fixedJointPath = "/envTemplate/SimpleArticulation/fixedJoint"
+        actor_path = self.env_template_path.AppendChild("SimpleArticulation")
+
+        xform = UsdGeom.Xform.Define(self.stage, actor_path)
+        xform_prim = xform.GetPrim()
+        root_link_path = actor_path.AppendChild("RootLink")
+        rigidBody0Path = root_link_path.AppendChild("rigidBody0")
+
+        UsdPhysics.ArticulationRootAPI.Apply(xform_prim)
+        articulation_api = PhysxSchema.PhysxArticulationAPI.Apply(xform_prim)
+
+        # Create the rigid body 0
+        rigidBodyXform = UsdGeom.Xform.Define(self.stage, rigidBody0Path)
+        rigidBodyPrim = rigidBodyXform.GetPrim()
+        rigidBodyAPI = UsdPhysics.RigidBodyAPI.Apply(rigidBodyPrim)
+        rigidBodyAPI.CreateRigidBodyEnabledAttr(True)
+        massAPI = UsdPhysics.MassAPI.Apply(rigidBodyPrim)
+        massAPI.CreateMassAttr(1.0)
+        massAPI.CreateDiagonalInertiaAttr(Gf.Vec3f(1.0, 1.0, 1.0))
+
+        # Create the rigid body 1
+        rigidBody1Path = root_link_path.AppendChild("rigidBody1")
+        rigidBodyXform = UsdGeom.Xform.Define(self.stage, rigidBody1Path)
+        rigidBodyPrim = rigidBodyXform.GetPrim()
+        rigidBodyAPI = UsdPhysics.RigidBodyAPI.Apply(rigidBodyPrim)
+        rigidBodyAPI.CreateRigidBodyEnabledAttr(True)
+        massAPI = UsdPhysics.MassAPI.Apply(rigidBodyPrim)
+        massAPI.CreateMassAttr(1.0)
+        massAPI.CreateDiagonalInertiaAttr(Gf.Vec3f(1.0, 1.0, 1.0))
+
+        # Create a D6 joint between the two prims
+        d6JointPath = root_link_path.AppendChild("d6Joint")
+        d6Joint = UsdPhysics.Joint.Define(self.stage, d6JointPath)
+        d6Joint.CreateBody0Rel().SetTargets([rigidBody0Path])
+        d6Joint.CreateBody1Rel().SetTargets([rigidBody1Path])
+        d6JointPrim = d6Joint.GetPrim()
+
+        # Create a fixed joint between the root link and the world.
+        # Mark the fixed joint as the root. This will create a fixed
+        # base articulation with body0 as the root link.
+        fixedJointPath = root_link_path.AppendChild("FixedJoint")
+        fixedJoint = UsdPhysics.FixedJoint.Define(self.stage, fixedJointPath)
+        fixedJoint.CreateBody0Rel().AddTarget(rigidBody0Path)
+
+        # Create a spherical joint by locking the translational axes
+        lockedAxes = [UsdPhysics.Tokens.transX, UsdPhysics.Tokens.transY, UsdPhysics.Tokens.transZ]
+        for i in range(3):
+            limitAPI = UsdPhysics.LimitAPI.Apply(d6JointPrim, lockedAxes[i])
+            limitAPI.CreateLowAttr(1.0)
+            limitAPI.CreateHighAttr(-1.0)
+
+        self.d6JointPrim = d6JointPrim
+
+
+    def assertTrue(self, res)  -> bool:
+        return True;
+
+    def on_start(self, sim):
+        self.artivView = sim.create_articulation_view("/envs/*/SimpleArticulation")
+        self.check_articulation_view(self.artivView, self.num_envs, 2, 3, True)
+
+    def on_physics_step(self, sim, stepno, dt):
+
+        if stepno == 1:
+
+            limitAPI = UsdPhysics.LimitAPI.Apply(self.d6JointPrim, UsdPhysics.Tokens.rotX)
+            limits = np.zeros((self.num_envs, 3, 2))
+            limits[:, :, 0] = -0.1
+            limits[:, :, 1] = 0.1
+            all_indices = wp_utils.arange(self.num_envs)
+            wp_limits = wp.from_numpy(limits, dtype=wp.float32, device="cpu")
+
+            # attempt to change state of rotX to limited
+            message = "setDofLimits - Cannot update articulation joint limits because the joint was not initially configured with limits."
+            with utils.ExpectMessage(self, message):
+                self.artivView.set_dof_limits(wp_limits, all_indices)
+
+            self.finish()
+  
+
 
 class TestSimulationViewGravity(GridTestBase):
     def __init__(self, test_case, device_params):
@@ -158,12 +252,12 @@ class TestSimulationViewGravity(GridTestBase):
         self.create_actor_from_asset(actor_path, transform, asset_path)
 
     def on_start(self, sim):
-        sim.set_gravity(carb.Float3(0, 0, 1))
+        sim.set_gravity([0, 0, 1])
         gravity = sim.get_gravity()
 
-        self.test_case.assertEqual(gravity.x, 0)
-        self.test_case.assertEqual(gravity.y, 0)
-        self.test_case.assertEqual(gravity.z, 1)
+        self.test_case.assertEqual(gravity[0], 0)
+        self.test_case.assertEqual(gravity[1], 0)
+        self.test_case.assertEqual(gravity[2], 1)
 
         self.finish()
 
@@ -608,7 +702,15 @@ class TestArticulationDofProperties(GridTestBase):
         actor_path = self.env_template_path.AppendChild("humanoid")
         transform = Transform((0.0, 0.0, 1.5))
         self.create_actor_from_asset(actor_path, transform, asset_path)
+        
 
+        from omni.physx.bindings._physx import (
+            PERF_ENV_API
+        )
+        lower_waist_joint = self.stage.GetPrimAtPath(actor_path.AppendPath("joints/lower_waist"))
+        if lower_waist_joint:
+            lower_waist_joint.ApplyAPI(PERF_ENV_API, UsdPhysics.Tokens.rotX)
+        
     def on_start(self, sim):
         humanoids = sim.create_articulation_view("/envs/*/humanoid/torso")
 
@@ -683,7 +785,10 @@ class TestArticulationDofProperties(GridTestBase):
         all_indices = wp_utils.arange(humanoids.count)
         wp_mf = wp.from_numpy(drive_model_properties, dtype=wp.float32, device="cpu")
         humanoids.set_dof_drive_model_properties(wp_mf, all_indices)
-        self.test_case.assertTrue(np.allclose(humanoids.get_dof_drive_model_properties().numpy(), drive_model_properties))
+        # Only DOF 0 (lower_waist rotX) has the API, so only it will have values
+        result = humanoids.get_dof_drive_model_properties().numpy()
+        self.test_case.assertTrue(np.allclose(result[:, 0, :], drive_model_properties[:, 0, :]))
+        self.test_case.assertFalse(np.any(np.isclose(result[:, 1:, :], drive_model_properties[:, 1:, :])))
 
         # joint drive_model_properties indexed
         indexed_indices = [0]
@@ -693,7 +798,9 @@ class TestArticulationDofProperties(GridTestBase):
         indices = wp.from_numpy(indexed_indices, dtype=wp.int32, device="cpu")
         wp_mf = wp.from_numpy(drive_model_properties, dtype=wp.float32, device="cpu")
         humanoids.set_dof_drive_model_properties(wp_mf, indices)
-        self.test_case.assertTrue(np.allclose(humanoids.get_dof_drive_model_properties().numpy(), drive_model_properties))
+        result = humanoids.get_dof_drive_model_properties().numpy()
+        self.test_case.assertTrue(np.allclose(result[indexed_indices, 0, :], drive_model_properties[indexed_indices, 0, :]))
+        self.test_case.assertFalse(np.any(np.isclose(result[indexed_indices, 1:, :], drive_model_properties[indexed_indices, 1:, :])))
 
         # DEPRECATED
         # joint friction_coefficients
@@ -1309,35 +1416,15 @@ class TestArticulationJointBodyOrderDofForce(TestArticulationJointBodyOrder):
             # print(new_dof_actuation_forces_1, new_dof_actuation_forces_2)
             self.test_case.assertTrue(np.allclose(new_dof_actuation_forces_1, new_dof_actuation_forces_1, rtol=1e-03, atol=self.atol), "similar dof actuation forces")
 
-            # using deprecated API
-            dof_gravity_forces_1 = self.cartpoles_1.get_generalized_gravity_forces().numpy().reshape((self.cartpoles_1.count, num_dof)).copy()
-            dof_gravity_forces_2 = self.cartpoles_2.get_generalized_gravity_forces().numpy().reshape((self.cartpoles_2.count, num_dof)).copy()
-            # print(dof_gravity_forces_1, dof_gravity_forces_2)
-            self.test_case.assertTrue(np.allclose(dof_gravity_forces_1, dof_gravity_forces_2, rtol=1e-03, atol=self.atol), "similar gravity compensation forces")
-
-            # using new API
             dof_gravity_forces_3 = self.cartpoles_1.get_gravity_compensation_forces().numpy().reshape((self.cartpoles_1.count, num_dof)).copy()
             dof_gravity_forces_4 = self.cartpoles_2.get_gravity_compensation_forces().numpy().reshape((self.cartpoles_2.count, num_dof)).copy()
             # print(dof_gravity_forces_1, dof_gravity_forces_2)
             self.test_case.assertTrue(np.allclose(dof_gravity_forces_3, dof_gravity_forces_4, rtol=1e-03, atol=self.atol), "similar generalized gravity forces")
 
-            # using deprecated API
-            dof_coriolis_and_centrifugal_forces_1 = self.cartpoles_1.get_coriolis_and_centrifugal_forces().numpy().reshape((self.cartpoles_1.count, num_dof)).copy()
-            dof_coriolis_and_centrifugal_forces_2 = self.cartpoles_2.get_coriolis_and_centrifugal_forces().numpy().reshape((self.cartpoles_2.count, num_dof)).copy()
-            # print(dof_coriolis_and_centrifugal_forces_1, dof_coriolis_and_centrifugal_forces_2)
-            self.test_case.assertTrue(np.allclose(dof_coriolis_and_centrifugal_forces_1, dof_coriolis_and_centrifugal_forces_2, rtol=1e-03, atol=self.atol), "similar coriolis and centrifugal forces")
-
-            # using new API
             dof_coriolis_and_centrifugal_forces_3 = self.cartpoles_1.get_coriolis_and_centrifugal_compensation_forces().numpy().reshape((self.cartpoles_1.count, num_dof)).copy()
             dof_coriolis_and_centrifugal_forces_4 = self.cartpoles_2.get_coriolis_and_centrifugal_compensation_forces().numpy().reshape((self.cartpoles_2.count, num_dof)).copy()
             # print(dof_coriolis_and_centrifugal_forces_1, dof_coriolis_and_centrifugal_forces_2)
             self.test_case.assertTrue(np.allclose(dof_coriolis_and_centrifugal_forces_3, dof_coriolis_and_centrifugal_forces_4, rtol=1e-03, atol=self.atol), "similar coriolis and centrifugal forces")
-
-            # comparing old and new API
-            self.test_case.assertTrue(np.allclose(dof_gravity_forces_1, dof_gravity_forces_3, rtol=1e-03, atol=self.atol), "similar generalized gravity forces")
-            self.test_case.assertTrue(np.allclose(dof_gravity_forces_2, dof_gravity_forces_4, rtol=1e-03, atol=self.atol), "similar generalized gravity forces")
-            self.test_case.assertTrue(np.allclose(dof_coriolis_and_centrifugal_forces_1, dof_coriolis_and_centrifugal_forces_3, rtol=1e-03, atol=self.atol), "similar generalized gravity forces")
-            self.test_case.assertTrue(np.allclose(dof_coriolis_and_centrifugal_forces_2, dof_coriolis_and_centrifugal_forces_4, rtol=1e-03, atol=self.atol), "similar generalized gravity forces")
 
             self.finish()
 
@@ -1384,12 +1471,12 @@ class TestArticulationJointBodyOrderLinkForce(TestArticulationJointBodyOrder):
         body_0_q = joint.GetLocalRot0Attr().Get()
         body_1_p = joint.GetLocalPos1Attr().Get()
         body_1_q = joint.GetLocalRot1Attr().Get()
-        body_1_xform_p = body_1_link_p + Gf.Rotation(body_1_link_q).TransformDir(Gf.CompMult(body_1_scale, body_1_p)) 
-        body_0_xform_p = body_0_link_p + Gf.Rotation(body_0_link_q).TransformDir(Gf.CompMult(body_0_scale, body_0_p))
+        body_1_xform_p = body_1_link_p + Gf.Vec3f(Gf.Rotation(body_1_link_q).TransformDir(Gf.CompMult(body_1_scale, body_1_p))) 
+        body_0_xform_p = body_0_link_p + Gf.Vec3f(Gf.Rotation(body_0_link_q).TransformDir(Gf.CompMult(body_0_scale, body_0_p)))
         d_global =  body_0_xform_p - body_1_xform_p
         F = Gf.Vec3f(*(link_forces[i, j ,0:3].tolist()))
         T = Gf.Vec3f(*(link_forces[i, j ,3:6].tolist()))
-        d = Gf.Rotation(body_1_link_q *  body_1_q).GetInverse().TransformDir(d_global) #distance in body_1 link joint frame
+        d = Gf.Vec3f(Gf.Rotation(body_1_link_q *  body_1_q).GetInverse().TransformDir(d_global)) #distance in body_1 link joint frame
         T-= Gf.Cross(d, F)
         # print("body_1_name: ", body_1_name, body_1_link_p, body_1_link_q , body_1_p, body_1_q, body_1_xform_p )
         # print("body_0_name: ", body_0_name, body_0_link_p, body_0_link_q, body_0_p, body_0_q, body_0_xform_p)
@@ -1936,14 +2023,7 @@ class TestRigidBodiesGetSet(GridTestBase):
         self.atol=1e-05
 
 class TestRigidBodiesGetSetAppliedForces(TestRigidBodiesGetSet):
-    def on_start(self, sim):
-
-        self.rb_view = sim.create_rigid_body_view("/envs/*/ant/right_ball|left_ball|right_back_leg|right_back_foot|torso")
-        self.rb_view_subset = sim.create_rigid_body_view("/envs/env[0-5]/ant/right_ball|left_ball|right_back_leg|right_back_foot|torso")
-        self.check_rigid_body_view(self.rb_view, self.num_envs * self.body_per_env)
-        self.check_rigid_body_view(self.rb_view_subset, 6 * self.body_per_env)
-        self.all_indices = wp_utils.arange(self.rb_view.count, device=sim.device)
-        
+    def compute_forces(self, sim):
         force_offset = 1
         transforms= self.rb_view.get_transforms().numpy().reshape((self.num_envs, self.body_per_env, 7))
         positions=transforms[:,:,0:3]
@@ -1955,22 +2035,34 @@ class TestRigidBodiesGetSetAppliedForces(TestRigidBodiesGetSet):
             forces = wp_utils.fill_vec3(self.rb_view.count, value=gForce, device=sim.device)
         else:
             positions[:,:,0:3]=np.array([0,0,force_offset])
-            # Trasform the gForce to local space
+            # Transform the gForce to local space
             from pxr import Gf
             forces = np.zeros((self.num_envs,self.body_per_env,3))
             for e in range(self.num_envs):
                 for b in range(self.body_per_env):
                     rot=rotations[e,b,:].tolist()
-                    q = Gf.Quatf(*np.array(rot))
-                    lForce = (q * Gf.Quatf(0, Gf.Vec3f(*gForce)) * q.GetInverse()).GetImaginary()
+                    q = Gf.Quatf(rot[3], rot[0], rot[1], rot[2])
+                    lForce = q.GetConjugate().Transform(Gf.Vec3f(*gForce))
                     forces[e, b, :]=lForce
-    
+
         forces_wp = wp.from_numpy(forces.flatten(), dtype=wp.float32, device=sim.device)
         force_subset_wp = wp.from_numpy(forces[0:6].flatten(), dtype=wp.float32, device=sim.device)
+
         self.forces_wp=forces_wp
         self.force_subset_wp=force_subset_wp
+
         self.positions_wp = wp.from_numpy(positions.flatten(), dtype=wp.float32, device=sim.device)
         self.positions_subset_wp = wp.from_numpy(positions[0:6].flatten(), dtype=wp.float32, device=sim.device)
+
+    def on_start(self, sim):
+
+        self.rb_view = sim.create_rigid_body_view("/envs/*/ant/right_ball|left_ball|right_back_leg|right_back_foot|torso")
+        self.rb_view_subset = sim.create_rigid_body_view("/envs/env[0-5]/ant/right_ball|left_ball|right_back_leg|right_back_foot|torso")
+        self.check_rigid_body_view(self.rb_view, self.num_envs * self.body_per_env)
+        self.check_rigid_body_view(self.rb_view_subset, 6 * self.body_per_env)
+        self.all_indices = wp_utils.arange(self.rb_view.count, device=sim.device)
+
+        self.indices = wp_utils.arange(self.rb_view.count, device=sim.device)
 
 
     def on_physics_step(self, sim, stepno, dt):
@@ -1978,6 +2070,8 @@ class TestRigidBodiesGetSetAppliedForces(TestRigidBodiesGetSet):
         # # tests for get after set for all bodies
         if stepno==1:
             self.init_height= self.rb_view.get_transforms().numpy().reshape((self.num_envs, self.body_per_env, 7))[:,:,2].copy()
+
+            self.compute_forces(sim)
             self.rb_view.apply_forces_and_torques_at_position(self.forces_wp, None, self.positions_wp, self.indices, self.is_global)
         if stepno==10:
             height = self.rb_view.get_transforms().numpy().reshape((self.num_envs, self.body_per_env, 7))[:,:,2].copy()
@@ -1986,7 +2080,9 @@ class TestRigidBodiesGetSetAppliedForces(TestRigidBodiesGetSet):
         # tests for setting a subsets of envs (last 6 envs)
         if stepno==60:
             self.init_height= self.rb_view.get_transforms().numpy().reshape((self.num_envs, self.body_per_env, 7))[-6:,:,2].copy()
-            subset_indices = self.to_warp(self.all_indices.numpy()[-6 *self.body_per_env:], wp.uint32) 
+            subset_indices = self.to_warp(self.all_indices.numpy()[-6 *self.body_per_env:], wp.uint32)
+
+            self.compute_forces(sim)
             self.rb_view.apply_forces_and_torques_at_position(self.forces_wp, None, self.positions_wp, subset_indices, self.is_global)
         if stepno==70:
             height = self.rb_view.get_transforms().numpy().reshape((self.num_envs, self.body_per_env, 7))[-6:,:,2].copy()
@@ -1996,6 +2092,8 @@ class TestRigidBodiesGetSetAppliedForces(TestRigidBodiesGetSet):
         if stepno==100:
             self.init_height= self.rb_view_subset.get_transforms().numpy().reshape((6, self.body_per_env, 7))[:,:,2].copy()
             subset_indices = wp_utils.arange(self.rb_view_subset.count, device=sim.device)
+
+            self.compute_forces(sim)
             self.rb_view_subset.apply_forces_and_torques_at_position(self.force_subset_wp, None, self.positions_subset_wp, subset_indices, self.is_global)
         if stepno==110:
             height = self.rb_view_subset.get_transforms().numpy().reshape((6, self.body_per_env, 7))[:,:,2].copy()
@@ -2640,13 +2738,6 @@ class TestMassMatrices(GridTestBase):
 
     def on_physics_step(self, sim, stepno, dt):
         if stepno == 20:
-            # using depreacted API
-            mm_shape = self.ants.mass_matrix_shape
-            mass_matrices = self.ants.get_mass_matrices()
-            self.test_case.assertTrue(mm_shape == (self.ants.max_dofs, self.ants.max_dofs))
-            self.test_case.assertTrue(mass_matrices.shape == (self.ants.count, mm_shape[0], mm_shape[1]))
-
-            # using new API
             mm_shape = self.ants.generalized_mass_matrix_shape
             mass_matrices = self.ants.get_generalized_mass_matrices()
             self.test_case.assertTrue(mm_shape == (self.ants.max_dofs + 6, self.ants.max_dofs + 6))
@@ -2686,11 +2777,6 @@ class TestCoriolisCentrifugal(GridTestBase):
         self.ants.set_dof_actuation_forces(rc_forces, rc_indices)
 
         if stepno == 20:
-            # using deprecated API
-            cori_centri_forces = self.ants.get_coriolis_and_centrifugal_forces()
-            self.test_case.assertTrue(cori_centri_forces.shape == (self.ants.count, self.ants.max_dofs))
-
-            # using new API
             cori_centri_forces = self.ants.get_coriolis_and_centrifugal_compensation_forces()
             self.test_case.assertTrue(cori_centri_forces.shape == (self.ants.count, self.ants.max_dofs + 6))
 
@@ -4032,6 +4118,85 @@ class TestRigidBodyView(GridTestBase):
     def on_physics_step(self, stepno, dt):
         pass
 
+class TestRigidBodyEnableDisablePhysics(GridTestBase):
+    def __init__(self, test_case, device_params):
+        # set up stage
+        grid_params = GridParams(8, 2.0)
+        sim_params = SimParams()
+        sim_params.gravity_mag = 10.0
+        super().__init__(test_case, grid_params, sim_params, device_params)
+
+        self.num_balls = 4
+        # Create rigid balls at different heights for clear testing
+        for i in range(self.num_balls):
+            actor_path = self.env_template_path.AppendChild(f"ball_{i}")
+            transform = Transform((0.0, 0.0, 1.0 + i * 0.5))
+            ball = self.create_rigid_ball(actor_path, transform, 0.1)
+            
+            # Set known mass
+            mass_api = UsdPhysics.MassAPI(ball)
+            mass_api.GetMassAttr().Set(1.0)
+
+    def on_start(self, sim):
+        # Create rigid body view for all balls
+        self.balls = sim.create_rigid_body_view("/envs/*/ball_*")
+        self.check_rigid_body_view(self.balls, self.num_envs * self.num_balls)  # 4 balls per env
+        
+        self.all_indices = wp_utils.arange(self.balls.count, device=sim.device)
+        self.subset_inds_disabled_np = np.arange(0, self.balls.count, 2, dtype=np.int32)
+        self.subset_inds_enabled_np = np.arange(1, self.balls.count, 2, dtype=np.int32)
+        self.subset_indices_disabled_wp = wp.from_numpy(self.subset_inds_disabled_np, dtype=wp.int32, device=sim.device)
+        self.subset_indices_enabled_wp = wp.from_numpy(self.subset_inds_enabled_np, dtype=wp.int32, device=sim.device)
+        
+        # Disable physics simulation for subset of balls
+        self.wp_disable_flags = wp.from_numpy(np.ones(self.balls.count, dtype=np.uint8), dtype=wp.uint8, device="cpu")
+        self.wp_enable_flags = wp.from_numpy(np.zeros(self.balls.count, dtype=np.uint8), dtype=wp.uint8, device="cpu")
+        
+        self.balls.set_disable_simulations(self.wp_disable_flags, self.subset_indices_disabled_wp)
+        
+        # Verify that disable simulation flags are set correctly
+        current_disable_flags = self.balls.get_disable_simulations().numpy().flatten()
+        self.test_case.assertTrue(np.all(current_disable_flags[self.subset_inds_disabled_np] == True))
+        self.test_case.assertTrue(np.all(current_disable_flags[self.subset_inds_enabled_np] == False))
+
+        self.dt = 1.0 / self.sim_params.time_steps_per_second
+
+    def on_physics_step(self, sim, stepno, dt):
+        current_velocities = self.balls.get_velocities().numpy().reshape(self.balls.count, 6)
+        current_velocities_z = current_velocities[:, 2]  # Z positions
+
+        if stepno == 1:
+            # note the 2.0 is due to the warmstart, so we are actually at the second sim step
+            expected_velocity_z = -2.0 * self.dt * self.sim_params.gravity_mag
+            # Verify disabled balls have not moved, and enabled balls moved.
+            self.test_case.assertTrue(np.allclose(current_velocities_z[self.subset_inds_disabled_np], 0.0), 
+                                    f"Disabled objects should not fall when physics is disabled (step {stepno})")
+            self.test_case.assertTrue(np.allclose(current_velocities_z[self.subset_inds_enabled_np], expected_velocity_z), 
+                                    f"Enabled objects should fall when physics is enabled (step {stepno})")
+
+            # swap enabled / disabled
+            self.balls.set_disable_simulations(self.wp_disable_flags, self.subset_indices_enabled_wp)
+            self.balls.set_disable_simulations(self.wp_enable_flags, self.subset_indices_disabled_wp)
+
+            # Verify that disable simulation flags are set correctly
+            current_disable_flags = self.balls.get_disable_simulations().numpy().flatten()
+            self.test_case.assertTrue(np.all(current_disable_flags[self.subset_inds_enabled_np] == True))
+            self.test_case.assertTrue(np.all(current_disable_flags[self.subset_inds_disabled_np] == False))
+
+            # Wake up now-enabled rigid bodies to ensure they respond to physics immediately
+            self.balls.wake_up(self.all_indices)
+        
+        elif stepno == 2:
+            expected_velocity_z = -self.dt * self.sim_params.gravity_mag
+            # Verify that the enable/disable behavior swapped
+            # the previously enabled balls must be at rest
+            self.test_case.assertTrue(np.allclose(current_velocities_z[self.subset_inds_enabled_np], 0.0), 
+                                    f"Disabled objects should not fall when physics is disabled (step {stepno})")
+            # the previously disabled balls must be falling
+            self.test_case.assertTrue(np.allclose(current_velocities_z[self.subset_inds_disabled_np], expected_velocity_z), 
+                                    f"Enabled objects should fall when physics is enabled (step {stepno})")
+            self.finish()
+
 class TestRigidBodyProperties(GridTestBase):
     def __init__(self, test_case, device_params):
         # set up stage
@@ -4199,6 +4364,127 @@ class TestRigidBodyShapeProperties(GridTestBase):
 
     def on_physics_step(self, sim, stepno, dt):
         pass
+
+class TestRigidBodyCompliantContact(GridTestBase):
+    def __init__(self, test_case, device_params):
+        # set up stage
+        grid_params = GridParams(16, 2.0)
+        sim_params = SimParams()
+        sim_params.gravity_dir = Gf.Vec3f(0.0, 0.0, -1.0)
+        sim_params.gravity_mag = 10
+        super().__init__(test_case, grid_params, sim_params, device_params)
+
+        actor_path = self.env_template_path.AppendChild("ball")
+        transform = Transform((0.0, 0.0, 0.5))
+        self.create_multi_shape_rigid_body(actor_path, transform, 0.5)
+
+    def on_start(self, sim):
+        self.balls = sim.create_rigid_body_view("/envs/*/ball")
+        self.all_indices = wp_utils.arange(self.balls.count)
+        self.stiffness = 100000
+        self.damping = 1000
+        # materials
+        self.compliant_material_properties = np.zeros((self.balls.count, self.balls.max_shapes, 4))
+        self.compliant_material_properties[:, :, 0] = 0.8
+        self.compliant_material_properties[:, :, 1] = 0.7
+        self.compliant_material_properties[:, :, 2] = self.stiffness
+        self.compliant_material_properties[:, :, 3] = self.damping
+        self.compliant_material_combine_modes = np.zeros((self.balls.count, self.balls.max_shapes, 3))
+        self.compliant_material_combine_modes[:, :, 0] = 1
+        self.compliant_material_combine_modes[:, :, 1] = 2
+        self.compliant_material_combine_modes[:, :, 2] = 3
+        self.wp_properties = wp.from_numpy(self.compliant_material_properties, dtype=wp.float32, device="cpu")
+        self.wp_modes = wp.from_numpy(self.compliant_material_combine_modes, dtype=wp.uint8, device="cpu")
+        self.balls.set_compliant_material_properties(self.wp_properties, self.wp_modes, self.all_indices)
+        prop, mode = self.balls.get_compliant_material_properties()
+        self.test_case.assertTrue(np.allclose(prop.numpy(), self.compliant_material_properties[:,:,2:]))
+        self.test_case.assertTrue(np.allclose(mode.numpy(), self.compliant_material_combine_modes[:,:,1:]))
+
+    def on_physics_step(self, sim, stepno, dt):
+        if stepno == 100:
+            transforms = self.balls.get_transforms().numpy().reshape(self.balls.count, 7)
+            # penetration dx = mg/(4*k) based on static equilibrium and 4 contact points, 0.25 is rest position for rigid/perfect contact
+            expected_z = 0.25 - self.balls.get_masses().numpy().reshape(self.balls.count, )*10/(4*self.stiffness)
+            # print(transforms[:,2], expected_z)
+            self.test_case.assertTrue(np.allclose(transforms[:,2], expected_z, rtol=1e-03, atol=1e-02), "expected z")
+
+            # try a different stiffness
+            self.stiffness = self.stiffness * 10
+            self.compliant_material_properties[:, :, 2] = self.stiffness
+            self.wp_properties = wp.from_numpy(self.compliant_material_properties, dtype=wp.float32, device="cpu")
+            self.balls.set_compliant_material_properties(self.wp_properties, self.wp_modes, self.all_indices)
+        if stepno == 299:
+            transforms = self.balls.get_transforms().numpy().reshape(self.balls.count, 7)
+            # penetration dx = mg/(4*k) based on static equilibrium and 4 contact points, 0.25 is rest position for rigid/perfect contact
+            expected_z = 0.25 - self.balls.get_masses().numpy().reshape(self.balls.count, )*10/(4*self.stiffness)
+            # print(transforms[:,2], expected_z)
+            self.test_case.assertTrue(np.allclose(transforms[:,2], expected_z, rtol=1e-03, atol=1e-02), "expected z")
+            self.finish()
+
+
+class TestArticulationCompliantContact(GridTestBase):
+    def __init__(self, test_case, device_params):
+        # set up stage
+        grid_params = GridParams(16, 2.0)
+        sim_params = SimParams()
+        sim_params.gravity_dir = Gf.Vec3f(0.0, 0.0, -1.0)
+        sim_params.gravity_mag = 10
+        super().__init__(test_case, grid_params, sim_params, device_params)
+
+        # set up env template
+        asset_path = os.path.join(get_asset_root(), "Ant.usda")
+        actor_path = self.env_template_path.AppendChild("ant")
+        transform = Transform((0.0, 0.0, 1.0))
+        self.create_actor_from_asset(actor_path, transform, asset_path)
+
+
+    def on_start(self, sim):
+        self.ants = sim.create_articulation_view("/envs/*/ant/torso")
+        self.all_indices = wp_utils.arange(self.ants.count)
+
+    def on_physics_step(self, sim, stepno, dt):
+        # After settling phase
+        if stepno == 50:
+            self.stiffness = 100000
+            self.damping = 1000
+            # materials
+            self.compliant_material_properties = np.zeros((self.ants.count, self.ants.max_shapes, 4))
+            self.compliant_material_properties[:, :, 0] = 0.8
+            self.compliant_material_properties[:, :, 1] = 0.7
+            self.compliant_material_properties[:, :, 2] = self.stiffness
+            self.compliant_material_properties[:, :, 3] = self.damping
+            self.compliant_material_combine_modes = np.zeros((self.ants.count, self.ants.max_shapes, 3))
+            self.compliant_material_combine_modes[:, :, 0] = 1
+            self.compliant_material_combine_modes[:, :, 1] = 2
+            self.compliant_material_combine_modes[:, :, 2] = 3
+            self.wp_properties = wp.from_numpy(self.compliant_material_properties, dtype=wp.float32, device="cpu")
+            self.wp_modes = wp.from_numpy(self.compliant_material_combine_modes, dtype=wp.uint8, device="cpu")
+            self.ants.set_compliant_material_properties(self.wp_properties, self.wp_modes, self.all_indices)
+            prop, mode = self.ants.get_compliant_material_properties()
+            self.test_case.assertTrue(np.allclose(prop.numpy(), self.compliant_material_properties[:,:,2:]))
+            self.test_case.assertTrue(np.allclose(mode.numpy(), self.compliant_material_combine_modes[:,:,1:]))
+
+            self.rigid_transforms = self.ants.get_root_transforms().numpy().reshape(self.ants.count, 7)
+
+        if stepno == 100:
+            transforms = self.ants.get_root_transforms().numpy().reshape(self.ants.count, 7)
+            # penetration dx = mg/(4*k) based on static equilibrium and 4 contact points, 0.25 is rest position for rigid/perfect contact
+            expected_z = self.rigid_transforms[:,2] - np.sum(self.ants.get_masses().numpy(), axis=1).reshape(self.ants.count, )*10/(4*self.stiffness)
+            # print(transforms[:,2], expected_z)
+            self.test_case.assertTrue(np.allclose(transforms[:,2], expected_z, rtol=1e-03, atol=1e-02), "expected z")
+
+            # try a different stiffness
+            self.stiffness = self.stiffness * 10
+            self.compliant_material_properties[:, :, 2] = self.stiffness
+            self.wp_properties = wp.from_numpy(self.compliant_material_properties, dtype=wp.float32, device="cpu")
+            self.ants.set_compliant_material_properties(self.wp_properties, self.wp_modes, self.all_indices)
+        if stepno == 200:
+            transforms = self.ants.get_root_transforms().numpy().reshape(self.ants.count, 7)
+            # penetration dx = mg/(4*k) based on static equilibrium and 4 contact points, 0.25 is rest position for rigid/perfect contact
+            expected_z = self.rigid_transforms[:,2] - np.sum(self.ants.get_masses().numpy(), axis=1).reshape(self.ants.count, )*10/(4*self.stiffness)
+            # print(transforms[:,2], expected_z)
+            self.test_case.assertTrue(np.allclose(transforms[:,2], expected_z, rtol=1e-03, atol=1e-02), "expected z")
+            self.finish()
 
 class TestRigidBodyStates(GridTestBase):
     def __init__(self, test_case, device_params):
@@ -4853,6 +5139,168 @@ class TestRigidContactMatrix(GridTestBase):
             box_fricton_point_expected[:,0,:]=self.boxes.get_transforms().numpy()[:,0:3] - np.array([0,0, 0.15])
             box_fricton_point_expected[:,1,:]=self.boxes.get_transforms().numpy()[:,0:3] + np.array([0,0, 0.15])
             self.test_case.assertTrue(np.allclose(box_friction_patch_point_average, box_fricton_point_expected, rtol=1e-02, atol=1e-1), "expected net contact forces")
+
+            self.finish()
+
+
+class TestRawContactData(GridTestBase):
+    """Test raw contact data API that returns all contacts without filter patterns.
+    
+    Creates stacked boxes (top_box on bottom_box) to verify:
+    - Contact counts are correct
+    - Other body paths are correctly reported
+    - Forces are reasonable
+    """
+    def __init__(self, test_case, device_params):
+        # set up stage with stacked boxes
+        self.num_envs = 4
+        grid_params = GridParams(self.num_envs, 2.0)
+        self.g = 10.0
+        sim_params = SimParams()
+        sim_params.gravity_mag = self.g
+        self.device_params = device_params
+        super().__init__(test_case, grid_params, sim_params, device_params)
+
+        self.box_mass = 1.0
+        self.box_size = 0.3
+
+        # Create bottom box - sits on ground
+        bottom_box_path = self.env_template_path.AppendChild("bottom_box")
+        bottom_transform = Transform((0.0, 0.0, self.box_size / 2.0))  # On ground
+        bottom_box = self.create_rigid_box(bottom_box_path, bottom_transform, Gf.Vec3f(self.box_size))
+        # Set mass using proper API
+        mass_api = UsdPhysics.MassAPI(bottom_box)
+        mass_api.GetMassAttr().Set(self.box_mass)
+        # Disable sleeping so contacts are reported
+        physx_rb = PhysxSchema.PhysxRigidBodyAPI.Apply(bottom_box)
+        physx_rb.CreateSleepThresholdAttr().Set(0)
+        # Enable contact reporting
+        contact_api = PhysxSchema.PhysxContactReportAPI.Apply(bottom_box)
+        contact_api.CreateThresholdAttr().Set(0)
+
+        # Create top box - stacked on bottom box
+        top_box_path = self.env_template_path.AppendChild("top_box")
+        top_transform = Transform((0.0, 0.0, self.box_size * 1.5))  # On top of bottom box
+        top_box = self.create_rigid_box(top_box_path, top_transform, Gf.Vec3f(self.box_size))
+        # Set mass using proper API
+        mass_api = UsdPhysics.MassAPI(top_box)
+        mass_api.GetMassAttr().Set(self.box_mass)
+        # Disable sleeping so contacts are reported
+        physx_rb = PhysxSchema.PhysxRigidBodyAPI.Apply(top_box)
+        physx_rb.CreateSleepThresholdAttr().Set(0)
+        # Enable contact reporting
+        contact_api = PhysxSchema.PhysxContactReportAPI.Apply(top_box)
+        contact_api.CreateThresholdAttr().Set(0)
+
+        # Create ground plane using physicsUtils
+        physicsUtils.add_quad_plane(self.stage, "/groundPlane", "Z", 20.0, Gf.Vec3f(-1), Gf.Vec3f(0.5))
+
+    def on_start(self, sim):
+        # Create contact views WITHOUT filter patterns - will use raw contact data
+        # View for top boxes
+        self.top_box_contacts = sim.create_rigid_contact_view(
+            "/envs/*/top_box",
+            max_contact_data_count=self.num_envs * 10
+        )
+        self.check_rigid_contact_view(self.top_box_contacts, self.num_envs, 0)  # 0 filters
+        self.test_case.assertEqual(self.top_box_contacts.filter_count, 0, "No filters should be specified for top boxes")
+
+        # View for bottom boxes
+        self.bottom_box_contacts = sim.create_rigid_contact_view(
+            "/envs/*/bottom_box",
+            max_contact_data_count=self.num_envs * 10
+        )
+        self.check_rigid_contact_view(self.bottom_box_contacts, self.num_envs, 0)  # 0 filters
+        self.test_case.assertEqual(self.bottom_box_contacts.filter_count, 0, "No filters should be specified for bottom boxes")
+
+    def on_physics_step(self, sim, stepno, dt):
+        if stepno < 60:
+            # Wait for boxes to settle
+            return
+
+        if stepno == 60:
+            # Get raw contact data for top boxes
+            (forces, points, normals, separations, counts, start_indices,
+             other_actor_ids) = self.top_box_contacts.get_raw_contact_data(dt)
+            counts_np = counts.numpy().flatten()
+            start_indices_np = start_indices.numpy().flatten()
+            forces_np = forces.numpy().flatten()
+            normals_np = normals.numpy().reshape(-1, 3)
+            other_actor_ids_np = other_actor_ids.numpy().flatten()
+            def get_sensor_slice(start_indices, counts, sensor_idx):
+                start = int(start_indices[sensor_idx])
+                count = int(counts[sensor_idx])
+                return start, count
+
+            def compute_net_force(forces, normals, start, count):
+                """Compute net contact force vector: sum(force * normal)."""
+                if count == 0:
+                    return np.zeros(3)
+                slc = slice(start, start + count)
+                force_vectors = forces[slc, np.newaxis] * normals[slc]
+                return np.sum(force_vectors, axis=0)
+
+            # Verify all top box sensors have contacts
+            self.test_case.assertTrue(np.all(counts_np > 0),
+                f"All top box sensors should have contacts. Counts: {counts_np}")
+
+            # Verify other actor paths using batch get_other_actor_paths_from_ids
+            # Path conversion expects CPU tensor - create CPU warp array from numpy slice
+            start, count = get_sensor_slice(start_indices_np, counts_np, 0)
+            if count > 0:
+                self.test_case.assertNotEqual(other_actor_ids_np[start], 0,
+                    "Should return non-zero actor IDs")
+                ids_cpu = wp.array(other_actor_ids_np[start:start + count], dtype=wp.uint64, device="cpu")
+                paths = self.top_box_contacts.get_other_actor_paths_from_ids(ids_cpu)
+                has_bottom_box = any("bottom_box" in p for p in paths if p)
+                self.test_case.assertTrue(has_bottom_box,
+                    f"Top box should contact bottom_box. Paths: {paths}")
+
+            # Get raw contact data for bottom boxes
+            (forces2, points2, normals2, separations2, counts2, start_indices2,
+             other_actor_ids2) = self.bottom_box_contacts.get_raw_contact_data(dt)
+
+            counts2_np = counts2.numpy().flatten()
+            start_indices2_np = start_indices2.numpy().flatten()
+            forces2_np = forces2.numpy().flatten()
+            normals2_np = normals2.numpy().reshape(-1, 3)
+            other_actor_ids2_np = other_actor_ids2.numpy().flatten()
+
+            # Verify all bottom box sensors have contacts
+            self.test_case.assertTrue(np.all(counts2_np > 0),
+                f"All bottom box sensors should have contacts. Counts: {counts2_np}")
+
+            # Verify other actor paths using batch get_other_actor_paths_from_ids
+            # Path conversion expects CPU tensor - create CPU warp array from numpy slice
+            start2, count2 = get_sensor_slice(start_indices2_np, counts2_np, 0)
+            if count2 > 0:
+                self.test_case.assertNotEqual(other_actor_ids2_np[start2], 0,
+                    "Should return non-zero actor IDs")
+                ids2_cpu = wp.array(other_actor_ids2_np[start2:start2 + count2], dtype=wp.uint64, device="cpu")
+                paths2 = self.bottom_box_contacts.get_other_actor_paths_from_ids(ids2_cpu)
+                has_ground = any("groundPlane" in p or "Ground" in p for p in paths2 if p)
+                has_top_box = any("top_box" in p for p in paths2 if p)
+                self.test_case.assertTrue(has_ground or has_top_box,
+                    f"Bottom box should contact ground and/or top_box. Paths: {paths2}")
+
+            # Verify contact forces using Newton's second law
+            # At equilibrium: net_contact_force + gravity = 0
+            # Therefore: net_contact_force.z = +mg (balances gravity)
+            expected_weight = self.box_mass * self.g
+
+            # Top box net force
+            start, count = get_sensor_slice(start_indices_np, counts_np, 0)
+            if count > 0:
+                net_force = compute_net_force(forces_np, normals_np, start, count)
+                self.test_case.assertAlmostEqual(net_force[2], expected_weight, delta=expected_weight * 0.5,
+                    msg=f"Top box net Z force should be ~{expected_weight}, got {net_force[2]}")
+
+            # Bottom box net force
+            start2, count2 = get_sensor_slice(start_indices2_np, counts2_np, 0)
+            if count2 > 0:
+                net_force2 = compute_net_force(forces2_np, normals2_np, start2, count2)
+                self.test_case.assertAlmostEqual(net_force2[2], expected_weight, delta=expected_weight * 0.5,
+                    msg=f"Bottom box net Z force should be ~{expected_weight}, got {net_force2[2]}")
 
             self.finish()
 
@@ -6166,7 +6614,9 @@ class TestVolumeDeformableBodyMultipleView(GridTestBase):
     def on_physics_step(self, sim, stepno, dt):
         if stepno == 20:
             # print("create /envs/*/deformableBody")
-            self.deformable_bodies_2 = sim.create_volume_deformable_body_view("/envs/*/deformableBody")
+            self.deformable_bodies_2 = sim.create_volume_deformable_body_view(["/envs/env[0-9]/deformableBody",
+                                                                               "/envs/env10/deformableBody", #10,
+                                                                               "/envs/env[1-2][1-5]/deformableBody"]) # 11, 12, 13, 14, 15
             self.check_deformable_body_view(self.deformable_bodies_2, self.num_envs)
             # create and destroy a view
             # print("create /envs/env[3-7]/deformableBody")
@@ -6212,7 +6662,8 @@ class TestSurfaceDeformableBodyMultipleView(GridTestBase):
     def on_physics_step(self, sim, stepno, dt):
         if stepno == 20:
             # print("create /envs/*/deformableBody")
-            self.deformable_bodies_2 = sim.create_surface_deformable_body_view("/envs/*/deformableBody")
+            self.deformable_bodies_2 = sim.create_surface_deformable_body_view(["/envs/env[0-9]/deformableBody",
+                                                                               "/envs/env[5-9]/deformableBody"])
             self.check_deformable_body_view(self.deformable_bodies_2, self.num_envs)
             # create and destroy a view
             # print("create /envs/env[3-7]/deformableBody")
@@ -6254,7 +6705,9 @@ class TestVolumeDeformableBodyElementIndices(GridTestBase):
 
     def on_start(self, sim):
         sim.set_subspace_roots("/envs/*")
-        self.volume_deformable_bodies = sim.create_volume_deformable_body_view("/envs/*/deformableBody")
+        self.volume_deformable_bodies = sim.create_volume_deformable_body_view(["/envs/env[0-9]/deformableBody",
+                                                                               "/envs/env10/deformableBody",
+                                                                                "/envs/env[1-2][1-5]/deformableBody"])
         self.check_deformable_body_view(self.volume_deformable_bodies, self.num_envs)
 
         self.simulation_element_indices=self.volume_deformable_bodies.get_simulation_element_indices().numpy().reshape(self.volume_deformable_bodies.count, self.volume_deformable_bodies.max_simulation_elements_per_body, 4)
@@ -6296,7 +6749,7 @@ class TestSurfaceDeformableBodyElementIndices(GridTestBase):
 
     def on_start(self, sim):
         sim.set_subspace_roots("/envs/*")
-        self.surface_deformable_bodies = sim.create_surface_deformable_body_view("/envs/*/deformableBody")
+        self.surface_deformable_bodies = sim.create_surface_deformable_body_view(["/envs/env[0-9]/deformableBody","/envs/env10/deformableBody", "/envs/env[1-2][1-5]/deformableBody"])
         self.check_deformable_body_view(self.surface_deformable_bodies, self.num_envs)
         self.simulation_element_indices=self.surface_deformable_bodies.get_simulation_element_indices().numpy().reshape(self.surface_deformable_bodies.count, self.surface_deformable_bodies.max_simulation_elements_per_body, 3)
         self.sim_mesh_paths = self.surface_deformable_bodies.simulation_mesh_prim_paths
@@ -6339,9 +6792,9 @@ class TestDeformableBodyRest(GridTestBase):
     def on_start(self, sim):
         sim.set_subspace_roots("/envs/*")
         if self.test_surface:
-            self.bodies_view = sim.create_surface_deformable_body_view("/envs/*/deformableBody")
+            self.bodies_view = sim.create_surface_deformable_body_view(["/envs/env[0-9]/deformableBody","/envs/env10/deformableBody", "/envs/env[1-2][1-5]/deformableBody"])
         else:
-            self.bodies_view = sim.create_volume_deformable_body_view("/envs/*/deformableBody")
+            self.bodies_view = sim.create_volume_deformable_body_view(["/envs/env[0-9]/deformableBody","/envs/env10/deformableBody", "/envs/env[1-2][1-5]/deformableBody"])
 
         self.check_deformable_body_view(self.bodies_view, self.num_envs)
 
@@ -6388,7 +6841,7 @@ class TestVolumeDeformableBodySimulationPositions(GridTestBase):
 
     def on_start(self, sim):
         sim.set_subspace_roots("/envs/*")
-        volume_deformable_bodies = sim.create_volume_deformable_body_view("/envs/*/deformableBody")
+        volume_deformable_bodies = sim.create_volume_deformable_body_view(["/envs/env[0-9]/deformableBody","/envs/env10/deformableBody", "/envs/env[1-2][1-5]/deformableBody"])
         self.check_deformable_body_view(volume_deformable_bodies, self.num_envs)
         self.volume_deformable_bodies = volume_deformable_bodies
         self.wp_all_indices = wp_utils.arange(self.volume_deformable_bodies.count, device=sim.device)
@@ -6474,7 +6927,7 @@ class TestVolumeDeformableBodySimulationVelocities(GridTestBase):
 
     def on_start(self, sim):
         sim.set_subspace_roots("/envs/*")
-        volume_deformable_bodies = sim.create_volume_deformable_body_view("/envs/*/deformableBody")
+        volume_deformable_bodies = sim.create_volume_deformable_body_view(["/envs/env[0-9]/deformableBody","/envs/env10/deformableBody", "/envs/env[1-2][1-5]/deformableBody"])
         self.check_deformable_body_view(volume_deformable_bodies, self.num_envs)
         self.volume_deformable_bodies = volume_deformable_bodies
         self.wp_all_indices = wp_utils.arange(self.volume_deformable_bodies.count, device=sim.device)
@@ -6554,7 +7007,7 @@ class TestVolumeDeformableBodySimulationKinematicTargets(GridTestBase):
 
     def on_start(self, sim):
         sim.set_subspace_roots("/envs/*")
-        volume_deformable_bodies = sim.create_volume_deformable_body_view("/envs/*/deformableBody")
+        volume_deformable_bodies = sim.create_volume_deformable_body_view(["/envs/env[0-9]/deformableBody"])
         #self.materials = sim.create_deformable_material_view("/envs/*/deformableMaterial")
         self.check_deformable_body_view(volume_deformable_bodies, self.num_envs)
         self.volume_deformable_bodies = volume_deformable_bodies
@@ -6748,8 +7201,8 @@ class TestDeformableMaterialDynamicFriction(GridTestBase):
 
     def on_start(self, sim):
         sim.set_subspace_roots("/envs/*")
-        volume_deformable_bodies = sim.create_volume_deformable_body_view("/envs/*/deformableBody")
-        volume_deformable_materials = sim.create_deformable_material_view("/envs/*/volumeDeformableMaterial")
+        volume_deformable_bodies = sim.create_volume_deformable_body_view(["/envs/env[0-9]/deformableBody", "/envs/env10/deformableBody", "/envs/env[1-2][1-5]/deformableBody"])
+        volume_deformable_materials = sim.create_deformable_material_view(["/envs/env[0-9]/volumeDeformableMaterial", "/envs/env10/volumeDeformableMaterial", "/envs/env[1-2][1-5]/volumeDeformableMaterial"])
 
         self.check_deformable_material_view(volume_deformable_materials, self.num_envs)
         self.check_deformable_body_view(volume_deformable_bodies, self.num_envs)
@@ -7805,6 +8258,9 @@ class PhysicsTensorsTests(PhysicsBaseAsyncTestCase):
         await self.run_test(TestRigidBodyView(self, DeviceParams(True, True)))
 
 
+    async def test_rigid_body_enable_disable_physics_cc(self):
+        await self.run_test(TestRigidBodyEnableDisablePhysics(self, DeviceParams(False, False)))
+
     async def test_rigid_body_properties_cpu(self):
         await self.run_test(TestRigidBodyProperties(self, DeviceParams(False, False)))
 
@@ -7822,6 +8278,18 @@ class PhysicsTensorsTests(PhysicsBaseAsyncTestCase):
 
     async def test_rigid_body_shape_properties_gpu(self):
         await self.run_test(TestRigidBodyShapeProperties(self, DeviceParams(True, True)))
+
+    async def test_rigid_body_compliant_material_cpu(self):
+        await self.run_test(TestRigidBodyCompliantContact(self, DeviceParams(False, False)))
+
+    async def test_rigid_body_compliant_material_gpu(self):
+        await self.run_test(TestRigidBodyCompliantContact(self, DeviceParams(True, True)))
+
+    async def test_articulation_compliant_material_properties_cpu(self):
+        await self.run_test(TestArticulationCompliantContact(self, DeviceParams(False, False)))
+
+    async def test_articulation_compliant_material_properties_gpu(self):
+        await self.run_test(TestArticulationCompliantContact(self, DeviceParams(True, True)))
 
 
     async def test_rigid_body_transforms_cc(self):
@@ -7919,6 +8387,16 @@ class PhysicsTensorsTests(PhysicsBaseAsyncTestCase):
 
     async def test_rigid_contact_matrix_gg(self):
         await self.run_test(TestRigidContactMatrix(self, DeviceParams(True, True)))
+
+    async def test_raw_contact_data_cc(self):
+        await self.run_test(TestRawContactData(self, DeviceParams(False, False)))
+
+    async def test_raw_contact_data_gc(self):
+        await self.run_test(TestRawContactData(self, DeviceParams(True, False)))
+
+    async def test_raw_contact_data_gg(self):
+        await self.run_test(TestRawContactData(self, DeviceParams(True, True)))
+
     async def test_particle_cloth_positions_gg(self):
         await self.run_test(TestParticleClothPositions(self, DeviceParams(True, True)))
 
@@ -7930,7 +8408,6 @@ class PhysicsTensorsTests(PhysicsBaseAsyncTestCase):
 
     async def test_rigid_contact_perf_gg(self):
         await self.run_test(TestRigidContactPerfTest(self, DeviceParams(True, True)))
-
 
     async def test_particle_cloth_velocities_gg(self):
         await self.run_test(TestParticleClothVelocities(self, DeviceParams(True, True)))
@@ -7982,14 +8459,12 @@ class PhysicsTensorsTests(PhysicsBaseAsyncTestCase):
     async def test_soft_body_sim_positions_gg(self):
         await self.run_test(TestSoftBodySimPositions(self, DeviceParams(True, True)))
 
-    @unittest.skip("OMPE-24852")
     async def test_soft_body_sim_velocities_gg(self):
         await self.run_test(TestSoftBodySimVelocities(self, DeviceParams(True, True)))
 
     async def test_soft_body_sim_kinematic_targets_gg(self):
         await self.run_test(TestSoftBodyKinematicTargets(self, DeviceParams(True, True)))
 
-    @unittest.skip("OM-91738")
     async def test_soft_body_sim_staging_buffers_gg(self):
         await self.run_test(TestSoftBodyStagingBuffers(self, DeviceParams(True, True)))
 
@@ -8053,3 +8528,6 @@ class PhysicsTensorsTests(PhysicsBaseAsyncTestCase):
         await self.run_test(TestSimViewInvalidate(self, DeviceParams(True, False)))
     async def test_sim_view_invalidate_gg(self):
         await self.run_test(TestSimViewInvalidate(self, DeviceParams(True, True)))
+
+    async def test_articulation_joint_free_motion_to_limited_motion(self):
+        await self.run_test(TestArtJointFreeMotionToLimitMotion(self, DeviceParams(False, False)))

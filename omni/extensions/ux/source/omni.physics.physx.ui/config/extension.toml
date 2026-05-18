@@ -1,0 +1,36 @@
+[package]
+title = "Physics Umbrella PhysX UI Extension"
+description="Adds support for multiphysics workflows for PhysX."
+authors = ["PhysX"]
+changelog="docs/CHANGELOG.md"
+readme = "docs/README.md"
+repository = ""
+keywords = ["physics", "ui"]
+category = "simulation"
+version = "110.0.7"
+icon = "data/images/icon.png"
+preview_image = "data/images/preview.png"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.usd" = {}
+"omni.physics.isaacsimready" = { version = "110.0.7", exact = true }
+"omni.physics.physx" = { version = "110.0.7", exact = true }
+"omni.usd.schema.physx" = { version = "110.0.7", exact = true }
+"omni.physx" = { version = "110.0.7", exact = true }
+"omni.physx.ui" = { version = "110.0.7", exact = true }
+"omni.kit.property.physics" = { version = "110.0.7", exact = true }
+
+[[python.module]]
+name = "omni.physics.physxui"
+
+[[test]]
+dependencies = [
+]
+
+args = [
+]

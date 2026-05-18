@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #include "UsdPCH.h"
@@ -8,6 +8,8 @@
 #include "ImmediateNode.h"
 #include "ImmediateShared.h"
 #include "../MultiThreader.h"
+
+#include <omni/fabric/usd/PathConversion.h>
 
 #include <PxPhysicsAPI.h>
 using namespace ::physx;
@@ -37,7 +39,7 @@ void ImmediateCookMeshes::cookMeshes(const std::vector<MeshInputView>& inputMesh
                     meshViewWithHashes.meshHashes = meshCookedData[sourceID].meshHashes;
                     meshViewWithHashes.meshCollision = inputMesh.meshCollision;
                     if (inputMesh.meshCollision.collisionApproximation ==
-                        ImmediateNode::kCollisionApproximationConvexHull.token)
+                        omni::fabric::fabricTokenToHandle(omni::fabric::Token::createImmortal("convexHull")))
                     {
                         meshCookedData[sourceID].isValid = sharedMeshCache.queryConvexApproximationFor(
                             meshViewWithHashes, meshCookedData[sourceID].pxConvexMesh,

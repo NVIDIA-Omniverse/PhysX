@@ -1,10 +1,11 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import typing
 from pxr import Usd, UsdGeom, UsdShade, Sdf, Tf, Gf, UsdPhysics, PhysxSchema, UsdUtils
-from omni.physx import get_physx_simulation_interface, get_physxunittests_interface
+from omni.physx.scripts.ifaces import get_physx_simulation_interface, get_physxunittests_interface
 from omni.physx.bindings._physx import METADATA_ATTRIBUTE_NAME_LOCALSPACEVELOCITIES
 import traceback
 from functools import partial
@@ -23,15 +24,14 @@ COOKED_DATA_TOKENS = [
 ]
 
 MESH_APPROXIMATIONS = {
-    "none": PhysxSchema.PhysxTriangleMeshCollisionAPI,
-    "convexHull": PhysxSchema.PhysxConvexHullCollisionAPI,
-    "convexDecomposition": PhysxSchema.PhysxConvexDecompositionCollisionAPI,
-    "meshSimplification": PhysxSchema.PhysxTriangleMeshSimplificationCollisionAPI,
-    "convexMeshSimplification": PhysxSchema.PhysxTriangleMeshSimplificationCollisionAPI,
-    "boundingCube": None,
-    "boundingSphere": None,
-    "sphereFill": PhysxSchema.PhysxSphereFillCollisionAPI,
-    "sdf": PhysxSchema.PhysxSDFMeshCollisionAPI,
+    UsdPhysics.Tokens.none: PhysxSchema.PhysxTriangleMeshCollisionAPI,
+    UsdPhysics.Tokens.convexHull: PhysxSchema.PhysxConvexHullCollisionAPI,
+    PhysxSchema.Tokens.convexDecomposition: PhysxSchema.PhysxConvexDecompositionCollisionAPI,
+    UsdPhysics.Tokens.meshSimplification: PhysxSchema.PhysxTriangleMeshSimplificationCollisionAPI,
+    UsdPhysics.Tokens.boundingCube: None,
+    UsdPhysics.Tokens.boundingSphere: None,
+    PhysxSchema.Tokens.sphereFill: PhysxSchema.PhysxSphereFillCollisionAPI,
+    PhysxSchema.Tokens.sdf: PhysxSchema.PhysxSDFMeshCollisionAPI,
 }
 
 
@@ -150,7 +150,7 @@ def setPhysics(prim, kinematic, custom_execute_fn=None):
     physicsAPI.CreateKinematicEnabledAttr(kinematic)
 
 
-def setCollider(prim, approximationShape="none", custom_execute_fn=None):
+def setCollider(prim, approximationShape=UsdPhysics.Tokens.none, custom_execute_fn=None):
     # using this attribute instead of purpose=guide, so that the volumes will be easily renderable
     if prim.GetAttribute("omni:no_collision"):
         return
@@ -170,9 +170,9 @@ def setCollider(prim, approximationShape="none", custom_execute_fn=None):
 
         return isPartOfRigidBody(currPrim)
     isMesh = prim.IsA(UsdGeom.Mesh)
-    if isMesh and approximationShape == "none" and isPartOfRigidBody(prim):
+    if isMesh and approximationShape == UsdPhysics.Tokens.none and isPartOfRigidBody(prim):
         carb.log_warn(f"setCollider: {prim.GetPath()} is a part of a rigid body. Resetting approximation shape from none (trimesh) to convexHull")
-        approximationShape = "convexHull"
+        approximationShape = UsdPhysics.Tokens.convexHull
 
     if custom_execute_fn is None:
         collisionAPI = UsdPhysics.CollisionAPI.Apply(prim)
@@ -186,7 +186,7 @@ def setCollider(prim, approximationShape="none", custom_execute_fn=None):
         api = MESH_APPROXIMATIONS.get(approximationShape, 0)  # None is a valid value
         if api == 0:
             carb.log_warn(f"setCollider: invalid approximation type {approximationShape} provided for {prim.GetPath()}. Falling back to convexHull.")
-            approximationShape = "convexHull"
+            approximationShape = UsdPhysics.Tokens.convexHull
             api = MESH_APPROXIMATIONS[approximationShape]
         if custom_execute_fn is None:
             if api is not None:
@@ -200,7 +200,7 @@ def setCollider(prim, approximationShape="none", custom_execute_fn=None):
         meshcollisionAPI.CreateApproximationAttr().Set(approximationShape)
 
 
-def setColliderSubtree(prim, approximationShape="none", execute_command_fn=None):
+def setColliderSubtree(prim, approximationShape=UsdPhysics.Tokens.none, execute_command_fn=None):
     pit = iter(Usd.PrimRange(prim))
     for p in pit:
         if p.GetMetadata("hide_in_stage_window"):
@@ -219,7 +219,7 @@ def setRigidBody(prim, approximationShape, kinematic, custom_execute_fn=None):
         setCollider(prim, approximationShape, custom_execute_fn)
 
 
-def setStaticCollider(prim, approximationShape="none", custom_execute_fn=None):
+def setStaticCollider(prim, approximationShape=UsdPhysics.Tokens.none, custom_execute_fn=None):
     setColliderSubtree(prim, approximationShape, custom_execute_fn)
 
 def removePhysics(prim, custom_execute_fn=None):

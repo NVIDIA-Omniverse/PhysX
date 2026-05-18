@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -43,14 +43,18 @@ public:
     // simulation mesh nodal position
     virtual bool getSimNodalPositions(const TensorDesc* dstTensor) const = 0;
     virtual bool setSimNodalPositions(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    // Masked variant: srcTensor is full [N,...], maskTensor is uint8[N] where nonzero = selected.
+    virtual bool setSimNodalPositionsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     // simulation mesh nodal velocities
     virtual bool getSimNodalVelocities(const TensorDesc* dstTensor) const = 0;
     virtual bool setSimNodalVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    virtual bool setSimNodalVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     // targets for kinematic nodes
     virtual bool getSimKinematicTargets(const TensorDesc* dstTensor) const = 0;
     virtual bool setSimKinematicTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    virtual bool setSimKinematicTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     virtual bool check() const = 0;
 

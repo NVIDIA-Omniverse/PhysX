@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXCooking common
@@ -45,7 +45,6 @@ SET(PHYSX_COOKING_HEADERS
 	${PHYSX_ROOT_DIR}/include/cooking/Pxc.h
 	${PHYSX_ROOT_DIR}/include/cooking/PxConvexMeshDesc.h
 	${PHYSX_ROOT_DIR}/include/cooking/PxCooking.h
-	${PHYSX_ROOT_DIR}/include/cooking/PxCookingInternal.h
 	${PHYSX_ROOT_DIR}/include/cooking/PxMidphaseDesc.h
 	${PHYSX_ROOT_DIR}/include/cooking/PxTriangleMeshDesc.h
 	${PHYSX_ROOT_DIR}/include/cooking/PxTetrahedronMeshDesc.h
@@ -57,7 +56,6 @@ SOURCE_GROUP(include FILES ${PHYSX_COOKING_HEADERS})
 
 SET(PHYSX_COOKING_SOURCE
 	${LL_SOURCE_DIR}/Cooking.cpp
-	${LL_SOURCE_DIR}/Cooking.h
 )
 SOURCE_GROUP(src FILES ${PHYSX_COOKING_SOURCE})
 

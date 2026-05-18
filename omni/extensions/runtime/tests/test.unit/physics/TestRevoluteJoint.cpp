@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -105,7 +105,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
 
         // disable joint, joint should not exist
         changeTemplate.setAttributeValue(jointPath, changeToken, false);
-        changeTemplate.broadcastChanges();
         joint.CreateJointEnabledAttr().Set(false); // still through USD as we parse from USD
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
@@ -116,7 +115,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
 
         // enable joint
         changeTemplate.setAttributeValue(jointPath, changeToken, true);
-        changeTemplate.broadcastChanges();
         joint.CreateJointEnabledAttr().Set(true); // still through USD as we parse from USD
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
@@ -144,7 +142,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
 
         // change value
         changeTemplate.setAttributeValue(jointPath, changeToken, true);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -178,7 +175,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = 100.0f;
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -213,7 +209,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = 100.0f;
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -246,7 +241,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = GfVec3f(2.0f);
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
         
@@ -278,7 +272,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value        
         value = GfQuatf(GfRotation(GfVec3d(1.0, 0.0, 0.0), 0.5).GetQuat());
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -310,7 +303,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = GfVec3f(2.0f / boxSize);
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -343,7 +335,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value        
         value = GfQuatf(GfRotation(GfVec3d(1.0, 0.0, 0.0), 0.5).GetQuat());
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -432,7 +423,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = -10.0f; // degree
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -504,7 +494,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = 10.0f; // degree
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -563,7 +552,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = UsdPhysicsTokens->acceleration;
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -611,7 +599,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = 1000.0f;
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -652,7 +639,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = 90.0f;
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -709,7 +695,7 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         if(std::is_same<JointType, UsdPhysicsRevoluteJoint>())
         {
             compare(linearVelocity, PxVec3(PxZero), epsilon);
-            // inversion due to SDK bug https ://nvidia-omniverse.atlassian.net/browse/OM-42441
+            // inversion due to SDK bug OM-42441
             compare(angularVelocity, PxVec3(-degToRad(value), 0.0f, 0.0f), epsilon);
         }
         else if(std::is_same<JointType, UsdPhysicsPrismaticJoint>())
@@ -721,7 +707,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = 90.0f;
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -733,7 +718,7 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         if(std::is_same<JointType, UsdPhysicsRevoluteJoint>())
         {
             compare(linearVelocity, PxVec3(PxZero), epsilon);
-            // inversion due to SDK bug https ://nvidia-omniverse.atlassian.net/browse/OM-42441
+            // inversion due to SDK bug OM-42441
             compare(angularVelocity, PxVec3(degToRad(-value), 0.0f, 0.0f), epsilon);
         }
         else if(std::is_same<JointType, UsdPhysicsPrismaticJoint>())
@@ -779,7 +764,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = 90.0f;
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -843,7 +827,7 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         if (std::is_same<JointType, UsdPhysicsRevoluteJoint>())
         {
             compare(linearVelocity, PxVec3(PxZero), epsilon);
-            // inversion due to SDK bug https ://nvidia-omniverse.atlassian.net/browse/OM-42441
+            // inversion due to SDK bug OM-42441
             compare(angularVelocity, PxVec3(-degToRad(velocity_value), 0.0f, 0.0f), epsilon);
         }
         else if (std::is_same<JointType, UsdPhysicsPrismaticJoint>())
@@ -855,7 +839,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = 90.0f;
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -879,7 +862,7 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         if (std::is_same<JointType, UsdPhysicsRevoluteJoint>())
         {
             compare(linearVelocity, PxVec3(PxZero), epsilon);
-            // inversion due to SDK bug https ://nvidia-omniverse.atlassian.net/browse/OM-42441
+            // inversion due to SDK bug OM-42441
             compare(angularVelocity, PxVec3(-degToRad(velocity_value), 0.0f, 0.0f), epsilon);
         }
         else if (std::is_same<JointType, UsdPhysicsPrismaticJoint>())
@@ -928,7 +911,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = 90.0f;
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -987,7 +969,6 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
         // change value
         value = 0.5f;
         changeTemplate.setAttributeValue(jointPath, changeToken, value);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.01f, 0.0f);
         physxSim->fetchResults();
 
@@ -1039,4 +1020,3 @@ TEST_CASE_TEMPLATE("Revolute and Prismatic Joint Tests", T
     pxr::UsdUtilsStageCache::Get().Erase(stage);
     stage = nullptr;
 }
-

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -10,7 +10,6 @@
 #include <carb/logging/Logger.h>
 #include <carb/windowing/IWindowing.h>
 
-#include "common/test/TestCommonUtils.h"
 
 #include <carb/settings/ISettings.h>
 
@@ -59,6 +58,20 @@ inline extras::Path getCarbAppPath(filesystem::IFileSystem* fs)
 
     return carbAppPath;
 }
+
+struct TestGlobalSettings
+{
+    bool carbLogEnabled = true; ///< Determines if logging is enabled for unit tests. Enabled by default, to capture any
+                                ///< error as a failure in FrameworkScoped.
+    int32_t carbLogLevel = logging::kLevelWarn; ///< ILogging level, if enabled.
+    bool carbLogAll = false; ///< Determines if extra logging settings should be applied.
+
+    static const TestGlobalSettings& get()
+    {
+        static TestGlobalSettings instance;
+        return instance;
+    }
+};
 
 class FrameworkScoped
 {
@@ -193,24 +206,12 @@ private:
 /**
  * Custom Logger which saves all messages to be used to test that logging happened
  */
-struct TestLogger : public logging::Logger
+struct TestLogger : public logging::Logger2
 {
-    TestLogger()
+    void handleMessage(const logging::LogMessage& msg) override
     {
-        handleMessage = msg;
-    }
-
-    static void msg(Logger* logger,
-                    const char* source,
-                    int32_t level,
-                    const char* filename,
-                    const char* functionName,
-                    int lineNumber,
-                    const char* message)
-    {
-        TestLogger* thisLogger = static_cast<TestLogger*>(logger);
-        std::lock_guard<Lock> g(thisLogger->m_mutex);
-        thisLogger->m_msgs[level].push_back(message);
+        std::lock_guard<Lock> g(m_mutex);
+        m_msgs[msg.level].push_back(msg.message);
     }
 
     bool hasMessage(int32_t level, const std::string& subStr)

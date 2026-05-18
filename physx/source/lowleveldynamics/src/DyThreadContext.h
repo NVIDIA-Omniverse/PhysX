@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,7 +32,7 @@
 #include "foundation/PxTransform.h"
 #include "geomutils/PxContactBuffer.h"
 
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 #include "PxvDynamics.h"
 #include "PxcThreadCoherentCache.h"
 #include "PxcConstraintBlockStream.h"
@@ -42,7 +42,6 @@
 #include "DySolverConstraintDesc.h"
 #include "DyCorrelationBuffer.h"
 #include "foundation/PxAllocator.h"
-#include "DyResidualAccumulator.h"
 
 namespace physx
 {
@@ -81,8 +80,6 @@ public:
 		PxU32 numActiveDynamicBodies;
 		PxU32 numActiveKinematicBodies;
 		PxU32 numAxisSolverConstraints;
-
-		Dy::ErrorAccumulatorEx contactErrorAccumulator;
 	};
 #else
 	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
@@ -92,9 +89,6 @@ public:
 	ThreadContext(PxcNpMemBlockPool* memBlockPool);
 	void reset();
 	void resizeArrays(PxU32 articulationCount);
-
-	// PT: TODO: is there a reason why everything is public except mArticulations ?
-	PX_FORCE_INLINE	PxArray<ArticulationSolverDesc>&	getArticulations()	{ return mArticulations;	}
 
 #if PX_ENABLE_SIM_STATS
 	PX_FORCE_INLINE ThreadSimStats& getSimStats()
@@ -122,6 +116,8 @@ public:
 	PxU32										mNumDifferentBodyConstraints;
 	PxU32										mNumStaticConstraints;
 	bool										mHasOverflowPartitions;
+
+	PxU32										mNbArticulations;
 
 	PxArray<PxU32>								mConstraintsPerPartition;
 	//PxArray<PxU32>								mPartitionNormalizationBitmap;	// PT: for PX_NORMALIZE_PARTITIONS
@@ -171,8 +167,6 @@ public:
 	
 	PxSolverConstraintDesc*						mContactDescPtr;
 private:
-
-	PxArray<ArticulationSolverDesc>				mArticulations;
 
 #if PX_ENABLE_SIM_STATS
 	ThreadSimStats								mThreadSimStats;

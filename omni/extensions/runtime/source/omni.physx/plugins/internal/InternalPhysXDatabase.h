@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -9,8 +9,12 @@
 #include "InternalVoxelMap.h"
 #include "InternalActor.h"
 #include "InternalScene.h"
+#include "InternalDebugDraw.h"
 
 #include <utils/SplinesCurve.h>
+#include <utils/OmniRenderBuffer.h>
+
+#include <omni/physx/IPhysxVisualization.h>
 
 namespace omni
 {
@@ -18,6 +22,7 @@ namespace physx
 {
 namespace internal
 {
+
 
 using TransformsMap = pxr::TfHashMap<pxr::SdfPath, ::physx::PxTransform, pxr::SdfPath::Hash>;
 using PxJointMap = std::unordered_multimap<pxr::SdfPath, std::pair<::physx::PxJoint*, bool>, pxr::SdfPath::Hash>;
@@ -66,6 +71,27 @@ public:
 
     void updateDirtyMassActors();
 
+    void updateStats();
+
+    void debugDraw();
+    void setVisualizationParameter(PhysXVisualizationParameter param, bool val);
+    const ::physx::PxRenderBuffer& getDebugRenderBuffer() const
+    {
+        return mRenderBuffer;
+    }
+    ::physx::PxRenderBuffer& getDebugRenderBuffer()
+    {
+        return mRenderBuffer;
+    }
+    void clearDebugRenderBuffer()
+    {
+        mRenderBuffer.clear();
+    }
+    uint64_t getDebugDrawFlags() const 
+    {
+        return mDebugDrawFlags;
+    }
+
     const PxJointMap& getPxJointMap() const
     {
         return mPxJointMap;
@@ -92,26 +118,16 @@ public:
         }
     }
 
-    // These method names might be confusing because other method with very similar names exist
-    void addResidualReportingJoint(const ::physx::PxJoint* joint)
-    {
-        mResitualPxJoints.insert(joint);
-    }
-    void removeResidualReportingJoint(const ::physx::PxJoint* joint)
-    {
-        mResitualPxJoints.erase(joint);
-    }
-    void clearResidualReportingJoints()
-    {
-        mResitualPxJoints.clear();
-    }
-
-    void updateSimulationOutputs(bool updateResidualsToUsd);
-
     SplinesCurve* addSplinesCurve(const pxr::UsdGeomBasisCurves& curve, bool& added);
 
-private:
-    void updateJointResiduals(bool updateResidualsToUsd);
+    bool getNestedBodiesUsed() const
+    {
+        return mNestedBodiesUsed;
+    }
+    void setNestedBodiesUsed(bool val)
+    {
+        mNestedBodiesUsed = val;
+    }
 
 public:
     bool mInitialTransformsStored;
@@ -131,6 +147,10 @@ private:
     std::unordered_set<const ::physx::PxJoint*> mResitualPxJoints;
 
     SplinesCurveMap mSplinesMap;
+
+    OmniRenderBuffer mRenderBuffer; // used for debug vis
+    uint64_t mDebugDrawFlags;
+    bool mNestedBodiesUsed;
 };
 
 

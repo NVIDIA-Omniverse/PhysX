@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -67,9 +67,9 @@ volatile PxI32			 gRaysCompleted;
 
 static PxVec3 randVec3() 
 {
-	return (PxVec3(float(rand())/float(RAND_MAX),
-		float(rand())/float(RAND_MAX), 
-		float(rand())/float(RAND_MAX))*2.0f - PxVec3(1.0f)).getNormalized();
+	return (PxVec3(float(rand())/float(RAND_MAX),  // NOSONAR - rand() is fine for physics demo data
+		float(rand())/float(RAND_MAX),  // NOSONAR
+		float(rand())/float(RAND_MAX))*2.0f - PxVec3(1.0f)).getNormalized();  // NOSONAR
 }
 
 static void threadExecute(void* data)

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -7,8 +7,6 @@
 #include "ParticleManagerDeprecated.h"
 #include "FabricKernels.h"
 #include "FabricManager.h"
-
-#if !CARB_AARCH64
 
 #include <carb/logging/Log.h>
 #include <carb/InterfaceUtils.h>
@@ -53,10 +51,8 @@ ParticleClothSetDeprecated::ParticleClothSetDeprecated()
     using omni::fabric::AttributeRole;
     using omni::fabric::BaseDataType;
 
-    omni::fabric::IToken* iToken = carb::getCachedInterface<omni::fabric::IToken>();
-
-    mParticleClothSchemaToken = iToken->getHandle("PhysxParticleClothAPI");
-    mPointsToken = iToken->getHandle("points");
+    mParticleClothSchemaToken = omni::fabric::Token::createImmortal("PhysxParticleClothAPI");
+    mPointsToken = omni::fabric::Token::createImmortal("points");
     mTypeFloat3Array = omni::fabric::Type(BaseDataType::eFloat, 3, 1, AttributeRole::ePosition);
 
     carb::settings::ISettings* iSettings = carb::getCachedInterface<carb::settings::ISettings>();
@@ -222,7 +218,7 @@ void ParticleClothSetDeprecated::prepareBuffers(omni::fabric::StageReaderWriter&
             ParticleClothDataDeprecated* it = mParticleCloths[i];
 
             SdfPath path = it->prim.GetPath();
-            omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+            omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(srw.getFabricId(), path);
 
             srw.createPrim(pathHandle);
             srw.createAttribute(pathHandle, mPointsToken, mTypeFloat3Array);
@@ -334,17 +330,33 @@ void ParticleClothSetDeprecated::updateParticleCloths(omni::fabric::StageReaderW
         ParticleClothDataDeprecated* it = mParticleCloths[i];
 
         SdfPath path = it->prim.GetPath();
-        omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+        omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(srw.getFabricId(), path);
 
         if (mGPUInterop)
         {
             float3** cudaPtr = srw.getAttributeWrGpu<float3*>(pathHandle, mPointsToken);
-            mFabricHost[i] = (CUdeviceptr)*cudaPtr;
+            if (cudaPtr && *cudaPtr)
+            {
+                mFabricHost[i] = (CUdeviceptr)*cudaPtr;
+            }
+            else
+            {
+                CARB_LOG_ERROR("Failed to get valid GPU points attribute!");
+                return;
+            }
         }
         else
         {
             float3** cpuPtr = srw.getAttributeWr<float3*>(pathHandle, mPointsToken);
-            mFabricPointsCPU[i] = *cpuPtr;
+            if (cpuPtr && *cpuPtr)
+            {
+                mFabricPointsCPU[i] = *cpuPtr;
+            }
+            else
+            {
+                CARB_LOG_ERROR("Failed to get valid CPU points attribute!");
+                return;
+            }
         }
     }
 
@@ -388,10 +400,9 @@ ParticleManagerDeprecated::ParticleManagerDeprecated()
 
     mTypeFloat3 = omni::fabric::Type(BaseDataType::eFloat, 3, 0, AttributeRole::eNone);
     mTypeFloat3Array = omni::fabric::Type(BaseDataType::eFloat, 3, 1, AttributeRole::ePosition);
-
-    omni::fabric::IToken* iToken = carb::getCachedInterface<omni::fabric::IToken>();
-    mParticleClothSchemaToken = iToken->getHandle("PhysxParticleClothAPI");
-    mPointsToken = iToken->getHandle("points");
+    
+    mParticleClothSchemaToken = omni::fabric::Token::createImmortal("PhysxParticleClothAPI");
+    mPointsToken = omni::fabric::Token::createImmortal("points");
           
     mPhysxSimulationInterface = carb::getCachedInterface<omni::physx::IPhysxSimulation>();
 }
@@ -404,7 +415,7 @@ void ParticleManagerDeprecated::registerParticleCloth(UsdGeomXformCache& xfCache
     omni::fabric::StageReaderWriterId stageInProgress, const UsdPrim& prim)
 {
     SdfPath path = prim.GetPath();
-    omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+    omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(iStageReaderWriter->getFabricId(stageInProgress), path);
 
     UsdGeomPointBased pointBased(prim);
     VtArray<GfVec3f> points;
@@ -423,20 +434,12 @@ void ParticleManagerDeprecated::registerParticleCloth(UsdGeomXformCache& xfCache
     pc.numVerts = points.size();
     //printf("+++ Registering GPU ParticleCloth %s numVerts=%zu\n", path.GetText(), pc.numVerts);
 
-    PositionCache::const_iterator fit = mInitialPositions.find(pathHandle.path);
+    PositionCache::const_iterator fit = mInitialPositions.find(pathHandle);
     if (fit == mInitialPositions.end())
     {
         bool resetsXformStack;
         UsdGeomXform(prim).GetLocalTransformation(&pc.initialPrimToParent, &resetsXformStack, UsdTimeCode::Default());
-
-        VtArray<carb::Float3> initPos;
-        initPos.resize(points.size());
-        for (uint32_t i = 0; i < points.size(); ++i)
-        {
-            initPos[i] = toFloat3(points[i]);
-        }
-
-        mInitialPositions[pathHandle.path] = initPos;
+        mInitialPositions[pathHandle] = points;
     }
 
     mIsDirty = true;
@@ -461,7 +464,7 @@ bool ParticleManagerDeprecated::prepareBuffers(omni::fabric::StageReaderWriter& 
     {
         mParticleClothsSet.clear();
 
-        std::vector<omni::fabric::PathC> emptyPaths;
+        std::vector<omni::fabric::Path> emptyPaths;
 
         for (auto& it : mParticleCloths)
         {
@@ -554,8 +557,9 @@ void ParticleManagerDeprecated::updateParticleCloths(omni::fabric::StageReaderWr
 
 void ParticleManagerDeprecated::setInitialTransformation(omni::fabric::StageReaderWriter& stage)
 {
-   const omni::fabric::set<omni::fabric::AttrNameAndType_v2> requiredAll = { omni::fabric::AttrNameAndType_v2(mTypeAppliedSchema, mParticleClothSchemaToken) };
-   const omni::fabric::set<omni::fabric::AttrNameAndType_v2> requiredAny = { omni::fabric::AttrNameAndType_v2(mTypeFloat3Array, mPointsToken) };
+    omni::fabric::StageReaderWriterUsd stageUsd{ stage.getId() };
+    const omni::fabric::set<omni::fabric::AttrNameAndType> requiredAll = { omni::fabric::AttrNameAndType(mTypeAppliedSchema, mParticleClothSchemaToken) };
+    const omni::fabric::set<omni::fabric::AttrNameAndType> requiredAny = { omni::fabric::AttrNameAndType(mTypeFloat3Array, mPointsToken) };
 
     omni::fabric::PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
     size_t bucketCount = primBuckets.bucketCount();
@@ -564,16 +568,11 @@ void ParticleManagerDeprecated::setInitialTransformation(omni::fabric::StageRead
         gsl::span<const omni::fabric::Path> paths = stage.getPathArray(primBuckets, i);
         for (const omni::fabric::Path& path : paths)
         {
-            // AD: attention, we will get a pointer to the pointer here. not really intuitive.
-            carb::Float3* positions = *(stage.getAttributeWr<carb::Float3*>(path, mPointsToken));
-
-            PositionCache::const_iterator fit = mInitialPositions.find(omni::fabric::PathC(path).path);
-            if (fit != mInitialPositions.end() && positions)
+            PositionCache::const_iterator fit = mInitialPositions.find(path);
+            if (fit != mInitialPositions.end())
             {
-                for (size_t j = 0; j < fit->second.size(); ++j)
-                {
-                    positions[j] = fit->second[j];
-                }
+                pxr::VtValue value{ fit->second };
+                stageUsd.setArrayAttribute(path, mPointsToken, value);
             }
         }
     }
@@ -583,8 +582,8 @@ void ParticleManagerDeprecated::setInitialTransformation(omni::fabric::StageRead
 
 void ParticleManagerDeprecated::saveToUsd(omni::fabric::StageReaderWriter& stage, UsdStageRefPtr& usdStage)
 {
-   const omni::fabric::set<omni::fabric::AttrNameAndType_v2> requiredAll = { omni::fabric::AttrNameAndType_v2(mTypeAppliedSchema, mParticleClothSchemaToken) };
-   const omni::fabric::set<omni::fabric::AttrNameAndType_v2> requiredAny = { omni::fabric::AttrNameAndType_v2(mTypeFloat3Array, mPointsToken) };
+   const omni::fabric::set<omni::fabric::AttrNameAndType> requiredAll = { omni::fabric::AttrNameAndType(mTypeAppliedSchema, mParticleClothSchemaToken) };
+   const omni::fabric::set<omni::fabric::AttrNameAndType> requiredAny = { omni::fabric::AttrNameAndType(mTypeFloat3Array, mPointsToken) };
 
     omni::fabric::PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
     size_t bucketCount = primBuckets.bucketCount();
@@ -617,5 +616,3 @@ void ParticleManagerDeprecated::saveToUsd(omni::fabric::StageReaderWriter& stage
 
 } // namespace physx
 } // namespace omni
-
-#endif

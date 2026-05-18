@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -24,6 +24,7 @@
 #include <private/omni/physx/PhysXCompoundShape.h>
 
 #include <PxPhysicsAPI.h>
+#include "InternalDebugDraw.h"
 #include "InternalParticle.h"
 #include "InternalDeformableDeprecated.h"
 #include "InternalAttachmentDeprecated.h"
@@ -51,91 +52,6 @@ namespace deformables
 
 namespace internal
 {
-
-inline void updateResidualsImpl(bool updateToUsd,
-                                bool skipWriteResiduals,
-                                bool notifyResiduals,
-                                ResidualUpdateNotificationFn residualFn,
-                                const pxr::SdfPath primPath,
-                                const ::physx::PxResiduals& residuals,
-                                const pxr::SdfLayerHandle& currentLayer,
-                                void* cbUserData)
-{
-    if (updateToUsd && !skipWriteResiduals)
-    {
-        const pxr::SdfPath posMaxRes =
-            primPath.AppendProperty(pxr::PhysxSchemaTokens->physxResidualReportingMaxResidualPositionIteration);
-        const pxr::SdfPath posRmsRes =
-            primPath.AppendProperty(pxr::PhysxSchemaTokens->physxResidualReportingRmsResidualPositionIteration);
-        const pxr::SdfPath velMaxRes =
-            primPath.AppendProperty(pxr::PhysxSchemaTokens->physxResidualReportingMaxResidualVelocityIteration);
-        const pxr::SdfPath velRmsRes =
-            primPath.AppendProperty(pxr::PhysxSchemaTokens->physxResidualReportingRmsResidualVelocityIteration);
-
-        pxr::SdfAttributeSpecHandle posMaxResAttr = currentLayer->GetAttributeAtPath(posMaxRes);
-        if (posMaxResAttr)
-        {
-            posMaxResAttr->SetDefaultValue(pxr::VtValue(residuals.positionIterationResidual.maxResidual));
-        }
-        else
-        {
-            pxr::SdfPrimSpecHandle primSpec = pxr::SdfCreatePrimInLayer(currentLayer, primPath);
-            posMaxResAttr = pxr::SdfAttributeSpec::New(
-                primSpec, pxr::PhysxSchemaTokens->physxResidualReportingMaxResidualPositionIteration.GetString(),
-                pxr::SdfValueTypeNames->Float);
-            posMaxResAttr->SetDefaultValue(pxr::VtValue(residuals.positionIterationResidual.maxResidual));
-        }
-
-        pxr::SdfAttributeSpecHandle posRmsResAttr = currentLayer->GetAttributeAtPath(posRmsRes);
-        if (posRmsResAttr)
-        {
-            posRmsResAttr->SetDefaultValue(pxr::VtValue(residuals.positionIterationResidual.rmsResidual));
-        }
-        else
-        {
-            pxr::SdfPrimSpecHandle primSpec = pxr::SdfCreatePrimInLayer(currentLayer, primPath);
-            posRmsResAttr = pxr::SdfAttributeSpec::New(
-                primSpec, pxr::PhysxSchemaTokens->physxResidualReportingRmsResidualPositionIteration.GetString(),
-                pxr::SdfValueTypeNames->Float);
-            posRmsResAttr->SetDefaultValue(pxr::VtValue(residuals.positionIterationResidual.rmsResidual));
-        }
-
-        pxr::SdfAttributeSpecHandle velMaxResAttr = currentLayer->GetAttributeAtPath(velMaxRes);
-        if (velMaxResAttr)
-        {
-            velMaxResAttr->SetDefaultValue(pxr::VtValue(residuals.velocityIterationResidual.maxResidual));
-        }
-        else
-        {
-            pxr::SdfPrimSpecHandle primSpec = pxr::SdfCreatePrimInLayer(currentLayer, primPath);
-            velMaxResAttr = pxr::SdfAttributeSpec::New(
-                primSpec, pxr::PhysxSchemaTokens->physxResidualReportingMaxResidualVelocityIteration.GetString(),
-                pxr::SdfValueTypeNames->Float);
-            velMaxResAttr->SetDefaultValue(pxr::VtValue(residuals.velocityIterationResidual.maxResidual));
-        }
-
-        pxr::SdfAttributeSpecHandle velRmsResAttr = currentLayer->GetAttributeAtPath(velRmsRes);
-        if (velRmsResAttr)
-        {
-            velRmsResAttr->SetDefaultValue(pxr::VtValue(residuals.velocityIterationResidual.rmsResidual));
-        }
-        else
-        {
-            pxr::SdfPrimSpecHandle primSpec = pxr::SdfCreatePrimInLayer(currentLayer, primPath);
-            velRmsResAttr = pxr::SdfAttributeSpec::New(
-                primSpec, pxr::PhysxSchemaTokens->physxResidualReportingRmsResidualVelocityIteration.GetString(),
-                pxr::SdfValueTypeNames->Float);
-            velRmsResAttr->SetDefaultValue(pxr::VtValue(residuals.velocityIterationResidual.rmsResidual));
-        }
-    }
-
-    if (notifyResiduals && residualFn)
-    {
-        residualFn(asInt(primPath), residuals.positionIterationResidual.maxResidual,
-                   residuals.positionIterationResidual.rmsResidual, residuals.velocityIterationResidual.maxResidual,
-                   residuals.velocityIterationResidual.rmsResidual, cbUserData);
-    }
-}
 
 const uint32_t kInvalidUint32_t = 0xFFFFFFFF;
 using CctMap = std::unordered_map<pxr::SdfPath, InternalCct*, pxr::SdfPath::Hash>;
@@ -215,7 +131,7 @@ class InternalArticulation : public Allocateable
 {
 public:
     InternalArticulation(PhysXScene* ps)
-        : mEnableSelfCollision(true), mAggregate(nullptr), mPhysxScene(ps), mReportResiduals(false)
+        : mEnableSelfCollision(true), mAggregate(nullptr), mPhysxScene(ps)
     {
         mStaticRootBody = pxr::SdfPath();
     }
@@ -226,7 +142,6 @@ public:
     pxr::SdfPath mStaticRootBody;
     ::physx::PxAggregate* mAggregate;
     PhysXScene* mPhysxScene;
-    bool mReportResiduals;
 };
 
 class InternalJoint : public Allocateable
@@ -416,8 +331,7 @@ public:
     void updateSimulationOutputs(bool updateToUSD,
                                  bool updateVelocitiesToUsd,
                                  bool outputVelocitiesLocalSpace,
-                                 bool updateParticlesToUsd,
-                                 bool updateResidualsToUsd);
+                                 bool updateParticlesToUsd);
     void updateRigidBodyTransforms(bool updateToUSD, bool updateVelocitiesToUsd, bool outputVelocitiesLocalSpace);
     void updateCctTransforms(bool updateToUSD);
     void updateVehicleTransforms(bool updateToUSD);
@@ -486,13 +400,13 @@ public:
     CUstream getDeformableCopyStream();
     void syncDeformableCopyStream(::physx::PxCudaContextManager* cudaContextManager);
 
-    void updateResiduals(bool updateToUsd);
-
     // mimic joints
     void addMimicJoint(InternalMimicJoint&);
     void removeMimicJoint(InternalMimicJoint&);
     void releasePhysXMimicJoints(const ::physx::PxArticulationJointReducedCoordinate&);
     bool hasMimicJoint(const ::physx::PxArticulationJointReducedCoordinate&) const;
+
+    void debugDraw(omni::physx::OmniRenderBuffer& renderBuffer, uint64_t debugDrawFlags);
 
 private:
     void setVehicleAtPosition(const uint32_t index, InternalVehicle&);
@@ -534,8 +448,6 @@ public:
 
     ::physx::PxVec3 mGravityDirection;
     float mGravityMagnitude;
-
-    bool mReportResiduals;
 
     // For deformable skinning
     omni::physx::deformables::VolumeDeformablePostSolveCallback* mVolumeDeformablePostSolveCallback;

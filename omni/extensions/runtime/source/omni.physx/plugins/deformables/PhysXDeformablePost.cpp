@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -15,6 +15,39 @@ using namespace ::physx;
 using namespace physx::Ext;
 using namespace omni::physx;
 using namespace omni::physx::deformables;
+
+namespace
+{
+    size_t findSkinningData(const std::vector<VolumeDeformableSkinningData>& skinningData, const PxDeformableVolume* deformableVolume)
+    {
+        size_t index = skinningData.size();
+        for (size_t i = 0; i < skinningData.size(); ++i)
+        {
+            if (skinningData[i].mDeformableVolume == deformableVolume)
+            {
+                index = i;
+                break;
+            }
+        }
+
+        return index;
+    }
+
+    size_t findSkinningData(const std::vector<SurfaceDeformableSkinningData>& skinningData, const PxDeformableSurface* deformableSurface)
+    {
+        size_t index = skinningData.size();
+        for (size_t i = 0; i < skinningData.size(); ++i)
+        {
+            if (skinningData[i].mDeformableSurface == deformableSurface)
+            {
+                index = i;
+                break;
+            }
+        }
+
+        return index;
+    }
+}
 
 void VolumeDeformableSkinningData::packageSkinningData(PxTetmeshSkinningGpuData& packagedData)
 {
@@ -71,12 +104,15 @@ VolumeDeformablePostSolveCallback::~VolumeDeformablePostSolveCallback()
     releaseMemory();
 }
 
-void VolumeDeformablePostSolveCallback::copySkinnedVerticesDtoHAsync(size_t deformableIndex, PxVec3* mAllSkinnedVerticesH)
+void VolumeDeformablePostSolveCallback::copySkinnedVerticesDtoHAsync(PxDeformableVolume* deformableVolume, PxVec3* allSkinnedVerticesH)
 {
-    if (!mAllSkinnedVerticesH || deformableIndex >= mSkinningData.size() || !mSkinningData[deformableIndex].mAllSkinnedVerticesD)
+    size_t index = findSkinningData(mSkinningData, deformableVolume);
+
+    // TODO: Potential optimization to use the copy stream instead of mSkinningStream
+    if (!allSkinnedVerticesH || index >= mSkinningData.size() || !mSkinningData[index].mAllSkinnedVerticesD)
         return;
 
-    PxCudaHelpersExt::copyDToHAsync(*mCudaContextManager, mAllSkinnedVerticesH, mSkinningData[deformableIndex].mAllSkinnedVerticesD, mSkinningData[deformableIndex].mNumSkinnedVertices, mSkinningStream);
+    PxCudaHelpersExt::copyDToHAsync(*mCudaContextManager, allSkinnedVerticesH, mSkinningData[index].mAllSkinnedVerticesD, mSkinningData[index].mNumSkinnedVertices, mSkinningStream);
 }
 
 void VolumeDeformablePostSolveCallback::onPostSolve(CUevent startEvent)
@@ -102,9 +138,11 @@ void VolumeDeformablePostSolveCallback::onPostSolve(CUevent startEvent)
             mSkinningData[i].packageSkinningData(mPackagedSkinningDataH[i]);
         }
 
-        PxCudaHelpersExt::copyHToD(*mCudaContextManager, mPackagedSkinningDataD, mPackagedSkinningDataH, skinningDataSize);
+        PxCudaHelpersExt::copyHToDAsync(*mCudaContextManager, mPackagedSkinningDataD, mPackagedSkinningDataH, skinningDataSize, mSkinningStream);
 
         mSkinning->evaluateVerticesEmbeddedIntoVolume(mPackagedSkinningDataD, skinningDataSize, mSkinningStream);
+
+        mCudaContextManager->getCudaContext()->eventRecord(startEvent, mSkinningStream);
     }
 }
 
@@ -121,12 +159,13 @@ void VolumeDeformablePostSolveCallback::addVolumeDeformableSkinningData(const Vo
     }
 }
 
-void VolumeDeformablePostSolveCallback::removeVolumeDeformableSkinningData(const size_t index)
+void VolumeDeformablePostSolveCallback::removeVolumeDeformableSkinningData(const PxDeformableVolume* deformableVolume)
 {
-    auto it = mSkinningData.begin() + index;
-    if (it != mSkinningData.end())
+    size_t index = findSkinningData(mSkinningData, deformableVolume);
+
+    if (index < mSkinningData.size())
     {
-        *it = mSkinningData.back();
+        mSkinningData[index] = mSkinningData.back();
         mSkinningData.pop_back();
     }
 
@@ -180,12 +219,15 @@ SurfaceDeformablePostSolveCallback::~SurfaceDeformablePostSolveCallback()
     releaseMemory();
 }
 
-void SurfaceDeformablePostSolveCallback::copySkinnedVerticesDtoHAsync(size_t deformableIndex, PxVec3* mAllSkinnedVerticesH)
+void SurfaceDeformablePostSolveCallback::copySkinnedVerticesDtoHAsync(PxDeformableSurface* deformableSurface, PxVec3* allSkinnedVerticesH)
 {
-    if (!mAllSkinnedVerticesH || deformableIndex >= mSkinningData.size() || !mSkinningData[deformableIndex].mSkinnedVerticesD)
+    size_t index = findSkinningData(mSkinningData, deformableSurface);
+
+    // TODO: Potential optimization to use the copy stream instead of mSkinningStream
+    if (!allSkinnedVerticesH || index >= mSkinningData.size() || !mSkinningData[index].mSkinnedVerticesD)
         return;
 
-    PxCudaHelpersExt::copyDToHAsync(*mCudaContextManager, mAllSkinnedVerticesH, mSkinningData[deformableIndex].mSkinnedVerticesD, mSkinningData[deformableIndex].mNumSkinnedVertices, mSkinningStream);
+    PxCudaHelpersExt::copyDToHAsync(*mCudaContextManager, allSkinnedVerticesH, mSkinningData[index].mSkinnedVerticesD, mSkinningData[index].mNumSkinnedVertices, mSkinningStream);
 }
 
 void SurfaceDeformablePostSolveCallback::onPostSolve(CUevent startEvent)
@@ -211,10 +253,12 @@ void SurfaceDeformablePostSolveCallback::onPostSolve(CUevent startEvent)
             mSkinningData[i].packageSkinningData(mPackagedSkinningDataH[i]);
         }
 
-        PxCudaHelpersExt::copyHToD(*mCudaContextManager, mPackagedSkinningDataD, mPackagedSkinningDataH, skinningDataSize);
+        PxCudaHelpersExt::copyHToDAsync(*mCudaContextManager, mPackagedSkinningDataD, mPackagedSkinningDataH, skinningDataSize, mSkinningStream);
 
         mSkinning->computeNormalVectors(mPackagedSkinningDataD, skinningDataSize, mSkinningStream);
         mSkinning->evaluateVerticesEmbeddedIntoSurface(mPackagedSkinningDataD, skinningDataSize, mSkinningStream);
+
+        mCudaContextManager->getCudaContext()->eventRecord(startEvent, mSkinningStream);
     }
 }
 
@@ -231,12 +275,13 @@ void SurfaceDeformablePostSolveCallback::addSurfaceDeformableSkinningData(const 
     }
 }
 
-void SurfaceDeformablePostSolveCallback::removeSurfaceDeformableSkinningData(const size_t index)
+void SurfaceDeformablePostSolveCallback::removeSurfaceDeformableSkinningData(const PxDeformableSurface* deformableSurface)
 {
-    auto it = mSkinningData.begin() + index;
-    if (it != mSkinningData.end())
+    size_t index = findSkinningData(mSkinningData, deformableSurface);
+
+    if (index < mSkinningData.size())
     {
-        *it = mSkinningData.back();
+        mSkinningData[index] = mSkinningData.back();
         mSkinningData.pop_back();
     }
 

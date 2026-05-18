@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -323,7 +323,7 @@ public:
 
 	\see PxRigidDynamic.setLinearVelocity() getAngularVelocity()
 	*/
-	virtual		PxVec3			getLinearVelocity()		const = 0;
+	virtual		PxVec3			getLinearVelocity()		const PX_OVERRIDE = 0;
 
 	/**
 	\brief Sets the actor's center-of-mass linear velocity.
@@ -363,7 +363,7 @@ public:
 
 	\see PxRigidDynamic.setAngularVelocity() getLinearVelocity()
 	*/
-	virtual		PxVec3			getAngularVelocity()	const = 0;
+	virtual		PxVec3			getAngularVelocity()	const PX_OVERRIDE = 0;
 
 	/**
 	\brief Sets the angular velocity of the actor.
@@ -466,7 +466,7 @@ protected:
 	PX_INLINE						PxRigidDynamic(PxType concreteType, PxBaseFlags baseFlags) : PxRigidBody(concreteType, baseFlags) { }
 	PX_INLINE						PxRigidDynamic(PxBaseFlags baseFlags) : PxRigidBody(baseFlags) {}
 	virtual							~PxRigidDynamic() {}
-	virtual		bool				isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxRigidDynamic", PxRigidBody); }
+	virtual		bool				isKindOf(const char* name) const PX_OVERRIDE { PX_IS_KIND_OF(name, "PxRigidDynamic", PxRigidBody); }
 };
 
 #if !PX_DOXYGEN

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -43,7 +43,7 @@ void postErrorMessage(const SdfPath& path)
 {
     std::string errorStr = "Attachment " + path.GetString() + " was not created! The prims attached must belong to the same scene.";
 
-    PhysXUsdPhysicsInterface::reportLoadError(ErrorCode::eError, errorStr.c_str());
+    PhysXUsdPhysicsInterface::reportLoadError(usdparser::ErrorCode::eError, errorStr.c_str());
 }
 
 template <typename T = int>

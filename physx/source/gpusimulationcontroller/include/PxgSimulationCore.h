@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,33 +31,55 @@
 
 #include "PxgCudaBuffer.h"
 #include "PxgSimulationCoreDesc.h"
+#include "PxgArticulationLink.h"
+#include "PxgArticulationBlockData.h"
+#include "PxgConstraintIdMap.h"
 #include "PxgSoftBody.h"
-#include "PxgSimulationController.h"
 #include "PxgFEMCloth.h"
-#include "foundation/PxUserAllocated.h"
-#include "PxgFEMCore.h"
+#include "PxgAllocatorDesc.h"
 #include "PxgShapeSimManager.h"
+#include "CmPinnableArray.h"
+
+#include "CmPinnableObject.h"
+#include "CmPinnableBitMap.h"
+
+#include "PxDirectGPUAPI.h"
+#include "foundation/PxUserAllocated.h"
 
 namespace physx
 {
+	namespace Bp
+	{
+		class BoundsArray;
+	}
+
 	class PxCudaContextManager;
 	class PxCudaContext;
-	class KernelWrangler;
-	class PxgCudaSolverCore;
-	class PxgGpuNarrowphaseCore;
-	class PxgCudaBroadPhaseSap;
-	class PxgParticleSystemCore;
-	class PxgSoftBodyCore;
-	class PxgFEMClothCore;
+	struct PxgBodySimVelocities;
+	struct PxgFEMRigidAttachmentConstraint;
+	struct PxgFEMFEMAttachmentConstraint;
 	struct PxsCachedTransform;
+	struct SoftBodyAttachmentAndFilterData;
 	class PxgCudaKernelWranglerManager;
+	class PxgArticulationBuffer;
 	class PxgSoftBodyBuffer;
 	class PxgFEMClothBuffer;
-	class PxgParticleSystemBuffer;
 	class PxgBodySimManager;
 	class PxgGpuContext;
-	class PxSceneDesc;
 	
+	// PdHC: GPU-compatible rigid body acceleration struct
+	// Aligned to 16 bytes for efficient GPU memory access
+	// Note: Two PxVec3s (2 x 12 bytes = 24 bytes), padded to 32 bytes for GPU alignment
+	PX_ALIGN_PREFIX(16)
+	struct PxgRigidBodyAcceleration
+	{
+		PxVec3	linear;
+		PxReal	_padLinear;		// Padding to align angular to 16 bytes
+		PxVec3	angular;
+		PxReal	_padAngular;	// Padding to maintain 32-byte struct size
+	}
+	PX_ALIGN_SUFFIX(16);
+
 	class PxgSimulationCore : public PxUserAllocated
 	{
 		PX_NOCOPY(PxgSimulationCore)
@@ -65,74 +87,74 @@ namespace physx
 	public:
 		PxgSimulationCore(PxgCudaKernelWranglerManager* gpuKernelWrangler,
 			PxCudaContextManager* cudaContextManager,
-			PxgHeapMemoryAllocatorManager* heapMemoryManager,
+			PxgAllocatorDesc& allocDesc,
 			PxgGpuContext* gpuContext,
 			const bool useGpuBroadphase);
 
 		~PxgSimulationCore();
 
-		void gpuMemDmaUpBodySim(PxPinnedArray<PxgBodySimVelocityUpdate>& updatedBodySim,
-			PxPinnedArray<PxgBodySim>& newBodySim,
-			PxPinnedArray<PxgArticulationLink>& newLinkPool,
-			PxFloatArrayPinned& newLinkWakeCounterPool,
-			PxPinnedArray<Cm::UnAlignedSpatialVector>& newLinkExtAccelPool,
-			PxPinnedArray<PxgArticulationLinkProp>& newLinkPropPool,
-			PxInt32ArrayPinned& newLinkParentsPool,
-			PxPinnedArray<Dy::ArticulationBitField>& newLinkChildPool,
-			PxPinnedArray<PxTransform>& newLinkBody2WorldsPool,
-			PxPinnedArray<PxTransform>& newLinkBody2ActorsPool,
-			PxPinnedArray<Dy::ArticulationJointCore>& newJointCorePool,
-			PxPinnedArray<Dy::ArticulationJointCoreData>& newJointDataPool,
-			PxPinnedArray<PxgArticulationSimUpdate>& newLinkJointIndexPool,
-			PxPinnedArray<PxgArticulation>& newArticulationPool,
-			PxPinnedArray<PxGpuSpatialTendonData>& newSpatialTendonParamsPool,
-			PxPinnedArray<PxgArticulationTendon>& newSpatialTendonPool,
-			PxPinnedArray<PxgArticulationTendonElementFixedData>& newAttachmentFixedPool,
-			PxPinnedArray<PxGpuTendonAttachmentData>& newAttachmentModPool,
-			PxInt32ArrayPinned& newTendonToAttachmentRemapPool,
-			PxPinnedArray<PxGpuFixedTendonData>& newFixedTendonParamsPool,
-			PxPinnedArray<PxgArticulationTendon>& newFixedTendonPool,
-			PxPinnedArray<PxgArticulationTendonElementFixedData>& newTendonJointFixedPool,
-			PxPinnedArray<PxGpuTendonJointCoefficientData>& newTendonJointCoefficientPool,
-			PxInt32ArrayPinned& newTendonToTendonJointRemapPool,
-			PxPinnedArray<Dy::ArticulationMimicJointCore>& newMimicJointPool,
-			PxInt32ArrayPinned& newPathToRootPool,
+		void gpuMemDmaUpBodySim(Cm::PinnableArray<PxgBodySimVelocityUpdate>& updatedBodySim,
+			Cm::PinnableArray<PxgBodySim>& newBodySim,
+			Cm::PinnableArray<PxgArticulationLink>& newLinkPool,
+			Cm::PinnableArray<PxReal>& newLinkWakeCounterPool,
+			Cm::PinnableArray<Cm::UnAlignedSpatialVector>& newLinkExtAccelPool,
+			Cm::PinnableArray<PxgArticulationLinkProp>& newLinkPropPool,
+			Cm::PinnableArray<PxU32>& newLinkParentsPool,
+			Cm::PinnableArray<Dy::ArticulationBitField>& newLinkChildPool,
+			Cm::PinnableArray<PxTransform>& newLinkBody2WorldsPool,
+			Cm::PinnableArray<PxTransform>& newLinkBody2ActorsPool,
+			Cm::PinnableArray<Dy::ArticulationJointCore>& newJointCorePool,
+			Cm::PinnableArray<Dy::ArticulationJointCoreData>& newJointDataPool,
+			Cm::PinnableArray<PxgArticulationSimUpdate>& newLinkJointIndexPool,
+			Cm::PinnableArray<PxgArticulation>& newArticulationPool,
+			Cm::PinnableArray<PxGpuSpatialTendonData>& newSpatialTendonParamsPool,
+			Cm::PinnableArray<PxgArticulationTendon>& newSpatialTendonPool,
+			Cm::PinnableArray<PxgArticulationTendonElementFixedData>& newAttachmentFixedPool,
+			Cm::PinnableArray<PxGpuTendonAttachmentData>& newAttachmentModPool,
+			Cm::PinnableArray<PxU32>& newTendonToAttachmentRemapPool,
+			Cm::PinnableArray<PxGpuFixedTendonData>& newFixedTendonParamsPool,
+			Cm::PinnableArray<PxgArticulationTendon>& newFixedTendonPool,
+			Cm::PinnableArray<PxgArticulationTendonElementFixedData>& newTendonJointFixedPool,
+			Cm::PinnableArray<PxGpuTendonJointCoefficientData>& newTendonJointCoefficientPool,
+			Cm::PinnableArray<PxU32>& newTendonToTendonJointRemapPool,
+			Cm::PinnableArray<Dy::ArticulationMimicJointCore>& newMimicJointPool,
+			Cm::PinnableArray<PxU32>& newPathToRootPool,
 			PxU32 nbTotalBodies, PxU32 nbTotalArticulations, PxU32 maxLinks, 
 			PxU32 maxDofs, PxU32 maxMimicJoints, PxU32 maxSpatialTendons, 
 			PxU32 maxAttachments, PxU32 maxFixedTendons, PxU32 maxTendonJoints,
 			bool enableBodyAccelerations);
 
-		void gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSoftBodyPool,
+		void gpuMemDmaUpSoftBodies(Cm::PinnableArray<PxgSoftBody>& newSoftBodyPool,
 			PxU32* newTetMeshByteSizePool,
 			PxArray<PxgSoftBodyData>& newSoftBodyDataPool,
 			PxArray<PxU32>& newSoftBodyNodeIndexPool,
 			PxArray<PxU32>& newSoftBodyElememtIndexPool,
-			PxPinnedArray<PxgSoftBody>& softBodyPool,
+			Cm::PinnableArray<PxgSoftBody>& softBodyPool,
 			PxArray<PxgSoftBodyData>& softBodyDataPool,
-			PxInt32ArrayPinned& softBodyElementIndexPool,
+			Cm::PinnableArray<PxU32>& softBodyElementIndexPool,
 			PxArray<PxU32>& softBodyNodeIndexPool,
 			PxgBodySimManager& bodySimManager,
 			SoftBodyAttachmentAndFilterData& data);
 
-		void gpuMemDmaUpFEMCloths(PxPinnedArray<PxgFEMCloth>& newFEMClothPool,
+		void gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& newFEMClothPool,
 			PxU32* newTriangleMeshByteSizePool,
 			PxArray<PxgFEMClothData>& newFEMClothDataPool,
 			PxArray<PxU32>& newFEMClothNodeIndexPool,
 			PxArray<PxU32>& newFEMClothElememtIndexPool,
-			PxPinnedArray<PxgFEMCloth>& femClothPool,
+			Cm::PinnableArray<PxgFEMCloth>& femClothPool,
 			PxArray<PxgFEMClothData>& femClothDataPool,
-			PxInt32ArrayPinned& femClothElementIndexPool,
+			Cm::PinnableArray<PxU32>& femClothElementIndexPool,
 			PxArray<PxU32>& femClothNodeIndexPool,
 			PxgBodySimManager& bodySimManager,
-			PxPinnedArray<PxgFEMRigidAttachment>& rigidAttachments,
-			PxPinnedArray<PxgRigidFilterPair>& rigidAttachmentIds,
+			Cm::PinnableArray<PxgFEMRigidAttachment>& rigidAttachments,
+			Cm::PinnableArray<PxgRigidFilterPair>& rigidAttachmentIds,
 			bool dirtyRigidAttachments,
-			PxInt32ArrayPinned& activeRigidAttachments,
+			Cm::PinnableArray<PxU32>& activeRigidAttachments,
 			bool dirtyActiveRigidAttachments,
-			PxPinnedArray<PxgFEMFEMAttachment>& clothAttachments,
-			PxPinnedArray<PxgNonRigidFilterPair>& clothVertTriFilterIds,
+			Cm::PinnableArray<PxgFEMFEMAttachment>& clothAttachments,
+			Cm::PinnableArray<PxgNonRigidFilterPair>& clothVertTriFilterIds,
 			bool dirtyClothAttachments,
-			PxInt32ArrayPinned& activeClothAttachments,
+			Cm::PinnableArray<PxU32>& activeClothAttachments,
 			bool dirtyActiveClothAttachments
 		);
 
@@ -141,14 +163,14 @@ namespace physx
 		void mergeChangedAABBMgHandle();
 
 		void gpuMemDmaUp(const PxU32 nbTotalBodies, const PxU32 nbTotalShapes,
-			PxBitMapPinned& changedHandleMap, const bool enableDirectGPUAPI);
-		void gpuMemDmaBack(PxInt32ArrayPinned& frozenArray,
-			PxInt32ArrayPinned& unfrozenArray,
-			PxInt32ArrayPinned& activateArray,
-			PxInt32ArrayPinned& deactiveArray,
-			PxCachedTransformArrayPinned* cachedTransform,
+			Cm::PinnableBitMap& changedHandleMap, const bool enableDirectGPUAPI);
+		void gpuMemDmaBack(Cm::PinnableArray<PxU32>& frozenArray,
+			Cm::PinnableArray<PxU32>& unfrozenArray,
+			Cm::PinnableArray<PxU32>& activateArray,
+			Cm::PinnableArray<PxU32>& deactiveArray,
+			PxsCachedTransform* cachedTransforms,
 			const PxU32 cachedCapacity,
-			Bp::BoundsArray& boundArray, PxBitMapPinned& changedAABBMgrHandles,
+			Bp::BoundsArray& boundArray, Cm::PinnableBitMap& changedAABBMgrHandles,
 			const PxU32 numShapes, const PxU32 numActiveBodies, bool enableDirectGPUAPI);
 
 		void syncDmaback(PxU32& nbFrozenShapesThisFrame, PxU32& nbUnfrozenShapesThisFrame, bool didSimulate);
@@ -158,13 +180,13 @@ namespace physx
 		void updateArticulations(const PxU32 nbNewArticulations, PxgArticulationSimUpdate* updates,
 			const PxU32 nbUpdatedArticulations, PxReal* dofData);
 
-		void updateJointsAndSyncData(const PxPinnedArray<PxgD6JointData>& rigidJointData,
-			const PxInt32ArrayPinned& dirtyRigidJointIndices,
-			const PxPinnedArray<PxgD6JointData>& artiJointData,
-			const PxInt32ArrayPinned& dirtyArtiJointIndices,
-			const PxPinnedArray<PxgConstraintPrePrep>& rigidJointPrePrep,
-			const PxPinnedArray<PxgConstraintPrePrep>& artiJointPrePrep, 
-			const PxgJointManager::ConstraintIdMap& gpuConstraintIdMapHost,
+		void updateJointsAndSyncData(const Cm::PinnableArray<PxgD6JointData>& rigidJointData,
+			const Cm::PinnableArray<PxU32>& dirtyRigidJointIndices,
+			const Cm::PinnableArray<PxgD6JointData>& artiJointData,
+			const Cm::PinnableArray<PxU32>& dirtyArtiJointIndices,
+			const Cm::PinnableArray<PxgConstraintPrePrep>& rigidJointPrePrep,
+			const Cm::PinnableArray<PxgConstraintPrePrep>& artiJointPrePrep, 
+			const Cm::PinnableArray<PxgConstraintIdMapEntry>& gpuConstraintIdMapHost,
 			bool isGpuConstraintIdMapDirty,
 			PxU32 nbTotalRigidJoints, PxU32 nbTotalArtiJoints);
 
@@ -176,9 +198,13 @@ namespace physx
 		PxgTypedCudaBuffer<PxBounds3>*	getBoundArrayBuffer();
 
 		void gpuDmaUpdateData();
+		void initDirectGPUAPIDescriptor();
 
-		bool getRigidDynamicData(void* data, const PxRigidDynamicGPUIndex* gpuIndices, PxRigidDynamicGPUAPIReadType::Enum dataType, PxU32 nbElements, float oneOverDt, CUevent startEvent, CUevent finishEvent) const;
+		bool getRigidDynamicData(void* data, const PxRigidDynamicGPUIndex* gpuIndices, PxRigidDynamicGPUAPIReadType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent) const;
 		bool setRigidDynamicData(const void* data, const PxRigidDynamicGPUIndex* gpuIndices, PxRigidDynamicGPUAPIWriteType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent);
+
+		void launchComputeRigidBodyAccelerations(const PxU32 nbBodies, const float oneOverDt);
+		void launchCopyRigidBodyVelocitiesToPrevious(const PxU32 nbBodies);
 
 		void setSoftBodyWakeCounter(const PxU32 remapId, const PxReal wakeCounter, const PxU32 numSoftBodies);
 		void setFEMClothWakeCounter(const PxU32 remapId, const PxReal wakeCounter, const PxU32 numClothes);
@@ -189,6 +215,11 @@ namespace physx
 
 		PX_FORCE_INLINE PxgDevicePointer<PxgBodySimVelocities>	getBodySimPrevVelocitiesBufferDevicePtr()	const	{ return mBodySimPreviousVelocitiesCudaBuffer.getTypedDevicePtr();	}
 		PX_FORCE_INLINE PxgDevicePointer<PxgBodySimVelocities>	getBodySimPrevVelocitiesBufferDeviceData()			{ return mBodySimPreviousVelocitiesCudaBuffer.getTypedDevicePtr();	}
+
+		PX_FORCE_INLINE PxgRigidBodyAcceleration* getRigidBodyAccelerations() { return mBodySimAccelerationsPinned.begin(); }
+		PX_FORCE_INLINE const PxgRigidBodyAcceleration* getRigidBodyAccelerations() const { return mBodySimAccelerationsPinned.begin(); }
+		PX_FORCE_INLINE PxU32 getNbRigidBodyAccelerations() const { return mBodySimAccelerationsPinned.size(); }
+		PX_FORCE_INLINE bool hasAccelerationBuffers() const { return mBodySimAccelerationsCudaBuffer.getSize() > 0; }
 
 		PX_FORCE_INLINE PxgTypedCudaBuffer<PxgArticulation>&  getArticulationBuffer() { return mArticulationBuffer; }
 		PX_FORCE_INLINE PxgTypedCudaBuffer<PxgSolverBodySleepData>&  getArticulationSleepDataBuffer() { return mArticulationSleepDataBuffer; }
@@ -321,17 +352,18 @@ namespace physx
 
 		PX_FORCE_INLINE PxgDevicePointer<PxgNonRigidFilterPair> getClothClothVertTriFilters() { return mClothClothVertTriFilterPairs.getTypedDevicePtr(); }
 
-		PX_FORCE_INLINE PxBitMapPinned& getActiveClothStateChangedMap() { return mActiveFEMClothStateChangedMap; }
+		PX_FORCE_INLINE Cm::PinnableBitMap& getActiveClothStateChangedMap() { return mActiveFEMClothStateChangedMap; }
 		PX_FORCE_INLINE PxReal* getActiveClothWakeCountsCPU() { return mFEMClothWakeCounts.begin(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxReal> getActiveClothWakeCountsGPU() { return mFEMClothWakeCountsGPU.getTypedDevicePtr(); }
 
-		PX_FORCE_INLINE PxBitMapPinned& getActiveSBStateChangedMap() { return mActiveSBStateChangedMap; }
+		PX_FORCE_INLINE Cm::PinnableBitMap& getActiveSBStateChangedMap() { return mActiveSBStateChangedMap; }
 		PX_FORCE_INLINE const PxReal* getActiveSBWakeCountsCPU() const { return mSBWakeCounts.begin(); }
 		PX_FORCE_INLINE const PxgDevicePointer<PxReal> getActiveSBWakeCountsGPU() const { return mSBWakeCountsGPU.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxReal* getActiveSBWakeCountsCPU() { return mSBWakeCounts.begin(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxReal> getActiveSBWakeCountsGPU() { return mSBWakeCountsGPU.getTypedDevicePtr(); }
 
 		PX_FORCE_INLINE PxgDevicePointer<PxgSimulationCoreDesc> getSimulationCoreDesc() { return mUpdatedCacheAndBoundsDescBuffer.getTypedDevicePtr(); }
+		PX_FORCE_INLINE PxgDevicePointer<PxgUpdateActorDataDesc> getUpdatedActorDescDesc() { return mUpdatedActorDescBuffer.getTypedDevicePtr(); }
 
 		PxU32			getMaxArticulationLinks() const;
 		PxU32			getMaxArticulationDofs() const;
@@ -345,7 +377,7 @@ namespace physx
 		PxgCudaKernelWranglerManager*			mGpuKernelWranglerManager;
 		PxCudaContextManager*					mCudaContextManager;
 		PxCudaContext*							mCudaContext;
-		PxgHeapMemoryAllocatorManager*			mHeapMemoryManager;
+		PxgAllocatorDesc						mAllocDesc;
 		Bp::BoundsArray*						mBoundArray;
 		bool									mUseGpuBp;
 
@@ -356,12 +388,12 @@ namespace physx
 		void releaseGpuStreamsAndEvents();
 		void syncData();
 		
-		PxgSimulationCoreDesc*			mUpdatedCacheAndBoundsDesc;
-		PxgNewBodiesDesc*				mNewBodiesDesc;
-		PxgUpdateArticulationDesc*		mUpdateArticulationDesc;
-		PxgUpdatedBodiesDesc*			mUpdatedBodiesDesc;
-		PxgUpdatedJointsDesc*			mUpdatedJointsDesc;
-		PxgUpdateActorDataDesc*			mUpdatedActorDataDesc;
+		Cm::PinnableObject<PxgSimulationCoreDesc>		mUpdatedCacheAndBoundsDesc;
+		Cm::PinnableObject<PxgNewBodiesDesc>			mNewBodiesDesc;
+		Cm::PinnableObject<PxgUpdateArticulationDesc>	mUpdateArticulationDesc;
+		Cm::PinnableObject<PxgUpdatedBodiesDesc>		mUpdatedBodiesDesc;
+		Cm::PinnableObject<PxgUpdatedJointsDesc>		mUpdatedJointsDesc;
+		Cm::PinnableObject<PxgUpdateActorDataDesc>		mUpdatedActorDataDesc;
 
 		PxgTypedCudaBuffer<PxU32>	mFrozenBuffer;
 		PxgTypedCudaBuffer<PxU32>	mUnfrozenBuffer;
@@ -375,7 +407,9 @@ namespace physx
 
 		// PT: new naming convention with "CudaBuffer" suffix and specific prefix for easier searching
 		PxgTypedCudaBuffer<PxgBodySim>	mBodySimCudaBuffer;						// PT: contains PxgBodySim structs.
-		PxgTypedCudaBuffer<PxgBodySimVelocities>	mBodySimPreviousVelocitiesCudaBuffer;	// PT: contains PxgBodySimVelocities structs. Only for direct GPU acceleration getters.
+		PxgTypedCudaBuffer<PxgBodySimVelocities>	mBodySimPreviousVelocitiesCudaBuffer;	// PdHC: previous frame velocities for acceleration computation (used by both DirectGPU and non-DirectGPU).
+		PxgTypedCudaBuffer<PxgRigidBodyAcceleration> mBodySimAccelerationsCudaBuffer;
+		Cm::PinnableArray<PxgRigidBodyAcceleration> mBodySimAccelerationsPinned;
 
 		public:
 		PxgShapeSimManager	mPxgShapeSimManager;
@@ -401,28 +435,28 @@ namespace physx
 		PxgTypedCudaBuffer<PxgArticulationInternalTendonConstraintData>	mArticulationFixedTendonConstraintsBatchBuffer;
 		PxgTypedCudaBuffer<PxgArticulationBlockTendonJointData>	mArticulationTendonJointBatchBuffer;
 
-		PxArray<PxgArticulationBuffer*> mArticulationDataBuffer;// persistent data, map with mArticulationBuffer
+		PxArray<PxgArticulationBuffer*>	mArticulationDataBuffer;// persistent data, map with mArticulationBuffer
 		//PxU32			mMaxLinks;
 		//PxU32			mMaxDofs;
 
 		PxgTypedCudaBuffer<PxgSoftBody>	mSoftBodyBuffer; //persistent buffer for soft bodies
-		PxgTypedCudaBuffer<PxU32>	mActiveSoftBodyBuffer;
-		PxgTypedCudaBuffer<PxU32>	mActiveSelfCollisionSoftBodyBuffer;
-		PxgTypedCudaBuffer<PxU32>	mSoftBodyElementIndexBuffer;
+		PxgTypedCudaBuffer<PxU32>		mActiveSoftBodyBuffer;
+		PxgTypedCudaBuffer<PxU32>		mActiveSelfCollisionSoftBodyBuffer;
+		PxgTypedCudaBuffer<PxU32>		mSoftBodyElementIndexBuffer;
 		PxgTypedCudaBuffer<PxgFEMCloth>	mFEMClothBuffer; // persistent buffer for FEM-cloth
-		PxgTypedCudaBuffer<PxU32>	mActiveFEMClothBuffer;
-		PxgTypedCudaBuffer<PxU32>	mFEMClothElementIndexBuffer;
+		PxgTypedCudaBuffer<PxU32>		mActiveFEMClothBuffer;
+		PxgTypedCudaBuffer<PxU32>		mFEMClothElementIndexBuffer;
 		
-		PxArray<PxgSoftBodyBuffer*> mSoftBodyDataBuffer; //persistent data, map with mSoftBodyBuffer
-		PxArray<PxgFEMClothBuffer*> mFEMClothDataBuffer; //persistent data, map with mFEMClothBuffer
+		PxArray<PxgSoftBodyBuffer*>		mSoftBodyDataBuffer; //persistent data, map with mSoftBodyBuffer
+		PxArray<PxgFEMClothBuffer*>		mFEMClothDataBuffer; //persistent data, map with mFEMClothBuffer
 		
-		PxBitMapPinned	mActiveFEMClothStateChangedMap;
-		PxFloatArrayPinned mFEMClothWakeCounts;
-		PxgTypedCudaBuffer<PxReal>	mFEMClothWakeCountsGPU;
+		Cm::PinnableBitMap				mActiveFEMClothStateChangedMap;
+		Cm::PinnableArray<PxReal>		mFEMClothWakeCounts;
+		PxgTypedCudaBuffer<PxReal>		mFEMClothWakeCountsGPU;
 
-		PxBitMapPinned	mActiveSBStateChangedMap;
-		PxFloatArrayPinned mSBWakeCounts;
-		PxgTypedCudaBuffer<PxReal>	mSBWakeCountsGPU;
+		Cm::PinnableBitMap				mActiveSBStateChangedMap;
+		Cm::PinnableArray<PxReal>		mSBWakeCounts;
+		PxgTypedCudaBuffer<PxReal>		mSBWakeCountsGPU;
 
 		PxgTypedCudaBuffer<PxgD6JointData>	mRigidJointBuffer;
 		PxgTypedCudaBuffer<PxgD6JointData>	mArtiJointBuffer;
@@ -509,7 +543,7 @@ namespace physx
 		PxgTypedCudaBuffer<PxgFEMFEMAttachmentConstraint>	mClothClothConstraints;
 		PxgTypedCudaBuffer<PxU32>	mNumClothClothAttachments;
 
-		PxU32*			mPinnedEvent;
+		PxU32*			mEventMapped;
 
 		PxU32			mNbRigidSoftBodyAttachments;
 		PxU32			mNbRigidSoftBodyFilters;
@@ -579,14 +613,14 @@ namespace physx
 	
 		PxVec3			mGravity;
 
-		PxArray<PxgSoftBody> mSoftBodiesToFree;
-		PxArray<PxgFEMCloth> mClothsToFree;
+		PxArray<PxgSoftBody>	mSoftBodiesToFree;
+		PxArray<PxgFEMCloth>	mClothsToFree;
 #if PX_SUPPORT_OMNI_PVD
 		PxU64 getRigidBodyDataTypeElementSize(PxRigidDynamicGPUAPIWriteType::Enum dataType);
 		void ovdRigidBodyCallback(const void* PX_RESTRICT data, const PxRigidDynamicGPUIndex* PX_RESTRICT gpuIndices, PxRigidDynamicGPUAPIWriteType::Enum dataType, PxU32 nbElements);		
 		
-		PxPinnedArray<PxU8>  mOvdDataBuffer;
-		PxPinnedArray<PxU8>  mOvdIndexBuffer;
+		Cm::PinnableArray<PxU8>	mOvdDataBuffer;
+		Cm::PinnableArray<PxU8>	mOvdIndexBuffer;
 #endif
 	};
 }

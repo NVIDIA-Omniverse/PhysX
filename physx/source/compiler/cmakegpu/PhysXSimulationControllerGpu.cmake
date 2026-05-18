@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXSimulationControllerGpu common
@@ -41,11 +41,18 @@ SET(PHYXGPU_SIMCONTROLLER_HEADERS
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgBodySim.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgBodySimManager.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgArticulation.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgArticulationBlockData.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgArticulationBuffer.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgArticulationLink.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgArticulationTendon.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSoftBody.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSoftBodyBuffer.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgDeformableContactInfo.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgDeformableConstraints.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgFEMCloth.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgFEMClothBuffer.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgParticleSystem.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgParticleSystemBuffer.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSimulationCore.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgJointManager.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgShapeSim.h

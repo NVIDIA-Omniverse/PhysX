@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #include "UsdPCH.h"
@@ -134,6 +134,9 @@ void PhysXReplicatorBindings(pybind11::module& m)
         m, "IPhysxReplicator", "acquire_physx_replicator_interface", "release_physx_replicator_interface");
 
     m.def("release_physx_replicator_interface_scripting", [](IPhysxReplicator* iface) { carb::getFramework()->releaseInterfaceWithClient("carb.scripting-python.plugin", iface); });  // OM-60917
+
+    // scene partion
+    m.attr("SCENE_PARTITION_PRIMVAR_TOKEN_NAME") = py::str(kScenePartitionPrimvar);
 
     docString = R"(
         Register replicator for given stage.

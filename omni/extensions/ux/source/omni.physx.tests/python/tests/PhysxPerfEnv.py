@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import typing
 import carb
 import omni.physx.scripts.utils
@@ -592,7 +593,7 @@ class PhysxPerfEnvAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, Articu
         jointDriveAPI.GetTargetVelocityAttr().Set(self._scaleVelocityToDegreesAsNecessary(jointType, driveTargetVel))
 
         # Spherical joints do not behave the same as prismatic/revolute joints for reasons unknown.
-        # This issue is tracked in nvbug 5199927
+        # This issue is tracked in nvbugs (NVBug 5199927)
         permittedError = [0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.1, 0.1, 0.1]
 
         # test that the drive force works as expected when below the max force threshold.

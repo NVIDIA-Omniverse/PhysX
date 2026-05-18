@@ -1,9 +1,10 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb, math, omni.timeline
 from omni.physx.scripts.physicsUtils import *
-from pxr import UsdGeom, Gf, Vt
+from pxr import UsdGeom, Gf, Vt, Sdf
 import omni.physxdemos as demo
 from omni.physx import get_physx_scene_query_interface
 from omni.debugdraw import get_debug_draw_interface
@@ -107,8 +108,11 @@ Follow the instructions on screen.\n\nPress play (space) to run the simulation."
             self.set_colors(stage, origColor, True)
 
         if self.sweepMode == 0:
-            hitInfo = get_physx_scene_query_interface().sweep_sphere_closest(sphereRadius, origin, rayDir, maxDist)
-            if hitInfo["hit"]:
+            if not omni.timeline.get_timeline_interface().is_stopped():
+                hitInfo = get_physx_scene_query_interface().sweep_sphere_closest(sphereRadius, origin, rayDir, maxDist)
+            else:
+                hitInfo = None
+            if hitInfo and hitInfo["hit"]:
                 hitPos = hitInfo["position"]
                 hitNormal = hitInfo["normal"]
                 hitDistance = hitInfo["distance"]
@@ -134,13 +138,18 @@ Follow the instructions on screen.\n\nPress play (space) to run the simulation."
                 #self.set_colors(stage, origColor, True)
 
                 #get_physx_scene_query_interface().raycast_all(origin, rayDir, maxDist, self.report_all_hits)
-                get_physx_scene_query_interface().sweep_sphere_all(sphereRadius, origin, rayDir, maxDist, self.report_all_hits)
+                if not omni.timeline.get_timeline_interface().is_stopped():
+                    get_physx_scene_query_interface().sweep_sphere_all(sphereRadius, origin, rayDir, maxDist, self.report_all_hits)
 
                 hitColor = Vt.Vec3fArray([demo.get_hit_color()])
                 self.set_colors(stage, hitColor, False)
 
         elif self.sweepMode == 2:
-            anyHit = get_physx_scene_query_interface().sweep_sphere_any(sphereRadius, origin, rayDir, maxDist)
+            if not omni.timeline.get_timeline_interface().is_stopped():
+                anyHit = get_physx_scene_query_interface().sweep_sphere_any(sphereRadius, origin, rayDir, maxDist)
+            else:
+                anyHit = False
+
             if anyHit:
                 self._debugDraw.draw_line(origin, COLOR_RED, endPoint, COLOR_RED)
             else:

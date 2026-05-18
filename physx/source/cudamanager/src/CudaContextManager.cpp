@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "foundation/PxAssert.h"
 #include "foundation/PxAtomic.h"
@@ -58,9 +58,6 @@
 #include "cudamanager/PxCudaContext.h"
 
 #if PX_WIN32 || PX_WIN64
-
-// Enable/disable NVIDIA secure load library code
-#define SECURE_LOAD_LIBRARY !PX_PUBLIC_RELEASE
 
 #include "foundation/windows/PxWindowsInclude.h"
 
@@ -124,7 +121,7 @@ namespace physx
 static MemTracker mMemTracker;
 #endif
 
-PxCudaContext* createCudaContext(CUdevice device, PxDeviceAllocatorCallback* callback, bool launchSynchronous);
+PxCudaContext* createCudaContext(CUdevice device, PxDeviceAllocatorCallback* deviceCallback, PxPinnedHostAllocatorCallback* pinnedHostCallback, bool launchSynchronous);
 
 class CudaCtxMgr : public PxCudaContextManager, public PxUserAllocated
 {
@@ -598,7 +595,7 @@ CudaCtxMgr::CudaCtxMgr(const PxCudaContextManagerDesc& desc, PxErrorCallback& er
 	}
 
 	// create cuda context wrapper
-	mCudaCtx = createCudaContext(mDevHandle, desc.deviceAllocator, launchSynchronous);
+	mCudaCtx = createCudaContext(mDevHandle, desc.deviceAllocator, desc.pinnedHostAllocator, launchSynchronous);
 	
 	// Verify we can at least allocate a CUDA event from this context
 	CUevent testEvent;
@@ -845,7 +842,7 @@ private:
 	bool mIsInAbortMode;
 
 public:
-	CudaCtx(PxDeviceAllocatorCallback* callback, bool launchSynchronous);
+	CudaCtx(PxDeviceAllocatorCallback* deviceCallback, PxPinnedHostAllocatorCallback* pinnedHostCallback, bool launchSynchronous);
 	~CudaCtx();
 
 	// PxCudaContext
@@ -916,10 +913,11 @@ public:
 	//~PxCudaContext
 };
 
-CudaCtx::CudaCtx(PxDeviceAllocatorCallback* callback, bool launchSynchronous)
+CudaCtx::CudaCtx(PxDeviceAllocatorCallback* deviceCallback, PxPinnedHostAllocatorCallback* pinnedHostCallback, bool launchSynchronous)
 {
 	mLastResult = CUDA_SUCCESS;
-	mAllocatorCallback = callback;
+	mDeviceAllocatorCallback = deviceCallback;
+	mPinnedHostAllocatorCallback = pinnedHostCallback;
 	mIsInAbortMode = false;
 #if FORCE_LAUNCH_SYNCHRONOUS
 	PX_UNUSED(launchSynchronous);
@@ -1178,6 +1176,10 @@ PxCUresult CudaCtx::launchKernel(
 			extra
 		);
 
+		PX_ASSERT(mLastResult != CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES);
+		if (mLastResult == CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES)
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, file, line, "Kernel launch failed - register resource overflow. Error: %i\n", mLastResult);
+
 		if (mLaunchSynchronous)
 		{
 			mLastResult = cuStreamSynchronize(hStream);
@@ -1219,6 +1221,10 @@ PxCUresult CudaCtx::launchKernel(
 			kernelParams,
 			extra
 		);
+
+		PX_ASSERT(mLastResult != CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES);
+		if (mLastResult == CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES)
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, file, line, "Kernel launch failed - register resource overflow. Error: %i\n", mLastResult);
 
 		if (mLaunchSynchronous)
 		{
@@ -1487,10 +1493,10 @@ void CudaCtx::setAbortMode(bool abort)
 	}
 }
 
-PxCudaContext* createCudaContext(CUdevice device, PxDeviceAllocatorCallback* callback, bool launchSynchronous)
+PxCudaContext* createCudaContext(CUdevice device, PxDeviceAllocatorCallback* deviceCallback, PxPinnedHostAllocatorCallback* pinnedHostCallback, bool launchSynchronous)
 {
 	PX_UNUSED(device);
-	return PX_NEW(CudaCtx)(callback, launchSynchronous);
+	return PX_NEW(CudaCtx)(deviceCallback, pinnedHostCallback, launchSynchronous);
 }
 
 #if PX_SUPPORT_GPU_PHYSX

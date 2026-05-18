@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -21,15 +21,20 @@ public:
 
     virtual bool getSolidRestOffset(const TensorDesc* dstTensor) const = 0;
     virtual bool setSolidRestOffset(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    // Masked variant: srcTensor is full [N,...], maskTensor is uint8[N] where nonzero = selected.
+    virtual bool setSolidRestOffsetMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     virtual bool getFluidRestOffset(const TensorDesc* dstTensor) const = 0;
     virtual bool setFluidRestOffset(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    virtual bool setFluidRestOffsetMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     virtual bool getParticleContactOffset(const TensorDesc* dstTensor) const = 0;
     virtual bool setParticleContactOffset(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    virtual bool setParticleContactOffsetMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     virtual bool getWind(const TensorDesc* dstTensor) const = 0;
     virtual bool setWind(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
+    virtual bool setWindMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     virtual bool check() const = 0;
 

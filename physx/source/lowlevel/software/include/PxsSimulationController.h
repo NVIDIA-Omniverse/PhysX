@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,8 +33,8 @@
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxTransform.h"
-#include "foundation/PxPinnedBitMap.h"
-#include "foundation/PxPinnedArray.h"
+#include "CmPinnableArray.h"
+#include "CmPinnableBitMap.h"
 #include "foundation/PxUserAllocated.h"
 #include "PxScene.h"
 #include "PxParticleSystem.h"
@@ -82,16 +82,10 @@ namespace physx
 	class PxsContext;
 
 	class PxsRigidBody;
-	class PxsKernelWranglerManager;
-	class PxsHeapMemoryAllocatorManager;
-	class PxgParticleSystemCore;
 	struct PxConeLimitedConstraint;
 
 	struct PxsShapeCore;
 
-	class PxPhysXGpu;
-
-	struct PxgSolverConstraintManagerConstants;
 	struct PxsExternalAccelerationProvider;
 	
 	class PxsSimulationControllerCallback : public PxUserAllocated
@@ -260,17 +254,24 @@ namespace physx
 		virtual	void preIntegrateAndUpdateBound(PxBaseTask* /*continuation*/, const PxVec3 /*gravity*/, const PxReal /*dt*/){}
 		virtual void updateParticleSystemsAndSoftBodies(){}
 		virtual void sortContacts(){}
-		virtual void update(PxBitMapPinned& /*changedHandleMap*/){}
+		virtual void update(Cm::PinnableBitMap& /*changedHandleMap*/){}
 		virtual void updateArticulation(Dy::FeatherstoneArticulation* /*articulation*/, const PxNodeIndex& /*nodeIndex*/) {}
 		virtual void updateArticulationJoint(Dy::FeatherstoneArticulation* /*articulation*/, const PxNodeIndex& /*nodeIndex*/) {}
 //		virtual void updateArticulationTendon(Dy::FeatherstoneArticulation* /*articulation*/, const PxNodeIndex& /*nodeIndex*/) {}
 		virtual void updateArticulationExtAccel(Dy::FeatherstoneArticulation* /*articulation*/, const PxNodeIndex& /*nodeIndex*/) {}
 		virtual void updateArticulationAfterIntegration(PxsContext*	/*llContext*/, Bp::AABBManagerBase* /*aabbManager*/,
-			PxArray<Sc::BodySim*>& /*ccdBodies*/, PxBaseTask* /*continuation*/, IG::IslandSim& /*islandSim*/, float /*dt*/)	{}
+			PxArray<Sc::BodySim*>& /*ccdBodies*/, PxBaseTask* /*continuation*/, IG::IslandSim& /*islandSim*/, float /*dt*/, bool /*isSleepingDisabled*/)	{}
 
 		virtual void mergeChangedAABBMgHandle() {}
-		virtual void gpuDmabackData(PxsTransformCache& /*cache*/, Bp::BoundsArray& /*boundArray*/, PxBitMapPinned& /*changedAABBMgrHandles*/, bool /*enableDirectGPUAPI*/){}
+		virtual void gpuDmabackData(PxsTransformCache& /*cache*/, Bp::BoundsArray& /*boundArray*/, Cm::PinnableBitMap& /*changedAABBMgrHandles*/, bool /*enableDirectGPUAPI*/){}
 		virtual void	updateScBodyAndShapeSim(PxsTransformCache& cache, Bp::BoundsArray& boundArray, PxBaseTask* continuation) = 0;
+		
+	// PdHC: Returns pointer to GPU-computed rigid body accelerations, or NULL if not available.
+	// Accelerations are computed on GPU using velocity-delta in gpuMemDmaBack for both
+	// DirectGPU and non-DirectGPU (CPU Frontend + GPU Backend) modes.
+	// GPU implementations (PxgSimulationController) provide actual data; CPU implementations return NULL.
+	virtual const void* getRigidBodyAccelerations() const { return NULL; }
+
 		virtual PxU32* getActiveBodies()		{ return NULL;	}
 		virtual PxU32* getDeactiveBodies()		{ return NULL;	}
 		virtual void** getRigidBodies()			{ return NULL;	}
@@ -298,7 +299,7 @@ namespace physx
 
 		// NEW DIRECT-GPU API
 
-		virtual bool	getRigidDynamicData(void* /*data*/, const PxRigidDynamicGPUIndex* /*gpuIndices*/, PxRigidDynamicGPUAPIReadType::Enum /*dataType*/, PxU32 /*nbElements*/, float /*oneOverDt*/, CUevent /*startEvent*/, CUevent /*finishEvent*/) const { return false; }
+		virtual bool	getRigidDynamicData(void* /*data*/, const PxRigidDynamicGPUIndex* /*gpuIndices*/, PxRigidDynamicGPUAPIReadType::Enum /*dataType*/, PxU32 /*nbElements*/, CUevent /*startEvent*/, CUevent /*finishEvent*/) const { return false; }
 		virtual bool 	setRigidDynamicData(const void* /*data*/, const PxRigidDynamicGPUIndex* /*gpuIndices*/, PxRigidDynamicGPUAPIWriteType::Enum /*dataType*/, PxU32 /*nbElements*/, CUevent /*startEvent*/, CUevent /*finishEvent*/) { return false; }
 
 		virtual bool 	getArticulationData(void* /*data*/, const PxArticulationGPUIndex* /*gpuIndices*/, PxArticulationGPUAPIReadType::Enum /*dataType*/, PxU32 /*nbElements*/, CUevent /*startEvent*/, CUevent /*finishEvent*/) const { return false; }
@@ -326,7 +327,7 @@ namespace physx
 
 		virtual void	syncParticleData()	{}
 
-		virtual void    updateBoundsAndShapes(Bp::AABBManagerBase& /*aabbManager*/, bool /*useDirectApi*/){}
+		virtual void	updateBoundsAndShapes(Bp::AABBManagerBase& /*aabbManager*/, bool /*useDirectApi*/){}
 
 #if PX_SUPPORT_GPU_PHYSX
 		virtual PxU32					getNbDeactivatedDeformableSurfaces()	const	{ return 0;		}

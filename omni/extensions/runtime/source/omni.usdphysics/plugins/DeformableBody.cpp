@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -108,11 +108,18 @@ namespace omni
                 return prim.IsA<UsdGeomPointBased>();
             }
 
-            bool isEnabledCollision(const UsdPrim prim)
+            bool isEnabledCollisionGeom(const UsdPrim prim)
             {
                 UsdPhysicsCollisionAPI collisionAPI(prim);
                 if (collisionAPI)
                 {
+                    if (!prim.IsA<UsdGeomPointBased>())
+                    {
+                        CARB_LOG_ERROR(
+                            "CollisionAPI in deformable body subtree is not GeomPointBased. (%s)", prim.GetPrimPath().GetText());
+                        return false;
+                    }
+
                     bool isEnabled;
                     collisionAPI.GetCollisionEnabledAttr().Get(&isEnabled);
                     return isEnabled;
@@ -244,7 +251,7 @@ namespace omni
                     }
                     ObjectType::Enum type;
                     bool isSim = isSimMesh(type, prim);
-                    bool isColl = isEnabledCollision(prim);
+                    bool isColl = isEnabledCollisionGeom(prim);
                     if (isSim)
                     {
                         if (simMeshPrim.IsValid())
@@ -267,6 +274,10 @@ namespace omni
 
                         pxr::TfToken bindPoseToken = getPoseNameFromPurpose(simMeshPrim, OmniPhysicsDeformableAttrTokens->bindPose);
                         desc->simMeshBindPoseToken = bindPoseToken;
+
+                        pxr::TfToken orientation;
+                        UsdGeomGprim(simMeshPrim).GetOrientationAttr().Get(&orientation);
+                        desc->simMeshLeftHandedOrientation = (orientation == UsdGeomTokens->leftHanded);
                     }
                     if (isColl)
                     {
@@ -277,6 +288,10 @@ namespace omni
                         desc->collisionGeomPaths.push_back(prim.GetPath());
                         pxr::TfToken bindPoseToken = getPoseNameFromPurpose(prim, OmniPhysicsDeformableAttrTokens->bindPose);
                         desc->collisionGeomBindPoseTokens.push_back(bindPoseToken);
+
+                        pxr::TfToken orientation;
+                        UsdGeomGprim(prim).GetOrientationAttr().Get(&orientation);
+                        desc->collisionGeomLeftHandedOrientations.push_back(orientation == UsdGeomTokens->leftHanded);
 
                         pxr::TfToken selfCollisionFilterPoseToken = getPoseNameFromPurpose(prim, OmniPhysicsDeformableAttrTokens->selfCollisionFilterPose);
                         desc->collisionGeomSelfCollisionFilterPoseTokens.push_back(selfCollisionFilterPoseToken);

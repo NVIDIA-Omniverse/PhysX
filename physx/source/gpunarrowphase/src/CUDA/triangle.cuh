@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,12 +32,17 @@
 #define TRI_FEATURE_IDX		0x7FffFFff
 #define EDGE_FEATURE_IDX	0x80000000
 
-static const physx::PxU32 BOUNDARY = 0xffffffff;
-static const physx::PxU32 NONCONVEX_FLAG = 0x80000000;
+namespace physx
+{
 
-__device__ static bool isEdgeNonconvex(physx::PxU32 adjEdgeIndex)
+static const PxU32 BOUNDARY = 0xffffffff;
+static const PxU32 NONCONVEX_FLAG = 0x80000000;
+
+__device__ static bool isEdgeNonconvex(PxU32 adjEdgeIndex)
 {
 	return (adjEdgeIndex != BOUNDARY) && (adjEdgeIndex & NONCONVEX_FLAG);
 }
+
+} // namespace physx
 
 #endif

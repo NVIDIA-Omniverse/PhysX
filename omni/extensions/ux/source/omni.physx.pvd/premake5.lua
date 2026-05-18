@@ -73,7 +73,6 @@ project ("omni.physx.pvd.python")
     includedirs {
         runtime_include_dir,
         targetDeps_dir.."/carbonite/include",
-        targetDeps_dir.."/rtx_plugins/include",
         kit_sdk_includes,
         
     }

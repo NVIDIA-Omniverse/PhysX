@@ -22,23 +22,20 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef DY_THRESHOLD_TABLE_H
 #define DY_THRESHOLD_TABLE_H
 
-#include "foundation/PxPinnedArray.h"
-#include "foundation/PxUserAllocated.h"
+#include "foundation/PxAllocator.h"
 #include "foundation/PxHash.h"
 #include "foundation/PxMemory.h"
 #include "PxNodeIndex.h"
 
 namespace physx
 {
-
-class PxsRigidBody;
 
 namespace Sc
 {
@@ -72,18 +69,6 @@ struct ThresholdStreamElement
 	{
 		return ((nodeIndexA == otherPair.nodeIndexA && nodeIndexB == otherPair.nodeIndexB));
 	}
-
-};
-
-typedef PxPinnedArray<ThresholdStreamElement> ThresholdArray;
-
-class ThresholdStream : public ThresholdArray, public PxUserAllocated
-{
-public:
-	ThresholdStream(PxVirtualAllocatorCallback& allocatorCallback) : ThresholdArray(PxVirtualAllocator(&allocatorCallback))
-	{
-	}
-
 };
 
 class ThresholdTable
@@ -107,11 +92,11 @@ public:
 		PX_FREE(mBuffer);
 	}
 
-	void build(const ThresholdStream& stream);
+	void build(const ThresholdStreamElement* stream, const PxU32 streamSize);
 
-	bool check(const ThresholdStream& stream, const PxU32 nodexIndexA, const PxU32 nodexIndexB, PxReal dt);
+	bool check(const ThresholdStreamElement* stream, const PxU32 streamSize, const PxU32 nodexIndexA, const PxU32 nodexIndexB, PxReal dt);
 
-	bool check(const ThresholdStream& stream, const ThresholdStreamElement& elem, PxU32& thresholdIndex);
+	bool check(const ThresholdStreamElement* stream, const PxU32 streamSize, const ThresholdStreamElement& elem, PxU32& thresholdIndex);
 
 //private:
 
@@ -144,7 +129,8 @@ namespace
 	}
 }
 
-inline bool ThresholdTable::check(const ThresholdStream& stream, const ThresholdStreamElement& elem, PxU32& thresholdIndex)
+inline bool ThresholdTable::check(const ThresholdStreamElement* stream, const PxU32 streamSize, const ThresholdStreamElement& elem,
+								  PxU32& thresholdIndex)
 {
 	PxU32* PX_RESTRICT hashes = mHash;
 	PxU32* PX_RESTRICT nextIndices = mNexts;
@@ -159,7 +145,8 @@ inline bool ThresholdTable::check(const ThresholdStream& stream, const Threshold
 	{
 		Pair& pair = pairs[pairIndex];
 		const PxU32 thresholdStreamIndex = pair.thresholdStreamIndex;
-		PX_ASSERT(thresholdStreamIndex < stream.size());
+		PX_ASSERT(thresholdStreamIndex < streamSize);
+		PX_UNUSED(streamSize);
 		const ThresholdStreamElement& otherElement = stream[thresholdStreamIndex];
 		if(otherElement.nodeIndexA==elem.nodeIndexA  && otherElement.nodeIndexB==elem.nodeIndexB && otherElement.shapeInteraction == elem.shapeInteraction)
 		{
@@ -174,10 +161,10 @@ inline bool ThresholdTable::check(const ThresholdStream& stream, const Threshold
 }
 
 
-inline void ThresholdTable::build(const ThresholdStream& stream)
+inline void ThresholdTable::build(const ThresholdStreamElement* stream, const PxU32 streamSize)
 {
 	//Handle the case of an empty stream.
-	if(0==stream.size())
+	if(0==streamSize)
 	{
 		mPairsSize=0;
 		mPairsCapacity=0;
@@ -188,7 +175,7 @@ inline void ThresholdTable::build(const ThresholdStream& stream)
 	}
 
 	//Realloc/resize if necessary.
-	const PxU32 pairsCapacity = stream.size();
+	const PxU32 pairsCapacity = streamSize;
 	const PxU32 hashCapacity = pairsCapacity*2+1;
 	if((pairsCapacity > mPairsCapacity) || (pairsCapacity < (mPairsCapacity >> 2)))
 	{
@@ -211,7 +198,6 @@ inline void ThresholdTable::build(const ThresholdStream& stream)
 		mPairsCapacity = pairsCapacity;
 		mHashCapactiy = hashCapacity;
 	}
-
 
 	//Set each entry of the hash table to 0xffffffff
 	PxMemSet(mHash, 0xff, sizeof(PxU32)*hashCapacity);
@@ -249,7 +235,7 @@ inline void ThresholdTable::build(const ThresholdStream& stream)
 		{
 			Pair& pair = pairs[pairIndex];
 			const PxU32 thresholdStreamIndex = pair.thresholdStreamIndex;
-			PX_ASSERT(thresholdStreamIndex < stream.size());
+			PX_ASSERT(thresholdStreamIndex < streamSize);
 			const ThresholdStreamElement& otherElement = stream[thresholdStreamIndex];
 			if(nodeIndexA == otherElement.nodeIndexA && nodeIndexB==otherElement.nodeIndexB)
 			{	

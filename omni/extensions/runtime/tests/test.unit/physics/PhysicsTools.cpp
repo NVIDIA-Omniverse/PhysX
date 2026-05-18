@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -64,6 +64,7 @@ PhysicsTest::PhysicsTest()
     carb::extras::Path basePath = mApp->getFileSystem()->getExecutableDirectoryPath();
     foldersNew.push_back((basePath /= "/../extsPhysics").getString());
     foldersNew.push_back((basePath /= "/../exts").getString());
+    foldersNew.push_back((basePath /= "/../extsPhysicsRepo").getString());
 
     for (const std::string& folder : foldersNew)
     {
@@ -74,6 +75,7 @@ PhysicsTest::PhysicsTest()
     // Not being able to have ujitso enabled is not an error and can occur on non-GPU machines.
     mManager->setExtensionEnabled("usdrt.scenegraph", true);
     mManager->setExtensionEnabled("omni.ujitso.default", true);
+    mManager->setExtensionEnabled("omni.hydra.usdrt_delegate", true);
     mManager->processAndApplyAllChanges();
 
     // Load physx *after* ujitso, to ensure it is available when physx.cooking is loaded
@@ -260,6 +262,8 @@ ScopedFabricActivation::ScopedFabricActivation()
 
     omni::physx::IPhysxFabric* iPhysxFabric = framework->tryAcquireInterface<omni::physx::IPhysxFabric>();
     REQUIRE(iPhysxFabric);
+    
+    settings->setBool(omni::physx::kSettingFabricEnabled, true);
 
     // store for external use
     mIPhysxFabric = iPhysxFabric;
@@ -274,27 +278,10 @@ ScopedFabricActivation::~ScopedFabricActivation()
 
     extManager->setExtensionEnabled("omni.physx.fabric", false);
     extManager->processAndApplyAllChanges();
-}
 
-ScopedPopulationActivation::ScopedPopulationActivation()
-{
-    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
-
-    omni::ext::ExtensionManager* extManager = physicsTests.getExtensionManager();
-    REQUIRE(extManager);
-
-    extManager->setExtensionEnabled("omni.hydra.usdrt_delegate", true);
-    extManager->processAndApplyAllChanges();
-}
-
-ScopedPopulationActivation::~ScopedPopulationActivation()
-{
-    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
-    omni::ext::ExtensionManager* extManager = physicsTests.getExtensionManager();
-    REQUIRE(extManager);
-
-    extManager->setExtensionEnabled("omni.hydra.usdrt_delegate", false);
-    extManager->processAndApplyAllChanges();
+    carb::Framework* framework = physicsTests.getApp()->getFramework();
+    auto settings = framework->acquireInterface<carb::settings::ISettings>();
+    settings->setBool(omni::physx::kSettingFabricEnabled, false);
 }
 
 ScopedOmniPhysicsActivation::ScopedOmniPhysicsActivation()

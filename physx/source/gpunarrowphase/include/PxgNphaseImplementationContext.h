@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,35 +30,35 @@
 #define PXG_NPHASE_IMPLEMENTATION_CONTEXT_H
 
 #include "CmTask.h"
-#include "foundation/PxMutex.h"
 
 #include "PxvNphaseImplementationContext.h"
-#include "PxgNarrowphaseCore.h"
-#include "PxgSimulationCore.h"
-#include "foundation/PxHashMap.h"
 
 #include "PxsContactManagerState.h"
 #include "PxgContactManager.h"
-#include "PxgPersistentContactManifold.h"
-#include "PxgHeapMemAllocator.h"
+#include "PxgBucket.h"
 
 namespace physx
 {
-	struct PxcNpWorkUnit;
-	class PxgNphaseImplementationContext;
-	class PxgGpuContext;
-	class PxgParticleSystemCore;
-	class PxsKernelWranglerManager;
-
 	namespace Bp
 	{
-		class BpNonVirtualMemAllocator;
+		class BoundsArray;
 	}
 
 	namespace Dy
 	{
 		class Context;
 	}
+
+	struct PxcNpWorkUnit;
+	class PxsKernelWranglerManager;
+
+	class PxgNphaseImplementationContext;
+	class PxgGpuContext;
+	struct PxgContactManagers;
+	struct PxgGpuContactManagers;
+	class PxgGpuNarrowphaseCore;
+	class PxgSimulationCore;
+	struct PxgAllocatorDesc;
 	
 	class PxgCMGpuDiscreteUpdateBase: public Cm::Task
 	{
@@ -178,8 +178,8 @@ namespace physx
 		
 		PxgNphaseImplementationContext(PxsContext& context, PxsKernelWranglerManager* gpuKernelWrangler, PxvNphaseImplementationFallback* fallbackForUnsupportedCMs,
 			const PxGpuDynamicsMemoryConfig& gpuDynamicsConfig, void* contactStreamBase, void* patchStreamBase, void* forceAndIndiceStreamBase,
-			PxBoundsArrayPinned& bounds, IG::IslandSim* islandSim, 
-			physx::Dy::Context* dynamicsContext, PxgHeapMemoryAllocatorManager* heapMemoryManager, 
+			Bp::BoundsArray& bounds, IG::IslandSim* islandSim, 
+			physx::Dy::Context* dynamicsContext, PxgAllocatorDesc& allocDesc, 
 			bool useGPUNP);
 
 		virtual ~PxgNphaseImplementationContext();
@@ -281,7 +281,7 @@ namespace physx
 		PxgCMGpuDiscreteSecondPassUpdateTask	mUpdateCMsSecondPassTask;
 		PxgCMGpuDiscreteUpdateFallbackTask		mUpdateFallbackPairs;
 
-		PxPinnedArray<PxsContactManagerOutput>	mContactManagerOutputs;
+		Cm::PinnableArray<PxsContactManagerOutput>	mContactManagerOutputs;
 		
 		PxBitMap								mGpuContactManagerBitMap[GPU_BUCKET_ID::eCount];
 		PxU32									mRecordedGpuPairCount[GPU_BUCKET_ID::eCount];
@@ -293,7 +293,7 @@ namespace physx
 
 		PxU32									mTotalNbPairs;
 
-		PxBoundsArrayPinned&					mBounds;
+		Bp::BoundsArray&						mBounds;
 
 		bool									mHasContactDistanceChanged;
 		bool									mUseGPUBP;

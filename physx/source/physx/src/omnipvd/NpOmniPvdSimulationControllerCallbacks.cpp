@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -55,10 +55,7 @@ const PxRigidDynamic* NpOmniPvdSimulationControllerCallbacks::castPxsRigidBodyTo
 
 const NpArticulationReducedCoordinate* NpOmniPvdSimulationControllerCallbacks::castFeatherstoneToNpArticulation(const Dy::FeatherstoneArticulation* const featherstone)
 {
-	// Dy::FeatherstoneArticulation's constructor takes a void pointer argument, which is stored as userData in the
-	// object. This userData argument is the Sc::ArticulationSim pointer for the purpose of the PxgArticulationCore
-	// See Sc::ArticulationSim constructor
-	Sc::ArticulationSim* articulationSim = (Sc::ArticulationSim*)(featherstone->getUserData());
+	const Sc::ArticulationSim* articulationSim = static_cast<const Sc::ArticulationSim*>(featherstone);
 	Sc::ArticulationCore& articulationCore = articulationSim->getCore();
 	NpArticulationReducedCoordinate* npArticulation = static_cast<NpArticulationReducedCoordinate*>(Sc::gOffsetTable.convertScArticulation2Px(&articulationCore));
 	PX_ASSERT(npArticulation->getConcreteType() == PxConcreteType::eARTICULATION_REDUCED_COORDINATE);

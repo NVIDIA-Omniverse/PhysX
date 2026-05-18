@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,19 +31,23 @@
 
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxBounds3.h"
-#include "PxgContactManager.h"
+#include "geometry/PxGeometry.h"
+#include "PxNodeIndex.h"
+
 #include "AlignedTransform.h"
-#include "PxsTransformCache.h"
-#include "PxgConvexConvexShape.h"
+#include "PxsCachedTransform.h"
 #include "convexNpCommon.h"
 
 #include "PxgCommonDefines.h"
-#include "geometry/PxGeometry.h"
-#include "utils.cuh"
+#include "PxgContactManager.h"
+#include "PxgConvexConvexShape.h"
 #include "PxgSolverCoreDesc.h"
 #include "PxgArticulationCoreDesc.h"
 
-using namespace physx;
+#include "utils.cuh"
+
+namespace physx
+{
 
 struct PxgVelocityPackPGS
 {
@@ -392,5 +396,7 @@ void ConvexMeshPair_WriteWarp(ConvexMeshPair* outp, const ConvexMeshPair& inp)
 	}
 
 }
+
+} // namespace physx
 
 #endif

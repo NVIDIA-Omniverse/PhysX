@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -256,7 +256,7 @@ struct PxPairFlag
 		*/
 		eCONTACT_EVENT_POSE					= (1<<14),
 
-		eNEXT_FREE							= (1<<15),        //!< For internal use only.
+		eNEXT_FREE							= (1<<15),		//!< For internal use only.
 
 		/**
 		\brief Provided default flag to do simple contact processing for this collision pair.

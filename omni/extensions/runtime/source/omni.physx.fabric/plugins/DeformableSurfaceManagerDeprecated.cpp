@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -6,8 +6,6 @@
 
 #include "DeformableSurfaceManagerDeprecated.h"
 #include "FabricManager.h"
-
-#if !CARB_AARCH64
 
 #include <omni/fabric/FabricUSD.h>
 #include <carb/settings/ISettings.h>
@@ -40,9 +38,7 @@ DeformableSurfaceSetDeprecated::DeformableSurfaceSetDeprecated()
     using omni::fabric::AttributeRole;
     using omni::fabric::BaseDataType;
 
-    omni::fabric::IToken* iToken = carb::getCachedInterface<omni::fabric::IToken>();
-
-    mPointsToken = iToken->getHandle("points");
+    mPointsToken = omni::fabric::Token::createImmortal("points");
     mTypeFloat3Array = omni::fabric::Type(BaseDataType::eFloat, 3, 1, AttributeRole::ePosition);
 
     carb::settings::ISettings* iSettings = carb::getCachedInterface<carb::settings::ISettings>();
@@ -96,8 +92,8 @@ void DeformableSurfaceSetDeprecated::prepareBuffers(omni::fabric::StageReaderWri
         mMaxPoints = 0;
         for (DeformableSurfaceDataDeprecated* const it: mDeformableSurfaces)
         {
-            SdfPath path = it->prim.GetPath();
-            omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+            const SdfPath path = it->prim.GetPath();
+            const omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(srw.getFabricId(), path);
 
             srw.createPrim(pathHandle);
             srw.createAttribute(pathHandle, mPointsToken, mTypeFloat3Array);
@@ -133,18 +129,34 @@ void DeformableSurfaceSetDeprecated::updateDeformableSurfaces(omni::fabric::Stag
 
         DeformableSurfaceDataDeprecated* hostData = mDeformableSurfaces[i];
         SdfPath path = hostData->prim.GetPath();
-        omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+        const omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(srw.getFabricId(), path);
 
         if (mGPUInterop)
         {
             float3** cudaPtr = srw.getAttributeWrGpu<float3*>(pathHandle, mPointsToken);
-            data.dstPoints = *cudaPtr;
+            if (cudaPtr && *cudaPtr)
+            {
+                data.dstPoints = *cudaPtr;
+            }
+            else
+            {
+                CARB_LOG_ERROR("Failed to get valid GPU points attribute!");
+                return;
+            }
         }
         else
         {
             float3** cpuPtr = srw.getAttributeWr<float3*>(pathHandle, mPointsToken);
             data.dstPoints = hostData->stagingPointsDev;
-            hostData->fabricPointsCPU = *cpuPtr;
+            if (cpuPtr && *cpuPtr)
+            {
+                hostData->fabricPointsCPU = *cpuPtr;
+            }
+            else
+            {
+                CARB_LOG_ERROR("Failed to get valid CPU points attribute!");
+                return;
+            }
         }
 
         GfMatrix4f parentToWorld = GfMatrix4f(UsdGeomXform(hostData->prim).ComputeParentToWorldTransform(UsdTimeCode::Default()));
@@ -184,9 +196,8 @@ DeformableSurfaceManagerDeprecated::DeformableSurfaceManagerDeprecated()
     mTypeFloat3 = omni::fabric::Type(BaseDataType::eFloat, 3, 0, AttributeRole::eNone);
     mTypeFloat3Array = omni::fabric::Type(BaseDataType::eFloat, 3, 1, AttributeRole::ePosition);
 
-    omni::fabric::IToken* iToken = carb::getCachedInterface<omni::fabric::IToken>();
-    mDeformableSurfaceSchemaToken = iToken->getHandle("PhysxDeformableSurfaceAPI");
-    mPointsToken = iToken->getHandle("points");
+    mDeformableSurfaceSchemaToken = omni::fabric::Token::createImmortal("PhysxDeformableSurfaceAPI");
+    mPointsToken = omni::fabric::Token::createImmortal("points");
           
     mPhysxSimulationInterface = carb::getCachedInterface<omni::physx::IPhysxSimulation>();
 }
@@ -198,8 +209,8 @@ DeformableSurfaceManagerDeprecated::~DeformableSurfaceManagerDeprecated()
 void DeformableSurfaceManagerDeprecated::registerDeformableSurface(UsdGeomXformCache& xfCache, uint64_t stageId, omni::fabric::IStageReaderWriter* iStageReaderWriter,
     omni::fabric::StageReaderWriterId stageInProgress, const UsdPrim& prim)
 {
-    SdfPath path = prim.GetPath();
-    omni::fabric::PathC pathHandle = omni::fabric::asInt(path);
+    const SdfPath path = prim.GetPath();
+    omni::fabric::Path pathHandle = omni::fabric::convertToPathType<omni::fabric::Path>(iStageReaderWriter->getFabricId(stageInProgress), path);
 
     UsdGeomPointBased pointBased(prim);
     VtArray<GfVec3f> points;
@@ -217,21 +228,12 @@ void DeformableSurfaceManagerDeprecated::registerDeformableSurface(UsdGeomXformC
     dd.prim = prim;
     dd.numVerts = points.size();
 
-    PositionCache::const_iterator fit = mInitialPositions.find(pathHandle.path);
+    PositionCache::const_iterator fit = mInitialPositions.find(pathHandle);
     if (fit == mInitialPositions.end())
     {
         bool resetsXformStack;
         UsdGeomXform(prim).GetLocalTransformation(&dd.initialPrimToParent, &resetsXformStack, UsdTimeCode::Default());
-
-        VtArray<carb::Float3> initPos;
-        initPos.resize(points.size());
-        for (uint32_t i = 0; i < points.size(); ++i)
-        {
-            GfVec3f tmp = points[i];
-            initPos[i] = carb::Float3{ tmp[0], tmp[1], tmp[2] };
-        }
-
-        mInitialPositions[pathHandle.path] = initPos;
+        mInitialPositions[pathHandle] = points;
     }
 
     mIsDirty = true;
@@ -240,7 +242,7 @@ void DeformableSurfaceManagerDeprecated::registerDeformableSurface(UsdGeomXformC
 bool DeformableSurfaceManagerDeprecated::prepareBuffers(omni::fabric::StageReaderWriter& srw)
 {
     IPhysx* iPhysX = carb::getCachedInterface<IPhysx>();
-    std::vector<omni::fabric::PathC> emptyPaths;
+    std::vector<omni::fabric::Path> emptyPaths;
 
     for (auto const &it : mDeformableSurfaces)
     {
@@ -257,7 +259,7 @@ bool DeformableSurfaceManagerDeprecated::prepareBuffers(omni::fabric::StageReade
     {
         mDeformableSurfacesSet.clear();
 
-        std::vector<omni::fabric::PathC> emptyPaths;
+        std::vector<omni::fabric::Path> emptyPaths;
 
         for (auto &it : mDeformableSurfaces)
         {
@@ -335,8 +337,9 @@ void DeformableSurfaceManagerDeprecated::updateDeformableSurfaces(omni::fabric::
 
 void DeformableSurfaceManagerDeprecated::setInitialTransformation(omni::fabric::StageReaderWriter& stage)
 {
-   const omni::fabric::set<omni::fabric::AttrNameAndType_v2> requiredAll = { omni::fabric::AttrNameAndType_v2(mTypeAppliedSchema, mDeformableSurfaceSchemaToken) };
-   const omni::fabric::set<omni::fabric::AttrNameAndType_v2> requiredAny = { omni::fabric::AttrNameAndType_v2(mTypeFloat3Array, mPointsToken) };
+    omni::fabric::StageReaderWriterUsd stageUsd{ stage.getId() };
+    const omni::fabric::set<omni::fabric::AttrNameAndType> requiredAll = { omni::fabric::AttrNameAndType(mTypeAppliedSchema, mDeformableSurfaceSchemaToken) };
+    const omni::fabric::set<omni::fabric::AttrNameAndType> requiredAny = { omni::fabric::AttrNameAndType(mTypeFloat3Array, mPointsToken) };
 
     omni::fabric::PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
     size_t bucketCount = primBuckets.bucketCount();
@@ -345,16 +348,11 @@ void DeformableSurfaceManagerDeprecated::setInitialTransformation(omni::fabric::
         gsl::span<const omni::fabric::Path> paths = stage.getPathArray(primBuckets, i);
         for (const omni::fabric::Path& path : paths)
         {
-            // AD: attention, we will get a pointer to the pointer here. not really intuitive.
-            carb::Float3* positions = *(stage.getAttributeWr<carb::Float3*>(path, mPointsToken));
-
-            PositionCache::const_iterator fit = mInitialPositions.find(omni::fabric::PathC(path).path);
-            if (fit != mInitialPositions.end() && positions)
+            PositionCache::const_iterator fit = mInitialPositions.find(path);
+            if (fit != mInitialPositions.end())
             {
-                for (size_t j = 0; j < fit->second.size(); ++j)
-                {
-                    positions[j] = fit->second[j];
-                }
+                pxr::VtValue value{ fit->second };
+                stageUsd.setArrayAttribute(path, mPointsToken, value);
             }
         }
     }
@@ -364,8 +362,8 @@ void DeformableSurfaceManagerDeprecated::setInitialTransformation(omni::fabric::
 
 void DeformableSurfaceManagerDeprecated::saveToUsd(omni::fabric::StageReaderWriter& stage, UsdStageRefPtr& usdStage)
 {
-   const omni::fabric::set<omni::fabric::AttrNameAndType_v2> requiredAll = { omni::fabric::AttrNameAndType_v2(mTypeAppliedSchema, mDeformableSurfaceSchemaToken) };
-   const omni::fabric::set<omni::fabric::AttrNameAndType_v2> requiredAny = { omni::fabric::AttrNameAndType_v2(mTypeFloat3Array, mPointsToken) };
+   const omni::fabric::set<omni::fabric::AttrNameAndType> requiredAll = { omni::fabric::AttrNameAndType(mTypeAppliedSchema, mDeformableSurfaceSchemaToken) };
+   const omni::fabric::set<omni::fabric::AttrNameAndType> requiredAny = { omni::fabric::AttrNameAndType(mTypeFloat3Array, mPointsToken) };
 
     omni::fabric::PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
     size_t bucketCount = primBuckets.bucketCount();
@@ -399,5 +397,3 @@ void DeformableSurfaceManagerDeprecated::saveToUsd(omni::fabric::StageReaderWrit
 
 } // namespace physx
 } // namespace omni
-
-#endif

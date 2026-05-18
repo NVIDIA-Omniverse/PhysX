@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -34,10 +34,11 @@
 #include "nputils.cuh"
 #include "schlockShared.h"
 
-namespace squawk
+namespace physx
 {
 
-using namespace physx;
+namespace squawk
+{
 
 struct EpaScratch
 {
@@ -443,7 +444,7 @@ __device__ inline schlock::GjkResult::Enum epa(EpaScratch& epaS,
 		//get the normal from the shortest distance triangle
 		PxVec3 d(__shfl_sync(FULL_MASK, normal.x, triIndex), __shfl_sync(FULL_MASK, normal.y, triIndex), __shfl_sync(FULL_MASK, normal.z, triIndex));
 		//get the support vertex
-		PxU8 indexA = squawk::supportIndex(vA, nbA, d), indexB = squawk::supportIndex(vB, nbB, -d);
+		PxU8 indexA = supportIndex(vA, nbA, d), indexB = supportIndex(vB, nbB, -d);
 		PxVec3 supportVertex = vA[indexA] - vB[indexB];
 
 		//calculate the distance from the origin to the support vertex
@@ -524,7 +525,8 @@ __device__ inline schlock::GjkResult::Enum epa(EpaScratch& epaS,
 
 	return result;
 }
-}
+} // namespace squawk
 
+} // namespace physx
 
 #endif

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -197,7 +197,7 @@ public:
     // (no synchronization is provided between post-frame-end pvd flushing and client reconnection)
     void changePVDSettings(bool enableLegacyPVD, bool enableOmniPVD);
 
-    inline const ::physx::vehicle2::PxVehiclePvdAttributeHandles* getVehiclePvdRegistrationHandles() const
+    inline const ::physx::PxVehiclePvdAttributeHandles* getVehiclePvdRegistrationHandles() const
     {
         return mVehiclePvdRegistrationHandles;
     }
@@ -286,7 +286,7 @@ private:
     ::physx::PxPvd* mVisualDebugger{ nullptr };
     ::physx::PxPvdTransport* mPvdTransport{ nullptr };
     ::physx::PxOmniPvd* mOmniPvd{ nullptr };
-    ::physx::vehicle2::PxVehiclePvdAttributeHandles* mVehiclePvdRegistrationHandles{ nullptr };
+    ::physx::PxVehiclePvdAttributeHandles* mVehiclePvdRegistrationHandles{ nullptr };
     bool mWasOmniPVDSimStarted{ false };
     std::string mOmniPVDOutputDirectory;
     std::string mOmniPVDTimeStampedFileName;

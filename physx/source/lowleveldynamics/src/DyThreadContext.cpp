@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -41,6 +41,7 @@ ThreadContext::ThreadContext(PxcNpMemBlockPool* memBlockPool) :
 	mNumDifferentBodyConstraints			(0),
 	mNumStaticConstraints					(0),
 	mHasOverflowPartitions					(false),
+	mNbArticulations						(0),
 	mConstraintsPerPartition				("ThreadContext::mConstraintsPerPartition"),
 	//mPartitionNormalizationBitmap			("ThreadContext::mPartitionNormalizationBitmap"),
 	mBodyCoreArray							(NULL),
@@ -70,8 +71,7 @@ ThreadContext::ThreadContext(PxcNpMemBlockPool* memBlockPool) :
 	mMaxSolverPositionIterations			(0),
 	mMaxSolverVelocityIterations			(0),
 	mMaxArticulationLinks					(0),
-	mContactDescPtr							(NULL),
-	mArticulations							("ThreadContext::articulations")
+	mContactDescPtr							(NULL)
 {
 #if PX_ENABLE_SIM_STATS
 	mThreadSimStats.clear();
@@ -86,9 +86,7 @@ ThreadContext::ThreadContext(PxcNpMemBlockPool* memBlockPool) :
 
 void ThreadContext::resizeArrays(PxU32 articulationCount)
 {
-	mArticulations.forceSize_Unsafe(0);
-	mArticulations.reserve(PxMax<PxU32>(PxNextPowerOfTwo(articulationCount), 16));
-	mArticulations.forceSize_Unsafe(articulationCount);
+	mNbArticulations = articulationCount;
 
 	mContactDescPtr = contactConstraintDescArray;
 }

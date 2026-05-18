@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,6 +31,9 @@
 
 #include "copy.cuh"
 #include "reduction.cuh"
+
+namespace physx
+{
 
 //Not used but handy when creating a new type of tree traversal
 struct BV32TraversalTemplate
@@ -62,7 +65,7 @@ struct BV32TraversalTemplate
 
 template<typename T, unsigned int WarpsPerBlock>
 __device__ static void bv32TreeTraversal(
-	const physx::Gu::BV32DataPacked* bv32PackedNodes,
+	const Gu::BV32DataPacked* bv32PackedNodes,
 	int* sBv32Nodes,
 	T& callback
 )
@@ -146,13 +149,11 @@ __device__ static void bv32TreeTraversal(
 			bool isValidNode = false;
 			if (idxInWarp < nbChildren)
 			{
-				const PxU32 childOffset = node.getChildOffset(idxInWarp);
-
 				isValidNode = intersect;
 
 				if (isValidNode && !node.isLeaf(idxInWarp))
 				{
-					currentIndex = (childOffset) << 6;
+					currentIndex = node.getChildOffset(idxInWarp) << 6;
 				}
 			}
 
@@ -204,5 +205,7 @@ PX_FORCE_INLINE __device__ void pushOntoStackFullWarp(bool threadPushesElement, 
 		stackPtr[stackIndex] = stackItemToPush;
 	}
 }
+
+} // namespace physx
 
 #endif

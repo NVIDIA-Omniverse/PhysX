@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -28,7 +28,6 @@ PYBIND11_MODULE(_physxFabric, m)
     m.attr("SETTING_FABRIC_UPDATE_JOINT_STATES") = py::str(kSettingFabricUpdateJointStates);
     m.attr("SETTING_FABRIC_UPDATE_POINTS") = py::str(kSettingFabricUpdatePoints);
     m.attr("SETTING_FABRIC_USE_GPU_INTEROP") = py::str(kSettingFabricUseGPUInterop);
-    m.attr("SETTING_FABRIC_UPDATE_RESIDUALS") = py::str(kSettingFabricUpdateResiduals);
 
     auto physxFabric = defineInterfaceClass<IPhysxFabric>(m, "PhysXFabric", "acquire_physx_fabric_interface", "release_physx_fabric_interface");
     m.def("release_physx_fabric_interface_scripting", [](IPhysxFabric* iface)

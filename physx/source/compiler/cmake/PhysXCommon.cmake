@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXCommon common
@@ -52,6 +52,10 @@ SET(PHYSX_COMMON_SOURCE
 	${COMMON_SRC_DIR}/CmFlushPool.h
 	${COMMON_SRC_DIR}/CmIDPool.h
 	${COMMON_SRC_DIR}/CmMatrix34.h
+	${COMMON_SRC_DIR}/CmPinnableAllocator.h
+	${COMMON_SRC_DIR}/CmPinnableArray.h
+	${COMMON_SRC_DIR}/CmPinnableBitMap.h
+	${COMMON_SRC_DIR}/CmPinnableObject.h
 	${COMMON_SRC_DIR}/CmPool.h
 	${COMMON_SRC_DIR}/CmPreallocatingPool.h
 	${COMMON_SRC_DIR}/CmPriorityQueue.h
@@ -67,6 +71,7 @@ SET(PHYSX_COMMON_SOURCE
 	${COMMON_SRC_DIR}/CmTask.h
 	${COMMON_SRC_DIR}/CmTransformUtils.h
 	${COMMON_SRC_DIR}/CmUtils.h
+	${COMMON_SRC_DIR}/CmVirtualAllocatorCallback.h
 	${COMMON_SRC_DIR}/CmVisualization.h
 	${COMMON_SRC_DIR}/CmVisualization.cpp
 )
@@ -105,7 +110,6 @@ SET(PHYSXCOMMON_GEOMETRY_HEADERS
 	${PHYSX_ROOT_DIR}/include/geometry/PxCustomGeometry.h
 	${PHYSX_ROOT_DIR}/include/geometry/PxConvexCoreGeometry.h
 	${PHYSX_ROOT_DIR}/include/geometry/PxGeometry.h
-	${PHYSX_ROOT_DIR}/include/geometry/PxGeometryInternal.h
 	${PHYSX_ROOT_DIR}/include/geometry/PxGeometryHelpers.h
 	${PHYSX_ROOT_DIR}/include/geometry/PxGeometryHit.h
 	${PHYSX_ROOT_DIR}/include/geometry/PxGeometryQuery.h
@@ -179,6 +183,8 @@ SET(PHYSXCOMMON_GU_HEADERS
 	${GU_SOURCE_DIR}/include/GuConvexSupport.h
 	${GU_SOURCE_DIR}/include/GuConvexGeometry.h
 	${GU_SOURCE_DIR}/include/GuRefGjkEpa.h
+	${GU_SOURCE_DIR}/include/GuMeshDepenetration.h
+	${GU_SOURCE_DIR}/include/GuLocalCluster.h
 )
 SOURCE_GROUP(geomutils\\include FILES ${PHYSXCOMMON_GU_HEADERS})
 
@@ -450,6 +456,7 @@ SET(PHYSXCOMMON_GU_MESH_SOURCE
 	${GU_SOURCE_DIR}/src/mesh/GuTetrahedronMesh.h
 	${GU_SOURCE_DIR}/src/mesh/GuTetrahedronMeshUtils.h
 	${GU_SOURCE_DIR}/src/mesh/GuTriangleRefinement.h
+	${GU_SOURCE_DIR}/src/mesh/GuMeshDepenetration.cpp
 )
 SOURCE_GROUP(geomutils\\src\\mesh FILES ${PHYSXCOMMON_GU_MESH_SOURCE})
 

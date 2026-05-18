@@ -22,51 +22,24 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef DY_V_ARTICULATION_H
 #define DY_V_ARTICULATION_H
 
-#include "foundation/PxVec3.h"
-#include "foundation/PxQuat.h"
-#include "foundation/PxTransform.h"
-#include "foundation/PxVecMath.h"
-#include "foundation/PxUtilities.h"
-#include "CmUtils.h"
-#include "CmSpatialVector.h"
-#include "foundation/PxMemory.h"
-#include "DyArticulationCore.h"
 #include "DyArticulationJointCore.h"
-#include "DyArticulationMimicJointCore.h"
 
 namespace physx
 {
 	struct PxsBodyCore;
-	class PxsConstraintBlockManager;
-	class PxsContactManagerOutputIterator;
-	struct PxSolverConstraintDesc;
-	struct PxSolverBodyData;
-	struct PxTGSSolverBodyData;
-	struct PxTGSSolverBodyTxInertia;
-	struct PxSolverConstraintDesc;
 
 	namespace Dy
 	{
-		
-		struct SpatialSubspaceMatrix;
-		
-		struct ConstraintWriteback;
-		class ThreadContext;
-
 		static const size_t DY_ARTICULATION_TENDON_MAX_SIZE = 64;
 	
 		struct Constraint;
-		class Context;
-		class ArticulationSpatialTendon;
-		class ArticulationFixedTendon;
-		class ArticulationTendonJoint;
 
 		typedef PxU64 ArticulationBitField;
 
@@ -82,53 +55,31 @@ namespace physx
 
 		struct ArticulationLink
 		{
-			PxU32						mPathToRootStartIndex;
-			PxU32						mChildrenStartIndex;
-			PxU16						mPathToRootCount;
-			PxU16						mNumChildren;
-			PxsBodyCore*				bodyCore;
-			ArticulationJointCore*		inboundJoint;
-			PxU32						parent;
-			PxReal						cfm;
-		};
+			PxU32					mPathToRootStartIndex;
+			PxU32					mChildrenStartIndex;
+			PxU16					mPathToRootCount;
+			PxU16					mNumChildren;
+			PxsBodyCore*			bodyCore;
+			ArticulationJointCore*	inboundJoint;
+			PxU32					parent;
+			PxReal					cfm;
 
-		class FeatherstoneArticulation;
-
-		struct ArticulationSolverDesc
-		{
-			void	initData(ArticulationCore* core_, const PxArticulationFlags* flags_)
+			PX_FORCE_INLINE	void	initBody(PxsBodyCore* core)
 			{
-				articulation			= NULL;
-				links					= NULL;
-				motionVelocity			= NULL;
-				acceleration			= NULL;
-				poses					= NULL;
-				deltaQ					= NULL;
-	
-				core					= core_;
-				flags					= flags_;
-				linkCount				= 0;
-				numInternalConstraints	= 0;
-				
+				bodyCore				= core;
+				mPathToRootStartIndex	= 0;
+				mPathToRootCount		= 0;
+				mChildrenStartIndex		= 0xffffffff;
+				mNumChildren			= 0;
 			}
 
-			FeatherstoneArticulation*	articulation;
-			ArticulationLink*			links;
-			Cm::SpatialVectorV*			motionVelocity;
-			Cm::SpatialVector*			acceleration;
-			PxTransform*				poses;
-			PxQuat*						deltaQ;
-	
-			ArticulationCore*			core;
-			const PxArticulationFlags*	flags;	// PT: PX-1399
-
-			PxU8						linkCount;
-			PxU8						numInternalConstraints;
-			
+			PX_FORCE_INLINE	void	initJoint(ArticulationJointCore* core, PxU32 parentIndex)
+			{
+				inboundJoint	= core;
+				parent			= parentIndex;
+			}
 		};
-
 	}
-
 }
 
 #endif

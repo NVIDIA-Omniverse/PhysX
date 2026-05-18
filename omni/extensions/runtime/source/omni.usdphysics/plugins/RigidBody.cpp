@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -157,31 +157,31 @@ RigidBodyDesc* parseRigidBody(const UsdStageWeakPtr stage, UsdGeomXformCache& xf
 
     // Ensure if we have a hierarchical parent that has an enabled rigid body,
     // that we also have a reset xform stack, otherwise we should log an error.
-    UsdPrim bodyParent = UsdPrim();
-    if (hasEnabledBodyParent(stage, bodyPrim, bodyMap, bodyParent, ObjectType::eRigidBody))
-    {
-        bool hasResetXformStack = false;
-        UsdPrim parent = bodyPrim;
-        while (parent != stage->GetPseudoRoot() && parent != bodyParent)
-        {
-            if (xfCache.GetResetXformStack(parent))
-            {
-                hasResetXformStack = true;
-                break;
-            }
-            parent = parent.GetParent();
-        }                   
-        if (!hasResetXformStack)
-        {
-            CARB_LOG_ERROR("Rigid Body of (%s) missing xformstack reset when child of another enabled rigid body (%s) in hierarchy. "
-                           "Simulation of multiple RigidBodyAPI's in a hierarchy will cause unpredicted results. "
-                           "Please fix the hierarchy or use XformStack reset.",
-                            bodyPrim.GetPrimPath().GetText(),
-                            bodyParent.GetPrimPath().GetText());
-            delete desc;
-            return nullptr;
-        }
-    }
+    //UsdPrim bodyParent = UsdPrim();
+    //if (hasEnabledBodyParent(stage, bodyPrim, bodyMap, bodyParent, ObjectType::eRigidBody))
+    //{
+    //    bool hasResetXformStack = false;
+    //    UsdPrim parent = bodyPrim;
+    //    while (parent != stage->GetPseudoRoot() && parent != bodyParent)
+    //    {
+    //        if (xfCache.GetResetXformStack(parent))
+    //        {
+    //            hasResetXformStack = true;
+    //            break;
+    //        }
+    //        parent = parent.GetParent();
+    //    }                   
+    //    if (!hasResetXformStack)
+    //    {
+    //        CARB_LOG_ERROR("Rigid Body of (%s) missing xformstack reset when child of another enabled rigid body (%s) in hierarchy. "
+    //                       "Simulation of multiple RigidBodyAPI's in a hierarchy will cause unpredicted results. "
+    //                       "Please fix the hierarchy or use XformStack reset.",
+    //                        bodyPrim.GetPrimPath().GetText(),
+    //                        bodyParent.GetPrimPath().GetText());
+    //        delete desc;
+    //        return nullptr;
+    //    }
+    //}
 
     return desc;
 }

@@ -6,7 +6,7 @@ keywords = ["physics", "physx", "vehicle"]
 category = "simulation"
 authors = ["PhysX"]
 
-version = "107.3.0-oss.0"
+version = "110.0.7"
 
 icon = "data/icon.png"
 preview_image = "data/preview.png"
@@ -23,10 +23,10 @@ usd = true
 [dependencies]
 "omni.ui" = {}
 "omni.kit.window.property" = {}
-"omni.physx" = { version = "107.3.0-oss.0", exact = true }
-"omni.kit.property.physx" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.demos" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.ui" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx" = { version = "110.0.7", exact = true }
+"omni.kit.property.physics" = { version = "110.0.7", exact = true }
+"omni.physx.demos" = { version = "110.0.7", exact = true }
+"omni.physx.ui" = { version = "110.0.7", exact = true }
 
 [[python.module]]
 name = "omni.physxvehicle"

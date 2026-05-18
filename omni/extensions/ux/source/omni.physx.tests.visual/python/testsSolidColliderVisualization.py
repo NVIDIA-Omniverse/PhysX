@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.kit.viewport.utility.camera_state import ViewportCameraState
 from omni.physxtestsvisual.utils import TestCase
 from omni.physxtests.utils.physicsBase import TestCategory, PhysicsBaseAsyncTestCase
@@ -11,7 +12,8 @@ from pxr import Gf, UsdPhysics, UsdGeom, UsdLux, Sdf, Usd
 from omni.physx.bindings._physx import SETTING_VISUALIZATION_COLLISION_MESH
 import omni.ui as ui
 import unittest
-from omni.physx import get_physx_cooking_interface, get_physx_cooking_private_interface
+from omni.physx import get_physx_cooking_interface
+from omni.physx.scripts.ifaces import get_physx_cooking_private_interface
 
 
 class PhysxSolidColliderVisualization(TestCase):
@@ -90,7 +92,7 @@ class PhysxSolidColliderVisualization(TestCase):
             await self.wait(30)
             await apply_test_configuration()
             await self.wait(120) # Wait for rendering
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_solid_collider_no_collider_0",
                 use_distant_light=True,
@@ -109,7 +111,7 @@ class PhysxSolidColliderVisualization(TestCase):
             await self._wait_cooking_finished()
             await self.wait(120) # Wait for rendering
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_solid_collider_convex_decomposition",
                 use_distant_light=True,
@@ -126,7 +128,7 @@ class PhysxSolidColliderVisualization(TestCase):
             await self._wait_cooking_finished()
             await self.wait(120) # Wait for rendering
 
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_solid_collider_convex_hull",
                 use_distant_light=True,
@@ -140,7 +142,7 @@ class PhysxSolidColliderVisualization(TestCase):
             await apply_test_configuration()
             self._selection.set_selected_prim_paths([], True)
             await self.wait(10) # Wait for rendering
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_solid_collider_no_collider_1",
                 use_distant_light=True,
@@ -156,7 +158,7 @@ class PhysxSolidColliderVisualization(TestCase):
             await self.wait(30)
             await self._wait_cooking_finished()
             await self.wait(120) # Wait for rendering
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_solid_collider_torus_decomposition",
                 use_distant_light=True,
@@ -172,7 +174,7 @@ class PhysxSolidColliderVisualization(TestCase):
             await self.wait(30)
             await self._wait_cooking_finished()
             await self.wait(120) # Wait for rendering
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_solid_collider_torus_and_concave",
                 use_distant_light=True,
@@ -186,7 +188,7 @@ class PhysxSolidColliderVisualization(TestCase):
             await apply_test_configuration()
             self._selection.set_selected_prim_paths([], True)
             await self.wait(10) # Wait for rendering
-            all_tests_passed = all_tests_passed and await self.do_visual_test(
+            all_tests_passed &= await self.do_visual_test(
                 img_name="",
                 img_suffix="test_physics_visual_solid_collider_no_collider_2",
                 use_distant_light=True,

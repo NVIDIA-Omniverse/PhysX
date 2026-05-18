@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -15,11 +15,15 @@
 #include <private/omni/physx/IPhysxTests.h>
 #include <omni/physx/IPhysxSimulation.h>
 #include <omni/physx/PhysxTokens.h>
+#include <omni/physx/IPhysxFabric.h>
 
 #include <common/foundation/TypeCast.h>
 
 #include "pxr/usd/sdf/payload.h"
 #include "pxr/usd/usd/payloads.h"
+
+#include <usdrt/scenegraph/usd/usd/stage.h>
+#include <usdrt/population/IUtils.h>
 
 using namespace pxr;
 using namespace omni::physx;
@@ -112,7 +116,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
         // disable rigid body API -> static body should be created
         // A.B. reparse changes dont work from fabric, as we read from USD the new parsed data
         changeTemplate.setAttributeValue(boxPath, changeToken, false);
-        changeTemplate.broadcastChanges();
         UsdPhysicsRigidBodyAPI usdPhysicsRigidBodyAPI = UsdPhysicsRigidBodyAPI::Get(stage, boxPath);
         usdPhysicsRigidBodyAPI.GetRigidBodyEnabledAttr().Set(false);
 
@@ -153,7 +156,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         // enable kinematics 
         changeTemplate.setAttributeValue(boxPath, changeToken, true);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -183,7 +185,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         // enable starts asleep 
         changeTemplate.setAttributeValue(boxPath, changeToken, true);
-        changeTemplate.broadcastChanges();
         UsdPhysicsRigidBodyAPI usdPhysicsRigidBodyAPI = UsdPhysicsRigidBodyAPI::Get(stage, boxPath);
         usdPhysicsRigidBodyAPI.GetStartsAsleepAttr().Set(true);
 
@@ -215,7 +216,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
         // enable velocity
         velocity = GfVec3f(50.0f, 20.0f, 10.0f);
         changeTemplate.setAttributeValue(boxPath, changeToken, velocity);
-        changeTemplate.broadcastChanges();
 
         physxSim->flushChanges();
 
@@ -242,7 +242,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
         // enable velocity
         velocity = GfVec3f(50.0f, 20.0f, 10.0f);
         changeTemplate.setAttributeValue(boxPath, changeToken, velocity);
-        changeTemplate.broadcastChanges();
 
         physxSim->flushChanges();        
 
@@ -270,7 +269,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
         // set force
         force = GfVec3f(0.0f, 20000000.0f, 0.0f);
         changeTemplate.setAttributeValue(boxPath, changeToken, force);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.02f, 0.0f);
         physxSim->fetchResults();
 
@@ -300,7 +298,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
         // set force
         force = GfVec3f(0.0f, 20000000.0f, 0.0f);
         changeTemplate.setAttributeValue(boxPath, changeToken, force);
-        changeTemplate.broadcastChanges();
         physxSim->simulate(0.02f, 0.0f);
         physxSim->fetchResults();
 
@@ -328,7 +325,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         damping = 1.0f;
         changeTemplate.setAttributeValue(boxPath, changeToken, damping);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -355,7 +351,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         damping = 1.0f;
         changeTemplate.setAttributeValue(boxPath, changeToken, damping);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -382,7 +377,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         maxVel = 10.0f;
         changeTemplate.setAttributeValue(boxPath, changeToken, maxVel);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -411,7 +405,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         maxVel = 10.0f;
         changeTemplate.setAttributeValue(boxPath, changeToken, maxVel);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -439,7 +432,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = 10.0f;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -467,7 +459,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = 10.0f;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -494,7 +485,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = 10.0f;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -533,7 +523,7 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = 10.0f;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
+        physxSim->flushChanges();
 
         // same ptr should be returned - no reparsing
         PxBase* newBasePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(boxPath, ePTActor));
@@ -557,7 +547,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = 10.0f;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -587,7 +576,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = 10;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -622,7 +610,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
             int value = 10;
             changeTemplate.setAttributeValue(boxPath, changeToken, value);
-            changeTemplate.broadcastChanges();
 
             physxSim->simulate(0.017f, 0.0f);
             physxSim->fetchResults();
@@ -651,7 +638,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
             int value = 10;
             changeTemplate.setAttributeValue(boxPath, changeToken, value);
-            changeTemplate.broadcastChanges();
 
             physxSim->simulate(0.017f, 0.0f);
             physxSim->fetchResults();
@@ -686,7 +672,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = 10;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -721,7 +706,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
             int value = 10;
             changeTemplate.setAttributeValue(boxPath, changeToken, value);
-            changeTemplate.broadcastChanges();
 
             physxSim->simulate(0.017f, 0.0f);
             physxSim->fetchResults();
@@ -750,7 +734,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
             int value = 10;
             changeTemplate.setAttributeValue(boxPath, changeToken, value);
-            changeTemplate.broadcastChanges();
 
             physxSim->simulate(0.017f, 0.0f);
             physxSim->fetchResults();
@@ -781,7 +764,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = true;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -808,7 +790,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = true;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -835,7 +816,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = true;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -862,7 +842,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = false;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -889,7 +868,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = true;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -916,7 +894,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = 7;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -945,7 +922,6 @@ TEST_CASE_TEMPLATE("RigidBody Tests", T, USDChange, FabricChange)
 
         value = 7;
         changeTemplate.setAttributeValue(boxPath, changeToken, value);
-        changeTemplate.broadcastChanges();
 
         physxSim->simulate(0.017f, 0.0f);
         physxSim->fetchResults();
@@ -1420,12 +1396,10 @@ TEST_CASE("RigidBody Sleeping",
     const SdfPath box0Path = SdfPath("/World/box0");
     UsdPrim box0Prim = stage->GetPrimAtPath(box0Path);
 
-    carb::settings::ISettings* settings =
-        physicsTests.getApp()->getFramework()->acquireInterface<carb::settings::ISettings>();
-
     SUBCASE("Sleeping On")
     {        
-        settings->setBool(kSettingDisableSleeping, false);
+        PhysxSchemaPhysxSceneAPI physxSceneAPI = PhysxSchemaPhysxSceneAPI::Apply(scene.GetPrim());
+        physxSceneAPI.CreateDisableSleepingAttr().Set(false);
 
         // attach sim to stage which parses and creates the pointers that we can check directly
         physxSim->attachStage(stageId);
@@ -1446,7 +1420,8 @@ TEST_CASE("RigidBody Sleeping",
 
     SUBCASE("Sleeping Off")
     {
-        settings->setBool(kSettingDisableSleeping, true);
+        PhysxSchemaPhysxSceneAPI physxSceneAPI = PhysxSchemaPhysxSceneAPI::Apply(scene.GetPrim());
+        physxSceneAPI.CreateDisableSleepingAttr().Set(true);
 
         // attach sim to stage which parses and creates the pointers that we can check directly
         physxSim->attachStage(stageId);
@@ -1464,9 +1439,6 @@ TEST_CASE("RigidBody Sleeping",
 
         CHECK(basePtr->is<PxRigidDynamic>()->isSleeping() == false);
     }
-
-    // set back default
-    settings->setBool(kSettingDisableSleeping, false);
 
     // Common post-test actions
     physxSim->detachStage();
@@ -1947,3 +1919,750 @@ TEST_CASE("OM_115801_Repro",
 //        printf("iteration %i\n", i);
 //    }
 //}
+
+
+class UsdTemplate
+{
+public:
+    UsdTemplate(PhysicsTest& physicsTests)
+    {
+    }
+
+    ~UsdTemplate()
+    {
+    }
+
+    void attachStage(long id)
+    {
+    }
+
+    void detachStage()
+    {
+    }
+
+    void update(float dt, float currentTime)
+    {
+    }
+
+    PxTransform getPhysXTransformation(PxRigidBody* rbo, FabricChange& fabricChange, const pxr::SdfPath& primPath)
+    {
+        return rbo->getGlobalPose();
+    }
+
+    pxr::GfTransform getTransformation(FabricChange& fabricChange, const pxr::SdfPath& primPath)
+    {
+        const GfMatrix4d worldMatrix = UsdGeomXformable(fabricChange.mStage->GetPrimAtPath(primPath))
+                                           .ComputeLocalToWorldTransform(UsdTimeCode::Default());
+        return GfTransform(worldMatrix);
+    }
+
+    pxr::GfTransform getLocalTransformation(FabricChange& fabricChange, const pxr::SdfPath& primPath)
+    {
+        bool resetsXformStack = false;
+        GfMatrix4d localMatrix;
+        UsdGeomXformable(fabricChange.mStage->GetPrimAtPath(primPath))
+                                           .GetLocalTransformation(&localMatrix, &resetsXformStack, UsdTimeCode::Default());
+        return GfTransform(localMatrix);
+    }
+};
+
+class FabricTemplate
+{
+public:
+    FabricTemplate()
+    {
+    }
+    FabricTemplate(PhysicsTest& physicsTests)
+    {
+    }
+
+    ~FabricTemplate()
+    {
+    }
+
+    void update(float dt, float currentTime)
+    {
+        fabricOutputActivation.mIPhysxFabric->update(dt, currentTime);
+    }
+
+    void attachStage(long id)
+    {
+        fabricOutputActivation.mIPhysxFabric->attachStage(id);
+    }
+
+    void detachStage()
+    {
+        fabricOutputActivation.mIPhysxFabric->detachStage();
+    }
+
+    PxTransform getPhysXTransformation(PxRigidBody* rbo, FabricChange& fabricChange, const pxr::SdfPath& primPath)
+    {
+        return rbo->getGlobalPose();
+    }
+
+    pxr::GfTransform getTransformation(FabricChange& fabricChange, const pxr::SdfPath& primPath)
+    {
+        pxr::GfMatrix4d& valData =
+            *(pxr::GfMatrix4d*)(fabricChange.iStageReaderWriter->getAttributeRd(
+                                    fabricChange.mSrwId,
+                                    omni::fabric::convertToPathType<omni::fabric::Path>(
+                                        fabricChange.iStageReaderWriter->getFabricId(fabricChange.mSrwId), primPath),
+                                    fabricChange.mWorldMatrixToken))
+                 .ptr;
+        return pxr::GfTransform(valData);
+    }
+
+    pxr::GfTransform getLocalTransformation(FabricChange& fabricChange, const pxr::SdfPath& primPath)
+    {
+        pxr::GfMatrix4d& valData =
+            *(pxr::GfMatrix4d*)(fabricChange.iStageReaderWriter->getAttributeRd(
+                                    fabricChange.mSrwId,
+                                    omni::fabric::convertToPathType<omni::fabric::Path>(
+                                        fabricChange.iStageReaderWriter->getFabricId(fabricChange.mSrwId), primPath),
+                                    fabricChange.mLocalMatrixToken))
+                 .ptr;
+        return pxr::GfTransform(valData);
+    }
+
+    ScopedFabricActivation fabricOutputActivation;
+};
+
+class FabricSuppresReadbackNoGPUTemplate : public FabricTemplate
+{
+public:
+    FabricSuppresReadbackNoGPUTemplate(PhysicsTest& physicsTests) : mPhysicsTests(physicsTests)
+    {
+        carb::settings::ISettings* settings =
+            mPhysicsTests.getApp()->getFramework()->acquireInterface<carb::settings::ISettings>();
+
+        mSuppressReadback = settings->getAsBool(kSettingSuppressReadback);
+        mGPUInterop = settings->getAsBool("/physics/fabricUseGPUInterop");
+        settings->setBool(kSettingSuppressReadback, true);
+    }
+
+    ~FabricSuppresReadbackNoGPUTemplate()
+    {
+        carb::settings::ISettings* settings =
+            mPhysicsTests.getApp()->getFramework()->acquireInterface<carb::settings::ISettings>();
+
+        settings->setBool(kSettingSuppressReadback, mSuppressReadback);
+    }
+
+    PxTransform getPhysXTransformation(PxRigidBody* rbo, FabricChange& fabricChange, const pxr::SdfPath& primPath)
+    {
+        pxr::GfVec3d& p =
+            *(pxr::GfVec3d*)(fabricChange.iStageReaderWriter->getAttributeRd(
+                                 fabricChange.mSrwId,
+                                 omni::fabric::convertToPathType<omni::fabric::Path>(
+                                     fabricChange.iStageReaderWriter->getFabricId(fabricChange.mSrwId), primPath),
+                                 omni::fabric::Token("_rigidBodyWorldPosition")))
+                 .ptr;
+
+        physx::PxQuat& q =
+            *(physx::PxQuat*)(fabricChange.iStageReaderWriter->getAttributeRd(
+                                  fabricChange.mSrwId,
+                                  omni::fabric::convertToPathType<omni::fabric::Path>(
+                                      fabricChange.iStageReaderWriter->getFabricId(fabricChange.mSrwId), primPath),
+                                  omni::fabric::Token("_rigidBodyWorldOrientation")))
+                 .ptr;
+
+        return PxTransform(toPhysX(p), q);
+    }
+
+    PhysicsTest& mPhysicsTests;
+    bool mSuppressReadback;
+    bool mGPUInterop;
+};
+
+class FabricSuppresReadbackGPUTemplate : public FabricSuppresReadbackNoGPUTemplate
+{
+public:
+    FabricSuppresReadbackGPUTemplate(PhysicsTest& physicsTests) : FabricSuppresReadbackNoGPUTemplate(physicsTests)
+    {
+        carb::settings::ISettings* settings =
+            mPhysicsTests.getApp()->getFramework()->acquireInterface<carb::settings::ISettings>();
+
+        mGPUInterop = settings->getAsBool("/physics/fabricUseGPUInterop");
+        settings->setBool("/physics/fabricUseGPUInterop", true);
+    }
+
+    ~FabricSuppresReadbackGPUTemplate()
+    {
+        carb::settings::ISettings* settings =
+            mPhysicsTests.getApp()->getFramework()->acquireInterface<carb::settings::ISettings>();
+
+        settings->setBool(kSettingSuppressReadback, mSuppressReadback);
+        settings->setBool("/physics/fabricUseGPUInterop", mGPUInterop);
+    }
+};
+
+TEST_CASE_TEMPLATE("RigidBody Kinematic Switch", T, UsdTemplate, FabricTemplate)
+{
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+
+    T kinematicTemplate(physicsTests);
+    FabricChange fabricChangeTemplate;
+
+    const float epsilon = 0.0001f;
+    
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+
+    // setup basic stage
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    pxr::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    REQUIRE(pxr::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit)));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+
+    pxr::UsdUtilsStageCache::Get().Insert(stage);
+    long stageId = pxr::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    const SdfPath physicsScenePath = defaultPrimPath.AppendChild(TfToken("physicsScene"));
+    UsdPhysicsScene scene = UsdPhysicsScene::Define(stage, physicsScenePath);
+
+    // create rigid body
+    const SdfPath boxPath = SdfPath("/World/box");
+    UsdGeomCube cube = UsdGeomCube::Define(stage, boxPath);
+    
+    UsdPrim boxPrim = cube.GetPrim();
+    UsdPhysicsRigidBodyAPI::Apply(boxPrim);
+    UsdPhysicsCollisionAPI::Apply(boxPrim);
+    UsdPhysicsRigidBodyAPI(boxPrim).CreateKinematicEnabledAttr().Set(true);
+
+    fabricChangeTemplate.init(stageId, physicsTests.getApp()->getFramework());
+    // Set change specific parameters on the prim such as the matrix attributes for fabric.
+    fabricChangeTemplate.initPrim(boxPath);
+
+    // Enable population utils to emulate FSD behavior
+    auto populationUtils = omni::core::createType<usdrt::population::IUtils>();
+    const bool usdNoticeHandling = populationUtils->getEnableUsdNoticeHandling(fabricChangeTemplate.mStageId);
+    populationUtils->setEnableUsdNoticeHandling(
+        fabricChangeTemplate.mStageId,
+        fabricChangeTemplate.iStageReaderWriter->getFabricId(fabricChangeTemplate.mSrwId), true);
+
+
+    // attach sim to stage which parses and creates the pointers that we can check directly
+    physxSim->attachStage(stageId);
+    kinematicTemplate.attachStage(stageId);
+    physxSim->pauseChangeTracking(false);
+
+    for (int i = 0; i < 10; ++i)
+    {
+        physxSim->simulate(1.0f / 60, 0.0f);
+        physxSim->fetchResults();
+        kinematicTemplate.update(1.0f / 60, 0.0f);
+    }
+
+    {
+        const pxr::GfTransform transform = fabricChangeTemplate.getTransformation(boxPath);
+        const pxr::GfVec3d position = transform.GetTranslation();
+        CHECK(GfIsClose(position, GfVec3d(0.0), epsilon));
+    }
+
+    fabricChangeTemplate.setTransformation(boxPath, GfVec3f(1.0f), GfQuatf(1.0f));
+
+    for (int i = 0; i < 10; ++i)
+    {
+        physxSim->simulate(1.0f / 60, 0.0f);
+        physxSim->fetchResults();
+        kinematicTemplate.update(1.0f / 60, 0.0f);
+    }
+
+    {
+        const pxr::GfTransform transform = fabricChangeTemplate.getTransformation(boxPath);
+        const pxr::GfVec3d position = transform.GetTranslation();
+        CHECK(GfIsClose(position, GfVec3d(1.0), epsilon));
+    }
+
+    SUBCASE("USD Change")
+    {
+        UsdPhysicsRigidBodyAPI(boxPrim).CreateKinematicEnabledAttr().Set(false);
+
+        auto iHierarchyMaker = omni::core::createType<usdrt::hierarchy::IFabricHierarchy>();
+        if (iHierarchyMaker)
+        {
+            auto iHierarchy = iHierarchyMaker->getFabricHierarchy(
+                fabricChangeTemplate.iStageReaderWriter->getFabricId(fabricChangeTemplate.mSrwId), stageId);
+            iHierarchy->updateWorldXforms();
+        }
+
+        for (int i = 0; i < 10; ++i)
+        {
+            physxSim->simulate(1.0f / 60, 0.0f);
+            physxSim->fetchResults();
+            kinematicTemplate.update(1.0f / 60, 0.0f);
+        }
+
+        {
+            const pxr::GfTransform transform = fabricChangeTemplate.getTransformation(boxPath);
+            const pxr::GfVec3d position = transform.GetTranslation();
+            CHECK(GfIsClose(position[0], 1.0, epsilon));
+            CHECK(GfIsClose(position[1], 1.0, epsilon));
+        }
+    }
+
+    SUBCASE("Fabric Change")
+    {
+        fabricChangeTemplate.setAttributeValue(boxPath, UsdPhysicsTokens->physicsKinematicEnabled, false);
+
+        usdrt::UsdStageRefPtr stageUsdrt = usdrt::UsdStage::Attach(fabricChangeTemplate.mStageId);
+        stageUsdrt->SynchronizeToFabric();
+
+        auto iHierarchyMaker = omni::core::createType<usdrt::hierarchy::IFabricHierarchy>();
+        if (iHierarchyMaker)
+        {
+            auto iHierarchy = iHierarchyMaker->getFabricHierarchy(
+                fabricChangeTemplate.iStageReaderWriter->getFabricId(fabricChangeTemplate.mSrwId), stageId);
+            iHierarchy->updateWorldXforms();
+        }
+
+        for (int i = 0; i < 10; ++i)
+        {
+            physxSim->simulate(1.0f / 60, 0.0f);
+            physxSim->fetchResults();
+            kinematicTemplate.update(1.0f / 60, 0.0f);
+        }
+
+        {
+            const pxr::GfTransform transform = fabricChangeTemplate.getTransformation(boxPath);
+            const pxr::GfVec3d position = transform.GetTranslation();
+            CHECK(GfIsClose(position[0], 1.0, epsilon));
+            CHECK(GfIsClose(position[1], 1.0, epsilon));
+        }
+    }
+
+    populationUtils->setEnableUsdNoticeHandling(
+        fabricChangeTemplate.mStageId,
+        fabricChangeTemplate.iStageReaderWriter->getFabricId(fabricChangeTemplate.mSrwId), usdNoticeHandling);
+
+    physxSim->detachStage();
+    kinematicTemplate.detachStage();
+
+    fabricChangeTemplate.destroy();
+
+    pxr::UsdUtilsStageCache::Get().Erase(stage);
+    stage = nullptr;
+}
+
+TEST_CASE_TEMPLATE("RigidBody Nested Bodies",
+                   T,
+                   UsdTemplate,
+                   FabricTemplate,
+                   FabricSuppresReadbackNoGPUTemplate,
+                   FabricSuppresReadbackGPUTemplate)
+{
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    T runtimeTemplate(physicsTests);
+
+    const bool running_usd = std::is_same<T,UsdTemplate>::value;
+    const bool running_gpu = std::is_same<T,FabricSuppresReadbackGPUTemplate>::value;
+
+    FabricChange fabricChangeTemplate;
+
+    const float epsilon = 0.0001f;
+    
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+
+    // setup basic stage
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    pxr::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    REQUIRE(pxr::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit)));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+
+    pxr::UsdUtilsStageCache::Get().Insert(stage);
+    long stageId = pxr::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    // Enable population utils to emulate FSD behavior
+    fabricChangeTemplate.init(stageId, physicsTests.getApp()->getFramework());
+    auto populationUtils = omni::core::createType<usdrt::population::IUtils>();
+    const bool usdNoticeHandling = populationUtils->getEnableUsdNoticeHandling(fabricChangeTemplate.mStageId);
+    populationUtils->setEnableUsdNoticeHandling(
+        fabricChangeTemplate.mStageId,
+        fabricChangeTemplate.iStageReaderWriter->getFabricId(fabricChangeTemplate.mSrwId), true);
+
+    const SdfPath physicsScenePath = defaultPrimPath.AppendChild(TfToken("physicsScene"));
+    UsdPhysicsScene scene = UsdPhysicsScene::Define(stage, physicsScenePath);
+
+    std::vector<SdfPath> rigidBodyPrimPaths;
+
+    // create various rigid bodies, some standalone, some nested
+    // standalone
+    {
+        {
+            const SdfPath boxPath = SdfPath("/World/box");
+            UsdGeomCube cube = UsdGeomCube::Define(stage, boxPath);
+
+            UsdPrim boxPrim = cube.GetPrim();
+            UsdPhysicsRigidBodyAPI::Apply(boxPrim);
+            UsdPhysicsCollisionAPI::Apply(boxPrim);
+            rigidBodyPrimPaths.push_back(boxPath);
+        }
+        
+        {
+            UsdGeomXform xform = UsdGeomXform::Define(stage, SdfPath("/World/xform0"));
+            xform.AddTranslateOp().Set(GfVec3d(1.0));
+            const SdfPath boxPath = SdfPath("/World/xform0/box");
+            UsdGeomCube cube = UsdGeomCube::Define(stage, boxPath);
+
+            UsdPrim boxPrim = cube.GetPrim();
+            UsdPhysicsRigidBodyAPI::Apply(boxPrim);
+            UsdPhysicsCollisionAPI::Apply(boxPrim);
+            rigidBodyPrimPaths.push_back(boxPath);
+        }
+    }
+    // nested
+    {
+        // nested 0
+        {
+            UsdGeomXform xform = UsdGeomXform::Define(stage, SdfPath("/World/xform1"));
+            xform.AddTranslateOp().Set(GfVec3d(2.0));
+            for (size_t i = 0; i < 10; i++)
+            {
+                std::string stringXformPath = "/World/xform1";
+                for (size_t j = 0; j <= i; j++)
+                {
+                    stringXformPath += "/xform";
+                }
+                UsdGeomXform xform = UsdGeomXform::Define(stage, SdfPath(stringXformPath));
+                xform.AddTranslateOp().Set(GfVec3d(1.0* (i + 1)));
+                UsdGeomCube cube = UsdGeomCube::Define(stage, SdfPath(stringXformPath + "/box"));
+
+                UsdPhysicsRigidBodyAPI::Apply(xform.GetPrim());
+                UsdPhysicsCollisionAPI::Apply(cube.GetPrim());
+                rigidBodyPrimPaths.push_back(xform.GetPrim().GetPrimPath());
+            }
+        }
+        // nested 1
+        {
+            UsdGeomXform xform = UsdGeomXform::Define(stage, SdfPath("/World/xform2"));
+            xform.AddTranslateOp().Set(GfVec3d(-2.0));
+            for (size_t i = 0; i < 10; i++)
+            {
+                std::string stringXformPath = "/World/xform2";
+                for (size_t j = 0; j <= i; j++)
+                {
+                    stringXformPath += "/xform";
+                }
+                UsdGeomXform xform = UsdGeomXform::Define(stage, SdfPath(stringXformPath));
+                xform.AddTranslateOp().Set(GfVec3d(-1.0 * (i + 1)));
+                if ((i % 2) == 0)
+                {
+                    UsdGeomCube cube = UsdGeomCube::Define(stage, SdfPath(stringXformPath + "/box"));
+
+                    UsdPhysicsRigidBodyAPI::Apply(xform.GetPrim());
+                    UsdPhysicsCollisionAPI::Apply(cube.GetPrim());
+                    rigidBodyPrimPaths.push_back(xform.GetPrim().GetPrimPath());
+                }
+            }
+        }
+    }
+
+    // Fill the stage in progress with USD values
+    {
+        populationUtils->populateFromUsd(fabricChangeTemplate.mSrwId, stageId,
+            omni::fabric::convertToPathType<omni::fabric::Path>(
+                fabricChangeTemplate.iStageReaderWriter->getFabricId(fabricChangeTemplate.mSrwId),
+                PXR_NS::SdfPath::AbsoluteRootPath()),
+            nullptr,
+            0.0);
+    }
+    
+    // attach sim to stage which parses and creates the pointers that we can check directly
+    physxSim->attachStage(stageId);
+    runtimeTemplate.attachStage(stageId);
+
+    SUBCASE("Parsing")
+    {
+        for (size_t i = 0; i < rigidBodyPrimPaths.size(); i++)
+        {
+            PxRigidDynamic* actor =
+                getPhysxBaseDerivedFromPathChecked<PxRigidDynamic>(rigidBodyPrimPaths[i], PhysXType::ePTActor);
+            REQUIRE(actor);
+        }
+    }
+
+    SUBCASE("Initial transformation")
+    {
+        for (size_t i = 0; i < rigidBodyPrimPaths.size(); i++)
+        {
+            PxRigidDynamic* actor =
+                getPhysxBaseDerivedFromPathChecked<PxRigidDynamic>(rigidBodyPrimPaths[i], PhysXType::ePTActor);
+            CHECK(actor);
+
+            const PxTransform transform = actor->getGlobalPose();
+            const GfTransform outputTransform =
+                runtimeTemplate.getTransformation(fabricChangeTemplate, rigidBodyPrimPaths[i]);
+            compare(transform.p, GfVec3f(outputTransform.GetTranslation()), epsilon);
+        }
+    }
+
+    SUBCASE("Simulation output transformations")
+    {
+        for (int i = 0; i < 10; ++i)
+        {
+            physxSim->simulate(1.0f / 60, 0.0f);
+            physxSim->fetchResults();
+            runtimeTemplate.update(1.0f / 60, 0.0f);
+        }
+
+        for (size_t i = 0; i < rigidBodyPrimPaths.size(); i++)
+        {
+            PxRigidDynamic* actor =
+                getPhysxBaseDerivedFromPathChecked<PxRigidDynamic>(rigidBodyPrimPaths[i], PhysXType::ePTActor);
+            CHECK(actor);
+
+            const PxTransform transform = runtimeTemplate.getPhysXTransformation(actor, fabricChangeTemplate, rigidBodyPrimPaths[i]);
+            const GfTransform worldTransform = runtimeTemplate.getTransformation(fabricChangeTemplate, rigidBodyPrimPaths[i]);
+            const GfTransform localTransform = runtimeTemplate.getLocalTransformation(fabricChangeTemplate, rigidBodyPrimPaths[i]);
+            compare(transform.p, GfVec3f(worldTransform.GetTranslation()), epsilon);
+        }
+    }
+
+    populationUtils->setEnableUsdNoticeHandling(
+        fabricChangeTemplate.mStageId,
+        fabricChangeTemplate.iStageReaderWriter->getFabricId(fabricChangeTemplate.mSrwId), usdNoticeHandling);
+
+    physxSim->detachStage();
+    runtimeTemplate.detachStage();
+
+    fabricChangeTemplate.destroy();
+
+    pxr::UsdUtilsStageCache::Get().Erase(stage);
+    stage = nullptr;
+}
+
+TEST_CASE("StaticBody Hierarchy Collision API",
+          "[omniphysics]"
+          "[component=OmniPhysics][owner=aborovicka][priority=mandatory]")
+{
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+
+    const float toleranceEpsilon = 1e-4f;
+
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxUnitTests* physxUT = physicsTests.acquirePhysxUnitTestInterface();
+    REQUIRE(physxUT);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+
+
+    // setup basic stage
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    pxr::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    REQUIRE(pxr::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit)));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+
+    pxr::UsdUtilsStageCache::Get().Insert(stage);
+    long stageId = pxr::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    const SdfPath physicsScenePath = defaultPrimPath.AppendChild(TfToken("physicsScene"));
+    UsdPhysicsScene scene = UsdPhysicsScene::Define(stage, physicsScenePath);
+
+    const SdfPath topPrimPath = defaultPrimPath.AppendChild(TfToken("topPrim"));
+    UsdGeomXform xform = UsdGeomXform::Define(stage, topPrimPath);
+    UsdPhysicsCollisionAPI::Apply(xform.GetPrim());
+
+    const SdfPath sourceGPrimPath = topPrimPath.AppendChild(TfToken("sourceGPrim"));
+    UsdGeomCube cube = UsdGeomCube::Define(stage, sourceGPrimPath);
+    const GfVec3d translate(1.0);
+    const GfQuatf orientation = GfQuatf(GfRotation(GfVec3d(1.0, 0.0, 0.0), 90.0).GetQuat());
+    cube.AddTranslateOp().Set(translate);
+    cube.AddOrientOp().Set(orientation);
+
+    physxSim->attachStage(stageId);
+
+    SUBCASE("Initial Transform")
+    {
+        PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(topPrimPath, ePTActor));
+        CHECK(basePtr != nullptr);
+        REQUIRE(basePtr->is<PxRigidStatic>());
+
+        const PxTransform transform = basePtr->is<PxRigidStatic>()->getGlobalPose();
+
+        compare(transform.p, GfVec3f(translate), toleranceEpsilon);
+        compare(transform.q, orientation, toleranceEpsilon);
+    }
+
+    SUBCASE("Change Transform")
+    {
+        xform.AddTranslateOp().Set(GfVec3d(2.0));
+
+        physxSim->simulate(1.0f / 60.0f, 1.0f / 60.0f);
+        physxSim->fetchResults();
+
+        PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(topPrimPath, ePTActor));
+        CHECK(basePtr != nullptr);
+        REQUIRE(basePtr->is<PxRigidStatic>());
+
+        const PxTransform transform = basePtr->is<PxRigidStatic>()->getGlobalPose();
+        compare(transform.p, GfVec3f(translate + GfVec3d(2.0)), toleranceEpsilon);
+        compare(transform.q, orientation, toleranceEpsilon);
+    }
+
+    physxSim->detachStage();
+
+    pxr::UsdUtilsStageCache::Get().Erase(stage);
+    stage = nullptr;
+}
+
+TEST_CASE_TEMPLATE("RigidBody ResetXformOpStack Bodies",
+                   T,
+                   UsdTemplate,
+                   FabricTemplate,
+                   FabricSuppresReadbackNoGPUTemplate,
+                   FabricSuppresReadbackGPUTemplate)
+{
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    T runtimeTemplate(physicsTests);
+
+    FabricChange fabricChangeTemplate;
+
+    const float epsilon = 0.0001f;
+
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+
+    // setup basic stage
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    pxr::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    REQUIRE(pxr::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit)));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+
+    pxr::UsdUtilsStageCache::Get().Insert(stage);
+    long stageId = pxr::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    // Enable population utils to emulate FSD behavior
+    fabricChangeTemplate.init(stageId, physicsTests.getApp()->getFramework());
+    auto populationUtils = omni::core::createType<usdrt::population::IUtils>();
+    const bool usdNoticeHandling = populationUtils->getEnableUsdNoticeHandling(fabricChangeTemplate.mStageId);
+    populationUtils->setEnableUsdNoticeHandling(
+        fabricChangeTemplate.mStageId,
+        fabricChangeTemplate.iStageReaderWriter->getFabricId(fabricChangeTemplate.mSrwId), true);
+
+
+    const SdfPath physicsScenePath = defaultPrimPath.AppendChild(TfToken("physicsScene"));
+    UsdPhysicsScene scene = UsdPhysicsScene::Define(stage, physicsScenePath);
+
+    std::vector<SdfPath> rigidBodyPrimPaths;
+
+    // resetXformOpStack on the bodies
+    {
+        // nested 1
+        {
+            UsdGeomXform xform = UsdGeomXform::Define(stage, SdfPath("/World/xform"));
+            xform.AddTranslateOp().Set(GfVec3d(-2.0));
+            for (size_t i = 0; i < 2; i++)
+            {
+                std::string stringXformPath = "/World/xform";
+                for (size_t j = 0; j <= i; j++)
+                {
+                    stringXformPath += "/xform";
+                }
+                UsdGeomXform xform = UsdGeomXform::Define(stage, SdfPath(stringXformPath));
+                xform.AddTranslateOp().Set(GfVec3d(-1.0 * (i + 1)));
+                {
+                    UsdGeomCube cube = UsdGeomCube::Define(stage, SdfPath(stringXformPath + "/box"));
+
+                    UsdPhysicsRigidBodyAPI::Apply(cube.GetPrim());
+                    UsdPhysicsCollisionAPI::Apply(cube.GetPrim());
+                    rigidBodyPrimPaths.push_back(cube.GetPrim().GetPrimPath());
+                    cube.SetResetXformStack(true);
+                }
+            }
+        }
+    }
+
+    // Fill the stage in progress with USD values
+    {
+        populationUtils->populateFromUsd(
+            fabricChangeTemplate.mSrwId, stageId,
+            omni::fabric::convertToPathType<omni::fabric::Path>(
+                fabricChangeTemplate.iStageReaderWriter->getFabricId(fabricChangeTemplate.mSrwId),
+                PXR_NS::SdfPath::AbsoluteRootPath()),
+            nullptr, 0.0);
+    }
+
+    // attach sim to stage which parses and creates the pointers that we can check directly
+    physxSim->attachStage(stageId);
+    runtimeTemplate.attachStage(stageId);
+
+    SUBCASE("Parsing")
+    {
+        for (size_t i = 0; i < rigidBodyPrimPaths.size(); i++)
+        {
+            PxRigidDynamic* actor =
+                getPhysxBaseDerivedFromPathChecked<PxRigidDynamic>(rigidBodyPrimPaths[i], PhysXType::ePTActor);
+            REQUIRE(actor);
+        }
+    }
+
+    SUBCASE("Initial transformation")
+    {
+        for (size_t i = 0; i < rigidBodyPrimPaths.size(); i++)
+        {
+            PxRigidDynamic* actor =
+                getPhysxBaseDerivedFromPathChecked<PxRigidDynamic>(rigidBodyPrimPaths[i], PhysXType::ePTActor);
+            CHECK(actor);
+
+            const PxTransform transform = actor->getGlobalPose();
+            const GfTransform outputTransform =
+                runtimeTemplate.getTransformation(fabricChangeTemplate, rigidBodyPrimPaths[i]);
+            compare(transform.p, GfVec3f(outputTransform.GetTranslation()), epsilon);
+        }
+    }
+
+    SUBCASE("Simulation output transformations")
+    {
+        for (int i = 0; i < 10; ++i)
+        {
+            physxSim->simulate(1.0f / 60, 0.0f);
+            physxSim->fetchResults();
+            runtimeTemplate.update(1.0f / 60, 0.0f);
+        }
+
+        for (size_t i = 0; i < rigidBodyPrimPaths.size(); i++)
+        {
+            PxRigidDynamic* actor =
+                getPhysxBaseDerivedFromPathChecked<PxRigidDynamic>(rigidBodyPrimPaths[i], PhysXType::ePTActor);
+            CHECK(actor);
+
+            const PxTransform transform =
+                runtimeTemplate.getPhysXTransformation(actor, fabricChangeTemplate, rigidBodyPrimPaths[i]);
+            const GfTransform outputTransform =
+                runtimeTemplate.getTransformation(fabricChangeTemplate, rigidBodyPrimPaths[i]);
+            compare(transform.p, GfVec3f(outputTransform.GetTranslation()), epsilon);
+        }
+    }
+
+    populationUtils->setEnableUsdNoticeHandling(
+        fabricChangeTemplate.mStageId,
+        fabricChangeTemplate.iStageReaderWriter->getFabricId(fabricChangeTemplate.mSrwId), usdNoticeHandling);
+
+    physxSim->detachStage();
+    runtimeTemplate.detachStage();
+
+    fabricChangeTemplate.destroy();
+
+    pxr::UsdUtilsStageCache::Get().Erase(stage);
+    stage = nullptr;
+}

@@ -15,6 +15,6 @@
     <cmakeSwitch name="PX_GENERATE_GPU_REDUCED_ARCHITECTURES" value="False" comment="Generate only a reduced number of GPU architectures for faster compilation" />  
   </CMakeSwitches>
   <CMakeParams>
-    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/linux-aarch64-gccPhysX" comment="Install path relative to PhysX SDK root" />
+    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/linux-aarch64-gcc/PhysX" comment="Install path relative to PhysX SDK root" />
   </CMakeParams>
 </preset>

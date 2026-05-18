@@ -22,25 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-
-#include "foundation/PxMathUtils.h"
-#include "CmConeLimitHelper.h"
-#include "DySolverConstraint1D.h"
 #include "DyFeatherstoneArticulation.h"
-#include "PxsRigidBody.h"
-#include "PxcConstraintBlockStream.h"
-#include "DyArticulationContactPrep.h"
 #include "DyDynamics.h"
-#include "DyArticulationPImpl.h"
-#include "DyFeatherstoneArticulationLink.h"
-#include "DyFeatherstoneArticulationJointData.h"
 #include "common/PxProfileZone.h"
 #include <stdio.h>
-
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
@@ -161,12 +150,12 @@ namespace Dy
 			linkInvStISW.invStIs[0][0] = invStIS;
 
 			//Mirtich equivalent: [I_i^A * s_i]/[s_i^T * I_i^A * s_i]
-			Cm::SpatialVectorF isID = Is * invStIS;
+			const Cm::SpatialVectorF isID = Is * invStIS;
 			jointDofISInvStISW[0] = isID;
 
 			//(6x1)Is = [v0, v1]; (1x6)stI = [v1, v0]
 			//Cm::SpatialVector stI1(Is1.angular, Is1.linear);
-			Cm::SpatialVectorF stI(Is.bottom, Is.top);
+			const Cm::SpatialVectorF stI(Is.bottom, Is.top);
 
 			//Mirtich equivalent: I_i^A * s_i^T *Inv(s_i^T *I_i^A * s_i) * s_i^T * I_i^A
 			//Note we will compute I_i^A - [I_i^A * s_i^T *Inv(s_i^T *I_i^A * s_i) * s_i^T * I_i^A] later in the function.
@@ -234,11 +223,10 @@ namespace Dy
 				}
 				PxU32 dofId = dofIds[ind];
 				D[ind][ind] += jointTargetArmatures[dofId];
-				
 			}
 
 			//PxMat33 invD = SpatialMatrix::invertSym33(D);
-			PxMat33 invD = D.getInverse();
+			const PxMat33 invD = D.getInverse();
 			for (PxU32 ind = 0; ind < nbJointDofs; ++ind)
 			{
 				for (PxU32 ind2 = 0; ind2 < nbJointDofs; ++ind2)
@@ -672,7 +660,6 @@ namespace Dy
 		for (PxU32 linkID = startIndex; linkID > 0; --linkID)
 		{
 			const ArticulationLink& link = links[linkID];
-			const ArticulationJointCore* joint = link.inboundJoint;
 			const ArticulationJointCoreData& jointDatum = jointData[linkID];
 			const PxU32 jointOffset = jointDatum.jointOffset;
 			const PxU8 nbDofs = jointDatum.nbDof;
@@ -689,6 +676,8 @@ namespace Dy
 			Cm::SpatialVectorF deltaZAIntParent;
 			SpatialMatrix spatialInertiaW;
 			{
+				const ArticulationJointCore* joint = link.inboundJoint;
+
 				//calculate spatial zero acceleration force, this can move out of the loop
 				const Cm::SpatialVectorF linkZW = linkZAExtForcesW[linkID];
 				const Cm::SpatialVectorF linkIcW = linkSpatialArticulatedInertiaW[linkID] * linkCoriolisVectors[linkID];
@@ -699,7 +688,7 @@ namespace Dy
 				//us some round-trips to memory!
 				spatialInertiaW = 
 					computePropagateSpatialInertia_ZA_ZIc(
-						PxArticulationJointType::Enum(link.inboundJoint->jointType), jointDatum.nbDof, 
+						PxArticulationJointType::Enum(joint->jointType), jointDatum.nbDof, 
 						&jointDofMotionMatricesW[jointOffset], &jointDofISW[jointOffset], 
 						&joint->armature[0], &joint->dofIds[0], jointDofForces ? &jointDofForces[jointOffset] : NULL,
 						linkSpatialArticulatedInertiaW[linkID], 
@@ -726,8 +715,8 @@ namespace Dy
 
 			//Accumulate the articulated z.a force on the parent link.
 			{
-				Cm::SpatialVectorF translatedZA = FeatherstoneArticulation::translateSpatialVector(linkRsW[linkID], deltaZAExtParent);
-				Cm::SpatialVectorF translatedZAInt = FeatherstoneArticulation::translateSpatialVector(linkRsW[linkID], deltaZAIntParent);
+				const Cm::SpatialVectorF translatedZA = FeatherstoneArticulation::translateSpatialVector(linkRsW[linkID], deltaZAExtParent);
+				const Cm::SpatialVectorF translatedZAInt = FeatherstoneArticulation::translateSpatialVector(linkRsW[linkID], deltaZAIntParent);
 				linkZAExtForcesW[link.parent] += translatedZA;
 				linkZAIntForcesW[link.parent] += translatedZAInt;
 			}
@@ -739,29 +728,30 @@ namespace Dy
 
 	void FeatherstoneArticulation::computeArticulatedSpatialInertiaAndZ_NonSeparated(ArticulationData& data, ScratchData& scratchData)
 	{
-		const ArticulationLink* links = data.getLinks();
-		ArticulationJointCoreData* jointData = data.getJointData();
-		SpatialMatrix* spatialArticulatedInertia = data.getWorldSpatialArticulatedInertia();
-		const Cm::UnAlignedSpatialVector* motionMatrix = data.getWorldMotionMatrix();
-		Cm::SpatialVectorF* Is = data.getIsW();
+		const ArticulationLink* PX_RESTRICT links = data.getLinks();
+		ArticulationJointCoreData* PX_RESTRICT jointData = data.getJointData();
+		SpatialMatrix* PX_RESTRICT spatialArticulatedInertia = data.getWorldSpatialArticulatedInertia();
+		const Cm::UnAlignedSpatialVector* PX_RESTRICT motionMatrix = data.getWorldMotionMatrix();
+		Cm::SpatialVectorF* PX_RESTRICT Is = data.getIsW();
 		
-		InvStIs* invStIs = data.getInvStIS();
-		Cm::SpatialVectorF* IsInvDW = data.getISInvStIS();
-		PxReal* qstZIc = data.getQstZIc();
+		InvStIs* PX_RESTRICT invStIs = data.getInvStIS();
+		Cm::SpatialVectorF* PX_RESTRICT IsInvDW = data.getISInvStIS();
+		PxReal* PX_RESTRICT qstZIc = data.getQstZIc();
 
 		SpatialMatrix& baseInvSpatialArticulatedInertia = data.getBaseInvSpatialArticulatedInertiaW();
 
 		const PxU32 linkCount = data.getLinkCount();
 		const PxU32 startIndex = PxU32(linkCount - 1);
 
-		Cm::SpatialVectorF* coriolisVectors = scratchData.coriolisVectors;
-		Cm::SpatialVectorF* articulatedZA = scratchData.spatialZAVectors;
+		const Cm::SpatialVectorF* PX_RESTRICT coriolisVectors = scratchData.coriolisVectors;
+		Cm::SpatialVectorF* PX_RESTRICT articulatedZA = scratchData.spatialZAVectors;
+		const PxVec3* PX_RESTRICT rw = data.getRw();
 
 		for (PxU32 linkID = startIndex; linkID > 0; --linkID)
 		{
 			const ArticulationLink& link = links[linkID];
 			const ArticulationJointCore* joint = link.inboundJoint; //todo: check for & and const
-			ArticulationJointCoreData& jointDatum = jointData[linkID];
+			const ArticulationJointCoreData& jointDatum = jointData[linkID];
 			const PxU32 jointOffset = jointDatum.jointOffset;
 			const PxU8 nbDofs = jointDatum.nbDof;
 
@@ -796,10 +786,10 @@ namespace Dy
 			}
 
 			//transform spatial inertia into parent space
-			FeatherstoneArticulation::translateInertia(constructSkewSymmetricMatrix(data.getRw(linkID)), spatialInertiaW);
+			FeatherstoneArticulation::translateInertia(constructSkewSymmetricMatrix(rw[linkID]), spatialInertiaW);
 			spatialArticulatedInertia[link.parent] += spatialInertiaW;
 
-			Cm::SpatialVectorF translatedZA = FeatherstoneArticulation::translateSpatialVector(data.getRw(linkID), deltaZParent);
+			const Cm::SpatialVectorF translatedZA = FeatherstoneArticulation::translateSpatialVector(rw[linkID], deltaZParent);
 			articulatedZA[link.parent] += translatedZA;
 		}
 
@@ -807,17 +797,17 @@ namespace Dy
 		spatialArticulatedInertia[0].invertInertiaV(baseInvSpatialArticulatedInertia);
 	}
 
-
 	void FeatherstoneArticulation::computeArticulatedSpatialInertia(ArticulationData& data)
 	{
-		const ArticulationLink* links = data.getLinks();
-		const ArticulationJointCoreData* jointData = data.getJointData();
-		SpatialMatrix* spatialArticulatedInertia = data.getWorldSpatialArticulatedInertia();
-		const Cm::UnAlignedSpatialVector* motionMatrix = data.getWorldMotionMatrix();
-		Cm::SpatialVectorF* Is = data.getIsW();
-		InvStIs* invStIs = data.getInvStIS();
-		Cm::SpatialVectorF* IsInvDW = data.getISInvStIS();
+		const ArticulationLink* PX_RESTRICT links = data.getLinks();
+		const ArticulationJointCoreData* PX_RESTRICT jointData = data.getJointData();
+		SpatialMatrix* PX_RESTRICT spatialArticulatedInertia = data.getWorldSpatialArticulatedInertia();
+		const Cm::UnAlignedSpatialVector* PX_RESTRICT motionMatrix = data.getWorldMotionMatrix();
+		Cm::SpatialVectorF* PX_RESTRICT Is = data.getIsW();
+		InvStIs* PX_RESTRICT invStIs = data.getInvStIS();
+		Cm::SpatialVectorF* PX_RESTRICT IsInvDW = data.getISInvStIS();
 		SpatialMatrix& baseInvSpatialArticulatedInertia = data.getBaseInvSpatialArticulatedInertiaW();
+		const PxVec3* PX_RESTRICT rw = data.getRw();
 
 		const PxU32 linkCount = data.getLinkCount();
 		const PxU32 startIndex = PxU32(linkCount - 1);
@@ -844,7 +834,7 @@ namespace Dy
 				invStIs[linkID], &IsInvDW[jointOffset]);
 
 			//transform spatial inertia into parent space
-			FeatherstoneArticulation::translateInertia(constructSkewSymmetricMatrix(data.getRw(linkID)), spatialInertiaW);
+			FeatherstoneArticulation::translateInertia(constructSkewSymmetricMatrix(rw[linkID]), spatialInertiaW);
 
 			spatialArticulatedInertia[link.parent] += spatialInertiaW;
 		}
@@ -920,9 +910,9 @@ namespace Dy
 				PxReal QMinusStZ[3] = { 0.f, 0.f, 0.f };
 				const Cm::SpatialVectorF Zp = propagateImpulseW(
 					parentLinkToChildLink,
-					testLinkImpulse, 
-					NULL, &jointDofIsInvDW[jointOffset], &jointDofMotionMatricesW[jointOffset], dofCount, 
-					QMinusStZ);				
+					testLinkImpulse,
+					NULL, &jointDofIsInvDW[jointOffset], &jointDofMotionMatricesW[jointOffset], dofCount,
+					QMinusStZ);
 
 				//(2) Get deltaV response for parent
 				const Cm::SpatialVectorF deltaVParent = -testImpulseResponsesW[parentLinkId].getLinkDeltaVImpulseResponse(Zp);
@@ -943,25 +933,32 @@ namespace Dy
 
 	void FeatherstoneArticulation::computeArticulatedSpatialZ(ArticulationData& data, ScratchData& scratchData)
 	{
-		ArticulationLink* links = data.getLinks();
-		ArticulationJointCoreData* jointData = data.getJointData();
+		const ArticulationLink* PX_RESTRICT links = data.getLinks();
+		const ArticulationJointCoreData* PX_RESTRICT jointData = data.getJointData();
 
 		const PxU32 linkCount = data.getLinkCount();
 		const PxU32 startIndex = PxU32(linkCount - 1);
 
-		Cm::SpatialVectorF* coriolisVectors = scratchData.coriolisVectors;
-		Cm::SpatialVectorF* articulatedZA = scratchData.spatialZAVectors;
+		Cm::SpatialVectorF* PX_RESTRICT coriolisVectors = scratchData.coriolisVectors;
+		Cm::SpatialVectorF* PX_RESTRICT articulatedZA = scratchData.spatialZAVectors;
 
-		PxReal* jointForces = scratchData.jointForces;
+		PxReal* PX_RESTRICT jointForces = scratchData.jointForces;
 		
+		const SpatialMatrix* PX_RESTRICT worldSpatialArticulatedInertia = data.getWorldSpatialArticulatedInertia();
+
+		PxReal* PX_RESTRICT qstZIc = data.getQstZIc();	// PT: TODO: unclear if the code meant getQstZIc() or getMinusStZExt()
+		const Cm::UnAlignedSpatialVector* PX_RESTRICT worldMotionMatrix = data.getWorldMotionMatrix();
+		const Cm::SpatialVectorF* PX_RESTRICT iSInvStIS = data.getISInvStIS();
+		const PxVec3* PX_RESTRICT rw = data.getRw();
+
 		for (PxU32 linkID = startIndex; linkID > 0; --linkID)
 		{
-			ArticulationLink& link = links[linkID];
+			const ArticulationLink& link = links[linkID];
 		
-			ArticulationJointCoreData& jointDatum = jointData[linkID];
+			const ArticulationJointCoreData& jointDatum = jointData[linkID];
 
 			//calculate spatial zero acceleration force, this can move out of the loop
-			Cm::SpatialVectorF Ic = data.mWorldSpatialArticulatedInertia[linkID] * coriolisVectors[linkID];
+			Cm::SpatialVectorF Ic = worldSpatialArticulatedInertia[linkID] * coriolisVectors[linkID];
 			Cm::SpatialVectorF ZIc = articulatedZA[linkID] + Ic;
 
 			const PxReal* jF = &jointForces[jointDatum.jointOffset];
@@ -969,18 +966,18 @@ namespace Dy
 			Cm::SpatialVectorF ZA = ZIc;
 			for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 			{
-				const Cm::UnAlignedSpatialVector& sa = data.mWorldMotionMatrix[jointDatum.jointOffset + ind];
+				const Cm::UnAlignedSpatialVector& sa = worldMotionMatrix[jointDatum.jointOffset + ind];
 				const PxReal stZ = sa.innerProduct(ZIc);
 
 				//link.qstZIc[ind] = jF[ind] - stZ;
 				const PxReal qstZic = jF[ind] - stZ;
-				data.qstZIc[jointDatum.jointOffset + ind] = qstZic;
+				qstZIc[jointDatum.jointOffset + ind] = qstZic;
 				PX_ASSERT(PxIsFinite(qstZic));
 
-				ZA += data.mISInvStIS[jointDatum.jointOffset + ind] * qstZic;
+				ZA += iSInvStIS[jointDatum.jointOffset + ind] * qstZic;
 			}
 			//accumulate childen's articulated zero acceleration force to parent's articulated zero acceleration
-			articulatedZA[link.parent] += FeatherstoneArticulation::translateSpatialVector(data.getRw(linkID), ZA);
+			articulatedZA[link.parent] += FeatherstoneArticulation::translateSpatialVector(rw[linkID], ZA);
 		}
 	}
 
@@ -1028,8 +1025,6 @@ namespace Dy
 		
 		if (!fixBase)
 		{
-			//ArticulationLinkData& baseLinkDatum = data.getLinkData(0);
-
 #if FEATHERSTONE_DEBUG
 			SpatialMatrix result = invInertia * baseLinkDatum.spatialArticulatedInertia;
 
@@ -1040,9 +1035,9 @@ namespace Dy
 #endif
 			//ArticulationLink& baseLink = data.getLink(0);
 			//const PxTransform& body2World = baseLink.bodyCore->body2World;
-			Cm::SpatialVectorF accel = -(baseInvSpatialArticulatedInertiaW * linkSpatialZAForces[0]);
+			const Cm::SpatialVectorF accel = -(baseInvSpatialArticulatedInertiaW * linkSpatialZAForces[0]);
 			linkMotionAccelerations[0] = accel;
-			Cm::SpatialVectorF deltaV = accel * dt;
+			const Cm::SpatialVectorF deltaV = accel * dt;
 			linkMotionVelocities[0] += deltaV;
 		}
 #if FEATHERSTONE_DEBUG
@@ -1066,30 +1061,32 @@ namespace Dy
 		{
 			const ArticulationLink& link = links[linkID];
 
-			Cm::SpatialVectorF pMotionAcceleration = FeatherstoneArticulation::translateSpatialVector(-linkRws[linkID], linkMotionAccelerations[link.parent]);
+			const Cm::SpatialVectorF pMotionAcceleration = FeatherstoneArticulation::translateSpatialVector(-linkRws[linkID], linkMotionAccelerations[link.parent]);
 
 			const ArticulationJointCoreData& jointDatum = jointDatas[linkID];
+			const PxU32 jointOffset = jointDatum.jointOffset;
+			const PxU32 nbDof = jointDatum.nbDof;
 
 			//calculate jointAcceleration
-			PxReal* jA = &jointDofAccelerations[jointDatum.jointOffset];
+			PxReal* jA = &jointDofAccelerations[jointOffset];
 			const InvStIs& invStIs = linkInvStIs[linkID];
-			computeJointAccelerationW(jointDatum.nbDof, pMotionAcceleration, &jointDofIsWs[jointDatum.jointOffset], invStIs,
-				&jointDofQstZics[jointDatum.jointOffset], jA);
+			computeJointAccelerationW(PxU8(nbDof), pMotionAcceleration, &jointDofIsWs[jointOffset], invStIs,
+				&jointDofQstZics[jointOffset], jA);
 
 			Cm::SpatialVectorF motionAcceleration = pMotionAcceleration;
 			if (doIC)
 				motionAcceleration += linkCoriolisForces[linkID];
-			PxReal* jointVelocity = &jointDofVelocities[jointDatum.jointOffset];
-			PxReal* jointNewVelocity = &jointDofNewVelocities[jointDatum.jointOffset];
+			PxReal* jointVelocity = &jointDofVelocities[jointOffset];
+			PxReal* jointNewVelocity = &jointDofNewVelocities[jointOffset];
 
-			for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
+			for (PxU32 ind = 0; ind < nbDof; ++ind)
 			{
 				const PxReal accel = jA[ind];
-				PxReal jVel = jointVelocity[ind] + accel * dt;
+				const PxReal jVel = jointVelocity[ind] + accel * dt;
 				jointVelocity[ind] = jVel;
 				jointNewVelocity[ind] = jVel;
-				motionAcceleration.top += jointDofMotionMatrices[jointDatum.jointOffset + ind].top * accel;
-				motionAcceleration.bottom += jointDofMotionMatrices[jointDatum.jointOffset + ind].bottom * accel;
+				motionAcceleration.top += jointDofMotionMatrices[jointOffset + ind].top * accel;
+				motionAcceleration.bottom += jointDofMotionMatrices[jointOffset + ind].bottom * accel;
 			}
 
 			//KS - can we just work out velocities by projecting out the joint velocities instead of accumulating all this?
@@ -1114,7 +1111,7 @@ namespace Dy
 	\param[in] riMinusComW has value (ri - rcom) with ri denoting the position of the rigid body in the world frame
 	and rcom the position of the centre of mass of the collection of rigid bodies in the world frame.
 	*/	 
-	PxMat33 computeContributionToEnsembleMomentOfInertia(const PxMat33& IiW, const PxReal mi, const PxVec3& riMinusComW)
+	static PxMat33 computeContributionToEnsembleMomentOfInertia(const PxMat33& IiW, const PxReal mi, const PxVec3& riMinusComW)
 	{
 		//We compute the 3x3 matrix R from riMinusComW and then return [IiW +  mi * (R^T * R)]
 		//This can be computed in fewer steps than R^T * R because the outcome contains only a few repeated terms.
@@ -1153,7 +1150,7 @@ namespace Dy
 	may have any value if computeCompoundInertia is false because it will be ignored.
 	*/
 	template<bool computeCompoundInertia>
-	void computeMomentum(
+	static void computeMomentum(
 		const PxVec3& rcomW, const PxReal recipMass,
 		const PxU32 linkCount, 
 		const PxReal* linkMasses, const PxMat33* linkIsolatedSpatialArticulatedInertiasW, 
@@ -1221,13 +1218,13 @@ namespace Dy
 		const bool fixBase,
 		const PxVec3& rcom, const PxReal recipMass, const PxMat33* linkIsolatedSpatialArticulatedInertiasW,
 		const SpatialMatrix& baseInvSpatialArticulatedInertiaW,
-		const ArticulationLink* links, const PxU32 linkCount, 
+		const ArticulationLink* links, const PxU32 linkCount,
 		const PxReal* linkMasses, const PxVec3* linkRsW, const PxTransform* linkAccumulatedPosesW,
 		const Cm::SpatialVectorF* linkSpatialZAIntForcesW, const Cm::SpatialVectorF* linkCoriolisVectorsW,
 		const ArticulationJointCoreData* jointDatas, const Cm::UnAlignedSpatialVector* jointDofMotionMatricesW,
 		const InvStIs* linkInvStISW, const Cm::SpatialVectorF* jointDofISW, const PxReal* jointDofQStZIntIcW,
-		Cm::SpatialVectorF* linkMotionAccelerationsW, Cm::SpatialVectorF* linkMotionIntAccelerationsW, Cm::SpatialVectorF* linkMotionVelocitiesW, 
-		PxReal* jointDofAccelerations, PxReal* jointDofInternalAccelerations, PxReal* jointDofVelocities, PxReal* jointDofNewVelocities)		
+		Cm::SpatialVectorF* linkMotionAccelerationsW, Cm::SpatialVectorF* linkMotionIntAccelerationsW, Cm::SpatialVectorF* linkMotionVelocitiesW,
+		PxReal* jointDofAccelerations, PxReal* jointDofVelocities, PxReal* jointDofNewVelocities)
 	{
 		//we have initialized motionVelocity and motionAcceleration to be zero in the root link if
 		//fix based flag is raised
@@ -1241,11 +1238,6 @@ namespace Dy
 				rcom, recipMass, 
 				linkCount, linkMasses, linkIsolatedSpatialArticulatedInertiasW, linkAccumulatedPosesW, linkMotionVelocitiesW, 
 				linMomentum0, angMomentum0, NULL);
-		}
-		
-		if (!fixBase)
-		{
-			//ArticulationLinkData& baseLinkDatum = data.getLinkData(0);
 
 #if FEATHERSTONE_DEBUG
 			SpatialMatrix result = invInertia * baseLinkDatum.spatialArticulatedInertia;
@@ -1278,28 +1270,30 @@ namespace Dy
 
 			const Cm::SpatialVectorF pMotionAcceleration = FeatherstoneArticulation::translateSpatialVector(-linkRsW[linkID], linkMotionIntAccelerationsW[link.parent]);
 
-			const  ArticulationJointCoreData& jointDatum = jointDatas[linkID];
+			const ArticulationJointCoreData& jointDatum = jointDatas[linkID];
+			const PxU32 jointOffset = jointDatum.jointOffset;
+			const PxU32 nbDof = jointDatum.nbDof;
 
 			//calculate jointAcceleration
-			PxReal* jIntAccel = &jointDofInternalAccelerations[jointDatum.jointOffset];
-			computeJointAccelerationW(jointDatum.nbDof, pMotionAcceleration, &jointDofISW[jointDatum.jointOffset], linkInvStISW[linkID],
-				&jointDofQStZIntIcW[jointDatum.jointOffset], jIntAccel);
+			PxReal jIntAccel[DY_MAX_DOF];
+			computeJointAccelerationW(PxU8(nbDof), pMotionAcceleration, &jointDofISW[jointOffset], linkInvStISW[linkID],
+				&jointDofQStZIntIcW[jointOffset], jIntAccel);
 			//printf("jA %f\n", jA[0]);
 
 			//KS - TODO - separate integration of coriolis vectors!
 			Cm::SpatialVectorF motionAcceleration = pMotionAcceleration + linkCoriolisVectorsW[linkID];
-			PxReal* jointVelocity = &jointDofVelocities[jointDatum.jointOffset];
-			PxReal* jointNewVelocity = &jointDofNewVelocities[jointDatum.jointOffset];
+			PxReal* PX_RESTRICT jointVelocity = &jointDofVelocities[jointOffset];
+			PxReal* PX_RESTRICT jointNewVelocity = &jointDofNewVelocities[jointOffset];
 
-			PxReal* jA = &jointDofAccelerations[jointDatum.jointOffset];
-			for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
+			PxReal* PX_RESTRICT jA = &jointDofAccelerations[jointOffset];
+			for (PxU32 ind = 0; ind < nbDof; ++ind)
 			{
 				const PxReal accel = jIntAccel[ind];
-				PxReal jVel = jointVelocity[ind] + accel * dt;
+				const PxReal jVel = jointVelocity[ind] + accel * dt;
 				jointVelocity[ind] = jVel;
 				jointNewVelocity[ind] = jVel;
-				motionAcceleration.top += jointDofMotionMatricesW[jointDatum.jointOffset + ind].top * accel;
-				motionAcceleration.bottom += jointDofMotionMatricesW[jointDatum.jointOffset + ind].bottom * accel;
+				motionAcceleration.top += jointDofMotionMatricesW[jointOffset + ind].top * accel;
+				motionAcceleration.bottom += jointDofMotionMatricesW[jointOffset + ind].bottom * accel;
 				jA[ind] += accel;
 			}
 
@@ -1307,7 +1301,7 @@ namespace Dy
 			linkMotionIntAccelerationsW[linkID] = motionAcceleration;
 			linkMotionAccelerationsW[linkID] += motionAcceleration;
 			PX_ASSERT(linkMotionAccelerationsW[linkID].isFinite());
-			Cm::SpatialVectorF velDelta = (motionAcceleration)* dt;
+			const Cm::SpatialVectorF velDelta = (motionAcceleration) * dt;
 			linkMotionVelocitiesW[linkID] += velDelta;
 		}
 
@@ -1317,8 +1311,8 @@ namespace Dy
 			PxVec3 angMomentum1(PxZero);
 			PxMat33 compoundInertia(PxZero);
 			computeMomentum<true>(
-				rcom,  recipMass, 
-				linkCount, linkMasses, linkIsolatedSpatialArticulatedInertiasW, linkAccumulatedPosesW, linkMotionVelocitiesW, 
+				rcom, recipMass,
+				linkCount, linkMasses, linkIsolatedSpatialArticulatedInertiasW, linkAccumulatedPosesW, linkMotionVelocitiesW,
 				linMomentum1, angMomentum1, &compoundInertia);
 
 			const PxMat33 invCompoundInertia = compoundInertia.getInverse();
@@ -1336,19 +1330,19 @@ namespace Dy
 			const PxVec3 deltaAngMom = angMomentum1 * (angRatio - 1.0f);
 
 			//Compute the delta angular velocity.
-			PxVec3 deltaAng = invCompoundInertia * deltaAngMom;
+			const PxVec3 deltaAng = invCompoundInertia * deltaAngMom;
 
 			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 			{
-				const PxVec3 offset = (linkAccumulatedPosesW[linkID].p - rcom);
-				Cm::SpatialVectorF velChange(deltaAng, -offset.cross(deltaAng));
+				const PxVec3 offset = linkAccumulatedPosesW[linkID].p - rcom;
+				const Cm::SpatialVectorF velChange(deltaAng, -offset.cross(deltaAng));
 				linkMotionVelocitiesW[linkID] += velChange;
 				const PxReal mass = linkMasses[linkID];
 				linMomentum1 += velChange.bottom * mass;
 			}
 
 			const PxVec3 deltaLinMom = linMomentum0 - linMomentum1;
-			PxVec3 deltaLin = deltaLinMom * recipMass;
+			const PxVec3 deltaLin = deltaLinMom * recipMass;
 
 			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 			{
@@ -1357,28 +1351,12 @@ namespace Dy
 		}
 	}
 
-	void FeatherstoneArticulation::computeLinkIncomingJointForce(
-		const PxU32 linkCount,						
-		const Cm::SpatialVectorF* linkZAForcesExtW,	const Cm::SpatialVectorF* linkZAForcesIntW,
-		const Cm::SpatialVectorF* linkMotionAccelerationsW, const SpatialMatrix* linkSpatialInertiasW,
-		Cm::SpatialVectorF* linkIncomingJointForces)
-	{
-		linkIncomingJointForces[0] = Cm::SpatialVectorF(PxVec3(0,0,0), PxVec3(0,0,0));
-		for(PxU32 i = 1; i < linkCount; i++)
-		{
-			linkIncomingJointForces[i] = linkSpatialInertiasW[i]*linkMotionAccelerationsW[i] + (linkZAForcesExtW[i] + linkZAForcesIntW[i]);
-		}
-	}
-
-
-	void FeatherstoneArticulation::computeJointTransmittedFrictionForce(
-		ArticulationData& data, ScratchData& scratchData)
+	void FeatherstoneArticulation::computeJointTransmittedFrictionForce(const ArticulationData& data, Cm::SpatialVectorF* PX_RESTRICT transmittedForce)
 	{
 		//const PxU32 linkCount = data.getLinkCount();
 		const PxU32 startIndex = data.getLinkCount() - 1;
 
-		//const PxReal frictionCoefficient =30.5f;
-		Cm::SpatialVectorF* transmittedForce = scratchData.spatialZAVectors;
+		const PxVec3* PX_RESTRICT rw = data.getRw();
 
 		for (PxU32 linkID = startIndex; linkID > 1; --linkID)
 		{
@@ -1386,77 +1364,15 @@ namespace Dy
 
 			//joint force transmitted from parent to child
 			//transmittedForce[link.parent] += data.mChildToParent[linkID] *  transmittedForce[linkID];
-			transmittedForce[link.parent] += FeatherstoneArticulation::translateSpatialVector(data.getRw(linkID), transmittedForce[linkID]);
+			transmittedForce[link.parent] += FeatherstoneArticulation::translateSpatialVector(rw[linkID], transmittedForce[linkID]);
 		}
 
 		transmittedForce[0] = Cm::SpatialVectorF::Zero();
-
-		//const PxReal dt = data.getDt();
-		//for (PxU32 linkID = 1; linkID < linkCount; ++linkID)
-		//{
-		//	//ArticulationLink& link = data.getLink(linkID);
-		//	//ArticulationLinkData& linkDatum = data.getLinkData(linkID);
-		//	transmittedForce[linkID] = transmittedForce[linkID] * (frictionCoefficient) * dt;
-		//	//transmittedForce[link.parent] -= linkDatum.childToParent * transmittedForce[linkID];
-		//}
-
-		//
-
-		//applyImpulses(transmittedForce, Z, DeltaV);
-
-		//PxReal* deltaV = data.getJointDeltaVelocities();
-		//PxReal* jointV = data.getJointVelocities();
-
-		//for (PxU32 linkID = 1; linkID < data.getLinkCount(); ++linkID)
-		//{
-		//	ArticulationJointCoreData& tJointDatum = data.getJointData()[linkID];
-		//	for (PxU32 i = 0; i < tJointDatum.dof; ++i)
-		//	{
-		//		jointV[i + tJointDatum.jointOffset] += deltaV[i + tJointDatum.jointOffset];
-		//		deltaV[i + tJointDatum.jointOffset] = 0.f;
-		//	}
-		//}
 	}
 
-	//void FeatherstoneArticulation::computeJointFriction(ArticulationData& data,
-	//	ScratchData& scratchData)
-	//{
-	//	PX_UNUSED(scratchData);
-	//	const PxU32 linkCount = data.getLinkCount();
-	//	PxReal* jointForces = scratchData.jointForces;
-	//	PxReal* jointFrictionForces = data.getJointFrictionForces();
-	//	PxReal* jointVelocities = data.getJointVelocities();
-
-	//	const PxReal coefficient = 0.5f;
-
-	//	for (PxU32 linkID = 1; linkID < linkCount; ++linkID)
-	//	{
-	//		ArticulationJointCoreData& jointDatum = data.getJointData(linkID);
-	//		//compute generalized force
-	//		PxReal* jFs = &jointForces[jointDatum.jointOffset];
-	//		PxReal* jVs = &jointVelocities[jointDatum.jointOffset];
-	//		PxReal* jFFs = &jointFrictionForces[jointDatum.jointOffset];
-
-	//		for (PxU32 ind = 0; ind < jointDatum.dof; ++ind)
-	//		{
-	//			PxReal sign = jVs[ind] > 0 ? -1.f : 1.f;
-	//			jFFs[ind] = coefficient * PxAbs(jFs[ind]) *sign;
-
-	//			//jFFs[ind] = coefficient * jVs[ind];
-	//		}
-	//	}
-	//}
-
-	// TODO AD: the following two functions could be just one.
-	PxU32 FeatherstoneArticulation::computeUnconstrainedVelocities(
-		const ArticulationSolverDesc& desc,
-		PxReal dt,
-		PxU32& acCount,
-		const PxVec3& gravity, 
-		const PxReal invLengthScale)
+	void FeatherstoneArticulation::computeUnconstrainedVelocities(FeatherstoneArticulation* articulation,
+		PxReal dt, const PxVec3& gravity, PxReal invLengthScale, bool externalForcesEveryTgsIterationEnabled, bool tgs)
 	{
-
-		FeatherstoneArticulation* articulation = static_cast<FeatherstoneArticulation*>(desc.articulation);
 		ArticulationData& data = articulation->mArticulationData;
 		data.setDt(dt);
 
@@ -1469,115 +1385,12 @@ namespace Dy
 			articulation->jcalc(data);
 		}
 
-		articulation->computeUnconstrainedVelocitiesInternal(gravity, invLengthScale);
+		articulation->computeUnconstrainedVelocitiesInternal(gravity,
+			invLengthScale, tgs ? externalForcesEveryTgsIterationEnabled : false);
 
-		const bool fixBase = data.getArticulationFlags() & PxArticulationFlag::eFIX_BASE;
-
-		return articulation->setupSolverConstraints(data.getLinks(), data.getLinkCount(), fixBase, data, acCount);
+		if(!tgs)
+			articulation->setupSolverConstraints(data);
 	}
-
-	void FeatherstoneArticulation::computeUnconstrainedVelocitiesTGS(
-		const ArticulationSolverDesc& desc,
-		const PxReal dt, const PxVec3& gravity,
-		const PxReal invLengthScale,
-		const bool externalForcesEveryTgsIterationEnabled)
-	{
-		FeatherstoneArticulation* articulation = desc.articulation;
-		ArticulationData& data = articulation->mArticulationData;
-		data.setDt(dt);
-
-		// AD: would be nicer to just have a list of all dirty articulations and process that one.
-		// but that means we need to add a task dependency before because we'll get problems with multithreading
-		// if we don't process the same lists.
-		if (articulation->mJcalcDirty) 
-		{	
-			articulation->mJcalcDirty = false;
-			articulation->jcalc(data);
-		}
-
-		articulation->computeUnconstrainedVelocitiesInternal(gravity, invLengthScale, externalForcesEveryTgsIterationEnabled);
-	}
-
-	//void FeatherstoneArticulation::computeCounteractJointForce(const ArticulationSolverDesc& desc, ScratchData& /*scratchData*/, const PxVec3& gravity)
-	//{
-	//	const bool fixBase = mArticulationData.getCore()->flags & PxArticulationFlag::eFIX_BASE;
-
-	//	const PxU32 linkCount = mArticulationData.getLinkCount();
-	//	const PxU32 totalDofs = mArticulationData.getDofs();
-	//	//common data
-	//	computeRelativeTransform(mArticulationData);
-
-	//	jcalc(mArticulationData);
-
-	//	computeSpatialInertia(mArticulationData);
-
-	//	DyScratchAllocator allocator(desc.scratchMemory, desc.scratchMemorySize);
-
-	//	ScratchData tempScratchData;
-	//	allocateScratchSpatialData(allocator, linkCount, tempScratchData);
-
-	//	//PxReal* gravityJointForce = allocator.alloc<PxReal>(totalDofs);
-	//	//{
-	//	//	PxMemZero(gravityJointForce, sizeof(PxReal) * totalDofs);
-
-	//	//	//compute joint force due to gravity
-	//	//	tempScratchData.jointVelocities = NULL;
-	//	//	tempScratchData.jointAccelerations = NULL;
-	//	//	tempScratchData.jointForces = gravityJointForce;
-	//	//	tempScratchData.externalAccels = NULL;
-
-	//	//	if (fixBase)
-	//	//		inverseDynamic(mArticulationData, gravity,tempScratchData);
-	//	//	else
-	//	//		inverseDynamicFloatingLink(mArticulationData, gravity, tempScratchData);
-	//	//}
-
-	//	////PxReal* jointForce = mArticulationData.getJointForces();
-	//	//PxReal* tempJointForce = mArticulationData.getTempJointForces();
-	//	//{
-	//	//	PxMemZero(tempJointForce, sizeof(PxReal) * totalDofs);
-
-	//	//	//compute joint force due to coriolis force
-	//	//	tempScratchData.jointVelocities = mArticulationData.getJointVelocities();
-	//	//	tempScratchData.jointAccelerations = NULL;
-	//	//	tempScratchData.jointForces = tempJointForce;
-	//	//	tempScratchData.externalAccels = NULL;
-
-	//	//	if (fixBase)
-	//	//		inverseDynamic(mArticulationData, PxVec3(0.f), tempScratchData);
-	//	//	else
-	//	//		inverseDynamicFloatingLink(mArticulationData, PxVec3(0.f), tempScratchData);
-	//	//}
-
-	//	//PxReal* jointForce = mArticulationData.getJointForces();
-	//	//for (PxU32 i = 0; i < mArticulationData.getDofs(); ++i)
-	//	//{
-	//	//	jointForce[i] = tempJointForce[i] - gravityJointForce[i];
-	//	//}
-
-	//	//PxReal* jointForce = mArticulationData.getJointForces();
-	//	PxReal* tempJointForce = mArticulationData.getTempJointForces();
-	//	{
-	//		PxMemZero(tempJointForce, sizeof(PxReal) * totalDofs);
-
-	//		//compute joint force due to coriolis force
-	//		tempScratchData.jointVelocities = mArticulationData.getJointVelocities();
-	//		tempScratchData.jointAccelerations = NULL;
-	//		tempScratchData.jointForces = tempJointForce;
-	//		tempScratchData.externalAccels = mArticulationData.getExternalAccelerations();
-
-	//		if (fixBase)
-	//			inverseDynamic(mArticulationData, gravity, tempScratchData);
-	//		else
-	//			inverseDynamicFloatingLink(mArticulationData, gravity, tempScratchData);
-	//	}
-
-	//	PxReal* jointForce = mArticulationData.getJointForces();
-	//	for (PxU32 i = 0; i < mArticulationData.getDofs(); ++i)
-	//	{
-	//		jointForce[i] = tempJointForce[i];
-	//	}
-	//}
 
 	void FeatherstoneArticulation::updateArticulation(const PxVec3& gravity, const PxReal invLengthScale, const bool externalForcesEveryTgsIterationEnabled)
 	{
@@ -1601,32 +1414,29 @@ namespace Dy
 				linkAccumulatedPosesW, linkRsW, jointDofMotionMatricesW);
 		}
 
-
-
 		//computeLinkVelocities(mArticulationData, scratchData);
 		{
 			//constants
 			const PxReal dt = mArticulationData.mDt;
 			const bool fixBase = mArticulationData.getArticulationFlags() & PxArticulationFlag::eFIX_BASE;
 			const PxU32 nbLinks = mArticulationData.mLinkCount;
-			const PxTransform* linkAccumulatedPosesW = mArticulationData.mAccumulatedPoses.begin();
-			Cm::SpatialVector* linkExternalAccelsW = mArticulationData.mExternalAcceleration;
-			const PxVec3* linkRsW = mArticulationData.mRw.begin();
+			const PxTransform* linkAccumulatedPosesW = mArticulationData.getAccumulatedPoses();
+			const PxVec3* linkRsW = mArticulationData.getRw();
+			const ArticulationJointCoreData* jointCoreData = mArticulationData.mJointData;
+			const Cm::UnAlignedSpatialVector* jointDofMotionMatricesW = mArticulationData.getWorldMotionMatrix();
 
 			//outputs
-			Cm::UnAlignedSpatialVector* jointDofMotionMatricesW = mArticulationData.mWorldMotionMatrix.begin();
-			const ArticulationJointCoreData* jointCoreData = mArticulationData.mJointData;
-			ArticulationLinkData* linkData = mArticulationData.mLinksData;
+			Cm::SpatialVector* linkExternalAccelsW = mArticulationData.mExternalAcceleration;
 			ArticulationLink* links = mArticulationData.mLinks;
-			Cm::SpatialVectorF* linkMotionVelocitiesW = mArticulationData.mMotionVelocities.begin();
-			Cm::SpatialVectorF* linkMotionAccelerationsW = mArticulationData.mMotionAccelerations.begin();
-			Cm::SpatialVectorF* linkCoriolisVectorsW = mArticulationData.mCorioliseVectors.begin();
-			Cm::SpatialVectorF* linkZAExtForcesW = mArticulationData.mZAForces.begin();
-			Cm::SpatialVectorF* linkZAIntForcesW = mArticulationData.mZAInternalForces.begin();
-			Dy::SpatialMatrix* linkSpatialArticulatedInertiasW = mArticulationData.mWorldSpatialArticulatedInertia.begin();
-			PxMat33* linkIsolatedSpatialArticulatedInertiasW = mArticulationData.mWorldIsolatedSpatialArticulatedInertia.begin();
-			PxReal* linkMasses = mArticulationData.mMasses.begin();
-			PxReal* jointDofVelocities = mArticulationData.mJointVelocity.begin();
+			Cm::SpatialVectorF* linkMotionVelocitiesW = mArticulationData.getMotionVelocities();
+			Cm::SpatialVectorF* linkMotionAccelerationsW = mArticulationData.getMotionAccelerations();
+			Cm::SpatialVectorF* linkCoriolisVectorsW = mArticulationData.getCoriolisVectors();
+			Cm::SpatialVectorF* linkZAExtForcesW = mArticulationData.getSpatialZAVectors();
+			Cm::SpatialVectorF* linkZAIntForcesW = mArticulationData.getSpatialZAInternalVectors();
+			Dy::SpatialMatrix* linkSpatialArticulatedInertiasW = mArticulationData.getWorldSpatialArticulatedInertia();
+			PxMat33* linkIsolatedSpatialArticulatedInertiasW = mArticulationData.getWorldIsolatedSpatialArticulatedInertia();
+			PxReal* linkMasses = mArticulationData.getMasses();
+			PxReal* jointDofVelocities = mArticulationData.getJointVelocities();
 			Cm::SpatialVectorF& rootPreMotionVelocityW = mArticulationData.mRootPreMotionVelocity;
 			PxVec3& comW = mArticulationData.mCOM;
 			PxReal& invMass = mArticulationData.mInvSumMass;
@@ -1635,7 +1445,7 @@ namespace Dy
 				dt, invLengthScale, gravity, fixBase,
 				nbLinks,
 				linkAccumulatedPosesW, linkExternalAccelsW, linkRsW, jointDofMotionMatricesW, jointCoreData, externalForcesEveryTgsIterationEnabled,
-				linkData, links, linkMotionAccelerationsW, linkMotionVelocitiesW, linkZAExtForcesW, linkZAIntForcesW, linkCoriolisVectorsW,
+				links, linkMotionAccelerationsW, linkMotionVelocitiesW, linkZAExtForcesW, linkZAIntForcesW, linkCoriolisVectorsW,
 				linkIsolatedSpatialArticulatedInertiasW, linkMasses, linkSpatialArticulatedInertiasW,
 				jointDofVelocities,
 				rootPreMotionVelocityW, comW, invMass);
@@ -1646,7 +1456,7 @@ namespace Dy
 			if (linkCount > 1)
 			{
 				const Cm::SpatialVectorF* ZAForcesExtW = mArticulationData.getSpatialZAVectors();
-				const Cm::SpatialVectorF* ZAForcesIntW = mArticulationData.mZAInternalForces.begin();
+				const Cm::SpatialVectorF* ZAForcesIntW = mArticulationData.getSpatialZAInternalVectors();
 				Cm::SpatialVectorF* ZAForcesTransmittedW = mArticulationData.getTransmittedForces();
 				for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 				{
@@ -1662,7 +1472,7 @@ namespace Dy
 			const PxVec3* linkRsW = mArticulationData.getRw();
 			const ArticulationJointCoreData* jointData = mArticulationData.getJointData();
 			const Cm::UnAlignedSpatialVector* jointDofMotionMatricesW = mArticulationData.getWorldMotionMatrix();
-			const Cm::SpatialVectorF* linkCoriolisVectorsW = mArticulationData.getCorioliseVectors();
+			const Cm::SpatialVectorF* linkCoriolisVectorsW = mArticulationData.getCoriolisVectors();
 			const PxReal* jointDofForces = externalForcesEveryTgsIterationEnabled ? NULL : mArticulationData.getJointForces();
 
 			//Values that we need now and will cache for later use.	
@@ -1674,7 +1484,7 @@ namespace Dy
 
 			//We need to compute these.
 			Cm::SpatialVectorF* linkZAForcesExtW = mArticulationData.getSpatialZAVectors();
-			Cm::SpatialVectorF* linkZAForcesIntW = mArticulationData.mZAInternalForces.begin();
+			Cm::SpatialVectorF* linkZAForcesIntW = mArticulationData.getSpatialZAInternalVectors();
 			SpatialMatrix* linkSpatialInertiasW = mArticulationData.getWorldSpatialArticulatedInertia();
 			SpatialMatrix& baseInvSpatialArticulatedInertiaW = mArticulationData.getBaseInvSpatialArticulatedInertiaW();
 		
@@ -1691,7 +1501,6 @@ namespace Dy
 		{
 			//Constants
 			const PxArticulationFlags& flags = mArticulationData.getArticulationFlags();
-			ArticulationLink* links = mArticulationData.getLinks();
 			const PxU32 linkCount = mArticulationData.getLinkCount();
 			const ArticulationJointCoreData* jointData = mArticulationData.getJointData();
 			const SpatialMatrix& baseInvSpatialArticulatedInertiaW = mArticulationData.getBaseInvSpatialArticulatedInertiaW();
@@ -1702,6 +1511,7 @@ namespace Dy
 			const Cm::SpatialVectorF* jointDofISInvDW = mArticulationData.getISInvStIS(); 
 
 			//outputs
+			ArticulationLink* links = mArticulationData.getLinks();
 			TestImpulseResponse* linkImpulseResponseMatricesW = mArticulationData.getImpulseResponseMatrixWorld();
 
 			computeArticulatedResponseMatrix(
@@ -1721,7 +1531,7 @@ namespace Dy
 			const PxU32 linkCount = mArticulationData.getLinkCount();
 			const ArticulationJointCoreData* jointDatas = mArticulationData.getJointData();
 			const Cm::SpatialVectorF* linkSpatialZAForcesExtW = mArticulationData.getSpatialZAVectors();
-			const Cm::SpatialVectorF* linkCoriolisForcesW = mArticulationData.getCorioliseVectors();
+			const Cm::SpatialVectorF* linkCoriolisForcesW = mArticulationData.getCoriolisVectors();
 			const PxVec3* linkRsW = mArticulationData.getRw(); 
 			const Cm::UnAlignedSpatialVector* jointDofMotionMatricesW = mArticulationData.getWorldMotionMatrix();
 			const SpatialMatrix& baseInvSpatialArticulatedInertiaW = mArticulationData.getBaseInvSpatialArticulatedInertiaW();
@@ -1745,8 +1555,8 @@ namespace Dy
 					linkSpatialZAForcesExtW, linkCoriolisForcesW, linkRsW,
 					jointDofMotionMatricesW, baseInvSpatialArticulatedInertiaW,
 					linkInvStISW, jointDofISW, jointDofMinusStZExtW,
-					linkMotionAccelerationsW,linkMotionVelocitiesW,
-					jointDofAccelerations, jointDofVelocities, jointDofNewVelocities);		
+					linkMotionAccelerationsW, linkMotionVelocitiesW,
+					jointDofAccelerations, jointDofVelocities, jointDofNewVelocities);
 		}
 
 		{
@@ -1760,11 +1570,11 @@ namespace Dy
 			const ArticulationJointCoreData* jointDatas = mArticulationData.getJointData();
 			const bool fixBase = mArticulationData.getArticulationFlags() & PxArticulationFlag::eFIX_BASE;
 			const Cm::SpatialVectorF* linkSpatialZAIntForcesW = mArticulationData.getSpatialZAInternalVectors();
-			const Cm::SpatialVectorF* linkCoriolisVectorsW = mArticulationData.getCorioliseVectors();
-			const PxReal* linkMasses = mArticulationData.mMasses.begin();
+			const Cm::SpatialVectorF* linkCoriolisVectorsW = mArticulationData.getCoriolisVectors();
+			const PxReal* linkMasses = mArticulationData.getMasses();
 			const PxVec3* linkRsW = mArticulationData.getRw();
 			const PxTransform* linkAccumulatedPosesW = mArticulationData.getAccumulatedPoses();
-			const PxMat33* linkIsolatedSpatialArticulatedInertiasW = mArticulationData.mWorldIsolatedSpatialArticulatedInertia.begin();
+			const PxMat33* linkIsolatedSpatialArticulatedInertiasW = mArticulationData.getWorldIsolatedSpatialArticulatedInertia();
 			const Cm::UnAlignedSpatialVector* jointDofMotionMatricesW = mArticulationData.getWorldMotionMatrix();
 			//cached data.
 			const InvStIs* linkInvStISW = mArticulationData.getInvStIS();
@@ -1773,11 +1583,10 @@ namespace Dy
 			//output
 			Cm::SpatialVectorF* linkMotionVelocitiesW = mArticulationData.getMotionVelocities();
 			Cm::SpatialVectorF* linkMotionAccelerationsW = mArticulationData.getMotionAccelerations();
-			Cm::SpatialVectorF* linkMotionAccelerationIntW = mArticulationData.mMotionAccelerationsInternal.begin();
+			Cm::SpatialVectorF* linkMotionAccelerationIntW = mArticulationData.getMotionAccelerationsInternal();
 			PxReal* jointDofAccelerations = mArticulationData.getJointAccelerations();
-			PxReal* jointDofInternalAccelerations = mArticulationData.mJointInternalAcceleration.begin();
 			PxReal* jointVelocities = mArticulationData.getJointVelocities();
-			PxReal* jointNewVelocities = mArticulationData.mJointNewVelocity.begin();
+			PxReal* jointNewVelocities = mArticulationData.getJointNewVelocities();
 
 			computeLinkInternalAcceleration(
 				dt, fixBase, comW, invSumMass, linkIsolatedSpatialArticulatedInertiasW, baseInvSpatialArticulatedInertiaW,
@@ -1787,16 +1596,16 @@ namespace Dy
 				jointDatas, jointDofMotionMatricesW,
 				linkInvStISW, jointDofISW, jointDofQStZIntIcW,
 				linkMotionAccelerationsW, linkMotionAccelerationIntW, linkMotionVelocitiesW, 
-				jointDofAccelerations, jointDofInternalAccelerations, jointVelocities, jointNewVelocities);
+				jointDofAccelerations, jointVelocities, jointNewVelocities);
 		}
 
 		{
 			const PxU32 linkCount = mArticulationData.getLinkCount();
 
-			Cm::SpatialVectorF* solverLinkSpatialDeltaVels = mArticulationData.mSolverLinkSpatialDeltaVels.begin();
+			Cm::SpatialVectorF* solverLinkSpatialDeltaVels = mArticulationData.getSolverLinkSpatialDeltaVels();
 			PxMemZero(solverLinkSpatialDeltaVels, sizeof(Cm::SpatialVectorF) * linkCount);
 
-			Cm::SpatialVectorF* solverLinkSpatialImpulses = mArticulationData.mSolverLinkSpatialImpulses.begin();
+			Cm::SpatialVectorF* solverLinkSpatialImpulses = mArticulationData.getSolverLinkSpatialImpulses();
 			PxMemZero(solverLinkSpatialImpulses, sizeof(Cm::SpatialVectorF) * linkCount);
 		}
 	}
@@ -1811,31 +1620,21 @@ namespace Dy
 		mStatic1DConstraints.forceSize_Unsafe(0);
 		mStaticContactConstraints.forceSize_Unsafe(0);
 
-		PxMemZero(mArticulationData.mNbStatic1DConstraints.begin(), mArticulationData.mNbStatic1DConstraints.size()*sizeof(PxU32));
-		PxMemZero(mArticulationData.mNbStaticContactConstraints.begin(), mArticulationData.mNbStaticContactConstraints.size() * sizeof(PxU32));
+		PxMemZero(mArticulationData.mNbStatic1DConstraints, mArticulationData.mLinkCapacity * sizeof(PxU32));
+		PxMemZero(mArticulationData.mNbStaticContactConstraints, mArticulationData.mLinkCapacity * sizeof(PxU32));
 		//const PxU32 linkCount = mArticulationData.getLinkCount();
 
 		mArticulationData.init();
 
 		updateArticulation(gravity, invLengthScale, externalForcesEveryTgsIterationEnabled);
-
-		ScratchData scratchData;
-		scratchData.motionVelocities = mArticulationData.getMotionVelocities();
-		scratchData.motionAccelerations = mArticulationData.getMotionAccelerations();
-		scratchData.coriolisVectors = mArticulationData.getCorioliseVectors();
-		scratchData.spatialZAVectors = mArticulationData.getSpatialZAVectors();
-		scratchData.jointAccelerations = mArticulationData.getJointAccelerations();
-		scratchData.jointVelocities = mArticulationData.getJointVelocities();
-		scratchData.jointPositions = mArticulationData.getJointPositions();
-		scratchData.jointForces = mArticulationData.getJointForces();
-		scratchData.externalAccels = mArticulationData.getExternalAccelerations();
-		
+	
 		if (mArticulationData.mLinkCount > 1)
 		{
 			//use individual zero acceleration force(we copy the initial Z value to the transmitted force buffers in initLink())
-			scratchData.spatialZAVectors = mArticulationData.getTransmittedForces();
-			computeZAForceInv(mArticulationData, scratchData);
-			computeJointTransmittedFrictionForce(mArticulationData, scratchData);
+			const Cm::SpatialVectorF* motionAccelerations = mArticulationData.getMotionAccelerations();
+			Cm::SpatialVectorF* spatialZAVectors = mArticulationData.getTransmittedForces();
+			computeZAForceInv(mArticulationData, motionAccelerations, spatialZAVectors);
+			computeJointTransmittedFrictionForce(mArticulationData, spatialZAVectors);
 		}
 
 		//the dirty flag is used in inverse dynamic
@@ -1846,33 +1645,25 @@ namespace Dy
 		//PxMemZero(mArticulationData.getSpatialZAVectors(), sizeof(Cm::SpatialVectorF) * linkCount);
 
 		//Reset deferredQstZ and root deferredZ!
-		PxMemZero(mArticulationData.mDeferredQstZ.begin(), sizeof(PxReal)*mArticulationData.getDofs());
+		PxMemZero(mArticulationData.getDeferredQstZ(), sizeof(PxReal) * mArticulationData.getDofs());
 		mArticulationData.mRootDeferredZ = Cm::SpatialVectorF::Zero();
 
 		// solver progress counters
 		maxSolverNormalProgress = 0;
 		maxSolverFrictionProgress = 0;
 		solverProgress = 0;
-		numTotalConstraints = 0;
+
+		PxTransform* PX_RESTRICT preTransform = mArticulationData.getPreTransform();
+		const ArticulationLink* PX_RESTRICT links = mArticulationData.getLinks();
+		PxTransform* PX_RESTRICT accumulatedPoses = mArticulationData.getAccumulatedPoses();
+		PxQuat* PX_RESTRICT deltaQ = mArticulationData.getDeltaQ();
 
 		for (PxU32 a = 0; a < mArticulationData.getLinkCount(); ++a)
 		{
-			mArticulationData.mAccumulatedPoses[a] = mArticulationData.getLink(a).bodyCore->body2World; // ?? this was already done in updateArticulation->computeRelativeTransformC2P
-			mArticulationData.mPreTransform[a] = mArticulationData.getLink(a).bodyCore->body2World;
-			mArticulationData.mDeltaQ[a] = PxQuat(PxIdentity);
-		}
-	}
-
-	void FeatherstoneArticulation::enforcePrismaticLimits(PxReal& jPosition, ArticulationJointCore* joint)
-	{
-		const PxU32 dofId = joint->dofIds[0];
-		if (joint->motion[dofId] == PxArticulationMotion::eLIMITED)
-		{
-			if (jPosition < (joint->limits[dofId].low))
-				jPosition = joint->limits[dofId].low;
-
-			if (jPosition > (joint->limits[dofId].high))
-				jPosition = joint->limits[dofId].high;
+			const PxTransform& body2World = links[a].bodyCore->body2World;
+			accumulatedPoses[a] = body2World; // ?? this was already done in updateArticulation->computeRelativeTransformC2P
+			preTransform[a] = body2World;
+			deltaQ[a] = PxQuat(PxIdentity);
 		}
 	}
 
@@ -1923,28 +1714,29 @@ namespace Dy
 
 	void FeatherstoneArticulation::computeAndEnforceJointPositions(ArticulationData& data)
 	{
-		ArticulationLink* links = data.getLinks();
+		const ArticulationLink* PX_RESTRICT links = data.getLinks();
 		const PxU32 linkCount = data.getLinkCount();
 
-		ArticulationJointCoreData* jointData = data.getJointData();
+		const ArticulationJointCoreData* PX_RESTRICT jointData = data.getJointData();
 
-		PxReal* jointPositions = data.getJointPositions();
+		PxReal* PX_RESTRICT jointPositions = data.getJointPositions();
+		const PxQuat* PX_RESTRICT relativeQuats = data.getRelativeQuat();
 		
 		for (PxU32 linkID = 1; linkID < linkCount; ++linkID)
 		{
-			ArticulationLink& link = links[linkID];
-			ArticulationJointCore* joint = link.inboundJoint;
-			ArticulationJointCoreData& jointDatum = jointData[linkID];
+			const ArticulationLink& link = links[linkID];
+			const ArticulationJointCore* joint = link.inboundJoint;
+			const ArticulationJointCoreData& jointDatum = jointData[linkID];
 			PxReal* jPositions = &jointPositions[jointDatum.jointOffset];
 			
 			if (joint->jointType == PxArticulationJointType::eSPHERICAL)
 			{
-				ArticulationLink& pLink = links[link.parent];
+				const ArticulationLink& pLink = links[link.parent];
 				//const PxTransform pBody2World = pLink.bodyCore->body2World;
 
 				const PxU32 dof = jointDatum.nbDof;
 
-				computeSphericalJointPositions(data.mRelativeQuat[linkID], link.bodyCore->body2World.q,
+				computeSphericalJointPositions(relativeQuats[linkID], link.bodyCore->body2World.q,
 					pLink.bodyCore->body2World.q, jPositions, &data.getMotionMatrix(jointDatum.jointOffset), dof);
 			}
 			else if (joint->jointType == PxArticulationJointType::eREVOLUTE)
@@ -1959,11 +1751,6 @@ namespace Dy
 				jPos = PxClamp(jPos, -PxTwoPi*2.f, PxTwoPi*2.f);
 
 				jPositions[0] = jPos;
-
-			}
-			else if(joint->jointType == PxArticulationJointType::ePRISMATIC)
-			{
-				enforcePrismaticLimits(jPositions[0], joint);
 			}
 		}
 	}
@@ -1985,30 +1772,28 @@ namespace Dy
 	void FeatherstoneArticulation::propagateLinksDown(ArticulationData& data, const PxReal* jointVelocities, PxReal* jointPositions,
 		Cm::SpatialVectorF* motionVelocities)
 	{
-		ArticulationLink* links = mArticulationData.getLinks();
+		const ArticulationLink* PX_RESTRICT links = data.getLinks();
 
-		ArticulationJointCoreData* jointData = mArticulationData.getJointData();
+		const ArticulationJointCoreData* PX_RESTRICT jointData = data.getJointData();
 
-		const PxQuat* const PX_RESTRICT relativeQuats = mArticulationData.mRelativeQuat.begin();
+		const PxQuat* const PX_RESTRICT relativeQuats = data.getRelativeQuat();
+		const Cm::UnAlignedSpatialVector* PX_RESTRICT motionMatrix = data.getMotionMatrix();
 
-		const PxU32 linkCount = mArticulationData.getLinkCount();
+		const PxU32 linkCount = data.getLinkCount();
 
 		const PxReal dt = data.getDt();
-
-		
 		
 		for (PxU32 linkID = 1; linkID < linkCount; ++linkID)
 		{
-			ArticulationLink& link = links[linkID];
+			const ArticulationLink& link = links[linkID];
 
-			ArticulationJointCoreData& jointDatum = jointData[linkID];
-			//ArticulationLinkData& linkDatum = mArticulationData.getLinkData(linkID);
+			const ArticulationJointCoreData& jointDatum = jointData[linkID];
 			//const PxTransform oldTransform = preTransforms[linkID];
 
-			ArticulationLink& pLink = links[link.parent];
+			const ArticulationLink& pLink = links[link.parent];
 			const PxTransform pBody2World = pLink.bodyCore->body2World;
 
-			ArticulationJointCore* joint = link.inboundJoint;
+			const ArticulationJointCore* joint = link.inboundJoint;
 
 			const PxReal* jVelocity = &jointVelocities[jointDatum.jointOffset];
 			PxReal* jPosition = &jointPositions[jointDatum.jointOffset];
@@ -2032,15 +1817,13 @@ namespace Dy
 
 				PxReal jPos = jPosition[0] + delta;
 
-				enforcePrismaticLimits(jPos, joint);
-
 				jPosition[0] = jPos;
 
 				newParentToChild = relativeQuat;
 				const PxVec3 e = newParentToChild.rotate(parentOffset);
 				const PxVec3 d = childOffset;
 
-				const PxVec3& u = data.mMotionMatrix[jointDatum.jointOffset].bottom;
+				const PxVec3& u = motionMatrix[jointDatum.jointOffset].bottom;
 
 				r = e + d + u * jPos;
 				break;
@@ -2060,7 +1843,7 @@ namespace Dy
 				jPos = PxClamp(jPos, -PxTwoPi*2.f, PxTwoPi*2.f);
 				jPosition[0] = jPos;
 
-				const PxVec3& u = data.mMotionMatrix[jointDatum.jointOffset].top;
+				const PxVec3& u = motionMatrix[jointDatum.jointOffset].top;
 
 				PxQuat jointRotation = PxQuat(-jPos, u);
 				if (jointRotation.w < 0)	//shortest angle.
@@ -2084,7 +1867,7 @@ namespace Dy
 
 				jPosition[0] = jPos;
 
-				const PxVec3& u = data.mMotionMatrix[jointDatum.jointOffset].top;
+				const PxVec3& u = motionMatrix[jointDatum.jointOffset].top;
 
 				PxQuat jointRotation = PxQuat(-jPos, u);
 				if (jointRotation.w < 0)	//shortest angle.
@@ -2104,9 +1887,10 @@ namespace Dy
 			{
 				if (1)
 				{
-					const PxTransform oldTransform = data.mAccumulatedPoses[linkID];
+					PxTransform* PX_RESTRICT accumulatedPoses = data.getAccumulatedPoses();
+					const PxTransform oldTransform = accumulatedPoses[linkID];
 #if 0
-					Cm::SpatialVectorF worldVel = FeatherstoneArticulation::translateSpatialVector(-mArticulationData.mRw[linkID], motionVelocities[link.parent]);
+					Cm::SpatialVectorF worldVel = FeatherstoneArticulation::translateSpatialVector(-data.mRw[linkID], motionVelocities[link.parent]);
 					for (PxU32 i = 0; i < jointDatum.dof; ++i)
 					{
 						const PxReal delta = (jVelocity[i]) * dt;
@@ -2125,7 +1909,7 @@ namespace Dy
 					//PxVec3 relVel = oldTransform.rotateInv(worldVel.top - parentVel.top);
 					//for (PxU32 i = 0; i < jointDatum.dof; ++i)
 					//{
-					//	const PxReal jVel = mArticulationData.mMotionMatrix[jointDatum.jointOffset + i].top.dot(relVel);
+					//	const PxReal jVel = data.mMotionMatrix[jointDatum.jointOffset + i].top.dot(relVel);
 					//	jVelocity[i] = jVel;
 					//	/*const PxReal delta = jVel * dt;
 					//	jPosition[i] += delta;*/
@@ -2212,7 +1996,7 @@ namespace Dy
 					axis *= angle;
 					for (PxU32 i = 0; i < jointDatum.nbDof; ++i)
 					{
-						PxVec3 sa = mArticulationData.getMotionMatrix(jointDatum.jointOffset + i).top;
+						PxVec3 sa = data.getMotionMatrix(jointDatum.jointOffset + i).top;
 						PxReal ang = -sa.dot(axis);
 						jPosition[i] = ang;
 					}
@@ -2247,26 +2031,17 @@ namespace Dy
 		}
 	}
 
-	void FeatherstoneArticulation::updateBodies(const ArticulationSolverDesc& desc, Cm::SpatialVectorF* tempDeltaV, PxReal dt)
-	{
-		updateBodies(static_cast<FeatherstoneArticulation*>(desc.articulation), tempDeltaV, dt, true);
-	}
-
-	void FeatherstoneArticulation::updateBodiesTGS(const ArticulationSolverDesc& desc, Cm::SpatialVectorF* tempDeltaV, PxReal dt)
-	{
-		updateBodies(static_cast<FeatherstoneArticulation*>(desc.articulation), tempDeltaV, dt, false);
-	}
-
 	void FeatherstoneArticulation::updateBodies(FeatherstoneArticulation* articulation, Cm::SpatialVectorF* tempDeltaV, PxReal dt, bool integrateJointPositions)
 	{		
 		ArticulationData& data = articulation->mArticulationData;
-		ArticulationLink* links = data.getLinks();
+		ArticulationLink* PX_RESTRICT links = data.getLinks();
 		const PxU32 linkCount = data.getLinkCount();
 
-		Cm::SpatialVectorF* motionVelocities = data.getMotionVelocities();
-		Cm::SpatialVectorF* posMotionVelocities = data.getPosIterMotionVelocities();
+		const PxReal* PX_RESTRICT masses = data.getMasses();
+		Cm::SpatialVectorF* PX_RESTRICT motionVelocities = data.getMotionVelocities();
+		Cm::SpatialVectorF* PX_RESTRICT posMotionVelocities = data.getPosIterMotionVelocities();
 
-		Cm::SpatialVector* externalAccels = data.getExternalAccelerations();
+		Cm::SpatialVector* PX_RESTRICT externalAccels = data.getExternalAccelerations();
 		Cm::SpatialVector zero = Cm::SpatialVector::zero();
 
 		data.setDt(dt);
@@ -2290,90 +2065,93 @@ namespace Dy
 
 			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 			{
-				PxReal mass = data.mMasses[linkID];
+				const PxReal mass = masses[linkID];
 				momentum0.top += motionVelocities[linkID].bottom * mass;
 				posMomentum += posMotionVelocities[linkID].bottom * mass;
 			}
 
-			PxVec3 rootVel = momentum0.top * data.mInvSumMass;
+			const PxVec3 rootVel = momentum0.top * data.mInvSumMass;
+
+			const PxTransform* PX_RESTRICT preTransform = data.getPreTransform();
+			const PxMat33* PX_RESTRICT worldIsolatedSpatialArticulatedInertia = data.getWorldIsolatedSpatialArticulatedInertia();
 
 			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 			{
-				PxReal mass = data.mMasses[linkID];
-				PxVec3 offsetMass = (data.mPreTransform[linkID].p - COM)*mass;
-				PxVec3 angMom = (data.mWorldIsolatedSpatialArticulatedInertia[linkID] * motionVelocities[linkID].top) +
+				const PxReal mass = masses[linkID];
+				const PxVec3 offsetMass = (preTransform[linkID].p - COM) * mass;
+				const PxVec3 angMom = (worldIsolatedSpatialArticulatedInertia[linkID] * motionVelocities[linkID].top) +
 					offsetMass.cross(motionVelocities[linkID].bottom - rootVel);
 				momentum0.bottom += angMom;
 			}
 		}
 
-
+		PxTransform* PX_RESTRICT accumulatedPoses = data.getAccumulatedPoses();
 		if (!integrateJointPositions)
 		{
 			//TGS
 			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 			{
-				links[linkID].bodyCore->body2World = data.mAccumulatedPoses[linkID].getNormalized();
+				links[linkID].bodyCore->body2World = accumulatedPoses[linkID].getNormalized();
 			}
 
-			articulation->computeAndEnforceJointPositions(data);
+			computeAndEnforceJointPositions(data);
 		}
 		else // PGS
 		{
-
 			if (!fixBase)
 			{
-				const PxTransform& preTrans = data.mAccumulatedPoses[0];
+				const PxTransform& preTrans = accumulatedPoses[0];
 
 				const Cm::SpatialVectorF& posVel = data.getPosIterMotionVelocity(0);
 
 				updateRootBody(posVel, preTrans, data, dt);
 			}
 			//using the original joint velocities and delta velocities changed in the positional iter to update joint position/body transform
-			articulation->propagateLinksDown(data, data.getPosIterJointVelocities(), data.getJointPositions(), data.getPosIterMotionVelocities());
-
+			propagateLinksDown(data, data.getPosIterJointVelocities(), data.getJointPositions(), data.getPosIterMotionVelocities());
 		}
 		//Fix up momentum based on changes in pos. Only currently possible with non-fixed base
 
-		
-
 		if (!fixBase)
 		{
-			PxVec3 COM = data.mLinks[0].bodyCore->body2World.p * data.mMasses[0];
-			data.mAccumulatedPoses[0] = data.mLinks[0].bodyCore->body2World;
+			PxVec3* PX_RESTRICT linkRsW = data.getRw();
+			const Cm::UnAlignedSpatialVector* PX_RESTRICT motionMatrix = data.getMotionMatrix();
+			const PxReal* PX_RESTRICT jointNewVelocities = data.getJointNewVelocities();
 
-			PxVec3 sumLinMom = data.mMotionVelocities[0].bottom * data.mMasses[0];
+			PxVec3 COM = data.mLinks[0].bodyCore->body2World.p * masses[0];
+			accumulatedPoses[0] = data.mLinks[0].bodyCore->body2World;
+
+			PxVec3 sumLinMom = motionVelocities[0].bottom * masses[0];
 			for (PxU32 linkID = 1; linkID < linkCount; ++linkID)
 			{
 				PxU32 parent = data.mLinks[linkID].parent;
 
 				const PxTransform childPose = data.mLinks[linkID].bodyCore->body2World;
 
-				data.mAccumulatedPoses[linkID] = childPose;
+				accumulatedPoses[linkID] = childPose;
 
-				PxVec3 rw = childPose.p - data.mAccumulatedPoses[parent].p;
+				PxVec3 rw = childPose.p - accumulatedPoses[parent].p;
 
-				data.mRw[linkID] = rw;
+				linkRsW[linkID] = rw;
 
 				ArticulationJointCoreData& jointDatum = data.mJointData[linkID];
 
-				const PxReal* jVelocity = &data.mJointNewVelocity[jointDatum.jointOffset];
+				const PxReal* jVelocity = &jointNewVelocities[jointDatum.jointOffset];
 
-				Cm::SpatialVectorF vel = FeatherstoneArticulation::translateSpatialVector(-rw, data.mMotionVelocities[parent]);
+				Cm::SpatialVectorF vel = FeatherstoneArticulation::translateSpatialVector(-rw, motionVelocities[parent]);
 				Cm::UnAlignedSpatialVector deltaV = Cm::UnAlignedSpatialVector::Zero();
 				for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 				{
-					PxReal jVel = jVelocity[ind];
+					const PxReal jVel = jVelocity[ind];
 					//deltaV += data.mWorldMotionMatrix[jointDatum.jointOffset + ind] * jVel;
-					deltaV += data.mMotionMatrix[jointDatum.jointOffset + ind] * jVel;
+					deltaV += motionMatrix[jointDatum.jointOffset + ind] * jVel;
 				}
 
 				vel.top += childPose.rotate(deltaV.top);
 				vel.bottom += childPose.rotate(deltaV.bottom);
 
-				data.mMotionVelocities[linkID] = vel;
+				motionVelocities[linkID] = vel;
 
-				PxReal mass = data.mMasses[linkID];
+				PxReal mass = masses[linkID];
 				COM += childPose.p * mass;
 				sumLinMom += vel.bottom * mass;
 			}
@@ -2386,24 +2164,26 @@ namespace Dy
 
 			PxVec3 rootLinVel = sumLinMom * data.mInvSumMass;
 
-
+#if PX_DEBUG
+			PxMat33* PX_RESTRICT worldIsolatedSpatialArticulatedInertia = data.getWorldIsolatedSpatialArticulatedInertia();
+#endif
 
 			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 			{
-				PxReal mass = data.mMasses[linkID];
+				const PxReal mass = masses[linkID];
 
-				const PxVec3 offset = data.mAccumulatedPoses[linkID].p - COM;
+				const PxVec3 offset = accumulatedPoses[linkID].p - COM;
 				PxMat33 inertia;
-				PxMat33 R(data.mAccumulatedPoses[linkID].q);
-				const PxVec3 invInertiaDiag = data.getLink(linkID).bodyCore->inverseInertia;
-				PxVec3 inertiaDiag(1.f / invInertiaDiag.x, 1.f / invInertiaDiag.y, 1.f / invInertiaDiag.z);
+				const PxMat33 R(accumulatedPoses[linkID].q);
+
+				const PxVec3 inertiaTensor = Cm::safeRecip<PxVec3>(data.getLink(linkID).bodyCore->inverseInertia);
 
 				const PxVec3 offsetMass = offset * mass;
 
-				Cm::transformInertiaTensor(inertiaDiag, R, inertia);
+				Cm::transformInertiaTensor(inertiaTensor, R, inertia);
 				//Only needed for debug validation
 #if PX_DEBUG
-				data.mWorldIsolatedSpatialArticulatedInertia[linkID] = inertia;
+				worldIsolatedSpatialArticulatedInertia[linkID] = inertia;
 #endif
 				sumInertia += computeContributionToEnsembleMomentOfInertia(inertia, mass, offset);
 				sumAngMom += inertia * motionVelocities[linkID].top;
@@ -2435,17 +2215,18 @@ namespace Dy
 			}
 #else
 
+			const PxTransform* PX_RESTRICT poses = data.getAccumulatedPoses();
 			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 			{
-				const PxVec3 offset = (data.getAccumulatedPoses()[linkID].p - COM);
-				Cm::SpatialVectorF velChange(angDelta, -offset.cross(angDelta));
+				const PxVec3 offset = poses[linkID].p - COM;
+				const Cm::SpatialVectorF velChange(angDelta, -offset.cross(angDelta));
 				motionVelocities[linkID] += velChange;
-				PxReal mass = data.mMasses[linkID];
+				const PxReal mass = masses[linkID];
 				sumLinMom += velChange.bottom * mass;
 			}
 #endif
 
-			PxVec3 linDelta = (momentum0.top - sumLinMom)*data.mInvSumMass;
+			const PxVec3 linDelta = (momentum0.top - sumLinMom) * data.mInvSumMass;
 
 			
 
@@ -2456,8 +2237,8 @@ namespace Dy
 
 			//if (integrateJointPositions)
 			{
-				PxVec3 predictedCOM = data.mCOM + posMomentum * (data.mInvSumMass * dt);
-				PxVec3 posCorrection = predictedCOM - COM;
+				const PxVec3 predictedCOM = data.mCOM + posMomentum * (data.mInvSumMass * dt);
+				const PxVec3 posCorrection = predictedCOM - COM;
 
 				for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 				{
@@ -2522,13 +2303,13 @@ namespace Dy
 	void FeatherstoneArticulation::updateRootBody(const Cm::SpatialVectorF& motionVelocity, 
 		const PxTransform& preTransform, ArticulationData& data, const PxReal dt)
 	{
-		ArticulationLink* links = data.getLinks();
+		const ArticulationLink* PX_RESTRICT links = data.getLinks();
 		//body2World store new body transform integrated from solver linear/angular velocity
 
 		PX_ASSERT(motionVelocity.top.isFinite());
 		PX_ASSERT(motionVelocity.bottom.isFinite());
 
-		ArticulationLink& baseLink = links[0];
+		const ArticulationLink& baseLink = links[0];
 
 		PxsBodyCore* baseBodyCore = baseLink.bodyCore;
 
@@ -2546,10 +2327,8 @@ namespace Dy
 		PX_ASSERT(baseBodyCore->body2World.isFinite() && baseBodyCore->body2World.isValid());
 	}
 
-
 	void FeatherstoneArticulation::getJointAcceleration(const PxVec3& gravity, PxArticulationCache& cache)
 	{
-		PX_SIMD_GUARD
 		if (mArticulationData.getDataDirty())
 		{
 			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Articulation::getJointAcceleration() commonInit need to be called first to initialize data!");
@@ -2582,7 +2361,6 @@ namespace Dy
 		const bool fixBase = mArticulationData.getArticulationFlags() & PxArticulationFlag::eFIX_BASE;
 		//we have initialized motionVelocity and motionAcceleration to be zero in the root link if
 		//fix based flag is raised
-		//ArticulationLinkData& baseLinkDatum = mArticulationData.getLinkData(0);
 
 		Cm::SpatialVectorF* motionAccelerations = scratchData.motionAccelerations;
 		Cm::SpatialVectorF* spatialZAForces = scratchData.spatialZAVectors;
@@ -2590,7 +2368,8 @@ namespace Dy
 
 		if (!fixBase)
 		{
-			SpatialMatrix inverseArticulatedInertia = mArticulationData.mWorldSpatialArticulatedInertia[0].getInverse();
+			const SpatialMatrix* worldSpatialArticulatedInertia = mArticulationData.getWorldSpatialArticulatedInertia();
+			const SpatialMatrix inverseArticulatedInertia = worldSpatialArticulatedInertia[0].getInverse();
 			motionAccelerations[0] = -(inverseArticulatedInertia * spatialZAForces[0]);
 		}
 #if FEATHERSTONE_DEBUG
@@ -2600,30 +2379,37 @@ namespace Dy
 		}
 #endif
 
+		const InvStIs* PX_RESTRICT invStIS = mArticulationData.getInvStIS();
+		const Cm::SpatialVectorF* PX_RESTRICT isW = mArticulationData.getIsW();
+		const PxReal* PX_RESTRICT qstZIc = mArticulationData.getQstZIc();	// PT: TODO: unclear if the code meant getQstZIc() or getMinusStZExt()
+		const PxVec3* PX_RESTRICT rw = mArticulationData.getRw();
+
 		PxReal* jointAccelerations = cache.jointAcceleration;
 		//calculate acceleration
 		for (PxU32 linkID = 1; linkID < linkCount; ++linkID)
 		{
-			ArticulationLink& link = mArticulationData.getLink(linkID);
+			const ArticulationLink& link = mArticulationData.getLink(linkID);
 
 			//SpatialTransform p2C = linkDatum.childToParent.getTranspose();
 			//Cm::SpatialVectorF pMotionAcceleration = mArticulationData.mChildToParent[linkID].transposeTransform(motionAccelerations[link.parent]);
 
-			Cm::SpatialVectorF pMotionAcceleration = FeatherstoneArticulation::translateSpatialVector(-mArticulationData.getRw(linkID), motionAccelerations[link.parent]);
+			Cm::SpatialVectorF pMotionAcceleration = FeatherstoneArticulation::translateSpatialVector(-rw[linkID], motionAccelerations[link.parent]);
 
-			ArticulationJointCoreData& jointDatum = mArticulationData.getJointData(linkID);
+			const ArticulationJointCoreData& jointDatum = mArticulationData.getJointData(linkID);
 			//calculate jointAcceleration
 			PxReal* jA = &jointAccelerations[jointDatum.jointOffset];
-			const InvStIs& invStIs = mArticulationData.mInvStIs[linkID];
-			computeJointAccelerationW(jointDatum.nbDof, pMotionAcceleration, &mArticulationData.mIsW[jointDatum.jointOffset], invStIs,
-				&mArticulationData.qstZIc[jointDatum.jointOffset], jA);
+			const InvStIs& invStIs = invStIS[linkID];
+			computeJointAccelerationW(jointDatum.nbDof, pMotionAcceleration, &isW[jointDatum.jointOffset], invStIs,
+				&qstZIc[jointDatum.jointOffset], jA);
 
 			Cm::SpatialVectorF motionAcceleration(PxVec3(0.f), PxVec3(0.f));
 
+			const Cm::UnAlignedSpatialVector* PX_RESTRICT worldMotionMatrix = mArticulationData.getWorldMotionMatrix();
+
 			for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 			{
-				motionAcceleration.top += mArticulationData.mWorldMotionMatrix[jointDatum.jointOffset + ind].top * jA[ind];
-				motionAcceleration.bottom += mArticulationData.mWorldMotionMatrix[jointDatum.jointOffset + ind].bottom * jA[ind];
+				motionAcceleration.top += worldMotionMatrix[jointDatum.jointOffset + ind].top * jA[ind];
+				motionAcceleration.bottom += worldMotionMatrix[jointDatum.jointOffset + ind].bottom * jA[ind];
 			}
 
 			motionAccelerations[linkID] = pMotionAcceleration + coriolisVectors[linkID] + motionAcceleration;

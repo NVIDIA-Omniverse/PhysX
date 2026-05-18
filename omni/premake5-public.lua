@@ -1,6 +1,8 @@
 PHYSX_LIBS_DEFAULT = "checked"
-BOOST_LIB = "boost_python311"
-PYTHON_LIB = "python3.11"
+PYTHON_VERSION = "3.12"
+PYTHON_LIB = "python"..PYTHON_VERSION
+MSVC_VERSION = "14.29.30133"
+WINSDK_VERSION = "10.0.19041.0"
 
 function extension_physxsdk_deps(targetDepsDirIn, physxVersionIn, physxLibsIn)    
     local physxLibs = get_param_or_global_or_default(physxLibsIn, physxLibs, PHYSX_LIBS_DEFAULT)
@@ -12,9 +14,9 @@ function extension_physxsdk_deps(targetDepsDirIn, physxVersionIn, physxLibsIn)
         libdirs { targetDepsDirIn.."/"..physxVersionIn.."/bin/win.x86_64.vc142.md/"..physxLibs}
         defines {  "PX_PHYSX_STATIC_LIB", "NDEBUG" }
     filter { "system:windows" }
-        links { "PhysXVehicle2_static_64", "PhysXExtensions_static_64", "PhysXCharacterKinematic_static_64", "PhysX_static_64", "PhysXPvdSDK_static_64","PhysXCooking_static_64","PhysXCommon_static_64", "PhysXFoundation_static_64" }
+        links { "PhysXVehicle_static_64", "PhysXExtensions_static_64", "PhysXCharacterKinematic_static_64", "PhysX_static_64", "PhysXPvdSDK_static_64","PhysXCooking_static_64","PhysXCommon_static_64", "PhysXFoundation_static_64" }
     filter { "system:linux" }            
-        linkoptions { "-lpthread -Wl,--start-group -lPhysXExtensions_static_64 -lPhysX_static_64 -lPhysXPvdSDK_static_64 -lPhysXVehicle2_static_64 -lPhysXCharacterKinematic_static_64 -lPhysXCooking_static_64 -lPhysXCommon_static_64 -lPhysXFoundation_static_64 -Wl,--end-group -ldl" }        
+        linkoptions { "-lpthread -Wl,--start-group -lPhysXExtensions_static_64 -lPhysX_static_64 -lPhysXPvdSDK_static_64 -lPhysXVehicle_static_64 -lPhysXCharacterKinematic_static_64 -lPhysXCooking_static_64 -lPhysXCommon_static_64 -lPhysXFoundation_static_64 -Wl,--end-group -ldl" }        
     filter { "system:linux", "platforms:x86_64", "configurations:debug" }
         buildoptions { "-Wno-invalid-offsetof" }        
         defines {  "PX_PHYSX_STATIC_LIB", "_DEBUG" }
@@ -32,26 +34,16 @@ function extension_physxsdk_deps(targetDepsDirIn, physxVersionIn, physxLibsIn)
         defines {  "PX_PHYSX_STATIC_LIB", "NDEBUG" }
         libdirs { targetDepsDirIn.."/"..physxVersionIn.."/bin/linux.aarch64/"..physxLibs }        
     filter {} 
+
+    if os.target() == "windows" and _OPTIONS["devphysx"] then
+        fastuptodate "Off"
+        dependson { "PhysX", "PhysXExtensions", "PhysXGpu", "PhysXVehicle", "PhysXCharacterKinematic", "PVDRuntime"}
+    end
 end
 
 function link_boost_for_windows_wdefault(libs)
-    local libs = libs or {BOOST_LIB}
-    BOOST_COMPILER_TYPE = "vc142-mt"
-    BOOST_VERSION = "x64-1_82"
-
+    --- just for macros now
     defines { "BOOST_ALL_NO_LIB", "BOOST_ALL_DYN_LINK" }
-
-    filter { "system:windows", "configurations:debug" }
-        for _, l in ipairs(libs) do
-            links { l.."-"..BOOST_COMPILER_TYPE.."-gd-"..BOOST_VERSION}
-        end
-
-    filter { "system:windows", "configurations:release" }
-        for _, l in ipairs(libs) do
-            links { l.."-"..BOOST_COMPILER_TYPE.."-"..BOOST_VERSION}
-        end
-
-    filter {}
 end
 
 function usd_links(...)
@@ -141,7 +133,11 @@ function define_physics_test_experience(ext_name, args)
         }
     end
 
-    test_args = concat_arrays(test_args, extra_test_args)
+    if #extra_test_args > 0 then
+        local arg_placeholder = (os.target() == "windows") and "%*" or "$@"
+        table.insert(test_args, arg_placeholder)
+        test_args = concat_arrays(test_args, extra_test_args)
+    end
 
     local exp_args = {
         config_path = "",
@@ -171,7 +167,9 @@ function add_folder_overrides(args)
 end
 
 function define_etm_test_experience(ext_name)
-    -- not relevant for OSS release
+    for _, config in ipairs(ALL_CONFIGS) do
+        create_repo_runner("tests-etm-"..ext_name, "etm", config, "-e "..ext_name)
+    end
 end
 
 function get_prebuild_files()
@@ -186,6 +184,29 @@ function get_version()
         file:close()        
     end
     return version
+end
+
+function read_kit_sdk_version()
+    local file = io.open(root.."/deps/kit-sdk-target-deps.packman.xml", "r")
+    if file then
+        local content = file:read "*all"
+        file:close()
+        -- Extract version attribute value (e.g., "109.0.1+feature.252300...")
+        local full_version = content:match('version="([^"]+)"')
+        if full_version then
+            -- Extract first three numbers separated by dots (e.g., "109.0.1")
+            local major, minor, patch = full_version:match("^(%d+)%.(%d+)%.(%d+)")
+            if major and minor and patch then
+                kit_sdk_version = major .. "." .. minor .. "." .. patch
+                -- Compute numeric version as MAJOR * 10000 + MINOR * 100 + PATCH for preprocessor comparisons
+                kit_sdk_version_num = tonumber(major) * 10000 + tonumber(minor) * 100 + tonumber(patch)
+                return kit_sdk_version_num
+            end
+        end
+    end
+    kit_sdk_version = "0.0.0"
+    kit_sdk_version_num = 0
+    return kit_sdk_version_num
 end
 
 function get_param_or_global_or_default(param, glb, default)
@@ -218,9 +239,29 @@ end
 function make_nvcc_command(nvccPath, nvccHostCompilerVS, nvccHostCompilerFlags, nvccFlags)
     if os.target() == "windows" then
         ext = ".obj"
-        local compilerBindir = " --compiler-bindir "..nvccHostCompilerVS
-        local buildString =  "\""..nvccPath.."\"".." "..nvccFlags..compilerBindir.." -t0 -Xcompiler="..commaficate(nvccHostCompilerFlags)..",/Zc:__cplusplus --std c++17 -c %{get_include_string(cfg.includedirs)} %{file.abspath} -o %{cfg.objdir}/%{file.basename}"..ext
-        buildmessage (buildString)
+        local packagedVCInstallDir = root.."/_build/host-deps/msvc/VC"
+
+        -- NVCC may try to locate and run vcvars64.bat based on the host compiler
+        -- path. For our packaged MSVC toolchain, vcvars64.bat may be missing,
+        -- but MSBuild already provides a usable environment for cl.exe.
+        -- Only force --use-local-env when vcvars64.bat is not available to avoid
+        -- changing behavior for other setups.
+        local useLocalEnv = ""
+        if not os.isfile(packagedVCInstallDir.."/Auxiliary/Build/vcvars64.bat") then
+            useLocalEnv = " --use-local-env"
+        end
+
+        local compilerBindir = useLocalEnv.." --compiler-bindir "..nvccHostCompilerVS
+        local nvccCmd = "\""..nvccPath.."\"".." "..nvccFlags..compilerBindir.." -t0 -Xcompiler="..commaficate(nvccHostCompilerFlags)..",/Zc:__cplusplus --std c++17 -c %{get_include_string(cfg.includedirs)} %{file.abspath} -o %{cfg.objdir}/%{file.basename}"..ext
+
+        -- Prefer the packaged MSVC layout when present; scope the env var to this invocation.
+        local vcInstallPrefix = ""
+        if os.isdir(packagedVCInstallDir) then
+            vcInstallPrefix = "set \"VCINSTALLDIR="..packagedVCInstallDir.."\" && "
+        end
+        local buildString = vcInstallPrefix..nvccCmd
+
+        buildmessage (nvccCmd)
         buildcommands { buildString }
         buildoutputs { "%{cfg.objdir}/%{file.basename}"..ext }
     end
@@ -234,7 +275,20 @@ end
 
 function add_nvcc_commands()
     local nvccPath = root.."/_build/target-deps/cuda/bin/nvcc"
-    local nvccHostCompilerVS = root.."/_build/host-deps/msvc/VC"
+    -- Discover the cl.exe directory dynamically so nvcc finds the host compiler
+    -- without invoking vcvars64.bat. The packaged MSVC's vcvars64.bat doesn't
+    -- work in a non-VS-installer context, and relying on VCINSTALLDIR being
+    -- set (or not set) in the environment was fragile across CI configurations.
+    local msvcToolsDirs = os.matchdirs(root.."/_build/host-deps/msvc/VC/Tools/MSVC/*")
+    local nvccHostCompilerVS
+    if #msvcToolsDirs > 0 then
+        nvccHostCompilerVS = msvcToolsDirs[1].."/bin/HostX64/x64"
+    else
+        -- Fallback for when host-deps haven't been fetched yet (e.g. premake
+        -- generation before packman pull). Use the legacy path; nvcc will
+        -- produce a clear error at build time if cl.exe isn't there.
+        nvccHostCompilerVS = root.."/_build/host-deps/msvc/VC"
+    end
 
     -- Note: This is mostly copy'n'pasted from the rendering premake5.lua
     -- Create pre-compiled SASS for all architectures that are supported by CUDA 11.5 (Maxwell to Ampere)
@@ -258,10 +312,24 @@ function add_nvcc_commands()
         make_nvcc_command(nvccPath, nvccHostCompilerVS, "/MDd", sass..ptx.."-g -G")
     filter { "files:**.cu", "system:windows", "configurations:release" }
         make_nvcc_command(nvccPath, nvccHostCompilerVS, "/MD /DNDEBUG", sass..ptx)
+    -- Workarounds for glibc's bits/math-vector.h on systems where nvcc 12.4's
+    -- host front-end can't parse the gcc/SVE built-in vector typedefs:
+    --   * Older libc6-dev (Ubuntu 22.04 patches): the file has an
+    --     `_BITS_MATH_VECTOR_H` include guard. Predefining it skips the file.
+    --   * glibc >= 2.39 (Ubuntu 24.04): no top-level guard. The typedefs at
+    --     lines ~96-108 use gcc built-in types like __Float32x4_t / __SVFloat32_t
+    --     that nvcc doesn't know. Macro-substitute them to `int` — the typedefs
+    --     become `typedef int __f32x4_t;` etc.; nvcc parses fine and nothing
+    --     in CUDA code path references the aliased libm SIMD symbols.
+    -- Defines must be top-level nvcc `-D` (not `-Xcompiler -D`) because nvcc's
+    -- own preprocessing pass parses these headers before invoking host gcc.
+    local mathVectorStubs = "-D_BITS_MATH_VECTOR_H "..
+                            "-D__Float32x4_t=int -D__Float64x2_t=int "..
+                            "-D__SVFloat32_t=int -D__SVFloat64_t=int -D__SVBool_t=int "
     filter { "files:**.cu", "system:linux", "configurations:debug" }
-        make_nvcc_command(nvccPath, nvccHostCompilerVS, "-fPIC -g -D_DEBUG", sass..ptx.."-g")
+        make_nvcc_command(nvccPath, nvccHostCompilerVS, "-fPIC -g -D_DEBUG", mathVectorStubs..sass..ptx.."-g")
     filter { "files:**.cu", "system:linux", "configurations:release" }
-        make_nvcc_command(nvccPath, nvccHostCompilerVS, "-fPIC -O3 -DNDEBUG", sass..ptx)
+        make_nvcc_command(nvccPath, nvccHostCompilerVS, "-fPIC -O3 -DNDEBUG", mathVectorStubs..sass..ptx)
     filter {}
 end
 
@@ -304,6 +372,16 @@ function add_cuda_deps(targetDepsDirIn)
     filter {}
 end
 
+function add_tbb_deps()
+    filter { "system:linux" }
+        defines { "TBB_SUPPRESS_DEPRECATED_MESSAGES",}
+    filter { "system:linux", "configurations:debug" }
+        links { "tbb_debug" }
+    filter { "system:linux", "configurations:release" }
+        links { "tbb" }
+    filter {}
+end
+
 function extension_omniui_deps()
     libdirs {                
         kit_sdk_exts_build.."/omni.ui.scene/bin", 
@@ -334,18 +412,21 @@ function extension_usd_deps(targetDepsDirIn, hostDepsDirIn)
     filter  { "configurations:release" }
         runtime "Release"
     filter {}
-
+    add_tbb_deps()
     dependson { "prebuild", "physxSchema", "physicsSchemaTools", "_physxSchema", "_physicsSchemaTools" }
     includedirs {
-        extensions_root_dir.."/pch",
+        pch_dir,
         targetDepsDirIn.."/python/include",
         targetDepsDirIn.."/omni-usd-plugin/%{cfg.buildcfg}/include",
         schema_package_dir.."/include",
         targetDepsDirIn.."/usd_audio_schema/%{cfg.buildcfg}/include",
         targetDepsDirIn.."/usd_schema_semantics/%{cfg.buildcfg}/include",
         targetDepsDirIn.."/usd/%{cfg.buildcfg}/include",
+        targetDepsDirIn.."/usd/%{cfg.buildcfg}/include/pxr/external",
+        targetDeps_dir.."/boost_preprocessor",
         hostDepsDirIn.."/mirror/include",
-        targetDepsDirIn.."/rtx_plugins/include",
+        kit_sdk_dir.."/dev/include",
+        kit_sdk_dir.."/dev/fabric/include",
         targetDeps_dir.."/gsl/include",   -- Support for std::span
     }
     libdirs {
@@ -357,29 +438,25 @@ function extension_usd_deps(targetDepsDirIn, hostDepsDirIn)
         kit_sdk_exts_deps.."/omni.usd.core/bin",
     }
     usd_links {
-        "ar", "arch", "gf", "js", "kind", "pcp", "plug", "sdf", "tf", "trace", "usd", "usdGeom", "usdSkel", "usdShade", "vt", "work", "pxOsd",
-        "hdx", "hd", "usdImaging",  "usdLux", "usdUtils", "usdPhysics"
+        "ar", "arch", "gf", "js", "kind", "pcp", "plug", "sdf", "tf", "ts", "trace", "usd", "usdGeom", "usdSkel", "usdShade", "vt", "work", "pxOsd",
+        "hdx", "hd", "usdImaging",  "usdLux", "usdUtils", "usdPhysics", "boost", "python"
     }
     filter { "system:windows" }
         if not _OPTIONS["nopch"] then
             removeflags { "NoPCH" }
             pchheader "UsdPCH.h"
-            pchsource (extensions_root_dir.."/pch/UsdPCH.cpp")
-            files { extensions_root_dir.."/pch/UsdPCH.cpp" }
+            pchsource (pch_dir.."/UsdPCH.cpp")
+            files { pch_dir.."/UsdPCH.cpp" }
         end
-        libdirs {   targetDepsDirIn.."/python/libs",
-                    targetDepsDirIn.."/tbb/lib/intel64/vc14",
-                    targetDepsDirIn.."/usd/%{cfg.buildcfg}/lib" }
+        libdirs { targetDepsDirIn.."/python/libs" }
         includedirs { targetDepsDirIn.."/opensubdiv/%{cfg.buildcfg}/include" }
     filter { "system:linux" }
         exceptionhandling "On"
         removeflags { "UndefinedIdentifiers" }
-        includedirs { targetDepsDirIn.."/usd/%{cfg.buildcfg}/include/boost",
-                    targetDepsDirIn.."/python/include/"..PYTHON_LIB }
+        includedirs { targetDepsDirIn.."/python/include/"..PYTHON_LIB }
         buildoptions { "-pthread" }
         libdirs { targetDepsDirIn.."/python/lib" }
-        links { BOOST_LIB, PYTHON_LIB, "tbb", "dl", "pthread" }
-        defines { "TBB_SUPPRESS_DEPRECATED_MESSAGES",}
+        links { PYTHON_LIB, "dl", "pthread" }
     filter {}
 end
 
@@ -392,7 +469,8 @@ function extension_usd_deps_tests(targetDepsDirIn, hostDepsDirIn)
     filter  { "configurations:release" }
         runtime "Release"
     filter {}
-    includedirs { extensions_root_dir.."/pch",
+    add_tbb_deps()
+    includedirs { pch_dir,
                   targetDepsDirIn.."/python/include",
                   targetDepsDirIn.."/omni-usd-plugin/%{cfg.buildcfg}/include",
                   schema_package_dir.."/include",
@@ -400,32 +478,31 @@ function extension_usd_deps_tests(targetDepsDirIn, hostDepsDirIn)
                   targetDepsDirIn.."/usd_schema_semantics/%{cfg.buildcfg}/include",
                   targetDepsDirIn.."/usd/%{cfg.buildcfg}/include",
                   hostDepsDirIn.."/mirror/include",
-                  targetDepsDirIn.."/rtx_plugins/include" }
+                  kit_sdk_dir.."/dev/include",
+                  kit_sdk_dir.."/dev/fabric/include" }
     libdirs { schema_package_dir.."/lib",
               targetDepsDirIn.."/usd_audio_schema/%{cfg.buildcfg}/lib",
               targetDepsDirIn.."/usd_schema_semantics/%{cfg.buildcfg}/lib",
-              targetDepsDirIn.."/usd/%{cfg.buildcfg}/lib"}
+              targetDepsDirIn.."/usd/%{cfg.buildcfg}/lib",
+    }
     usd_links {
-        "arch", "sdf", "tf", "gf", "vt", "usd", "usdGeom", "usdUtils", "usdShade", "usdLux", "usdPhysics"
+        "arch", "sdf", "tf", "gf", "vt", "usd", "usdGeom", "usdUtils", "usdShade", "usdLux", "usdPhysics", "boost", "python"
     }
     filter { "system:windows" }
         if not _OPTIONS["nopch"] then
             removeflags { "NoPCH" }
             pchheader "UsdPCH.h"
-            pchsource (extensions_root_dir.."/pch/UsdPCH.cpp")
-            files { extensions_root_dir.."/pch/UsdPCH.cpp" }
+            pchsource (pch_dir.."/UsdPCH.cpp")
+            files { pch_dir.."/UsdPCH.cpp" }
         end
-        libdirs {   targetDepsDirIn.."/python/libs",
-                    targetDepsDirIn.."/tbb/lib/intel64/vc14",
-                    targetDepsDirIn.."/usd/%{cfg.buildcfg}/lib" }
+        libdirs { targetDepsDirIn.."/python/libs" }
         includedirs { targetDepsDirIn.."/opensubdiv/%{cfg.buildcfg}/include" }
     filter { "system:linux" }
         exceptionhandling "On"
         removeflags { "UndefinedIdentifiers" }
-        includedirs { targetDepsDirIn.."/usd/%{cfg.buildcfg}/include/boost",
-                    targetDepsDirIn.."/python/include/"..PYTHON_LIB }
+        includedirs { targetDepsDirIn.."/python/include/"..PYTHON_LIB }
         buildoptions { "-pthread" }
-        links { BOOST_LIB, "tbb", "dl", "pthread" }
+        links { "dl", "pthread" }
     filter {}
 end
 
@@ -454,143 +531,6 @@ function firstToUpper(str)
     return (str:gsub("^%l", string.upper))
 end
 
-function schema_usd_deps(targetDepsDirIn)
-    staticruntime "Off"
-    exceptionhandling "On"
-    rtti "On"
-    filter { "configurations:debug" }
-        runtime "Debug"
-    filter  { "configurations:release" }
-        runtime "Release"
-    filter {}
-    includedirs {
-                  targetDepsDirIn.."/python/include",
-                  targetDepsDirIn.."/usd/%{cfg.buildcfg}/include",
-    }
-    libdirs {
-              targetDepsDirIn.."/usd/%{cfg.buildcfg}/lib"}
-    usd_links {
-        "ar", "arch", "gf", "js", "kind", "pcp", "plug", "sdf", "tf", "trace", "usd", "usdGeom", "usdSkel", "usdShade", "vt", "work", "pxOsd",
-        "hdx", "hd", "usdImaging",  "usdLux", "usdUtils", "usdPhysics"
-    }
-    filter { "system:windows" }
-        libdirs {   targetDepsDirIn.."/python/libs",
-                    targetDepsDirIn.."/usd/%{cfg.buildcfg}/lib" }
-    filter { "system:linux" }
-        exceptionhandling "On"
-        removeflags { "UndefinedIdentifiers" }
-        includedirs { targetDepsDirIn.."/usd/%{cfg.buildcfg}/include/boost",
-        targetDepsDirIn.."/python/include/"..PYTHON_LIB }
-        buildoptions { "-pthread" }
-        links { BOOST_LIB, "tbb", "dl", "pthread" }
-    filter {}
- end
-
-function project_usd_schema(schemaname, source, targetdir)
-    targetname(schemaname)
-
-    os.remove(source.."/premake5.lua")
-
-    -- copies
-    repo_build.prebuild_copy
-    {
-        { source.."/generatedSchema.usda", targetdir.."/resources" },
-        { source.."/schema.usda", targetdir.."/resources/"..schemaname },
-        { source.."/plugInfo_%{platform}.json", targetdir.."/resources/plugInfo.json" },
-    }
-
-    -- specify the files to include
-    files { source.."/**.h", source.."/**.cpp"}
-    removefiles { source.."/wrap*.cpp" }
-
-    local schemaname_upper = schemaname:upper()
-    local schemaname_first_upper = firstToUpper(schemaname)
-
-    -- preprocessor directives
-    defines {
-        "PXR_PYTHON_ENABLED=1",
-        "MFB_PACKAGE_NAME="..schemaname,
-        "MFB_ALT_PACKAGE_NAME="..schemaname,
-        "MFB_PACKAGE_MODULE="..schemaname_first_upper,
-        "NOMINMAX",
-        "BOOST_ALL_DYN_LINK",
-        "PXR_PYTHON_MODULES_ENABLED=1",
-        schemaname_upper.."_EXPORTS"
-    }
-
-    usd_links(
-        {"usd", "sdf", "tf", "arch", "vt", "usdGeom"}
-    )
-
-    filter {"system:windows", "configurations:release" }
-        defines { "WIN32", "_WINDOWS", "NDEBUG", "TBB_USE_THREADING_TOOLS" }
-        buildoptions { "/Zc:rvalueCast", "/Zc:inline-", "/W3", "/WX-", "/Zi", "/GR" }
-    filter {"system:windows", "configurations:debug" }
-        defines { "WIN32", "_WINDOWS", "_DEBUG", "TBB_USE_DEBUG", "TBB_USE_ASSERT", "TBB_USE_THREADING_TOOLS" }
-        buildoptions { "/Zc:rvalueCast", "/Zc:inline-", "/W3", "/WX-", "/Zi", "/GR" }
-    filter {"system:linux", "configurations:release" }
-        defines { "LINUX", "NDEBUG", "TBB_USE_THREADING_TOOLS" }
-        buildoptions { "-Wno-deprecated", "-Wno-deprecated-declarations", "-Wno-inconsistent-missing-override" }
-    filter {"system:linux", "configurations:debug" }
-        buildoptions { "-Wno-deprecated", "-Wno-deprecated-declarations", "-Wno-inconsistent-missing-override" }
-        defines { "LINUX", "TBB_USE_DEBUG", "TBB_USE_ASSERT", "TBB_USE_THREADING_TOOLS" }
-    filter {}
-
-    local additional_python_files = get_path_list(source.."/module.cpp", ";", "")
-    removefiles { additional_python_files }
-end
-
-function project_usd_schema_python(schemaname, source)
-    targetname("_"..schemaname)
-    targetprefix("")
-
-    local schemaname_upper = schemaname:upper()
-    local schemaname_first_upper = firstToUpper(schemaname)
-
-    -- preprocessor directives
-    defines {
-        "PXR_PYTHON_ENABLED=1",
-        "MFB_PACKAGE_NAME="..schemaname,
-        "MFB_ALT_PACKAGE_NAME="..schemaname,
-        "MFB_PACKAGE_MODULE="..schemaname_first_upper,
-        "NOMINMAX",
-        "BOOST_ALL_DYN_LINK",
-        "BOOST_PYTHON_NO_PY_SIGNATURES",
-        "_"..schemaname_upper.."_EXPORTS"
-    }
-
-    filter {"system:windows", "configurations:release" }
-        defines { "WIN32", "_WINDOWS", "NDEBUG", "TBB_USE_THREADING_TOOLS" }
-        buildoptions { "/WX-" }
-    filter {"system:windows", "configurations:debug" }
-        defines { "WIN32", "_WINDOWS", "_DEBUG", "TBB_USE_DEBUG", "TBB_USE_ASSERT", "TBB_USE_THREADING_TOOLS" }
-        buildoptions { "/WX-" }
-    filter {"system:linux", "configurations:release" }
-        defines { "LINUX", "NDEBUG", "TBB_USE_THREADING_TOOLS" }
-        buildoptions { "-Wno-deprecated", "-Wno-deprecated-declarations", "-Wno-inconsistent-missing-override" }
-    filter {"system:linux", "configurations:debug" }
-        buildoptions { "-Wno-deprecated", "-Wno-deprecated-declarations", "-Wno-inconsistent-missing-override" }
-        defines { "LINUX", "TBB_USE_DEBUG", "TBB_USE_ASSERT", "TBB_USE_THREADING_TOOLS" }
-    filter {}
-
-    usd_links({"usd", "sdf", "tf", "arch", "vt", "usdGeom" })
-
-    -- python library also needs to link the C++ library
-    links( schemaname..getLibSuffix())
-
-    filter {"system:windows"}
-        targetextension(".pyd")
-    filter {"system:linux"}
-        targetextension(".so")
-    filter {}
-
-    -- specify the files to include
-    files { source.."/wrap*.cpp" }
-
-    local additional_python_files = get_path_list(source.."/module.cpp", ";", "")
-    files { additional_python_files }
-end
-
 function create_test_runner(name, config, env_path)
     if os.target() == "windows" then
         local bat_file_dir = root.."/_build/windows-x86_64/"..config
@@ -599,7 +539,7 @@ function create_test_runner(name, config, env_path)
         f:write(string.format([[
 @echo off
 setlocal
-set PATH="%%PATH%%";%s
+set PATH=%s;"%%PATH%%"
 call "%%~dp0\plugins\%s.exe" %%*
         ]], env_path, name))
         f:close()
@@ -633,10 +573,9 @@ function carbonitePlugin(args)
     staticruntime "Off"
     defines { "carb_eventdispatcher_IEventDispatcher=CARB_HEXVERSION(1, 4)" }    
     location (workspaceDir.."/%{prj.name}")
-    includedirs { 
+    includedirs {
         runtime_include_dir,
-        extensions_root_dir.."/common/include",
-        repo_root_dir.."/include/extras",
+        common_include_dir,
     }
     if type(args.ifaces) == "string" and type(args.impl) == "string" then
         filesTable = {}
@@ -693,28 +632,34 @@ function carboniteBindingsPython(args)
     dependson { "carb" }
     links {"carb" }
     location (workspaceDir.."/%{prj.name}")
-    includedirs { 
+    includedirs {
         runtime_include_dir,
-        extensions_root_dir.."/common/include",
+        common_include_dir,
     }
 
     local python_folder = root.."/_build/target-deps/python"
-    repo_build.define_bindings_python(name, python_folder, "3.11")
+    if type(args.python_folder) == "string" then
+        python_folder = args.python_folder
+    end
+    local python_version = PYTHON_VERSION
+    if type(args.python_version) == "string" then
+        python_version = args.python_version
+    end
+    repo_build.define_bindings_python(name, python_folder, python_version)
 end
 
 function workspace_defaults(currentAbsPath, hostDepsDir, targetDepsDir)
-    configurations { "release" }
+    configurations { "debug", "release" }
     startproject "omni.bloky.kit"
 
-    winsdk_version = "10.0.17763.0"
     targetDeps_dir = root.."/_build/target-deps"
     hostDeps_dir = root.."/_build/host-deps"
 
     repo_build.ccache_compiler_options()
 
     repo_build.setup_workspace {
-        msvc_version = "14.29.30133",
-        winsdk_version = winsdk_version,
+        msvc_version = MSVC_VERSION,
+        winsdk_version = WINSDK_VERSION,
         extra_warnings = false,
         security_hardening = true,
         host_deps_dir = hostDeps_dir,
@@ -744,10 +689,9 @@ function workspace_defaults(currentAbsPath, hostDepsDir, targetDepsDir)
     else
         symbols "Full"
     end
-    staticruntime "On"
-    buildoptions { "-DPX_ENABLE_FEATURES_UNDER_CONSTRUCTION=1" }
+    staticruntime "Off"
 
-    includedirs { "_build/generated/include", "_build/target-deps", "_build/mirrored", "_build/host-deps", "include", "shaders", "pch" }
+    includedirs { "_build/generated/include", "_build/target-deps", "_build/mirrored", "_build/host-deps", "include", "shaders", pch_dir }
     syslibdirs { carbSDKLibs, targetPluginsDir }
     externalincludedirs { carbSDKInclude, pybindInclude }
 
@@ -862,17 +806,16 @@ function define_paths(repo_root_dir_rel, extension_dir_rel)
     repo_build.root = root
     repo_root_dir = path.getabsolute(root..repo_root_dir_rel)
     extensions_root_dir = path.getabsolute(root..extension_dir_rel)
-    runtime_include_dir = path.getabsolute(root.."/include")
-
-    print("repo_root_dir: "..repo_root_dir)
-    print("extensions_root_dir: "..extensions_root_dir)
-    print("runtime_include_dir: "..runtime_include_dir)
 
     -- base paths
     hostDepsDir = "_build/host-deps"
     mirroredDir = "_build/mirrored"
     targetDepsDir = "_build/target-deps"
-    currentAbsPath = repo_build.get_abs_path(".");
+    currentAbsPath = repo_build.get_abs_path(".")
+    local ovruntime_root = path.getabsolute(currentAbsPath.."/extensions/runtime")
+    runtime_include_dir = path.getabsolute(ovruntime_root.."/include")
+    common_include_dir = path.getabsolute(ovruntime_root.."/source/common/include")
+    pch_dir = path.getabsolute(ovruntime_root.."/source/pch")
     targetName = _ACTION
     workspaceDir = currentAbsPath.."/_compiler/"..targetName
 
@@ -898,7 +841,6 @@ function define_paths(repo_root_dir_rel, extension_dir_rel)
     print("repo_root_dir: "..repo_root_dir)
     extensions_root_dir = path.getabsolute(root..extension_dir_rel)
     print("extensions_root_dir: "..extensions_root_dir)
-    runtime_include_dir = path.getabsolute(extensions_root_dir.."/runtime/include")
     print("runtime_include_dir: "..runtime_include_dir)
 end
 
@@ -983,7 +925,6 @@ function get_uuid(vcxprojPath)
     return os.uuid(vcxprojPath)
 end
 
-
 function include_physxsdk(physxLibsIn)
     local physxLibs = get_param_or_global_or_default(physxLibsIn, physxLibs, PHYSX_LIBS_DEFAULT)
     local physxSourceDir = _OPTIONS["devphysx"]
@@ -1018,7 +959,7 @@ function include_physxsdk(physxLibsIn)
             if projectName ~= "INSTALL" and projectName ~= "ALL_BUILD" then
                 externalproject (projectName)
                     location (physxSDKSourceDir)
-                    local uid = os.uuid(projectFile)
+                    local uid = get_uuid(projectFile)
                     uuid (uid)
                     kind "StaticLib"
                     language "C++"
@@ -1039,7 +980,7 @@ function include_physxsdk(physxLibsIn)
             if projectName ~= "INSTALL" and projectName ~= "ALL_BUILD" then
                 externalproject (projectName)
                     location (physxSDKSourceDir)
-                    local uid = os.uuid(projectFile)
+                    local uid = get_uuid(projectFile)
                     uuid (uid)
                     kind "SharedLib"
                     language "C++"
@@ -1082,7 +1023,7 @@ function generate_version_header()
     shortSha = get_git_info("rev-parse --short HEAD", "PHYSICS_BUILD_SHA")
     commitDate = get_git_info("show -s --format=\"%ad\" --date=format:\"%b-%d-%Y\"", "PHYSICS_BUILD_DATE")
     branch = get_git_info("rev-parse --abbrev-ref HEAD", "PHYSICS_BUILD_BRANCH")
-    version = get_git_info("show HEAD:omni/VERSION", "PHYSICS_BUILD_VERSION")
+    version = get_git_info("show HEAD:omni/ovexts/VERSION", "PHYSICS_BUILD_VERSION")
     print("Generating version header file: "..branch.." "..shortSha.." "..version.." "..commitDate)
 
     os.mkdir("_build/generated/include/omni/physx")

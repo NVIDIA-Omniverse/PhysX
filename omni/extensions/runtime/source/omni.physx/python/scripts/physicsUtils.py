@@ -1,19 +1,38 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import math
 import typing
 import carb
 import re
 from omni.physx.bindings._physx import SimulationEvent, ContactEventType, SETTING_UPDATE_TO_USD
 from pxr import Gf, PhysicsSchemaTools, PhysxSchema, Sdf, Usd, UsdUtils, UsdGeom, UsdPhysics, UsdShade
-import omni.usd
 import usdrt
 from omni.physx import get_physx_simulation_interface
 
 
 HALF_PI = 1.57079632679489662
 MAX_FLOAT = 3.40282347e38
+
+__all__ = [
+    "compute_bounding_box_diagonal",
+    "create_mesh", "create_mesh_square_axis", "create_mesh_concave", "create_mesh_cube", "create_mesh_cylinder", "create_mesh_cone",
+    "add_density", "add_mass", "add_force_torque",
+    "add_physics_material_to_prim", "add_collision_to_collision_group",
+    "remove_collision_from_collision_group", "is_in_collision_group",
+    "add_ground_plane", "add_quad_plane", "add_cube_ground_plane",
+    "add_box", "add_collider_box",
+    "add_rigid_box", "add_cube",
+    "add_collider_cube", "add_rigid_cube",
+    "add_sphere", "add_collider_sphere", "add_rigid_sphere",
+    "add_capsule", "add_collider_capsule", "add_rigid_capsule",
+    "add_cylinder", "add_collider_cylinder", "add_rigid_cylinder",
+    "add_cone", "add_collider_cone", "add_rigid_cone",
+    "add_xform", "add_rigid_xform",
+    "get_translation", "add_joint_fixed", "set_or_add_scale_op", "set_or_add_translate_op",
+    "set_or_add_orient_op", "set_or_add_scale_orient_translate", "setup_transform_as_scale_orient_translate", "copy_transform_as_scale_orient_translate",
+]
 
 
 def get_stage_next_free_path(
@@ -43,10 +62,10 @@ def get_stage_next_free_path(
             path = path.ReplacePrefix(Sdf.Path.absoluteRootPath, defaultPrim.GetPath())
 
     def increment_path(path):
-        match = re.search("_(\d+)$", path)
+        match = re.search(r"_(\d+)$", path)
         if match:
             new_num = int(match.group(1)) + 1
-            ret = re.sub("_(\d+)$", str.format("_{:02d}", new_num), path)
+            ret = re.sub(r"_(\d+)$", str.format("_{:02d}", new_num), path)
         else:
             ret = path + "_01"
         return ret

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,15 +30,22 @@
 #define __DEFORMABLE_UTILS_CUH__
 
 #include "foundation/PxMathUtils.h"
+#include "PxDeformableSurface.h" // for PX_MAX_NB_DEFORMABLE_SURFACE_TRI
+#include "PxDeformableVolume.h" // for PX_MAX_NB_DEFORMABLE_VOLUME_TET
 #include "PxsMaterialCombiner.h"
-#include "PxgFEMCore.h"
+#include "PxsDeformableVolumeMaterialCore.h"
+#include "PxsDeformableSurfaceMaterialCore.h"
+#include "PxgDeformableContactInfo.h"
+#include "PxgDeformableConstraints.h"
 #include "PxgFEMCloth.h"
 #include "PxgSoftBody.h"
 #include "PxgArticulation.h"
 #include "PxgBodySim.h"
 #include "dataReadWriteHelper.cuh"
+#include "PxgSolverCoreDesc.h"
 
-using namespace physx;
+namespace physx
+{
 
 //This code is based on Matthias Muller's paper: A robust method to extract the rotational part of deformations
 //Basically, this is another way to extract a rotational matrix from deformation gradient instead of using polar
@@ -56,7 +63,14 @@ __device__ inline void extractRotation(const PxMat33 &A, PxQuat& q, int maxIter)
 		omega *= 1.0f / (PxAbs(R.column0.dot(A.column0) + R.column1.dot(A.column1) + R.column2.dot(A.column2)) + eps);
 
 		const float w = omega.normalize();
-		const PxQuat tempQ = PxQuat(w, omega);
+
+		PxQuat tempQ;
+
+		if (w < eps) // near-zero omega produces non-unit vector after normalize()
+			tempQ = PxQuat(PxIdentity);
+		else
+			tempQ = PxQuat(w, omega);
+
 		q = tempQ * q;
 		q = q.getNormalized();
 
@@ -436,7 +450,7 @@ struct FEMCollision
 
 	PX_FORCE_INLINE __device__ PxReal getCombinedFriction()
 	{
-		return PxsCombinePxReal(rigidBodyFriction, deformableFriction, frictionCombineMode);
+		return combineScalars(rigidBodyFriction, deformableFriction, frictionCombineMode);
 	}
 
 	PX_FORCE_INLINE __device__ int getGlobalRigidBodyId(const PxgPrePrepDesc* const prePrepDesc, const PxNodeIndex& rigidId,
@@ -636,5 +650,7 @@ struct FEMCollision
 		}
 	}
 };
+
+} // namespace physx
 
 #endif // __DEFORMABLE_UTILS_CUH__

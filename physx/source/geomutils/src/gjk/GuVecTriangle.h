@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -143,7 +143,7 @@ namespace Gu
 
 		\return Triangle normal.
 		*/
-		PX_FORCE_INLINE	aos::Vec3V	normal() const  
+		PX_FORCE_INLINE	aos::Vec3V	normal() const
 		{
 			using namespace aos;
 			const Vec3V ab = V3Sub(verts[1], verts[0]);
@@ -217,8 +217,7 @@ namespace Gu
 		}
 
 		PX_FORCE_INLINE aos::Vec3V supportLocal(const aos::Vec3VArg dir, PxI32& index) const
-		{
-		
+		{		
 			using namespace aos;
 			const VecI32V vZero = VecI32V_Zero();
 			const VecI32V vOne = VecI32V_One();

@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.physx.scripts.physicsUtils as physicsUtils
 from omni.physx.scripts.utils import setRigidBody
 from omni.physx import get_physxunittests_interface, get_physx_simulation_interface, get_physx_interface
@@ -1139,6 +1140,31 @@ class PhysicsMassAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, MassTes
         Gf.IsClose(principal_axes.GetImaginary(), Gf.Vec3f(1.0, 0.0, 0.0), epsilon)
         self.assertTrue(abs(principal_axes.GetReal() - 1.0) < epsilon)
 
+    async def test_physics_mass_nested_bodies(self):
+        stage = await self.mass_test_stage_setup()
+
+        # Create test nested bodies
+        rbo0_xform = UsdGeom.Xform.Define(stage, "/rbo0")
+        rigidBodyAPI0 = UsdPhysics.RigidBodyAPI.Apply(rbo0_xform.GetPrim())
+
+        cube = UsdGeom.Cube.Define(stage, "/rbo0/cube")
+        cube.GetSizeAttr().Set(100.0)
+        UsdPhysics.CollisionAPI.Apply(cube.GetPrim())
+
+        rbo1_xform = UsdGeom.Xform.Define(stage, "/rbo0/rbo1")
+        rigidBodyAPI1 = UsdPhysics.RigidBodyAPI.Apply(rbo1_xform.GetPrim())
+
+        cube = UsdGeom.Cube.Define(stage, "/rbo0/rbo1/cube")
+        cube.GetSizeAttr().Set(200.0)
+        UsdPhysics.CollisionAPI.Apply(cube.GetPrim())
+
+        await self.check_mass_properties(
+            "/rbo0", 1000.0
+        )
+
+        await self.check_mass_properties(
+            "/rbo0/rbo1", 8000.0
+        )
 
 async def base_setup():
     await utils.new_stage_setup()

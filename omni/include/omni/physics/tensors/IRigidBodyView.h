@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -37,6 +37,18 @@ public:
                                                  const TensorDesc* indexTensor,
                                                  const bool isGlobal) = 0;
 
+    // Masked write variants: srcTensor is full [N,...], maskTensor is uint8[N] where nonzero = selected.
+    // Gpu/CpuRigidBodyView provide real implementations.
+    virtual bool setKinematicTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setTransformsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool applyForcesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool applyForcesAndTorquesAtPositionMasked(const TensorDesc* srcForceTensor,
+                                                       const TensorDesc* srcTorqueTensor,
+                                                       const TensorDesc* srcPositionTensor,
+                                                       const TensorDesc* maskTensor,
+                                                       const bool isGlobal) = 0;
+
     // rigid body properties
     virtual bool getMasses(const TensorDesc* dstTensor) const = 0;
     virtual bool getInvMasses(const TensorDesc* dstTensor) const = 0;
@@ -52,14 +64,36 @@ public:
     virtual bool setDisableGravities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
     virtual bool setDisableSimulations(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
 
+    // Masked variants for rigid body properties
+    virtual bool setMassesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setCOMsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setInertiasMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDisableGravitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDisableSimulationsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+
+    virtual bool wakeUp(const TensorDesc* indexTensor) = 0;
+
     // materials/shapes
     virtual bool getMaterialProperties(const TensorDesc* dstTensor) const = 0;
+    virtual bool getCompliantMaterialProperties(const TensorDesc* dstTensor,
+                                                const TensorDesc* dstCombineModeTensor) const = 0;
     virtual bool getRestOffsets(const TensorDesc* dstTensor) const = 0;
     virtual bool getContactOffsets(const TensorDesc* dstTensor) const = 0;
 
     virtual bool setMaterialProperties(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const = 0;
+    virtual bool setCompliantMaterialProperties(const TensorDesc* srcTensor,
+                                                const TensorDesc* srcCombineTensor,
+                                                const TensorDesc* indexTensor) const = 0;
     virtual bool setRestOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const = 0;
     virtual bool setContactOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const = 0;
+
+    // Masked variants for materials/shapes
+    virtual bool setMaterialPropertiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) const = 0;
+    virtual bool setCompliantMaterialPropertiesMasked(const TensorDesc* srcTensor,
+                                                      const TensorDesc* srcCombineTensor,
+                                                      const TensorDesc* maskTensor) const = 0;
+    virtual bool setRestOffsetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) const = 0;
+    virtual bool setContactOffsetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) const = 0;
 
     virtual bool check() const = 0;
 

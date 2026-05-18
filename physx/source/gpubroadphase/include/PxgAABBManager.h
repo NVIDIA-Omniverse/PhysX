@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,29 +32,28 @@
 #include "BpAABBManagerBase.h"
 #include "PxgCudaBuffer.h"
 #include "PxgAggregate.h"
-#include "CmIDPool.h"
-#include "PxgBroadPhasePairReport.h"
+#include "PxgAggregateBuffer.h"
 #include "PxgAggregateDesc.h"
+#include "PxgBoundTransformUpdate.h"
+#include "PxgBroadPhasePairReport.h"
+#include "CmIDPool.h"
 #include "CmTask.h"
-#include "foundation/PxPinnedArray.h"
-#include "foundation/PxBitMap.h"
-#include "foundation/PxPinnedBitMap.h"
+#include "CmPinnableArray.h"
+#include "CmPinnableBitMap.h"
+#include "CmPinnableObject.h"
+#include "PxsHeapStats.h"
+#include "foundation/PxHashMap.h"
 
 namespace physx
 {
-	class PxgCudaKernelWranglerManager;
 	class PxCudaContextManager;
+
+	class PxgCudaKernelWranglerManager;
 	class PxgCudaBroadPhaseSap;
-	struct PxGpuDynamicsMemoryConfig;
-
 	class PxgAABBManager;
-	class PxSceneDesc;
-
-	struct PxBoundTransformUpdate
-	{
-		PxU32 indexTo;
-		PxU32 indexFrom; //MSB stores info if the bound is new. New is copied from cpu array, not new - from gpu array
-	};
+	class PxgHeapMemoryAllocator;
+	struct PxgAllocatorDesc;
+	struct PxGpuDynamicsMemoryConfig;
 
 	class PxgProcessFoundPairTask : public Cm::Task 
 	{
@@ -85,11 +84,12 @@ namespace physx
 	public:
 											PxgAABBManager(PxgCudaKernelWranglerManager* gpuKernelWrangler,
 												PxCudaContextManager* cudaContextManager,
-												PxgHeapMemoryAllocatorManager* heapMemoryManager,
+												PxgAllocatorDesc& allocDesc,
 												const PxGpuDynamicsMemoryConfig& config,
-												Bp::BroadPhase& bp, Bp::BoundsArray& boundsArray, PxFloatArrayPinnedSafe& contactDistance,
-												PxU32 maxNbAggregates, PxU32 maxNbShapes, PxVirtualAllocator& allocator, PxU64 contextID,
-												PxPairFilteringMode::Enum kineKineFilteringMode, PxPairFilteringMode::Enum staticKineFilteringMode);
+												Bp::BroadPhase& bp, Bp::BoundsArray& boundsArray, Cm::PinnableArray<PxReal>& contactDistance,
+												PxU32 maxNbAggregates, PxU32 maxNbShapes,
+												PxU64 contextID, PxPairFilteringMode::Enum kineKineFilteringMode, 
+												PxPairFilteringMode::Enum staticKineFilteringMode);
 
 		virtual								~PxgAABBManager() {}
 
@@ -109,8 +109,6 @@ namespace physx
 		virtual			void				setPersistentStateChanged()		PX_OVERRIDE	{ mPersistentStateChanged = true;	}
 		//~AABBManagerBase
 
-						PxgCudaBuffer		mVolumDataBuf;
-
 						void				markAggregateBoundsBitmap();
 
 						void				processFoundPairs();
@@ -121,6 +119,7 @@ namespace physx
 		PX_FORCE_INLINE	CUdeviceptr			getRemovedHandles()					{ return mRemovedHandleBuf.getDevicePtr(); }
 		PX_FORCE_INLINE	CUdeviceptr			getChangedAABBMgrHandles()			{ return mChangedAABBMgrHandlesBuf.getDevicePtr(); }
 		PX_FORCE_INLINE	PxU32				getChangedAABBMgrHandlesWordCount()	{ return mChangedHandleMap.getWordCount(); }
+		PX_FORCE_INLINE CUdeviceptr			getVolumeData()						{ return mVolumeDataBuf.getDevicePtr(); }
 
 	private:
 						void				preBpUpdate_GPU();
@@ -133,195 +132,247 @@ namespace physx
 		PxgCudaKernelWranglerManager*		mGpuKernelWranglerManager;
 		PxCudaContextManager*				mCudaContextManager;
 		PxCudaContext*						mCudaContext;
-		PxgHeapMemoryAllocatorManager*		mHeapMemoryManager;
+		PxgHeapMemoryAllocator&				mDeviceAlloc;
 
 		PxArray<PxgAggregate>				mAggregates;				//cpu mirror
 
-		PxPinnedArraySafe<PxgAggregatePair>	mAggregatePairs;
-		PxPinnedArraySafe<Bp::AggregateHandle>	mDirtyAggregateIndices;
-		PxPinnedArraySafe<PxgAggregate>		mDirtyAggregates;
+		Cm::PinnableArray<PxgAggregatePair>		mAggregatePairs;
+		Cm::PinnableArray<Bp::AggregateHandle>	mDirtyAggregateIndices;
+		Cm::PinnableArray<PxgAggregate>			mDirtyAggregates;
 
-		//found and lost pairs for agg vs agg and agg vs actor
-		PxPinnedArray<PxgBroadPhasePair>	mFoundPairs;
-		PxPinnedArray<PxgBroadPhasePair>	mLostPairs;
+		//found and lost pairs for agg vs agg and agg vs actor, need to be device mapped memory
+		Cm::PinnableArray<PxgBroadPhasePair>	mFoundPairsMapped;
+		Cm::PinnableArray<PxgBroadPhasePair>	mLostPairsMapped;
 
-		PxInt32ArrayPinnedSafe				mDirtyBoundIndices;
-		PxInt32ArrayPinnedSafe				mDirtyBoundStartIndices; //start index of each aggregate in the dirty bound indices list
+		Cm::PinnableArray<PxU32>				mDirtyBoundIndices;
+		Cm::PinnableArray<PxU32>				mDirtyBoundStartIndices; //start index of each aggregate in the dirty bound indices list
 
-		PxInt32ArrayPinnedSafe				mRemovedAggregatedBounds;
-		PxInt32ArrayPinnedSafe				mAddedAggregatedBounds;
+		Cm::PinnableArray<PxU32>				mRemovedAggregatedBounds;
+		Cm::PinnableArray<PxU32>				mAddedAggregatedBounds;
 
-		Cm::DeferredIDPool					mAggregatesIdPool; //generate the remap id between pxgbodysim and pxgaggregate
-		PxBitMap							mDirtyAggregateBitMap;
-		PxBitMapPinned						mAggregatedBoundMap;
+		Cm::DeferredIDPool						mAggregatesIdPool; //generate the remap id between pxgbodysim and pxgaggregate
+		PxBitMap								mDirtyAggregateBitMap;
+		Cm::PinnableBitMap						mAggregatedBoundMap;
 
-		PxArray<PxgAggregateBuffer*>		mAggregateBufferArray;
+		PxArray<PxgAggregateBuffer*>			mAggregateBufferArray;
 
-						PxgAggregateDesc*	mAggregateDesc;
+		Cm::PinnableObject<PxgAggregateDesc>	mAggregateDesc;
 		
-						PxgCudaBuffer		mAggregateBuf;
-						PxgCudaBuffer		mAggregatePairsBuf;
+		PxgCudaBuffer						mVolumeDataBuf;
+
+		PxgCudaBuffer						mAggregateBuf;
+		PxgCudaBuffer						mAggregatePairsBuf;
 		
-						PxgCudaBuffer		mDirtyAggregateIndiceBuf;
-						PxgCudaBuffer		mDirtyAggregateBuf;
+		PxgCudaBuffer						mDirtyAggregateIndiceBuf;
+		PxgCudaBuffer						mDirtyAggregateBuf;
 
-						PxgCudaBuffer		mDirtyBoundIndicesBuf;
-						PxgCudaBuffer		mDirtyBoundStartIndicesBuf;
+		PxgCudaBuffer						mDirtyBoundIndicesBuf;
+		PxgCudaBuffer						mDirtyBoundStartIndicesBuf;
 
-						PxgCudaBuffer		mRemovedAggregatedBoundsBuf;
-						PxgCudaBuffer		mAddedAggregatedBoundsBuf;
+		PxgCudaBuffer						mRemovedAggregatedBoundsBuf;
+		PxgCudaBuffer						mAddedAggregatedBoundsBuf;
 		
-						PxgCudaBuffer		mAggPairBuf;	//persistent pairs
-						PxgCudaBuffer		mNumAggPairBuf; // number of app pairs
-						PxgCudaBuffer		mAggregateDescBuf;
+		PxgCudaBuffer						mAggPairBuf;	//persistent pairs
+		PxgCudaBuffer						mNumAggPairBuf; // number of app pairs
+		PxgCudaBuffer						mAggregateDescBuf;
 
-						PxgCudaBuffer		mFoundPairsBuf;
-						PxgCudaBuffer		mLostPairsBuf;
+		PxgCudaBuffer						mFoundPairsBuf;
+		PxgCudaBuffer						mLostPairsBuf;
 
-						PxgCudaBuffer		mFreeIDPool;
-						PxgCudaBuffer		mFreeIDs;
+		PxgCudaBuffer						mFreeIDPool;
+		PxgCudaBuffer						mFreeIDs;
 
-						PxgCudaBuffer		mRemoveBitmap;
-						PxgCudaBuffer		mRemoveHistogram;
+		PxgCudaBuffer						mRemoveBitmap;
+		PxgCudaBuffer						mRemoveHistogram;
 
-						PxgCudaBuffer		mAggregatedBoundsBuf;
-						PxgCudaBuffer		mAddedHandleBuf;
-						PxgCudaBuffer		mRemovedHandleBuf;
-						PxgCudaBuffer		mChangedAABBMgrHandlesBuf;
+		PxgCudaBuffer						mAggregatedBoundsBuf;
+		PxgCudaBuffer						mAddedHandleBuf;
+		PxgCudaBuffer						mRemovedHandleBuf;
+		PxgCudaBuffer						mChangedAABBMgrHandlesBuf;
 
-						PxU32				mNumAggregatesSlots;
+		PxU32								mNumAggregatesSlots;
 
-						PxU32				mMaxFoundLostPairs;
-						PxU32				mMaxAggPairs;
+		PxU32								mMaxFoundLostPairs;
+		PxU32								mMaxAggPairs;
 
-					PxgProcessFoundPairTask	mFoundPairTask;
-					PxgProcessLostPairTask	mLostPairTask;
+		PxgProcessFoundPairTask				mFoundPairTask;
+		PxgProcessLostPairTask				mLostPairTask;
 
-						// PT: this flag is set:
-						// - via setGPUStateChanged():
-						//     - in PxgSimulationCore::applyActorData() when body data is changed 
-						//     - in FEMClothShapeSim::updateBoundsInAABBMgr()
-						//     - in ParticleSystemShapeSim::updateBoundsInAABBMgr
-						//     - in SoftBodyShapeSim::updateBoundsInAABBMgr()
-						// - when mOriginShifted is false and hasActive is true in PxgAABBManager::updateBPFirstPass
-						//
-						// It is unclear whether we need to set the flag in all of these cases.
-						//
-						// The flag is used:
-						// - in PxgAABBManager::preBpUpdate_GPU
-						//     - to skip DMA of mChangedHandleMap
-						// - in PxgAABBManager::updateBPSecondPass
-						//     - in the GPU broadphase (passed there as part of the updateData structure)
-						//         - TODO: investigate what happens there
-						//     - to skip kernel launches of AGG_ADD_AGGPAIRS_STAGE_1/AGG_ADD_AGGPAIRS_STAGE_2
-						bool				mGPUStateChanged; //non-rigid body, direct API calls
+		// PT: this flag is set:
+		// - via setGPUStateChanged():
+		//     - in PxgSimulationCore::applyActorData() when body data is changed 
+		//     - in FEMClothShapeSim::updateBoundsInAABBMgr()
+		//     - in ParticleSystemShapeSim::updateBoundsInAABBMgr
+		//     - in SoftBodyShapeSim::updateBoundsInAABBMgr()
+		// - when mOriginShifted is false and hasActive is true in PxgAABBManager::updateBPFirstPass
+		//
+		// It is unclear whether we need to set the flag in all of these cases.
+		//
+		// The flag is used:
+		// - in PxgAABBManager::preBpUpdate_GPU
+		//     - to skip DMA of mChangedHandleMap
+		// - in PxgAABBManager::updateBPSecondPass
+		//     - in the GPU broadphase (passed there as part of the updateData structure)
+		//         - TODO: investigate what happens there
+		//     - to skip kernel launches of AGG_ADD_AGGPAIRS_STAGE_1/AGG_ADD_AGGPAIRS_STAGE_2
+		bool								mGPUStateChanged; //non-rigid body, direct API calls
 
-						// PT: this flag is set:
-						// - via setPersistentStateChanged():
-						//     - when a contact distance changes
-						// - when an aggregate is removed (PxgAABBManager::destroyAggregate)
-						// - when an object is added (PxgAABBManager::addBounds)
-						// - when an aggregated is added (PxgAABBManager::addBounds)
-						// - when an object is removed (PxgAABBManager::removeBounds)
-						// - when an aggregated is removed (PxgAABBManager::removeBounds)
-						// - in PxgAABBManager::updateBPFirstPass if hasContactDistanceUpdated is true
-						// - when mOriginShifted is true, during PxgAABBManager::updateBPFirstPass
-						//
-						// It is unclear whether we need to set the flag in all of these cases.
-						//
-						// The flag is used:
-						// - in PxgAABBManager::preBpUpdate_GPU
-						//     - to skip DMAs of mAddedHandleMap/mRemovedHandleMap
-						//     - to skip DMA of mAggregatedBoundMap / mVolumeData
-						//     - to skip the preBroadphase call
-						//     - to skip DMA of mChangedHandleMap
-						// - in PxgAABBManager::updateBPSecondPass
-						//     - in the GPU broadphase (passed there as part of the updateData structure)
-						//         - TODO: investigate what happens there
-						//     - to skip kernel launches of AGG_ADD_AGGPAIRS_STAGE_1/AGG_ADD_AGGPAIRS_STAGE_2
-						bool				mPersistentStateChanged;
+		// PT: this flag is set:
+		// - via setPersistentStateChanged():
+		//     - when a contact distance changes
+		// - when an aggregate is removed (PxgAABBManager::destroyAggregate)
+		// - when an object is added (PxgAABBManager::addBounds)
+		// - when an aggregated is added (PxgAABBManager::addBounds)
+		// - when an object is removed (PxgAABBManager::removeBounds)
+		// - when an aggregated is removed (PxgAABBManager::removeBounds)
+		// - in PxgAABBManager::updateBPFirstPass if hasContactDistanceUpdated is true
+		// - when mOriginShifted is true, during PxgAABBManager::updateBPFirstPass
+		//
+		// It is unclear whether we need to set the flag in all of these cases.
+		//
+		// The flag is used:
+		// - in PxgAABBManager::preBpUpdate_GPU
+		//     - to skip DMAs of mAddedHandleMap/mRemovedHandleMap
+		//     - to skip DMA of mAggregatedBoundMap / mVolumeData
+		//     - to skip the preBroadphase call
+		//     - to skip DMA of mChangedHandleMap
+		// - in PxgAABBManager::updateBPSecondPass
+		//     - in the GPU broadphase (passed there as part of the updateData structure)
+		//         - TODO: investigate what happens there
+		//     - to skip kernel launches of AGG_ADD_AGGPAIRS_STAGE_1/AGG_ADD_AGGPAIRS_STAGE_2
+		bool								mPersistentStateChanged;
 	};
 
 	class PxgBoundsArray : public Bp::BoundsArray
 	{
-				  PX_NOCOPY(PxgBoundsArray)
+	PX_NOCOPY(PxgBoundsArray)
 
-				  public:
-					  PxgBoundsArray(PxVirtualAllocator& allocator)
-						: BoundsArray(allocator)
-						, mIsFirstCopy(true)
-						, mChanges(allocator)
-						{
-						}
+	public:
+	PxgBoundsArray(Cm::VirtualAllocatorCallback& mappedAllocator)
+	  : BoundsArray(mappedAllocator, PxsHeapStats::eBROADPHASE, Cm::PinnableAllocatorFallback::eDISABLED)
+	  , mEnableChangeTracking(false)
+	  , mChangesMapped(mappedAllocator, PxsHeapStats::eBROADPHASE, Cm::PinnableAllocatorFallback::eDISABLED)
+	{}
 
-						virtual ~PxgBoundsArray() PX_OVERRIDE
-						{
-							mChanges.clear();
-						}
+		virtual ~PxgBoundsArray() PX_OVERRIDE
+		{
+			mChangesMapped.clear();
+		}
 
-						void updateBounds(const PxTransform& transform, const PxGeometry& geom, PxU32 index,
-										  PxU32 indexFrom) PX_OVERRIDE PX_FINAL 
-						{	
-							if(indexFrom == index) // new, needs to be copied from CPU
-							{
-								Gu::computeBounds(mBounds[index], geom, transform, 0.0f, 1.0f);
-								updateChanges(index, indexFrom, true);
-							}
-							else
-							{
-								updateChanges(index, indexFrom, false);
-							}							
-						}
+		virtual void updateBounds(const PxTransform& transform, const PxGeometry& geom, PxU32 index, PxU32 indexFrom) PX_OVERRIDE PX_FINAL 
+		{
+			if(mAllocFailed)
+				return;
+
+			const bool isNew = indexFrom == index;
+
+			if(isNew) // new, needs to be copied from CPU
+				Gu::computeBounds(mBounds[index], geom, transform, 0.0f, 1.0f);
+
+			updateChanges(index, indexFrom, isNew);
+		}
  
-						void setBounds(const PxBounds3& bounds, PxU32 index) PX_OVERRIDE PX_FINAL
-						{															
-							mBounds[index] = bounds;						
-						    updateChanges(index, index, true);
-						}
+		virtual void setBounds(const PxBounds3& bounds, PxU32 index) PX_OVERRIDE PX_FINAL
+		{
+			if(mAllocFailed)
+				return;
 
-						PX_FORCE_INLINE PxU32 getNumberOfChanges()
-						{ 
-							return mChanges.size();
-						}
+			mBounds[index] = bounds;
+			updateChanges(index, index, true);
+		}
 
-						PX_FORCE_INLINE PxArray<PxBoundTransformUpdate, PxVirtualAllocator>& getStagingBuffer()
-						{					
-							return mChanges;
-						}
+		PX_FORCE_INLINE PxU32 getNumberOfChanges() const
+		{ 
+			return mChangesMapped.size();
+		}
 
-						PX_FORCE_INLINE void resetChanges() 
-						{ 
-							mChanges.reset();
-						}
+		PX_FORCE_INLINE const PxgBoundTransformUpdate* getStagingBuffer()
+		{					
+			return mChangesMapped.begin();
+		}
 
-						PX_FORCE_INLINE bool isFirstCopy() 
-						{ 
-							return mIsFirstCopy;
-						} 
+		PX_FORCE_INLINE void resetChanges() 
+		{ 
+			mChangesMapped.clear();
+			mChangeMap.clear();
+		}
 
-						PX_FORCE_INLINE void setCopied() 
-						{ 
-							mIsFirstCopy = false; 
-						}
+		PX_FORCE_INLINE bool isChangeTrackingEnabled() const
+		{ 
+			return mEnableChangeTracking;
+		} 
 
-				  private:
-						PX_FORCE_INLINE void updateChanges(PxU32 indexTo, PxU32 indexFrom, bool isNew)
-						{
-							if(!mIsFirstCopy)
-							{
-									PxBoundTransformUpdate update;
-									update.indexTo = indexTo;
-									update.indexFrom = indexFrom & 0x7FFFFFFF; 
-									if(isNew)
-										{
-											update.indexFrom |= (1U << 31);
-										}
-									mChanges.pushBack(update);
-							}
-						}
+		/*
+		* Returns whether change tracking has been successfully enabled 
+		* i.e. pinned change buffer successfully allocated.
+		*/
+		PX_FORCE_INLINE bool enableChangeTracking() 
+		{
+			if (!mEnableChangeTracking)
+			{
+				bool allocated = mChangesMapped.reserve(mBounds.size());
+				mEnableChangeTracking = allocated;
+				mAllocFailed |= !allocated;
+				return allocated;
+			}
+			return true;
+		}
 
-						bool mIsFirstCopy;
-						PxArray<PxBoundTransformUpdate, PxVirtualAllocator> mChanges;
+	private:
+
+		virtual bool resize(PxU32 size) PX_OVERRIDE PX_FINAL
+		{
+			//PxgBoundsArray is only used with directAPI,
+			//so mBounds and mChangesMapped must both be allocated as
+			//pinned device mapped memory (without pageable fallback).
+			if(mBounds.reserve(size))
+			{
+				mBounds.forceSize_Unsafe(size);
+				if(mEnableChangeTracking && !mChangesMapped.reserve(size))
+				{
+					mAllocFailed = true;
+					return false;
+				}
+				return true;
+			}
+			mAllocFailed = true;
+			return false;
+		}
+
+		PX_FORCE_INLINE void updateChanges(PxU32 indexTo, PxU32 indexFrom, bool isNew)
+		{
+			PX_ASSERT(!mAllocFailed);
+			if(mEnableChangeTracking)
+			{
+				PxgBoundTransformUpdate update;
+				update.indexTo = indexTo;
+				update.indexFrom = indexFrom & 0x7FFFFFFF; 
+				if(isNew)
+				{
+					update.indexFrom |= (1U << 31);
+				}
+
+				//Uniquify indexTo changes, last one wins. We don't need to worry about chaining,
+				//because indices (elementIDs) are delay released, and are therefore unique during one update.
+				const PxHashMap<PxU32, PxU32>::Entry* e = mChangeMap.find(indexTo);
+				if(e)
+				{
+					PxgBoundTransformUpdate& oldUpdate = mChangesMapped[e->second];
+					oldUpdate = update;
+				}
+				else
+				{
+					// indexTo elementIDs definitely fit in mChanges, which is resized with bounds array
+					PX_ASSERT(mChangesMapped.capacity() > mChangesMapped.size());
+					mChangeMap.insert(indexTo, mChangesMapped.size());
+					mChangesMapped.pushBack(update);
+				}
+			}
+		}
+
+		bool mEnableChangeTracking;
+		Cm::PinnableArray<PxgBoundTransformUpdate> mChangesMapped;
+		PxHashMap<PxU32, PxU32> mChangeMap;
 	};
 }
 

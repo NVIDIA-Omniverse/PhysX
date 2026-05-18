@@ -22,29 +22,25 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "ScPhysics.h"
 #include "ScScene.h"
 #include "BpBroadPhase.h"
-#include "ScConstraintSim.h"
 #include "ScConstraintCore.h"
 #include "ScArticulationJointCore.h"
 #include "ScArticulationTendonCore.h"
 #include "ScArticulationMimicJointCore.h"
 #include "ScArticulationSim.h"
-#include "ScArticulationJointSim.h"
 #include "ScArticulationTendonSim.h"
 #include "ScArticulationMimicJointSim.h"
-#include "ScConstraintInteraction.h"
 #include "ScTriggerInteraction.h"
 #include "ScSimStats.h"
-#include "PxvGlobals.h"
 #include "PxsCCD.h"
 #include "ScSimulationController.h"
 #include "ScSqBoundsManager.h"
+#include "ScArticulationCore.h"
 #include "DyIslandManager.h"
 
 #if defined(__APPLE__) && defined(__POWERPC__)
@@ -52,10 +48,11 @@
 #endif
 
 #if PX_SUPPORT_GPU_PHYSX
+	#include "PxvGlobals.h"
 	#include "PxPhysXGpu.h"
-	#include "PxsKernelWrangler.h"
 	#include "PxsHeapMemoryAllocator.h"
 	#include "cudamanager/PxCudaContextManager.h"
+	#include "cudamanager/PxCudaContext.h"
 #endif
 
 #include "PxsMemoryManager.h"
@@ -82,12 +79,6 @@ PX_IMPLEMENT_OUTPUT_ERROR
 
 namespace physx { 
 namespace Sc {
-
-class LLArticulationRCPool : public PxPool<FeatherstoneArticulation, PxAlignedAllocator<64> >
-{
-public:
-	LLArticulationRCPool() {}
-};
 
 #if PX_SUPPORT_GPU_PHYSX
 
@@ -130,7 +121,7 @@ namespace
 		const PxU32					mNumBodies;
 		PxsContext*					mContext;
 		Context*					mDynamicsContext;
-		PxsTransformCache&			mCache;
+		const UpdateCachedParams	mParams;
 		Sc::Scene&					mScene;
 	
 	public:
@@ -141,7 +132,7 @@ namespace
 			mNumBodies		(numBodies),
 			mContext		(context),
 			mDynamicsContext(dynamicsContext),
-			mCache			(cache),
+			mParams			(cache, scene.getBoundsArray()),
 			mScene			(scene)
 		{
 		}
@@ -158,32 +149,39 @@ namespace
 
 			IG::SimpleIslandManager& manager = *mScene.getSimpleIslandManager();
 			const IG::IslandSim& islandSim = manager.getAccurateIslandSim();
-			Bp::BoundsArray& boundsArray = mScene.getBoundsArray();
 
 			Sc::BodySim* frozen[MaxTasks], * unfrozen[MaxTasks];
 			PxU32 nbFrozen = 0, nbUnfrozen = 0;
 			PxU32 nbActivated = 0, nbDeactivated = 0;
+
+			// PdHC: Check if body acceleration tracking is enabled for velocity-delta computation
+			const bool computeAccelerations = (mScene.getFlags() & PxSceneFlag::eENABLE_BODY_ACCELERATIONS) && !mScene.isUsingGpuDynamics();
+			const PxReal oneOverDt = mScene.getOneOverDt();
 
 			for(PxU32 i = 0; i < mNumBodies; i++)
 			{
 				PxsRigidBody* rigid = getRigidBodyFromIG(islandSim, mIndices[i]);
 				Sc::BodySim* bodySim = reinterpret_cast<Sc::BodySim*>(reinterpret_cast<PxU8*>(rigid) - rigidBodyOffset);
 				
-				PxsBodyCore& bodyCore = bodySim->getBodyCore().getCore();
+				Sc::BodyCore& scBodyCore = bodySim->getBodyCore();
+				PxsBodyCore& bodyCore = scBodyCore.getCore();
 				//If we got in this code, then this is an active object this frame. The solver computed the new wakeCounter and we 
 				//commit it at this stage. We need to do it this way to avoid a race condition between the solver and the island gen, where
 				//the island gen may have deactivated a body while the solver decided to change its wake counter.
 				bodyCore.wakeCounter = bodyCore.solverWakeCounter;
 				PxsRigidBody& llBody = bodySim->getLowLevelBody();
 
+				// PdHC: Compute accelerations using velocity-delta method (for CPU dynamics only)
+				// This is multithreaded since each body's acceleration is independent
+				if(computeAccelerations)
+					scBodyCore.updateAccelerations(oneOverDt);
+
 				const PxIntBool isFrozen = bodySim->isFrozen();
 				if(!isFrozen)
 				{
 					bpUpdates[nbBpUpdates++] = bodySim;
 
-					// PT: TODO: remove duplicate "isFrozen" test inside updateCached
-	//				bodySim->updateCached(NULL);
-					bodySim->updateCached(mCache, boundsArray);
+					bodySim->updateCached_ThreadSafe(mParams);
 				}
 
 				if(llBody.isFreezeThisFrame() && isFrozen)
@@ -207,15 +205,16 @@ namespace
 			}
 			if(nbBpUpdates)
 			{
-				mCache.setChangedState();
-				boundsArray.setChangedState();
+				mParams.mTransformCache.setChangedState();
+				mParams.mBoundsArray.setChangedState();
 			}
 
 			if(nbBpUpdates>0 || nbFrozen > 0 || nbCcdBodies>0 || nbActivated>0 || nbDeactivated>0)
 			{
 				//Write active bodies to changed actor map
+				// PT: TODO: do that directly inside updateCached with atomics
 				mContext->getLock().lock();
-				PxBitMapPinned& changedAABBMgrHandles = mScene.getAABBManager()->getChangedAABBMgActorHandleMap();
+				PinnableBitMap& changedAABBMgrHandles = mScene.getAABBManager()->getChangedAABBMgActorHandleMap();
 			
 				for(PxU32 i = 0; i < nbBpUpdates; i++)
 				{
@@ -239,7 +238,7 @@ namespace
 				for(PxU32 i=0;i<nbFrozen;i++)
 				{
 					PX_ASSERT(frozen[i]->isFrozen());
-					frozen[i]->freezeTransforms(&changedAABBMgrHandles);
+					frozen[i]->freezeTransforms(mParams, &changedAABBMgrHandles);
 				}
 
 				for(PxU32 i=0;i<nbUnfrozen;i++)
@@ -385,7 +384,7 @@ namespace
 			mNumBodies			(numBodies),
 			mScene				(scene),
 			mRigidBodyLL		(rigidBodyLL),
-			mActivatedBodies	(activatedBodies),  
+			mActivatedBodies	(activatedBodies),
 			mDeactivatedBodies	(deactivatedBodies),
 			mCCDBodyWriteIndex	(ccdBodyWriteIndex)
 		{
@@ -583,7 +582,7 @@ namespace
 #endif
 }
 
-static Bp::AABBManagerBase* createAABBManagerCPU(const PxSceneDesc& desc, Bp::BroadPhase* broadPhase, Bp::BoundsArray* boundsArray, PxFloatArrayPinnedSafe* contactDistances, PxVirtualAllocator& allocator, PxU64 contextID)
+static Bp::AABBManagerBase* createAABBManagerCPU(const PxSceneDesc& desc, Bp::BroadPhase* broadPhase, Bp::BoundsArray* boundsArray, PinnableArray<PxReal>* contactDistances, VirtualAllocatorCallback& allocator, PxU64 contextID)
 {
 	return PX_NEW(Bp::AABBManager)(*broadPhase, *boundsArray, *contactDistances,
 		desc.limits.maxNbAggregates, desc.limits.maxNbStaticShapes + desc.limits.maxNbDynamicShapes, allocator, contextID,
@@ -591,8 +590,9 @@ static Bp::AABBManagerBase* createAABBManagerCPU(const PxSceneDesc& desc, Bp::Br
 }
 
 #if PX_SUPPORT_GPU_PHYSX
-static Bp::AABBManagerBase* createAABBManagerGPU(PxsKernelWranglerManager* kernelWrangler, PxCudaContextManager* cudaContextManager, PxsHeapMemoryAllocatorManager* heapMemoryAllocationManager,
-												const PxSceneDesc& desc, Bp::BroadPhase* broadPhase, Bp::BoundsArray* boundsArray, PxFloatArrayPinnedSafe* contactDistances, PxVirtualAllocator& allocator, PxU64 contextID)
+static Bp::AABBManagerBase* createAABBManagerGPU(PxsKernelWranglerManager* kernelWrangler, PxCudaContextManager* cudaContextManager, PxsHeapMemoryAllocatorManager& heapMemoryAllocationManager,
+												const PxSceneDesc& desc, Bp::BroadPhase* broadPhase, Bp::BoundsArray* boundsArray, PinnableArray<PxReal>* contactDistances,
+												PxU64 contextID)
 {
 	return PxvGetPhysXGpu(true)->createGpuAABBManager(
 		kernelWrangler,
@@ -601,7 +601,7 @@ static Bp::AABBManagerBase* createAABBManagerGPU(PxsKernelWranglerManager* kerne
 		desc.gpuDynamicsConfig,
 		heapMemoryAllocationManager,
 		*broadPhase, *boundsArray, *contactDistances,
-		desc.limits.maxNbAggregates, desc.limits.maxNbStaticShapes + desc.limits.maxNbDynamicShapes, allocator, contextID,
+		desc.limits.maxNbAggregates, desc.limits.maxNbStaticShapes + desc.limits.maxNbDynamicShapes, contextID,
 		desc.kineKineFilteringMode, desc.staticKineFilteringMode);
 }
 #endif
@@ -727,7 +727,6 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mIslandInsertionTaskHead		(NULL),
 	mIsCollisionPhaseActive			(false),
 	mIsDirectGPUAPIInitialized		(false),
-	mResidual						(),
 	mOnSleepingStateChanged			(NULL)
 #if PX_SUPPORT_GPU_PHYSX
 	,mDeformableSurfaces			("sceneDeformableSurfaces"), 
@@ -761,7 +760,6 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mStaticSimPool				= PX_NEW(PreallocatingPool<StaticSim>)(64, "StaticSim");
 	mBodySimPool				= PX_NEW(PreallocatingPool<BodySim>)(64, "BodySim");
 	mShapeSimPool				= PX_NEW(PreallocatingPool<ShapeSim>)(128, "ShapeSim");
-	mLLArticulationRCPool		= PX_NEW(LLArticulationRCPool);
 	mSimStateDataPool			= PX_NEW(PxPool<SimStateData>)("ScScene::SimStateData");
 
 	mSqBoundsManager			= PX_NEW(SqBoundsManager);
@@ -804,6 +802,12 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	}
 	mLLContext->setMaterialManager(&getMaterialManager());
 
+	// Allocator used for shared data that may be accessed as cuda host memory depending on the pipeline
+	// configuration (useGpuBroadphase, useGpuDynamics, directAPI). Cases where device mapped memory is
+	// required, are handled separately. It gets used for Bp::BoundsArray, Bp::AABBManagerBase, contact distances,
+	// Dy::Context (base class for dynamics context) and PxsTransformCache
+	VirtualAllocatorCallback* allocator = NULL;
+
 #if PX_SUPPORT_GPU_PHYSX
 	if (useGpuBroadphase || useGpuDynamics)
 	{
@@ -814,13 +818,16 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 		mGpuWranglerManagers = physxGpu->getGpuKernelWranglerManager(mLLContext->getCudaContextManager());
 		// PT: this creates a PxgHeapMemoryAllocatorManager
 		mHeapMemoryAllocationManager = physxGpu->createGpuHeapMemoryAllocatorManager(desc.gpuDynamicsConfig.heapCapacity, mMemoryManager, desc.gpuComputeVersion);
+		allocator = mHeapMemoryAllocationManager->mPinnedHostMemoryAllocator;
 	}
 	else
 #endif
 	{
 		// PT: this creates a PxsDefaultMemoryManager
 		mMemoryManager = createDefaultMemoryManager();
+		allocator = mMemoryManager->getPinnedHostMemoryAllocator();
 	}
+	PX_ASSERT(allocator);
 
 	Bp::BroadPhase* broadPhase = NULL;
 
@@ -850,27 +857,26 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 		broadPhase = PxvGetPhysXGpu(true)->createGpuBroadPhase(	desc.gpuBroadPhaseDesc ? *desc.gpuBroadPhaseDesc : defaultGpuBPDesc,
 																mGpuWranglerManagers, mLLContext->getCudaContextManager(),
 																desc.gpuComputeVersion, desc.gpuDynamicsConfig,
-																mHeapMemoryAllocationManager, contextID);
+																*mHeapMemoryAllocationManager, contextID);
 	}
 #endif
-
-	//create allocator
-	PxVirtualAllocatorCallback* allocatorCallback = mMemoryManager->getHostMemoryAllocator();
-	PxVirtualAllocator allocator(allocatorCallback);
 
 #if PX_SUPPORT_GPU_PHYSX
 	const bool directAPI = mPublicFlags & PxSceneFlag::eENABLE_DIRECT_GPU_API;
 	if(directAPI)
 	{
-		mBoundsArray = PxvGetPhysXGpu(true)->createGpuBounds(allocator);
+		PX_ASSERT(mHeapMemoryAllocationManager);
+		// Direct pipeline needs mapped bounds: mergeBoundsAndTransformsChanges
+		mBoundsArray = PxvGetPhysXGpu(true)->createGpuBounds(*mHeapMemoryAllocationManager->mPinnedHostMappedMemoryAllocator);
 	}
 	else
 #endif
 	{
-		mBoundsArray = PX_NEW(Bp::BoundsArray)(allocator);
+		// Non-direct pipeline is fine with regular pinned memory: copyBoundsAndTransforms
+		mBoundsArray = PX_NEW(Bp::BoundsArray)(*allocator);
 	}
 	
-	mContactDistance = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxFloatArrayPinnedSafe), "ContactDistance"), PxFloatArrayPinnedSafe)(allocator.getCallback());
+	mContactDistance = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PinnableArray<PxReal>), "ContactDistance"), PinnableArray<PxReal>)(*allocator);
 	mHasContactDistanceChanged = false;
 
 	const bool useEnhancedDeterminism = mPublicFlags & PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
@@ -878,27 +884,23 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mSimpleIslandManager = PX_NEW(IG::SimpleIslandManager)(useEnhancedDeterminism, useGpuBroadphase || useGpuDynamics, contextID);
 	PX_ASSERT(mSimpleIslandManager);
 
-	PxvNphaseImplementationFallback* cpuNphaseImplementation = createNphaseImplementationContext(*mLLContext, &mSimpleIslandManager->getAccurateIslandSim(), allocatorCallback, useGpuDynamics);
+	PxvNphaseImplementationFallback* cpuNphaseImplementation = createNphaseImplementationContext(*mLLContext, &mSimpleIslandManager->getAccurateIslandSim(), *allocator, useGpuDynamics);
 
 	if (!useGpuDynamics)
 	{
+		// PT: we must pass mPublicFlags to the contexts in case it has been tweaked by the above code
+
 		if (desc.solverType == PxSolverType::ePGS)
 		{
-			mDynamicsContext = createDynamicsContext
-			(&mLLContext->getNpMemBlockPool(), mLLContext->getScratchAllocator(),
-				mLLContext->getTaskPool(), mLLContext->getSimStats(), &mLLContext->getTaskManager(), allocatorCallback, &getMaterialManager(),
-				*mSimpleIslandManager, contextID, mEnableStabilization, useEnhancedDeterminism, desc.flags & PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST, desc.maxBiasCoefficient,
-				desc.flags & PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATION, desc.getTolerancesScale().length,
-				desc.flags & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING);
+			mDynamicsContext = createDynamicsContext(&mLLContext->getNpMemBlockPool(), mLLContext->getTaskPool(), mLLContext->getSimStats(),
+													*allocator, &getMaterialManager(), *mSimpleIslandManager, contextID,
+													desc.maxBiasCoefficient, desc.getTolerancesScale().length, mPublicFlags);
 		}
 		else
 		{
-			mDynamicsContext = createTGSDynamicsContext
-			(&mLLContext->getNpMemBlockPool(), mLLContext->getScratchAllocator(),
-				mLLContext->getTaskPool(), mLLContext->getSimStats(), &mLLContext->getTaskManager(), allocatorCallback, &getMaterialManager(),
-				*mSimpleIslandManager, contextID, mEnableStabilization, useEnhancedDeterminism, desc.flags & PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST,
-				desc.getTolerancesScale().length, desc.flags & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS,
-				desc.flags & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING);
+			mDynamicsContext = createTGSDynamicsContext(&mLLContext->getNpMemBlockPool(), mLLContext->getTaskPool(), mLLContext->getSimStats(),
+														*allocator, &getMaterialManager(), *mSimpleIslandManager, contextID,
+														desc.getTolerancesScale().length, mPublicFlags);
 		}
 
 		mLLContext->setNphaseImplementationContext(cpuNphaseImplementation);
@@ -907,10 +909,10 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 		mSimulationController = PX_NEW(SimulationController)(mSimulationControllerCallback);
 
 		if (!useGpuBroadphase)
-			mAABBManager = createAABBManagerCPU(desc, broadPhase, mBoundsArray, mContactDistance, allocator, contextID);
+			mAABBManager = createAABBManagerCPU(desc, broadPhase, mBoundsArray, mContactDistance, *allocator, contextID);
 #if PX_SUPPORT_GPU_PHYSX
 		else
-			mAABBManager = createAABBManagerGPU(mGpuWranglerManagers, mLLContext->getCudaContextManager(), mHeapMemoryAllocationManager, desc, broadPhase, mBoundsArray, mContactDistance, allocator, contextID);
+			mAABBManager = createAABBManagerGPU(mGpuWranglerManagers, mLLContext->getCudaContextManager(), *mHeapMemoryAllocationManager, desc, broadPhase, mBoundsArray, mContactDistance, contextID);
 #endif
 	}
 	else
@@ -923,10 +925,9 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 		// PT: why are we using mPublicFlags in one case and desc in other cases?
 
 		mDynamicsContext = physxGpu->createGpuDynamicsContext(mLLContext->getTaskPool(), mGpuWranglerManagers, mLLContext->getCudaContextManager(),
-			desc.gpuDynamicsConfig, *mSimpleIslandManager, desc.gpuMaxNumPartitions, desc.gpuMaxNumStaticPartitions, mEnableStabilization, useEnhancedDeterminism, desc.flags & PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST,
-			desc.maxBiasCoefficient, desc.gpuComputeVersion, mLLContext->getSimStats(), mHeapMemoryAllocationManager, 
-			desc.flags & PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATION, desc.flags & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS,
-			desc.solverType, desc.getTolerancesScale().length, directAPI, contextID, desc.flags & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING);
+			desc.gpuDynamicsConfig, *mSimpleIslandManager, desc.gpuMaxNumPartitions, desc.gpuMaxNumStaticPartitions,
+			desc.maxBiasCoefficient, desc.gpuComputeVersion, mLLContext->getSimStats(), *mHeapMemoryAllocationManager, 
+			desc.solverType, desc.getTolerancesScale().length, contextID, mPublicFlags);
 
 		void* contactStreamBase = NULL;
 		void* patchStreamBase = NULL;
@@ -937,12 +938,12 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 		mLLContext->setNphaseFallbackImplementationContext(cpuNphaseImplementation);
 
 		PxvNphaseImplementationContext* gpuNphaseImplementation = physxGpu->createGpuNphaseImplementationContext(*mLLContext, mGpuWranglerManagers, cpuNphaseImplementation, desc.gpuDynamicsConfig, contactStreamBase, patchStreamBase,
-			forceAndIndiceStreamBase, getBoundsArray().getBounds(), &mSimpleIslandManager->getAccurateIslandSim(), mDynamicsContext, desc.gpuComputeVersion, mHeapMemoryAllocationManager, useGpuBroadphase);
+			forceAndIndiceStreamBase, *mBoundsArray, &mSimpleIslandManager->getAccurateIslandSim(), mDynamicsContext, desc.gpuComputeVersion, *mHeapMemoryAllocationManager, useGpuBroadphase);
 
 		mSimulationControllerCallback = PX_NEW(PxgSimulationControllerCallback)(this);
 
 		mSimulationController = physxGpu->createGpuSimulationController(mGpuWranglerManagers, mLLContext->getCudaContextManager(),
-			mDynamicsContext, gpuNphaseImplementation, broadPhase, useGpuBroadphase, mSimulationControllerCallback, desc.gpuComputeVersion, mHeapMemoryAllocationManager,
+			mDynamicsContext, gpuNphaseImplementation, broadPhase, useGpuBroadphase, mSimulationControllerCallback, desc.gpuComputeVersion, *mHeapMemoryAllocationManager,
 			(desc.gpuDynamicsConfig.maxSoftBodyContacts > 0) ? desc.gpuDynamicsConfig.maxSoftBodyContacts : desc.gpuDynamicsConfig.maxDeformableVolumeContacts,
 			(desc.gpuDynamicsConfig.maxFemClothContacts > 0) ? desc.gpuDynamicsConfig.maxFemClothContacts : desc.gpuDynamicsConfig.maxDeformableSurfaceContacts,
 			desc.gpuDynamicsConfig.maxParticleContacts,
@@ -958,14 +959,11 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 		mLLContext->mForceAndIndiceStreamPool = &mDynamicsContext->getForceStreamPool();
 		mLLContext->mFrictionPatchStreamPool = &mDynamicsContext->getFrictionPatchStreamPool();
 
-		// PT: TODO: what's the difference between this allocator and "allocator" above?
-		PxVirtualAllocator tAllocator(mHeapMemoryAllocationManager->mMappedMemoryAllocators, PxsHeapStats::eBROADPHASE);
-
 		if (!useGpuBroadphase)
-			// PT: TODO: we're using a CUDA allocator in the CPU broadphase, and a different allocator for the bounds array?
-			mAABBManager = createAABBManagerCPU(desc, broadPhase, mBoundsArray, mContactDistance, tAllocator, contextID);
+			mAABBManager = createAABBManagerCPU(desc, broadPhase, mBoundsArray, mContactDistance, *allocator, contextID);
 		else
-			mAABBManager = createAABBManagerGPU(mGpuWranglerManagers, mLLContext->getCudaContextManager(), mHeapMemoryAllocationManager, desc, broadPhase, mBoundsArray, mContactDistance, tAllocator, contextID);
+			mAABBManager = createAABBManagerGPU(mGpuWranglerManagers, mLLContext->getCudaContextManager(), 
+				*mHeapMemoryAllocationManager, desc, broadPhase, mBoundsArray, mContactDistance, contextID);
 #endif
 	}
 
@@ -976,12 +974,22 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 		mAABBManager->getChangedAABBMgActorHandleMap().resize((2*desc.limits.maxNbBodies + 256) & ~255);
 	}
 
-	//mLLContext->createTransformCache(mDynamicsContext->getAllocatorCallback());
+#if PX_SUPPORT_GPU_PHYSX
+	if(directAPI)
+	{
+		// Direct pipeline needs mapped memory transform cache: mergeBoundsAndTransformsChanges
+		mLLContext->createTransformCache(*mHeapMemoryAllocationManager->mPinnedHostMappedMemoryAllocator, Cm::PinnableAllocatorFallback::eDISABLED);
+	}
+	else
+#endif
+	{
+		// Non-direct pipeline is fine with regular pinned memory that can fallback to pageable memory: copyBoundsAndTransforms
+		mLLContext->createTransformCache(*allocator, Cm::PinnableAllocatorFallback::eENABLED);
+	}
 
-	mLLContext->createTransformCache(*allocatorCallback);
 	mLLContext->setContactDistance(mContactDistance);
 
-	mCCDContext = PX_NEW(PxsCCDContext)(mLLContext, mDynamicsContext->getThresholdStream(), *mLLContext->getNphaseImplementationContext(), desc.ccdThreshold);
+	mCCDContext = PX_NEW(PxsCCDContext)(mLLContext, mDynamicsContext->getThresholdStream(), *mLLContext->getNphaseImplementationContext(), desc.ccdThreshold, useGpuBroadphase || useGpuDynamics);
 	
 	setSolverBatchSize(desc.solverBatchSize);
 	setSolverArticBatchSize(desc.solverArticulationBatchSize);
@@ -1115,7 +1123,6 @@ void Sc::Scene::release()
 	PX_DELETE(mStaticSimPool);
 	PX_DELETE(mShapeSimPool);
 	PX_DELETE(mBodySimPool);
-	PX_DELETE(mLLArticulationRCPool);
 #if PX_SUPPORT_GPU_PHYSX
 	gpu_releasePools();
 #endif
@@ -1140,28 +1147,21 @@ void Sc::Scene::release()
 
 	PX_DELETE(mSimpleIslandManager);
 
-#if PX_SUPPORT_GPU_PHYSX
-	gpu_release();
-#endif
-
 	PX_RELEASE(mTaskManager);
 	PX_DELETE(mLLContext);
 
 	// PT: TODO: revisit this
-	mContactDistance->~PxFloatArrayPinnedSafe();
+	mContactDistance->~PinnableArray<PxReal>();
 	PX_FREE(mContactDistance);
+
+#if PX_SUPPORT_GPU_PHYSX
+	gpu_release();
+#endif
 
 	PX_DELETE(mMemoryManager);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-PxSceneResidual Sc::Scene::getSolverResidual()	const
-{
-	if (!(getFlags() & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING))
-		outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Proper solver residual values can only be provided if the scene flag PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING is set");
-	return mResidual;
-}
 
 void Sc::Scene::preAllocate(PxU32 nbStatics, PxU32 nbBodies, PxU32 nbStaticShapes, PxU32 nbDynamicShapes)
 {
@@ -1758,11 +1758,9 @@ void Sc::Scene::addArticulation(ArticulationCore& articulation, BodyCore& root)
 {
 	ArticulationSim* sim = PX_NEW(ArticulationSim)(articulation, *this, root);
 
-	if (sim && (sim->getLowLevelArticulation() == NULL))
-	{
-		PX_DELETE(sim);
+	if(!sim)
 		return;
-	}
+
 	mArticulations.insert(&articulation);
 
 	addDirtyArticulationSim(sim);
@@ -1837,14 +1835,14 @@ void Sc::Scene::addArticulationSimControl(Sc::ArticulationCore& core)
 {
 	Sc::ArticulationSim* sim = core.getSim();
 	if (sim)
-		mSimulationController->addArticulation(sim->getLowLevelArticulation(), sim->getIslandNodeIndex());
+		mSimulationController->addArticulation(sim, sim->getIslandNodeIndex());
 }
 
 void Sc::Scene::removeArticulationSimControl(Sc::ArticulationCore& core)
 {
 	Sc::ArticulationSim* sim = core.getSim();
 	if (sim)
-		mSimulationController->releaseArticulation(sim->getLowLevelArticulation(), sim->getIslandNodeIndex());
+		mSimulationController->releaseArticulation(sim, sim->getIslandNodeIndex());
 }
 
 void* Sc::Scene::allocateConstraintBlock(PxU32 size)
@@ -1983,7 +1981,7 @@ const PxArray<PxContactPairHeader>& Sc::Scene::getQueuedContactPairHeaders()
 		if (i + 1 < nbActorPairs)
 			PxPrefetch(&(actorPairs[i + 1]->getContactStreamManager()));
 
-		PxContactPairHeader &pairHeader = mQueuedContactPairHeaders.insert();
+		PxContactPairHeader& pairHeader = *mQueuedContactPairHeaders.insert();
 		finalizeContactStreamAndCreateHeader(pairHeader, *aPair, cs, removedShapeTestMask);
 
 		cs.maxPairCount = cs.currentPairCount;
@@ -2272,8 +2270,15 @@ void Sc::Scene::addShapes(NpShape *const* shapes, PxU32 nbShapes, size_t ptrOffs
 
 		mSimulationController->addPxgShape(shapeSim, shapeSim->getPxsShapeCore(), shapeSim->getActorNodeIndex(), shapeSim->getElementID());
 
-		if (outBounds)
-			outBounds[i] = mBoundsArray->getBounds(shapeSim->getElementID());
+		if(outBounds)
+		{
+			PxU32 elementID = shapeSim->getElementID();
+#if PX_SUPPORT_GPU_PHYSX
+			outBounds[i] = mBoundsArray->hadAllocationFailure() ? PxBounds3::empty() : mBoundsArray->getBounds(elementID);
+#else
+			outBounds[i] = mBoundsArray->getBounds(elementID);
+#endif
+		}
 		
 		//I register the shape if its either not an articulation link or if the nodeIndex has already been
 		//assigned. On insertion, the articulation will not have this nodeIndex correctly assigned at this stage
@@ -2338,6 +2343,10 @@ void Sc::Scene::addBody(BodyCore& body, NpShape*const *shapes, PxU32 nbShapes, s
 	// activation, registering with the interaction system, etc
 
 	BodySim* sim = mBodySimPool->construct(*this, body, compound);
+
+	// Reset acceleration state to seed previous velocities from current velocities,
+	// avoiding spurious acceleration spike on first updateAccelerations call
+	body.resetAccelerationState();
 
 	const bool isArticulationLink = sim->isArticulationLink();
 
@@ -2469,7 +2478,11 @@ void Sc::Scene::addShapes(NpShape*const* shapes, PxU32 nbShapes, size_t ptrOffse
 		PX_PLACEMENT_NEW(prefetchedShapeSim, ShapeSim(rigidSim, sc));
 		const PxU32 elementID = prefetchedShapeSim->getElementID();
 
+#if PX_SUPPORT_GPU_PHYSX
+		outBounds[i] = mBoundsArray->hadAllocationFailure() ? PxBounds3::empty() : mBoundsArray->getBounds(elementID);
+#else
 		outBounds[i] = mBoundsArray->getBounds(elementID);
+#endif
 
 		// PT: TODO: revisit getActorNodeIndex() vs rigidSim.getNodeIndex()
 		mSimulationController->addPxgShape(prefetchedShapeSim, prefetchedShapeSim->getPxsShapeCore(), prefetchedShapeSim->getActorNodeIndex(), elementID);
@@ -2505,6 +2518,9 @@ void Sc::Scene::addBody(PxActor* actor, BatchInsertionState& s, PxBounds3* outBo
 	Sc::BodyCore* bodyCore = PxPointerOffset<Sc::BodyCore*>(actor, s.dynamicActorOffset);
 	mBodySimPool->construct(sim, *this, *bodyCore, compound);	
 	s.bodySim = mBodySimPool->allocateAndPrefetch();
+
+	// Reset acceleration state to seed previous velocities from current velocities
+	bodyCore->resetAccelerationState();
 
 	if(sim->getLowLevelBody().mCore->mFlags & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD)
 	{
@@ -2842,20 +2858,20 @@ PX_INLINE void Sc::Scene::cleanUpSleepOrWokenBodies(PxCoalescedHashSet<BodyCore*
 	validMarker = true;
 }
 
-FeatherstoneArticulation* Sc::Scene::createLLArticulation(Sc::ArticulationSim* sim)
-{
-	return mLLArticulationRCPool->construct(sim);
-}
-
-void Sc::Scene::destroyLLArticulation(FeatherstoneArticulation& articulation)
-{
-	mLLArticulationRCPool->destroy(static_cast<Dy::FeatherstoneArticulation*>(&articulation));
-}
-
 PxU32 Sc::Scene::createAggregate(void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint, PxU32 envID)
 {
 	const Bp::BoundsIndex index = getElementIDPool().createID();
+#if PX_SUPPORT_GPU_PHYSX
+	if(!mBoundsArray->initEntry(index))
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "Sc::Scene::createAggregate: failed to allocate pinned memory bounds");
+		getCudaContextManager()->getCudaContext()->setAbortMode(true);
+		// let aggregate creation continue to be able to remove it cleanly later.
+	}
+#else
 	mBoundsArray->initEntry(index);
+#endif
+
 	mLLContext->getNphaseImplementationContext()->registerAggregate(index);
 #if BP_USE_AGGREGATE_GROUP_TAIL
 	return mAABBManager->createAggregate(index, Bp::FilterGroup::eINVALID, userData, maxNumShapes, filterHint, envID);
@@ -3036,18 +3052,15 @@ Sc::ConstraintCore*	Sc::Scene::findConstraintCore(const Sc::ActorSim* sim0, cons
 	return entry ? entry->second : NULL;
 }
 
-void Sc::Scene::updateBodySim(Sc::BodySim& bodySim)
-{
-	Dy::FeatherstoneArticulation* arti = NULL;
-	Sc::ArticulationSim* artiSim = bodySim.getArticulation();
-	if (artiSim)
-		arti = artiSim->getLowLevelArticulation();
-	mSimulationController->updateDynamic(arti, bodySim.getNodeIndex());
-}
-
 // PT: start moving PX_SUPPORT_GPU_PHYSX bits to the end of the file. Ideally/eventually they would move to a separate class or file,
 // to clearly decouple the CPU and GPU parts of the scene/pipeline.
 #if PX_SUPPORT_GPU_PHYSX
+void Sc::Scene::gpu_updateBodySim(Sc::BodySim& bodySim)
+{
+	ArticulationSim* artiSim = bodySim.getArticulation();
+	mSimulationController->updateDynamic(artiSim, bodySim.getNodeIndex());
+}
+
 void Sc::Scene::gpu_releasePools()
 {
 	PX_DELETE(mLLDeformableSurfacePool);
@@ -3222,7 +3235,7 @@ void Sc::Scene::gpu_updateBounds()
 {
 	bool gpuStateChanged = false;
 
-	PxBitMapPinned& changedMap = mAABBManager->getChangedAABBMgActorHandleMap();
+	PinnableBitMap& changedMap = mAABBManager->getChangedAABBMgActorHandleMap();
 
 	//update deformable volumes world bound
 	Sc::DeformableVolumeCore* const* deformableVolumes = mDeformableVolumes.getEntries();
@@ -3326,6 +3339,8 @@ void Sc::Scene::addDeformableSurface(DeformableSurfaceCore& deformableSurface)
 void Sc::Scene::removeDeformableSurface(DeformableSurfaceCore& deformableSurface)
 {
 	DeformableSurfaceSim* a = deformableSurface.getSim();
+	if(a)
+		markReleasedBodyIDForLostTouch(a->getActorID());  // BUGFIX 5813869: avoid use-after-free in processLostTouchPairs
 	PX_DELETE(a);
 	mDeformableSurfaces.erase(&deformableSurface);
 	mStats->gpuMemSizeDeformableSurfaces -= deformableSurface.getGpuMemStat();
@@ -3348,6 +3363,8 @@ void Sc::Scene::addDeformableVolume(DeformableVolumeCore& deformableVolume)
 void Sc::Scene::removeDeformableVolume(DeformableVolumeCore& deformableVolume)
 {
 	DeformableVolumeSim* a = deformableVolume.getSim();
+	if(a)
+		markReleasedBodyIDForLostTouch(a->getActorID());  // BUGFIX 5813869: avoid use-after-free in processLostTouchPairs
 	PX_DELETE(a);
 	mDeformableVolumes.erase(&deformableVolume);
 	mStats->gpuMemSizeDeformableVolumes -= deformableVolume.getGpuMemStat();
@@ -3372,6 +3389,8 @@ void Sc::Scene::addParticleSystem(ParticleSystemCore& particleSystem)
 void Sc::Scene::removeParticleSystem(ParticleSystemCore& particleSystem)
 {
 	ParticleSystemSim* a = particleSystem.getSim();
+	if(a)
+		markReleasedBodyIDForLostTouch(a->getActorID());  // BUGFIX 5813869: avoid use-after-free in processLostTouchPairs
 	PX_DELETE(a);
 	mParticleSystems.erase(&particleSystem);
 	mStats->gpuMemSizeParticles -= particleSystem.getShapeCore().getGpuMemStat();

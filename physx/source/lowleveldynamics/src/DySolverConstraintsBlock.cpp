@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,7 +35,6 @@
 #include "DySolverContact4.h"
 #include "DySolverConstraint1D4.h"
 #include "DyPGS.h"
-#include "DyResidualAccumulator.h"
 
 namespace physx
 {
@@ -101,9 +100,6 @@ static void solveContact4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, 
 	const Vec4V invMassB = hdr->invMass1D1;
 
 	const Vec4V sumInvMass = V4Add(invMassA, invMassB);
-
-	Dy::ErrorAccumulator error;
-	const bool residualReportingActive = cache.contactErrorAccumulator;
 
 	while(currPtr < last)
 	{
@@ -197,9 +193,6 @@ static void solveContact4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, 
 			const Vec4V newAppliedForce = V4Min(V4MulAdd(c.impulseMultiplier, appliedForce, deltaF), maxImpulse);
 			deltaF = V4Sub(newAppliedForce, appliedForce);
 			
-			if (residualReportingActive)
-				error.accumulateErrorLocalV4(deltaF, c.velMultiplier);
-
 			accumDeltaF = V4Add(accumDeltaF, deltaF);
 
 			const Vec4V angDetaF0 = V4Mul(deltaF, angD0);
@@ -297,9 +290,6 @@ static void solveContact4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, 
 				const Vec4V newAppliedForce = V4Sel(broken, V4Min(maxDynFrictionImpulse, V4Max(negMaxDynFrictionImpulse, totalImpulse)), totalImpulse);
 
 				const Vec4V deltaF = V4Sub(newAppliedForce, appliedForce);
-				
-				if (residualReportingActive)
-					error.accumulateErrorLocalV4(deltaF, f.velMultiplier);
 
 				frictionAppliedForce[i] = newAppliedForce;
 
@@ -399,9 +389,6 @@ static void solveContact4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, 
 	PX_ASSERT(b21.angularState.isFinite());
 	PX_ASSERT(b31.linearVelocity.isFinite());
 	PX_ASSERT(b31.angularState.isFinite());
-
-	if (residualReportingActive)
-		error.accumulateErrorGlobal(*cache.contactErrorAccumulator);
 }
 
 static void solveContact4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, SolverContext& cache)
@@ -443,9 +430,6 @@ static void solveContact4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT 
 	const SolverContactHeader4* PX_RESTRICT hdr = reinterpret_cast<SolverContactHeader4*>(currPtr);
 
 	const Vec4V invMass0 = hdr->invMass0D0;
-
-	Dy::ErrorAccumulator error;
-	const bool residualReportingActive = cache.contactErrorAccumulator;
 
 	while((currPtr < last))
 	{
@@ -529,9 +513,6 @@ static void solveContact4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT 
 			newAppliedForce = V4Min(newAppliedForce, maxImpulse);
 			const Vec4V deltaF = V4Sub(newAppliedForce, appliedForce);
 
-			if (residualReportingActive)
-				error.accumulateErrorLocalV4(deltaF, c.velMultiplier);
-
 			const Vec4V angDeltaF = V4Mul(angD0, deltaF);
 
 			accumDeltaF = V4Add(accumDeltaF, deltaF);
@@ -613,9 +594,6 @@ static void solveContact4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT 
 
 				const Vec4V deltaF = V4Sub(newAppliedForce, appliedForce);
 
-				if (residualReportingActive)
-					error.accumulateErrorLocalV4(deltaF, f.velMultiplier);
-
 				const Vec4V deltaFInvMass = V4Mul(invMass0, deltaF);
 				const Vec4V angDeltaF = V4Mul(angD0, deltaF);
 
@@ -668,9 +646,6 @@ static void solveContact4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT 
 	PX_ASSERT(b20.angularState.isFinite());
 	PX_ASSERT(b30.linearVelocity.isFinite());
 	PX_ASSERT(b30.angularState.isFinite());
-
-	if (residualReportingActive)
-		error.accumulateErrorGlobal(*cache.contactErrorAccumulator);
 }
 
 static void concludeContact4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, PxU32 contactSize, PxU32 frictionSize)
@@ -912,7 +887,7 @@ static void writeBackContact4_Block(const PxSolverConstraintDesc* PX_RESTRICT de
 	}
 }
 
-static void solve1D4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, const SolverContext& cache)
+static void solve1D4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc)
 {
 	PxSolverBody& b00 = *desc[0].bodyA;
 	PxSolverBody& b01 = *desc[0].bodyB;
@@ -930,9 +905,7 @@ static void solve1D4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, const
 	//PxU32 length = desc.constraintLength;
 
 	SolverConstraint1DHeader4* PX_RESTRICT  header = reinterpret_cast<SolverConstraint1DHeader4*>(bPtr);
-	PxU8* PX_RESTRICT base = reinterpret_cast<PxU8*>(header+1);
-	bool residualReportingEnabled = cache.contactErrorAccumulator != NULL;
-	PxU32 stride = residualReportingEnabled ? sizeof(SolverConstraint1DDynamic4WithResidual) : sizeof(SolverConstraint1DDynamic4);
+	SolverConstraint1DDynamic4* PX_RESTRICT base = reinterpret_cast<SolverConstraint1DDynamic4*>(header + 1);
 
 	//const FloatV fZero = FZero();
 	Vec4V linVel00 = V4LoadA(&b00.linearVelocity.x);
@@ -975,8 +948,7 @@ static void solve1D4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, const
 
 	for(PxU32 a = 0; a < maxConstraints; ++a)
 	{
-		SolverConstraint1DDynamic4& c = *reinterpret_cast<SolverConstraint1DDynamic4*>(base);
-		base+= stride;
+		SolverConstraint1DDynamic4& c = *base++;
 
 		PxPrefetchLine(base);
 		PxPrefetchLine(base, 64);
@@ -1010,15 +982,6 @@ static void solve1D4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, const
 		const Vec4V clampedForce = V4Max(c.minImpulse, V4Min(c.maxImpulse, unclampedForce));
 		const Vec4V deltaF = V4Sub(clampedForce, appliedForce);
 		c.appliedForce = clampedForce;
-		if (residualReportingEnabled) 
-		{
-			SolverConstraint1DDynamic4WithResidual& cc = static_cast<SolverConstraint1DDynamic4WithResidual&>(c);
-			const Vec4V residual = Dy::calculateResidualV4(deltaF, c.velMultiplier);
-			if (cache.isPositionIteration)
-				cc.residualPosIter = residual;
-			else
-				cc.residualVelIter = residual;
-		}
 
 		const Vec4V deltaFInvMass0 = V4Mul(deltaF, invMass0D0);
 		const Vec4V deltaFInvMass1 = V4Mul(deltaF, invMass1D1);
@@ -1069,15 +1032,11 @@ static void solve1D4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, const
 	V4StoreA(angState31, &b31.angularState.x);
 }
 
-static void conclude1D4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, bool residualAccumulationEnabled)
+static void conclude1D4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc)
 {
 	SolverConstraint1DHeader4* header = reinterpret_cast<SolverConstraint1DHeader4*>(desc[0].constraint);
 	PxU8* base = desc[0].constraint + sizeof(SolverConstraint1DHeader4);
-	PxU32 stride;
-	if (residualAccumulationEnabled)
-		stride = header->type == DY_SC_TYPE_BLOCK_1D ? sizeof(SolverConstraint1DDynamic4WithResidual) : sizeof(SolverConstraint1DBase4WithResidual);
-	else
-		stride = header->type == DY_SC_TYPE_BLOCK_1D ? sizeof(SolverConstraint1DDynamic4) : sizeof(SolverConstraint1DBase4);
+	const PxU32 stride = header->type == DY_SC_TYPE_BLOCK_1D ? sizeof(SolverConstraint1DDynamic4) : sizeof(SolverConstraint1DBase4);
 
 	const PxU32 count = header->count;
 	for(PxU32 i=0; i<count; i++)
@@ -1089,7 +1048,7 @@ static void conclude1D4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, bo
 	PX_ASSERT(desc[0].constraint + getConstraintLength(desc[0]) == base);
 }
 
-static void writeBack1D4(const PxSolverConstraintDesc* PX_RESTRICT desc, bool residualAccumulationEnabled)
+static void writeBack1D4(const PxSolverConstraintDesc* PX_RESTRICT desc)
 {
 	ConstraintWriteback* writeback0 = reinterpret_cast<ConstraintWriteback*>(desc[0].writeBack);
 	ConstraintWriteback* writeback1 = reinterpret_cast<ConstraintWriteback*>(desc[1].writeBack);
@@ -1100,17 +1059,11 @@ static void writeBack1D4(const PxSolverConstraintDesc* PX_RESTRICT desc, bool re
 	{
 		SolverConstraint1DHeader4* header = reinterpret_cast<SolverConstraint1DHeader4*>(desc[0].constraint);
 		PxU8* base = desc[0].constraint + sizeof(SolverConstraint1DHeader4);
-		PxU32 stride;
-		if (residualAccumulationEnabled)
-			stride = header->type == DY_SC_TYPE_BLOCK_1D ? sizeof(SolverConstraint1DDynamic4WithResidual) : sizeof(SolverConstraint1DBase4WithResidual);
-		else
-			stride = header->type == DY_SC_TYPE_BLOCK_1D ? sizeof(SolverConstraint1DDynamic4) : sizeof(SolverConstraint1DBase4);
+		const PxU32 stride = header->type == DY_SC_TYPE_BLOCK_1D ? sizeof(SolverConstraint1DDynamic4) : sizeof(SolverConstraint1DBase4);
 
 		const Vec4V zero = V4Zero();
 		Vec4V linX(zero), linY(zero), linZ(zero); 
 		Vec4V angX(zero), angY(zero), angZ(zero); 
-		Vec4V residual(zero);
-		Vec4V residualPosIter(zero);
 
 		const PxU32 count = header->count;
 		for(PxU32 i=0; i<count; i++)
@@ -1126,22 +1079,6 @@ static void writeBack1D4(const PxSolverConstraintDesc* PX_RESTRICT desc, bool re
 			const BoolV isEq = VecI32V_IsEq(masked, mask);
 
 			const Vec4V appliedForce = V4Sel(isEq, c->appliedForce, zero);
-
-			if (residualAccumulationEnabled)
-			{
-				if (header->type == DY_SC_TYPE_BLOCK_1D)
-				{
-					const SolverConstraint1DDynamic4WithResidual* cc = static_cast<const SolverConstraint1DDynamic4WithResidual*>(c);
-					residual = V4MulAdd(cc->residualVelIter, cc->residualVelIter, residual);
-					residualPosIter = V4MulAdd(cc->residualPosIter, cc->residualPosIter, residualPosIter);
-				}
-				else
-				{
-					const SolverConstraint1DBase4WithResidual* cc = static_cast<const SolverConstraint1DBase4WithResidual*>(c);
-					residual = V4MulAdd(cc->residualVelIter, cc->residualVelIter, residual);
-					residualPosIter = V4MulAdd(cc->residualPosIter, cc->residualPosIter, residualPosIter);
-				}
-			}
 
 			linX = V4MulAdd(c->lin0X, appliedForce, linX);
 			linY = V4MulAdd(c->lin0Y, appliedForce, linY);
@@ -1171,12 +1108,6 @@ static void writeBack1D4(const PxSolverConstraintDesc* PX_RESTRICT desc, bool re
 		PX_ALIGN(16, PxU32 iBroken[4]);
 		BStoreA(broken, iBroken);
 
-		PX_ALIGN(16, PxReal residual4[4]);
-		V4StoreA(residual, residual4);
-
-		PX_ALIGN(16, PxReal residual4PosIter[4]);
-		V4StoreA(residualPosIter, residual4PosIter);
-
 		Vec4V lin0, lin1, lin2, lin3;
 		Vec4V ang0, ang1, ang2, ang3;
 
@@ -1187,29 +1118,25 @@ static void writeBack1D4(const PxSolverConstraintDesc* PX_RESTRICT desc, bool re
 		{
 			V3StoreU(Vec3V_From_Vec4V_WUndefined(lin0), writeback0->linearImpulse);
 			V3StoreU(Vec3V_From_Vec4V_WUndefined(ang0), writeback0->angularImpulse);
-			writeback0->setCombined(header->break0 ? PxU32(iBroken[0] != 0) : 0, residual4PosIter[0]);
-			writeback0->residual = residual4[0];
+			writeback0->broken = header->break0 ? PxU32(iBroken[0] != 0) : 0;
 		}
 		if(writeback1)
 		{
 			V3StoreU(Vec3V_From_Vec4V_WUndefined(lin1), writeback1->linearImpulse);
 			V3StoreU(Vec3V_From_Vec4V_WUndefined(ang1), writeback1->angularImpulse);
-			writeback1->setCombined(header->break1 ? PxU32(iBroken[1] != 0) : 0, residual4PosIter[1]);
-			writeback1->residual = residual4[1];
+			writeback1->broken = header->break1 ? PxU32(iBroken[1] != 0) : 0;
 		}
 		if(writeback2)
 		{
 			V3StoreU(Vec3V_From_Vec4V_WUndefined(lin2), writeback2->linearImpulse);
 			V3StoreU(Vec3V_From_Vec4V_WUndefined(ang2), writeback2->angularImpulse);
-			writeback2->setCombined(header->break2 ? PxU32(iBroken[2] != 0) : 0, residual4PosIter[2]);
-			writeback2->residual = residual4[2];
+			writeback2->broken = header->break2 ? PxU32(iBroken[2] != 0) : 0;
 		}
 		if(writeback3)
 		{
 			V3StoreU(Vec3V_From_Vec4V_WUndefined(lin3), writeback3->linearImpulse);
 			V3StoreU(Vec3V_From_Vec4V_WUndefined(ang3), writeback3->angularImpulse);
-			writeback3->setCombined(header->break3 ? PxU32(iBroken[3] != 0) : 0, residual4PosIter[3]);
-			writeback3->residual = residual4[3];
+			writeback3->broken = header->break3 ? PxU32(iBroken[3] != 0) : 0;
 		}
 
 		PX_ASSERT(desc[0].constraint + getConstraintLength(desc[0]) == base);
@@ -1304,7 +1231,7 @@ void solve1D4_Block(DY_PGS_SOLVE_METHOD_PARAMS)
 	PX_UNUSED(constraintCount);
 	PX_UNUSED(cache);
 
-	solve1D4_Block(desc, cache);
+	solve1D4_Block(desc);
 }
 
 void solve1D4Block_Conclude(DY_PGS_SOLVE_METHOD_PARAMS)
@@ -1312,9 +1239,8 @@ void solve1D4Block_Conclude(DY_PGS_SOLVE_METHOD_PARAMS)
 	PX_UNUSED(constraintCount);
 	PX_UNUSED(cache);
 
-	solve1D4_Block(desc, cache);
-	bool residualAccumulationEnabled = cache.contactErrorAccumulator != NULL;
-	conclude1D4_Block(desc, residualAccumulationEnabled);
+	solve1D4_Block(desc);
+	conclude1D4_Block(desc);
 }
 
 void solve1D4Block_WriteBack(DY_PGS_SOLVE_METHOD_PARAMS)
@@ -1322,14 +1248,13 @@ void solve1D4Block_WriteBack(DY_PGS_SOLVE_METHOD_PARAMS)
 	PX_UNUSED(constraintCount);
 	PX_UNUSED(cache);
 
-	solve1D4_Block(desc, cache);
-	bool residualAccumulationEnabled = cache.contactErrorAccumulator != NULL;
-	writeBack1D4(desc, residualAccumulationEnabled);
+	solve1D4_Block(desc);
+	writeBack1D4(desc);
 }
 
-void writeBack1D4Block(const PxSolverConstraintDesc* PX_RESTRICT desc, bool residualAccumulationEnabled)
+void writeBack1D4Block(const PxSolverConstraintDesc* PX_RESTRICT desc)
 {
-	writeBack1D4(desc, residualAccumulationEnabled);
+	writeBack1D4(desc);
 }
 
 }

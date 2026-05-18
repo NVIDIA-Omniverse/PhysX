@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,7 +33,10 @@
 #include "foundation/PxVec3.h"
 #include "foundation/PxSimpleTypes.h"
 #include "PxgIntrinsics.h"
-#include "PxgArticulation.h"
+#include "PxgArticulationBlockData.h"
+
+namespace physx
+{
 
 static __device__ inline void AtomicAdd(float4& a, const float4 b)
 {
@@ -43,7 +46,7 @@ static __device__ inline void AtomicAdd(float4& a, const float4 b)
 	atomicAdd(&a.w, b.w);
 }
 
-static __device__ inline void AtomicAdd(float4& a, const physx::PxVec3 b, const physx::PxReal w)
+static __device__ inline void AtomicAdd(float4& a, const PxVec3 b, const PxReal w)
 {
 	atomicAdd(&a.x, b.x);
 	atomicAdd(&a.y, b.y);
@@ -51,7 +54,7 @@ static __device__ inline void AtomicAdd(float4& a, const physx::PxVec3 b, const 
 	atomicAdd(&a.w, w);
 }
 
-static __device__ inline void AtomicAdd(float4& a, const physx::PxVec3 b)
+static __device__ inline void AtomicAdd(float4& a, const PxVec3 b)
 {
 	atomicAdd(&a.x, b.x);
 	atomicAdd(&a.y, b.y);
@@ -59,12 +62,12 @@ static __device__ inline void AtomicAdd(float4& a, const physx::PxVec3 b)
 }
 
 
-__device__ inline void AtomicAdd(float* p, physx::PxU32 i, const physx::PxReal val)
+__device__ inline void AtomicAdd(float* p, PxU32 i, const PxReal val)
 {
 	atomicAdd(&p[i], val);
 }
 
-__device__ inline void AtomicAdd(float4* p, physx::PxU32 i, const physx::PxVec3& v, physx::PxReal w)
+__device__ inline void AtomicAdd(float4* p, PxU32 i, const PxVec3& v, PxReal w)
 {
 	atomicAdd(&p[i].x, v.x);
 	atomicAdd(&p[i].y, v.y);
@@ -72,7 +75,7 @@ __device__ inline void AtomicAdd(float4* p, physx::PxU32 i, const physx::PxVec3&
 	atomicAdd(&p[i].w, w);
 }
 
-__device__ inline void AtomicAdd(float4* p, physx::PxU32 i, const physx::PxVec4& v)
+__device__ inline void AtomicAdd(float4* p, PxU32 i, const PxVec4& v)
 {
 	atomicAdd(&p[i].x, v.x);
 	atomicAdd(&p[i].y, v.y);
@@ -80,21 +83,21 @@ __device__ inline void AtomicAdd(float4* p, physx::PxU32 i, const physx::PxVec4&
 	atomicAdd(&p[i].w, v.w);
 }
 
-__device__ inline void AtomicAdd(float4* p, physx::PxU32 i, const physx::PxVec3& v)
+__device__ inline void AtomicAdd(float4* p, PxU32 i, const PxVec3& v)
 {
 	atomicAdd(&p[i].x, v.x);
 	atomicAdd(&p[i].y, v.y);
 	atomicAdd(&p[i].z, v.z);
 }
 
-__device__ inline void AtomicAdd3(float4* p, physx::PxU32 i, const float4& v)
+__device__ inline void AtomicAdd3(float4* p, PxU32 i, const float4& v)
 {
 	atomicAdd(&p[i].x, v.x);
 	atomicAdd(&p[i].y, v.y);
 	atomicAdd(&p[i].z, v.z);
 }
 
-__device__ inline void AtomicAdd3(physx::PxVec3& p, const physx::PxVec3& v)
+__device__ inline void AtomicAdd3(PxVec3& p, const PxVec3& v)
 {
 	atomicAdd(&p.x, v.x);
 	atomicAdd(&p.y, v.y);
@@ -133,10 +136,10 @@ inline __device__ float AtomicMax(float* address, float val)
 
 
 //Some compiler was complaining about not supporting atomicOr on 64bit integers
-PX_FORCE_INLINE static __device__ void AtomicOr(physx::PxU64* address, const physx::PxU64 mask)
+PX_FORCE_INLINE static __device__ void AtomicOr(PxU64* address, const PxU64 mask)
 {
-	physx::PxU32* address32 = reinterpret_cast<physx::PxU32*>(address);
-	const physx::PxU32* maskPtr = reinterpret_cast<const physx::PxU32*>(&mask);
+	PxU32* address32 = reinterpret_cast<PxU32*>(address);
+	const PxU32* maskPtr = reinterpret_cast<const PxU32*>(&mask);
 	atomicOr(address32, maskPtr[0]);
 	atomicOr(address32 + 1, maskPtr[1]);
 }
@@ -156,5 +159,7 @@ PX_FORCE_INLINE __device__ void PxRedAddGlobal(float* addr, const float val)
 #endif
 #endif
 }
+
+} // namespace physx
 
 #endif

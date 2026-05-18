@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -36,7 +36,7 @@
 #include "PxvGeometry.h"
 #include "PxvGlobals.h"
 #include "CmFlushPool.h"
-#include "DyThresholdTable.h"
+#include "DyContext.h"
 #include "GuCCDSweepConvexMesh.h"
 #include "GuBounds.h"
 #include "GuConvexMesh.h"
@@ -347,11 +347,12 @@ static void getLastCCDAbsPose(PxTransform32& out, const PxsCCDShape* ccdShape, c
 	trInvTr(out, atom->getLastCCDTransform(), atom->getCore().getBody2Actor(), ccdShape->mShapeCore->getTransform());
 }
 
-PxsCCDContext::PxsCCDContext(PxsContext* context, Dy::ThresholdStream& thresholdStream, PxvNphaseImplementationContext& nPhaseContext, PxReal ccdThreshold) :
+PxsCCDContext::PxsCCDContext(PxsContext* context, Dy::ThresholdStream& thresholdStream, PxvNphaseImplementationContext& nPhaseContext, PxReal ccdThreshold, bool gpu) :
 	mPostCCDSweepTask		(context->getContextId(), this, "PxsContext.postCCDSweep"),
 	mPostCCDAdvanceTask		(context->getContextId(), this, "PxsContext.postCCDAdvance"),
 	mPostCCDDepenetrateTask	(context->getContextId(), this, "PxsContext.postCCDDepenetrate"),
 	mDisableCCDResweep		(false),
+	mGPU					(gpu),
 	miCCDPass				(0),
 	mSweepTotalHits			(0),
 	mCCDThreadContext		(NULL),
@@ -1330,18 +1331,32 @@ void PxsCCDContext::updateCCDEnd()
 		// so that the next frame we know which ones need to be newly paired with PxsCCDBody objects
 		// also free the CCDBody memory blocks
 
-		mMutex.lock();
-		for (PxU32 j = 0, n = mCCDBodies.size(); j < n; j++)
+		// PT: see CL 20888255 for the introduction of the mutex & mUpdatedCCDBodies array. This is only needed for the GPU version.
+#if PX_SUPPORT_GPU_PHYSX
+		if(mGPU)
 		{
-			if (mCCDBodies[j].mBody->mCCD && mCCDBodies[j].mBody->mCCD->mHasAnyPassDone)
+			mMutex.lock();
+			for (PxU32 j = 0, n = mCCDBodies.size(); j < n; j++)
 			{
-				//Record this body in the list of bodies that were updated
-				mUpdatedCCDBodies.pushBack(mCCDBodies[j].mBody);
+				if (mCCDBodies[j].mBody->mCCD && mCCDBodies[j].mBody->mCCD->mHasAnyPassDone)
+				{
+					//Record this body in the list of bodies that were updated
+					mUpdatedCCDBodies.pushBack(mCCDBodies[j].mBody);
+				}
+				mCCDBodies[j].mBody->mCCD = NULL;
+				mCCDBodies[j].mBody->getCore().isFastMoving = false; //Clear the "isFastMoving" bool
 			}
-			mCCDBodies[j].mBody->mCCD = NULL;
-			mCCDBodies[j].mBody->getCore().isFastMoving = false; //Clear the "isFastMoving" bool
+			mMutex.unlock();
 		}
-		mMutex.unlock();
+		else
+#endif
+		{
+			for (PxU32 j = 0, n = mCCDBodies.size(); j < n; j++)
+			{
+				mCCDBodies[j].mBody->mCCD = NULL;
+				mCCDBodies[j].mBody->getCore().isFastMoving = false; //Clear the "isFastMoving" bool
+			}
+		}
 
 		mCCDBodies.clear_NoDelete();
 	}
@@ -1506,8 +1521,9 @@ void PxsCCDContext::updateCCD(PxReal dt, PxBaseTask* continuation, IG::IslandSim
 	mCCDPairs.clear_NoDelete();
 	mCCDPtrPairs.forceSize_Unsafe(0);
 
+#if PX_SUPPORT_GPU_PHYSX
 	mUpdatedCCDBodies.forceSize_Unsafe(0);
-
+#endif
 	mCCDOverlaps.clear_NoDelete();
 
 	PxU32 nbKinematicStaticCollisions = 0;
@@ -2039,18 +2055,6 @@ Cm::SpatialVector PxsRigidBody::getPreSolverVelocities() const
 	return Cm::SpatialVector(PxVec3(0.0f), PxVec3(0.0f));
 }
 
-/*PxTransform PxsRigidBody::getAdvancedTransform(PxReal toi) const
-{
-	//If it is kinematic, just return identity. We don't fully support kinematics yet
-	if (isKinematic())
-		return PxTransform(PxIdentity);
-
-	//Otherwise we interpolate the pose between the current and previous pose and return that pose
-	PxVec3 newLastP = mLastTransform.p*(1.0f-toi) + mCore->body2World.p*toi; // advance mLastTransform position to toi
-	PxQuat newLastQ = slerp(toi, getLastCCDTransform().q, mCore->body2World.q); // advance mLastTransform rotation to toi
-	return PxTransform(newLastP, newLastQ);
-}*/
-
 void PxsRigidBody::advancePrevPoseToToi(PxReal toi)
 {
 	//If this is kinematic, just return
@@ -2118,15 +2122,7 @@ void PxsCCDContext::runCCDModifiableContact(PxModifiableContact* PX_RESTRICT con
 	};
 	{
 		PxContactModifyPair p;
-
-		p.shape[0] = gPxvOffsetTable.convertPxsShape2Px(shapeCore0);
-		p.shape[1] = gPxvOffsetTable.convertPxsShape2Px(shapeCore1);
-
-		p.actor[0] = rigid0 != NULL ? gPxvOffsetTable.convertPxsRigidCore2PxRigidBody(rigidCore0) 
-									: gPxvOffsetTable.convertPxsRigidCore2PxRigidStatic(rigidCore0);
-
-		p.actor[1] = rigid1 != NULL ? gPxvOffsetTable.convertPxsRigidCore2PxRigidBody(rigidCore1) 
-									: gPxvOffsetTable.convertPxsRigidCore2PxRigidStatic(rigidCore1);
+		gPxvOffsetTable.fillPairPointers(p,	shapeCore0, shapeCore1, rigidCore0, rigidCore1, rigid0 != NULL, rigid1 != NULL);
 
 		getShapeAbsPose(p.transform[0], shapeCore0, rigidCore0, rigid0);
 		getShapeAbsPose(p.transform[1], shapeCore1, rigidCore1, rigid1);

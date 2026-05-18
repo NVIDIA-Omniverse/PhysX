@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -47,40 +47,13 @@ bool Gu::contactPlaneBox(GU_CONTACT_METHOD_ARGS)
 	
 	const PxVec3 negPlaneNormal = -transform0.q.getBasisVector0();
 	
-	//Make sure we have a normalized plane
-	//PX_ASSERT(PxAbs(shape0.mNormal.magnitudeSquared() - 1.0f) < 0.000001f);
-
 	const Matrix34FromTransform boxMatrix(transform1);
 	const Matrix34FromTransform boxToPlane(transform0.transformInv(transform1));
 
-	PxVec3 point;
-
 	PX_ASSERT(contactBuffer.count==0);
 
-/*	for(int vx=-1; vx<=1; vx+=2)
-		for(int vy=-1; vy<=1; vy+=2)
-			for(int vz=-1; vz<=1; vz+=2)
-			{				
-				//point = boxToPlane.transform(PxVec3(shapeBox.halfExtents.x*vx, shapeBox.halfExtents.y*vy, shapeBox.halfExtents.z*vz));	
-				//PxReal planeEq = point.x;
-				//Optimized a bit
-				point.set(shapeBox.halfExtents.x*vx, shapeBox.halfExtents.y*vy, shapeBox.halfExtents.z*vz);
-				const PxReal planeEq = boxToPlane.m.column0.x*point.x + boxToPlane.m.column1.x*point.y + boxToPlane.m.column2.x*point.z + boxToPlane.p.x;
-
-				if(planeEq <= contactDistance)
-				{
-					contactBuffer.contact(boxMatrix.transform(point), negPlaneNormal, planeEq);
-					
-					//no point in making more than 4 contacts.
-					if (contactBuffer.count >= 6) //was: 4)	actually, with strong interpenetration more than just the bottom surface goes through,
-						//and we want to find the *deepest* 4 vertices, really.
-						return true;
-				}
-			}*/
-
-	// PT: the above code is shock full of LHS/FCMPs. And there's no point in limiting the number of contacts to 6 when the max possible is 8.
-
-	const PxReal limit = params.mContactDistance - boxToPlane.p.x;
+	const PxReal contactDistance = params.mContactDistance;
+	const PxReal limit = contactDistance - boxToPlane.p.x;
 	const PxReal dx = shapeBox.halfExtents.x;
 	const PxReal dy = shapeBox.halfExtents.y;
 	const PxReal dz = shapeBox.halfExtents.z;
@@ -98,25 +71,31 @@ bool Gu::contactPlaneBox(GU_CONTACT_METHOD_ARGS)
 	depths[6] = - bxdx - bxdy + bxdz - limit;
 	depths[7] = - bxdx - bxdy - bxdz - limit;
 
-	//const PxU32* binary = reinterpret_cast<const PxU32*>(depths);
-	const PxU32* binary = PxUnionCast<PxU32*, PxF32*>(depths);
+	const PxVec3& column0 = boxMatrix.m.column0;
+	const PxVec3& column1 = boxMatrix.m.column1;
+	const PxVec3& column2 = boxMatrix.m.column2;
+	const PxVec3& p = boxMatrix.p;
 
-	if(binary[0] & PX_SIGN_BITMASK)
-		contactBuffer.contact(boxMatrix.transform(PxVec3(dx, dy, dz)), negPlaneNormal, depths[0] + params.mContactDistance);
-	if(binary[1] & PX_SIGN_BITMASK)
-		contactBuffer.contact(boxMatrix.transform(PxVec3(dx, dy, -dz)), negPlaneNormal, depths[1] + params.mContactDistance);
-	if(binary[2] & PX_SIGN_BITMASK)
-		contactBuffer.contact(boxMatrix.transform(PxVec3(dx, -dy, dz)), negPlaneNormal, depths[2] + params.mContactDistance);
-	if(binary[3] & PX_SIGN_BITMASK)
-		contactBuffer.contact(boxMatrix.transform(PxVec3(dx, -dy, -dz)), negPlaneNormal, depths[3] + params.mContactDistance);
-	if(binary[4] & PX_SIGN_BITMASK)
-		contactBuffer.contact(boxMatrix.transform(PxVec3(-dx, dy, dz)), negPlaneNormal, depths[4] + params.mContactDistance);
-	if(binary[5] & PX_SIGN_BITMASK)
-		contactBuffer.contact(boxMatrix.transform(PxVec3(-dx, dy, -dz)), negPlaneNormal, depths[5] + params.mContactDistance);
-	if(binary[6] & PX_SIGN_BITMASK)
-		contactBuffer.contact(boxMatrix.transform(PxVec3(-dx, -dy, dz)), negPlaneNormal, depths[6] + params.mContactDistance);
-	if(binary[7] & PX_SIGN_BITMASK)
-		contactBuffer.contact(boxMatrix.transform(PxVec3(-dx, -dy, -dz)), negPlaneNormal, depths[7] + params.mContactDistance);
+	const PxVec3 x = column0 * dx;
+	const PxVec3 y = column1 * dy;
+	const PxVec3 z = column2 * dz;
+
+	if(depths[0] < 0.0f)
+		contactBuffer.contact(x + y + z + p, negPlaneNormal, depths[0] + contactDistance);
+	if(depths[1] < 0.0f)
+		contactBuffer.contact(x + y - z + p, negPlaneNormal, depths[1] + contactDistance);
+	if(depths[2] < 0.0f)
+		contactBuffer.contact(x - y + z + p, negPlaneNormal, depths[2] + contactDistance);
+	if(depths[3] < 0.0f)
+		contactBuffer.contact(x - y - z + p, negPlaneNormal, depths[3] + contactDistance);
+	if(depths[4] < 0.0f)
+		contactBuffer.contact(- x + y + z + p, negPlaneNormal, depths[4] + contactDistance);
+	if(depths[5] < 0.0f)
+		contactBuffer.contact(- x + y - z + p, negPlaneNormal, depths[5] + contactDistance);
+	if(depths[6] < 0.0f)
+		contactBuffer.contact(- x - y + z + p, negPlaneNormal, depths[6] + contactDistance);
+	if(depths[7] < 0.0f)
+		contactBuffer.contact(- x - y - z + p, negPlaneNormal, depths[7] + contactDistance);
 
 	return contactBuffer.count > 0;
 }

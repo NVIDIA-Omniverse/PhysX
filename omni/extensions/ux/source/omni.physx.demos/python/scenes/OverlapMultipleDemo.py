@@ -1,9 +1,10 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb, math, omni.timeline
 from omni.physx.scripts.physicsUtils import *
-from pxr import UsdGeom, Gf, Vt
+from pxr import UsdGeom, Gf, Vt, Sdf
 import omni.physxdemos as demo
 from omni.physx import get_physx_scene_query_interface
 from omni.debugdraw import get_debug_draw_interface
@@ -55,6 +56,8 @@ In this case, we query the scene with the wireframe sphere or box and retrieve a
 
         if not self.text_array:
             self.text_array = ["'Overlap Multiple' sample. Press 1 or 2 to change query shape.", text_shape, ""]
+        else:
+            self.text_array[1] = text_shape
 
         if self._room._captureUIText:
             self._room.update_ui_text(self.text_array)
@@ -75,11 +78,16 @@ In this case, we query the scene with the wireframe sphere or box and retrieve a
         return True # return True to continue the query
 
     def perform_sphere_overlap(self, origin, radius):
+        if omni.timeline.get_timeline_interface().is_stopped():
+            return 0
         # PT: we pass 'False' to overlap_sphere() to indicate an 'overlap multiple' query.
         numHits = get_physx_scene_query_interface().overlap_sphere(radius, origin, self.report_hit, False)
         return numHits
 
     def perform_box_overlap(self, origin, extent, rot):
+        if omni.timeline.get_timeline_interface().is_stopped():
+            return 0
+
         # PT: we pass 'False' to overlap_box() to indicate an 'overlap multiple' query.
         numHits = get_physx_scene_query_interface().overlap_box(extent, origin, rot, self.report_hit, False)
         return numHits

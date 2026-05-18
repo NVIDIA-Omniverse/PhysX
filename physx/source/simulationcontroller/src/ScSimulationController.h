@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -44,8 +44,10 @@ namespace Sc
 
 		virtual void	updateScBodyAndShapeSim(PxsTransformCache& cache, Bp::BoundsArray& boundArray, PxBaseTask* continuation)	PX_OVERRIDE;
 
+		virtual const void* getRigidBodyAccelerations() const PX_OVERRIDE { return NULL; }
+
 		virtual void	updateArticulationAfterIntegration(PxsContext*	llContext, Bp::AABBManagerBase* aabbManager,
-															PxArray<Sc::BodySim*>& ccdBodies, PxBaseTask* continuation, IG::IslandSim& islandSim, float dt)	PX_OVERRIDE;
+															PxArray<Sc::BodySim*>& ccdBodies, PxBaseTask* continuation, IG::IslandSim& islandSim, float dt, bool isSleepingDisabled)	PX_OVERRIDE;
 	};
 }
 

@@ -22,27 +22,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PXG_CONSTRAINT_PREP_H
 #define PXG_CONSTRAINT_PREP_H
 
-#include "PxConstraintDesc.h"
 #include "PxgSolverConstraintDesc.h"
-#include "PxgD6JointData.h"
-#include "AlignedTransform.h"
-
 #include "PxcNpWorkUnit.h"
 
 namespace physx
 {
 	typedef PxcNpWorkUnitFlag	PxgNpWorkUnitFlag;
-
-	struct PxgSolverBody;
-	struct PxgSolverBodyData;
-	struct PxgSolverConstraintDesc;
 
 	//This structure can update everyframe
 	struct PxgConstraintPrePrep

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -237,7 +237,7 @@ struct ParticleData
     {
         for (size_t p = 0; p < numPoints; ++p)
         {
-            GfVec3f position = rigidTransform.Transform(positions[p]);
+            GfVec3f position = pxr::GfVec3f(rigidTransform.Transform(positions[p]));
             points[dstIndex + p] = position;
         }
 
@@ -268,12 +268,12 @@ struct ParticleData
         if (dstIndex + count <= points.size())
         {
             for (size_t i = dstIndex; i < dstIndex + count; ++i)
-                points[i] = transform.Transform(points[i]);
+                points[i] = pxr::GfVec3f(transform.Transform(points[i]));
 
             if (particleAPI)
             {
                 for (size_t i = dstIndex; i < dstIndex + count; ++i)
-                    simPoints[i] = transform.Transform(simPoints[i]);
+                    simPoints[i] = pxr::GfVec3f(transform.Transform(simPoints[i]));
             }
         }
     }

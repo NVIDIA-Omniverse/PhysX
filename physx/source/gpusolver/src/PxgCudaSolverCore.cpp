@@ -22,13 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #include "PxgCudaSolverCore.h"
+#include "PxgCommonDefines.h"
 #include "PxgSolverConstraintDesc.h"
-#include "PxgSolverContext.h"
 #include "PxgSolverBody.h"
 #include "PxgConstraint.h"
 #include "PxgFrictionPatch.h"
@@ -46,7 +46,6 @@
 #include "PxSceneDesc.h"
 #include "PxgSolverConstraintBlock1D.h"
 #include "PxgConstraintBlock.h"
-#include "PxgCudaMemoryAllocator.h"
 #include "PxgCudaUtils.h"
 #include "PxgSimulationController.h"
 #include "PxgArticulationCore.h"
@@ -56,7 +55,6 @@
 #include "PxgFEMClothCore.h"
 #include "PxgKernelWrangler.h"
 #include "PxgKernelIndices.h"
-#include "PxgHeapMemAllocator.h"
 #include "PxgConstraintWriteBack.h"
 #include "PxgSolverConstraint1D.h"
 #include "PxgArticulationCoreKernelIndices.h"
@@ -73,37 +71,37 @@
 using namespace physx;
 
 PxgCudaSolverCore::PxgCudaSolverCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, 
-	PxgGpuContext* dynamicContext, PxgHeapMemoryAllocatorManager* heapMemoryManager, const PxGpuDynamicsMemoryConfig& init, const bool frictionEveryIteration) :
-	PxgSolverCore(gpuKernelWrangler, cudaContextManager, dynamicContext, heapMemoryManager),
-	mContactHeaderStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mFrictionHeaderStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mContactStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mFrictionStream(heapMemoryManager, PxsHeapStats::eSOLVER),
+	PxgGpuContext* dynamicContext, PxgAllocatorDesc& allocDesc, const PxGpuDynamicsMemoryConfig& init, const bool frictionEveryIteration) :
+	PxgSolverCore(gpuKernelWrangler, cudaContextManager, dynamicContext, allocDesc),
+	mContactHeaderStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mFrictionHeaderStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mContactStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mFrictionStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
 
 	// Each bit encodes the activation of a slab (32 bits). When there are more than 32 slabs, use multiple indices.
 	// To query the reference count, count the number of active slabs/bits.
-	mSolverEncodedReferenceCount(heapMemoryManager, PxsHeapStats::eSOLVER), 
+	mSolverEncodedReferenceCount(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER), 
 
 	//KS - new KEEPME
-	mArtiConstraintBlockResponse(heapMemoryManager, PxsHeapStats::eSOLVER),
+	mArtiConstraintBlockResponse(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
 
-	mForceThresholdStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mTmpForceThresholdStream(heapMemoryManager, PxsHeapStats::eSOLVER),
+	mForceThresholdStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mTmpForceThresholdStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
 
-	mConstraint1DBatchIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mContactBatchIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiContactBatchIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiConstraint1dBatchIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mAccumulatedForceObjectPairs(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mExceededForceElements(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mForceChangeThresholdElements(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mThresholdStreamAccumulatedForce(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mBlocksThresholdStreamAccumulatedForce(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mThresholdStreamWriteIndex(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mBlocksThresholdStreamWriteIndex(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mThresholdStreamWriteable(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mIslandIds(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mIslandStaticTouchCount(heapMemoryManager, PxsHeapStats::eSOLVER),
+	mConstraint1DBatchIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mContactBatchIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiContactBatchIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiConstraint1dBatchIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mAccumulatedForceObjectPairs(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mExceededForceElements(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mForceChangeThresholdElements(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mThresholdStreamAccumulatedForce(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mBlocksThresholdStreamAccumulatedForce(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mThresholdStreamWriteIndex(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mBlocksThresholdStreamWriteIndex(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mThresholdStreamWriteable(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mIslandIds(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mIslandStaticTouchCount(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
 	mFrictionEveryIteration(frictionEveryIteration)
 {
 	mCudaContextManager->acquireContext();
@@ -136,10 +134,15 @@ void PxgCudaSolverCore::createStreams()
 
 	mCudaContext->eventCreate(&mIntegrateEvent, CU_EVENT_DISABLE_TIMING);
 
-	mPinnedEvent = PX_PINNED_MEMORY_ALLOC(PxU32, *mCudaContextManager, 1);
-
 	//pass mStream to PxgArticulationCore to synchronize data
 	mGpuContext->getArticulationCore()->setSolverStream(mStream);
+
+	mEventMapped = PX_PINNED_MEMORY_ALLOC_FLAGS(PxU32, *mCudaContextManager, 1, CU_MEMHOSTALLOC_PORTABLE | CU_MEMHOSTALLOC_DEVICEMAP);
+	if(!mEventMapped)
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgCudaSolverCore: failed to allocate pinned event");
+		mCudaContext->setAbortMode(true);
+	}
 }
 
 void PxgCudaSolverCore::releaseStreams()
@@ -150,7 +153,7 @@ void PxgCudaSolverCore::releaseStreams()
 	mCudaContext->eventDestroy(mEventDmaBack);
 	mCudaContext->eventDestroy(mIntegrateEvent);
 
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mPinnedEvent);
+	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mEventMapped);
 }
 
 void PxgCudaSolverCore::syncSimulationController()
@@ -254,6 +257,7 @@ void PxgCudaSolverCore::constructConstraitPrepareDesc(PxgConstraintPrepareDesc& 
 	prepareDesc.frictionOffsetThreshold = cData.frictionOffsetThreshold;
 	prepareDesc.correlationDistance = cData.correlationDistance;
 	prepareDesc.ccdMaxSeparation = cData.ccdMaxSeparation;
+	prepareDesc.biasCoefficients = cData.biasCoefficients;
 	prepareDesc.totalPreviousEdges = totalPreviousEdges;
 	prepareDesc.totalCurrentEdges = totalCurrentEdges;
 
@@ -402,8 +406,8 @@ void PxgCudaSolverCore::gpuMemDMAUpContactData(PxgPinnedHostLinearMemoryAllocato
 }
 
 //solverBodyIndices and islandNodeIndices will include rigid bodies and articulations
-void PxgCudaSolverCore::gpuMemDmaUpBodyData(PxPinnedArray<PxgSolverBodyData>& solverBodyDataPool, 
-		PxPinnedArray<PxgSolverTxIData>& solverTxIDataPool,
+void PxgCudaSolverCore::gpuMemDmaUpBodyData(Cm::PinnableArray<PxgSolverBodyData>& solverBodyDataPool, 
+		Cm::PinnableArray<PxgSolverTxIData>& solverTxIDataPool,
 		const PxU32 numSolverBodies,
 		const PxU32 totalNumRigidBatches, const PxU32 totalNumArticBatches,
 		const PxU32 nbSlabs, const PxU32 nbStaticSlabs, const PxU32 maxNumStaticPartitions)
@@ -456,7 +460,7 @@ void PxgCudaSolverCore::gpuMemDmaUpBodyData(PxPinnedArray<PxgSolverBodyData>& so
 }
 
 void PxgCudaSolverCore::allocateSolverBodyBuffers(const PxU32 numSolverBodies,
-	PxPinnedArray<PxNodeIndex>& islandNodeIndices,
+	Cm::PinnableArray<PxNodeIndex>& islandNodeIndices,
 	const PxU32 numActiveActiculations, const PxU32 maxArticulationLinks)
 {
 	allocateSolverBodyBuffersCommon(numSolverBodies, islandNodeIndices);
@@ -703,7 +707,7 @@ void PxgCudaSolverCore::gpuMemDMAUp(PxgPinnedHostLinearMemoryAllocator& hostAllo
 
 void PxgCudaSolverCore::gpuMemDMAbackSolverData(PxU8* forceBufferPool, PxU32 forceBufferOffset, PxU32 forceBufferUpperPartSize,
 	PxU32 forceBufferLowerPartSize, Dy::ThresholdStreamElement* changedElems, bool hasForceThresholds, Dy::ConstraintWriteback* constraintWriteBack,
-	const PxU32 writeBackSize, bool copyAllToHost, Dy::ErrorAccumulator*& contactError)
+	const PxU32 writeBackSize, bool copyAllToHost)
 {
 	PX_PROFILE_ZONE("GpuDynamics.DMABackSolverData", 0);
 
@@ -711,9 +715,7 @@ void PxgCudaSolverCore::gpuMemDMAbackSolverData(PxU8* forceBufferPool, PxU32 for
 	synchronizeStreams(mCudaContext, mStream, mStream2, mEventDmaBack);
 
 	mCudaContext->memcpyDtoHAsync(mSolverCoreDesc, mSolverCoreDescd, sizeof(PxgSolverCoreDesc), mStream2);
-		
-	contactError = &mSolverCoreDesc->contactErrorAccumulator;
-		
+
 	if (copyAllToHost)
 	{
 		if (writeBackSize)
@@ -789,7 +791,7 @@ void PxgCudaSolverCore::syncDmaBack(PxU32& nbChangedThresholdElements)
 	PX_UNUSED(result);
 	PX_ASSERT(result == CUDA_SUCCESS);*/
 		
-	volatile PxU32* pEvent = mPinnedEvent;
+	volatile PxU32* pEvent = mEventMapped;
 	if (!spinWait(*pEvent, 0.1f))
 		mCudaContext->streamSynchronize(mStream);
 
@@ -1106,8 +1108,8 @@ void PxgCudaSolverCore::writeBackBlock(PxU32 a, PxgIslandContext& context)
 	}		
 }
 
-void PxgCudaSolverCore::solvePartitions(PxgIslandContext* islandContexts, PxInt32ArrayPinned& constraintsPerPartition,
-	PxInt32ArrayPinned& artiConstraintsPerPartition, PxU32 islandIndex, bool doFriction, bool anyArticulationConstraints)
+void PxgCudaSolverCore::solvePartitions(PxgIslandContext* islandContexts, Cm::PinnableArray<PxU32>& constraintsPerPartition,
+	Cm::PinnableArray<PxU32>& artiConstraintsPerPartition, PxU32 islandIndex, bool doFriction, bool anyArticulationConstraints)
 {
 	PxgIslandContext& context = islandContexts[islandIndex];
 
@@ -1238,9 +1240,8 @@ void PxgCudaSolverCore::solvePartitions(PxgIslandContext* islandContexts, PxInt3
 
 //#pragma optimize("", off)
 void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandContexts, const PxU32 numIslands, const PxU32 /*maxPartitions*/,
-	PxInt32ArrayPinned& constraintsPerPartition, PxInt32ArrayPinned& artiConstraintsPerPartition, const PxVec3& gravity, const bool solveArticulationContactLast,
-	PxReal* posIterResidualPinnedMem, PxU32 posIterResidualPinnedMemSize, Dy::ErrorAccumulator* posIterError, PxPinnedArray<Dy::ErrorAccumulator>& artiContactPosIterError,
-	PxPinnedArray<Dy::ErrorAccumulator>& perArticulationInternalError)
+	Cm::PinnableArray<PxU32>& constraintsPerPartition, Cm::PinnableArray<PxU32>& artiConstraintsPerPartition, const PxVec3& gravity,
+	const bool solveArticulationContactLast)
 {
 	PX_PROFILE_ZONE("GpuDynamics.Solve", 0);
 
@@ -1269,16 +1270,6 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 	const PxReal dt = mSharedDesc->dt;
 	const PxReal invDt = 1.f / dt;
 
-	//Zero contact error accumulators
-	PxReal* zeroA = ((PxReal*)mSolverCoreDescd) + offsetof(PxgSolverCoreDesc, contactErrorAccumulator) / sizeof(PxReal);
-	PxReal* zeroB = ((PxReal*)artiDescd) + offsetof(PxgArticulationCoreDesc, mContactErrorAccumulator) / sizeof(PxReal);
-	const bool residualReportingEnabled = mGpuContext->isResidualReportingEnabled();
-	const PxU32 clearValue = residualReportingEnabled ? 0u : 0xFFFFFFFFu;
-	//Clear the residual accumulation values at least once even if residual accumulation is not enabled because depending on the value used
-	//for clearing, residuals will get computed or not.
-	mCudaContext->memsetD32Async(CUdeviceptr(zeroA), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
-	mCudaContext->memsetD32Async(CUdeviceptr(zeroB), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
-
 	const Dy::ArticulationConstraintProcessingConfigGPU singlePassArticulationConstraintProcessingConfig = Dy::ArticulationConstraintProcessingConfigGPU::getSinglePassConfig();
 	const Dy::ArticulationConstraintProcessingConfigGPU firstPassArticulationConstraintProcessingConfig = Dy::ArticulationConstraintProcessingConfigGPU::getFirstPassConfig();
 	const Dy::ArticulationConstraintProcessingConfigGPU secondPassArticulationConstraintProcessingConfig = Dy::ArticulationConstraintProcessingConfigGPU::getSecondPassConfig();
@@ -1294,37 +1285,37 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 		PxgIslandContext& context = islandContexts[a];	
 		const bool anyArticulationConstraints = (context.mArtiBatchCount + context.mStaticArtiBatchCount + context.mSelfArtiBatchCount) > 0;
 		const bool isTgs = false;
-		bool isVelocityIteration = false;
-		PX_UNUSED(isVelocityIteration);
+
+		const PxReal articulationBiasCoefficient = context.mBiasCoefficients.articulation;
+		const PxReal rigidContactBiasCoefficient = context.mBiasCoefficients.rigidContact;
+		const PxReal particlesAndDeformablesBiasCoefficient = context.mBiasCoefficients.particlesAndDeformables;
+		const PxReal femClothParticleBiasCoefficient = context.mBiasCoefficients.femClothParticle;
+		const PxReal femClothRigidAttachmentBiasCoefficient = context.mBiasCoefficients.femClothRigidAttachment;
 
 		for (PxI32 b = 0; b < context.mNumPositionIterations; ++b)
 		{
-			if (residualReportingEnabled) 
-			{
-				//Zero contact error accumulators
-				mCudaContext->memsetD32Async(CUdeviceptr(zeroA), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
-				mCudaContext->memsetD32Async(CUdeviceptr(zeroB), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
-			}
-
 			bool doFriction = mFrictionEveryIteration ? true : (context.mNumPositionIterations - b) <= 3;
-			const PxReal biasCoefficient = DY_ARTICULATION_PGS_BIAS_COEFFICIENT;
 
 			if(solveArticulationContactLast)
 			{
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					dt, invDt, false, 0.f, biasCoefficient, firstPassArticulationConstraintProcessingConfig,
+					dt, invDt, false, 0.f, 
+					articulationBiasCoefficient, rigidContactBiasCoefficient,
+					firstPassArticulationConstraintProcessingConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-					doFriction, isTgs, residualReportingEnabled);
+					doFriction, isTgs);
 
 				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction,
 								anyArticulationConstraints);
 
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					dt, invDt, false, 0.f, biasCoefficient, secondPassArticulationConstraintProcessingConfig,
+					dt, invDt, false, 0.f, 
+					articulationBiasCoefficient, rigidContactBiasCoefficient,
+					secondPassArticulationConstraintProcessingConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-					doFriction, isTgs, residualReportingEnabled);
+					doFriction, isTgs);
 			}
 			else
 			{
@@ -1332,10 +1323,12 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 								anyArticulationConstraints);
 
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					dt, invDt, false, 0.f, biasCoefficient, singlePassArticulationConstraintProcessingConfig,
+					dt, invDt, false, 0.f, 
+					articulationBiasCoefficient, rigidContactBiasCoefficient,
+					singlePassArticulationConstraintProcessingConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-					doFriction, isTgs, residualReportingEnabled);
+					doFriction, isTgs);
 			}
 
 			if (softbodyCore || numParticleSystemCores > 0 || femClothCore)
@@ -1347,7 +1340,7 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 			{
 				//KS - computeAverageVelocities kernel produces the deltaVelocity buffer we require from the rigid body solver
 				//for the particle system to consume
-				particleSystemCores[i]->solve(mPrePrepDescd, mSolverCoreDescd, mSharedDescd, artiDescd, dt, mStream);
+				particleSystemCores[i]->solve(mPrePrepDescd, mSolverCoreDescd, mSharedDescd, artiDescd, dt, mStream, particlesAndDeformablesBiasCoefficient);
 				//Particle system has updated the deltaVelocity buffer, so now we propagate these changes back to the rigid body
 				//solver
 			}
@@ -1355,13 +1348,14 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 			if (femClothCore)
 			{
 				femClothCore->solve(mPrePrepDescd, mSolverCoreDescd, mSharedDescd, artiDescd, dt, mStream, b,
-									context.mNumPositionIterations, false, gravity);
+									context.mNumPositionIterations, false, gravity,
+									femClothParticleBiasCoefficient, femClothRigidAttachmentBiasCoefficient);
 			}
 
 			if (softbodyCore)
 			{
 				softbodyCore->solve(mPrePrepDescd, mPrepareDescd, mSolverCoreDescd, mSharedDescd, artiDescd,
-					dt, mStream, b == 0);
+					dt, mStream, b == 0, particlesAndDeformablesBiasCoefficient);
 			}
 
 			for (PxU32 i = 0; i < numParticleSystemCores; ++i)
@@ -1465,93 +1459,30 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 			mGpuContext->getArticulationCore()->saveVelocities();
 		}
 		
-		if (residualReportingEnabled)
-		{
-			writeBackBlock(a, context);
-
-			if (posIterResidualPinnedMemSize > 0)
-			{
-				CUfunction function = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::DMA_CONSTRAINT_RESIDUAL);
-
-				CUdeviceptr ptr = mConstraintWriteBackBuffer.getDevicePtr();
-				PxCudaKernelParam kernelParams[] =
-				{
-					PX_CUDA_KERNEL_PARAM(ptr),
-					PX_CUDA_KERNEL_PARAM(posIterResidualPinnedMem),
-					PX_CUDA_KERNEL_PARAM(posIterResidualPinnedMemSize)
-				};
-
-				PxU32 threadBlockSize = 256;
-				PxU32 gridSize = (posIterResidualPinnedMemSize + threadBlockSize - 1) / threadBlockSize;
-
-				PxCUresult result = mCudaContext->launchKernel(function, gridSize, 1, 1, threadBlockSize, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-				if (result != CUDA_SUCCESS)
-					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU dmaConstraintResidual fail to launch kernel!!\n");
-			}
-
-			if (mGpuContext->getArticulationCore()->getArticulationCoreDesc()->nbArticulations > 0)
-			{
-				//perArticulationInternalError.resize(mGpuContext->getArticulationCore()->getArticulationCoreDesc()->nbArticulations);
-
-				CUfunction function = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::DMA_ARTICULATION_RESIDUAL);
-
-				CUdeviceptr ptr = (CUdeviceptr)perArticulationInternalError.begin();
-				PxCudaKernelParam kernelParams[] =
-				{
-					PX_CUDA_KERNEL_PARAM(artiDescd),
-					PX_CUDA_KERNEL_PARAM(ptr)
-				};
-
-				PxU32 threadBlockSize = 256;
-				PxU32 gridSize = (mGpuContext->getArticulationCore()->getArticulationCoreDesc()->nbArticulations + threadBlockSize - 1) / threadBlockSize;
-
-				PxCUresult result = mCudaContext->launchKernel(function, gridSize, 1, 1, threadBlockSize, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-				if (result != CUDA_SUCCESS)
-					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU dmaArticulationResidual fail to launch kernel!!\n");
-			}
-			PX_UNUSED(perArticulationInternalError);
-
-			{
-				PxgSolverCoreDesc* gpuPtr = (PxgSolverCoreDesc*)mSolverCoreDescd;
-				mCudaContext->memcpyDtoHAsync(posIterError, (CUdeviceptr)&gpuPtr->contactErrorAccumulator, sizeof(Dy::ErrorAccumulator), mStream); //Should posIterError be shared memory?	
-			}
-			{
-				artiContactPosIterError.resize(1);
-				PxgArticulationCoreDesc* gpuPtr = (PxgArticulationCoreDesc*)mGpuContext->getArticulationCore()->getArticulationCoreDescd();
-				mCudaContext->memcpyDtoHAsync(artiContactPosIterError.begin(), (CUdeviceptr)&gpuPtr->mContactErrorAccumulator, sizeof(Dy::ErrorAccumulator), mStream);
-			}
-		}
-
 		bool doFriction = true;
-		isVelocityIteration = true;
 
 		for(PxI32 b = 0; b < context.mNumVelocityIterations; ++b)
 		{
-			if (residualReportingEnabled)
-			{
-				//Zero contact error accumulators
-				mCudaContext->memsetD32Async(CUdeviceptr(zeroA), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
-				mCudaContext->memsetD32Async(CUdeviceptr(zeroB), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
-			}
-
-			const PxReal biasCoefficient = DY_ARTICULATION_PGS_BIAS_COEFFICIENT;
-
 			if(solveArticulationContactLast)
 			{
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					dt, invDt, true, 0.f, biasCoefficient, firstPassArticulationConstraintProcessingConfig,
+					dt, invDt, true, 0.f, 
+					articulationBiasCoefficient, rigidContactBiasCoefficient,
+					firstPassArticulationConstraintProcessingConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-					doFriction, isTgs, residualReportingEnabled);
+					doFriction, isTgs);
 
 				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction,
 								anyArticulationConstraints);
 
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					dt, invDt, true, 0.f, biasCoefficient, secondPassArticulationConstraintProcessingConfig,
+					dt, invDt, true, 0.f, 
+					articulationBiasCoefficient, rigidContactBiasCoefficient,
+					secondPassArticulationConstraintProcessingConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-					doFriction, isTgs, residualReportingEnabled);
+					doFriction, isTgs);
 			}
 			else
 			{
@@ -1559,10 +1490,12 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 								anyArticulationConstraints);
 
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					dt, invDt, true, 0.f, biasCoefficient, singlePassArticulationConstraintProcessingConfig,
+					dt, invDt, true, 0.f, 
+					articulationBiasCoefficient, rigidContactBiasCoefficient,
+					singlePassArticulationConstraintProcessingConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-					doFriction, isTgs, residualReportingEnabled);
+					doFriction, isTgs);
 			}
 
 			if (softbodyCore || numParticleSystemCores > 0 || femClothCore)
@@ -1574,14 +1507,14 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 			{
 				//KS - computeAverageVelocities kernel produces the deltaVelocity buffer we require from the rigid body solver
 				//for the particle system to consume
-				particleSystemCores[i]->solve(mPrePrepDescd, mSolverCoreDescd, mSharedDescd, artiDescd, dt, mStream);
+				particleSystemCores[i]->solve(mPrePrepDescd, mSolverCoreDescd, mSharedDescd, artiDescd, dt, mStream, particlesAndDeformablesBiasCoefficient);
 			}
 
 			//! no velocity iteration support for FEM cloth
 
 			if (softbodyCore)
 			{
-				softbodyCore->solve(mPrePrepDescd, mPrepareDescd, mSolverCoreDescd, mSharedDescd, artiDescd, dt, mStream, false);
+				softbodyCore->solve(mPrePrepDescd, mPrepareDescd, mSolverCoreDescd, mSharedDescd, artiDescd, dt, mStream, false, particlesAndDeformablesBiasCoefficient);
 			}
 
 			for (PxU32 i = 0; i < numParticleSystemCores; ++i)

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -52,8 +52,13 @@ namespace physx
 		const bool visualizeAABBs = scScene.getVisualizationParameter(PxVisualizationParameter::eCOLLISION_AABBS) != 0.0f;
 		if (visualizeAABBs)
 		{
-			out << PxU32(PxDebugColor::eARGB_YELLOW) << PxMat44(PxIdentity);
-			Cm::renderOutputDebugBox(out, scScene.getBoundsArray().getBounds(core.getSim()->getShapeSim().getElementID()));
+			const PxU32 boundsIndex = core.getSim()->getShapeSim().getElementID();
+			const Bp::BoundsArray& boundsArray = scScene.getBoundsArray();
+			if(!boundsArray.hadAllocationFailure())
+			{
+				out << PxU32(PxDebugColor::eARGB_YELLOW) << PxMat44(PxIdentity);
+				Cm::renderOutputDebugBox(out, boundsArray.getBounds(boundsIndex));
+			}
 		}
 	}
 #else
@@ -92,7 +97,11 @@ namespace physx
 
 		PX_SIMD_GUARD;
 
-		const PxBounds3 bounds = getNpScene()->getScScene().getBoundsArray().getBounds(sim->getShapeSim().getElementID());
+		NP_CHECK_SCENE_CORRUPTION_AND_RETURN_VAL(getNpScene(), PxBounds3::empty())
+
+		const PxU32 boundsIndex = sim->getShapeSim().getElementID();
+		const Bp::BoundsArray& boundsArray = getNpScene()->getScScene().getBoundsArray();
+		const PxBounds3 bounds = boundsArray.getBounds(boundsIndex);
 		PX_ASSERT(bounds.isValid());
 
 		// PT: unfortunately we can't just scale the min/max vectors, we need to go through center/extents.

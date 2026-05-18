@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -94,7 +94,8 @@ enum SimulationEvent
     ePointReleased, //!< When a grabbed point is released
     eAttachedToStage, //!< When physx stage attachment (initialization) finished
     eDetachedFromStage, //!< When physx stage detachment (deinitialization) finished
-    ePointPushed //!< When a point is force pushed.
+    ePointPushed, //!< When a point is force pushed
+    ePhysicsObjectsReleased //!< When physics objects are released
 };
 
 enum SimulationStatusEvent

@@ -22,17 +22,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "common/PxProfileZone.h"
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 #include "PxcContactCache.h"
 #include "PxsRigidBody.h"
 #include "PxsContactManager.h"
 #include "PxsContext.h"
-#include "PxPhysXConfig.h"
 
 #include "foundation/PxBitMap.h"
 #include "CmFlushPool.h"
@@ -67,6 +66,7 @@ PxsContext::PxsContext(const PxSceneDesc& desc, PxTaskManager* taskManager, Cm::
 	mPCM							(desc.flags & PxSceneFlag::eENABLE_PCM),
 	mContactCache					(false),
 	mCreateAveragePoint				(desc.flags & PxSceneFlag::eENABLE_AVERAGE_POINT),
+	mCCD							(desc.flags & PxSceneFlag::eENABLE_CCD),
 	mContextID						(contextID)
 {
 	clearManagerTouchEvents();
@@ -256,9 +256,9 @@ namespace physx
 	PX_COMPILE_TIME_ASSERT(sizeof(gEnablePCMCaching) / sizeof(gEnablePCMCaching[0]) == PxGeometryType::eGEOMETRY_COUNT);
 }
 
-void PxsContext::createTransformCache(PxVirtualAllocatorCallback& allocatorCallback)
+void PxsContext::createTransformCache(Cm::VirtualAllocatorCallback& allocator, Cm::PinnableAllocatorFallback::Enum fallback)
 {
-	mTransformCache = PX_NEW(PxsTransformCache)(allocatorCallback);
+	mTransformCache = PX_NEW(PxsTransformCache)(allocator, fallback);
 }
 
 PxsContactManager* PxsContext::createContactManager(PxsContactManager* contactManager, bool useCCD)
@@ -481,8 +481,7 @@ void PxsContext::updateContactManager(PxReal dt, bool hasContactDistanceChanged,
 	Cm::FanoutTask* updateBoundAndShapeTask)
 {
 	PX_ASSERT(mNpImplementationContext);
-	return mNpImplementationContext->updateContactManager(dt, hasContactDistanceChanged, continuation, 
-		firstPassContinuation, updateBoundAndShapeTask);
+	mNpImplementationContext->updateContactManager(dt, hasContactDistanceChanged, continuation, firstPassContinuation, updateBoundAndShapeTask);
 }
 
 void PxsContext::secondPassUpdateContactManager(PxReal dt, PxBaseTask* continuation)

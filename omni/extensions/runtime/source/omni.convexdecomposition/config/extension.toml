@@ -1,7 +1,7 @@
 [package]
 title = "V-HACD Convex Decompostion"
 description="V-HACD Convex Decompostion"
-version = "107.3.0-oss.0"
+version = "110.0.7"
 authors = ["PhysX"]
 repository = ""
 keywords = ["convex", "convexdecomposition"]
@@ -20,7 +20,7 @@ usd = true
 [dependencies]
 "omni.assets.plugins" = {}
 "omni.usd.libs" = {}
-"omni.usd.schema.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.usd.schema.physx" = { version = "110.0.7", exact = true }
 "omni.kit.commands" = {optional=true}
 
 [[python.module]]

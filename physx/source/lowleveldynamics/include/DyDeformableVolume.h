@@ -22,13 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef DY_DEFORMABLE_VOLUME_H
 #define DY_DEFORMABLE_VOLUME_H
 
 #include "foundation/PxSimpleTypes.h"
-#include "foundation/PxPinnedArray.h"
+#include "CmPinnableArray.h"
 #include "DyDeformableVolumeCore.h"
 #include "PxvGeometry.h"
 
@@ -45,7 +45,7 @@ namespace Dy
 typedef size_t DeformableVolumeHandle;
 struct DeformableVolumeCore;
 struct VolumeVolumeFilter { PxU64 a; PxU64 b; };
-typedef PxPinnedArray<VolumeVolumeFilter> VolumeVolumeFilterArray;
+typedef Cm::PinnableArray<VolumeVolumeFilter> VolumeVolumeFilterArray;
 
 class DeformableVolume
 {

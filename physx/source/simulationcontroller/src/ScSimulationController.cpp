@@ -22,20 +22,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "ScSimulationController.h"
-#include "foundation/PxAllocator.h"
-#include "CmTask.h"
 #include "CmFlushPool.h"
-#include "PxNodeIndex.h"
 #include "ScArticulationSim.h"
 #include "PxsContext.h"
-#include "foundation/PxAllocator.h"
 #include "BpAABBManager.h"
-#include "DyVArticulation.h"
+#include "common/PxProfileZone.h"
+#include "ScShapeSimBase.h"
 
 using namespace physx;
 using namespace IG;
@@ -50,32 +47,38 @@ namespace
 {
 class UpdateArticulationAfterIntegrationTask : public Cm::Task
 {
+	const UpdateCachedParams				mParams;
 	IslandSim&								mIslandSim;
 	const PxNodeIndex* const PX_RESTRICT	mNodeIndices;
 	const PxU32								mNbArticulations;
 	const PxReal							mDt;
+	const bool								mIsSleepingDisabled;
 
 	PX_NOCOPY(UpdateArticulationAfterIntegrationTask)
 public:
 	static const PxU32 NbArticulationsPerTask = 64;
 
-	UpdateArticulationAfterIntegrationTask(PxU64 contextId, PxU32 nbArticulations, PxReal dt, const PxNodeIndex* nodeIndices, IslandSim& islandSim) :
-		Cm::Task(contextId),
+	UpdateArticulationAfterIntegrationTask(const UpdateCachedParams& params, PxU32 nbArticulations, PxReal dt, const PxNodeIndex* nodeIndices, IslandSim& islandSim, bool isSleepingDisabled) :
+		Cm::Task(islandSim.getContextId()),
+		mParams(params),
 		mIslandSim(islandSim),
 		mNodeIndices(nodeIndices),
 		mNbArticulations(nbArticulations),
-		mDt(dt)
+		mDt(dt),
+		mIsSleepingDisabled(isSleepingDisabled)
 	{
 	}
 
 	virtual void runInternal()
 	{
-		for (PxU32 i = 0; i < mNbArticulations; ++i)
+		const bool sleepingDisabled = mIsSleepingDisabled;
+		const PxU32 nb = mNbArticulations;
+		for(PxU32 i=0; i<nb; i++)
 		{
-			PxNodeIndex nodeIndex = mNodeIndices[i];
-			ArticulationSim* articSim = getArticulationSim(mIslandSim, nodeIndex);
-			articSim->sleepCheck(mDt);
-			articSim->updateCached(NULL);
+			ArticulationSim* articSim = getArticulationSim(mIslandSim, mNodeIndices[i]);
+			if(!sleepingDisabled)
+				articSim->sleepCheck(mDt);
+			articSim->updateCached_NotThreadSafe(mParams, NULL);
 		}
 	}
 
@@ -83,45 +86,52 @@ public:
 };
 }
 
+void updateCCDLinks(Sc::ArticulationSim& artic, PxArray<BodySim*>& sims);
+
 //KS - TODO - parallelize this bit!!!!!
-void SimulationController::updateArticulationAfterIntegration(
-	PxsContext*	llContext,
-	Bp::AABBManagerBase* aabbManager,
-	PxArray<BodySim*>& ccdBodies,
-	PxBaseTask* continuation,
-	IslandSim& islandSim,
-	float dt
-	)
+void SimulationController::updateArticulationAfterIntegration(PxsContext* llContext, Bp::AABBManagerBase* aabbManager,
+	PxArray<BodySim*>& ccdBodies, PxBaseTask* continuation, IslandSim& islandSim, float dt, bool isSleepingDisabled)
 {
 	const PxU32 nbActiveArticulations = islandSim.getNbActiveNodes(Node::eARTICULATION_TYPE);
+	if(!nbActiveArticulations)
+		return;
 
 	Cm::FlushPool& flushPool = llContext->getTaskPool();
+	UpdateCachedParams params(llContext->getTransformCache(), aabbManager->getBoundsArray());
+	params.mTransformCache.setChangedState();
+	params.mBoundsArray.setChangedState();
 
 	const PxNodeIndex* activeArticulations = islandSim.getActiveNodes(Node::eARTICULATION_TYPE);
 
 	for (PxU32 i = 0; i < nbActiveArticulations; i += UpdateArticulationAfterIntegrationTask::NbArticulationsPerTask)
 	{
 		UpdateArticulationAfterIntegrationTask* task =
-			PX_PLACEMENT_NEW(flushPool.allocate(sizeof(UpdateArticulationAfterIntegrationTask)), UpdateArticulationAfterIntegrationTask)(islandSim.getContextId(), PxMin(UpdateArticulationAfterIntegrationTask::NbArticulationsPerTask, PxU32(nbActiveArticulations - i)), dt,
-				activeArticulations + i, islandSim);
+			PX_PLACEMENT_NEW(flushPool.allocate(sizeof(UpdateArticulationAfterIntegrationTask)), UpdateArticulationAfterIntegrationTask)(params,
+				PxMin(UpdateArticulationAfterIntegrationTask::NbArticulationsPerTask, PxU32(nbActiveArticulations - i)), dt,
+				activeArticulations + i, islandSim, isSleepingDisabled);
 
 		startTask(task, continuation);
 	}
 
-	llContext->getLock().lock();
-
-	//const NodeIndex* activeArticulations = islandSim.getActiveNodes(Node::eARTICULATION_TYPE);
-
-	PxBitMapPinned& changedAABBMgrActorHandles = aabbManager->getChangedAABBMgActorHandleMap();
-
-	for (PxU32 i = 0; i < nbActiveArticulations; i++)
 	{
-		ArticulationSim* articSim = getArticulationSim(islandSim, activeArticulations[i]);
+		PX_PROFILE_ZONE("SimulationController::updateArticulationAfterIntegration_serial", llContext->getContextId());
 
-		//KS - check links for CCD flags and add to mCcdBodies list if required....
-		articSim->updateCCDLinks(ccdBodies);
+		PxMutex::ScopedLock lock(llContext->getLock());
 
-		articSim->markShapesUpdated(&changedAABBMgrActorHandles);
+		Cm::PinnableBitMap& changedAABBMgrActorHandles = aabbManager->getChangedAABBMgActorHandleMap();
+
+		const bool ccdEnabled = llContext->getCCDFlag();
+
+		for (PxU32 i = 0; i < nbActiveArticulations; i++)
+		{
+			ArticulationSim* articSim = getArticulationSim(islandSim, activeArticulations[i]);
+
+			//KS - check links for CCD flags and add to mCcdBodies list if required....
+			if(ccdEnabled)
+				updateCCDLinks(*articSim, ccdBodies);
+
+			// PT: TODO: do this directly in ShapeSimBase::updateCached() with atomics, only serially process leftovers afterwards (the ones for which the map had to grow)
+			articSim->markShapesUpdated(&changedAABBMgrActorHandles);
+		}
 	}
-	llContext->getLock().unlock();
 }

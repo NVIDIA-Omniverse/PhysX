@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -40,6 +40,11 @@ void createAttribPassOver(pxr::UsdStageRefPtr* usdStage,
                           std::list<OmniPvdObject*>& objectCreations,
                           std::unordered_map<std::string, pxr::TfToken*>& tokenMap,
                           int isUSDA);
+
+void createParticleAttribPassOver(pxr::UsdStageRefPtr* usdStage,
+                                  std::list<OmniPvdObject*>& objectCreations,
+                                  std::unordered_map<std::string, pxr::TfToken*>& tokenMap,
+                                  int isUSDA);
 
 void writeUSDFileOver(
     OmniPvdDOMState &domState

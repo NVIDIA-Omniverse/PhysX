@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -52,6 +52,14 @@ PX_FORCE_INLINE PxU32 getArrayOfPointers(DstType** PX_RESTRICT userBuffer, PxU32
 	for(PxU32 i=0;i<writeCount;i++)
 		userBuffer[i] = static_cast<DstType*>(src[i]);
 	return writeCount;
+}
+
+template<class DstType>
+PX_FORCE_INLINE DstType safeRecip(const PxVec3& v)
+{
+	return DstType(	v.x == 0.0f ? 0.0f : 1.0f/v.x,
+					v.y == 0.0f ? 0.0f : 1.0f/v.y,
+					v.z == 0.0f ? 0.0f : 1.0f/v.z);
 }
 
 PX_CUDA_CALLABLE PX_INLINE void transformInertiaTensor(const PxVec3& invD, const PxMat33& M, PxMat33& mIInv)

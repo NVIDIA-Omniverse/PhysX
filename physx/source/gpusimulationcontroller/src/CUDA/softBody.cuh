@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,6 +31,9 @@
 
 #include "foundation/PxVecMath.h"
 #include "atomic.cuh"
+
+namespace physx
+{
 
 /**
 TODO, remove. Already has been removed from softbody/softbody, softbody/femcloth and softbody/particle attachments.
@@ -146,5 +149,7 @@ static __device__ void updateTriPositionDelta(float4* outputDeltaPositions, cons
 		AtomicAdd(outputDeltaPositions[triVertIndices.z], deltaPosition*invMassBary.z, constraintWeight);
 	}
 }
+
+} // namespace physx
 
 #endif

@@ -171,6 +171,19 @@ class "PhysxSplinesSurfaceVelocityAPI"
         doc = """Whether surface velocity is enabled or not."""
     )    
 
+    bool physxSplinesSurfaceVelocity:surfaceVelocityForceBased = true (
+        customData = {
+            string apiName = "surfaceVelocityForceBased"
+        }
+        displayName = "Surface Velocity Force Based"
+        doc = """Whether surface velocity is applied as forces to the bodies.
+        Doing so will introduce one step latency as contacts are gathered and
+        forces are applied in the next simulation step. Otherwise computation
+        happens during contact modify callback, which can have performance
+        implications.
+        """
+    ) 
+
     float physxSplinesSurfaceVelocity:surfaceVelocityMagnitude = 0.0 (
         customData = {
             string apiName = "surfaceVelocityMagnitude"

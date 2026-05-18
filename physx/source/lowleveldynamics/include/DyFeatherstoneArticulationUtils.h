@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -78,7 +78,6 @@ namespace Dy
 			res.bottom.x = result[3]; res.bottom.y = result[4]; res.bottom.z = result[5];
 
 			return res;
-
 		}
 
 		PX_CUDA_CALLABLE PX_FORCE_INLINE void setColumn(const PxU32 index, const PxVec3& top, const PxVec3& bottom)
@@ -104,107 +103,10 @@ namespace Dy
 			return columns;
 		}
 
-
 	//private:
 		Cm::UnAlignedSpatialVector columns[MaxColumns];			//3x24 = 72
 		PxU32	numColumns;										//76
 		PxU32	padding;										//80
-
-	};
-
-	//this should be 6x6 matrix
-	//|R,		0|
-	//|-R*rX,	R|
-	struct SpatialTransform
-	{
-		PxMat33 R;
-		PxQuat q;
-		PxMat33 T;
-
-	public:
-		PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialTransform() : R(PxZero), T(PxZero)
-		{
-		}
-
-		PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialTransform(const PxMat33& R_, const PxMat33& T_) : R(R_), T(T_)
-		{
-			q = PxQuat(R_);
-		}
-
-		PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialTransform(const PxQuat& q_, const PxMat33& T_) : q(q_), T(T_)
-		{
-			R = PxMat33(q_);
-		}
-
-		//This assume angular is the top vector and linear is the bottom vector
-		/*PX_CUDA_CALLABLE PX_FORCE_INLINE Cm::SpatialVector operator *(const Cm::SpatialVector& s) const
-		{
-			const PxVec3 angular = R * s.angular;
-			const PxVec3 linear = T * s.angular + R * s.linear;
-			return Cm::SpatialVector(linear, angular);
-		}*/
-
-
-		////This assume angular is the top vector and linear is the bottom vector
-		//PX_FORCE_INLINE Cm::SpatialVectorF operator *(Cm::SpatialVectorF& s) const
-		//{
-		//	const PxVec3 top = R * s.top;
-		//	const PxVec3 bottom = T * s.top + R * s.bottom;
-
-		//	const PxVec3 top1 = q.rotate(s.top);
-		//	const PxVec3 bottom1 = T * s.top + q.rotate(s.bottom);
-
-		///*	const PxVec3 tDif = (top - top1).abs();
-		//	const PxVec3 bDif = (bottom - bottom1).abs();
-		//	const PxReal eps = 0.001f;
-		//	PX_ASSERT(tDif.x < eps && tDif.y < eps && tDif.z < eps);
-		//	PX_ASSERT(bDif.x < eps && bDif.y < eps && bDif.z < eps);*/
-		//	return Cm::SpatialVectorF(top1, bottom1);
-		//}
-
-		//This assume angular is the top vector and linear is the bottom vector
-		PX_CUDA_CALLABLE PX_FORCE_INLINE Cm::SpatialVectorF operator *(const Cm::SpatialVectorF& s) const
-		{
-			//const PxVec3 top = R * s.top;
-			//const PxVec3 bottom = T * s.top + R * s.bottom;
-
-			const PxVec3 top1 = q.rotate(s.top);
-			const PxVec3 bottom1 = T * s.top + q.rotate(s.bottom);
-
-			return Cm::SpatialVectorF(top1, bottom1);
-		}
-
-		PX_CUDA_CALLABLE PX_FORCE_INLINE Cm::UnAlignedSpatialVector operator *(const Cm::UnAlignedSpatialVector& s) const
-		{
-			//const PxVec3 top = R * s.top;
-			//const PxVec3 bottom = T * s.top + R * s.bottom;
-
-			const PxVec3 top1 = q.rotate(s.top);
-			const PxVec3 bottom1 = T * s.top + q.rotate(s.bottom);
-
-			return Cm::UnAlignedSpatialVector(top1, bottom1);
-		}
-
-		//transpose is the same as inverse, R(inverse) = R(transpose)
-		//|R(t),	0	|
-		//|rXR(t),	R(t)|
-		PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialTransform getTranspose() const
-		{
-			SpatialTransform ret;
-			ret.q = q.getConjugate();
-			ret.R = R.getTranspose();
-			ret.T = T.getTranspose();
-			return ret;
-			
-		}
-
-		PX_CUDA_CALLABLE PX_FORCE_INLINE void operator =(SpatialTransform& other)
-		{
-			R = other.R;
-			q = other.q;
-			T = other.T;
-		}
-
 	};
 
 	struct InvStIs
@@ -255,7 +157,6 @@ namespace Dy
 			bottomLeft = PxMat33(0.f);
 		}
 
-
 		//This assume angular is the top vector and linear is the bottom vector
 		PX_CUDA_CALLABLE PX_FORCE_INLINE Cm::SpatialVector operator *(const Cm::SpatialVector& s) const
 		{
@@ -280,7 +181,6 @@ namespace Dy
 
 			return Cm::UnAlignedSpatialVector(top, bottom);
 		}
-
 
 		PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialMatrix operator *(const PxReal& s) const
 		{
@@ -337,13 +237,12 @@ namespace Dy
 			return SpatialMatrix(newTopLeft, newTopRight, newBottomLeft);
 		}
 
-		static SpatialMatrix constructSpatialMatrix(const Cm::SpatialVector& Is, const Cm::SpatialVector& stI)
+		/*static SpatialMatrix constructSpatialMatrix(const Cm::SpatialVector& Is, const Cm::SpatialVector& stI)
 		{
 			//construct top left
 			const PxVec3 tLeftC0 = Is.angular * stI.angular.x;
 			const PxVec3 tLeftC1 = Is.angular * stI.angular.y;
 			const PxVec3 tLeftC2 = Is.angular * stI.angular.z;
-
 			const PxMat33 topLeft(tLeftC0, tLeftC1, tLeftC2);
 
 			//construct top right
@@ -359,7 +258,7 @@ namespace Dy
 			const PxMat33 bottomLeft(bLeftC0, bLeftC1, bLeftC2);
 
 			return SpatialMatrix(topLeft, topRight, bottomLeft);
-		}
+		}*/
 
 		static PX_CUDA_CALLABLE SpatialMatrix constructSpatialMatrix(const Cm::SpatialVectorF& Is, const Cm::SpatialVectorF& stI)
 		{
@@ -367,7 +266,6 @@ namespace Dy
 			const PxVec3 tLeftC0 = Is.top * stI.top.x;
 			const PxVec3 tLeftC1 = Is.top * stI.top.y;
 			const PxVec3 tLeftC2 = Is.top * stI.top.z;
-
 			const PxMat33 topLeft(tLeftC0, tLeftC1, tLeftC2);
 
 			//construct top right
@@ -584,7 +482,7 @@ namespace Dy
 			M33Store(LL, result.bottomLeft);
 		}
 
-		SpatialMatrix getInverse()
+		SpatialMatrix getInverse()	const
 		{
 			const PxMat33 bottomRight = topLeft.getTranspose();
 

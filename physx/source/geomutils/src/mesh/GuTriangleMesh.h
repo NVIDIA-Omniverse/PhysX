@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -44,7 +44,6 @@
 namespace physx
 {
 class PxMeshScale;
-struct PxTriangleMeshInternalData;
 
 namespace Gu
 {
@@ -88,7 +87,6 @@ public:
 	virtual						void					requiresObjects(PxProcessPxBaseCallback&){}
 //~PX_SERIALIZATION
 														TriangleMesh(MeshFactory* factory, TriangleMeshData& data);
-														TriangleMesh(const PxTriangleMeshInternalData& data);
 	virtual												~TriangleMesh();
 	
 	// PxBase
@@ -101,8 +99,8 @@ public:
 	//~PxRefCounted
 	
 	// PxTriangleMesh
-	virtual						PxU32					getNbVertices()				const   { return mNbVertices;}
-	virtual						const PxVec3*			getVertices()				const   { return mVertices; }
+	virtual						PxU32					getNbVertices()				const	{ return mNbVertices;}
+	virtual						const PxVec3*			getVertices()				const	{ return mVertices; }
 
 	virtual						PxVec3*					getVerticesForModification();
 	virtual						PxBounds3				refitBVH();
@@ -154,8 +152,6 @@ public:
 														}
 	
 	//~PxTriangleMesh
-
-	virtual						bool					getInternalData(PxTriangleMeshInternalData&, bool)	const	{ return false; }
 
 	// PT: this one is just to prevent instancing Gu::TriangleMesh.
 	// But you should use PxBase::getConcreteType() instead to avoid the virtual call.

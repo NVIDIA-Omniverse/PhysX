@@ -2,7 +2,7 @@
 category = "Internal"
 title = "Physics Tensors Tests"
 description="Physics tensors tests."
-repository=""
+repository = ""
 support_level = "Internal"
 
 [package.writeTarget]
@@ -11,8 +11,8 @@ python = true
 usd = true
 
 [dependencies]
-"omni.physx.tests" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.tensors" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx.tests" = {}
+"omni.physx.tensors" = {}
 "omni.warp" = {}
 # Note: fabric will be enabled on demand
 #"omni.physx.fabric" = {}
@@ -37,5 +37,6 @@ args = [
    "--/app/renderer/resolution/width=64",
    "--/app/renderer/resolution/height=64",
    "--/rtx/rendermode=\"rtx\"",
-   "--/physics/cudaDevice=0"
+   "--/physics/cudaDevice=0",
+   "--/app/fastShutdown=true", # Fast shutdown by default, otherwise it will crash, nvbug 5672099
 ]

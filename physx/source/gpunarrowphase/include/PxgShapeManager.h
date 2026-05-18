@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,28 +30,30 @@
 #define PXG_SHAPE_MANAGER_H
 
 #include "foundation/PxPreprocessor.h"
-#include "PxSceneDesc.h"
-#include "foundation/PxPinnedArray.h"
-#include "CmIDPool.h"
-#include "PxgCudaBuffer.h"
 #include "foundation/PxBitMap.h"
+#include "PxNodeIndex.h"
+
+#include "CmPinnableArray.h"
+#include "CmIDPool.h"
+
 #include "PxsMaterialCore.h"
 #include "PxsDeformableSurfaceMaterialCore.h"
 #include "PxsDeformableVolumeMaterialCore.h"
 #include "PxsPBDMaterialCore.h"
+
+#include "PxgCudaBuffer.h"
 #include "PxgConvexConvexShape.h"
 
 namespace physx
 {
 	class PxCudaContext;
-	class PxgHeapMemoryAllocatorManager;
 	class PxgCopyManager;
-	class PxNodeIndex;
+	struct PxgAllocatorDesc;
 
 	class PxgShapeManager
 	{
 	public:
-		PxgShapeManager(PxgHeapMemoryAllocatorManager* heapManager);
+		PxgShapeManager(PxgAllocatorDesc& allocDesc);
 		~PxgShapeManager(){}
 
 
@@ -70,11 +72,13 @@ namespace physx
 		void releaseIDs() { mIdPool.processDeferredIds(); }
 
 		Cm::DeferredIDPool				mIdPool;
-		PxgHeapMemoryAllocatorManager*	mHeapManager;
-		PxPinnedArray<PxgShape>			mHostShapes;
-		PxPinnedArray<PxNodeIndex>		mHostShapesRemapTable;//remap table from shape to node index
-		PxInt32ArrayPinned				mHostShapeIdTable;
-		PxPinnedArray<PxActor*>			mHostTransformCacheIdToActorTable; // remap table from transformCacheId to PxActor
+
+		// needs to be device mapped memory
+		Cm::PinnableArray<PxgShape>		mHostShapesMapped;
+		Cm::PinnableArray<PxNodeIndex>	mHostShapesRemapTableMapped; // remap table from shape to node index
+		Cm::PinnableArray<PxActor*>		mHostTransformCacheIdToActorTableMapped; // remap table from transformCacheId to PxActor
+		Cm::PinnableArray<PxU32>		mHostShapeIdTableMapped;
+		
 		PxgCudaBuffer					mGpuShapesBuffer;
 		PxgCudaBuffer					mGpuShapesRemapTableBuffer;	// shape to rigid
 		PxgCudaBuffer					mGpuTransformCacheIdToActorTableBuffer; // transformCacheId to PxActor
@@ -91,6 +95,7 @@ namespace physx
 		PxI32							mMaxTransformCacheID;
 		bool							mHasShapeChanged;
 		bool							mHasShapeInstanceChanged;
+		bool							mAllocFailed;
 
 	private:
 		PX_NOCOPY(PxgShapeManager)
@@ -100,7 +105,7 @@ namespace physx
 	{
 		PX_NOCOPY(PxgMaterialManager)
 	public:
-		PxgMaterialManager(PxgHeapMemoryAllocatorManager* heapManager, const PxU32 elemSize = sizeof(PxsMaterialData));
+		PxgMaterialManager(PxgAllocatorDesc& allocDesc, const PxU32 elemSize = sizeof(PxsMaterialData));
 		virtual ~PxgMaterialManager(){}
 
 		//this method push CopyDesc to PxgCopyManager
@@ -112,12 +117,15 @@ namespace physx
 		void unregisterMaterial(const PxU32 materialId);
 		void releaseIDs() { mIdPool.processDeferredIds(); }
 
-		PxgCudaBuffer					mGpuMaterialBuffer;
+		bool mAllocFailed;
 
+		PxgCudaBuffer					mGpuMaterialBuffer;
 	protected:
 		Cm::DeferredIDPool				mIdPool;
-		PxgHeapMemoryAllocatorManager*	mHeapManager;
-		PxInt8ArrayPinned				mHostMaterial;
+
+		//needs to be device mapped memory
+		Cm::PinnableArray<PxU8>			mHostMaterialMapped;
+
 		PxBitMap						mDirtyMaterialMap;
 		bool							mResizeRequired;
 	};
@@ -125,8 +133,9 @@ namespace physx
 	class PxgFEMMaterialManager : public PxgMaterialManager
 	{
 	public:
-
-		PxgFEMMaterialManager(PxgHeapMemoryAllocatorManager* heapManager, const PxU32 elemSize);
+		PxgFEMMaterialManager(PxgAllocatorDesc& allocDesc, const PxU32 elemSize)
+		: PxgMaterialManager(allocDesc, elemSize)
+		{}
 
 		virtual void scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaContext* cudaContext, CUstream stream, const PxU32 elemSize);
 	};
@@ -134,29 +143,30 @@ namespace physx
 	class PxgFEMSoftBodyMaterialManager : public PxgFEMMaterialManager
 	{
 	public:
-		PxgFEMSoftBodyMaterialManager(PxgHeapMemoryAllocatorManager* heapManager);
+		PxgFEMSoftBodyMaterialManager(PxgAllocatorDesc& allocDesc)
+		: PxgFEMMaterialManager(allocDesc, sizeof(PxsDeformableVolumeMaterialData))
+		{}
 	};
 
 	class PxgFEMClothMaterialManager : public PxgMaterialManager
 	{
 	public:
-	    PxgFEMClothMaterialManager(PxgHeapMemoryAllocatorManager* heapManager) :
-			PxgMaterialManager(heapManager, sizeof(PxsDeformableSurfaceMaterialData))
-	    {
-	    }
-	    PxsDeformableSurfaceMaterialData* getCPUMaterialData()
-	    {
-		    return reinterpret_cast<PxsDeformableSurfaceMaterialData*>(mHostMaterial.begin());
-	    }
+		PxgFEMClothMaterialManager(PxgAllocatorDesc& allocDesc)
+		: PxgMaterialManager(allocDesc, sizeof(PxsDeformableSurfaceMaterialData))
+		{}
+	
+		PxsDeformableSurfaceMaterialData* getCPUMaterialData()
+		{
+			return reinterpret_cast<PxsDeformableSurfaceMaterialData*>(mHostMaterialMapped.begin());
+		}
 	};
 
 	class PxgPBDMaterialManager : public PxgMaterialManager
 	{
 	public:
-		PxgPBDMaterialManager(PxgHeapMemoryAllocatorManager* heapManager) :
-			PxgMaterialManager(heapManager, sizeof(PxsPBDMaterialData))
-		{
-		}
+		PxgPBDMaterialManager(PxgAllocatorDesc& allocDesc)
+		: PxgMaterialManager(allocDesc, sizeof(PxsPBDMaterialData))
+		{}
 	};
 
 }

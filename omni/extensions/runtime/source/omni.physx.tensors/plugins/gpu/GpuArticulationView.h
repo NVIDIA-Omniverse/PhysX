@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -58,13 +58,10 @@ public:
     bool getDofProjectedJointForces(const TensorDesc* dstTensor) const override;
 
     bool getJacobians(const TensorDesc* dstTensor) const override;
-    bool getMassMatrices(const TensorDesc* dstTensor) const override; // deprecated
     bool getGeneralizedMassMatrices(const TensorDesc* dstTensor) const override;
 
     bool getCoriolisAndCentrifugalCompensationForces(const TensorDesc* dstTensor) const override;
-    bool getCoriolisAndCentrifugalForces(const TensorDesc* dstTensor) const override; // deprecated
     bool getGravityCompensationForces(const TensorDesc* dstTensor) const override;
-    bool getGeneralizedGravityForces(const TensorDesc* dstTensor) const override; // deprecated
 
     bool getArticulationMassCenter(const TensorDesc* dstTensor, bool localFrame) const override;
     bool getArticulationCentroidalMomentum(const TensorDesc* dstTensor) const override;
@@ -75,6 +72,51 @@ public:
                                          const TensorDesc* srcPositionTensor,
                                          const TensorDesc* indexTensor,
                                          const bool isGlobal) override;
+
+    // Masked overrides
+    bool setRootTransformsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setRootVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofPositionsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofActuationForcesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofPositionTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofVelocityTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofLimitsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofStiffnessesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofDampingsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofMaxForcesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofDriveModelPropertiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofFrictionCoefficientsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofFrictionPropertiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofMaxVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDofArmaturesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool applyForcesAndTorquesAtPositionMasked(const TensorDesc* srcForceTensor,
+                                               const TensorDesc* srcTorqueTensor,
+                                               const TensorDesc* srcPositionTensor,
+                                               const TensorDesc* maskTensor,
+                                               const bool isGlobal) override;
+    bool setMassesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setCOMsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setInertiasMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDisableGravitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setMaterialPropertiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) const override;
+    bool setCompliantMaterialPropertiesMasked(const TensorDesc* srcTensor,
+                                              const TensorDesc* srcCombineTensor,
+                                              const TensorDesc* maskTensor) const override;
+    bool setRestOffsetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) const override;
+    bool setContactOffsetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) const override;
+    bool setFixedTendonPropertiesMasked(const TensorDesc* stiffnesses,
+                                        const TensorDesc* dampings,
+                                        const TensorDesc* limitStiffnesses,
+                                        const TensorDesc* limits,
+                                        const TensorDesc* restLengths,
+                                        const TensorDesc* offsets,
+                                        const TensorDesc* maskTensor) const override;
+    bool setSpatialTendonPropertiesMasked(const TensorDesc* stiffnesses,
+                                          const TensorDesc* dampings,
+                                          const TensorDesc* limitStiffnesses,
+                                          const TensorDesc* offsets,
+                                          const TensorDesc* maskTensor) const override;
 
     // tendons
     bool getFixedTendonStiffnesses(const TensorDesc* dstTensor) const override;
@@ -102,6 +144,8 @@ public:
                                     const TensorDesc* indexTensor) const override;
 
 private:
+    bool resolveMask(const TensorDesc* maskTensor, ::physx::PxU32& outK) const;
+
     // generic helper function to get a DOF attribute tensor
     bool getDofAttribute(const char* attribName,
                          const TensorDesc* dstTensor,
@@ -140,6 +184,15 @@ private:
 
     std::vector<::physx::PxVec3> cMassLocalPosePos;
     ::physx::PxVec3* cMassLocalPosePosDev = nullptr; // coms for links
+
+    // Mask -> indices scratch (cached). Declared mutable because resolveMask()
+    // is const - some interface setters (e.g. material/shape properties) are
+    // const by pre-existing TensorAPI convention ("const" = view object unchanged,
+    // simulation state may be mutated via pointer indirection). These buffers are
+    // internal caching state, not logical view state.
+    mutable ::physx::PxU32* mMaskIndicesDev = nullptr;
+    mutable ::physx::PxU32 mMaskIndicesCapacity = 0;
+    mutable SingleAllocPolicy mMaskAllocPolicy;
 };
 
 } // namespace tensors

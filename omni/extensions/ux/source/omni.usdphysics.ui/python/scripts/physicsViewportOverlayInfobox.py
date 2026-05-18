@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.ui as ui
 import omni.kit.app
 import omni.usd
@@ -9,7 +10,7 @@ from carb.eventdispatcher import get_eventdispatcher
 from omni.ui_scene import scene as sc
 from omni.ui import color as cl
 from .physicsViewportOverlayShared import *
-
+from math import floor
 
 class PhysicsSubsectionCollapseClickGesture(PhysicsUIClickGesture):
 
@@ -46,7 +47,7 @@ class PhysicsUIFloatingInfobox(PhysicsUIManipulator):
     The infobox contains a number of subsections (derived from Subsection) that can be changed dynamically.
     """
     # Defaults:
-    width = 270.0
+    width = 270
     background_color = cl("#1E212360")
     title_background_color = cl("00000020")
     default_font_color = COLOR_TEXT
@@ -164,7 +165,7 @@ class PhysicsUIFloatingInfobox(PhysicsUIManipulator):
 
             self._collapsed_transform.visible = not self._collapsed
 
-            self._ui_subsection_background_transform.transform = sc.Matrix44.get_translation_matrix(self.manipulator.width * 0.5, -height * 0.5, -0.01) * sc.Matrix44.get_scale_matrix(inner_width, height, 1.0)
+            self._ui_subsection_background_transform.transform = sc.Matrix44.get_translation_matrix(self.manipulator.width // 2, -height // 2, -0.01) * sc.Matrix44.get_scale_matrix(inner_width, height, 1.0)
 
         def _make_ui_shapes(self):
             with self.manipulator._ui_transform_screen:
@@ -182,14 +183,14 @@ class PhysicsUIFloatingInfobox(PhysicsUIManipulator):
                     line_height = self.get_title_font_height()
                     offset_y += self.manipulator.subsection_padding
                     self._ui_text_title_transform = sc.Transform()
-                    self._ui_text_title_transform.transform = sc.Matrix44.get_translation_matrix(self.manipulator.width * 0.5, -offset_y, 0.0)
+                    self._ui_text_title_transform.transform = sc.Matrix44.get_translation_matrix(self.manipulator.width // 2, -offset_y, 0.0)
                     with self._ui_text_title_transform:
                         self._ui_text_title_shape = sc.Label(
                             self.text_title,
                             alignment=ui.Alignment.CENTER_TOP,
                             color=self._get_title_font_color(),
                             size=self._get_title_font_size())
-                    with sc.Transform(transform=sc.Matrix44.get_translation_matrix(self.manipulator.width * 0.5, -line_height * 0.5 - offset_y, 0.0)):
+                    with sc.Transform(transform=sc.Matrix44.get_translation_matrix(self.manipulator.width // 2, -line_height // 2 - offset_y, 0.0)):
                         toggles = self._collapse_toggle.get_manipulator_toggles(self.manipulator)
                         toggles.clear()
 
@@ -212,11 +213,11 @@ class PhysicsUIFloatingInfobox(PhysicsUIManipulator):
                         self._ui_text_entries_shape[column] = []
                         self._text_entries_transform[column] = []
                         offset_y_column = offset_y + self.manipulator.subsection_padding
-                        offset_x = self.manipulator.subsection_margin + self.manipulator.subsection_padding + (0.0 if column == 0 else inner_width_padded - (self.columns - column - 1) * inner_width_padded / (self.columns + 1))
+                        offset_x = self.manipulator.subsection_margin + self.manipulator.subsection_padding + (0.0 if column == 0 else inner_width_padded - (self.columns - column - 1) * inner_width_padded // (self.columns + 1))
                         for entry in self.text_entries[column]:
                             entry_transform = sc.Transform()
                             entry_transform.transform = sc.Matrix44.get_translation_matrix(offset_x, -offset_y_column, 0.0)
-                            offset_y_column += self._get_font_line_spacing() * self._get_font_size()
+                            offset_y_column += self.get_font_height()
                             self._text_entries_transform[column].append(entry_transform)
                             with entry_transform:
                                 self._ui_text_entries_shape[column].append(sc.Label(
@@ -227,19 +228,19 @@ class PhysicsUIFloatingInfobox(PhysicsUIManipulator):
 
                         height = max(height, offset_y_column + self.manipulator.subsection_padding)
 
-        def get_title_font_height(self) -> float:
-            return round(self._get_title_font_size() * self._get_title_font_line_spacing())
+        def get_title_font_height(self) -> int:
+            return int(self._get_title_font_size() * self._get_title_font_line_spacing() + 0.5)
 
-        def get_title_height(self) -> float:
+        def get_title_height(self) -> int:
             if self.text_title is not None:
                 return self.get_title_font_height() + self.manipulator.subsection_padding * 2
-            return 0.0
+            return 0
 
-        def get_font_height(self) -> float:
-            return round(self._get_font_size() * self._get_font_line_spacing())
+        def get_font_height(self) -> int:
+            return int(self._get_font_size() * self._get_font_line_spacing() + 0.5)
 
-        def get_height(self) -> float:
-            height = 0.0
+        def get_height(self) -> int:
+            height = 0
             lines = 0
             if not self._collapsed:
                 for text_entries in self.text_entries:
@@ -367,7 +368,7 @@ class PhysicsUIFloatingInfobox(PhysicsUIManipulator):
             self._subsections[subsection]._ui_root_transform.transform = sc.Matrix44.get_translation_matrix(0.0, -self._height, 0.0)
             self._height += self._subsections[subsection].get_height() + self.subsection_margin
 
-        self._ui_background_transform.transform = sc.Matrix44.get_translation_matrix(self.width * 0.5, -self._height * 0.5, 0.0) * sc.Matrix44.get_scale_matrix(self.width, self._height, 1.0)
+        self._ui_background_transform.transform = sc.Matrix44.get_translation_matrix(self.width // 2, -self._height // 2, 0.0) * sc.Matrix44.get_scale_matrix(self.width, self._height, 1.0)
 
         self._refresh_position()
 
@@ -419,24 +420,31 @@ class PhysicsUIFloatingInfobox(PhysicsUIManipulator):
 
         self._ui_root_transform.visible = True
 
-        # Add some smoothing.
-        if self._screen_position_current is not None:
-            screen_position_new = components_lerped(self._screen_position_current, screen_position_new, 0.25)
-
         # Determine the boundaries of the viewport in pixel coords.
-        screen_min = self.manager._overlay_transform_screen.transform_space(sc.Space.NDC, sc.Space.OBJECT, [-1.0, -1.0, 0.0])
+        screen_min = self.manager._overlay_transform_screen.transform_space(sc.Space.NDC, sc.Space.OBJECT, [-1.0, -1.0, -1.0])
         screen_max = self.manager._overlay_transform_screen.transform_space(sc.Space.NDC, sc.Space.OBJECT, [1.0, 1.0, 1.0])
 
         # Shrink to make sure that our own dimensions will also be able to fit.
         screen_max[0] -= self.width
         screen_min[1] += self._height
 
-        # Now clamp the coordinates to fit.
-        screen_position_new[0] = max(min(screen_position_new[0], screen_max[0]), screen_min[0])
-        screen_position_new[1] = max(min(screen_position_new[1], screen_max[1]), screen_min[1])
+        for n in range(2):
+            if self._screen_position_current is not None:
+                # Add some smoothing.
+                screen_position_new[n] = lerp(self._screen_position_current[n], screen_position_new[n], 0.25)
+            
+            # Due to float arithmics, we have to do some rounding for actual pixel values.
+            screen_max[n] = round(screen_max[n])
+            screen_min[n] = round(screen_min[n])
 
+            # Now clamp the coordinates to fit (the -1 for max is because we align to pixel centers.)
+            screen_position_new[n] = clamp(screen_position_new[n], screen_min[n], screen_max[n] - 1)
+        
         self._screen_position_current = screen_position_new
-        world_position_new = self.manager.transform_screen_to_world(screen_position_new)
+
+        # For the actual output coordinates we set, align to pixel center.
+        screen_position_pixel_aligned = (floor(screen_position_new[0]) + 0.5, floor(screen_position_new[1]) + 0.5, screen_position_new[2])
+        world_position_new = self.manager.transform_screen_to_world(screen_position_pixel_aligned)
         self._ui_root_transform.transform = sc.Matrix44.get_translation_matrix(*world_position_new)
 
     def _on_kit_update(self, event: carb.events.IEvent):

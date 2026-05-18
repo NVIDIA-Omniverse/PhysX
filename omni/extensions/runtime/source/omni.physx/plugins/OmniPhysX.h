@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -39,7 +39,6 @@ class FabricBatchData;
 
 class ContactReport;
 class TriggerManager;
-class FabricParticles;
 class PhysXCustomJointManager;
 class PhysXCustomGeometryManager;
 class PhysXPropertyQueryManager;
@@ -69,17 +68,15 @@ struct OmniCachedSettings
     float viewportGizmoScale = 1.0f;
     int visualizationDisplayParticles = 0;
     bool updateToUsd = true;
+    bool updateToUsdUsingXformCommonAPI = false;
     bool updateVelocitiesToUsd = true;
     bool outputVelocitiesLocalSpace = false;
     bool updateParticlesToUsd = true;
-    bool updateResidualsToUsd = true;
-    bool delayedInitLocalMeshCache = false;
     bool localMeshCacheEnabled = false;
     int localMeshCacheSize = 0;
     int minFrameRate = 30;
     float jointBodyTransformCheckTolerance = 0.001f;
     bool simulateEmptyScene = false;
-    bool disableSleeping = false;
     bool enableSynchronousKernelLaunches = false;
     bool disableContactProcessing = false;
     bool disableResetOnStop = false;
@@ -168,10 +165,18 @@ public:
     // Get Internal PhysX database, contains records for PhysX and internal pointers
     const internal::InternalPhysXDatabase& getInternalPhysXDatabase() const
     {
+        if (!mInternalPhysXDatabase)
+        {
+            mInternalPhysXDatabase = ICE_NEW(internal::InternalPhysXDatabase);
+        }
         return *mInternalPhysXDatabase;
     }
     internal::InternalPhysXDatabase& getInternalPhysXDatabase()
     {
+        if (!mInternalPhysXDatabase)
+        {
+            mInternalPhysXDatabase = ICE_NEW(internal::InternalPhysXDatabase);
+        }
         return *mInternalPhysXDatabase;
     }
 
@@ -370,10 +375,19 @@ public:
     void setDebugVisualizationEnabled(bool val)
     {
         mEnableVisualization = val;
+        mDebugVisualizationDirty = true;
     }
     bool isNormalsVisualizationEnabled() const
     {
         return mEnableNormalsVisualization;
+    }
+    bool isDebugVisualizationDirty() const
+    {
+        return mEnableVisualization && mDebugVisualizationDirty;
+    }
+    void setDebugVisualizationDirty(bool val)
+    {
+        mDebugVisualizationDirty = val;
     }
     void setNormalsVisualizationEnabled(bool val)
     {
@@ -386,12 +400,13 @@ public:
     void setVisualizationScale(float val)
     {
         mVisualizationScale = val;
+        mDebugVisualizationDirty = true;
     }
-    uint32_t getVisualizationBitMask() const
+    uint64_t getVisualizationBitMask() const
     {
         return mVisualizationBitMask;
     }
-    void setVisualizationBitMask(uint32_t val)
+    void setVisualizationBitMask(uint64_t val)
     {
         mVisualizationBitMask = val;
     }
@@ -715,13 +730,6 @@ public:
         return mCachedSettings;
     }
 
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    FabricParticles* getFabricParticles() const
-    {
-        return mFabricParticles;
-    }
-#endif
-
     ///////////////////////////////////////////////////////////////////////////////////////
     // Replicator
     bool registerReplicator(uint64_t stageId, const IReplicatorCallback& callback);
@@ -780,7 +788,8 @@ private:
 
     // PhysX globals
     PhysXSetup mPhysXSetup;
-    internal::InternalPhysXDatabase* mInternalPhysXDatabase{ nullptr }; // database with PhysX <-> internal objects
+    mutable internal::InternalPhysXDatabase* mInternalPhysXDatabase{ nullptr }; // database with PhysX <-> internal
+                                                                               // objects
                                                                         // records
 
     // event streams
@@ -803,8 +812,9 @@ private:
     // debug vis
     bool mEnableVisualization{ false };
     bool mEnableNormalsVisualization{ false };
+    bool mDebugVisualizationDirty{ true };
     float mVisualizationScale{ 1.0f };
-    uint32_t mVisualizationBitMask{ 0 };
+    uint64_t mVisualizationBitMask{ 0ul };
 
     // Simulation state
     mutable carb::tasking::MutexWrapper mSimParamMutex; // A.B. Do we really need this mutex?
@@ -849,9 +859,6 @@ private:
     // Stage update
     PhysXStageUpdate mStageUpdate;
 
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    FabricParticles* mFabricParticles{ nullptr };
-#endif
     PhysXCustomJointManager* mCustomJointManager{ nullptr };
     PhysXCustomGeometryManager* mCustomGeometryManager{ nullptr };
     PhysXPropertyQueryManager* mPropertyQueryManager{ nullptr };

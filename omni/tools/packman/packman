@@ -27,7 +27,7 @@ else
 	PM_CURL_SILENT="-s -S"
 	PM_WGET_QUIET="--quiet"
 fi
-export PM_PACKMAN_VERSION=7.32
+export PM_PACKMAN_VERSION=7.34
 
 
 cleanup() {
@@ -142,7 +142,7 @@ main() {
     {
         PLATFORM=`uname`
         PROCESSOR=`uname -m`
-        PYTHON_VERSION=3.10.18-nv1
+        PYTHON_VERSION=3.10.19-nv2
 
         if [ $PLATFORM == 'Darwin' ]; then
             PYTHON_PACKAGE=3.10.5-1-macos-x86_64

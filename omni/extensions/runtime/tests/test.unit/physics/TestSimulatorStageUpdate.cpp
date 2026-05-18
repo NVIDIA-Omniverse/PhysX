@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -9,7 +9,9 @@
 #include "PhysicsTools.h"
 
 #include <omni/physics/simulation/IPhysics.h>
-#include <private/omni/physics/IPhysicsStageUpdate.h>
+#include <omni/physics/simulation/IPhysicsStageUpdate.h>
+#include <carb/events/IEvents.h>
+#include <carb/events/EventsUtils.h>
 
 using namespace omni::physics;
 
@@ -30,6 +32,7 @@ public:
         , m_isPhysicsLoaded(false)
         , m_timelineState(TimelineState::Stopped)
         , m_resetSimulationCalled(false)
+        , m_startSimulationCalled(false)
     {
         // Initialize function pointers
         onAttach = [this](long int stageId) {
@@ -93,6 +96,12 @@ public:
                 m_resetSimulationCalled = true;
             }
         };
+
+        startSimulation = [this]() {
+            if (m_isAttached) {
+                m_startSimulationCalled = true;
+            }
+        };
     }
 
     ~MockStageUpdate()
@@ -111,6 +120,7 @@ public:
     ForceLoadPhysicsFromUSDFn forceLoadPhysicsFromUSD;
     ReleasePhysicsObjectsFn releasePhysicsObjects;
     ResetSimulationFn resetSimulation;
+    StartSimulationFn startSimulation;
 
     // Get the function pointers structure
     StageUpdateFns getStageUpdateFns() const
@@ -126,12 +136,15 @@ public:
         fns.forceLoadPhysicsFromUSD = forceLoadPhysicsFromUSD;
         fns.releasePhysicsObjects = releasePhysicsObjects;
         fns.resetSimulation = resetSimulation;
+        fns.startSimulation = startSimulation;
         return fns;
     }
 
     TimelineState getTimelineState() const { return m_timelineState; }
     bool wasResetSimulationCalled() const { return m_resetSimulationCalled; }
     void clearResetSimulationFlag() { m_resetSimulationCalled = false; }
+    bool wasStartSimulationCalled() const { return m_startSimulationCalled; }
+    void clearStartSimulationFlag() { m_startSimulationCalled = false; }
 
 public:
     // Internal state
@@ -140,6 +153,7 @@ public:
     bool m_isPhysicsLoaded;
     TimelineState m_timelineState;
     bool m_resetSimulationCalled;
+    bool m_startSimulationCalled;
 };
 
 //-----------------------------------------------------------------------------
@@ -271,6 +285,187 @@ TEST_CASE("Simulator Stage Update Tests",
         
         stageUpdate->resetSimulation();
         REQUIRE(mockStageUpdate.wasResetSimulationCalled());
+    }
+
+    SECTION("Start simulation")
+    {
+        stageUpdate->onAttach(123);
+        REQUIRE(mockStageUpdate.m_isAttached);
+        REQUIRE_FALSE(mockStageUpdate.wasStartSimulationCalled());
+        
+        // Test startSimulation
+        stageUpdate->startSimulation();
+        
+        // Verify simulation was started
+        REQUIRE(mockStageUpdate.wasStartSimulationCalled());
+        REQUIRE(mockStageUpdate.m_isAttached);  // Stage should remain attached
+        
+        // Test that we can clear the flag and call again
+        mockStageUpdate.clearStartSimulationFlag();
+        REQUIRE_FALSE(mockStageUpdate.wasStartSimulationCalled());
+        
+        stageUpdate->startSimulation();
+        REQUIRE(mockStageUpdate.wasStartSimulationCalled());
+        
+        stageUpdate->onDetach();
+    }
+
+    physics->unregisterSimulation(simId);
+}
+
+//-----------------------------------------------------------------------------
+// Simulation Event Stream Tests
+TEST_CASE("Simulation Event Stream Tests",
+    "[omniphysics]"
+    "[component=OmniPhysics][owner=aborovicka][priority=mandatory]")
+{
+    ScopedOmniPhysicsActivation scopedOmniPhysicsActivation;
+
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    IPhysics* physics = physicsTests.getApp()->getFramework()->acquireInterface<IPhysics>();
+    REQUIRE(physics);
+
+    IPhysicsStageUpdate* stageUpdate = physicsTests.getApp()->getFramework()->acquireInterface<IPhysicsStageUpdate>();
+    REQUIRE(stageUpdate);
+
+    // Create a mock stage update
+    MockStageUpdate mockStageUpdate;
+    StageUpdateFns fns = mockStageUpdate.getStageUpdateFns();
+
+    Simulation sim;
+    sim.stageUpdateFns = fns;
+
+    SimulationId simId = physics->registerSimulation(sim, "MockupSimulatorEvents");
+    REQUIRE(simId != kInvalidSimulationId);
+
+    SECTION("Event stream exists")
+    {
+        carb::events::IEventStreamPtr eventStream = stageUpdate->getSimulationEventStream();
+        REQUIRE(eventStream != nullptr);
+    }
+
+    SECTION("Resume event is sent")
+    {
+        carb::events::IEventStreamPtr eventStream = stageUpdate->getSimulationEventStream();
+        REQUIRE(eventStream != nullptr);
+
+        // Track received events
+        std::vector<SimulationEvent> receivedEvents;
+        auto subscription = carb::events::createSubscriptionToPop(
+            eventStream.get(),
+            [&receivedEvents](carb::events::IEvent* event) {
+                receivedEvents.push_back(static_cast<SimulationEvent>(event->type));
+            }
+        );
+
+        stageUpdate->onAttach(123);
+        stageUpdate->onResume(1.0f);
+
+        // Process events
+        eventStream->pump();
+
+        REQUIRE(receivedEvents.size() == 1);
+        REQUIRE(receivedEvents[0] == SimulationEvent::eResumed);
+
+        stageUpdate->onDetach();
+    }
+
+    SECTION("Pause event is sent")
+    {
+        carb::events::IEventStreamPtr eventStream = stageUpdate->getSimulationEventStream();
+        REQUIRE(eventStream != nullptr);
+
+        // Track received events
+        std::vector<SimulationEvent> receivedEvents;
+        auto subscription = carb::events::createSubscriptionToPop(
+            eventStream.get(),
+            [&receivedEvents](carb::events::IEvent* event) {
+                receivedEvents.push_back(static_cast<SimulationEvent>(event->type));
+            }
+        );
+
+        stageUpdate->onAttach(123);
+        stageUpdate->onResume(1.0f);
+        eventStream->pump();
+        receivedEvents.clear();
+
+        stageUpdate->onPause();
+
+        // Process events
+        eventStream->pump();
+
+        REQUIRE(receivedEvents.size() == 1);
+        REQUIRE(receivedEvents[0] == SimulationEvent::ePaused);
+
+        stageUpdate->onDetach();
+    }
+
+    SECTION("Stopped event is sent on reset")
+    {
+        carb::events::IEventStreamPtr eventStream = stageUpdate->getSimulationEventStream();
+        REQUIRE(eventStream != nullptr);
+
+        // Track received events
+        std::vector<SimulationEvent> receivedEvents;
+        auto subscription = carb::events::createSubscriptionToPop(
+            eventStream.get(),
+            [&receivedEvents](carb::events::IEvent* event) {
+                receivedEvents.push_back(static_cast<SimulationEvent>(event->type));
+            }
+        );
+
+        stageUpdate->onAttach(123);
+        stageUpdate->onResume(1.0f);
+        eventStream->pump();
+        receivedEvents.clear();
+
+        stageUpdate->onReset();
+
+        // Process events
+        eventStream->pump();
+
+        REQUIRE(receivedEvents.size() == 1);
+        REQUIRE(receivedEvents[0] == SimulationEvent::eStopped);
+
+        stageUpdate->onDetach();
+    }
+
+    SECTION("Full lifecycle events")
+    {
+        carb::events::IEventStreamPtr eventStream = stageUpdate->getSimulationEventStream();
+        REQUIRE(eventStream != nullptr);
+
+        // Track received events
+        std::vector<SimulationEvent> receivedEvents;
+        auto subscription = carb::events::createSubscriptionToPop(
+            eventStream.get(),
+            [&receivedEvents](carb::events::IEvent* event) {
+                receivedEvents.push_back(static_cast<SimulationEvent>(event->type));
+            }
+        );
+
+        stageUpdate->onAttach(123);
+
+        // Resume -> Pause -> Resume -> Stop
+        stageUpdate->onResume(1.0f);
+        eventStream->pump();
+        REQUIRE(receivedEvents.back() == SimulationEvent::eResumed);
+
+        stageUpdate->onPause();
+        eventStream->pump();
+        REQUIRE(receivedEvents.back() == SimulationEvent::ePaused);
+
+        stageUpdate->onResume(2.0f);
+        eventStream->pump();
+        REQUIRE(receivedEvents.back() == SimulationEvent::eResumed);
+
+        stageUpdate->onReset();
+        eventStream->pump();
+        REQUIRE(receivedEvents.back() == SimulationEvent::eStopped);
+
+        REQUIRE(receivedEvents.size() == 4);
+
+        stageUpdate->onDetach();
     }
 
     physics->unregisterSimulation(simId);

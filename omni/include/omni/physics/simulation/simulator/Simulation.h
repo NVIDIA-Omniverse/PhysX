@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -95,11 +95,22 @@ using DetachStageFn = std::function<void()>;
 //\return USD stageId, 0 means no stage is attached.
 using GetAttachedStageFn = std::function<long()>;
 
-// Execute physics simulation
+// Execute physics simulation asynchronously
 //
 // The simulation will simulate the exact elapsedTime passed. No substepping will happen.
 // It is the caller's responsibility to provide reasonable elapsedTime.
 // In general it is recommended to use fixed size time steps with a maximum of 1/60 of a second
+//
+//\param[in] elapsedTime Simulation time in seconds.
+//\param[in] currentTime Current time, might be used for time sampled transformations to apply.
+using SimulateAsyncFn = std::function<void(float elapsedTime, float currentTime)>;
+
+// Execute physics simulation synchronously
+//
+// The simulation will simulate the exact elapsedTime passed. No substepping will happen.
+// It is the caller's responsibility to provide reasonable elapsedTime.
+// In general it is recommended to use fixed size time steps with a maximum of 1/60 of a second
+// It is expected that after the simulation call output data are fetched.
 //
 //\param[in] elapsedTime Simulation time in seconds.
 //\param[in] currentTime Current time, might be used for time sampled transformations to apply.
@@ -168,39 +179,6 @@ using GetSimulationTimestampFn = std::function<uint64_t()>;
 // \return Number of steps since the currently active simulation started or 0 if there is no active simulation.
 using GetSimulationStepCountFn = std::function<uint64_t()>;
 
-// Applies a force (or impulse) defined in the global coordinate frame, acting at a particular
-// point in global coordinates, to the actor.
-//
-// \param[in] stageId    USD stageId
-// \param[in] path		  Body USD path encoded to uint64_t
-// \param[in] force      Force / impulse to add, defined in the global frame.
-// \param[in] pos        Position in the global frame to add the force at.
-// \param[in] mode       The mode to use when applying the force/impulse
-using AddForceAtPosFn = std::function<void(
-    uint64_t stageId, uint64_t path, const carb::Float3& force, const carb::Float3& pos, ForceModeType::Enum mode)>;
-
-// Applies a torque (or impulse) at the center of mass
-// \param[in] stageId    USD stageId
-// \param[in] path		  Body USD path encoded to uint64_t
-// \param[in] force      Torque to add to the body center of mass
-using AddTorqueFn = std::function<void(uint64_t stageId, uint64_t path, const carb::Float3& torque)>;
-
-// Wakes up body on given path
-// \param[in] stageId    USD stageId
-// \param[in] path		  Body USD path encoded to uint64_t
-using WakeUpFn = std::function<void(uint64_t stageId, uint64_t path)>;
-
-// Puts to sleep body on given path
-// \param[in] stageId    USD stageId
-// \param[in] path		  Body USD path encoded to uint64_t
-using PutToSleepFn = std::function<void(uint64_t stageId, uint64_t path)>;
-
-// Checks whether a body sleeps
-// \param[in] stageId    USD stageId
-// \param[in] path		  Body USD path encoded to uint64_t
-// \return True if body is asleep
-using IsSleepingFn = std::function<bool(uint64_t stageId, uint64_t path)>;
-
 // Subscribe to physics pre/post step events.
 //
 // \note Subscriptions cannot be changed in the onUpdate callback
@@ -220,13 +198,20 @@ using SubscribePhysicsOnStepEventsFn =
 // subscriptionId SubscriptionId obtained via @ref subscribePhysicsOnStepEvents.
 using UnsubscribePhysicsOnStepEventsFn = std::function<void(SubscriptionId subscriptionId)>;
 
+// Check if simulation is capable of simulating given schema names
+// \param schemaNames List of schema names to check, can be a schema API name or a schema type name.
+// \param schemaNamesCount The number of schema names to check.
+// \param isCapable Output parameter - array of booleans to indicate if simulation is capable of simulating given schema names.
+// \return True if the operation was successful and the simulation is able to check the capabilities.
+using IsCapableOfSimulatingFn = std::function<bool(const char** schemaNames, size_t schemaNamesCount, bool* isCapable)>;
 
 struct SimulationFns
 {
     SimulationFns()
-        : attachStage(nullptr),
-          detachStage(nullptr),
+        : initialize(nullptr),
+          close(nullptr),
           getAttachedStage(nullptr),
+          simulateAsync(nullptr),
           simulate(nullptr),
           fetchResults(nullptr),
           checkResults(nullptr),
@@ -238,19 +223,15 @@ struct SimulationFns
           getSimulationTimeStepsPerSecond(nullptr),
           getSimulationTimestamp(nullptr),
           getSimulationStepCount(nullptr),
-          addForceAtPos(nullptr),
-          addTorque(nullptr),
-          wakeUp(nullptr),
-          putToSleep(nullptr),
-          isSleeping(nullptr),
           subscribePhysicsOnStepEvents(nullptr),
           unsubscribePhysicsOnStepEvents(nullptr)
     {
     }
 
-    AttachStageFn attachStage;
-    DetachStageFn detachStage;
+    AttachStageFn initialize;
+    DetachStageFn close;
     GetAttachedStageFn getAttachedStage;
+    SimulateAsyncFn simulateAsync;
     SimulateFn simulate;
     FetchResultsFn fetchResults;
     CheckResultsFn checkResults;
@@ -262,13 +243,9 @@ struct SimulationFns
     GetSimulationTimeStepsPerSecondFn getSimulationTimeStepsPerSecond;
     GetSimulationTimestampFn getSimulationTimestamp;
     GetSimulationStepCountFn getSimulationStepCount;
-    AddForceAtPosFn addForceAtPos;
-    AddTorqueFn addTorque;
-    WakeUpFn wakeUp;
-    PutToSleepFn putToSleep;
-    IsSleepingFn isSleeping;
     SubscribePhysicsOnStepEventsFn subscribePhysicsOnStepEvents;
     UnsubscribePhysicsOnStepEventsFn unsubscribePhysicsOnStepEvents;
+    IsCapableOfSimulatingFn isCapableOfSimulating;
 };
 
 } // namespace physics

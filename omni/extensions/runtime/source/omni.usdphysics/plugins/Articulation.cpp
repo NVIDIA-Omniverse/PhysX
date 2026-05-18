@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -62,12 +62,12 @@ struct ArticulationLink
 using ArticulationLinkMap = std::map<pxr::SdfPath, ArticulationLink>;
 using BodyJointMap = pxr::TfHashMap<pxr::SdfPath, std::vector<const JointDesc*>, pxr::SdfPath::Hash>;
 
-bool isInLinkMap(const SdfPath& path, const std::vector<ArticulationLinkMap>& linkMaps)
+bool isInLinkMap(const SdfPath& path, const std::vector<std::pair<pxr::SdfPath, ArticulationLinkMap>>& linkMaps)
 {
     for (size_t i = 0; i < linkMaps.size(); i++)
     {
-        ArticulationLinkMap::const_iterator it = linkMaps[i].find(path);
-        if (it != linkMaps[i].end())
+        ArticulationLinkMap::const_iterator it = linkMaps[i].second.find(path);
+        if (it != linkMaps[i].second.end())
             return true;
     }
 
@@ -146,6 +146,41 @@ void traverseChilds(const ArticulationLink& link, const ArticulationLinkMap& map
             }
         }        
     }
+}
+
+pxr::SdfPath isNestedArticulation(const pxr::SdfPath& topPath, const ArticulationLinkMap& map)
+{
+    if (map.size() > 1)
+    {
+        bool nestedBodies = true;
+        for (ArticulationLinkMap::const_reference& ref : map)
+        {
+            const SdfPath& linkPath = ref.first;
+
+            bool parentFound = false;
+            for (const SdfPath& p : linkPath.GetAncestorsRange())
+            {
+                if (p == topPath)
+                {
+                    parentFound = true;
+                    break;
+                }
+            }
+
+            if (!parentFound)
+            {
+                nestedBodies = false;
+                break;
+            }
+        }
+
+        if (nestedBodies)
+        {
+            return topPath;
+        }
+    }
+
+    return SdfPath();
 }
 
 pxr::SdfPath getCenterOfGraph(const ArticulationLinkMap& map, const SdfPathVector& linkOrderVector)
@@ -320,7 +355,7 @@ void finalizeArticulations(const pxr::UsdStageWeakPtr stage, ArticulationMap& ar
         if (!articulationPrim)
             continue;        
         UsdPrimRange range(articulationPrim, UsdTraverseInstanceProxies());
-        std::vector<ArticulationLinkMap> articulationLinkMaps;
+        std::vector<std::pair<pxr::SdfPath,ArticulationLinkMap>> articulationLinkMaps;
         articulationLinkOrderVector.clear();
 
         for (pxr::UsdPrimRange::const_iterator iter = range.begin(); iter != range.end(); ++iter)
@@ -338,9 +373,9 @@ void finalizeArticulations(const pxr::UsdStageWeakPtr stage, ArticulationMap& ar
             BodyMap::const_iterator bodyIt = bodyMap.find(primPath);
             if (bodyIt != bodyMap.end() && bodyIt->second->type == ObjectType::eRigidBody)
             {
-                articulationLinkMaps.push_back(ArticulationLinkMap());
+                articulationLinkMaps.push_back(std::make_pair(primPath, ArticulationLinkMap()));
                 uint32_t index = 0;
-                traverseHierarchy(stage, primPath, articulationLinkMaps.back(), bodyJointMap, index, articulationLinkOrderVector);
+                traverseHierarchy(stage, primPath, articulationLinkMaps.back().second, bodyJointMap, index, articulationLinkOrderVector);
             }
         }
 
@@ -348,7 +383,7 @@ void finalizeArticulations(const pxr::UsdStageWeakPtr stage, ArticulationMap& ar
         {
             for (size_t i = 0; i < articulationLinkMaps.size(); i++)
             {
-                const ArticulationLinkMap& map = articulationLinkMaps[i];
+                const ArticulationLinkMap& map = articulationLinkMaps[i].second;
                 SdfPath linkPath = SdfPath();
                 uint32_t largestWeight = 0;
                 bool hasFixedJoint = false;
@@ -388,7 +423,12 @@ void finalizeArticulations(const pxr::UsdStageWeakPtr stage, ArticulationMap& ar
                 // for floating articulation lets find the body with the shortest paths (center of graph)
                 if (!hasFixedJoint)
                 {
-                    linkPath = getCenterOfGraph(map, articulationLinkOrderVector);
+                    // check if we have articulation defined by nesting, then we pick the first body of the chain
+                    linkPath = isNestedArticulation(articulationLinkMaps[i].first, map);
+                    if (linkPath == SdfPath())
+                    {
+                        linkPath = getCenterOfGraph(map, articulationLinkOrderVector);
+                    }
                 }
 
                 if (linkPath != SdfPath())
@@ -401,7 +441,7 @@ void finalizeArticulations(const pxr::UsdStageWeakPtr stage, ArticulationMap& ar
         {
             for (size_t i = 0; i < articulationLinkMaps.size(); i++)
             {
-                const ArticulationLinkMap& map = articulationLinkMaps[i];
+                const ArticulationLinkMap& map = articulationLinkMaps[i].second;
                 SdfPath linkPath = SdfPath();
                 uint32_t largestWeight = 0;
                 bool hasFixedOrLoopJoint = false;
@@ -416,7 +456,7 @@ void finalizeArticulations(const pxr::UsdStageWeakPtr stage, ArticulationMap& ar
         }
         for (size_t i = 0; i < articulationLinkMaps.size(); i++)
         {
-            const ArticulationLinkMap& map = articulationLinkMaps[i];
+            const ArticulationLinkMap& map = articulationLinkMaps[i].second;
             for (ArticulationLinkMap::const_reference& linkIt : map)
             {
                 it.second->articulatedBodies.insert(linkIt.second.childs.begin(), linkIt.second.childs.end());

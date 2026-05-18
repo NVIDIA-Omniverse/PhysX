@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -140,6 +140,32 @@ struct IPhysXPvd
 
     /// \return the list of messages received in the OVD stream.
     void(CARB_ABI* clearMessages)();
+
+    /// Update visibility of OVD prims for the given time code.
+    /// This is a C++ implementation of the recursive visibility update for better performance.
+    /// It traverses /Scenes and /Shared prims and sets visibility based on omni:pvdi:viz attribute.
+    ///
+    /// \param[in] timeCode The time code to evaluate visibility at
+    void(CARB_ABI* updateOvdVisibility)(double timeCode);
+
+    /// Build and cache the handle-to-path mapping by traversing the stage once.
+    /// This is much faster than Python stage traversal.
+    /// Call this once when stage opens, then use getHandlePrimName for lookups.
+    void(CARB_ABI* buildHandleCache)();
+
+    /// Invalidate the handle cache. Call this when stage closes.
+    void(CARB_ABI* invalidateHandleCache)();
+
+    /// Batch resolve multiple handles to prim names in one call.
+    /// Much faster than calling getHandlePrimName repeatedly due to reduced Python-C++ interop overhead.
+    ///
+    /// \param[in] handles Array of handles to resolve
+    /// \param[in] numHandles Number of handles in the array
+    /// \param[in] timeCode The time code to check visibility at
+    /// \param[out] outNames Array of name buffers (each must be at least 256 chars, total size numHandles * 256)
+    /// \param[out] outIsActionable Array of actionability flags (size numHandles)
+    void(CARB_ABI* getHandlePrimNamesBatch)(const uint64_t* handles, size_t numHandles, double timeCode, 
+                                            char* outNames, bool* outIsActionable);
 };
 
 } // namespace physx

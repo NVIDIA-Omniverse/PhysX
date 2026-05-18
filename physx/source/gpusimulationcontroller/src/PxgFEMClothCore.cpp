@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -75,11 +75,11 @@ namespace physx
 
 	PxgFEMClothCore::PxgFEMClothCore(PxgCudaKernelWranglerManager* gpuKernelWrangler,
 									 PxCudaContextManager* cudaContextManager,
-									 PxgHeapMemoryAllocatorManager* heapMemoryManager, PxgSimulationController* simController,
+									 PxgAllocatorDesc& allocDesc, PxgSimulationController* simController,
 									 PxgGpuContext* gpuContext, PxU32 maxContacts, const PxU32 collisionStackSize, bool isTGS)
-	: PxgFEMCore(gpuKernelWrangler, cudaContextManager, heapMemoryManager, simController, gpuContext, maxContacts, collisionStackSize,
+	: PxgFEMCore(gpuKernelWrangler, cudaContextManager, allocDesc, simController, gpuContext, maxContacts, collisionStackSize,
 				 isTGS, PxsHeapStats::eSHARED_FEMCLOTH), 
-		mUpdateClothContactPairs(heapMemoryManager, PxsHeapStats::eSHARED_FEMCLOTH),
+		mUpdateClothContactPairs(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_FEMCLOTH),
 		mPostSolveCallback(NULL)
 	{
 		mCudaContextManager->acquireContext();
@@ -155,11 +155,11 @@ namespace physx
 			const bool externalForcesEveryTgsIterationEnabled = mGpuContext->isExternalForcesEveryTgsIterationEnabled() && mGpuContext->isTGS();
 
 			PxgSimulationCore* core = mSimController->getSimulationCore();
-			const PxU32 maxNbCollisionPairUpdatesPerTimestep = core->getMaxNbCollisionPairUpdatesPerTimestep();
+			const PxU32 nbCollisionPairUpdatesPerTimestep = mIsTGS ? core->getMaxNbCollisionPairUpdatesPerTimestep() : 1;
 
-			// If maxNbCollisionPairUpdatesPerTimestep is zero, update collision pairs adaptively and automatically. Otherwise, update them
-			// maxNbCollisionPairUpdatesPerTimestep times per time step.
-			const bool adaptiveCollisionPairUpdate = maxNbCollisionPairUpdatesPerTimestep == 0u;
+			// If nbCollisionPairUpdatesPerTimestep is zero, update collision pairs adaptively and automatically. 
+			// Otherwise, update the contact pairs "nbCollisionPairUpdatesPerTimestep" times per time step.
+			const bool adaptiveCollisionPairUpdate = nbCollisionPairUpdatesPerTimestep == 0;
 
 			PxgDevicePointer<PxU8> updateClothContactPairsd = mUpdateClothContactPairs.getTypedDevicePtr();
 			
@@ -603,24 +603,26 @@ namespace physx
 	void PxgFEMClothCore::checkBufferOverflows()
 	{
 		PxU32 contactCountNeeded =
-			PxMax(*mParticleContactCountPrevTimestep,
-				  PxMax(*mRigidContactCountPrevTimestep, PxMax(*mVolumeContactorVTContactCountPrevTimestep, *mEEContactCountPrevTimestep)));
+			PxMax(mContactCountsPrevTimestep[ContactCounts::ePARTICLE],
+				  PxMax(mContactCountsPrevTimestep[ContactCounts::eRIGID],
+						PxMax(mContactCountsPrevTimestep[ContactCounts::eVOLUME_CONTACTOR_VT],
+							  mContactCountsPrevTimestep[ContactCounts::eEDGE_EDGE])));
 
 		if (contactCountNeeded >= mMaxContacts) 
 		{
 			PxGetFoundation().error(::physx::PxErrorCode::eINTERNAL_ERROR, PX_FL, "Deformable surface contact buffer overflow detected, please increase PxGpuDynamicsMemoryConfig::maxDeformableSurfaceContacts to at least %u\n", contactCountNeeded);
 		}
 
-		if (*mStackSizeNeededPinned > mCollisionStackSizeBytes)
+		if (mStackSizeNeededPinned.get() > mCollisionStackSizeBytes)
 		{
-			PxGetFoundation().error(::physx::PxErrorCode::eINTERNAL_ERROR, PX_FL, "PxGpuDynamicsMemoryConfig::collisionStackSize buffer overflow detected, please increase its size to at least %i in the scene desc! Contacts have been dropped.\n", *mStackSizeNeededPinned);
+			PxGetFoundation().error(::physx::PxErrorCode::eINTERNAL_ERROR, PX_FL, "PxGpuDynamicsMemoryConfig::collisionStackSize buffer overflow detected, please increase its size to at least %i in the scene desc! Contacts have been dropped.\n", mStackSizeNeededPinned.get());
 		}
 
 #if PX_ENABLE_SIM_STATS
 		mContactCountStats = PxMax(mContactCountStats, contactCountNeeded);
 		mGpuContext->getSimStats().mGpuDynamicsDeformableSurfaceContacts = mContactCountStats;
 
-		mCollisionStackSizeBytesStats = PxMax(*mStackSizeNeededPinned, mCollisionStackSizeBytesStats);
+		mCollisionStackSizeBytesStats = PxMax(mStackSizeNeededPinned.get(), mCollisionStackSizeBytesStats);
 		mGpuContext->getSimStats().mGpuDynamicsCollisionStackSize = PxMax(mCollisionStackSizeBytesStats, mGpuContext->getSimStats().mGpuDynamicsCollisionStackSize); // max because we also write this from other places.
 #else
 		PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
@@ -1305,7 +1307,7 @@ namespace physx
 	void PxgFEMClothCore::createActivatedDeactivatedLists()
 	{
 		PxgSimulationCore* core = mSimController->getSimulationCore();
-		PxBitMapPinned& clothChangedMap = core->getActiveClothStateChangedMap();
+		Cm::PinnableBitMap& clothChangedMap = core->getActiveClothStateChangedMap();
 
 		PxArray<Dy::DeformableSurface*>& deformableSurfaces = mSimController->getBodySimManager().mDeformableSurfaces;
 
@@ -1316,17 +1318,31 @@ namespace physx
 		mActivatingDeformableSurfaces.forceSize_Unsafe(0);
 		mDeactivatingDeformableSurfaces.forceSize_Unsafe(0);
 
-		PxBitMapPinned::Iterator iter(clothChangedMap);
+		Cm::PinnableBitMap::Iterator iter(clothChangedMap);
+
+		const PxU32 nbActiveFEMCloths = bodyManager.mActiveFEMCloths.size();
+		const PxU32 nbDeformableSurfaces = deformableSurfaces.size();
 
 		PxU32 dirtyIdx;
-		while((dirtyIdx = iter.getNext()) != PxBitMapPinned::Iterator::DONE)
+		while((dirtyIdx = iter.getNext()) != Cm::PinnableBitMap::Iterator::DONE)
 		{
-			PX_ASSERT(dirtyIdx < bodyManager.mActiveFEMClothIndex.size());
+			// BUGFIX 5813869: clothChangedMap is sized to nbTotalFEMCloths; active list may have been compacted (e.g. after removeActor).
+			// Bounds-check to avoid out-of-range access when add/remove happens between kernel run and this callback.
+			if(dirtyIdx >= nbActiveFEMCloths)
+				continue;
+
 			PxU32 idx = bodyManager.mActiveFEMCloths[dirtyIdx];
+			if(idx >= nbDeformableSurfaces)
+				continue;
+
+			Dy::DeformableSurface* surface = deformableSurfaces[idx];
+			if(!surface)
+				continue;
+
 			if(wakeCounters[idx] == 0.f)
-				mDeactivatingDeformableSurfaces.pushBack(deformableSurfaces[idx]);
+				mDeactivatingDeformableSurfaces.pushBack(surface);
 			else
-				mActivatingDeformableSurfaces.pushBack(deformableSurfaces[idx]);
+				mActivatingDeformableSurfaces.pushBack(surface);
 		}
 
 		clothChangedMap.clear();
@@ -1335,7 +1351,8 @@ namespace physx
 	void PxgFEMClothCore::solve(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
 								PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd,
 								PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, PxReal dt, CUstream solverStream, const PxU32 iter,
-								const PxU32 maxIter, const bool isVelocityIteration, const PxVec3& gravity)
+								const PxU32 maxIter, const bool isVelocityIteration, const PxVec3& gravity,
+								const PxReal particleCollisionBiasCoefficient, const PxReal rigidAttachmentBiasCoefficient)
 	{
 		PX_UNUSED(isVelocityIteration);
 
@@ -1347,7 +1364,8 @@ namespace physx
 		// TGS: The position at the beginning of each sub-timestep.
 		// PGS: The position at the beginning of the entire time step.
 		// Any velocity changes or filtering, if needed, are handled separately in solve_velocity().
-		solve_position(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, dt, solverStream, iter, maxIter, gravity);
+		solve_position(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, dt, solverStream, iter, maxIter, gravity,
+			particleCollisionBiasCoefficient, rigidAttachmentBiasCoefficient);
 
 		// Apply additional velocity changes or filtering, such as cloth internal energy damping.
 		solve_velocity(iter, maxIter, dt);
@@ -1360,7 +1378,8 @@ namespace physx
 	void PxgFEMClothCore::solve_position(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
 										 PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd,
 										 PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, PxReal dt, CUstream solverStream,
-										 const PxU32 iter, const PxU32 maxIter, const PxVec3& gravity)
+										 const PxU32 iter, const PxU32 maxIter, const PxVec3& gravity, 
+										 const PxReal particleCollisionBiasCoefficient, const PxReal rigidAttachmentBiasCoefficient)
 	{
 		const PxU32 nbActiveFEMCloths = mSimController->getBodySimManager().mActiveFEMCloths.size();
 
@@ -1423,7 +1442,8 @@ namespace physx
 			synchronizeStreams(mCudaContext, mStream, solverStream);
 
 			// Solve cloth-rigid attachment constraints (runs on solverStream)
-			solveClothRigidAttachment(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, solverStream, dt);
+			solveClothRigidAttachment(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, solverStream, dt,
+				rigidAttachmentBiasCoefficient);
 
 			mCudaContext->streamWaitEvent(mStream, mSolveRigidEvent);
 
@@ -1452,10 +1472,10 @@ namespace physx
 					CUstream particleStream = particleCore->getStream();
 
 					// Solve soft body vs particle contact in soft body stream
-					solveParticleContactsOutputClothDelta(particleStream);
+					solveParticleContactsOutputClothDelta(particleStream, particleCollisionBiasCoefficient);
 
 					// Solve soft body vs particle contact in particle stream
-					solveParticleContactsOutputParticleDelta(particleStream);
+					solveParticleContactsOutputParticleDelta(particleStream, particleCollisionBiasCoefficient);
 
 					// FEM cloth stream need to wait till soft body vs particle finish in the particle stream
 					mCudaContext->streamWaitEvent(mStream, mSolveParticleEvent);
@@ -1831,12 +1851,17 @@ namespace physx
 		// accumulate velocity delta for rigid body and impulse delta for articulation link
 		accumulateRigidDeltas(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, mRigidSortedRigidIdBuf.getDevicePtr(),
 							  mRigidTotalContactCountBuf.getDevicePtr(), solverStream, mIsTGS);
+
+		// if the contact is between articulation and soft body, after accumulated all the related contact's
+		// impulse, we need to propagate the accumulated impulse to the articulation block solver
+		mGpuContext->mGpuArticulationCore->pushImpulse(solverStream);
 	}
 
 	void PxgFEMClothCore::solveClothRigidAttachment(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
 													PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
 													PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd,
-													PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt)
+													PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt,
+													const PxReal biasCoefficient)
 	{
 		PxgSimulationCore* simCore = mSimController->getSimulationCore();
 
@@ -1863,6 +1888,7 @@ namespace physx
 													 PX_CUDA_KERNEL_PARAM(artiCoreDescd),
 													 PX_CUDA_KERNEL_PARAM(sharedDescd),
 													 PX_CUDA_KERNEL_PARAM(dt),
+													 PX_CUDA_KERNEL_PARAM(biasCoefficient),
 													 PX_CUDA_KERNEL_PARAM(deltaVd) };
 
 				const PxU32 numThreadsPerBlock = PxgSoftBodyKernelBlockDim::SB_UPDATEROTATION;
@@ -2130,7 +2156,7 @@ namespace physx
 	}
 
 	// solve cloth vs. particle contact and output to cloth delta buffer
-	void PxgFEMClothCore::solveParticleContactsOutputClothDelta(CUstream particleStream)
+	void PxgFEMClothCore::solveParticleContactsOutputClothDelta(CUstream particleStream, const PxReal biasCoefficient)
 	{
 		PxgPBDParticleSystemCore* particleCore = mSimController->getPBDParticleSystemCore();
 
@@ -2162,7 +2188,8 @@ namespace physx
 												 PX_CUDA_KERNEL_PARAM(constraintsd),
 												 PX_CUDA_KERNEL_PARAM(totalParticleContactCountsd),
 												 PX_CUDA_KERNEL_PARAM(appliedForced),
-												 PX_CUDA_KERNEL_PARAM(materials) };
+												 PX_CUDA_KERNEL_PARAM(materials),
+												 PX_CUDA_KERNEL_PARAM(biasCoefficient) };
 
 			CUresult result = mCudaContext->launchKernel(
 				solveOutputClothDeltaKernelFunction, PxgSoftBodyKernelGridDim::SB_UPDATEROTATION, 1, 1,
@@ -2187,7 +2214,7 @@ namespace physx
 	}
 
 	// solve cloth vs particle contact and output to particle delta buffer
-	void PxgFEMClothCore::solveParticleContactsOutputParticleDelta(CUstream particleStream)
+	void PxgFEMClothCore::solveParticleContactsOutputParticleDelta(CUstream particleStream, const PxReal biasCoefficient)
 	{
 		// solve soft body vs particle contact in the particle system stream and update selfCollision delta for particle
 		// system
@@ -2230,7 +2257,8 @@ namespace physx
 												 PX_CUDA_KERNEL_PARAM(totalParticleContactCountsd),
 												 PX_CUDA_KERNEL_PARAM(deltaVd),
 												 PX_CUDA_KERNEL_PARAM(appliedForced),
-												 PX_CUDA_KERNEL_PARAM(materials) };
+												 PX_CUDA_KERNEL_PARAM(materials),
+												 PX_CUDA_KERNEL_PARAM(biasCoefficient) };
 
 			CUresult result = mCudaContext->launchKernel(solveOutputParticleDeltaKernelFunction,
 														 PxgSoftBodyKernelGridDim::SB_UPDATEROTATION, 1, 1,
@@ -2294,7 +2322,7 @@ namespace physx
 		}
 	}
 
-	bool PxgFEMClothCore::updateUserData(PxPinnedArray<PxgFEMCloth>& femClothPool, PxArray<PxU32>& femClothNodeIndexPool,
+	bool PxgFEMClothCore::updateUserData(Cm::PinnableArray<PxgFEMCloth>& femClothPool, PxArray<PxU32>& femClothNodeIndexPool,
 										 const PxU32* activeFEMCloths, PxU32 nbActiveFEMCloths, void** bodySimsLL)
 	{
 		bool anyDirty = false;
@@ -2486,8 +2514,10 @@ namespace physx
 	}
 
 	void PxgFEMClothCore::partitionTriangleSimData(PxgFEMCloth& femCloth, PxgFEMClothData& clothData, PxArray<PxU32>& orderedTriangles,
-												   const PxArray<PxU32>& activeTriangles, PxsHeapMemoryAllocator* alloc)
+												   const PxArray<PxU32>& activeTriangles)
 	{
+		Cm::VirtualAllocatorCallback& hostAlloc = mAllocDesc.hostAlloc;
+
 		if (activeTriangles.empty())
 		{
 			clothData.mMaxNbNonSharedTrisPerPartition = 0;
@@ -2526,7 +2556,7 @@ namespace physx
 		}
 
 		femCloth.mNonSharedTriAccumulatedPartitionsCP =
-			reinterpret_cast<PxU32*>(alloc->allocate(sizeof(PxU32) * maxPartition, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+			reinterpret_cast<PxU32*>(hostAlloc.allocate(sizeof(PxU32) * maxPartition, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 
 		// compute run sum
 		PxU32 accumulation = 0;
@@ -2785,7 +2815,7 @@ namespace physx
 	void combineTrianglePairPartitions(PxgFEMCloth& femCloth, PxArray<PxU32>& orderedTrianglePairs,
 									   PxU32* accumulatedTrianglePairsPerPartition, PxgFEMClothData& clothData, PxU32 maximumPartitions,
 									   const PxArray<PxU32>& activeTrianglePairs, const PxArray<uint4>& trianglePairVertexIndices,
-									   bool isSharedTrianglePair, PxsHeapMemoryAllocator* alloc)
+									   bool isSharedTrianglePair, Cm::VirtualAllocatorCallback& hostAlloc)
 	{
 		const PxU32 nbTrianglePairs = activeTrianglePairs.size();
 		const PxU32 nbVerts = femCloth.mNbVerts;
@@ -2800,7 +2830,7 @@ namespace physx
 		{
 			nbPartitions = femCloth.mNbSharedTriPairPartitions;
 			femCloth.mSharedTriPairAccumulatedPartitionsCP =
-				reinterpret_cast<PxU32*>(alloc->allocate(sizeof(PxU32) * nbPartitions, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+				reinterpret_cast<PxU32*>(hostAlloc.allocate(sizeof(PxU32) * nbPartitions, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 
 			combineAccumulatedTrianglePairsPerPartition = femCloth.mSharedTriPairAccumulatedPartitionsCP;
 			accumulatedCopiesEachVerts = femCloth.mSharedTriPairAccumulatedCopiesCP;
@@ -2809,7 +2839,7 @@ namespace physx
 		{
 			nbPartitions = femCloth.mNbNonSharedTriPairPartitions;
 			femCloth.mNonSharedTriPairAccumulatedPartitionsCP =
-				reinterpret_cast<PxU32*>(alloc->allocate(sizeof(PxU32) * nbPartitions, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+				reinterpret_cast<PxU32*>(hostAlloc.allocate(sizeof(PxU32) * nbPartitions, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 
 			combineAccumulatedTrianglePairsPerPartition = femCloth.mNonSharedTriPairAccumulatedPartitionsCP;
 			accumulatedCopiesEachVerts = femCloth.mNonSharedTriPairAccumulatedCopiesCP;
@@ -2952,7 +2982,7 @@ namespace physx
 			clothData.mSharedTriPairRemapOutputSize = totalNumVerts + totalCopies;
 
 			femCloth.mSharedTriPairRemapOutputCP = reinterpret_cast<PxU32*>(
-				alloc->allocate(sizeof(PxU32) * clothData.mSharedTriPairRemapOutputSize, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+				hostAlloc.allocate(sizeof(PxU32) * clothData.mSharedTriPairRemapOutputSize, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 
 			remapOutput = femCloth.mSharedTriPairRemapOutputCP;
 			femCloth.mSharedTriPairClusterId = clusterId;
@@ -2965,7 +2995,7 @@ namespace physx
 			clothData.mNonSharedTriPairRemapOutputSize = totalNumVerts + totalCopies;
 
 			femCloth.mNonSharedTriPairRemapOutputCP = reinterpret_cast<PxU32*>(
-				alloc->allocate(sizeof(PxU32) * clothData.mNonSharedTriPairRemapOutputSize, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+				hostAlloc.allocate(sizeof(PxU32) * clothData.mNonSharedTriPairRemapOutputSize, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 
 			remapOutput = femCloth.mNonSharedTriPairRemapOutputCP;
 			femCloth.mNonSharedTriPairClusterId = clusterId;
@@ -3006,8 +3036,7 @@ namespace physx
 
 	void PxgFEMClothCore::partitionTrianglePairSimData(PxgFEMCloth& femCloth, PxgFEMClothData& clothData, PxU32 maximumPartitions,
 													   PxArray<PxU32>& orderedTrianglePairs, const PxArray<PxU32>& activeTrianglePairs,
-													   const PxArray<uint4>& trianglePairVertexIndices, bool isSharedTrianglePair,
-													   PxsHeapMemoryAllocator* alloc)
+													   const PxArray<uint4>& trianglePairVertexIndices, bool isSharedTrianglePair)
 	{
 		if (activeTrianglePairs.empty())
 		{
@@ -3035,7 +3064,7 @@ namespace physx
 		PxU32* accumulatedTrianglePairsPerPartition = trianglePairPartitions(femCloth, orderedTrianglePairs, activeTrianglePairs, trianglePairVertexIndices, isSharedTrianglePair);
 
 		combineTrianglePairPartitions(femCloth, orderedTrianglePairs, accumulatedTrianglePairsPerPartition, clothData, maximumPartitions,
-									  activeTrianglePairs, trianglePairVertexIndices, isSharedTrianglePair, alloc);
+									  activeTrianglePairs, trianglePairVertexIndices, isSharedTrianglePair, mAllocDesc.hostAlloc);
 
 		PX_FREE(accumulatedTrianglePairsPerPartition);
 	}

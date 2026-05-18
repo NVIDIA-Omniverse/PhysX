@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -18,57 +18,6 @@ extern UsdStageRefPtr gStage;
 
 namespace
 {
-
-struct SortedTriangle
-{
-    uint32_t A;
-    uint32_t B;
-    uint32_t C;
-    int32_t TetIndex;
-    bool Flipped;
-
-    inline SortedTriangle(uint32_t a = -1, uint32_t b = -1, uint32_t c = -1, int32_t tetIndex = -1)
-    {
-        A = a;
-        B = b;
-        C = c;
-        TetIndex = tetIndex;
-        Flipped = false;
-        if (A > B)
-        {
-            std::swap(A, B);
-            Flipped = !Flipped;
-        }
-        if (B > C)
-        {
-            std::swap(B, C);
-            Flipped = !Flipped;
-        }
-        if (A > B)
-        {
-            std::swap(A, B);
-            Flipped = !Flipped;
-        }
-    }
-};
-
-class SortedTriangleEqualFunction
-{
-public:
-    inline bool operator()(const SortedTriangle& first, const SortedTriangle& second) const
-    {
-        return first.A == second.A && first.B == second.B && first.C == second.C;
-    }
-};
-
-struct TriangleHash
-{
-    inline std::size_t operator()(const SortedTriangle& k) const
-    {
-        return k.A ^ k.B ^ k.C;
-    }
-};
-
 struct SurfaceTriangleInfo
 {
     SurfaceTriangleInfo() : innerPointIndex(-1), numSurfaceTriangles(0)
@@ -136,12 +85,6 @@ void extractSurfaceTriangles(const uint32_t* tetrahedra,
     }
 }
 
-bool isSurfaceTriangle(const std::unordered_set<SortedTriangle, TriangleHash, SortedTriangleEqualFunction>& surfaceTrianglesSet,
-                       const SortedTriangle& surfaceTriangle)
-{
-    return surfaceTrianglesSet.find(surfaceTriangle) != surfaceTrianglesSet.end();
-}
-
 bool isInSortedTriangle(const SortedTriangle& tri, const uint32_t index)
 {
     if (index == tri.A || index == tri.B || index == tri.C)
@@ -168,30 +111,36 @@ void setSurfaceTriangleInfo(
     const uint32_t idx0,
     const uint32_t idx1,
     const uint32_t idx2,
+    const uint32_t tetId,
     SurfaceTriangleInfo& surfaceTriangleInfo)
 {
     const SortedTriangle surfaceTriangle(idx0, idx1, idx2);
-    if (isSurfaceTriangle(surfaceTrianglesSet, surfaceTriangle))
+    auto it = surfaceTrianglesSet.find(surfaceTriangle);
+    if (it != surfaceTrianglesSet.end())
     {
+        SortedTriangle& surfaceTriangleRef = const_cast<SortedTriangle&>(*it);
+        surfaceTriangleRef.TetIndex = static_cast<int32_t>(tetId);
+
         if (surfaceTriangleInfo.numSurfaceTriangles == 0)
         {
             surfaceTriangleInfo.innerPointIndex = innerPointIndex;
         }
-        surfaceTriangleInfo.tris[surfaceTriangleInfo.numSurfaceTriangles++] = surfaceTriangle;
+        surfaceTriangleInfo.tris[surfaceTriangleInfo.numSurfaceTriangles++] = surfaceTriangleRef;
     }
 }
 
 void calculateSurfaceTrianglesInfo(
     const std::unordered_set<SortedTriangle, TriangleHash, SortedTriangleEqualFunction>& surfaceTrianglesSet,
     const uint32_t* indices,
+    const uint32_t tetId,
     SurfaceTriangleInfo& surfaceTriangleInfo)
 {
     // We only consider a tetrahedron with at least 1 surface triangle as a surface tet
     // Four triangles of tet (0, 1, 2, 3) are (0, 1, 2) & (0, 1, 3) & (0, 2, 3) & (1, 2, 3)
-    setSurfaceTriangleInfo(surfaceTrianglesSet, indices[3], indices[0], indices[1], indices[2], surfaceTriangleInfo);
-    setSurfaceTriangleInfo(surfaceTrianglesSet, indices[2], indices[0], indices[1], indices[3], surfaceTriangleInfo);
-    setSurfaceTriangleInfo(surfaceTrianglesSet, indices[1], indices[0], indices[2], indices[3], surfaceTriangleInfo);
-    setSurfaceTriangleInfo(surfaceTrianglesSet, indices[0], indices[1], indices[2], indices[3], surfaceTriangleInfo);
+    setSurfaceTriangleInfo(surfaceTrianglesSet, indices[3], indices[0], indices[1], indices[2], tetId, surfaceTriangleInfo);
+    setSurfaceTriangleInfo(surfaceTrianglesSet, indices[2], indices[0], indices[1], indices[3], tetId, surfaceTriangleInfo);
+    setSurfaceTriangleInfo(surfaceTrianglesSet, indices[1], indices[0], indices[2], indices[3], tetId, surfaceTriangleInfo);
+    setSurfaceTriangleInfo(surfaceTrianglesSet, indices[0], indices[1], indices[2], indices[3], tetId, surfaceTriangleInfo);
 }
 
 void fillInNewPoints(const GfVec3f* outputPoints, VtVec3fArray& newPoints)
@@ -471,6 +420,27 @@ void DeformableTetMeshVisualizer::updatePoints()
         updateTetPointsInternal();
 }
 
+std::unordered_set<uint32_t> DeformableTetMeshVisualizer::getFilteredTetIds(const VtArray<GfVec3i>& filteredSurfaceFaceVertexIndices)
+{
+    std::unordered_set<uint32_t> tetIds;
+
+    for (const GfVec3i& tri : filteredSurfaceFaceVertexIndices)
+    {
+        const SortedTriangle surfaceTriangle(tri[0], tri[1], tri[2]);
+        auto it = mSurfaceTrianglesSet.find(surfaceTriangle);
+        if (it != mSurfaceTrianglesSet.end())
+        {
+            SortedTriangle& surfaceTriangleRef = const_cast<SortedTriangle&>(*it);
+            uint32_t tetId = surfaceTriangleRef.TetIndex;
+
+            if (tetId != -1)
+                tetIds.insert(tetId);
+        }
+    }
+
+    return tetIds;
+}
+
 void DeformableTetMeshVisualizer::computeRenderMeshPointsWithoutGap(const VtVec3fArray& originalPoints,
     VtVec3fArray& newPoints)
 {
@@ -508,7 +478,7 @@ void DeformableTetMeshVisualizer::computeRenderMeshPointsGap(const VtVec3fArray&
             if (indices[i] >= originalPoints.size())
             {
                 isIndicesValid = false;
-                CARB_LOG_ERROR("Index %d from original inidices array is out of range.", indices[i]);
+                CARB_LOG_ERROR_ONCE("Index %d from original inidices array is out of range.", indices[i]);
                 break;
             }
         }
@@ -623,16 +593,15 @@ void DeformableTetMeshVisualizer::computeRenderMeshColorsWithGap(VtArray<GfVec3f
 
 void DeformableTetMeshVisualizer::calculateMeshTopology()
 {
-    std::unordered_set<SortedTriangle, TriangleHash, SortedTriangleEqualFunction> surfaceTrianglesSet;
-
     std::vector<uint32_t>& surfaceTriangles = mSurfaceTriangles;
     extractSurfaceTriangles((uint32_t*)mOriginalIndices.data(), (uint32_t)(mOriginalIndices.size() / 4), surfaceTriangles);
 
+    mSurfaceTrianglesSet.clear();
     const size_t numSurfaceTriangles = surfaceTriangles.size() / 3;
     for (size_t i = 0; i < numSurfaceTriangles; ++i)
     {
         SortedTriangle surfaceTriangle(surfaceTriangles[3 * i], surfaceTriangles[3 * i + 1], surfaceTriangles[3 * i + 2]);
-        surfaceTrianglesSet.insert(surfaceTriangle);
+        mSurfaceTrianglesSet.insert(surfaceTriangle);
     }
 
     const size_t numIndices = mOriginalIndices.size();
@@ -642,7 +611,7 @@ void DeformableTetMeshVisualizer::calculateMeshTopology()
     mTargetShrinkPointsBarycentric.clear();
     mTargetShrinkPointsBarycentric.reserve(numTetrahedrons);
 
-    for (size_t tetrahedronIndex = 0; tetrahedronIndex < numTetrahedrons; ++tetrahedronIndex)
+    for (uint32_t tetrahedronIndex = 0; tetrahedronIndex < numTetrahedrons; ++tetrahedronIndex)
     {
         uint32_t indices[4];
         bool isIndicesValid = true;
@@ -652,7 +621,7 @@ void DeformableTetMeshVisualizer::calculateMeshTopology()
             if (indices[i] >= mOriginalPoints.size())
             {
                 isIndicesValid = false;
-                CARB_LOG_ERROR("Index %d from original inidices array is out of range.", indices[i]);
+                CARB_LOG_ERROR_ONCE("Index %d from original inidices array is out of range.", indices[i]);
                 break;
             }
         }
@@ -663,7 +632,7 @@ void DeformableTetMeshVisualizer::calculateMeshTopology()
         }
 
         SurfaceTriangleInfo surfaceTriangleInfo;
-        calculateSurfaceTrianglesInfo(surfaceTrianglesSet, indices, surfaceTriangleInfo);
+        calculateSurfaceTrianglesInfo(mSurfaceTrianglesSet, indices, tetrahedronIndex, surfaceTriangleInfo);
 
         GfVec4f barycentric;
         if (surfaceTriangleInfo.numSurfaceTriangles == 0)

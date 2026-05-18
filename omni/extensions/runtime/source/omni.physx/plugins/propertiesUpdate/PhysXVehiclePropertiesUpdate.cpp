@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -850,8 +850,8 @@ static bool updateVehicleTireData(InternalVehicleWheelReferenceList* wheelRefLis
                 case TireParam::eTIRE_FRICTION_TABLE:
                 {
                     CARB_ASSERT(valuePtr);
-                    const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams* materialFrictionTable =
-                        static_cast<const ::physx::vehicle2::PxVehiclePhysXMaterialFrictionParams*>(valuePtr);
+                    const ::physx::PxVehiclePhysXMaterialFrictionParams* materialFrictionTable =
+                        static_cast<const ::physx::PxVehiclePhysXMaterialFrictionParams*>(valuePtr);
                     physxVehicle->setTireMaterialFrictionTable(currentIndex, materialFrictionTable);
                 }
                 break;
@@ -2303,8 +2303,8 @@ bool omni::physx::updateVehicleControllerTargetGear(AttachedStage& attachedStage
         if (!getValue<int>(attachedStage, path, property, timeCode, value))
             return true;
 
-        constexpr int highestGear = ::physx::vehicle2::PxVehicleGearboxParams::eMAX_NB_GEARS - 2;
-        constexpr int automaticGear = ::physx::vehicle2::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR;
+        constexpr int highestGear = ::physx::PxVehicleGearboxParams::eMAX_NB_GEARS - 2;
+        constexpr int automaticGear = ::physx::PxVehicleEngineDriveTransmissionCommandState::eAUTOMATIC_GEAR;
         if ((value != automaticGear) &&
             ((value < -1) || (value > (highestGear))))
         {

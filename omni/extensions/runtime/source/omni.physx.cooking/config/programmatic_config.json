@@ -1,0 +1,13 @@
+{
+    "cook_all":
+    [
+        {
+            "cmd": "OpenStage",
+            "event_data_as_kwargs": true
+        },
+        {
+            "cmd": "CookPhysxColliders",
+            "deps": ["omni.physx.commands"]
+        }
+    ]
+}

@@ -161,6 +161,7 @@ PhysxAdditionAttrTokensType::PhysxAdditionAttrTokensType() :
     surfaceVelocityEnabled("physxSplinesSurfaceVelocity:surfaceVelocityEnabled", TfToken::Immortal),
     surfaceVelocityMagnitude("physxSplinesSurfaceVelocity:surfaceVelocityMagnitude", TfToken::Immortal),
     surfaceVelocityCurve("physxSplinesSurfaceVelocity:surfaceVelocityCurve", TfToken::Immortal),
+    surfaceVelocityForceBased("physxSplinesSurfaceVelocity:surfaceVelocityForceBased", TfToken::Immortal),
     solverPositionIterationCount("physxDeformableBody:solverPositionIterationCount", TfToken::Immortal), // rel name
     linearDamping("physxDeformableBody:linearDamping", TfToken::Immortal),
     maxLinearVelocity("physxDeformableBody:maxLinearVelocity", TfToken::Immortal),

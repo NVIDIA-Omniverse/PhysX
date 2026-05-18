@@ -22,17 +22,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PXG_CONSTRAINT_BLOCK_H
 #define PXG_CONSTRAINT_BLOCK_H
 
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 #include "foundation/PxSimpleTypes.h"
-#include "foundation/PxVec3.h"
-#include "PxgSolverBody.h"
+#include <vector_types.h>
 
 namespace physx
 {
@@ -146,12 +145,12 @@ struct PxgTGSBlockSolverContactHeader
 
 	// To use different mass for mass-splitting every sub-timestep (or iteration),
 	// recipResponse, velMultipler, biasCoefficient, etc. are computed every sub-timestep (or iteration).
-	// To compute them every sub-timestep (or iteration), restitution, cfm, and p8 are additionally stored.
+	// To compute them every sub-timestep (or iteration), restitution, cfm, and biasCoefficient are additionally stored.
 	// This does not change the previous impulse formulation, but a different mass is used due to mass-splitting.
 
 	PX_ALIGN(128, PxReal	restitutionXdt[32]);
 	PX_ALIGN(128, PxReal	cfm[32]);						
-	PX_ALIGN(128, PxReal	p8[32]);						
+	PX_ALIGN(128, PxReal	biasCoefficient[32]);						
 };
 
 struct PxgTGSBlockSolverFrictionHeader

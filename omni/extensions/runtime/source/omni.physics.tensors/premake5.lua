@@ -56,3 +56,13 @@ project ("omni.physics.tensors.python")
         namespace = "omni", -- ??
     }
     targetdir (targetDir.."/"..ext_dir.."/omni/physics/tensors/bindings")
+
+project ("omni.physics.tensors.python311")
+    carboniteBindingsPython {
+        name = "_physicsTensors",
+        folder = "bindings/python",
+        namespace = "omni", -- ??
+        python_folder = root.."/_build/target-deps/python311",
+        python_version = "3.11",
+    }
+    targetdir (targetDir.."/"..ext_dir.."/omni/physics/tensors/bindings")

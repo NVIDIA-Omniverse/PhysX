@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXSolverGpu common
@@ -61,7 +61,6 @@ SET(PHYXGPU_SOLVER_HEADERS
 	${PHYSX_SOURCE_DIR}/gpusolver/include/PxgSolverConstraint1D.h
 	${PHYSX_SOURCE_DIR}/gpusolver/include/PxgSolverConstraintBlock1D.h
 	${PHYSX_SOURCE_DIR}/gpusolver/include/PxgSolverConstraintDesc.h
-	${PHYSX_SOURCE_DIR}/gpusolver/include/PxgSolverContext.h
 	${PHYSX_SOURCE_DIR}/gpusolver/include/PxgSolverCore.h
 	${PHYSX_SOURCE_DIR}/gpusolver/include/PxgSolverCoreDesc.h
     ${PHYSX_SOURCE_DIR}/gpusolver/include/PxgSolverFlags.h
@@ -91,7 +90,6 @@ SET(PHYXGPU_SOLVER_CUDA_INCLUDE
     ${GPUSOLVER_SOURCE_DIR}/CUDA/jointConstraintBlockPrepTGS.cuh
 	${GPUSOLVER_SOURCE_DIR}/CUDA/constant.cuh
 	${GPUSOLVER_SOURCE_DIR}/CUDA/contactConstraintBlockPrep.cuh
-	${GPUSOLVER_SOURCE_DIR}/CUDA/contactConstraintPrep.cuh
 	${GPUSOLVER_SOURCE_DIR}/CUDA/constraintPrepShared.cuh
 	${GPUSOLVER_SOURCE_DIR}/CUDA/solverBlock.cuh
 	${GPUSOLVER_SOURCE_DIR}/CUDA/solverBlockTGS.cuh

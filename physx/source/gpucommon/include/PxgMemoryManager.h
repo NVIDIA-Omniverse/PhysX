@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,6 +31,7 @@
 
 #include "PxsMemoryManager.h"
 #include "foundation/PxArray.h"
+#include "CmVirtualAllocatorCallback.h"
 
 namespace physx
 {
@@ -41,13 +42,42 @@ namespace physx
 	PxsMemoryManager* createPxgMemoryManager(PxCudaContextManager* cudaContextManager);
 
 
-	class PxgCudaAllocatorCallbackBase : public PxVirtualAllocatorCallback, public PxUserAllocated
+	class PxgCudaAllocatorCallbackBase : public Cm::VirtualAllocatorCallback, public PxUserAllocated
 	{
 	public:
-		PxgCudaAllocatorCallbackBase(PxCudaContextManager* contextManager);
+		PxgCudaAllocatorCallbackBase(PxCudaContextManager& contextManager);
 		virtual					~PxgCudaAllocatorCallbackBase() {}
-		PxCudaContextManager* mContextManager;
-		PxCudaContext* mCudaContext;
+		PxCudaContextManager& mContextManager;
+		PxCudaContext& mCudaContext;
+	};
+
+	class PxgMemoryManager : public PxsMemoryManager
+	{
+	public:
+		
+		PxgMemoryManager(PxCudaContextManager& cudaContextManager);
+		virtual ~PxgMemoryManager();
+
+		// PxsMemoryManager
+		virtual Cm::VirtualAllocatorCallback* getPinnedHostMemoryAllocator() PX_OVERRIDE
+		{
+			return mPinnedHostMemoryAllocator;
+		}
+
+		virtual Cm::VirtualAllocatorCallback* getDeviceMemoryAllocator() PX_OVERRIDE
+		{
+			return mDeviceMemoryAllocator;
+		}
+		//~PxsMemoryManager
+		
+		// accessors for the PxgCudaAllocatorCallbackBase typed allocators.
+		PxgCudaAllocatorCallbackBase* getCudaHostMemoryAllocator(const PxU32 flags);
+		PxgCudaAllocatorCallbackBase* getCudaDeviceMemoryAllocator();
+
+	private:
+		PxgCudaAllocatorCallbackBase*		mPinnedHostMemoryAllocator;
+		PxgCudaAllocatorCallbackBase*		mPinnedHostMappedMemoryAllocator;
+		PxgCudaAllocatorCallbackBase*		mDeviceMemoryAllocator;
 	};
 }
 

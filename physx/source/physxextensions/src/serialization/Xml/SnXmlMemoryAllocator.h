@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -38,7 +38,7 @@ namespace physx {
 	protected:
 		virtual ~XmlMemoryAllocator(){}
 	public:
-		virtual PxU8* allocate(PxU32 inSize) = 0;
+		virtual PxU8* allocate(PxU64 inSize) = 0;
 		virtual void deallocate( PxU8* inMem ) = 0;
 		virtual PxAllocatorCallback& getAllocator() = 0;
 		template<typename TObjectType>
@@ -112,7 +112,7 @@ namespace physx {
 			return mManager.getWrapper().getAllocator();
 		}
 		
-		virtual PxU8* allocate(PxU32 inSize )
+		virtual PxU8* allocate(PxU64 inSize )
 		{
 			if ( !inSize )
 				return NULL;

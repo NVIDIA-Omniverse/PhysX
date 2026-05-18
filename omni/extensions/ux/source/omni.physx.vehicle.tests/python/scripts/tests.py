@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import asyncio
 import math
 import carb
@@ -53,8 +54,6 @@ from omni.physx.bindings._physx import (
     VEHICLE_DRIVE_STATE_AUTOBOX_TIME_SINCE_LAST_SHIFT,
     VEHICLE_DRIVE_STATE_ENGINE_ROTATION_SPEED,
     VEHICLE_DRIVE_STATE_AUTOMATIC_TRANSMISSION,
-
-    SETTING_COLLISION_APPROXIMATE_CYLINDERS,
 )
 from omni.physxvehicle.scripts.wizards import physxVehicleWizard as VehicleWizard
 from omni.physxvehicle.scripts.helpers import Factory
@@ -192,7 +191,7 @@ class PhysXVehicleTestBase:
         # dir is expected to be a GfVec3
         # transform is expected to be a GfMatrix4
         quat = transform.ExtractRotation()
-        rotatedDir = quat.TransformDir(dir)
+        rotatedDir = Gf.Vec3f(quat.TransformDir(dir))
         return rotatedDir
 
     def _local_dir_to_world(self, dir, xformable):
@@ -3473,7 +3472,7 @@ class PhysXVehicleTestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, PhysXVehi
             refDirLocal = Gf.Vec3f(0, 0, 1)
             if i != 4:
                 wheelDirCurrent = self._local_dir_to_world(refDirLocal, xformable)
-                wheelDirStart = startQuat.TransformDir(refDirLocal)
+                wheelDirStart = Gf.Vec3f(startQuat.TransformDir(refDirLocal))
                 deltaAngle = self._get_delta_angle_degree(wheelDirStart, wheelDirCurrent)
                 self.assertGreater(math.fabs(deltaAngle), deltaAngleMin)  # expect wheel to steer
 
@@ -4085,11 +4084,6 @@ class PhysXVehicleTestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, PhysXVehi
     # the right direction and the wheel collision shape should not be rotated in a weird way.
     #
     async def test_up_and_forward_axis_combinations(self):
-
-        # Use convex hull approximation as vehicle's hacks don't
-        # work with new convex core cylinders (OMPE-26698)
-        settings = carb.settings.get_settings()
-        settings.set_bool(SETTING_COLLISION_APPROXIMATE_CYLINDERS, True)
 
         for i in range(6):
 
@@ -5387,7 +5381,7 @@ class PhysXVehicleTestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, PhysXVehi
 
             rotQuat = Gf.Quatf(orientation[0][1], orientation[0][2], orientation[0][3], orientation[0][0])
             rot = Gf.Rotation(rotQuat)
-            refDir0 = rot.TransformDir(refDir)
+            refDir0 = Gf.Vec3f(rot.TransformDir(refDir))
             refDir0[2] = 0
             refDir0.Normalize()
             deltaAngle = self._get_delta_angle_radians(refDir0, refDir)
@@ -5395,7 +5389,7 @@ class PhysXVehicleTestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, PhysXVehi
 
             rotQuat = Gf.Quatf(orientation[1][1], orientation[1][2], orientation[1][3], orientation[1][0])
             rot = Gf.Rotation(rotQuat)
-            refDir1 = rot.TransformDir(refDir)
+            refDir1 = Gf.Vec3f(rot.TransformDir(refDir))
             refDir1[2] = 0
             refDir1.Normalize()
             deltaAngle = self._get_delta_angle_radians(refDir1, refDir)

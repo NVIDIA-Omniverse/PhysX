@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -145,10 +145,10 @@ void removePhysicsAPIs(pxr::UsdPrim& prim)
 {
     if (prim.IsInstanceProxy()) return;
     const pxr::TfTokenVector apiSchemas = prim.GetAppliedSchemas();
-    for (const pxr::TfToken& schema : apiSchemas) 
+    for (const pxr::TfToken& schema : apiSchemas)
     {
         const std::string schemaStr = schema.GetString();
-        if (schemaStr.find("PhysX") != std::string::npos || schemaStr.find("Physics") != std::string::npos) 
+        if (schemaStr.find("PhysX") != std::string::npos || schemaStr.find("Physics") != std::string::npos)
         {
             if (prim.HasAPI(schema))
             {
@@ -170,7 +170,6 @@ bool clearPhysicsAPIsAndDisableJoints(pxr::UsdStageRefPtr stage)
         removePhysicsAPIs((pxr::UsdPrim&)prim);
         if (prim.IsA<pxr::UsdPhysicsJoint>())
         {
-            //prim.CreateAttribute(jointEnabledToken, pxr::SdfValueTypeNames->Bool).Set(false);
             prim.SetActive(false);
         }
     }
@@ -337,6 +336,104 @@ void createAttribPassOver(
     }
 }
 
+void createParticleAttribPassOver(
+    pxr::UsdStageRefPtr* usdStage,
+    std::list<OmniPvdObject*> &objectCreations,
+    std::unordered_map<std::string, pxr::TfToken*> &tokenMap,
+    int isUSDA
+)
+{
+    int32_t particleBufferNameAttribIndex = -1;
+    int32_t particleBufferNameClassIndex = -1;
+
+    int32_t particleBufferPosAttribIndex = -1;
+    int32_t particleBufferPosClassIndex = -1;
+
+    pxr::UsdGeomXformCache xformCache;
+
+    std::list<OmniPvdObject*>::iterator it;
+    for (it = objectCreations.begin(); it != objectCreations.end(); it++)
+    {
+        OmniPvdObject* omniPvdObject = *it;
+        OmniPvdClass *omniPvdClass = omniPvdObject->mOmniPvdClass;
+
+        // Check if this is a PxParticleBuffer or derived class
+        if (omniPvdClass->mPhysXBaseProcessingClassId == OmniPvdPhysXClassEnum::ePxParticleBuffer)
+        {
+            // Get the Points prim path from name attribute
+            char* primPath = (char*)getAttribData(particleBufferNameAttribIndex, particleBufferNameClassIndex, "name", omniPvdObject);
+            if (primPath)
+            {
+                pxr::SdfPath primPathSdf = pxr::SdfPath(primPath);
+                pxr::UsdPrim simPrim = (*usdStage)->GetPrimAtPath(primPathSdf);
+                if (simPrim)
+                {
+                    pxr::UsdPrim overPrim = (*usdStage)->OverridePrim(primPathSdf);
+                    if (overPrim)
+                    {
+                        // Get positionInvMasses samples
+                        OmniPvdAttributeInstList* positions = getAttribList(particleBufferPosAttribIndex, particleBufferPosClassIndex, "positionInvMasses", omniPvdObject);
+
+                        if (positions)
+                        {
+                            // Get transform for world-to-local conversion
+                            pxr::GfMatrix4d localToWorld = xformCache.GetLocalToWorldTransform(simPrim);
+                            pxr::GfMatrix4d worldToLocal = localToWorld.GetInverse();
+
+                            // Get points attribute - works for both UsdGeomPoints and UsdGeomPointInstancer
+                            // Check PointInstancer first since it derives from PointBased
+                            pxr::UsdGeomPointInstancer pointInstancer(simPrim);
+                            pxr::UsdGeomPointBased pointBased(simPrim);
+                            pxr::UsdAttribute pointsAttr;
+                            if (pointInstancer)
+                            {
+                                pointsAttr = pointInstancer.CreatePositionsAttr();
+                            }
+                            else if (pointBased)
+                            {
+                                pointsAttr = pointBased.CreatePointsAttr();
+                            }
+
+                            if (pointsAttr)
+                            {
+                                // Process each frame's positions
+                                OmniPvdAttributeSample* posAttrib = (OmniPvdAttributeSample*)positions->mFirst;
+                                while (posAttrib)
+                                {
+                                    // positionInvMasses is array of floats: (x, y, z, invMass) per particle
+                                    float* posData = (float*)posAttrib->mData;
+                                    uint32_t numFloats = posAttrib->mDataLen / sizeof(float);
+                                    uint32_t numParticles = numFloats / 4;
+
+                                    pxr::VtArray<pxr::GfVec3f> localPoints(numParticles);
+                                    for (uint32_t i = 0; i < numParticles; i++)
+                                    {
+                                        pxr::GfVec3d worldPos(posData[i*4], posData[i*4+1], posData[i*4+2]);
+                                        pxr::GfVec3d localPos = worldToLocal.Transform(worldPos);
+                                        localPoints[i] = pxr::GfVec3f(localPos);
+                                    }
+
+                                    // Calculate timecode (same logic as rigid bodies)
+                                    double timeStamp = 0.0;
+                                    double attribTimeStamp = (double)posAttrib->mTimeStamp;
+                                    if (attribTimeStamp > 1.0)
+                                    {
+                                        timeStamp = std::ceil(attribTimeStamp / 2.0);
+                                    }
+
+                                    pointsAttr.Set(localPoints, timeStamp);
+
+                                    posAttrib = (OmniPvdAttributeSample*)posAttrib->mNextAttribute;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 bool getTimePerFrame(OmniPvdDOMState &domState, float& timePerFrame)
 {
     OmniPvdObject* sceneRoot = domState.mSceneLayerRoot;
@@ -492,6 +589,15 @@ void writeUSDFileOver(
 {
     pxr::UsdStageRefPtr stage = omni::usd::UsdContext::getContext()->getStage();
 
+    // Check if the current edit target is writable
+    pxr::UsdEditTarget editTarget = stage->GetEditTarget();
+    pxr::SdfLayerHandle editLayer = editTarget.GetLayer();
+    if (!editLayer || !editLayer->PermissionToEdit())
+    {
+        CARB_LOG_ERROR("[Bake] Current edit target is not writable. Please create or select an edit layer before baking.");
+        return;
+    }
+
     //createPrimPassOverMirroredInOVD(stage, domState.mObjectCreations, domState.mTokenMap, 1);
     //createPrimPassOverHasPhysXAPIsOrIsJoint(stage);
     {
@@ -500,12 +606,35 @@ void writeUSDFileOver(
     }
     {
         pxr::SdfChangeBlock block;
-        clearPhysicsAPIsAndDisableJoints(stage);
+        createParticleAttribPassOver(&stage, domState.mObjectCreations, domState.mTokenMap, 1);
     }
     {
-        PXR_NS::UsdEditContext editCtx(stage, stage->GetRootLayer());
+        pxr::SdfChangeBlock block;
+        clearPhysicsAPIsAndDisableJoints(stage);
+    }
+    // Set time codes - prefer root layer, fall back to session layer
+    // Note: USD only allows stage metadata on root or session layer, not sublayers
+    pxr::SdfLayerHandle rootLayer = stage->GetRootLayer();
+    if (rootLayer && !rootLayer->IsAnonymous() && rootLayer->PermissionToEdit())
+    {
+        PXR_NS::UsdEditContext editCtx(stage, rootLayer);
         stage->SetStartTimeCode((double)domState.mMinFrame);
         stage->SetEndTimeCode((double)domState.mMaxFrame);
+    }
+    else
+    {
+        // Fall back to session layer for time codes
+        pxr::SdfLayerHandle sessionLayer = stage->GetSessionLayer();
+        if (sessionLayer && sessionLayer->PermissionToEdit())
+        {
+            PXR_NS::UsdEditContext editCtx(stage, sessionLayer);
+            stage->SetStartTimeCode((double)domState.mMinFrame);
+            stage->SetEndTimeCode((double)domState.mMaxFrame);
+        }
+        else
+        {
+            CARB_LOG_WARN("[Bake] Neither root nor session layer is writable, skipping time code setup");
+        }
     }
 }
 
@@ -586,13 +715,10 @@ bool writeUSDFileOverWithLayerCreation(
     pxr::SdfLayerHandle inputRootLayer = inputStage->GetRootLayer();
     std::vector<std::string> subLayers = inputRootLayer->GetSubLayerPaths();
 
+    // Keep sublayer paths exactly as they are from the input stage
     for (const std::string& subLayerPath : subLayers)
     {
-        pxr::SdfLayerRefPtr subLayer = pxr::SdfLayer::Find(subLayerPath);
-        if (subLayer)
-        {
-            newSubLayers.push_back(subLayerPath);
-        }
+        newSubLayers.push_back(subLayerPath);
     }    
     outputStage->GetRootLayer()->SetSubLayerPaths(newSubLayers);
 
@@ -634,6 +760,10 @@ bool writeUSDFileOverWithLayerCreation(
         {
             pxr::SdfChangeBlock block;
             createAttribPassOver(&outputStage, domState.mObjectCreations, domState.mTokenMap, 1);
+        }
+        {
+            pxr::SdfChangeBlock block;
+            createParticleAttribPassOver(&outputStage, domState.mObjectCreations, domState.mTokenMap, 1);
         }
         {
             pxr::SdfChangeBlock block;

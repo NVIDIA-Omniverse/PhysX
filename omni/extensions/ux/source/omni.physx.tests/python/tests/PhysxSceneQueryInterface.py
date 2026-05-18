@@ -1,11 +1,12 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import omni.physx.scripts.utils
 import omni.physx.scripts.physicsUtils as physicsUtils
 from omni.physxtests.utils.physicsBase import PhysicsMemoryStageBaseAsyncTestCase, TestCategory
-from omni.physx import get_physx_scene_query_interface
+from omni.physx import get_physx_scene_query_interface, get_physx_interface
 from omni.physxtests import utils
 from pxr import Usd, Gf, Sdf, UsdGeom, UsdShade, UsdPhysics, UsdUtils, PhysxSchema, PhysicsSchemaTools
 import math
@@ -1180,3 +1181,132 @@ class PhysxSceneQueryInterfaceTestMemoryStage(PhysicsMemoryStageBaseAsyncTestCas
         else:
             print("Hit not found.")
             self.assertTrue(False)
+
+    async def test_overlap_mesh_multiple(self):
+        # Create a stage
+        stage = await self.new_stage()
+
+        # Define the root Xform (transformable object)
+        rootxform = UsdGeom.Xform.Define(stage, "/World")
+
+        rigidBodyXform = UsdGeom.Xform.Define(stage, "/World/rigidBody")
+
+        # Apply also the collision definitions here
+        UsdPhysics.CollisionAPI.Apply(rigidBodyXform.GetPrim())
+        collisionMeshAPI = UsdPhysics.MeshCollisionAPI.Apply(rigidBodyXform.GetPrim())
+        collisionMeshAPI.GetApproximationAttr().Set(UsdPhysics.Tokens.convexHull)
+
+        # Define shared mesh points
+        halfSize = 0.5
+        points = [
+            Gf.Vec3f(halfSize, -halfSize, -halfSize),
+            Gf.Vec3f(halfSize, halfSize, -halfSize),
+            Gf.Vec3f(halfSize, halfSize, halfSize),
+            Gf.Vec3f(halfSize, -halfSize, halfSize),
+            Gf.Vec3f(-halfSize, -halfSize, -halfSize),
+            Gf.Vec3f(-halfSize, halfSize, -halfSize),
+            Gf.Vec3f(-halfSize, halfSize, halfSize),
+            Gf.Vec3f(-halfSize, -halfSize, halfSize),
+        ]
+
+        normals = [
+            Gf.Vec3f(1, 0, 0),
+            Gf.Vec3f(1, 0, 0),
+            Gf.Vec3f(1, 0, 0),
+            Gf.Vec3f(1, 0, 0),
+            Gf.Vec3f(-1, 0, 0),
+            Gf.Vec3f(-1, 0, 0),
+            Gf.Vec3f(-1, 0, 0),
+            Gf.Vec3f(-1, 0, 0),
+        ]
+
+        indices = [
+            0, 1, 2, 3,
+            1, 5, 6, 2,
+            3, 2, 6, 7,
+            0, 3, 7, 4,
+            1, 0, 4, 5,
+            5, 4, 7, 6
+        ]
+
+        vertexCounts = [4, 4, 4, 4, 4, 4]
+
+        for i in range(3):
+            meshPath = "/World/rigidBody/mesh" + str(i)
+            mesh = UsdGeom.Mesh.Define(stage, meshPath)
+            mesh.CreateFaceVertexCountsAttr(vertexCounts)
+            mesh.CreateFaceVertexIndicesAttr(indices)
+            mesh.CreatePointsAttr(points)
+            mesh.CreateDoubleSidedAttr(False)
+            mesh.CreateNormalsAttr(normals)
+
+            if i == 1:
+                mesh.AddTranslateOp().Set(Gf.Vec3f(1.0 * i, 0.0, 1.0))
+            else:
+                mesh.AddTranslateOp().Set(Gf.Vec3f(1.0 * i, 0.0, 0.0))
+
+        # Now setup the mesh merging to include mesh 0 and mesh 2, excluding mesh 1
+        meshMergeCollision = PhysxSchema.PhysxMeshMergeCollisionAPI.Apply(
+            rigidBodyXform.GetPrim()
+        )
+        meshMergeCollection = meshMergeCollision.GetCollisionMeshesCollectionAPI()
+        meshMergeCollection.GetIncludesRel().AddTarget("/World/rigidBody")
+        meshMergeCollection.GetExcludesRel().AddTarget("/World/rigidBody/mesh1")
+
+        # Create a second mesh to collide with
+        cube_mesh = UsdGeom.Mesh.Define(stage, "/World/Cube")
+        cube_mesh.CreateFaceVertexCountsAttr(vertexCounts)
+        cube_mesh.CreateFaceVertexIndicesAttr(indices)
+        cube_mesh.CreatePointsAttr(points)
+        cube_mesh.CreateDoubleSidedAttr(False)
+        cube_mesh.CreateNormalsAttr(normals)
+        cube_mesh.AddTranslateOp().Set(Gf.Vec3f(1.0, 0.5, 0.0))
+        UsdPhysics.CollisionAPI.Apply(cube_mesh.GetPrim())
+        collisionMeshAPI = UsdPhysics.MeshCollisionAPI.Apply(cube_mesh.GetPrim())
+        collisionMeshAPI.GetApproximationAttr().Set(UsdPhysics.Tokens.convexHull)
+
+        # Force usd scene sync w/ physx        
+        get_physx_interface().force_load_physics_from_usd()
+
+        self.numHits = 0
+
+        # collision tests
+        def report_fn(a):
+            # print(f'Overlaps with {a.collision}')
+            self.numHits = self.numHits + 1
+            return True
+
+        query_interface = get_physx_scene_query_interface()
+        # print("Testing overlap with Cube. ") 
+        cube_encoded_path = PhysicsSchemaTools.encodeSdfPath(cube_mesh.GetPrim().GetPath())
+        # This works as expected
+        result = query_interface.overlap_mesh(
+            *cube_encoded_path,
+            reportFn = report_fn,
+            anyHit = False,
+        )
+        self.assertTrue(self.numHits == 2)
+
+        self.numHits = 0
+        # print("\nTesting overlap with Xform that has PhysxMeshMergeCollisionAPI.")
+        xform_encoded_path = PhysicsSchemaTools.encodeSdfPath(rigidBodyXform.GetPrim().GetPath())
+        # This should print the cube, right?
+        result = query_interface.overlap_mesh(
+            *xform_encoded_path,
+            reportFn = report_fn,
+            anyHit = False,
+        )
+
+        self.assertTrue(self.numHits == 2)
+
+        self.numHits = 0
+        # print("\nTesting overlap with Xform that has PhysxMeshMergeCollisionAPI.")
+        xform_encoded_path = PhysicsSchemaTools.encodeSdfPath(rigidBodyXform.GetPrim().GetPath())
+        # This should print the cube, right?
+        result = query_interface.overlap_shape(
+            *xform_encoded_path,
+            reportFn = report_fn,
+            anyHit = False,
+        )
+
+        self.assertTrue(self.numHits == 2)

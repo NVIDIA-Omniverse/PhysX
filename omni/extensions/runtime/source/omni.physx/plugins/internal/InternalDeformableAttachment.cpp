@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -14,7 +14,6 @@
 using namespace omni::physx;
 using namespace omni::physx::internal;
 using namespace omni::physx::usdparser;
-using namespace carb;
 using namespace ::physx;
 
 extern ObjectId getObjectId(const pxr::SdfPath& path, PhysXType type);
@@ -260,12 +259,12 @@ InternalDeformableAttachment::InternalDeformableAttachment(pxr::SdfPath path, co
         if (mData[1].actor == nullptr)
         {
             std::string errorStr = "Physics Deformable Attachment " + mPath.GetString() + " cannot have 2 invalid actors.";
-            PhysXUsdPhysicsInterface::reportLoadError(ErrorCode::eError, errorStr.c_str());
+            PhysXUsdPhysicsInterface::reportLoadError(usdparser::ErrorCode::eError, errorStr.c_str());
         }
         else
         {
             std::string errorStr = "Physics Deformable Attachment " + mPath.GetString() + " cannot have an invalid deformable actor.";
-            PhysXUsdPhysicsInterface::reportLoadError(ErrorCode::eError, errorStr.c_str());
+            PhysXUsdPhysicsInterface::reportLoadError(usdparser::ErrorCode::eError, errorStr.c_str());
         }
 
         return;
@@ -403,7 +402,7 @@ void InternalDeformableAttachment::create()
     if (mDeformableAttachment == nullptr)
     {
         std::string errorStr = "Failed to create Physics Deformable Attachment " + mPath.GetString();
-        PhysXUsdPhysicsInterface::reportLoadError(ErrorCode::eError, errorStr.c_str());
+        PhysXUsdPhysicsInterface::reportLoadError(usdparser::ErrorCode::eError, errorStr.c_str());
     }
     else
     {
@@ -553,7 +552,7 @@ InternalDeformableCollisionFilter::InternalDeformableCollisionFilter(pxr::SdfPat
         if (mData[i].physxType == ePTRemoved)
         {
             std::string errorStr = "Physics Element Collision Filter " + mPath.GetString() + " has an invalid actor " + mData[i].path.GetString();
-            PhysXUsdPhysicsInterface::reportLoadError(ErrorCode::eError, errorStr.c_str());
+            PhysXUsdPhysicsInterface::reportLoadError(usdparser::ErrorCode::eError, errorStr.c_str());
             return;
         }
 
@@ -578,7 +577,7 @@ InternalDeformableCollisionFilter::InternalDeformableCollisionFilter(pxr::SdfPat
         {
             // Actor cannot be null for collision filtering
             std::string errorStr = "Physics Element Collision Filter " + mPath.GetString() + " has an invalid actor " + mData[mActorIndex[1]].path.GetString();
-            PhysXUsdPhysicsInterface::reportLoadError(ErrorCode::eError, errorStr.c_str());
+            PhysXUsdPhysicsInterface::reportLoadError(usdparser::ErrorCode::eError, errorStr.c_str());
             return;
         }
     }
@@ -653,7 +652,7 @@ void InternalDeformableCollisionFilter::create()
     if (mDeformableElementFilter == nullptr)
     {
         std::string errorStr = "Failed to create Physics Element Collision Filter " + mPath.GetString();
-        PhysXUsdPhysicsInterface::reportLoadError(ErrorCode::eError, errorStr.c_str());
+        PhysXUsdPhysicsInterface::reportLoadError(usdparser::ErrorCode::eError, errorStr.c_str());
     }
 }
 

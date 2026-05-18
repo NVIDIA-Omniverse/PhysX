@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -143,22 +143,19 @@ GpuSoftBodyMaterialView* GpuSimulationView::createSoftBodyMaterialView(const cha
 
 GpuVolumeDeformableBodyView* GpuSimulationView::createVolumeDeformableBodyView(const char* pattern)
 {
+    return createVolumeDeformableBodyView(std::vector<std::string>{ pattern });
+}
+
+GpuVolumeDeformableBodyView* GpuSimulationView::createVolumeDeformableBodyView(const std::vector<std::string>& patterns)
+{
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, this, nullptr);
-    if (!pattern || !*pattern)
-    {
-        CARB_LOG_ERROR("Empty pattern not allowed");
-        return nullptr;
-    }
-
     std::vector<DeformableBodyEntry> entries;
-    findMatchingVolumeDeformableBodies(pattern, entries);
-
+    processVolumeDeformableBodyEntries(patterns, entries);
     if (entries.empty())
     {
-        CARB_LOG_ERROR("Pattern '%s' did not match any volume deformable bodies\n", pattern);
+        CARB_LOG_ERROR("Provided pattern list did not match any volume deformable bodies\n");
         return nullptr;
     }
-
     GpuVolumeDeformableBodyView* view = new GpuVolumeDeformableBodyView(this, entries, mDevice);
     mVolumeDeformableBodyViews.push_back(view);
     return view;
@@ -166,22 +163,19 @@ GpuVolumeDeformableBodyView* GpuSimulationView::createVolumeDeformableBodyView(c
 
 GpuSurfaceDeformableBodyView* GpuSimulationView::createSurfaceDeformableBodyView(const char* pattern)
 {
+    return createSurfaceDeformableBodyView(std::vector<std::string>{ pattern });
+}
+
+GpuSurfaceDeformableBodyView* GpuSimulationView::createSurfaceDeformableBodyView(const std::vector<std::string>& patterns)
+{
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, this, nullptr);
-    if (!pattern || !*pattern)
-    {
-        CARB_LOG_ERROR("Empty pattern not allowed");
-        return nullptr;
-    }
-
     std::vector<DeformableBodyEntry> entries;
-    findMatchingSurfaceDeformableBodies(pattern, entries);
-
+    processSurfaceDeformableBodyEntries(patterns, entries);
     if (entries.empty())
     {
-        CARB_LOG_ERROR("Pattern '%s' did not match any surface deformable bodies\n", pattern);
+        CARB_LOG_ERROR("Provided pattern list did not match any surface deformable bodies\n");
         return nullptr;
     }
-
     GpuSurfaceDeformableBodyView* view = new GpuSurfaceDeformableBodyView(this, entries, mDevice);
     mSurfaceDeformableBodyViews.push_back(view);
     return view;
@@ -196,21 +190,30 @@ GpuDeformableMaterialView* GpuSimulationView::createDeformableMaterialView(const
         return nullptr;
     }
 
-    if (!mGpuSimData)
-    {
-        CARB_LOG_ERROR("Failed to create deformable material view: GPU data not initialized");
-        return nullptr;
-    }
-
     std::vector<DeformableMaterialEntry> entries;
     findMatchingDeformableMaterials(pattern, entries);
 
     if (entries.empty())
     {
-        CARB_LOG_ERROR("Pattern '%s' did not match any deformable materials\n", pattern);
+        CARB_LOG_ERROR("Pattern '%s' did not match any volume deformable body material\n", pattern);
         return nullptr;
     }
 
+    GpuDeformableMaterialView* view = new GpuDeformableMaterialView(this, entries);
+    mDeformableMaterialViews.push_back(view);
+    return view;
+}
+
+GpuDeformableMaterialView* GpuSimulationView::createDeformableMaterialView(const std::vector<std::string>& patterns)
+{
+    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, this, nullptr);
+    std::vector<DeformableMaterialEntry> entries;
+    processDeformableMaterialEntries(patterns, entries);
+    if (entries.empty())
+    {
+        CARB_LOG_ERROR("Provided pattern list did not match any deformable materials\n");
+        return nullptr;
+    }
     GpuDeformableMaterialView* view = new GpuDeformableMaterialView(this, entries);
     mDeformableMaterialViews.push_back(view);
     return view;
@@ -390,6 +393,7 @@ bool GpuSimulationView::flush()
 void GpuSimulationView::updateArticulationsKinematic()
 {
     CHECK_VALID_DATA_SIM_NO_RETURN(mGpuSimData, this);
+    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
     mGpuSimData->mScene->getDirectGPUAPI().computeArticulationData(NULL, NULL, PxArticulationGPUAPIComputeType::eUPDATE_KINEMATIC, 0);
 }
 

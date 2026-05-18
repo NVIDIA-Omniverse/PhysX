@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -57,6 +57,20 @@ public:
     virtual bool setDofMaxVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
     virtual bool setDofArmatures(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
 
+    // Masked write variants: srcTensor is full [N,...], maskTensor is uint8[N] where nonzero = selected.
+    // Gpu/CpuArticulationView provide real implementations.
+    //
+    // DOF properties:
+    virtual bool setDofLimitsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDofStiffnessesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDofDampingsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDofMaxForcesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDofDriveModelPropertiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDofFrictionCoefficientsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0; // deprecated
+    virtual bool setDofFrictionPropertiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDofMaxVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDofArmaturesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+
     virtual bool getDofActuationForces(const TensorDesc* dstTensor) const = 0;
     virtual bool getDofProjectedJointForces(const TensorDesc* dstTensor) const = 0;
 
@@ -70,6 +84,10 @@ public:
     virtual bool setRootTransforms(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
     virtual bool setRootVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
 
+    // Masked variants for root state: srcTensor is full [N,...], maskTensor is uint8[N].
+    virtual bool setRootTransformsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setRootVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+
     virtual bool getDofPositions(const TensorDesc* dstTensor) const = 0;
     virtual bool getDofVelocities(const TensorDesc* dstTensor) const = 0;
 
@@ -81,20 +99,23 @@ public:
     virtual bool setDofPositionTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
     virtual bool setDofVelocityTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
 
+    // Masked variants for DOF state/control: srcTensor is full [N,...], maskTensor is uint8[N].
+    virtual bool setDofPositionsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDofVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDofActuationForcesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDofPositionTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDofVelocityTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+
     virtual bool getDofPositionTargets(const TensorDesc* dstTensor) const = 0;
     virtual bool getDofVelocityTargets(const TensorDesc* dstTensor) const = 0;
 
     virtual bool getJacobianShape(uint32_t* numRows, uint32_t* numCols) const = 0;
     virtual bool getJacobians(const TensorDesc* dstTensor) const = 0;
 
-    virtual bool getMassMatrixShape(uint32_t* numRows, uint32_t* numCols) const = 0; // deprecated
-    virtual bool getMassMatrices(const TensorDesc* dstTensor) const = 0; // deprecated
     virtual bool getGeneralizedMassMatrixShape(uint32_t* numRows, uint32_t* numCols) const = 0;
     virtual bool getGeneralizedMassMatrices(const TensorDesc* dstTensor) const = 0;
 
-    virtual bool getCoriolisAndCentrifugalForces(const TensorDesc* dstTensor) const = 0; // deprecated
     virtual bool getCoriolisAndCentrifugalCompensationForces(const TensorDesc* dstTensor) const = 0;
-    virtual bool getGeneralizedGravityForces(const TensorDesc* dstTensor) const = 0; // deprecated
     virtual bool getGravityCompensationForces(const TensorDesc* dstTensor) const = 0;
 
     virtual bool getLinkIncomingJointForce(const TensorDesc* dstTensor) const = 0;
@@ -103,6 +124,14 @@ public:
                                                  const TensorDesc* srcPositionTensor,
                                                  const TensorDesc* indexTensor,
                                                  const bool isGlobal) = 0;
+
+    // Masked variant for link forces
+    virtual bool applyForcesAndTorquesAtPositionMasked(const TensorDesc* srcForceTensor,
+                                                       const TensorDesc* srcTorqueTensor,
+                                                       const TensorDesc* srcPositionTensor,
+                                                       const TensorDesc* maskTensor,
+                                                       const bool isGlobal) = 0;
+
     // rigid body properties
     virtual bool getMasses(const TensorDesc* dstTensor) const = 0;
     virtual bool getInvMasses(const TensorDesc* dstTensor) const = 0;
@@ -118,15 +147,33 @@ public:
     virtual bool setInertias(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
     virtual bool setDisableGravities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
 
+    // Masked variants for articulation rigid body properties
+    virtual bool setMassesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setCOMsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setInertiasMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
+    virtual bool setDisableGravitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     // materials/shapes
     virtual bool getMaterialProperties(const TensorDesc* dstTensor) const = 0;
+    virtual bool getCompliantMaterialProperties(const TensorDesc* dstTensor,
+                                                const TensorDesc* dstCombineModeTensor) const = 0;
     virtual bool getRestOffsets(const TensorDesc* dstTensor) const = 0;
     virtual bool getContactOffsets(const TensorDesc* dstTensor) const = 0;
 
     virtual bool setMaterialProperties(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const = 0;
+    virtual bool setCompliantMaterialProperties(const TensorDesc* srcTensor,
+                                                const TensorDesc* srcCombineTensor,
+                                                const TensorDesc* indexTensor) const = 0;
     virtual bool setRestOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const = 0;
     virtual bool setContactOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const = 0;
+
+    // Masked variants for materials/shapes
+    virtual bool setMaterialPropertiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) const = 0;
+    virtual bool setCompliantMaterialPropertiesMasked(const TensorDesc* srcTensor,
+                                                      const TensorDesc* srcCombineTensor,
+                                                      const TensorDesc* maskTensor) const = 0;
+    virtual bool setRestOffsetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) const = 0;
+    virtual bool setContactOffsetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) const = 0;
 
     // tendons
     virtual bool getFixedTendonStiffnesses(const TensorDesc* dstTensor) const = 0;
@@ -151,6 +198,20 @@ public:
                                             const TensorDesc* limitStiffnesses,
                                             const TensorDesc* offsets,
                                             const TensorDesc* indexTensor) const = 0;
+
+    // Masked variants for tendons
+    virtual bool setFixedTendonPropertiesMasked(const TensorDesc* stiffnesses,
+                                                const TensorDesc* dampings,
+                                                const TensorDesc* limitStiffnesses,
+                                                const TensorDesc* limits,
+                                                const TensorDesc* restLengths,
+                                                const TensorDesc* offsets,
+                                                const TensorDesc* maskTensor) const = 0;
+    virtual bool setSpatialTendonPropertiesMasked(const TensorDesc* stiffnesses,
+                                                  const TensorDesc* dampings,
+                                                  const TensorDesc* limitStiffnesses,
+                                                  const TensorDesc* offsets,
+                                                  const TensorDesc* maskTensor) const = 0;
 
     virtual bool check() const = 0;
 

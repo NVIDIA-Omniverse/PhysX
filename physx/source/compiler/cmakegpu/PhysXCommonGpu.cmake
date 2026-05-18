@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXGpu common
@@ -43,10 +43,12 @@ SET(PHYXGPU_COMMON_HEADERS
 	${PHYSX_SOURCE_DIR}/gpucommon/include/AlignedTransform.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/cutil_math.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/mathsExtensions.h
+	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgAllocatorDesc.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgCommon.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgCommonDefines.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgContactsDebug.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgCopyManager.h
+	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgCopyDesc.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgCudaBuffer.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgCudaHelpers.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgCudaMemoryAllocator.h
@@ -58,7 +60,6 @@ SET(PHYXGPU_COMMON_HEADERS
 	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgIntrinsics.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgKernelWrangler.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgKernelNames.h
-	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgMemCopyDispatcher.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgMemoryManager.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgRadixSortDesc.h
 	${PHYSX_SOURCE_DIR}/gpucommon/include/PxgRadixSortKernelIndices.h
@@ -89,7 +90,6 @@ SET(PHYXGPU_COMMON_CUDA_INCLUDE
 	${GPU_COMMON_SOURCE_DIR}/CUDA/gridCal.cuh
 	${GPU_COMMON_SOURCE_DIR}/CUDA/sbMidphaseScratch.cuh
 	${GPU_COMMON_SOURCE_DIR}/CUDA/femMidphaseScratch.cuh
-	${GPU_COMMON_SOURCE_DIR}/CUDA/solverResidual.cuh
 )
 SOURCE_GROUP("common kernels cuda include" FILES ${PHYXGPU_COMMON_CUDA_INCLUDE})
 
@@ -100,7 +100,6 @@ SET(PHYXGPU_COMMON_SOURCE
 	${GPU_COMMON_SOURCE_DIR}/PxgCudaMemoryAllocator.cpp
 	${GPU_COMMON_SOURCE_DIR}/PxgHeapMemoryAllocator.cpp
 	${GPU_COMMON_SOURCE_DIR}/PxgKernelWrangler.cpp
-	${GPU_COMMON_SOURCE_DIR}/PxgMemCopyDispatcher.cpp
 	${GPU_COMMON_SOURCE_DIR}/PxgMemoryManager.cpp
 	${GPU_COMMON_SOURCE_DIR}/PxgCommon.cpp
 )

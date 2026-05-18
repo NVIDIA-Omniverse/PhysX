@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -32,20 +32,22 @@
 #include "foundation/PxArray.h"
 #include "foundation/PxMath.h"
 #include "foundation/PxMutex.h"
+#include "PxgHeapMemAllocator.h"
 
 namespace physx
 {
+class PxgHeapMemoryAllocator;
 
-template<typename AllocT>
 class PxgCudaPagedLinearAllocator
 {
 	PX_NOCOPY(PxgCudaPagedLinearAllocator)
 public:
 
-	PxgCudaPagedLinearAllocator(AllocT&	alloc, const size_t defaultPageBytesize = 1024 * 1024 ) :
-		mAlloc(alloc),
+	PxgCudaPagedLinearAllocator(PxgHeapMemoryAllocator& deviceAlloc, PxI32 group, const size_t defaultPageBytesize = 1024 * 1024) :
+		mDeviceAlloc(deviceAlloc),
 		mCurrOffsetBytes(0),
 		mCurrPage(0),
+		mGroup(group),
 		mDefaultPageBytesize(defaultPageBytesize)
 	{}
 	
@@ -60,7 +62,7 @@ public:
 
 		for (PxU32 i = 0; i < mPages.size(); ++i)
 		{
-			mAlloc.deallocate(mPages[i]);
+			mDeviceAlloc.deallocate(mPages[i]);
 		}
 
 		mPages.resize(0);
@@ -154,7 +156,7 @@ protected:
 	bool addNewPage(size_t requestedAllocByteSize)
 	{
 		const size_t size = PxMax(requestedAllocByteSize, mDefaultPageBytesize);
-		mPages.pushBack(reinterpret_cast<PxU8*>(mAlloc.allocate(size, 0, PX_FL)));
+		mPages.pushBack(reinterpret_cast<PxU8*>(mDeviceAlloc.allocate(size, mGroup, PX_FL)));
 		mPagesSize.pushBack(size);
 		PX_ASSERT(mPages.back() != 0);
 
@@ -172,11 +174,12 @@ protected:
 		return true;
 	}
 
-	AllocT&											mAlloc;
+	PxgHeapMemoryAllocator&							mDeviceAlloc;
 	PxArray<PxU8*>									mPages;
 	PxArray<size_t>									mPagesSize;
 	size_t											mCurrOffsetBytes;
 	PxU32											mCurrPage;
+	PxU32											mGroup;
 	size_t											mCurrPageSize;
 	size_t											mDefaultPageBytesize;
 	

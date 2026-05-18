@@ -22,18 +22,20 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #include "PxgSoftBody.h"
-#include "geometry/PxSimpleTriangleMesh.h"
+#include "CmVirtualAllocatorCallback.h"
+#include "cudamanager/PxCudaTypes.h"
+#include "foundation/PxHashMap.h"
 #include "GuTetrahedronMesh.h"
-#include "cutil_math.h"
 //KS - currently need to include this as we are "borrowing" some of the block math types. Need to move them
 //to a common header
-#include "PxgArticulation.h"
+#include "PxgArticulationBlockData.h"
 #include "PxsDeformableVolumeMaterialCore.h"
+#include "PxsHeapStats.h"
 
 using namespace physx;
 
@@ -283,7 +285,7 @@ PxU32 PxgSoftBodyUtil::loadOutTetMesh(void* mem, const Gu::BVTetrahedronMesh* te
 
 void PxgSoftBodyUtil::initialTetData(PxgSoftBody& softbody, const Gu::BVTetrahedronMesh* colTetMesh, 
 	const Gu::TetrahedronMesh* simTetMesh, const Gu::DeformableVolumeAuxData* softBodyAuxData, const PxU16* materialsHandles,
-	PxsHeapMemoryAllocator* alloc)
+	Cm::VirtualAllocatorCallback& hostAlloc)
 {	
 	const PxU32 numTets = colTetMesh->getNbTetrahedronsFast();
 	uint4* tetIndices = softbody.mTetIndices;
@@ -442,7 +444,7 @@ void PxgSoftBodyUtil::initialTetData(PxgSoftBody& softbody, const Gu::BVTetrahed
 
 		softbody.mNumJacobiVertices = localIndexCount;
 		softbody.mSimJacobiVertIndices = reinterpret_cast<PxU32*>(
-		    alloc->allocate(sizeof(PxU32) * localIndexCount, PxsHeapStats::eSIMULATION, PX_FL));
+		    hostAlloc.allocate(sizeof(PxU32) * localIndexCount, PxsHeapStats::eSIMULATION, PX_FL));
 		PxMemCopy(softbody.mSimJacobiVertIndices, jacobiVertIndices.begin(), sizeof(PxU32) * localIndexCount);
 
 		PX_ASSERT(numVoxelVertices >= localIndexCount);
@@ -609,35 +611,35 @@ PxU32 PxgSoftBody::dataIndexFromFlagDEPRECATED(PxSoftBodyGpuDataFlag::Enum flag)
 	return 0;
 }
 
-void PxgSoftBody::deallocate(PxsHeapMemoryAllocator* allocator)
+void PxgSoftBody::deallocate(Cm::VirtualAllocatorCallback& hostAlloc)
 {
-	allocator->deallocate(mTetMeshData);
-	allocator->deallocate(mTetMeshSurfaceHint);
-	allocator->deallocate(mTetIndices);
-	allocator->deallocate(mTetIndicesRemapTable);
-	allocator->deallocate(mTetraRestPoses);
-	allocator->deallocate(mSimTetIndices);
-	allocator->deallocate(mSimTetraRestPoses);
-	allocator->deallocate(mSimOrderedTetrahedrons);
-	allocator->deallocate(mVertsBarycentricInGridModel);
-	allocator->deallocate(mVertsRemapInGridModel);
-	allocator->deallocate(mTetsRemapColToSim);
-	allocator->deallocate(mTetsAccumulatedRemapColToSim);
-	allocator->deallocate(mSurfaceVertsHint);
-	allocator->deallocate(mSurfaceVertToTetRemap);
-	allocator->deallocate(mSimAccumulatedPartitionsCP);
-	allocator->deallocate(mSimPullIndices);
-	allocator->deallocate(mOrderedMaterialIndices);
-	allocator->deallocate(mMaterialIndices);
+	hostAlloc.deallocate(mTetMeshData);
+	hostAlloc.deallocate(mTetMeshSurfaceHint);
+	hostAlloc.deallocate(mTetIndices);
+	hostAlloc.deallocate(mTetIndicesRemapTable);
+	hostAlloc.deallocate(mTetraRestPoses);
+	hostAlloc.deallocate(mSimTetIndices);
+	hostAlloc.deallocate(mSimTetraRestPoses);
+	hostAlloc.deallocate(mSimOrderedTetrahedrons);
+	hostAlloc.deallocate(mVertsBarycentricInGridModel);
+	hostAlloc.deallocate(mVertsRemapInGridModel);
+	hostAlloc.deallocate(mTetsRemapColToSim);
+	hostAlloc.deallocate(mTetsAccumulatedRemapColToSim);
+	hostAlloc.deallocate(mSurfaceVertsHint);
+	hostAlloc.deallocate(mSurfaceVertToTetRemap);
+	hostAlloc.deallocate(mSimAccumulatedPartitionsCP);
+	hostAlloc.deallocate(mSimPullIndices);
+	hostAlloc.deallocate(mOrderedMaterialIndices);
+	hostAlloc.deallocate(mMaterialIndices);
 
 	if (mNumTetsPerElement == 1) // used for tet mesh only
 	{
-		allocator->deallocate(mSimRemapOutputCP);
-		allocator->deallocate(mSimAccumulatedCopiesCP);
+		hostAlloc.deallocate(mSimRemapOutputCP);
+		hostAlloc.deallocate(mSimAccumulatedCopiesCP);
 	}
 
 	if (mNumJacobiVertices) // when Jacobi vertices are used, deallocate mSimJacobiVertIndices.
 	{
-		allocator->deallocate(mSimJacobiVertIndices);
+		hostAlloc.deallocate(mSimJacobiVertIndices);
 	}
 }

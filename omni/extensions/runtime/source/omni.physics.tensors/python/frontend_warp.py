@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 """Warp frontend for data-oriented interface"""
 
 import ctypes
@@ -87,7 +88,7 @@ class FrontendWarp(FrontendBase):
     def get_tensor_desc(self, tensor):
         desc = omni.physics.tensors.TensorDesc()
         desc.dtype = FrontendWarp.DTYPE_FROM_WARP[tensor.dtype]
-        type_length = wp.types.type_length(tensor.dtype)
+        type_length = wp.types.type_size(tensor.dtype)
         if type_length > 1:
             desc.shape = tensor.shape + (type_length,)
         else:
@@ -97,8 +98,10 @@ class FrontendWarp(FrontendBase):
         return desc
 
     def as_contiguous_float32(self, tensor):
-        scalar_type = wp.types.type_scalar_type(tensor.dtype)
-        if wp.types.type_ctype(tensor.dtype) == ctypes.c_float or wp.types.type_ctype(scalar_type) == ctypes.c_float:
+        scalar_ctype = wp.types.type_ctype(tensor.dtype)
+        if issubclass(scalar_ctype, ctypes.Array):
+            scalar_ctype = scalar_ctype._type_
+        if scalar_ctype == ctypes.c_float:
             return tensor
         else:
             raise TypeError("A float32 tensor is required")

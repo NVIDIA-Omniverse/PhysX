@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,17 +35,20 @@
 #include "PxgCommonDefines.h"
 #include "utils.cuh"
 
+namespace physx
+{
+
 template <typename T> __device__ static inline T ldS(const volatile T& val) { return val; }
 template <typename T> __device__ static inline void stS(volatile T& dst, const T& src) { dst = src; }
 
-template <> __device__ inline physx::PxVec3 ldS<physx::PxVec3>(const volatile physx::PxVec3& val) { return physx::PxVec3(val.x, val.y, val.z); }
-template <> __device__ inline void stS<physx::PxVec3>(volatile physx::PxVec3& dst, const physx::PxVec3& src) { dst.x = src.x, dst.y = src.y, dst.z = src.z; }
+template <> __device__ inline PxVec3 ldS<PxVec3>(const volatile PxVec3& val) { return PxVec3(val.x, val.y, val.z); }
+template <> __device__ inline void stS<PxVec3>(volatile PxVec3& dst, const PxVec3& src) { dst.x = src.x, dst.y = src.y, dst.z = src.z; }
 
-template <> __device__ __forceinline__ physx::PxQuat ldS<physx::PxQuat>(const volatile physx::PxQuat& val) { return physx::PxQuat(val.x, val.y, val.z, val.w); }
-template <> __device__ __forceinline__ void stS<physx::PxQuat>(volatile physx::PxQuat& dst, const physx::PxQuat& src) { dst.x = src.x, dst.y = src.y, dst.z = src.z, dst.w = src.w; }
+template <> __device__ __forceinline__ PxQuat ldS<PxQuat>(const volatile PxQuat& val) { return PxQuat(val.x, val.y, val.z, val.w); }
+template <> __device__ __forceinline__ void stS<PxQuat>(volatile PxQuat& dst, const PxQuat& src) { dst.x = src.x, dst.y = src.y, dst.z = src.z, dst.w = src.w; }
 
-template <> __device__ __forceinline__ physx::PxTransform ldS<physx::PxTransform>(const volatile physx::PxTransform& val) { return physx::PxTransform(ldS(val.p), ldS(val.q)); }
-template <> __device__ __forceinline__ void stS<physx::PxTransform>(volatile physx::PxTransform& dst, const physx::PxTransform& src)
+template <> __device__ __forceinline__ PxTransform ldS<PxTransform>(const volatile PxTransform& val) { return PxTransform(ldS(val.p), ldS(val.q)); }
+template <> __device__ __forceinline__ void stS<PxTransform>(volatile PxTransform& dst, const PxTransform& src)
 { 
 	stS(dst.p, src.p); 
 	stS(dst.q, src.q); 
@@ -112,12 +115,12 @@ static __device__ inline bool anyX(bool a)					// check if any of an initial seg
 	return packXFlags<N>(a) != 0;
 }
 
-static __device__ inline float loadV3Unsafe(const physx::PxVec3* v)	// NB requires padding (i.e. the 4th element is loaded)
+static __device__ inline float loadV3Unsafe(const PxVec3* v)	// NB requires padding (i.e. the 4th element is loaded)
 {
 	return reinterpret_cast<const float*>(v)[threadIdx.x&3];
 }
 
-static __device__ void storeV3(volatile physx::PxVec3* v, int index, float value)
+static __device__ void storeV3(volatile PxVec3* v, int index, float value)
 {
 	int lane = index<<2;
 	volatile float* dest = reinterpret_cast<volatile float*>(v);
@@ -129,13 +132,13 @@ static __device__ void storeV3(volatile physx::PxVec3* v, int index, float value
 
 // experimentally, seems more register-efficient to coalesce this
 static __device__ __forceinline__
-physx::PxReal shuffleDot(const physx::PxU32 syncMask, const physx::PxVec3& v0, int shuffle0, const physx::PxVec3& v1)
+PxReal shuffleDot(const PxU32 syncMask, const PxVec3& v0, int shuffle0, const PxVec3& v1)
 {
 	return __shfl_sync(syncMask, v0.x, shuffle0)*v1.x + __shfl_sync(syncMask, v0.y, shuffle0)*v1.y + __shfl_sync(syncMask, v0.z, shuffle0)*v1.z;
 }
 
 static __device__ __forceinline__
-physx::PxU32 maxIndex(physx::PxReal v, physx::PxU32 mask, physx::PxReal& maxV)
+PxU32 maxIndex(PxReal v, PxU32 mask, PxReal& maxV)
 {
 	maxV = mask & (1 << (threadIdx.x&31)) ? v : -FLT_MAX;
 
@@ -145,11 +148,11 @@ physx::PxU32 maxIndex(physx::PxReal v, physx::PxU32 mask, physx::PxReal& maxV)
 	maxV = fmaxf(maxV, __shfl_xor_sync(FULL_MASK, maxV, 2));
 	maxV = fmaxf(maxV, __shfl_xor_sync(FULL_MASK, maxV, 1));
 
-	return physx::lowestSetIndex(__ballot_sync(FULL_MASK, maxV == v)&mask);
+	return lowestSetIndex(__ballot_sync(FULL_MASK, maxV == v)&mask);
 }
 
 static __device__ __forceinline__
-physx::PxU32 minIndex(physx::PxReal v, physx::PxU32 mask, physx::PxReal& minV)
+PxU32 minIndex(PxReal v, PxU32 mask, PxReal& minV)
 {
 	minV = mask & (1 << (threadIdx.x & 31)) ? v : FLT_MAX;
 
@@ -159,27 +162,27 @@ physx::PxU32 minIndex(physx::PxReal v, physx::PxU32 mask, physx::PxReal& minV)
 	minV = fminf(minV, __shfl_xor_sync(FULL_MASK, minV, 2));
 	minV = fminf(minV, __shfl_xor_sync(FULL_MASK, minV, 1));
 
-	return physx::lowestSetIndex(__ballot_sync(FULL_MASK, minV == v)&mask);
+	return lowestSetIndex(__ballot_sync(FULL_MASK, minV == v)&mask);
 }
 
 // similar as above but only with blocks of 4 threads
 // mask must have exactly 4 consecutive bits set and the corresponding
 // threads must execute this function together
 static __device__ __forceinline__
-physx::PxU32 minIndex4(physx::PxReal v, physx::PxU32 mask, physx::PxU32 threadIndexInGroup)
+PxU32 minIndex4(PxReal v, PxU32 mask, PxU32 threadIndexInGroup)
 {
 	// sanity checks that function has been called as expected
 	assert(__popc(mask) == 4); // exactly 4 threads in mask
 	assert(mask & (1 << (threadIdx.x & 31))); // executing thread must be in the mask
 	assert(threadIndexInGroup == 0 || (mask & (1 << (threadIdx.x - 1 & 31)))); // threads consecutive
 
-	physx::PxReal minV =  v;
+	PxReal minV =  v;
 
-	physx::PxReal minV_m1 = __shfl_sync(mask, minV, (threadIdx.x & 31) - 1);
+	PxReal minV_m1 = __shfl_sync(mask, minV, (threadIdx.x & 31) - 1);
 	if(threadIndexInGroup > 0)
 		minV = fminf(minV, minV_m1);
 
-	physx::PxReal minV_m2 = __shfl_sync(mask, minV, (threadIdx.x & 31) - 2);
+	PxReal minV_m2 = __shfl_sync(mask, minV, (threadIdx.x & 31) - 2);
 	if(threadIndexInGroup > 2)
 		minV = fminf(minV, minV_m2);
 
@@ -187,7 +190,9 @@ physx::PxU32 minIndex4(physx::PxReal v, physx::PxU32 mask, physx::PxU32 threadIn
 	// Send it back to all the threads.
 	minV = __shfl_sync(mask, minV, (threadIdx.x & 31) | 3);
 
-	return physx::lowestSetIndex(__ballot_sync(mask, minV == v)&mask);
+	return lowestSetIndex(__ballot_sync(mask, minV == v)&mask);
 }
+
+} // namespace physx
 
 #endif

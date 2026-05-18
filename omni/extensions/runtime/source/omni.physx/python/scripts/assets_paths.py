@@ -1,19 +1,15 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import omni.physx.bindings._physx as pxb
+from .assets_paths_base import *
 
-OV_PATH = ""
-S3_BUCKET = "omniverse-content-staging"
-S3_REGION = "us-west-2"
-S3_PATH = "DoNotDelete/PhysicsDemoAssets/Versioned"
-
-deformable_beta_on = carb.settings.get_settings().get(pxb.SETTING_ENABLE_DEFORMABLE_BETA)
+deformable_deprecated_on = carb.settings.get_settings().get(pxb.SETTING_ENABLE_DEFORMABLE_DEPRECATED)
 
 class AssetFolders:
     ANALOG_DIGITAL_CLOCK = "AnalogDigitalClock/1/"
-    BLOCKWORLD = "Blockworld/1/"
     CHAIR_STACKING = "ChairStacking/1/"
     CLOTH_DECK_CHAIR = "ClothDeckChair/1/"
     FLUID_ISOSURFACE_GLASS_BOX = "FluidIsosurfaceGlassBox/1/"
@@ -24,7 +20,7 @@ class AssetFolders:
     LEGO_BUGGY = "LegoBuggy/1/"
     MIXER = "Mixer/1/"
     NUTS_AND_BOLTS = "NutsAndBolts/1/"
-    TEDDY_ON_ICE = "TeddyOnIce/2/" if deformable_beta_on else "TeddyOnIce/1/"
+    TEDDY_ON_ICE = "TeddyOnIce/1/" if deformable_deprecated_on else "TeddyOnIce/2/"
 
 
 def get_server_path(force_ov_path=False, force_s3_path=False):
@@ -62,7 +58,3 @@ def get_asset_path(server_setting_path: str, resource_folder: str, resource_rela
 
 def get_s3_web_path():
     return f"https://{S3_BUCKET}.s3.{S3_REGION}.amazonaws.com/{S3_PATH}"
-
-
-def get_s3_upload_path():
-    return f"s3://{S3_BUCKET}/{S3_PATH}"

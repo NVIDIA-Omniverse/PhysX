@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -49,7 +49,7 @@ namespace physx
 		NpParticleClothPreProcessor(PxCudaContextManager* cudaContextManager) : mCudaContextManager(cudaContextManager), mNbPartitions(0){}
 		virtual ~NpParticleClothPreProcessor() {}
 
-		virtual	void release();
+		virtual	void release() PX_OVERRIDE;
 
 		virtual void partitionSprings(const PxParticleClothDesc& clothDesc, PxPartitionedParticleCloth& output) PX_OVERRIDE;
 
@@ -83,8 +83,9 @@ namespace physx
 		: APIClass(type)
 		, NpBase(NpType::eUNDEFINED)
 		, mGpuBuffer(NULL)
-		, mParticleSystem(NULL) 
+		, mParticleSystem(NULL)
 		, mBufferIndex(0xffffffff)
+		, mName(NULL)
 		{}
 
 		virtual ~NpParticleBufferBase() PX_OVERRIDE { NpFactory::getInstance().onParticleBufferRelease(this); }
@@ -164,6 +165,19 @@ namespace physx
 			return mGpuBuffer->getUniqueId();
 		}
 
+		virtual void setName(const char* name) PX_OVERRIDE PX_FINAL
+		{
+			mName = name;
+#if PX_SUPPORT_OMNI_PVD
+			streamParticleBufferName(*this, mName);
+#endif
+		}
+
+		virtual const char* getName() const PX_OVERRIDE PX_FINAL
+		{
+			return mName;
+		}
+
 		void setParticleSystem(NpPBDParticleSystem* particleSystem)
 		{
 			mParticleSystem = particleSystem;
@@ -177,6 +191,7 @@ namespace physx
 		PxsParticleBuffer*		mGpuBuffer;
 		NpPBDParticleSystem*	mParticleSystem;
 		PxU32					mBufferIndex;
+		const char*				mName;
 	};
 
 	class NpParticleBuffer : public NpParticleBufferBase<PxParticleBuffer>

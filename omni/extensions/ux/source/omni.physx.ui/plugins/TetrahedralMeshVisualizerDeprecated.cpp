@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -507,7 +507,7 @@ void TetrahedralMeshVisualizerDeprecated::computeRenderMeshPointsGap(const VtVec
             if (indices[i] >= originalPoints.size())
             {
                 isIndicesValid = false;
-                CARB_LOG_ERROR("Index %d from original inidices array is out of range.", indices[i]);
+                CARB_LOG_ERROR_ONCE("Index %d from original inidices array is out of range.", indices[i]);
                 break;
             }
         }
@@ -651,7 +651,7 @@ void TetrahedralMeshVisualizerDeprecated::calculateMeshTopology()
             if (indices[i] >= mOriginalPoints.size())
             {
                 isIndicesValid = false;
-                CARB_LOG_ERROR("Index %d from original inidices array is out of range.", indices[i]);
+                CARB_LOG_ERROR_ONCE("Index %d from original inidices array is out of range.", indices[i]);
                 break;
             }
         }

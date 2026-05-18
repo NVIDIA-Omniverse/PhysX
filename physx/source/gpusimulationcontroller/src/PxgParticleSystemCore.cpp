@@ -22,13 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
-#include "PxgCudaMemoryAllocator.h"
 #include "PxgPBDParticleSystemCore.h"
 #include "PxgParticleSystem.h"
+#include "PxgParticleSystemBuffer.h"
 #include "foundation/PxAssert.h"
 #include "common/PxProfileZone.h"
 #include "cudamanager/PxCudaContextManager.h"
@@ -265,20 +265,32 @@ namespace physx
 		if (!mPositionInvMassesH)
 		{
 			PX_ASSERT(!mVelocitiesH && !mPhasesH && !mVolumesH);
-			mPositionInvMassesH = PX_PINNED_MEMORY_ALLOC(PxVec4, mContextManager, mMaxNumParticles);
-			mVelocitiesH = PX_PINNED_MEMORY_ALLOC(PxVec4, mContextManager, mMaxNumParticles);
-			mPhasesH = PX_PINNED_MEMORY_ALLOC(PxU32, mContextManager, mMaxNumParticles);
+			mPositionInvMassesH = PX_PINNED_MEMORY_ALLOC_FLAGS(PxVec4, mContextManager, mMaxNumParticles, CU_MEMHOSTALLOC_PORTABLE);
+			mVelocitiesH = PX_PINNED_MEMORY_ALLOC_FLAGS(PxVec4, mContextManager, mMaxNumParticles, CU_MEMHOSTALLOC_PORTABLE);
+			mPhasesH = PX_PINNED_MEMORY_ALLOC_FLAGS(PxU32, mContextManager, mMaxNumParticles, CU_MEMHOSTALLOC_PORTABLE);
 			if (mMaxNumVolumes)
 			{
-				mVolumesH = PX_PINNED_MEMORY_ALLOC(PxParticleVolume, mContextManager, mMaxNumVolumes);
+				mVolumesH = PX_PINNED_MEMORY_ALLOC_FLAGS(PxParticleVolume, mContextManager, mMaxNumVolumes, CU_MEMHOSTALLOC_PORTABLE);
 			}
+		}
+
+		bool allocOk = (mPositionInvMassesH != NULL && mVelocitiesH != NULL && mPhasesH != NULL &&
+						(mMaxNumVolumes == 0 || mVolumesH != NULL));
+
+		if(!allocOk)
+		{
+			mContextManager.getCudaContext()->setAbortMode(true);
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgParticleBufferBase: failed to allocate pinned host buffers");
 		}
 	}
 
 	template<class BufferClass>
 	void PxgParticleBufferBase<BufferClass>::copyToHost(CUstream stream)
 	{
-		mContextManager.copyDToHAsync<PxVec4>(mPositionInvMassesH, mPositionInvMassesD, mNumActiveParticles, stream);
+		if(mPositionInvMassesH)
+		{
+			mContextManager.copyDToHAsync<PxVec4>(mPositionInvMassesH, mPositionInvMassesD, mNumActiveParticles, stream);
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -304,6 +316,7 @@ namespace physx
 		mNumActiveDiffuseParticlesH(NULL)
 	{
 		mContextManager.acquireContext();
+		PxCudaContext* cudaContext = mContextManager.getCudaContext();
 
 		if (maxNumDiffuseParticles > 0)
 		{
@@ -313,10 +326,17 @@ namespace physx
 		}
 
 		mNumDiffuseParticlesD = PX_DEVICE_MEMORY_ALLOC(int, mContextManager, 2);
-		mNumActiveDiffuseParticlesH = PX_PINNED_MEMORY_ALLOC(int, mContextManager, 1);
-		*mNumActiveDiffuseParticlesH = 0;
-
-		PxCudaContext* cudaContext = mContextManager.getCudaContext();
+		mNumActiveDiffuseParticlesH = PX_PINNED_MEMORY_ALLOC_FLAGS(int, mContextManager, 1, CU_MEMHOSTALLOC_PORTABLE | CU_MEMHOSTALLOC_DEVICEMAP);
+		if(!mNumActiveDiffuseParticlesH)
+		{
+			cudaContext->setAbortMode(true);
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgParticleAndDiffuseBuffer: failed to allocate pinned host buffers");
+		}
+		else
+		{
+			*mNumActiveDiffuseParticlesH = 0;
+		}
+		
 		cudaContext->memsetD32((CUdeviceptr)mNumDiffuseParticlesD, 0, 2);
 		mMaxNumDiffuseParticles = maxNumDiffuseParticles;
 		mContextManager.releaseContext();
@@ -512,39 +532,39 @@ namespace physx
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	PxgParticleSystemCore::PxgParticleSystemCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
-		PxgHeapMemoryAllocatorManager* heapMemoryManager, PxgSimulationController* simController, PxgGpuContext* gpuContext, const PxU32 maxParticleContacts) :
-		PxgNonRigidCore(gpuKernelWrangler, cudaContextManager, heapMemoryManager, simController, gpuContext, maxParticleContacts, 0, PxsHeapStats::eSHARED_PARTICLES),
-		mNewParticleSystemPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mParticleSystemPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mDirtyParamsParticleSystems(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mParticleSystemBuffer(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mActiveParticleSystemBuffer(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mTempGridParticleHashBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mTempGridParticleIndexBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mTempGridDiffuseParticleHashBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mTempGridDiffuseParticleIndexBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mTempCellsHistogramBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mTempBlockCellsHistogramBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mTempHistogramCountBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mTempBoundsBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mPrimitiveContactsBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mPrimitiveContactCountBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mPrimitiveContactSortedByParticleBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mPrimitiveContactSortedByRigidBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mPrimitiveConstraintSortedByParticleBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mPrimitiveConstraintSortedByRigidBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mPrimitiveConstraintAppliedParticleForces(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mPrimitiveConstraintAppliedRigidForces(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mDeltaVelParticleBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mDeltaVelRigidBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mTempBlockDeltaVelBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mTempBlockRigidIdBuf(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mParticleRigidConstraints(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mParticleRigidAttachmentIds(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mParticleRigidConstraintCount(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mParticleRigidAttachmentScaleBuffer(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-		mHasFlipPhase(heapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),	
-		mDiffuseParticlesRSDesc(heapMemoryManager->mMappedMemoryAllocators),
+		PxgAllocatorDesc& allocDesc, PxgSimulationController* simController, PxgGpuContext* gpuContext, const PxU32 maxParticleContacts) :
+		PxgNonRigidCore(gpuKernelWrangler, cudaContextManager, allocDesc, simController, gpuContext, maxParticleContacts, 0, PxsHeapStats::eSHARED_PARTICLES),
+		mNewParticleSystemPool(allocDesc.hostAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mParticleSystemPool(allocDesc.hostAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mDirtyParamsParticleSystems(allocDesc.hostAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mParticleSystemBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mActiveParticleSystemBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mTempGridParticleHashBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mTempGridParticleIndexBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mTempGridDiffuseParticleHashBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mTempGridDiffuseParticleIndexBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mTempCellsHistogramBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mTempBlockCellsHistogramBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mTempHistogramCountBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mTempBoundsBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mPrimitiveContactsBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mPrimitiveContactCountBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mPrimitiveContactSortedByParticleBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mPrimitiveContactSortedByRigidBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mPrimitiveConstraintSortedByParticleBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mPrimitiveConstraintSortedByRigidBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mPrimitiveConstraintAppliedParticleForces(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mPrimitiveConstraintAppliedRigidForces(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mDeltaVelParticleBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mDeltaVelRigidBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mTempBlockDeltaVelBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mTempBlockRigidIdBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mParticleRigidConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mParticleRigidAttachmentIds(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mParticleRigidConstraintCount(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mParticleRigidAttachmentScaleBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mHasFlipPhase(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+		mDiffuseParticlesRSDesc(allocDesc.hostAlloc, PxsHeapStats::eSHARED_PARTICLES),
 		mNbTotalParticleSystems(0),
 		mMaxParticles(0),
 		mHasNonZeroFluidBoundaryScale(true),
@@ -553,7 +573,7 @@ namespace physx
 		mMaxDiffusePerBuffer(0),
 		mMaxDiffuseBuffersPerSystem(0),
 		mMaxRigidAttachmentsPerSystem(0),
-		mHostContactCount(NULL)
+		mHostContactCount(allocDesc.hostAlloc, PxsHeapStats::eSHARED_PARTICLES)
 	{
 		mCudaContextManager->acquireContext();
 
@@ -598,8 +618,7 @@ namespace physx
 		mTempBlockDeltaVelBuf.allocate(sizeof(PxVec4) * 2 * PxgParticleSystemKernelGridDim::ACCUMULATE_DELTA, PX_FL);
 		mTempBlockRigidIdBuf.allocate(sizeof(PxU64) * PxgParticleSystemKernelGridDim::ACCUMULATE_DELTA, PX_FL);
 
-		mHostContactCount = PX_PINNED_MEMORY_ALLOC(PxU32, *mCudaContextManager, 1);
-		*mHostContactCount = 0;
+		mHostContactCount.get() = 0;
 
 #endif
 		mCudaContextManager->releaseContext();
@@ -621,8 +640,6 @@ namespace physx
 		mCudaContext->eventDestroy(mFinalizeStartEvent);
 		mCudaContext->eventDestroy(mSolveParticleRigidEvent);
 		mCudaContext->eventDestroy(mSolveRigidParticleEvent);
-
-		PX_PINNED_MEMORY_FREE(*mCudaContextManager, mHostContactCount);
 
 		mCudaContextManager->releaseContext();
 	}
@@ -1082,7 +1099,7 @@ namespace physx
 		CUdeviceptr totalContactCountsd = getParticleContactCount().getDevicePtr();
 		mCudaContext->memsetD32Async(totalContactCountsd, 0, 1, mStream);
 
-		*mHostContactCount = 0;
+		mHostContactCount.get() = 0;
 	}
 
 	//sort contacts based on (1)rigid body index (2)particle id 
@@ -1092,7 +1109,7 @@ namespace physx
 		CUdeviceptr  totalContactCountsd = mPrimitiveContactCountBuf.getDevicePtr();
 
 		// copy contacts to host for overflow checking.
-		mCudaContext->memcpyDtoHAsync(mHostContactCount, totalContactCountsd, sizeof(PxU32), mStream);
+		mCudaContext->memcpyDtoHAsync(mHostContactCount.data(), totalContactCountsd, sizeof(PxU32), mStream);
 
 		{
 			CUfunction clampFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLAMP_MAX_VALUE);
@@ -2680,7 +2697,7 @@ namespace physx
 
 	PxgDiffuseParticleCore::PxgDiffuseParticleCore(PxgEssentialCore* core) :
 		mEssentialCore(core),
-		mDiffuseParticlesRandomTableBuf(core->mHeapMemoryManager, PxsHeapStats::eSHARED_PARTICLES)
+		mDiffuseParticlesRandomTableBuf(core->mAllocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES)
 	{
 		mRandomTableSize = 1024;
 		mMaxDiffuseParticles = 0;

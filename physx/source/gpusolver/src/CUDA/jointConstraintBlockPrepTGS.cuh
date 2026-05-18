@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -36,7 +36,6 @@
 #include "PxgSolverBody.h"
 #include "PxgConstraint.h"
 #include "PxgSolverConstraintBlock1D.h"
-#include "PxgCudaMemoryAllocator.h"
 #include "PxgSolverConstraintDesc.h"
 #include "PxgConstraintPrep.h"
 #include "foundation/PxVec4.h"
@@ -44,11 +43,11 @@
 #include "PxgSolverKernelIndices.h"
 #include "jointConstraintBlockPrep.cuh"
 
+namespace physx
+{
 
-using namespace physx;
-  
 static __device__ PxU32 intializeBlock1DTGS
-(const physx::PxgBlockConstraint1DVelocities& rv, const physx::PxgBlockConstraint1DParameters& rp, const PxgBlockConstraint1DData& constraintData,
+(const PxgBlockConstraint1DVelocities& rv, const PxgBlockConstraint1DParameters& rp, const PxgBlockConstraint1DData& constraintData,
  const PxReal jointSpeedForRestitutionBounce, const PxReal initJointSpeed,
  const PxReal unitResponse, const PxReal minRowResponse,
  const PxReal erp, const PxReal lengthScale,
@@ -59,8 +58,6 @@ static __device__ PxU32 intializeBlock1DTGS
  PxgTGSBlockSolverConstraint1DHeader& hdr,
  PxgTGSBlockSolverConstraint1DCon& scon)
 {
-	using namespace physx;
-
 	//Copy min and max impulse because the convention of
 	//function inputs and outputs is very confusing.
 
@@ -122,7 +119,6 @@ static __device__ PxU32 intializeBlock1DTGS
 	scon.maxBias[threadIndex] = maxBiasVelocity;
 	scon.angularErrorScale[threadIndex] = angularErrorScale;
 	scon.appliedForce[threadIndex] = 0.f;
-	scon.residual[threadIndex] = 0.0f;
 
 	const bool hasDriveLimit = rp.flags[threadIndex] & Px1DConstraintFlag::eHAS_DRIVE_LIMIT;
 	const bool driveLimitsAreForces = constraintData.mFlags[threadIndex] & PxConstraintFlag::eDRIVE_LIMITS_ARE_FORCES;
@@ -161,14 +157,12 @@ static __device__ PxU32 intializeBlock1DTGS
 static __device__ PxU32 setUp1DConstraintBlockTGS
 (PxU32* sortedRowIndices, PxgBlockConstraint1DData* constraintData, PxgBlockConstraint1DVelocities* rowVelocities, PxgBlockConstraint1DParameters* rowParameters, 
  PxVec3* angSqrtInvInertias0, PxVec3* angSqrtInvInertias1, PxgTGSBlockSolverConstraint1DHeader& header, PxgTGSBlockSolverConstraint1DCon* constraintsCon,
- float stepDt, float recipStepDt, float simDt, float recipSimDt, float biasCoefficient, const physx::PxgSolverBodyData* sBodyData0, const physx::PxgSolverBodyData* sBodyData1,
+ float stepDt, float recipStepDt, float simDt, float recipSimDt, float biasCoefficient, const PxgSolverBodyData* sBodyData0, const PxgSolverBodyData* sBodyData1,
  const PxU32 threadIndex, const PxReal lengthScale, bool disablePreprocessing)
 {
-	using namespace physx;
-
 	//PxU32 stride = sizeof(PxgSolverConstraint1D);
 
-	const PxReal erp = 0.5f * biasCoefficient;
+	const PxReal erp = biasCoefficient;
 	const float4 sBodyData0_initialLinVelXYZ_invMassW0 = sBodyData0->initialLinVelXYZ_invMassW;
 	const float4 sBodyData1_initialLinVelXYZ_invMassW1 = sBodyData1->initialLinVelXYZ_invMassW;
 
@@ -218,7 +212,7 @@ static __device__ PxU32 setUp1DConstraintBlockTGS
 		}
 
 
-		//https://omniverse-jirasw.nvidia.com/browse/PX-4383
+		// JIRA: PX-4383
 		const PxReal minRowResponse = DY_MIN_RESPONSE;
 
 		eqCount += intializeBlock1DTGS(
@@ -244,12 +238,10 @@ static __device__ PxU32 setUp1DConstraintBlockTGS
 
 template<int NbThreads>
 static __device__ void setupSolverConstraintBlockGPUTGS(PxgBlockConstraint1DData* constraintData, PxgBlockConstraint1DVelocities* rowVelocities, PxgBlockConstraint1DParameters* rowParameters, 
-													const physx::PxgSolverBodyData* sBodyData0, const physx::PxgSolverBodyData* sBodyData1, PxgSolverTxIData* txIData0, PxgSolverTxIData* txIData1,
+													const PxgSolverBodyData* sBodyData0, const PxgSolverBodyData* sBodyData1, PxgSolverTxIData* txIData0, PxgSolverTxIData* txIData1,
 													float dt, float recipdt, float totalDt, float recipTotalDt, float lengthScale, float biasCoefficient, PxgBlockConstraintBatch& batch, 
 													const PxU32 threadIndex, PxgTGSBlockSolverConstraint1DHeader* header, PxgTGSBlockSolverConstraint1DCon* rowsCon, const PxgSolverConstraintManagerConstants& managerConstants)
 {
-	using namespace physx;
-
 	//distance constraint might have zero number of rows	
 	const PxU32 numRows = constraintData->mNumRows[threadIndex];
 
@@ -317,5 +309,7 @@ static __device__ void setupSolverConstraintBlockGPUTGS(PxgBlockConstraint1DData
 	header->rowCounts_breakable_orthoAxisCount[threadIndex] = rowCounts_breakable_orthoAxisCount;
 }
 
+
+} // namespace physx
 
 #endif

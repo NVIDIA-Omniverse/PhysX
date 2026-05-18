@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -66,7 +66,7 @@ namespace
 			const THashMapType::Entry* existing( mHashMap.find( inSrc ) );
 			if ( existing == NULL )
 			{
-				size_t len( strlen( inSrc ) );
+				size_t len( strnlen( inSrc, UINT64_MAX - 1 ) );
 				len += 1;
 				char* newMem = reinterpret_cast<char*>(mWrapper.getAllocator().allocate( len, "PxStringTableImpl: const char*", PX_FL));
 				physx::Pxstrlcpy( newMem, len, inSrc );

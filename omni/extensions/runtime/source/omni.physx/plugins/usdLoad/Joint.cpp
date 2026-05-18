@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -160,7 +160,6 @@ void setToDefault(PhysxJointDesc& desc)
 {
     desc.enableCollision = false;
     desc.jointFriction = 0.0f;
-    desc.enableResidualReporting = false;
 }
 
 void fillJointDesc(const omni::physics::schema::JointDesc& inDesc, PhysxJointDesc& desc)
@@ -191,14 +190,6 @@ void fillJointDesc(const omni::physics::schema::JointDesc& inDesc, PhysxJointDes
     if (physxJointAPI)
     {        
         getAttribute(desc.jointFriction, physxJointAPI.GetJointFrictionAttr(), 0.0f, FLT_MAX, nullptr);
-    }
-
-
-    // residual reporting
-    const PhysxSchemaPhysxResidualReportingAPI residualReportingAPI = PhysxSchemaPhysxResidualReportingAPI::Get(inDesc.usdPrim.GetStage(), inDesc.usdPrim.GetPrimPath());
-    if (residualReportingAPI)
-    {
-        desc.enableResidualReporting = true;
     }
 }
 

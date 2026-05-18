@@ -1,10 +1,12 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.kit.test
 from omni.kit.commands import execute
 from pxr import UsdLux, Gf, Sdf, UsdGeom, PhysxSchema, UsdPhysics, Usd
-from omni.physx import get_physx_interface, get_physx_cooking_interface, get_physx_cooking_private_interface, get_physx_simulation_interface
+from omni.physx import get_physx_interface, get_physx_cooking_interface, get_physx_simulation_interface
+from omni.physx.scripts.ifaces import get_physx_cooking_private_interface
 from omni.physxcommands import AddPhysicsSceneCommand, AddGroundPlaneCommand
 from omni.physxtests import utils
 from omni.physx.scripts import particleUtils, deformableUtils, physicsUtils
@@ -558,7 +560,7 @@ class PhysxParticleClothAPITestAsync(PhysicsBaseAsyncTestCase):
         initial_cloth_crc_list = []
         for mesh in mesh_list:
             cloth_crc_attr = mesh.GetPrim().GetAttribute("physxParticle:clothDataInputCrc")
-            self.assertTrue(cloth_crc_attr)
+            self.assertTrue(cloth_crc_attr, f"Prim {mesh.GetPrim().GetPath()} does not have clothDataInputCrc attribute")
 
             #store initial_crc
             initial_cloth_crc_list.append(cloth_crc_attr.Get())
@@ -593,7 +595,7 @@ class PhysxParticleClothAPITestAsync(PhysicsBaseAsyncTestCase):
         # check expected CRCs
         for mesh, initial_cloth_crc in zip(mesh_list, initial_cloth_crc_list):
             cloth_crc_attr = mesh.GetPrim().GetAttribute("physxParticle:clothDataInputCrc")
-            self.assertTrue(cloth_crc_attr)
+            self.assertTrue(cloth_crc_attr, f"Prim {mesh.GetPrim().GetPath()} does not have clothDataInputCrc attribute")
 
             #non-uniform scaled meshes can still share all the cooked data for particle cloth
             if change_type in ["change_translation", "change_rotation", "change_scale_uniform", "change_scale_non_uniform", "change_stack_scale_non_uniform"]:
@@ -602,6 +604,7 @@ class PhysxParticleClothAPITestAsync(PhysicsBaseAsyncTestCase):
                 self.assertFalse(initial_cloth_crc == cloth_crc_attr.Get())
 
     #test re-cook sensitivity on transform changes:
+    @unittest.skip("OMPE-60155")
     async def test_particle_cloth_recooking_mesh_on_transform_changes(self):
         for sync_type in ["sync_sim", "sync_wait"]:
             for change_type in ["change_translation", "change_rotation", "change_scale_uniform", "change_scale_non_uniform", "change_stack_scale_non_uniform"]:

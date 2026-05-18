@@ -22,11 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #include "PxgSolverCore.h"
+#include "PxgCommonDefines.h"
+#include "PxgRadixSortDesc.h"
 #include "cudamanager/PxCudaContextManager.h"
 #include "cudamanager/PxCudaContext.h"
 #include "PxgSimulationController.h"
@@ -50,12 +52,12 @@
 
 using namespace physx;
 
-PxgRadixSortBuffers::PxgRadixSortBuffers(PxgHeapMemoryAllocatorManager* heapMemoryManager) :
-	mInputKeys(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mInputRanks(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mOutputKeys(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mOutputRanks(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mRadixCounts(heapMemoryManager, PxsHeapStats::eSOLVER)
+PxgRadixSortBuffers::PxgRadixSortBuffers(PxgHeapMemoryAllocator& deviceAlloc) :
+	mInputKeys(deviceAlloc, PxsHeapStats::eSOLVER),
+	mInputRanks(deviceAlloc, PxsHeapStats::eSOLVER),
+	mOutputKeys(deviceAlloc, PxsHeapStats::eSOLVER),
+	mOutputRanks(deviceAlloc, PxsHeapStats::eSOLVER),
+	mRadixCounts(deviceAlloc, PxsHeapStats::eSOLVER)
 {
 }
 
@@ -83,12 +85,11 @@ void PxgRadixSortBuffers::allocate(PxU32 totalContactBatches)
 	mRadixCounts.allocate(sizeof(PxU32)*32*16, PX_FL);
 }
 
-PxgSolverCore::PxgSolverCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, PxgGpuContext* dynamicContext, PxgHeapMemoryAllocatorManager* heapMemoryManager) :
+PxgSolverCore::PxgSolverCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, PxgGpuContext* dynamicContext, PxgAllocatorDesc& allocDesc) :
 	mGpuKernelWranglerManager(gpuKernelWrangler),
 	mCudaContextManager(cudaContextManager),
 	mCudaContext(cudaContextManager->getCudaContext()),
 	mGpuContext(dynamicContext), 
-	mHeapMemoryManager(heapMemoryManager),
 	mSolverCoreDesc(NULL),
 	mPrepareDesc(NULL),
 	mPrePrepDesc(NULL),
@@ -98,85 +99,85 @@ PxgSolverCore::PxgSolverCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, Px
 	mTotalContactManagers(0),
 	mNbPrevExceededForceElements(0),
 	mNbArticSlabs(0),
-	mContactHeaderBlockStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mFrictionHeaderBlockStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mContactBlockStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mFrictionBlockStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mJointHeaderBlockStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mJointRowBlockStreamCon(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mJointRowBlockStreamMod(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mConstraintContactPrepBlockPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mConstraint1DPrepBlockPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mConstraint1DPrepBlockPoolVel(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mConstraint1DPrepBlockPoolPar(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mConstraintDataPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mConstraintRowPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiConstraintDataPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiConstraintRowPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mSolverBodyPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mTempStaticBodyOutputPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mIslandNodeIndices2(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mSolverBodyIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mOutVelocityPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mOutBody2WorldPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mSolverBodyDataPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mSolverBodySleepDataPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mOutArtiVelocityPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mSolverTxIDataPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mConstraintsPerPartition(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiConstraintsPerPartition(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mMotionVelocityArray(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mBlockConstraintBatches(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiOrderedStaticConstraints(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiOrderedStaticContacts(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mSolverBodyReferences(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mBlockWorkUnits(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mPartitionIndexData(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mPartitionNodeData(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mSolverConstantData(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mPartitionStartBatchIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mPartitionArticulationStartBatchIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mPartitionJointBatchCounts(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mPartitionArtiJointBatchCounts(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mDestroyedEdgeIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mNpIndexArray(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mGpuContactBlockBuffer(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mDataBuffer(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mCompressedContacts(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mCompressedPatches(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mConstraintWriteBackBuffer(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mForceBuffer(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mFrictionPatches(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiStaticContactIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiStaticJointIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiStaticContactCounts(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiStaticJointCounts(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mRigidStaticContactIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mRigidStaticJointIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mRigidStaticContactCounts(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mRigidStaticJointCounts(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mRigidStaticContactStartIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mRigidStaticJointStartIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mTempContactUniqueIndicesBlockBuffer(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mTempConstraintUniqueIndicesBlockBuffer(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mTempContactHeaderBlockBuffer(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mTempConstraintHeaderBlockBuffer(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiSelfContactIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiSelfJointIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiSelfContactCounts(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiSelfJointCounts(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mNodeInteractionCounts(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mFrictionPatchBlockStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mFrictionAnchorPatchBlockStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mFrictionIndexStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mFrictionPatchCounts(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mFrictionPatchStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mFrictionAnchorPatchStream(heapMemoryManager, PxsHeapStats::eSOLVER),
+	mContactHeaderBlockStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mFrictionHeaderBlockStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mContactBlockStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mFrictionBlockStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mJointHeaderBlockStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mJointRowBlockStreamCon(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mJointRowBlockStreamMod(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mConstraintContactPrepBlockPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mConstraint1DPrepBlockPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mConstraint1DPrepBlockPoolVel(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mConstraint1DPrepBlockPoolPar(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mConstraintDataPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mConstraintRowPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiConstraintDataPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiConstraintRowPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mSolverBodyPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mTempStaticBodyOutputPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mIslandNodeIndices2(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mSolverBodyIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mOutVelocityPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mOutBody2WorldPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mSolverBodyDataPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mSolverBodySleepDataPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mOutArtiVelocityPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mSolverTxIDataPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mConstraintsPerPartition(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiConstraintsPerPartition(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mMotionVelocityArray(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mBlockConstraintBatches(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiOrderedStaticConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiOrderedStaticContacts(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mSolverBodyReferences(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mBlockWorkUnits(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mPartitionIndexData(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mPartitionNodeData(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mSolverConstantData(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mPartitionStartBatchIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mPartitionArticulationStartBatchIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mPartitionJointBatchCounts(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mPartitionArtiJointBatchCounts(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mDestroyedEdgeIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mNpIndexArray(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mGpuContactBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mDataBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mCompressedContacts(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mCompressedPatches(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mConstraintWriteBackBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mForceBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mFrictionPatches(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiStaticContactIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiStaticJointIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiStaticContactCounts(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiStaticJointCounts(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mRigidStaticContactIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mRigidStaticJointIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mRigidStaticContactCounts(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mRigidStaticJointCounts(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mRigidStaticContactStartIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mRigidStaticJointStartIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mTempContactUniqueIndicesBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mTempConstraintUniqueIndicesBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mTempContactHeaderBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mTempConstraintHeaderBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiSelfContactIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiSelfJointIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiSelfContactCounts(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiSelfJointCounts(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mNodeInteractionCounts(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mFrictionPatchBlockStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mFrictionAnchorPatchBlockStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mFrictionIndexStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mFrictionPatchCounts(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mFrictionPatchStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mFrictionAnchorPatchStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
 	mCurrentIndex(0),
-	mPinnedEvent(NULL),
+	mEventMapped(NULL),
 	mCpuIslandNodeIndices(NULL),
 	mSolverBodyOutputVelocityOffset(0),
-	mRadixSort(heapMemoryManager)
+	mRadixSort(allocDesc.deviceAlloc)
 {}
 
 // These two structures must have the same layout
@@ -214,8 +215,8 @@ void PxgSolverCore::uploadNodeInteractionCounts(const PxU32* nodeInteractionCoun
 }
 
 void PxgSolverCore::gpuMemDMAbackSolverBodies(float4* solverBodyPool, PxU32 nbSolverBodies,
-	PxPinnedArray<PxAlignedTransform>& body2WorldPool,
-	PxPinnedArray<PxgSolverBodySleepData>& solverBodySleepDataPool,
+	Cm::PinnableArray<PxAlignedTransform>& body2WorldPool,
+	Cm::PinnableArray<PxgSolverBodySleepData>& solverBodySleepDataPool,
 	const bool enableDirectGPUAPI)
 {
 	PX_PROFILE_ZONE("GpuDynamics.DMABackBodies", 0);
@@ -231,9 +232,9 @@ void PxgSolverCore::gpuMemDMAbackSolverBodies(float4* solverBodyPool, PxU32 nbSo
 
 	CUfunction signalFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::BP_SIGNAL_COMPLETE);
 
-	*mPinnedEvent = 0;
+	*mEventMapped = 0;
 
-	void* devicePtr = getMappedDevicePtr(mCudaContext, mPinnedEvent);
+	void* devicePtr = getMappedDevicePtr(mCudaContext, mEventMapped);
 	PxCudaKernelParam signalParams[] =
 	{
 		PX_CUDA_KERNEL_PARAM(devicePtr)
@@ -242,7 +243,7 @@ void PxgSolverCore::gpuMemDMAbackSolverBodies(float4* solverBodyPool, PxU32 nbSo
 	mCudaContext->launchKernel(signalFunction, 1, 1, 1, 1, 1, 1, 0, mStream, signalParams, sizeof(signalParams), 0, PX_FL);
 }
 
-void PxgSolverCore::allocateSolverBodyBuffersCommon(PxU32 numSolverBodies, PxPinnedArray<PxNodeIndex>& islandNodeIndices)
+void PxgSolverCore::allocateSolverBodyBuffersCommon(PxU32 numSolverBodies, Cm::PinnableArray<PxNodeIndex>& islandNodeIndices)
 {
 	mMotionVelocityArray.allocate(sizeof(float4) * numSolverBodies * 2, PX_FL);
 
@@ -421,10 +422,10 @@ void PxgSolverCore::constructSolverSharedDescCommon(PxgSolverSharedDescBase& sha
 	sharedDesc.deltaOutOffset = mSolverBodyOutputVelocityOffset;
 }
 
-// PT: I don't understand the existing code. We already have a constructSolverSharedDescCommon function above, working on a
-// PxgSolverSharedDescBase structure. But there is still plenty of "constructSolverDesc" code that could be shared between
-// PGS and TGS when we initialize PxgSolverCoreDesc (which doesn't inherit from PxgSolverSharedDescBase). I just started moving
-// that shared code here, without touching the other bits.
+// TODO: Refactor code sharing between PGS and TGS solvers. The existing constructSolverSharedDescCommon function
+// works on PxgSolverSharedDescBase structure, but there is additional "constructSolverDesc" code that could be
+// shared between PGS and TGS when initializing PxgSolverCoreDesc (which doesn't inherit from PxgSolverSharedDescBase).
+// Consider consolidating the shared initialization logic.
 void PxgSolverCore::constructSolverDesc(PxgSolverCoreDesc& scDesc, PxU32 numIslands, PxU32 numSolverBodies, PxU32 numConstraintBatchHeader, PxU32 numArticConstraints, PxU32 numSlabs, bool enableStabilization)
 {
 	CUdeviceptr islandContextPoold = mIslandContextPool;//mIslandContextPool.getDevicePtr(0);
@@ -478,7 +479,7 @@ void PxgSolverCore::constructSolverDesc(PxgSolverCoreDesc& scDesc, PxU32 numIsla
 	scDesc.enableStabilization = enableStabilization;
 }
 
-void PxgSolverCore::gpuMemDMAUpJointData(const PxPinnedArray<PxgConstraintData>& cpuJointDataPool, const PxPinnedArray<Px1DConstraint>& cpuJointRowPool,
+void PxgSolverCore::gpuMemDMAUpJointData(const Cm::PinnableArray<PxgConstraintData>& cpuJointDataPool, const Cm::PinnableArray<Px1DConstraint>& cpuJointRowPool,
 	PxU32 nbCpuJoints, PxU32 nbGpuJoints, PxU32 totalCpuRows)
 {
 	CUdeviceptr startPtr = mConstraintDataPool.getDevicePtr() + nbGpuJoints * sizeof(PxgConstraintData);
@@ -493,7 +494,7 @@ void PxgSolverCore::gpuMemDMAUpJointData(const PxPinnedArray<PxgConstraintData>&
 #endif
 }
 
-void PxgSolverCore::gpuMemDMAUpArtiJointData(const PxPinnedArray<PxgConstraintData>& cpuArtiJointDataPool, const PxPinnedArray<Px1DConstraint>& cpuArtiJointRowPool,
+void PxgSolverCore::gpuMemDMAUpArtiJointData(const Cm::PinnableArray<PxgConstraintData>& cpuArtiJointDataPool, const Cm::PinnableArray<Px1DConstraint>& cpuArtiJointRowPool,
 	PxU32 nbCpuArtiJoints, PxU32 nbGpuArtiJoints, PxU32 totalArtiRows)
 {
 	CUdeviceptr startPtr = mArtiConstraintDataPool.getDevicePtr() + nbGpuArtiJoints * sizeof(PxgConstraintData);
@@ -637,8 +638,8 @@ void PxgSolverCore::resetVelocities(bool isTGS)
 	}
 }
 
-void PxgSolverCore::precomputeReferenceCount(PxgIslandContext* islandContext, PxU32 islandIndex, PxInt32ArrayPinned& constraintsPerPartition,
-	PxInt32ArrayPinned& artiConstraintsPerPartition, bool isTGS, PxReal minPen, PxReal elapsedTime)
+void PxgSolverCore::precomputeReferenceCount(PxgIslandContext* islandContext, PxU32 islandIndex, Cm::PinnableArray<PxU32>& constraintsPerPartition,
+	Cm::PinnableArray<PxU32>& artiConstraintsPerPartition, bool isTGS, PxReal minPen, PxReal elapsedTime)
 {
 	PX_PROFILE_ZONE("GpuDynamics.precomputeReferenceCount", 0);
 	{

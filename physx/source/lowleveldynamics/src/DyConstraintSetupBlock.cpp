@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -46,15 +46,14 @@ namespace Dy
 
 SolverConstraintPrepState::Enum setupSolverConstraint4
 		(PxSolverConstraintPrepDesc* PX_RESTRICT constraintDescs,
-		const PxReal dt, const PxReal recipdt, PxU32& totalRows,
-		PxConstraintAllocator& allocator, PxU32 maxRows, bool residualReportingEnabled);
+		const PxReal dt, const PxReal recipdt, const PxReal biasCoefficient, PxU32& totalRows,
+		PxConstraintAllocator& allocator, PxU32 maxRows);
 
 SolverConstraintPrepState::Enum setupSolverConstraint4
 (SolverConstraintShaderPrepDesc* PX_RESTRICT constraintShaderDescs,
 PxSolverConstraintPrepDesc* PX_RESTRICT constraintDescs,
-const PxReal dt, const PxReal recipdt, PxU32& totalRows,
-PxConstraintAllocator& allocator, bool residualReportingEnabled)
-
+const PxReal dt, const PxReal recipdt, const PxReal biasCoefficient, PxU32& totalRows,
+PxConstraintAllocator& allocator)
 {
 	//KS - we will never get here with constraints involving articulations so we don't need to stress about those in here
 
@@ -103,13 +102,13 @@ PxConstraintAllocator& allocator, bool residualReportingEnabled)
 		rows += constraintCount;
 	}
 
-	return setupSolverConstraint4(constraintDescs, dt, recipdt, totalRows, allocator, maxRows, residualReportingEnabled);
+	return setupSolverConstraint4(constraintDescs, dt, recipdt, biasCoefficient, totalRows, allocator, maxRows);
 }
 
 SolverConstraintPrepState::Enum setupSolverConstraint4
 (PxSolverConstraintPrepDesc* PX_RESTRICT constraintDescs,
-const PxReal simDt, const PxReal recipSimDt, PxU32& totalRows,
-PxConstraintAllocator& allocator, PxU32 maxRows, bool residualReportingEnabled)
+const PxReal simDt, const PxReal recipSimDt, const PxReal biasCoefficient, PxU32& totalRows,
+PxConstraintAllocator& allocator, PxU32 maxRows)
 {
 	const Vec4V zero = V4Zero();
 	Px1DConstraint* allSorted[MAX_CONSTRAINT_ROWS * 4];
@@ -132,7 +131,7 @@ PxConstraintAllocator& allocator, PxU32 maxRows, bool residualReportingEnabled)
 		numRows += desc.numRows;
 	}
 
-	const PxU32 stride = residualReportingEnabled ? sizeof(SolverConstraint1DDynamic4WithResidual) : sizeof(SolverConstraint1DDynamic4);
+	const PxU32 stride = sizeof(SolverConstraint1DDynamic4);
 
 	const PxU32 constraintLength = sizeof(SolverConstraint1DHeader4) + stride * maxRows;
 
@@ -164,7 +163,7 @@ PxConstraintAllocator& allocator, PxU32 maxRows, bool residualReportingEnabled)
 		desc.desc->writeBack = desc.writeback;
 	}
 
-	const PxReal erp[4] = { 1.0f, 1.0f, 1.0f, 1.0f};
+	const PxReal erp[4] = { biasCoefficient, biasCoefficient, biasCoefficient, biasCoefficient };
 	//OK, now we build all 4 constraints into a single set of rows
 
 	{
@@ -367,12 +366,6 @@ PxConstraintAllocator& allocator, PxU32 maxRows, bool residualReportingEnabled)
 			c->minImpulse = minImpulse;
 			c->maxImpulse = maxImpulse;
 			c->appliedForce = zero;
-			if (residualReportingEnabled) 
-			{
-				SolverConstraint1DDynamic4WithResidual* cc = static_cast<SolverConstraint1DDynamic4WithResidual*>(c);
-				cc->residualPosIter = zero;
-				cc->residualVelIter = zero;
-			}
 
 			const Vec4V lin0MagSq = V4MulAdd(clin0Z, clin0Z, V4MulAdd(clin0Y, clin0Y, V4Mul(clin0X, clin0X)));
 			const Vec4V cang0DotAngDelta = V4MulAdd(angDelta0Z, angDelta0Z, V4MulAdd(angDelta0Y, angDelta0Y, V4Mul(angDelta0X, angDelta0X)));

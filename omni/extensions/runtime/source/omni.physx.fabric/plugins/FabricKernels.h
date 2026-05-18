@@ -1,17 +1,45 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+#include <type_traits>
 #include <vector_types.h>
-
-#include "common/utilities/CudaHelpers.h"
-#include <cudamanager/PxCudaTypes.h>
 
 namespace omni
 {
 namespace physx
 {
+
+// Opaque handle wrappers used to transport CUDA driver handles without including <cuda.h>.
+// These types are trivial / standard-layout so they can be safely embedded in ABI structs
+// shared across translation units (e.g. between host .cpp and .cu files).
+
+// Host-only handle to a CUDA stream. Not meaningful on device; used only by host launch code.
+struct FabricCudaStreamHandle
+{
+    std::uintptr_t v = 0;
+};
+
+// Device pointer handle. Uses uint64_t to match CUdeviceptr (always 64-bit, regardless of
+// host pointer width).
+struct FabricCudaDevicePtrHandle
+{
+    std::uint64_t v = 0;
+};
+
+// compile-time checks to ensure we don't get surprises
+static_assert(sizeof(void*) == 8, "this code assumes a 64-bit host build");
+static_assert(sizeof(FabricCudaStreamHandle) == sizeof(std::uintptr_t), "stream handle must not change ABI");
+static_assert(alignof(FabricCudaStreamHandle) == alignof(std::uintptr_t), "stream handle alignment must match");
+static_assert(std::is_trivially_copyable_v<FabricCudaStreamHandle>, "stream handle must be trivially copyable");
+static_assert(std::is_standard_layout_v<FabricCudaStreamHandle>, "stream handle must be standard layout");
+static_assert(sizeof(FabricCudaDevicePtrHandle) == sizeof(std::uint64_t), "device ptr handle must not change ABI");
+static_assert(alignof(FabricCudaDevicePtrHandle) == alignof(std::uint64_t), "device ptr handle alignment must match");
+static_assert(std::is_trivially_copyable_v<FabricCudaDevicePtrHandle>, "device ptr handle must be trivially copyable");
+static_assert(std::is_standard_layout_v<FabricCudaDevicePtrHandle>, "device ptr handle must be standard layout");
 
 // DEPRECATED
 // AD: pack the complete info into 1 GPU cache line.
@@ -62,17 +90,16 @@ void convertVec4ftoVec3fBlockDeformableSurfaceDeprecated(DeformableSurfaceGPUDat
 void convertToVec3fBlockDeformableBody(DeformableBodyGPUData* deformableBodies,
                                        int numDeformables,
                                        int maxPoints,
-                                       CUstream stream = 0);
+                                       FabricCudaStreamHandle stream = { 0 });
 
 struct RigidBodyGpuData
 {
     size_t numRigidBodies;
-    CUdeviceptr rigidBodyTransforms;
-    CUdeviceptr linearVelocities;
-    CUdeviceptr angularVelocities;
-    CUdeviceptr initialScales;
-    double** localMatMapping;
-    double** parentWorldMatMapping;
+    FabricCudaDevicePtrHandle rigidBodyTransforms;
+    FabricCudaDevicePtrHandle linearVelocities;
+    FabricCudaDevicePtrHandle angularVelocities;
+    FabricCudaDevicePtrHandle initialScales;
+    double** worldMatMapping;
     double** worldPosMapping;
     float** worldOriMapping;
     float** worldSclMapping;
@@ -82,7 +109,7 @@ struct RigidBodyGpuData
     bool updateVelocities;
 };
 
-void copyRigidBodyDataToFabricGpu(const RigidBodyGpuData& rigidBodyData, CUstream cudaStream);
+void copyRigidBodyDataToFabricGpu(const RigidBodyGpuData& rigidBodyData, FabricCudaStreamHandle cudaStream);
 
 } // namespace physx
 } // namespace omni

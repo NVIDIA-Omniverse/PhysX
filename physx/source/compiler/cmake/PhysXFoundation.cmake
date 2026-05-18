@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXFoundation common
@@ -66,8 +66,6 @@ SET(PHYSXFOUNDATION_HEADERS
 	${PHYSX_ROOT_DIR}/include/foundation/PxHashSet.h
 	${PHYSX_ROOT_DIR}/include/foundation/PxInlineAllocator.h
 	${PHYSX_ROOT_DIR}/include/foundation/PxInlineArray.h
-	${PHYSX_ROOT_DIR}/include/foundation/PxPinnedArray.h
-	${PHYSX_ROOT_DIR}/include/foundation/PxPinnedBitMap.h
 	${PHYSX_ROOT_DIR}/include/foundation/PxMathIntrinsics.h
 	${PHYSX_ROOT_DIR}/include/foundation/PxMutex.h
 	${PHYSX_ROOT_DIR}/include/foundation/PxIO.h

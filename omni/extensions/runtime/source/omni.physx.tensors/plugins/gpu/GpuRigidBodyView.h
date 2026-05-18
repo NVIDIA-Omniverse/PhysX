@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -42,10 +42,33 @@ public:
                                          const TensorDesc* indexTensor,
                                          const bool isGlobal) override;
 
+    // Masked overrides
+    bool setKinematicTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setTransformsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool applyForcesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool applyForcesAndTorquesAtPositionMasked(const TensorDesc* srcForceTensor,
+                                               const TensorDesc* srcTorqueTensor,
+                                               const TensorDesc* srcPositionTensor,
+                                               const TensorDesc* maskTensor,
+                                               const bool isGlobal) override;
+    bool setMassesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setCOMsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setInertiasMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDisableGravitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setDisableSimulationsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setMaterialPropertiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) const override;
+    bool setCompliantMaterialPropertiesMasked(const TensorDesc* srcTensor,
+                                              const TensorDesc* srcCombineTensor,
+                                              const TensorDesc* maskTensor) const override;
+    bool setRestOffsetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) const override;
+    bool setContactOffsetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) const override;
+
 private:
     void copyActorAndLinksTransorms();
     bool updateCMassData();
     bool clearDataFlagsAndIndices();
+    bool resolveMask(const TensorDesc* maskTensor, ::physx::PxU32& outK) const;
 
     int mDevice = -1;
 
@@ -81,6 +104,15 @@ private:
 
     SingleAllocPolicy mArtiIndexSingleAllocPolicy;
     SingleAllocPolicy mRdIndexSingleAllocPolicy;
+
+    // Mask -> indices scratch (cached). Declared mutable because resolveMask()
+    // is const - some interface setters (e.g. material/shape properties) are
+    // const by pre-existing TensorAPI convention ("const" = view object unchanged,
+    // simulation state may be mutated via pointer indirection). These buffers are
+    // internal caching state, not logical view state.
+    mutable ::physx::PxU32* mMaskIndicesDev = nullptr;
+    mutable ::physx::PxU32 mMaskIndicesCapacity = 0;
+    mutable SingleAllocPolicy mMaskAllocPolicy;
 };
 } // namespace tensors
 } // namespace physx

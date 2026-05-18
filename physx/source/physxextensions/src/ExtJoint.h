@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -90,7 +90,7 @@ namespace Ext
 	PX_FORCE_INLINE	JointType*	createJointObject(PxU8*& address, PxDeserializationContext& context)
 	{
 		JointType* obj = PX_PLACEMENT_NEW(address, JointType(PxBaseFlag::eIS_RELEASABLE));
-		address += sizeof(JointType);	
+		address += sizeof(JointType);
 		obj->importExtraData(context);
 		obj->resolveReferences(context);
 		return obj;
@@ -123,14 +123,14 @@ namespace Ext
 
 		virtual void	preExportDataReset(){}
 		virtual	void	requiresObjects(PxProcessPxBaseCallback& c)
-		{			
+		{
 			c.process(*mPxConstraint);
-			
+
 			{
 				PxRigidActor* a0 = NULL;
 				PxRigidActor* a1 = NULL;
 				mPxConstraint->getActors(a0,a1);
-				
+
 				if (a0)
 				{
 					c.process(*a0);
@@ -140,9 +140,9 @@ namespace Ext
 					c.process(*a1);
 				}
 			}
-		}	
+		}
 //~PX_SERIALIZATION
-		
+
 #if PX_SUPPORT_PVD
 		// PxConstraintConnector
 		virtual bool updatePvdProperties(physx::pvdsdk::PvdDataStream& pvdConnection, const PxConstraint* c, PxPvdUpdateType::Enum updateType) const	PX_OVERRIDE
@@ -183,7 +183,7 @@ namespace Ext
 
 		// PxJoint
 		virtual void setActors(PxRigidActor* actor0, PxRigidActor* actor1)	PX_OVERRIDE
-		{	
+		{
 			//TODO SDK-DEV
 			//You can get the debugger stream from the NpScene
 			//Ext::Pvd::setActors( stream, this, mPxConstraint, actor0, actor1 );
@@ -201,7 +201,7 @@ namespace Ext
 					*conn,
 					*this,
 					*mPxConstraint,
-					actor0, 
+					actor0,
 					actor1
 					);
 			}
@@ -219,7 +219,7 @@ namespace Ext
 
 		// PxJoint
 		virtual	void getActors(PxRigidActor*& actor0, PxRigidActor*& actor1)	const	PX_OVERRIDE
-		{	
+		{
 			if(mPxConstraint)
 				mPxConstraint->getActors(actor0,actor1);
 			else
@@ -230,7 +230,7 @@ namespace Ext
 		}
 
 		// this is the local pose relative to the actor, and we store internally the local
-		// pose relative to the body 
+		// pose relative to the body
 
 		// PxJoint
 		virtual void setLocalPose(PxJointActorIndex::Enum actor, const PxTransform& pose)	PX_OVERRIDE
@@ -238,7 +238,7 @@ namespace Ext
 			PX_CHECK_AND_RETURN(pose.isSane(), "PxJoint::setLocalPose: transform is invalid");
 			const PxTransform p = pose.getNormalized();
 			mLocalPose[actor] = p;
-			mData->c2b[actor] = getCom(actor).transformInv(p); 
+			mData->c2b[actor] = getCom(actor).transformInv(p);
 			mPxConstraint->markDirty();
 
 			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
@@ -249,7 +249,7 @@ namespace Ext
 
 		// PxJoint
 		virtual	PxTransform	getLocalPose(PxJointActorIndex::Enum actor) const	PX_OVERRIDE
-		{	
+		{
 			return mLocalPose[actor];
 		}
 
@@ -267,7 +267,7 @@ namespace Ext
 				linear = angular = PxVec3(0.0f);
 				return;
 			}
-			
+
 			linear = static_cast<const PxRigidBody*>(actor)->getLinearVelocity();
 			angular = static_cast<const PxRigidBody*>(actor)->getAngularVelocity();
 		}
@@ -451,7 +451,7 @@ namespace Ext
 			mName = name;
 #if PX_SUPPORT_OMNI_PVD
 			const char* n = name ? name : "";
-			PxU32 nLen = PxU32(strlen(n)) + 1;
+			PxU32 nLen = PxU32(strnlen(n, UINT32_MAX - 1)) + 1;
 			OMNI_PVD_SET_ARRAY(OMNI_PVD_CONTEXT_HANDLE, PxJoint, name, static_cast<PxJoint&>(*this), n, nLen)
 #endif
 		}
@@ -477,7 +477,7 @@ namespace Ext
 		// PxConstraintConnector
 		virtual	void onComShift(PxU32 actor)	PX_OVERRIDE
 		{
-			mData->c2b[actor] = getCom(actor).transformInv(mLocalPose[actor]); 
+			mData->c2b[actor] = getCom(actor).transformInv(mLocalPose[actor]);
 			markDirty();
 		}
 
@@ -530,7 +530,7 @@ namespace Ext
 		// PxConstraintConnector
 		virtual const void* getConstantBlock()	const	PX_OVERRIDE
 		{
-			return mData; 
+			return mData;
 		}
 
 		virtual	void		connectToConstraint(PxConstraint* c)	PX_OVERRIDE
@@ -599,7 +599,7 @@ namespace Ext
 		}
 
 		PX_FORCE_INLINE	void markDirty()
-		{ 
+		{
 			mPxConstraint->markDirty();
 		}
 

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -35,7 +35,8 @@
 #include "DySleepingConfigulation.h"
 #include "stdio.h"
 
-using namespace physx;
+namespace physx
+{
 
 static __device__ void updateWakeCounter(bool& freeze, float4& solverBodyLinVel, float4& solverBodyAngVel, const PxAlignedTransform& body2World, 
 	PxgBodySim& bodySim, PxgSolverBodySleepData& sleepData,
@@ -433,3 +434,5 @@ static __device__ void integrateCoreTGS(const float4 motionLinVelXYZW, const flo
 		body2World.q.q.x = q.x; body2World.q.q.y = q.y; body2World.q.q.z = q.z; body2World.q.q.w = q.w;
 	}
 }
+
+} // namespace physx

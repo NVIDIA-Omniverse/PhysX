@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -161,6 +161,10 @@ GpuParticleClothView::~GpuParticleClothView()
         CHECK_CUDA(cudaFree(mPcDirtyFlagsDev));
         CHECK_CUDA(cudaFree(mDirtyPcIndicesDev));
         CHECK_CUDA(cudaFree(mPcIndexPairsDev));
+        if (mMaskIndicesDev)
+            CHECK_CUDA(cudaFree(mMaskIndicesDev));
+        if (mMaskAllocPolicy.mBuffer)
+            CHECK_CUDA(cudaFree(mMaskAllocPolicy.mBuffer));
     }
 }
 
@@ -207,11 +211,11 @@ bool GpuParticleClothView::applyParticleCloth()
         getPcDirtyIndices(mPcIndexSingleAllocPolicy, mDirtyPcIndicesDev, mPcDirtyFlagsDev, mNumCloths);
     CUevent waitEvent = mGpuSimData->mApplyWaitEvents[ApplyEvent::ePcBuffers];
     CUevent signalEvent = mGpuSimData->mApplySignalEvents[ApplyEvent::ePcBuffers];
-    CHECK_CU(cuEventRecord(waitEvent, nullptr));
-    CHECK_CU(cuEventSynchronize(waitEvent));
+    CHECK_CU(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(waitEvent), uintptr_t(0), nullptr));
+    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(waitEvent), nullptr));
     mGpuSimData->mScene->applyParticleBufferData(
         mDirtyPcIndicesDev, mPcIndexPairsDev, mPcDirtyFlagsDev, numDirtyIndices, waitEvent, signalEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, (CUevent)signalEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(signalEvent), 0, nullptr));
     if (!CHECK_CUDA(cudaMemset(mPcDirtyFlagsDev, 0, mNumCloths * sizeof(PxParticleBufferFlags))))
     {
         return false;
@@ -575,6 +579,135 @@ bool GpuParticleClothView::setSpringStiffness(const TensorDesc* srcTensor, const
     }
 
     return applyParticleCloth();
+}
+
+// ---------------------------------------------------------------------------
+// Mask support (mask -> compact indices -> existing indexed setters)
+// ---------------------------------------------------------------------------
+
+bool GpuParticleClothView::resolveMask(const TensorDesc* maskTensor, PxU32& outK) const
+{
+    if (!maskTensor || !maskTensor->data)
+    {
+        CARB_LOG_ERROR("mask tensor is null or has no data in %s", __FUNCTION__);
+        return false;
+    }
+
+    if (!checkTensorDevice(*maskTensor, mDevice, "mask", __FUNCTION__))
+        return false;
+
+    if (maskTensor->dtype != omni::physics::tensors::TensorDataType::eUint8)
+    {
+        CARB_LOG_ERROR("mask tensor must be uint8 in %s", __FUNCTION__);
+        return false;
+    }
+
+    if (getTensorTotalSize(*maskTensor) != getCount())
+    {
+        CARB_LOG_ERROR("mask tensor size (%llu) must equal view count (%u) in %s",
+                       (unsigned long long)getTensorTotalSize(*maskTensor), getCount(), __FUNCTION__);
+        return false;
+    }
+
+    const PxU32 N = getCount();
+
+    // Acquire PhysX CUDA context before any device calls (cudaMalloc, thrust)
+    PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
+
+    if (!mMaskIndicesDev || N > mMaskIndicesCapacity)
+    {
+        if (mMaskIndicesDev)
+            CHECK_CUDA(cudaFree(mMaskIndicesDev));
+        mMaskIndicesDev = nullptr;
+        mMaskIndicesCapacity = 0;
+
+        if (cudaMalloc(&mMaskIndicesDev, N * sizeof(PxU32)) != cudaSuccess)
+        {
+            CARB_LOG_ERROR("Failed to allocate mask indices buffer in %s", __FUNCTION__);
+            return false;
+        }
+        mMaskIndicesCapacity = N;
+    }
+
+    if (!compactMaskToIndices(mMaskAllocPolicy, mMaskIndicesDev,
+                              static_cast<const uint8_t*>(maskTensor->data), N, outK))
+        return false;
+    return true;
+}
+
+bool GpuParticleClothView::setPositionsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    PxU32 K;
+    if (!resolveMask(maskTensor, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return setPositions(srcTensor, nullptr);
+    TensorDesc idx{};
+    idx.device = mDevice;
+    idx.dtype = omni::physics::tensors::TensorDataType::eUint32;
+    idx.numDims = 1;
+    idx.dims[0] = (int)K;
+    idx.data = mMaskIndicesDev;
+    return setPositions(srcTensor, &idx);
+}
+
+bool GpuParticleClothView::setVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    PxU32 K;
+    if (!resolveMask(maskTensor, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return setVelocities(srcTensor, nullptr);
+    TensorDesc idx{};
+    idx.device = mDevice;
+    idx.dtype = omni::physics::tensors::TensorDataType::eUint32;
+    idx.numDims = 1;
+    idx.dims[0] = (int)K;
+    idx.data = mMaskIndicesDev;
+    return setVelocities(srcTensor, &idx);
+}
+
+bool GpuParticleClothView::setMassesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    PxU32 K;
+    if (!resolveMask(maskTensor, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return setMasses(srcTensor, nullptr);
+    TensorDesc idx{};
+    idx.device = mDevice;
+    idx.dtype = omni::physics::tensors::TensorDataType::eUint32;
+    idx.numDims = 1;
+    idx.dims[0] = (int)K;
+    idx.data = mMaskIndicesDev;
+    return setMasses(srcTensor, &idx);
+}
+
+bool GpuParticleClothView::setSpringDampingMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    PxU32 K;
+    if (!resolveMask(maskTensor, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return setSpringDamping(srcTensor, nullptr);
+    TensorDesc idx{};
+    idx.device = mDevice;
+    idx.dtype = omni::physics::tensors::TensorDataType::eUint32;
+    idx.numDims = 1;
+    idx.dims[0] = (int)K;
+    idx.data = mMaskIndicesDev;
+    return setSpringDamping(srcTensor, &idx);
+}
+
+bool GpuParticleClothView::setSpringStiffnessMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    PxU32 K;
+    if (!resolveMask(maskTensor, K)) return false;
+    if (K == 0) return true;
+    if (K == getCount()) return setSpringStiffness(srcTensor, nullptr);
+    TensorDesc idx{};
+    idx.device = mDevice;
+    idx.dtype = omni::physics::tensors::TensorDataType::eUint32;
+    idx.numDims = 1;
+    idx.dims[0] = (int)K;
+    idx.data = mMaskIndicesDev;
+    return setSpringStiffness(srcTensor, &idx);
 }
 
 }

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -371,16 +371,6 @@ public:
      * This method releases the instance of the CookingDataAsync class.
      */
     virtual void release(void) = 0;
-
-    virtual bool isLocalMeshCacheEnabled() const = 0;
-
-    virtual void setLocalMeshCacheEnabled(bool val) = 0;
-
-    // local mesh cache size in MB
-    virtual uint32_t getLocalMeshCacheSize() const = 0;
-
-    // local mesh cache size in MB
-    virtual void setLocalMeshCacheSize(uint32_t val) = 0;
 
     virtual void resetLocalMeshCacheContents() = 0;
 

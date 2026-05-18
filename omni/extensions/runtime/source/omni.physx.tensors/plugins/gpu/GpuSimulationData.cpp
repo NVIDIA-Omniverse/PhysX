@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -8,6 +8,7 @@
 
 #include "GpuSimulationData.h"
 
+#include "../CommonTypes.h"
 #include "../GlobalsAreBad.h"
 #include "../SimulationBackend.h"
 #include "CudaKernels.h"
@@ -15,6 +16,8 @@
 #include <omni/physx/IPhysx.h>
 
 #include <PxPhysicsAPI.h>
+
+#include <algorithm>
 
 using namespace physx;
 using namespace pxr;
@@ -140,32 +143,16 @@ bool GpuSimulationData::init(PxScene* scene)
     mSpatialTendonBufSize = numArtis * maxSpatialTendons;
     mMaxArtiIndex = maxArtiIndex;
 
-    /*
-    {
-        CUcontext _ctx = 0;
-        CHECK_CU(cuCtxGetCurrent(&_ctx));
-        printf(":=:=:=:=:=:=:=: ctx @ %p (init entry)\n", _ctx);
-    }
-    */
-
     PhysxCudaContextGuard ctxGuarg(mCudaContextManager);
 
-    /*
-    {
-        CUcontext _ctx = 0;
-        CHECK_CU(cuCtxGetCurrent(&_ctx));
-        printf(":=:=:=:=:=:=:=: ctx @ %p (init guarded)\n", _ctx);
-    }
-    */
-
-    CHECK_CU(cuCtxGetCurrent(&mCtx));
+    SHIM_CU_CTX_GET_CURRENT(&mCtx);
 
     VALIDATE_CUDA_CONTEXT();
 
     // determine the device ordinal that PhysX is using
     {
         int deviceCount = 0;
-        if (!CHECK_CU(cuDeviceGetCount(&deviceCount)))
+        if (!CHECK_CU(getCudaShim()->deviceGetCount(&deviceCount, nullptr)))
         {
             CARB_LOG_ERROR("Failed to get device count");
             return false;
@@ -174,17 +161,17 @@ bool GpuSimulationData::init(PxScene* scene)
         std::map<CUdevice, int> deviceMap;
         for (int i = 0; i < deviceCount; i++)
         {
-            CUdevice device;
-            if (CHECK_CU(cuDeviceGet(&device, i)))
+            int dev = -1;
+            if (CHECK_CU(getCudaShim()->deviceGet(&dev, i, nullptr)))
             {
-                deviceMap[device] = i;
+                deviceMap[static_cast<CUdevice>(dev)] = i;
             }
         }
 
-        CUdevice device;
-        if (CHECK_CU(cuCtxGetDevice(&device)))
+        int devOrdinal = -1;
+        if (CHECK_CU(getCudaShim()->ctxGetDevice(&devOrdinal, nullptr)))
         {
-            auto it = deviceMap.find(device);
+            auto it = deviceMap.find(static_cast<CUdevice>(devOrdinal));
             if (it != deviceMap.end())
             {
                 mDevice = it->second;
@@ -339,19 +326,109 @@ bool GpuSimulationData::init(PxScene* scene)
                       "mGpuContactPairsDev");
     prepareDeviceData((void**)&mGpuContactPairCountDev, nullptr, sizeof(PxU32),
                       "mGpuContactPairCountDev");
+
+    // Build global actor-to-pathId lookup for raw contact data
+    // This allows contact views to identify which actor a contact is with on GPU
+    // Note: userData contains an object ID, we need to convert it to a path ID
+    if (g_physx)
+    {
+        std::vector<GpuActorPathIdPair> actorPathLookup;
+
+        // Add all rigid dynamics
+        if (numRds > 0)
+        {
+            std::vector<PxActor*> rdActors(numRds);
+            scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, rdActors.data(), numRds);
+            for (PxActor* actor : rdActors)
+            {
+                if (actor && actor->userData)
+                {
+                    size_t objectId = reinterpret_cast<size_t>(actor->userData);
+                    SdfPath path = g_physx->getPhysXObjectUsdPath(objectId);
+                    if (!path.IsEmpty())
+                    {
+                        GpuActorPathIdPair pair;
+                        pair.actor = actor;
+                        pair.pathId = asInt(path);
+                        actorPathLookup.push_back(pair);
+                    }
+                }
+            }
+        }
+
+        // Add all rigid statics (ground plane, etc.)
+        PxU32 numStatics = scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC);
+        if (numStatics > 0)
+        {
+            std::vector<PxActor*> staticActors(numStatics);
+            scene->getActors(PxActorTypeFlag::eRIGID_STATIC, staticActors.data(), numStatics);
+            for (PxActor* actor : staticActors)
+            {
+                if (actor && actor->userData)
+                {
+                    size_t objectId = reinterpret_cast<size_t>(actor->userData);
+                    SdfPath path = g_physx->getPhysXObjectUsdPath(objectId);
+                    if (!path.IsEmpty())
+                    {
+                        GpuActorPathIdPair pair;
+                        pair.actor = actor;
+                        pair.pathId = asInt(path);
+                        actorPathLookup.push_back(pair);
+                    }
+                }
+            }
+        }
+
+        // Add all articulation links
+        for (PxArticulationReducedCoordinate* arti : artis)
+        {
+            if (arti)
+            {
+                PxU32 numLinks = arti->getNbLinks();
+                std::vector<PxArticulationLink*> links(numLinks);
+                arti->getLinks(links.data(), numLinks);
+                for (PxArticulationLink* link : links)
+                {
+                    if (link && link->userData)
+                    {
+                        size_t objectId = reinterpret_cast<size_t>(link->userData);
+                        SdfPath path = g_physx->getPhysXObjectUsdPath(objectId);
+                        if (!path.IsEmpty())
+                        {
+                            GpuActorPathIdPair pair;
+                            pair.actor = link;
+                            pair.pathId = asInt(path);
+                            actorPathLookup.push_back(pair);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sort for binary search on GPU
+        std::sort(actorPathLookup.begin(), actorPathLookup.end(), GpuActorPathIdPair::LessThan());
+        mNumActorPathPairs = PxU32(actorPathLookup.size());
+
+        if (mNumActorPathPairs > 0)
+        {
+            prepareDeviceData((void**)&mActorPathLookupDev, actorPathLookup.data(),
+                              mNumActorPathPairs * sizeof(GpuActorPathIdPair), "mActorPathLookupDev");
+        }
+    }
+
     // synchronization events
     for (PxU32 i = 0; i < PxU32(CopyEvent::eCOUNT); i++)
     {
-        CHECK_CU(cuEventCreate(&mCopyEvents[i], CU_EVENT_DISABLE_TIMING));
+        SHIM_CU_EVENT_CREATE(&mCopyEvents[i], CU_EVENT_DISABLE_TIMING);
         mCopyEventPointers[i] = mCopyEvents[i] ? &mCopyEvents[i] : nullptr;
     }
     for (PxU32 i = 0; i < PxU32(ApplyEvent::eCOUNT); i++)
     {
-        CHECK_CU(cuEventCreate(&mApplyWaitEvents[i], CU_EVENT_DISABLE_TIMING));
-        CHECK_CU(cuEventCreate(&mApplySignalEvents[i], CU_EVENT_DISABLE_TIMING));
+        SHIM_CU_EVENT_CREATE(&mApplyWaitEvents[i], CU_EVENT_DISABLE_TIMING);
+        SHIM_CU_EVENT_CREATE(&mApplySignalEvents[i], CU_EVENT_DISABLE_TIMING);
     }
 
-    CHECK_CU(cuEventCreate(&mContactReadEvent, CU_EVENT_DISABLE_TIMING));
+    SHIM_CU_EVENT_CREATE(&mContactReadEvent, CU_EVENT_DISABLE_TIMING);
 
     CHECK_CUDA(cudaStreamSynchronize(nullptr));
 
@@ -368,6 +445,7 @@ GpuSimulationData::~GpuSimulationData()
     CHECK_CUDA(cudaFree(mNodeIdx2ArtiGpuIdxDev));
     CHECK_CUDA(cudaFree(mGpuContactPairsDev));
     CHECK_CUDA(cudaFree(mGpuContactPairCountDev));
+    CHECK_CUDA(cudaFree(mActorPathLookupDev));
 
     CHECK_CUDA(cudaFree(mLinkOrRootLinearVelAccDev));
     CHECK_CUDA(cudaFree(mLinkOrRootAngularVelAccDev));
@@ -423,23 +501,23 @@ GpuSimulationData::~GpuSimulationData()
     {
         if (mCopyEvents[i])
         {
-            CHECK_CU(cuEventDestroy(mCopyEvents[i]));
+            CHECK_CU(getCudaShim()->eventDestroy(reinterpret_cast<uintptr_t>(mCopyEvents[i]), nullptr));
         }
     }
     for (PxU32 i = 0; i < PxU32(ApplyEvent::eCOUNT); i++)
     {
         if (mApplyWaitEvents[i])
         {
-            CHECK_CU(cuEventDestroy(mApplyWaitEvents[i]));
+            CHECK_CU(getCudaShim()->eventDestroy(reinterpret_cast<uintptr_t>(mApplyWaitEvents[i]), nullptr));
         }
         if (mApplySignalEvents[i])
         {
-            CHECK_CU(cuEventDestroy(mApplySignalEvents[i]));
+            CHECK_CU(getCudaShim()->eventDestroy(reinterpret_cast<uintptr_t>(mApplySignalEvents[i]), nullptr));
         }
     }
     if (mContactReadEvent)
     {
-        CHECK_CU(cuEventDestroy(mContactReadEvent));
+        CHECK_CU(getCudaShim()->eventDestroy(reinterpret_cast<uintptr_t>(mContactReadEvent), nullptr));
     }
 }
 
@@ -523,7 +601,7 @@ void GpuSimulationData::updateContactReports()
     PhysxCudaContextGuard ctxGuarg(mCudaContextManager);
 
     mScene->getDirectGPUAPI().copyContactData(mGpuContactPairsDev, mGpuContactPairCountDev, mMaxGpuContactPairs, NULL, mContactReadEvent);
-    CHECK_CU(cuStreamWaitEvent(nullptr, mContactReadEvent, 0));
+    CHECK_CU(getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(mContactReadEvent), 0, nullptr));
 
     //dumpGpuContactData(mGpuContactPairsDev, mGpuContactPairCountDev);
 

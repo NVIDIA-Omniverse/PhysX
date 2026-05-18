@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -37,8 +37,11 @@
 #include "PxcConstraintBlockStream.h"
 #include "DyArticulationContactPrep.h"
 #include "foundation/PxSIMDHelpers.h"
-#include "DyArticulationUtils.h"
 #include "DyAllocator.h"
+#include "foundation/PxVecMath.h"
+
+using namespace physx;
+using namespace aos;
 
 namespace physx
 {
@@ -230,6 +233,14 @@ void diagonalize(Px1DConstraint** row,
 // The constraint projected velocity scalar is then:
 // projV = J * v
 // 
+// A hard 1D constraint tries to satisfy the equation:
+// 
+// projV + BaumgarteTerm*geometricError/dt - velocityTarget = 0
+//
+// The scalar constraint error to resolve can thus be defined as:
+// 
+// errV = projV + BaumgarteTerm*geometricError/dt - velocityTarget
+// 
 // Let M be the 12x12 mass matrix (with scalar masses m0, m1 and 3x3 inertias I0, I1)
 // 
 // | m0                            |
@@ -246,50 +257,75 @@ void diagonalize(Px1DConstraint** row,
 // |                        |    | |
 // 
 // Let p be the impulse scalar that results from solving the 1D constraint given
-// projV, geometric error etc.
-// Turning this impulse p to a 12x1 delta velocity vector dv:
+// errV
+//
+// p = (J * M^-1 * J^T)^-1 * -errV
+// 
+// With u = (J * M^-1 * J^T) this turns to:
+// 
+// p = u^-1 * -errV
+// 
+// We often refer to u as "unit response" in the code. It is easy to verify that u
+// is a scalar indeed.
+//
+// Turning this scalar impulse p to a 12x1 delta velocity vector dv:
 // 
 // dv = M^-1 * (J^T * p) =  M^-1 * J^T * p
 // 
-// Now to consider the case of multiple 1D constraints J0, J1, J2, ... operating
-// on the same body pair.
+// Now to consider the case of multiple 1D constraints operating on the same body pair.
 // 
-// Let K be the matrix holding these constraints as rows
+// Let K be the matrix holding the Jacobians of each 1D constraint as rows
 // 
 //     |  J0  |
 // K = |  J1  |
 //     |  J2  |
 //     |  ... |
-// 
-// Applying these constraints:
 //
-// |                 |                | p0       |
-// | dv0 dv1 dv2 ... | = M^-1 * K^T * |    p1    |
-// |                 |                |       p2 |
+// The computation of the impulses p0, p1, p2, ... can now be written in matrix form as:
 //
-// Let MK = (M^-1 * K^T)^T = K * M^-1  (M^-1 is symmetric). The transpose
-// is only used here to talk about constraint rows instead of columns (since
-// that expression seems to be used more commonly here).
+// | p0  |                         | -errV0 |
+// | p1  |                         | -errV1 |
+// | p2  | = (K * M^-1 * K^T)^-1 * | -errV2 |
+// | ... |                         | ...    |
+// | ... |                         | ...    |
+//
+// Let's assume 3 1D constraints to verify the dimensions match:
 // 
-// dvMatrix = MK^T * pMatrix
+// 3x1 = (3x12 * 12x12 * 12x3) * 3x1
+//     = (3x3) * 3x1 = 3x1
+//
+// Let's use the capital letter U for the matrix (K * M^-1 * K^T). It can be observed that
+// depending on the form of U, the constraint error of one 1D constraint might affect the
+// impulse of other 1D constraints on the same body pair. This can impact convergence negatively
+// as one 1D constraint might apply an impulse that resolves the error along its Jacobian
+// but at the same time introduces errors along the Jacobians of other constraints. The ideal
+// case would be for all 1D constraints to operate independently. This will be the case if the
+// matrix U is diagonal. A matrix is diagonal, if an orthogonal matrix O is multiplied with
+// its transpose. Thus, if the matrix U can be decomposed as follows and if O is orthogonal,
+// then U will be diagonal:
 // 
-// The rows of MK define how an impulse affects the constrained velocity directions
-// of the two bodies. Ideally, the different constraint rows operate on independent
-// parts of the velocity such that constraints don't step on each others toe
-// (constraint A making the situation better with respect to its own constrained
-// velocity directions but worse for directions of constraint B and vice versa).
-// A formal way to specify this goal is to try to have the rows of MK be orthogonal
-// to each other, that is, to orthogonalize the MK matrix. This will eliminate
-// any action of a constraint in directions that have been touched by previous
-// constraints already. This re-configuration of constraint rows does not work in
-// general but for hard equality constraints (no spring, targetVelocity=0,
-// min/maxImpulse unlimited), changing the constraint rows to make them orthogonal
-// should not change the solution of the constraint problem. As an example, one
-// might consider a joint with two 1D constraints that lock linear movement in the
-// xy-plane (those are hard equality constraints). It's fine to choose different
-// constraint directions from the ones provided, assuming the new directions are
-// still in the xy-plane and that the geometric errors get patched up accordingly.
+// U = O * O^T
+//
+// We have:
+//
+// U = (K * M^-1 * K^T) = (K * (M^(-1/2) * M^(-1/2)) * K^T) = (K * M^(-1/2) * (M^(-1/2))^T * K^T)
+//   = (K * M^(-1/2)) * (K * M^(-1/2))^T
+//
+// Note: M^(-1/2) = (M^(-1/2))^T because M is symmetric
 // 
+// => O = (K * M^(-1/2))
+// 
+// If we can ensure that O (or O^T) is orthogonal, then U will be a diagonal matrix and the
+// 1D constraints will operate independently of each other. The following code will thus try
+// to orthogonalize the O matrix. Let's refer to the rows of O as "constraint rows" from here
+// on. Note that this orthogonalization of constraint rows does not work in general but for
+// hard equality constraints (no spring, targetVelocity=0, min/maxImpulse unlimited), changing
+// the constraint rows to make them orthogonal should not change the solution of the constraint
+// problem. As an example, one might consider a joint with two 1D constraints that lock linear
+// movement in the xy-plane (those are hard equality constraints). It's fine to choose different
+// constraint directions from the ones provided, assuming the new directions are still in the
+// xy-plane and that the geometric errors get patched up accordingly.
+//
 // \param[in,out] row Pointers to the constraints to orthogonalize. The members
 //                    linear0/1, angular0/1, geometricError and velocityTarget will
 //                    get changed potentially
@@ -368,43 +404,56 @@ void orthogonalize(Px1DConstraint** row,
 			// 
 			// The implementation here maps as follows:
 			//
-			// u = [orthoLinear0, orthoAngular0, orthoLinear1, orthoAngular1]
-			// v = [row[]->linear0, row[]->angular0, row[]->linear1, row[]->angular1]
+			// u = M_isqr * _u  (M_isqr see further below)
+			// v = M_isqr * _v
+			// _u = [orthoLinear0, orthoAngular0, orthoLinear1, orthoAngular1]
+			// _v = [row[]->linear0, row[]->angular0, row[]->linear1, row[]->angular1]
 			//
-			// Since the solver is using momocity, orthogonality should not be achieved for rows
-			// M^-1 * u but for rows uM = M^(-1/2) * u (with M^(-1/2) being the square root of the
-			// inverse mass matrix). Following the described orthogonalization procedure to turn
-			// v1m into u1m that is orthogonal to u0m:
+			// | m0^(-1/2)                                                |
+			// |    m0^(-1/2)                                             |
+			// |       m0^(-1/2)                                          |
+			// |                |           |                             |
+			// |                | I0^(-1/2) |                             |
+			// |                |           |                             | = M_isqr = M^(-1/2)
+			// |                             m1^(-1/2)                    |
+			// |                                m1^(-1/2)                 |
+			// |                                   m1^(-1/2)              |
+			// |                                            |           | |
+			// |                                            | I1^(-1/2) | |
+			// |                                            |           | |
+			//  
+			// Following the described orthogonalization procedure to turn v1 into u1 that is orthogonal
+			// to u0:
 			// 
-			// u1M           = v1M - proj_u0M(v1M)
-			// M^(-1/2) * u1 = M^(-1/2) * v1  -  <v1M,u0M>/<u0M,u0M> * M^(-1/2) * u0
+			// u1            = v1 - proj_u0(v1)
+			// M_isqr * _u1  = M_isqr * _v1  -  <v1,u0>/<u0,u0> * M_isqr * _u0
 			// 
-			// Since M^(-1/2) is multiplied on the left and right hand side, this can be transformed to:
+			// Since M_isqr is multiplied on the left and right hand side, this can be transformed to:
 			// 
-			// u1 = v1  -  <v1M,u0M>/<u0M,u0M> * u0
+			// _u1 = _v1  -  <v1,u0>/<u0,u0> * _u0
 			// 
-			// For the computation of <v1M,u0M>/<u0M,u0M>, the following shall be considered:
+			// For the computation of <v1,u0>/<u0,u0>, the following shall be considered:
 			//
-			// <vM,uM>
-			// = <M^(-1/2) * v, M^(-1/2) * u>
-			// = (M^(-1/2) * v)^T * (M^(-1/2) * u)  (v and u being seen as 12x1 vectors here)
-			// = v^T * M^(-1/2)^T * M^(-1/2) * u
-			// = v^T * M^-1 * u   (M^(-1/2) is a symmetric matrix, thus transposing has no effect)
-			// = <v, M^-1 * u>
+			// <v,u>
+			// = <M_isqr * _v, M_isqr * _u>
+			// = (M_isqr * _v)^T * (M_isqr * _u)  (_v and _u being seen as 12x1 vectors here)
+			// = _v^T * M_isqr^T * M_isqr * _u
+			// = _v^T * M_isqr^2 * _u   (M_isqr is a symmetric matrix, thus transposing has no effect)
+			// = <_v, M_isqr^2 * _u>
 			// 
 			// Applying this:
 			// 
-			// <v1M,u0M>/<u0M,u0M> = <v1, M^-1 * u0> / <u0, M^-1 * u0>
+			// <v1,u0>/<u0,u0> = <_v1, M_isqr^2 * _u0> / <_u0, M_isqr^2 * _u0>
 			//
 			// The code uses:
 			// 
-			// v1m_ = [v1Lin0, I0^(-1/2) * v1Ang0, v1Lin1, I1^(-1/2) * v1Ang1]
-			// u0m_ = [(1/m0) * u0Lin0, I0^(-1/2) * u0Ang0, (1/m1) * u0Lin1, I1^(-1/2) * u0Ang1]
-			// u0m* = u0m_ / <u0M,u0M>  (see variables named lin0m, ang0m, lin1m, ang1m in the code)
+			// v1* = [_v1Lin0, I0^(-1/2) * _v1Ang0, _v1Lin1, I1^(-1/2) * _v1Ang1]
+			// u0* = [(1/m0) * _u0Lin0, I0^(-1/2) * _u0Ang0, (1/m1) * _u0Lin1, I1^(-1/2) * _u0Ang1]  (see variables named l0m, a0m, l1m, a1m in the code)
+			// u0** = u0* / <u0,u0>  (see variables named lin0m, ang0m, lin1m, ang1m in the code. Note <u0,u0> is called s in the code)
 			// 
 			// And then does:
 			// 
-			// <v1m_, u0m*> = <v1m_, u0m_> / <u0M,u0M> = <v, M^-1 * u> / <u0M,u0M> = <v1M,u0M>/<u0M,u0M>
+			// <v1*, u0**> = <v1*, u0*> / <u0,u0> = <_v1, M_isqr^2 * _u0> / <u0,u0> = <v1,u0>/<u0,u0>
 			// (see variable named t in the code)
 			// 
 			// note: u0, u1, ... get computed for equality constraints. Inequality constraints do not generate new
@@ -596,7 +645,7 @@ void preprocessRows(Px1DConstraint** sorted,
 PxU32 ConstraintHelper::setupSolverConstraint(
 PxSolverConstraintPrepDesc& prepDesc,
 PxConstraintAllocator& allocator,
-PxReal simDt, PxReal recipSimDt)
+PxReal simDt, PxReal recipSimDt, PxReal biasCoefficient)
 {
 	if (prepDesc.numRows == 0)
 	{
@@ -626,7 +675,8 @@ PxReal simDt, PxReal recipSimDt)
 
 	desc.writeBack = prepDesc.writeback;
 
-	PxMemSet(desc.constraint, 0, constraintLength);
+	// PT: we clear the whole buffer to ensure Ws of Vec3s/Vec4s/etc will be zero
+	PxMemZero(desc.constraint, constraintLength);
 
 	SolverConstraint1DHeader* header = reinterpret_cast<SolverConstraint1DHeader*>(desc.constraint);
 	PxU8* constraints = desc.constraint + sizeof(SolverConstraint1DHeader);
@@ -647,7 +697,7 @@ PxReal simDt, PxReal recipSimDt)
 		prepDesc.data0->sqrtInvInertia, prepDesc.data1->sqrtInvInertia, prepDesc.data0->invMass, prepDesc.data1->invMass, 
 		prepDesc.invMassScales, isExtended || prepDesc.disablePreprocessing, prepDesc.improvedSlerp);
 
-	const PxReal erp = 1.0f;
+	const PxReal erp = biasCoefficient;
 
 	PxU32 outCount = 0;
 
@@ -714,8 +764,14 @@ PxReal simDt, PxReal recipSimDt)
 
 			const Cm::SpatialVector resp0 = createImpulseResponseVector(e.lin0, e.ang0, eb0);
 			const Cm::SpatialVector resp1 = createImpulseResponseVector(-e.lin1, -e.ang1, eb1);
-			unitResponse = getImpulseResponse(eb0, resp0, unsimdRef(e.deltaVA), prepDesc.invMassScales.linear0, prepDesc.invMassScales.angular0,
-				eb1, resp1, unsimdRef(e.deltaVB), prepDesc.invMassScales.linear1, prepDesc.invMassScales.angular1, false);
+
+			// PT: deltaVX writes: we write the delta vectors to memory and ensure padding is zero after that.
+			unitResponse = getImpulseResponse(	eb0, resp0, e.deltaVA_, prepDesc.invMassScales.linear0, prepDesc.invMassScales.angular0,
+												eb1, resp1, e.deltaVB_, prepDesc.invMassScales.linear1, prepDesc.invMassScales.angular1, false);
+			PX_ASSERT(e.deltaVA_.linear.padding == 0);
+			PX_ASSERT(e.deltaVA_.angular.padding == 0);
+			PX_ASSERT(e.deltaVB_.linear.padding == 0);
+			PX_ASSERT(e.deltaVB_.angular.padding == 0);
 
 			//Add CFM term!
 
@@ -755,7 +811,7 @@ PxReal simDt, PxReal recipSimDt)
 			simDt, recipSimDt));
 
 		if(c.flags & Px1DConstraintFlag::eOUTPUT_FORCE)
-			s.setOutputForceFlag(true);
+			s.flags |= DY_SC_FLAG_OUTPUT_FORCE;
 
 		outCount++;
 
@@ -770,18 +826,16 @@ PxReal simDt, PxReal recipSimDt)
 PxU32 SetupSolverConstraint(SolverConstraintShaderPrepDesc& shaderDesc,
 	PxSolverConstraintPrepDesc& prepDesc,
 	PxConstraintAllocator& allocator,
-	PxReal dt, PxReal invdt)
+	PxReal dt, PxReal invdt, PxReal biasCoefficient)
 {
 	// LL shouldn't see broken constraints
 	
-	PX_ASSERT(!(reinterpret_cast<ConstraintWriteback*>(prepDesc.writeback)->isBroken()));
+	PX_ASSERT(!(reinterpret_cast<ConstraintWriteback*>(prepDesc.writeback)->broken));
 
 	setConstraintLength(*prepDesc.desc, 0);
 
 	if (!shaderDesc.solverPrep)
 		return 0;
-
-	//PxU32 numAxisConstraints = 0;
 
 	Px1DConstraint rows[MAX_CONSTRAINT_ROWS];
 	setupConstraintRows(rows, MAX_CONSTRAINT_ROWS);
@@ -801,7 +855,7 @@ PxU32 SetupSolverConstraint(SolverConstraintShaderPrepDesc& shaderDesc,
 
 	prepDesc.rows = rows;
 
-	return ConstraintHelper::setupSolverConstraint(prepDesc, allocator, dt, invdt);
+	return ConstraintHelper::setupSolverConstraint(prepDesc, allocator, dt, invdt, biasCoefficient);
 }
 
 }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -145,7 +145,7 @@ namespace Gu
 			return *this;
 		}
 
-		PX_FORCE_INLINE void populateVerts(const PxU8* inds, PxU32 numInds, const PxVec3* originalVerts, aos::Vec3V* verts)const
+		PX_FORCE_INLINE void populateVerts(const PxU8* inds, PxU32 numInds, const PxVec3* originalVerts, aos::Vec3V* verts) const
 		{
 			using namespace aos;
 
@@ -153,27 +153,27 @@ namespace Gu
 				verts[i] = V3LoadU_SafeReadW(originalVerts[inds[i]]);	// PT: safe because of the way vertex memory is allocated in ConvexHullData (and 'populateVerts' is always called with polyData.mVerts)
 		}
 
-		PX_FORCE_INLINE aos::Vec3V supportPoint(const PxI32 index)const
+		PX_FORCE_INLINE aos::Vec3V supportPoint(const PxI32 index) const
 		{
 			using namespace aos;
 			const BoolV con = boxVertexTable[index];
 			return V3Sel(con, extents, V3Neg(extents));
 		}  
 
-		PX_FORCE_INLINE void getIndex(const aos::BoolV con, PxI32& index)const 
+		PX_FORCE_INLINE void getIndex(const aos::BoolV con, PxI32& index) const
 		{ 
 			using namespace aos;
 			index = PxI32(BGetBitMask(con) & 0x7); 
 		}
 
-		PX_FORCE_INLINE aos::Vec3V supportLocal(const aos::Vec3VArg dir)const  
+		PX_FORCE_INLINE aos::Vec3V supportLocal(const aos::Vec3VArg dir) const
 		{
 			using namespace aos;
 			return V3Sel(V3IsGrtr(dir, V3Zero()), extents, V3Neg(extents));
 		}
 
 		//this is used in the sat test for the full contact gen
-		PX_SUPPORT_INLINE void supportLocal(const aos::Vec3VArg dir, aos::FloatV& min, aos::FloatV& max)const
+		PX_SUPPORT_INLINE void supportLocal(const aos::Vec3VArg dir, aos::FloatV& min, aos::FloatV& max) const
 		{
 			using namespace aos;
 			const Vec3V point = V3Sel(V3IsGrtr(dir, V3Zero()), extents, V3Neg(extents));
@@ -181,7 +181,7 @@ namespace Gu
 			min = FNeg(max);
 		}
 
-		PX_SUPPORT_INLINE aos::Vec3V supportRelative(const aos::Vec3VArg dir, const aos::PxMatTransformV& aTob, const aos::PxMatTransformV& aTobT) const  
+		PX_SUPPORT_INLINE aos::Vec3V supportRelative(const aos::Vec3VArg dir, const aos::PxMatTransformV& aTob, const aos::PxMatTransformV& aTobT) const
 		{
 			//a is the current object, b is the other object, dir is in the local space of b
 			using namespace aos;
@@ -192,7 +192,7 @@ namespace Gu
 			return aTob.transform(p);//relTra.transform(p);
 		}
 
-		PX_SUPPORT_INLINE aos::Vec3V supportLocal(const aos::Vec3VArg dir, PxI32& index)const  
+		PX_SUPPORT_INLINE aos::Vec3V supportLocal(const aos::Vec3VArg dir, PxI32& index) const
 		{
 			using namespace aos;
 			const BoolV comp = V3IsGrtr(dir, V3Zero());
@@ -201,7 +201,7 @@ namespace Gu
 		}
 
 		PX_SUPPORT_INLINE aos::Vec3V supportRelative(	const aos::Vec3VArg dir, const aos::PxMatTransformV& aTob,
-															const aos::PxMatTransformV& aTobT, PxI32& index)const  
+														const aos::PxMatTransformV& aTobT, PxI32& index) const
 		{
 			//a is the current object, b is the other object, dir is in the local space of b
 			using namespace aos;

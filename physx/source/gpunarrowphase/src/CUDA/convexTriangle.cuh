@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -52,105 +52,104 @@
 
 namespace physx
 {
-	struct ConvexScratch
+struct ConvexScratch
+{
+	const PxU8* PX_RESTRICT convexPtrA;                     //8
+	PxU32 nbEdgesNbHullVerticesNbPolygons;                  //12
+
+	PxVec3 convexScale;                                     //24
+	PxQuat convexScaleRot;                                  //40
+
+	PxVec3 convexCenterOfMass; //shape space                //52
+
+	PxReal contactDist;                                     //56
+	PxReal restDist;                                        //60
+
+	PxVec3 triangleLocNormal;                               //72
+	PxVec3 triLocVerts[3];                                  //108
+
+	PxU8 threadIds[32];                                     //140
+
+	//we need to assign the adjacent triangles indices to the edge buffer so 
+	//we can do post processing
+	uint triAdjTrisIdx[3];                                  //152
+
+	PxVec3 convexPlaneN[CONVEX_MAX_VERTICES_POLYGONS];      //920
+	PxReal convexPlaneD[CONVEX_MAX_VERTICES_POLYGONS];      //1176
+
+	PxVec3 convexScaledVerts[CONVEX_MAX_VERTICES_POLYGONS]; //1944
+
+	__device__ const float4 * PX_RESTRICT getVertices() const
 	{
-		const PxU8* PX_RESTRICT convexPtrA;                     //8
-		PxU32 nbEdgesNbHullVerticesNbPolygons;                  //12
-	
-		PxVec3 convexScale;                                     //24
-		PxQuat convexScaleRot;                                  //40
+		return (const float4*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4));
+	}
 
-		PxVec3 convexCenterOfMass; //shape space                //52
-
-		PxReal contactDist;                                     //56
-		PxReal restDist;                                        //60
-
-		PxVec3 triangleLocNormal;                               //72
-		PxVec3 triLocVerts[3];                                  //108
-
-		PxU8 threadIds[32];                                     //140
-
-		//we need to assign the adjacent triangles indices to the edge buffer so 
-		//we can do post processing
-		uint triAdjTrisIdx[3];                                  //152
-
-		PxVec3 convexPlaneN[CONVEX_MAX_VERTICES_POLYGONS];      //920
-		PxReal convexPlaneD[CONVEX_MAX_VERTICES_POLYGONS];      //1176
-
-		PxVec3 convexScaledVerts[CONVEX_MAX_VERTICES_POLYGONS]; //1944
-
-		__device__ const float4 * PX_RESTRICT getVertices() const
-		{
-			return (const float4*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4));
-		}
-
-		__device__ const float4 * PX_RESTRICT getPlanes() const
-		{
-			PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
-			return (const float4*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
-				+ sizeof(float4)* getNbVerts(hullDesc));
-		}
-
-		__device__ const PxU32 * PX_RESTRICT getPolyDescs() const //vRef8NbVertsMinIndex
-		{
-			PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
-			return (const PxU32*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
-				+ sizeof(float4)* getNbVerts(hullDesc)
-				+ sizeof(float4)* getNbPolygons(hullDesc));
-		}
-
-		__device__ const PxU16 * PX_RESTRICT getVerticesByEdges16() const
-		{
-			PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
-			return (const PxU16*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
-				+ sizeof(float4)* getNbVerts(hullDesc)
-				+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc));
-		}
-
-		__device__ const PxU8 * PX_RESTRICT getFacesByEdges8() const
-		{
-			PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
-			return (const PxU8*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
-				+ sizeof(float4)* getNbVerts(hullDesc)
-				+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc)
-				+ sizeof(PxU16) * 2 * getNbEdges(hullDesc));
-		}
-
-		__device__ const PxU8 * PX_RESTRICT getFacesByVertices8() const
-		{
-			PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
-			return (const PxU8*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
-				+ sizeof(float4)* getNbVerts(hullDesc)
-				+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc)
-				+ (sizeof(PxU16) + sizeof(PxU8)) * 2 * getNbEdges(hullDesc));
-		}
-
-		__device__ const PxU8 * PX_RESTRICT getVertexData8() const
-		{
-			PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
-			return (const PxU8*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
-				+ sizeof(float4)* getNbVerts(hullDesc)
-				+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc)
-				+ (sizeof(PxU16) + sizeof(PxU8)) * 2 * getNbEdges(hullDesc)
-				+ sizeof(PxU8) * 3 * getNbVerts(hullDesc));
-		}
-	};
-
-	//PX_ALIGN_PREFIX(16)
-	struct ConvexMeshScratch : public ConvexScratch
+	__device__ const float4 * PX_RESTRICT getPlanes() const
 	{
-		PxTransform trimeshToConvexTransform;
+		PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
+		return (const float4*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
+			+ sizeof(float4)* getNbVerts(hullDesc));
+	}
 
-		const float4* PX_RESTRICT trimeshVerts;
-		const uint4* PX_RESTRICT trimeshTriIndices;
+	__device__ const PxU32 * PX_RESTRICT getPolyDescs() const //vRef8NbVertsMinIndex
+	{
+		PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
+		return (const PxU32*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
+			+ sizeof(float4)* getNbVerts(hullDesc)
+			+ sizeof(float4)* getNbPolygons(hullDesc));
+	}
 
-		//this is just valid for mesh contact gen to map the cpu triangle index to the gpu triangle index
-		//height field don't have remap table
-		const PxU32* PX_RESTRICT trimeshFaceRemap;
+	__device__ const PxU16 * PX_RESTRICT getVerticesByEdges16() const
+	{
+		PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
+		return (const PxU16*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
+			+ sizeof(float4)* getNbVerts(hullDesc)
+			+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc));
+	}
 
-	};// PX_ALIGN_SUFFIX(16);
-	PX_COMPILE_TIME_ASSERT(sizeof(ConvexMeshScratch) <= WARP_SIZE * 16 * sizeof(PxU32));
-}
+	__device__ const PxU8 * PX_RESTRICT getFacesByEdges8() const
+	{
+		PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
+		return (const PxU8*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
+			+ sizeof(float4)* getNbVerts(hullDesc)
+			+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc)
+			+ sizeof(PxU16) * 2 * getNbEdges(hullDesc));
+	}
+
+	__device__ const PxU8 * PX_RESTRICT getFacesByVertices8() const
+	{
+		PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
+		return (const PxU8*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
+			+ sizeof(float4)* getNbVerts(hullDesc)
+			+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc)
+			+ (sizeof(PxU16) + sizeof(PxU8)) * 2 * getNbEdges(hullDesc));
+	}
+
+	__device__ const PxU8 * PX_RESTRICT getVertexData8() const
+	{
+		PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
+		return (const PxU8*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
+			+ sizeof(float4)* getNbVerts(hullDesc)
+			+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc)
+			+ (sizeof(PxU16) + sizeof(PxU8)) * 2 * getNbEdges(hullDesc)
+			+ sizeof(PxU8) * 3 * getNbVerts(hullDesc));
+	}
+};
+
+//PX_ALIGN_PREFIX(16)
+struct ConvexMeshScratch : public ConvexScratch
+{
+	PxTransform trimeshToConvexTransform;
+
+	const float4* PX_RESTRICT trimeshVerts;
+	const uint4* PX_RESTRICT trimeshTriIndices;
+
+	//this is just valid for mesh contact gen to map the cpu triangle index to the gpu triangle index
+	//height field don't have remap table
+	const PxU32* PX_RESTRICT trimeshFaceRemap;
+
+};// PX_ALIGN_SUFFIX(16);
+PX_COMPILE_TIME_ASSERT(sizeof(ConvexMeshScratch) <= WARP_SIZE * 16 * sizeof(PxU32));
 
 //__device__ inline static PxVec3 getAdjacentTriangleNormal( PxU32 adjIdx, const PxVec3 triangleLocNormal, const PxTransform & meshToConvex, const PxVec3 & trimeshScale,
 //	const PxQuat & trimeshRot, const float4 * trimeshVerts, const uint4 * trimeshTriIndices
@@ -1880,5 +1879,7 @@ static __device__ void convexTriangleContactGen(
 	normalIndex.index = delayContactMask + (nbOutputContacts << ConvexTriNormalAndIndex::NbContactsShift) + remapCpuTriangleIdx;
 	ConvexTriNormalAndIndex_WriteWarp(cvxTriNI + convexTriPairOffset, normalIndex);
 }
+
+} // namespace physx
 
 #endif

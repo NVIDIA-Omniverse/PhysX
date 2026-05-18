@@ -1,12 +1,14 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 import numpy as np
 import math
 
-from pxr import Gf, UsdGeom, PhysxSchema, UsdPhysics
+from pxr import Gf, UsdGeom, PhysxSchema, UsdPhysics, UsdUtils
 import omni.physxdemos as demo
+import omni.usd
 from omni.physx.scripts import physicsUtils
 
 from omni.physxdemos.utils import gripper_helpers
@@ -64,7 +66,8 @@ class GripperInverseDynamicTensorAPIDemo(gripper_helpers.GripperDemoBase):
         massAPI.CreateMassAttr(0.005)
 
     def on_tensor_start(self, tensorApi):
-        sim = tensorApi.create_simulation_view("numpy")
+        stage_id = UsdUtils.StageCache.Get().GetId(omni.usd.get_context().get_stage()).ToLongInt()
+        sim = tensorApi.create_simulation_view("numpy", stage_id)
         self._boxActor = sim.create_rigid_body_view("/World/boxActor")
         self._gripper = sim.create_articulation_view("/World/gripper/root")
         self._gripper_indices = np.arange(1, dtype=np.int32)

@@ -23,7 +23,6 @@ project ("omni.usdphysicsui.plugin")
     staticruntime "Off"
     rtti "On"
     extension_usd_deps(targetDeps_dir, hostDeps_dir)
-    extension_imgui_deps()
     targetdir (targetDir.."/"..ext_dir.."/bin/")
     dependson { "prebuild", "carb.physics-usd.plugin", "foundation" }
     language "C++"
@@ -36,6 +35,7 @@ project ("omni.usdphysicsui.plugin")
         runtime_include_dir,
     }
     links { "omni.usd", "foundation", "carb" }
+    extension_imgui_deps()
 
     filter { "configurations:debug" }
         runtime "Debug"

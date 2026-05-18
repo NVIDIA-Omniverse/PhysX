@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -309,7 +309,7 @@ namespace physx
 		PX_INLINE			PxPBDMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxBaseMaterial(concreteType, baseFlags) {}
 		PX_INLINE			PxPBDMaterial(PxBaseFlags baseFlags) : PxBaseMaterial(baseFlags) {}
 		virtual				~PxPBDMaterial() {}
-		virtual		bool	isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxPBDMaterial", PxBaseMaterial); }
+		virtual		bool	isKindOf(const char* name) const PX_OVERRIDE { PX_IS_KIND_OF(name, "PxPBDMaterial", PxBaseMaterial); }
 	};
 #if !PX_DOXYGEN
 } // namespace physx

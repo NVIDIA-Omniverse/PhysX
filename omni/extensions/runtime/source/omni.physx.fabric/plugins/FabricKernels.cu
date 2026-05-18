@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -203,14 +203,16 @@ void convertVec4ftoVec3fBlockDeformableSurfaceDeprecated(DeformableSurfaceGPUDat
     convertVec4fToVec3fBlockDeformableSurfaceKernel<<<gridSize, blockSize>>>(surfaces);
 }
 
-void convertToVec3fBlockDeformableBody(DeformableBodyGPUData* deformableBodies, int numDeformables, int maxPoints, CUstream stream)
+void convertToVec3fBlockDeformableBody(DeformableBodyGPUData* deformableBodies, int numDeformables, int maxPoints, FabricCudaStreamHandle stream)
 {
     const size_t numThreadsPerBlocks = 256;
     const size_t numBlocksX = (maxPoints + numThreadsPerBlocks - 1) / numThreadsPerBlocks;
     dim3 blockSize(numThreadsPerBlocks, 1, 1);
     dim3 gridSize(numBlocksX, numDeformables, 1);
 
-    fabricDeformableBodyKernel<<<gridSize, blockSize, 0, stream>>>(deformableBodies);
+    static_assert(sizeof(uint64_t) == sizeof(CUdeviceptr), "FabricCudaDevicePtrHandle::v must match CUdeviceptr size");
+    CUstream cudaStream = reinterpret_cast<CUstream>(stream.v);
+    fabricDeformableBodyKernel<<<gridSize, blockSize, 0, cudaStream>>>(deformableBodies);
 }
 
 // debug code, temporary
@@ -256,23 +258,15 @@ __global__ void copyRigidBodyDataKernel(RigidBodyGpuData rb) {
     {
         if (rb.updateTransforms)
         {
-            ::physx::PxTransform rdTransform = reinterpret_cast<::physx::PxTransform*>(rb.rigidBodyTransforms)[idx];
+            ::physx::PxTransform rdTransform = reinterpret_cast<::physx::PxTransform*>(rb.rigidBodyTransforms.v)[idx];
             ::usdrt::GfVec3d position = toVec3d(rdTransform.p);
             ::usdrt::GfVec4f rotate = toVec4(rdTransform.q);
-            ::usdrt::GfVec3f scale = rb.initialScales ? reinterpret_cast<::usdrt::GfVec3f*>(rb.initialScales)[idx] : ::usdrt::GfVec3f(1, 1, 1);
-            double* fabricLocalMatPtr = rb.localMatMapping ? rb.localMatMapping[idx] : nullptr;
-            double* fabricParentWorldMatPtr = rb.parentWorldMatMapping ? rb.parentWorldMatMapping[idx] : nullptr;
-            if (fabricLocalMatPtr)
+            ::usdrt::GfVec3f scale = rb.initialScales.v ? reinterpret_cast<::usdrt::GfVec3f*>(rb.initialScales.v)[idx] : ::usdrt::GfVec3f(1, 1, 1);
+            double* worldMatPtr = rb.worldMatMapping ? rb.worldMatMapping[idx] : nullptr;
+            if(worldMatPtr)
             {
-                ::usdrt::GfMatrix4d localMat = composeMatrix(position, rotate, scale);
-
-                if (fabricParentWorldMatPtr)
-                {
-                    ::usdrt::GfMatrix4d parentWorldMat = *reinterpret_cast<::usdrt::GfMatrix4d*>(fabricParentWorldMatPtr);
-                    localMat = localMat * parentWorldMat.GetInverse();
-                }
-
-                *reinterpret_cast<::usdrt::GfMatrix4d*>(fabricLocalMatPtr) = localMat;
+                ::usdrt::GfMatrix4d worldMat = composeMatrix(position, rotate, scale);
+                *reinterpret_cast<::usdrt::GfMatrix4d*>(worldMatPtr) = worldMat;
             }
             double* worldPosPtr = rb.worldPosMapping ? rb.worldPosMapping[idx] : nullptr;
             if (worldPosPtr)
@@ -295,25 +289,26 @@ __global__ void copyRigidBodyDataKernel(RigidBodyGpuData rb) {
             float* linVelPtr = rb.linVelMapping ? rb.linVelMapping[idx] : nullptr;
             if (linVelPtr)
             {
-                ::usdrt::GfVec3f velocity = rb.linearVelocities ? toVec3f(reinterpret_cast<::physx::PxVec3*>(rb.linearVelocities)[idx]) : ::usdrt::GfVec3f(0, 0, 0);
+                ::usdrt::GfVec3f velocity = rb.linearVelocities.v ? toVec3f(reinterpret_cast<::physx::PxVec3*>(rb.linearVelocities.v)[idx]) : ::usdrt::GfVec3f(0, 0, 0);
                 *reinterpret_cast<::usdrt::GfVec3f*>(linVelPtr) = velocity;
             }
             float* angVelPtr = rb.angVelMapping ? rb.angVelMapping[idx] : nullptr;
             if (angVelPtr)
             {
-                ::usdrt::GfVec3f velocity = rb.angularVelocities ? toVec3f(reinterpret_cast<::physx::PxVec3*>(rb.angularVelocities)[idx]) : ::usdrt::GfVec3f(0, 0, 0);
+                ::usdrt::GfVec3f velocity = rb.angularVelocities.v ? toVec3f(reinterpret_cast<::physx::PxVec3*>(rb.angularVelocities.v)[idx]) : ::usdrt::GfVec3f(0, 0, 0);
                 *reinterpret_cast<::usdrt::GfVec3f*>(angVelPtr) = velocity;
             }
         }
     }
 }
 
-void copyRigidBodyDataToFabricGpu(const RigidBodyGpuData& rigidBodyData, CUstream cudaStream)
+void copyRigidBodyDataToFabricGpu(const RigidBodyGpuData& rigidBodyData, FabricCudaStreamHandle cudaStream)
 {    
     const size_t numThreadsPerBlocks = 256;
     dim3 blockDim(numThreadsPerBlocks);
     dim3 gridDim((rigidBodyData.numRigidBodies + blockDim.x - 1) / blockDim.x);
-    copyRigidBodyDataKernel<<<gridDim, blockDim, 0, cudaStream>>>(rigidBodyData);
+    CUstream cuStream = reinterpret_cast<CUstream>(cudaStream.v);
+    copyRigidBodyDataKernel<<<gridDim, blockDim, 0, cuStream>>>(rigidBodyData);
 }
 
 } // namespace physx

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_CUDA_TYPES_H
 #define PX_CUDA_TYPES_H
@@ -60,6 +60,16 @@ typedef struct CUfunc_st* CUfunction;
 typedef struct CUstream_st* CUstream;
 typedef struct CUevent_st* CUevent;
 typedef struct CUgraphicsResource_st* CUgraphicsResource;
+
+#define CU_MEMHOSTALLOC_PORTABLE 0x01
+#define CU_MEMHOSTALLOC_DEVICEMAP 0x02
+#define CU_MEMHOSTALLOC_WRITECOMBINED 0x04
+
+#else
+
+PX_COMPILE_TIME_ASSERT(CU_MEMHOSTALLOC_PORTABLE == 0x01);
+PX_COMPILE_TIME_ASSERT(CU_MEMHOSTALLOC_DEVICEMAP == 0x02);
+PX_COMPILE_TIME_ASSERT(CU_MEMHOSTALLOC_WRITECOMBINED == 0x04);
 
 #endif
 

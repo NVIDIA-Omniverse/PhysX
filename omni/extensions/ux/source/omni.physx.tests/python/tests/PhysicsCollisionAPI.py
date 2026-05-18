@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.kit.test
 import omni.kit.stage_templates
 import omni.usd
@@ -406,7 +407,7 @@ class PhysicsCollisionAPITestAsyncRB(rigidbody.AsyncTestCase):
         )
 
     async def test_physics_userpath_set_static_collider(self):
-        for approx in rigidbody.approximations:
+        for approx in physxUtils.MESH_APPROXIMATIONS.keys():
             print(approx)
             await self.base_basic_userpath_command_test(
                 lambda primPath: SetStaticColliderCommand.execute(primPath, approx),

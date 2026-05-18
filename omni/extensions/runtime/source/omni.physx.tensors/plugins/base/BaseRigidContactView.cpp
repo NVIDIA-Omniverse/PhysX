@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -16,8 +16,12 @@
 
 #include <carb/logging/Log.h>
 #include <omni/physx/IPhysx.h>
+#include <omni/physics/tensors/TensorUtils.h>
 
 using namespace physx;
+using omni::physics::tensors::checkTensorDevice;
+using omni::physics::tensors::checkTensorInt64;
+using omni::physics::tensors::getTensorTotalSize;
 
 namespace omni
 {
@@ -128,6 +132,54 @@ void BaseRigidContactView::_onParentRelease()
 {
     // printf("~!~!~! Detaching RC view from parent %p\n", mSim);
     mSim = nullptr;
+}
+
+void BaseRigidContactView::getOtherActorPathsFromIds(const TensorDesc* otherActorIdsTensor, std::vector<std::string>& outPaths) const
+{
+    outPaths.clear();
+
+    if (!otherActorIdsTensor || !otherActorIdsTensor->data)
+    {
+        return;
+    }
+
+    // Path conversion is a CPU-only operation - expect CPU data
+    if (!checkTensorDevice(*otherActorIdsTensor, -1, "other actor IDs tensor", __FUNCTION__) ||
+        !checkTensorInt64(*otherActorIdsTensor, "other actor IDs tensor", __FUNCTION__))
+    {
+        return;
+    }
+
+    size_t count = getTensorTotalSize(*otherActorIdsTensor);
+    if (count == 0)
+    {
+        return;
+    }
+
+    const uint64_t* actorIds = static_cast<const uint64_t*>(otherActorIdsTensor->data);
+    outPaths.reserve(count);
+    for (size_t i = 0; i < count; ++i)
+    {
+        uint64_t id = actorIds[i];
+        if (id == 0)
+        {
+            outPaths.emplace_back("");
+            continue;
+        }
+
+        // Check cache first
+        auto it = mPathCache.find(id);
+        if (it != mPathCache.end())
+        {
+            outPaths.push_back(it->second);
+        }
+        else
+        {
+            // Convert and cache
+            auto result = mPathCache.emplace(id, intToPath(id).GetString());
+            outPaths.push_back(result.first->second);
+        }
+    }
 }
 
 }

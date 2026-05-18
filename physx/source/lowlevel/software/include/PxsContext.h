@@ -22,14 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PXS_CONTEXT_H
 #define PXS_CONTEXT_H
 
-#include "foundation/PxPinnedArray.h"
+#include "CmPinnableArray.h"
 #include "foundation/PxPool.h"
 #include "PxVisualizationParameter.h"
 #include "PxSceneDesc.h"
@@ -92,7 +92,7 @@ public:
 												PxsContext(const PxSceneDesc& desc, PxTaskManager*, Cm::FlushPool&, PxCudaContextManager*, PxU32 poolSlabSize, PxU64 contextID);
 												~PxsContext();
 
-					void						createTransformCache(PxVirtualAllocatorCallback& allocatorCallback);
+					void						createTransformCache(Cm::VirtualAllocatorCallback& allocator, Cm::PinnableAllocatorFallback::Enum fallback);
 
 					PxsContactManager*			createContactManager(PxsContactManager* contactManager, bool useCCD);
 					void						createCache(Gu::Cache& cache, PxGeometryType::Enum geomType0, PxGeometryType::Enum geomType1);
@@ -109,7 +109,7 @@ public:
     // resource-related
 					void						setScratchBlock(void* addr, PxU32 size);
 
-	PX_FORCE_INLINE	void						setContactDistance(const PxFloatArrayPinnedSafe* contactDistances)	{ mContactDistances = contactDistances;	}
+	PX_FORCE_INLINE	void						setContactDistance(const Cm::PinnableArray<PxReal>* contactDistances)	{ mContactDistances = contactDistances;	}
 
 	// Task-related
 					void						updateContactManager(PxReal dt, bool hasContactDistanceChanged, PxBaseTask* continuation, 
@@ -152,12 +152,13 @@ public:
 													mVisualizationParams[param] = value;
 												}
 
-	PX_FORCE_INLINE	void						setVisualizationCullingBox(const PxBounds3& box)	{ mVisualizationCullingBox = box;					}
-	PX_FORCE_INLINE	const PxBounds3&			getVisualizationCullingBox()				const	{ return mVisualizationCullingBox;					}
+	PX_FORCE_INLINE	void						setVisualizationCullingBox(const PxBounds3& box)	{ mVisualizationCullingBox = box;	}
+	PX_FORCE_INLINE	const PxBounds3&			getVisualizationCullingBox()				const	{ return mVisualizationCullingBox;	}
 
-	PX_FORCE_INLINE	bool						getPCM()					const	{ return mPCM;														}
-	PX_FORCE_INLINE	bool						getContactCacheFlag()		const	{ return mContactCache;												}
-	PX_FORCE_INLINE	bool						getCreateAveragePoint()		const	{ return mCreateAveragePoint;										}
+	PX_FORCE_INLINE	bool						getPCM()					const	{ return mPCM;					}
+	PX_FORCE_INLINE	bool						getContactCacheFlag()		const	{ return mContactCache;			}
+	PX_FORCE_INLINE	bool						getCreateAveragePoint()		const	{ return mCreateAveragePoint;	}
+	PX_FORCE_INLINE	bool						getCCDFlag()				const	{ return mCCD;					}
 
 	// general stuff
 					void						shiftOrigin(const PxVec3& shift);
@@ -175,7 +176,7 @@ public:
 	PX_FORCE_INLINE	PxvNphaseImplementationContext*	getNphaseFallbackImplementationContext()	const							{ return mNpFallbackImplementationContext;	}
 	PX_FORCE_INLINE	void							setNphaseFallbackImplementationContext(PxvNphaseImplementationContext* ctx)	{ mNpFallbackImplementationContext = ctx;	}
 
-					PxU32							getMaxPatchCount() const				{ return mMaxPatches; }
+	PX_FORCE_INLINE	PxU32							getMaxPatchCount() const				{ return mMaxPatches; }
 
 	PX_FORCE_INLINE	PxcNpThreadContext*			getNpThreadContext()
 	{
@@ -269,12 +270,13 @@ private:
 					PxvSimStats					mSimStats;
 					bool						mPCM;
 					bool						mContactCache;
-					bool						mCreateAveragePoint;
+					const bool					mCreateAveragePoint;
+					const bool					mCCD;
 
-					PxsTransformCache*			mTransformCache;
-					const PxFloatArrayPinnedSafe*	mContactDistances;
-					PxU32						mMaxPatches;
-					const PxU64					mContextID;
+					PxsTransformCache*					mTransformCache;
+					const Cm::PinnableArray<PxReal>*	mContactDistances;
+					PxU32								mMaxPatches;
+					const PxU64							mContextID;
 
 					friend class PxsCCDContext;
 					friend class PxsNphaseImplementationContext;

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -163,6 +163,30 @@ bool BaseParticleSystemView::setSolidRestOffset(const TensorDesc* srcTensor, con
     return true;
 }
 
+// ---------------------------------------------------------------------------
+// Mask support
+//
+// NOTE: Particle system views operate via CPU-side PxParticleSystem API calls,
+// even when the simulation runs on GPU. Both Cpu/GpuParticleSystemView inherit
+// from this base class without overriding. The device check is hardcoded to -1
+// (CPU), matching the existing indexed setters.
+// ---------------------------------------------------------------------------
+
+using omni::physics::tensors::MaskResult;
+using omni::physics::tensors::resolveMaskToIndices;
+using omni::physics::tensors::makeIndexTensorDesc;
+
+bool BaseParticleSystemView::setSolidRestOffsetMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setSolidRestOffset(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setSolidRestOffset(srcTensor, &idx);
+}
+
 bool BaseParticleSystemView::getFluidRestOffset(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
@@ -233,6 +257,17 @@ bool BaseParticleSystemView::setFluidRestOffset(const TensorDesc* srcTensor, con
     }
 
     return true;
+}
+
+bool BaseParticleSystemView::setFluidRestOffsetMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setFluidRestOffset(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setFluidRestOffset(srcTensor, &idx);
 }
 
 bool BaseParticleSystemView::getParticleContactOffset(const TensorDesc* dstTensor) const
@@ -307,6 +342,17 @@ bool BaseParticleSystemView::setParticleContactOffset(const TensorDesc* srcTenso
     return true;
 }
 
+bool BaseParticleSystemView::setParticleContactOffsetMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setParticleContactOffset(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setParticleContactOffset(srcTensor, &idx);
+}
+
 bool BaseParticleSystemView::getWind(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
@@ -377,6 +423,17 @@ bool BaseParticleSystemView::setWind(const TensorDesc* srcTensor, const TensorDe
     }
 
     return true;
+}
+
+bool BaseParticleSystemView::setWindMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setWind(srcTensor, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setWind(srcTensor, &idx);
 }
 
 }

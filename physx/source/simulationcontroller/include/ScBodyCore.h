@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,7 +33,7 @@
 #include "ScRigidCore.h"
 #include "PxRigidDynamic.h"
 #include "PxvDynamics.h"
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 
 namespace physx
 {
@@ -45,7 +45,8 @@ namespace Sc
 	{
 	public:
 // PX_SERIALIZATION
-											BodyCore(const PxEMPTY) : RigidCore(PxEmpty), mCore(PxEmpty) {}
+											BodyCore(const PxEMPTY) : RigidCore(PxEmpty), mCore(PxEmpty),
+												mLinAccel(0.0f), mAngAccel(0.0f), mPrevLinVel(0.0f), mPrevAngVel(0.0f) {}
 							void			restoreDynamicData();
 
 //~PX_SERIALIZATION
@@ -177,8 +178,56 @@ namespace Sc
 		}
 
 						void				setFixedBaseLink(bool value);
+
+		//---------------------------------------------------------------------------------
+		// Body Acceleration API (for eENABLE_BODY_ACCELERATIONS)
+		// These are computed during afterIntegration using velocity-delta method
+		//---------------------------------------------------------------------------------
+		PX_FORCE_INLINE	const PxVec3&		getComputedLinAccel()		const	{ return mLinAccel;		}
+		PX_FORCE_INLINE	const PxVec3&		getComputedAngAccel()		const	{ return mAngAccel;		}
+		PX_FORCE_INLINE	const PxVec3&		getPrevLinVel()				const	{ return mPrevLinVel;	}
+		PX_FORCE_INLINE	const PxVec3&		getPrevAngVel()				const	{ return mPrevAngVel;	}
+
+		// Update prev velocities when user sets velocity directly (for correct acceleration on next frame)
+		PX_FORCE_INLINE	void				setPrevLinVel(const PxVec3& v)		{ mPrevLinVel = v;		}
+		PX_FORCE_INLINE	void				setPrevAngVel(const PxVec3& v)		{ mPrevAngVel = v;		}
+
+		// Called from ScAfterIntegrationTask to update accelerations (thread-safe per body)
+		PX_FORCE_INLINE	void				updateAccelerations(PxReal oneOverDt)
+		{
+			const PxVec3 deltaLinVel = mCore.linearVelocity - mPrevLinVel;
+			const PxVec3 deltaAngVel = mCore.angularVelocity - mPrevAngVel;
+			mLinAccel = deltaLinVel * oneOverDt;
+			mAngAccel = deltaAngVel * oneOverDt;
+			mPrevLinVel = mCore.linearVelocity;
+			mPrevAngVel = mCore.angularVelocity;
+		}
+
+		// Reset acceleration state (called when body is added or first activated)
+		PX_FORCE_INLINE	void				resetAccelerationState()
+		{
+			mLinAccel = PxVec3(0.0f);
+			mAngAccel = PxVec3(0.0f);
+			mPrevLinVel = mCore.linearVelocity;
+			mPrevAngVel = mCore.angularVelocity;
+		}
+
+		// Set computed accelerations directly (used for GPU dynamics path)
+		PX_FORCE_INLINE	void				setComputedAccelerations(const PxVec3& linAccel, const PxVec3& angAccel)
+		{
+			mLinAccel = linAccel;
+			mAngAccel = angAccel;
+		}
+
 	private:
 						PX_ALIGN_PREFIX(16) PxsBodyCore mCore PX_ALIGN_SUFFIX(16);
+
+		// Body acceleration tracking (for eENABLE_BODY_ACCELERATIONS)
+		// These are updated in ScAfterIntegrationTask for active bodies
+						PxVec3				mLinAccel;		// Computed linear acceleration
+						PxVec3				mAngAccel;		// Computed angular acceleration
+						PxVec3				mPrevLinVel;	// Previous frame's linear velocity
+						PxVec3				mPrevAngVel;	// Previous frame's angular velocity
 	};
 
 } // namespace Sc

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,7 +31,6 @@
 
 #include "task/PxTask.h"
 
-#include "foundation/PxPinnedArray.h"
 #include "common/PxPhysXCommonConfig.h"
 #include "PxSceneDesc.h"
 #include "cudamanager/PxCudaContextManager.h"
@@ -66,6 +65,7 @@ class PxAnisotropyGenerator;
 class PxSmoothedPositionGenerator;
 class PxParticleNeighborhoodProvider;
 class PxPhysicsGpu;
+class PxProfilerCallback;
 
 struct PxvSimStats;
 
@@ -90,6 +90,8 @@ namespace IG
 namespace Cm
 {
 	class FlushPool;
+	class VirtualAllocatorCallback;
+	template<class T> class PinnableArray;
 }
 
 /**
@@ -141,7 +143,7 @@ public:
 		PxCudaContextManager* cudaContextManager,
 		PxU32 gpuComputeVersion,
 		const PxGpuDynamicsMemoryConfig& config,
-		PxsHeapMemoryAllocatorManager* heapMemoryManager, PxU64 contextID) = 0;
+		PxsHeapMemoryAllocatorManager& heapMemoryManager, PxU64 contextID) = 0;
 
 
 	/**
@@ -152,18 +154,17 @@ public:
 		PxCudaContextManager* cudaContextManager,
 		const PxU32 gpuComputeVersion,
 		const PxGpuDynamicsMemoryConfig& config,
-		PxsHeapMemoryAllocatorManager* heapMemoryManager,
+		PxsHeapMemoryAllocatorManager& heapMemoryManager,
 		Bp::BroadPhase& bp, 
 		Bp::BoundsArray& boundsArray, 
-		PxFloatArrayPinnedSafe& contactDistance,
+		Cm::PinnableArray<PxReal>& contactDistance,
 		PxU32 maxNbAggregates, PxU32 maxNbShapes,
-		PxVirtualAllocator& allocator, 
 		PxU64 contextID,
 		PxPairFilteringMode::Enum kineKineFilteringMode, 
 		PxPairFilteringMode::Enum staticKineFilteringMode) = 0;
 
 
-	virtual Bp::BoundsArray* createGpuBounds(PxVirtualAllocator& allocator) = 0;
+	virtual Bp::BoundsArray* createGpuBounds(Cm::VirtualAllocatorCallback& allocator) = 0;
 
 	/**
 	Create GPU narrow phase context.
@@ -172,8 +173,8 @@ public:
 		PxsKernelWranglerManager* gpuKernelWrangler,
 		PxvNphaseImplementationFallback* fallbackForUnsupportedCMs,
 		const PxGpuDynamicsMemoryConfig& gpuDynamicsConfig, void* contactStreamBase, void* patchStreamBase, void* forceAndIndiceStreamBase,
-		PxBoundsArrayPinned& bounds, IG::IslandSim* islandSim,
-		physx::Dy::Context* dynamicsContext, const PxU32 gpuComputeVersion, PxsHeapMemoryAllocatorManager* heapMemoryManager,
+		Bp::BoundsArray& bounds, IG::IslandSim* islandSim,
+		physx::Dy::Context* dynamicsContext, const PxU32 gpuComputeVersion, PxsHeapMemoryAllocatorManager& heapMemoryManager,
 		bool useGpuBP) = 0;
 
 	/**
@@ -183,7 +184,7 @@ public:
 		PxCudaContextManager* cudaContextManager,
 		Dy::Context* dynamicContext, PxvNphaseImplementationContext* npContext, Bp::BroadPhase* bp, 
 		bool useGpuBroadphase,
-		PxsSimulationControllerCallback* callback, PxU32 gpuComputeVersion, PxsHeapMemoryAllocatorManager* heapMemoryManager,
+		PxsSimulationControllerCallback* callback, PxU32 gpuComputeVersion, PxsHeapMemoryAllocatorManager& heapMemoryManager,
 		PxU32 maxSoftBodyContacts, PxU32 maxDeformableSurfaceContacts, PxU32 maxParticleContacts,
 		PxU32 collisionStackSizeBytes, bool enableBodyAccelerations) = 0;
 
@@ -192,11 +193,9 @@ public:
 	*/
 	virtual Dy::Context* createGpuDynamicsContext(Cm::FlushPool& taskPool, PxsKernelWranglerManager* gpuKernelWragler, 
 		PxCudaContextManager* cudaContextManager, 
-		const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
-		bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast, PxReal maxBiasCoefficient,
-		PxU32 gpuComputeVersion, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager,
-		bool frictionEveryIteration, bool externalForcesEveryTgsIterationEnabled, PxSolverType::Enum solverType,
-		PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled) = 0;
+		const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions, PxReal maxBiasCoefficient,
+		PxU32 gpuComputeVersion, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager& heapMemoryManager, PxSolverType::Enum solverType,
+		PxReal lengthScale, PxU64 contextID, PxSceneFlags sceneFlags) = 0;
 };
 
 }

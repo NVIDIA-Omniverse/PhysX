@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
        
@@ -60,15 +60,15 @@ public:
 	//static const PxU32 BATCH_SIZE = 32;
 
 	PxsCMUpdateTask(PxsContext* context, PxReal dt, PxsContactManager** cmArray, PxsContactManagerOutput* cmOutputs, Gu::Cache* caches, PxU32 cmCount, PxContactModifyCallback* callback) :
-			Cm::Task		(context->getContextId()),
-			mCmArray		(cmArray),
-			mCmOutputs		(cmOutputs),
-			mCaches			(caches),
-			mContext		(context),
-			mCallback		(callback),
-			mCmCount		(cmCount),
-			mDt				(dt),
-			mNbPatchChanged	(0)			
+			Cm::Task			(context->getContextId()),
+			mCmArray			(cmArray),
+			mCmOutputs			(cmOutputs),
+			mCaches				(caches),
+			mContext			(context),
+			mCallback			(callback),
+			mCmCount			(cmCount),
+			mDt					(dt),
+			mGPU_NbPatchChanged	(0)			
 	{
 	}
 
@@ -82,10 +82,10 @@ public:
 	PxContactModifyCallback*		mCallback;
 	const PxU32						mCmCount;
 	const PxReal					mDt;		//we could probably retrieve from context to save space?
-	PxU32							mNbPatchChanged;
 
-	PxsContactManagerOutputCounts	mPatchChangedOutputCounts[BATCH_SIZE];
-	PxsContactManager*				mPatchChangedCms[BATCH_SIZE];
+	PxU32							mGPU_NbPatchChanged;
+	PxsContactManagerOutputCounts	mGPU_PatchChangedOutputCounts[BATCH_SIZE];
+	PxsContactManager*				mGPU_PatchChangedCms[BATCH_SIZE];
 };
 #if PX_VC
 #pragma warning(pop)
@@ -112,7 +112,7 @@ class PxsCMDiscreteUpdateTask : public PxsCMUpdateTask
 {
 public:
 	PxsCMDiscreteUpdateTask(PxsContext* context, PxReal dt, PxsContactManager** cms, PxsContactManagerOutput* cmOutputs, Gu::Cache* caches, PxU32 nbCms,
-		PxContactModifyCallback* callback):
+		PxContactModifyCallback* callback) :
 	  PxsCMUpdateTask(context, dt, cms, cmOutputs, caches, nbCms, callback)
 	{}
 
@@ -157,16 +157,9 @@ public:
 					PxContactModifyPair& p = mModifiablePairArray[i];
 					const PxcNpWorkUnit& unit = cm.getWorkUnit();
 
-					p.shape[0] = gPxvOffsetTable.convertPxsShape2Px(unit.getShapeCore0());
-					p.shape[1] = gPxvOffsetTable.convertPxsShape2Px(unit.getShapeCore1());
-	
-					p.actor[0] = unit.mFlags & (PxcNpWorkUnitFlag::eDYNAMIC_BODY0 | PxcNpWorkUnitFlag::eARTICULATION_BODY0) ?
-									gPxvOffsetTable.convertPxsRigidCore2PxRigidBody(unit.mRigidCore0)
-								:	gPxvOffsetTable.convertPxsRigidCore2PxRigidStatic(unit.mRigidCore0);
-
-					p.actor[1] = unit.mFlags & (PxcNpWorkUnitFlag::eDYNAMIC_BODY1 | PxcNpWorkUnitFlag::eARTICULATION_BODY1) ?
-									gPxvOffsetTable.convertPxsRigidCore2PxRigidBody(unit.mRigidCore1)
-								:	gPxvOffsetTable.convertPxsRigidCore2PxRigidStatic(unit.mRigidCore1);
+					gPxvOffsetTable.fillPairPointers(p,	unit.getShapeCore0(), unit.getShapeCore1(), unit.mRigidCore0, unit.mRigidCore1,
+														unit.mFlags & (PxcNpWorkUnitFlag::eDYNAMIC_BODY0 | PxcNpWorkUnitFlag::eARTICULATION_BODY0),
+														unit.mFlags & (PxcNpWorkUnitFlag::eDYNAMIC_BODY1 | PxcNpWorkUnitFlag::eARTICULATION_BODY1));
 	
 					p.transform[0] = transformCache.getTransformCache(unit.mTransformCache0).transform;
 					p.transform[1] = transformCache.getTransformCache(unit.mTransformCache1).transform;
@@ -269,8 +262,8 @@ public:
 
 			if(output.nbPatches != output.prevPatches)
 			{
-				mPatchChangedCms[mNbPatchChanged] = &cm;
-				PxsContactManagerOutputCounts& counts = mPatchChangedOutputCounts[mNbPatchChanged++];
+				mGPU_PatchChangedCms[mGPU_NbPatchChanged] = &cm;
+				PxsContactManagerOutputCounts& counts = mGPU_PatchChangedOutputCounts[mGPU_NbPatchChanged++];
 				counts.nbPatches = PxU8(numPatches);
 				counts.prevPatches = output.prevPatches;
 				counts.statusFlag = output.statusFlag;
@@ -320,17 +313,18 @@ public:
 				PxU8* patchAddress = threadContext.mPatchStreamPool->mDataStream + threadContext.mPatchStreamPool->mDataStreamSize - patchIndex;
 	
 				PxU32 internalFlags = reinterpret_cast<PxContactPatch*>(output.contactPatches)->internalFlags;
-	
 
 				const bool hasIndices = (internalFlags & PxContactPatch::eHAS_FACE_INDICES);
-				const PxI32 increment2 = PxI32(output.nbContacts * sizeof(PxReal) + (hasIndices ? output.nbContacts * sizeof(PxU32) : 0));
-				const PxI32 index2 = PxAtomicAdd(&threadContext.mForceAndIndiceStreamPool->mSharedDataIndex, increment2);
+				const PxI32 forceAndFaceIncrement = PxI32(output.nbContacts * sizeof(PxReal) + (hasIndices ? output.nbContacts * sizeof(PxU32) : 0));
+				const PxI32 forceAndFaceIndex = PxAtomicAdd(&threadContext.mForceAndIndiceStreamPool->mSharedDataIndex, forceAndFaceIncrement);
 				
 				if (threadContext.mForceAndIndiceStreamPool->isOverflown())
 				{
 					PX_WARN_ONCE("Force buffer overflow detected, please increase its size in the scene desc!\n");
 					isOverflown = true;
 				}
+
+				PxU8* forceAndFaceAddress = threadContext.mForceAndIndiceStreamPool->mDataStream + threadContext.mForceAndIndiceStreamPool->mDataStreamSize - forceAndFaceIndex;
 
 				const PxI32 frictionIncrement = PxI32(frictionSize);
 				const PxI32 frictionIndex = PxAtomicAdd(&threadContext.mFrictionPatchStreamPool->mSharedDataIndex, frictionIncrement);
@@ -354,10 +348,13 @@ public:
 				}
 				else
 				{
-					output.contactForces = reinterpret_cast<PxReal*>(threadContext.mForceAndIndiceStreamPool->mDataStream + threadContext.mForceAndIndiceStreamPool->mDataStreamSize - index2);
-				
-					PxMemZero(output.contactForces, sizeof(PxReal) * output.nbContacts);
-					
+					PxMemZero(forceAndFaceAddress, sizeof(PxReal) * output.nbContacts);
+
+					if (hasIndices && output.getInternalFaceIndice())
+						PxMemCopy(forceAndFaceAddress + sizeof(PxReal) * output.nbContacts, output.getInternalFaceIndice(), sizeof(PxU32) * output.nbContacts);
+
+					output.contactForces = reinterpret_cast<PxReal*>(forceAndFaceAddress);
+
 					PxExtendedContact* contacts = reinterpret_cast<PxExtendedContact*>(contactAddress);
 					PxMemCopy(patchAddress, output.contactPatches, sizeof(PxContactPatch) * output.nbPatches);
 	
@@ -460,8 +457,8 @@ public:
 
 					if(output.prevPatches != output.nbPatches)
 					{
-						mPatchChangedCms[mNbPatchChanged] = cm;
-						PxsContactManagerOutputCounts& counts = mPatchChangedOutputCounts[mNbPatchChanged++];
+						mGPU_PatchChangedCms[mGPU_NbPatchChanged] = cm;
+						PxsContactManagerOutputCounts& counts = mGPU_PatchChangedOutputCounts[mGPU_NbPatchChanged++];
 						counts.nbPatches = output.nbPatches;
 						counts.prevPatches = output.prevPatches;
 						counts.statusFlag = output.statusFlag;
@@ -523,13 +520,16 @@ public:
 	}
 };
 
-static void processContactManagers(PxsContext& context, PxsContactManagers& narrowPhasePairs, PxArray<PxsCMDiscreteUpdateTask*>& tasks, PxReal dt, PxsContactManagerOutput* cmOutputs, PxBaseTask* continuation, PxContactModifyCallback* modifyCallback)
+static void processContactManagers(PxsContext& context, PxsContactManagers& narrowPhasePairs, PxArray<PxsCMDiscreteUpdateTask*>* tasks, PxReal dt, PxsContactManagerOutput* cmOutputs, PxBaseTask* continuation, PxContactModifyCallback* modifyCallback)
 {
+	/*const*/ PxU32 nbCmsToProcess = narrowPhasePairs.mContactManagerMapping.size();
+	if(!nbCmsToProcess)
+		return;
+
 	Cm::FlushPool& taskPool = context.getTaskPool();
 
 	//Iterate all active contact managers
 	taskPool.lock();
-	/*const*/ PxU32 nbCmsToProcess = narrowPhasePairs.mContactManagerMapping.size();
 
 	// PT: TASK-CREATION TAG
 	if(!gUseNewTaskAllocationScheme)
@@ -546,7 +546,8 @@ static void processContactManagers(PxsContext& context, PxsContactManagers& narr
 			task->setContinuation(continuation);
 			task->removeReference();
 
-			tasks.pushBack(task);
+			if(tasks)
+				tasks->pushBack(task);
 		}
 	}
 	else
@@ -576,7 +577,8 @@ static void processContactManagers(PxsContext& context, PxsContactManagers& narr
 				task->setContinuation(continuation);
 				task->removeReference();
 
-				tasks.pushBack(task);
+				if(tasks)
+					tasks->pushBack(task);
 
 			start += nb;
 			nbCmsToProcess -= nb;
@@ -587,12 +589,12 @@ static void processContactManagers(PxsContext& context, PxsContactManagers& narr
 
 void PxsNphaseImplementationContext::processContactManager(PxReal dt, PxsContactManagerOutput* cmOutputs, PxBaseTask* continuation)
 {
-	processContactManagers(mContext, mNarrowPhasePairs, mCmTasks, dt, cmOutputs, continuation, mModifyCallback);
+	processContactManagers(mContext, mNarrowPhasePairs, mGPU ? &mGPU_CmTasks : NULL, dt, cmOutputs, continuation, mModifyCallback);
 }
 
 void PxsNphaseImplementationContext::processContactManagerSecondPass(PxReal dt, PxBaseTask* continuation)
 {
-	processContactManagers(mContext, mNewNarrowPhasePairs, mCmTasks, dt, mNewNarrowPhasePairs.mOutputContactManagers.begin(), continuation, mModifyCallback);
+	processContactManagers(mContext, mNewNarrowPhasePairs, mGPU ? &mGPU_CmTasks : NULL, dt, mNewNarrowPhasePairs.mOutputContactManagers.begin(), continuation, mModifyCallback);
 }
 
 void PxsNphaseImplementationContext::updateContactManager(PxReal dt, bool /*hasContactDistanceChanged*/, PxBaseTask* continuation, 
@@ -652,7 +654,7 @@ void PxsNphaseImplementationContext::registerContactManager(PxsContactManager* c
 	Gu::Cache cache;
 	mContext.createCache(cache, geomType0, geomType1);
 
-	PxsContactManagerOutput& output = mNewNarrowPhasePairs.mOutputContactManagers.insert();
+	PxsContactManagerOutput& output = *mNewNarrowPhasePairs.mOutputContactManagers.insert();
 	PxMemZero(&output, sizeof(output));
 	output.nbPatches = PxTo8(patchCount);
 
@@ -929,39 +931,39 @@ void PxsNphaseImplementationContext::appendNewLostPairs()
 {
 	if(mGPU)
 	{
-		mCmFoundLostOutputCounts.forceSize_Unsafe(0);
-		mCmFoundLost.forceSize_Unsafe(0);
+		mGPU_CmFoundLostOutputCounts.forceSize_Unsafe(0);
+		mGPU_CmFoundLost.forceSize_Unsafe(0);
 		PxU32 count = 0;
-		for (PxU32 i = 0, taskSize = mCmTasks.size(); i < taskSize; ++i)
+		for (PxU32 i = 0, taskSize = mGPU_CmTasks.size(); i < taskSize; ++i)
 		{
-			PxsCMDiscreteUpdateTask* task = mCmTasks[i];
+			PxsCMDiscreteUpdateTask* task = mGPU_CmTasks[i];
 
-			const PxU32 patchCount = task->mNbPatchChanged;
+			const PxU32 patchCount = task->mGPU_NbPatchChanged;
 
 			if (patchCount)
 			{
-				const PxU32 newSize = mCmFoundLostOutputCounts.size() + patchCount;
+				const PxU32 newSize = mGPU_CmFoundLostOutputCounts.size() + patchCount;
 
 				//KS - TODO - consider switching to 2x loops to avoid frequent allocations. However, we'll probably only grow this rarely,
 				//so may not be worth the effort!
-				if (mCmFoundLostOutputCounts.capacity() < newSize)
+				if (mGPU_CmFoundLostOutputCounts.capacity() < newSize)
 				{
 					//Allocate more memory!!!
-					const PxU32 newCapacity = PxMax(mCmFoundLostOutputCounts.capacity() * 2, newSize);
-					mCmFoundLostOutputCounts.reserve(newCapacity);
-					mCmFoundLost.reserve(newCapacity);
+					const PxU32 newCapacity = PxMax(mGPU_CmFoundLostOutputCounts.capacity() * 2, newSize);
+					mGPU_CmFoundLostOutputCounts.reserve(newCapacity);
+					mGPU_CmFoundLost.reserve(newCapacity);
 				}
 	
-				mCmFoundLostOutputCounts.forceSize_Unsafe(newSize);
-				mCmFoundLost.forceSize_Unsafe(newSize);
+				mGPU_CmFoundLostOutputCounts.forceSize_Unsafe(newSize);
+				mGPU_CmFoundLost.forceSize_Unsafe(newSize);
 
-				PxMemCopy(&mCmFoundLost[count], task->mPatchChangedCms, sizeof(PxsContactManager*)*patchCount);
-				PxMemCopy(&mCmFoundLostOutputCounts[count], task->mPatchChangedOutputCounts, sizeof(PxsContactManagerOutputCounts)*patchCount);
+				PxMemCopy(&mGPU_CmFoundLost[count], task->mGPU_PatchChangedCms, sizeof(PxsContactManager*)*patchCount);
+				PxMemCopy(&mGPU_CmFoundLostOutputCounts[count], task->mGPU_PatchChangedOutputCounts, sizeof(PxsContactManagerOutputCounts)*patchCount);
 				count += patchCount;
 			}
 		}
 	}
-	mCmTasks.forceSize_Unsafe(0);
+	mGPU_CmTasks.forceSize_Unsafe(0);
 }
 
 void PxsNphaseImplementationContext::unregisterContactManagerInternal(PxU32 npIndex, PxsContactManagers& managers, PxsContactManagerOutput* cmOutputs)
@@ -1018,7 +1020,7 @@ PxsContactManagerOutputIterator PxsNphaseImplementationContext::getContactManage
 	return PxsContactManagerOutputIterator(offsets, 1, mNarrowPhasePairs.mOutputContactManagers.begin());
 }
 
-PxvNphaseImplementationFallback* physx::createNphaseImplementationContext(PxsContext& context, IG::IslandSim* islandSim, PxVirtualAllocatorCallback* allocator, bool gpuDynamics)
+PxvNphaseImplementationFallback* physx::createNphaseImplementationContext(PxsContext& context, IG::IslandSim* islandSim, Cm::VirtualAllocatorCallback& alloc, bool gpuDynamics)
 {
 	// PT: TODO: remove useless placement new
 
@@ -1026,7 +1028,7 @@ PxvNphaseImplementationFallback* physx::createNphaseImplementationContext(PxsCon
 		PX_ALLOC(sizeof(PxsNphaseImplementationContext), "PxsNphaseImplementationContext"));
 
 	if(npImplContext)
-		npImplContext = PX_PLACEMENT_NEW(npImplContext, PxsNphaseImplementationContext)(context, islandSim, allocator, 0, gpuDynamics);
+		npImplContext = PX_PLACEMENT_NEW(npImplContext, PxsNphaseImplementationContext)(context, islandSim, alloc, 0, gpuDynamics);
 
 	return npImplContext;
 }

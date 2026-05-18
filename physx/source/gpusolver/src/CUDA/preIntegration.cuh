@@ -22,11 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
 #include "foundation/PxSimpleTypes.h"
+#include "AlignedMat33.h"
 #include "PxgBodySim.h"
 #include "PxgSolverBody.h"
 #include "PxvDynamics.h"
@@ -34,11 +35,12 @@
 #include "PxgSolverKernelIndices.h"
 #include "stdio.h"
 
-using namespace physx;
+namespace physx
+{
 
 __device__ __forceinline__ PxVec3 computeSafeSqrtInertia(const PxVec3& v)
 {
-	return PxVec3(v.x == 0.f ? 0.f : PxSqrt(v.x), v.y == 0.f ? 0.f : PxSqrt(v.y), v.z == 0.f ? 0.f : PxSqrt(v.z));
+	return PxVec3(PxSqrt(v.x), PxSqrt(v.y), PxSqrt(v.z));
 }
 
 __device__ __forceinline__ void transformInertiaTensor(const PxVec3& invD, const PxMat33& M, PxAlignedMat33& mIInv)
@@ -108,8 +110,8 @@ __device__  __forceinline__ void bodyCoreComputeUnconstrainedVelocity(const floa
 	angularVelocity += angularAccelTimesDT;
 
 	//Apply damping.
-	const PxReal linVelMultiplier = physx::intrinsics::fsel(oneMinusLinearDampingTimesDT, oneMinusLinearDampingTimesDT, 0.0f);
-	const PxReal angVelMultiplier = physx::intrinsics::fsel(oneMinusAngularDampingTimesDT, oneMinusAngularDampingTimesDT, 0.0f);
+	const PxReal linVelMultiplier = intrinsics::fsel(oneMinusLinearDampingTimesDT, oneMinusLinearDampingTimesDT, 0.0f);
+	const PxReal angVelMultiplier = intrinsics::fsel(oneMinusAngularDampingTimesDT, oneMinusAngularDampingTimesDT, 0.0f);
 	linearVelocity *= linVelMultiplier;
 	angularVelocity *= angVelMultiplier;
 
@@ -436,4 +438,6 @@ static __device__ void preIntegration(const uint32_t offset, const uint32_t nbSo
 
 	}
 }
+
+} // namespace physx
 

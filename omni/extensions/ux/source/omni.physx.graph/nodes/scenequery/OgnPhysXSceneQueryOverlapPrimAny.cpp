@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -19,14 +19,18 @@ class OgnPhysXSceneQueryOverlapPrimAny
 public:
     static bool compute(OgnPhysXSceneQueryOverlapPrimAnyDatabase& db)
     {
-        omni::fabric::PathC path;
+        omni::fabric::Path path;
         if (db.inputs.prim().size() == 0)
         {
             const auto& primPath = db.tokenToString(db.inputs.primPath());
             if (pxr::SdfPath::IsValidPathString(primPath))
             {
                 db.logWarning("Prim Path input is deprecated. Please use the Prim input instead.");
-                path = omni::fabric::asInt(pxr::SdfPath(primPath));
+                omni::graph::core::BackendId backendId;
+                omni::graph::core::GraphObj graphObj = db.abi_context().iContext->getGraph(db.abi_context());
+                graphObj.iGraph->getBackendId(graphObj, backendId);
+                omni::fabric::FabricId fabricId(backendId.id);
+                path = omni::fabric::StageReaderWriterUsd(fabricId).registerPath(primPath);
             }
             else
             {
@@ -39,7 +43,7 @@ public:
             path = db.inputs.prim()[0];
         }
 
-        db.outputs.overlap() = getPhysXSceneQuery()->overlapShape(path.path, NULL, true);;
+        db.outputs.overlap() = getPhysXSceneQuery()->overlapShape(fabricPathToHandle(path), NULL, true);;
         db.outputs.execOut() = kExecutionAttributeStateEnabled;
         return true;
     }

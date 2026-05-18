@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -7,6 +7,9 @@
 #include "../base/BaseSimulationData.h"
 
 #include <omni/physics/tensors/IRigidContactView.h>
+
+#include <string>
+#include <unordered_map>
 
 namespace omni
 {
@@ -48,6 +51,9 @@ public:
 
     void _onParentRelease();
 
+    // Batch convert other actor IDs to paths
+    void getOtherActorPathsFromIds(const TensorDesc* otherActorIdsTensor, std::vector<std::string>& outPaths) const override;
+
 protected:
     BaseSimulationDataPtr mSimData;
     BaseSimulationView* mSim = nullptr;
@@ -56,6 +62,9 @@ protected:
 
     uint32_t mNumFilters = 0;
     uint32_t mMaxContactDataCount = 0;
+
+    // Cache for uint64 path ID to string path conversion
+    mutable std::unordered_map<uint64_t, std::string> mPathCache;
 };
 
 } // namespace tensors

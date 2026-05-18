@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,7 +30,6 @@
 #include "foundation/PxVec3.h"
 #include "foundation/PxVec4.h"
 #include "foundation/PxBounds3.h"
-#include "PxgSoftBodyCore.h"
 #include "PxgSoftBody.h"
 #include "PxgSoftBodyCoreKernelIndices.h"
 #include "PxgBodySim.h"
@@ -69,7 +68,9 @@ extern "C" __host__ void initSoftBodyKernels1() {}
 
 
 //This kernel is called before refitBound
-extern "C" __global__ void sb_gm_preIntegrateLaunch(
+extern "C" __global__
+__launch_bounds__(PxgSoftBodyKernelBlockDim::SB_PREINTEGRATION, 1)
+void sb_gm_preIntegrateLaunch(
 	PxgSoftBody* PX_RESTRICT softbodies,
 	const PxU32* activeId,
 	const PxVec3 gravity,
@@ -1506,7 +1507,9 @@ void sb_gm_cp_solveTetrahedronsJacobiPartitionLaunch(
 }
 
 //multiple blocks per soft body(NUM_BLOCK_PER_SOFTBODY_SOLVE_TETRA), each block has 256 threads
-extern "C" __global__ void sb_gm_cp_averageVertsLaunch(
+extern "C" __global__
+__launch_bounds__(PxgSoftBodyKernelBlockDim::SB_PREINTEGRATION, 1)
+void sb_gm_cp_averageVertsLaunch(
 	PxgSoftBody* gSoftbodies,
 	const PxU32* activeSoftbodies,
 	const PxReal invDt)
@@ -1586,7 +1589,9 @@ extern "C" __global__ void sb_gm_cp_averageVertsLaunch(
 
 
 //Multiple blocks deal with one soft body. This uses grid model verts to update tet model verts.
-extern "C" __global__ void sb_gm_updateTetModelVertsLaunch(
+extern "C" __global__
+__launch_bounds__(PxgSoftBodyKernelBlockDim::SB_PREINTEGRATION, 1)
+void sb_gm_updateTetModelVertsLaunch(
 	PxgSoftBody* gSoftbodies,
 	const PxU32* activeSoftbodies
 )
@@ -2582,7 +2587,7 @@ extern "C" __global__ void sb_solveOutputParticleAttachmentDeltaVLaunch(
 		const PxReal invMass0 = pos0.w;
 
 		if (invMass1 == 0.f && invMass0 == 0.f)
-			continue; //Constrainint an infinte mass particle to an infinite mass soft body. Won't work so skip!
+			continue; //Constraining an infinite mass particle to an infinite mass soft body. Won't work so skip!
 
 		const float4 diff = (pos1 - pos0);
 		const PxVec3 error(diff.x, diff.y, diff.z);

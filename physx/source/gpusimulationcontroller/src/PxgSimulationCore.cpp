@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,24 +32,29 @@
 #include "common/PxProfileZone.h"
 #include "CudaKernelWrangler.h"
 #include "foundation/PxAllocator.h"
+#include "PxgArticulationBuffer.h"
 #include "PxgCudaSolverCore.h"
 #include "PxgArticulationCore.h"
 #include "PxgNarrowphaseCore.h"
 #include "PxgPBDParticleSystemCore.h"
+#include "PxgParticleSystemBuffer.h"
+#include "PxgSoftBodyBuffer.h"
+#include "PxgFEMClothBuffer.h"
 #include "PxgSimulationCoreKernelIndices.h"
 #include "PxgBodySim.h"
-#include "PxsTransformCache.h"
-#include "PxgCudaMemoryAllocator.h"
+#include "PxsCachedTransform.h"
 #include "PxgCudaBroadPhaseSap.h"
 #include "PxgCudaUtils.h"
 #include "PxgKernelWrangler.h"
 #include "PxgKernelIndices.h"
+#include "PxgKernelLauncher.h"
 #include "PxgD6JointData.h"
 #include "PxgConstraintPrep.h"
 #include "PxgCudaUtils.h"
 #include "PxgArticulationLink.h"
 #include "PxgArticulationTendon.h"
 #include "DyArticulationJointCore.h"
+#include "DyArticulationMimicJointCore.h"
 #include "DyFeatherstoneArticulationJointData.h"
 #include "PxgArticulation.h"
 #include "PxgSoftBody.h"
@@ -82,41 +87,39 @@
 
 using namespace physx;
 
-PxgArticulationBuffer::PxgArticulationBuffer(PxgHeapMemoryAllocatorManager* heapMemoryManager) :
-	links(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	linkWakeCounters(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	linkSleepData(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	linkProps(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	joints(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	jointData(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	corioliseVectors(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	zAForces(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	pathToRoots(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	spatialTendonParams(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	spatialTendons(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	fixedTendonParams(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	fixedTendons(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mimicJoints(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	externalAccelerations(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	jointForce(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	jointTargetPositions(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	jointTargetVelocities(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	jointOffsets(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	parents(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	motionMatrix(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	motionMatrixW(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	jointAxis(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	spatialArticulatedInertiaW(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	spatialImpulseResponseW(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	linkAndJointAndRootStates(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	linkBody2Actors(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	children(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	relativeQuats(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	cfms(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	cfmScale(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	tempParentToChilds(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	tempRs(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mHeapMemoryManager(heapMemoryManager)
+PxgArticulationBuffer::PxgArticulationBuffer(PxgHeapMemoryAllocator& deviceAlloc) :
+	links(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	linkWakeCounters(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	linkSleepData(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	linkProps(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	joints(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	jointData(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	coriolisVectors(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	zAForces(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	pathToRoots(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	spatialTendonParams(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	spatialTendons(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	fixedTendonParams(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	fixedTendons(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mimicJoints(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	externalAccelerations(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	jointForce(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	jointTargetPositions(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	jointTargetVelocities(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	jointOffsets(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	parents(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	motionMatrix(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	motionMatrixW(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	spatialArticulatedInertiaW(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	spatialImpulseResponseW(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	linkAndJointAndRootStates(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	linkBody2Actors(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	children(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	relativeQuats(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	cfms(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	cfmScale(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	tempParentToChilds(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	tempRs(deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION)
 {
 }
 
@@ -168,282 +171,290 @@ PxgArticulationBuffer::~PxgArticulationBuffer()
 }
 
 
-PxgParticleSystemBuffer::PxgParticleSystemBuffer(PxgHeapMemoryAllocatorManager* heapMemoryManager) :
-	originalPosition_mass(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	grid_particle_hash(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	grid_particle_index(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	sorted_position_mass(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	sorted_velocity(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	accumDeltaV(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	sortedDeltaP(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	cell_start(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	cell_end(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	collision_headers(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	collision_counts(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	collision_index(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	collision_impulses(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	phases(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	unsortedpositions(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	unsortedvelocities(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	restArray(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	normal(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	density(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	staticDensity(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	surfaceNormal(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	delta(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	curl(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	sorted_originalPosition_mass(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	sortedPhaseArray(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	particleOneWayContacts(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	particleOneWayForces(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	particleOneWayContactsNodeIndices(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	particleOneWayContactsSurfaceVelocities(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	particleOneWayContactCount(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	reverseLookup(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	phase_group_to_material_handle(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	derivedPBDMaterialProperties(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	user_particle_buffer(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	user_particle_buffer_runsum(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	user_particle_buffer_sorted_unique_ids(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	user_particle_buffer_runsum_sorted_unique_ids_original_index(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	user_cloth_buffer(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	user_rigid_buffer(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	user_diffuse_buffer(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	attachmentRunSum(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	referencedRigidsRunsum(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	mHostParticleBuffers(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mHostClothBuffers(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mHostRigidBuffers(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mHostDiffuseBuffers(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mAttachmentRunSum(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mParticleBufferRunSum(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mReferencedRigidsRunsum(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mParticleBufferSortedUniqueIds(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mParticleBufferSortedUniqueIdsOriginalIndex(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mRandomTable(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mHostPhaseGroupToMaterialHandle(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators))
+PxgParticleSystemBuffer::PxgParticleSystemBuffer(PxgAllocatorDesc& allocDesc) :
+	originalPosition_mass(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	grid_particle_hash(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	grid_particle_index(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	sorted_position_mass(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	sorted_velocity(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	accumDeltaV(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	sortedDeltaP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	cell_start(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	cell_end(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	collision_headers(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	collision_counts(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	collision_index(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	collision_impulses(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	phases(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	unsortedpositions(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	unsortedvelocities(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	restArray(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	normal(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	density(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	staticDensity(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	surfaceNormal(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	delta(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	curl(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	sorted_originalPosition_mass(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	sortedPhaseArray(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	particleOneWayContacts(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	particleOneWayForces(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	particleOneWayContactsNodeIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	particleOneWayContactsSurfaceVelocities(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	particleOneWayContactCount(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	reverseLookup(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	phase_group_to_material_handle(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	derivedPBDMaterialProperties(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	user_particle_buffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	user_particle_buffer_runsum(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	user_particle_buffer_sorted_unique_ids(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	user_particle_buffer_runsum_sorted_unique_ids_original_index(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	user_cloth_buffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	user_rigid_buffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	user_diffuse_buffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	attachmentRunSum(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	referencedRigidsRunsum(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	mHostParticleBuffers(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	mHostClothBuffers(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	mHostRigidBuffers(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	mHostDiffuseBuffers(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	mAttachmentRunSum(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	mParticleBufferRunSum(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	mReferencedRigidsRunsum(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	mParticleBufferSortedUniqueIds(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	mParticleBufferSortedUniqueIdsOriginalIndex(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	mRandomTable(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	mHostPhaseGroupToMaterialHandle(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES)
 {
 }
 
-PxgParticleSystemDiffuseBuffer::PxgParticleSystemDiffuseBuffer(PxgHeapMemoryAllocatorManager* heapMemoryManager) :
-	diffuse_positions(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_velocities(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_potentials(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_cell_start(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_cell_end(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_grid_particle_hash(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_sorted_to_unsorted_mapping(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_unsorted_to_sorted_mapping(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_origin_pos_life_time(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_sorted_pos_life_time(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_sorted_origin_pos_life_time(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_sorted_vel(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_one_way_contacts(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_one_way_forces(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_one_way_contacts_node_indices(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_one_way_contact_count(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES),
-	diffuse_particle_count(heapMemoryManager, PxsHeapStats::eSIMULATION_PARTICLES)
+PxgParticleSystemDiffuseBuffer::PxgParticleSystemDiffuseBuffer(PxgAllocatorDesc& allocDesc) :
+	diffuse_positions(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_velocities(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_potentials(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_cell_start(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_cell_end(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_grid_particle_hash(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_sorted_to_unsorted_mapping(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_unsorted_to_sorted_mapping(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_origin_pos_life_time(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_sorted_pos_life_time(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_sorted_origin_pos_life_time(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_sorted_vel(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_one_way_contacts(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_one_way_forces(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_one_way_contacts_node_indices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_one_way_contact_count(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
+	diffuse_particle_count(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES)
 	{
 	}
 
-PxgSoftBodyBuffer::PxgSoftBodyBuffer(PxgHeapMemoryAllocatorManager* heapMemoryManager) :
-	tetMeshData(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	tetMeshSurfaceHint(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	tetIndices(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	tetIndicesRemapTable(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	tetStresses(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	tetStressCoefficient(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	tetRestPoses(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	tetRotations(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	tetIndicesGM(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	pPostion_InvMassGM(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	vertsAreDeformed(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	vertsCantDeform(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	tetRestPosesGM(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	origTetRestPosesGM(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	tetRotationsGM(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	orderedTetGM(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	jacobiVertIndicesGM(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	tetMultipliersGM(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	pDeltaVGM(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	pBarycentricGM(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	pRemapGM(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	tetRemapColToSim(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	tetAccumulatedRemapColToSim(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	surfaceVertsHint(heapMemoryManager, PxsHeapStats::eSHARED_SOFTBODY),
-	surfaceVertToTetRemap(heapMemoryManager, PxsHeapStats::eSHARED_SOFTBODY),
-	pDeltaPosGM(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	pPosition_InvMassGMCP(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	pVelocity_InvMassGMCP(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	remapOutputGMCP(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	accumulatedPartitionsGMCP(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	accumulatedCopiesGMCP(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	pullIndices(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	orderedMaterialIndices(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	materialIndices(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	packedNodeBounds(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	filterPairs(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY)
+PxgSoftBodyBuffer::PxgSoftBodyBuffer(PxgAllocatorDesc& allocDesc) :
+	tetMeshData(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	tetMeshSurfaceHint(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	tetIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	tetIndicesRemapTable(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	tetStresses(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	tetStressCoefficient(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	tetRestPoses(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	tetRotations(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	tetIndicesGM(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	pPostion_InvMassGM(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	vertsAreDeformed(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	vertsCantDeform(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	tetRestPosesGM(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	origTetRestPosesGM(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	tetRotationsGM(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	orderedTetGM(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	jacobiVertIndicesGM(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	tetMultipliersGM(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	pDeltaVGM(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	pBarycentricGM(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	pRemapGM(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	tetRemapColToSim(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	tetAccumulatedRemapColToSim(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	surfaceVertsHint(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_SOFTBODY),
+	surfaceVertToTetRemap(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_SOFTBODY),
+	pDeltaPosGM(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	pPosition_InvMassGMCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	pVelocity_InvMassGMCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	remapOutputGMCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	accumulatedPartitionsGMCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	accumulatedCopiesGMCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	pullIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	orderedMaterialIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	materialIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	packedNodeBounds(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	filterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY)
 {
 }
 
-PxgFEMClothBuffer::PxgFEMClothBuffer(PxgHeapMemoryAllocatorManager* heapMemoryManager) :
-	triangleMeshData(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	deltaPos(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	accumulatedDeltaPos(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	accumulatedDeltaVel(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	prevPositionInContactOffset(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	prevPositionInRestOffset(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	materialIndices(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	dynamicfrictions(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	trianglesWithActiveEdges(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	triangleVertexIndices(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	orderedNonSharedTriangleVertexIndices_triIndex(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	orderedSharedTriangleLambdas(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	orderedNonSharedTriangleLambdas(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	orderedNonSharedTriangleRestPoseInv(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	orderedSharedTrianglePairVertexIndices(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	orderedNonSharedTrianglePairVertexIndices(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	orderedSharedRestBendingAngle_flexuralStiffness_damping(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	orderedNonSharedRestBendingAngle_flexuralStiffness_damping(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	orderedSharedRestEdge0_edge1(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	orderedSharedRestEdgeLength_material0_material1(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	sharedBendingLambdas(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	nonSharedBendingLambdas(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	position_InvMassCP(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	nonSharedTriAccumulatedPartitionsCP(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	sharedTriPairRemapOutputCP(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	nonSharedTriPairRemapOutputCP(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	sharedTriPairAccumulatedCopiesCP(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	nonSharedTriPairAccumulatedCopiesCP(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	sharedTriPairAccumulatedPartitionsCP(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	nonSharedTriPairAccumulatedPartitionsCP(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	packedNodeBounds(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	numPenetratedTets(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH)
+PxgFEMClothBuffer::PxgFEMClothBuffer(PxgAllocatorDesc& allocDesc) :
+	triangleMeshData(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	deltaPos(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	accumulatedDeltaPos(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	accumulatedDeltaVel(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	prevPositionInContactOffset(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	prevPositionInRestOffset(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	materialIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	dynamicfrictions(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	trianglesWithActiveEdges(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	triangleVertexIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	orderedNonSharedTriangleVertexIndices_triIndex(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	orderedSharedTriangleLambdas(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	orderedNonSharedTriangleLambdas(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	orderedNonSharedTriangleRestPoseInv(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	orderedSharedTrianglePairVertexIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	orderedNonSharedTrianglePairVertexIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	orderedSharedRestBendingAngle_flexuralStiffness_damping(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	orderedNonSharedRestBendingAngle_flexuralStiffness_damping(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	orderedSharedRestEdge0_edge1(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	orderedSharedRestEdgeLength_material0_material1(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	sharedBendingLambdas(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	nonSharedBendingLambdas(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	position_InvMassCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	nonSharedTriAccumulatedPartitionsCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	sharedTriPairRemapOutputCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	nonSharedTriPairRemapOutputCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	sharedTriPairAccumulatedCopiesCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	nonSharedTriPairAccumulatedCopiesCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	sharedTriPairAccumulatedPartitionsCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	nonSharedTriPairAccumulatedPartitionsCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	packedNodeBounds(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	numPenetratedTets(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH)
 {
 }
 
 PxgSimulationCore::PxgSimulationCore(PxgCudaKernelWranglerManager* gpuKernelWrangler,
 	PxCudaContextManager* cudaContextManager,
-	PxgHeapMemoryAllocatorManager* heapMemoryManager,
+	PxgAllocatorDesc& allocDesc,
 	PxgGpuContext* gpuContext,
 	const bool useGpuBroadphase) :
 	mGpuContext(gpuContext),
 	mGpuKernelWranglerManager(gpuKernelWrangler),
 	mCudaContextManager(cudaContextManager),
 	mCudaContext(cudaContextManager->getCudaContext()),
-	mHeapMemoryManager(heapMemoryManager),
+	mAllocDesc(allocDesc),
 	mUseGpuBp(useGpuBroadphase),
-	mFrozenBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mUnfrozenBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mFrozenBlockAndResBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mUnfrozenBlockAndResBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mUpdatedBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mActivateBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mDeactivateBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mUpdatedDirectBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mBodySimCudaBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mBodySimPreviousVelocitiesCudaBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mPxgShapeSimManager(heapMemoryManager),
-	mArticulationBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mArticulationSleepDataBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mArticulationBatchBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mArticulationLinkBatchBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mArticulationTraversalStackBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mTempPathToRootBitFieldStackBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mTempSharedBitFieldStackBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mTempRootBitFieldStackBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mPathToRootBitFieldStackBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mArticulationDofBatchBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mArticulationMimicJointBatchBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mArticulationSpatialTendonBatchBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mArticulationSpatialTendonConstraintsBatchBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mArticulationAttachmentBatchBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mArticulationFixedTendonBatchBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mArticulationFixedTendonConstraintsBatchBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mArticulationTendonJointBatchBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mSoftBodyBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mActiveSoftBodyBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mActiveSelfCollisionSoftBodyBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyElementIndexBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mFEMClothBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mActiveFEMClothBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mFEMClothElementIndexBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mActiveFEMClothStateChangedMap(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators, PxsHeapStats::eSIMULATION_FEMCLOTH).getCallback()),
-	mFEMClothWakeCounts(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators, PxsHeapStats::eSIMULATION_FEMCLOTH)),
-	mFEMClothWakeCountsGPU(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mActiveSBStateChangedMap(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators, PxsHeapStats::eSIMULATION_FEMCLOTH).getCallback()),
-	mSBWakeCounts(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators, PxsHeapStats::eSIMULATION_FEMCLOTH)),
-	mSBWakeCountsGPU(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mRigidJointBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mArtiJointBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mRigidJointPrePrepBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mArtiJointPrePrepBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mGpuConstraintIdMapDevice(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mUpdatedBodySimBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewBodySimBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewArticulationBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mNewLinkBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewLinkWakeCounterBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewLinkExtAccelBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewLinkPropBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewLinkParentBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewLinkChildBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewLinkBody2WorldsBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewLinkBody2ActorsBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewJointCoreBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewJointDataBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewLinkIndexBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewSpatialTendonParamsBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewSpatialTendonsBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewMimicJointBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewPathToRootBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewAttachmentFixedBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewAttachmentModBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewTendonAttachmentRemapBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewFixedTendonParamsBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewFixedTendonsBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewTendonJointsFixedBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewTendonJointsCoefficientBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewTendonTendonJointRemapBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mActiveNodeIndices(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mUpdatedCacheAndBoundsDescBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mBodiesDescBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mArticulationDescBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION),
-	mUpdatedBodiesDescBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mUpdatedJointDescBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mUpdatedActorDescBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mBoundsBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mChangedAABBMgrHandlesBuffer(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mSoftBodyRigidAttachments(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyRigidFilterPairs(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyRigidConstraints(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mActiveSoftBodyRigidConstraints(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mNumSoftBodyRigidAttachments(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyRigidAttachmentIds(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodySoftBodyAttachments(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodySoftBodyConstraints(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mActiveSoftBodySoftBodyConstraints(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mNumSoftBodySoftBodyAttachments(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyClothAttachments(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyClothFilterPairs(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyClothConstraints(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mActiveSoftBodyClothConstraints(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mNumSoftBodyClothAttachments(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyParticleAttachments(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyParticleFilterPairs(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyParticleConstraints(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mActiveSoftBodyParticleConstraints(heapMemoryManager, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mClothRigidAttachments(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mActiveClothRigidAttachments(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mClothRigidFilterPairs(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mClothRigidConstraints(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mNumClothRigidAttachments(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mClothRigidAttachmentIds(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mClothClothAttachments(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mActiveClothClothAttachments(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mClothClothVertTriFilterPairs(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mClothClothConstraints(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mNumClothClothAttachments(heapMemoryManager, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mUpdatedCacheAndBoundsDesc(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+	mNewBodiesDesc(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+	mUpdateArticulationDesc(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mUpdatedBodiesDesc(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+	mUpdatedJointsDesc(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+	mUpdatedActorDataDesc(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+	mFrozenBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mUnfrozenBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mFrozenBlockAndResBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mUnfrozenBlockAndResBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mUpdatedBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mActivateBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mDeactivateBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mUpdatedDirectBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mBodySimCudaBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mBodySimPreviousVelocitiesCudaBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mBodySimAccelerationsCudaBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mBodySimAccelerationsPinned(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+	mPxgShapeSimManager(allocDesc),
+	mArticulationBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mArticulationSleepDataBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mArticulationBatchBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mArticulationLinkBatchBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mArticulationTraversalStackBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mTempPathToRootBitFieldStackBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mTempSharedBitFieldStackBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mTempRootBitFieldStackBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mPathToRootBitFieldStackBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mArticulationDofBatchBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mArticulationMimicJointBatchBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mArticulationSpatialTendonBatchBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mArticulationSpatialTendonConstraintsBatchBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mArticulationAttachmentBatchBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mArticulationFixedTendonBatchBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mArticulationFixedTendonConstraintsBatchBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mArticulationTendonJointBatchBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mSoftBodyBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mActiveSoftBodyBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mActiveSelfCollisionSoftBodyBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mSoftBodyElementIndexBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mFEMClothBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mActiveFEMClothBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mFEMClothElementIndexBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mActiveFEMClothStateChangedMap(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mFEMClothWakeCounts(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mFEMClothWakeCountsGPU(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mActiveSBStateChangedMap(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mSBWakeCounts(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mSBWakeCountsGPU(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mRigidJointBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mArtiJointBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mRigidJointPrePrepBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mArtiJointPrePrepBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mGpuConstraintIdMapDevice(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mUpdatedBodySimBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewBodySimBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewArticulationBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mNewLinkBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewLinkWakeCounterBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewLinkExtAccelBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewLinkPropBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewLinkParentBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewLinkChildBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewLinkBody2WorldsBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewLinkBody2ActorsBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewJointCoreBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewJointDataBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewLinkIndexBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewSpatialTendonParamsBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewSpatialTendonsBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewMimicJointBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewPathToRootBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewAttachmentFixedBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewAttachmentModBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewTendonAttachmentRemapBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewFixedTendonParamsBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewFixedTendonsBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewTendonJointsFixedBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewTendonJointsCoefficientBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewTendonTendonJointRemapBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mActiveNodeIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mUpdatedCacheAndBoundsDescBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mBodiesDescBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mArticulationDescBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+	mUpdatedBodiesDescBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mUpdatedJointDescBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mUpdatedActorDescBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mBoundsBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mChangedAABBMgrHandlesBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mSoftBodyRigidAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mSoftBodyRigidFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mSoftBodyRigidConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mActiveSoftBodyRigidConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mNumSoftBodyRigidAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mSoftBodyRigidAttachmentIds(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mSoftBodySoftBodyAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mSoftBodySoftBodyConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mActiveSoftBodySoftBodyConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mNumSoftBodySoftBodyAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mSoftBodyClothAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mSoftBodyClothFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mSoftBodyClothConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mActiveSoftBodyClothConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mNumSoftBodyClothAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mSoftBodyParticleAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mSoftBodyParticleFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mSoftBodyParticleConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mActiveSoftBodyParticleConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mClothRigidAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mActiveClothRigidAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mClothRigidFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mClothRigidConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mNumClothRigidAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mClothRigidAttachmentIds(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mClothClothAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mActiveClothClothAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mClothClothVertTriFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mClothClothConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mNumClothClothAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	mNbTotalBodySim(0), mNbTotalArticulations(0),
 	mNbTotalSoftBodies(0), mNbTotalFEMCloths(0),
 	mMaxTetraVerts(0), mMaxTetrahedrons(0),
@@ -473,11 +484,11 @@ PxgSimulationCore::PxgSimulationCore(PxgCudaKernelWranglerManager* gpuKernelWran
 	mUsePartitionAveraging(false),
 	mHasActiveBendingPairs(false)
 #if PX_SUPPORT_OMNI_PVD
-	,mOvdDataBuffer(heapMemoryManager->mMappedMemoryAllocators)
-	,mOvdIndexBuffer(heapMemoryManager->mMappedMemoryAllocators)
+	,mOvdDataBuffer(allocDesc.hostAlloc, PxsHeapStats::eOTHER)
+	,mOvdIndexBuffer(allocDesc.hostAlloc, PxsHeapStats::eOTHER)
 #endif
 {
-	mPinnedEvent = NULL;
+	mEventMapped = NULL;
 	mCudaContextManager->acquireContext();
 
 	mNbRigidSoftBodyAttachments = 0;
@@ -504,14 +515,6 @@ PxgSimulationCore::PxgSimulationCore(PxgCudaKernelWranglerManager* gpuKernelWran
 	mUpdatedJointDescBuffer.allocate(sizeof(PxgUpdatedJointsDesc), PX_FL);
 	mUpdatedActorDescBuffer.allocate(sizeof(PxgUpdateActorDataDesc), PX_FL);
 
-	//we should combined all these desc and allocate and deallocate once!
-	mUpdatedCacheAndBoundsDesc = PX_PINNED_MEMORY_ALLOC(PxgSimulationCoreDesc, *mCudaContextManager, 1);
-	mNewBodiesDesc = PX_PINNED_MEMORY_ALLOC(PxgNewBodiesDesc, *mCudaContextManager, 1);
-	mUpdateArticulationDesc = PX_PINNED_MEMORY_ALLOC(PxgUpdateArticulationDesc, *mCudaContextManager, 1);
-	mUpdatedBodiesDesc = PX_PINNED_MEMORY_ALLOC(PxgUpdatedBodiesDesc, *mCudaContextManager, 1);
-	mUpdatedJointsDesc = PX_PINNED_MEMORY_ALLOC(PxgUpdatedJointsDesc, *mCudaContextManager, 1);
-	mUpdatedActorDataDesc = PX_PINNED_MEMORY_ALLOC(PxgUpdateActorDataDesc, *mCudaContextManager, 1);
-		
 	mNumSoftBodyRigidAttachments.allocate(sizeof(PxU32), PX_FL);
 	mNumSoftBodySoftBodyAttachments.allocate(sizeof(PxU32), PX_FL);
 	mNumSoftBodyClothAttachments.allocate(sizeof(PxU32), PX_FL);
@@ -526,24 +529,17 @@ PxgSimulationCore::PxgSimulationCore(PxgCudaKernelWranglerManager* gpuKernelWran
 PxgSimulationCore::~PxgSimulationCore()
 {
 	mCudaContextManager->acquireContext();
-
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mUpdatedCacheAndBoundsDesc);
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mNewBodiesDesc);
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mUpdateArticulationDesc);
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mUpdatedBodiesDesc);
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mUpdatedJointsDesc);
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mUpdatedActorDataDesc);
 	
 	// AD: the tofree lists could contain entries if they were added less than one
 	// frame ago. 
 	for (PxU32 i = 0; i < mSoftBodiesToFree.size(); ++i)
 	{
-		mSoftBodiesToFree[i].deallocate(mHeapMemoryManager->mMappedMemoryAllocators);
+		mSoftBodiesToFree[i].deallocate(mAllocDesc.hostAlloc);
 	}
 
 	for (PxU32 i = 0; i < mClothsToFree.size(); ++i)
 	{
-		mClothsToFree[i].deallocate(mHeapMemoryManager->mMappedMemoryAllocators);
+		mClothsToFree[i].deallocate(mAllocDesc.hostAlloc);
 	}
 
 	for (PxU32 i = 0; i < mArticulationDataBuffer.size(); ++i)
@@ -590,7 +586,12 @@ void PxgSimulationCore::createGpuStreamsAndEvents()
 	//create event
 	mCudaContext->eventCreate(&mDmaEvent, CU_EVENT_DISABLE_TIMING);
 
-	mPinnedEvent = PX_PINNED_MEMORY_ALLOC(PxU32, *mCudaContextManager, 1);
+	mEventMapped = PX_PINNED_MEMORY_ALLOC_FLAGS(PxU32, *mCudaContextManager, 1, CU_MEMHOSTALLOC_PORTABLE | CU_MEMHOSTALLOC_DEVICEMAP);
+	if(!mEventMapped)
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgSimulationCore: failed to allocate pinned event");
+		mCudaContextManager->getCudaContext()->setAbortMode(true);
+	}
 }
 
 void PxgSimulationCore::releaseGpuStreamsAndEvents()
@@ -607,68 +608,69 @@ void PxgSimulationCore::releaseGpuStreamsAndEvents()
 	mCudaContext->eventDestroy(mDmaEvent);
 	mDmaEvent = NULL;
 
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mPinnedEvent);
+	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mEventMapped);
 }
 
 void PxgSimulationCore::constructDescriptor(CUdeviceptr boundsd, CUdeviceptr changedAABBMgrHandlesd, const PxU32 nbTotalShapes, const PxU32 bitMapWordCounts)
 {
-	mUpdatedCacheAndBoundsDesc->mChangedAABBMgrHandles = reinterpret_cast<PxU32*>(changedAABBMgrHandlesd);
-	mUpdatedCacheAndBoundsDesc->mFrozen = mFrozenBuffer.getTypedPtr();
-	mUpdatedCacheAndBoundsDesc->mUnfrozen = mUnfrozenBuffer.getTypedPtr();
-	mUpdatedCacheAndBoundsDesc->mFrozenBlockAndRes = mFrozenBlockAndResBuffer.getTypedPtr();
-	mUpdatedCacheAndBoundsDesc->mUnfrozenBlockAndRes = mUnfrozenBlockAndResBuffer.getTypedPtr();
-	mUpdatedCacheAndBoundsDesc->mUpdated = mUpdatedBuffer.getTypedPtr();
-	mUpdatedCacheAndBoundsDesc->mActivate = mActivateBuffer.getTypedPtr();
-	mUpdatedCacheAndBoundsDesc->mDeactivate = mDeactivateBuffer.getTypedPtr();
+	PxgSimulationCoreDesc& desc = mUpdatedCacheAndBoundsDesc.get();
+	desc.mChangedAABBMgrHandles = reinterpret_cast<PxU32*>(changedAABBMgrHandlesd);
+	desc.mFrozen = mFrozenBuffer.getTypedPtr();
+	desc.mUnfrozen = mUnfrozenBuffer.getTypedPtr();
+	desc.mFrozenBlockAndRes = mFrozenBlockAndResBuffer.getTypedPtr();
+	desc.mUnfrozenBlockAndRes = mUnfrozenBlockAndResBuffer.getTypedPtr();
+	desc.mUpdated = mUpdatedBuffer.getTypedPtr();
+	desc.mActivate = mActivateBuffer.getTypedPtr();
+	desc.mDeactivate = mDeactivateBuffer.getTypedPtr();
 
-	mUpdatedCacheAndBoundsDesc->mSleepData = mGpuContext->mGpuSolverCore->getSolverBodySleepData().getPointer();
+	desc.mSleepData = mGpuContext->mGpuSolverCore->getSolverBodySleepData().getPointer();
 
-	mUpdatedCacheAndBoundsDesc->mTransformCache = reinterpret_cast<PxsCachedTransform*>(mGpuContext->mGpuNpCore->getTransformCache().getDevicePtr());
+	desc.mTransformCache = reinterpret_cast<PxsCachedTransform*>(mGpuContext->mGpuNpCore->getTransformCache().getDevicePtr());
 
-	mUpdatedCacheAndBoundsDesc->mBounds = reinterpret_cast<PxBounds3*>(boundsd);
+	desc.mBounds = reinterpret_cast<PxBounds3*>(boundsd);
 
-	mUpdatedCacheAndBoundsDesc->mBodyDataIndices = mGpuContext->mGpuSolverCore->getSolverBodyIndices().getPointer();
+	desc.mBodyDataIndices = mGpuContext->mGpuSolverCore->getSolverBodyIndices().getPointer();
 
-	mUpdatedCacheAndBoundsDesc->mShapes = reinterpret_cast<PxgShape*>(mGpuContext->mGpuNpCore->mGpuShapesManager.mGpuShapesBuffer.getDevicePtr());
-	mUpdatedCacheAndBoundsDesc->mBodySimBufferDeviceData = getBodySimBufferDeviceData().getPointer();
-	mUpdatedCacheAndBoundsDesc->mShapeSimsBufferDeviceData = mPxgShapeSimManager.getShapeSimsDeviceTypedPtr();
-	mUpdatedCacheAndBoundsDesc->mArticulationPool = mArticulationBuffer.getTypedPtr();
-	mUpdatedCacheAndBoundsDesc->mArticulationSleepDataPool = mArticulationSleepDataBuffer.getTypedPtr();
-	mUpdatedCacheAndBoundsDesc->mNbTotalShapes = nbTotalShapes;
-	mUpdatedCacheAndBoundsDesc->mBitMapWordCounts = bitMapWordCounts;
+	desc.mShapes = reinterpret_cast<PxgShape*>(mGpuContext->mGpuNpCore->mGpuShapesManager.mGpuShapesBuffer.getDevicePtr());
+	desc.mBodySimBufferDeviceData = getBodySimBufferDeviceData().getPointer();
+	desc.mShapeSimsBufferDeviceData = mPxgShapeSimManager.getShapeSimsDeviceTypedPtr();
+	desc.mArticulationPool = mArticulationBuffer.getTypedPtr();
+	desc.mArticulationSleepDataPool = mArticulationSleepDataBuffer.getTypedPtr();
+	desc.mNbTotalShapes = nbTotalShapes;
+	desc.mBitMapWordCounts = bitMapWordCounts;
 
-	mUpdatedCacheAndBoundsDesc->mTotalFrozenShapes = 0;
-	mUpdatedCacheAndBoundsDesc->mTotalUnfrozenShapes = 0;
+	desc.mTotalFrozenShapes = 0;
+	desc.mTotalUnfrozenShapes = 0;
 }
 
 //new articulation and rigid bodies are both in newBodySimPool. We store the new rigid bodies first, then store new articulations
 //bodySimOffset is articulation start point
-void PxgSimulationCore::gpuMemDmaUpBodySim(PxPinnedArray<PxgBodySimVelocityUpdate>& updatedBodySimPool,
-	PxPinnedArray<PxgBodySim>& newBodySimPool,
-	PxPinnedArray<PxgArticulationLink>& newLinkPool,
-	PxFloatArrayPinned& newLinkWakeCounterPool,
-	PxPinnedArray<Cm::UnAlignedSpatialVector>& newLinkExtAccelPool,
-	PxPinnedArray<PxgArticulationLinkProp>& newLinkPropPool,
-	PxInt32ArrayPinned& newLinkParentsPool,
-	PxPinnedArray<Dy::ArticulationBitField>& newLinkChildPool,
-	PxPinnedArray<PxTransform>& newLinkBody2WorldsPool,
-	PxPinnedArray<PxTransform>& newLinkBody2ActorsPool,
-	PxPinnedArray<Dy::ArticulationJointCore>& newJointCorePool,
-	PxPinnedArray<Dy::ArticulationJointCoreData>& newJointDataPool,
-	PxPinnedArray<PxgArticulationSimUpdate>& newLinkJointIndexPool,
-	PxPinnedArray<PxgArticulation>& newArticulationPool,
-	PxPinnedArray<PxGpuSpatialTendonData>& newSpatialTendonParamPool,
-	PxPinnedArray<PxgArticulationTendon>& newSpatialTendonPool,
-	PxPinnedArray<PxgArticulationTendonElementFixedData>& newAttachmentFixedPool,
-	PxPinnedArray<PxGpuTendonAttachmentData>& newAttachmentModPool,
-	PxInt32ArrayPinned& newTendonToAttachmentRemapPool,
-	PxPinnedArray<PxGpuFixedTendonData>& newFixedTendonParamPool,
-	PxPinnedArray<PxgArticulationTendon>& newFixedTendonPool,
-	PxPinnedArray<PxgArticulationTendonElementFixedData>& newTendonJointFixedPool,
-	PxPinnedArray<PxGpuTendonJointCoefficientData>& newTendonJointCoefficientPool,
-	PxInt32ArrayPinned& newTendonToTendonJointRemapPool,
-	PxPinnedArray<Dy::ArticulationMimicJointCore>& newMimicJointPool,
-	PxInt32ArrayPinned& newPathToRootPool,
+void PxgSimulationCore::gpuMemDmaUpBodySim(Cm::PinnableArray<PxgBodySimVelocityUpdate>& updatedBodySimPool,
+	Cm::PinnableArray<PxgBodySim>& newBodySimPool,
+	Cm::PinnableArray<PxgArticulationLink>& newLinkPool,
+	Cm::PinnableArray<PxReal>& newLinkWakeCounterPool,
+	Cm::PinnableArray<Cm::UnAlignedSpatialVector>& newLinkExtAccelPool,
+	Cm::PinnableArray<PxgArticulationLinkProp>& newLinkPropPool,
+	Cm::PinnableArray<PxU32>& newLinkParentsPool,
+	Cm::PinnableArray<Dy::ArticulationBitField>& newLinkChildPool,
+	Cm::PinnableArray<PxTransform>& newLinkBody2WorldsPool,
+	Cm::PinnableArray<PxTransform>& newLinkBody2ActorsPool,
+	Cm::PinnableArray<Dy::ArticulationJointCore>& newJointCorePool,
+	Cm::PinnableArray<Dy::ArticulationJointCoreData>& newJointDataPool,
+	Cm::PinnableArray<PxgArticulationSimUpdate>& newLinkJointIndexPool,
+	Cm::PinnableArray<PxgArticulation>& newArticulationPool,
+	Cm::PinnableArray<PxGpuSpatialTendonData>& newSpatialTendonParamPool,
+	Cm::PinnableArray<PxgArticulationTendon>& newSpatialTendonPool,
+	Cm::PinnableArray<PxgArticulationTendonElementFixedData>& newAttachmentFixedPool,
+	Cm::PinnableArray<PxGpuTendonAttachmentData>& newAttachmentModPool,
+	Cm::PinnableArray<PxU32>& newTendonToAttachmentRemapPool,
+	Cm::PinnableArray<PxGpuFixedTendonData>& newFixedTendonParamPool,
+	Cm::PinnableArray<PxgArticulationTendon>& newFixedTendonPool,
+	Cm::PinnableArray<PxgArticulationTendonElementFixedData>& newTendonJointFixedPool,
+	Cm::PinnableArray<PxGpuTendonJointCoefficientData>& newTendonJointCoefficientPool,
+	Cm::PinnableArray<PxU32>& newTendonToTendonJointRemapPool,
+	Cm::PinnableArray<Dy::ArticulationMimicJointCore>& newMimicJointPool,
+	Cm::PinnableArray<PxU32>& newPathToRootPool,
 	PxU32 nbTotalBodies, PxU32 nbTotalArticulations, PxU32 maxLinks,
 	PxU32 maxDofs, PxU32 maxMimicJoints, PxU32 maxSpatialTendons,
 	PxU32 maxAttachments, PxU32 maxFixedTendons, PxU32 maxTendonJoints,
@@ -691,8 +693,8 @@ void PxgSimulationCore::gpuMemDmaUpBodySim(PxPinnedArray<PxgBodySimVelocityUpdat
 				mCudaContext->memsetD32Async(mBodySimCudaBuffer.getDevicePtr() + oldCapacity, 0xFFFFFFFF, (mBodySimCudaBuffer.getSize() - oldCapacity) / sizeof(PxU32), mStream);
 		}
 
-		// PT: this buffer for Direct GPU acceleration getters
-		if(enableBodyAccelerations)	// eENABLE_BODY_ACCELERATIONS
+		// PT: GPU acceleration buffers for acceleration getters
+		if(enableBodyAccelerations)
 		{
 			// PT: we may be allocating more than needed here, as this is only needed for rigid bodies
 			const PxU64 oldCapacity = mBodySimPreviousVelocitiesCudaBuffer.getSize();
@@ -701,6 +703,13 @@ void PxgSimulationCore::gpuMemDmaUpBodySim(PxPinnedArray<PxgBodySimVelocityUpdat
 			// PT: initialize this buffer to zero to make sure the initial previous velocities are 0.0
 			if (oldCapacity < mBodySimPreviousVelocitiesCudaBuffer.getSize())
 				mCudaContext->memsetD32Async(mBodySimPreviousVelocitiesCudaBuffer.getDevicePtr() + oldCapacity, 0, (mBodySimPreviousVelocitiesCudaBuffer.getSize() - oldCapacity) / sizeof(PxU32), mStream);
+
+			mBodySimAccelerationsCudaBuffer.allocateCopyOldDataAsync(nbTotalBodies * sizeof(PxgRigidBodyAcceleration), mCudaContext, mStream, PX_FL);
+			if (mBodySimAccelerationsPinned.capacity() < nbTotalBodies)
+			{
+				mBodySimAccelerationsPinned.reserve(nbTotalBodies);
+				mBodySimAccelerationsPinned.forceSize_Unsafe(nbTotalBodies);
+			}
 		}
 		else
 		{
@@ -759,7 +768,7 @@ void PxgSimulationCore::gpuMemDmaUpBodySim(PxPinnedArray<PxgBodySimVelocityUpdat
 
 			if(!buffer)
 			{
-				buffer = PX_NEW(PxgArticulationBuffer)(mHeapMemoryManager);
+				buffer = PX_NEW(PxgArticulationBuffer)(mAllocDesc.deviceAlloc);
 				mArticulationDataBuffer[data.index] = buffer;
 			}
 
@@ -800,8 +809,8 @@ void PxgSimulationCore::gpuMemDmaUpBodySim(PxPinnedArray<PxgBodySimVelocityUpdat
 			{
 				PxgArticulationTendon& tendon = newSpatialTendonPool[tendonStartIndex + j];
 
-				PxgCudaBuffer* attachmentFixedBuffer = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgCudaBuffer), "PxgCudaBuffer"), PxgCudaBuffer)(buffer->mHeapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION);
-				PxgCudaBuffer* attachmentModBuffer = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgCudaBuffer), "PxgCudaBuffer"), PxgCudaBuffer)(buffer->mHeapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION);
+				PxgCudaBuffer* attachmentFixedBuffer = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgCudaBuffer), "PxgCudaBuffer"), PxgCudaBuffer)(mAllocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION);
+				PxgCudaBuffer* attachmentModBuffer = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgCudaBuffer), "PxgCudaBuffer"), PxgCudaBuffer)(mAllocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION);
 
 				attachmentFixedBuffer->allocate(sizeof(PxgArticulationTendonElementFixedData) * tendon.mNbElements, PX_FL);
 				attachmentModBuffer->allocate(sizeof(PxGpuTendonAttachmentData) * tendon.mNbElements, PX_FL);
@@ -818,8 +827,8 @@ void PxgSimulationCore::gpuMemDmaUpBodySim(PxPinnedArray<PxgBodySimVelocityUpdat
 			{
 				PxgArticulationTendon& tendon = newFixedTendonPool[tendonStartIndex + j];
 
-				PxgCudaBuffer* tendonJointFixedDataBuffer = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgCudaBuffer), "PxgCudaBuffer"), PxgCudaBuffer)(buffer->mHeapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION);
-				PxgCudaBuffer* tendonJointCoefficientDataBuffer = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgCudaBuffer), "PxgCudaBuffer"), PxgCudaBuffer)(buffer->mHeapMemoryManager, PxsHeapStats::eSIMULATION_ARTICULATION);
+				PxgCudaBuffer* tendonJointFixedDataBuffer = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgCudaBuffer), "PxgCudaBuffer"), PxgCudaBuffer)(mAllocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION);
+				PxgCudaBuffer* tendonJointCoefficientDataBuffer = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgCudaBuffer), "PxgCudaBuffer"), PxgCudaBuffer)(mAllocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_ARTICULATION);
 
 				tendonJointFixedDataBuffer->allocate(sizeof(PxgArticulationTendonElementFixedData) * tendon.mNbElements, PX_FL);
 				tendonJointCoefficientDataBuffer->allocate(sizeof(PxGpuTendonJointCoefficientData) * tendon.mNbElements, PX_FL);
@@ -834,7 +843,7 @@ void PxgSimulationCore::gpuMemDmaUpBodySim(PxPinnedArray<PxgBodySimVelocityUpdat
 			buffer->mimicJoints.allocate(numMimicJoints*sizeof(Dy::ArticulationMimicJointCore), PX_FL);
 				
 			const PxU32 linkSize = sizeof(Cm::UnAlignedSpatialVector) * numLinks;
-			buffer->corioliseVectors.allocate(linkSize, PX_FL);
+			buffer->coriolisVectors.allocate(linkSize, PX_FL);
 			buffer->zAForces.allocate(linkSize, PX_FL);
 
 			buffer->externalAccelerations.allocate(linkSize, PX_FL);
@@ -858,8 +867,6 @@ void PxgSimulationCore::gpuMemDmaUpBodySim(PxPinnedArray<PxgBodySimVelocityUpdat
 			buffer->parents.allocate(sizeof(PxU32) * numLinks, PX_FL);
 			buffer->motionMatrix.allocate(sizeof(Dy::SpatialSubspaceMatrix)*numLinks, PX_FL);
 			buffer->motionMatrixW.allocate(sizeof(Dy::SpatialSubspaceMatrix)*numLinks, PX_FL);
-
-			buffer->jointAxis.allocate(sizeof(Cm::UnAlignedSpatialVector)*numDofs, PX_FL);
 
 			buffer->spatialArticulatedInertiaW.allocate(sizeof(PxSpatialMatrix) * numLinks, PX_FL);
 			buffer->spatialImpulseResponseW.allocate(sizeof(PxSpatialMatrix)*numLinks, PX_FL);
@@ -899,7 +906,7 @@ void PxgSimulationCore::gpuMemDmaUpBodySim(PxPinnedArray<PxgBodySimVelocityUpdat
 				newArticulation.rootPreMotionVelocity);
 
 			newArticulation.linkBody2Actors = buffer->linkBody2Actors.getTypedPtr();
-			newArticulation.corioliseVectors = buffer->corioliseVectors.getTypedPtr();
+			newArticulation.coriolisVectors = buffer->coriolisVectors.getTypedPtr();
 			newArticulation.externalAccelerations = buffer->externalAccelerations.getTypedPtr();
 			newArticulation.zAForces = buffer->zAForces.getTypedPtr();
 
@@ -910,7 +917,6 @@ void PxgSimulationCore::gpuMemDmaUpBodySim(PxPinnedArray<PxgBodySimVelocityUpdat
 			newArticulation.parents = buffer->parents.getTypedPtr();
 			newArticulation.motionMatrix = buffer->motionMatrix.getTypedPtr();
 			newArticulation.worldMotionMatrix = buffer->motionMatrixW.getTypedPtr();
-			newArticulation.jointAxis = buffer->jointAxis.getTypedPtr();
 			newArticulation.worldSpatialArticulatedInertia = buffer->spatialArticulatedInertiaW.getTypedPtr();
 			newArticulation.spatialResponseMatrixW = buffer->spatialImpulseResponseW.getTypedPtr();
 
@@ -1049,53 +1055,58 @@ void PxgSimulationCore::gpuMemDmaUpBodySim(PxPinnedArray<PxgBodySimVelocityUpdat
 	if (nbNewBodies > 0 || nbNewLinks > 0 || nbNewSpatialTendons > 0 || nbNewFixedTendons > 0 || nbNewMimicJoints > 0)
 	{
 		//fill in descriptor
-		mNewBodiesDesc->mNewBodySim = mNewBodySimBuffer.getTypedPtr();
-		mNewBodiesDesc->mBodySimBufferDeviceData = getBodySimBufferDeviceData().getPointer();
-		mNewBodiesDesc->mNbNewBodies = nbNewBodies;
+		PxgNewBodiesDesc& newBodiesDesc = mNewBodiesDesc.get();
+		newBodiesDesc.mNewBodySim = mNewBodySimBuffer.getTypedPtr();
+		newBodiesDesc.mBodySimBufferDeviceData = getBodySimBufferDeviceData().getPointer();
+		// PdHC: For new bodies, kernel will initialize their previous velocities to their initial velocity
+		newBodiesDesc.mPrevVelocitiesBuffer = getBodySimPrevVelocitiesBufferDeviceData().getPointer();
+		newBodiesDesc.mNbNewBodies = nbNewBodies;
 			
-		mUpdateArticulationDesc->mNewArticulations = mNewArticulationBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewLinks = mNewLinkBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewLinkWakeCounters = mNewLinkWakeCounterBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewLinkExtAccels = mNewLinkExtAccelBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewLinkProps = mNewLinkPropBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewLinkParents = mNewLinkParentBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewLinkChildren = mNewLinkChildBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewLinkBody2Worlds = mNewLinkBody2WorldsBuffer.getTypedPtr();
+		PxgUpdateArticulationDesc& updateArtiDesc = mUpdateArticulationDesc.get();
+		updateArtiDesc.mNewArticulations = mNewArticulationBuffer.getTypedPtr();
+		updateArtiDesc.mNewLinks = mNewLinkBuffer.getTypedPtr();
+		updateArtiDesc.mNewLinkWakeCounters = mNewLinkWakeCounterBuffer.getTypedPtr();
+		updateArtiDesc.mNewLinkExtAccels = mNewLinkExtAccelBuffer.getTypedPtr();
+		updateArtiDesc.mNewLinkProps = mNewLinkPropBuffer.getTypedPtr();
+		updateArtiDesc.mNewLinkParents = mNewLinkParentBuffer.getTypedPtr();
+		updateArtiDesc.mNewLinkChildren = mNewLinkChildBuffer.getTypedPtr();
+		updateArtiDesc.mNewLinkBody2Worlds = mNewLinkBody2WorldsBuffer.getTypedPtr();
 
-		mUpdateArticulationDesc->mNewLinkBody2Actors = mNewLinkBody2ActorsBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewJointCores = mNewJointCoreBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewJointData = mNewJointDataBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mIndicesOffset = mNewLinkIndexBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mArticulationPool = mArticulationBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mArticulationSleepDataPool = mArticulationSleepDataBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewSpatialTendonParamsPool = mNewSpatialTendonParamsBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewSpatialTendonPool = mNewSpatialTendonsBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewAttachmentFixedPool = mNewAttachmentFixedBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewAttachmentModPool = mNewAttachmentModBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewTendonAttachmentRemapPool = mNewTendonAttachmentRemapBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewFixedTendonParamsPool = mNewFixedTendonParamsBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewFixedTendonPool = mNewFixedTendonsBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewTendonJointFixedPool = mNewTendonJointsFixedBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewTendonJointCoefficientPool = mNewTendonJointsCoefficientBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewTendonTendonJointRemapPool = mNewTendonTendonJointRemapBuffer.getTypedPtr();
-		mUpdateArticulationDesc->mNewArticulationMimicJointPool = mNewMimicJointBuffer.getTypedPtr();
+		updateArtiDesc.mNewLinkBody2Actors = mNewLinkBody2ActorsBuffer.getTypedPtr();
+		updateArtiDesc.mNewJointCores = mNewJointCoreBuffer.getTypedPtr();
+		updateArtiDesc.mNewJointData = mNewJointDataBuffer.getTypedPtr();
+		updateArtiDesc.mIndicesOffset = mNewLinkIndexBuffer.getTypedPtr();
+		updateArtiDesc.mArticulationPool = mArticulationBuffer.getTypedPtr();
+		updateArtiDesc.mArticulationSleepDataPool = mArticulationSleepDataBuffer.getTypedPtr();
+		updateArtiDesc.mNewSpatialTendonParamsPool = mNewSpatialTendonParamsBuffer.getTypedPtr();
+		updateArtiDesc.mNewSpatialTendonPool = mNewSpatialTendonsBuffer.getTypedPtr();
+		updateArtiDesc.mNewAttachmentFixedPool = mNewAttachmentFixedBuffer.getTypedPtr();
+		updateArtiDesc.mNewAttachmentModPool = mNewAttachmentModBuffer.getTypedPtr();
+		updateArtiDesc.mNewTendonAttachmentRemapPool = mNewTendonAttachmentRemapBuffer.getTypedPtr();
+		updateArtiDesc.mNewFixedTendonParamsPool = mNewFixedTendonParamsBuffer.getTypedPtr();
+		updateArtiDesc.mNewFixedTendonPool = mNewFixedTendonsBuffer.getTypedPtr();
+		updateArtiDesc.mNewTendonJointFixedPool = mNewTendonJointsFixedBuffer.getTypedPtr();
+		updateArtiDesc.mNewTendonJointCoefficientPool = mNewTendonJointsCoefficientBuffer.getTypedPtr();
+		updateArtiDesc.mNewTendonTendonJointRemapPool = mNewTendonTendonJointRemapBuffer.getTypedPtr();
+		updateArtiDesc.mNewArticulationMimicJointPool = mNewMimicJointBuffer.getTypedPtr();
 
-		mUpdateArticulationDesc->mNewPathToRootPool = mNewPathToRootBuffer.getTypedPtr();
+		updateArtiDesc.mNewPathToRootPool = mNewPathToRootBuffer.getTypedPtr();
 
-		mUpdateArticulationDesc->mNbNewArticulations = nbNewArticulations;
+		updateArtiDesc.mNbNewArticulations = nbNewArticulations;
 
 		//dma up descriptor
-		mCudaContext->memcpyHtoDAsync(mBodiesDescBuffer.getDevicePtr(), mNewBodiesDesc, sizeof(PxgNewBodiesDesc), mStream);
-		mCudaContext->memcpyHtoDAsync(mArticulationDescBuffer.getDevicePtr(), mUpdateArticulationDesc, sizeof(PxgUpdateArticulationDesc), mStream);
+		mCudaContext->memcpyHtoDAsync(mBodiesDescBuffer.getDevicePtr(), &newBodiesDesc, sizeof(PxgNewBodiesDesc), mStream);
+		mCudaContext->memcpyHtoDAsync(mArticulationDescBuffer.getDevicePtr(), &updateArtiDesc, sizeof(PxgUpdateArticulationDesc), mStream);
 	}
 
 	if (nbUpdatedBodies > 0 || nbNewBodies > 0)
 	{
-		mUpdatedBodiesDesc->mBodySimBufferDeviceData = getBodySimBufferDeviceData().getPointer();
-		mUpdatedBodiesDesc->mUpdatedBodySim = reinterpret_cast<PxgBodySimVelocityUpdate*>(mUpdatedBodySimBuffer.getDevicePtr());
-		mUpdatedBodiesDesc->mNbUpdatedBodies = nbUpdatedBodies;
+		PxgUpdatedBodiesDesc& updatedBodiesDesc = mUpdatedBodiesDesc.get();
+		updatedBodiesDesc.mBodySimBufferDeviceData = getBodySimBufferDeviceData().getPointer();
+		updatedBodiesDesc.mUpdatedBodySim = reinterpret_cast<PxgBodySimVelocityUpdate*>(mUpdatedBodySimBuffer.getDevicePtr());
+		updatedBodiesDesc.mNbUpdatedBodies = nbUpdatedBodies;
 
-		mCudaContext->memcpyHtoDAsync(mUpdatedBodiesDescBuffer.getDevicePtr(), mUpdatedBodiesDesc, sizeof(PxgUpdatedBodiesDesc), mStream);
+		mCudaContext->memcpyHtoDAsync(mUpdatedBodiesDescBuffer.getDevicePtr(), &updatedBodiesDesc, sizeof(PxgUpdatedBodiesDesc), mStream);
 	}
 
 	const PxU32 nbArticulationBatches = (nbTotalArticulations + 31)/32;
@@ -1121,14 +1132,14 @@ void PxgSimulationCore::gpuMemDmaUpBodySim(PxPinnedArray<PxgBodySimVelocityUpdat
 	mArticulationTendonJointBatchBuffer.allocate(nbArticulationBatches * sizeof(PxgArticulationBlockTendonJointData) *  maxFixedTendons * maxTendonJoints, PX_FL);
 }
 
-void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSoftBodyPool,
+void PxgSimulationCore::gpuMemDmaUpSoftBodies(Cm::PinnableArray<PxgSoftBody>& newSoftBodyPool,
 	PxU32* newTetMeshByteSizePool,
 	PxArray<PxgSoftBodyData>& newSoftBodyDataPool,
 	PxArray<PxU32>& newSoftBodyNodeIndexPool,
 	PxArray<PxU32>& newSoftBodyElememtIndexPool,
-	PxPinnedArray<PxgSoftBody>& softBodyPool,
+	Cm::PinnableArray<PxgSoftBody>& softBodyPool,
 	PxArray<PxgSoftBodyData>& softBodyDataPool,
-	PxInt32ArrayPinned& softBodyElementIndexPool,
+	Cm::PinnableArray<PxU32>& softBodyElementIndexPool,
 	PxArray<PxU32>& softBodyNodeIndexPool,
 	PxgBodySimManager& bodySimManager,
 	SoftBodyAttachmentAndFilterData& data
@@ -1174,7 +1185,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 
 	for (PxU32 i = 0; i < mSoftBodiesToFree.size(); ++i)
 	{
-		mSoftBodiesToFree[i].deallocate(mHeapMemoryManager->mMappedMemoryAllocators);
+		mSoftBodiesToFree[i].deallocate(mAllocDesc.hostAlloc);
 	}
 
 	mSoftBodiesToFree.forceSize_Unsafe(0);
@@ -1201,7 +1212,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 
 		if (!buffer)
 		{
-			buffer = PX_NEW(PxgSoftBodyBuffer)(mHeapMemoryManager);
+			buffer = PX_NEW(PxgSoftBodyBuffer)(mAllocDesc);
 				
 			mSoftBodyDataBuffer[gpuRemapIndex] = buffer;
 		}
@@ -1431,7 +1442,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 		if (deformableVolume)
 		{
 			PX_COMPILE_TIME_ASSERT(sizeof(Dy::VolumeVolumeFilter) == sizeof(PxgNonRigidFilterPair));
-			PxArray<PxgNonRigidFilterPair, PxVirtualAllocator >& filterPairs = reinterpret_cast<PxArray<PxgNonRigidFilterPair, PxVirtualAllocator >&>(*deformableVolume->mVolumeVolumeFilterPairs);
+			Cm::PinnableArray<PxgNonRigidFilterPair>& filterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>&>(*deformableVolume->mVolumeVolumeFilterPairs);
 
 			const PxU32 gpuRemapIndex = deformableVolume->getGpuRemapId();
 
@@ -1453,7 +1464,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 
 	if (data.dirtyRigidAttachments)
 	{
-		PxPinnedArray<PxgFEMRigidAttachment>& rigidAttachments = *data.rigidAttachments;
+		Cm::PinnableArray<PxgFEMRigidAttachment>& rigidAttachments = *data.rigidAttachments;
 		const PxU32 numDirtyAttachments = rigidAttachments.size();
 		if (numDirtyAttachments > 0)
 		{
@@ -1467,7 +1478,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 			mGpuContext->getGpuSoftBodyCore()->reserveRigidDeltaVelBuf(numDirtyAttachments);
 		}
 
-		PxPinnedArray<PxgRigidFilterPair>& rigidFilterPairs = *data.rigidFilterPairs;
+		Cm::PinnableArray<PxgRigidFilterPair>& rigidFilterPairs = *data.rigidFilterPairs;
 		const PxU32 numDirtyPairs = rigidFilterPairs.size();
 
 		mSoftBodyRigidFilterPairs.allocate(sizeof(PxgRigidFilterPair)* numDirtyPairs, PX_FL);
@@ -1478,7 +1489,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 
 	if (data.dirtyActiveRigidAttachments)
 	{
-		PxInt32ArrayPinned& activeRigidAttachments = *data.activeRigidAttachments;
+		Cm::PinnableArray<PxU32>& activeRigidAttachments = *data.activeRigidAttachments;
 		const PxU32 nbActiveAttachments = activeRigidAttachments.size();
 		if (nbActiveAttachments > 0)
 		{
@@ -1493,7 +1504,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 
 	if (data.dirtySoftBodyAttachments)
 	{
-		PxPinnedArray<PxgFEMFEMAttachment>& softBodyAttachments = *data.softBodyAttachments;
+		Cm::PinnableArray<PxgFEMFEMAttachment>& softBodyAttachments = *data.softBodyAttachments;
 		const PxU32 numDirtyAttachments = softBodyAttachments.size();
 		if (numDirtyAttachments > 0)
 		{
@@ -1506,7 +1517,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 
 	if (data.dirtyActiveSoftBodyAttachments)
 	{
-		PxInt32ArrayPinned& activeSoftBodyAttachments = *data.activeSoftBodyAttachments;
+		Cm::PinnableArray<PxU32>& activeSoftBodyAttachments = *data.activeSoftBodyAttachments;
 		const PxU32 nbActiveAttachments = activeSoftBodyAttachments.size();
 		if (nbActiveAttachments > 0)
 		{
@@ -1521,7 +1532,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 
 	if (data.dirtyClothAttachments)
 	{
-		PxPinnedArray<PxgFEMFEMAttachment>& clothAttachments = *data.clothAttachments;
+		Cm::PinnableArray<PxgFEMFEMAttachment>& clothAttachments = *data.clothAttachments;
 		const PxU32 numDirtyAttachments = clothAttachments.size();
 		if (numDirtyAttachments > 0)
 		{
@@ -1531,7 +1542,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 			mSoftBodyClothConstraints.allocate(sizeof(PxgFEMFEMAttachmentConstraint)*(numDirtyAttachments + 31) / 32, PX_FL);
 		}
 
-		PxPinnedArray<PxgNonRigidFilterPair>& clothFilterPairs = *data.clothFilterPairs;
+		Cm::PinnableArray<PxgNonRigidFilterPair>& clothFilterPairs = *data.clothFilterPairs;
 		const PxU32 numDirtyPairs = clothFilterPairs.size();
 
 		mSoftBodyClothFilterPairs.allocate(sizeof(PxgNonRigidFilterPair)* numDirtyPairs, PX_FL);
@@ -1542,7 +1553,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 
 	if (data.dirtyActiveClothAttachments)
 	{
-		PxInt32ArrayPinned& activeClothAttachments = *data.activeClothAttachments;
+		Cm::PinnableArray<PxU32>& activeClothAttachments = *data.activeClothAttachments;
 		const PxU32 nbActiveAttachments = activeClothAttachments.size();
 		if (nbActiveAttachments > 0)
 		{
@@ -1557,7 +1568,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 
 	if (data.dirtyParticleAttachments)
 	{
-		PxPinnedArray<PxgFEMFEMAttachment>& particleAttachments = *data.particleAttachments;
+		Cm::PinnableArray<PxgFEMFEMAttachment>& particleAttachments = *data.particleAttachments;
 		const PxU32 numDirtyAttachments = particleAttachments.size();
 		if (numDirtyAttachments > 0)
 		{
@@ -1567,7 +1578,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 			mSoftBodyParticleConstraints.allocate(sizeof(PxgFEMFEMAttachmentConstraint)*(numDirtyAttachments + 31) / 32, PX_FL);
 		}
 
-		PxPinnedArray<PxgNonRigidFilterPair>& particleFilterPairs = *data.particleFilterPairs;
+		Cm::PinnableArray<PxgNonRigidFilterPair>& particleFilterPairs = *data.particleFilterPairs;
 		const PxU32 numDirtyPairs = particleFilterPairs.size();
 
 		mSoftBodyParticleFilterPairs.allocate(sizeof(PxgNonRigidFilterPair)* numDirtyPairs, PX_FL);
@@ -1578,7 +1589,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 
 	if (data.dirtyActiveParticleAttachments)
 	{
-		PxInt32ArrayPinned& activeParticlesAttachments = *data.activeParticleAttachments;
+		Cm::PinnableArray<PxU32>& activeParticlesAttachments = *data.activeParticleAttachments;
 		const PxU32 nbActiveAttachments = activeParticlesAttachments.size();
 		if (nbActiveAttachments > 0)
 		{
@@ -1640,25 +1651,25 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(PxPinnedArray<PxgSoftBody>& newSof
 	}
 }
 
-void PxgSimulationCore::gpuMemDmaUpFEMCloths(PxPinnedArray<PxgFEMCloth>& newFEMClothPool,
+void PxgSimulationCore::gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& newFEMClothPool,
 	PxU32* newTriangleMeshByteSizePool,
 	PxArray<PxgFEMClothData>& newFEMClothDataPool,
 	PxArray<PxU32>& newFEMClothNodeIndexPool,
 	PxArray<PxU32>& newFEMClothElememtIndexPool,
-	PxPinnedArray<PxgFEMCloth>& femClothPool,
+	Cm::PinnableArray<PxgFEMCloth>& femClothPool,
 	PxArray<PxgFEMClothData>& femClothDataPool,
-	PxInt32ArrayPinned& femClothElementIndexPool,
+	Cm::PinnableArray<PxU32>& femClothElementIndexPool,
 	PxArray<PxU32>& femClothNodeIndexPool,
 	PxgBodySimManager& bodySimManager,
-	PxPinnedArray<PxgFEMRigidAttachment>& rigidAttachments,
-	PxPinnedArray<PxgRigidFilterPair>& rigidAttachmentIds,
+	Cm::PinnableArray<PxgFEMRigidAttachment>& rigidAttachments,
+	Cm::PinnableArray<PxgRigidFilterPair>& rigidAttachmentIds,
 	bool dirtyRigidAttachments,
-	PxInt32ArrayPinned& activeRigidAttachments,
+	Cm::PinnableArray<PxU32>& activeRigidAttachments,
 	bool dirtyActiveRigidAttachments,
-	PxPinnedArray<PxgFEMFEMAttachment>& clothAttachments,
-	PxPinnedArray<PxgNonRigidFilterPair>& clothVertTriFilterIds,
+	Cm::PinnableArray<PxgFEMFEMAttachment>& clothAttachments,
+	Cm::PinnableArray<PxgNonRigidFilterPair>& clothVertTriFilterIds,
 	bool dirtyClothAttachments,
-	PxInt32ArrayPinned& activeClothAttachments,
+	Cm::PinnableArray<PxU32>& activeClothAttachments,
 	bool dirtyActiveClothAttachments
 ) 
 {
@@ -1705,7 +1716,7 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(PxPinnedArray<PxgFEMCloth>& newFEMC
 
 	for (PxU32 i = 0; i < mClothsToFree.size(); ++i)
 	{
-		mClothsToFree[i].deallocate(mHeapMemoryManager->mMappedMemoryAllocators);	
+		mClothsToFree[i].deallocate(mAllocDesc.hostAlloc);	
 	}
 	mClothsToFree.forceSize_Unsafe(0);
 
@@ -1729,7 +1740,7 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(PxPinnedArray<PxgFEMCloth>& newFEMC
 
 		if (!buffer)
 		{
-			buffer = PX_NEW(PxgFEMClothBuffer)(mHeapMemoryManager);
+			buffer = PX_NEW(PxgFEMClothBuffer)(mAllocDesc);
 
 			mFEMClothDataBuffer[gpuRemapIndex] = buffer;
 		}
@@ -2136,7 +2147,7 @@ void PxgSimulationCore::mergeChangedAABBMgHandle()
 
 //This is called after solver
 void PxgSimulationCore::gpuMemDmaUp(const PxU32 nbTotalBodies, const PxU32 nbTotalShapes,
-	PxBitMapPinned& changedHandleMap, const bool enableDirectGPUAPI)
+	Cm::PinnableBitMap& changedHandleMap, const bool enableDirectGPUAPI)
 {
 	PX_PROFILE_ZONE("GpuSimulationController.gpuMemDmaUp", 0);
 	//these free buffers are based on shapes count
@@ -2189,41 +2200,35 @@ void PxgSimulationCore::gpuMemDmaUp(const PxU32 nbTotalBodies, const PxU32 nbTot
 	}
 
 	//DMA descriptor up
-	mCudaContext->memcpyHtoDAsync(mUpdatedCacheAndBoundsDescBuffer.getDevicePtr(), mUpdatedCacheAndBoundsDesc, sizeof(PxgSimulationCoreDesc), mStream);
-
-	if (enableDirectGPUAPI)
-	{
-		// AD: I think we are safe here - mergeChangedAABBMgHandles runs on the BP stream,
-		// and the BP stream is synchronized as part of fetchBroadphaseResults (in postBroadPhase task).
-		// updateBodies (which runs this function) is only launched in advanceStep, which in turn has
-		// dependencies back to the postBroadphase.
-
-		mUpdatedDirectBuffer.allocate(roundElement * sizeof(PxU32), PX_FL);
-		mCudaContext->memsetD32Async(mUpdatedDirectBuffer.getDevicePtr(), 0, roundElement, mStream);
-	
-		gpuDmaUpdateData();
-	}
+	mCudaContext->memcpyHtoDAsync(mUpdatedCacheAndBoundsDescBuffer.getDevicePtr(), mUpdatedCacheAndBoundsDesc.data(), sizeof(PxgSimulationCoreDesc), mStream);
 }
 
 //simulation controller need to call syncDmaback in the application before all datas are back to cpu
-void PxgSimulationCore::gpuMemDmaBack(PxInt32ArrayPinned& frozenArray,
-	PxInt32ArrayPinned& unfrozenArray,
-	PxInt32ArrayPinned& activateArray,
-	PxInt32ArrayPinned& deactiveArray,
-	PxCachedTransformArrayPinned* cachedTransform,
+void PxgSimulationCore::gpuMemDmaBack(Cm::PinnableArray<PxU32>& frozenArray,
+	Cm::PinnableArray<PxU32>& unfrozenArray,
+	Cm::PinnableArray<PxU32>& activateArray,
+	Cm::PinnableArray<PxU32>& deactiveArray,
+	PxsCachedTransform* cachedTransforms,
 	const PxU32 cachedCapacity, Bp::BoundsArray& boundArray,
-	PxBitMapPinned&  changedAABBMgrHandles,
+	Cm::PinnableBitMap&  changedAABBMgrHandles,
 	const PxU32 numShapes, const PxU32 numActiveBodies,
 	bool enableDirectGPUAPI)
 {
 	PX_PROFILE_ZONE("GpuSimulationController.gpuMemDmaBack", 0);
-	PxBoundsArrayPinned& bounds = boundArray.getBounds();
-	PxU32 boundCapacity = bounds.size();
+	PxBounds3* bounds = boundArray.getBounds();
+	PxU32 boundCapacity = boundArray.size();
 
 	// AD: DtoH memcopies, need to be skip safe!
-	mCudaContext->memcpyDtoHAsync(mUpdatedCacheAndBoundsDesc, mUpdatedCacheAndBoundsDescBuffer.getDevicePtr(), sizeof(PxgSimulationCoreDesc), mStream);
+	mCudaContext->memcpyDtoHAsync(mUpdatedCacheAndBoundsDesc.data(), mUpdatedCacheAndBoundsDescBuffer.getDevicePtr(), sizeof(PxgSimulationCoreDesc), mStream);
 	mCudaContext->memcpyDtoHAsync(activateArray.begin(), mActivateBuffer.getDevicePtr(), sizeof(PxU32)*numActiveBodies, mStream);
 	mCudaContext->memcpyDtoHAsync(deactiveArray.begin(), mDeactivateBuffer.getDevicePtr(), sizeof(PxU32)*numActiveBodies, mStream);
+
+	// DMA accelerations back to CPU (kernel was launched in update())
+	if (hasAccelerationBuffers())
+	{
+		const PxU32 nbBodies = mNbTotalBodySim;
+		mCudaContext->memcpyDtoHAsync(mBodySimAccelerationsPinned.begin(), mBodySimAccelerationsCudaBuffer.getDevicePtr(), sizeof(PxgRigidBodyAcceleration) * nbBodies, mStream);
+	}
 
 	// AD: frozen/unfrozen arrays are only needed for SQ tree updates, skipping for direct-GPU.
 	if (!enableDirectGPUAPI)
@@ -2236,8 +2241,8 @@ void PxgSimulationCore::gpuMemDmaBack(PxInt32ArrayPinned& frozenArray,
 	// Fine to do sync because we never dispatch the copies if we abort.
 	if (mCudaContext->isInAbortMode())
 	{
-		mUpdatedCacheAndBoundsDesc->mTotalFrozenShapes = 0;
-		mUpdatedCacheAndBoundsDesc->mTotalUnfrozenShapes = 0;
+		mUpdatedCacheAndBoundsDesc.get().mTotalFrozenShapes = 0;
+		mUpdatedCacheAndBoundsDesc.get().mTotalUnfrozenShapes = 0;
 
 		for (PxU32 i = 0; i < activateArray.size(); ++i)
 			activateArray[i] = 0;
@@ -2250,8 +2255,8 @@ void PxgSimulationCore::gpuMemDmaBack(PxInt32ArrayPinned& frozenArray,
 	if(!mGpuContext->getEnableDirectGPUAPI())
 	{	
 		CUdeviceptr boundsd = mUseGpuBp ? mGpuContext->mGpuBp->getBoundsBuffer().getDevicePtr() : mBoundsBuffer.getDevicePtr();
-		mCudaContext->memcpyDtoHAsync(bounds.begin(), boundsd, sizeof(PxBounds3)*boundCapacity, mStream);
-		mCudaContext->memcpyDtoHAsync(cachedTransform->begin(), mGpuContext->mGpuNpCore->getTransformCache().getDevicePtr(), sizeof(PxsCachedTransform)*cachedCapacity, mStream);
+		mCudaContext->memcpyDtoHAsync(bounds, boundsd, sizeof(PxBounds3)*boundCapacity, mStream);
+		mCudaContext->memcpyDtoHAsync(cachedTransforms, mGpuContext->mGpuNpCore->getTransformCache().getDevicePtr(), sizeof(PxsCachedTransform)*cachedCapacity, mStream);
 	}
 	else
 	{
@@ -2266,11 +2271,11 @@ void PxgSimulationCore::gpuMemDmaBack(PxInt32ArrayPinned& frozenArray,
 	mCudaContext->memcpyDtoHAsync(changedAABBMgrHandles.getWords(), changeAABBHandlesd, sizeof(PxU32)*changedAABBMgrHandles.getWordCount(), mStream);
 
 	
-	*mPinnedEvent = 0;
+	*mEventMapped = 0;
 
 	CUfunction signalFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::BP_SIGNAL_COMPLETE);
 
-	void* devicePtr = getMappedDevicePtr(mCudaContext, mPinnedEvent);
+	void* devicePtr = getMappedDevicePtr(mCudaContext, mEventMapped);
 	PxCudaKernelParam signalParams[] =
 	{
 		PX_CUDA_KERNEL_PARAM(devicePtr)
@@ -2297,14 +2302,14 @@ void PxgSimulationCore::syncDmaback(PxU32& nbFrozenShapesThisFrame, PxU32& nbUnf
 
 	if (didSimulate)
 	{
-		volatile PxU32* pEvent = mPinnedEvent;
+		volatile PxU32* pEvent = mEventMapped;
 			
 		if (!spinWait(*pEvent, 0.1f))
 			mCudaContext->streamSynchronize(mStream);
 	}
 
-	nbFrozenShapesThisFrame = mUpdatedCacheAndBoundsDesc->mTotalFrozenShapes;
-	nbUnfrozenShapesThisFrame = mUpdatedCacheAndBoundsDesc->mTotalUnfrozenShapes;
+	nbFrozenShapesThisFrame = mUpdatedCacheAndBoundsDesc.get().mTotalFrozenShapes;
+	nbUnfrozenShapesThisFrame = mUpdatedCacheAndBoundsDesc.get().mTotalUnfrozenShapes;
 }
 
 void PxgSimulationCore::updateBodies(const PxU32 nbUpdatedBodies, const PxU32 nbNewBodies)
@@ -2460,7 +2465,7 @@ void PxgSimulationCore::updateArticulations(const PxU32 nbNewArticulations, PxgA
 }
 
 template<typename T>
-static PX_FORCE_INLINE void resizeAndCopyToDeviceBuffer(const PxArray<T, PxVirtualAllocator>& hostBuffer, 
+static PX_FORCE_INLINE void resizeAndCopyToDeviceBuffer(const Cm::PinnableArray<T>& hostBuffer, 
 	PxgTypedCudaBuffer<T>& deviceBuffer,
 	PxCudaContext& cudaContext, CUstream& stream)
 {
@@ -2475,12 +2480,12 @@ static PX_FORCE_INLINE void resizeAndCopyToDeviceBuffer(const PxArray<T, PxVirtu
 }
 
 void PxgSimulationCore::updateJointsAndSyncData(
-	const PxPinnedArray<PxgD6JointData>& rigidJointData,
-	const PxInt32ArrayPinned& dirtyRigidJointIndices,
-	const PxPinnedArray<PxgD6JointData>& artiJointData, 
-	const PxInt32ArrayPinned& dirtyArtiJointIndices,
-	const PxPinnedArray<PxgConstraintPrePrep>& rigidJointPrePrep, 
-	const PxPinnedArray<PxgConstraintPrePrep>& artiJointPrePrep,
+	const Cm::PinnableArray<PxgD6JointData>& rigidJointData,
+	const Cm::PinnableArray<PxU32>& dirtyRigidJointIndices,
+	const Cm::PinnableArray<PxgD6JointData>& artiJointData, 
+	const Cm::PinnableArray<PxU32>& dirtyArtiJointIndices,
+	const Cm::PinnableArray<PxgConstraintPrePrep>& rigidJointPrePrep, 
+	const Cm::PinnableArray<PxgConstraintPrePrep>& artiJointPrePrep,
 	const PxgJointManager::ConstraintIdMap& gpuConstraintIdMapHost,
 	bool isGpuConstraintIdMapDirty,
 	PxU32 nbTotalRigidJoints, PxU32 nbTotalArtiJoints)
@@ -2538,29 +2543,29 @@ void PxgSimulationCore::updateJointsAndSyncData(
 		//PxgIterator<PxU32> indicesIter(updatedJointIndices);
 
 		const PxU32 nbUpdatedRigidJoints = dirtyRigidJointIndices.size();
-
-		mUpdatedJointsDesc->mD6RigidJointCPUPool = reinterpret_cast<const PxgD6JointData*>(getMappedDeviceConstPtr(mCudaContext, rigidJointData.begin()));
-		mUpdatedJointsDesc->mD6RigidJointGPUPool = reinterpret_cast<PxgD6JointData*>(mRigidJointBuffer.getDevicePtr());
+		PxgUpdatedJointsDesc& updatedJointsDesc = mUpdatedJointsDesc.get();
+		updatedJointsDesc.mD6RigidJointCPUPool = reinterpret_cast<const PxgD6JointData*>(getMappedDeviceConstPtr(mCudaContext, rigidJointData.begin()));
+		updatedJointsDesc.mD6RigidJointGPUPool = reinterpret_cast<PxgD6JointData*>(mRigidJointBuffer.getDevicePtr());
 			
-		mUpdatedJointsDesc->mD6RigidJointPrePrepCPUPool = reinterpret_cast<const PxgConstraintPrePrep*>(getMappedDeviceConstPtr(mCudaContext, rigidJointPrePrep.begin()));
-		mUpdatedJointsDesc->mD6RigidJointPrePrepGPUPool = reinterpret_cast<PxgConstraintPrePrep*>(mRigidJointPrePrepBuffer.getDevicePtr());
+		updatedJointsDesc.mD6RigidJointPrePrepCPUPool = reinterpret_cast<const PxgConstraintPrePrep*>(getMappedDeviceConstPtr(mCudaContext, rigidJointPrePrep.begin()));
+		updatedJointsDesc.mD6RigidJointPrePrepGPUPool = reinterpret_cast<PxgConstraintPrePrep*>(mRigidJointPrePrepBuffer.getDevicePtr());
 			
-		mUpdatedJointsDesc->mUpdatedRigidJointIndices = reinterpret_cast<const PxU32*>(getMappedDeviceConstPtr(mCudaContext, dirtyRigidJointIndices.begin()));
-		mUpdatedJointsDesc->mNbUpdatedRigidJoints = nbUpdatedRigidJoints;
+		updatedJointsDesc.mUpdatedRigidJointIndices = reinterpret_cast<const PxU32*>(getMappedDeviceConstPtr(mCudaContext, dirtyRigidJointIndices.begin()));
+		updatedJointsDesc.mNbUpdatedRigidJoints = nbUpdatedRigidJoints;
 
 		const PxU32 nbUpdatedArtiJoints = dirtyArtiJointIndices.size();
 
-		mUpdatedJointsDesc->mD6ArtiJointCPUPool = reinterpret_cast<const PxgD6JointData*>(getMappedDeviceConstPtr(mCudaContext, artiJointData.begin()));
-		mUpdatedJointsDesc->mD6ArtiJointGPUPool = reinterpret_cast<PxgD6JointData*>(mArtiJointBuffer.getDevicePtr());
+		updatedJointsDesc.mD6ArtiJointCPUPool = reinterpret_cast<const PxgD6JointData*>(getMappedDeviceConstPtr(mCudaContext, artiJointData.begin()));
+		updatedJointsDesc.mD6ArtiJointGPUPool = reinterpret_cast<PxgD6JointData*>(mArtiJointBuffer.getDevicePtr());
 
-		mUpdatedJointsDesc->mD6ArtiJointPrePrepCPUPool = reinterpret_cast<const PxgConstraintPrePrep*>(getMappedDeviceConstPtr(mCudaContext, artiJointPrePrep.begin()));
-		mUpdatedJointsDesc->mD6ArtiJointPrePrepGPUPool = reinterpret_cast<PxgConstraintPrePrep*>(mArtiJointPrePrepBuffer.getDevicePtr());
+		updatedJointsDesc.mD6ArtiJointPrePrepCPUPool = reinterpret_cast<const PxgConstraintPrePrep*>(getMappedDeviceConstPtr(mCudaContext, artiJointPrePrep.begin()));
+		updatedJointsDesc.mD6ArtiJointPrePrepGPUPool = reinterpret_cast<PxgConstraintPrePrep*>(mArtiJointPrePrepBuffer.getDevicePtr());
 
-		mUpdatedJointsDesc->mUpdatedArtiJointIndices = reinterpret_cast<const PxU32*>(getMappedDeviceConstPtr(mCudaContext, dirtyArtiJointIndices.begin()));
-		mUpdatedJointsDesc->mNbUpdatedArtiJoints = nbUpdatedArtiJoints;
+		updatedJointsDesc.mUpdatedArtiJointIndices = reinterpret_cast<const PxU32*>(getMappedDeviceConstPtr(mCudaContext, dirtyArtiJointIndices.begin()));
+		updatedJointsDesc.mNbUpdatedArtiJoints = nbUpdatedArtiJoints;
 
 		//dma up descriptor
-		mCudaContext->memcpyHtoDAsync(mUpdatedJointDescBuffer.getDevicePtr(), mUpdatedJointsDesc, sizeof(PxgUpdatedJointsDesc), mStream);
+		mCudaContext->memcpyHtoDAsync(mUpdatedJointDescBuffer.getDevicePtr(), &updatedJointsDesc, sizeof(PxgUpdatedJointsDesc), mStream);
 
 		const PxU32 maxUpdatedJoints = PxMax(nbUpdatedArtiJoints, nbUpdatedRigidJoints);
 		const PxU32 numWarpPerBlocks = 8;
@@ -2714,6 +2719,15 @@ void PxgSimulationCore::update(bool enableDirectGPUAPI)
 	if(result != CUDA_SUCCESS)
 		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU create frozen/unfrozen array kernel fail!\n");
 #endif
+
+	// Compute rigid body accelerations using velocity-delta method
+	if (hasAccelerationBuffers())
+	{
+		const PxReal dt = mGpuContext->getDt();
+		const PxU32 nbBodies = mNbTotalBodySim;
+		const float oneOverDt = 1.0f / dt;
+		launchComputeRigidBodyAccelerations(nbBodies, oneOverDt);
+	}
 }
 
 void PxgSimulationCore::setBounds(Bp::BoundsArray* boundArray)
@@ -2734,7 +2748,7 @@ PxgTypedCudaBuffer<PxBounds3>*	PxgSimulationCore::getBoundArrayBuffer()
 }
 
 bool PxgSimulationCore::getRigidDynamicData(void* data, const PxRigidDynamicGPUIndex* gpuIndices,
-											PxRigidDynamicGPUAPIReadType::Enum dataType, PxU32 nbElements, float oneOverDt,
+											PxRigidDynamicGPUAPIReadType::Enum dataType, PxU32 nbElements,
 											CUevent startEvent, CUevent finishEvent) const
 {
 	PxScopedCudaLock _lock(*mCudaContextManager);
@@ -2800,17 +2814,16 @@ bool PxgSimulationCore::getRigidDynamicData(void* data, const PxRigidDynamicGPUI
 	}
 	case PxRigidDynamicGPUAPIReadType::eLINEAR_ACCELERATION:
 	{
-		const CUdeviceptr bodySimPrevVelocitiesBufferDevicePtr = getBodySimPrevVelocitiesBufferDevicePtr();
-		PX_ASSERT(bodySimPrevVelocitiesBufferDevicePtr);
+		// Gather from pre-computed accelerations buffer (computed during gpuMemDmaBack)
+		const CUdeviceptr accelerationsDevicePtr = mBodySimAccelerationsCudaBuffer.getDevicePtr();
+		PX_ASSERT(accelerationsDevicePtr);
 
 		PxCudaKernelParam accelKernelParams[] =
 		{
 			PX_CUDA_KERNEL_PARAM(data),
 			PX_CUDA_KERNEL_PARAM(gpuIndices),
-			PX_CUDA_KERNEL_PARAM(bodySimBufferDevicePtr),
-			PX_CUDA_KERNEL_PARAM(bodySimPrevVelocitiesBufferDevicePtr),
+			PX_CUDA_KERNEL_PARAM(accelerationsDevicePtr),
 			PX_CUDA_KERNEL_PARAM(nbElements),
-			PX_CUDA_KERNEL_PARAM(oneOverDt),
 		};
 
 		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RIGID_DYNAMIC_GET_LINACCEL);
@@ -2821,17 +2834,16 @@ bool PxgSimulationCore::getRigidDynamicData(void* data, const PxRigidDynamicGPUI
 	}
 	case PxRigidDynamicGPUAPIReadType::eANGULAR_ACCELERATION:
 	{
-		const CUdeviceptr bodySimPrevVelocitiesBufferDevicePtr = getBodySimPrevVelocitiesBufferDevicePtr();
-		PX_ASSERT(bodySimPrevVelocitiesBufferDevicePtr);
+		// Gather from pre-computed accelerations buffer (computed during gpuMemDmaBack)
+		const CUdeviceptr accelerationsDevicePtr = mBodySimAccelerationsCudaBuffer.getDevicePtr();
+		PX_ASSERT(accelerationsDevicePtr);
 
 		PxCudaKernelParam accelKernelParams[] =
 		{
 			PX_CUDA_KERNEL_PARAM(data),
 			PX_CUDA_KERNEL_PARAM(gpuIndices),
-			PX_CUDA_KERNEL_PARAM(bodySimBufferDevicePtr),
-			PX_CUDA_KERNEL_PARAM(bodySimPrevVelocitiesBufferDevicePtr),
+			PX_CUDA_KERNEL_PARAM(accelerationsDevicePtr),
 			PX_CUDA_KERNEL_PARAM(nbElements),
-			PX_CUDA_KERNEL_PARAM(oneOverDt),
 		};
 
 		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RIGID_DYNAMIC_GET_ANGACCEL);
@@ -3132,23 +3144,71 @@ bool PxgSimulationCore::getD6JointData(void* data, const PxD6JointGPUIndex* gpuI
 void PxgSimulationCore::gpuDmaUpdateData()
 {
 	// this descriptor is only for the direct-GPU updates.
+	PxgUpdateActorDataDesc& desc = mUpdatedActorDataDesc.get();
 
-	mUpdatedActorDataDesc->mBodySimBufferDeviceData = getBodySimBufferDeviceData().getPointer();
-	mUpdatedActorDataDesc->mBounds = reinterpret_cast<PxBounds3*>(mGpuContext->mGpuBp->getBoundsBuffer().getDevicePtr());
+	desc.mBodySimBufferDeviceData = getBodySimBufferDeviceData().getPointer();
+	desc.mBounds = reinterpret_cast<PxBounds3*>(mGpuContext->mGpuBp->getBoundsBuffer().getDevicePtr());
 
-	mUpdatedActorDataDesc->mUpdated = reinterpret_cast<PxU32*>(mUpdatedDirectBuffer.getDevicePtr());
+	desc.mUpdated = reinterpret_cast<PxU32*>(mUpdatedDirectBuffer.getDevicePtr());
 	
 	PxgAABBManager* aabbManager = mGpuContext->mGpuBp->getAABBManager();
-	mUpdatedActorDataDesc->mChangedAABBMgrHandles = reinterpret_cast<PxU32*>(aabbManager->getChangedAABBMgrHandles());
-	mUpdatedActorDataDesc->mBitMapWordCounts = aabbManager->getChangedAABBMgrHandlesWordCount();
+	desc.mChangedAABBMgrHandles = reinterpret_cast<PxU32*>(aabbManager->getChangedAABBMgrHandles());
+	desc.mBitMapWordCounts = aabbManager->getChangedAABBMgrHandlesWordCount();
 
 	PxgShapeManager& shapeManager = mGpuContext->mGpuNpCore->getGpuShapeManager();
-	mUpdatedActorDataDesc->mRigidNodeIndices = reinterpret_cast<PxNodeIndex*>(shapeManager.mGpuRigidIndiceBuffer.getDevicePtr());
-	mUpdatedActorDataDesc->mShapeIndices = reinterpret_cast<PxU32*>(shapeManager.mGpuShapeIndiceBuffer.getDevicePtr());
-	mUpdatedActorDataDesc->mShapes = reinterpret_cast<PxgShape*>(mGpuContext->mGpuNpCore->mGpuShapesManager.mGpuShapesBuffer.getDevicePtr());
-	mUpdatedActorDataDesc->mTransformCache = reinterpret_cast<PxsCachedTransform*>(mGpuContext->mGpuNpCore->getTransformCache().getDevicePtr());
-	mUpdatedActorDataDesc->mShapeSimsBufferDeviceData = mPxgShapeSimManager.getShapeSimsDeviceTypedPtr();
-	mCudaContext->memcpyHtoDAsync(mUpdatedActorDescBuffer.getDevicePtr(), mUpdatedActorDataDesc, sizeof(PxgUpdateActorDataDesc), mStream);
+	desc.mRigidNodeIndices = reinterpret_cast<PxNodeIndex*>(shapeManager.mGpuRigidIndiceBuffer.getDevicePtr());
+	desc.mShapeIndices = reinterpret_cast<PxU32*>(shapeManager.mGpuShapeIndiceBuffer.getDevicePtr());
+	desc.mShapes = reinterpret_cast<PxgShape*>(mGpuContext->mGpuNpCore->mGpuShapesManager.mGpuShapesBuffer.getDevicePtr());
+	desc.mTransformCache = reinterpret_cast<PxsCachedTransform*>(mGpuContext->mGpuNpCore->getTransformCache().getDevicePtr());
+	desc.mShapeSimsBufferDeviceData = mPxgShapeSimManager.getShapeSimsDeviceTypedPtr();
+	mCudaContext->memcpyHtoDAsync(mUpdatedActorDescBuffer.getDevicePtr(), &desc, sizeof(PxgUpdateActorDataDesc), mStream);
+}
+
+void PxgSimulationCore::initDirectGPUAPIDescriptor()
+{
+	PxgAABBManager* aabbManager = mGpuContext->mGpuBp->getAABBManager();
+	const PxU32 bitMapWordCounts = aabbManager->getChangedAABBMgrHandlesWordCount();
+	const PxU32 roundElement = bitMapWordCounts * 32;
+
+	mUpdatedDirectBuffer.allocate(roundElement * sizeof(PxU32), PX_FL);
+	mCudaContext->memsetD32Async(mUpdatedDirectBuffer.getDevicePtr(), 0, roundElement, mStream);
+
+	gpuDmaUpdateData();
+}
+
+void PxgSimulationCore::launchComputeRigidBodyAccelerations(const PxU32 nbBodies, const float oneOverDt)
+{
+	PX_ASSERT(nbBodies == mNbTotalBodySim);
+	PX_ASSERT(mBodySimAccelerationsCudaBuffer.getSize() >= nbBodies * sizeof(PxgRigidBodyAcceleration));
+	PX_ASSERT(mBodySimPreviousVelocitiesCudaBuffer.getSize() >= nbBodies * sizeof(PxgBodySimVelocities));
+
+	CUdeviceptr accPtr = mBodySimAccelerationsCudaBuffer.getDevicePtr();
+	CUdeviceptr bodySimPtr = mBodySimCudaBuffer.getDevicePtr();
+	CUdeviceptr prevVelPtr = mBodySimPreviousVelocitiesCudaBuffer.getDevicePtr();
+
+	PxgKernelLauncher::launchKernelThreadsAutoPackParameters(mCudaContext, mGpuKernelWranglerManager,
+		PxgKernelIds::RIGID_DYNAMIC_COMPUTE_ACCELERATIONS, nbBodies, PxgSimulationCoreKernelBlockDim::RIGID_DYNAMIC_COMPUTE_ACCELERATIONS, 0, mStream,
+		accPtr, bodySimPtr, prevVelPtr, nbBodies, oneOverDt);
+}
+
+void PxgSimulationCore::launchCopyRigidBodyVelocitiesToPrevious(const PxU32 nbBodies)
+{
+	const PxU64 bufferSize = mBodySimPreviousVelocitiesCudaBuffer.getSize();
+	if (bufferSize == 0)
+		return;
+
+	const PxU32 capacity = PxU32(bufferSize / sizeof(PxgBodySimVelocities));
+	const PxU32 nbToCopy = PxMin(nbBodies, capacity);
+
+	if (nbToCopy == 0)
+		return;
+
+	CUdeviceptr prevVelPtr = mBodySimPreviousVelocitiesCudaBuffer.getDevicePtr();
+	CUdeviceptr bodySimPtr = mBodySimCudaBuffer.getDevicePtr();
+
+	PxgKernelLauncher::launchKernelThreadsAutoPackParameters(mCudaContext, mGpuKernelWranglerManager,
+		PxgKernelIds::RIGID_DYNAMIC_COPY_PREVIOUS_VELOCITIES, nbToCopy, PxgSimulationCoreKernelBlockDim::RIGID_DYNAMIC_COPY_PREVIOUS_VELOCITIES, 0, mStream,
+		prevVelPtr, bodySimPtr, nbToCopy);
 }
 
 PxU32 PxgSimulationCore::getMaxArticulationLinks() const { return mGpuContext->getSimulationController()->mMaxLinks; }

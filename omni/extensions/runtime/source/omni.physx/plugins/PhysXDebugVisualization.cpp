@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -34,7 +34,8 @@ PX_COMPILE_TIME_ASSERT(sizeof(PxDebugPoint) == sizeof(DebugPoint));
 PX_COMPILE_TIME_ASSERT(sizeof(PxDebugLine) == sizeof(DebugLine));
 PX_COMPILE_TIME_ASSERT(sizeof(PxDebugTriangle) == sizeof(DebugTriangle));
 PX_COMPILE_TIME_ASSERT(PxVisualizationParameter::eWORLD_AXES == eWorldAxes);
-PX_COMPILE_TIME_ASSERT(PxVisualizationParameter::eNUM_VALUES == eNumValues);
+PX_COMPILE_TIME_ASSERT(PxVisualizationParameter::eNUM_VALUES == ePhysXNumValues);
+PX_COMPILE_TIME_ASSERT(PxVisualizationParameter::eNUM_VALUES <= 64);
 
 static DebugVisualizationCache gDebugVisualizationCache;
 
@@ -180,10 +181,12 @@ void omni::physx::enableVisualization(bool enableVis)
 
         if (enableVis)
         {
-            scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, omniPhysX.getVisualizationScale());
+            const float gizmoScale = omniPhysX.getCachedSettings().viewportGizmoScale;
+            scene->setVisualizationParameter(
+                PxVisualizationParameter::eSCALE, gizmoScale * omniPhysX.getVisualizationScale());
 
             const uint32_t visMask = omniPhysX.getVisualizationBitMask();
-            for (uint32_t i = 0; i < 32; i++)
+            for (uint32_t i = 0; i < ePhysXNumValues; i++)
             {
                 if (visMask & (1 << i))
                 {
@@ -209,6 +212,7 @@ void omni::physx::setVisualizationScale(float scale)
     const PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
 
     omniPhysX.setVisualizationScale(scale);
+    const float gizmoScale = omniPhysX.getCachedSettings().viewportGizmoScale;
 
     if (omniPhysX.isDebugVisualizationEnabled())
     {
@@ -218,7 +222,7 @@ void omni::physx::setVisualizationScale(float scale)
         {
             PxScene* scene = ref.second->getScene();
             if (scene)
-                scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, scale);
+                scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, gizmoScale * scale);
         }
     }
 }
@@ -250,19 +254,18 @@ void omni::physx::setVisualizationParameter(PhysXVisualizationParameter par, boo
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
 
-    uint32_t visMask = omniPhysX.getVisualizationBitMask();
-
-    CARB_ASSERT((uint32_t)par < 32);
+    uint64_t visMask = omniPhysX.getVisualizationBitMask();
+    
     if (val)
-        visMask |= (1 << (uint32_t)par);
+        visMask |= (1ull << (uint64_t)par);
     else
-        visMask &= ~(1 << (uint32_t)par);
+        visMask &= ~(1ull << (uint64_t)par);
 
     omniPhysX.setVisualizationBitMask(visMask);
 
     waitForSimulationCompletion(false);
 
-    if (par != eNone)
+    if (par != eNone && par < ePhysXNumValues)
     {
         for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
         {
@@ -270,6 +273,10 @@ void omni::physx::setVisualizationParameter(PhysXVisualizationParameter par, boo
             if (scene)
                 scene->setVisualizationParameter(PxVisualizationParameter::Enum(par), val ? 1.0f : 0.0f);
         }
+    }
+    else
+    {
+        omniPhysX.getInternalPhysXDatabase().setVisualizationParameter(par, val);
     }
 }
 
@@ -332,6 +339,7 @@ uint32_t omni::physx::getNbLines()
         if (scene)
             numLines += scene->getRenderBuffer().getNbLines();
     }
+    numLines += omniPhysX.getInternalPhysXDatabase().getDebugRenderBuffer().getNbLines();
     return numLines;
 }
 
@@ -345,7 +353,8 @@ const DebugLine* omni::physx::getLines()
 
     waitForSimulationCompletion(false);
 
-    if (physxSetup.getPhysXScenes().size() == 1)
+    if (physxSetup.getPhysXScenes().size() == 1 &&
+        omniPhysX.getInternalPhysXDatabase().getDebugRenderBuffer().getNbLines() == 0)
         return (const DebugLine*)physxSetup.getPhysXScenes().begin()->second->getScene()->getRenderBuffer().getLines();
     else
     {
@@ -357,6 +366,14 @@ const DebugLine* omni::physx::getLines()
             const uint32_t numLines = scene->getRenderBuffer().getNbLines();
             memcpy(gDebugVisualizationCache.mLinesBuffer.data() + offset, scene->getRenderBuffer().getLines(), sizeof(DebugLine) * numLines);
             offset += numLines;
+        }
+
+        if (omniPhysX.getInternalPhysXDatabase().getDebugRenderBuffer().getNbLines() > 0)
+        {
+            const uint32_t numLines = omniPhysX.getInternalPhysXDatabase().getDebugRenderBuffer().getNbLines();
+            memcpy(gDebugVisualizationCache.mLinesBuffer.data() + offset,
+                   omniPhysX.getInternalPhysXDatabase().getDebugRenderBuffer().getLines(),
+                   sizeof(PxDebugLine) * numLines);
         }
     }
 
@@ -843,10 +860,10 @@ void DebugVisualizationCache::addEdges(const pxr::SdfPath& path, DebugEdge* debu
 
 namespace
 {
-    struct OmniRenderBuffer : PxRenderBuffer
+    struct OmniDebugRenderBuffer : PxRenderBuffer
     {
         debugrender::RenderBuffer& buff;
-        OmniRenderBuffer(debugrender::RenderBuffer& b) : buff(b) {}
+        OmniDebugRenderBuffer(debugrender::RenderBuffer& b) : buff(b) {}
         virtual PxU32 getNbPoints() const { return 0; }
         virtual const PxDebugPoint* getPoints() const { return nullptr; }
         virtual void addPoint(const PxDebugPoint&) {}
@@ -1157,7 +1174,7 @@ const DebugLine* omni::physx::getShapeDebugDraw(const pxr::SdfPath& primPath,
             PxTransform pose = cylinderDesc->axis == eZ ? transform.transform(PxTransform(PxQuat(PxPiDivTwo, PxVec3(0, -1, 0)))) :
                                 cylinderDesc->axis == eY ? transform.transform(PxTransform(PxQuat(PxPiDivTwo, PxVec3(0, 0, 1)))) :
                                 transform;
-            OmniRenderBuffer omniRenderBuffer(gRenderBuffer);
+            OmniDebugRenderBuffer omniRenderBuffer(gRenderBuffer);
             PxRenderOutput output(omniRenderBuffer);
             PxConvexCoreExt::visualize(geom, pose, false, PxBounds3(), output);
         }
@@ -1188,7 +1205,7 @@ const DebugLine* omni::physx::getShapeDebugDraw(const pxr::SdfPath& primPath,
             PxTransform pose = coneDesc->axis == eZ ? transform.transform(PxTransform(PxQuat(PxPiDivTwo, PxVec3(0, -1, 0)))) :
                                coneDesc->axis == eY ? transform.transform(PxTransform(PxQuat(PxPiDivTwo, PxVec3(0, 0, 1)))) :
                                transform;
-            OmniRenderBuffer omniRenderBuffer(gRenderBuffer);
+            OmniDebugRenderBuffer omniRenderBuffer(gRenderBuffer);
             PxRenderOutput output(omniRenderBuffer);
             PxConvexCoreExt::visualize(geom, pose, false, PxBounds3(), output);
         }

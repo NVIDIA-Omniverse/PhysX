@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,12 +31,11 @@
 
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxSimpleTypes.h"
-#include "PxgCudaBuffer.h"
 #include "foundation/PxUserAllocated.h"
+#include "common/PxPhysXCommonConfig.h"
 
 namespace physx
 {
-	class PxgHeapMemoryAllocatorManager;
 	class PxgSapBox1D;
 
 	// PT: TODO:
@@ -103,20 +102,6 @@ namespace physx
 		bool isNew;
 		bool isDead;
 		PxU16 pad;
-	};
-
-	class PxgAggregateBuffer : public PxUserAllocated
-	{
-	public:
-		PxgAggregateBuffer(PxgHeapMemoryAllocatorManager* heapMemoryManager);
-
-		PxgCudaBuffer		updateBoundIndices;
-		PxgCudaBufferN<2>	boundIndices;
-		PxgCudaBufferN<2>	sortedProjections;
-		PxgCudaBufferN<2>	sortedHandles;
-		PxgCudaBufferN<2>	sapBox1D;
-		PxgCudaBufferN<2>	startMasks;
-		PxgCudaBufferN<2>	comparisons;
 	};
 
 }

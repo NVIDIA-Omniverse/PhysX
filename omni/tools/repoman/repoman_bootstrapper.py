@@ -1,7 +1,8 @@
-# SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 
+import contextlib
 import json
 import logging
 import os
@@ -14,7 +15,7 @@ import packmanapi
 
 logger = logging.getLogger(__name__)
 
-if sys.version_info < (3, 10):
+if sys.version_info < (3, 10):  # noqa: UP036 - Keep version check for user-facing warning
     logger.warning("This version of repo_man currently requires Python 3.10 or later.")
 
 REPO_ROOT = os.path.join(os.path.dirname(os.path.normpath(__file__)), "../..")
@@ -33,10 +34,16 @@ def _pull_optional_deps():
     """
     OPT_DEPS_FILE = Path(REPO_ROOT, f"deps/repo-deps-{_opt_deps_suffix()}.packman.xml")
     if OPT_DEPS_FILE.is_file():
-        deps = packmanapi.pull(OPT_DEPS_FILE.as_posix())
-        for dep_path in deps.values():
-            if dep_path not in sys.path:
-                sys.path.append(dep_path)
+        deps = None
+        with contextlib.suppress(packmanapi.PackmanErrorFileNotFound):
+            deps = packmanapi.pull(OPT_DEPS_FILE.as_posix())
+            for dep_path in deps.values():
+                if dep_path not in sys.path:
+                    sys.path.append(dep_path)
+        if deps is None:
+            logger.debug(
+                f"Failed to pull optional dependencies in {OPT_DEPS_FILE}. This can be normal depending on configuration and context.",
+            )
 
 
 def _path_checks():
@@ -123,7 +130,7 @@ def _opt_deps_suffix():
     opt_deps_suffix = "nv"
     repo_toml = Path(REPO_ROOT, "repo.toml")
     if repo_toml.is_file():
-        with open(repo_toml, "r") as f:
+        with open(repo_toml) as f:
             for line in f.readlines():
                 line = line.lstrip()
                 if line.startswith("optional_deps_suffix"):

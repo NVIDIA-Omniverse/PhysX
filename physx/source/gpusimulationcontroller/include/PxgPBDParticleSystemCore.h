@@ -22,46 +22,24 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PXG_PBD_PARTICLE_SYSTEM_CORE_H
 #define PXG_PBD_PARTICLE_SYSTEM_CORE_H
 
-#include "foundation/PxVec3.h"
-#include "foundation/PxSimpleTypes.h"
-
-#include "cudamanager/PxCudaTypes.h"
-
 #include "PxgParticleSystemCore.h"
 
 namespace physx
 {
-	class PxCudaContextManager;
-	class PxgBodySimManager;
-	class PxgCudaKernelWranglerManager;
-	class PxgGpuContext;
 	struct PxGpuParticleBufferIndexPair;
-	class PxgHeapMemoryAllocatorManager;
-	class PxgParticleAndDiffuseBuffer;
-	class PxgParticleClothBuffer;
-	class PxgParticleRigidBuffer;
-	class PxgParticleSystem;
-	class PxgParticleSystemBuffer;
-	class PxgParticleSystemDiffuseBuffer;
-	class PxgSimulationController;
-
-	namespace Dy
-	{
-		class ParticleSystemCore;
-	}
 
 	class PxgPBDParticleSystemCore : public PxgParticleSystemCore, public PxgDiffuseParticleCore
 	{
 	public:
 		PxgPBDParticleSystemCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
-			PxgHeapMemoryAllocatorManager* heapMemoryManager, PxgSimulationController* simController,
+			PxgAllocatorDesc& allocDesc, PxgSimulationController* simController,
 			PxgGpuContext* gpuContext, PxU32 maxParticleContacts);
 		virtual ~PxgPBDParticleSystemCore();
 
@@ -80,7 +58,7 @@ namespace physx
 			const PxReal dt, CUstream solverStream, bool isTGS, PxU32 numSolverBodies);
 		virtual void updateParticles(const PxReal dt);
 		virtual void solve(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
-			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, const PxReal dt, CUstream solverStream);
+			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, const PxReal dt, CUstream solverStream, PxReal biasCoefficient);
 
 		virtual void solveTGS(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
 			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, const PxReal dt, const PxReal totalInvDt, CUstream solverStream,

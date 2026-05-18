@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -216,6 +216,29 @@ public:
 	\brief Retrieve unique index that does not change over the lifetime of a PxParticleBuffer.
 	*/
 	virtual PxU32				getUniqueId() const = 0;
+
+	/**
+	\brief Sets a name string for the object that can be retrieved with getName().
+
+	This is for debugging and is not used by the SDK. The string is not copied by the SDK,
+	only the pointer is stored.
+
+	\param[in] name String to set the objects name to.
+
+	<b>Default:</b> NULL
+
+	\see getName()
+	*/
+	virtual	void				setName(const char* name) = 0;
+
+	/**
+	\brief Retrieves the name string set with setName().
+
+	\return Name string associated with object.
+
+	\see setName()
+	*/
+	virtual	const char*			getName() const = 0;
 
 	//public variables:
 	void*						userData;	//!< user can assign this to whatever, usually to create a 1:1 relationship with a user object.

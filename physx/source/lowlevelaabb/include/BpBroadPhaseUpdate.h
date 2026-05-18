@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -42,6 +42,27 @@ typedef PxU32 BpHandle;
 #define BP_INVALID_BP_HANDLE	0x3fffffff
 
 class BroadPhase;
+
+struct BroadPhaseUpdateError
+{
+	enum Enum
+	{
+		eNO_ERROR				= 0,
+		eINVALID				= 1,	// generic unspecified error
+		eMISSING_DATA			= 2,	// passed data has a non-zero size and a null pointer
+		eOUT_OF_BOUNDS			= 3,	// passed index is out of bounds
+		eINVALID_ORDER			= 4,	// passed indices are not in ascending order
+		eINVALID_GROUP			= 5,	// passed groups are invalid
+		eNON_FINITE_BOUNDS		= 6,	// passed bounds have NaNs/non-finite values
+		eINVALID_BOUNDS			= 7,	// passed bounds are invalid (non-empty and min>max)
+		eCREATED_AND_UPDATED	= 8,	// an object has been both created and updated (in the same BP update call)
+		eCREATED_AND_REMOVED	= 9,	// an object has been both created and removed (in the same BP update call)
+		eUPDATED_AND_REMOVED	= 10,	// an object has been both updated and removed (in the same BP update call)
+		eALREADY_ADDED			= 11,	// an object has been added but already exists in the broadphase
+		eALREADY_REMOVED		= 12,	// an object has been removed but does not exist in the broadphase
+		eNOT_IN_DATABASE		= 13,	// an object has been updated but does not exist in the broadphase
+	};
+};
 
 class BroadPhaseUpdateData
 {
@@ -180,8 +201,8 @@ public:
 	PX_FORCE_INLINE	bool							getGpuStateChanged()	const { return mGpuStateChanged;	}
 
 #if PX_CHECKED
-	static bool isValid(const BroadPhaseUpdateData& updateData, const BroadPhase& bp, const bool skipBoundValidation, PxU64 contextID);
-	bool isValid(const bool skipBoundValidation) const;
+	// PT: we skip bounds validation for the GPU so we cannot drop 'skipBoundValidation'
+	BroadPhaseUpdateError::Enum isValid(PxU64 contextID, const BroadPhase* bp = NULL, bool skipBoundValidation = false) const;
 #endif
 
 private:

@@ -5,7 +5,7 @@ repository = ""
 keywords = ["physics", "physx", "fabric"]
 category = "Simulation"
 
-version = "107.3.0-oss.0"
+version = "110.0.7"
 authors = ["PhysX"]
 
 icon = "data/icon.png"
@@ -21,7 +21,7 @@ usd = true
 
 
 [dependencies]
-"omni.physx" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx" = { version = "110.0.7", exact = true }
 "usdrt.scenegraph" = {}
 "omni.graph.core" = {optional=true}
 "omni.ui" = {optional=true}
@@ -39,10 +39,18 @@ path = "bin/*.plugin"
 dependencies = [
    "omni.physics.stageupdate",
    "omni.physics.physx",
-   "omni.hydra.usdrt_delegate"
+   "omni.physx.tests",
+   "omni.population"
 ]
 args = [
-   "--/app/useFabricSceneDelegate=true"
+   "--no-window",
+   "--/app/asyncRendering=false", 
+   "--/app/file/ignoreUnsavedOnExit=true" , 
+   "--/renderer/multiGpu/autoEnable=false",
+   "--/app/profilerBackend=\"\"",
+   "--/rtx/materialDb/syncLoads=true",
+   "--/omni.kit.plugin/syncUsdLoads=true",
+   "--/app/useFabricSceneDelegate=true",
 ]
 stdoutFailPatterns.exclude = [
     "*Failed to create Cuda Context Manager*",

@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.usd
 import omni.ui as ui
 import omni.kit.widget.layers as layers
@@ -63,10 +64,10 @@ class RigidBodySelectionMode:
         self._layers_wnd_in_selection = False
 
     def _enable_sel_op_main_toolbar_button(self, enable):
-        import omni.kit.window.toolbar
-        from omni.kit.window.toolbar.builtin_tools.select_button_group import SelectButtonGroup
+        import omni.kit.widget.toolbar
+        from omni.kit.widget.toolbar.builtin_tools.select_button_group import SelectButtonGroup
 
-        toolbar = omni.kit.window.toolbar.get_instance()
+        toolbar = omni.kit.widget.toolbar.get_instance()
 
         widget_instance = toolbar
 

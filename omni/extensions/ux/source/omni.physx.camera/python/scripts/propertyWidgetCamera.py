@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.ui
 import omni.usd
 import carb
@@ -19,8 +20,8 @@ from .commands import (
 )
 
 from .propertyWidgets import PropertyWidgetCameraBase, PROPERTY_WIDGET_STYLE
-from omni.kit.property.physx.widgets import InvisibleMenuWidgetBase, MainFrameWidget
-from omni.kit.property.physx.database import ExtraAddItem
+from omni.kit.property.physics.widgets import InvisibleMenuWidgetBase, MainFrameWidget
+from omni.kit.property.physics.database import ExtraAddItem
 
 
 # this widget has no visual, it's here just to fill the add menu with extra items

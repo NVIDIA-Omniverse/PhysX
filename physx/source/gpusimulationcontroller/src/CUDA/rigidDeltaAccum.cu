@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -378,9 +378,6 @@ extern "C" __global__ void accumulateDeltaVRigidSecondLaunch(
 						impulse.top *= ratio;
 						impulse.bottom *= ratio;
 						
-						/*printf("blockIndex %i artiIndexInBlock %i linkID %i ratio %f impulse linear(%f, %f, %f) angular(%f, %f, %f)\n", blockIndex, artiIndexInBlock, linkID, ratio,
-							impulse.top.x, impulse.top.y, impulse.top.z, impulse.bottom.x, impulse.bottom.y, impulse.bottom.z);*/
-					
 						storeSpatialVector(artiLinks[linkID].mScratchImpulse, -impulse, artiIndexInBlock);
 					}
 					else
@@ -404,13 +401,6 @@ extern "C" __global__ void accumulateDeltaVRigidSecondLaunch(
 						}
 						else
 						{
-							/*assert(PxIsFinite(linVel.x)); assert(PxIsFinite(linVel.y)); assert(PxIsFinite(linVel.z));
-							assert(PxIsFinite(angVel.x)); assert(PxIsFinite(angVel.y)); assert(PxIsFinite(angVel.z));
-							assert(PxIsFinite(ratio));*/
-
-							/*printf("Accum linVelDelta = (%f, %f, %f, %f), angVelDelta = (%f, %f, %f, %f), ratio = %f, denom = %f, globalRelax = %f\n",
-								linVel.x, linVel.y, linVel.z, linVel.w, angVel.x, angVel.y, angVel.z, angVel.w, ratio, denom, globalRelaxationCoefficient);*/
-
 							linearVelocity += linVel * ratio;
 							angularVelocity += angVel * ratio;
 						}
@@ -419,9 +409,6 @@ extern "C" __global__ void accumulateDeltaVRigidSecondLaunch(
 						solverBodyDeltaVel[solverBodyIndex + numSolverBodies] = angularVelocity;
 
 					}
-					//printf("solverBodyIndex %i\n", solverBodyIndex);
-					//printf("linearVelocity(%f, %f, %f, %f)\n", linearVelocity.x, linearVelocity.y, linearVelocity.z, linearVelocity.w);
-					//printf("angularVelocity(%f, %f, %f, %f)\n", angularVelocity.x, angularVelocity.y, angularVelocity.z, angularVelocity.w);
 				}
 			}
 		}

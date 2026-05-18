@@ -1,0 +1,49 @@
+[package]
+title = "Physics UI extension"
+description="Adds UI elements for generic physics simulation."
+authors = ["PhysX"]
+changelog="docs/CHANGELOG.md"
+readme = "docs/README.md"
+repository = ""
+keywords = ["physics", "ui"]
+category = "simulation"
+version = "110.0.7"
+icon = "data/images/icon.png"
+preview_image = "data/images/preview.png"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.ui" = {}
+"omni.physics" = { version = "110.0.7", exact = true }
+"omni.usdphysics.ui" = { version = "110.0.7", exact = true }
+"omni.kit.viewport.menubar.core" = {}
+"omni.kit.clipboard" = {}
+"omni.kit.notification_manager" = {}
+
+[[python.module]]
+name = "omni.physics.ui"
+
+[[test]]
+dependencies = [
+    "omni.kit.viewport.window",
+    "omni.kit.viewport.utility",
+    "omni.kit.test",
+    "omni.kit.ui_test",
+    "omni.kit.mainwindow",
+    "omni.hydra.usdrt_delegate"
+]
+
+args = [
+    "--/persistent/app/viewport/displayOptions=0",
+    "--/app/window/dpiScaleOverride=1.0",
+    "--/app/window/scaleToMonitor=false",
+]
+
+pythonTests.include = [
+    "omni.physics.ui.tests.test_simulation_config.*",
+    "omni.physics.ui.tests.test_simulation_data_visualizer.*",
+]

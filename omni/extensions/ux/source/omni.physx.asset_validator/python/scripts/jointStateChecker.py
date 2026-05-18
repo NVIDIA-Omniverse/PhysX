@@ -1,11 +1,10 @@
-# SPDX-FileCopyrightText: Copyright (c) 2024-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
 __all__ = ["JointStateChecker"]
 
-from omni.asset_validator.core import BaseRuleChecker, registerRule, Suggestion
-from omni.asset_validator.core.complianceChecker import is_omni_path
+from omni.asset_validator.core import BaseRuleChecker, registerRule, Suggestion, is_omni_path
 from .. import get_physx_asset_validator_interface
 from pxr import Usd, UsdPhysics, UsdUtils, PhysicsSchemaTools
 import carb

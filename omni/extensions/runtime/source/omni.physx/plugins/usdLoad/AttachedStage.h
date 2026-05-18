@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -18,6 +18,7 @@ const uint64_t kInvalidFabricListenerId = 0;
 
 using TimeSampleMap = std::unordered_map<pxr::SdfPath, OnUpdateObjectFn, pxr::SdfPath::Hash>;
 using PathPrimMap = std::unordered_map<pxr::SdfPath, pxr::UsdPrim, pxr::SdfPath::Hash>;
+using TokenEnvIdMap = std::unordered_map<pxr::TfToken, uint32_t, pxr::TfToken::HashFunctor>;
 
 enum class ChangeSource
 {
@@ -288,6 +289,35 @@ public:
         return ChangeSourceBlock(*this, source);
     }
 
+    uint32_t registerEnvIdFromToken(const pxr::TfToken& token)
+    {
+        TokenEnvIdMap::const_iterator fit = mTokenEnvIdMap.find(token);
+        if (fit == mTokenEnvIdMap.end())
+        {
+            const uint32_t envIdInt = mEnvIdCounter++;
+            mTokenEnvIdMap[token] = envIdInt;
+            return envIdInt;
+        }
+        else
+        {
+            return fit->second;
+        }
+    }
+
+    uint32_t getEnvIdFromToken(const pxr::TfToken& token) const
+    {
+        TokenEnvIdMap::const_iterator fit = mTokenEnvIdMap.find(token);
+        if (fit != mTokenEnvIdMap.end())
+        {
+            return fit->second;
+        }
+        else
+        {
+            CARB_LOG_WARN("EnvId not found for given scene partition token: %s", token.GetText());
+            return 0;
+        }
+    }
+
 private:
     PhysXUsdPhysicsInterface* mPhysicsInterface;
     pxr::UsdStageWeakPtr mStage;
@@ -308,7 +338,11 @@ private:
     bool mChangeTrackingPaused;
     bool mReplicatorStage;
     bool mPhysXDefaultSim;
+
     bool mUseReplicatorEnvIds;
+    uint32_t mEnvIdCounter;
+    TokenEnvIdMap mTokenEnvIdMap;
+
     std::vector<void*> mReplicatorMemory;
     ChangeSource mChangeSource{ ChangeSource::eUnknwon };
 };

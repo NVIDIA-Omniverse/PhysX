@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -85,7 +85,7 @@ struct ConstraintPartitionOut
 PxU32 partitionContactConstraints(ConstraintPartitionOut& out, const ConstraintPartitionIn& in);
 
 // PT: TODO: why is this only called for TGS?
-void processOverflowConstraints(PxU8* bodies, PxU32 bodyStride, PxU32 numBodies, ArticulationSolverDesc* articulations, PxU32 numArticulations,
+void processOverflowConstraints(PxU8* bodies, PxU32 bodyStride, PxU32 numBodies, FeatherstoneArticulation** articulations, PxU32 numArticulations,
 	PxSolverConstraintDesc* constraints, PxU32 numConstraints);
 
 } // namespace physx

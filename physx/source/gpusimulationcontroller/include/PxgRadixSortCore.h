@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -31,28 +31,20 @@
 
 #include "PxgCudaBuffer.h"
 #include "PxgEssentialCore.h"
-#include "PxgKernelWrangler.h"
 #include "PxgRadixSortDesc.h"
-
-#include "cudamanager/PxCudaTypes.h"
-#include "foundation/PxSimpleTypes.h"
-#include "foundation/PxVec3.h"
-#include "foundation/PxVec4.h"
-#include "foundation/PxPinnedArray.h"
+#include "CmPinnableArray.h"
 
 namespace physx
 {
-	class PxCudaContext;
-	class PxgCudaKernelWranglerManager;
 
 	class PxgRadixSortCore
 	{
 	public:
-		PxPinnedArray<PxgRadixSortBlockDesc>	mRSDesc;
-		PxgCudaBufferN<2>						mRadixSortDescBuf; //radix sort with rank
-		PxgCudaBuffer							mRadixCountTotalBuf;
-		PxU32									mRadixCountSize;
-		PxgEssentialCore*						mEssentialCore;
+		Cm::PinnableArray<PxgRadixSortBlockDesc>	mRSDesc;
+		PxgCudaBufferN<2>							mRadixSortDescBuf; //radix sort with rank
+		PxgCudaBuffer								mRadixCountTotalBuf;
+		PxU32										mRadixCountSize;
+		PxgEssentialCore*							mEssentialCore;
 
 		PxgRadixSortCore(PxgEssentialCore* core);
 

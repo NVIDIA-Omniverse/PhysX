@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,57 +30,48 @@
 #define PXS_TRANSFORM_CACHE_H
 
 #include "CmIDPool.h"
+#include "PxsHeapStats.h"
+#include "PxsCachedTransform.h"
 #include "foundation/PxBitMap.h"
-#include "foundation/PxTransform.h"
 #include "foundation/PxUserAllocated.h"
-#include "foundation/PxPinnedArray.h"
+#include "CmPinnableArray.h"
 
-#define PX_DEFAULT_CACHE_SIZE 512
+#define PX_DEFAULT_CACHE_SIZE 512 // this is currently not in use
 
 namespace physx
 {
-	struct PxsTransformFlag
-	{
-		enum Flags
-		{
-			eFROZEN = (1 << 0)
-		};
-	};
-
-	struct PX_ALIGN_PREFIX(16) PxsCachedTransform
-	{
-		PxTransform transform;
-		PxU32 flags;
-
-		PX_FORCE_INLINE PxU32 isFrozen() const { return flags & PxsTransformFlag::eFROZEN; }
-	}
-	PX_ALIGN_SUFFIX(16);
 
 	class PxsTransformCache : public PxUserAllocated
 	{
 		typedef PxU32 RefCountType;
 
 	public:
-		PxsTransformCache(PxVirtualAllocatorCallback& allocatorCallback) : mTransformCache(PxVirtualAllocator(&allocatorCallback)), mHasAnythingChanged(true)
+		PxsTransformCache(Cm::VirtualAllocatorCallback& alloc, Cm::PinnableAllocatorFallback::Enum fallback) :
+			mTransformCache(alloc, PxsHeapStats::eNARROWPHASE, fallback), mHasAnythingChanged(true), mAllocFailed(false)
 		{
 			/*mTransformCache.reserve(PX_DEFAULT_CACHE_SIZE);
 			mTransformCache.forceSize_Unsafe(PX_DEFAULT_CACHE_SIZE);*/
 			mUsedSize = 0;
 		}
 
-		void initEntry(PxU32 index)
+		bool initEntry(PxU32 index)
 		{
 			PxU32 oldCapacity = mTransformCache.capacity();
 			if (index >= oldCapacity)
 			{
 				PxU32 newCapacity = PxNextPowerOfTwo(index);
-				mTransformCache.reserve(newCapacity);
+				if(!mTransformCache.reserve(newCapacity))
+				{
+					mAllocFailed = true;
+					return false;
+				}
 				mTransformCache.forceSize_Unsafe(newCapacity);
 			}
 			mUsedSize = PxMax(mUsedSize, index + 1u);
+			return true;
 		}
 
-		PX_FORCE_INLINE void setTransformCache(const PxTransform& transform, PxU32 flags, PxU32 index, PxU32 /*indexFrom*/)
+		PX_FORCE_INLINE void setTransformCache(const PxTransform& transform, PxU32 flags, PxU32 index)
 		{
 			mTransformCache[index].transform = transform;
 			mTransformCache[index].flags = flags;
@@ -121,21 +112,19 @@ namespace physx
 			return mTransformCache.begin();
 		}
 
-		PX_FORCE_INLINE PxCachedTransformArrayPinned* getCachedTransformArray()
-		{
-			return &mTransformCache;
-		}
-
 		PX_FORCE_INLINE	void resetChangedState()	{ mHasAnythingChanged = false;	}
 		PX_FORCE_INLINE	void setChangedState()		{ mHasAnythingChanged = true;	}
 		PX_FORCE_INLINE	bool hasChanged()	const	{ return mHasAnythingChanged;	}
 
+		PX_FORCE_INLINE bool hadAllocationFailure()	const	{ return mAllocFailed;	}
+
 	protected:
-		PxCachedTransformArrayPinned	mTransformCache;
+		Cm::PinnableArray<PxsCachedTransform>	mTransformCache;
 
 	private:
-		PxU32							mUsedSize;
-		bool							mHasAnythingChanged;
+		PxU32									mUsedSize;
+		bool									mHasAnythingChanged;
+		bool									mAllocFailed;
 	};
 }
 

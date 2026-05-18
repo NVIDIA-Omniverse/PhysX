@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -6,6 +6,9 @@
 
 #include <omni/fabric/IFabric.h>
 #include <omni/fabric/FabricUSD.h>
+
+#include <omni/core/ITypeFactory.h>
+#include <usdrt/hierarchy/IFabricHierarchy.h>
 
 #include <omni/physx/IPhysxSettings.h>
 #include <carb/settings/ISettings.h>
@@ -89,10 +92,6 @@ public:
         return false;
     }
 
-    void broadcastChanges()
-    {
-    }
-
 private:
     pxr::UsdStageRefPtr mStage;
     carb::settings::ISettings* mSettings;
@@ -169,11 +168,32 @@ public:
         omni::fabric::Token attrToken(primAttribute.GetText());
 
         omni::fabric::Type fabricType = toFabricType<T>();
-        iStageReaderWriter->createAttribute(mSrwId, { asInt(primPath) }, attrToken, omni::fabric::TypeC(fabricType));
+        iStageReaderWriter->createAttribute(
+            mSrwId,
+            omni::fabric::convertToPathType<omni::fabric::Path>(iStageReaderWriter->getFabricId(mSrwId), primPath),
+            attrToken, omni::fabric::TypeC(fabricType));
 
-        iStageReaderWriter->logAttributeWriteForNotice(mSrwId, { asInt(primPath) }, attrToken);
-        T& valData = *(T*)(iStageReaderWriter->getAttributeWr(mSrwId, { asInt(primPath) }, attrToken)).ptr;
-        valData = value;
+        if constexpr (std::is_same_v<T, pxr::TfToken>)
+        {
+            omni::fabric::Token& valData =
+                *(omni::fabric::Token*)(iStageReaderWriter->getAttributeWr(
+                                            mSrwId,
+                                                                  omni::fabric::convertToPathType<omni::fabric::Path>(
+                                                                      iStageReaderWriter->getFabricId(mSrwId), primPath),
+                                                                  attrToken))
+                              .ptr;
+            valData =
+                omni::fabric::convertToTokenType<omni::fabric::Token>(iStageReaderWriter->getFabricId(mSrwId), value);
+        }
+        else
+        {
+            T& valData = *(T*)(iStageReaderWriter->getAttributeWr(mSrwId,
+                                                                  omni::fabric::convertToPathType<omni::fabric::Path>(
+                                                                      iStageReaderWriter->getFabricId(mSrwId), primPath),
+                                                                  attrToken))
+                              .ptr;
+            valData = value;
+        }        
     }
 
     void setTransformation(const pxr::SdfPath& primPath, const pxr::GfVec3f& position, const pxr::GfQuatf& orientation)
@@ -191,39 +211,34 @@ public:
         transform = tr.GetMatrix();
             
         pxr::GfMatrix4d& valData =
-            *(pxr::GfMatrix4d*)(iStageReaderWriter->getAttributeWr(mSrwId, { asInt(primPath) }, mLocalMatrixToken)).ptr;
+            *(pxr::GfMatrix4d*)(iStageReaderWriter->getAttributeWr(mSrwId,
+                                                                   omni::fabric::convertToPathType<omni::fabric::Path>(
+                                                                   iStageReaderWriter->getFabricId(mSrwId), primPath),
+                                                                   mLocalMatrixToken))
+                 .ptr;
         valData = transform;
+        auto iHierarchyMaker = omni::core::createType<usdrt::hierarchy::IFabricHierarchy>();
+        if (iHierarchyMaker)
+        {
+            auto iHierarchy = iHierarchyMaker->getFabricHierarchy(iStageReaderWriter->getFabricId(mSrwId), mStageId);
+            iHierarchy->updateWorldXforms();
+        }
     }
 
     pxr::GfTransform getTransformation(const pxr::SdfPath& primPath)
-    {            
+    {
         pxr::GfMatrix4d& valData =
-            *(pxr::GfMatrix4d*)(iStageReaderWriter->getAttributeRd(mSrwId, { asInt(primPath) }, mLocalMatrixToken)).ptr;        
+            *(pxr::GfMatrix4d*)(iStageReaderWriter->getAttributeRd(mSrwId,
+                                                                   omni::fabric::convertToPathType<omni::fabric::Path>(
+                                                                       iStageReaderWriter->getFabricId(mSrwId), primPath),
+                                                                   mLocalMatrixToken))
+                 .ptr;        
         return pxr::GfTransform(valData);
     }    
 
     template <typename T>
     T getAttributeValue(const pxr::SdfPath& primPath, const pxr::TfToken& primAttribute)
     {
-        /* A.B. Fabric does not sync all the attributes lets read from USD for now
-        uint32_t valType;
-        if (std::is_same_v<T, int>) {
-            omni::fabric::Type intType(omni::fabric::BaseDataType::eInt);
-            valType = uint32_t(intType);
-        }
-        else if (std::is_same_v<T, float>) {
-            omni::fabric::Type floatType(omni::fabric::BaseDataType::eFloat);
-            valType = uint32_t(floatType);
-        }
-        else if (std::is_same_v<T, bool>) {
-            omni::fabric::Type boolType(omni::fabric::BaseDataType::eBool);
-            valType = uint32_t(boolType);
-        }
-
-        omni::fabric::Token attrToken(primAttribute.GetText());
-        iStageReaderWriter->createAttribute(mSrwId, asInt(primPath), attrToken, valType);
-        return *(const T*)(iStageReaderWriter->getAttributeRd(mSrwId, asInt(primPath), attrToken)).ptr;     */
-
         pxr::UsdPrim prim = mStage->GetPrimAtPath(primPath);
 
         pxr::UsdAttribute attr = prim.GetAttribute(primAttribute);
@@ -232,11 +247,6 @@ public:
         attr.Get(&value);
 
         return value;
-    }
-
-    void broadcastChanges()
-    {
-        iStageReaderWriter->broadcastTfNoticeForAttributesChanged(mSrwId);
     }
 
 public:

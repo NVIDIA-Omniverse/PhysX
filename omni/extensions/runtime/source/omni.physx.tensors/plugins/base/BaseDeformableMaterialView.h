@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -28,12 +28,15 @@ public:
 
     bool getDynamicFriction(const TensorDesc* dstTensor) const;
     bool setDynamicFriction(const TensorDesc* srcTensor, const TensorDesc* indexTensor);
+    bool setDynamicFrictionMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     bool getYoungsModulus(const TensorDesc* dstTensor) const;
     bool setYoungsModulus(const TensorDesc* srcTensor, const TensorDesc* indexTensor);
+    bool setYoungsModulusMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     bool getPoissonsRatio(const TensorDesc* dstTensor) const;
     bool setPoissonsRatio(const TensorDesc* srcTensor, const TensorDesc* indexTensor);
+    bool setPoissonsRatioMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     bool check() const override;
     void release() override;

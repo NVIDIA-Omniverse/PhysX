@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef __CU_RADIX_SORT_CUH__
 #define __CU_RADIX_SORT_CUH__
@@ -39,7 +39,8 @@
 #include "foundation/PxMath.h"
 #include <assert.h>
 
-using namespace physx;
+namespace physx
+{
 
 #define		RADIX_SIZE			16
 #define		RADIX_ACCUM_SIZE	8
@@ -758,5 +759,7 @@ PX_FORCE_INLINE __device__ void bitonicSortWarp(const PxU32 mask, PxU32& key, Px
 		}
 	}
 }
+
+} // namespace physx
 
 #endif // !PXG_RADIX_SORT_CUH

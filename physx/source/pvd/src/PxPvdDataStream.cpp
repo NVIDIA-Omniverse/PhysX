@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "foundation/PxAssert.h"
 #include "PxPvdCommStreamEventSink.h"
@@ -83,7 +83,7 @@ struct PropertyDefinitionHelper : public PvdPropertyDefinitionHelper
 	{
 		if(str == NULL)
 			return;
-		size_t strLen = strlen(str);
+		size_t strLen = strnlen(str, UINT64_MAX - 1);
 		size_t endBufOffset = mNameBuffer.size();
 		size_t resizeLen = endBufOffset;
 		// account for null
@@ -320,7 +320,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 		ScopedMetaData meta(mMetaDataProvider);
 		return meta->findClass(nm).hasValue();
 	}
-	
+
 	bool createMetaClass(const NamespacedName& nm)
 	{
 		ScopedMetaData meta(mMetaDataProvider);
@@ -333,7 +333,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 		ScopedMetaData meta(mMetaDataProvider);
 		return meta->deriveClass(parent, child);
 	}
-	
+
 // You will notice that some functions are #pragma'd out throughout this file.
 // This is because they are only called from asserts which means they aren't
 // called in release.  This causes warnings when building using snc which break

@@ -43,7 +43,7 @@ project ("omni.physx.graph.plugin")
     extension_usd_deps(targetDeps_dir, hostDeps_dir)
     extension_physxsdk_deps(targetDeps_dir, physxVersion)
     targetdir (targetDir.."/"..ext_dir.."/bin")
-    dependson { "prebuild", "carb.physics-usd.plugin", "omni.physx.plugin", "foundation" }
+    dependson { "prebuild", "carb.physics-usd.plugin", "omni.physx.plugin", "foundation", ogn_info["ogn_project"] }
     -- Add the standard dependencies all OGN projects have
     add_ogn_dependencies(ogn_info)
     removelinks {"ar","gf","arch","plug","sdf","tf","usd","vt","usdUtils"}

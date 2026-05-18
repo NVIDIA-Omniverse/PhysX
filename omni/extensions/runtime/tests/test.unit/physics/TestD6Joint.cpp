@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -134,7 +134,6 @@ TEST_CASE_TEMPLATE("D6 Joint Tests",T, USDChange, FabricChange)
             {
                 TfToken driveAttributeToken = TfToken("drive:" + axisTokens[i].GetString() + ":physics:damping");
                 changeTemplate.setAttributeValue(jointPath, driveAttributeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
@@ -188,7 +187,6 @@ TEST_CASE_TEMPLATE("D6 Joint Tests",T, USDChange, FabricChange)
             {
                 TfToken driveAttributeToken = TfToken("drive:" + axisTokens[i].GetString() + ":physics:stiffness");
                 changeTemplate.setAttributeValue(jointPath, driveAttributeToken, changedStartValue + i * delta);
-                changeTemplate.broadcastChanges();
             }
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
@@ -279,7 +277,6 @@ TEST_CASE_TEMPLATE("D6 Joint Tests",T, USDChange, FabricChange)
             // change value
             value = 0.5f;
             changeTemplate.setAttributeValue(jointPath, changeToken, value);
-            changeTemplate.broadcastChanges();
             physxSim->simulate(0.01f, 0.0f);
             physxSim->fetchResults();
 

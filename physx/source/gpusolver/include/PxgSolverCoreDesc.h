@@ -22,15 +22,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PXG_SOLVER_CORE_DESC_H
 #define PXG_SOLVER_CORE_DESC_H
 
-#include "PxgNarrowphaseCore.h"
-#include "DyResidualAccumulator.h"
+#include "PxgBucket.h"
+#include "DyCpuGpuBiasCoefficient.h"
 
 struct float4;
 
@@ -46,152 +46,124 @@ namespace physx
 		class ShapeInteraction;
 	}
 
+	class PxgArticulation;
 	struct PxgConstraintData;
 	struct PxgConstraintPrePrep;
-
+	struct PxgConstraintWriteback;
+	struct PxgConstraintBatchHeader;
 	struct PxgBlockConstraint1DData;
 	struct PxgBlockConstraint1DVelocities;
 	struct PxgBlockConstraint1DParameters;
 	struct PxgBlockContactData;
 	struct PxgBlockContactPoint;
-	struct PxgConstraint1DData;
-	struct PxgConstraint1DVelocities;
-	struct PxgConstraint1DParameters;
-
 	struct PxgSolverBodyData;
-	struct PxgSolverBodySleepData;
 	struct PxgSolverTxIData;
-	
-	struct PxgIslandContext;
 	struct PxgBodySim;
-	struct PxgBodySimVelocities;
-	class PxgArticulation;
-
-	struct PxgSolverConstraintDesc;
 	struct PxgBlockWorkUnit;
-
 	struct PxgBlockConstraintBatch;
-
 	struct PxgBlockFrictionPatch;
 	struct PxgBlockFrictionAnchorPatch;
-
-	struct PxgBlockSolverConstraint1DHeader;
-	struct PxgBlockSolverConstraint1DCon;
 	struct PxgBlockSolverConstraint1DMod;
-
-	struct PxgTGSBlockSolverConstraint1DHeader;
-	struct PxgTGSBlockSolverConstraint1DCon;
-	
+	struct PxgBlockSolverConstraint1DCon;
 	struct PxgBlockSolverContactHeader;
-	struct PxgBlockSolverFrictionHeader;
 	struct PxgBlockSolverContactPoint;
 	struct PxgBlockSolverContactFriction;
+	struct PxgBlockSolverFrictionHeader;
+	struct PxgSolverContactHeader;
+	struct PxgSolverContactPointExt;
+	struct PxgSolverContactFrictionExt;
+	struct PxgSolverConstraintManagerConstants;
+	struct PxgSolverBodySleepData;
 	struct PxgBlockFrictionIndex;
-
+	struct PxgFrictionPatch;
+	struct PxgFrictionAnchorPatch;
+	struct PxgSolverFrictionHeader;
+	struct PxgArticulationBlockResponse;
+	struct PxgD6JointData;
+	struct PxgSolverReferences;
+	struct PxgBlockSolverConstraint1DHeader;
+	struct PxgTGSSolverContactHeader;
+	struct PxgTGSBlockSolverConstraint1DHeader;
+	struct PxgTGSBlockSolverConstraint1DCon;
 	struct PxgTGSBlockSolverContactHeader;
 	struct PxgTGSBlockSolverFrictionHeader;
 	struct PxgTGSBlockSolverContactPoint;
 	struct PxgTGSBlockSolverContactFriction;
-
-	struct PxgFrictionPatch;
-	struct PxgFrictionAnchorPatch;
-
-	struct PxgSolverConstraint1DHeader;
-	struct PxgSolverConstraint1DCon;
-	struct PxgSolverConstraint1DMod;
-
-	struct PxgTGSSolverConstraint1DHeader;
-	struct PxgTGSSolverConstraint1DCon;
-	struct PxgTGSSolverConstraint1DMod;
-
-	struct PxgSolverContactHeader;
-	struct PxgSolverFrictionHeader;
-	struct PxgSolverContactPointExt;
-	struct PxgSolverContactFrictionExt;
-	  
-	struct PxContact;
-	struct PxContactPatch;
-	struct PxgD6JointData;
-	struct PxgSolverReferences;
-	struct PxFrictionPatch;
-
-	struct PxsContactManagerOutput;
-	struct PartitionIndexData;
-	struct PartitionNodeData;
-	struct PxgSolverConstraintManagerConstants;
-	struct PxgConstraintBatchHeader;
-	struct PxgConstraintWriteback;
-	class PxAlignedTransform;
-	struct Px1DConstraint;
-
-	struct PxgTGSSolverContactHeader;
 	struct PxgTGSSolverContactPointExt;
 	struct PxgTGSSolverFrictionExt;
+	struct PxgIslandContext;
+	struct PxgBodySimVelocities;
+	struct PartitionIndexData;
+	struct PartitionNodeData;
 
-	struct PxgArticulationBlockResponse;
-
+	struct PxsContactManagerOutput;
 	struct PxsTorsionalFrictionData;
+
+	struct PxContact;
+	struct PxContactPatch;
+	struct PxFrictionPatch;
+	class PxAlignedTransform;
+	struct Px1DConstraint;
 
 	namespace Dy
 	{
 		struct ThresholdStreamElement;
-		class ThresholdStream;
 	}
 
 	struct IterativeSolveData
 	{
-		PxgBlockConstraintBatch*		blockConstraintBatch;
-		PxgBlockSolverConstraint1DHeader* blockJointConstraintHeaders;
-		PxgBlockSolverConstraint1DCon*	blockJointConstraintRowsCon;
-		PxgBlockSolverConstraint1DMod*	blockJointConstraintRowsMod;
-
-		PxgBlockSolverContactHeader*	blockContactHeaders;
-		PxgBlockSolverFrictionHeader*	blockFrictionHeaders;
-		PxgBlockSolverContactPoint*		blockContactPoints;
-		PxgBlockSolverContactFriction*	blockFrictions;
-
-		//first numSolverBodies float4s are linear velocity, last numSolverBodies float4s are angular velocity
-		float4*							solverBodyVelPool; 
-		float4*							tempStaticBodyOutputPool;
-
-		// Each bit encodes the activation of a slab (32 bits). When there are more than 32 slabs, use multiple indices.
-		// To query the reference count, count the number of active slabs/bits.
-		PxU32*							solverEncodedReferenceCount;
-		PxgSolverContactHeader*			contactHeaders;
-		PxgSolverFrictionHeader*		frictionHeaders;
-		PxgSolverContactPointExt*		contactPoints;
-		PxgSolverContactFrictionExt*	frictions;
-
-		PxgArticulationBlockResponse*	artiResponse;
-	};
-
-	struct IterativeSolveDataTGS
-	{
 		PxgBlockConstraintBatch*				blockConstraintBatch;
-		PxgTGSBlockSolverConstraint1DHeader*	blockJointConstraintHeaders;
-		PxgTGSBlockSolverConstraint1DCon*		blockJointConstraintRowsCon;
+		PxgBlockSolverConstraint1DHeader*		blockJointConstraintHeaders;
+		PxgBlockSolverConstraint1DCon*			blockJointConstraintRowsCon;
 		PxgBlockSolverConstraint1DMod*			blockJointConstraintRowsMod;
 
-		PxgTGSBlockSolverContactHeader*			blockContactHeaders;
-		PxgTGSBlockSolverFrictionHeader*		blockFrictionHeaders;
-		PxgTGSBlockSolverContactPoint*			blockContactPoints;
-		PxgTGSBlockSolverContactFriction*		blockFrictions;
+		PxgBlockSolverContactHeader*			blockContactHeaders;
+		PxgBlockSolverFrictionHeader*			blockFrictionHeaders;
+		PxgBlockSolverContactPoint*				blockContactPoints;
+		PxgBlockSolverContactFriction*			blockFrictions;
 
 		//first numSolverBodies float4s are linear velocity, last numSolverBodies float4s are angular velocity
-		float4*									solverBodyVelPool;
-		float4*									tempStaticBodyOutputs;
+		float4*									solverBodyVelPool; 
+		float4*									tempStaticBodyOutputPool;
 
 		// Each bit encodes the activation of a slab (32 bits). When there are more than 32 slabs, use multiple indices.
 		// To query the reference count, count the number of active slabs/bits.
 		PxU32*									solverEncodedReferenceCount;
-		
-		PxgTGSSolverContactHeader*				contactHeaders;
-		PxgSolverFrictionHeader*				frictionHeaders;	//Technically, not needed
-		PxgTGSSolverContactPointExt*			contactPoints;
-
-		PxgTGSSolverFrictionExt*				frictions;
+		PxgSolverContactHeader*					contactHeaders;
+		PxgSolverFrictionHeader*				frictionHeaders;
+		PxgSolverContactPointExt*				contactPoints;
+		PxgSolverContactFrictionExt*			frictions;
 
 		PxgArticulationBlockResponse*			artiResponse;
+	};
+
+	struct IterativeSolveDataTGS
+	{
+		PxgBlockConstraintBatch*					blockConstraintBatch;
+		PxgTGSBlockSolverConstraint1DHeader*		blockJointConstraintHeaders;
+		PxgTGSBlockSolverConstraint1DCon*			blockJointConstraintRowsCon;
+		PxgBlockSolverConstraint1DMod*				blockJointConstraintRowsMod;
+
+		PxgTGSBlockSolverContactHeader*				blockContactHeaders;
+		PxgTGSBlockSolverFrictionHeader*			blockFrictionHeaders;
+		PxgTGSBlockSolverContactPoint*				blockContactPoints;
+		PxgTGSBlockSolverContactFriction*			blockFrictions;
+
+		//first numSolverBodies float4s are linear velocity, last numSolverBodies float4s are angular velocity
+		float4*										solverBodyVelPool;
+		float4*										tempStaticBodyOutputs;
+
+		// Each bit encodes the activation of a slab (32 bits). When there are more than 32 slabs, use multiple indices.
+		// To query the reference count, count the number of active slabs/bits.
+		PxU32*										solverEncodedReferenceCount;
+		
+		PxgTGSSolverContactHeader*					contactHeaders;
+		PxgSolverFrictionHeader*					frictionHeaders;	//Technically, not needed
+		PxgTGSSolverContactPointExt*				contactPoints;
+
+		PxgTGSSolverFrictionExt*					frictions;
+
+		PxgArticulationBlockResponse*				artiResponse;
 	};
 
 	struct PxgSolverSharedDescBase
@@ -282,8 +254,6 @@ namespace physx
 		PxU32 nbForceChangeElements;
 
 		PxU32 maxLinksPerArticulation;
-
-		Dy::ErrorAccumulator contactErrorAccumulator;
 	};
 
 	struct PxgConstraintPrepareDesc
@@ -363,7 +333,7 @@ namespace physx
 		PxU32 articJointIndex;
 		PxU32 nbElementsPerBody;
 
-		PxReal biasCoefficient;
+		Dy::BiasCoefficientCollection biasCoefficients;
 	};
 
 

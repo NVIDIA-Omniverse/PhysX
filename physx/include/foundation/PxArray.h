@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -36,26 +36,39 @@
 #include "foundation/PxMemory.h"
 #include "foundation/PxIO.h"
 
+#if !PX_DOXYGEN
 namespace physx
 {
+#endif
 
 /*!
-An array is a sequential container.
+\brief An array is a sequential container.
 
-Implementation note
-* entries between 0 and size are valid objects
-* we use inheritance to build this because the array is included inline in a lot
+Implementation note:
+- entries between 0 and size are valid objects
+- we use inheritance to build this because the array is included inline in a lot
   of objects and we want the allocator to take no space if it's not stateful, which
   aggregation doesn't allow. Also, we want the metadata at the front for the inline
   case where the allocator contains some inline storage space
+
+\tparam T Element type
+\tparam Alloc Allocator type (defaults to PxAllocatorTraits<T>::Type)
 */
+#if !PX_DOXYGEN
 template <class T, class Alloc = typename PxAllocatorTraits<T>::Type>
 class PxArray : protected Alloc
+#else
+template <class T, class Alloc> class PxArray
+#endif
 {
   public:
 	typedef T* Iterator;
 	typedef const T* ConstIterator;
 
+	/*!
+	\brief Deserialization constructor.
+	\param v Empty tag for deserialization
+	*/
 	explicit PxArray(const PxEMPTY v) : Alloc(v)
 	{
 		if(mData)
@@ -63,14 +76,18 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Default array constructor. Initialize an empty array
+	\brief Default array constructor. Initialize an empty array
+	\param alloc Allocator to use
 	*/
 	PX_INLINE explicit PxArray(const Alloc& alloc = Alloc()) : Alloc(alloc), mData(0), mSize(0), mCapacity(0)
 	{
 	}
 
 	/*!
-	Initialize array with given capacity
+	\brief Initialize array with given size
+	\param size Initial size (and capacity) of the array
+	\param a Default value for elements
+	\param alloc Allocator to use
 	*/
 	PX_INLINE explicit PxArray(uint32_t size, const T& a = T(), const Alloc& alloc = Alloc())
 	: Alloc(alloc), mData(0), mSize(0), mCapacity(0)
@@ -79,7 +96,9 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Copy-constructor. Copy all entries from other array
+	\brief Copy-constructor. Copy all entries from other array
+	\param other Source array to copy from
+	\param alloc Allocator to use
 	*/
 	template <class A>
 	PX_INLINE explicit PxArray(const PxArray<T, A>& other, const Alloc& alloc = Alloc())
@@ -101,17 +120,21 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Initialize array with given length
+	\brief Initialize array with given length
+	\param first Pointer to the first element to copy
+	\param last Pointer past the last element to copy
+	\param alloc Allocator to use
 	*/
 	PX_INLINE explicit PxArray(const T* first, const T* last, const Alloc& alloc = Alloc())
 	: Alloc(alloc), mSize(last < first ? 0 : uint32_t(last - first)), mCapacity(mSize)
 	{
 		mData = allocate(mSize);
-		copy(mData, mData + mSize, first);
+		if(mData)
+			copy(mData, mData + mSize, first);
 	}
 
 	/*!
-	Destructor
+	\brief Destructor
 	*/
 	PX_INLINE ~PxArray()
 	{
@@ -122,7 +145,9 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Assignment operator. Copy content (deep-copy)
+	\brief Assignment operator. Copy content (deep-copy)
+	\param rhs Source array to copy from
+	\return Reference to this array
 	*/
 	template <class A>
 	PX_INLINE PxArray& operator=(const PxArray<T, A>& rhs)
@@ -144,11 +169,9 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Array indexing operator.
-	\param i
-	The index of the element that will be returned.
-	\return
-	The element i in the array.
+	\brief Array indexing operator.
+	\param i The index of the element that will be returned.
+	\return The element i in the array.
 	*/
 	PX_FORCE_INLINE const T& operator[](uint32_t i) const
 	{
@@ -157,11 +180,9 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Array indexing operator.
-	\param i
-	The index of the element that will be returned.
-	\return
-	The element i in the array.
+	\brief Array indexing operator.
+	\param i The index of the element that will be returned.
+	\return The element i in the array.
 	*/
 	PX_FORCE_INLINE T& operator[](uint32_t i)
 	{
@@ -170,9 +191,8 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Returns a pointer to the initial element of the array.
-	\return
-	a pointer to the initial element of the array.
+	\brief Returns a pointer to the first element of the array.
+	\return Pointer to the first element of the array.
 	*/
 	PX_FORCE_INLINE ConstIterator begin() const
 	{
@@ -185,11 +205,9 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Returns an iterator beyond the last element of the array. Do not dereference.
-	\return
-	a pointer to the element beyond the last element of the array.
+	\brief Returns a pointer beyond the last element of the array. Do not dereference.
+	\return Pointer to the element beyond the last element of the array.
 	*/
-
 	PX_FORCE_INLINE ConstIterator end() const
 	{
 		return mData + mSize;
@@ -201,10 +219,9 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Returns a reference to the first element of the array. Undefined if the array is empty.
-	\return a reference to the first element of the array
+	\brief Returns a reference to the first element of the array. Undefined if the array is empty.
+	\return Reference to the first element of the array
 	*/
-
 	PX_FORCE_INLINE const T& front() const
 	{
 		PX_ASSERT(mSize);
@@ -218,10 +235,9 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Returns a reference to the last element of the array. Undefined if the array is empty
-	\return a reference to the last element of the array
+	\brief Returns a reference to the last element of the array. Undefined if the array is empty.
+	\return Reference to the last element of the array
 	*/
-
 	PX_FORCE_INLINE const T& back() const
 	{
 		PX_ASSERT(mSize);
@@ -235,10 +251,9 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Returns the number of entries in the array. This can, and probably will,
+	\brief Returns the number of entries in the array. This can, and probably will,
 	differ from the array capacity.
-	\return
-	The number of of entries in the array.
+	\return The number of entries in the array.
 	*/
 	PX_FORCE_INLINE uint32_t size() const
 	{
@@ -246,7 +261,8 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Clears the array.
+	\brief Clears the array.
+	Calls destructor on all elements.
 	*/
 	PX_INLINE void clear()
 	{
@@ -255,9 +271,8 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Returns whether the array is empty (i.e. whether its size is 0).
-	\return
-	true if the array is empty
+	\brief Returns whether the array is empty (i.e. whether its size is 0).
+	\return True if the array is empty
 	*/
 	PX_FORCE_INLINE bool empty() const
 	{
@@ -265,11 +280,10 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Finds the first occurrence of an element in the array.
-	\param a
-	The element to find.
+	\brief Finds the first occurrence of an element in the array.
+	\param a The element to find.
+	\return Pointer to the found element or end() if not found
 	*/
-
 	PX_INLINE Iterator find(const T& a)
 	{
 		uint32_t index;
@@ -288,25 +302,25 @@ class PxArray : protected Alloc
 
 	/////////////////////////////////////////////////////////////////////////
 	/*!
-	Adds one element to the end of the array. Operation is O(1).
-	\param a
-	The element that will be added to this array.
+	\brief Adds one element to the end of the array. Operation is O(1).
+	\param a The element that will be added to this array.
+	\return Pointer to the element that has been added, NULL if operation failed.
 	*/
 	/////////////////////////////////////////////////////////////////////////
-
-	PX_FORCE_INLINE T& pushBack(const T& a)
+	PX_FORCE_INLINE T* pushBack(const T& a)
 	{
 		if(capacity() <= mSize)
 			return growAndPushBack(a);
 
 		PX_PLACEMENT_NEW(reinterpret_cast<void*>(mData + mSize), T)(a);
 
-		return mData[mSize++];
+		return &mData[mSize++];
 	}
 
 	/////////////////////////////////////////////////////////////////////////
 	/*!
-	Returns the element at the end of the array. Only legal if the array is non-empty.
+	\brief Removes and returns the element at the end of the array. Only legal if the array is non-empty.
+	\return The last element of the array
 	*/
 	/////////////////////////////////////////////////////////////////////////
 	PX_INLINE T popBack()
@@ -321,26 +335,30 @@ class PxArray : protected Alloc
 
 	/////////////////////////////////////////////////////////////////////////
 	/*!
-	Construct one element at the end of the array. Operation is O(1).
+	\brief Construct one element at the end of the array. Operation is O(1).
+	\return Pointer to the element that has been inserted, NULL if operation failed.
 	*/
 	/////////////////////////////////////////////////////////////////////////
-	PX_INLINE T& insert()
+	PX_INLINE T* insert()
 	{
 		if(capacity() <= mSize)
-			grow(capacityIncrement());
+		{
+			if (!grow(capacityIncrement()))
+			{
+				return NULL;
+			}
+		}
 
 		T* ptr = mData + mSize++;
 		PX_PLACEMENT_NEW(ptr, T); // not 'T()' because PODs should not get default-initialized.
-		return *ptr;
+		return ptr;
 	}
 
 	/////////////////////////////////////////////////////////////////////////
 	/*!
-	Subtracts the element on position i from the array and replace it with
-	the last element.
-	Operation is O(1)
-	\param i
-	The position of the element that will be subtracted from this array.
+	\brief Removes the element at position i from the array and replaces it with
+	the last element. Operation is O(1)
+	\param i The position of the element that will be removed from this array.
 	*/
 	/////////////////////////////////////////////////////////////////////////
 	PX_INLINE void replaceWithLast(uint32_t i)
@@ -358,14 +376,12 @@ class PxArray : protected Alloc
 
 	/////////////////////////////////////////////////////////////////////////
 	/*!
-	Replaces the first occurrence of the element a with the last element
+	\brief Replaces the first occurrence of the element a with the last element.
 	Operation is O(n)
-	\param a
-	The position of the element that will be subtracted from this array.
-	\return true if the element has been removed.
+	\param a The element to find and remove from this array.
+	\return True if the element has been removed.
 	*/
 	/////////////////////////////////////////////////////////////////////////
-
 	PX_INLINE bool findAndReplaceWithLast(const T& a)
 	{
 		uint32_t index = 0;
@@ -379,11 +395,9 @@ class PxArray : protected Alloc
 
 	/////////////////////////////////////////////////////////////////////////
 	/*!
-	Subtracts the element on position i from the array. Shift the entire
-	array one step.
-	Operation is O(n)
-	\param i
-	The position of the element that will be subtracted from this array.
+	\brief Subtracts the element on position i from the array. Shift the entire
+	array one step. Operation is O(n)
+	\param i The position of the element that will be subtracted from this array.
 	*/
 	/////////////////////////////////////////////////////////////////////////
 	PX_INLINE void remove(uint32_t i)
@@ -403,12 +417,10 @@ class PxArray : protected Alloc
 
 	/////////////////////////////////////////////////////////////////////////
 	/*!
-	Removes a range from the array.  Shifts the array so order is maintained.
+	\brief Removes a range from the array.  Shifts the array so order is maintained.
 	Operation is O(n)
-	\param begin
-	The starting position of the element that will be subtracted from this array.
-	\param count
-	The number of elments that will be subtracted from this array.
+	\param begin The starting position of the element that will be subtracted from this array.
+	\param count The number of elements that will be subtracted from this array.
 	*/
 	/////////////////////////////////////////////////////////////////////////
 	PX_INLINE void removeRange(uint32_t begin, uint32_t count)
@@ -435,27 +447,36 @@ class PxArray : protected Alloc
 
 	//////////////////////////////////////////////////////////////////////////
 	/*!
-	Resize array
+	\brief Resize array
+	\param size New size of the array
+	\param a Default value for new elements
+	\return True if operation succeeded
 	*/
 	//////////////////////////////////////////////////////////////////////////
-	PX_NOINLINE void resize(const uint32_t size, const T& a = T());
+	PX_NOINLINE bool resize(const uint32_t size, const T& a = T());
 
-	PX_NOINLINE void resizeUninitialized(const uint32_t size);
+	/*!
+	\brief Resize array without initializing new elements
+	\param size New size of the array
+	\return True if operation succeeded
+	*/
+	PX_NOINLINE bool resizeUninitialized(const uint32_t size);
 
 	//////////////////////////////////////////////////////////////////////////
 	/*!
-	Resize array such that only as much memory is allocated to hold the
+	\brief Resize array such that only as much memory is allocated to hold the
 	existing elements
+	\return True if operation succeeds, false otherwise.
 	*/
 	//////////////////////////////////////////////////////////////////////////
-	PX_INLINE void shrink()
+	PX_INLINE bool shrink()
 	{
-		recreate(mSize);
+		return recreate(mSize);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	/*!
-	Deletes all array elements and frees memory.
+	\brief Deletes all array elements and frees memory.
 	*/
 	//////////////////////////////////////////////////////////////////////////
 	PX_INLINE void reset()
@@ -466,7 +487,7 @@ class PxArray : protected Alloc
 
 	//////////////////////////////////////////////////////////////////////////
 	/*!
-	Resets or clears the array depending on occupancy.
+	\brief Resets or clears the array depending on occupancy.
 	*/
 	//////////////////////////////////////////////////////////////////////////
 	PX_INLINE void resetOrClear()
@@ -481,18 +502,22 @@ class PxArray : protected Alloc
 
 	//////////////////////////////////////////////////////////////////////////
 	/*!
-	Ensure that the array has at least size capacity.
+	\brief Ensure that the array has at least the requested capacity.
+	\param capacity Minimum capacity to reserve
+	\return True if operation succeeds, false otherwise.
 	*/
 	//////////////////////////////////////////////////////////////////////////
-	PX_INLINE void reserve(const uint32_t capacity)
+	PX_INLINE bool reserve(const uint32_t capacity)
 	{
 		if(capacity > this->capacity())
-			grow(capacity);
+			return grow(capacity);
+		return true;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	/*!
-	Query the capacity(allocated mem) for the array.
+	\brief Query the capacity(allocated mem) for the array.
+	\return The capacity of the array
 	*/
 	//////////////////////////////////////////////////////////////////////////
 	PX_FORCE_INLINE uint32_t capacity() const
@@ -502,18 +527,20 @@ class PxArray : protected Alloc
 
 	//////////////////////////////////////////////////////////////////////////
 	/*!
-	Unsafe function to force the size of the array
+	\brief Unsafe function to force the size of the array
+	\param size New size to force
 	*/
 	//////////////////////////////////////////////////////////////////////////
 	PX_FORCE_INLINE void forceSize_Unsafe(uint32_t size)
 	{
-		PX_ASSERT(size <= mCapacity);
+		PX_ASSERT(size <= capacity());
 		mSize = size;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	/*!
-	Swap contents of an array without allocating temporary storage
+	\brief Swap contents of an array without allocating temporary storage
+	\param other Array to swap with
 	*/
 	//////////////////////////////////////////////////////////////////////////
 	PX_INLINE void swap(PxArray<T, Alloc>& other)
@@ -525,13 +552,19 @@ class PxArray : protected Alloc
 
 	//////////////////////////////////////////////////////////////////////////
 	/*!
-	Assign a range of values to this vector (resizes to length of range)
+	\brief Assign a range of values to this array (resizes to length of range)
+	\param first Pointer to the first element to copy
+	\param last Pointer past the last element to copy
+	\return True if operation succeeds, false otherwise.
 	*/
 	//////////////////////////////////////////////////////////////////////////
-	PX_INLINE void assign(const T* first, const T* last)
+	PX_INLINE bool assign(const T* first, const T* last)
 	{
-		resizeUninitialized(uint32_t(last - first));
+		if(!resizeUninitialized(uint32_t(last - first)))
+			return false;
+
 		copy(begin(), end(), first);
+		return true;
 	}
 
 	// We need one bit to mark arrays that have been deserialized from a user-provided memory block.
@@ -561,9 +594,16 @@ class PxArray : protected Alloc
 	{
 		// always call Alloc::allocate to respect cookie logic even if size is 0
 		T* p = reinterpret_cast<T*>(Alloc::allocate(sizeof(T) * size, PX_FL, cookie));
-		if(size > 0 && p)
+		if(size > 0)
 		{
-			PxMarkSerializedMemory(p, sizeof(T) * size);
+			if(p)
+			{
+				PxMarkSerializedMemory(p, sizeof(T) * size);
+			}
+			else
+			{
+				PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxArray::allocate: allocator returned null pointer.");
+			}
 		}
 		return p;
 	}
@@ -595,30 +635,29 @@ class PxArray : protected Alloc
 	}
 
 	/*!
-	Called when pushBack() needs to grow the array.
+	\brief Called when pushBack() needs to grow the array.
 	\param a The element that will be added to this array.
+	\return Pointer to the pushed element or NULL if the operation failed
 	*/
-	PX_NOINLINE T& growAndPushBack(const T& a);
+	PX_NOINLINE T* growAndPushBack(const T& a);
 
 	/*!
-	Resizes the available memory for the array.
-
-	\param capacity
-	The number of entries that the set should be able to hold.
+	\brief Resizes the available memory for the array.
+	\param capacity The number of entries that the array should be able to hold.
+	\return True if operation succeeds, false otherwise.
 	*/
-	PX_INLINE void grow(uint32_t capacity)
+	PX_INLINE bool grow(uint32_t capacity)
 	{
 		PX_ASSERT(this->capacity() < capacity);
-		recreate(capacity);
+		return recreate(capacity);
 	}
 
 	/*!
-	Creates a new memory block, copies all entries to the new block and destroys old entries.
-
-	\param capacity
-	The number of entries that the set should be able to hold.
+	\brief Creates a new memory block, copies all entries to the new block and destroys old entries.
+	\param capacity The number of entries that the array should be able to hold.
+	\return True if operation succeeds, false otherwise.
 	*/
-	PX_NOINLINE void recreate(uint32_t capacity);
+	PX_NOINLINE bool recreate(uint32_t capacity);
 
 	// The idea here is to prevent accidental bugs with pushBack or insert. Unfortunately
 	// it interacts badly with InlineArrays with smaller inline allocations.
@@ -635,12 +674,14 @@ class PxArray : protected Alloc
 };
 
 template <class T, class Alloc>
-PX_NOINLINE void PxArray<T, Alloc>::resize(const uint32_t size, const T& a)
+PX_NOINLINE bool PxArray<T, Alloc>::resize(const uint32_t size, const T& a)
 {
-	reserve(size);
+	if(!reserve(size))
+		return false;
 	create(mData + mSize, mData + size, a);
 	destroy(mData + size, mData + mSize);
 	mSize = size;
+	return true;
 }
 
 template <class T, class Alloc>
@@ -650,7 +691,8 @@ PX_NOINLINE void PxArray<T, Alloc>::copy(const PxArray<T, A>& other)
 	if(!other.empty())
 	{
 		mData = allocate(mSize = mCapacity = other.size());
-		copy(mData, mData + mSize, other.begin());
+		if(mData)
+			copy(mData, mData + mSize, other.begin());
 	}
 	else
 	{
@@ -666,20 +708,25 @@ PX_NOINLINE void PxArray<T, Alloc>::copy(const PxArray<T, A>& other)
 }
 
 template <class T, class Alloc>
-PX_NOINLINE void PxArray<T, Alloc>::resizeUninitialized(const uint32_t size)
+PX_NOINLINE bool PxArray<T, Alloc>::resizeUninitialized(const uint32_t size)
 {
-	reserve(size);
+	if(!reserve(size))
+		return false;
 	mSize = size;
+	return true;
 }
 
 template <class T, class Alloc>
-PX_NOINLINE T& PxArray<T, Alloc>::growAndPushBack(const T& a)
+PX_NOINLINE T* PxArray<T, Alloc>::growAndPushBack(const T& a)
 {
 	const uint32_t capacity = capacityIncrement();
 
 	uint32_t cookie = 0;
 	T* newData = allocate(capacity, &cookie);
+	if(!newData)
+		return NULL;
 	PX_ASSERT((!capacity) || (newData && (newData != mData)));
+
 	copy(newData, newData + mSize, mData);
 
 	// inserting element before destroying old array
@@ -692,15 +739,16 @@ PX_NOINLINE T& PxArray<T, Alloc>::growAndPushBack(const T& a)
 
 	mData = newData;
 	mCapacity = capacity;
-
-	return mData[mSize++];
+	return &mData[mSize++];
 }
 
 template <class T, class Alloc>
-PX_NOINLINE void PxArray<T, Alloc>::recreate(uint32_t capacity)
+PX_NOINLINE bool PxArray<T, Alloc>::recreate(uint32_t capacity)
 {
 	uint32_t cookie = 0;
 	T* newData = allocate(capacity, &cookie);
+	if(capacity && !newData)
+		return false;
 	PX_ASSERT((!capacity) || (newData && (newData != mData)));
 
 	copy(newData, newData + mSize, mData);
@@ -710,6 +758,7 @@ PX_NOINLINE void PxArray<T, Alloc>::recreate(uint32_t capacity)
 
 	mData = newData;
 	mCapacity = capacity;
+	return true;
 }
 
 template <class T, class Alloc>
@@ -718,7 +767,9 @@ PX_INLINE void swap(PxArray<T, Alloc>& x, PxArray<T, Alloc>& y)
 	x.swap(y);
 }
 
+#if !PX_DOXYGEN
 } // namespace physx
+#endif
 
 #endif
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -20,7 +20,7 @@ public:
 
     static bool compute(OgnPhysXSceneQuerySweepPrimAllDatabase& db)
     {
-        omni::fabric::PathC path;
+        omni::fabric::Path path;
         if (db.inputs.prim().size() == 1)
         {
             path = db.inputs.prim()[0];
@@ -84,7 +84,8 @@ public:
         // Sweep reports an error when the range is 0, but as inputs may be generated dynamically (like by offsets) we want to be able to accept this.
         if(range != 0.0f)
         {
-            getPhysXSceneQuery()->sweepShapeAll(path.path, direction, range < 0.0f ? PX_MAX_F32 : range, gather, both_sides);
+            getPhysXSceneQuery()->sweepShapeAll(
+                fabricPathToHandle(path), direction, range < 0.0f ? PX_MAX_F32 : range, gather, both_sides);
         }
 
         if(sort_by_distance)
@@ -102,15 +103,20 @@ public:
         db.outputs.faceIndexes().resize(gatherList.size());
         db.outputs.materialPrims().resize(gatherList.size());
 
+        omni::graph::core::BackendId backendId;
+        omni::graph::core::GraphObj graphObj = db.abi_context().iContext->getGraph(db.abi_context());
+        graphObj.iGraph->getBackendId(graphObj, backendId);
+        omni::fabric::FabricId fabricId(backendId.id);
+
          for (const SweepHit& hit : gatherList)
         {
-            db.outputs.colliderPrims()[n] = static_cast<omni::fabric::PathC>(hit.collision);
-            db.outputs.bodyPrims()[n] = static_cast<omni::fabric::PathC>(hit.rigidBody);
+            db.outputs.colliderPrims()[n] = omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, omni::fabric::handleToSdfPath(hit.collision));
+            db.outputs.bodyPrims()[n] = omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, omni::fabric::handleToSdfPath(hit.rigidBody));
             db.outputs.positions()[n] = hit.position;
             db.outputs.normals()[n] = hit.normal;
             db.outputs.distances()[n] = hit.distance;
             db.outputs.faceIndexes()[n] = hit.faceIndex;
-            db.outputs.materialPrims()[n] = static_cast<omni::fabric::PathC>(hit.material);
+            db.outputs.materialPrims()[n] = omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, omni::fabric::handleToSdfPath(hit.material));
             n++;
         }
         db.outputs.execOut() = kExecutionAttributeStateEnabled;
@@ -119,4 +125,3 @@ public:
 };
 
 REGISTER_OGN_NODE()
-

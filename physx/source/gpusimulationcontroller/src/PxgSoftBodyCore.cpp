@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -75,17 +75,17 @@ namespace physx
 	}
 
 	PxgSoftBodyCore::PxgSoftBodyCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
-		PxgHeapMemoryAllocatorManager* heapMemoryManager, PxgSimulationController* simController, PxgGpuContext* gpuContext, const PxU32 maxContacts, const PxU32 collisionStackSize, const bool isTGS) :
-		PxgFEMCore(gpuKernelWrangler, cudaContextManager, heapMemoryManager, simController, gpuContext, maxContacts, collisionStackSize, isTGS, PxsHeapStats::eSHARED_SOFTBODY),
-		mSCContactPointBuffer(heapMemoryManager, PxsHeapStats::eSHARED_SOFTBODY),
-		mSCContactNormalPenBuffer(heapMemoryManager, PxsHeapStats::eSHARED_SOFTBODY),
-		mSCContactBarycentricBuffer0(heapMemoryManager, PxsHeapStats::eSHARED_SOFTBODY),
-		mSCContactBarycentricBuffer1(heapMemoryManager, PxsHeapStats::eSHARED_SOFTBODY),
-		mSCContactInfoBuffer(heapMemoryManager, PxsHeapStats::eSHARED_SOFTBODY),
-		mSCTotalContactCountBuffer(heapMemoryManager, PxsHeapStats::eSHARED_SOFTBODY),
-		mPrevSCContactCountBuffer(heapMemoryManager, PxsHeapStats::eSHARED_SOFTBODY),
-		mSCConstraintBuf(heapMemoryManager, PxsHeapStats::eSHARED_SOFTBODY),
-		mSCLambdaNBuf(heapMemoryManager, PxsHeapStats::eSHARED_SOFTBODY), 
+		PxgAllocatorDesc& allocDesc, PxgSimulationController* simController, PxgGpuContext* gpuContext, const PxU32 maxContacts, const PxU32 collisionStackSize, const bool isTGS) :
+		PxgFEMCore(gpuKernelWrangler, cudaContextManager, allocDesc, simController, gpuContext, maxContacts, collisionStackSize, isTGS, PxsHeapStats::eSHARED_SOFTBODY),
+		mSCContactPointBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_SOFTBODY),
+		mSCContactNormalPenBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_SOFTBODY),
+		mSCContactBarycentricBuffer0(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_SOFTBODY),
+		mSCContactBarycentricBuffer1(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_SOFTBODY),
+		mSCContactInfoBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_SOFTBODY),
+		mSCTotalContactCountBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_SOFTBODY),
+		mPrevSCContactCountBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_SOFTBODY),
+		mSCConstraintBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_SOFTBODY),
+		mSCLambdaNBuf(allocDesc.deviceAlloc, PxsHeapStats::eSHARED_SOFTBODY), 
 		mPostSolveCallback(NULL)
 	{
 		mGpuContext->mGpuSoftBodyCore = this;
@@ -343,22 +343,25 @@ namespace physx
 
 	void PxgSoftBodyCore::checkBufferOverflows()
 	{
-		PxU32 contactCountNeeded = PxMax(*mParticleContactCountPrevTimestep, PxMax(*mRigidContactCountPrevTimestep, *mVolumeContactorVTContactCountPrevTimestep));
+		PxU32 contactCountNeeded = PxMax(mContactCountsPrevTimestep[ContactCounts::ePARTICLE],
+										 PxMax(mContactCountsPrevTimestep[ContactCounts::eRIGID],
+											   mContactCountsPrevTimestep[ContactCounts::eVOLUME_CONTACTOR_VT]));
+		
 		if (contactCountNeeded >= mMaxContacts) 
 		{
 			PxGetFoundation().error(::physx::PxErrorCode::eINTERNAL_ERROR, PX_FL, "Deformable volume contact buffer overflow detected, please increase PxGpuDynamicsMemoryConfig::maxDeformableVolumeContacts to at least %u\n", contactCountNeeded);
 		}
 
-		if (*mStackSizeNeededPinned > mCollisionStackSizeBytes)
+		if (mStackSizeNeededPinned.get() > mCollisionStackSizeBytes)
 		{
-			PxGetFoundation().error(::physx::PxErrorCode::eINTERNAL_ERROR, PX_FL, "PxGpuDynamicsMemoryConfig::collisionStackSize buffer overflow detected, please increase its size to at least %i in the scene desc! Contacts have been dropped.\n", *mStackSizeNeededPinned);
+			PxGetFoundation().error(::physx::PxErrorCode::eINTERNAL_ERROR, PX_FL, "PxGpuDynamicsMemoryConfig::collisionStackSize buffer overflow detected, please increase its size to at least %i in the scene desc! Contacts have been dropped.\n", mStackSizeNeededPinned.get());
 		}
 
 #if PX_ENABLE_SIM_STATS
 		mContactCountStats = PxMax(mContactCountStats, contactCountNeeded);
 		mGpuContext->getSimStats().mGpuDynamicsDeformableVolumeContacts = mContactCountStats;
 
-		mCollisionStackSizeBytesStats = PxMax(*mStackSizeNeededPinned, mCollisionStackSizeBytesStats);
+		mCollisionStackSizeBytesStats = PxMax(mStackSizeNeededPinned.get(), mCollisionStackSizeBytesStats);
 		mGpuContext->getSimStats().mGpuDynamicsCollisionStackSize = PxMax(mCollisionStackSizeBytesStats, mGpuContext->getSimStats().mGpuDynamicsCollisionStackSize);
 #else
 		PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
@@ -393,7 +396,7 @@ namespace physx
 
 		if (nbActiveSelfCollisionSoftbodies)
 		{
-			PxgSoftBodyContactWriter writer(this);
+			PxgSoftBodyContactWriter writer = createSoftBodyContactWriter();
 
 			CUfunction scMidphaseFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SELFCOLLISION_MIDPHASE);
 
@@ -1005,7 +1008,7 @@ namespace physx
 	void PxgSoftBodyCore::createActivatedDeactivatedLists()
 	{
 		PxgSimulationCore* core = mSimController->getSimulationCore();
-		PxBitMapPinned& sbChangedMap = core->getActiveSBStateChangedMap();
+		Cm::PinnableBitMap& sbChangedMap = core->getActiveSBStateChangedMap();
 
 		PxArray<Dy::DeformableVolume*>& deformableVolumes = mSimController->getBodySimManager().mDeformableVolumes;
 
@@ -1016,10 +1019,10 @@ namespace physx
 		mActivatingDeformableVolumes.forceSize_Unsafe(0);
 		mDeactivatingDeformableVolumes.forceSize_Unsafe(0);
 
-		PxBitMapPinned::Iterator iter(sbChangedMap);
+		Cm::PinnableBitMap::Iterator iter(sbChangedMap);
 
 		PxU32 dirtyIdx;
-		while ((dirtyIdx = iter.getNext()) != PxBitMapPinned::Iterator::DONE)
+		while ((dirtyIdx = iter.getNext()) != Cm::PinnableBitMap::Iterator::DONE)
 		{
 			PX_ASSERT(dirtyIdx < bodyManager.mActiveSoftbodies.size());
 			PxU32 idx = bodyManager.mActiveSoftbodies[dirtyIdx];
@@ -1093,6 +1096,10 @@ namespace physx
 		//accumulate velocity delta for rigid body and impulse delta for articulation link
 		accumulateRigidDeltas(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, mRigidSortedRigidIdBuf.getDevicePtr(),
 							  mRigidTotalContactCountBuf.getDevicePtr(), solverStream, false);
+
+		// if the contact is between articulation and soft body, after accumulated all the related contact's
+		// impulse, we need to propagate the accumulated impulse to the articulation block solver
+		mGpuContext->mGpuArticulationCore->pushImpulse(solverStream);
 	}
 
 	void PxgSoftBodyCore::solveRSContactsOutputRigidDeltaTGS(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
@@ -1159,6 +1166,8 @@ namespace physx
 		//impulse, we need to propagate the accumulated impulse to the articulation block solver
 		accumulateRigidDeltas(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, mRigidSortedRigidIdBuf.getDevicePtr(),
 							  mRigidTotalContactCountBuf.getDevicePtr(), solverStream, true);
+
+		mGpuContext->mGpuArticulationCore->pushImpulse(solverStream);
 	}
 
 
@@ -2811,7 +2820,7 @@ namespace physx
 
 	void PxgSoftBodyCore::solve(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgConstraintPrepareDesc> prepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
 		PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, const PxReal dt, CUstream solverStream,
-		const bool isFirstIteration)
+		const bool isFirstIteration, const PxReal biasCoefficient)
 	{
 #if SB_GPU_DEBUG
 		PX_PROFILE_ZONE("PxgSoftBodyCore.solve", 0);
@@ -2903,10 +2912,10 @@ namespace physx
 				synchronizeStreams(mCudaContext, particleStream, mStream);
 
 				//solve soft body vs particle contact in soft body stream
-				solveSPContactsOutputSoftBodyDelta(dt, 0.7f/dt);
+				solveSPContactsOutputSoftBodyDelta(dt, biasCoefficient/dt);
 
 				//solve soft body vs particle contact in particle stream
-				solveSPContactsOutputParticleDelta(dt, 0.7f/dt, particleStream);
+				solveSPContactsOutputParticleDelta(dt, biasCoefficient/dt, particleStream);
 				//solveSPContactsOutputParticleDelta(dt, mStream);
 
 				//soft body stream need to wait till soft body vs particle finish in the particle stream
@@ -3070,7 +3079,7 @@ namespace physx
 
 	}
 
-	bool PxgSoftBodyCore::updateUserData(PxPinnedArray<PxgSoftBody>& softBodyPool, PxArray<PxU32>& softBodyNodeIndexPool,
+	bool PxgSoftBodyCore::updateUserData(Cm::PinnableArray<PxgSoftBody>& softBodyPool, PxArray<PxU32>& softBodyNodeIndexPool,
 		const PxU32* activeSoftBodies, const PxU32 nbActiveSoftBodies, void** bodySimsLL)
 	{
 		bool anyDirty = false;
@@ -3185,6 +3194,32 @@ namespace physx
 			PX_UNUSED(result);
 		}
 
+	}
+
+	PxgSoftBodyContactWriter PxgSoftBodyCore::createSoftBodyContactWriter()
+	{
+		PxgSoftBodyContactWriter writer;
+		writer.totalContactCount = getVolumeContactOrVTContactCount().getTypedPtr();
+		writer.outPoint = getFemContacts().getTypedPtr();
+		writer.outNormalPen = getFemNormalPens().getTypedPtr();
+		writer.outBarycentric0 = getFemBarycentrics0().getTypedPtr();
+		writer.outBarycentric1 = getFemBarycentrics1().getTypedPtr();
+		writer.outContactInfo = getVolumeContactOrVTContactInfos().getTypedPtr();
+		writer.maxContacts = mMaxContacts;
+		return writer;
+	}
+
+	PxgSoftBodyContactWriter PxgSoftBodyCore::createClothVsSoftBodyContactWriter(PxU32 clothMaxContacts)
+	{
+		PxgSoftBodyContactWriter writer;
+		writer.totalContactCount = getClothVsSoftBodyContactCount().getTypedPtr();
+		writer.outPoint = getClothVsSoftBodyContacts().getTypedPtr();
+		writer.outNormalPen = getClothVsSoftBodyNormalPens().getTypedPtr();
+		writer.outBarycentric0 = getClothVsSoftBodyBarycentrics0().getTypedPtr();
+		writer.outBarycentric1 = getClothVsSoftBodyBarycentrics1().getTypedPtr();
+		writer.outContactInfo = getClothVsSoftBodyContactInfos().getTypedPtr();
+		writer.maxContacts = PxMin(mMaxContacts, clothMaxContacts);
+		return writer;
 	}
 
 }

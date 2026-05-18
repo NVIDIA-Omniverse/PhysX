@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -216,11 +216,10 @@ void getMaterialsPaths(const pxr::SdfPath& path, std::vector<pxr::SdfPath>& mate
     }
 }
 
-struct CheckLogger : public logging::Logger
+struct CheckLogger : public logging::Logger2
 {
     CheckLogger()
     {
-        handleMessage = msg;
         reset();
     }
 
@@ -293,21 +292,13 @@ struct CheckLogger : public logging::Logger
         }
     }
 
-    static void msg(Logger* logger,
-                    const char* source,
-                    int32_t level,
-                    const char* filename,
-                    const char* functionName,
-                    int lineNumber,
-                    const char* message)
+    void handleMessage(const logging::LogMessage& msg) override
     {
-        auto& self = *static_cast<CheckLogger*>(logger);
-
         bool found = false;
 
-        for (auto& m : self.mMessages)
+        for (auto& m : mMessages)
         {
-            bool match = self.mPartialStringMatch ? strstr(message, m.mText.c_str()) != nullptr : m.mText.compare(message) == 0;
+            bool match = mPartialStringMatch ? strstr(msg.message, m.mText.c_str()) != nullptr : m.mText.compare(msg.message) == 0;
             if (match)
             {
                 found = true;
@@ -317,8 +308,8 @@ struct CheckLogger : public logging::Logger
 
         if (!found)
         {  
-            logging::Logger* dl = logging::getLogging()->getDefaultLogger()->getLogger();
-            dl->handleMessage(dl, source, level, filename, functionName, lineNumber, message);
+            logging::Logger2* dl = logging::getLogging()->getDefaultLogger()->getLogger();
+            dl->handleMessage(msg);
         }
     }
 

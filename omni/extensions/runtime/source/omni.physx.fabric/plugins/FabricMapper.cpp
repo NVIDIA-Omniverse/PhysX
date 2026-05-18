@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -42,9 +42,9 @@ void FabricMapper::MappingStorage::releaseGpu()
     }
 }
 
-FabricMapper::MappingStorage& FabricMapper::initialize(const omni::fabric::TokenC& attributeToken,
+FabricMapper::MappingStorage& FabricMapper::initialize(const omni::fabric::Token& attributeToken,
                                                        size_t maxTargetIndex,
-                                                       std::unordered_map<omni::fabric::TokenC, MappingStorage>& map)
+                                                       std::unordered_map<omni::fabric::Token, MappingStorage>& map)
 {
     MappingStorage& storage = map[attributeToken];
     storage.reset(maxTargetIndex);
@@ -81,7 +81,7 @@ void FabricMapper::finalize(MappingStorage& storage)
     }
 }
 
-size_t FabricMapper::getSize(const omni::fabric::TokenC& attributeToken) const
+size_t FabricMapper::getSize(const omni::fabric::Token& attributeToken) const
 {
     const auto& it = m_mappingStorage.find(attributeToken);
     if (it != m_mappingStorage.end())
@@ -91,7 +91,7 @@ size_t FabricMapper::getSize(const omni::fabric::TokenC& attributeToken) const
     return 0;
 }
 
-FabricMapper::AttributePtrType* FabricMapper::getPtr(const omni::fabric::TokenC& attributeToken) const
+FabricMapper::AttributePtrType* FabricMapper::getPtr(const omni::fabric::Token& attributeToken) const
 {
     const auto& it = m_mappingStorage.find(attributeToken);
     if (it != m_mappingStorage.end())
@@ -101,9 +101,9 @@ FabricMapper::AttributePtrType* FabricMapper::getPtr(const omni::fabric::TokenC&
     return nullptr;
 }
 
-std::vector<omni::fabric::TokenC> FabricMapper::getAttributes() const
+std::vector<omni::fabric::Token> FabricMapper::getAttributes() const
 {
-    std::vector<omni::fabric::TokenC> result;
+    std::vector<omni::fabric::Token> result;
     result.reserve(m_mappingStorage.size());
 
     for (const auto& stIt : m_mappingStorage)
@@ -113,48 +113,15 @@ std::vector<omni::fabric::TokenC> FabricMapper::getAttributes() const
     return result;
 }
 
-size_t FabricMapper::getParentSize(const omni::fabric::TokenC& attributeToken) const
-{
-    const auto& it = m_parentMappingStorage.find(attributeToken);
-    if (it != m_parentMappingStorage.end())
-    {
-        return it->second.m_size;
-    }
-    return 0;
-}
-
-FabricMapper::AttributePtrType* FabricMapper::getParentPtr(const omni::fabric::TokenC& attributeToken) const
-{
-    const auto& it = m_parentMappingStorage.find(attributeToken);
-    if (it != m_parentMappingStorage.end())
-    {
-        return it->second.m_objectToFabricGpu;
-    }
-    return nullptr;
-}
-
-std::vector<omni::fabric::TokenC> FabricMapper::getParentAttributes() const
-{
-    std::vector<omni::fabric::TokenC> result;
-    result.reserve(m_parentMappingStorage.size());
-
-    for (const auto& stIt : m_parentMappingStorage)
-    {
-        result.push_back(stIt.first);
-    }
-    return result;
-}
-
 void FabricMapper::clear()
 {
     m_mappingStorage.clear();
-    m_parentMappingStorage.clear();
     m_deviceId = -1;
 }
 
 bool FabricMapper::empty() const
 {
-    return m_mappingStorage.empty() && m_parentMappingStorage.empty();
+    return m_mappingStorage.empty();
 }
 
 int FabricMapper::deviceId() const

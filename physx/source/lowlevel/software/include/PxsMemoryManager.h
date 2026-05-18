@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -34,14 +34,17 @@
 
 namespace physx
 {
-	class PxVirtualAllocatorCallback;
+	namespace Cm
+	{
+		class VirtualAllocatorCallback;
+	}
 
 	class PxsMemoryManager : public PxUserAllocated
 	{
 	public:
 		virtual								~PxsMemoryManager(){}
-		virtual	PxVirtualAllocatorCallback* getHostMemoryAllocator()	= 0;
-		virtual	PxVirtualAllocatorCallback* getDeviceMemoryAllocator()	= 0;
+		virtual	Cm::VirtualAllocatorCallback* getPinnedHostMemoryAllocator()	= 0;
+		virtual	Cm::VirtualAllocatorCallback* getDeviceMemoryAllocator()	= 0;
 	};
 
 	// PT: this is for CPU, see createPxgMemoryManager for GPU

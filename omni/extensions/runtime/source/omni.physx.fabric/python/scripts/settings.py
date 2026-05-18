@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni import ui
 import carb
 import carb.settings
@@ -50,7 +51,6 @@ class PhysicsFcSettings(PreferenceBuilder):
         self._add_setting_checkbox_and_label("Update velocities", pxfabric.SETTING_FABRIC_UPDATE_VELOCITIES)
         self._add_setting_checkbox_and_label("Update joint states", pxfabric.SETTING_FABRIC_UPDATE_JOINT_STATES)
         self._add_setting_checkbox_and_label("Update points", pxfabric.SETTING_FABRIC_UPDATE_POINTS)
-        self._add_setting_checkbox_and_label("Update residuals", pxfabric.SETTING_FABRIC_UPDATE_RESIDUALS)
 
     def _build_section(self, name, build_func):
         with ui.CollapsableFrame(name, height=0):

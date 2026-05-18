@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -22,7 +22,6 @@ struct GlobalSimulationFlag
         eTRANSFORMATION = 1 << (16 + SimulationOutputType::eTRANSFORMATION),
         eVELOCITY = 1 << (16 + SimulationOutputType::eVELOCITY),
         ePOINTS = 1 << (16 + SimulationOutputType::ePOINTS),
-        eRESIDUALS = 1 << (16 + SimulationOutputType::eRESIDUALS)
     };
 };
 
@@ -99,11 +98,6 @@ public:
         return mVelocityWriteFn;
     }
 
-    ResidualUpdateNotificationFn getResidualWriteFn() const
-    {
-        return mResidualWriteFn;
-    }
-
     TransformUpdateFn getTransformUpdateFn() const
     {
         return mTransformUpdateFn;
@@ -152,7 +146,6 @@ public:
 private:
     TransformUpdateNotificationFn mTransformationWriteFn;
     VelocityUpdateNotificationFn mVelocityWriteFn;
-    ResidualUpdateNotificationFn mResidualWriteFn;
     TransformUpdateFn mTransformUpdateFn;
     void* mUserData;
     uint32_t mGlobalSimulationFlags;

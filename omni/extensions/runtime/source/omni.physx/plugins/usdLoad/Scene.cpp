@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -28,8 +28,6 @@ namespace physx
 {
 namespace usdparser
 {
-
-static const TfToken kSolveArticulationContactLastToken("physxScene:solveArticulationContactLast");
 
 void setToDefault(UsdStageWeakPtr stage, PhysxSceneDesc& desc)
 {
@@ -67,10 +65,10 @@ void setToDefault(UsdStageWeakPtr stage, PhysxSceneDesc& desc)
     desc.reportKineStatic = false;
     desc.sceneUpdateType = Synchronous;
     desc.supportSceneQueries = true;
-    desc.enableResidualReporting = false;
-    desc.reportResiduals = false;
 
     desc.enableQuasistatic = false;
+
+    desc.disableSleeping = false;
 
     desc.gpuTempBufferCapacity = (16 * 1024 * 1024);
     desc.gpuMaxRigidContactCount = (1024 * 512);
@@ -176,11 +174,8 @@ PhysxSceneDesc* parseSceneDesc(const UsdStageWeakPtr stage, const omni::physics:
         getBoolAttribute(sceneDesc->reportKineKine, physxSceneAPI.GetReportKinematicKinematicPairsAttr(), nullptr);
         getBoolAttribute(sceneDesc->reportKineStatic, physxSceneAPI.GetReportKinematicStaticPairsAttr(), nullptr);
         getBoolAttribute(sceneDesc->supportSceneQueries, physxSceneAPI.GetEnableSceneQuerySupportAttr(), nullptr);
-        getBoolAttribute(sceneDesc->enableResidualReporting, physxSceneAPI.GetEnableResidualReportingAttr(), nullptr);
-
-        //Query the custom attribute "physxScene:enableRunArticulationContactLast"
-        //This will be promoted to PhysxSceneAPI at next major release 108
-        getBoolAttribute(sceneDesc->solveArticulationContactLast, inDesc.usdPrim.GetAttribute(kSolveArticulationContactLastToken), nullptr);
+        getBoolAttribute(sceneDesc->solveArticulationContactLast, physxSceneAPI.GetSolveArticulationContactLastAttr(), nullptr);
+        getBoolAttribute(sceneDesc->disableSleeping, physxSceneAPI.GetDisableSleepingAttr(), nullptr);
 
         if (physxSceneAPI.GetCollisionSystemAttr())
         {
@@ -252,12 +247,6 @@ PhysxSceneDesc* parseSceneDesc(const UsdStageWeakPtr stage, const omni::physics:
             CARB_LOG_ERROR("Physics scene enable external forces every iteration is not supported by the PGS solver type.");
             sceneDesc->enableExternalForcesEveryIteration = false;
         }
-    }
-
-    const PhysxSchemaPhysxResidualReportingAPI physxReportResidualsAPI = PhysxSchemaPhysxResidualReportingAPI::Get(stage, inDesc.usdPrim.GetPrimPath());
-    if (physxReportResidualsAPI)
-    {
-        sceneDesc->reportResiduals = true;
     }
 
     const PhysxSchemaPhysxSceneQuasistaticAPI physxSceneQuasistaticAPI = PhysxSchemaPhysxSceneQuasistaticAPI::Get(stage, inDesc.usdPrim.GetPrimPath());

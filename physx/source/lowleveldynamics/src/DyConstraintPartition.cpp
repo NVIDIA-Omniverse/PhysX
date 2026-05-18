@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "DyConstraintPartition.h"
 #include "foundation/PxHashMap.h"
@@ -91,7 +91,7 @@ public:
 	}
 };
 
-PX_FORCE_INLINE	void initSolverProgress(PxU32 nbBodies, PxU32 stride, PxU8* bodies)
+static PX_FORCE_INLINE void initSolverProgress(PxU32 nbBodies, PxU32 stride, PxU8* bodies)
 {
 	while(nbBodies--)
 	{
@@ -106,7 +106,7 @@ PX_FORCE_INLINE	void initSolverProgress(PxU32 nbBodies, PxU32 stride, PxU8* bodi
 	}
 }
 
-PX_FORCE_INLINE	void resetSolverProgress(PxU32 nbBodies, PxU32 stride, PxU8* bodies)
+static PX_FORCE_INLINE void resetSolverProgress(PxU32 nbBodies, PxU32 stride, PxU8* bodies)
 {
 	while(nbBodies--)
 	{
@@ -124,7 +124,7 @@ PX_FORCE_INLINE	void resetSolverProgress(PxU32 nbBodies, PxU32 stride, PxU8* bod
 // all the time, but it could have a small performance impact, so for now I'll keep both.
 
 // PT: regular version without articulations
-PX_FORCE_INLINE void reserveSpaceForStaticConstraints_(PxArray<PxU32>& numConstraintsPerPartition, PxU32 bodyCount, PxU32 bodyStride, PxU8* bodies)
+static PX_FORCE_INLINE void reserveSpaceForStaticConstraints_(PxArray<PxU32>& numConstraintsPerPartition, PxU32 bodyCount, PxU32 bodyStride, PxU8* bodies)
 {
 	while(bodyCount--)
 	{
@@ -143,8 +143,8 @@ PX_FORCE_INLINE void reserveSpaceForStaticConstraints_(PxArray<PxU32>& numConstr
 }
 
 // PT: "extended" version with articulations
-PX_FORCE_INLINE void reserveSpaceForStaticConstraints_(PxArray<PxU32>& numConstraintsPerPartition, PxU32 bodyCount, PxU32 bodyStride, PxU8* bodies,
-														PxU32 numArticulations, Dy::FeatherstoneArticulation** articulations)
+static PX_FORCE_INLINE void reserveSpaceForStaticConstraints_(PxArray<PxU32>& numConstraintsPerPartition, PxU32 bodyCount, PxU32 bodyStride, PxU8* bodies,
+															PxU32 numArticulations, Dy::FeatherstoneArticulation** articulations)
 {
 	reserveSpaceForStaticConstraints_(numConstraintsPerPartition, bodyCount, bodyStride, bodies);
 
@@ -954,7 +954,7 @@ static PX_FORCE_INLINE void getProgressRequirementsExtended(const PxSolverConstr
 	}
 }
 
-void processOverflowConstraints(PxU8* bodies, PxU32 bodyStride, PxU32 numBodies, Dy::ArticulationSolverDesc* articulationDescs, PxU32 numArticulations,
+void processOverflowConstraints(PxU8* bodies, PxU32 bodyStride, PxU32 numBodies, Dy::FeatherstoneArticulation** articulations, PxU32 numArticulations,
 	PxSolverConstraintDesc* constraints, PxU32 numConstraints)
 {
 	// PT: TODO: resetSolverProgress + the articulation reset below is the same as afterClassification()
@@ -976,12 +976,9 @@ void processOverflowConstraints(PxU8* bodies, PxU32 bodyStride, PxU32 numBodies,
 	}
 	else
 	{
-		PX_ALLOCA(_eaArticulations, Dy::FeatherstoneArticulation*, numArticulations);
-		Dy::FeatherstoneArticulation** eaArticulations = _eaArticulations;
 		for (PxU32 i = 0; i<numArticulations; i++)
 		{
-			FeatherstoneArticulation* articulation = articulationDescs[i].articulation;
-			eaArticulations[i] = articulation;
+			FeatherstoneArticulation* articulation = articulations[i];
 			articulation->solverProgress = 0;
 			articulation->maxSolverFrictionProgress = 0;
 			//articulation->maxSolverNormalProgress = 0;

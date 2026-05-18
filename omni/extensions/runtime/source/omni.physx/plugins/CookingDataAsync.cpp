@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #include "UsdPCH.h"
@@ -253,6 +253,30 @@ namespace
         double y = std::round(scaleNormalized[1] * eps_inv);
         double z = std::round(scaleNormalized[2] * eps_inv);
         return GfVec3f(float(x * eps), float(y * eps), float(z * eps));
+    }
+
+    void warnTetMeshOrientation(const UsdGeomTetMesh tetMesh, bool expectLeftHanded)
+    {
+        VtArray<int32_t> invertedElements;
+        bool res = UsdGeomTetMesh::FindInvertedElements(tetMesh, &invertedElements);
+        if (!res)
+        {
+            VtArray<GfVec4i> tetVertexIndices;
+            tetMesh.GetTetVertexIndicesAttr().Get(&tetVertexIndices);
+            CARB_LOG_WARN(
+                "Cooking: Found %d inverted tets of %d tets in total, relative to UsdGeomGprim orientation %s, %s",
+                uint32_t(invertedElements.size()), uint32_t(tetVertexIndices.size()),
+                expectLeftHanded ? "leftHanded" : "rightHanded", tetMesh.GetPath().GetText());
+        }
+    }
+
+    void switchTetsOrientation(VtArray<GfVec4i>& tetVertexIndices)
+    {
+        for (size_t i = 0; i < tetVertexIndices.size(); ++i)
+        {
+            GfVec4i& tet = tetVertexIndices[i];
+            std::swap(tet[0], tet[1]);
+        }
     }
 
 } // namespace
@@ -832,6 +856,7 @@ public:
 
         request.primStageId = UsdUtilsStageCache::Get().GetId(usdPrim.GetStage()).ToLongInt();
         request.primId = asInt(usdPrim.GetPath());
+        request.primMeshText = { usdPrim.GetPath().GetText(), strlen(usdPrim.GetPath().GetText()) };
 
         // If we haven't loaded the mesh from the in memory mesh cache, we go further to see if it is in the local cache
         // or UsdPrim itself
@@ -2241,7 +2266,7 @@ public:
             for (size_t i = 0; i < pxrSrcPointsInSim.size(); ++i)
             {
                 pxr::GfVec3f& srcPoint = pxrSrcPointsInSim[i];
-                srcPoint = srcToSim.Transform(srcPoint);
+                srcPoint = pxr::GfVec3f(srcToSim.Transform(srcPoint));
             }
         }
 
@@ -2465,7 +2490,7 @@ public:
             for (size_t i = 0; i < pxrSrcPointsInSim.size(); ++i)
             {
                 pxr::GfVec3f& srcPoint = pxrSrcPointsInSim[i];
-                srcPoint = srcToSim.Transform(srcPoint);
+                srcPoint = pxr::GfVec3f(srcToSim.Transform(srcPoint));
             }
         }
 
@@ -2680,8 +2705,15 @@ public:
 
             UsdGeomPointBased(simMeshPrim).GetPointsAttr().Get(&simPoints);
             UsdGeomTetMesh(simMeshPrim).GetTetVertexIndicesAttr().Get(&simTetVertexIndices);
+            warnTetMeshOrientation(UsdGeomTetMesh(simMeshPrim), desc.simMeshLeftHandedOrientation);
+
             simMeshPrim.GetAttribute(OmniPhysicsDeformableAttrTokens->restShapePoints).Get(&simRestShapePoints);
             simMeshPrim.GetAttribute(OmniPhysicsDeformableAttrTokens->restTetVtxIndices).Get(&simRestTetVtxIndices);
+            if (desc.simMeshLeftHandedOrientation)
+            {
+                switchTetsOrientation(simTetVertexIndices);
+                switchTetsOrientation(simRestTetVtxIndices);
+            }
 
             bool mismatch = simPoints.size() != simRestShapePoints.size() ||
                             simTetVertexIndices.size() != simRestTetVtxIndices.size() ||
@@ -2725,11 +2757,16 @@ public:
             GfMatrix4d collToSim = collToWorld * worldToSim;
             for (size_t i = 0; i < collMeshBindPoints.size(); ++i)
             {
-                collMeshBindPoints[i] = collToSim.Transform(collMeshBindPoints[i]);
+                collMeshBindPoints[i] = pxr::GfVec3f(collToSim.Transform(collMeshBindPoints[i]));
             }
             pxrCollBindPointsInSim.swap(collMeshBindPoints);
             pxrSimBindPoints.swap(simMeshBindPoints);
             UsdGeomTetMesh(collMeshPrim).GetTetVertexIndicesAttr().Get(&pxrCollIndices);
+            warnTetMeshOrientation(UsdGeomTetMesh(simMeshPrim), desc.collisionMeshLeftHandedOrientation);
+            if (desc.collisionMeshLeftHandedOrientation)
+            {
+                switchTetsOrientation(pxrCollIndices);
+            }
 
             if (pxrSimBindPoints.size() != pxrSimPoints.size())
             {
@@ -3367,6 +3404,13 @@ public:
                 {
                     UsdPrim prim = objectsChanged.GetStage()->GetPrimAtPath(primPath);
                     m_primAddedRemovedRefreshSet.insert(primPath);
+
+                    {
+                        // Be defensive, we can have no idea what changed, we could run the full traversal of the
+                        // changes but that might be very expensive, we can wipe the cache rather to make sure we have
+                        // always correct mesh key
+                        omni::physx::usdparser::notifyStageReset();
+                    }
                 }
             }
         }
@@ -3677,17 +3721,11 @@ public:
         }
     }
 
-    virtual bool isLocalMeshCacheEnabled() const override final { return m_cookingServicePrivate.isLocalMeshCacheEnabled(); }
-    
-    virtual void setLocalMeshCacheEnabled(bool val) override final { m_cookingServicePrivate.setLocalMeshCacheEnabled(val); }
 
-    // local mesh cache size in MB
-    virtual uint32_t getLocalMeshCacheSize() const override final { return m_cookingServicePrivate.getLocalMeshCacheSize(); }
-
-    // local mesh cache size in MB
-    virtual void setLocalMeshCacheSize(uint32_t val) override final { m_cookingServicePrivate.setLocalMeshCacheSize(val); }
-
-    virtual void resetLocalMeshCacheContents() override final { m_cookingServicePrivate.resetLocalMeshCacheContents(); }
+    virtual void resetLocalMeshCacheContents() override final
+    {
+        m_cookingServicePrivate.resetMeshCacheContents();
+    }
 
     virtual omni::physx::PhysxCookingAsyncContext getCookingAsyncContext()
     {

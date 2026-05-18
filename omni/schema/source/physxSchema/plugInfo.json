@@ -14,6 +14,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysicsJointStateAPI", 
                         "schemaKind": "multipleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxArticulationAPI": {
@@ -24,6 +25,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxArticulationAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxAutoAttachmentAPI": {
@@ -34,6 +36,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxAutoAttachmentAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxAutoParticleClothAPI": {
@@ -44,6 +47,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxAutoParticleClothAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxCameraAPI": {
@@ -54,6 +58,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxCameraAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxCameraDroneAPI": {
@@ -64,6 +69,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxCameraDroneAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxCameraFollowAPI": {
@@ -74,6 +80,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxCameraFollowAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxCameraFollowLookAPI": {
@@ -84,6 +91,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxCameraFollowLookAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxCameraFollowVelocityAPI": {
@@ -94,6 +102,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxCameraFollowVelocityAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxCharacterControllerAPI": {
@@ -104,6 +113,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxCharacterControllerAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxCollisionAPI": {
@@ -114,6 +124,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxCollisionAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxContactReportAPI": {
@@ -124,6 +135,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxContactReportAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxConvexDecompositionCollisionAPI": {
@@ -134,6 +146,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxConvexDecompositionCollisionAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxConvexHullCollisionAPI": {
@@ -144,6 +157,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxConvexHullCollisionAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxCookedDataAPI": {
@@ -154,6 +168,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxCookedDataAPI", 
                         "schemaKind": "multipleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxDeformableAPI": {
@@ -164,6 +179,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxDeformableAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxDeformableBodyAPI": {
@@ -174,6 +190,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxDeformableBodyAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxDeformableBodyMaterialAPI": {
@@ -184,6 +201,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxDeformableBodyMaterialAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxDeformableSurfaceAPI": {
@@ -194,6 +212,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxDeformableSurfaceAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxDeformableSurfaceMaterialAPI": {
@@ -204,6 +223,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxDeformableSurfaceMaterialAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxDiffuseParticlesAPI": {
@@ -214,6 +234,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxDiffuseParticlesAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxForceAPI": {
@@ -224,6 +245,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxForceAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxJointAPI": {
@@ -234,6 +256,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxJointAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxLimitAPI": {
@@ -244,6 +267,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxLimitAPI", 
                         "schemaKind": "multipleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxMaterialAPI": {
@@ -254,6 +278,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxMaterialAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxMeshMergeCollisionAPI": {
@@ -264,6 +289,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxMeshMergeCollisionAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxMimicJointAPI": {
@@ -274,6 +300,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxMimicJointAPI", 
                         "schemaKind": "multipleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxPBDMaterialAPI": {
@@ -284,6 +311,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxPBDMaterialAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxParticleAPI": {
@@ -294,6 +322,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxParticleAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxParticleAnisotropyAPI": {
@@ -304,6 +333,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxParticleAnisotropyAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxParticleClothAPI": {
@@ -314,6 +344,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxParticleClothAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxParticleIsosurfaceAPI": {
@@ -324,6 +355,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxParticleIsosurfaceAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxParticleSamplingAPI": {
@@ -334,6 +366,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxParticleSamplingAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxParticleSetAPI": {
@@ -344,6 +377,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxParticleSetAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxParticleSmoothingAPI": {
@@ -354,6 +388,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxParticleSmoothingAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxParticleSystem": {
@@ -364,6 +399,7 @@
                         "bases": [
                             "UsdGeomGprim"
                         ], 
+                        "schemaIdentifier": "PhysxParticleSystem", 
                         "schemaKind": "concreteTyped"
                     }, 
                     "PhysxSchemaPhysxPhysicsAttachment": {
@@ -374,6 +410,7 @@
                         "bases": [
                             "UsdTyped"
                         ], 
+                        "schemaIdentifier": "PhysxPhysicsAttachment", 
                         "schemaKind": "concreteTyped"
                     }, 
                     "PhysxSchemaPhysxPhysicsDistanceJointAPI": {
@@ -384,6 +421,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxPhysicsDistanceJointAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxPhysicsGearJoint": {
@@ -394,6 +432,7 @@
                         "bases": [
                             "UsdPhysicsJoint"
                         ], 
+                        "schemaIdentifier": "PhysxPhysicsGearJoint", 
                         "schemaKind": "concreteTyped"
                     }, 
                     "PhysxSchemaPhysxPhysicsInstancer": {
@@ -404,6 +443,7 @@
                         "bases": [
                             "UsdGeomImageable"
                         ], 
+                        "schemaIdentifier": "PhysxPhysicsInstancer", 
                         "schemaKind": "concreteTyped"
                     }, 
                     "PhysxSchemaPhysxPhysicsJointInstancer": {
@@ -414,6 +454,7 @@
                         "bases": [
                             "PhysxSchemaPhysxPhysicsInstancer"
                         ], 
+                        "schemaIdentifier": "PhysxPhysicsJointInstancer", 
                         "schemaKind": "concreteTyped"
                     }, 
                     "PhysxSchemaPhysxPhysicsRackAndPinionJoint": {
@@ -424,17 +465,8 @@
                         "bases": [
                             "UsdPhysicsJoint"
                         ], 
+                        "schemaIdentifier": "PhysxPhysicsRackAndPinionJoint", 
                         "schemaKind": "concreteTyped"
-                    }, 
-                    "PhysxSchemaPhysxResidualReportingAPI": {
-                        "alias": {
-                            "UsdSchemaBase": "PhysxResidualReportingAPI"
-                        }, 
-                        "autoGenerated": true, 
-                        "bases": [
-                            "UsdAPISchemaBase"
-                        ], 
-                        "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxRigidBodyAPI": {
                         "alias": {
@@ -444,6 +476,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxRigidBodyAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxSDFMeshCollisionAPI": {
@@ -454,6 +487,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxSDFMeshCollisionAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxSceneAPI": {
@@ -464,6 +498,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxSceneAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxSceneQuasistaticAPI": {
@@ -474,6 +509,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxSceneQuasistaticAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxSphereFillCollisionAPI": {
@@ -484,6 +520,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxSphereFillCollisionAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxSurfaceVelocityAPI": {
@@ -494,6 +531,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxSurfaceVelocityAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxTendonAttachmentAPI": {
@@ -504,6 +542,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxTendonAttachmentAPI", 
                         "schemaKind": "multipleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxTendonAttachmentLeafAPI": {
@@ -514,6 +553,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxTendonAttachmentLeafAPI", 
                         "schemaKind": "multipleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxTendonAttachmentRootAPI": {
@@ -524,6 +564,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxTendonAttachmentRootAPI", 
                         "schemaKind": "multipleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxTendonAxisAPI": {
@@ -534,6 +575,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxTendonAxisAPI", 
                         "schemaKind": "multipleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxTendonAxisRootAPI": {
@@ -544,6 +586,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxTendonAxisRootAPI", 
                         "schemaKind": "multipleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxTriangleMeshCollisionAPI": {
@@ -554,6 +597,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxTriangleMeshCollisionAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxTriangleMeshSimplificationCollisionAPI": {
@@ -564,6 +608,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxTriangleMeshSimplificationCollisionAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxTriggerAPI": {
@@ -574,6 +619,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxTriggerAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxTriggerStateAPI": {
@@ -584,6 +630,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxTriggerStateAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleAPI": {
@@ -594,6 +641,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleAckermannSteeringAPI": {
@@ -604,6 +652,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleAckermannSteeringAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleAutoGearBoxAPI": {
@@ -614,6 +663,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleAutoGearBoxAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleBrakesAPI": {
@@ -624,6 +674,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleBrakesAPI", 
                         "schemaKind": "multipleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleClutchAPI": {
@@ -634,6 +685,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleClutchAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleContextAPI": {
@@ -644,6 +696,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleContextAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleControllerAPI": {
@@ -654,6 +707,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleControllerAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleDriveBasicAPI": {
@@ -664,6 +718,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleDriveBasicAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleDriveStandardAPI": {
@@ -674,6 +729,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleDriveStandardAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleEngineAPI": {
@@ -684,6 +740,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleEngineAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleGearsAPI": {
@@ -694,6 +751,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleGearsAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleMultiWheelDifferentialAPI": {
@@ -704,6 +762,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleMultiWheelDifferentialAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleNonlinearCommandResponseAPI": {
@@ -714,6 +773,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleNonlinearCommandResponseAPI", 
                         "schemaKind": "multipleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleSteeringAPI": {
@@ -724,6 +784,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleSteeringAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleSuspensionAPI": {
@@ -734,6 +795,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleSuspensionAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleSuspensionComplianceAPI": {
@@ -744,6 +806,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleSuspensionComplianceAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleTankControllerAPI": {
@@ -754,6 +817,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleTankControllerAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleTankDifferentialAPI": {
@@ -764,6 +828,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleTankDifferentialAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleTireAPI": {
@@ -774,6 +839,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleTireAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleTireFrictionTable": {
@@ -784,6 +850,7 @@
                         "bases": [
                             "UsdTyped"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleTireFrictionTable", 
                         "schemaKind": "concreteTyped"
                     }, 
                     "PhysxSchemaPhysxVehicleWheelAPI": {
@@ -794,6 +861,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleWheelAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleWheelAttachmentAPI": {
@@ -804,6 +872,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleWheelAttachmentAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaPhysxVehicleWheelControllerAPI": {
@@ -814,6 +883,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxVehicleWheelControllerAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaTetrahedralMesh": {
@@ -824,6 +894,7 @@
                         "bases": [
                             "UsdGeomPointBased"
                         ], 
+                        "schemaIdentifier": "TetrahedralMesh", 
                         "schemaKind": "concreteTyped"
                     }
                 }

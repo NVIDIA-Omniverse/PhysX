@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -10,7 +10,10 @@
 
 #include <carb/logging/Log.h>
 #include <carb/InterfaceUtils.h>
+#include <carb/Framework.h>
 #include <carb/container/RHUnorderedMap.h>
+
+#include <omni/physx/IPhysxFoundation.h>
 
 #include <omni/fabric/connectivity/Connectivity.h>
 #include <omni/fabric/FabricUSD.h>
@@ -24,12 +27,11 @@
 #include <pxr/usd/usdPhysics/tokens.h>
 #include <physxSchema/tokens.h>
 
-#include "common/utilities/CudaHelpers.h"
 #include "common/foundation/TypeCast.h"
 
-#include <PxPhysicsAPI.h>
+#include <common/utilities/CudaShimWrappers.h>
 
-#include <cuda.h>
+#include <PxPhysicsAPI.h>
 
 #include <algorithm>
 #include <unordered_set>
@@ -38,71 +40,37 @@
 using namespace pxr;
 using namespace physx;
 using namespace carb;
+using omni::physx::cudaShimWrappers::getCudaShim;
 
 extern omni::physx::FabricManager* gFabricManager;
+
+extern pxr::GfMatrix4d computeMatrix(const pxr::GfVec3d& translate,
+                                     const pxr::GfMatrix3d& rotate,
+                                     const pxr::GfVec3d& scale);
+
+extern pxr::GfMatrix4d computeLocalMatrix(omni::fabric::USDHierarchy& usdHierarchy,
+                                          omni::fabric::StageReaderWriter& stage,
+                                          const omni::fabric::Path& path,
+                                          const GfMatrix4d& worldMatrix,
+                                          const omni::fabric::Token& worldMatrixToken);
 
 namespace omni
 {
 namespace physx
 {
 
-// private stuff
-namespace
-{
-
-#define CHECK_CU_DGH(code) cudaHelpers::checkCu(code, __FILE__, __LINE__)
-
-} // end of private stuff
-
-// TODO(mmagdics): this is duplicated from FabricManager.cpp in omni.physx.fabric
-// common/utility does not depend on Fabric yet and it seemed better to leave it this way
-
-GfMatrix4d computeMatrix(const pxr::GfVec3d& translate, const pxr::GfMatrix3d& rotate, const pxr::GfVec3d& scale)
-{
-    // Order is scale*rotate*translate
-    return GfMatrix4d(rotate[0][0] * scale[0], rotate[0][1] * scale[0], rotate[0][2] * scale[0], 0,
-                      rotate[1][0] * scale[1], rotate[1][1] * scale[1], rotate[1][2] * scale[1], 0,
-                      rotate[2][0] * scale[2], rotate[2][1] * scale[2], rotate[2][2] * scale[2], 0, translate[0],
-                      translate[1], translate[2], 1);
-}
-
-GfMatrix4d computeLocalMatrix(omni::fabric::USDHierarchy& usdHierarchy,
-                              omni::fabric::StageReaderWriter& stage,
-                              const omni::fabric::Path& path,
-                              const GfMatrix4d& worldMatrix,
-                              const omni::fabric::TokenC& worldMatrixToken)
-{
-    omni::fabric::PathC parentPath = usdHierarchy.getParent(path);
-    while (parentPath != omni::fabric::kUninitializedPath)
-    {
-        const pxr::GfMatrix4d* parentWorldMatrix = stage.getAttributeRd<pxr::GfMatrix4d>(parentPath, worldMatrixToken);
-        if (parentWorldMatrix)
-        {
-            return worldMatrix * parentWorldMatrix->GetInverse();
-        }
-        else
-        {
-            parentPath = usdHierarchy.getParent(parentPath);
-        }
-    }
-    return worldMatrix;
-}
-
 DirectGpuHelper::DirectGpuHelper()
 {
-    omni::fabric::IToken* iToken = carb::getCachedInterface<omni::fabric::IToken>();
+    mRigidBodySchemaToken = omni::fabric::Token::createImmortal(gRigidBodyAPITokenString);
 
-    mRigidBodySchemaToken = iToken->getHandle("PhysicsRigidBodyAPI");
+    mWorldMatrixToken = omni::fabric::Token::createImmortal(gWorldMatrixTokenString);
 
-    mWorldMatrixToken = iToken->getHandle(gWorldMatrixTokenString);
-    mLocalMatrixToken = iToken->getHandle(gLocalMatrixTokenString);
+    mLinVelToken = omni::fabric::Token::createImmortal(UsdPhysicsTokens->physicsVelocity.GetText());
+    mAngVelToken = omni::fabric::Token::createImmortal(UsdPhysicsTokens->physicsAngularVelocity.GetText());
 
-    mLinVelToken = iToken->getHandle(UsdPhysicsTokens->physicsVelocity.GetText());
-    mAngVelToken = iToken->getHandle(UsdPhysicsTokens->physicsAngularVelocity.GetText());
-
-    mRigidBodyWorldPositionToken = iToken->getHandle(gRigidBodyWorldPositionTokenString);
-    mRigidBodyWorldOrientationToken = iToken->getHandle(gRigidBodyWorldOrientationTokenString);
-    mRigidBodyWorldScaleToken = iToken->getHandle(gRigidBodyWorldScaleTokenString);
+    mRigidBodyWorldPositionToken = omni::fabric::Token::createImmortal(gRigidBodyWorldPositionTokenString);
+    mRigidBodyWorldOrientationToken = omni::fabric::Token::createImmortal(gRigidBodyWorldOrientationTokenString);
+    mRigidBodyWorldScaleToken = omni::fabric::Token::createImmortal(gRigidBodyWorldScaleTokenString);
 
     using omni::fabric::BaseDataType;
     using omni::fabric::AttributeRole;
@@ -127,15 +95,17 @@ void DirectGpuHelper::attach(unsigned long usdStageId)
     mAttachTimestamp = mPhysxSimulationInterface->getSimulationTimestamp();
     //printf("~!~!~! Attaching at step %u\n", unsigned(mAttachTimestamp));
     mUsdStageId.id = usdStageId;
+    isTopologyConnectivityInitialized = false;
 }
 
 void DirectGpuHelper::detach()
 {
     releaseBuffers();
+
     *this = DirectGpuHelper();
 }
 
-void DirectGpuHelper::registerRigidBody(const omni::fabric::PathC& primPath, const carb::Float3& scale)
+void DirectGpuHelper::registerRigidBody(const omni::fabric::Path& primPath, const carb::Float3& scale)
 {
     //printf("+++ Registering GPU body %s\n", path.GetText());
 
@@ -309,11 +279,11 @@ bool DirectGpuHelper::prepareBuffers(omni::fabric::StageReaderWriter& srw, bool 
     // allocate articulation buffers
     if (mNumArtis > 0)
     {
-        if (!CHECK_CU_DGH(cuMemAlloc(&mArtiIndicesDev, artiIndices.size() * sizeof(PxU32))))
+        if (!SHIM_CU_ALLOC(&mArtiIndicesDev, artiIndices.size() * sizeof(PxU32)))
         {
             return false;
         }
-        if (!CHECK_CU_DGH(cuMemcpyHtoD(mArtiIndicesDev, artiIndices.data(), artiIndices.size() * sizeof(PxU32))))
+        if (!CHECK_CUDA_SHIM(getCudaShim()->memcpyHtoD(static_cast<uintptr_t>(mArtiIndicesDev), artiIndices.data(), artiIndices.size() * sizeof(PxU32), nullptr)))
         {
             return false;
         }
@@ -323,53 +293,56 @@ bool DirectGpuHelper::prepareBuffers(omni::fabric::StageReaderWriter& srw, bool 
         {
             mLinkTransforms.resize(mLinkBufSize);
         }
-        if (!CHECK_CU_DGH(cuMemAlloc(&mLinkTransformsDev, mLinkBufSize * sizeof(PxTransform))))
+        if (!SHIM_CU_ALLOC(&mLinkTransformsDev, mLinkBufSize * sizeof(PxTransform)))
         {
             return false;
         }
-        CHECK_CU_DGH(cuMemsetD8(mLinkTransformsDev, 0, mLinkBufSize * sizeof(PxTransform)));
+        CHECK_CUDA_SHIM(getCudaShim()->memsetD8(static_cast<uintptr_t>(mLinkTransformsDev), 0, mLinkBufSize * sizeof(PxTransform), nullptr));
 
         // link linear velocities
         if (!fullFabricGpuInterop)
         {
             mLinkLinearVelocities.resize(mLinkBufSize);
         }
-        if (!CHECK_CU_DGH(cuMemAlloc(&mLinkLinearVelocitiesDev, mLinkBufSize * sizeof(PxVec3))))
+        if (!SHIM_CU_ALLOC(&mLinkLinearVelocitiesDev, mLinkBufSize * sizeof(PxVec3)))
         {
             return false;
         }
-        CHECK_CU_DGH(cuMemsetD8(mLinkLinearVelocitiesDev, 0, mLinkBufSize * sizeof(PxVec3)));
+        CHECK_CUDA_SHIM(getCudaShim()->memsetD8(static_cast<uintptr_t>(mLinkLinearVelocitiesDev), 0, mLinkBufSize * sizeof(PxVec3), nullptr));
 
         // link angular velocities
         if (!fullFabricGpuInterop)
         {
             mLinkAngularVelocities.resize(mLinkBufSize);
         }
-        if (!CHECK_CU_DGH(cuMemAlloc(&mLinkAngularVelocitiesDev, mLinkBufSize * sizeof(PxVec3))))
+        if (!SHIM_CU_ALLOC(&mLinkAngularVelocitiesDev, mLinkBufSize * sizeof(PxVec3)))
         {
             return false;
         }
-        CHECK_CU_DGH(cuMemsetD8(mLinkAngularVelocitiesDev, 0, mLinkBufSize * sizeof(PxVec3)));
+        CHECK_CUDA_SHIM(getCudaShim()->memsetD8(static_cast<uintptr_t>(mLinkAngularVelocitiesDev), 0, mLinkBufSize * sizeof(PxVec3), nullptr));
 
 
         // synchronization events
-        CHECK_CU_DGH(cuEventCreate(&mLinkTransformsStartEvent, CU_EVENT_DISABLE_TIMING));
-        CHECK_CU_DGH(cuEventCreate(&mLinkTransformsCopyEvent, CU_EVENT_DISABLE_TIMING));
-        CHECK_CU_DGH(cuEventCreate(&mLinkLinearVelocitiesStartEvent, CU_EVENT_DISABLE_TIMING));
-        CHECK_CU_DGH(cuEventCreate(&mLinkAngularVelocitiesStartEvent, CU_EVENT_DISABLE_TIMING));
-        CHECK_CU_DGH(cuEventCreate(&mLinkLinearVelocitiesCopyEvent, CU_EVENT_DISABLE_TIMING));
-        CHECK_CU_DGH(cuEventCreate(&mLinkAngularVelocitiesCopyEvent, CU_EVENT_DISABLE_TIMING));
+        if (!SHIM_CU_EVENT_CREATE(&mLinkTransformsStartEvent, CU_EVENT_DISABLE_TIMING) ||
+            !SHIM_CU_EVENT_CREATE(&mLinkTransformsCopyEvent, CU_EVENT_DISABLE_TIMING) ||
+            !SHIM_CU_EVENT_CREATE(&mLinkLinearVelocitiesStartEvent, CU_EVENT_DISABLE_TIMING) ||
+            !SHIM_CU_EVENT_CREATE(&mLinkAngularVelocitiesStartEvent, CU_EVENT_DISABLE_TIMING) ||
+            !SHIM_CU_EVENT_CREATE(&mLinkLinearVelocitiesCopyEvent, CU_EVENT_DISABLE_TIMING) ||
+            !SHIM_CU_EVENT_CREATE(&mLinkAngularVelocitiesCopyEvent, CU_EVENT_DISABLE_TIMING))
+        {
+            return false;
+        }
     }
 
     // allocate rigid dynamic buffers
     if (mNumRds > 0)
     {
         // actor indices
-        if (!CHECK_CU_DGH(cuMemAlloc(&mRdIndicesDev, mNumRds * sizeof(PxRigidDynamicGPUIndex))))
+        if (!SHIM_CU_ALLOC(&mRdIndicesDev, mNumRds * sizeof(PxRigidDynamicGPUIndex)))
         {
             return false;
         }
-        if (!CHECK_CU_DGH(cuMemcpyHtoD(mRdIndicesDev, rdIndices.data(), mNumRds * sizeof(PxRigidDynamicGPUIndex))))
+        if (!CHECK_CUDA_SHIM(getCudaShim()->memcpyHtoD(static_cast<uintptr_t>(mRdIndicesDev), rdIndices.data(), mNumRds * sizeof(PxRigidDynamicGPUIndex), nullptr)))
         {
             return false;
         }
@@ -379,39 +352,42 @@ bool DirectGpuHelper::prepareBuffers(omni::fabric::StageReaderWriter& srw, bool 
         {
             mRdTransforms.resize(mNumRds);
         }
-        if (!CHECK_CU_DGH(cuMemAlloc(&mRdTransformsDev, mNumRds * sizeof(PxTransform))))
+        if (!SHIM_CU_ALLOC(&mRdTransformsDev, mNumRds * sizeof(PxTransform)))
         {
             return false;
         }
-        CHECK_CU_DGH(cuMemsetD8(mRdTransformsDev, 0, mNumRds * sizeof(PxTransform)));
+        CHECK_CUDA_SHIM(getCudaShim()->memsetD8(static_cast<uintptr_t>(mRdTransformsDev), 0, mNumRds * sizeof(PxTransform), nullptr));
 
         if (!fullFabricGpuInterop)
         {
             mRdLinearVelocities.resize(mNumRds);
         }
-        if (!CHECK_CU_DGH(cuMemAlloc(&mRdLinearVelocitiesDev, mNumRds * sizeof(PxVec3))))
+        if (!SHIM_CU_ALLOC(&mRdLinearVelocitiesDev, mNumRds * sizeof(PxVec3)))
         {
             return false;
         }
-        CHECK_CU_DGH(cuMemsetD8(mRdLinearVelocitiesDev, 0, mNumRds * sizeof(PxVec3)));
+        CHECK_CUDA_SHIM(getCudaShim()->memsetD8(static_cast<uintptr_t>(mRdLinearVelocitiesDev), 0, mNumRds * sizeof(PxVec3), nullptr));
 
         if (!fullFabricGpuInterop)
         {
             mRdAngularVelocities.resize(mNumRds);
         }
-        if (!CHECK_CU_DGH(cuMemAlloc(&mRdAngularVelocitiesDev, mNumRds * sizeof(PxVec3))))
+        if (!SHIM_CU_ALLOC(&mRdAngularVelocitiesDev, mNumRds * sizeof(PxVec3)))
         {
             return false;
         }
-        CHECK_CU_DGH(cuMemsetD8(mRdAngularVelocitiesDev, 0, mNumRds * sizeof(PxVec3)));
+        CHECK_CUDA_SHIM(getCudaShim()->memsetD8(static_cast<uintptr_t>(mRdAngularVelocitiesDev), 0, mNumRds * sizeof(PxVec3), nullptr));
 
-        // synchronization event
-        CHECK_CU_DGH(cuEventCreate(&mRdTransformsStartEvent, CU_EVENT_DISABLE_TIMING));
-        CHECK_CU_DGH(cuEventCreate(&mRdTransformsCopyEvent, CU_EVENT_DISABLE_TIMING));
-        CHECK_CU_DGH(cuEventCreate(&mRdLinearVelocityStartEvent, CU_EVENT_DISABLE_TIMING));
-        CHECK_CU_DGH(cuEventCreate(&mRdLinearVelocityCopyEvent, CU_EVENT_DISABLE_TIMING));
-        CHECK_CU_DGH(cuEventCreate(&mRdAngularVelocityStartEvent, CU_EVENT_DISABLE_TIMING));
-        CHECK_CU_DGH(cuEventCreate(&mRdAngularVelocityCopyEvent, CU_EVENT_DISABLE_TIMING));
+        // synchronization events
+        if (!SHIM_CU_EVENT_CREATE(&mRdTransformsStartEvent, CU_EVENT_DISABLE_TIMING) ||
+            !SHIM_CU_EVENT_CREATE(&mRdTransformsCopyEvent, CU_EVENT_DISABLE_TIMING) ||
+            !SHIM_CU_EVENT_CREATE(&mRdLinearVelocityStartEvent, CU_EVENT_DISABLE_TIMING) ||
+            !SHIM_CU_EVENT_CREATE(&mRdLinearVelocityCopyEvent, CU_EVENT_DISABLE_TIMING) ||
+            !SHIM_CU_EVENT_CREATE(&mRdAngularVelocityStartEvent, CU_EVENT_DISABLE_TIMING) ||
+            !SHIM_CU_EVENT_CREATE(&mRdAngularVelocityCopyEvent, CU_EVENT_DISABLE_TIMING))
+        {
+            return false;
+        }
     }
 
     if (fullFabricGpuInterop)
@@ -420,9 +396,9 @@ bool DirectGpuHelper::prepareBuffers(omni::fabric::StageReaderWriter& srw, bool 
 
         if (mCopyStream)
         {
-            CHECK_CU_DGH(cuStreamDestroy(mCopyStream));
+            CHECK_CUDA_SHIM(getCudaShim()->streamDestroy(reinterpret_cast<uintptr_t>(mCopyStream), nullptr));
         }
-        if (!CHECK_CU_DGH(cuStreamCreate(&mCopyStream, 0)))
+        if (!SHIM_CU_STREAM_CREATE(&mCopyStream, 0))
         {
             return false;
         }
@@ -431,7 +407,7 @@ bool DirectGpuHelper::prepareBuffers(omni::fabric::StageReaderWriter& srw, bool 
         // rigid bodies first, then articulations in the same buffer
         if (mNumRds + mLinkBufSize != 0)
         {
-            if (!CHECK_CU_DGH(cuMemAlloc(&mInitialScalesDev, (mNumRds + mLinkBufSize) * sizeof(carb::Float3))))
+            if (!SHIM_CU_ALLOC(&mInitialScalesDev, (mNumRds + mLinkBufSize) * sizeof(carb::Float3)))
             {
                 return false;
             }
@@ -454,7 +430,7 @@ bool DirectGpuHelper::prepareBuffers(omni::fabric::StageReaderWriter& srw, bool 
                     initialScales[rb.link.linkOffset + mNumRds] = pathScale.second;
                 }
             }
-            if (!CHECK_CU_DGH(cuMemcpyHtoD(mInitialScalesDev, initialScales.data(), initialScales.size() * sizeof(carb::Float3))))
+            if (!CHECK_CUDA_SHIM(getCudaShim()->memcpyHtoD(static_cast<uintptr_t>(mInitialScalesDev), initialScales.data(), initialScales.size() * sizeof(carb::Float3), nullptr)))
             {
                 return false;
             }
@@ -475,6 +451,7 @@ bool DirectGpuHelper::prepareBuffers(omni::fabric::StageReaderWriter& srw, bool 
 // Note: This must be called when the right Cuda context/device is set!
 bool DirectGpuHelper::prepareMappings(omni::fabric::StageReaderWriter& srw)
 {
+    CARB_PROFILE_ZONE(1, "FabricMapper build");
     omni::fabric::FabricId fabricId = srw.getFabricId();
     if (fabricId == omni::fabric::kInvalidFabricId)
     {
@@ -482,66 +459,78 @@ bool DirectGpuHelper::prepareMappings(omni::fabric::StageReaderWriter& srw)
         return false;
     }
 
-    int deviceId;
-    cudaGetDevice(&deviceId);
+    int deviceId = -1;
+    if (!CHECK_CUDA_SHIM(getCudaShim()->ctxGetDevice(&deviceId, nullptr)))
+        return false;
 
-    CARB_PROFILE_ZONE(1, "FabricMapper build");
-    if (mNumRds > 0)
+    auto iFabricConnectivity = carb::getCachedInterface<omni::fabric::IConnectivity>();
+    auto iFabric = carb::getCachedInterface<omni::fabric::IFabric>();
+
+    if (mNumRds > 0 || mLinkBufSize > 0)
     {
-        mFabricMapperRb.clear();
-        mFabricMapperRb.bindFabric(srw.getFabricId());
-        mFabricMapperRb.bindDevice(deviceId);
-        auto getRigidBodyIndex = [&](const RigidBodyData& rb) -> size_t {
-            if (rb.isArticulationLink)
-            {
-                return mNumRds + 1;
-            }
-            return rb.rd.idx;
+        using omni::fabric::AttrNameAndType;
+        const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(
+            mTypeAppliedSchema, mRigidBodySchemaToken) };
+        const omni::fabric::set<AttrNameAndType> requiredAny = {
+            AttrNameAndType(mTypeMatrix4d, mWorldMatrixToken),
+            AttrNameAndType(mTypeFloat3, mLinVelToken),
+            AttrNameAndType(mTypeFloat3, mAngVelToken),
+            AttrNameAndType(mTypeDouble3, mRigidBodyWorldPositionToken),
+            AttrNameAndType(mTypeQuat, mRigidBodyWorldOrientationToken),
+            AttrNameAndType(mTypeFloat3, mRigidBodyWorldScaleToken)
         };
-        mFabricMapperRb.build<RigidBodyData, pxr::GfMatrix4d>(
-            mRigidBodies, mNumRds, getRigidBodyIndex, mLocalMatrixToken);
-        mFabricMapperRb.buildParent<RigidBodyData, pxr::GfMatrix4d>(
-            mRigidBodies, mNumRds, getRigidBodyIndex, mWorldMatrixToken);
-        mFabricMapperRb.build<RigidBodyData, carb::Float3>(mRigidBodies, mNumRds, getRigidBodyIndex, mLinVelToken);
-        mFabricMapperRb.build<RigidBodyData, carb::Float3>(mRigidBodies, mNumRds, getRigidBodyIndex, mAngVelToken);
-        mFabricMapperRb.build<RigidBodyData, carb::Double3>(
-            mRigidBodies, mNumRds, getRigidBodyIndex, mRigidBodyWorldPositionToken);
-        mFabricMapperRb.build<RigidBodyData, carb::Float4>(
-            mRigidBodies, mNumRds, getRigidBodyIndex, mRigidBodyWorldOrientationToken);
-        mFabricMapperRb.build<RigidBodyData, carb::Float3>(
-            mRigidBodies, mNumRds, getRigidBodyIndex, mRigidBodyWorldScaleToken);
-    }
+        omni::fabric::PrimBucketList primBuckets = srw.findPrims(requiredAll, requiredAny);
 
-    if (mLinkBufSize > 0)
-    {
-        mFabricMapperArticulation.clear();
-        mFabricMapperArticulation.bindFabric(srw.getFabricId());
-        mFabricMapperArticulation.bindDevice(deviceId);
-        auto getArticulationIndex = [&](const RigidBodyData& rb) -> size_t {
-            if (rb.isArticulationLink)
-            {
-                return rb.link.linkOffset;
-            }
-            return mLinkBufSize + 1;
-        };
-        mFabricMapperArticulation.build<RigidBodyData, pxr::GfMatrix4d>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mLocalMatrixToken);
-        mFabricMapperArticulation.buildParent<RigidBodyData, pxr::GfMatrix4d>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mWorldMatrixToken);
-        mFabricMapperArticulation.build<RigidBodyData, carb::Float3>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mLinVelToken);
-        mFabricMapperArticulation.build<RigidBodyData, carb::Float3>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mAngVelToken);
-        mFabricMapperArticulation.build<RigidBodyData, carb::Double3>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mRigidBodyWorldPositionToken);
-        mFabricMapperArticulation.build<RigidBodyData, carb::Float4>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mRigidBodyWorldOrientationToken);
-        mFabricMapperArticulation.build<RigidBodyData, carb::Float3>(
-            mRigidBodies, mLinkBufSize, getArticulationIndex, mRigidBodyWorldScaleToken);
-    }
+        if (mNumRds > 0)
+        {
+            mFabricMapperRb.bindFabric(srw.getFabricId());
+            mFabricMapperRb.bindDevice(deviceId);
+            auto getRigidBodyIndex = [&](const RigidBodyData& rb) -> size_t {
+                if (rb.isArticulationLink)
+                {
+                    return mNumRds + 1;
+                }
+                return rb.rd.idx;
+            };
 
-    omni::fabric::IFabric* iFabric = carb::getCachedInterface<omni::fabric::IFabric>();
+            mFabricMapperRb.build<RigidBodyData, pxr::GfMatrix4d>(mRigidBodies, mNumRds, getRigidBodyIndex, mWorldMatrixToken, primBuckets);
+            mFabricMapperRb.build<RigidBodyData, carb::Float3>(mRigidBodies, mNumRds, getRigidBodyIndex, mLinVelToken, primBuckets);
+            mFabricMapperRb.build<RigidBodyData, carb::Float3>(mRigidBodies, mNumRds, getRigidBodyIndex, mAngVelToken, primBuckets);
+            mFabricMapperRb.build<RigidBodyData, carb::Double3>(mRigidBodies, mNumRds, getRigidBodyIndex, mRigidBodyWorldPositionToken, primBuckets);
+            mFabricMapperRb.build<RigidBodyData, carb::Float4>(mRigidBodies, mNumRds, getRigidBodyIndex, mRigidBodyWorldOrientationToken, primBuckets);
+            mFabricMapperRb.build<RigidBodyData, carb::Float3>(mRigidBodies, mNumRds, getRigidBodyIndex, mRigidBodyWorldScaleToken, primBuckets);
+        }
+
+        if (mLinkBufSize > 0)
+        {
+            mFabricMapperArticulation.bindFabric(srw.getFabricId());
+            mFabricMapperArticulation.bindDevice(deviceId);
+            auto getArticulationIndex = [&](const RigidBodyData& rb) -> size_t {
+                if (rb.isArticulationLink)
+                {
+                    return rb.link.linkOffset;
+                }
+                return mLinkBufSize + 1;
+            };
+
+            mFabricMapperArticulation.build<RigidBodyData, pxr::GfMatrix4d>(mRigidBodies, mLinkBufSize, getArticulationIndex, mWorldMatrixToken, primBuckets);
+            mFabricMapperArticulation.build<RigidBodyData, carb::Float3>(mRigidBodies, mLinkBufSize, getArticulationIndex, mLinVelToken, primBuckets);
+            mFabricMapperArticulation.build<RigidBodyData, carb::Float3>(mRigidBodies, mLinkBufSize, getArticulationIndex, mAngVelToken, primBuckets);
+            mFabricMapperArticulation.build<RigidBodyData, carb::Double3>(mRigidBodies, mLinkBufSize, getArticulationIndex, mRigidBodyWorldPositionToken, primBuckets);
+            mFabricMapperArticulation.build<RigidBodyData, carb::Float4>(mRigidBodies, mLinkBufSize, getArticulationIndex, mRigidBodyWorldOrientationToken, primBuckets);
+            mFabricMapperArticulation.build<RigidBodyData, carb::Float3>(mRigidBodies, mLinkBufSize, getArticulationIndex, mRigidBodyWorldScaleToken, primBuckets);
+        }
+    }
+    
+#if KIT_SDK_VERSION < 1090002
     mFabricTopologyVersion = iFabric->getTopologyVersion(fabricId);
+#else
+    mFabricTopologyVersion = iFabric->getCounter(fabricId, omni::fabric::Counter::eBucketTopology);
+#endif
+           
+    mFabricConnectivityVersion = iFabricConnectivity->getDataRevision(fabricId);
+    if(!isTopologyConnectivityInitialized)
+        isTopologyConnectivityInitialized = true;
 
     return true;
 }
@@ -552,35 +541,55 @@ void DirectGpuHelper::releaseBuffers()
 
     if (cudaContextManager)
     {
-
         PxScopedCudaLock _lock(*cudaContextManager);
 
-        CHECK_CU_DGH(cuMemFree(mArtiIndicesDev));
+        CHECK_CUDA_SHIM(getCudaShim()->memFree(static_cast<uintptr_t>(mArtiIndicesDev), nullptr));
         mArtiIndicesDev = 0;
 
-        CHECK_CU_DGH(cuMemFree(mLinkTransformsDev));
+        CHECK_CUDA_SHIM(getCudaShim()->memFree(static_cast<uintptr_t>(mLinkTransformsDev), nullptr));
         mLinkTransformsDev = 0;
 
-        CHECK_CU_DGH(cuMemFree(mLinkLinearVelocitiesDev));
+        CHECK_CUDA_SHIM(getCudaShim()->memFree(static_cast<uintptr_t>(mLinkLinearVelocitiesDev), nullptr));
         mLinkLinearVelocitiesDev = 0;
 
-        CHECK_CU_DGH(cuMemFree(mLinkAngularVelocitiesDev));
+        CHECK_CUDA_SHIM(getCudaShim()->memFree(static_cast<uintptr_t>(mLinkAngularVelocitiesDev), nullptr));
         mLinkAngularVelocitiesDev = 0;
 
-        CHECK_CU_DGH(cuMemFree(mRdIndicesDev));
+        CHECK_CUDA_SHIM(getCudaShim()->memFree(static_cast<uintptr_t>(mRdIndicesDev), nullptr));
         mRdIndicesDev = 0;
 
-        CHECK_CU_DGH(cuMemFree(mRdTransformsDev));
+        CHECK_CUDA_SHIM(getCudaShim()->memFree(static_cast<uintptr_t>(mRdTransformsDev), nullptr));
         mRdTransformsDev = 0;
 
-        CHECK_CU_DGH(cuMemFree(mRdLinearVelocitiesDev));
+        CHECK_CUDA_SHIM(getCudaShim()->memFree(static_cast<uintptr_t>(mRdLinearVelocitiesDev), nullptr));
         mRdLinearVelocitiesDev = 0;
 
-        CHECK_CU_DGH(cuMemFree(mRdAngularVelocitiesDev));
+        CHECK_CUDA_SHIM(getCudaShim()->memFree(static_cast<uintptr_t>(mRdAngularVelocitiesDev), nullptr));
         mRdAngularVelocitiesDev = 0;
 
-        CHECK_CU_DGH(cuMemFree(mInitialScalesDev));
+        CHECK_CUDA_SHIM(getCudaShim()->memFree(static_cast<uintptr_t>(mInitialScalesDev), nullptr));
         mInitialScalesDev = 0;
+
+        // Destroy synchronization events (created in prepareBuffers).
+        auto destroyEvent = [](CUevent& evt) {
+            if (evt)
+            {
+                omni::physx::cudaShimWrappers::getCudaShim()->eventDestroy(reinterpret_cast<uintptr_t>(evt), nullptr);
+                evt = nullptr;
+            }
+        };
+        destroyEvent(mLinkTransformsStartEvent);
+        destroyEvent(mLinkTransformsCopyEvent);
+        destroyEvent(mLinkLinearVelocitiesStartEvent);
+        destroyEvent(mLinkLinearVelocitiesCopyEvent);
+        destroyEvent(mLinkAngularVelocitiesStartEvent);
+        destroyEvent(mLinkAngularVelocitiesCopyEvent);
+        destroyEvent(mRdTransformsStartEvent);
+        destroyEvent(mRdTransformsCopyEvent);
+        destroyEvent(mRdLinearVelocityStartEvent);
+        destroyEvent(mRdLinearVelocityCopyEvent);
+        destroyEvent(mRdAngularVelocityStartEvent);
+        destroyEvent(mRdAngularVelocityCopyEvent);
     }
 
     mScene = nullptr;
@@ -602,8 +611,16 @@ void DirectGpuHelper::releaseBuffers()
     mFabricMapperArticulation.clear();
     if (mCopyStream)
     {
-        CHECK_CU_DGH(cuStreamDestroy(mCopyStream));
+        CHECK_CUDA_SHIM(getCudaShim()->streamDestroy(reinterpret_cast<uintptr_t>(mCopyStream), nullptr));
         mCopyStream = nullptr;
+    }
+
+    if (mCubricAdapter)
+    {
+        IPhysxFoundation* iFoundation = carb::getCachedInterface<IPhysxFoundation>();
+        if (iFoundation)
+            iFoundation->cubricReleaseAdapter(mCubricAdapter);
+        mCubricAdapter = nullptr;
     }
 }
 
@@ -679,27 +696,27 @@ void DirectGpuHelper::fetchRigidBodyData(omni::fabric::StageReaderWriter& srw, b
     {
         if (updateTransforms && mLinkTransformsDev)
         {
-            CHECK_CU_DGH(cuEventRecord(mLinkTransformsStartEvent, nullptr));
-            mScene->getDirectGPUAPI().getArticulationData((void*)mLinkTransformsDev,
-                                                          (PxArticulationGPUIndex*)mArtiIndicesDev,
-                                                          PxArticulationGPUAPIReadType::eLINK_GLOBAL_POSE, mNumArtis,
-                                                          mLinkTransformsStartEvent, mLinkTransformsCopyEvent);
+            CHECK_CUDA_SHIM(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mLinkTransformsStartEvent), uintptr_t(0), nullptr));
+            mScene->getDirectGPUAPI().getArticulationData(
+                (void*)mLinkTransformsDev,
+                (PxArticulationGPUIndex*)mArtiIndicesDev,
+                PxArticulationGPUAPIReadType::eLINK_GLOBAL_POSE, mNumArtis,
+                mLinkTransformsStartEvent, mLinkTransformsCopyEvent);
             fetchingLinkTransforms = true;
         }
         if (updateVelocities && mLinkLinearVelocitiesDev && mLinkAngularVelocitiesDev)
         {
-            CHECK_CU_DGH(cuEventRecord(mLinkLinearVelocitiesStartEvent, nullptr));
+            CHECK_CUDA_SHIM(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mLinkLinearVelocitiesStartEvent), uintptr_t(0), nullptr));
             mScene->getDirectGPUAPI().getArticulationData(
                 (void*)mLinkLinearVelocitiesDev, (PxArticulationGPUIndex*)mArtiIndicesDev,
                 PxArticulationGPUAPIReadType::eLINK_LINEAR_VELOCITY, mNumArtis, mLinkLinearVelocitiesStartEvent,
                 mLinkLinearVelocitiesCopyEvent);
 
-            CHECK_CU_DGH(cuEventRecord(mLinkAngularVelocitiesStartEvent, nullptr));
+            CHECK_CUDA_SHIM(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mLinkAngularVelocitiesStartEvent), uintptr_t(0), nullptr));
             mScene->getDirectGPUAPI().getArticulationData(
                 (void*)mLinkAngularVelocitiesDev, (PxArticulationGPUIndex*)mArtiIndicesDev,
                 PxArticulationGPUAPIReadType::eLINK_ANGULAR_VELOCITY, mNumArtis, mLinkLinearVelocitiesStartEvent,
                 mLinkLinearVelocitiesCopyEvent);
-
 
             fetchingLinkVelocities = true;
         }
@@ -708,7 +725,7 @@ void DirectGpuHelper::fetchRigidBodyData(omni::fabric::StageReaderWriter& srw, b
     {
         if (mRdTransformsDev)
         {
-            CHECK_CU_DGH(cuEventRecord(mRdTransformsStartEvent, nullptr));
+            CHECK_CUDA_SHIM(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mRdTransformsStartEvent), uintptr_t(0), nullptr));
             mScene->getDirectGPUAPI().getRigidDynamicData(
                 (void*)mRdTransformsDev, (PxRigidDynamicGPUIndex*)mRdIndicesDev,
                 PxRigidDynamicGPUAPIReadType::eGLOBAL_POSE, mNumRds, mRdTransformsStartEvent, mRdTransformsCopyEvent);
@@ -718,13 +735,13 @@ void DirectGpuHelper::fetchRigidBodyData(omni::fabric::StageReaderWriter& srw, b
 
         if (mRdLinearVelocitiesDev && mRdAngularVelocitiesDev)
         {
-            CHECK_CU_DGH(cuEventRecord(mRdLinearVelocityStartEvent, nullptr));
+            CHECK_CUDA_SHIM(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mRdLinearVelocityStartEvent), uintptr_t(0), nullptr));
             mScene->getDirectGPUAPI().getRigidDynamicData((void*)mRdLinearVelocitiesDev,
                                                           (PxRigidDynamicGPUIndex*)mRdIndicesDev,
                                                           PxRigidDynamicGPUAPIReadType::eLINEAR_VELOCITY, mNumRds,
                                                           mRdLinearVelocityStartEvent, mRdLinearVelocityCopyEvent);
 
-            CHECK_CU_DGH(cuEventRecord(mRdAngularVelocityStartEvent, nullptr));
+            CHECK_CUDA_SHIM(getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mRdAngularVelocityStartEvent), uintptr_t(0), nullptr));
             mScene->getDirectGPUAPI().getRigidDynamicData((void*)mRdAngularVelocitiesDev,
                                                           (PxRigidDynamicGPUIndex*)mRdIndicesDev,
                                                           PxRigidDynamicGPUAPIReadType::eANGULAR_VELOCITY, mNumRds,
@@ -741,184 +758,54 @@ void DirectGpuHelper::fetchRigidBodyData(omni::fabric::StageReaderWriter& srw, b
 
     if (fetchingLinkTransforms)
     {
-        CHECK_CU_DGH(cuStreamWaitEvent(nullptr, mLinkTransformsCopyEvent, 0));
+        CHECK_CUDA_SHIM(getCudaShim()->streamWaitEvent(reinterpret_cast<uintptr_t>(nullptr), reinterpret_cast<uintptr_t>(mLinkTransformsCopyEvent), 0, nullptr));
         if (!fullFabricGpuInterop)
         {
-            CHECK_CU_DGH(cuMemcpyDtoH(mLinkTransforms.data(), mLinkTransformsDev, mLinkBufSize * sizeof(PxTransform)));
+            CHECK_CUDA_SHIM(getCudaShim()->memcpyDtoH(mLinkTransforms.data(), static_cast<uintptr_t>(mLinkTransformsDev), mLinkBufSize * sizeof(PxTransform), nullptr));
         }
     }
     if (fetchingLinkVelocities)
     {
-        CHECK_CU_DGH(cuStreamWaitEvent(nullptr, mLinkLinearVelocitiesCopyEvent, 0));
-        CHECK_CU_DGH(cuStreamWaitEvent(nullptr, mLinkAngularVelocitiesCopyEvent, 0));
+        CHECK_CUDA_SHIM(getCudaShim()->streamWaitEvent(reinterpret_cast<uintptr_t>(nullptr), reinterpret_cast<uintptr_t>(mLinkLinearVelocitiesCopyEvent), 0, nullptr));
+        CHECK_CUDA_SHIM(getCudaShim()->streamWaitEvent(reinterpret_cast<uintptr_t>(nullptr), reinterpret_cast<uintptr_t>(mLinkAngularVelocitiesCopyEvent), 0, nullptr));
         if (!fullFabricGpuInterop)
         {
-            CHECK_CU_DGH(cuMemcpyDtoH(mLinkLinearVelocities.data(), mLinkLinearVelocitiesDev, mLinkBufSize * sizeof(PxVec3)));
-            CHECK_CU_DGH(
-                cuMemcpyDtoH(mLinkAngularVelocities.data(), mLinkAngularVelocitiesDev, mLinkBufSize * sizeof(PxVec3)));
+            CHECK_CUDA_SHIM(getCudaShim()->memcpyDtoH(mLinkLinearVelocities.data(), static_cast<uintptr_t>(mLinkLinearVelocitiesDev), mLinkBufSize * sizeof(PxVec3), nullptr));
+            CHECK_CUDA_SHIM(getCudaShim()->memcpyDtoH(mLinkAngularVelocities.data(), static_cast<uintptr_t>(mLinkAngularVelocitiesDev), mLinkBufSize * sizeof(PxVec3), nullptr));
         }
     }
     if (fetchingRdTransforms)
     {
-        CHECK_CU_DGH(cuStreamWaitEvent(nullptr, mRdTransformsCopyEvent, 0));
+        CHECK_CUDA_SHIM(getCudaShim()->streamWaitEvent(reinterpret_cast<uintptr_t>(nullptr), reinterpret_cast<uintptr_t>(mRdTransformsCopyEvent), 0, nullptr));
         if (!fullFabricGpuInterop)
         {
-            CHECK_CU_DGH(cuMemcpyDtoH(mRdTransforms.data(), mRdTransformsDev, mNumRds * sizeof(PxTransform)));
+            CHECK_CUDA_SHIM(getCudaShim()->memcpyDtoH(mRdTransforms.data(), static_cast<uintptr_t>(mRdTransformsDev), mNumRds * sizeof(PxTransform), nullptr));
         }
     }
     if (fetchingRdVelocities)
     {
-        CHECK_CU_DGH(cuStreamWaitEvent(nullptr, mRdLinearVelocityCopyEvent, 0));
-        CHECK_CU_DGH(cuStreamWaitEvent(nullptr, mRdAngularVelocityCopyEvent, 0));
+        CHECK_CUDA_SHIM(getCudaShim()->streamWaitEvent(reinterpret_cast<uintptr_t>(nullptr), reinterpret_cast<uintptr_t>(mRdLinearVelocityCopyEvent), 0, nullptr));
+        CHECK_CUDA_SHIM(getCudaShim()->streamWaitEvent(reinterpret_cast<uintptr_t>(nullptr), reinterpret_cast<uintptr_t>(mRdAngularVelocityCopyEvent), 0, nullptr));
         if (!fullFabricGpuInterop)
         {
-            CHECK_CU_DGH(cuMemcpyDtoH(mRdLinearVelocities.data(), mRdLinearVelocitiesDev, mNumRds * sizeof(PxVec3)));
-            CHECK_CU_DGH(cuMemcpyDtoH(mRdAngularVelocities.data(), mRdAngularVelocitiesDev, mNumRds * sizeof(PxVec3)));
+            CHECK_CUDA_SHIM(getCudaShim()->memcpyDtoH(mRdLinearVelocities.data(), static_cast<uintptr_t>(mRdLinearVelocitiesDev), mNumRds * sizeof(PxVec3), nullptr));
+            CHECK_CUDA_SHIM(getCudaShim()->memcpyDtoH(mRdAngularVelocities.data(), static_cast<uintptr_t>(mRdAngularVelocitiesDev), mNumRds * sizeof(PxVec3), nullptr));
         }
     }
 }
 
-void DirectGpuHelper::updateRigidBodies(omni::fabric::StageReaderWriter& srw, bool updateTransforms, bool updateVelocities, bool fullFabricGpuInterop)
+
+void DirectGpuHelper::applyRigidBodiesToFabric_CPU(omni::fabric::StageReaderWriter& srw, bool updateTransforms, bool updateVelocities)
 {
-    if (!updateTransforms && !updateVelocities)
-    {
-        return;
-    }
+    using omni::fabric::AttrNameAndType;
 
-    if (fullFabricGpuInterop)
-    {
-        PxCudaContextManager* cudaContextManager = FabricManager::getCudaContextManager();
-        if (!cudaContextManager)
-            return;
-
-        PxScopedCudaLock _lock(*cudaContextManager);
-        int deviceId;
-        cudaGetDevice(&deviceId);
-
-        omni::fabric::IFabric* iFabric = carb::getCachedInterface<omni::fabric::IFabric>();
-        if (iFabric->getTopologyVersion(srw.getFabricId()) != mFabricTopologyVersion)
-        {
-            if (!prepareMappings(srw))
-            {
-                CARB_LOG_ERROR("Could not re-create Fabric mapping");
-                return;
-            }
-        }
-
-        // Get a write pointer to Fabric GPU data to dirty them before the GPU update.
-        using omni::fabric::AttrNameAndType_v2;
-        const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(
-            mTypeAppliedSchema, mRigidBodySchemaToken) };
-        const omni::fabric::set<AttrNameAndType_v2> requiredAny = {
-            AttrNameAndType_v2(mTypeMatrix4d, mWorldMatrixToken),
-            AttrNameAndType_v2(mTypeMatrix4d, mLocalMatrixToken),
-            AttrNameAndType_v2(mTypeFloat3, mLinVelToken),
-            AttrNameAndType_v2(mTypeFloat3, mAngVelToken),
-            AttrNameAndType_v2(mTypeDouble3, mRigidBodyWorldPositionToken),
-            AttrNameAndType_v2(mTypeQuat, mRigidBodyWorldOrientationToken),
-            AttrNameAndType_v2(mTypeFloat3, mRigidBodyWorldScaleToken)
-        };
-        omni::fabric::PrimBucketList primBuckets = srw.findPrims(requiredAll, requiredAny);
-        size_t bucketCount = primBuckets.bucketCount();
-        {
-            CARB_PROFILE_ZONE(1, "DirectGpuHelper dirty Fabric GPU buffers");
-            for (size_t i = 0; i != bucketCount; i++)
-            {
-                gsl::span<const pxr::GfMatrix4d> worldMatrices =
-                   srw.getAttributeArrayRdGpu<pxr::GfMatrix4d>(primBuckets, i, mWorldMatrixToken, deviceId);
-                gsl::span<pxr::GfMatrix4d> localMatrices =
-                   srw.getAttributeArrayGpu<pxr::GfMatrix4d>(primBuckets, i, mLocalMatrixToken, deviceId);
-                gsl::span<carb::Float3> linVelocities = srw.getAttributeArrayGpu<carb::Float3>(primBuckets, i, mLinVelToken, deviceId);
-                gsl::span<carb::Float3> angVelocities = srw.getAttributeArrayGpu<carb::Float3>(primBuckets, i, mAngVelToken, deviceId);
-                gsl::span<carb::Double3> rbWorldPositions =
-                    srw.getAttributeArrayGpu<carb::Double3>(primBuckets, i, mRigidBodyWorldPositionToken, deviceId);
-                gsl::span<carb::Float4> rbWorldOrientations =
-                    srw.getAttributeArrayGpu<carb::Float4>(primBuckets, i, mRigidBodyWorldOrientationToken, deviceId);
-                gsl::span<carb::Float3> rbWorldScales =
-                    srw.getAttributeArrayGpu<carb::Float3>(primBuckets, i, mRigidBodyWorldScaleToken, deviceId);
-            }
-        }
-
-        // Call GPU kernels to copy transforms
-        {
-            CARB_PROFILE_ZONE(1, "DirectGpuHelper rigid body data copy to Fabric GPU");
-
-            if (!mFabricMapperRb.empty())
-            {
-                RigidBodyGpuData rb;
-                rb.updateTransforms = updateTransforms;
-                rb.updateVelocities = updateVelocities;
-                rb.numRigidBodies = mFabricMapperRb.getSize(mLocalMatrixToken);
-                rb.rigidBodyTransforms = mRdTransformsDev;
-                rb.linearVelocities = mRdLinearVelocitiesDev;
-                rb.angularVelocities = mRdAngularVelocitiesDev;
-                rb.initialScales = mInitialScalesDev;
-                rb.localMatMapping = reinterpret_cast<double**>(mFabricMapperRb.getPtr(mLocalMatrixToken));
-                rb.parentWorldMatMapping = reinterpret_cast<double**>(mFabricMapperRb.getParentPtr(mWorldMatrixToken));
-                rb.worldPosMapping = reinterpret_cast<double**>(mFabricMapperRb.getPtr(mRigidBodyWorldPositionToken));
-                rb.worldOriMapping = reinterpret_cast<float**>(mFabricMapperRb.getPtr(mRigidBodyWorldOrientationToken));
-                rb.worldSclMapping = reinterpret_cast<float**>(mFabricMapperRb.getPtr(mRigidBodyWorldScaleToken));
-                rb.linVelMapping = reinterpret_cast<float**>(mFabricMapperRb.getPtr(mLinVelToken));
-                rb.angVelMapping = reinterpret_cast<float**>(mFabricMapperRb.getPtr(mAngVelToken));
-                copyRigidBodyDataToFabricGpu(rb, mCopyStream);
-            }
-
-            if (!mFabricMapperArticulation.empty())
-            {
-                const size_t scaleOffset = mFabricMapperRb.getSize(mLocalMatrixToken) * sizeof(carb::Float3);
-                RigidBodyGpuData rb;
-                rb.updateTransforms = updateTransforms;
-                rb.updateVelocities = updateVelocities;
-                rb.numRigidBodies = mFabricMapperArticulation.getSize(mLocalMatrixToken);
-                rb.rigidBodyTransforms = mLinkTransformsDev;
-                rb.linearVelocities = mLinkLinearVelocitiesDev;
-                rb.angularVelocities = mLinkAngularVelocitiesDev;
-                rb.initialScales = mInitialScalesDev + scaleOffset;
-                rb.localMatMapping = reinterpret_cast<double**>(mFabricMapperArticulation.getPtr(mLocalMatrixToken));
-                rb.parentWorldMatMapping = reinterpret_cast<double**>(mFabricMapperArticulation.getParentPtr(mWorldMatrixToken));
-                rb.worldPosMapping = reinterpret_cast<double**>(mFabricMapperArticulation.getPtr(mRigidBodyWorldPositionToken));
-                rb.worldOriMapping = reinterpret_cast<float**>(mFabricMapperArticulation.getPtr(mRigidBodyWorldOrientationToken));
-                rb.worldSclMapping = reinterpret_cast<float**>(mFabricMapperArticulation.getPtr(mRigidBodyWorldScaleToken));
-                rb.linVelMapping = reinterpret_cast<float**>(mFabricMapperArticulation.getPtr(mLinVelToken));
-                rb.angVelMapping = reinterpret_cast<float**>(mFabricMapperArticulation.getPtr(mAngVelToken));
-                copyRigidBodyDataToFabricGpu(rb, mCopyStream);
-            }
-
-            if (!mFabricMapperRb.empty() || !mFabricMapperArticulation.empty())
-            {
-                CHECK_CU_DGH(cuStreamSynchronize(mCopyStream));
-            }
-
-        }
-
-        // Update fabric hierarchy on GPU only
-        auto iFabricHierarchy = omni::core::createType<usdrt::hierarchy::IFabricHierarchy>();
-        if (iFabricHierarchy != nullptr)
-        {
-            auto fabricHierarchy = iFabricHierarchy->getFabricHierarchy(srw.getFabricId(), mUsdStageId);
-            bool success = fabricHierarchy->updateWorldXformsGpu(true);
-            if (!success)
-            {
-                CARB_LOG_WARN("Failed to update transform hierarchy on the GPU, falling back to CPU");
-                fabricHierarchy->updateWorldXforms();
-            }
-        }
-
-        return;
-    }
-
-    //printf("~!~!~! Updating GPU transforms\n");
-
-    using omni::fabric::AttrNameAndType_v2;
-
-   const omni::fabric::set<AttrNameAndType_v2> requiredAll = { AttrNameAndType_v2(mTypeAppliedSchema, mRigidBodySchemaToken) };
-   const omni::fabric::set<AttrNameAndType_v2> requiredAny = { AttrNameAndType_v2(mTypeMatrix4d, mWorldMatrixToken),
-                                                             AttrNameAndType_v2(mTypeMatrix4d, mLocalMatrixToken),
-                                                             AttrNameAndType_v2(mTypeFloat3, mLinVelToken),
-                                                             AttrNameAndType_v2(mTypeFloat3, mAngVelToken),
-                                                             AttrNameAndType_v2(mTypeDouble3, mRigidBodyWorldPositionToken),
-                                                             AttrNameAndType_v2(mTypeQuat, mRigidBodyWorldOrientationToken),
-                                                             AttrNameAndType_v2(mTypeFloat3, mRigidBodyWorldScaleToken) };
+    const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(mTypeAppliedSchema, mRigidBodySchemaToken) };
+    const omni::fabric::set<AttrNameAndType> requiredAny = { AttrNameAndType(mTypeMatrix4d, mWorldMatrixToken),
+                                                             AttrNameAndType(mTypeFloat3, mLinVelToken),
+                                                             AttrNameAndType(mTypeFloat3, mAngVelToken),
+                                                             AttrNameAndType(mTypeDouble3, mRigidBodyWorldPositionToken),
+                                                             AttrNameAndType(mTypeQuat, mRigidBodyWorldOrientationToken),
+                                                             AttrNameAndType(mTypeFloat3, mRigidBodyWorldScaleToken) };
 
     omni::fabric::PrimBucketList primBuckets = srw.findPrims(requiredAll, requiredAny);
 
@@ -929,22 +816,18 @@ void DirectGpuHelper::updateRigidBodies(omni::fabric::StageReaderWriter& srw, bo
     for (size_t i = 0; i != bucketCount; i++)
     {
         gsl::span<pxr::GfMatrix4d> worldMatrices = srw.getAttributeArray<pxr::GfMatrix4d>(primBuckets, i, mWorldMatrixToken);
-        gsl::span<pxr::GfMatrix4d> localMatrices = srw.getAttributeArray<pxr::GfMatrix4d>(primBuckets, i, mLocalMatrixToken);
         gsl::span<carb::Float3> linVelocities = srw.getAttributeArray<carb::Float3>(primBuckets, i, mLinVelToken);
         gsl::span<carb::Float3> angVelocities = srw.getAttributeArray<carb::Float3>(primBuckets, i, mAngVelToken);
-        gsl::span<carb::Double3> rbWorldPositions =
-            srw.getAttributeArray<carb::Double3>(primBuckets, i, mRigidBodyWorldPositionToken);
-        gsl::span<carb::Float4> rbWorldOrientations =
-            srw.getAttributeArray<carb::Float4>(primBuckets, i, mRigidBodyWorldOrientationToken);
-        gsl::span<carb::Float3> rbWorldScales =
-            srw.getAttributeArray<carb::Float3>(primBuckets, i, mRigidBodyWorldScaleToken);
+        gsl::span<carb::Double3> rbWorldPositions = srw.getAttributeArray<carb::Double3>(primBuckets, i, mRigidBodyWorldPositionToken);
+        gsl::span<carb::Float4> rbWorldOrientations = srw.getAttributeArray<carb::Float4>(primBuckets, i, mRigidBodyWorldOrientationToken);
+        gsl::span<carb::Float3> rbWorldScales = srw.getAttributeArray<carb::Float3>(primBuckets, i, mRigidBodyWorldScaleToken);
 
         gsl::span<const omni::fabric::Path> paths = srw.getPathArray(primBuckets, i);
         //printf("+++   Bucket %u: Path count %u\n", unsigned(i), unsigned(paths.size()));
 
         for (size_t j = 0; j < paths.size(); j++)
         {
-            omni::fabric::PathC pathHandle = paths[j];
+            const omni::fabric::Path pathHandle = paths[j];
 
             // get the indexing data for this rigid body
             auto it = mRigidBodies.find(pathHandle);
@@ -956,17 +839,14 @@ void DirectGpuHelper::updateRigidBodies(omni::fabric::StageReaderWriter& srw, bo
                     if (updateTransforms && mLinkTransforms.size() > rb.link.linkOffset)
                     {
                         const PxTransform& transform = mLinkTransforms[rb.link.linkOffset];
-  
+
                         carb::Float3 translation;
                         carb::Float4 quaternion;
                         carb::Float3 scale{ 1.0f, 1.0f, 1.0f };
                         gFabricManager->getInitialTransformation(pathHandle, translation, quaternion, scale);
-                        worldMatrices[j] =
-                            computeMatrix(omni::physx::toVec3d(omni::physx::toDouble3(transform.p)),
-                                          pxr::GfMatrix3d(omni::physx::toQuatd(omni::physx::toDouble4(transform.q))),
-                                          omni::physx::toVec3d(scale));
-                        localMatrices[j] =
-                            computeLocalMatrix(usdHierarchy, srw, pathHandle, worldMatrices[j], mWorldMatrixToken);
+                        worldMatrices[j] = computeMatrix(omni::physx::toVec3d(omni::physx::toDouble3(transform.p)),
+                                                            pxr::GfMatrix3d(omni::physx::toQuatd(omni::physx::toDouble4(transform.q))),
+                                                            omni::physx::toVec3d(scale));
                         if (j < rbWorldPositions.size())
                         {
                             rbWorldPositions[j] = omni::physx::toDouble3(transform.p);
@@ -1001,12 +881,9 @@ void DirectGpuHelper::updateRigidBodies(omni::fabric::StageReaderWriter& srw, bo
                             carb::Float4 quaternion;
                             carb::Float3 scale{ 1.0f, 1.0f, 1.0f };
                             gFabricManager->getInitialTransformation(pathHandle, translation, quaternion, scale);
-                            worldMatrices[j] =
-                                computeMatrix(omni::physx::toVec3d(omni::physx::toDouble3(rdTransform.p)),
-                                pxr::GfMatrix3d(omni::physx::toQuatd(omni::physx::toDouble4(rdTransform.q))),
-                                              omni::physx::toVec3d(scale));
-                            localMatrices[j] =
-                                computeLocalMatrix(usdHierarchy, srw, pathHandle, worldMatrices[j], mWorldMatrixToken);
+                            worldMatrices[j] = computeMatrix(omni::physx::toVec3d(omni::physx::toDouble3(rdTransform.p)),
+                                                                pxr::GfMatrix3d(omni::physx::toQuatd(omni::physx::toDouble4(rdTransform.q))),
+                                                                omni::physx::toVec3d(scale));
                             if (j < rbWorldPositions.size())
                             {
                                 rbWorldPositions[j] = omni::physx::toDouble3(rdTransform.p);
@@ -1035,5 +912,263 @@ void DirectGpuHelper::updateRigidBodies(omni::fabric::StageReaderWriter& srw, bo
     }
 }
 
+
+void DirectGpuHelper::applyRigidBodiesToFabric_GPU(omni::fabric::StageReaderWriter& srw, bool updateTransforms, bool updateVelocities)
+{
+    //printf("~!~!~! Updating GPU transforms\n");
+
+    PxCudaContextManager* cudaContextManager = FabricManager::getCudaContextManager();
+    if (!cudaContextManager)
+        return;
+
+    PxScopedCudaLock _lock(*cudaContextManager);
+    int deviceId = -1;
+    {
+        int st = 0;
+        if (!getCudaShim()->ctxGetDevice(&deviceId, &st))
+        {
+            CARB_LOG_ERROR("cuCtxGetDevice failed (CUresult %d)", st);
+            return;
+        }
+    }
+
+    auto iFabric = carb::getCachedInterface<omni::fabric::IFabric>();
+    auto iFabricConnectivity = carb::getCachedInterface<omni::fabric::IConnectivity>();
+
+    // NOTE: comment to measure mapping performance in each frame
+#if KIT_SDK_VERSION < 1090002
+    if (iFabric->getTopologyVersion(srw.getFabricId()) != mFabricTopologyVersion ||
+        iFabricConnectivity->getDataRevision(srw.getFabricId()) != mFabricConnectivityVersion ||
+        !isTopologyConnectivityInitialized)
+    {
+        if (!prepareMappings(srw))
+        {
+            CARB_LOG_ERROR("Could not re-create Fabric mapping");
+            return;
+        }
+    }
+#else
+    if (iFabric->getCounter(srw.getFabricId(), omni::fabric::Counter::eBucketTopology) != mFabricTopologyVersion ||
+        iFabricConnectivity->getDataRevision(srw.getFabricId()) != mFabricConnectivityVersion ||
+        !isTopologyConnectivityInitialized)
+    {
+        if (!prepareMappings(srw))
+        {
+            CARB_LOG_ERROR("Could not re-create Fabric mapping");
+            return;
+        }
+    }
+#endif
+
+    // Get a write pointer to Fabric GPU data to dirty them before the GPU update.
+    using omni::fabric::AttrNameAndType;
+    const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(
+        mTypeAppliedSchema, mRigidBodySchemaToken) };
+    const omni::fabric::set<AttrNameAndType> requiredAny = {
+        AttrNameAndType(mTypeMatrix4d, mWorldMatrixToken),
+        AttrNameAndType(mTypeFloat3, mLinVelToken),
+        AttrNameAndType(mTypeFloat3, mAngVelToken),
+        AttrNameAndType(mTypeDouble3, mRigidBodyWorldPositionToken),
+        AttrNameAndType(mTypeQuat, mRigidBodyWorldOrientationToken),
+        AttrNameAndType(mTypeFloat3, mRigidBodyWorldScaleToken)
+    };
+    omni::fabric::PrimBucketList primBuckets = srw.findPrims(requiredAll, requiredAny);
+    size_t bucketCount = primBuckets.bucketCount();
+    {
+        CARB_PROFILE_ZONE(1, "DirectGpuHelper dirty Fabric GPU buffers");
+        for (size_t i = 0; i != bucketCount; i++)
+        {
+            gsl::span<const pxr::GfMatrix4d> worldMatrices = srw.getAttributeArrayGpu<pxr::GfMatrix4d>(primBuckets, i, mWorldMatrixToken, deviceId);
+            gsl::span<carb::Float3> linVelocities = srw.getAttributeArrayGpu<carb::Float3>(primBuckets, i, mLinVelToken, deviceId);
+            gsl::span<carb::Float3> angVelocities = srw.getAttributeArrayGpu<carb::Float3>(primBuckets, i, mAngVelToken, deviceId);
+            gsl::span<carb::Double3> rbWorldPositions = srw.getAttributeArrayGpu<carb::Double3>(primBuckets, i, mRigidBodyWorldPositionToken, deviceId);
+            gsl::span<carb::Float4> rbWorldOrientations = srw.getAttributeArrayGpu<carb::Float4>(primBuckets, i, mRigidBodyWorldOrientationToken, deviceId);
+            gsl::span<carb::Float3> rbWorldScales = srw.getAttributeArrayGpu<carb::Float3>(primBuckets, i, mRigidBodyWorldScaleToken, deviceId);
+        }
+    }
+
+    // Call GPU kernels to copy transforms
+    {
+        CARB_PROFILE_ZONE(1, "DirectGpuHelper rigid body data copy to Fabric GPU");
+
+        if (!mFabricMapperRb.empty())
+        {
+            RigidBodyGpuData rb;
+            rb.updateTransforms = updateTransforms;
+            rb.updateVelocities = updateVelocities;
+            rb.numRigidBodies = mFabricMapperRb.getSize(mWorldMatrixToken);
+            rb.rigidBodyTransforms = omni::physx::FabricCudaDevicePtrHandle{ static_cast<uint64_t>(mRdTransformsDev) };
+            rb.linearVelocities = omni::physx::FabricCudaDevicePtrHandle{ static_cast<uint64_t>(mRdLinearVelocitiesDev) };
+            rb.angularVelocities = omni::physx::FabricCudaDevicePtrHandle{ static_cast<uint64_t>(mRdAngularVelocitiesDev) };
+            rb.initialScales = omni::physx::FabricCudaDevicePtrHandle{ static_cast<uint64_t>(mInitialScalesDev) };
+            rb.worldMatMapping = reinterpret_cast<double**>(mFabricMapperRb.getPtr(mWorldMatrixToken));
+            rb.worldPosMapping = reinterpret_cast<double**>(mFabricMapperRb.getPtr(mRigidBodyWorldPositionToken));
+            rb.worldOriMapping = reinterpret_cast<float**>(mFabricMapperRb.getPtr(mRigidBodyWorldOrientationToken));
+            rb.worldSclMapping = reinterpret_cast<float**>(mFabricMapperRb.getPtr(mRigidBodyWorldScaleToken));
+            rb.linVelMapping = reinterpret_cast<float**>(mFabricMapperRb.getPtr(mLinVelToken));
+            rb.angVelMapping = reinterpret_cast<float**>(mFabricMapperRb.getPtr(mAngVelToken));
+            copyRigidBodyDataToFabricGpu(rb, omni::physx::FabricCudaStreamHandle{ reinterpret_cast<uintptr_t>(mCopyStream) });
+        }
+
+        if (!mFabricMapperArticulation.empty())
+        {
+            const size_t scaleOffset = mFabricMapperRb.getSize(mWorldMatrixToken) * sizeof(carb::Float3);
+            RigidBodyGpuData rb;
+            rb.updateTransforms = updateTransforms;
+            rb.updateVelocities = updateVelocities;
+            rb.numRigidBodies = mFabricMapperArticulation.getSize(mWorldMatrixToken);
+            rb.rigidBodyTransforms = omni::physx::FabricCudaDevicePtrHandle{ static_cast<uint64_t>(mLinkTransformsDev) };
+            rb.linearVelocities = omni::physx::FabricCudaDevicePtrHandle{ static_cast<uint64_t>(mLinkLinearVelocitiesDev) };
+            rb.angularVelocities = omni::physx::FabricCudaDevicePtrHandle{ static_cast<uint64_t>(mLinkAngularVelocitiesDev) };
+            rb.initialScales = omni::physx::FabricCudaDevicePtrHandle{ static_cast<uint64_t>(mInitialScalesDev + scaleOffset) };
+            rb.worldMatMapping = reinterpret_cast<double**>(mFabricMapperArticulation.getPtr(mWorldMatrixToken));
+            rb.worldPosMapping = reinterpret_cast<double**>(mFabricMapperArticulation.getPtr(mRigidBodyWorldPositionToken));
+            rb.worldOriMapping = reinterpret_cast<float**>(mFabricMapperArticulation.getPtr(mRigidBodyWorldOrientationToken));
+            rb.worldSclMapping = reinterpret_cast<float**>(mFabricMapperArticulation.getPtr(mRigidBodyWorldScaleToken));
+            rb.linVelMapping = reinterpret_cast<float**>(mFabricMapperArticulation.getPtr(mLinVelToken));
+            rb.angVelMapping = reinterpret_cast<float**>(mFabricMapperArticulation.getPtr(mAngVelToken));
+            copyRigidBodyDataToFabricGpu(rb, omni::physx::FabricCudaStreamHandle{ reinterpret_cast<uintptr_t>(mCopyStream) });
+        }
+
+        if (!mFabricMapperRb.empty() || !mFabricMapperArticulation.empty())
+        {
+            CHECK_CUDA_SHIM(getCudaShim()->streamSynchronize(reinterpret_cast<uintptr_t>(mCopyStream), nullptr));
+        }
+    }
 }
+
+
+void DirectGpuHelper::updateXForms_CPU(omni::fabric::StageReaderWriter& srw)
+{
+    auto iHierarchyMaker = omni::core::createType<usdrt::hierarchy::IFabricHierarchy>();
+    auto iHierarchy = iHierarchyMaker ? iHierarchyMaker->getFabricHierarchy(srw.getFabricId(), mUsdStageId) : nullptr;
+
+    if (iHierarchy)
+    {
+        iHierarchy->updateWorldXforms();
+    }
 }
+
+
+bool DirectGpuHelper::updateXForms_GPU(omni::fabric::StageReaderWriter& srw)
+{
+    if (!mCubricAdapter)
+    {
+        IPhysxFoundation* iFoundation = carb::getCachedInterface<IPhysxFoundation>();
+        if (!iFoundation)
+            return false;
+        mCubricAdapter = iFoundation->cubricCreateAdapter();
+        if (!mCubricAdapter)
+            return false;
+    }
+
+    carb::settings::ISettings* iSettings = carb::getCachedInterface<carb::settings::ISettings>();
+    const bool cubricEnableCAS = iSettings->getAsBool(kSettingCubricEnableCAS);
+
+    IPhysxFoundation* iFoundation = carb::getCachedInterface<IPhysxFoundation>();
+    if (!iFoundation)
+        return false;
+
+    {
+        CARB_PROFILE_ZONE(1, "DirectGpuHelper cubric binding");
+        if (!iFoundation->cubricBindToStage(mCubricAdapter, srw.getFabricId(), cubricEnableCAS))
+            return false;
+    }
+    {
+        CARB_PROFILE_ZONE(1, "DirectGpuHelper cubric compute");
+        return iFoundation->cubricCompute(mCubricAdapter);
+    }
+}
+
+
+struct ScopedUSDRT
+{
+    omni::core::ObjectPtr<usdrt::hierarchy::IFabricHierarchy> iHierarchy;
+    bool trackingPaused = false;
+
+    ScopedUSDRT(omni::fabric::StageReaderWriter& srw, fabric::UsdStageId usdStageId)
+    {
+        auto iHierarchyMaker = omni::core::createType<usdrt::hierarchy::IFabricHierarchy>();
+        iHierarchy = iHierarchyMaker ? iHierarchyMaker->getFabricHierarchy(srw.getFabricId(), usdStageId) : nullptr;
+
+        pauseTracking();
+    }
+
+    ~ScopedUSDRT()
+    {
+        resumeTracking();
+    }
+
+    void pauseTracking()
+    {
+        if (iHierarchy && not trackingPaused)
+        {
+            iHierarchy->trackWorldXformChanges(false);
+            iHierarchy->trackLocalXformChanges(false);
+            trackingPaused = true;
+        }
+    }
+
+    void resumeTracking()
+    {
+        if (iHierarchy && trackingPaused)
+        {
+            iHierarchy->trackWorldXformChanges(true);
+            iHierarchy->trackLocalXformChanges(true);
+            trackingPaused = false;
+        }
+    }
+};
+
+
+void DirectGpuHelper::updateRigidBodies(omni::fabric::StageReaderWriter& srw, bool updateTransforms, bool updateVelocities, bool fullFabricGpuInterop)
+{
+    if (!updateTransforms && !updateVelocities)
+    {
+        return;
+    }
+
+    // full GPU data flow Physics/GPU >>> RB-buffers/GPU >>> Fabric/GPU > cuBric/GPU
+
+    if (fullFabricGpuInterop)
+    {
+        CARB_PROFILE_ZONE(0, "FabricManager::DirectGpuHelper::updateRigidBodies");
+
+        ScopedUSDRT scopedUSDRT(srw, mUsdStageId);
+        
+        applyRigidBodiesToFabric_GPU(srw, updateTransforms, updateVelocities);
+
+        if(updateXForms_GPU(srw))
+        {
+            return;
+        }
+
+        CARB_LOG_WARN("Failed to update transform hierarchy on the GPU, falling back to CPU");
+    }
+
+    // Testing data flow Physics/GPU >>> RB-buffers/GPU >>> RB-buffers/CPU >>> Fabric/CPU > cuBric/GPU
+
+    if(false)
+    {
+        applyRigidBodiesToFabric_CPU(srw, updateTransforms, updateVelocities);
+
+        if(updateXForms_GPU(srw))
+        {
+            return;
+        }
+
+        CARB_LOG_WARN("Failed to update transform hierarchy on the GPU, falling back to CPU");
+    }
+
+    // full CPY data flow Physics/GPU >>> RB-buffers/GPU >>> RB-buffers/CPU >>> Fabric/CPU > FabricHierarchy/GPU
+    {
+        // we need to update the transformations
+        updateXForms_CPU(srw);
+        applyRigidBodiesToFabric_CPU(srw, updateTransforms, updateVelocities);
+        updateXForms_CPU(srw);
+    }
+}
+
+
+} // physx
+} // omni

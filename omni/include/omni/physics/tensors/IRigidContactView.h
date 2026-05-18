@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -6,6 +6,8 @@
 #include "TensorDesc.h"
 
 #include <cstdint>
+#include <string>
+#include <vector>
 
 namespace omni
 {
@@ -48,6 +50,20 @@ public:
                                  const TensorDesc* contactCountTensor, //(getSensorCount(), getFilterCount())
                                  const TensorDesc* contactStartIndicesTensor, //(getSensorCount(), getFilterCount())
                                  float dt) const = 0;
+
+    // raw contact data for all contacts per sensor (no filter required)
+    // Returns all contacts for each sensor with IDs of the contacting bodies
+    virtual bool getRawContactData(const TensorDesc* contactForceTensor,        // (getMaxContactDataCount(), 1)
+                                   const TensorDesc* contactPointTensor,        // (getMaxContactDataCount(), 3)
+                                   const TensorDesc* contactNormalTensor,       // (getMaxContactDataCount(), 3)
+                                   const TensorDesc* contactSeparationTensor,   // (getMaxContactDataCount(), 1)
+                                   const TensorDesc* contactCountTensor,        // (getSensorCount(),)
+                                   const TensorDesc* contactStartIndicesTensor, // (getSensorCount(),)
+                                   const TensorDesc* otherActorIdsTensor,       // (getMaxContactDataCount(),) uint64 IDs
+                                   float dt) const = 0;
+
+    // Batch convert other actor IDs (from getRawContactData) to USD paths
+    virtual void getOtherActorPathsFromIds(const TensorDesc* otherActorIdsTensor, std::vector<std::string>& outPaths) const = 0;
 
     virtual bool check() const = 0;
 

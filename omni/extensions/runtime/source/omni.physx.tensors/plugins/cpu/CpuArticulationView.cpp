@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -920,57 +920,6 @@ bool CpuArticulationView::getJacobians(const TensorDesc* dstTensor) const
     return true;
 }
 
-// DEPRECATED
-bool CpuArticulationView::getMassMatrices(const TensorDesc* dstTensor) const
-{
-    CARB_LOG_WARN("DEPRECATED: Please use getGeneralizedMassMatrices instead.");
-    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    uint32_t massMatrixRows = 0;
-    uint32_t massMatrixCols = 0;
-
-    // this will fail if view is not homogeneous
-    if (!getMassMatrixShape(&massMatrixRows, &massMatrixCols))
-    {
-        return false;
-    }
-
-    uint32_t massMatrixSize = massMatrixRows * massMatrixCols;
-
-    if (!checkTensorDevice(*dstTensor, -1, "Mass Matrix", __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, "Mass Matrix", __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, getCount() * massMatrixSize, "Mass Matrix", __FUNCTION__))
-    {
-        return false;
-    }
-
-    float* dst = (float*)dstTensor->data;
-
-    for (PxU32 i = 0; i < mEntries.size(); i++)
-    {
-        PxArticulationReducedCoordinate* arti = mEntries[i].arti;
-        PxArticulationCache* cache = mArticulationCaches[i];
-
-        arti->commonInit();
-         arti->computeGeneralizedMassMatrix(*cache);
-
-        for (PxU32 j = 0; j < massMatrixSize; j++)
-        {
-            dst[j] = cache->massMatrix[j];
-        }
-
-        dst += massMatrixSize;
-    }
-
-    return true;
-}
-
 bool CpuArticulationView::getGeneralizedMassMatrices(const TensorDesc* dstTensor) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
@@ -988,16 +937,11 @@ bool CpuArticulationView::getGeneralizedMassMatrices(const TensorDesc* dstTensor
     uint32_t massMatrixCols = 0;
 
     // this will fail if view is not homogeneous
-    if (!getMassMatrixShape(&massMatrixRows, &massMatrixCols))
+    if (!getGeneralizedMassMatrixShape(&massMatrixRows, &massMatrixCols))
     {
         return false;
     }
 
-    if (!isFixedBase)
-    {
-        massMatrixRows += 6;
-        massMatrixCols += 6;
-    }
     uint32_t massMatrixSize = massMatrixRows * massMatrixCols;
 
     if (!checkTensorDevice(*dstTensor, -1, "Mass Matrix", __FUNCTION__) ||
@@ -1022,46 +966,6 @@ bool CpuArticulationView::getGeneralizedMassMatrices(const TensorDesc* dstTensor
         }
 
         dst += massMatrixSize;
-    }
-
-    return true;
-}
-
-// DEPRECATED
-bool CpuArticulationView::getCoriolisAndCentrifugalForces(const TensorDesc* dstTensor) const
-{
-    CARB_LOG_WARN("DEPRECATED: Please use getCoriolisAndCentrifugalCompensationForces instead.");
-    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    if (!checkTensorDevice(*dstTensor, -1, "coriolis and centrifugal forces", __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, "coriolis and centrifugal forces", __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, getCount() * mMaxDofs, "coriolis and centrifugal forces", __FUNCTION__))
-    {
-        return false;
-    }
-
-    float* dst = (float*)dstTensor->data;
-
-    for (PxU32 i = 0; i < mEntries.size(); i++)
-    {
-        PxArticulationReducedCoordinate* arti = mEntries[i].arti;
-        PxArticulationCache* cache = mArticulationCaches[i];
-
-        arti->commonInit();
-        arti->computeCoriolisAndCentrifugalForce(*cache);
-
-        for (PxU32 j = 0; j < mMaxDofs; j++)
-        {
-            dst[j] = mEntries[i].metatype->isDofBody0Parent(j) ? cache->jointForce[j] : -cache->jointForce[j];
-        }
-
-        dst += mMaxDofs;
     }
 
     return true;
@@ -1116,46 +1020,6 @@ bool CpuArticulationView::getCoriolisAndCentrifugalCompensationForces(const Tens
         }
 
         dst += maxDofs;
-    }
-
-    return true;
-}
-
-// DEPRECATED
-bool CpuArticulationView::getGeneralizedGravityForces(const TensorDesc* dstTensor) const
-{
-    CARB_LOG_WARN("DEPRECATED: Please use getGravityCompensationForces instead.");
-    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    if (!checkTensorDevice(*dstTensor, -1, "generalized gravity forces", __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, "generalized gravity forces", __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, getCount() * mMaxDofs, "generalized gravity forces", __FUNCTION__))
-    {
-        return false;
-    }
-
-    float* dst = (float*)dstTensor->data;
-
-    for (PxU32 i = 0; i < mEntries.size(); i++)
-    {
-        PxArticulationReducedCoordinate* arti = mEntries[i].arti;
-        PxArticulationCache* cache = mArticulationCaches[i];
-
-        arti->commonInit();
-        arti->computeGeneralizedGravityForce(*cache);
-
-        for (PxU32 j = 0; j < mMaxDofs; j++)
-        {
-            dst[j] = mEntries[i].metatype->isDofBody0Parent(j) ? cache->jointForce[j] : -cache->jointForce[j];
-        }
-
-        dst += mMaxDofs;
     }
 
     return true;
@@ -2183,6 +2047,126 @@ bool CpuArticulationView::setSpatialTendonProperties(const TensorDesc* stiffness
     }
 
     return true;
+}
+
+// ---------------------------------------------------------------------------
+// Mask support - uses shared resolveMaskToIndices() / makeIndexTensorDesc()
+// from TensorUtils.h to avoid duplicating validation logic across view classes.
+// ---------------------------------------------------------------------------
+
+using omni::physics::tensors::MaskResult;
+using omni::physics::tensors::resolveMaskToIndices;
+using omni::physics::tensors::makeIndexTensorDesc;
+
+// Macro to stamp out the ~24 simple two-arg masked setters: setFooMasked(src, mask) -> setFoo(src, &idx).
+// We chose a macro over a template because:
+// - The target methods have mixed const/non-const qualifiers (setDofPositions vs setMaterialProperties const)
+// - Some methods live in the base class, some in the derived — a template would need CRTP or std::function
+// - The macro is #undef'd immediately after use, so it doesn't leak
+// - Each expansion is trivially greppable by method name (setRootTransformsMasked, etc.)
+#define CPU_ARTI_MASKED_SETTER(MethodName, IsConst) \
+bool CpuArticulationView::MethodName##Masked(const TensorDesc* src, const TensorDesc* maskTensor) IsConst \
+{ \
+    std::vector<uint32_t> indices; \
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__); \
+    if (result == MaskResult::Error) return false; \
+    if (result == MaskResult::Empty) return true; \
+    if (result == MaskResult::All)   return MethodName(src, nullptr); \
+    TensorDesc idx = makeIndexTensorDesc(indices, -1); \
+    return MethodName(src, &idx); \
+}
+
+// Non-const masked setters (20)
+CPU_ARTI_MASKED_SETTER(setRootTransforms, )
+CPU_ARTI_MASKED_SETTER(setRootVelocities, )
+CPU_ARTI_MASKED_SETTER(setDofPositions, )
+CPU_ARTI_MASKED_SETTER(setDofVelocities, )
+CPU_ARTI_MASKED_SETTER(setDofActuationForces, )
+CPU_ARTI_MASKED_SETTER(setDofPositionTargets, )
+CPU_ARTI_MASKED_SETTER(setDofVelocityTargets, )
+CPU_ARTI_MASKED_SETTER(setDofLimits, )
+CPU_ARTI_MASKED_SETTER(setDofStiffnesses, )
+CPU_ARTI_MASKED_SETTER(setDofDampings, )
+CPU_ARTI_MASKED_SETTER(setDofMaxForces, )
+CPU_ARTI_MASKED_SETTER(setDofDriveModelProperties, )
+CPU_ARTI_MASKED_SETTER(setDofFrictionCoefficients, )
+CPU_ARTI_MASKED_SETTER(setDofFrictionProperties, )
+CPU_ARTI_MASKED_SETTER(setDofMaxVelocities, )
+CPU_ARTI_MASKED_SETTER(setDofArmatures, )
+CPU_ARTI_MASKED_SETTER(setMasses, )
+CPU_ARTI_MASKED_SETTER(setCOMs, )
+CPU_ARTI_MASKED_SETTER(setInertias, )
+CPU_ARTI_MASKED_SETTER(setDisableGravities, )
+
+// Const masked setters (3 via macro; setCompliantMaterialPropertiesMasked is below, hand-written due to extra param)
+CPU_ARTI_MASKED_SETTER(setMaterialProperties, const)
+CPU_ARTI_MASKED_SETTER(setRestOffsets, const)
+CPU_ARTI_MASKED_SETTER(setContactOffsets, const)
+
+#undef CPU_ARTI_MASKED_SETTER
+
+// setCompliantMaterialPropertiesMasked – has extra srcCombineTensor param
+bool CpuArticulationView::setCompliantMaterialPropertiesMasked(const TensorDesc* src,
+                                                                const TensorDesc* srcCombine,
+                                                                const TensorDesc* maskTensor) const
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setCompliantMaterialProperties(src, srcCombine, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setCompliantMaterialProperties(src, srcCombine, &idx);
+}
+
+// applyForcesAndTorquesAtPositionMasked – has force, torque, position, mask, isGlobal
+bool CpuArticulationView::applyForcesAndTorquesAtPositionMasked(const TensorDesc* srcForceTensor,
+                                                                  const TensorDesc* srcTorqueTensor,
+                                                                  const TensorDesc* srcPositionTensor,
+                                                                  const TensorDesc* maskTensor,
+                                                                  const bool isGlobal)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return applyForcesAndTorquesAtPosition(srcForceTensor, srcTorqueTensor, srcPositionTensor, nullptr, isGlobal);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return applyForcesAndTorquesAtPosition(srcForceTensor, srcTorqueTensor, srcPositionTensor, &idx, isGlobal);
+}
+
+// setFixedTendonPropertiesMasked – multi-param tendon setter
+bool CpuArticulationView::setFixedTendonPropertiesMasked(const TensorDesc* stiffnesses,
+                                                          const TensorDesc* dampings,
+                                                          const TensorDesc* limitStiffnesses,
+                                                          const TensorDesc* limits,
+                                                          const TensorDesc* restLengths,
+                                                          const TensorDesc* offsets,
+                                                          const TensorDesc* maskTensor) const
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setFixedTendonProperties(stiffnesses, dampings, limitStiffnesses, limits, restLengths, offsets, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setFixedTendonProperties(stiffnesses, dampings, limitStiffnesses, limits, restLengths, offsets, &idx);
+}
+
+// setSpatialTendonPropertiesMasked – multi-param tendon setter
+bool CpuArticulationView::setSpatialTendonPropertiesMasked(const TensorDesc* stiffnesses,
+                                                            const TensorDesc* dampings,
+                                                            const TensorDesc* limitStiffnesses,
+                                                            const TensorDesc* offsets,
+                                                            const TensorDesc* maskTensor) const
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setSpatialTendonProperties(stiffnesses, dampings, limitStiffnesses, offsets, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setSpatialTendonProperties(stiffnesses, dampings, limitStiffnesses, offsets, &idx);
 }
 
 }

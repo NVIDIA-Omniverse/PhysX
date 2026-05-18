@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -65,7 +65,7 @@ PxReal stackZ = 10.0f;
 Allocates 128 byte aligned memory block for binary serialized data
 Stores pointer to memory in gMemBlocks for later deallocation
 */
-void* createAlignedBlock(PxU32 size)
+void* createAlignedBlock(PxU64 size)
 {
 	PX_ASSERT(gMemBlockCount < MAX_MEMBLOCKS);
 	PxU8* baseAddr = static_cast<PxU8*>(malloc(size + PX_SERIAL_FILE_ALIGN - 1));

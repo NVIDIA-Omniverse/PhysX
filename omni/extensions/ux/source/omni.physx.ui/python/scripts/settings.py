@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.usd
 from omni import ui
 from omni.physx import get_physx_interface, get_physx_cooking_interface
@@ -71,7 +72,7 @@ class PhysicsPreferences(PreferenceBuilder):
         self._add_setting(SettingType.BOOL, "Simulate empty scene", physx_bindings.SETTING_SIMULATE_EMPTY_SCENE)
 
     def _add_release_local_mesh_cache(self):
-        button = ui.Button("Release Local Mesh Cache", height=BUTTON_HEIGHT, width=300)
+        button = ui.Button("Release Mesh Cache", height=BUTTON_HEIGHT, width=300)
 
         def on_click():
             get_physx_cooking_interface().release_local_mesh_cache()
@@ -79,8 +80,6 @@ class PhysicsPreferences(PreferenceBuilder):
 
     def _build_local_mesh_cache_ui(self):
         self._line_height = 23
-        self._add_setting(SettingType.BOOL, "Enable Local Mesh Cache (Takes Effect on Sim Start)", physx_bindings.SETTING_USE_LOCAL_MESH_CACHE)
-        self._add_setting(SettingType.INT, "Local Mesh Cache Size MB (Takes Effect on Sim Start)", physx_bindings.SETTING_LOCAL_MESH_CACHE_SIZE_MB, 16, 4096)
         self._add_setting(SettingType.BOOL, "Enable Ujitso Collision Cooking", physx_bindings.SETTING_UJITSO_COLLISION_COOKING)
         self._add_setting(SettingType.INT, "Ujitso Cooking Max Process Count", physx_bindings.SETTING_UJITSO_COOKING_MAX_PROCESS_COUNT, 1, 128)
         self._add_release_local_mesh_cache()
@@ -93,7 +92,7 @@ class PhysicsPreferences(PreferenceBuilder):
         self._add_setting(SettingType.INT, "Add Menu Subtree Prim Limit", physx_bindings.SETTING_ADDMENU_SUBTREE_LIMIT, 0, 4294967295)
         self._add_setting(SettingType.BOOL, "Enable Attachment Authoring (Requires Stage Reload)", physx_bindings.SETTING_ENABLE_ATTACHMENT_AUTHORING)
         self._add_setting(SettingType.BOOL, "Enable Particle Authoring (Requires Stage Reload)", physx_bindings.SETTING_ENABLE_PARTICLE_AUTHORING)
-        self._add_setting(SettingType.BOOL, "Enable Deformable Schema Beta (Requires Restart)", physx_bindings.SETTING_ENABLE_DEFORMABLE_BETA)
+        self._add_setting(SettingType.BOOL, "Enable Deprecated Deformables (Requires Restart)", physx_bindings.SETTING_ENABLE_DEFORMABLE_DEPRECATED)
         self._add_setting_combo_and_label(
             "Default Physics Simulator",
             physx_bindings.SETTING_DEFAULT_SIMULATOR,
@@ -238,10 +237,10 @@ class PhysicsSettings(ui.Window):
 
     def _build_update_ui(self):
         self._add_setting(SettingType.BOOL, "Update to USD", physx_bindings.SETTING_UPDATE_TO_USD)
+        self._add_setting(SettingType.BOOL, "Update to USD using XformCommonAPI", physx_bindings.SETTING_UPDATE_TO_USD_USING_XFORM_COMMON_API)
         self._add_setting(SettingType.BOOL, "Update Velocities to USD", physx_bindings.SETTING_UPDATE_VELOCITIES_TO_USD)
         self._add_setting(SettingType.BOOL, "Output Velocities in Local Space", physx_bindings.SETTING_OUTPUT_VELOCITIES_LOCAL_SPACE)
         self._add_setting(SettingType.BOOL, "Update Particles to USD", physx_bindings.SETTING_UPDATE_PARTICLES_TO_USD)
-        self._add_setting(SettingType.BOOL, "Update Residuals to USD", physx_bindings.SETTING_UPDATE_RESIDUALS_TO_USD)
 
     def _build_collision_ui(self):
         self._add_setting(SettingType.BOOL, "Approximate Cones With Convex Meshes", physx_bindings.SETTING_COLLISION_APPROXIMATE_CONES)

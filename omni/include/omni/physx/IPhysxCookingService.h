@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -247,7 +247,7 @@ struct PhysxCookingComputeResult
     enum ResultSource
     {
         eRESULT_CACHE_MISS, //!< If the cooked data has been recomputed from scratch
-        eRESULT_CACHE_HIT_LOCAL, //!< If the cooked data has been read from local cache
+        eRESULT_DEPRECATED, //!< Deprecated: was eRESULT_CACHE_HIT_LOCAL, no longer used
         eRESULT_CACHE_HIT_UJITSO, //!< If the cooked data has been read from UJITSO datastore
     };
     ResultSource resultSource = eRESULT_CACHE_MISS; //!< Indicates the source of data returned in this result object

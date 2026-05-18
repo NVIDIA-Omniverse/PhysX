@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -35,6 +35,9 @@ public:
     virtual bool setSimulationNodalVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     virtual bool getSimulationNodalKinematicTargets(const TensorDesc* dstTensor) const override;
     virtual bool setSimulationNodalKinematicTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
+    virtual bool setSimulationNodalPositionsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    virtual bool setSimulationNodalVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    virtual bool setSimulationNodalKinematicTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     // rest shape
     virtual bool getRestElementIndices(const TensorDesc* dstTensor) const override;
@@ -71,6 +74,8 @@ private:
                     const char* callingFunctionName,
                     const checkTensorType checkTensorBaseType);
 
+    bool resolveMask(const TensorDesc* maskTensor, ::physx::PxU32& outK) const;
+
     // indexing data for all deformable body buffers
     std::vector<GpuDeformableBodyRecord> mDeformableBodyRecords;
     GpuDeformableBodyRecord* mDeformableBodyRecordsD = nullptr;
@@ -81,6 +86,15 @@ private:
 
     DeformableBodyBufferManager mSimElementIndices;
     DeformableBodyBufferManager mRestNodalPositions;
+
+    // Mask -> indices scratch (cached). Declared mutable because resolveMask()
+    // is const - some interface setters (e.g. material/shape properties) are
+    // const by pre-existing TensorAPI convention ("const" = view object unchanged,
+    // simulation state may be mutated via pointer indirection). These buffers are
+    // internal caching state, not logical view state.
+    mutable ::physx::PxU32* mMaskIndicesDev = nullptr;
+    mutable ::physx::PxU32 mMaskIndicesCapacity = 0;
+    mutable SingleAllocPolicy mMaskAllocPolicy;
 };
 
 } // namespace tensors

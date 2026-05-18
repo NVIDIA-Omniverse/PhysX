@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -37,7 +37,6 @@ namespace aos
 //Test that Vec3V and FloatV are legal
 //////////////////////////////////////////////////////////////////////
 
-#define FLOAT_COMPONENTS_EQUAL_THRESHOLD 0.01f
 PX_FORCE_INLINE bool isValidFloatV(const FloatV a)
 {
 	const PxF32 x = V4ReadX(a);
@@ -46,25 +45,6 @@ PX_FORCE_INLINE bool isValidFloatV(const FloatV a)
 	const PxF32 w = V4ReadW(a);
 
 	return (!(x != y || x != z || x != w));
-
-	/*if (
-		(PxAbs(x - y) < FLOAT_COMPONENTS_EQUAL_THRESHOLD) &&
-		(PxAbs(x - z) < FLOAT_COMPONENTS_EQUAL_THRESHOLD) &&
-		(PxAbs(x - w) < FLOAT_COMPONENTS_EQUAL_THRESHOLD)
-		)
-	{
-		return true;
-	}
-	
-	if (
-		(PxAbs((x - y) / x) < FLOAT_COMPONENTS_EQUAL_THRESHOLD) &&
-		(PxAbs((x - z) / x) < FLOAT_COMPONENTS_EQUAL_THRESHOLD) &&
-		(PxAbs((x - w) / x) < FLOAT_COMPONENTS_EQUAL_THRESHOLD)
-		)
-	{
-		return true;
-	}
-	return false;*/
 }
 
 }

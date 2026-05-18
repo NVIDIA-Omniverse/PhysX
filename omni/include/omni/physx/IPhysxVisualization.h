@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -107,7 +107,9 @@ enum PhysXVisualizationParameter
     eMBPRegions,
     eSimulationMesh,
     eSDF,
-
+    ePhysXNumValues,
+    eSplinesSurfaceVelocitySegments, // omni physx custom visualization should be after PhysX debug vis
+    eSplinesSurfaceVelocity, // omni physx custom visualization should be after PhysX debug vis
     eNumValues // to test against PxVisualizationParameter::eNUM_VALUES
 };
 

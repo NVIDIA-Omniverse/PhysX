@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -37,7 +37,6 @@
 #include "solver/PxSolverDefs.h"
 #include "PxArticulationFlag.h"
 #include "PxArticulationTendon.h"
-#include "PxResidual.h"
 #include "PxArticulationMimicJoint.h"
 #include "PxArticulationFlag.h"
 
@@ -170,7 +169,7 @@ namespace physx
 		- The indexing follows the internal DOF index order, see PxArticulationCache::jointVelocity.
 		- The mass matrix is indexed [nCols * row + column].
 
-		\see PxArticulationReducedCoordinate::computeMassMatrix, PxArticulationReducedCoordinate::computeGeneralizedMassMatrix
+		\see PxArticulationReducedCoordinate::computeMassMatrix
 		*/
 		PxReal*						massMatrix;
 
@@ -608,7 +607,7 @@ namespace physx
 
 		\note  When the articulation is added to a scene, the root link adopts the specified pose. The pose of the 
 		root link is propagated through the ensemble of links from parent to child after accounting for each child's 
-		inbound joint frames and the joint positions set by  PxArticulationJointReducedCoordinate::setJointPosition().
+		inbound joint frames and the joint positions set by PxArticulationJointReducedCoordinate::setJointPosition().
 		As a consequence, the pose of each non-root link is automatically overwritten when adding the articulation to the scene.
 
 		\see PxArticulationLink
@@ -624,7 +623,7 @@ namespace physx
 
 		\note This call does not release any PxArticulationCache instance that has been instantiated using #createCache()
 		*/
-		virtual		void				release() = 0;
+		virtual		void				release() PX_OVERRIDE = 0;
 
 		/**
 		\brief Returns the number of links in the articulation.
@@ -873,26 +872,6 @@ namespace physx
 		virtual		void					commonInit() const = 0;
 
 		/**
-		\deprecated Please use computeGravityCompensation instead. It provides a more complete gravity compensation force for floating-base articulations.
-
-		\brief Computes the joint DOF forces required to counteract gravitational forces for the given articulation pose.
-
-		- Inputs:	Articulation pose (joint positions + base transform).
-		- Outputs:	Joint forces to counteract gravity (in cache).
-
-		- The joint forces returned are determined purely by gravity for the articulation in the current joint and base pose, and joints at rest;
-		i.e. external forces, joint velocities, and joint accelerations are set to zero. Joint drives are also not considered in the computation.
-		- commonInit() must be called before the computation, and after setting the articulation pose via applyCache().
-
-		\param[out] cache Out: PxArticulationCache::jointForce.
-
-		\note This call may only be made on articulations that are in a scene, and may not be made during simulation.
-
-		\see commonInit
-		*/
-		virtual		void					computeGeneralizedGravityForce(PxArticulationCache& cache) const = 0;
-
-		/**
 		\brief Computes the forces required to counteract gravitational forces for the given articulation pose.
 
 		In the case of a fixed-base articulation, the gravity compensation force accounts for the gravity on all the links and provides
@@ -917,27 +896,6 @@ namespace physx
 		\see commonInit
 		*/
 		virtual		void					computeGravityCompensation(PxArticulationCache& cache) const = 0;
-
-		/**
-		\deprecated Please use computeCoriolisCompensation instead. It provides a more complete Coriolis and centrifugal compensation force for floating-base articulations.
-
-		\brief Computes the joint DOF forces required to counteract Coriolis and centrifugal forces for the given articulation state.
-
-		- Inputs:	Articulation state (joint positions and velocities (in cache), and base transform and spatial velocity).
-		- Outputs:	Joint forces to counteract Coriolis and centrifugal forces (in cache).
-
-		- The joint forces returned are determined purely by the articulation's state; i.e. external forces, gravity, and joint accelerations are set to zero.
-		Joint drives and potential damping terms, such as link angular or linear damping, or joint friction, are also not considered in the computation.
-		- Prior to the computation, update/set the base spatial velocity with PxArticulationCache::rootLinkData and applyCache().
-		- commonInit() must be called before the computation, and after setting the articulation pose via applyCache().
-
-		\param[in,out] cache In: PxArticulationCache::jointVelocity; Out: PxArticulationCache::jointForce.
-
-		\note This call may only be made on articulations that are in a scene, and may not be made during simulation.
-
-		\see commonInit
-		*/
-		virtual		void					computeCoriolisAndCentrifugalForce(PxArticulationCache& cache) const = 0;
 
 		/**
 		\brief Computes the joint DOF forces (and root force) required to counteract Coriolis and centrifugal forces for the given articulation state.
@@ -1063,7 +1021,7 @@ namespace physx
 
 		\param[out] cache Out: PxArticulationCache::lambda.
 		\param[in] initialState The initial state of the articulation system.
-		\param[in] jointTorque M(q)*qddot + C(q,qdot) + g(q) <- calculate by summing joint forces obtained with computeJointForce and computeGeneralizedGravityForce.
+		\param[in] jointTorque M(q)*qddot + C(q,qdot) + g(q) <- calculate by summing joint forces obtained with computeJointForce and computeGravityCompensation.
 		\param[in] maxIter Maximum number of solver iterations to run. If the system converges, fewer iterations may be used.
 
 		\return True if convergence was achieved within maxIter; False if convergence was not achieved or the operation failed otherwise.
@@ -1073,24 +1031,6 @@ namespace physx
 		\see commonInit, getNbLoopJoints
 		*/
 		virtual	PX_DEPRECATED	bool		computeLambda(PxArticulationCache& cache, PxArticulationCache& initialState, const PxReal* const jointTorque, const PxU32 maxIter) const = 0;
-
-		/**
-		\deprecated Please use computeMassMatrix instead. It provides a more complete mass matrix for floating-base articulations.
-
-		\brief Compute the joint-space inertia matrix that maps joint accelerations to joint forces: forces = M * accelerations.
-
-		- Inputs:	Articulation pose (joint positions and base transform).
-		- Outputs:	Mass matrix (in cache).
-
-		commonInit() must be called before the computation, and after setting the articulation pose via applyCache().
-
-		\param[out] cache Out: PxArticulationCache::massMatrix.
-
-		\note This call may only be made on articulations that are in a scene, and may not be made during simulation.
-
-		\see commonInit
-		*/
-		virtual	PX_DEPRECATED	void		computeGeneralizedMassMatrix(PxArticulationCache& cache) const = 0;
 
 		/**
 		\brief Compute the mass matrix M that maps accelerations to forces: forces = M * accelerations.
@@ -1505,17 +1445,6 @@ namespace physx
 		*/
 		virtual		void					updateKinematic(PxArticulationKinematicFlags flags) = 0;
 
-		/**
-		\brief Returns the internal residual for this articulation (does not include collision or external joint residual values).
-
-		The residual represents the current error in this constraint measured as the delta impulse applied in the last velocity or position iteration.
-		If the solver converges perfectly, the residual should approach zero.
-		
-		\return The residual for the articulation solver.
-
-		\see PxArticulationResidual
-		*/
-		virtual		PxArticulationResidual	getSolverResidual() const = 0;
 
 		/**
 		\brief Returns the string name of the dynamic type.
@@ -1529,10 +1458,10 @@ namespace physx
 		void*								userData;	//!< user can assign this to whatever, usually to create a 1:1 relationship with a user object.
 
 	protected:
-		PX_INLINE							PxArticulationReducedCoordinate(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags) {}
+		PX_INLINE							PxArticulationReducedCoordinate(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags), userData(NULL)   {}
 		PX_INLINE							PxArticulationReducedCoordinate(PxBaseFlags baseFlags) : PxBase(baseFlags) {}
 
-		virtual		bool			isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxArticulationReducedCoordinate", PxBase); }
+		virtual		bool			isKindOf(const char* name) const PX_OVERRIDE { PX_IS_KIND_OF(name, "PxArticulationReducedCoordinate", PxBase); }
 	};
 
 #if PX_VC

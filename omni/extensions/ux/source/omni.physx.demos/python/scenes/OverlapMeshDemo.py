@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.kit.commands
 from omni.physx.scripts.physicsUtils import set_or_add_translate_op
 from pxr import UsdGeom, Sdf, Gf, Vt, PhysicsSchemaTools
@@ -50,6 +51,9 @@ class OverlapMeshDemo(demo.Base):
         usdGeom.GetDisplayColorAttr().Set(origColor)
         usdGeom = UsdGeom.Cube.Get(stage, self.defaultPrimPath + "/boxActor2")
         usdGeom.GetDisplayColorAttr().Set(origColor)
+
+        if omni.timeline.get_timeline_interface().is_stopped():
+            return
 
         path_tuple = PhysicsSchemaTools.encodeSdfPath(Sdf.Path(self._path))
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -6,6 +6,8 @@
 
 #include <carb/logging/Log.h>
 #include "SplinesCurve.h"
+
+#include <common/foundation/TypeCast.h>
 
 using namespace pxr;
 
@@ -106,7 +108,6 @@ SplinesCurve::SplinesCurve(const pxr::UsdGeomBasisCurves& curvePrim)
 
     std::vector<GfVec3f> positions, tangents;
     std::vector<int> vertexCountsPerCurve(curveCount == 0 ? 1 : curveCount);
-    std::vector<float> segmentDistances;
     std::vector<int> segmentCountsPerCurve(curveCount == 0 ? 1 : curveCount);
 
     for (size_t curveIndex = 0, startIndex = 0; curveIndex < (curveCount == 0 ? 1 : curveCount); curveIndex++)
@@ -142,20 +143,74 @@ SplinesCurve::SplinesCurve(const pxr::UsdGeomBasisCurves& curvePrim)
             positions[offset + i] = tessellatedPositions[i];
             tangents[offset + i] = tessellatedTangents[i];
         }
-        offset = segmentDistances.size();
-        segmentDistances.resize(offset + curveSegmentDistances.size());
-        for (size_t i = 0; i < curveSegmentDistances.size(); i++)
-        {
-            segmentDistances[offset + i] = curveSegmentDistances[i];
-        }
 
         vertexCountsPerCurve[curveIndex] = (int)tessellatedPositions.size();
         segmentCountsPerCurve[curveIndex] = (int)curveSegmentDistances.size();
     }
 
+    mCurvaturePoints.resize(positions.size());
+    for (size_t i = 0; i < positions.size(); i++)
+    {
+        if (i == 0 || i == positions.size() - 1)
+        {
+            mCurvaturePoints[i] = GfVec3f(FLT_MAX);
+        }
+        else
+        {
+            const GfVec3f& previousPoint = positions[i - 1];
+            const GfVec3f& currentPoint = positions[i];
+            const GfVec3f& nextPoint = positions[i + 1];
+            
+            // Check if the three points are collinear (forming a straight line)
+            GfVec3f v1 = currentPoint - previousPoint;
+            GfVec3f v2 = nextPoint - currentPoint;
+            
+            // Verify vectors have non-zero length before normalizing to prevent NaNs/asserts
+            const float v1LengthSq = v1.GetLengthSq();
+            const float v2LengthSq = v2.GetLengthSq();
+            const float lengthEpsilonSq = 1e-10f;  // Squared epsilon for length check
+            if (v1LengthSq < lengthEpsilonSq || v2LengthSq < lengthEpsilonSq)
+            {
+                // Degenerate case: coincident or nearly coincident points
+                mCurvaturePoints[i] = GfVec3f(FLT_MAX);
+                continue;
+            }
+            
+            v1.Normalize();
+            v2.Normalize();
+            const GfVec3f crossProduct = GfCross(v1, v2);
+            const float crossProductMagnitude = crossProduct.GetLength();
+            
+            const float collinearityTolerance = 1e-4f;
+            const bool areCollinear = (crossProductMagnitude < collinearityTolerance);
+            
+            if (areCollinear)
+            {
+                // Points form a straight line - no curvature
+                mCurvaturePoints[i] = GfVec3f(FLT_MAX);
+            }
+            else
+            {
+                // Compute the center of the osculating circle/sphere
+                // This is the circumcenter of the three points
+                const GfVec3f a = currentPoint - previousPoint;
+                const GfVec3f b = nextPoint - previousPoint;
+                const GfVec3f axb = GfCross(a, b);
+                const float axbLengthSq = axb.GetLengthSq();
+                
+                // Circumcenter formula: C = P1 + [(|b|² * a - |a|² * b) × (a × b)] / (2 * |a × b|²)
+                const float aLengthSq = a.GetLengthSq();
+                const float bLengthSq = b.GetLengthSq();
+                const GfVec3f numerator = -GfCross((bLengthSq * a - aLengthSq * b), axb);
+                const GfVec3f circumcenter = previousPoint + numerator / (2.0f * axbLengthSq);
+                
+                mCurvaturePoints[i] = circumcenter;
+            }
+        }
+    }
+
     mPoints = positions;
     mTangents = tangents;
-    mDistances = segmentDistances;
     mCurveVertexCounts = vertexCountsPerCurve;
     
 #ifdef __AVX__
@@ -179,7 +234,28 @@ SplinesCurve::~SplinesCurve()
 
 }
 
-bool SplinesCurve::getClosestPoint(const pxr::GfVec3f& point, pxr::GfVec3f& pointOnCurveOut, pxr::GfVec3f& tangentOut)
+void SplinesCurve::draw(omni::physx::OmniRenderBuffer& renderBuffer, const ::physx::PxTransform& tr) const
+{
+    const size_t numLines = mPoints.size() - 1;
+    if (mPoints.size() > 0 && numLines > 0)
+    {
+        for (size_t i = 0; i < numLines; i++)
+        {
+            renderBuffer.addLine(::physx::PxDebugLine(tr.transform(omni::physx::toPhysX(mPoints[i])),
+                                                      tr.transform(omni::physx::toPhysX(mPoints[i + 1])),
+                                                      ::physx::PxDebugColor::eARGB_BLUE));
+
+            if (mCurvaturePoints[i][0] != FLT_MAX)
+            {
+                renderBuffer.addLine(::physx::PxDebugLine(tr.transform(omni::physx::toPhysX(mPoints[i])),
+                                                          tr.transform(omni::physx::toPhysX(mCurvaturePoints[i])),
+                                                          ::physx::PxDebugColor::eARGB_GREEN));
+            }
+        }
+    }
+}
+
+bool SplinesCurve::getClosestPoint(const pxr::GfVec3f& point, pxr::GfVec3f& pointOnCurveOut, pxr::GfVec3f& tangentOut, pxr::GfVec3f& curvaturePointOut)
 {
     bool foundCurve = false;
     GfVec3f pointOnCurve(0), tangentAtPoint(0);
@@ -191,10 +267,12 @@ bool SplinesCurve::getClosestPoint(const pxr::GfVec3f& point, pxr::GfVec3f& poin
 
     const GfVec3f* const points = mPoints.data();
     const GfVec3f* const tangents = mTangents.data();
-    const float* const distances = mDistances.data();
+    const GfVec3f* const curvaturePoints = mCurvaturePoints.data();
     const int* curveVertexCounts = mCurveVertexCounts.data();
 
-    if (points == nullptr || tangents == nullptr || distances == nullptr || curveVertexCounts == nullptr)
+    GfVec3f curvaturePoint(FLT_MAX);
+
+    if (points == nullptr || tangents == nullptr || curveVertexCounts == nullptr || curvaturePoints == nullptr)
     {
         return false;
     }
@@ -206,7 +284,6 @@ bool SplinesCurve::getClosestPoint(const pxr::GfVec3f& point, pxr::GfVec3f& poin
     {
         const GfVec3f* curvePoints = points + pointsStart;
         const GfVec3f* curveTangents = tangents + pointsStart;
-        const float* segmentDistances = distances + segmentsStart;
 
         const size_t vertexCount = curveVertexCounts[curveIndex];        
 
@@ -361,6 +438,7 @@ bool SplinesCurve::getClosestPoint(const pxr::GfVec3f& point, pxr::GfVec3f& poin
             const GfVec3f& ta = curveTangents[closestIndex];
             const GfVec3f& tb = curveTangents[closestIndex + 1];
             tangentAtPoint = ta + closestT * (tb - ta);
+            curvaturePoint = (closestT < 0.5f) ? curvaturePoints[closestIndex] : curvaturePoints[closestIndex+1];
         }
 #else
         // Original non-AVX implementation
@@ -389,13 +467,17 @@ bool SplinesCurve::getClosestPoint(const pxr::GfVec3f& point, pxr::GfVec3f& poin
                 const GfVec3f& ta = curveTangents[i - 1];
                 const GfVec3f& tb = curveTangents[i];
                 tangentAtPoint = ta + t * (tb - ta);
+
+                curvaturePoint = (t < 0.5f) ? curvaturePoints[i - 1] : curvaturePoints[i];
             }
         }
 #endif
         pointsStart += vertexCount;
     }
 
+    curvaturePointOut = curvaturePoint;
     pointOnCurveOut = pointOnCurve;
+    tangentAtPoint.Normalize();
     tangentOut = tangentAtPoint;
     return true;
 }

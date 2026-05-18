@@ -1,0 +1,63 @@
+[package]
+title = "PhysX Cooking"
+description="PhysX 5 mesh cooking system."
+
+version = "110.0.7"
+authors = ["PhysX"]
+
+repository = ""
+keywords = ["physics", "physx", "cooking"]
+category = "simulation"
+
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog="docs/CHANGELOG.md"
+readme  = "docs/README.md"
+
+support_level = "Core"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.convexdecomposition" = { version = "110.0.7", exact = true }
+"omni.usd.libs" = {}
+"omni.usd.schema.physx" = { version = "110.0.7", exact = true }
+"omni.usdphysics" = { version = "110.0.7", exact = true }
+"omni.physx.foundation" = { version = "110.0.7", exact = true }
+"omni.ujitso.default" = {}
+
+[settings]
+UJITSO.enabled=true
+
+[[python.module]]
+name = "omni.physxcooking"
+
+[[native.plugin]]
+path = "bin/omni.physx.cooking.plugin"
+
+[[test]]
+timeout = 1200
+dependencies = [
+    "omni.physx.tests",
+    "omni.kit.renderer.core",
+    "omni.hydra.rtx",
+    "omni.kit.viewport.window",
+]
+args = [
+    "--/UJITSO/datastore/allowHubDataStore=false",
+    "--no-window",
+    "--/app/asyncRendering=false", 
+    "--/app/file/ignoreUnsavedOnExit=true" , 
+    "--/renderer/multiGpu/autoEnable=false",
+    "--/app/profilerBackend=\"\"",
+    "--/rtx/materialDb/syncLoads=true",
+    "--/omni.kit.plugin/syncUsdLoads=true",
+    "--/rtx/hydra/materialSyncLoads=true",
+    "--/app/renderer/resolution/width=64",
+    "--/app/renderer/resolution/height=64",
+    "--/rtx/rendermode=\"rtx\"",
+    "--/physics/cudaDevice=0"
+]

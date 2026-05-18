@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -501,7 +501,7 @@ void InternalScene::swapDeformableCollisionFiltersRigidActor(::physx::PxRigidAct
 
 InternalScene::InternalScene(const PhysxSceneDesc& desc, ::physx::PxScene* scene)
     : mEnabledVehicleCount(0),
-      mScene(scene), mReportResiduals(false), mVolumeDeformablePostSolveCallback(nullptr), mSurfaceDeformablePostSolveCallback(nullptr)
+      mScene(scene), mVolumeDeformablePostSolveCallback(nullptr), mSurfaceDeformablePostSolveCallback(nullptr)
 {
     mSceneDesc = desc;
 
@@ -681,6 +681,14 @@ static PXR_NS::GfMatrix4d getGfMatrix4d(const Transform& transform)
     return mat;
 }
 
+static PXR_NS::GfMatrix4d getGfMatrix4dGfTransform(const Transform& transform)
+{
+    PXR_NS::GfTransform gf(
+        transform.position, GfRotation(transform.orientation), GfVec3d(transform.scale), GfVec3d(0.0), GfRotation());
+
+    return gf.GetMatrix();
+}
+
 bool setPrimXformOpsFast(const InternalActor& actor, const SdfLayerHandle& layer, const GfMatrix4d& mat)
 {
     if (layer)
@@ -782,8 +790,10 @@ void setPrimXformOps(UsdPrim& prim, const GfMatrix4d& mat, bool setScale)
     // if xformop update failed, fall back to matrix transform
     if (!translateSet || !orientSet)
     {
+        const bool resetXformOpStack = primXform.GetResetXformStack();
         primXform.ClearXformOpOrder();
         UsdGeomXformOp xform = primXform.MakeMatrixXform();
+        primXform.SetResetXformStack(resetXformStack);
         if (xform)
             xform.Set(mat);
     }
@@ -855,8 +865,10 @@ void setPrimXformOps(UsdPrim& prim, const Transform& transform, bool setScale)
     // if xformop update failed, fall back to matrix transform
     if (!orientSet || !translateSet)
     {
+        const bool resetXformOpStack = primXform.GetResetXformStack();
         const GfMatrix4d mat = getGfMatrix4d(transform);
         UsdGeomXformOp xform = primXform.MakeMatrixXform();
+        primXform.SetResetXformStack(resetXformStack);
         if (xform)
             xform.Set(mat);
     }
@@ -866,7 +878,7 @@ void processExtraTransforms(const InternalActor& actor, Transform& transform)
 {
     if (actor.mFlags & InternalActorFlag::eHAS_EXTRA_TRANSFORM)
     {
-        GfMatrix4d worldPose = getGfMatrix4d(transform);
+        GfMatrix4d worldPose = getGfMatrix4dGfTransform(transform);
         if (actor.mFlags & InternalActorFlag::eEXTRA_TRANSFORM_PRE_OP)
         {
             worldPose = worldPose * actor.mExtraTransfInv;
@@ -876,8 +888,9 @@ void processExtraTransforms(const InternalActor& actor, Transform& transform)
             worldPose = actor.mExtraTransfInv * worldPose;
         }
 
-        transform.position = GfVec3f(worldPose.ExtractTranslation());
-        transform.orientation = GfQuatf(worldPose.ExtractRotation().GetQuat());
+        GfTransform gf(worldPose);
+        transform.position = GfVec3f(gf.GetTranslation());
+        transform.orientation = GfQuatf(gf.GetRotation().GetQuat());
     }
 }
 
@@ -896,6 +909,193 @@ void processExtraTransforms(const InternalActor& actor, GfMatrix4d& transform)
     }
 }
 
+bool writeTransformUsingXformCommonAPI(const InternalActor& actor, const Transform& transform)
+{
+    if (!actor.mPrim)
+        return false;
+
+    pxr::UsdGeomXformCommonAPI xformAPI(actor.mPrim);
+    if (!xformAPI)
+    {
+        CARB_LOG_WARN_ONCE(
+            "XformCommonAPI not available for prim %s during update. "
+            "Falling back to standard method.",
+            actor.mPrim.GetPrimPath().GetText());
+        return false;
+    }
+
+    // Convert transform to XformCommonAPI format
+    const pxr::GfVec3d translation(transform.position[0], transform.position[1], transform.position[2]);
+    const pxr::GfVec3f scale(transform.scale[0], transform.scale[1], transform.scale[2]);
+
+    // Convert quaternion to rotation matrix
+    const pxr::GfQuatd inputQuat(transform.orientation);
+    pxr::GfMatrix3d rotMatrix = pxr::GfMatrix3d(inputQuat);
+
+    // Get current rotation order from prim
+    pxr::UsdGeomXformCommonAPI::RotationOrder rotOrder;
+    pxr::GfVec3f currentRotation, currentScale, currentPivot;
+    pxr::GfVec3d currentTranslation;
+    xformAPI.GetXformVectors(
+        &currentTranslation, &currentRotation, &currentScale, &currentPivot, &rotOrder, pxr::UsdTimeCode::Default());
+
+    // Transpose the matrix (USD stores matrices in transposed form)
+    rotMatrix = rotMatrix.GetTranspose();
+
+    // Extract Euler angles from rotation matrix
+    // XformCommonAPI uses intrinsic rotations
+    pxr::GfVec3f eulerAngles;
+    double r00 = rotMatrix[0][0], r01 = rotMatrix[0][1], r02 = rotMatrix[0][2];
+    double r10 = rotMatrix[1][0], r11 = rotMatrix[1][1], r12 = rotMatrix[1][2];
+    double r20 = rotMatrix[2][0], r21 = rotMatrix[2][1], r22 = rotMatrix[2][2];
+
+    switch (rotOrder)
+    {
+    case pxr::UsdGeomXformCommonAPI::RotationOrderXYZ:
+    {
+        // Intrinsic XYZ: R = Rx * Ry * Rz
+        double y = asin(std::max(-1.0, std::min(1.0, -r20)));
+        if (std::abs(r20) < 0.99999)
+        {
+            double x = atan2(r21, r22);
+            double z = atan2(r10, r00);
+            eulerAngles[0] = static_cast<float>(x * 180.0 / M_PI);
+            eulerAngles[1] = static_cast<float>(y * 180.0 / M_PI);
+            eulerAngles[2] = static_cast<float>(z * 180.0 / M_PI);
+        }
+        else
+        {
+            double z = atan2(-r01, r11);
+            eulerAngles[0] = 0.0f;
+            eulerAngles[1] = static_cast<float>(y * 180.0 / M_PI);
+            eulerAngles[2] = static_cast<float>(z * 180.0 / M_PI);
+        }
+        break;
+    }
+    case pxr::UsdGeomXformCommonAPI::RotationOrderXZY:
+    {
+        // Intrinsic XZY: R = Rx * Rz * Ry
+        double z = asin(std::max(-1.0, std::min(1.0, r10)));
+        if (std::abs(r10) < 0.99999)
+        {
+            double x = atan2(-r12, r11);
+            double y = atan2(-r20, r00);
+            eulerAngles[0] = static_cast<float>(x * 180.0 / M_PI);
+            eulerAngles[1] = static_cast<float>(y * 180.0 / M_PI);
+            eulerAngles[2] = static_cast<float>(z * 180.0 / M_PI);
+        }
+        else
+        {
+            double y = atan2(r02, r22);
+            eulerAngles[0] = 0.0f;
+            eulerAngles[1] = static_cast<float>(y * 180.0 / M_PI);
+            eulerAngles[2] = static_cast<float>(z * 180.0 / M_PI);
+        }
+        break;
+    }
+    case pxr::UsdGeomXformCommonAPI::RotationOrderYXZ:
+    {
+        // Intrinsic YXZ: R = Ry * Rx * Rz
+        double x = asin(std::max(-1.0, std::min(1.0, r21)));
+        if (std::abs(r21) < 0.99999)
+        {
+            double y = atan2(-r20, r22);
+            double z = atan2(-r01, r11);
+            eulerAngles[0] = static_cast<float>(x * 180.0 / M_PI);
+            eulerAngles[1] = static_cast<float>(y * 180.0 / M_PI);
+            eulerAngles[2] = static_cast<float>(z * 180.0 / M_PI);
+        }
+        else
+        {
+            double z = atan2(r10, r00);
+            eulerAngles[0] = static_cast<float>(x * 180.0 / M_PI);
+            eulerAngles[1] = 0.0f;
+            eulerAngles[2] = static_cast<float>(z * 180.0 / M_PI);
+        }
+        break;
+    }
+    case pxr::UsdGeomXformCommonAPI::RotationOrderYZX:
+    {
+        // Intrinsic YZX: R = Ry * Rz * Rx
+        double z = asin(std::max(-1.0, std::min(1.0, -r01)));
+        if (std::abs(r01) < 0.99999)
+        {
+            double y = atan2(r02, r00);
+            double x = atan2(r21, r11);
+            eulerAngles[0] = static_cast<float>(x * 180.0 / M_PI);
+            eulerAngles[1] = static_cast<float>(y * 180.0 / M_PI);
+            eulerAngles[2] = static_cast<float>(z * 180.0 / M_PI);
+        }
+        else
+        {
+            double x = atan2(-r12, r22);
+            eulerAngles[0] = static_cast<float>(x * 180.0 / M_PI);
+            eulerAngles[1] = 0.0f;
+            eulerAngles[2] = static_cast<float>(z * 180.0 / M_PI);
+        }
+        break;
+    }
+    case pxr::UsdGeomXformCommonAPI::RotationOrderZXY:
+    {
+        // Intrinsic ZXY: R = Rz * Rx * Ry
+        double x = asin(std::max(-1.0, std::min(1.0, -r12)));
+        if (std::abs(r12) < 0.99999)
+        {
+            double z = atan2(r10, r11);
+            double y = atan2(r02, r22);
+            eulerAngles[0] = static_cast<float>(x * 180.0 / M_PI);
+            eulerAngles[1] = static_cast<float>(y * 180.0 / M_PI);
+            eulerAngles[2] = static_cast<float>(z * 180.0 / M_PI);
+        }
+        else
+        {
+            double y = atan2(-r20, r00);
+            eulerAngles[0] = static_cast<float>(x * 180.0 / M_PI);
+            eulerAngles[1] = static_cast<float>(y * 180.0 / M_PI);
+            eulerAngles[2] = 0.0f;
+        }
+        break;
+    }
+    case pxr::UsdGeomXformCommonAPI::RotationOrderZYX:
+    {
+        // Intrinsic ZYX: R = Rz * Ry * Rx
+        double y = asin(std::max(-1.0, std::min(1.0, r02)));
+        if (std::abs(r02) < 0.99999)
+        {
+            double z = atan2(-r01, r00);
+            double x = atan2(-r12, r22);
+            eulerAngles[0] = static_cast<float>(x * 180.0 / M_PI);
+            eulerAngles[1] = static_cast<float>(y * 180.0 / M_PI);
+            eulerAngles[2] = static_cast<float>(z * 180.0 / M_PI);
+        }
+        else
+        {
+            double x = atan2(r21, r11);
+            eulerAngles[0] = static_cast<float>(x * 180.0 / M_PI);
+            eulerAngles[1] = static_cast<float>(y * 180.0 / M_PI);
+            eulerAngles[2] = 0.0f;
+        }
+        break;
+    }
+    default:
+        eulerAngles[0] = 0.0f;
+        eulerAngles[1] = 0.0f;
+        eulerAngles[2] = 0.0f;
+        break;
+    }
+
+    // Use SetXformVectors to write the transform
+    const bool success = xformAPI.SetXformVectors(
+        translation, eulerAngles, scale, currentPivot, rotOrder, pxr::UsdTimeCode::Default());
+
+    if (!success)
+    {
+        CARB_LOG_WARN("  WARNING: SetXformVectors failed for prim %s\n", actor.mPrim.GetPrimPath().GetText());
+    }
+
+    return success;
+}
+
 static void writeSingleNonRootTransformToUsd(UsdPrim& prim,
                                              UsdPrim& parentXformPrim,
                                              UsdGeomXformCache& xformCache,
@@ -911,14 +1111,31 @@ static void writeSingleNonRootTransformToUsd(UsdPrim& prim,
 
 static void writeSingleNonRootTransformToUsd(const InternalActor& actor,
     const SdfLayerHandle& layer,
-    UsdPrim& prim,    
-    const GfMatrix4d& parentWorldTransfInv,    
+    UsdPrim& prim,
+    const GfMatrix4d& parentWorldTransfInv,
     const Transform& transform)
 {
     const GfMatrix4d worldPose = getGfMatrix4d(transform);
     GfMatrix4d localTransf = worldPose * parentWorldTransfInv;
 
     processExtraTransforms(actor, localTransf);
+
+    // XformCommonAPI path
+    if (actor.mFlags & InternalActorFlag::eUSE_XFORM_COMMON_API)
+    {
+        GfTransform gf(localTransf);
+        Transform ltr;
+        ltr.scale = transform.scale;
+        ltr.position = GfVec3f(gf.GetTranslation());
+        ltr.orientation = GfQuatf(gf.GetRotation().GetQuat());
+        if (writeTransformUsingXformCommonAPI(actor, ltr))
+        {
+            return;  // Success - early exit
+        }
+        // Fall through to original code path if XformCommonAPI fails
+    }
+
+    // Original code path: use matrix-based transforms    
     if (actor.mFlags & InternalActorFlag::eFAST_TRANSFORM)
     {
         if (!setPrimXformOpsFast(actor, layer, localTransf))
@@ -954,7 +1171,24 @@ void writeSingleTransformToUsd(InternalActor& actor, const SdfLayerHandle& layer
     else
     {
         processExtraTransforms(actor, transform);
-        if (actor.mFlags & InternalActorFlag::eFAST_TRANSFORM)
+
+        if (actor.mFlags & InternalActorFlag::eUSE_XFORM_COMMON_API)
+        {
+            if (!writeTransformUsingXformCommonAPI(actor, transform))
+            {
+                // Fallback to standard method
+                if (actor.mFlags & InternalActorFlag::eFAST_TRANSFORM)
+                {
+                    if (!setPrimXformOpsFast(actor, layer, transform))
+                        setPrimXformOps(actor.mPrim, transform, false);
+                }
+                else
+                {
+                    setPrimXformOps(actor.mPrim, transform, false);
+                }
+            }
+        }
+        else if (actor.mFlags & InternalActorFlag::eFAST_TRANSFORM)
         {
             if (!setPrimXformOpsFast(actor, layer, transform))
             {
@@ -1237,6 +1471,11 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
                         std::memcpy(velocities.data(), srcPtr, sizeof(GfVec3f) * velocities.size());
                         simGeom.GetVelocitiesAttr().Set(velocities);
                     }
+                    else if (srcSize == 0) // for velocities, srcSize might be 0, which means no velocities
+                    {
+                        velocities.clear();
+                        simGeom.GetVelocitiesAttr().Set(velocities);
+                    }
                 }
             }
 
@@ -1311,6 +1550,11 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
                     if (velocities.size() == srcSize)
                     {
                         std::memcpy(velocities.data(), srcPtr, sizeof(GfVec3f) * velocities.size());
+                        simMesh.GetVelocitiesAttr().Set(velocities);
+                    }
+                    else if (srcSize == 0) // for velocities, srcSize might be 0, which means no velocities
+                    {
+                        velocities.clear();
                         simMesh.GetVelocitiesAttr().Set(velocities);
                     }
                 }
@@ -1555,6 +1799,17 @@ void InternalScene::updateRigidBodyTransforms(bool updateToUsd,
         PxU32 nbActors = 0;
         PxActor** activeActors = mScene->getActiveActors(nbActors);
 
+        struct NestedBody
+        {
+            InternalActor* actor;
+            Transform transform;
+            bool updated;
+        };
+
+        using NestedBodiesMap = std::unordered_map<SdfPath, NestedBody, SdfPath::Hash>;
+
+        NestedBodiesMap nestedBodies;
+
         for (PxU32 i = 0; i < nbActors; i++)
         {
             const PxActor* pxActor = activeActors[i];
@@ -1625,16 +1880,26 @@ void InternalScene::updateRigidBodyTransforms(bool updateToUsd,
                                 {
                                     if (updateToUsd)
                                     {
-                                        // We should ensure that all xformOp setups are consistent during physics scene
-                                        // setup. Any rigid bodies setup by PhysicsSchemaTools will have translate and
-                                        // rotate ops that we can directly set here. UsdUtils::setLocalTransformMatrix
-                                        // could work for prims regardless of their pre-existing xformOps, but with a
-                                        // performance cost, and portability issues, we we want omni.physx to be
-                                        // independent of any other Kit extensions. Anecdotally, usage of
-                                        // UsdUtils::setLocalTransformMatrix seemed to also intermittently give
-                                        // incorrect results with the VariousShapesOnTrimesh demo, where a couple of the
-                                        // rigid bodies sometimes do not update as expected.
-                                        writeSingleTransformToUsd(*actor, currentLayer, xformCache, fcTransform);
+                                        if (actor->mFlags & InternalActorFlag::eNESTED_BODY)
+                                        {
+                                            // Nested bodies cant be updated directly, they have to respect the
+                                            // hierarchy and be updated accordingly from top to bottom
+                                            nestedBodies[actor->mPrim.GetPrimPath()] = { actor, fcTransform, false };
+                                        }
+                                        else
+                                        {
+                                            // We should ensure that all xformOp setups are consistent during physics
+                                            // scene setup. Any rigid bodies setup by PhysicsSchemaTools will have
+                                            // translate and rotate ops that we can directly set here.
+                                            // UsdUtils::setLocalTransformMatrix could work for prims regardless of
+                                            // their pre-existing xformOps, but with a performance cost, and portability
+                                            // issues, we we want omni.physx to be independent of any other Kit
+                                            // extensions. Anecdotally, usage of UsdUtils::setLocalTransformMatrix
+                                            // seemed to also intermittently give incorrect results with the
+                                            // VariousShapesOnTrimesh demo, where a couple of the rigid bodies sometimes
+                                            // do not update as expected.
+                                            writeSingleTransformToUsd(*actor, currentLayer, xformCache, fcTransform);
+                                        }
                                     }
                                 }
                                 else
@@ -1896,6 +2161,55 @@ void InternalScene::updateRigidBodyTransforms(bool updateToUsd,
                 }
             }
         }
+
+        // process nested bodies transformations updated based on the hierarchy order
+        SdfPathVector nestedPaths;
+        for (NestedBodiesMap::reference ref : nestedBodies)
+        {
+            NestedBody& body = ref.second;
+            if (!body.updated)
+            {
+                nestedPaths.clear();
+                // traverse up, store the paths to update
+                UsdPrim parent = body.actor->mPrim.GetParent();
+                while (parent && parent != body.actor->mPrim.GetStage()->GetPseudoRoot())
+                {
+                    NestedBodiesMap::const_iterator fit = nestedBodies.find(parent.GetPrimPath());
+                    if (fit != nestedBodies.end())
+                    {
+                        if (!fit->second.updated)
+                        {
+                            nestedPaths.push_back(parent.GetPrimPath());
+                        }
+                        else
+                        {
+                            // if updated we dont need to traverse anymore abort
+                            break;
+                        }
+                    }
+                    parent = parent.GetParent();
+                }
+
+                // update from top to bottom
+                for (size_t i = nestedPaths.size(); i--;)
+                {
+                    const SdfPath& bodyToUpdatePath = nestedPaths[i];
+                    NestedBodiesMap::iterator fit = nestedBodies.find(bodyToUpdatePath);
+                    if (fit != nestedBodies.end())
+                    {
+                        NestedBody& bodyToUpdate = fit->second;
+                        bodyToUpdate.actor->mFlags |= InternalActorFlag::ePARENT_XFORM_DIRTY;
+                        writeSingleTransformToUsd(*bodyToUpdate.actor, currentLayer, xformCache, bodyToUpdate.transform);
+                        bodyToUpdate.updated = true;
+                    }
+                }
+
+                // update the body itself
+                body.actor->mFlags |= InternalActorFlag::ePARENT_XFORM_DIRTY;
+                writeSingleTransformToUsd(*body.actor, currentLayer, xformCache, body.transform);
+                body.updated = true;
+            }
+        }
     }
 
     if (!currInstancerPath.IsEmpty())
@@ -1992,11 +2306,6 @@ void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVeloci
         {
             if (!particleSet->mNumParticles || !particleSet->mEnabled || !particleSet->mDownloadDirtyFlags)
                 continue;
-
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-            if (particleSet->mFabric)
-                continue;
-#endif
 
             // transform particles from world space back to prim local space
             UsdGeomXform xform(particleSet->mPrim);
@@ -2577,63 +2886,10 @@ void InternalScene::updateJointState(UsdStageWeakPtr stage, const InternalDataba
     }
 }
 
-void InternalScene::updateResiduals(bool updateToUsd)
-{
-    if (!(mScene->getFlags() & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING))
-        return;
-
-    SimulationCallbacks* cb = SimulationCallbacks::getSimulationCallbacks();
-    const bool skipWriteResiduals = cb->checkGlobalSimulationFlags(GlobalSimulationFlag::eRESIDUALS | GlobalSimulationFlag::eSKIP_WRITE);
-    void* cbUserData = cb->getUserData();
-    ResidualUpdateNotificationFn residualFn = cb->getResidualWriteFn();
-    const bool notifyResiduals = residualFn && cb->checkGlobalSimulationFlags(GlobalSimulationFlag::eRESIDUALS | GlobalSimulationFlag::eNOTIFY_UPDATE);
-
-    if (notifyResiduals || residualFn || (updateToUsd && !skipWriteResiduals))
-    {
-        const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-        const std::vector<InternalPhysXDatabase::Record>& records = db.getRecords();
-
-        PxArticulationReducedCoordinate* articulation;
-        const PxU32 nbArticulations = mScene->getNbArticulations();        
-
-        SdfLayerHandle currentLayer = OmniPhysX::getInstance().getStage()->GetEditTarget().GetLayer();
-
-        for (PxU32 i = 0; i < nbArticulations; ++i)
-        {
-            mScene->getArticulations(&articulation, 1, i);
-
-            const size_t recordIndex = (size_t)articulation->userData;
-            if (recordIndex < db.getRecords().size())
-            {
-                const InternalDatabase::Record& record = db.getRecords()[recordIndex];
-                if (record.mType == ePTArticulation && record.mInternalPtr && ((InternalArticulation*)record.mInternalPtr)->mReportResiduals)
-                {
-                    const PxResiduals residuals = articulation->getSolverResidual();                    
-                    updateResidualsImpl(updateToUsd, skipWriteResiduals, notifyResiduals, residualFn, record.mPath, residuals, currentLayer, cbUserData);
-                }
-            }
-        }
-
-        {
-            const size_t recordIndex = (size_t)mScene->userData;
-            if (recordIndex < db.getRecords().size())
-            {
-                const InternalDatabase::Record& record = db.getRecords()[recordIndex];
-                if (record.mType == ePTScene  && record.mInternalPtr && ((InternalScene*)record.mInternalPtr)->mReportResiduals)
-                {
-                    const PxResiduals residuals = mScene->getSolverResidual();
-                    updateResidualsImpl(updateToUsd, skipWriteResiduals, notifyResiduals, residualFn, record.mPath, residuals, currentLayer, cbUserData);
-                }
-            }
-        }
-    }
-}
-
 void InternalScene::updateSimulationOutputs(bool updateToUsd,
                                            bool updateVelocitiesToUsd,
                                            bool outputVelocitiesLocalSpace,
-                                           bool updateParticlesToUsd,
-                                           bool updateResidualsToUsd)
+                                           bool updateParticlesToUsd)
 {
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     ScopedNoticeBlock scopedNoticeBlock;
@@ -2648,7 +2904,6 @@ void InternalScene::updateSimulationOutputs(bool updateToUsd,
         {
             CARB_PROFILE_ZONE(0, "updateRenderTransforms::USDWrite");
             updateRigidBodyTransforms(updateToUsd, updateVelocitiesToUsd, outputVelocitiesLocalSpace);
-            updateResiduals(updateResidualsToUsd);
             updateCctTransforms(updateToUsd);
             updateVehicleTransforms(updateToUsd);
             updateParticleTransforms(updateToUsd, updateVelocitiesToUsd, updateParticlesToUsd);
@@ -2662,7 +2917,6 @@ void InternalScene::updateSimulationOutputs(bool updateToUsd,
         {
             CARB_PROFILE_ZONE(0, "updateRenderTransforms::USDWrite");
             updateRigidBodyTransforms(updateToUsd, updateVelocitiesToUsd, outputVelocitiesLocalSpace);
-            updateResiduals(updateResidualsToUsd);
             updateCctTransforms(updateToUsd);
             updateVehicleTransforms(updateToUsd);
             updateParticleTransforms(updateToUsd, updateVelocitiesToUsd, updateParticlesToUsd);
@@ -2670,7 +2924,7 @@ void InternalScene::updateSimulationOutputs(bool updateToUsd,
         }
     }
 
-    if (updateToUsd || updateVelocitiesToUsd || outputVelocitiesLocalSpace || updateParticlesToUsd || updateResidualsToUsd)
+    if (updateToUsd || updateVelocitiesToUsd || outputVelocitiesLocalSpace || updateParticlesToUsd)
     {
         flushUsdToFabric(omniPhysX.getStage(), false);
     }
@@ -2964,4 +3218,23 @@ PhysxSchemaJointStateAPI InternalJoint::InternalJointState::getCachedJointStateA
         cachedJointStateAPI = PhysxSchemaJointStateAPI::Get(jointPrim, axisToken);
     }
     return cachedJointStateAPI;
+}
+
+
+void InternalScene::debugDraw(omni::physx::OmniRenderBuffer& renderBuffer, uint64_t debugDrawFlags)
+{
+    if (debugDrawFlags & InternalDebugDrawFlags::eDEBUG_DRAW_SPLINES_SEGMENTS)
+    {
+        // Get all actors with SplinesCurve
+        // A.B. TODO buffer the actors
+        for (const InternalActor* actor : mActors)
+        {
+            if (actor->mSplinesCurve)
+            {
+                const SplinesCurve* spline = actor->mSplinesCurve;
+                const PxTransform splineWorldPose = actor->mActor->getGlobalPose() * actor->mSplineLocalSpace;
+                spline->draw(renderBuffer, splineWorldPose);
+            }
+        }
+    }
 }

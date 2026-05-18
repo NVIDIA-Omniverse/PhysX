@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -551,6 +551,173 @@ bool CpuRigidBodyView::applyForcesAndTorquesAtPosition(const TensorDesc* srcForc
 
     return true;
 }
+
+// ── Mask helpers & masked variants ──────────────────────────────────────────
+
+using omni::physics::tensors::MaskResult;
+using omni::physics::tensors::resolveMaskToIndices;
+using omni::physics::tensors::makeIndexTensorDesc;
+
+bool CpuRigidBodyView::setKinematicTargetsMasked(const TensorDesc* src, const TensorDesc* mask)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setKinematicTargets(src, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setKinematicTargets(src, &idx);
+}
+
+bool CpuRigidBodyView::setTransformsMasked(const TensorDesc* src, const TensorDesc* mask)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setTransforms(src, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setTransforms(src, &idx);
+}
+
+bool CpuRigidBodyView::setVelocitiesMasked(const TensorDesc* src, const TensorDesc* mask)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setVelocities(src, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setVelocities(src, &idx);
+}
+
+bool CpuRigidBodyView::applyForcesMasked(const TensorDesc* src, const TensorDesc* mask)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return applyForces(src, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return applyForces(src, &idx);
+}
+
+bool CpuRigidBodyView::applyForcesAndTorquesAtPositionMasked(const TensorDesc* srcForceTensor,
+                                                              const TensorDesc* srcTorqueTensor,
+                                                              const TensorDesc* srcPositionTensor,
+                                                              const TensorDesc* maskTensor,
+                                                              const bool isGlobal)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(maskTensor, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return applyForcesAndTorquesAtPosition(srcForceTensor, srcTorqueTensor, srcPositionTensor, nullptr, isGlobal);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return applyForcesAndTorquesAtPosition(srcForceTensor, srcTorqueTensor, srcPositionTensor, &idx, isGlobal);
+}
+
+bool CpuRigidBodyView::setMassesMasked(const TensorDesc* src, const TensorDesc* mask)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setMasses(src, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setMasses(src, &idx);
+}
+
+bool CpuRigidBodyView::setCOMsMasked(const TensorDesc* src, const TensorDesc* mask)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setCOMs(src, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setCOMs(src, &idx);
+}
+
+bool CpuRigidBodyView::setInertiasMasked(const TensorDesc* src, const TensorDesc* mask)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setInertias(src, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setInertias(src, &idx);
+}
+
+bool CpuRigidBodyView::setDisableGravitiesMasked(const TensorDesc* src, const TensorDesc* mask)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setDisableGravities(src, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setDisableGravities(src, &idx);
+}
+
+bool CpuRigidBodyView::setDisableSimulationsMasked(const TensorDesc* src, const TensorDesc* mask)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setDisableSimulations(src, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setDisableSimulations(src, &idx);
+}
+
+bool CpuRigidBodyView::setMaterialPropertiesMasked(const TensorDesc* src, const TensorDesc* mask) const
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setMaterialProperties(src, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setMaterialProperties(src, &idx);
+}
+
+bool CpuRigidBodyView::setCompliantMaterialPropertiesMasked(const TensorDesc* src,
+                                                             const TensorDesc* srcCombine,
+                                                             const TensorDesc* mask) const
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setCompliantMaterialProperties(src, srcCombine, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setCompliantMaterialProperties(src, srcCombine, &idx);
+}
+
+bool CpuRigidBodyView::setRestOffsetsMasked(const TensorDesc* src, const TensorDesc* mask) const
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setRestOffsets(src, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setRestOffsets(src, &idx);
+}
+
+bool CpuRigidBodyView::setContactOffsetsMasked(const TensorDesc* src, const TensorDesc* mask) const
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setContactOffsets(src, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setContactOffsets(src, &idx);
+}
+
 }
 }
 }

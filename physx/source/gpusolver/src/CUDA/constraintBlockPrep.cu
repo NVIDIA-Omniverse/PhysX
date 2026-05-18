@@ -22,27 +22,26 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #include "PxgBodySim.h"
-#include "PxgArticulation.h"
+#include "PxgArticulationBlockData.h"
 #include "PxgSolverBody.h"
 #include "PxgConstraint.h"
 #include "PxgFrictionPatch.h"
 #include "PxgConstraintPrep.h"
 #include "PxgSolverConstraintDesc.h"
 #include "PxgSolverCoreDesc.h"
-#include "PxgCudaMemoryAllocator.h"
 #include "PxgArticulationCoreKernelIndices.h"
+#include "PxgCommonDefines.h"
 #include "DySolverConstraintTypes.h"
 #include "DyConstraintPrep.h"
 #include "PxNodeIndex.h"
 #include "PxContact.h"
 #include "PxsContactManagerState.h"
 #include "contactConstraintBlockPrep.cuh"
-#include "contactConstraintPrep.cuh"
 #include "jointConstraintBlockPrep.cuh"
 #include "constant.cuh"
 #include "constraintPrepShared.cuh"
@@ -196,9 +195,10 @@ extern "C" __global__ void jointConstraintBlockPrepareParallelLaunch(
 
 			PxU32 uniqueIndex = solverDesc->constraintUniqueIndices[batch.mStartPartitionIndex + threadIndexInWarp];
 				
-			setupSolverConstraintBlockGPU<PxgKernelBlockDim::CONSTRAINT_PREPARE_BLOCK_PARALLEL>(&constraintData, rowVelocities, rowParameters, bodyData0, bodyData1, txIData0, txIData1, sharedDesc->dt, sharedDesc->invDtF32, batch, threadIndexInWarp,
-					&jointConstraintHeaders[descIndexBatch], &jointConstraintRowsCon[batch.startConstraintIndex], &jointConstraintRowsMod[batch.startConstraintIndex],
-					solverDesc->solverConstantData[uniqueIndex]);
+			setupSolverConstraintBlockGPU<PxgKernelBlockDim::CONSTRAINT_PREPARE_BLOCK_PARALLEL>(&constraintData, rowVelocities, rowParameters, bodyData0, bodyData1, txIData0, txIData1, sharedDesc->dt, sharedDesc->invDtF32,
+				solverDesc->biasCoefficients.joint, batch, threadIndexInWarp,
+				&jointConstraintHeaders[descIndexBatch], &jointConstraintRowsCon[batch.startConstraintIndex], &jointConstraintRowsMod[batch.startConstraintIndex],
+				solverDesc->solverConstantData[uniqueIndex]);
 		}    
 	}
 }
@@ -478,7 +478,8 @@ extern "C" __global__ void contactConstraintBlockPrepareParallelLaunch(
 			PxU32 offset = unit.mWriteback[threadIndexInWarp];
 			createFinalizeSolverContactsBlockGPU(&contactData, baseContact, frictionPatch, prevFrictionPatches, fAnchor, prevFrictionAnchors, prevFrictionIndices, *bodyData0, *bodyData1, 
 				invInertia0, invInertia1, bodyFrame0, bodyFrame1, linVel_invMass0, angVelXYZ_penBiasClamp0, linVel_invMass1, angVelXYZ_penBiasClamp1,
-				sharedDesc->invDtF32, sharedDesc->dt, constraintPrepDesc->bounceThresholdF32, constraintPrepDesc->frictionOffsetThreshold, constraintPrepDesc->correlationDistance,
+				sharedDesc->invDtF32, sharedDesc->dt, constraintPrepDesc->bounceThresholdF32,
+				constraintPrepDesc->frictionOffsetThreshold, constraintPrepDesc->correlationDistance, constraintPrepDesc->biasCoefficients.rigidContact,
 				threadIndexInWarp, offset, &contactHeaders[descIndexBatch], &frictionHeaders[descIndexBatch], &contactPoints[batch.startConstraintIndex], 
 				&frictions[batch.startFrictionIndex], totalPreviousEdges, edgeIndex, constraintPrepDesc->ccdMaxSeparation, solverOffsetSlop);
 

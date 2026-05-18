@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -31,7 +31,8 @@
 
 #include "foundation/PxVecMath.h"
 
-using namespace physx;
+namespace physx
+{
 
 __device__ inline bool isConeLimitedEnabled(float maxAngle, float minDist, float maxDist)
 {
@@ -209,5 +210,7 @@ PX_FORCE_INLINE __device__ PxVec3 calculateAttachmentDeltaImpulseTGS(PxU32 offse
 											  constraint.low_high_limits[offset], constraint.axis_angle[offset], vel0, linDelta1, dt,
 											  biasCoefficient, isVelocityIteration, deltaLinVel, deltaAngVel);
 }
+
+} // namespace physx
 
 #endif // __ATTACHMENTS_CUH__

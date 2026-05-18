@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from collections.abc import Iterable
 from pxr import Usd
 from functools import partial
@@ -63,7 +64,7 @@ def _preserve_scroll_position_and_rebuild():
     
     try:
         import omni.kit.window.property as property_window
-        import omni.kit.property.physx.utils as physx_utils
+        import omni.kit.property.physics.utils as physx_utils
         
         # Get the current property window
         window = property_window.get_window()
@@ -343,8 +344,9 @@ def _on_next_page(prim_path, attribute_name):
                 total_size = current_state.get('total_size', 0)
                 
                 # Calculate new start index (next page)
-                max_start_index = max(0, total_size - page_size) if total_size > 0 else 0
-                new_start_index = min(start_index + page_size, max_start_index)
+                # Max is the start of the last page
+                last_page_start = ((total_size - 1) // page_size) * page_size if total_size > 0 else 0
+                new_start_index = min(start_index + page_size, last_page_start)
                 
                 current_state['start_index'] = new_start_index
                 if _debug_pagination:
@@ -405,6 +407,9 @@ def _on_page_index_change(prim_path, attribute_name):
 def _get_object_names_for_handles(handles, stage):
     """Get object names and actionability for a list of handles.
     
+    OPTIMIZED: Uses C++ batch implementation for fast handle resolution.
+    Single C++ call resolves all handles at once, avoiding Python-C++ interop overhead.
+    
     Args:
         handles: List of object handles
         stage: USD stage to search in
@@ -421,110 +426,19 @@ def _get_object_names_for_handles(handles, stage):
         - True for handles that point to prims without viz attribute or with active viz attribute
         - False for "INVALID" handles
     """
-    # Initialize result lists - set "NULL" for handles with value 0, "INVALID" for others
-    object_names = []
-    is_actionable = []
-    for handle in handles:
-        if int(handle) == 0:
-            object_names.append("NULL")
-            is_actionable.append(False)  # NULL handles are not actionable
-        else:
-            object_names.append("INVALID")
-            is_actionable.append(False)  # Invalid handles are not actionable
+    from omni.physxpvd.bindings._physxPvd import acquire_physx_pvd_interface
+    
+    if not handles:
+        return [], []
+    
     curr_time = get_time()
+    pvd_interface = acquire_physx_pvd_interface()
     
-    # Convert handles to set for O(1) lookup
-    handle_set = {int(handle) for handle in handles}
+    # Convert handles to integers and call C++ batch function
+    handle_ints = [int(h) for h in handles]
+    object_names, is_actionable = pvd_interface.get_handle_prim_names_batch(handle_ints, curr_time)
     
-    # Track the best prim for each handle (either currently active or last active)
-    handle_to_best_prim = {}
-    
-    # Iterate over prims to find the best match for each handle
-    for prim in stage.TraverseAll():
-        traversing_handle = get_object_handle(prim)
-        if not traversing_handle:
-            continue
-            
-        handle_int = int(traversing_handle)
-        if handle_int not in handle_set:
-            continue
-            
-        # Check if this prim has viz attribute and determine its state
-        has_viz_attr = prim.HasAttribute("omni:pvdi:viz")
-        is_currently_active = False
-        last_active_time = None
-        
-        if has_viz_attr:
-            viz_attr = prim.GetAttribute("omni:pvdi:viz")
-            is_currently_active = viz_attr.Get(curr_time)
-            
-            # Calculate the last active time for this prim
-            if not is_currently_active:
-                try:
-                    # Get all time samples for this attribute
-                    time_samples = viz_attr.GetTimeSamples()
-                    # Find the latest time where this prim was active and <= curr_time
-                    for sample_time in reversed(time_samples):
-                        if sample_time <= curr_time and viz_attr.Get(sample_time):
-                            last_active_time = sample_time
-                            break
-                except:
-                    last_active_time = None
-        
-        # Determine if this prim is better than the current best for this handle
-        should_use_this_prim = False
-        
-        if handle_int not in handle_to_best_prim:
-            # First prim we've seen with this handle
-            should_use_this_prim = True
-        else:
-            existing_prim, existing_active, existing_last_time, existing_has_viz = handle_to_best_prim[handle_int]
-            
-            # Priority: has_viz_attr > currently active > last active time > first encountered
-            if has_viz_attr and not existing_has_viz:
-                # Current prim has viz attribute, existing doesn't
-                should_use_this_prim = True
-            elif not has_viz_attr and existing_has_viz:
-                # Current prim doesn't have viz attribute, existing does - keep existing
-                should_use_this_prim = False
-            elif has_viz_attr and existing_has_viz:
-                # Both have viz attributes - use activity-based priority
-                if is_currently_active and not existing_active:
-                    # Current prim is active, existing isn't
-                    should_use_this_prim = True
-                elif not is_currently_active and existing_active:
-                    # Current prim isn't active, existing is - keep existing
-                    should_use_this_prim = False
-                elif is_currently_active and existing_active:
-                    # Both are active - keep the first one (existing)
-                    should_use_this_prim = False
-                else:
-                    # Both are inactive - use the one that was active more recently
-                    if last_active_time is not None and (existing_last_time is None or last_active_time > existing_last_time):
-                        should_use_this_prim = True
-            else:
-                # Neither has viz attribute - keep the first one (existing)
-                should_use_this_prim = False
-        
-        if should_use_this_prim:
-            handle_to_best_prim[handle_int] = (prim.GetName(), is_currently_active, last_active_time, has_viz_attr)
-    
-    # Update object names and actionability based on the best prim found for each handle
-    for i, target_handle in enumerate(handles):
-        handle_int = int(target_handle)
-        if handle_int in handle_to_best_prim:
-            prim_name, is_currently_active, last_active_time, has_viz_attr = handle_to_best_prim[handle_int]
-            object_names[i] = prim_name
-            
-            # Determine if this handle is actionable:
-            # - Prims without viz attribute are always actionable
-            # - Prims with viz attribute are only actionable if currently active
-            if not has_viz_attr:
-                is_actionable[i] = True  # No viz attribute = always actionable
-            else:
-                is_actionable[i] = is_currently_active  # Has viz = actionable only if active
-    
-    return object_names, is_actionable
+    return list(object_names), list(is_actionable)
 
 def prim_handler(prim: Usd.Prim) -> bool:
     if not prim.HasAttribute("omni:pvdi:class"):
@@ -544,7 +458,7 @@ def prim_handler(prim: Usd.Prim) -> bool:
                 
                 # Handle empty iterable case
                 if total_size == 0:
-                    make_label(f'{display_name} (Empty Data List)', 1)
+                    make_label(f'{display_name} (Empty Data List)')
                     continue
                 
                 # Handle small iterables (< 10 elements) - display directly without pagination
@@ -554,9 +468,9 @@ def prim_handler(prim: Usd.Prim) -> bool:
                         make_label_value(display_name, data_values[0])
                     else:
                         # Multiple elements but < 10 - display all with indices
-                        make_label(display_name, 1)
+                        make_label(display_name)
                         for i, data_value in enumerate(data_values):
-                            make_label_value(f'[{i}]', data_value, 2)
+                            make_label_value(f'[{i}]', data_value, 1)
                     continue
                 
                 # Initialize pagination state if not exists for data attributes
@@ -587,14 +501,6 @@ def prim_handler(prim: Usd.Prim) -> bool:
                 start_index = current_state['start_index']
                 page_size = current_state['page_size']
                 
-                # Ensure start_index doesn't exceed bounds after total_size update
-                max_start_index = max(0, total_size - 1) if total_size > 0 else 0
-                if start_index > max_start_index:
-                    start_index = max_start_index
-                    current_state['start_index'] = start_index
-                    if _debug_pagination:
-                        print(f"Adjusted data start_index to {start_index} due to total_size change")
-                
                 # Ensure page_size doesn't exceed total_size
                 max_page_size = min(100, total_size) if total_size > 0 else 1
                 if page_size > max_page_size:
@@ -603,9 +509,15 @@ def prim_handler(prim: Usd.Prim) -> bool:
                     if _debug_pagination:
                         print(f"Adjusted data page_size to {page_size} due to total_size change")
                 
-                # Ensure start_index doesn't exceed bounds
-                start_index = min(start_index, max(0, total_size - 1))
+                # Align start_index to page boundary first
+                start_index = (start_index // page_size) * page_size
+                # Ensure start_index doesn't exceed bounds (max is start of last page)
+                last_page_start = ((total_size - 1) // page_size) * page_size if total_size > 0 else 0
+                start_index = min(start_index, last_page_start)
+                start_index = max(0, start_index)
                 current_state['start_index'] = start_index
+                if _debug_pagination:
+                    print(f"Aligned data start_index to {start_index}")
                 
                 # Create pagination controls for data
                 if _debug_pagination:
@@ -652,7 +564,7 @@ def prim_handler(prim: Usd.Prim) -> bool:
                 
                 # Handle empty iterable case
                 if total_size == 0:
-                    make_label(f'{display_name} (Empty Ref List)', 1)
+                    make_label(f'{display_name} (Empty Ref List)')
                     continue
                 
                 # Handle small iterables (< 10 elements) - display directly without pagination
@@ -668,10 +580,10 @@ def prim_handler(prim: Usd.Prim) -> bool:
                         make_label_button(f'{display_name} (Ref)', button_text, partial(select_by_object_handle, target_handle), enabled=is_actionable[0])
                     else:
                         # Multiple elements but < 10 - display all with indices
-                        make_label(f'{display_name} (Ref List)', 1)
+                        make_label(f'{display_name} (Ref List)')
                         for i, (target_handle, object_name, actionable) in enumerate(zip(target_handles, object_names, is_actionable)):
                             button_text = f"{int(target_handle)} : {object_name}"
-                            make_label_button(f'[{i}]', button_text, partial(select_by_object_handle, target_handle), 2, enabled=actionable)
+                            make_label_button(f'[{i}]', button_text, partial(select_by_object_handle, target_handle), 1, enabled=actionable)
                     continue
                 
                 # Initialize pagination state if not exists
@@ -702,14 +614,6 @@ def prim_handler(prim: Usd.Prim) -> bool:
                 start_index = current_state['start_index']
                 page_size = current_state['page_size']
                 
-                # Ensure start_index doesn't exceed bounds after total_size update
-                max_start_index = max(0, total_size - 1) if total_size > 0 else 0
-                if start_index > max_start_index:
-                    start_index = max_start_index
-                    current_state['start_index'] = start_index
-                    if _debug_pagination:
-                        print(f"Adjusted start_index to {start_index} due to total_size change")
-                
                 # Ensure page_size doesn't exceed total_size
                 max_page_size = min(100, total_size) if total_size > 0 else 1
                 if page_size > max_page_size:
@@ -718,9 +622,15 @@ def prim_handler(prim: Usd.Prim) -> bool:
                     if _debug_pagination:
                         print(f"Adjusted page_size to {page_size} due to total_size change")
                 
-                # Ensure start_index doesn't exceed bounds
-                start_index = min(start_index, max(0, total_size - 1))
+                # Align start_index to page boundary first
+                start_index = (start_index // page_size) * page_size
+                # Ensure start_index doesn't exceed bounds (max is start of last page)
+                last_page_start = ((total_size - 1) // page_size) * page_size if total_size > 0 else 0
+                start_index = min(start_index, last_page_start)
+                start_index = max(0, start_index)
                 current_state['start_index'] = start_index
+                if _debug_pagination:
+                    print(f"Aligned start_index to {start_index}")
                 
                 # Create pagination controls
                 if _debug_pagination:

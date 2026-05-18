@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -58,8 +58,11 @@ public:
     GpuSoftBodyMaterialView* createSoftBodyMaterialView(const char* pattern) override;
 
     GpuVolumeDeformableBodyView* createVolumeDeformableBodyView(const char* pattern) override;
+    GpuVolumeDeformableBodyView* createVolumeDeformableBodyView(const std::vector<std::string>& patterns) override;
     GpuSurfaceDeformableBodyView* createSurfaceDeformableBodyView(const char* pattern) override;
+    GpuSurfaceDeformableBodyView* createSurfaceDeformableBodyView(const std::vector<std::string>& patterns) override;
     GpuDeformableMaterialView* createDeformableMaterialView(const char* pattern) override;
+    GpuDeformableMaterialView* createDeformableMaterialView(const std::vector<std::string>& patterns) override;
 
     // DEPRECATED
     GpuRigidContactView* createRigidContactView(const char* pattern,

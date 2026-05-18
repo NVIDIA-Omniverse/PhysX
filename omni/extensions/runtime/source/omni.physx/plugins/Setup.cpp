@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -9,6 +9,8 @@
 #include "Setup.h"
 #include <common/utilities/PhysXErrorCallback.h>
 #include <common/utilities/MemoryMacros.h>
+#include <string>
+#include <filesystem>
 
 #include "omnipvd/PxOmniPvd.h"
 #if !CARB_AARCH64
@@ -39,6 +41,22 @@
 #include <private/omni/physx/IPhysxCookingServicePrivate.h>
 #include <omni/physx/IPhysxFoundation.h>
 
+bool addLastSlash(std::string& fileDirectory)
+{
+    if ((fileDirectory.back() != '/') && (fileDirectory.back() != '\\'))
+    {
+        if (fileDirectory.find('\\') != std::string::npos)
+        {
+            fileDirectory += '\\';
+        }
+        else
+        {
+            fileDirectory += '/';
+        }
+        return true;
+    }
+    return false;
+}
 
 using namespace physx;
 using namespace omni::physx::internal;
@@ -345,6 +363,11 @@ namespace omni
         void PhysXSetup::setupGPU()
         {
 #if USE_PHYSX_GPU
+            if (mPhysxFoundation && mPhysxFoundation->isCpuMode && mPhysxFoundation->isCpuMode())
+            {
+                // CPU-only mode: never call into the CUDA driver API.
+                return;
+            }
             // AD: OM-117654 - the code in this function can throw a PhysX error, and the callback might access an outdated cuda context in that case.
             mErrorCallback->setCudaContextManager(nullptr);
 
@@ -462,40 +485,54 @@ namespace omni
                             const char* outputDirectory = iSettings->getStringBuffer(kOmniPvdOvdRecordingDirectory);
                             if ((*outputDirectory) != 0)
                             {
-                                ////////////////////////////////////////////////////////////////////////////////
-                                // diffCounter
-                                //   Starts at 1 for each time stamp that is taken that is different from the
-                                //   previous. As soon as a timeStap is sampled with the same time as the
-                                //   previously output OVD recording the diffCounter goes up by 1. This can
-                                //   happen if you press recording twice in the same second as they will be
-                                //   regarded as the same.
-                                ////////////////////////////////////////////////////////////////////////////////
-                                // dateTimeStamp
-                                //   year_month_hour_minute_second + _(diffCounter)
-                                ////////////////////////////////////////////////////////////////////////////////
-                                // stageName
-                                //   Taken from?
-                                ////////////////////////////////////////////////////////////////////////////////
-                                // outputFilename
-                                //   kOmniPvdOvdRecordingDirectory + dateTimeStamp + optional:("_" + stageName) + ".ovd"
-                                ////////////////////////////////////////////////////////////////////////////////
-                                OmniPvdRecordingTime nowTs;
-                                getLocalOmniPvdTime(nowTs);
-                                gLastOmniPvdTime.setWithDiffCounterIncreaseIfSame(nowTs);
+                                std::string formattedOutputDir = outputDirectory;
+                                addLastSlash(formattedOutputDir);
 
-                                char buffer[200];
-                                sprintf_s(buffer, 200, "%04d_%02d_%02d_%02d_%02d_%02d_%02d",
-                                    gLastOmniPvdTime.year, gLastOmniPvdTime.month, gLastOmniPvdTime.day, gLastOmniPvdTime.hour, gLastOmniPvdTime.minute, gLastOmniPvdTime.second, gLastOmniPvdTime.diffCounter);
-                                ovdRecordingFileName = outputDirectory;
-                                ////////////////////////////////////////////////////////////////////////////////
-                                // TODO : extract the stage name if it exists
-                                ////////////////////////////////////////////////////////////////////////////////
-                                ovdRecordingFileName += "tmp.ovd";
-                                setOmniPVDoutputDirectory(outputDirectory);
-                                setOmniPVDTimeStampedFileName(buffer);
-                                omniFileWriteStream->setFileName(ovdRecordingFileName.c_str());
+                                bool directoryCreationOk = true;
+                                // Ensure the output directory exists
+                                try {
+                                    std::filesystem::create_directories(formattedOutputDir);
+                                }
+                                catch (const std::filesystem::filesystem_error& e) {
+                                    directoryCreationOk = false;
+                                    CARB_LOG_ERROR("Failed to create output directory: %s", e.what());
+                                }
 
-                                mVehiclePvdRegistrationHandles = ::physx::vehicle2::PxVehiclePvdAttributesCreate(mAllocator, *omniWriter);
+                                if (directoryCreationOk)
+                                {
+
+
+                                    ////////////////////////////////////////////////////////////////////////////////
+                                    // diffCounter
+                                    //   Starts at 1 for each time stamp that is taken that is different from the
+                                    //   previous. As soon as a timeStap is sampled with the same time as the
+                                    //   previously output OVD recording the diffCounter goes up by 1. This can
+                                    //   happen if you press recording twice in the same second as they will be
+                                    //   regarded as the same.
+                                    ////////////////////////////////////////////////////////////////////////////////
+                                    // dateTimeStamp
+                                    //   year_month_hour_minute_second + _(diffCounter)
+                                    ////////////////////////////////////////////////////////////////////////////////
+                                    // stageName
+                                    //   Taken from?
+                                    ////////////////////////////////////////////////////////////////////////////////
+                                    // outputFilename
+                                    //   kOmniPvdOvdRecordingDirectory + dateTimeStamp + optional:("_" + stageName) + ".ovd"
+                                    ////////////////////////////////////////////////////////////////////////////////
+                                    OmniPvdRecordingTime nowTs;
+                                    getLocalOmniPvdTime(nowTs);
+                                    gLastOmniPvdTime.setWithDiffCounterIncreaseIfSame(nowTs);
+
+                                    char buffer[200];
+                                    sprintf_s(buffer, 200, "%04d_%02d_%02d_%02d_%02d_%02d_%02d",
+                                        gLastOmniPvdTime.year, gLastOmniPvdTime.month, gLastOmniPvdTime.day, gLastOmniPvdTime.hour, gLastOmniPvdTime.minute, gLastOmniPvdTime.second, gLastOmniPvdTime.diffCounter);
+                                    ovdRecordingFileName = formattedOutputDir + "tmp.ovd";
+                                    setOmniPVDoutputDirectory(formattedOutputDir.c_str());
+                                    setOmniPVDTimeStampedFileName(buffer);
+                                    omniFileWriteStream->setFileName(ovdRecordingFileName.c_str());
+
+                                    mVehiclePvdRegistrationHandles = ::physx::PxVehiclePvdAttributesCreate(mAllocator, *omniWriter);
+                                }
                             }
                             else
                             {
@@ -523,8 +560,10 @@ namespace omni
 #endif
 
 #if USE_PHYSX_GPU
-            // initialize only when delay-loaded CUDA lib is present
-            if (omniPhysX.isCudaLibPresent())
+            const bool cpuMode = (mPhysxFoundation && mPhysxFoundation->isCpuMode && mPhysxFoundation->isCpuMode());
+
+            // Initialize GPU only when not forced to CPU and when delay-loaded CUDA lib is present.
+            if (!cpuMode && omniPhysX.isCudaLibPresent())
             {
                 // check for at least one suitable device to prevent crashing
                 if (!mPhysxFoundation->cudaDeviceCheck())
@@ -570,8 +609,6 @@ namespace omni
 
             mDefaultCookingParams = getCookingParams(tolerances);
             mCookingDataAsync = cookingdataasync::createCookingDataAsync(*mPhysics, *mCookingServicePrivate, *mCookingService, mCookingServiceContext);
-            mCookingDataAsync->setLocalMeshCacheEnabled(iSettings->getAsBool(kSettingUseLocalMeshCache));
-            mCookingDataAsync->setLocalMeshCacheSize(iSettings->getAsInt(kSettingLocalMeshCacheSizeMB));
 
             // profiler callback
             if (iSettings->getAsBool(kSettingExposeProfilerData))
@@ -617,25 +654,45 @@ namespace omni
                 // into : outputDirFinal + mOmniPVDTimeStampedFileName
                 ////////////////////////////////////////////////////////////////////////////////
                 std::string outputDirFinal = mOmniPVDOutputDirectory;
+                if (addLastSlash(outputDirFinal))
+                {
+                    setOmniPVDoutputDirectory(outputDirFinal.c_str());
+                }
 
                 ////////////////////////////////////////////////////////////////////////////////
                 // The output directory could have been changed by the user to be different
                 // from that of where the tmp was created, so adjust if necessary.
                 ////////////////////////////////////////////////////////////////////////////////
-                const char* outputDirectory = iSettings->getStringBuffer(kOmniPvdOvdRecordingDirectory);
+                const char* outputDirectory = iSettings->getStringBuffer(kOmniPvdOvdRecordingDirectory);                
                 if ((*outputDirectory) != 0)
                 {
-                    outputDirFinal = outputDirectory;
+                    std::string formattedOutputDir = outputDirectory;
+                    addLastSlash(formattedOutputDir);
+                    outputDirFinal = formattedOutputDir;
                 }
-                ////////////////////////////////////////////////////////////////////////////////
-                // We have the final output directory
-                // First write it out in the dir with the name
-                ////////////////////////////////////////////////////////////////////////////////
-                std::string tmpFilePath = mOmniPVDOutputDirectory + "tmp.ovd";
-                std::string finalFilePath = outputDirFinal + mOmniPVDTimeStampedFileName + "_rec.ovd";
-                rename(tmpFilePath.c_str(), finalFilePath.c_str());
 
-                iSettings->setString("/persistent/physics/omniPvdImportDirectory", outputDirFinal.c_str());
+                bool directoryCreationOk = true;
+                // Ensure the output directory exists
+                try {
+                    std::filesystem::create_directories(outputDirFinal);
+                }
+                catch (const std::filesystem::filesystem_error& e) {
+                    directoryCreationOk = false;
+                    CARB_LOG_ERROR("Failed to create output directory: %s", e.what());
+                }
+
+                if (directoryCreationOk)
+                {
+                    ////////////////////////////////////////////////////////////////////////////////
+                    // We have the final output directory
+                    // First write it out in the dir with the name
+                    ////////////////////////////////////////////////////////////////////////////////
+                    std::string tmpFilePath = mOmniPVDOutputDirectory + "tmp.ovd";
+                    std::string finalFilePath = outputDirFinal + mOmniPVDTimeStampedFileName + "_rec.ovd";
+                    rename(tmpFilePath.c_str(), finalFilePath.c_str());
+
+                    iSettings->setString("/persistent/physics/omniPvdImportDirectory", outputDirFinal.c_str());
+                }
             }
         }
 
@@ -643,7 +700,7 @@ namespace omni
         {
             if (mVehiclePvdRegistrationHandles)
             {
-                ::physx::vehicle2::PxVehiclePvdAttributesRelease(mAllocator, *mVehiclePvdRegistrationHandles);
+                ::physx::PxVehiclePvdAttributesRelease(mAllocator, *mVehiclePvdRegistrationHandles);
                 mVehiclePvdRegistrationHandles = nullptr;
             }
         }
@@ -689,7 +746,7 @@ namespace omni
             // Initialize the vehicle SDK.
             if (!mVehicleSDKInitialized)
             {
-                mVehicleSDKInitialized = ::physx::vehicle2::PxInitVehicleExtension(*mFoundation);
+                mVehicleSDKInitialized = ::physx::PxInitVehicleExtension(*mFoundation);
             }
         }
 
@@ -715,7 +772,7 @@ namespace omni
 
             if (mVehicleSDKInitialized)
             {
-                ::physx::vehicle2::PxCloseVehicleExtension();
+                ::physx::PxCloseVehicleExtension();
                 mVehicleSDKInitialized = false;
             }
 
@@ -739,19 +796,6 @@ namespace omni
             mErrorCallback->invalidateEventStream();
         }
 
-        void addLastSlash(std::string& fileDirectory) {
-            if ((fileDirectory.back() != '/') && (fileDirectory.back() != '\\'))
-            {
-                if (fileDirectory.find('\\') != std::string::npos)
-                {
-                    fileDirectory += '\\';
-                }
-                else
-                {
-                    fileDirectory += '/';
-                }
-            }
-        }
         PxPhysics* PhysXSetup::getPhysics()
         {
             if (!mPhysics)

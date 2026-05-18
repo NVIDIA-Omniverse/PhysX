@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -14,14 +14,14 @@
 
 
 #include <omni/ext/IExt.h>
-#include <omni/kit/IStageUpdate.h>
-#include <omni/kit/KitUpdateOrder.h>
 
 #include <omni/physx/IPhysx.h>
 #include <private/omni/physx/IPhysxPrivate.h>
 #include <omni/physx/IPhysxJoint.h>
 #include <omni/physx/IPhysxSimulation.h>
 #include <omni/physics/tensors/TensorApi.h>
+
+#include <memory>
 
 #include "gpu/CudaCommon.h"
 #include "GlobalsAreBad.h"
@@ -41,9 +41,9 @@ public:
     void onShutdown() override;
 };
 
-}
-}
-}
+} // namespace tensors
+} // namespace physx
+} // namespace omni
 
 const struct carb::PluginImplDesc kPluginImpl = { "omni.physx.tensors.plugin", "PhysX Tensor API implementation",
                                                   "NVIDIA", carb::PluginHotReload::eDisabled, "dev" };
@@ -53,8 +53,7 @@ CARB_PLUGIN_IMPL_DEPS(omni::physx::IPhysx,
                       omni::physx::IPhysxSimulation,
                       omni::physx::IPhysxPrivate,
                       omni::physx::IPhysxJoint,
-                      omni::physics::tensors::BackendRegistry,
-                      omni::kit::IStageUpdate)
+                      omni::physics::tensors::BackendRegistry)
 
 namespace omni
 {
@@ -72,11 +71,23 @@ omni::physx::IPhysxJoint* g_physxJoint = nullptr;
 // private stuff
 namespace
 {
-omni::kit::StageUpdatePtr g_su;
-
 omni::physics::tensors::BackendRegistry* g_backendRegistry = nullptr;
 constexpr const char* g_simBackendName = "physx";
-omni::physx::tensors::SimulationBackend g_simBackend;
+
+// Simulation backend lifetime notes
+// ---------------------------------
+// - An explicit init/shutdown path (tensorsInit()/tensorsShutdown())
+//   lets us manage all Carbonite-dependent resources (event subscriptions, backend registry, etc.).
+// - This guarantees that, when the plugin is shut down (either via omni.ext in omni.kit apps
+//   or via carbOnPluginShutdown() in SDK/wheel mode), we release those resources
+//   *before* Carbonite tears down its core plugins.
+// - With this ordering, the default static destruction of g_simBackend at module
+//   unload becomes a no-op with respect to Carbonite and is safe.
+// - This design preserves existing Kit behavior while allowing custom packaging (Python wheels)
+//   to handle the lifetime of this plugin and the Carbonite framework explicitly, without
+//   shutdown crashes, intentional leaks, or skipped destructors.
+std::unique_ptr<omni::physx::tensors::SimulationBackend> g_simBackend;
+bool g_tensorsStarted = false;
 
 ////////////////////////
 class SimulationEventListener : public carb::events::IEventListener
@@ -85,11 +96,14 @@ class SimulationEventListener : public carb::events::IEventListener
     {
         int eventType = int(e->type);
 
-        //printf("~!~!~! Got SimulationEvent %d\n", eventType);
+        // printf("~!~!~! Got SimulationEvent %d\n", eventType);
 
         if (eventType == omni::physx::SimulationEvent::eStopped)
         {
-            g_simBackend.reset();
+            if (g_simBackend)
+            {
+                g_simBackend->reset();
+            }
         }
     }
 
@@ -115,35 +129,46 @@ SimulationEventListener* g_simEventListener = nullptr;
 carb::events::IEventStreamPtr g_simEventStream;
 carb::events::ISubscriptionPtr g_simEventSubscription;
 /////////////////////////
-
-//
-// TODO: get rid of stage update!  Replace with physics events.
-//
-omni::kit::StageUpdateNode* g_suPrePhysicsNode = nullptr;
+// note(malesiani): IStageUpdate-based callbacks were removed; we now always rely on omni.physx events.
+omni::physx::SubscriptionId g_physxPreStepSubscriptionId = omni::physx::kInvalidSubscriptionId;
 
 } // end of anonymous namespace
 
 
-SimulationBackend& GetSimulationBackend()
+SimulationBackend* GetSimulationBackend()
 {
-    return g_simBackend;
+    return g_simBackend.get();
 }
 
-void SuPrePhysicsUpdate(float currentTime, float elapsedTime, const omni::kit::StageUpdateSettings* settings, void* data)
+void PhysxPreStepCallback(float elapsedTime, void* userData)
 {
-    //printf("!!! SuPrePhysicsUpdate %d %d\n", int(g_simBackend.getTimestamp()), int(g_simBackend.getStepCount()));
-    g_simBackend.prePhysicsUpdate();
+    // printf("!!! PhysxPreStepCallback %d %d\n", int(g_simBackend->getTimestamp()), int(g_simBackend->getStepCount()));
+    if (g_simBackend)
+    {
+        g_simBackend->prePhysicsUpdate();
+    }
 }
-
 
 void onDetach(void* userData)
 {
-    g_simBackend.reset();
+    if (g_simBackend)
+    {
+        g_simBackend->reset();
+    }
 }
 
-
-void ExtensionImpl::onStartup(const char* extId)
+// Shared init/shutdown so both IExt::onStartup() and carbOnPluginStartup() can use them.
+// This makes omni.physx.tensors work both in Kit (extension manager) and in SDK/wheel mode.
+void tensorsInit()
 {
+    if (g_tensorsStarted)
+    {
+        CARB_LOG_VERBOSE("omni.physx.tensors tensorsInit() already ran, skipping duplicate");
+        return;
+    }
+
+    CARB_LOG_INFO("omni.physx.tensors tensorsInit() starting...");
+
     carb::Framework* framework = carb::getFramework();
     if (!framework)
     {
@@ -179,32 +204,26 @@ void ExtensionImpl::onStartup(const char* extId)
         return;
     }
 
+    // Create simulation backend on first successful initialization
+    if (!g_simBackend)
+    {
+        g_simBackend = std::make_unique<omni::physx::tensors::SimulationBackend>();
+    }
+
     g_simEventListener = new SimulationEventListener;
     g_simEventStream = g_physx->getSimulationEventStreamV2();
     g_simEventSubscription = g_simEventStream->createSubscriptionToPop(g_simEventListener, 0);
 
-    g_su = omni::kit::getStageUpdate();
-    if (!g_su)
+    // Use omni.physx for pre-physics callbacks - this replaces IStageUpdate so we don't have to rely on omni.usd anymore
+    g_physxPreStepSubscriptionId = g_physx->subscribePhysicsOnStepEvents(true, 0, PhysxPreStepCallback, nullptr);
+    if (g_physxPreStepSubscriptionId == omni::physx::kInvalidSubscriptionId)
     {
-        CARB_LOG_ERROR("Failed to acquire stage update interface");
-        return;
-    }
-
-    // IStageUpdate node
-    omni::kit::StageUpdateNodeDesc suPrePhysicsDesc = { 0 };
-    suPrePhysicsDesc.displayName = "omni.physx.tensors pre-physics";
-    suPrePhysicsDesc.order = omni::kit::update::eIUsdStageUpdateTensorPrePhysics; // should run before OmniPhysics update
-    suPrePhysicsDesc.onUpdate = SuPrePhysicsUpdate;
-    suPrePhysicsDesc.onDetach = onDetach;
-
-    g_suPrePhysicsNode = g_su->createStageUpdateNode(suPrePhysicsDesc);
-    if (!g_suPrePhysicsNode)
-    {
-        CARB_LOG_ERROR("Failed to create pre-physics stage update node");
+        CARB_LOG_ERROR("Failed to subscribe to PhysX pre-step events");
     }
 
     // backend registry
-    // FIXME: changed from getCachedInterface since it returned nullptr on linux when tensor ext would not unload correctly
+    // FIXME: changed from getCachedInterface since it returned nullptr on linux when tensor ext would not unload
+    // correctly
     g_backendRegistry = framework->tryAcquireInterface<omni::physics::tensors::BackendRegistry>();
     if (!g_backendRegistry)
     {
@@ -213,7 +232,7 @@ void ExtensionImpl::onStartup(const char* extId)
     }
 
     // register PhysX backend
-    if (!g_backendRegistry->registerBackend(g_simBackendName, &g_simBackend))
+    if (!g_backendRegistry->registerBackend(g_simBackendName, g_simBackend.get()))
     {
         CARB_LOG_ERROR("Failed to register simulation backend '%s'", g_simBackendName);
     }
@@ -221,22 +240,29 @@ void ExtensionImpl::onStartup(const char* extId)
     {
         CARB_LOG_INFO("Registered simulation backend '%s'\n", g_simBackendName);
     }
+
+    // Mark as successfully initialized only after all setup completes
+    g_tensorsStarted = true;
 }
 
-void ExtensionImpl::onShutdown()
+void tensorsShutdown()
 {
+    if (!g_tensorsStarted)
+        return;
+    g_tensorsStarted = false;
+
+    // Release event subscriptions and listeners while Carbonite is still alive.
+    // This avoids static-destruction-time callbacks into already torn-down plugins.
     g_simEventSubscription = nullptr;
     g_simEventStream = nullptr;
     delete g_simEventListener;
     g_simEventListener = nullptr;
 
-    if (g_suPrePhysicsNode)
+    if (g_physxPreStepSubscriptionId != omni::physx::kInvalidSubscriptionId)
     {
-        g_su->destroyStageUpdateNode(g_suPrePhysicsNode);
-        g_suPrePhysicsNode = nullptr;
+        g_physx->unsubscribePhysicsOnStepEvents(g_physxPreStepSubscriptionId);
+        g_physxPreStepSubscriptionId = omni::physx::kInvalidSubscriptionId;
     }
-
-    g_su = nullptr;
 
     if (g_backendRegistry)
     {
@@ -248,11 +274,29 @@ void ExtensionImpl::onShutdown()
     g_physxSimulation = nullptr;
     g_physxPrivate = nullptr;
     g_physxJoint = nullptr;
+
+    // Finally, destroy the simulation backend once all external references
+    // (stage update nodes, PhysX callbacks, backend registry) have been removed.
+    if (g_simBackend)
+    {
+        g_simBackend.reset();
+    }
 }
 
+
+void ExtensionImpl::onStartup(const char* extId)
+{
+    tensorsInit();
 }
+
+void ExtensionImpl::onShutdown()
+{
+    tensorsShutdown();
 }
-}
+
+} // namespace tensors
+} // namespace physx
+} // namespace omni
 
 CARB_EXPORT void carbOnPluginStartup()
 {
@@ -260,24 +304,29 @@ CARB_EXPORT void carbOnPluginStartup()
     // HACK?!
     //
     {
-        /*
-        CUcontext ctx = nullptr;
-        cuCtxGetCurrent(&ctx);
-        printf(":=:=:=: ctx before: %p\n", (void*)ctx);
-        */
-
         omni::physx::tensors::createPrimaryCudaContext();
-
-        /*
-        ctx = nullptr;
-        cuCtxGetCurrent(&ctx);
-        printf(":=:=:=: ctx after: %p\n", (void*)ctx);
-        */
     }
+
+    // Initialize the tensors backend when the plugin loads.
+    //
+    // In SDK/wheel mode there is no extension manager, so this is the only
+    // entrypoint as carbonite plugin. In Kit, initialization is also driven by ExtensionImpl::onStartup()
+    // with proper dependencies, but tensorsInit() is idempotent (guarded by
+    // g_tensorsStarted), so calling it here as well is safe.
+    omni::physx::tensors::tensorsInit();
 }
 
 CARB_EXPORT void carbOnPluginShutdown()
 {
+    // Ensure Carbonite-dependent resources are cleaned up before the framework
+    // tears down its core plugins. This prevents static destructors (event subscriptions,
+    // backend registry, etc.) from calling back into an already-partially-destroyed
+    // Carbonite, which previously caused shutdown-time segfaults in TensorAPI SDK wheels.
+    //
+    // tensorsShutdown() is idempotent (guarded by g_tensorsStarted), so it is safe to
+    // call here for both Kit and SDK/wheel modes even though ExtensionImpl::onShutdown()
+    // also calls it in Kit.
+    omni::physx::tensors::tensorsShutdown();
 }
 
 void fillInterface(omni::physx::tensors::ExtensionImpl& iface)

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -25,14 +25,9 @@
 
 #include <omni/physx/PhysxTokens.h>
 
-#include "particles/FabricParticles.h"
-
 using namespace pxr;
 using namespace carb;
 using namespace omni::physics::schema;
-
-const omni::fabric::IToken* omni::fabric::Token::iToken = nullptr;
-const omni::fabric::IPath* omni::fabric::Path::iPath = nullptr;
 
 static TfToken fabricWorldMatrix(omni::physx::gWorldMatrixTokenString);
 static TfToken fabricLocalMatrix(omni::physx::gLocalMatrixTokenString);
@@ -216,18 +211,22 @@ void PrimChangeMap::clearStageSpecificChanges()
     m_stageSpecificChanges.clear();
 }
 
-void moveBody(AttachedStage& attachedStage, const pxr::SdfPath& primPath, const pxr::UsdPrim* primIn, UsdGeomXformCache* xfCache, bool fastCache)
+void moveBody(AttachedStage& attachedStage, const pxr::SdfPath& primPath, const pxr::UsdPrim* primIn, UsdGeomXformCache* xfCache, bool fabricCache)
 {
     UsdLoad* usdLoad = UsdLoad::getUsdLoad();
 
-    // read the xform directly from body prim not from fastcache
+    // read the xform directly from body prim not from fabricCache
     // the notification came from USD, so lets use USD data
     PhysXUsdPhysicsInterface::Transform fcTransform;
 
     bool scaleProvided = true;
-    if (!fastCache)
+    if (!fabricCache)
     {
         const UsdPrim prim = primIn ? *primIn : attachedStage.getStage()->GetPrimAtPath(primPath);
+
+        // Guard against expired/invalid prims that may have been deleted during this notification cycle
+        if (!prim)
+            return;
 
         GfMatrix4d mat = xfCache->GetLocalToWorldTransform(prim);
         const GfTransform tr(mat);
@@ -247,17 +246,15 @@ void moveBody(AttachedStage& attachedStage, const pxr::SdfPath& primPath, const 
         {
             const omni::fabric::UsdStageId stageId = { uint64_t(attachedStage.getStageId()) };
             auto stageInProgress = iStageReaderWriter->get(stageId);
+            const omni::fabric::FabricId fabricId = iStageReaderWriter->getFabricId(stageInProgress);
 
             if (stageInProgress.id)
             {
-                if (!omni::fabric::Token::iToken)
-                    omni::fabric::Token::iToken = carb::getCachedInterface<omni::fabric::IToken>();
-
                 // Grab a pointer to in-memory representation for the attribute value, in this
                 // case a pointer to a T. Will be NULL if attribute doesn't exist in fabric
                 {
-                    auto valueSpan =
-                        iStageReaderWriter->getAttributeRd(stageInProgress, omni::fabric::asInt(primPath),
+                    auto valueSpan = iStageReaderWriter->getAttributeRd(
+                        stageInProgress, omni::fabric::convertToPathType<omni::fabric::Path>(fabricId, primPath),
                             *usdLoad->getFabricTokens().worldMatrix);
 
                     const pxr::GfMatrix4d* valuePtr = (const pxr::GfMatrix4d*)valueSpan.ptr;
@@ -277,6 +274,11 @@ void moveBody(AttachedStage& attachedStage, const pxr::SdfPath& primPath, const 
 
                         scaleProvided = true;
                     }
+                    else
+                    {
+                        return;
+                    }
+
                 }
             }
         }
@@ -295,8 +297,7 @@ void moveBody(AttachedStage& attachedStage, const pxr::SdfPath& primPath, const 
         auto it = entries->begin();
         while (it != entries->end())
         {
-            if (!attachedStage.getPhysXPhysicsInterface()->updateTransform(attachedStage,
-                primPath, it->second, fcTransform, true, scaleProvided))
+            if (!attachedStage.getPhysXPhysicsInterface()->updateTransform(attachedStage, primPath, it->second, fcTransform, fabricCache, true, scaleProvided))
             {
                 structChange = true;
                 if (it->first == eArticulationLink)
@@ -319,6 +320,10 @@ void moveBody(AttachedStage& attachedStage, const pxr::SdfPath& primPath, const 
         else
         {
             const UsdPrim prim = primIn ? *primIn : attachedStage.getStage()->GetPrimAtPath(primPath);
+
+            // Guard against expired/invalid prims that may have been deleted during this notification cycle
+            if (!prim)
+                return;
 
             PrimHierarchyStorage& primStorage = attachedStage.getObjectDatabase()->getPrimHierarchyStorage();
             PrimHierarchyStorage::Iterator iterator(primStorage, primPath);
@@ -401,7 +406,7 @@ void movePointInstancer(AttachedStage& attachedStage, const pxr::UsdPrim& prim)
             if (size_t(indices[i]) < targets.size())
             {
                 const GfVec3f instancePos = i < positions.size() ? positions[i] : GfVec3f(0.0f);
-                const GfVec3f transfPos = instancerMatrix.Transform(instancePos);
+                const GfVec3f transfPos = pxr::GfVec3f(instancerMatrix.Transform(instancePos));
 
                 const GfQuatf instanceOrient = i < orientations.size() ? GfQuatf(orientations[i]) : GfQuatf(1.0f);
                 const GfQuatf transfOrient = instanceOrient * instancerRotation;
@@ -412,7 +417,7 @@ void movePointInstancer(AttachedStage& attachedStage, const pxr::UsdPrim& prim)
 
                 ObjectIdMap::const_iterator& it = targetEntries[indices[i]];
                 if (!attachedStage.getPhysXPhysicsInterface()->updateTransform(attachedStage,
-                    targets[indices[i]], it->second, fcTransform))
+                    targets[indices[i]], it->second, fcTransform, false))
                 {
                     structChange = true;
                     break;
@@ -439,16 +444,33 @@ void PrimChangeMap::handleTransformChange(AttachedStage& attachedStage, const px
     if (attachedStage.getObjectDatabase()->empty())
         return;
 
-
+    bool bodyMoved = false;
     if (isMovableBody(attachedStage, primPath))
     {
+        bodyMoved = true;
         moveBody(attachedStage, primPath, primIn, xfCache, fastCache);
     }
-    else
+
+    // Do a quick check if there is actually something in the hierarchy
+    PrimHierarchyStorage& primStorage = attachedStage.getObjectDatabase()->getPrimHierarchyStorage();
+    {
+        PrimHierarchyStorage::Iterator iterator(primStorage, primPath);
+        // Early exit if have no interest in the hierarchy
+        if (iterator.getDescendentsPaths().empty())
+        {
+            return;
+        }
+    }
+    
+    if (!bodyMoved || OmniPhysX::getInstance().getInternalPhysXDatabase().getNestedBodiesUsed())
     {
         const UsdPrim prim = primIn ? *primIn : attachedStage.getStage()->GetPrimAtPath(primPath);
 
-        if (prim.IsA<UsdGeomPointInstancer>())
+        if (!prim || prim.IsPrototype())
+            return;
+
+        // Point instancer movement only supported by USD for now
+        if (!fastCache && prim.IsA<UsdGeomPointInstancer>())
         {
             movePointInstancer(attachedStage, prim);
         }
@@ -456,9 +478,10 @@ void PrimChangeMap::handleTransformChange(AttachedStage& attachedStage, const px
         {
             // check the parents
             UsdPrim resyncPrim;
-            if (isNonMovable(attachedStage, prim, resyncPrim))
-            {
-                PrimHierarchyStorage& primStorage = attachedStage.getObjectDatabase()->getPrimHierarchyStorage();
+            // Hierarchy movement for non moveable also not supported by Fabric yet, this 
+            // is causing resync issues, we need to figure out what to do here.
+            if (!fastCache && isNonMovable(attachedStage, prim, resyncPrim))
+            {                
                 PrimHierarchyStorage::Iterator iterator(primStorage, resyncPrim.GetPrimPath());
                 for (size_t i = iterator.getDescendentsPaths().size(); i--;)
                 {
@@ -477,9 +500,22 @@ void PrimChangeMap::handleTransformChange(AttachedStage& attachedStage, const px
                     const pxr::UsdPrim& primC = *iter;
                     if (!primC)
                         continue;
+
+                    const UsdGeomXformable primCXform(primC);
+                    if (primCXform)
+                    {
+                        const bool resetXformOpStack = primCXform.GetResetXformStack();
+                        if (resetXformOpStack)
+                        {
+                            iter.PruneChildren();
+                            continue;
+                        }
+                    }
+
                     if (isMovableBody(attachedStage, primC.GetPrimPath()))
                     {
-                        iter.PruneChildren();
+                        // We cant anymore early exit here, as we do support now nested bodies...
+                        //iter.PruneChildren();
                         moveBody(attachedStage, primC.GetPrimPath(), &primC, xfCache, fastCache);
                     }
                 }
@@ -1039,6 +1075,9 @@ void PrimChangeMap::checkPrimChange(AttachedStage& attachedStage, const pxr::Sdf
             {
                 prim = primIn ? *primIn : attachedStage.getStage()->GetPrimAtPath(primPath);
             }
+            // Guard against expired/invalid prims
+            if (!prim)
+                return;
             const TfTokenVector apiSchemas = prim.GetAppliedSchemas();
             const uint64_t storedAPIs = attachedStage.getObjectDatabase()->getSchemaAPIs(primPath);
             structuralChange = checkForStructuralSchemaAPIChanges(attachedStage, primPath, apiSchemas, storedAPIs, resyncPrimPath);
@@ -1063,6 +1102,9 @@ void PrimChangeMap::checkPrimChange(AttachedStage& attachedStage, const pxr::Sdf
         {
             resyncPrim = attachedStage.getStage()->GetPrimAtPath(resyncPrimPath);
         }
+        // Guard against expired/invalid prims
+        if (!resyncPrim)
+            return;
         PrimHierarchyStorage& primStorage = attachedStage.getObjectDatabase()->getPrimHierarchyStorage();
         PrimHierarchyStorage::Iterator iterator(primStorage, resyncPrim.GetPath());
         for (size_t i = iterator.getDescendentsPaths().size(); i--;)
@@ -1097,7 +1139,9 @@ void PrimChangeMap::processTransformUpdates(AttachedStage& attachedStage)
         {
             const UsdPrim prim = attachedStage.getStage()->GetPrimAtPath(m_transformUpdates[i]);
             if (prim)
+            {
                 handleTransformChange(attachedStage, prim.GetPrimPath(), &prim, &xfCache);
+            }
         }
 
         m_transformUpdates.clear();
@@ -1264,38 +1308,56 @@ void checkChange(AttachedStage& attachedStage, const PropertyChange& change, con
     }
 }
 
-void transformationChange(AttachedStage& attachedStage, const gsl::span<const pxr::GfMatrix4d>& matrices, size_t index,  const pxr::SdfPath& primPath)
+// Fabric codepath
+void fabricTransformationChange(AttachedStage& attachedStage, const gsl::span<const pxr::GfMatrix4d>& matrices, size_t index,  const pxr::SdfPath& primPath)
 {
-    PhysXUsdPhysicsInterface::Transform fcTransform;
-    bool scaleProvided = false;
-    if (index < matrices.size())
+    bool bodyMoved = false;
+    if (isMovableBody(attachedStage, primPath))
     {
-        const GfTransform tr(matrices[index]);
-        const GfVec3d pos = tr.GetTranslation();
-        const GfQuatd rot = tr.GetRotation().GetQuat();
-        const GfVec3d sc = tr.GetScale();
-
-        fcTransform.position = { float(pos[0]), float(pos[1]), float(pos[2]) };
-        fcTransform.orientation = { float(rot.GetImaginary()[0]), float(rot.GetImaginary()[1]),
-                                    float(rot.GetImaginary()[2]), float(rot.GetReal()) };
-        fcTransform.scale = { float(sc[0]), float(sc[1]), float(sc[2]) };
-    }
-    else
-    {
+        bodyMoved = true;
+        PhysXUsdPhysicsInterface::Transform fcTransform;
+        // Initialize with default values
         fcTransform.position = { 0.0f, 0.0f, 0.0f };
-        CARB_LOG_ERROR("Physics update: Transformation change without position array - %s", primPath.GetText());
-    }
+        fcTransform.orientation = { 0.0f, 0.0f, 0.0f, 1.0f };  // Identity quaternion
+        fcTransform.scale = { 1.0f, 1.0f, 1.0f };  // Neutral scale
 
-    const ObjectIdMap* entries = attachedStage.getObjectDatabase()->getEntries(primPath);
-    if (entries && !entries->empty())
-    {
-        auto it = entries->begin();
-        while (it != entries->end())
+        bool scaleProvided = false;
+        if (index < matrices.size())
         {
-            attachedStage.getPhysXPhysicsInterface()->updateTransform(attachedStage,
-                primPath, it->second, fcTransform, true, scaleProvided);
-            it++;
+            const GfTransform tr(matrices[index]);
+            const GfVec3d pos = tr.GetTranslation();
+            const GfQuatd rot = tr.GetRotation().GetQuat();
+            const GfVec3d sc = tr.GetScale();
+
+            fcTransform.position = { float(pos[0]), float(pos[1]), float(pos[2]) };
+            fcTransform.orientation = { float(rot.GetImaginary()[0]), float(rot.GetImaginary()[1]),
+                                        float(rot.GetImaginary()[2]), float(rot.GetReal()) };
+            fcTransform.scale = { float(sc[0]), float(sc[1]), float(sc[2]) };
+            scaleProvided = true;
         }
+        else
+        {
+            // Safe defaults already set during initialization
+            CARB_LOG_ERROR("Physics update: Transformation change without position array - %s", primPath.GetText());
+        }
+
+        const ObjectIdMap* entries = attachedStage.getObjectDatabase()->getEntries(primPath);
+        if (entries && !entries->empty())
+        {
+            auto it = entries->begin();
+            while (it != entries->end())
+            {
+                attachedStage.getPhysXPhysicsInterface()->updateTransform(
+                    attachedStage, primPath, it->second, fcTransform, true, true, scaleProvided);
+                it++;
+            }
+        }
+    }    
+
+    if (!bodyMoved || OmniPhysX::getInstance().getInternalPhysXDatabase().getNestedBodiesUsed())
+    {
+        // change happened in a hierarchy
+        attachedStage.getPrimChangeMap().handleTransformChange(attachedStage, primPath, nullptr, nullptr, true);
     }
 }
 
@@ -1303,11 +1365,6 @@ void fabricChangeTracking(AttachedStage& attachedStage, float currentTime)
 {
     UsdLoad* usdLoad = UsdLoad::getUsdLoad();
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-
-    if (!omni::fabric::Token::iToken)
-        omni::fabric::Token::iToken = carb::getCachedInterface<omni::fabric::IToken>();
-    if (!omni::fabric::Path::iPath)
-        omni::fabric::Path::iPath = carb::getCachedInterface<omni::fabric::IPath>();
 
     const omni::fabric::UsdStageId stageId = { uint64_t(attachedStage.getStageId()) };
     omni::fabric::StageReaderWriter stageInProgress = OmniPhysX::getInstance().getIStageReaderWriter()->get(stageId);
@@ -1389,7 +1446,7 @@ void fabricChangeTracking(AttachedStage& attachedStage, float currentTime)
                             for (const omni::fabric::Path& path : paths)
                             {
                                 const pxr::SdfPath primPath = omni::fabric::toSdfPath(path);
-                                transformationChange(attachedStage, matrices, index, primPath);
+                                fabricTransformationChange(attachedStage, matrices, index, primPath);
                                 index++;
                             }
                         }
@@ -1398,21 +1455,19 @@ void fabricChangeTracking(AttachedStage& attachedStage, float currentTime)
                             for (const size_t index : changeType.changedIndices)
                             {
                                 const pxr::SdfPath primPath = omni::fabric::toSdfPath(paths[index]);
-                                transformationChange(attachedStage, matrices, index, primPath);
+                                fabricTransformationChange(attachedStage, matrices, index, primPath);
                             }
                         }
                     }
 
                     if (attributeName == fabricPositionInvMasses && !particlePositionsUpdated)
                     {
-                        particlePositionsUpdated = true;
-                        omniPhysX.getFabricParticles()->updateParticles(changesByType, i, changeType.attr.name);
+                        particlePositionsUpdated = true;                    
                     }
 
                     if (attributeName == fabricVelocitiesFloat4 && !particleVelocitiesUpdated)
                     {
-                        particleVelocitiesUpdated = true;
-                        omniPhysX.getFabricParticles()->updateParticles(changesByType, i, changeType.attr.name);
+                        particleVelocitiesUpdated = true;                   
                     }
                 }
 
@@ -1568,7 +1623,7 @@ void processUpdates(AttachedStage& attachedStage, float currentTime)
                     while (it != entries->end())
                     {
                         attachedStage.getPhysXPhysicsInterface()->updateTransform(attachedStage,
-                            prim.GetPrimPath(), it->second, fcTransform);
+                            prim.GetPrimPath(), it->second, fcTransform, false);
                         it++;
                     }
                 }

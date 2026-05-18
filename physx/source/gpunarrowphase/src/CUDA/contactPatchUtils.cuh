@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,6 +32,9 @@
 #include "materialCombiner.cuh"
 #include "PxsContactManagerState.h"
 #include "PxgContactManager.h"
+
+namespace physx
+{
 
 PX_FORCE_INLINE __device__ PxU32 setContactPointAndForcePointers(PxsContactManagerOutput* PX_RESTRICT cmOutputs, PxgPatchAndContactCounters* PX_RESTRICT patchAndContactCounters,
 	PxU8* PX_RESTRICT startContactPoints, PxU8* PX_RESTRICT startContactForces, PxU32 contactBytesLimit, PxU32 forceBytesLimit, PxU32 workIndex, PxU32 nbContacts)
@@ -100,8 +103,8 @@ PX_FORCE_INLINE __device__ PxU32 registerContactPatch(PxsContactManagerOutput* P
 	touchChangeFlags[workIndex] = change;
 	patchChangeFlags[workIndex] = (prevPatches != numPatches);
 
-	reinterpret_cast<PxU32*>(&((cmOutputs + workIndex)->allflagsStart))[0] = merge(merge(prevPatches, statusFlags),
-		merge(numPatches, 0));
+	reinterpret_cast<PxU32*>(&((cmOutputs + workIndex)->allflagsStart))[0] = ::merge(::merge(prevPatches, statusFlags),
+		::merge(numPatches, 0));
 
 	cmOutputs[workIndex].nbContacts = nbContacts;
 
@@ -122,7 +125,7 @@ PX_FORCE_INLINE __device__ PxU32 registerContactPatch(PxsContactManagerOutput* P
 			statusFlags &= (~PxsContactManagerStatusFlag::eTOUCH_KNOWN);
 			statusFlags |= PxsContactManagerStatusFlag::eHAS_NO_TOUCH;
 
-			reinterpret_cast<PxU32*>(&((cmOutputs + workIndex)->allflagsStart))[0] = merge(merge(prevPatches, statusFlags), 0);
+			reinterpret_cast<PxU32*>(&((cmOutputs + workIndex)->allflagsStart))[0] = ::merge(::merge(prevPatches, statusFlags), 0);
 			cmOutputs[workIndex].nbContacts = 0;
 
 			touchChangeFlags[workIndex] = previouslyHadTouch;
@@ -169,7 +172,7 @@ PX_FORCE_INLINE __device__ void insertIntoPatchStream(const PxsMaterialData* PX_
 		patch->restitution = restitution;
 		patch->materialIndex0 = materialIndex0;
 		patch->materialIndex1 = materialIndex1;
-		assert(materialFlags <= PX_MAX_U8);
+		PX_ASSERT(materialFlags <= PX_MAX_U8);
 		patch->materialFlags = PxU8(materialFlags);
 		patch->internalFlags = 0;
 		patch->mMassModification.linear0 = 1.0f;
@@ -178,5 +181,7 @@ PX_FORCE_INLINE __device__ void insertIntoPatchStream(const PxsMaterialData* PX_
 		patch->mMassModification.angular1 = 1.0f;
 	}
 }
+
+} // namespace physx
 
 #endif

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -112,48 +112,75 @@ UsdLoad::UsdLoad()
 
 UsdLoad::~UsdLoad()
 {
+    // Revoke USD notices if possible. This is a USD operation and should not depend on Fabric.
     TfNotice::Revoke(mUsdNoticeListenerKey);
     TfNotice::Revoke(mAttributeValuesChangedListenerKey);
-    delete mUsdNoticeListener;
-    mUsdNoticeListener = nullptr;
-
-    if (mFabricTokens.worldMatrix)
+    if (mUsdNoticeListener)
     {
-        delete mFabricTokens.worldMatrix;
-        mFabricTokens.worldMatrix = nullptr;
-    }
-
-    if (mFabricTokens.localMatrix)
-    {
-        delete mFabricTokens.localMatrix;
-        mFabricTokens.localMatrix = nullptr;
-    }
-
-    if (mFabricTokens.worldForce)
-    {
-        delete mFabricTokens.worldForce;
-        mFabricTokens.worldForce = nullptr;
-    }
-
-    if (mFabricTokens.worldTorque)
-    {
-        delete mFabricTokens.worldTorque;
-        mFabricTokens.worldTorque = nullptr;
-    }
-
-    if (mFabricTokens.positionInvMasses)
-    {
-        delete mFabricTokens.positionInvMasses;
-        mFabricTokens.positionInvMasses = nullptr;
-    }
-
-    if (mFabricTokens.velocitiesFloat4)
-    {
-        delete mFabricTokens.velocitiesFloat4;
-        mFabricTokens.velocitiesFloat4 = nullptr;
+        delete mUsdNoticeListener;
+        mUsdNoticeListener = nullptr;
     }
 
     gChangeTrackerConfig = nullptr;
+
+    // CRITICAL: Guard against non-deterministic shutdown order
+    // ---------------------------------------------------------
+    // When users (rather than the Kit framework) control loading/unloading of Carbonite,
+    // USD, and Fabric, there is no guarantee of shutdown order. If Carbonite or Fabric are
+    // torn down before this destructor runs, attempting to revoke or delete
+    // Fabric tokens can access invalid state and crash. We therefore check availability
+    // of required systems before performing cleanup.
+    auto* framework = carb::getFramework();
+    if (!framework)
+    {
+        CARB_LOG_WARN("UsdLoad::~UsdLoad: Carbonite framework already destroyed; skipping cleanup (shutdown order) ");
+        return;
+    }
+
+    // Fabric token cleanup requires Fabric to still be available. If not, skip token deletion.
+    auto* iFabricToken = framework->tryAcquireInterface<omni::fabric::IToken>();
+    if (iFabricToken)
+    {
+        if (mFabricTokens.worldMatrix)
+        {
+            delete mFabricTokens.worldMatrix;
+            mFabricTokens.worldMatrix = nullptr;
+        }
+
+        if (mFabricTokens.localMatrix)
+        {
+            delete mFabricTokens.localMatrix;
+            mFabricTokens.localMatrix = nullptr;
+        }
+
+        if (mFabricTokens.worldForce)
+        {
+            delete mFabricTokens.worldForce;
+            mFabricTokens.worldForce = nullptr;
+        }
+
+        if (mFabricTokens.worldTorque)
+        {
+            delete mFabricTokens.worldTorque;
+            mFabricTokens.worldTorque = nullptr;
+        }
+
+        if (mFabricTokens.positionInvMasses)
+        {
+            delete mFabricTokens.positionInvMasses;
+            mFabricTokens.positionInvMasses = nullptr;
+        }
+
+        if (mFabricTokens.velocitiesFloat4)
+        {
+            delete mFabricTokens.velocitiesFloat4;
+            mFabricTokens.velocitiesFloat4 = nullptr;
+        }
+    }
+    else
+    {
+        CARB_LOG_WARN("UsdLoad::~UsdLoad: Fabric interface unavailable; skipping Fabric token cleanup (shutdown order)");
+    }
 }
 
 bool UsdLoad::attach(bool loadPhysics, uint64_t stageId, PhysXUsdPhysicsInterface* usdPhysicsInt)
@@ -255,6 +282,10 @@ void UsdLoad::releasePhysicsObjects(uint64_t stageId)
     if (fit != mAttachedStages.end())
     {
         fit->second->releasePhysicsObjects();
+    }
+    if (OmniPhysX::isStarted())
+    {
+        OmniPhysX::getInstance().sendSimulationEvent(SimulationEvent::ePhysicsObjectsReleased);
     }
 }
 
@@ -549,18 +580,23 @@ PhysxJointDesc* parseJoint(uint64_t stageId, const SdfPath& jointPath)
 {
     UsdStageWeakPtr stage = UsdUtilsStageCache::Get().Find(UsdStageCache::Id::FromLongInt(long(stageId)));
     if (!stage)
-        return nullptr;
+        return nullptr;    
 
-    IUsdPhysics* usdPhysics = carb::getCachedInterface<IUsdPhysics>();
-    gLoadPhysicsListener.clear();
-    UsdGeomXformCache xfCache(UsdTimeCode::EarliestTime());
-    gLoadPhysicsListener.setup(xfCache, stage);
-    usdPhysics->registerPhysicsListener(&gLoadPhysicsListener);
-    UsdPrim usdPrim = stage->GetPrimAtPath(jointPath);
-    UsdPrimRange range(usdPrim);
-    omni::physics::schema::PrimIteratorRange primIteratorRange(range);
-    usdPhysics->loadFromRange(stage, xfCache, primIteratorRange);
-    usdPhysics->unregisterPhysicsListener(&gLoadPhysicsListener);
+    {
+        UsdLoad* usdLoad = UsdLoad::getUsdLoad();
+        std::lock_guard<carb::tasking::MutexWrapper> lock(usdLoad->mParsingMutex);
+        IUsdPhysics* usdPhysics = carb::getCachedInterface<IUsdPhysics>();
+        gLoadPhysicsListener.clear();
+        UsdGeomXformCache xfCache(UsdTimeCode::EarliestTime());
+        gLoadPhysicsListener.setup(xfCache, stage);
+
+        usdPhysics->registerPhysicsListener(&gLoadPhysicsListener);
+        UsdPrim usdPrim = stage->GetPrimAtPath(jointPath);
+        UsdPrimRange range(usdPrim);
+        omni::physics::schema::PrimIteratorRange primIteratorRange(range);
+        usdPhysics->loadFromRange(stage, xfCache, primIteratorRange);
+        usdPhysics->unregisterPhysicsListener(&gLoadPhysicsListener);
+    }
 
     return gLoadPhysicsListener.jointDesc;
 }
@@ -583,26 +619,32 @@ PhysxRigidBodyDesc* parseRigidBody(uint64_t stageId,
         return nullptr;
     }
     IUsdPhysics* usdPhysics = carb::getCachedInterface<IUsdPhysics>();
-    gLoadPhysicsListener.clear();
-    UsdGeomXformCache xfCache(UsdTimeCode::EarliestTime());
-    gLoadPhysicsListener.setup(xfCache, stage);
-    usdPhysics->registerPhysicsListener(&gLoadPhysicsListener);
-    gLoadPhysicsListener.parseMode = LoadUsdPhysicsListener::PARSE_RIGID_BODIES_AND_COLLIDERS;
-    UsdPrimRange range(usdPrim, UsdTraverseInstanceProxies());
-    omni::physics::schema::PrimIteratorRange primIteratorRange(range);
-    usdPhysics->loadFromRange(stage, xfCache, primIteratorRange);
-    usdPhysics->unregisterPhysicsListener(&gLoadPhysicsListener);
-    gLoadPhysicsListener.parseMode = LoadUsdPhysicsListener::PARSE_DEFAULT;
 
-    for (const auto& collisionPath : gLoadPhysicsListener.bodyAndCollider.collisions)
     {
-        if (collisionPath != SdfPath())
-        {
-            auto range = gLoadPhysicsListener.rigidBodyShapesMap.equal_range(collisionPath);
+        UsdLoad* usdLoad = UsdLoad::getUsdLoad();
+        std::lock_guard<carb::tasking::MutexWrapper> lock(usdLoad->mParsingMutex);
 
-            for (auto it = range.first; it != range.second; ++it)
+        gLoadPhysicsListener.clear();
+        UsdGeomXformCache xfCache(UsdTimeCode::EarliestTime());
+        gLoadPhysicsListener.setup(xfCache, stage);
+        usdPhysics->registerPhysicsListener(&gLoadPhysicsListener);
+        gLoadPhysicsListener.parseMode = LoadUsdPhysicsListener::PARSE_RIGID_BODIES_AND_COLLIDERS;
+        UsdPrimRange range(usdPrim, UsdTraverseInstanceProxies());
+        omni::physics::schema::PrimIteratorRange primIteratorRange(range);
+        usdPhysics->loadFromRange(stage, xfCache, primIteratorRange);
+        usdPhysics->unregisterPhysicsListener(&gLoadPhysicsListener);
+        gLoadPhysicsListener.parseMode = LoadUsdPhysicsListener::PARSE_DEFAULT;
+
+        for (const auto& collisionPath : gLoadPhysicsListener.bodyAndCollider.collisions)
+        {
+            if (collisionPath != SdfPath())
             {
-                collision.push_back(*it);
+                auto range = gLoadPhysicsListener.rigidBodyShapesMap.equal_range(collisionPath);
+
+                for (auto it = range.first; it != range.second; ++it)
+                {
+                    collision.push_back(*it);
+                }
             }
         }
     }
@@ -617,16 +659,22 @@ PhysxShapeDesc* parseCollision(uint64_t stageId, const SdfPath& colPath, const S
         return nullptr;
 
     IUsdPhysics* usdPhysics = carb::getCachedInterface<IUsdPhysics>();
-    gLoadPhysicsListener.clear();
-    UsdGeomXformCache xfCache(UsdTimeCode::EarliestTime());
-    gLoadPhysicsListener.setup(xfCache, stage);
-    gLoadPhysicsListener.gPrim = stage->GetPrimAtPath(gprimPath);
-    usdPhysics->registerPhysicsListener(&gLoadPhysicsListener);
-    UsdPrim usdPrim = stage->GetPrimAtPath(colPath);
-    UsdPrimRange range(usdPrim, UsdTraverseInstanceProxies());
-    omni::physics::schema::PrimIteratorRange primIteratorRange(range);
-    usdPhysics->loadFromRange(stage, xfCache, primIteratorRange);
-    usdPhysics->unregisterPhysicsListener(&gLoadPhysicsListener);
+
+    {
+        UsdLoad* usdLoad = UsdLoad::getUsdLoad();
+        std::lock_guard<carb::tasking::MutexWrapper> lock(usdLoad->mParsingMutex);
+
+        gLoadPhysicsListener.clear();
+        UsdGeomXformCache xfCache(UsdTimeCode::EarliestTime());
+        gLoadPhysicsListener.setup(xfCache, stage);
+        gLoadPhysicsListener.gPrim = stage->GetPrimAtPath(gprimPath);
+        usdPhysics->registerPhysicsListener(&gLoadPhysicsListener);
+        UsdPrim usdPrim = stage->GetPrimAtPath(colPath);
+        UsdPrimRange range(usdPrim, UsdTraverseInstanceProxies());
+        omni::physics::schema::PrimIteratorRange primIteratorRange(range);
+        usdPhysics->loadFromRange(stage, xfCache, primIteratorRange);
+        usdPhysics->unregisterPhysicsListener(&gLoadPhysicsListener);
+    }
 
     return gLoadPhysicsListener.shapeDesc;
 }
@@ -638,18 +686,24 @@ std::vector<PhysxArticulationDesc*> parseArticulations(uint64_t stageId, const S
         return std::vector<PhysxArticulationDesc*>();
 
     IUsdPhysics* usdPhysics = carb::getCachedInterface<IUsdPhysics>();
-    gLoadPhysicsListener.clear();
-    UsdGeomXformCache xfCache(UsdTimeCode::EarliestTime());
-    gLoadPhysicsListener.setup(xfCache, stage);
-    gLoadPhysicsListener.gPrim = stage->GetPrimAtPath(articulationRootPath);
-    usdPhysics->registerPhysicsListener(&gLoadPhysicsListener);
-    // We have to traverse the whole stage here because we need to build joints and bodies map
-    // that may be referenced even if they're outside of the range identified by current articulation
-    // root path
-    UsdPrimRange range = stage->Traverse(UsdTraverseInstanceProxies());
-    omni::physics::schema::PrimIteratorRange primIteratorRange(range);
-    usdPhysics->loadFromRange(stage, xfCache, primIteratorRange);
-    usdPhysics->unregisterPhysicsListener(&gLoadPhysicsListener);
+
+    {
+        UsdLoad* usdLoad = UsdLoad::getUsdLoad();
+        std::lock_guard<carb::tasking::MutexWrapper> lock(usdLoad->mParsingMutex);
+
+        gLoadPhysicsListener.clear();
+        UsdGeomXformCache xfCache(UsdTimeCode::EarliestTime());
+        gLoadPhysicsListener.setup(xfCache, stage);
+        gLoadPhysicsListener.gPrim = stage->GetPrimAtPath(articulationRootPath);
+        usdPhysics->registerPhysicsListener(&gLoadPhysicsListener);
+        // We have to traverse the whole stage here because we need to build joints and bodies map
+        // that may be referenced even if they're outside of the range identified by current articulation
+        // root path
+        UsdPrimRange range = stage->Traverse(UsdTraverseInstanceProxies());
+        omni::physics::schema::PrimIteratorRange primIteratorRange(range);
+        usdPhysics->loadFromRange(stage, xfCache, primIteratorRange);
+        usdPhysics->unregisterPhysicsListener(&gLoadPhysicsListener);
+    }
     return gLoadPhysicsListener.articulationDesc;
 }
 
@@ -660,15 +714,21 @@ std::vector<PhysxTendonAttachmentHierarchyDesc*> parseSpatialTendons(uint64_t st
         return std::vector<PhysxTendonAttachmentHierarchyDesc*>();
 
     IUsdPhysics* usdPhysics = carb::getCachedInterface<IUsdPhysics>();
-    gLoadPhysicsListener.clear();
-    UsdGeomXformCache xfCache(UsdTimeCode::EarliestTime());
-    gLoadPhysicsListener.setup(xfCache, stage);
-    usdPhysics->registerPhysicsListener(&gLoadPhysicsListener);
-    UsdPrim usdPrim = stage->GetPrimAtPath(parentPath);
-    UsdPrimRange range(usdPrim);
-    omni::physics::schema::PrimIteratorRange primIteratorRange(range);
-    usdPhysics->loadFromRange(stage, xfCache, primIteratorRange);
-    usdPhysics->unregisterPhysicsListener(&gLoadPhysicsListener);
+
+    {
+        UsdLoad* usdLoad = UsdLoad::getUsdLoad();
+        std::lock_guard<carb::tasking::MutexWrapper> lock(usdLoad->mParsingMutex);
+
+        gLoadPhysicsListener.clear();
+        UsdGeomXformCache xfCache(UsdTimeCode::EarliestTime());
+        gLoadPhysicsListener.setup(xfCache, stage);
+        usdPhysics->registerPhysicsListener(&gLoadPhysicsListener);
+        UsdPrim usdPrim = stage->GetPrimAtPath(parentPath);
+        UsdPrimRange range(usdPrim);
+        omni::physics::schema::PrimIteratorRange primIteratorRange(range);
+        usdPhysics->loadFromRange(stage, xfCache, primIteratorRange);
+        usdPhysics->unregisterPhysicsListener(&gLoadPhysicsListener);
+    }
 
     return getAttachmentUiInfo(gLoadPhysicsListener.mTendonAttachmentMap, gLoadPhysicsListener.mSpatialTendons);
 }
@@ -680,15 +740,21 @@ std::vector<PhysxTendonAxisHierarchyDesc*> parseFixedTendons(uint64_t stageId, c
         return std::vector<PhysxTendonAxisHierarchyDesc*>();
 
     IUsdPhysics* usdPhysics = carb::getCachedInterface<IUsdPhysics>();
-    gLoadPhysicsListener.clear();
-    UsdGeomXformCache xfCache(UsdTimeCode::EarliestTime());
-    gLoadPhysicsListener.setup(xfCache, stage);
-    usdPhysics->registerPhysicsListener(&gLoadPhysicsListener);
-    UsdPrim usdPrim = stage->GetPrimAtPath(parentPath);
-    UsdPrimRange range(usdPrim);
-    omni::physics::schema::PrimIteratorRange primIteratorRange(range);
-    usdPhysics->loadFromRange(stage, xfCache, primIteratorRange);
-    usdPhysics->unregisterPhysicsListener(&gLoadPhysicsListener);
+
+    {
+        UsdLoad* usdLoad = UsdLoad::getUsdLoad();
+        std::lock_guard<carb::tasking::MutexWrapper> lock(usdLoad->mParsingMutex);
+        
+        gLoadPhysicsListener.clear();
+        UsdGeomXformCache xfCache(UsdTimeCode::EarliestTime());
+        gLoadPhysicsListener.setup(xfCache, stage);
+        usdPhysics->registerPhysicsListener(&gLoadPhysicsListener);
+        UsdPrim usdPrim = stage->GetPrimAtPath(parentPath);
+        UsdPrimRange range(usdPrim);
+        omni::physics::schema::PrimIteratorRange primIteratorRange(range);
+        usdPhysics->loadFromRange(stage, xfCache, primIteratorRange);
+        usdPhysics->unregisterPhysicsListener(&gLoadPhysicsListener);     
+    }
 
     return getAxesUiInfo(gLoadPhysicsListener.mTendonAxisMap, gLoadPhysicsListener.mFixedTendons);
 }
@@ -857,4 +923,3 @@ void UsdLoad::updateRigidBodyMass()
 } // namespace usdparser
 } // namespace physx
 } // namespace omni
-

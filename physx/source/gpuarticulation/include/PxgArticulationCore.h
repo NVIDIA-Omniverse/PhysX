@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,48 +32,56 @@
 #include "PxDirectGPUAPI.h"
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxSimpleTypes.h"
-#include "foundation/PxPinnedArray.h"
+#include "CmPinnableArray.h"
+#include "CmPinnableObject.h"
 #include "foundation/PxUserAllocated.h"
 #include "PxgCudaBuffer.h"
 #if !PX_CUDA_COMPILER
 #include <vector_types.h>
 #endif
 
-#include "DyFeatherstoneArticulation.h"
-#include "PxgArticulation.h"
-
 namespace physx
 {
 	//this is needed to force PhysXArticulationGpu linkage as Static Library!
 	void createPxgArticulation();
 
+	// Forward declarations to avoid heavy header includes
+	namespace Dy
+	{
+		struct ArticulationConstraintProcessingConfigGPU;
+	}
+
+	namespace Cm
+	{
+		struct UnAlignedSpatialVector;
+	}
+
+	struct PxgArticulationBitFieldStackData;
+	struct PxgArticulationCoreDesc;
+	struct PxgArticulationOutputDesc;
 	class PxgCudaKernelWranglerManager;
-	class PxCudaContextManager;
-	class PxCudaContext;
-	class PxgHeapMemoryAllocatorManager;
-
+	struct PxgAllocatorDesc;
 	class PxgGpuContext;
-
 	struct PxgSolverReferences;
 	struct PxgSolverBodySleepData;
 
-	struct PxgArticulationCoreDesc;
-	struct PxgArticulationOutputDesc;
-
-	struct PxIndexDataPair;
+	class PxCudaContextManager;
+	class PxCudaContext;
 	class PxSceneDesc;
+	struct PxIndexDataPair;
 
 	class PxgArticulationCore : public PxUserAllocated
 	{
 	public:
-		PxgArticulationCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, PxgHeapMemoryAllocatorManager* heapMemoryManager);
+		PxgArticulationCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
+							PxgAllocatorDesc& allocDesc);
 		~PxgArticulationCore();
 
-		void gpuMemDmaUpArticulationDesc(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled);
+		void gpuMemDmaUpArticulationDesc(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, const bool isSleepingDisabled);
 		
 		void createStaticContactAndConstraintsBatch(const PxU32 nbArticulations);
 
-		PxU32 computeUnconstrainedVelocities(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, bool recomputeBlockFormat);
+		PxU32 computeUnconstrainedVelocities(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, bool recomputeBlockFormat, const bool isSleepingDisabled);
 		PxU32 setupInternalConstraints(const PxU32 nbArticulations, const PxReal stepDt, const PxReal dt, const PxReal invDt, const bool isTGSSolver);
 		void syncStream();
 
@@ -82,8 +90,9 @@ namespace physx
 		void syncUnconstrainedVelocities();
 
 		void propagateRigidBodyImpulsesAndSolveInternalConstraints(const PxReal dt, const PxReal invDt, const bool velocityIteration, const PxReal elapsedTime,
-			const PxReal biasCoefficient, const Dy::ArticulationConstraintProcessingConfigGPU& articulationConstraintProcessingConfig, PxU32* staticContactUniqueIndices, PxU32* staticJointUniqueIndices, 
-			CUdeviceptr sharedDesc, bool doFriction, bool isTGS, bool residualReportingEnabled, bool isExternalForcesEveryTgsIterationEnabled = false);
+			const PxReal articulationBiasCoefficient, const PxReal rigidContactBiasCoefficient, 
+			const Dy::ArticulationConstraintProcessingConfigGPU& articulationConstraintProcessingConfig, PxU32* staticContactUniqueIndices, PxU32* staticJointUniqueIndices, 
+			CUdeviceptr sharedDesc, bool doFriction, bool isTGS, bool isExternalForcesEveryTgsIterationEnabled = false);
 
 		//These two methods are for articulation vs soft body interaction
 		void outputVelocity(CUdeviceptr sharedDesc, CUstream solverStream, bool isTGS);
@@ -95,14 +104,14 @@ namespace physx
 		void applyTgsSubstepForces(PxReal stepDt, CUstream stream);
 		void saveVelocities();
 		void updateBodies(PxReal dt, bool integrate, bool enableDirectGPUAPI);
-		void gpuMemDMAbackArticulation(PxInt8ArrayPinned& linkAndJointAndRootStateData,
-			PxPinnedArray<PxgSolverBodySleepData>& wakeCounterPool, PxPinnedArray<Dy::ErrorAccumulator>& internalResidualPerArticulation, PxPinnedArray<Dy::ErrorAccumulator>& contactResidual);
+		void gpuMemDMAbackArticulation(Cm::PinnableArray<PxU8>& linkAndJointAndRootStateData,
+			Cm::PinnableArray<PxgSolverBodySleepData>& wakeCounterPool);
 
 		void setSolverStream(CUstream& solverStream) { mSolverStream = &solverStream; }
 		
 		void setGpuContext(PxgGpuContext* context) { mGpuContext = context; }
 
-		PxgArticulationCoreDesc* getArticulationCoreDesc() { return mArticulationCoreDesc; }
+		PxgArticulationCoreDesc* getArticulationCoreDesc() { return mArticulationCoreDesc.data(); }
 
 		CUdeviceptr getArticulationCoreDescd() { return mArticulationCoreDescd.getDevicePtr(); }
 
@@ -151,9 +160,6 @@ namespace physx
 		bool getSpatialTendonAttachmentStates(void* data, const PxArticulationGPUIndex* gpuIndices, PxU32 nbElements, PxU32 maxTendonsXmaxAttachments) const;
 		bool getFixedTendonJointStates(void* data, const PxArticulationGPUIndex* gpuIndices, PxU32 nbElements, PxU32 maxFixedTendonsXmaxTendonJoints) const;
 
-		PxgArticulationCoreDesc*			mArticulationCoreDesc;
-		PxgArticulationOutputDesc*			mArticulationOutputDesc;
-
 		PxgCudaKernelWranglerManager*		mGpuKernelWranglerManager;
 		PxCudaContextManager*				mCudaContextManager;
 		PxCudaContext*						mCudaContext;
@@ -164,8 +170,12 @@ namespace physx
 
 		PxgGpuContext*						mGpuContext;
 
-		PxgTypedCudaBuffer<PxgArticulationCoreDesc>	mArticulationCoreDescd;
-		PxgTypedCudaBuffer<PxgArticulationOutputDesc> mArticulationOutputDescd;
+		Cm::PinnableObject<PxgArticulationCoreDesc>		mArticulationCoreDesc;
+		Cm::PinnableObject<PxgArticulationOutputDesc>	mArticulationOutputDesc;
+
+		PxgTypedCudaBuffer<PxgArticulationCoreDesc>		mArticulationCoreDescd;
+		PxgTypedCudaBuffer<PxgArticulationOutputDesc>	mArticulationOutputDescd;
+
 		PxU32								mNbActiveArticulation;
 
 		PxgTypedCudaBuffer<Cm::UnAlignedSpatialVector> mDeltaVs;
@@ -194,8 +204,8 @@ namespace physx
 		void ovdArticulationCallback(const void* PX_RESTRICT data, const PxRigidDynamicGPUIndex* PX_RESTRICT gpuIndices,
 			PxArticulationGPUAPIWriteType::Enum dataType, PxU32 nbElements,
 			PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialTendonAttachments);				
-		PxPinnedArray<PxU8> mOvdDataBuffer;
-		PxPinnedArray<PxU8> mOvdIndexBuffer;
+		Cm::PinnableArray<PxU8> mOvdDataBuffer;
+		Cm::PinnableArray<PxU8> mOvdIndexBuffer;
 #endif
 	};
 }

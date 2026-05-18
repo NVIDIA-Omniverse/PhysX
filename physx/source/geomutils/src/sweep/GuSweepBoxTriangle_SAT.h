@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -82,11 +82,13 @@ namespace Gu
 	//	if(t0 > t1)	TSwap(t0, t1);
 		const float t0_ = d0 * oneOverV;
 		const float t1_ = d1 * oneOverV;
-		float t0 = PxMin(t0_, t1_);
-		float t1 = PxMax(t0_, t1_);
+		const float t0 = PxMin(t0_, t1_);
+		const float t1 = PxMax(t0_, t1_);
 
-		if(t0 > tlast)	return false;
-		if(t1 < tfirst)	return false;
+		if(t0 > tlast)
+			return false;
+		if(t1 < tfirst)
+			return false;
 
 	//	if(t1 < tlast)	tlast = t1;
 		tlast = PxMin(t1, tlast);
@@ -125,11 +127,13 @@ namespace Gu
 	//	if(t0 > t1)	TSwap(t0, t1);
 		const float t0_ = d0 * oneOverV;
 		const float t1_ = d1 * oneOverV;
-		float t0 = PxMin(t0_, t1_);
-		float t1 = PxMax(t0_, t1_);
+		const float t0 = PxMin(t0_, t1_);
+		const float t1 = PxMax(t0_, t1_);
 
-		if(t0 > tlast)	return false;
-		if(t1 < tfirst)	return false;
+		if(t0 > tlast)
+			return false;
+		if(t1 < tfirst)
+			return false;
 
 	//	if(t1 < tlast)	tlast = t1;
 		tlast = PxMin(t1, tlast);

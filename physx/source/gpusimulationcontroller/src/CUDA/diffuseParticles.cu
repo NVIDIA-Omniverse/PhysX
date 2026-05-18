@@ -22,16 +22,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 
 #include "vector_types.h"
+#include "mathsExtensions.h"
 #include "foundation/PxVec3.h"
 #include "foundation/PxVec4.h"
 #include "foundation/PxBounds3.h"
-#include "PxgParticleSystemCore.h"
 #include "PxgParticleSystem.h"
 #include "PxgParticleSystemCoreKernelIndices.h"
 #include "PxgBodySim.h"

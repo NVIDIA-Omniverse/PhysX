@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -34,6 +34,7 @@
 #include "PxgConstraintPrep.h"
 #include "PxgSolverConstraintDesc.h"
 #include "PxgSolverCoreDesc.h"
+#include "PxgCommonDefines.h"
 #include "DyConstraintPrep.h"
 #include "contactConstraintBlockPrep.cuh"
 #include "jointConstraintBlockPrepTGS.cuh"
@@ -119,7 +120,7 @@ extern "C" __global__ void jointConstraintBlockPrepareParallelLaunchTGS( PxgCons
 				
 			setupSolverConstraintBlockGPUTGS<PxgKernelBlockDim::CONSTRAINT_PREPARE_BLOCK_PARALLEL>(&constraintData, rowVelocities, rowParameters, bodyData0, bodyData1, txIData0, txIData1, 
 				sharedDesc->stepDt, sharedDesc->stepInvDtF32, sharedDesc->dt, sharedDesc->invDtF32, sharedDesc->lengthScale, 
-				solverDesc->biasCoefficient, batch, threadIndexInWarp,
+				solverDesc->biasCoefficients.joint, batch, threadIndexInWarp,
 					&jointConstraintHeaders[descIndexBatch], &jointConstraintRowsCon[batch.startConstraintIndex],
 					solverDesc->solverConstantData[uniqueIndex]);
 		}    
@@ -394,7 +395,7 @@ extern "C" __global__ void contactConstraintBlockPrepareParallelLaunchTGS(
 			createFinalizeSolverContactsBlockGPUTGS(&contactData, baseContact, frictionPatch, prevFrictionPatches, fAnchor, prevFrictionAnchors, prevFrictionIndices, *bodyData0, *bodyData1,
 				invInertia0, invInertia1, bodyFrame0, bodyFrame1, linVel_invMass0, angVelXYZ_penBiasClamp0, linVel_invMass1, angVelXYZ_penBiasClamp1,
 				sharedDesc->stepInvDtF32, sharedDesc->stepDt, sharedDesc->dt, sharedDesc->invDtF32, constraintPrepDesc->bounceThresholdF32, constraintPrepDesc->frictionOffsetThreshold, constraintPrepDesc->correlationDistance,
-				constraintPrepDesc->biasCoefficient, threadIndexInWarp, offset, &contactHeaders[descIndexBatch], &frictionHeaders[descIndexBatch], &contactPoints[batch.startConstraintIndex], 
+				constraintPrepDesc->biasCoefficients.rigidContact, threadIndexInWarp, offset, &contactHeaders[descIndexBatch], &frictionHeaders[descIndexBatch], &contactPoints[batch.startConstraintIndex], 
 				&frictions[batch.startFrictionIndex], totalPreviousEdges, edgeIndex, constraintPrepDesc->ccdMaxSeparation, offsetSlop,
 				torsionalData);
 

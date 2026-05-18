@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.physx
 import omni.physx.scripts.utils as physicsBaseUtils
 import omni.physx.scripts.physicsUtils as physicsUtils
@@ -582,3 +583,70 @@ class PhysicsSplineSurfaceVelocityTestMemoryStage(PhysicsMemoryStageBaseAsyncTes
         # Check that the dynamic actor's velocity is not affected by the conflicting APIs
         velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
         self.assertTrue(velocity[0] < 0.1)  # Should be close to zero since APIs conflict
+
+class PhysicsSplineSurfaceVelocityRotateTestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase):
+    category = TestCategory.Core
+
+    def setup_stage(self, stage):
+        size = 1.0
+
+        # Physics scene
+        UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+        # Kinematic
+        kinematicActorPath = "/kinematicActor"
+        UsdGeom.Xform.Define(stage, kinematicActorPath)        
+        kinematicPrim = stage.GetPrimAtPath(kinematicActorPath)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, kinematicActorPath + "/cubeGeom")        
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddScaleOp().Set(Gf.Vec3f(200.0,200.0,0.1)) 
+        UsdPhysics.CollisionAPI.Apply(cubeGeom.GetPrim())
+
+        self.physicsAPI = UsdPhysics.RigidBodyAPI.Apply(kinematicPrim)
+        self.physicsAPI.CreateKinematicEnabledAttr().Set(True)       
+
+        # target velocities 
+        targetSurfaceVelocityMagnitude = 4.0
+
+        # dynamic actor
+        size = 0.2
+        boxActorPath = "/boxActor"
+        
+        position = Gf.Vec3f(-10.0, -10.0, 1.0)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, boxActorPath)
+        cubePrim = stage.GetPrimAtPath(boxActorPath)
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddTranslateOp().Set(position)
+        UsdPhysics.CollisionAPI.Apply(cubePrim)
+        self.rigidBodyAPI = UsdPhysics.RigidBodyAPI.Apply(cubePrim)
+
+        # spline
+        curveGeom = UsdGeom.BasisCurves.Define(stage, kinematicActorPath + "/basisCurve")        
+        curveGeom.GetPointsAttr().Set([Gf.Vec3f(-10.0, -10.0, 0.0), Gf.Vec3f(10.0, -10.0, 0.0),Gf.Vec3f(10.0, 10.0, 0.0), Gf.Vec3f(-10.0, 10.0, 0.0)])
+        curveGeom.GetWidthsAttr().Set([0.25, 0.25,0.25,0.25])
+        curveGeom.GetCurveVertexCountsAttr().Set([4])
+
+        # setup the splined 
+        kinematicPrim.ApplyAPI("PhysxSplinesSurfaceVelocityAPI")
+        kinematicPrim.GetAttribute("physxSplinesSurfaceVelocity:surfaceVelocityMagnitude").Set(targetSurfaceVelocityMagnitude)
+        kinematicPrim.GetRelationship("physxSplinesSurfaceVelocity:surfaceVelocityCurve").AddTarget(curveGeom.GetPrim().GetPrimPath())
+
+    async def test_physics_spline_surface_velocity_rotate(self):
+        stage = await self.new_stage(up=UsdGeom.Tokens.z, mpu=1.0)
+
+        self.setup_stage(stage)
+
+        translate_attr = stage.GetPrimAtPath("/boxActor").GetAttribute("xformOp:translate")
+        orient_attr = stage.GetPrimAtPath("/boxActor").GetAttribute("xformOp:orient")
+
+        for _ in range(500):
+            self.step()
+            pos = translate_attr.Get()
+            if (abs(pos[1]) < 0.1):
+                quat = orient_attr.Get()
+                rotation = Gf.Rotation(quat)
+                angles = rotation.Decompose(Gf.Vec3d(1.0,0.0,0.0), Gf.Vec3d(0.0,1.0,0.0), Gf.Vec3d(0.0,0.0,1.0))
+                self.assertTrue(abs(angles[2] - 90.0) < 2.0)
+                break

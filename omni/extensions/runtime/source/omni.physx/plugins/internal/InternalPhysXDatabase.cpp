@@ -1,10 +1,8 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
 #include "UsdPCH.h"
-
-#include <carb/profiler/Profile.h>
 
 
 #include "InternalPhysXDatabase.h"
@@ -15,11 +13,8 @@
 #include "InternalDeformableDeprecated.h"
 #include "InternalFilteredPairs.h"
 
-#include <CookingDataAsync.h>
 #include <usdLoad/LoadUsd.h>
 #include <common/utilities/MemoryMacros.h>
-
-#include <ScopedNoticeLock.h>
 
 
 using namespace omni::physx::internal;
@@ -29,12 +24,24 @@ using namespace carb;
 using namespace ::physx;
 
 
-InternalPhysXDatabase::InternalPhysXDatabase()
-    :mInitialTransformsStored(false)
+InternalPhysXDatabase::InternalPhysXDatabase() : mInitialTransformsStored(false), mDebugDrawFlags(0ull), mNestedBodiesUsed(false)
 {
     // A.B. lets add one record so that we dont return the id of 0, which
     // is a bit confusing, though seems to still work
     addRecord(ePTRemoved, nullptr, nullptr, pxr::SdfPath());
+
+    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
+    if (omniPhysX.isDebugVisualizationEnabled())
+    {
+        const uint64_t visMask = omniPhysX.getVisualizationBitMask();
+        for (uint64_t i = uint64_t(ePhysXNumValues); i < uint64_t(eNumValues); i++)
+        {
+            if (visMask & (1ull << i))
+            {
+                setVisualizationParameter(PhysXVisualizationParameter(i), true);
+            }
+        }
+    }
 }
 
 InternalPhysXDatabase::~InternalPhysXDatabase()
@@ -589,87 +596,50 @@ void InternalPhysXDatabase::resetStartProperties(bool useUsdUpdate, bool useVelo
     mInitialTransformsStored = false;
 }
 
-void InternalPhysXDatabase::updateSimulationOutputs(bool updateToUsd)
+void InternalPhysXDatabase::debugDraw()
+{
+    mRenderBuffer.clear();
+    if (OmniPhysX::getInstance().isDebugVisualizationEnabled())
+    {        
+        const PhysXScenesMap& physxScenes = OmniPhysX::getInstance().getPhysXSetup().getPhysXScenes();
+        for (PhysXScenesMap::const_reference ref : physxScenes)
+        {
+            const PhysXScene* sc = ref.second;
+            sc->getInternalScene()->debugDraw(mRenderBuffer, mDebugDrawFlags);
+        }
+    }
+}
+
+void InternalPhysXDatabase::setVisualizationParameter(PhysXVisualizationParameter param, bool val)
+{
+    switch (param)
+    {
+        case eSplinesSurfaceVelocitySegments:
+            if (val)
+                mDebugDrawFlags |= InternalDebugDrawFlags::eDEBUG_DRAW_SPLINES_SEGMENTS;
+            else
+                mDebugDrawFlags &= ~InternalDebugDrawFlags::eDEBUG_DRAW_SPLINES_SEGMENTS;
+            break;
+        case eSplinesSurfaceVelocity:
+            if (val)
+                mDebugDrawFlags |= InternalDebugDrawFlags::eDEBUG_DRAW_SPLINES;
+            else
+                mDebugDrawFlags &= ~InternalDebugDrawFlags::eDEBUG_DRAW_SPLINES;
+            break;
+        default:
+            break;
+    }
+}
+
+void InternalPhysXDatabase::updateStats()
 {
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    UsdStageWeakPtr stage = omniPhysX.getStage();
-    if (!stage)
-        return;
-
-    ScopedNoticeBlock scopedNoticeBlock;
-
-    if (omniPhysX.getSimulationLayer())
-    {        
-        pxr::UsdEditContext editContext(stage, UsdEditTarget(omniPhysX.getSimulationLayer()));
-
-        PXR_NS::SdfChangeBlock changeBlock;
-
-        {
-            CARB_PROFILE_ZONE(0, "updateJointResiduals");        
-            updateJointResiduals(updateToUsd);
-        }
-    }
-    else
-    {
-        PXR_NS::SdfChangeBlock changeBlock;
-
-        {
-            CARB_PROFILE_ZONE(0, "updateJointResiduals");        
-            updateJointResiduals(updateToUsd);
-        }
-    }
-
     if (omniPhysX.isUploadPhysXStatsToCarbEnabled())
     {
         PhysXStats* physxStats = omniPhysX.getPhysXStats();
         if (physxStats)
         {
             physxStats->update();
-        }
-    }
-}
-
-void InternalPhysXDatabase::updateJointResiduals(bool updateToUsd)
-{
-    SimulationCallbacks* cb = SimulationCallbacks::getSimulationCallbacks();
-    const bool skipWriteResiduals = cb->checkGlobalSimulationFlags(GlobalSimulationFlag::eRESIDUALS | GlobalSimulationFlag::eSKIP_WRITE);
-    void* cbUserData = cb->getUserData();
-    ResidualUpdateNotificationFn residualFn = cb->getResidualWriteFn();
-    const bool notifyResiduals = residualFn && cb->checkGlobalSimulationFlags(GlobalSimulationFlag::eRESIDUALS | GlobalSimulationFlag::eNOTIFY_UPDATE);
-
-    if (notifyResiduals || residualFn || (updateToUsd && !skipWriteResiduals))
-    {
-        UsdStageWeakPtr stage = OmniPhysX::getInstance().getStage();
-        if (!stage)
-            return;
-
-        const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-        const std::vector<InternalPhysXDatabase::Record>& records = db.getRecords();
-
-        SdfLayerHandle currentLayer = stage->GetEditTarget().GetLayer();
-
-        PXR_NS::SdfChangeBlock changeBlock;
-
-        for (auto joint : mResitualPxJoints)
-        {
-            if (!(joint->getScene()->getFlags() & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING))
-                continue;
-
-            const size_t recordIndex = (size_t)joint->userData;
-            if (recordIndex < db.getRecords().size())
-            {
-                const InternalDatabase::Record& record = db.getRecords()[recordIndex];
-                if (record.mType == ePTJoint)
-                {
-                    PxConstraintResidual jointResiduals = joint->getConstraint()->getSolverResidual();
-                    PxResiduals residuals;
-                    residuals.positionIterationResidual.maxResidual = jointResiduals.positionIterationResidual;
-                    residuals.positionIterationResidual.rmsResidual = jointResiduals.positionIterationResidual;
-                    residuals.velocityIterationResidual.maxResidual = jointResiduals.velocityIterationResidual;
-                    residuals.velocityIterationResidual.rmsResidual = jointResiduals.velocityIterationResidual;
-                    updateResidualsImpl(updateToUsd, skipWriteResiduals, notifyResiduals, residualFn, record.mPath, residuals, currentLayer, cbUserData);
-                }
-            }
         }
     }
 }

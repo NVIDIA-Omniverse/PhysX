@@ -1,10 +1,13 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
 
 #include <omni/fabric/IToken.h>
 #include <private/omni/physx/IPhysxUsdLoad.h>
+
+#include <carb/tasking/TaskingTypes.h>
+#include <carb/tasking/TaskingUtils.h>
 
 #include "LoadTools.h"
 #include "PrimUpdate.h"
@@ -151,6 +154,9 @@ public:
 
     void changeDefaultSimulator(const std::string& defaultSim);
 
+public:
+    carb::tasking::MutexWrapper mParsingMutex;
+
 private:
     UsdNoticeListener* mUsdNoticeListener;
     pxr::TfNotice::Key mUsdNoticeListenerKey;
@@ -159,7 +165,7 @@ private:
     MemoryAllocator mMemoryAllocator;
     volatile bool mAsyncUpdate;
     FabricTokens mFabricTokens;
-    AttachedStageMap mAttachedStages;
+    AttachedStageMap mAttachedStages;    
 };
 
 

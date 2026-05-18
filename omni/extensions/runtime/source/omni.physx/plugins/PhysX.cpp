@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -27,7 +27,6 @@
 #include "attachment/PhysXTetFinder.h"
 #include "attachment/PhysXPointFinder.h"
 #include "particles/PhysXParticlePost.h"
-#include "particles/FabricParticles.h"
 #include "particles/PhysXParticleSampling.h"
 #include "PhysXSimulationCallbacks.h"
 #include "CookingDataAsync.h"
@@ -62,7 +61,6 @@
 #include <private/omni/physx/IPhysxStageUpdate.h>
 #include <omni/physx/IPhysxStatistics.h>
 #include <private/omni/physics/schema/IUsdPhysics.h>
-#include <private/omni/localcache/ILocalCache.h>
 #include <omni/kit/KitUpdateOrder.h>
 #include <omni/physx/Version.h>
 
@@ -112,10 +110,8 @@ CARB_PLUGIN_IMPL(kPluginImpl,
     omni::physx::IPhysxStatistics)
 
 CARB_PLUGIN_IMPL_DEPS(
-    carb::settings::ISettings,
-    carb::scripting::IScripting,
+    carb::settings::ISettings,    
     omni::convexdecomposition::ConvexDecomposition,
-    omni::localcache::ILocalCache,
     carb::tasking::ITasking,
     carb::dictionary::IDictionary,
     omni::physics::schema::IUsdPhysics,
@@ -194,6 +190,14 @@ void forceLoadPhysicsFromUSD()
     if (stageId)
     {
         OmniPhysX& omniPhysX = OmniPhysX::getInstance();
+
+        // If physics objects are already loaded, release them first and notify listeners
+        AttachedStage* existingStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
+        if (existingStage && !existingStage->getObjectDatabase()->empty())
+        {
+            UsdLoad::getUsdLoad()->releasePhysicsObjects(stageId);            
+        }
+
         omniPhysX.getPhysXSetup().getPhysics(); // make sure we have physics created
         if (omniPhysX.getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene) != nullptr)
             getPhysXUsdPhysicsInterface().setForceParseOnlySingleScene(SdfPath(omniPhysX.getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene)));
@@ -398,7 +402,6 @@ void updateTransformationsInternal(const SdfPath& scenePath, bool updateToUSD, b
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     CARB_PROFILE_ZONE(0, "updateRenderTransforms");
     const bool updateParticlesToUsd = omniPhysX.getISettings()->getAsBool(kSettingUpdateParticlesToUsd);
-    const bool updateResidualsToUsd = omniPhysX.getISettings()->getAsBool(kSettingUpdateResidualsToUsd);
 
     const PhysXScenesMap& physxScenes = omniPhysX.getPhysXSetup().getPhysXScenes();
     for (PhysXScenesMap::const_reference ref : physxScenes)
@@ -420,11 +423,7 @@ void updateTransformationsInternal(const SdfPath& scenePath, bool updateToUSD, b
         }
 
 
-        sc->getInternalScene()->updateSimulationOutputs(updateToUSD, updateVelocitiesToUsd, outputVelocitiesLocalSpace, updateParticlesToUsd, updateResidualsToUsd);
-    }
-
-    {        
-        OmniPhysX::getInstance().getInternalPhysXDatabase().updateSimulationOutputs(updateResidualsToUsd);
+        sc->getInternalScene()->updateSimulationOutputs(updateToUSD, updateVelocitiesToUsd, outputVelocitiesLocalSpace, updateParticlesToUsd);
     }
 }
 
@@ -573,7 +572,7 @@ static long getPhysxSimulationAttachedStage()
 void addCrashreporterMetadata()
 {
     carb::crashreporter::addCrashMetadata("lib_physx_buildVersion", PHYSICS_BUILD_VERSION);
-    carb::crashreporter::addCrashMetadata("lib_physx_buildRepo", "");
+    carb::crashreporter::addCrashMetadata("lib_physx_buildRepo", "omniverse/physics");
     carb::crashreporter::addCrashMetadata("lib_physx_buildHash", PHYSICS_BUILD_SHA);
     carb::crashreporter::addCrashMetadata("lib_physx_buildBranch", PHYSICS_BUILD_BRANCH);
     carb::crashreporter::addCrashMetadata("lib_physx_buildDate", PHYSICS_BUILD_DATE);
@@ -1206,7 +1205,7 @@ static float computeVehicleVelocity(const usdparser::ObjectId vehicleId,
             else
             {
                 const InternalVehicleContext& vehicleContext = internalVehicle->mInternalScene.getVehicleContext();
-                const ::physx::vehicle2::PxVehicleFrame& frame = vehicleContext.getFrame();
+                const ::physx::PxVehicleFrame& frame = vehicleContext.getFrame();
                 dir = fromPhysX(frame.getLngAxis());
             }
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -1644,6 +1644,38 @@ __device__ __forceinline__ static PxU32 getRigidContactFilterIndex(const GpuRigi
     return INVALID_IDX;
 }
 
+__device__ __forceinline__ static uint64_t getActorPathId(const GpuActorPathIdPair* actorPathLookup,
+                                                          PxU32 numPairs,
+                                                          const PxActor* actor)
+{
+    if (!actorPathLookup || numPairs == 0 || !actor)
+    {
+        return 0;
+    }
+    
+    // binary search
+    int lo = 0;
+    int hi = int(numPairs) - 1;
+    while (hi >= lo)
+    {
+        int mid = lo + ((hi - lo) >> 1);
+        if (actorPathLookup[mid].actor == actor)
+        {
+            return actorPathLookup[mid].pathId;
+        }
+        else if (actorPathLookup[mid].actor < actor)
+        {
+            lo = mid + 1;
+        }
+        else
+        {
+            hi = mid - 1;
+        }
+    }
+    
+    return 0;
+}
+
 __global__ static void fetchRigidContactForceMatrixKernel(PxVec3* forceMatrix,
                                                           const PxGpuContactPair* contactPairs,
                                                           PxU32 numContactPairs,
@@ -1725,7 +1757,7 @@ bool fetchRigidContactForceMatrix(PxVec3* forceMatrix,
 }
 
 
-__device__ __forceinline__ static PxU32 getFrictionData(PxVec3* forceBuffer,
+__device__ __forceinline__ static void getFrictionData(PxVec3* forceBuffer,
                                                         PxVec3* pointBuffer,
                                                         PxU32* countMatrix,
                                                         const PxU32* startIndicesMatrix,
@@ -2073,6 +2105,160 @@ bool fetchRigidContactCount(PxU32* countMatrix,
         fetchRigidContactCountKernel<<<(numContactPairs + 1023) / 1024, 1024>>>(
             countMatrix, contactPairs, numContactPairs, numFilters, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices,
             linkContactIndices, filterLookup);
+    return CHECK_CUDA(cudaGetLastError());
+}
+
+// Raw contact count kernel - counts all contacts per sensor (no filter matching)
+__global__ static void fetchRawRigidContactCountKernel(PxU32* countBuffer,
+                                                       const PxGpuContactPair* contactPairs,
+                                                       PxU32 numContactPairs,
+                                                       PxU32 maxLinks,
+                                                       const PxU32* nodeIdx2ArtiGpuIdx,
+                                                       const PxU32* rdContactIndices,
+                                                       const PxU32* linkContactIndices)
+{
+    PxU32 c = blockIdx.x * blockDim.x + threadIdx.x;
+    if (c < numContactPairs)
+    {
+        const PxGpuContactPair& cp = contactPairs[c];
+
+        // Get sensor indices for both bodies
+        PxU32 refIdx0 = getRigidContactReferentIndex(
+            cp.nodeIndex0, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
+        PxU32 refIdx1 = getRigidContactReferentIndex(
+            cp.nodeIndex1, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
+
+        if (refIdx0 != INVALID_IDX || refIdx1 != INVALID_IDX)
+        {
+            for (PxU32 i = 0; i < cp.nbPatches; i++)
+            {
+                const PxContactPatch& patch = reinterpret_cast<const PxContactPatch*>(cp.contactPatches)[i];
+                PxU32 contactCount = patch.nbContacts;
+
+                if (refIdx0 != INVALID_IDX && cp.actor1 != nullptr)
+                {
+                    atomicAdd(&countBuffer[refIdx0], contactCount);
+                }
+                if (refIdx1 != INVALID_IDX && cp.actor0 != nullptr)
+                {
+                    atomicAdd(&countBuffer[refIdx1], contactCount);
+                }
+            }
+        }
+    }
+}
+
+bool fetchRawRigidContactCount(PxU32* countBuffer,
+                               const PxGpuContactPair* contactPairs,
+                               PxU32 numContactPairs,
+                               PxU32 maxLinks,
+                               const PxU32* nodeIdx2ArtiGpuIdx,
+                               const PxU32* rdContactIndices,
+                               const PxU32* linkContactIndices)
+{
+    if (numContactPairs > 0)
+        fetchRawRigidContactCountKernel<<<(numContactPairs + 1023) / 1024, 1024>>>(
+            countBuffer, contactPairs, numContactPairs, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices,
+            linkContactIndices);
+    return CHECK_CUDA(cudaGetLastError());
+}
+
+// Raw contact data kernel - fills contact data for sensors (no filter matching)
+__global__ static void fetchRawRigidContactDataKernel(PxReal* forceBuffer,
+                                                      PxVec3* pointBuffer,
+                                                      PxVec3* normalBuffer,
+                                                      PxReal* separationBuffer,
+                                                      uint64_t* actorIdBuffer,
+                                                      PxU32* countBuffer,
+                                                      PxU32* startIndicesBuffer,
+                                                      const PxGpuContactPair* contactPairs,
+                                                      PxU32 numContactPairs,
+                                                      PxU32 numDataPoints,
+                                                      PxU32 maxLinks,
+                                                      float timeStepInv,
+                                                      const PxU32* nodeIdx2ArtiGpuIdx,
+                                                      const PxU32* rdContactIndices,
+                                                      const PxU32* linkContactIndices,
+                                                      const GpuActorPathIdPair* actorPathLookup,
+                                                      PxU32 numActorPathPairs)
+{
+    PxU32 c = blockIdx.x * blockDim.x + threadIdx.x;
+    if (c < numContactPairs)
+    {
+        const PxGpuContactPair& cp = contactPairs[c];
+
+        // Get sensor indices for both bodies
+        PxU32 refIdx0 = getRigidContactReferentIndex(
+            cp.nodeIndex0, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
+        PxU32 refIdx1 = getRigidContactReferentIndex(
+            cp.nodeIndex1, maxLinks, nodeIdx2ArtiGpuIdx, rdContactIndices, linkContactIndices);
+
+        if (refIdx0 != INVALID_IDX || refIdx1 != INVALID_IDX)
+        {
+            for (PxU32 i = 0; i < cp.nbPatches; i++)
+            {
+                const PxContactPatch& patch = reinterpret_cast<const PxContactPatch*>(cp.contactPatches)[i];
+                PxVec3 normal = patch.normal;
+
+                for (PxU32 j = patch.startContactIndex; j < patch.startContactIndex + patch.nbContacts; j++)
+                {
+                    PxReal normalImpulse = cp.contactForces[j];
+                    const PxContact& contact = reinterpret_cast<const PxContact*>(cp.contactPoints)[j];
+
+                    if (refIdx0 != INVALID_IDX && cp.actor1 != nullptr)
+                    {
+                        PxU32 elementIdx = startIndicesBuffer[refIdx0] + atomicAdd(&countBuffer[refIdx0], 1);
+                        if (elementIdx < numDataPoints)
+                        {
+                            forceBuffer[elementIdx] = normalImpulse * timeStepInv;
+                            pointBuffer[elementIdx] = contact.contact;
+                            normalBuffer[elementIdx] = normal;
+                            separationBuffer[elementIdx] = contact.separation;
+                            actorIdBuffer[elementIdx] = getActorPathId(actorPathLookup, numActorPathPairs, cp.actor1);
+                        }
+                    }
+                    // Force sign inverted when sensor is body1
+                    if (refIdx1 != INVALID_IDX && cp.actor0 != nullptr)
+                    {
+                        PxU32 elementIdx = startIndicesBuffer[refIdx1] + atomicAdd(&countBuffer[refIdx1], 1);
+                        if (elementIdx < numDataPoints)
+                        {
+                            forceBuffer[elementIdx] = -normalImpulse * timeStepInv;
+                            pointBuffer[elementIdx] = contact.contact;
+                            normalBuffer[elementIdx] = normal;
+                            separationBuffer[elementIdx] = contact.separation;
+                            actorIdBuffer[elementIdx] = getActorPathId(actorPathLookup, numActorPathPairs, cp.actor0);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+bool fetchRawRigidContactData(PxReal* forceBuffer,
+                              PxVec3* pointBuffer,
+                              PxVec3* normalBuffer,
+                              PxReal* separationBuffer,
+                              uint64_t* actorIdBuffer,
+                              PxU32* countBuffer,
+                              PxU32* startIndicesBuffer,
+                              const PxGpuContactPair* contactPairs,
+                              PxU32 numContactPairs,
+                              PxU32 numDataPoints,
+                              PxU32 maxLinks,
+                              float timeStepInv,
+                              const PxU32* nodeIdx2ArtiGpuIdx,
+                              const PxU32* rdContactIndices,
+                              const PxU32* linkContactIndices,
+                              const GpuActorPathIdPair* actorPathLookup,
+                              PxU32 numActorPathPairs)
+{
+    if (numContactPairs > 0)
+        fetchRawRigidContactDataKernel<<<(numContactPairs + 1023) / 1024, 1024>>>(
+            forceBuffer, pointBuffer, normalBuffer, separationBuffer, actorIdBuffer, countBuffer, startIndicesBuffer,
+            contactPairs, numContactPairs, numDataPoints, maxLinks, timeStepInv, nodeIdx2ArtiGpuIdx, rdContactIndices,
+            linkContactIndices, actorPathLookup, numActorPathPairs);
     return CHECK_CUDA(cudaGetLastError());
 }
 
@@ -3033,6 +3219,46 @@ bool submitDeformableBodyVec4Data(const PxVec4* src,
     dim3 gridDim = dim3{ (srcMaxElementsPerBody + 1023) / 1024, numBodies, 1 };
     submitDeformableBodyVec4DataKernel<<<gridDim, 1024>>>(src, indices, bodyRecords, dataFlag, srcMaxElementsPerBody);
     return CHECK_CUDA(cudaGetLastError());
+}
+
+//
+// mask -> indices compaction
+//
+// NOTE: This runs on the CUDA stream associated with SingleAllocPolicy (currently stream 0).
+// If we ever move TensorAPI GPU ops to multi-stream execution, this should be plumbed through
+// explicitly rather than relying on the default stream.
+//
+namespace
+{
+class IsMaskNonZero
+{
+public:
+    __host__ __device__ __forceinline__ bool operator()(const uint8_t& value) const
+    {
+        return value != 0;
+    }
+};
+} // namespace
+
+bool compactMaskToIndices(SingleAllocPolicy& policy,
+                          PxU32* indicesOut,
+                          const uint8_t* maskDev,
+                          PxU32 N,
+                          PxU32& outK)
+{
+    thrust::device_ptr<const uint8_t> maskPtr(maskDev);
+    thrust::device_ptr<PxU32> indicesOutPtr(indicesOut);
+    thrust::device_ptr<PxU32> indicesEnd = thrust::copy_if(
+        policy,
+        thrust::make_counting_iterator<PxU32>(0),
+        thrust::make_counting_iterator<PxU32>(N),
+        maskPtr,
+        indicesOutPtr,
+        IsMaskNonZero());
+    if (!CHECK_CUDA(cudaGetLastError()))
+        return false;
+    outK = PxU32(indicesEnd - indicesOutPtr);
+    return true;
 }
 
 } // namespace tensors

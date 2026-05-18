@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import math
 import numpy
 import typing
@@ -18,8 +19,8 @@ def loadTetFile(path):
     with open(full_path) as reader:
         lines = reader.readlines()
     
-    flt_grp = '([-+]?\d*\.\d+|\d+)'
-    v_pat = re.compile(r'^\s*[vV]\s*'+flt_grp+'\s*'+flt_grp+'\s*'+flt_grp+'\s*$')
+    flt_grp = r'([-+]?\d*\.\d+|\d+)'
+    v_pat = re.compile(r'^\s*[vV]\s*'+flt_grp+r'\s*'+flt_grp+r'\s*'+flt_grp+r'\s*$')
     t_pat = re.compile(r'^\s*[tT]\s*(\d*)\s*(\d*)\s*(\d*)\s*(\d*)\s*$')
 
     for line in lines:

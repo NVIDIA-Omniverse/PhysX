@@ -1,13 +1,14 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.ui
 import omni.usd
 from pxr import UsdPhysics, PhysxSchema
 
 from omni.usd.commands.usd_commands import ChangePropertyCommand
 
-from omni.kit.property.physx.widgets import REMOVE_BUTTON_STYLE
+from omni.kit.property.physics.widgets import REMOVE_BUTTON_STYLE
 
 from ..helpers import UI
 from ..commands import (

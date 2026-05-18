@@ -22,23 +22,21 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "vehicle2/PxVehicleParams.h"
+#include "vehicle/PxVehicleParams.h"
 
-#include "vehicle2/roadGeometry/PxVehicleRoadGeometryState.h"
+#include "vehicle/roadGeometry/PxVehicleRoadGeometryState.h"
 
-#include "vehicle2/rigidBody/PxVehicleRigidBodyStates.h"
+#include "vehicle/rigidBody/PxVehicleRigidBodyStates.h"
 
-#include "vehicle2/suspension/PxVehicleSuspensionParams.h"
-#include "vehicle2/suspension/PxVehicleSuspensionFunctions.h"
-#include "vehicle2/suspension/PxVehicleSuspensionHelpers.h"
+#include "vehicle/suspension/PxVehicleSuspensionParams.h"
+#include "vehicle/suspension/PxVehicleSuspensionFunctions.h"
+#include "vehicle/suspension/PxVehicleSuspensionHelpers.h"
 
 namespace physx
-{
-namespace vehicle2
 {
 
 #define VH_SUSPENSION_NO_INTERSECTION_MARKER FLT_MIN
@@ -713,5 +711,4 @@ void PxVehicleAntiRollForceUpdate
 
 
 
-} //namespace vehicle2
 } //namespace physx

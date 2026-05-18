@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,6 +35,7 @@
 
 using namespace physx;
 using namespace Sc;
+using namespace Cm;
 
 static ConstraintInteraction* createInteraction(ConstraintSim* sim, RigidCore* r0, RigidCore* r1, Scene& scene)
 {
@@ -63,7 +64,7 @@ Sc::ConstraintSim::ConstraintSim(ConstraintCore& core, RigidCore* r0, RigidCore*
 	const PxU32 id = scene.getConstraintIDTracker().createID();
 
 	mLowLevelConstraint.index = id;
-	PxPinnedArray<Dy::ConstraintWriteback>& writeBackPool = scene.getDynamicsContext()->getConstraintWriteBackPool();
+	PinnableArray<Dy::ConstraintWriteback>& writeBackPool = scene.getDynamicsContext()->getConstraintWriteBackPool();
 	if(id >= writeBackPool.capacity())
 		writeBackPool.reserve(writeBackPool.capacity() * 2);
 
@@ -219,7 +220,7 @@ PxConstraintGPUIndex Sc::ConstraintSim::getGPUIndex() const
 	if (mLowLevelConstraint.flags & PxConstraintFlag::eGPU_COMPATIBLE)
 	{
 		PX_COMPILE_TIME_ASSERT(sizeof(Dy::Constraint::index) <= sizeof(PxConstraintGPUIndex));
-		return static_cast<PxConstraintGPUIndex>(mLowLevelConstraint.index);
+		return PxConstraintGPUIndex(mLowLevelConstraint.index);
 	}
 	else
 		return PX_INVALID_CONSTRAINT_GPU_INDEX;

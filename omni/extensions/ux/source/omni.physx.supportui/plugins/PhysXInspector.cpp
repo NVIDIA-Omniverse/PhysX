@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #include "UsdPCH.h"
@@ -31,6 +31,24 @@
 #include "PhysXInspectorModel.h"
 
 const static carb::RStringKey kObserverName("omni.physx.supportui:inspector");
+
+namespace
+{
+struct ScopedReleaseEventIgnore
+{
+    explicit ScopedReleaseEventIgnore(uint32_t& ignoreCount) : mIgnoreCount(ignoreCount)
+    {
+        ++mIgnoreCount;
+    }
+
+    ~ScopedReleaseEventIgnore()
+    {
+        --mIgnoreCount;
+    }
+
+    uint32_t& mIgnoreCount;
+};
+} // namespace
 // clang-format on
 
 void PhysXInspector::onStartup()
@@ -127,7 +145,10 @@ void PhysXInspector::disableAuthoringMode()
 {
     CARB_PROFILE_ZONE(0, "PhysXInspector::disableAuthoringMode");
     if (mState == PhysXInspectorModel::State::eRunningSimulation)
+    {
+        mState = PhysXInspectorModel::State::eDisabled;
         return;
+    }
 
     // Clearing session is faster than dropping the entire authoring sublayer
     clearSessionSublayer();
@@ -277,6 +298,24 @@ void PhysXInspector::refreshAllInspectorModelsValues()
     }
 }
 
+void PhysXInspector::handlePhysicsObjectsReleased()
+{
+    if (mIgnorePhysicsObjectsReleased > 0)
+    {
+        return;
+    }
+
+    if (mState == PhysXInspectorModel::State::eAuthoring)
+    {
+        enableNoticeHandler(false);
+        stopAuthoringSimulation();
+        disableAuthoringMode();
+        mCmdCommitAndDisable = false;
+        enableNoticeHandler(true);
+        setState(PhysXInspectorModel::State::eRunningSimulation);
+    }
+}
+
 
 void PhysXInspector::onSimStop()
 {
@@ -344,6 +383,7 @@ void PhysXInspector::onSimUpdate()
 
 void PhysXInspector::stopAuthoringSimulation()
 {
+    ScopedReleaseEventIgnore ignoreReleaseEvents(mIgnorePhysicsObjectsReleased);
     const bool usdResetOnStop = mISettings->getAsBool(omni::physx::kSettingResetOnStop);
     mISettings->setBool(omni::physx::kSettingResetOnStop, true);
     mPhysXInterface->resetSimulation();
@@ -366,6 +406,7 @@ void PhysXInspector::commitAuthoringState()
 {
     if (mState == PhysXInspectorModel::State::eAuthoring)
     {
+        ScopedReleaseEventIgnore ignoreReleaseEvents(mIgnorePhysicsObjectsReleased);
         // We need to explicitly save authoring state or it will get reset by next simulation start
         const bool usdResetOnStop = mISettings->getAsBool(omni::physx::kSettingResetOnStop);
         mISettings->setBool(omni::physx::kSettingResetOnStop, false);
@@ -1200,6 +1241,7 @@ void PhysXInspector::findAllSimOwnerForBody(const pxr::SdfPath& body, pxr::SdfPa
 void PhysXInspector::startSimulation()
 {
     CARB_PROFILE_ZONE(0, "PhysXInspector::startSimulation");
+    ScopedReleaseEventIgnore ignoreReleaseEvents(mIgnorePhysicsObjectsReleased);
     mCurrentTime = 0;
     mISettings->setString(omni::physx::kSettingForceParseOnlySingleScene, mSelectedPhysicsScenePath.GetText());
     mPhysXInterface->releasePhysicsObjects(); // sets the empty scene flag so that full parsing is triggered
@@ -1238,6 +1280,7 @@ void PhysXInspector::stepIfNecessary(float dt)
 void PhysXInspector::applyChangeSelection()
 {
     CARB_PROFILE_ZONE(0, "PhysXInspector::applyChangeSelection");
+    ScopedReleaseEventIgnore ignoreReleaseEvents(mIgnorePhysicsObjectsReleased);
     // We just clear the layer instead of dropping it as it's more efficient, and it will not trigger a full
     // USD resync (affecting also rendering) that happens when you drop the entire sublayer
     clearSessionSublayer();

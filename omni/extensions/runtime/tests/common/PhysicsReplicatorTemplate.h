@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -45,9 +45,11 @@ public:
         mSettings->setBool(kSettingUpdateToUsd, mUpdateUsd);        
     }
 
+    void setupScenePartition(const pxr::SdfPath& envPath, uint32_t envIndex);
+
     void clone(const pxr::SdfPath& envPath, const pxr::SdfPath& sourceEnvPath,  uint32_t numEnvs, uint32_t numCols, float offset);
 
-    void replicate(uint64_t sourceEnvPath, uint32_t numReplication);
+    void replicate(uint64_t sourceEnvPath, uint32_t numReplication, bool useEnvIds = false);
 
     bool isFabric()
     {
@@ -68,6 +70,7 @@ public:
     FabricReplicator()
     {
         mStage = nullptr;
+        mUsdNoticeEnabled = false;
     }
 
     ~FabricReplicator()
@@ -77,9 +80,11 @@ public:
 
     void init(long stageId, carb::Framework* framework);
 
+    void setupScenePartition(const pxr::SdfPath& envPath, uint32_t envIndex);
+
     void clone(const pxr::SdfPath& envPath, const pxr::SdfPath& sourceEnvPath,  uint32_t numEnvs, uint32_t numCols, float offset);
 
-    void replicate(uint64_t sourceEnvPath, uint32_t numReplication);
+    void replicate(uint64_t sourceEnvPath, uint32_t numReplication, bool useEnvIds = false);
 
     bool isFabric()
     {
@@ -94,6 +99,7 @@ public:
     carb::settings::ISettings*          mSettings;
     bool                                mUpdateUsd;
     bool                                mUpdateFastCache;
+    bool                                mUsdNoticeEnabled;
 };
 
 }

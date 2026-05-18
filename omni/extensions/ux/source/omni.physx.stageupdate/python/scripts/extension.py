@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.ext
 from .. import get_physx_stage_update_node_interface
 from omni.physxstageupdate.bindings._physxStageUpdateNode import release_physx_stage_update_node_interface, release_physx_stage_update_node_scripting

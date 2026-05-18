@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -300,11 +300,12 @@ struct ExtensionImpl : public omni::ext::IExt, public pxr::TfWeakBase
             }
         };
         // Defaults
-        gSettings->setDefaultBool(omni::physics::kSettingDisplayJoints, true);
+        gSettings->setDefaultBool(omni::physics::kSettingDisplayJoints, omni::physics::kSettingDisplayJointsDefault);
 
         // Subscriptions
         mUiSettingCallbackSubscriptions.push_back(gSettings->subscribeToNodeChangeEvents(
             omni::physics::kSettingDisplayJoints, onDisplayJointsChange, mJointAuthoringManager));
+        gSettings->setDefaultBool(omni::physics::kSettingDisplayJoints, omni::physics::kSettingDisplayJointsDefault);
         mUiSettingCallbackSubscriptions.push_back(gSettings->subscribeToNodeChangeEvents(
             kViewportGizmoMinFadeOutPath, onDisplayJointsFadeOutChange, mJointAuthoringManager));
         mUiSettingCallbackSubscriptions.push_back(

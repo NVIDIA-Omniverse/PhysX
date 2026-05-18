@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,14 +30,13 @@
 #define DY_CONSTRAINT_WRITE_BACK_H
 
 #include "foundation/PxVec3.h"
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 #include "PxvDynamics.h"
 
 namespace physx
 {
 	namespace Dy
 	{
-
 		PX_ALIGN_PREFIX(16)
 		struct ConstraintWriteback
 		{
@@ -45,39 +44,13 @@ namespace physx
 			{
 				linearImpulse = PxVec3(0);
 				angularImpulse = PxVec3(0);
-				residualPosIter = 0.0f;
-				residual = 0.0f;
+				broken = false;
 			}
 
 			PxVec3	linearImpulse;
-		private:
-			union
-			{
-				PxU32	broken;
-				PxReal	residualPosIter;
-			};
-		public:
-			PxVec3  angularImpulse;
-			PxReal	residual;
-
-			PX_FORCE_INLINE PxU32 setBit(PxU32 value, PxU32 bitLocation, bool bitState)
-			{
-				if (bitState)
-					return value | (1 << bitLocation);
-				else
-					return value & (~(1 << bitLocation));
-			}
-
-			PX_FORCE_INLINE bool isBroken() const { return broken & PX_SIGN_BITMASK; }
-			
-			PX_FORCE_INLINE PxReal getPositionIterationResidual() const { return PxAbs(residualPosIter); }
-			
-			PX_FORCE_INLINE void setCombined(bool isBroken, PxReal positionIterationResidual)
-			{
-				residualPosIter = positionIterationResidual;
-				broken = setBit(broken, 31, isBroken);
-			}
-
+			PxU32	broken;
+			PxVec3	angularImpulse;
+			PxU32	pad;
 		}
 		PX_ALIGN_SUFFIX(16);
 

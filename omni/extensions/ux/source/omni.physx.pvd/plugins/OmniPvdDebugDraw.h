@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -12,6 +12,11 @@
 
 #include <carb/eventdispatcher/IEventDispatcher.h>
 #include <carb/tasking/TaskingUtils.h>
+#include <carb/events/IEvents.h>
+
+#include <pxr/usd/sdf/path.h>
+#include <pxr/base/tf/hashmap.h>
+#include <vector>
 
 struct OmniPVDDebugVizData;
 
@@ -129,13 +134,34 @@ struct OmniPVDDebugLines
     OmniPVDDebugVizData* mOmniPVDDebugVizPtr;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+// Cache structure for prim data to avoid expensive stage traversal on every frame
+// The prim hierarchy doesn't change between frames in OVD files - only attribute
+// values (transforms, etc.) change. This cache dramatically speeds up frame stepping.
+////////////////////////////////////////////////////////////////////////////////
+struct OmniPVDPrimCache
+{
+    std::vector<pxr::SdfPath> actorPaths;     // All actor prim paths
+    std::vector<pxr::SdfPath> jointPaths;     // All joint prim paths
+    std::vector<pxr::SdfPath> jointRcPaths;   // All articulation joint prim paths
+    pxr::TfHashMap<uint64_t, pxr::SdfPath> actorMap; // Handle -> Path mapping
+    bool isValid{ false };                    // Whether the cache is populated
+    
+    void clear()
+    {
+        actorPaths.clear();
+        jointPaths.clear();
+        jointRcPaths.clear();
+        actorMap.clear();
+        isValid = false;
+    }
+};
+
 struct OmniPVDDebugVizData
 {
     OmniPVDDebugVizData();
     ~OmniPVDDebugVizData();
     void reset();
-    void initMutex();
-    void releaseMutex();
     void initInterfaces();
     void releaseInterfaces();
     void initEventSubs();
@@ -146,13 +172,14 @@ struct OmniPVDDebugVizData
     void setGizmoScale(OmniPVDDebugGizmoSelection::Enum gizmo, float scale);
     void setGizmoScale(float scale);
     void updateGizmoVizModes();
+    void invalidatePrimCache(); // Invalidate the prim cache when stage changes
 
     bool getClosingState();
     void setClosingState(bool closing);
 
     bool mIsClosing;
 
-    carb::tasking::MutexWrapper* mNextStateMutex{ nullptr };
+    carb::tasking::MutexWrapper mNextStateMutex;
 
     uint64_t mStageDirtyEvent; // stage load, unload, play, stop, prim selection changed or gizmo user drop down
                                // selection changed
@@ -167,4 +194,7 @@ struct OmniPVDDebugVizData
     OmniPVDDebugLines mGizmos[static_cast<int>(OmniPVDDebugGizmoSelection::eNbrEnums)];
     float mGizmoScale;
     bool mHasInterfaces;
+    
+    // Prim cache for performance optimization - avoids full stage traversal per frame
+    OmniPVDPrimCache mPrimCache;
 };

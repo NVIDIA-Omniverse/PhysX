@@ -14,6 +14,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxAutoDeformableAttachmentAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaAdditionPhysxAutoDeformableBodyAPI": {
@@ -24,6 +25,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxAutoDeformableBodyAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaAdditionPhysxAutoDeformableHexahedralMeshAPI": {
@@ -34,6 +36,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxAutoDeformableHexahedralMeshAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaAdditionPhysxAutoDeformableMeshSimplificationAPI": {
@@ -44,6 +47,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxAutoDeformableMeshSimplificationAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaAdditionPhysxBaseDeformableBodyAPI": {
@@ -54,6 +58,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxBaseDeformableBodyAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaAdditionPhysxDeformableMaterialAPI": {
@@ -64,6 +69,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxDeformableMaterialAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaAdditionPhysxDrivePerformanceEnvelopeAPI": {
@@ -74,6 +80,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxDrivePerformanceEnvelopeAPI", 
                         "schemaKind": "multipleApplyAPI"
                     }, 
                     "PhysxSchemaAdditionPhysxJointAxisAPI": {
@@ -84,6 +91,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxJointAxisAPI", 
                         "schemaKind": "multipleApplyAPI"
                     }, 
                     "PhysxSchemaAdditionPhysxSplinesSurfaceVelocityAPI": {
@@ -94,6 +102,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxSplinesSurfaceVelocityAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaAdditionPhysxSurfaceDeformableBodyAPI": {
@@ -104,6 +113,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxSurfaceDeformableBodyAPI", 
                         "schemaKind": "singleApplyAPI"
                     }, 
                     "PhysxSchemaAdditionPhysxSurfaceDeformableMaterialAPI": {
@@ -114,6 +124,7 @@
                         "bases": [
                             "UsdAPISchemaBase"
                         ], 
+                        "schemaIdentifier": "PhysxSurfaceDeformableMaterialAPI", 
                         "schemaKind": "singleApplyAPI"
                     }
                 }

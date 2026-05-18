@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -255,7 +255,7 @@ constexpr static int PhysxCookingDataVersion_DeformableBodyTetMeshDeprecated = 8
 constexpr static int PhysxCookingDataVersion_ParticleClothDeprecated = 9; // The current version number of cooked data for particle cloth
 constexpr static int PhysxCookingDataVersion_ParticlePoissonSampling = 2; // The current version number of cooked data for particle Poisson Sampling
 constexpr static int PhysxCookingDataVersion_SphereFill = 2; // The current version number of cooked data for a sphere fill operation
-constexpr static int PhysxCookingDataVersion_DeformableVolumeMesh = 3; // The current version number of cooked data for deformable volume meshes
+constexpr static int PhysxCookingDataVersion_DeformableVolumeMesh = 4; // The current version number of cooked data for deformable volume meshes
 constexpr static int PhysxCookingDataVersion_VolumeDeformableBody = 2; // The current version number of cooked data for volume deformable body meshes
 constexpr static int PhysxCookingDataVersion_SurfaceDeformableBody = 1; // The current version number of cooked data for surface deformable body meshes
 // clang-format on
@@ -269,18 +269,14 @@ constexpr static int PhysxCookingDataVersion_SurfaceDeformableBody = 1; // The c
 ///
 struct IPhysxCookingServicePrivate
 {
-    CARB_PLUGIN_INTERFACE("omni::physx::IPhysxCookingServicePrivate", 13, 0)
+    CARB_PLUGIN_INTERFACE("omni::physx::IPhysxCookingServicePrivate", 14, 0)
 
     /// Mirrors of corresponding functions in IPhysxCooking
     uint32_t(CARB_ABI* getActiveTaskCount)(PhysxCookingAsyncContext context);
     uint32_t(CARB_ABI* getFinishedCookingTasksCount)();
 
-    /// Local cache handling. NOTE: All these 5 operations are NOT thread safe
-    bool(CARB_ABI* isLocalMeshCacheEnabled)();
-    void(CARB_ABI* setLocalMeshCacheEnabled)(bool val);
-    uint32_t(CARB_ABI* getLocalMeshCacheSize)();
-    void(CARB_ABI* setLocalMeshCacheSize)(uint32_t val);
-    void(CARB_ABI* resetLocalMeshCacheContents)();
+    /// Cache handling. NOTE: All these 5 operations are NOT thread safe
+    void(CARB_ABI* resetMeshCacheContents)();
 
     /// Compute tetrahedral mesh
     bool(CARB_ABI* computeConformingTetrahedralMesh)(const PhysxCookingTetrahedralMeshInput& meshInput,

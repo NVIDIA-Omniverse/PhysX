@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -79,7 +79,6 @@ void setToDefault(UsdStageWeakPtr stage, PhysxArticulationDesc& desc)
     desc.stabilizationThreshold = 0.01f * tolerancesSpeed * tolerancesSpeed;
     desc.selfCollision = true;
     desc.staticRootBodyPrim = SdfPath();
-    desc.reportResiduals = false;
 }
 
 void parseArticulation(const pxr::UsdStageWeakPtr stage, const omni::physics::schema::ArticulationDesc& inDesc,
@@ -124,12 +123,6 @@ void parseArticulation(const pxr::UsdStageWeakPtr stage, const omni::physics::sc
                 physxArticulationAPI.GetSolverVelocityIterationCountAttr(), 0, 255, updateArticulationSolverVelocityIterationCount);
 
             getBoolAttribute(desc->selfCollision, physxArticulationAPI.GetEnabledSelfCollisionsAttr(), nullptr);
-        }
-
-        const PhysxSchemaPhysxResidualReportingAPI physxResidualReportingAPI = PhysxSchemaPhysxResidualReportingAPI::Get(stage, inDesc.usdPrim.GetPrimPath());
-        if (physxResidualReportingAPI)
-        {
-            desc->reportResiduals = true;
         }
 
         articulationMap[inDesc.usdPrim.GetPrimPath()].push_back(desc);
@@ -367,19 +360,19 @@ void createLinkHierarchy(AttachedStage& attachedStage,
             {
                 if(limit->stiffness > 0.0f)
                 {
-                    CARB_LOG_WARN("Stiffness attribute is unsupported for articulation joints and will be ignored (%s).", jointDesc->jointPrimPath.GetText());
+                    CARB_LOG_INFO("Stiffness attribute is unsupported for articulation joints and will be ignored (%s).", jointDesc->jointPrimPath.GetText());
                 }
                 if(limit->damping > 0.0f)
                 {
-                    CARB_LOG_WARN("Damping attribute is unsupported for articulation joints and will be ignored (%s).", jointDesc->jointPrimPath.GetText());
+                    CARB_LOG_INFO("Damping attribute is unsupported for articulation joints and will be ignored (%s).", jointDesc->jointPrimPath.GetText());
                 }
                 if(limit->restitution > 0.0f)
                 {
-                    CARB_LOG_WARN("Restitution attribute is unsupported for articulation joints and will be ignored (%s).", jointDesc->jointPrimPath.GetText());
+                    CARB_LOG_INFO("Restitution attribute is unsupported for articulation joints and will be ignored (%s).", jointDesc->jointPrimPath.GetText());
                 }
                 if(limit->bounceThreshold > 0.0f)
                 {
-                    CARB_LOG_WARN("Bounce threshold attribute is unsupported for articulation joints and will be ignored (%s).", jointDesc->jointPrimPath.GetText());
+                    CARB_LOG_INFO("Bounce threshold attribute is unsupported for articulation joints and will be ignored (%s).", jointDesc->jointPrimPath.GetText());
                 }
             }
         }

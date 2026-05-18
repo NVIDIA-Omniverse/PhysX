@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -78,21 +78,10 @@ DEFINE_PHYSX_SETTING(kSettingExposePrimPathNames, "/exposePrimPathNames");
 DEFINE_PHYSX_SETTING(kSettingForceParseOnlySingleScene, "/forceParseOnlySingleScene");
 /// @private
 DEFINE_PHYSX_SETTING(kSettingSimulateEmptyScene, "/simulateEmptyScene");
-/// (bool) Disable sleeping for all PhysX SDK objects, useful for debugging, should not be used for production.
-DEFINE_PHYSX_SETTING(kSettingDisableSleeping, "/disableSleeping");
 /// (bool) Enable synchronous CUDA kernel launches. This is very useful if you need to pin point the CUDA kernel that is failing.
 DEFINE_PHYSX_SETTING(kSettingSynchronousKernelLaunches, "/enableSynchronousKernelLaunches");
 /// (bool) Disable contact processing in omni.physx.
 DEFINE_PHYSX_SETTING(kSettingDisableContactProcessing, "/disableContactProcessing");
-
-/** @rst
-    (bool) See :ref:`Enable Local Mesh Cache<Enable Local Mesh Cache>`. Changeable through :ref:`Physics Preferences`.
-    @endrst */
-DEFINE_PERSISTENT_PHYSX_SETTING(kSettingUseLocalMeshCache, "/useLocalMeshCache");
-/** @rst
-    (int) See :ref:`Local Mesh Cache Size MB<Local Mesh Cache Size MB>`. Changeable through :ref:`Physics Preferences`.
-    @endrst */
-DEFINE_PERSISTENT_PHYSX_SETTING(kSettingLocalMeshCacheSizeMB, "/localMeshCacheSizeMB");
 
 /// @private
 DEFINE_PHYSX_SETTING(kSettingUjitsoCookingDevKey, "/cooking/ujitsoCookingDevKey");
@@ -120,6 +109,10 @@ DEFINE_PERSISTENT_PHYSX_SETTING(kSettingUjitsoCookingMaxProcessCount, "/cooking/
     @endrst */
 DEFINE_PHYSX_SETTING(kSettingUpdateToUsd, "/updateToUsd");
 /** @rst
+    (bool) See :ref:`Update to USD using XformCommonAPI<Update to USD using XformCommonAPI>`. This is a :ref:`per-stage setting<Physics Settings>`.
+    @endrst */
+DEFINE_PHYSX_SETTING(kSettingUpdateToUsdUsingXformCommonAPI, "/updateToUsdUsingXformCommonAPI");
+/** @rst
     (int) See :ref:`Update velocities to USD<Update velocities to USD>`. This is a :ref:`per-stage setting<Physics Settings>`.
     @endrst */
 DEFINE_PHYSX_SETTING(kSettingUpdateVelocitiesToUsd, "/updateVelocitiesToUsd");
@@ -131,10 +124,6 @@ DEFINE_PHYSX_SETTING(kSettingOutputVelocitiesLocalSpace, "/outputVelocitiesLocal
     (bool) See :ref:`Update Particles to USD<Update Particles to USD>`. This is a :ref:`per-stage setting<Physics Settings>`.
     @endrst */
 DEFINE_PHYSX_SETTING(kSettingUpdateParticlesToUsd, "/updateParticlesToUsd");
-/** @rst
-    (bool) See :ref:`Update Residuals to USD<Update Residuals to USD>`. This is a :ref:`per-stage setting<Physics Settings>`.
-    @endrst */
-DEFINE_PHYSX_SETTING(kSettingUpdateResidualsToUsd, "/updateResidualsToUsd");
 DEFINE_PHYSX_SETTING(kSettingFabricEnabled, "/fabricEnabled");
 
 // Simulator
@@ -264,11 +253,6 @@ DEFINE_PERSISTENT_PHYSX_SETTING(kSettingDisplayMassProperties, "/visualizationDi
 DEFINE_PERSISTENT_PHYSX_SETTING(kSettingDisplaySimulationOutput, "/visualizationSimulationOutput");
 
 /** @rst
-    (bool) Toggles the display of the :ref:`Simulation Data Visualizer Window`.
-    @endrst */    
-DEFINE_PERSISTENT_PHYSX_SETTING(kSettingDisplaySimulationDataVisualizer, "/visualizationSimulationDataVisualizer");
-
-/** @rst
     (bool) Automatically enable the :ref:`Simulation Settings Window` whenever Fabric is active
     @endrst */    
 DEFINE_PHYSX_SETTING(kSettingAutoPopupSimulationOutputWindow, "/autoPopupSimulationOutputWindow");
@@ -374,9 +358,9 @@ DEFINE_PERSISTENT_PHYSX_SETTING(kSettingDisplayDeformableMeshType, "/visualizati
 DEFINE_PERSISTENT_PHYSX_SETTING(kSettingDisplayDeformableAttachments, "/visualizationDisplayDeformableAttachments");
 
 /** @rst
-    (bool) Toggles between new deformable feature (beta) and deprecated deformable/particle-cloth graphical user interfaces.
+    (bool) Toggles between new deformable feature and deprecated deformable/particle-cloth graphical user interfaces.
     @endrst */
-DEFINE_PERSISTENT_PHYSX_SETTING(kSettingEnableDeformableBeta, "/enableDeformableBeta");
+DEFINE_PERSISTENT_PHYSX_SETTING(kSettingEnableDeformableDeprecated, "/enableDeformableDeprecated");
 
 /** @rst
     (int) Enables viewport debug visualization overlay of particles.

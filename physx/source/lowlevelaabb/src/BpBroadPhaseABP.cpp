@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -60,12 +60,13 @@ PT: to try:
 
 #define ABP_MT
 
+#define ABP_FREE_MEMORY_IN_EPILOGUE
+
 #define CHECKPOINT(x)
 //#include <stdio.h>
 //#define CHECKPOINT(x)	printf(x);
 
 //#pragma warning (disable : 4702)
-#define	CODEALIGN16		//_asm	align 16
 #if PX_INTEL_FAMILY && !defined(PX_SIMD_DISABLED)
 	#define ABP_SIMD_OVERLAP
 #endif
@@ -240,13 +241,8 @@ namespace internalABP
 	{
 		PX_FORCE_INLINE	void	initFrom(const SIMD_AABB4& box)
 		{
-	#ifdef ABP_SIMD_OVERLAP
 			mMinY	= -box.mMinY;
 			mMinZ	= -box.mMinZ;
-	#else
-			mMinY	= box.mMinY;
-			mMinZ	= box.mMinZ;
-	#endif
 			mMaxY	= box.mMaxY;
 			mMaxZ	= box.mMaxZ;
 		}
@@ -1755,7 +1751,7 @@ void BoxManager::prepareData(RadixSortBuffered& /*rs*/, ABP_Object* PX_RESTRICT 
 #ifdef ABP_MT
 namespace
 {
-	struct PairManagerMT
+	struct PairManagerMT : public PxUserAllocated
 	{
 		const ABP_PairManager*	mSharedPM;
 		PxArray<DelayedPair>	mDelayedPairs;
@@ -1784,68 +1780,67 @@ static PX_FORCE_INLINE void outputPair(PairManagerMT& pairManager, PxU32 index0,
 	class ABP_InternalTask : public PxLightCpuTask
 	{
 		public:
-							ABP_InternalTask(ABP_TaskID id) : mBP(NULL), mID(id)	{}
-		virtual	const char* getName()	const	PX_OVERRIDE
-		{
-			return "ABP_InternalTask";
-		}
+									ABP_InternalTask(ABP_TaskID id, PxU64 contextID) : mBP(NULL), mID(id)	{ setContextId(contextID);	}
+		virtual	const char*			getName()			const	PX_OVERRIDE	{ return "ABP_InternalTask";	}
+		virtual void				run()						PX_OVERRIDE;
+		virtual bool				isHighPriority()	const	PX_OVERRIDE	{ return true; }
 
-		virtual void run()	PX_OVERRIDE;
-
-		virtual bool	isHighPriority()	const	PX_OVERRIDE	{ return true; }
-
-		BroadPhaseABP*			mBP;
-		ABP_TaskID				mID;
+				BroadPhaseABP*		mBP;
+				const ABP_TaskID	mID;
 	};
 
 	class ABP_CompleteBoxPruningStartTask;
 
-	class ABP_CompleteBoxPruningTask : public PxLightCpuTask
+	class ABP_LeafTask : public PxLightCpuTask
 	{
-	public:
-							ABP_CompleteBoxPruningTask() :
-								mStartTask(NULL),
-								mType(0),
-								mID(0)
-							{
-							}
-
-		virtual	const char* getName()	const	PX_OVERRIDE
+		struct TaskBoxData
 		{
-			return "ABP_CompleteBoxPruningTask";
-		}
+			PxU32					mCounter;
+			const SIMD_AABB_X4*		mBoxListX;
+			const SIMD_AABB_YZ4*	mBoxListYZ;
+			const PxU32*			mRemap;
 
-		virtual void run()	PX_OVERRIDE;
+			PX_FORCE_INLINE	void	setData(PxU32 counter, const SIMD_AABB_X4* boxListX, const SIMD_AABB_YZ4* boxListYZ, const PxU32* remap)
+			{
+				mCounter = counter;
+				mBoxListX = boxListX;
+				mBoxListYZ = boxListYZ;
+				mRemap = remap;
+			}
+		};
 
-		virtual bool	isHighPriority()	const	PX_OVERRIDE	{ return true; }
+	public:
+								ABP_LeafTask() : mType(0), mID(0)	{}
 
-		ABP_CompleteBoxPruningStartTask*	mStartTask;
+		virtual	const char*		getName()			const	PX_OVERRIDE	{ return mType ? "BoxPruningLeafBipartiteTask" : "BoxPruningLeafCompleteTask";	}
+		virtual void			run()						PX_OVERRIDE;
+		virtual bool			isHighPriority()	const	PX_OVERRIDE	{ return true; }
 
-		PxU16					mType;
+		PxU16					mType;	// PT: complete (0) or bipartite (1)
 		PxU16					mID;
 
-		PxU32					mCounter;
-		const SIMD_AABB_X4*		mBoxListX;
-		const SIMD_AABB_YZ4*	mBoxListYZ;
-		const PxU32*			mRemap;
-
-		PxU32					mCounter4;
-		const SIMD_AABB_X4*		mBoxListX4;
-		const SIMD_AABB_YZ4*	mBoxListYZ4;
-		const PxU32*			mRemap4;
+		TaskBoxData				mData0;	// PT: used for complete & bipartite queries
+		TaskBoxData				mData1;	// PT: used for bipartite queries
 
 		PairManagerMT			mPairs;
 
 		PX_FORCE_INLINE	bool	isThereWorkToDo()	const
 		{
-			if(!mCounter)
+			if(!mData0.mCounter)
 				return false;
 
 			if(mType)
-				return mCounter4!=0;
+				return mData1.mCounter!=0;
 
 			return true;
 		}
+
+		void					startCompleteWork(	PxU32 counter, const SIMD_AABB_X4* boxListX, const SIMD_AABB_YZ4* boxListYZ, const PxU32* remap,
+													ABP_PairManager* pairManager, PxBaseTask* continuation, PxU32 id = 0);
+
+		void					startBipartiteWork(	PxU32 counter0, const SIMD_AABB_X4* boxListX0, const SIMD_AABB_YZ4* boxListYZ0, const PxU32* remap0,
+													PxU32 counter1, const SIMD_AABB_X4* boxListX1, const SIMD_AABB_YZ4* boxListYZ1, const PxU32* remap1,
+													ABP_PairManager* pairManager, PxBaseTask* continuation, PxU32 id = 0);
 	};
 
 	class ABP_CompleteBoxPruningEndTask : public PxLightCpuTask
@@ -1853,14 +1848,9 @@ static PX_FORCE_INLINE void outputPair(PairManagerMT& pairManager, PxU32 index0,
 		public:
 							ABP_CompleteBoxPruningEndTask() : mStartTask(NULL)	{}
 
-		virtual	const char* getName()	const	PX_OVERRIDE
-		{
-			return "ABP_CompleteBoxPruningEndTask";
-		}
-
-		virtual void run()	PX_OVERRIDE;
-
-		virtual bool	isHighPriority()	const	PX_OVERRIDE	{ return true; }
+		virtual	const char* getName()			const	PX_OVERRIDE	{ return "ABP_CompleteBoxPruningEndTask";	}
+		virtual void		run()						PX_OVERRIDE;
+		virtual bool		isHighPriority()	const	PX_OVERRIDE	{ return true; }
 
 		ABP_CompleteBoxPruningStartTask*	mStartTask;
 	};
@@ -1870,10 +1860,9 @@ static PX_FORCE_INLINE void outputPair(PairManagerMT& pairManager, PxU32 index0,
 		public:
 							ABP_CompleteBoxPruningStartTask();
 
-		virtual	const char* getName()	const	PX_OVERRIDE
-		{
-			return "ABP_CompleteBoxPruningStartTask";
-		}
+		virtual	const char* getName()			const	PX_OVERRIDE	{ return "ABP_CompleteBoxPruningStartTask";	}
+		virtual void		run()						PX_OVERRIDE;
+		virtual bool		isHighPriority()	const	PX_OVERRIDE	{ return true; }
 
 		void	setup(
 			//ABP_MM& memoryManager,
@@ -1885,13 +1874,11 @@ static PX_FORCE_INLINE void outputPair(PairManagerMT& pairManager, PxU32 index0,
 			const ABP_Index* PX_RESTRICT inputRemap,
 			PxU64 contextID);
 
+		void	releaseMemory();
+
 		void	addDelayedPairs();
 		void	addDelayedPairs2(PxArray<BroadPhasePair>& createdPairs);
 		
-		virtual void run()	PX_OVERRIDE;
-
-		virtual bool	isHighPriority()	const	PX_OVERRIDE	{ return true; }
-
 		const SIMD_AABB_X4*				mListX;
 		const SIMD_AABB_YZ4*			mListYZ;
 		const ABP_Index*				mInputRemap;
@@ -1907,7 +1894,7 @@ static PX_FORCE_INLINE void outputPair(PairManagerMT& pairManager, PxU32 index0,
 		PxBounds3						mBounds;
 		PxU32							mNb;
 
-		ABP_CompleteBoxPruningTask		mTasks[9];
+		ABP_LeafTask					mTasks[9];
 		ABP_CompleteBoxPruningEndTask	mEndTask;
 	};
 #endif
@@ -1952,18 +1939,12 @@ static PX_FORCE_INLINE void outputPair(PairManagerMT& pairManager, PxU32 index0,
 						ABP_InternalTask		mTask1;
 				ABP_CompleteBoxPruningStartTask	mCompleteBoxPruningTask0;
 				ABP_CompleteBoxPruningStartTask	mCompleteBoxPruningTask1;
-					ABP_CompleteBoxPruningTask	mBipTasks[NB_BIP_TASKS];
+						ABP_LeafTask			mLeafTasks[NB_BIP_TASKS];
 
 						void					addDelayedPairs();
 						void					addDelayedPairs2(PxArray<BroadPhasePair>& createdPairs);
 #endif
 	};
-
-#ifdef ABP_SIMD_OVERLAP
-	#define ABP_OVERLAP_TEST(x)	SIMD_OVERLAP_TEST(x)
-#else
-	#define ABP_OVERLAP_TEST(x)	if(intersect2D(box0, x))
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -2210,215 +2191,12 @@ void ABP_PairManager::addDelayedPairs2(PxArray<BroadPhasePair>& createdPairs, co
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if PX_INTEL_FAMILY
-	#define SIMD_OVERLAP_TEST_14a(box)	_mm_movemask_ps(_mm_cmpngt_ps(b, _mm_load_ps(box)))==15
-
-	#define SIMD_OVERLAP_INIT_9c(box)	\
-			__m128 b = _mm_shuffle_ps(_mm_load_ps(&box.mMinY), _mm_load_ps(&box.mMinY), 78);\
-			const float Coeff = -1.0f;\
-			b = _mm_mul_ps(b, _mm_load1_ps(&Coeff));
-
-	#define SIMD_OVERLAP_TEST_9c(box)					\
-			const __m128 a = _mm_load_ps(&box.mMinY);	\
-			const __m128 d = _mm_cmpge_ps(a, b);		\
-			if(_mm_movemask_ps(d)==15)
-#else
-	#define SIMD_OVERLAP_TEST_14a(box)	BAllEqFFFF(V4IsGrtr(b, V4LoadA(box)))
-
-	#define SIMD_OVERLAP_INIT_9c(box)				\
-			Vec4V b = V4PermZWXY(V4LoadA(&box.mMinY));	\
-			b = V4Mul(b, V4Load(-1.0f));
-
-	#define SIMD_OVERLAP_TEST_9c(box)				\
-			const Vec4V a = V4LoadA(&box.mMinY);	\
-			const Vec4V d = V4IsGrtrOrEq(a, b);		\
-			if(BAllEqTTTT(d))
-#endif
-
-#ifdef ABP_SIMD_OVERLAP
-	#define SIMD_OVERLAP_PRELOAD_BOX0	SIMD_OVERLAP_INIT_9c(box0)
-	#define SIMD_OVERLAP_TEST(x)		SIMD_OVERLAP_TEST_9c(x)
-#else
-	#define SIMD_OVERLAP_PRELOAD_BOX0
-#endif
-
-#ifndef ABP_SIMD_OVERLAP
-static PX_FORCE_INLINE int intersect2D(const SIMD_AABB_YZ4& a, const SIMD_AABB_YZ4& b)
-{
-/*	if(
-		b.mMaxY < a.mMinY || a.mMaxY < b.mMinY
-	||
-		b.mMaxZ < a.mMinZ || a.mMaxZ < b.mMinZ
-	)
-		return 0;
-	return 1;*/
-
-	const bool b0 = b.mMaxY < a.mMinY;
-	const bool b1 = a.mMaxY < b.mMinY;
-	const bool b2 = b.mMaxZ < a.mMinZ;
-	const bool b3 = a.mMaxZ < b.mMinZ;
-//	const bool b4 = b0 || b1 || b2 || b3;
-	const bool b4 = b0 | b1 | b2 | b3;
-	return !b4;
-}
-#endif
-
 static PX_FORCE_INLINE void outputPair(ABP_PairManager& pairManager, PxU32 index0, PxU32 index1)
 {
 	pairManager.addPair(index0, index1);
 }
 
-template<const int codepath, class ABP_PairManagerT>
-static void boxPruningKernel(	PxU32 nb0, PxU32 nb1,
-								const SIMD_AABB_X4* PX_RESTRICT boxes0_X, const SIMD_AABB_X4* PX_RESTRICT boxes1_X,
-								const SIMD_AABB_YZ4* PX_RESTRICT boxes0_YZ, const SIMD_AABB_YZ4* PX_RESTRICT boxes1_YZ,
-								const ABP_Index* PX_RESTRICT inToOut0, const ABP_Index* PX_RESTRICT inToOut1,
-								ABP_PairManagerT* PX_RESTRICT pairManager)
-{
-	pairManager->mInToOut0 = inToOut0;
-	pairManager->mInToOut1 = inToOut1;
-
-	PxU32 index0 = 0;
-	PxU32 runningIndex1 = 0;
-
-	while(runningIndex1<nb1 && index0<nb0)
-	{
-		const SIMD_AABB_X4& box0_X = boxes0_X[index0];
-		const PosXType2 maxLimit = box0_X.mMaxX;
-
-		const PosXType2 minLimit = box0_X.mMinX;
-		if(!codepath)
-		{
-			while(boxes1_X[runningIndex1].mMinX<minLimit)
-				runningIndex1++;
-		}
-		else
-		{
-			while(boxes1_X[runningIndex1].mMinX<=minLimit)
-				runningIndex1++;
-		}
-
-		const SIMD_AABB_YZ4& box0 = boxes0_YZ[index0];
-		SIMD_OVERLAP_PRELOAD_BOX0
-
-		if(gUseRegularBPKernel)
-		{
-			PxU32 index1 = runningIndex1;
-
-			while(boxes1_X[index1].mMinX<=maxLimit)
-			{
-				ABP_OVERLAP_TEST(boxes1_YZ[index1])
-				{
-					outputPair(*pairManager, index0, index1);
-				}
-				index1++;
-			}
-		}
-		else
-		{
-			PxU32 Offset = 0;
-			const char* const CurrentBoxListYZ = reinterpret_cast<const char*>(&boxes1_YZ[runningIndex1]);
-			const char* const CurrentBoxListX = reinterpret_cast<const char*>(&boxes1_X[runningIndex1]);
-
-			if(!gUnrollLoop)
-			{
-				while(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset)<=maxLimit)
-				{
-					const float* box = reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2);
-#ifdef ABP_SIMD_OVERLAP
-					if(SIMD_OVERLAP_TEST_14a(box))
-#else
-					if(intersect2D(box0, *reinterpret_cast<const SIMD_AABB_YZ4*>(box)))
-#endif
-					{
-						const PxU32 Index1 = PxU32(CurrentBoxListX + Offset - reinterpret_cast<const char*>(boxes1_X))>>3;
-						outputPair(*pairManager, index0, Index1);
-					}
-					Offset += 8;
-				}
-			}
-			else
-			{
-#define BIP_VERSION4
-#ifdef BIP_VERSION4
-#ifdef ABP_SIMD_OVERLAP
-	#define BLOCK4(x, label)	{const float* box = reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2 + x*2);	\
-								if(SIMD_OVERLAP_TEST_14a(box))															\
-								goto label;	}
-#else
-	#define BLOCK4(x, label)	{const float* box = reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2 + x*2);	\
-								if(intersect2D(box0, *reinterpret_cast<const SIMD_AABB_YZ4*>(box)))						\
-								goto label;	}
-#endif
-		goto StartLoop4;
-		CODEALIGN16
-FoundOverlap3:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap2:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap1:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap0:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap:
-		{
-			const PxU32 Index1 = PxU32(CurrentBoxListX + Offset - 8 - reinterpret_cast<const char*>(boxes1_X))>>3;
-			outputPair(*pairManager, index0, Index1);
-		}
-		CODEALIGN16
-StartLoop4:
-		while(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset + 8*5)<=maxLimit)
-		{
-			BLOCK4(0, FoundOverlap0)
-			BLOCK4(8, FoundOverlap1)
-			BLOCK4(16, FoundOverlap2)
-			BLOCK4(24, FoundOverlap3)
-			Offset += 40;
-			BLOCK4(-8, FoundOverlap)
-		}
-#undef BLOCK4
-#endif
-
-#ifdef ABP_SIMD_OVERLAP
-	#define BLOCK	if(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset)<=maxLimit)			\
-				{if(SIMD_OVERLAP_TEST_14a(reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2)))	\
-						goto OverlapFound;																\
-					Offset += 8;
-#else
-	#define BLOCK	if(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset)<=maxLimit)					\
-				{if(intersect2D(box0, *reinterpret_cast<const SIMD_AABB_YZ4*>(CurrentBoxListYZ + Offset*2)))	\
-						goto OverlapFound;																		\
-					Offset += 8;
-#endif
-
-		goto LoopStart;
-		CODEALIGN16
-OverlapFound:
-		{
-			const PxU32 Index1 = PxU32(CurrentBoxListX + Offset - reinterpret_cast<const char*>(boxes1_X))>>3;
-			outputPair(*pairManager, index0, Index1);
-		}
-		Offset += 8;
-		CODEALIGN16
-LoopStart:
-		BLOCK
-			BLOCK
-				BLOCK
-				}
-			}
-			goto LoopStart;
-		}
-#undef BLOCK
-			}
-		}
-
-		index0++;
-	}
-}
+#include "BpBoxPruningKernels.h"
 
 template<class ABP_PairManagerT>
 static /*PX_FORCE_INLINE*/ void doBipartiteBoxPruning_Leaf(
@@ -2446,155 +2224,10 @@ static PX_FORCE_INLINE void doBipartiteBoxPruning_Leaf(ABP_PairManagerT* PX_REST
 	doBipartiteBoxPruning_Leaf(pairManager, nb0, nb1, boxes0.getBoxes_X(), boxes1.getBoxes_X(), boxes0.getBoxes_YZ(), boxes1.getBoxes_YZ(), remap0, remap1);
 }
 
-template<class ABP_PairManagerT>
-static void doCompleteBoxPruning_Leaf(	ABP_PairManagerT* PX_RESTRICT pairManager, PxU32 nb,
-										const SIMD_AABB_X4* PX_RESTRICT boxes_X,
-										const SIMD_AABB_YZ4* PX_RESTRICT boxes_YZ,
-										const ABP_Index* PX_RESTRICT remap)
-{
-	pairManager->mInToOut0 = remap;
-	pairManager->mInToOut1 = remap;
-
-	PxU32 index0 = 0;
-	PxU32 runningIndex = 0;
-	while(runningIndex<nb && index0<nb)
-	{
-		const SIMD_AABB_X4& box0_X = boxes_X[index0];
-		const PosXType2 maxLimit = box0_X.mMaxX;
-
-		const PosXType2 minLimit = box0_X.mMinX;
-		while(boxes_X[runningIndex++].mMinX<minLimit);
-
-		const SIMD_AABB_YZ4& box0 = boxes_YZ[index0];
-		SIMD_OVERLAP_PRELOAD_BOX0
-
-		if(gUseRegularBPKernel)
-		{
-			PxU32 index1 = runningIndex;
-			while(boxes_X[index1].mMinX<=maxLimit)
-			{
-				ABP_OVERLAP_TEST(boxes_YZ[index1])
-				{
-					outputPair(*pairManager, index0, index1);
-				}
-				index1++;
-			}
-		}
-		else
-		{
-			PxU32 Offset = 0;
-			const char* const CurrentBoxListYZ = reinterpret_cast<const char*>(&boxes_YZ[runningIndex]);
-			const char* const CurrentBoxListX = reinterpret_cast<const char*>(&boxes_X[runningIndex]);
-
-			if(!gUnrollLoop)
-			{
-				while(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset)<=maxLimit)
-				{
-					const float* box = reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2);
-#ifdef ABP_SIMD_OVERLAP
-					if(SIMD_OVERLAP_TEST_14a(box))
-#else
-					if(intersect2D(box0, *reinterpret_cast<const SIMD_AABB_YZ4*>(box)))
-#endif
-					{
-						const PxU32 Index = PxU32(CurrentBoxListX + Offset - reinterpret_cast<const char*>(boxes_X))>>3;
-						outputPair(*pairManager, index0, Index);
-					}
-					Offset += 8;
-				}
-			}
-			else
-			{
-#define VERSION4c
-#ifdef VERSION4c
-#define VERSION3	// Enable this as our safe loop
-#ifdef ABP_SIMD_OVERLAP
-	#define BLOCK4(x, label)	{const float* box = reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2 + x*2);	\
-							if(SIMD_OVERLAP_TEST_14a(box))																\
-								goto label;	}
-#else
-	#define BLOCK4(x, label)	{const SIMD_AABB_YZ4* box = reinterpret_cast<const SIMD_AABB_YZ4*>(CurrentBoxListYZ + Offset*2 + x*2);	\
-							if(intersect2D(box0, *box))																					\
-								goto label;	}
-#endif
-		goto StartLoop4;
-		CODEALIGN16
-FoundOverlap3:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap2:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap1:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap0:
-		Offset += 8;
-		CODEALIGN16
-FoundOverlap:
-		{
-			const PxU32 Index = PxU32(CurrentBoxListX + Offset - 8 - reinterpret_cast<const char*>(boxes_X))>>3;
-			outputPair(*pairManager, index0, Index);
-		}
-		CODEALIGN16
-StartLoop4:
-		while(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset + 8*5)<=maxLimit)
-		{
-			BLOCK4(0, FoundOverlap0)
-			BLOCK4(8, FoundOverlap1)
-			BLOCK4(16, FoundOverlap2)
-			BLOCK4(24, FoundOverlap3)
-			Offset += 40;
-			BLOCK4(-8, FoundOverlap)
-		}
-#endif
-
-#define VERSION3
-#ifdef VERSION3
-#ifdef ABP_SIMD_OVERLAP
-	#define BLOCK	if(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset)<=maxLimit)			\
-				{if(SIMD_OVERLAP_TEST_14a(reinterpret_cast<const float*>(CurrentBoxListYZ + Offset*2)))	\
-						goto BeforeLoop;																\
-					Offset += 8;
-#else
-	#define BLOCK	if(*reinterpret_cast<const PosXType2*>(CurrentBoxListX + Offset)<=maxLimit)					\
-				{if(intersect2D(box0, *reinterpret_cast<const SIMD_AABB_YZ4*>(CurrentBoxListYZ + Offset*2)))	\
-						goto BeforeLoop;																		\
-					Offset += 8;
-#endif
-
-		goto StartLoop;
-		CODEALIGN16
-BeforeLoop:
-		{
-			const PxU32 Index = PxU32(CurrentBoxListX + Offset - reinterpret_cast<const char*>(boxes_X))>>3;
-			outputPair(*pairManager, index0, Index);
-			Offset += 8;
-		}
-		CODEALIGN16
-StartLoop:
-		BLOCK
-			BLOCK
-				BLOCK
-					BLOCK
-						BLOCK
-						}
-					}
-				}
-			}
-			goto StartLoop;
-		}
-#endif
-			}
-		}
-
-		index0++;
-	}
-}
-
 #ifdef USE_ABP_BUCKETS
-static const PxU8 gCodes[] = {	4, 4, 4, 255, 4, 3, 2, 255,
-								4, 1, 0, 255, 255, 255, 255, 255 };
+#define EMPTY_BOUNDS_BUCKET	4	// PT: puts empty bounds in cross bucket
+static const PxU8 gCodes[] = {	4, 4, 4, EMPTY_BOUNDS_BUCKET, 4, 3, 2, EMPTY_BOUNDS_BUCKET,
+								4, 1, 0, EMPTY_BOUNDS_BUCKET, EMPTY_BOUNDS_BUCKET, EMPTY_BOUNDS_BUCKET, EMPTY_BOUNDS_BUCKET, EMPTY_BOUNDS_BUCKET };
 
 static PX_FORCE_INLINE PxU8 classifyBoxNew(const SIMD_AABB_YZ4& boxYZ, const float limitY, const float limitZ)
 {
@@ -2611,7 +2244,6 @@ static PX_FORCE_INLINE PxU8 classifyBoxNew(const SIMD_AABB_YZ4& boxYZ, const flo
 
 	// Table-based box classification avoids many branches
 	const PxU32 Code = PxU32(rightPart)|(PxU32(leftPart)<<1)|(PxU32(upperPart)<<2)|(PxU32(lowerPart)<<3);
-	PX_ASSERT(gCodes[Code]!=255);
 	return gCodes[Code];
 }
 
@@ -2753,7 +2385,43 @@ static void CompleteBoxPruning_Recursive(
 #endif
 
 #ifdef ABP_MT2
-void ABP_CompleteBoxPruningTask::run()
+void ABP_LeafTask::startCompleteWork(	PxU32 counter, const SIMD_AABB_X4* boxListX, const SIMD_AABB_YZ4* boxListYZ, const PxU32* remap,
+										ABP_PairManager* pairManager, PxBaseTask* continuation, PxU32 id)
+{
+	mType = 0;
+	mData0.setData(counter, boxListX, boxListYZ, remap);
+	mPairs.mSharedPM = pairManager;
+	//mPairs.mDelayedPairs.reserve(10000);
+
+	if(isThereWorkToDo())
+	{
+		mID = PxU16(id);
+
+		setContinuation(continuation);
+		removeReference();
+	}
+}
+
+void ABP_LeafTask::startBipartiteWork(	PxU32 counter0, const SIMD_AABB_X4* boxListX0, const SIMD_AABB_YZ4* boxListYZ0, const PxU32* remap0,
+										PxU32 counter1, const SIMD_AABB_X4* boxListX1, const SIMD_AABB_YZ4* boxListYZ1, const PxU32* remap1,
+										ABP_PairManager* pairManager, PxBaseTask* continuation, PxU32 id)
+{
+	mType = 1;
+	mData0.setData(counter0, boxListX0, boxListYZ0, remap0);
+	mData1.setData(counter1, boxListX1, boxListYZ1, remap1);
+	mPairs.mSharedPM = pairManager;
+	//mPairs.mDelayedPairs.reserve(10000);
+
+	if(isThereWorkToDo())
+	{
+		mID = PxU16(id);
+
+		setContinuation(continuation);
+		removeReference();
+	}
+}
+
+void ABP_LeafTask::run()
 {
 //	printf("Running ABP_CompleteBoxPruningTask\n");
 
@@ -2769,14 +2437,14 @@ void ABP_CompleteBoxPruningTask::run()
 		runBipartite = true;
 
 	if(runComplete)
-		doCompleteBoxPruning_Leaf(&mPairs, mCounter, mBoxListX, mBoxListYZ, mRemap);
+		doCompleteBoxPruning_Leaf(&mPairs, mData0.mCounter, mData0.mBoxListX, mData0.mBoxListYZ, mData0.mRemap);
 
 	if(runBipartite)
 		doBipartiteBoxPruning_Leaf(&mPairs,
-									mCounter, mCounter4,
-									mBoxListX, mBoxListX4,
-									mBoxListYZ, mBoxListYZ4,
-									mRemap, mRemap4);
+									mData0.mCounter, mData1.mCounter,
+									mData0.mBoxListX, mData1.mBoxListX,
+									mData0.mBoxListYZ, mData1.mBoxListYZ,
+									mData0.mRemap, mData1.mRemap);
 }
 
 void ABP_CompleteBoxPruningEndTask::run()
@@ -2786,10 +2454,10 @@ void ABP_CompleteBoxPruningEndTask::run()
 	//memoryManager.frameFree(Remap);
 	//memoryManager.frameFree(BoxListYZBuffer);
 	//memoryManager.frameFree(BoxListXBuffer);
-	// PT: TODO: revisit allocs
-	PX_FREE(mStartTask->mRemap);
-	PX_FREE(mStartTask->mBoxListYZBuffer);
-	PX_FREE(mStartTask->mBoxListXBuffer);
+
+#ifndef ABP_FREE_MEMORY_IN_EPILOGUE
+	mStartTask->releaseMemory();
+#endif
 }
 
 ABP_CompleteBoxPruningStartTask::ABP_CompleteBoxPruningStartTask() :
@@ -2833,8 +2501,14 @@ void ABP_CompleteBoxPruningStartTask::setup(
 	mRemap = reinterpret_cast<PxU32*>(PX_ALLOC(sizeof(PxU32)*nb, "mRemap"));
 
 	mEndTask.mStartTask = this;
-	for(PxU32 i=0;i<9;i++)
-		mTasks[i].mStartTask = this;
+}
+
+void ABP_CompleteBoxPruningStartTask::releaseMemory()
+{
+	// PT: TODO: revisit allocs
+	PX_FREE(mRemap);
+	PX_FREE(mBoxListYZBuffer);
+	PX_FREE(mBoxListXBuffer);
 }
 
 void ABP_CompleteBoxPruningStartTask::run()
@@ -2932,53 +2606,18 @@ void ABP_CompleteBoxPruningStartTask::run()
 		}
 	}
 
-	for(PxU32 i=0;i<8;i++)
 	{
-		mTasks[i].mCounter = Counters[i/2];
-		mTasks[i].mBoxListX = BoxListX[i/2];
-		mTasks[i].mBoxListYZ = BoxListYZ[i/2];
-		mTasks[i].mRemap = RemapBase[i/2];
-		mTasks[i].mType = i&1;
-
-		mTasks[i].mCounter4 = Counters[4];
-		mTasks[i].mBoxListX4 = BoxListX[4];
-		mTasks[i].mBoxListYZ4 = BoxListYZ[4];
-		mTasks[i].mRemap4 = RemapBase[4];
-
-		mTasks[i].mPairs.mSharedPM = mPairManager;
-		//mTasks[i].mPairs.mDelayedPairs.reserve(10000);
-	}
-
-	PxU32 i=8;
-	{
-		mTasks[i].mCounter = Counters[4];
-		mTasks[i].mBoxListX = BoxListX[4];
-		mTasks[i].mBoxListYZ = BoxListYZ[4];
-		mTasks[i].mRemap = RemapBase[4];
-		mTasks[i].mType = 0;
-
-		mTasks[i].mCounter4 = Counters[4];
-		mTasks[i].mBoxListX4 = BoxListX[4];
-		mTasks[i].mBoxListYZ4 = BoxListYZ[4];
-		mTasks[i].mRemap4 = RemapBase[4];
-
-		mTasks[i].mPairs.mSharedPM = mPairManager;
-		//mTasks[i].mPairs.mDelayedPairs.reserve(10000);
-	}
-
-	for(PxU32 k=0; k<8+1; k++)
-	{
-		if(mTasks[k].isThereWorkToDo())
+		PxU32 k=0;
+		for(PxU32 i=0;i<5;i++)
 		{
-			mTasks[k].mID = PxU16(k);
-			mTasks[k].setContinuation(getContinuation());
+			mTasks[i].startCompleteWork(Counters[i], BoxListX[i], BoxListYZ[i], RemapBase[i], mPairManager, getContinuation(), k++);
 		}
-	}
-
-	for(PxU32 k=0; k<8+1; k++)
-	{
-		if(mTasks[k].isThereWorkToDo())
-			mTasks[k].removeReference();
+		for(PxU32 i=0;i<4;i++)
+		{
+			mTasks[5+i].startBipartiteWork(	Counters[i], BoxListX[i], BoxListYZ[i], RemapBase[i],
+											Counters[4], BoxListX[4], BoxListYZ[4], RemapBase[4],
+											mPairManager, getContinuation(), k++);
+		}
 	}
 }
 
@@ -3314,11 +2953,17 @@ static void CompleteBoxPruning_Version16(
 }
 #endif
 
+// PT: this function performs a "complete" box pruning query on the input set of boxes.
+// To reduce the amount of work it is split into two sub-queries:
+// - active-objects vs sleeping-objects	(bipartite work)
+// - active-objects vs active-objects (complete work)
+// That last "complete" query can itself be further subdivided into 9 sub-tasks if we use buckets.
+// (5 buckets gives 5 smaller complete tasks + 4 quadrant bucket vs cross bucket bipartite tasks)
 static void doCompleteBoxPruning_(
 #ifdef ABP_MT2
 	ABP_CompleteBoxPruningStartTask& completeBoxPruningTask,
-	ABP_CompleteBoxPruningTask&	bipTask0,
-	ABP_CompleteBoxPruningTask&	bipTask1,
+	ABP_LeafTask& leafTask0,
+	ABP_LeafTask& leafTask1,
 #endif
 	ABP_MM& memoryManager, ABP_PairManager* PX_RESTRICT pairManager, const DynamicManager& mDBM, PxBaseTask* continuation, PxU64 contextID)
 {
@@ -3337,26 +2982,9 @@ static void doCompleteBoxPruning_(
 #ifdef ABP_MT2
 		if(continuation)
 		{
-			bipTask0.mCounter = nbUpdated;
-			bipTask0.mBoxListX = updatedBoxes.getBoxes_X();
-			bipTask0.mBoxListYZ = updatedBoxes.getBoxes_YZ();
-			bipTask0.mRemap = mDBM.getRemap_Updated();
-			bipTask0.mType = 1;
-
-			bipTask0.mCounter4 = nbNonUpdated;
-			bipTask0.mBoxListX4 = mDBM.getSleepingBoxes().getBoxes_X();
-			bipTask0.mBoxListYZ4 = mDBM.getSleepingBoxes().getBoxes_YZ();
-			bipTask0.mRemap4 = mDBM.getRemap_Sleeping();
-
-			bipTask0.mPairs.mSharedPM = pairManager;
-			//bipTask0.mPairs.mDelayedPairs.reserve(10000);
-
-			if(bipTask0.isThereWorkToDo())
-			{
-				bipTask0.mID = 0;
-				bipTask0.setContinuation(continuation);
-				bipTask0.removeReference();
-			}
+			leafTask0.startBipartiteWork(nbUpdated, updatedBoxes.getBoxes_X(), updatedBoxes.getBoxes_YZ(), mDBM.getRemap_Updated(),
+										nbNonUpdated, mDBM.getSleepingBoxes().getBoxes_X(), mDBM.getSleepingBoxes().getBoxes_YZ(), mDBM.getRemap_Sleeping(),
+										pairManager, continuation);
 		}
 		else
 #endif
@@ -3386,21 +3014,7 @@ static void doCompleteBoxPruning_(
 #ifdef ABP_MT2
 			if(continuation)
 			{
-				bipTask1.mCounter = nbUpdated;
-				bipTask1.mBoxListX = updatedDynamicBoxes_X;
-				bipTask1.mBoxListYZ = updatedDynamicBoxes_YZ;
-				bipTask1.mRemap = mDBM.getRemap_Updated();
-				bipTask1.mType = 0;
-
-				bipTask1.mPairs.mSharedPM = pairManager;
-				//bipTask1.mPairs.mDelayedPairs.reserve(10000);
-
-				if(bipTask1.isThereWorkToDo())
-				{
-					bipTask1.mID = 0;
-					bipTask1.setContinuation(continuation);
-					bipTask1.removeReference();
-				}
+				leafTask1.startCompleteWork(nbUpdated, updatedDynamicBoxes_X, updatedDynamicBoxes_YZ, mDBM.getRemap_Updated(), pairManager, continuation);
 			}
 			else
 #endif
@@ -3434,27 +3048,30 @@ void ABP::Region_prepareOverlaps()
 static void findAllOverlaps(
 #ifdef ABP_MT2
 	ABP_CompleteBoxPruningStartTask& completeBoxPruningTask,
-	ABP_CompleteBoxPruningTask&	bipTask0,
-	ABP_CompleteBoxPruningTask&	bipTask1,
-	ABP_CompleteBoxPruningTask&	bipTask2,
-	ABP_CompleteBoxPruningTask&	bipTask3,
-	ABP_CompleteBoxPruningTask&	bipTask4,
+	ABP_LeafTask& leafTask0,
+	ABP_LeafTask& leafTask1,
+	ABP_LeafTask& leafTask2,
+	ABP_LeafTask& leafTask3,
+	ABP_LeafTask& leafTask4,
 #endif
 	ABP_MM& memoryManager, ABP_PairManager& pairManager, const StaticManager& mSBM, const DynamicManager& mDBM, bool doComplete, bool doBipartite, PxBaseTask* continuation, PxU64 contextID)
 {
+	// PT: each call to this function performs a "complete" query and a "bipartite" query.
+	// Each of these queries take sleeping objects into account to reduce the amount of work.
+
 	const PxU32 nbUpdatedBoxesDynamic = mDBM.getNbUpdatedBoxes();
 
-	// PT: find dynamics-vs-dynamics overlaps
+	// PT: find dynamics-vs-dynamics overlaps. This is the "complete" query.
 	if(doComplete)
 		doCompleteBoxPruning_(
 #ifdef ABP_MT2
 			completeBoxPruningTask,
-			bipTask3,
-			bipTask4,
+			leafTask3,
+			leafTask4,
 #endif
 			memoryManager, &pairManager, mDBM, continuation, contextID);
 
-	// PT: find dynamics-vs-statics overlaps
+	// PT: find dynamics-vs-statics overlaps. This is the "bipartite" query.
 	if(doBipartite)
 	{
 		const PxU32 nbUpdatedBoxesStatic = mSBM.getNbUpdatedBoxes();
@@ -3470,26 +3087,9 @@ static void findAllOverlaps(
 #ifdef ABP_MT2
 				if(continuation)
 				{
-					bipTask0.mCounter = nbUpdatedBoxesDynamic;
-					bipTask0.mBoxListX = mDBM.getUpdatedBoxes().getBoxes_X();
-					bipTask0.mBoxListYZ = mDBM.getUpdatedBoxes().getBoxes_YZ();
-					bipTask0.mRemap = mDBM.getRemap_Updated();
-					bipTask0.mType = 1;
-
-					bipTask0.mCounter4 = nbUpdatedBoxesStatic;
-					bipTask0.mBoxListX4 = mSBM.getUpdatedBoxes().getBoxes_X();
-					bipTask0.mBoxListYZ4 = mSBM.getUpdatedBoxes().getBoxes_YZ();
-					bipTask0.mRemap4 = mSBM.getRemap_Updated();
-
-					bipTask0.mPairs.mSharedPM = &pairManager;
-					//bipTask0.mPairs.mDelayedPairs.reserve(10000);
-
-					if(bipTask0.isThereWorkToDo())
-					{
-						bipTask0.mID = 0;
-						bipTask0.setContinuation(continuation);
-						bipTask0.removeReference();
-					}
+					leafTask0.startBipartiteWork(nbUpdatedBoxesDynamic, mDBM.getUpdatedBoxes().getBoxes_X(), mDBM.getUpdatedBoxes().getBoxes_YZ(), mDBM.getRemap_Updated(),
+												nbUpdatedBoxesStatic, mSBM.getUpdatedBoxes().getBoxes_X(), mSBM.getUpdatedBoxes().getBoxes_YZ(), mSBM.getRemap_Updated(),
+												&pairManager, continuation);
 				}
 				else
 #endif
@@ -3505,26 +3105,9 @@ static void findAllOverlaps(
 #ifdef ABP_MT2
 				if(continuation)
 				{
-					bipTask1.mCounter = nbUpdatedBoxesDynamic;
-					bipTask1.mBoxListX = mDBM.getUpdatedBoxes().getBoxes_X();
-					bipTask1.mBoxListYZ = mDBM.getUpdatedBoxes().getBoxes_YZ();
-					bipTask1.mRemap = mDBM.getRemap_Updated();
-					bipTask1.mType = 1;
-
-					bipTask1.mCounter4 = nbNonUpdatedBoxesStatic;
-					bipTask1.mBoxListX4 = mSBM.getSleepingBoxes().getBoxes_X();
-					bipTask1.mBoxListYZ4 = mSBM.getSleepingBoxes().getBoxes_YZ();
-					bipTask1.mRemap4 = mSBM.getRemap_Sleeping();
-
-					bipTask1.mPairs.mSharedPM = &pairManager;
-					//bipTask1.mPairs.mDelayedPairs.reserve(10000);
-
-					if(bipTask1.isThereWorkToDo())
-					{
-						bipTask1.mID = 0;
-						bipTask1.setContinuation(continuation);
-						bipTask1.removeReference();
-					}
+					leafTask1.startBipartiteWork(nbUpdatedBoxesDynamic, mDBM.getUpdatedBoxes().getBoxes_X(), mDBM.getUpdatedBoxes().getBoxes_YZ(), mDBM.getRemap_Updated(),
+												nbNonUpdatedBoxesStatic, mSBM.getSleepingBoxes().getBoxes_X(), mSBM.getSleepingBoxes().getBoxes_YZ(), mSBM.getRemap_Sleeping(),
+												&pairManager, continuation);
 				}
 				else
 #endif
@@ -3541,26 +3124,9 @@ static void findAllOverlaps(
 #ifdef ABP_MT2
 			if(continuation)
 			{
-				bipTask2.mCounter = nbNonUpdatedBoxesDynamic;
-				bipTask2.mBoxListX = mDBM.getSleepingBoxes().getBoxes_X();
-				bipTask2.mBoxListYZ = mDBM.getSleepingBoxes().getBoxes_YZ();
-				bipTask2.mRemap = mDBM.getRemap_Sleeping();
-				bipTask2.mType = 1;
-
-				bipTask2.mCounter4 = nbUpdatedBoxesStatic;
-				bipTask2.mBoxListX4 = mSBM.getUpdatedBoxes().getBoxes_X();
-				bipTask2.mBoxListYZ4 = mSBM.getUpdatedBoxes().getBoxes_YZ();
-				bipTask2.mRemap4 = mSBM.getRemap_Updated();
-
-				bipTask2.mPairs.mSharedPM = &pairManager;
-				//bipTask2.mPairs.mDelayedPairs.reserve(10000);
-
-				if(bipTask2.isThereWorkToDo())
-				{
-					bipTask2.mID = 0;
-					bipTask2.setContinuation(continuation);
-					bipTask2.removeReference();
-				}
+				leafTask2.startBipartiteWork(nbNonUpdatedBoxesDynamic, mDBM.getSleepingBoxes().getBoxes_X(), mDBM.getSleepingBoxes().getBoxes_YZ(), mDBM.getRemap_Sleeping(),
+											nbUpdatedBoxesStatic, mSBM.getUpdatedBoxes().getBoxes_X(), mSBM.getUpdatedBoxes().getBoxes_YZ(), mSBM.getRemap_Updated(),
+											&pairManager, continuation);
 			}
 			else
 #endif
@@ -3580,13 +3146,11 @@ ABP::ABP(PxU64 contextID) :
 	mKBM		(FilterType::KINEMATIC),
 	mContextID	(contextID)
 #ifdef ABP_MT2
-	,mTask0		(ABP_TASK_0)
-	,mTask1		(ABP_TASK_1)
+	,mTask0		(ABP_TASK_0, contextID)
+	,mTask1		(ABP_TASK_1, contextID)
 #endif
 {
 #ifdef ABP_MT2
-	mTask0.setContextId(mContextID);
-	mTask1.setContextId(mContextID);
 	mCompleteBoxPruningTask0.setContextId(mContextID);
 	mCompleteBoxPruningTask1.setContextId(mContextID);
 	for(PxU32 k=0; k<9; k++)
@@ -3596,7 +3160,7 @@ ABP::ABP(PxU64 contextID) :
 	}
 
 	for(PxU32 k=0; k<NB_BIP_TASKS; k++)
-		mBipTasks[k].setContextId(mContextID);
+		mLeafTasks[k].setContextId(mContextID);
 #endif
 }
 
@@ -3811,15 +3375,31 @@ void ABP::findOverlaps(PxBaseTask* continuation, const Bp::FilterGroup::Enum* PX
 		doKineKine = lut[Bp::FilterType::KINEMATIC*Bp::FilterType::COUNT + Bp::FilterType::KINEMATIC];
 	}
 
+	// PT:
+	// We have 3 different groups: static objects, dynamic objects, kinematic objects.
+	// We must handle all of these:
+	// - static vs dynamic (always)						|bipartite
+	// - dynamic vs dynamic (always)					|complete
+	// - static vs kinematic (if doStaticKine == true)	|bipartite
+	// - kinematic vs kinematic (if doKineKine == true)	|complete
+	// - kinematic vs dynamic (always)					|bipartite
+	// i.e. 2 "complete" queries and 3 "bipartite" queries.
+	//
+	// For bipartite:
+	// findAllOverlaps => ABP_LeafTask -> ABP_InternalTask (mTask1)
+	// For complete:
+	// findAllOverlaps => ABP_CompleteBoxPruningStartTask -> ABP_CompleteBoxPruningEndTask -> ABP_InternalTask (mTask1)
+	//                 => ABP_LeafTask -> ABP_InternalTask (mTask1)
+
 	// Static-vs-dynamic (bipartite) and dynamic-vs-dynamic (complete)
 	findAllOverlaps(
 #ifdef ABP_MT2
 		mCompleteBoxPruningTask0,
-		mBipTasks[0],
-		mBipTasks[1],
-		mBipTasks[2],
-		mBipTasks[3],
-		mBipTasks[4],
+		mLeafTasks[0],
+		mLeafTasks[1],
+		mLeafTasks[2],
+		mLeafTasks[3],
+		mLeafTasks[4],
 #endif
 		mMM, mPairManager, mSBM, mDBM, true, true, continuation, mContextID);
 
@@ -3827,26 +3407,27 @@ void ABP::findOverlaps(PxBaseTask* continuation, const Bp::FilterGroup::Enum* PX
 	findAllOverlaps(
 #ifdef ABP_MT2
 		mCompleteBoxPruningTask1,
-		mBipTasks[5],
-		mBipTasks[6],
-		mBipTasks[7],
-		mBipTasks[8],
-		mBipTasks[9],
+		mLeafTasks[5],
+		mLeafTasks[6],
+		mLeafTasks[7],
+		mLeafTasks[8],
+		mLeafTasks[9],
 #endif
 		mMM, mPairManager, mSBM, mKBM, doKineKine, doStaticKine, continuation, mContextID);
 
+	// Kinematics-vs-dynamics (bipartite)
 	if(1)
 	{
 		findAllOverlaps(
 	#ifdef ABP_MT2
-			mCompleteBoxPruningTask1,
-			mBipTasks[10],
-			mBipTasks[11],
-			mBipTasks[12],
-			mBipTasks[13],
-			mBipTasks[14],
+			mCompleteBoxPruningTask1,	// PT: that one won't be used so we can pass the same task here
+			mLeafTasks[10],
+			mLeafTasks[11],
+			mLeafTasks[12],
+			mLeafTasks[13],
+			mLeafTasks[14],
 	#endif
-			mMM, mPairManager, mKBM, mDBM, false, true, continuation, mContextID);
+			mMM, mPairManager, mKBM, mDBM, false, true, continuation, mContextID);	// PT: false to discard the redundant dyna-vs-dyna (already done)
 	}
 	else
 	{
@@ -3911,7 +3492,7 @@ void ABP::addDelayedPairs()
 
 	PxU32 nbDelayedPairs = 0;
 	for(PxU32 k=0; k<NB_BIP_TASKS; k++)
-		nbDelayedPairs += mBipTasks[k].mPairs.mDelayedPairs.size();
+		nbDelayedPairs += mLeafTasks[k].mPairs.mDelayedPairs.size();
 
 	if(nbDelayedPairs)
 	{
@@ -3921,7 +3502,7 @@ void ABP::addDelayedPairs()
 		}
 
 		for(PxU32 k=0; k<NB_BIP_TASKS; k++)
-			mPairManager.addDelayedPairs(mBipTasks[k].mPairs.mDelayedPairs);
+			mPairManager.addDelayedPairs(mLeafTasks[k].mPairs.mDelayedPairs);
 	}
 }
 
@@ -3934,7 +3515,7 @@ void ABP::addDelayedPairs2(PxArray<BroadPhasePair>& createdPairs)
 
 	PxU32 nbDelayedPairs = 0;
 	for(PxU32 k=0; k<NB_BIP_TASKS; k++)
-		nbDelayedPairs += mBipTasks[k].mPairs.mDelayedPairs.size();
+		nbDelayedPairs += mLeafTasks[k].mPairs.mDelayedPairs.size();
 
 	if(nbDelayedPairs)
 	{
@@ -3944,7 +3525,7 @@ void ABP::addDelayedPairs2(PxArray<BroadPhasePair>& createdPairs)
 		}
 
 		for(PxU32 k=0; k<NB_BIP_TASKS; k++)
-			mPairManager.addDelayedPairs2(createdPairs, mBipTasks[k].mPairs.mDelayedPairs);
+			mPairManager.addDelayedPairs2(createdPairs, mLeafTasks[k].mPairs.mDelayedPairs);
 	}
 }
 #endif
@@ -4009,11 +3590,31 @@ BroadPhaseABP::BroadPhaseABP(	PxU32 maxNbBroadPhaseOverlaps,
 
 	mCreated.reserve(DEFAULT_CREATED_DELETED_PAIRS_CAPACITY);
 	mDeleted.reserve(DEFAULT_CREATED_DELETED_PAIRS_CAPACITY);
+
+#ifdef ABP_MT2
+	mABP->mTask0.mBP = this;
+	mABP->mTask1.mBP = this;
+#endif
 }
 
 BroadPhaseABP::~BroadPhaseABP()
 {
 	PX_DELETE(mABP);
+}
+
+void BroadPhaseABP::setUpdateData()
+{
+	PX_PROFILE_ZONE("BroadPhaseABP - setUpdateData", mContextID);
+
+	removeObjects();
+	addObjects();
+	updateObjects();
+
+	PX_ASSERT(!mCreated.size());
+	PX_ASSERT(!mDeleted.size());
+
+	if(gPrepareOverlapsFlag)
+		mABP->Region_prepareOverlaps();
 }
 
 void BroadPhaseABP::update(PxcScratchAllocator* scratchAllocator, const BroadPhaseUpdateData& updateData, PxBaseTask* continuation)
@@ -4032,13 +3633,9 @@ void BroadPhaseABP::update(PxcScratchAllocator* scratchAllocator, const BroadPha
 
 #if PX_CHECKED
 		// PT: WARNING: this must be done after the allocateMappingArray call
-		if(!BroadPhaseUpdateData::isValid(updateData, *this, false, mContextID))
-		{
-			PX_CHECK_MSG(false, "Illegal BroadPhaseUpdateData \n");
+		if(updateData.isValid(mContextID, this) != BroadPhaseUpdateError::eNO_ERROR)
 			return;
-		}
 #endif
-
 		mGroups			= updateData.getGroups();
 		mFilter			= &updateData.getFilter();
 		mNbAdded		= updateData.getNumCreatedHandles();
@@ -4056,10 +3653,24 @@ void BroadPhaseABP::update(PxcScratchAllocator* scratchAllocator, const BroadPha
 #ifdef ABP_MT2
 	if(continuation)
 	{
-		mABP->mTask1.mBP = this;
-		mABP->mTask1.setContinuation(continuation);
+		// PT:
+		// "X -> Y" means X has Y as continuation
+		// "X => Y" means X spawns Y task(s)
+		//
+		// Chain is: mTask0 (ABP_InternalTask) -> mTask1 (ABP_InternalTask) -> continuation
+		//
+		// These two initial tasks replicate the single-threaded pipeline below:
+		// - mTask0 does: setUpdateData() / findOverlaps()
+		// - mTask1 does: finalize()
+		//
+		// We could run mTask0 right here in the calling code but we also put it in a task to not block the main thread.
+		// The only parallel parts so far are in findOverlaps(). We could do more eventually.
+		//
+		// Differences between mTask0/mTask1 and the single-threaded pipeline:
+		// - findOverlaps() only starts extra tasks that will do the job in parallel
+		// - addDelayedPairs()/addDelayedPairs2() take care of the pairs found in parallel "before" calling finalize()
 
-		mABP->mTask0.mBP = this;
+		mABP->mTask1.setContinuation(continuation);
 		mABP->mTask0.setContinuation(&mABP->mTask1);
 
 		mABP->mTask1.removeReference();
@@ -4068,33 +3679,14 @@ void BroadPhaseABP::update(PxcScratchAllocator* scratchAllocator, const BroadPha
 	else
 #endif
 	{
-		{
-			PX_PROFILE_ZONE("BroadPhaseABP - setUpdateData", mContextID);
-
-			removeObjects();
-			addObjects();
-			updateObjects();
-
-			PX_ASSERT(!mCreated.size());
-			PX_ASSERT(!mDeleted.size());
-
-			if(gPrepareOverlapsFlag)
-				mABP->Region_prepareOverlaps();
-		}
-
-		{
-			PX_PROFILE_ZONE("BroadPhaseABP - update", mContextID);
-			mABP->findOverlaps(continuation, mGroups, mFilter->getLUT());
-		}
-
-		{
-			PX_PROFILE_ZONE("BroadPhaseABP - postUpdate", mContextID);
-			mABP->finalize(mCreated, mDeleted);
-		}
+		setUpdateData();
+		mABP->findOverlaps(continuation, mGroups, mFilter->getLUT());
+		mABP->finalize(mCreated, mDeleted);
 	}
 }
 
 #ifdef ABP_MT2
+
 void ABP_InternalTask::run()
 {
 	PX_SIMD_GUARD
@@ -4103,31 +3695,23 @@ void ABP_InternalTask::run()
 
 	if(mID==ABP_TASK_0)
 	{
-		{
-			PX_PROFILE_ZONE("ABP_InternalTask - setUpdateData", mContextID);
-
-			mBP->removeObjects();
-			mBP->addObjects();
-			mBP->updateObjects();
-
-			PX_ASSERT(!mBP->mCreated.size());
-			PX_ASSERT(!mBP->mDeleted.size());
-
-			if(gPrepareOverlapsFlag)
-				abp->Region_prepareOverlaps();
-		}
+		mBP->setUpdateData();
 
 		{
 			PX_PROFILE_ZONE("ABP_InternalTask - update", mContextID);
 
-			for(PxU32 k=0;k<9;k++)
+			// PT: we have 2 ABP_CompleteBoxPruningStartTask and NB_BIP_TASKS ABP_LeafTask.
+			// Each ABP_CompleteBoxPruningStartTask has 9 further ABP_LeafTask.
+			// Therefore we have a total of NB_BIP_TASKS + 9*2 = 33 (static) leaf tasks with NB_BIP_TASKS = 15.
+
+			for(PxU32 k=0; k<9; k++)
 			{
 				abp->mCompleteBoxPruningTask0.mTasks[k].mPairs.mDelayedPairs.resetOrClear();
 				abp->mCompleteBoxPruningTask1.mTasks[k].mPairs.mDelayedPairs.resetOrClear();
 			}
 
-			for(PxU32 k=0;k<NB_BIP_TASKS;k++)
-				abp->mBipTasks[k].mPairs.mDelayedPairs.resetOrClear();
+			for(PxU32 k=0; k<NB_BIP_TASKS; k++)
+				abp->mLeafTasks[k].mPairs.mDelayedPairs.resetOrClear();
 
 			abp->findOverlaps(getContinuation(), mBP->mGroups, mBP->mFilter->getLUT());
 		}
@@ -4138,6 +3722,10 @@ void ABP_InternalTask::run()
 		//abp->finalize(mBP->mCreated, mBP->mDeleted);
 		abp->finalize(mBP->mCreated, mBP->mDeleted);
 		abp->addDelayedPairs2(mBP->mCreated);
+#ifdef ABP_FREE_MEMORY_IN_EPILOGUE
+		abp->mCompleteBoxPruningTask0.releaseMemory();
+		abp->mCompleteBoxPruningTask1.releaseMemory();
+#endif
 	}
 }
 #endif
@@ -4287,7 +3875,7 @@ void BroadPhaseABP::freeBuffers()
 }
 
 #if PX_CHECKED
-bool BroadPhaseABP::isValid(const BroadPhaseUpdateData& updateData) const
+BroadPhaseUpdateError::Enum BroadPhaseABP::isValid(const BroadPhaseUpdateData& updateData) const
 {
 	const PxU32 nbObjects = mABP->mShared.mABP_Objects_Capacity;
 	PX_UNUSED(nbObjects);
@@ -4301,7 +3889,7 @@ bool BroadPhaseABP::isValid(const BroadPhaseUpdateData& updateData) const
 			const BpHandle index = *created++;
 			PX_ASSERT(index<nbObjects);
 			if(objects[index].isValid())
-				return false;	// This object has been added already
+				return BroadPhaseUpdateError::eALREADY_ADDED;	// This object has been added already
 		}
 	}
 
@@ -4314,7 +3902,7 @@ bool BroadPhaseABP::isValid(const BroadPhaseUpdateData& updateData) const
 			const BpHandle index = *updated++;
 			PX_ASSERT(index<nbObjects);
 			if(!objects[index].isValid())
-				return false;	// This object has been removed already, or never been added
+				return BroadPhaseUpdateError::eNOT_IN_DATABASE;	// This object has been removed already, or never been added
 		}
 	}
 
@@ -4327,10 +3915,10 @@ bool BroadPhaseABP::isValid(const BroadPhaseUpdateData& updateData) const
 			const BpHandle index = *removed++;
 			PX_ASSERT(index<nbObjects);
 			if(!objects[index].isValid())
-				return false;	// This object has been removed already, or never been added
+				return BroadPhaseUpdateError::eALREADY_REMOVED;	// This object has been removed already, or never been added
 		}
 	}
-	return true;
+	return BroadPhaseUpdateError::eNO_ERROR;
 }
 #endif
 

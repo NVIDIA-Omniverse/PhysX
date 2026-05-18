@@ -1,11 +1,16 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
 
 #include <carb/logging/Log.h>
 
-#include "common/utilities/CudaHelpers.h"
+// NOTE: CudaHelpers.h is intentionally NOT included here. It contains static
+// functions (queryAllCudaDevices, selectBestPhysicsDevice) that reference cu*
+// driver API symbols directly. Since omni.physx.tensors no longer links libcuda
+// (all driver calls go through IOptionalCuda), including it causes link errors.
+// We only need checkCuda() (CUDA runtime API) which is inlined below.
+#include <common/utilities/CudaShimWrappers.h>
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -14,13 +19,36 @@ namespace omni
 {
 namespace physx
 {
+
+// Inline CUDA runtime error checker (uses cudart_static, no driver API link needed).
+// Duplicated from CudaHelpers.h to avoid pulling in its static driver-API functions.
+namespace cudaHelpers
+{
+inline bool checkCuda(cudaError_t code, const char* file, int line)
+{
+    if (code != cudaSuccess)
+    {
+        CARB_LOG_ERROR("CUDA error: %s: %s: %d", cudaGetErrorString(code), file, line);
+        return false;
+    }
+    return true;
+}
+} // namespace cudaHelpers
+
 namespace tensors
 {
 
 extern bool g_forceCudaDeviceSync;
 
+using omni::physx::cudaShimWrappers::getCudaShim;
+using omni::physx::cudaShimWrappers::shimCuEventCreate;
+
 #define CHECK_CUDA(code) cudaHelpers::checkCuda(code, __FILE__, __LINE__)
-#define CHECK_CU(code) cudaHelpers::checkCu(code, __FILE__, __LINE__)
+
+// CHECK_CU wraps bool-returning IOptionalCuda shim calls (replaces old CUresult-based CHECK_CU).
+// For shim calls that write through an out-pointer (memAlloc, eventCreate, streamCreate,
+// ctxGetCurrent, ctxPopCurrent), use the SHIM_CU_* macros from CudaShimWrappers.h.
+#define CHECK_CU(expr) CHECK_CUDA_SHIM(expr)
 
 inline bool validateCudaContext(const char* file, int line)
 {
@@ -28,9 +56,9 @@ inline bool validateCudaContext(const char* file, int line)
 
     // Verify we can at least create a CUDA event in this context
     CUevent evt = nullptr;
-    if (cudaHelpers::checkCu(cuEventCreate(&evt, CU_EVENT_DISABLE_TIMING), file, line))
+    if (shimCuEventCreate(&evt, CU_EVENT_DISABLE_TIMING, file, line))
     {
-        cuEventDestroy(evt);
+        getCudaShim()->eventDestroy(reinterpret_cast<uintptr_t>(evt), nullptr);
         return true;
     }
     else
@@ -91,7 +119,10 @@ inline bool prepareDeviceData(void** dst, const void* src, size_t size, const ch
 
 inline bool createPrimaryCudaContext()
 {
-    // Trigger primary context creation using the runtime API.
+    // Trigger primary context creation using the CUDA runtime API (cudaMalloc/cudaFree).
+    // NOTE: This intentionally uses the runtime API (linked via cudart_static) rather than
+    // the IOptionalCuda driver shim. The runtime API is the standard mechanism for
+    // creating the primary context, and cudart_static is statically linked (no DT_NEEDED).
     // This assumes that cudaSetDevice has been called already.
     //
     // This should be compatible with PyTorch, since PyTorch uses the primary context on each device with the runtime
@@ -117,12 +148,12 @@ inline bool createPrimaryCudaContext()
 class CudaContextGuard
 {
 public:
-    explicit CudaContextGuard(CUcontext ctx) : mPushedCtx(0)
+    explicit CudaContextGuard(CUcontext ctx) : mPushedCtx(nullptr)
     {
-        CUcontext oldCtx;
-        if (ctx && CHECK_CU(cuCtxGetCurrent(&oldCtx)))
+        CUcontext oldCtx = nullptr;
+        if (ctx && SHIM_CU_CTX_GET_CURRENT(&oldCtx))
         {
-            if (ctx != oldCtx && CHECK_CU(cuCtxPushCurrent(ctx)))
+            if (ctx != oldCtx && CHECK_CU(getCudaShim()->ctxPushCurrent(reinterpret_cast<uintptr_t>(ctx), nullptr)))
             {
                 mPushedCtx = ctx;
             }
@@ -133,8 +164,8 @@ public:
     {
         if (mPushedCtx)
         {
-            CUcontext ctx;
-            CHECK_CU(cuCtxPopCurrent(&ctx));
+            CUcontext popped = nullptr;
+            SHIM_CU_CTX_POP_CURRENT(&popped);
         }
     }
 

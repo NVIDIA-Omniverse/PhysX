@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -358,7 +358,7 @@ void setToDefault(UsdStageWeakPtr stage, DynamicPhysxRigidBodyDesc& desc)
     desc.surfaceLinearVelocity = { 0.0f, 0.0f, 0.0f };
     desc.surfaceAngularVelocity = { 0.0f, 0.0f, 0.0f };
 
-    desc.splinesSurfaceVelocityEnabled = false;
+    desc.splinesSurfaceVelocityEnabled = false;    
     desc.splinesSurfaceVelocityMagnitude = 0.0f;
     desc.splinesCurvePrimPath = SdfPath();
 }
@@ -408,9 +408,9 @@ PhysxRigidBodyDesc* parseRigidBody(AttachedStage& attachedStage, UsdGeomXformCac
             const GfRotation rot(tr.GetRotation());
             const GfVec3f scale(tr.GetScale());
 
-            transformedVelocity = rot.TransformDir(transformedVelocity);
+            transformedVelocity = pxr::GfVec3f(rot.TransformDir(transformedVelocity));
             transformedVelocity = GfCompMult(scale, transformedVelocity);
-            transformedAngularVelocity = rot.TransformDir(transformedAngularVelocity);
+            transformedAngularVelocity = pxr::GfVec3f(rot.TransformDir(transformedAngularVelocity));
         }
 
         // generic bits
@@ -637,6 +637,8 @@ void setToDefault(UsdStageWeakPtr stage, PhysxDeformableBodyDesc& desc)
     desc.hasAutoForceConforming = false;
     desc.autoRemeshingResolution = 0;
     desc.autoTriangleTargetCount = 0;
+    desc.simMeshLeftHandedOrientation = false;
+    desc.collisionMeshLeftHandedOrientation = false;
 }
 
 void setToDefault(UsdStageWeakPtr stage, PhysxVolumeDeformableBodyDesc& desc)
@@ -937,6 +939,9 @@ PhysxDeformableBodyDesc* parseDeformableBody(AttachedStage& attachedStage, UsdGe
             inDesc.usdPrim.GetPrimPath().GetText());
     }
     desc->skinGeomBindPoseTokens = inDesc.skinGeomBindPoseTokens;
+
+    desc->simMeshLeftHandedOrientation = inDesc.simMeshLeftHandedOrientation;
+    desc->collisionMeshLeftHandedOrientation = inDesc.collisionGeomLeftHandedOrientations[0];
 
     return desc;
 }

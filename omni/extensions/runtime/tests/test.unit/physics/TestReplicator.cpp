@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -29,336 +29,334 @@ using namespace ::physx;
 
 //-----------------------------------------------------------------------------
 // Replicator rigid body tests
-// TEST_CASE_TEMPLATE("Replicator RigidBody Tests", T, USDReplicator, FabricReplicator)
-// {
-//     ScopedPopulationActivation populationUtilsActivation;
-
-//     const float epsilon = 0.0001f;
-
-//     T replicatorTemplate;
-
-//     PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
-//     IPhysx* physx = physicsTests.acquirePhysxInterface();
-//     REQUIRE(physx);
-//     IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
-//     REQUIRE(physxSim);
-//     IPhysxReplicator* physxReplicator = physicsTests.acquirePhysxReplicatorInterface();
-//     REQUIRE(physxReplicator);
-
-//     // setup basic stage
-//     UsdStageRefPtr stage = UsdStage::CreateInMemory();
-//     pxr::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
-//     const float metersPerStageUnit = 0.01f; // work in default centimeters
-//     const double metersPerUnit = pxr::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit));
-//     const SdfPath defaultPrimPath = SdfPath("/World");
-//     UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
-//     stage->SetDefaultPrim(defaultPrim);
-
-//     pxr::UsdUtilsStageCache::Get().Insert(stage);
-//     long stageId = pxr::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
-
-//     const SdfPath physicsScenePath = defaultPrimPath.AppendChild(TfToken("physicsScene"));
-//     UsdPhysicsScene scene = UsdPhysicsScene::Define(stage, physicsScenePath);
-
-//     UsdGeomScope::Define(stage, SdfPath("/World/envs"));
-
-//     // create rigid bodies with materials
-//     {
-//         const std::string envPath = "/World/envs/env0";
-//         UsdGeomXform xform = UsdGeomXform::Define(stage, SdfPath(envPath));
-//         xform.AddTranslateOp().Set(GfVec3d(0.0));
-
-//         addRigidBox(stage, envPath + "/box", GfVec3f(0.1f), GfVec3f(0.0f), GfQuatf(1.0f),
-//             GfVec3f(0.7f), 0.001f);
-
-//         // material
-//         const SdfPath materialPath = SdfPath(envPath + "/material");
-//         UsdShadeMaterial basePhysicsMaterial = UsdShadeMaterial::Define(stage, materialPath);
-//         UsdPhysicsMaterialAPI::Apply(basePhysicsMaterial.GetPrim());
-
-//         UsdPrim cubePrim = stage->GetPrimAtPath(SdfPath(envPath + "/box"));
-
-//         UsdShadeMaterialBindingAPI bindingAPI = UsdShadeMaterialBindingAPI::Apply(cubePrim.GetPrim());
-//         bindingAPI.Bind(basePhysicsMaterial, UsdShadeTokens->weakerThanDescendants, TfToken("physics"));
-//     }
-
-//     const SdfPath cloneEnv = SdfPath("/World/envs/env0");
-
-//     replicatorTemplate.init(stageId, physicsTests.getApp()->getFramework());
-//     replicatorTemplate.clone(SdfPath("/World/envs"), cloneEnv, 6, 1, 1.0f);    
-
-
-//     SUBCASE("Non active filtering")
-//     {
-//         IReplicatorCallback cb = { nullptr, nullptr, nullptr };
-//         physxReplicator->registerReplicator(stageId, cb);
-
-//         if (!replicatorTemplate.isFabric())
-//         {
-//             SUBCASE("Base parsing")
-//             {
-//                 // attach sim to stage which parses and creates the pointers that we can check directly
-//                 physxSim->attachStage(stageId);
-
-//                 PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
-//                 REQUIRE(basePtr != nullptr);
-
-//                 PxScene* scene = (PxScene*)basePtr;
-//                 REQUIRE(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 6);
-
-//                 for (int i = 0; i < 6; i++)
-//                 {
-//                     const std::string envPath = "/World/envs/env" + std::to_string(i);
-
-//                     basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/box"), ePTActor));
-//                     REQUIRE(basePtr != nullptr);
-//                     CHECK(basePtr->is<PxRigidDynamic>());
-
-//                     basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/box"), ePTShape));
-//                     REQUIRE(basePtr != nullptr);
-//                     const PxShape* shape = basePtr->is<PxShape>();
-//                     REQUIRE(shape != nullptr);
-//                     REQUIRE(shape->getGeometry().getType() == PxGeometryType::eBOX);
-
-//                     basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/material"), ePTMaterial));
-//                     REQUIRE(basePtr != nullptr);
-//                     REQUIRE(basePtr->is<PxMaterial>());
-//                     REQUIRE(shape->getNbMaterials() == 1);
-//                     PxMaterial* mat;
-//                     shape->getMaterials(&mat, 1);
-//                     CHECK(mat == basePtr);
-//                 }
-//             }
-//         }
-//     }
-
-//     SUBCASE("Active filtering")
-//     {
-//         std::vector<carb::Float3> positions = {
-//             carb::Float3{ 0.0f, 0.0f, 0.0f }, carb::Float3{ 1.0f, 0.0f, 0.0f },
-//             carb::Float3{ 2.0f, 0.0f, 0.0f }, carb::Float3{ 3.0f, 0.0f, 0.0f },
-//             carb::Float3{ 4.0f, 0.0f, 0.0f }, carb::Float3{ 5.0f, 0.0f, 0.0f } };
-
-//         std::vector<carb::Float4> orientations = {
-//             carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f }, carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f },
-//             carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f }, carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f },
-//             carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f }, carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f },
-//         };
-
-//         IReplicatorCallback cb = { nullptr, nullptr, nullptr };
-
-//         cb.replicationAttachFn = [](uint64_t stageId, uint32_t& numExludePaths, uint64_t*& excludePaths, void* userData)
-//         {
-//             numExludePaths = 1;
-//             const SdfPath boxPath = SdfPath("/World/envs");
-//             static uint64_t excludePath = sdfPathToInt(boxPath);
-//             excludePaths = &excludePath;
-//         };
-
-//         cb.hierarchyRenameFn = [](uint64_t replicatePath, uint32_t index, void* userData)
-//         {
-//             std::string stringPath = "/World/envs/env" + std::to_string(index + 1);
-//             const SdfPath outPath(stringPath);
-//             return sdfPathToInt(outPath);
-//         };
-
-//         physxReplicator->registerReplicator(stageId, cb);
-
-//         if (!replicatorTemplate.isFabric())
-//         {
-//             SUBCASE("Base parsing")
-//             {
-//                 // attach sim to stage which parses and creates the pointers that we can check directly
-//                 physxSim->attachStage(stageId);
-
-//                 PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
-//                 REQUIRE(basePtr != nullptr);
-//                 PxScene* scene = (PxScene*)basePtr;
-//                 CHECK(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 0);
-//             }
-
-//             SUBCASE("Base parsing replicator re-attach")
-//             {
-//                 physxReplicator->registerReplicator(stageId, cb);
-
-//                 // attach sim to stage which parses and creates the pointers that we can check directly
-//                 physxSim->attachStage(stageId);
-
-//                 PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
-//                 REQUIRE(basePtr != nullptr);
-//                 PxScene* scene = (PxScene*)basePtr;
-//                 CHECK(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 0);
-//             }
-//         }
-
-//         SUBCASE("Replication filtering check")
-//         {
-//             // create a box outside, check if replication does replicate only the hierarchy
-//             addRigidBox(stage, "/World/boxOut", GfVec3f(0.1f), GfVec3f(0.0f), GfQuatf(1.0f),
-//                 GfVec3f(0.7f), 0.001f);
-//             const SdfPath boxOutPath("/World/boxOut");
-
-//             // attach sim to stage which parses and creates the pointers that we can check directly
-//             physxSim->attachStage(stageId);
-
-//             PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
-//             REQUIRE(basePtr != nullptr);
-//             PxScene* scene = (PxScene*)basePtr;
-//             CHECK(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 1);
-
-//             basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(boxOutPath, ePTActor));
-//             CHECK(basePtr != nullptr);
-
-//             basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(boxOutPath, ePTShape));
-//             CHECK(basePtr != nullptr);
-
-//             replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 5);
-
-
-//             CHECK(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 7);
-
-//             for (int i = 0; i < 6; i++)
-//             {
-//                 const std::string envPath = "/World/envs/env" + std::to_string(i);
-
-//                 basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/box"), ePTActor));
-//                 CHECK(basePtr != nullptr);
-
-//                 basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/box"), ePTShape));
-//                 REQUIRE(basePtr != nullptr);
-//             }
-//         }
-
-//         SUBCASE("Base RigidBody Replication")
-//         {
-//             // attach sim to stage which parses and creates the pointers that we can check directly
-//             physxSim->attachStage(stageId);
-
-//             PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
-//             REQUIRE(basePtr != nullptr);
-//             PxScene* scene = (PxScene*)basePtr;
-//             CHECK(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 0);
-
-//             replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 5);
-
-//             for (int i = 0; i < 6; i++)
-//             {
-//                 const std::string envPath = "/World/envs/env" + std::to_string(i);
-
-//                 basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/box"), ePTActor));
-//                 CHECK(basePtr != nullptr);
-
-//                 basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/box"), ePTShape));
-//                 const PxShape* shape = basePtr->is<PxShape>();
-//                 REQUIRE(shape != nullptr);
-//                 REQUIRE(shape->getGeometry().getType() == PxGeometryType::eBOX);
-
-//                 basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/material"), ePTMaterial));
-//                 REQUIRE(basePtr != nullptr);
-//                 REQUIRE(basePtr->is<PxMaterial>());
-//                 REQUIRE(shape->getNbMaterials() == 1);
-//                 PxMaterial* mat;
-//                 shape->getMaterials(&mat, 1);
-//                 CHECK(mat == basePtr);
-//             }
-//         }
-
-//         SUBCASE("Initial Position RigidBody Replication")
-//         {
-//             // attach sim to stage which parses and creates the pointers that we can check directly
-//             physxSim->attachStage(stageId);
-
-//             PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
-//             REQUIRE(basePtr != nullptr);
-//             PxScene* scene = (PxScene*)basePtr;
-
-//             replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 5);
-
-//             REQUIRE(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 6);
-
-//             PxActor* actor = nullptr;
-//             for (int i = 0; i < 6; i++)
-//             {
-//                 scene->getActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC, &actor, 1, i);
-//                 PxRigidActor* rbo = actor->is<PxRigidActor>();
-//                 const PxTransform tr = rbo->getGlobalPose();
-//                 CHECK(GfIsClose(omni::physx::toVec3f(tr.p), omni::physx::toVec3f(positions[i]), epsilon));
-//             }
-//         }
-
-//         if (!replicatorTemplate.isFabric())
-//         {
-//             SUBCASE("RigidBody Replication API Cache")
-//             {
-//                 // attach sim to stage which parses and creates the pointers that we can check directly
-//                 physxSim->attachStage(stageId);
-
-//                 PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
-//                 REQUIRE(basePtr != nullptr);
-//                 PxScene* scene = (PxScene*)basePtr;
-
-//                 replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 5);
-
-//                 REQUIRE(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 6);
-
-//                 PxActor* actors[6];
-//                 scene->getActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC, &actors[0], 6, 0);
-
-//                 for (int i = 1; i < 6; i++)
-//                 {
-//                     const std::string envPath = "/World/envs/env" + std::to_string(i);
-
-//                     UsdPrim prim = stage->GetPrimAtPath(SdfPath(envPath + "/box"));
-
-//                     REQUIRE(prim);
-
-//                     // apply the filtering pairs this should not trigger repasring if the flags are right
-//                     UsdPhysicsFilteredPairsAPI::Apply(prim);
-//                 }
-
-//                 REQUIRE(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 6);
-//             }
-
-//             SUBCASE("Update Positions RigidBody Replication")
-//             {
-//                 // attach sim to stage which parses and creates the pointers that we can check directly
-//                 physxSim->attachStage(stageId);
-
-//                 PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
-//                 REQUIRE(basePtr != nullptr);
-//                 PxScene* scene = (PxScene*)basePtr;
-
-//                 replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 5);
-
-//                 REQUIRE(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 6);
-
-//                 for (int k = 0; k < 20; k++)
-//                 {
-//                     physxSim->simulate(1.0f / 60.0f, k * 1.0f / 60.0f);
-//                     physxSim->fetchResults();
-//                 }
-
-//                 for (int i = 0; i < 6; i++)
-//                 {
-//                     const std::string envPath = "/World/envs/env" + std::to_string(i);
-//                     const GfVec3f position = getPhysicsPrimPos(stage, SdfPath(envPath + "/box"));
-//                     CHECK(position[2] < 0.0f);
-//                 }
-//             }
-//         }
-
-//     }
-
-//     // Common post-test actions
-//     physxSim->detachStage();
-
-//     replicatorTemplate.destroy();
-
-//     physxReplicator->unregisterReplicator(stageId);
-
-//     pxr::UsdUtilsStageCache::Get().Erase(stage);
-//     stage = nullptr;
-// }
+TEST_CASE_TEMPLATE("Replicator RigidBody Tests", T, USDReplicator, FabricReplicator)
+{
+    const float epsilon = 0.0001f;
+
+    T replicatorTemplate;
+
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+    IPhysxReplicator* physxReplicator = physicsTests.acquirePhysxReplicatorInterface();
+    REQUIRE(physxReplicator);
+
+    // setup basic stage
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    pxr::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    const double metersPerUnit = pxr::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+
+    pxr::UsdUtilsStageCache::Get().Insert(stage);
+    long stageId = pxr::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    const SdfPath physicsScenePath = defaultPrimPath.AppendChild(TfToken("physicsScene"));
+    UsdPhysicsScene scene = UsdPhysicsScene::Define(stage, physicsScenePath);
+
+    UsdGeomScope::Define(stage, SdfPath("/World/envs"));
+
+    // create rigid bodies with materials
+    {
+        const std::string envPath = "/World/envs/env0";
+        UsdGeomXform xform = UsdGeomXform::Define(stage, SdfPath(envPath));
+        xform.AddTranslateOp().Set(GfVec3d(0.0));
+
+        addRigidBox(stage, envPath + "/box", GfVec3f(0.1f), GfVec3f(0.0f), GfQuatf(1.0f),
+            GfVec3f(0.7f), 0.001f);
+
+        // material
+        const SdfPath materialPath = SdfPath(envPath + "/material");
+        UsdShadeMaterial basePhysicsMaterial = UsdShadeMaterial::Define(stage, materialPath);
+        UsdPhysicsMaterialAPI::Apply(basePhysicsMaterial.GetPrim());
+
+        UsdPrim cubePrim = stage->GetPrimAtPath(SdfPath(envPath + "/box"));
+
+        UsdShadeMaterialBindingAPI bindingAPI = UsdShadeMaterialBindingAPI::Apply(cubePrim.GetPrim());
+        bindingAPI.Bind(basePhysicsMaterial, UsdShadeTokens->weakerThanDescendants, TfToken("physics"));
+    }
+
+    const SdfPath cloneEnv = SdfPath("/World/envs/env0");
+
+    replicatorTemplate.init(stageId, physicsTests.getApp()->getFramework());
+    replicatorTemplate.clone(SdfPath("/World/envs"), cloneEnv, 6, 1, 1.0f);    
+
+
+    SUBCASE("Non active filtering")
+    {
+        IReplicatorCallback cb = { nullptr, nullptr, nullptr };
+        physxReplicator->registerReplicator(stageId, cb);
+
+        if (!replicatorTemplate.isFabric())
+        {
+            SUBCASE("Base parsing")
+            {
+                // attach sim to stage which parses and creates the pointers that we can check directly
+                physxSim->attachStage(stageId);
+
+                PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
+                REQUIRE(basePtr != nullptr);
+
+                PxScene* scene = (PxScene*)basePtr;
+                REQUIRE(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 6);
+
+                for (int i = 0; i < 6; i++)
+                {
+                    const std::string envPath = "/World/envs/env" + std::to_string(i);
+
+                    basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/box"), ePTActor));
+                    REQUIRE(basePtr != nullptr);
+                    CHECK(basePtr->is<PxRigidDynamic>());
+
+                    basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/box"), ePTShape));
+                    REQUIRE(basePtr != nullptr);
+                    const PxShape* shape = basePtr->is<PxShape>();
+                    REQUIRE(shape != nullptr);
+                    REQUIRE(shape->getGeometry().getType() == PxGeometryType::eBOX);
+
+                    basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/material"), ePTMaterial));
+                    REQUIRE(basePtr != nullptr);
+                    REQUIRE(basePtr->is<PxMaterial>());
+                    REQUIRE(shape->getNbMaterials() == 1);
+                    PxMaterial* mat;
+                    shape->getMaterials(&mat, 1);
+                    CHECK(mat == basePtr);
+                }
+            }
+        }
+    }
+
+    SUBCASE("Active filtering")
+    {
+        std::vector<carb::Float3> positions = {
+            carb::Float3{ 0.0f, 0.0f, 0.0f }, carb::Float3{ 1.0f, 0.0f, 0.0f },
+            carb::Float3{ 2.0f, 0.0f, 0.0f }, carb::Float3{ 3.0f, 0.0f, 0.0f },
+            carb::Float3{ 4.0f, 0.0f, 0.0f }, carb::Float3{ 5.0f, 0.0f, 0.0f } };
+
+        std::vector<carb::Float4> orientations = {
+            carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f }, carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f },
+            carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f }, carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f },
+            carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f }, carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f },
+        };
+
+        IReplicatorCallback cb = { nullptr, nullptr, nullptr };
+
+        cb.replicationAttachFn = [](uint64_t stageId, uint32_t& numExludePaths, uint64_t*& excludePaths, void* userData)
+        {
+            numExludePaths = 1;
+            const SdfPath boxPath = SdfPath("/World/envs");
+            static uint64_t excludePath = sdfPathToInt(boxPath);
+            excludePaths = &excludePath;
+        };
+
+        cb.hierarchyRenameFn = [](uint64_t replicatePath, uint32_t index, void* userData)
+        {
+            std::string stringPath = "/World/envs/env" + std::to_string(index + 1);
+            const SdfPath outPath(stringPath);
+            return sdfPathToInt(outPath);
+        };
+
+        physxReplicator->registerReplicator(stageId, cb);
+
+        if (!replicatorTemplate.isFabric())
+        {
+            SUBCASE("Base parsing")
+            {
+                // attach sim to stage which parses and creates the pointers that we can check directly
+                physxSim->attachStage(stageId);
+
+                PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
+                REQUIRE(basePtr != nullptr);
+                PxScene* scene = (PxScene*)basePtr;
+                CHECK(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 0);
+            }
+
+            SUBCASE("Base parsing replicator re-attach")
+            {
+                physxReplicator->registerReplicator(stageId, cb);
+
+                // attach sim to stage which parses and creates the pointers that we can check directly
+                physxSim->attachStage(stageId);
+
+                PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
+                REQUIRE(basePtr != nullptr);
+                PxScene* scene = (PxScene*)basePtr;
+                CHECK(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 0);
+            }
+        }
+
+        SUBCASE("Replication filtering check")
+        {
+            // create a box outside, check if replication does replicate only the hierarchy
+            addRigidBox(stage, "/World/boxOut", GfVec3f(0.1f), GfVec3f(0.0f), GfQuatf(1.0f),
+                GfVec3f(0.7f), 0.001f);
+            const SdfPath boxOutPath("/World/boxOut");
+
+            // attach sim to stage which parses and creates the pointers that we can check directly
+            physxSim->attachStage(stageId);
+
+            PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
+            REQUIRE(basePtr != nullptr);
+            PxScene* scene = (PxScene*)basePtr;
+            CHECK(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 1);
+
+            basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(boxOutPath, ePTActor));
+            CHECK(basePtr != nullptr);
+
+            basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(boxOutPath, ePTShape));
+            CHECK(basePtr != nullptr);
+
+            replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 5);
+
+
+            CHECK(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 7);
+
+            for (int i = 0; i < 6; i++)
+            {
+                const std::string envPath = "/World/envs/env" + std::to_string(i);
+
+                basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/box"), ePTActor));
+                CHECK(basePtr != nullptr);
+
+                basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/box"), ePTShape));
+                REQUIRE(basePtr != nullptr);
+            }
+        }
+
+        SUBCASE("Base RigidBody Replication")
+        {
+            // attach sim to stage which parses and creates the pointers that we can check directly
+            physxSim->attachStage(stageId);
+
+            PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
+            REQUIRE(basePtr != nullptr);
+            PxScene* scene = (PxScene*)basePtr;
+            CHECK(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 0);
+
+            replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 5);
+
+            for (int i = 0; i < 6; i++)
+            {
+                const std::string envPath = "/World/envs/env" + std::to_string(i);
+
+                basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/box"), ePTActor));
+                CHECK(basePtr != nullptr);
+
+                basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/box"), ePTShape));
+                const PxShape* shape = basePtr->is<PxShape>();
+                REQUIRE(shape != nullptr);
+                REQUIRE(shape->getGeometry().getType() == PxGeometryType::eBOX);
+
+                basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/material"), ePTMaterial));
+                REQUIRE(basePtr != nullptr);
+                REQUIRE(basePtr->is<PxMaterial>());
+                REQUIRE(shape->getNbMaterials() == 1);
+                PxMaterial* mat;
+                shape->getMaterials(&mat, 1);
+                CHECK(mat == basePtr);
+            }
+        }
+
+        SUBCASE("Initial Position RigidBody Replication")
+        {
+            // attach sim to stage which parses and creates the pointers that we can check directly
+            physxSim->attachStage(stageId);
+
+            PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
+            REQUIRE(basePtr != nullptr);
+            PxScene* scene = (PxScene*)basePtr;
+
+            replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 5);
+
+            REQUIRE(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 6);
+
+            PxActor* actor = nullptr;
+            for (int i = 0; i < 6; i++)
+            {
+                scene->getActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC, &actor, 1, i);
+                PxRigidActor* rbo = actor->is<PxRigidActor>();
+                const PxTransform tr = rbo->getGlobalPose();
+                CHECK(GfIsClose(omni::physx::toVec3f(tr.p), omni::physx::toVec3f(positions[i]), epsilon));
+            }
+        }
+
+        if (!replicatorTemplate.isFabric())
+        {
+            SUBCASE("RigidBody Replication API Cache")
+            {
+                // attach sim to stage which parses and creates the pointers that we can check directly
+                physxSim->attachStage(stageId);
+
+                PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
+                REQUIRE(basePtr != nullptr);
+                PxScene* scene = (PxScene*)basePtr;
+
+                replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 5);
+
+                REQUIRE(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 6);
+
+                PxActor* actors[6];
+                scene->getActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC, &actors[0], 6, 0);
+
+                for (int i = 1; i < 6; i++)
+                {
+                    const std::string envPath = "/World/envs/env" + std::to_string(i);
+
+                    UsdPrim prim = stage->GetPrimAtPath(SdfPath(envPath + "/box"));
+
+                    REQUIRE(prim);
+
+                    // apply the filtering pairs this should not trigger repasring if the flags are right
+                    UsdPhysicsFilteredPairsAPI::Apply(prim);
+                }
+
+                REQUIRE(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 6);
+            }
+
+            SUBCASE("Update Positions RigidBody Replication")
+            {
+                // attach sim to stage which parses and creates the pointers that we can check directly
+                physxSim->attachStage(stageId);
+
+                PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
+                REQUIRE(basePtr != nullptr);
+                PxScene* scene = (PxScene*)basePtr;
+
+                replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 5);
+
+                REQUIRE(scene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 6);
+
+                for (int k = 0; k < 20; k++)
+                {
+                    physxSim->simulate(1.0f / 60.0f, k * 1.0f / 60.0f);
+                    physxSim->fetchResults();
+                }
+
+                for (int i = 0; i < 6; i++)
+                {
+                    const std::string envPath = "/World/envs/env" + std::to_string(i);
+                    const GfVec3f position = getPhysicsPrimPos(stage, SdfPath(envPath + "/box"));
+                    CHECK(position[2] < 0.0f);
+                }
+            }
+        }
+
+    }
+
+    // Common post-test actions
+    physxSim->detachStage();
+
+    replicatorTemplate.destroy();
+
+    physxReplicator->unregisterReplicator(stageId);
+
+    pxr::UsdUtilsStageCache::Get().Erase(stage);
+    stage = nullptr;
+}
 
 //-----------------------------------------------------------------------------
 // Replicator rigid body tests
@@ -2496,6 +2494,307 @@ TEST_CASE_TEMPLATE("Replicator EnvId Articulation Tests", T, USDReplicator)
     stage = nullptr;
 }
 
+// Implicit envids use primvars:omni:scenePartition token attribute to define the partitions
+TEST_CASE_TEMPLATE("Replicator Implicit EnvId Articulation Tests", T, USDReplicator, FabricReplicator)
+{
+    const float epsilon = 0.0001f;
+
+    T replicatorTemplate;
+
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+    IPhysxReplicator* physxReplicator = physicsTests.acquirePhysxReplicatorInterface();
+    REQUIRE(physxReplicator);
+
+    // setup basic stage
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    pxr::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    const double metersPerUnit = pxr::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+
+    pxr::UsdUtilsStageCache::Get().Insert(stage);
+    long stageId = pxr::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    const SdfPath physicsScenePath = defaultPrimPath.AppendChild(TfToken("physicsScene"));
+    UsdPhysicsScene scene = UsdPhysicsScene::Define(stage, physicsScenePath);
+
+    UsdGeomScope::Define(stage, SdfPath("/World/envs"));
+    UsdGeomXform xform = UsdGeomXform::Define(stage, SdfPath("/World/envs/env0"));
+    xform.AddTranslateOp().Set(GfVec3d(0.0));
+    createLinkHierarchy("/World/envs/env0", 0, stage, true, true, 0.0f);
+
+    // create for multiple replicators
+    {
+        UsdGeomXform xform6 = UsdGeomXform::Define(stage, SdfPath("/World/envs/env6"));
+        xform6.AddTranslateOp().Set(GfVec3d(0.0));
+        createLinkHierarchy("/World/envs/env6", 0, stage, true, true, 0.0f);
+
+        UsdGeomXform xform7 = UsdGeomXform::Define(stage, SdfPath("/World/envs/env7"));
+        xform7.AddTranslateOp().Set(GfVec3d(0.0));
+        createLinkHierarchy("/World/envs/env7", 0, stage, true, true, 0.0f);
+    }
+
+    const SdfPath cloneEnv = SdfPath("/World/envs/env0");
+
+    replicatorTemplate.init(stageId, physicsTests.getApp()->getFramework());
+    replicatorTemplate.clone(SdfPath("/World/envs"), cloneEnv, 6, 1, 0.0f);
+
+    carb::settings::ISettings* settings =
+        physicsTests.getApp()->getFramework()->acquireInterface<carb::settings::ISettings>();
+
+    IReplicatorCallback cb = { nullptr, nullptr, nullptr };
+
+    cb.replicationAttachFn = [](uint64_t stageId, uint32_t& numExludePaths, uint64_t*& excludePaths, void* userData) {
+        numExludePaths = 1;
+        const SdfPath boxPath = SdfPath("/World/envs");
+        static uint64_t excludePath = sdfPathToInt(boxPath);
+        excludePaths = &excludePath;
+    };
+    static uint32_t indexOffset = 0;
+    cb.hierarchyRenameFn = [](uint64_t replicatePath, uint32_t index, void* userData) {
+        std::string stringPath = "/World/envs/env" + std::to_string(index + indexOffset + 1);
+        const SdfPath outPath(stringPath);
+        return sdfPathToInt(outPath);
+    };
+
+    physxReplicator->registerReplicator(stageId, cb);
+
+    SUBCASE("EnvIds Disabled")
+    {
+        // attach sim to stage which parses and creates the pointers that we can check directly
+        physxSim->attachStage(stageId);
+
+        {
+            indexOffset = 0;
+            replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 2, false);
+        }
+        {
+            indexOffset = 2;
+            replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 3, false);
+        }
+
+        PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
+        REQUIRE(basePtr != nullptr);
+
+        PxScene* scene = (PxScene*)basePtr;
+        REQUIRE(scene->getNbArticulations() == 6);
+        CHECK(scene->getNbAggregates() == 6);
+
+        for (int i = 0; i < 6; i++)
+        {
+            PxArticulationReducedCoordinate* articulation = nullptr;
+            scene->getArticulations(&articulation, 1, i);
+            CHECK(articulation->getNbLinks() == 2);
+        }
+
+        for (int i = 0; i < 6; i++)
+        {
+            const std::string envPath = "/World/envs/env" + std::to_string(i);
+
+            basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/dynamicLink"), ePTLink));
+            REQUIRE(basePtr != nullptr);
+            CHECK(basePtr->is<PxRigidActor>());
+            CHECK(basePtr->is<PxRigidActor>()->getEnvironmentID() == PX_INVALID_U32);
+
+            compare(basePtr->is<PxRigidActor>()->getGlobalPose().p, GfVec3f(0.0f), epsilon);
+        }
+
+        for (int i = 0; i < 10; i++)
+        {
+            physxSim->simulate(1.0f / 60.0f, 1.0f / 60.0f);
+            physxSim->fetchResults();
+        }
+
+        for (int i = 0; i < 6; i++)
+        {
+            const std::string envPath = "/World/envs/env" + std::to_string(i);
+
+            basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/dynamicLink"), ePTLink));
+            CHECK(basePtr->is<PxRigidActor>()->getGlobalPose().p.magnitudeSquared() > epsilon);
+        }
+    }
+
+    SUBCASE("EnvIds Enabled")
+    {
+        // Set the envIds through partition primvar primvars:omni:scenePartition
+        {
+            // Set the envIds through partition primvar primvars:omni:scenePartition
+            UsdPrim prim = stage->GetPrimAtPath(SdfPath("/World/envs/env0"));
+            if (prim)
+            {
+                UsdAttribute partitionAttr =
+                    prim.CreateAttribute(TfToken("primvars:omni:scenePartition"), SdfValueTypeNames->Token);
+                partitionAttr.Set(VtValue(TfToken("env_partition_0")));
+            }
+        }
+        for (int i = 1; i < 6; i++)
+        {
+            const SdfPath envPathRoot = SdfPath("/World/envs/env" + std::to_string(i));
+            replicatorTemplate.setupScenePartition(envPathRoot, i);
+        }
+
+        UsdAttribute attr =
+            scene.GetPrim().CreateAttribute(TfToken("physxScene:envIdInBoundsBitCount"), SdfValueTypeNames->Int);
+        attr.Set(4);
+
+        // attach sim to stage which parses and creates the pointers that we can check directly
+        physxSim->attachStage(stageId);
+
+        {
+            indexOffset = 0;
+            replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 2, false);
+        }
+        {
+            indexOffset = 2;
+            replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 3, false);
+        }
+
+        PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
+        REQUIRE(basePtr != nullptr);
+
+        PxScene* scene = (PxScene*)basePtr;
+        REQUIRE(scene->getNbArticulations() == 6);
+        CHECK(scene->getNbAggregates() == 6);
+
+        for (int i = 0; i < 6; i++)
+        {
+            const std::string envPath = "/World/envs/env" + std::to_string(i);
+
+            basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/dynamicLink"), ePTLink));
+            REQUIRE(basePtr != nullptr);
+            CHECK(basePtr->is<PxRigidActor>());
+            CHECK(basePtr->is<PxRigidActor>()->getEnvironmentID() == PX_INVALID_U32);
+
+            compare(basePtr->is<PxRigidActor>()->getGlobalPose().p, GfVec3f(0.0f), epsilon);
+
+            basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath), ePTArticulation));
+            REQUIRE(basePtr != nullptr);
+            CHECK(basePtr->is<PxArticulationReducedCoordinate>());
+            CHECK(basePtr->is<PxArticulationReducedCoordinate>()->getAggregate()->getEnvironmentID() == i);
+        }
+
+        for (int i = 0; i < 10; i++)
+        {
+            physxSim->simulate(1.0f / 60.0f, 1.0f / 60.0f);
+            physxSim->fetchResults();
+        }
+
+        for (int i = 0; i < 6; i++)
+        {
+            const std::string envPath = "/World/envs/env" + std::to_string(i);
+
+            basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/dynamicLink"), ePTLink));
+            compare(basePtr->is<PxRigidActor>()->getGlobalPose().p, GfVec3f(0.0f), epsilon);
+        }
+    }
+
+    SUBCASE("EnvIds Enabled Multiple Replications")
+    {
+        // Set the envIds through partition primvar primvars:omni:scenePartition
+        {
+            // Set the envIds through partition primvar primvars:omni:scenePartition
+            UsdPrim prim = stage->GetPrimAtPath(SdfPath("/World/envs/env0"));
+            if (prim)
+            {
+                UsdAttribute partitionAttr =
+                    prim.CreateAttribute(TfToken("primvars:omni:scenePartition"), SdfValueTypeNames->Token);
+                partitionAttr.Set(VtValue(TfToken("env_partition_0")));
+            }
+
+            prim = stage->GetPrimAtPath(SdfPath("/World/envs/env6"));
+            if (prim)
+            {
+                UsdAttribute partitionAttr =
+                    prim.CreateAttribute(TfToken("primvars:omni:scenePartition"), SdfValueTypeNames->Token);
+                partitionAttr.Set(VtValue(TfToken("env_partition_6")));
+            }
+
+        }
+        for (int i = 1; i < 6; i++)
+        {
+            const SdfPath envPathRoot = SdfPath("/World/envs/env" + std::to_string(i));
+            replicatorTemplate.setupScenePartition(envPathRoot, i);
+        }
+        {
+            const SdfPath envPathRoot = SdfPath("/World/envs/env7");
+            replicatorTemplate.setupScenePartition(envPathRoot, 7);
+        }
+
+        UsdAttribute attr =
+            scene.GetPrim().CreateAttribute(TfToken("physxScene:envIdInBoundsBitCount"), SdfValueTypeNames->Int);
+        attr.Set(4);
+
+        // attach sim to stage which parses and creates the pointers that we can check directly
+        physxSim->attachStage(stageId);
+
+        {
+            indexOffset = 0;
+            replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 2, false);
+        }
+        {
+            indexOffset = 2;
+            replicatorTemplate.replicate(sdfPathToInt(cloneEnv), 3, false);
+        }
+        {
+            indexOffset = 6;
+            replicatorTemplate.replicate(sdfPathToInt(SdfPath("/World/envs/env6")), 1, false);
+        }
+
+        PxBase* basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(physicsScenePath, ePTScene));
+        REQUIRE(basePtr != nullptr);
+
+        PxScene* scene = (PxScene*)basePtr;
+        REQUIRE(scene->getNbArticulations() == 8);
+        CHECK(scene->getNbAggregates() == 8);
+
+        for (int i = 0; i < 8; i++)
+        {
+            const std::string envPath = "/World/envs/env" + std::to_string(i);
+
+            basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/dynamicLink"), ePTLink));
+            REQUIRE(basePtr != nullptr);
+            CHECK(basePtr->is<PxRigidActor>());
+            CHECK(basePtr->is<PxRigidActor>()->getEnvironmentID() == PX_INVALID_U32);
+
+            compare(basePtr->is<PxRigidActor>()->getGlobalPose().p, GfVec3f(0.0f), epsilon);
+
+            basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath), ePTArticulation));
+            REQUIRE(basePtr != nullptr);
+            CHECK(basePtr->is<PxArticulationReducedCoordinate>());
+            CHECK(basePtr->is<PxArticulationReducedCoordinate>()->getAggregate()->getEnvironmentID() == i);
+        }
+
+        for (int i = 0; i < 10; i++)
+        {
+            physxSim->simulate(1.0f / 60.0f, 1.0f / 60.0f);
+            physxSim->fetchResults();
+        }
+
+        for (int i = 0; i < 8; i++)
+        {
+            const std::string envPath = "/World/envs/env" + std::to_string(i);
+
+            basePtr = reinterpret_cast<PxBase*>(physx->getPhysXPtr(SdfPath(envPath + "/dynamicLink"), ePTLink));
+            compare(basePtr->is<PxRigidActor>()->getGlobalPose().p, GfVec3f(0.0f), epsilon);
+        }
+    }    
+
+    // Common post-test actions
+    physxSim->detachStage();
+
+    physxReplicator->unregisterReplicator(stageId);
+
+    pxr::UsdUtilsStageCache::Get().Erase(stage);
+    stage = nullptr;
+}
+
+
 TEST_CASE_TEMPLATE("Replicator Multithreading Tests", T, USDReplicator)
 {
     const float epsilon = 0.0001f;
@@ -2552,6 +2851,9 @@ TEST_CASE_TEMPLATE("Replicator Multithreading Tests", T, USDReplicator)
     settings->setBool(kSettingUpdateVelocitiesToUsd, true);    
 
     physxReplicator->unregisterReplicator(stageId);
+
+    settings->setBool(kSettingUpdateToUsd, true);
+    settings->setBool(kSettingUpdateVelocitiesToUsd, true);    
 
     pxr::UsdUtilsStageCache::Get().Erase(stage);
     stage = nullptr;

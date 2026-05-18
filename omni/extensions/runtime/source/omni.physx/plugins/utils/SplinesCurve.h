@@ -1,10 +1,12 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
 #pragma once
 
 #include "carb/Defines.h"
+#include <PxPhysicsAPI.h>
+#include <utils/OmniRenderBuffer.h>
 
 enum class eBasisCurveWrap
 {
@@ -437,12 +439,17 @@ public:
     SplinesCurve(const pxr::UsdGeomBasisCurves& curvePrim);
     ~SplinesCurve();
 
-    bool getClosestPoint(const pxr::GfVec3f& point, pxr::GfVec3f& pointOnCurveOut, pxr::GfVec3f& tangentOut);
+    bool getClosestPoint(const pxr::GfVec3f& point,
+                         pxr::GfVec3f& pointOnCurveOut,
+                         pxr::GfVec3f& tangentOut,                         
+                         pxr::GfVec3f& curvaturePointOut);
 
     bool isInitialized() const
     {
         return mInitialized;
     }
+
+    void draw(omni::physx::OmniRenderBuffer& renderBuffer, const ::physx::PxTransform& tr) const;
 
 private:
     bool mInitialized;
@@ -450,12 +457,11 @@ private:
 
     std::vector<pxr::GfVec3f> mPoints;
     std::vector<pxr::GfVec3f> mTangents;
-    std::vector<float> mDistances;
-    std::vector<int> mCurveVertexCounts;    
+    std::vector<int> mCurveVertexCounts;
+    std::vector<pxr::GfVec3f> mCurvaturePoints;
 #ifdef __AVX__
     std::vector<float> mXPoints;
     std::vector<float> mYPoints;
     std::vector<float> mZPoints;
 #endif
 };
-

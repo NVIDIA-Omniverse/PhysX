@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef PXG_SIMULATION_CORE_DESC_H
 #define	PXG_SIMULATION_CORE_DESC_H
@@ -49,6 +49,7 @@ namespace physx
 	struct PxgSolverBodySleepData;
 	struct PxgShape;
 	struct PxgBodySim;
+	struct PxgBodySimVelocities;
 	struct PxgShapeSim;
 	struct PxgArticulationLink;
 	struct PxgArticulationLinkProp;
@@ -68,6 +69,7 @@ namespace physx
 	namespace Dy
 	{
 		struct ArticulationJointCore;
+		struct ArticulationMimicJointCore;
 		class ArticulationJointCoreData;
 	}
 	
@@ -75,6 +77,7 @@ namespace physx
 	{
 		const PxgBodySim*	mNewBodySim;
 		PxgBodySim*			mBodySimBufferDeviceData;
+		PxgBodySimVelocities*	mPrevVelocitiesBuffer;		// PdHC: Previous velocities buffer for acceleration computation
 		PxU32				mNbNewBodies;	//number of newly added bodies
 	};
 
@@ -105,6 +108,14 @@ namespace physx
 		PX_ASSERT(elementId <= PX_MAX_NB_DEFORMABLE_SURFACE_TRI); 
 		PX_ASSERT(elementId <= PX_MAX_NB_DEFORMABLE_SURFACE_VTX);
 		return (clothId << PXG_BITSHIFT_ELEMENT_ID) | elementId;
+	}
+
+	// BUGFIX 5813869: returns true if clothId or elementId are out of encoding range.
+	// Cloth-cloth contact managers are not unregistered via ShapeInteraction (unlike other pair
+	// types), so stale pairs with invalid indices may persist for one frame during add/remove cycling.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE bool PxIsClothIndexInvalid(const PxU32 clothId, const PxU32 elementId)
+	{
+		return clothId >= PX_MAX_NB_DEFORMABLE_SURFACE || elementId > PX_MAX_NB_DEFORMABLE_SURFACE_TRI;
 	}
 
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxEncodeSoftBodyIndex(const PxU32 softBodyId, const PxU32 tetId)

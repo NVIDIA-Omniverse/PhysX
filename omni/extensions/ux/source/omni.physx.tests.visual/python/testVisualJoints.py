@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.kit.viewport.utility.camera_state import ViewportCameraState
 from omni.physx.scripts import physicsUtils
 from omni.physxtests import utils
@@ -182,10 +183,8 @@ class PhysxVisualJointsTest(TestCase):
             await self.setup_viewport_window()
             res &= await self.do_visual_test(img_suffix=f"_{joint_type}_detach", skip_assert=True, threshold=0.0025, use_renderer_capture=True)
 
-
-        self.assertTrue(res)
         await self.new_stage()
-
+        self.assertTrue(res)
 
     async def test_physics_visual_joint_billboard(self):
         res = True
@@ -200,8 +199,8 @@ class PhysxVisualJointsTest(TestCase):
             await self.setup_viewport_window()
             res &= await self.do_visual_test(img_suffix=f"_{joint_type}", skip_assert=True, threshold=0.0025, use_renderer_capture=True)
 
-        self.assertTrue(res)
         await self.new_stage()
+        self.assertTrue(res)
 
     async def test_physics_visual_joint_billboard_visibility(self):
         stage = await self.new_stage()

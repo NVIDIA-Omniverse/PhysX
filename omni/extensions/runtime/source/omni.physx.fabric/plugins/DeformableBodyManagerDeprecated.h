@@ -1,11 +1,9 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
 
 #include <carb/Defines.h>
-
-#if !CARB_AARCH64
 
 #    include <omni/fabric/SimStageWithHistory.h>
 
@@ -27,7 +25,7 @@ namespace physx
 {
 struct IPhysxSimulation;
 
-using PositionCache = std::unordered_map<uint64_t, pxr::VtArray<carb::Float3>>;
+using PositionCache = std::unordered_map<omni::fabric::Path, pxr::VtArray<pxr::GfVec3f>>;
 
 struct DeformableBodyDataDeprecated
 {
@@ -134,7 +132,7 @@ private:
     omni::fabric::Token mSoftBodySchemaToken;
 
     omni::fabric::Token mWorldMatrixToken;
-    std::unordered_map<omni::fabric::PathC, DeformableBodyDataDeprecated> mSoftBodies;
+    std::unordered_map<omni::fabric::Path, DeformableBodyDataDeprecated> mSoftBodies;
 
     std::unordered_map<::physx::PxScene*, DeformableBodySetDeprecated> mSoftBodiesSet;
 
@@ -146,5 +144,3 @@ private:
 };
 } // namespace physx
 } // namespace omni
-
-#endif

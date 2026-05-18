@@ -22,12 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 
 #include "PxgPBDParticleSystemCore.h"
+#include "PxgParticleSystemBuffer.h"
 #include "foundation/PxAssert.h"
 #include "common/PxProfileZone.h"
 #include "cudamanager/PxCudaContextManager.h"
@@ -57,8 +58,8 @@ namespace physx
 {
 
 	PxgPBDParticleSystemCore::PxgPBDParticleSystemCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
-		PxgHeapMemoryAllocatorManager* heapMemoryManager, PxgSimulationController* simController, PxgGpuContext* gpuContext, const PxU32 maxParticleContacts) :
-		PxgParticleSystemCore(gpuKernelWrangler, cudaContextManager, heapMemoryManager, simController, gpuContext, maxParticleContacts),
+		PxgAllocatorDesc& allocDesc, PxgSimulationController* simController, PxgGpuContext* gpuContext, const PxU32 maxParticleContacts) :
+		PxgParticleSystemCore(gpuKernelWrangler, cudaContextManager, allocDesc, simController, gpuContext, maxParticleContacts),
 		PxgDiffuseParticleCore(this),	
 		mMaxClothBuffersPerSystem(0), mMaxClothsPerBuffer(0), mMaxSpringsPerBuffer(0), mMaxSpringPartitionsPerBuffer(0), mMaxSpringsPerPartitionPerBuffer(0),
 		mMaxTrianglesPerBuffer(0), mMaxVolumesPerBuffer(0),
@@ -425,7 +426,7 @@ namespace physx
 	}
 
 	void PxgPBDParticleSystemCore::solve(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
-		CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, const PxReal dt, CUstream solverStream)
+		CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, const PxReal dt, CUstream solverStream, PxReal biasCoefficient)
 	{
 
 #if PS_GPU_DEBUG
@@ -441,19 +442,19 @@ namespace physx
 
 		CUdeviceptr activeParticleSystemd = getActiveParticleSystemBuffer().getDevicePtr();
 
-		solveParticleCollision(dt, false, 0.7f);
+		solveParticleCollision(dt, false, biasCoefficient);
 
 		synchronizeStreams(mCudaContext, mStream, solverStream);
 
 		solveRigidAttachments(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd,
-			solverStream, dt, false, 0.7f, false, particleSystemd, activeParticleSystemd, nbActiveParticles);
+			solverStream, dt, false, biasCoefficient, false, particleSystemd, activeParticleSystemd, nbActiveParticles);
 		//Wait for solver stream to finish for mStream so it can do particle-rigid and rigid-particle work
 		synchronizeStreams(mCudaContext, solverStream, mStream);
 
-		solvePrimitiveCollisionForParticles(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, dt, false, 0.7f, false);
-		solvePrimitiveCollisionForRigids(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, solverStream, dt, false, 0.7f, false);
+		solvePrimitiveCollisionForParticles(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, dt, false, biasCoefficient, false);
+		solvePrimitiveCollisionForRigids(prePrepDescd, solverCoreDescd, sharedDescd, artiCoreDescd, solverStream, dt, false, biasCoefficient, false);
 
-		solveOneWayCollision(particleSystemd, activeParticleSystemd, nbActiveParticles, dt, 0.7f, false);
+		solveOneWayCollision(particleSystemd, activeParticleSystemd, nbActiveParticles, dt, biasCoefficient, false);
 
 		synchronizeStreams(mCudaContext, mStream, solverStream);
 	}
@@ -1178,9 +1179,9 @@ namespace physx
 		const PxU32 nbActiveParticleSystems, 
 		const PxReal dt)
 	{
-		if (mMaxDiffusePerBuffer > 0)
+		// checking abort mode for failed mandatory pinned memory mNumActiveDiffuseParticlesH
+		if (mMaxDiffusePerBuffer > 0 && !mCudaContext->isInAbortMode())
 		{
-
 			static PxU32 count = 0;
 			count++;
 			// Handle one-way collision
@@ -1718,7 +1719,8 @@ namespace physx
 				diffuseBuffer.mNumDiffuseParticles = srcBuffer.mNumDiffuseParticlesD;
 				diffuseBuffer.mFlags = srcBuffer.mBufferFlags;
 				diffuseBuffer.mStartIndex = 0;
-				diffuseBuffer.mNumActiveDiffuseParticles = srcBuffer.mNumActiveDiffuseParticlesH;
+				PxI32* mappedPtr = reinterpret_cast<PxI32*>(getMappedDevicePtr(mCudaContext, srcBuffer.mNumActiveDiffuseParticlesH));
+				diffuseBuffer.mNumActiveDiffuseParticles = mappedPtr;
 				
 				numActiveParticles += srcBuffer.mNumActiveParticles;
 				numMaxParticles += srcBuffer.mMaxNumParticles;
@@ -1989,8 +1991,8 @@ namespace physx
 
 			if (!buffer)
 			{
-				buffer = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgParticleSystemBuffer), "PxgParticleSystemBuffer"), PxgParticleSystemBuffer(mHeapMemoryManager));
-				diffuseBuffer = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgParticleSystemDiffuseBuffer), "PxgParticleSystemDiffuseBuffer"), PxgParticleSystemDiffuseBuffer(mHeapMemoryManager));
+				buffer = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgParticleSystemBuffer), "PxgParticleSystemBuffer"), PxgParticleSystemBuffer(mAllocDesc));
+				diffuseBuffer = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgParticleSystemDiffuseBuffer), "PxgParticleSystemDiffuseBuffer"), PxgParticleSystemDiffuseBuffer(mAllocDesc));
 				
 				mParticleSystemDataBuffer[data.mRemapIndex] = buffer;
 				mDiffuseParticleDataBuffer[data.mRemapIndex] = diffuseBuffer;

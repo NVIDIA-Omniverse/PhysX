@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -288,10 +288,21 @@ namespace omni
 
             mFabricReplication = useFabricReplicate;
 
+            bool implicitEnvIdsUse = false;
+            UsdGeomPrimvar scenePartitionPrimVar = UsdGeomPrimvar(topPrim.GetAttribute(TfToken(kScenePartitionPrimvar)));            
+            if (scenePartitionPrimVar)
+            {
+                pxr::TfToken scenePartitionToken;
+                scenePartitionPrimVar.Get(&scenePartitionToken);
+                implicitEnvIdsUse = true;
+                CARB_LOG_INFO("Registering scene partion token: %s", scenePartitionToken.GetText());
+                attachedStage->registerEnvIdFromToken(scenePartitionToken);
+            }
+
             PxScene* physXScene = scene->getScene();
             const bool gpuDynamics = physXScene->getFlags() & PxSceneFlag::eENABLE_GPU_DYNAMICS;
             const bool gpuBroadphase = physXScene->getBroadPhaseType() == PxBroadPhaseType::eGPU;
-            const bool useEnvIDs = gpuDynamics && gpuBroadphase && useEnvIDsIn; // PT: TODO: or is gpuBroadphase
+            const bool useEnvIDs = gpuDynamics && gpuBroadphase && (useEnvIDsIn || implicitEnvIdsUse); // PT: TODO: or is gpuBroadphase
                                                                                 // enough?
 
             if (useEnvIDsIn && !gpuDynamics)
@@ -307,6 +318,27 @@ namespace omni
             attachedStage->setUseReplicatorEnvIds(useEnvIDs);
 
             // parse the source
+            bool dataAlreadyParsed = false;
+            {
+                const pxr::UsdPrimRange range(topPrim, pxr::UsdTraverseInstanceProxies());
+                for (pxr::UsdPrimRange::const_iterator iter = range.begin(); iter != range.end(); ++iter)
+                {
+                    const pxr::UsdPrim& prim = *iter;
+
+                    if (!prim)
+                        continue;
+
+                    const SdfPath traversePrimPath = prim.GetPrimPath();
+
+                    const ObjectIdMap* entries = objectDb->getEntries(traversePrimPath);
+                    if (entries && !entries->empty())
+                    {
+                        dataAlreadyParsed = true;
+                        break;
+                    }
+                }
+            }
+            if (!dataAlreadyParsed)
             {
                 CARB_PROFILE_ZONE(0, "PhysXReplicator::replicate::source");
                 PHYSICS_PROFILE("PhysXReplicator::replicate::source");
@@ -339,11 +371,11 @@ namespace omni
             bool materialResolveEnabled = false;
 
             std::vector<std::pair<SdfPath, uint32_t>> schemaAPIFlagsStorage;
-
-            const pxr::UsdPrimRange range(topPrim, pxr::UsdTraverseInstanceProxies());
+            
             {
                 PHYSICS_PROFILE("PhysXReplicator::replicate::traverseTypes");
                 CARB_PROFILE_ZONE(0, "PhysXReplicator::replicate:traverseTypes");
+                const pxr::UsdPrimRange range(topPrim, pxr::UsdTraverseInstanceProxies());
                 for (pxr::UsdPrimRange::const_iterator iter = range.begin(); iter != range.end(); ++iter)
                 {
                     const pxr::UsdPrim& prim = *iter;
@@ -459,6 +491,7 @@ namespace omni
                     std::pair<pxr::SdfPath, PrimHierarchyStorage> hierarchyStorage;
                     std::vector<std::pair<InternalMaterial*, ObjectId>> materialPairs;
                     std::vector<std::pair<InternalScene*, InternalMimicJoint*>> mimicJointPairs;
+                    uint32_t envIdInt;
                 };
 
                 auto processReplicationFn = [this, memblockAligned, alignedSize, mirrorMemoryAligned, mirrorMemorySize, path,
@@ -608,7 +641,9 @@ namespace omni
                                 {
                                     const omni::fabric::Token fabricTransform("omni:fabric:worldMatrix");
                                     const pxr::GfMatrix4d* worldPose = stageRw.getAttributeRd<pxr::GfMatrix4d>(
-                                        omni::fabric::asInt(newSdfPath), fabricTransform);
+                                        omni::fabric::convertToPathType<omni::fabric::Path>(
+                                            stageRw.getFabricId(), newSdfPath),
+                                        fabricTransform);
                                     if (worldPose)
                                     {
                                         const GfTransform gftr(*worldPose);
@@ -631,7 +666,9 @@ namespace omni
                                     {
                                         const omni::fabric::Token fabricTransform("omni:fabric:worldMatrix");
                                         const pxr::GfMatrix4d* worldPose = stageRw.getAttributeRd<pxr::GfMatrix4d>(
-                                            omni::fabric::asInt(newSdfPath), fabricTransform);
+                                            omni::fabric::convertToPathType<omni::fabric::Path>(
+                                                stageRw.getFabricId(), newSdfPath),
+                                            fabricTransform);
                                         if (worldPose)
                                         {
                                             const GfTransform gftr(*worldPose);
@@ -1068,6 +1105,47 @@ namespace omni
                         }
                         replicationOutData[i].newReplicatePath = newHierarchyPath ? intToPath(newHierarchyPath) : SdfPath();
 
+                        // We need i + 1, 0 is used for the first env parsed initially
+                        replicationOutData[i].envIdInt = i + 1;
+
+                        if (implicitEnvIdsUse && (replicationOutData[i].newReplicatePath != SdfPath()))
+                        {
+                            if (mFabricReplication)
+                            {
+                                const omni::fabric::Token partitionToken(kScenePartitionPrimvar);
+                                const omni::fabric::Token* tokenToRead = stageRw.getAttributeRd<omni::fabric::Token>(
+                                    omni::fabric::convertToPathType<omni::fabric::Path>(
+                                        stageRw.getFabricId(), replicationOutData[i].newReplicatePath),
+                                    partitionToken);
+                                if (tokenToRead)
+                                {
+                                    const TfToken scenePartitionToken = omni::fabric::toTfToken(*tokenToRead);
+                                    CARB_LOG_INFO("Registering scene partion token: %s", scenePartitionToken.GetText());
+                                    const uint32_t envIdInt = attachedStage->registerEnvIdFromToken(scenePartitionToken);
+                                    replicationOutData[i].envIdInt = envIdInt;
+                                }
+                            }
+                            else
+                            {
+                                const UsdPrim topLevelEnvIdPrim =
+                                    stage->GetPrimAtPath(replicationOutData[i].newReplicatePath);
+                                if (topLevelEnvIdPrim)
+                                {
+                                    UsdGeomPrimvar scenePartitionPrimVar =
+                                        UsdGeomPrimvar(topLevelEnvIdPrim.GetAttribute(TfToken(kScenePartitionPrimvar)));
+                                    if (scenePartitionPrimVar)
+                                    {
+                                        pxr::TfToken scenePartitionToken;
+                                        scenePartitionPrimVar.Get(&scenePartitionToken);                                        
+                                        CARB_LOG_INFO(
+                                            "Registering scene partion token: %s", scenePartitionToken.GetText());
+                                        const uint32_t envIdInt = attachedStage->registerEnvIdFromToken(scenePartitionToken);
+                                        replicationOutData[i].envIdInt = envIdInt;
+                                    }
+                                }
+                            }
+                        }
+
                         // create the collection synchronously
                         void* nm = nullptr;
                         nm = (PxU8*)memblockAligned + alignedSize * i;
@@ -1138,7 +1216,7 @@ namespace omni
                             {
                                 // Needs to be setup here, as its a non-thread safe call
                                 // We need i + 1, 0 is used for the first env parsed initially 
-                                rp.first->setEnvironmentID(i + 1);
+                                rp.first->setEnvironmentID(data.envIdInt);
                             }
                         }
                         for (const std::pair<PxArticulationReducedCoordinate*, PxTransform>& ap :
@@ -1152,7 +1230,7 @@ namespace omni
                                 {
                                     // Needs to be setup here, as its a non-thread safe call
                                     // We need i + 1, 0 is used for the first env parsed initially
-                                    agg->setEnvironmentID(i + 1);
+                                    agg->setEnvironmentID(data.envIdInt);
                                 }
                             }
                         }
@@ -1290,4 +1368,3 @@ void fillInterface(omni::physx::IPhysxReplicator& iface)
     iface.replicate = omni::physx::replicate;
     iface.isReplicatorStage = omni::physx::isReplicatorStage;
 }
-

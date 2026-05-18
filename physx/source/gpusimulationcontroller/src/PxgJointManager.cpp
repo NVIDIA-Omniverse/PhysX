@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,6 +32,8 @@
 #include "PxgConstraintPrep.h"
 #include "common/PxProfileZone.h"
 #include "PxsPartitionEdge.h"
+#include "PxsHeapStats.h"
+#include "cudamanager/PxCudaContext.h"
 
 #define GPU_JOINT_PREP	1
 
@@ -62,16 +64,34 @@ static PX_FORCE_INLINE void setupConstraintPrepPrep(PxgConstraintPrePrep& preDat
 	::setupConstraintPrepPrep(preData, constraint);
 }
 
-PxgJointManager::PxgJointManager(const PxVirtualAllocator& allocator, bool isDirectGpuApiEnabled) :
-	mGpuRigidJointData(allocator), mGpuArtiJointData(allocator),
-	mGpuRigidJointPrePrep(allocator), mGpuArtiJointPrePrep(allocator),
-	mCpuRigidConstraintData(allocator), mCpuRigidConstraintRows(allocator),
-	mCpuArtiConstraintData(allocator), mCpuArtiConstraintRows(allocator),
-	mDirtyGPURigidJointDataIndices(allocator), mDirtyGPUArtiJointDataIndices(allocator)
-	, mGpuConstraintIdMapHost(allocator)
-	, mMaxConstraintId(0)
-	, mIsGpuConstraintIdMapDirty(false)
-	, mIsDirectGpuApiEnabled(isDirectGpuApiEnabled)
+PxgJointManager::GpuJoints::GpuJoints(Cm::VirtualAllocatorCallback& hostMappedAlloc)
+:
+	mJointDataMapped(hostMappedAlloc, PxsHeapStats::eSOLVER, Cm::PinnableAllocatorFallback::eDISABLED),
+	mJointPrePrepMapped(hostMappedAlloc, PxsHeapStats::eSOLVER, Cm::PinnableAllocatorFallback::eDISABLED),
+	mDirtyIndicesMapped(hostMappedAlloc, PxsHeapStats::eSOLVER, Cm::PinnableAllocatorFallback::eDISABLED)
+{
+}
+
+PxgJointManager::CpuJoints::CpuJoints(Cm::VirtualAllocatorCallback& hostAlloc)
+:
+	mConstraintData(hostAlloc, PxsHeapStats::eSOLVER),
+	mConstraintRows(hostAlloc, PxsHeapStats::eSOLVER),
+	mNbConstraintRows(0)
+{
+}
+
+PxgJointManager::PxgJointManager(Cm::VirtualAllocatorCallback& hostAlloc, Cm::VirtualAllocatorCallback& hostMappedAlloc,
+								 bool isDirectGpuApiEnabled, PxCudaContext* cudaContext)
+:
+	mGpuRigidJoints(hostMappedAlloc),
+	mGpuArtiJoints(hostMappedAlloc),
+	mCpuRigidJoints(hostAlloc),
+	mCpuArtiJoints(hostAlloc),
+	mGpuConstraintIdMapHost(hostAlloc, PxsHeapStats::eSOLVER),
+	mMaxConstraintId(0),
+	mIsGpuConstraintIdMapDirty(false),
+	mIsDirectGpuApiEnabled(isDirectGpuApiEnabled),
+	mCudaContext(cudaContext)
 {
 }
 
@@ -81,23 +101,23 @@ PxgJointManager::~PxgJointManager()
 
 void PxgJointManager::reserveMemory(PxU32 maxConstraintRows)
 {
-	const PxU32 nbCpuRigidConstraints = mCpuRigidConstraints.size();
-	const PxU32 nbCpuArtiConstraints = mCpuArtiConstraints.size();
+	const PxU32 nbCpuRigidConstraints = mCpuRigidJoints.mConstraints.size();
+	const PxU32 nbCpuArtiConstraints = mCpuArtiJoints.mConstraints.size();
 
-	mCpuRigidConstraintData.reserve(nbCpuRigidConstraints);
-	mCpuRigidConstraintData.forceSize_Unsafe(nbCpuRigidConstraints);
+	mCpuRigidJoints.mConstraintData.reserve(nbCpuRigidConstraints);
+	mCpuRigidJoints.mConstraintData.forceSize_Unsafe(nbCpuRigidConstraints);
 
-	mCpuRigidConstraintRows.reserve(nbCpuRigidConstraints * maxConstraintRows);
-	mCpuRigidConstraintRows.forceSize_Unsafe(nbCpuRigidConstraints * maxConstraintRows);
+	mCpuRigidJoints.mConstraintRows.reserve(nbCpuRigidConstraints * maxConstraintRows);
+	mCpuRigidJoints.mConstraintRows.forceSize_Unsafe(nbCpuRigidConstraints * maxConstraintRows);
 
-	mCpuArtiConstraintData.reserve(nbCpuArtiConstraints);
-	mCpuArtiConstraintData.forceSize_Unsafe(nbCpuArtiConstraints);
+	mCpuArtiJoints.mConstraintData.reserve(nbCpuArtiConstraints);
+	mCpuArtiJoints.mConstraintData.forceSize_Unsafe(nbCpuArtiConstraints);
 
-	mCpuArtiConstraintRows.reserve(nbCpuArtiConstraints * maxConstraintRows);
-	mCpuArtiConstraintRows.forceSize_Unsafe(nbCpuArtiConstraints * maxConstraintRows);
+	mCpuArtiJoints.mConstraintRows.reserve(nbCpuArtiConstraints * maxConstraintRows);
+	mCpuArtiJoints.mConstraintRows.forceSize_Unsafe(nbCpuArtiConstraints * maxConstraintRows);
 
-	mNbCpuRigidConstraintRows = 0;
-	mNbCpuArtiConstraintRows = 0;
+	mCpuRigidJoints.mNbConstraintRows = 0;
+	mCpuArtiJoints.mNbConstraintRows = 0;
 }
 
 void PxgJointManager::reserveMemoryPreAddRemove()
@@ -121,115 +141,116 @@ void PxgJointManager::registerJoint(const Dy::Constraint& constraint)
 	}
 }
 
-static PX_FORCE_INLINE void removeJointGpuCpu(PxU32 edgeIndex,
+static PX_FORCE_INLINE void removeJointCpu(PxU32 edgeIndex, PxU32 index,
 	const IG::GPUExternalData& islandSimGpuData,
-	PxHashMap<PxU32, PxU32>& gpuConstraintIndexMap,
-	PxPinnedArray<PxgConstraintPrePrep>& gpuConstraintPrePrepEntries,
-	PxInt32ArrayPinned& gpuDirtyJointDataIndices,
-	Cm::IDPool& gpuIdPool,
 	PxHashMap<PxU32, PxU32>& cpuConstraintIndexMap,
 	PxArray<const Dy::Constraint*>& cpuConstraintList,
 	PxArray<PxU32>& cpuConstraintEdgeIndices,
 	PxArray<PxU32>& cpuUniqueIndices,
-	PxArray<PxU32>& jointIndices,
+	PxArray<PxU32>& jointIndices)
+{
+	cpuConstraintList.replaceWithLast(index);
+
+	PxU32 replaceEdgeIndex = cpuConstraintEdgeIndices.back();
+
+	cpuConstraintEdgeIndices.replaceWithLast(index);
+
+	cpuConstraintIndexMap[replaceEdgeIndex] = index;
+
+	cpuUniqueIndices.replaceWithLast(index);
+
+	const PartitionEdge* pEdge = islandSimGpuData.getFirstPartitionEdge(replaceEdgeIndex);
+	if(pEdge)
+		jointIndices[pEdge->mUniqueIndex] = index;
+
+	cpuConstraintIndexMap.erase(edgeIndex);
+}
+
+static PX_FORCE_INLINE bool removeJointGpu(PxU32 edgeIndex, PxU32 jointDataIndex,
+	PxHashMap<PxU32, PxU32>& gpuConstraintIndexMap,
+	Cm::PinnableArray<PxgConstraintPrePrep>& gpuConstraintPrePrepEntriesMapped,
+	Cm::PinnableArray<PxU32>& gpuDirtyJointDataIndicesMapped,
+	Cm::IDPool& gpuIdPool,
 	PxgJointManager::ConstraintIdMap& gpuConstraintIdMapHost,
 	PxHashMap<PxU32, PxU32>& edgeIndexToGpuConstraintIdMap,
 	bool& isGpuConstraintIdMapDirty,
 	bool isDirectGpuApiEnabled)
 {
-	const PxPair<const PxU32, PxU32>* gpuPair = gpuConstraintIndexMap.find(edgeIndex);
-	if (gpuPair)
+	// update the dirty list
+	if(!gpuDirtyJointDataIndicesMapped.pushBack(jointDataIndex))
 	{
-		//gpu
-		const PxU32 jointDataIndex = gpuPair->second;
+		return false;
+	}
 
-		//update the dirty list
-		gpuDirtyJointDataIndices.pushBack(jointDataIndex);
+	resetConstraintPrepPrep(gpuConstraintPrePrepEntriesMapped[jointDataIndex]);
 
-		resetConstraintPrepPrep(gpuConstraintPrePrepEntries[jointDataIndex]);
+	gpuIdPool.freeID(jointDataIndex);
 
-		gpuIdPool.freeID(jointDataIndex);
+	gpuConstraintIndexMap.erase(edgeIndex);
 
-		gpuConstraintIndexMap.erase(edgeIndex);
+	if(isDirectGpuApiEnabled)
+	{
+		PxPair<const PxU32, PxU32> entry;
+		const bool found = edgeIndexToGpuConstraintIdMap.erase(edgeIndex, entry);
+		PX_ASSERT(found);
 
-		if (isDirectGpuApiEnabled)
+		if(found) // should always be the case but extra safety if something went horribly wrong
 		{
-			PxPair<const PxU32, PxU32> entry;
-			const bool found = edgeIndexToGpuConstraintIdMap.erase(edgeIndex, entry);
-			PX_ASSERT(found);
-
-			if (found)  // should always be the case but extra safety if something went horribly wrong
-			{
-				const PxU32 mapIndex = entry.second;
-
-				PX_ASSERT(mapIndex < gpuConstraintIdMapHost.size());
-		
-				gpuConstraintIdMapHost[mapIndex].invalidate();
-
-				isGpuConstraintIdMapDirty = true;
-			}
+			const PxU32 mapIndex = entry.second;
+			PX_ASSERT(mapIndex < gpuConstraintIdMapHost.size());
+			gpuConstraintIdMapHost[mapIndex].invalidate();
+			isGpuConstraintIdMapDirty = true;
 		}
 	}
-	else
-	{
-		//cpu
-		const PxPair<const PxU32, PxU32>* cpuPair = cpuConstraintIndexMap.find(edgeIndex);
-		if (cpuPair)
-		{
-			const PxU32 index = cpuPair->second;
-			cpuConstraintList.replaceWithLast(index);
 
-			PxU32 replaceEdgeIndex = cpuConstraintEdgeIndices.back();
-
-			cpuConstraintEdgeIndices.replaceWithLast(index);
-
-			cpuConstraintIndexMap[replaceEdgeIndex] = index;
-
-			cpuUniqueIndices.replaceWithLast(index);
-
-			const PartitionEdge* pEdge = islandSimGpuData.getFirstPartitionEdge(replaceEdgeIndex);
-			if (pEdge)
-				jointIndices[pEdge->mUniqueIndex] = index;
-
-			cpuConstraintIndexMap.erase(edgeIndex);
-		}
-	}
+	return true;
 }
 
-void PxgJointManager::removeJoint(PxU32 edgeIndex, PxArray<PxU32>& jointIndices, const IG::CPUExternalData& islandSimCpuData, const IG::GPUExternalData& islandSimGpuData)
+void PxgJointManager::removeJoint(PxU32 edgeIndex, PxArray<PxU32>& jointIndices, const IG::CPUExternalData& islandSimCpuData,
+								  const IG::GPUExternalData& islandSimGpuData)
 {
+	if(mCudaContext->isInAbortMode())
+	{
+		return;
+	}
+
 	const PxNodeIndex nodeIndex0 = islandSimCpuData.getNodeIndex1(edgeIndex);
 	const PxNodeIndex nodeIndex1 = islandSimCpuData.getNodeIndex2(edgeIndex);
+	bool isArticulationJoint = nodeIndex0.isArticulation() || nodeIndex1.isArticulation();
+	GpuJoints& gpuJoints = isArticulationJoint ? mGpuArtiJoints : mGpuRigidJoints;
 
-	if (nodeIndex0.isArticulation() || nodeIndex1.isArticulation())
+	const PxPair<const PxU32, PxU32>* gpuPair = gpuJoints.mConstraintIndices.find(edgeIndex);
+	if(gpuPair)
 	{
-		removeJointGpuCpu(edgeIndex, islandSimGpuData,
-			mGpuArtiConstraintIndices, mGpuArtiJointPrePrep, mDirtyGPUArtiJointDataIndices, mGpuArtiJointDataIDPool,
-			mCpuArtiConstraintIndices, mCpuArtiConstraints, mCpuArtiConstraintEdgeIndices, mCpuArtiUniqueIndex,
-			jointIndices,
-			mGpuConstraintIdMapHost, mEdgeIndexToGpuConstraintIdMap,
-			mIsGpuConstraintIdMapDirty, mIsDirectGpuApiEnabled);
+		if(!removeJointGpu(edgeIndex, gpuPair->second, gpuJoints.mConstraintIndices, gpuJoints.mJointPrePrepMapped, gpuJoints.mDirtyIndicesMapped,
+						   gpuJoints.mIDPool, mGpuConstraintIdMapHost, mEdgeIndexToGpuConstraintIdMap, mIsGpuConstraintIdMapDirty,
+						   mIsDirectGpuApiEnabled))
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgJointManager::removeJoint: failed to allocate pinned host buffer");
+			mCudaContext->setAbortMode(true);
+		}
 	}
 	else
 	{
-		removeJointGpuCpu(edgeIndex, islandSimGpuData,
-			mGpuRigidConstraintIndices, mGpuRigidJointPrePrep, mDirtyGPURigidJointDataIndices, mGpuRigidJointDataIDPool,
-			mCpuRigidConstraintIndices, mCpuRigidConstraints, mCpuRigidConstraintEdgeIndices, mCpuRigidUniqueIndex,
-			jointIndices,
-			mGpuConstraintIdMapHost, mEdgeIndexToGpuConstraintIdMap,
-			mIsGpuConstraintIdMapDirty, mIsDirectGpuApiEnabled);
+		CpuJoints& cpuJoints = isArticulationJoint ? mCpuArtiJoints : mCpuRigidJoints;
+		const PxPair<const PxU32, PxU32>* cpuPair = cpuJoints.mConstraintIndices.find(edgeIndex);
+		if(cpuPair)
+		{
+			removeJointCpu(edgeIndex, cpuPair->second, islandSimGpuData, cpuJoints.mConstraintIndices, cpuJoints.mConstraints,
+						   cpuJoints.mConstraintEdgeIndices, cpuJoints.mUniqueIndex, jointIndices);
+		}
 	}
 }
 
-static PX_FORCE_INLINE void addJointGpu(const Dy::Constraint& constraint, PxU32 edgeIndex, PxU32 uniqueId,
+static PX_FORCE_INLINE bool addJointGpu(const Dy::Constraint& constraint, PxU32 edgeIndex, PxU32 uniqueId,
 	PxNodeIndex nodeIndex0, PxNodeIndex nodeIndex1,
 	Cm::IDPool& idPool, 
-	PxPinnedArray<PxgD6JointData>& jointDataEntries,
-	PxPinnedArray<PxgConstraintPrePrep>& constraintPrePrepEntries,
-	PxInt32ArrayPinned& dirtyJointDataIndices,
+	Cm::PinnableArray<PxgD6JointData>& jointDataEntriesMapped,
+	Cm::PinnableArray<PxgConstraintPrePrep>& constraintPrePrepEntriesMapped,
+	Cm::PinnableArray<PxU32>& dirtyJointDataIndicesMapped,
 	PxHashMap<PxU32, PxU32>& constraintIndexMap,
 	PxArray<PxU32>& jointIndices, 
-	PxPinnedArray<PxgSolverConstraintManagerConstants>& managerIter,
+	Cm::PinnableArray<PxgSolverConstraintManagerConstants>& managerIter,
 	const IG::IslandSim& islandSim,
 	PxgJointManager::ConstraintIdMap& gpuConstraintIdMapHost,
 	PxHashMap<PxU32, PxU32>& edgeIndexToGpuConstraintIdMap,
@@ -239,23 +260,32 @@ static PX_FORCE_INLINE void addJointGpu(const Dy::Constraint& constraint, PxU32 
 	//In GPU, we work with PxgD6JointData and fill in PxgConstraintData
 	const PxU32 jointDataId = idPool.getNewID();
 
-	if (jointDataId >= jointDataEntries.capacity())
+	if (jointDataId >= jointDataEntriesMapped.capacity())
 	{
-		const PxU32 capacity = jointDataEntries.capacity() * 2 + 1;
-		jointDataEntries.resize(capacity);
-		constraintPrePrepEntries.resize(capacity);
+		const PxU32 capacity = jointDataEntriesMapped.capacity() * 2 + 1;
+		if (!jointDataEntriesMapped.resize(capacity))
+		{
+			return false;
+		}
+		if (!constraintPrePrepEntriesMapped.resize(capacity))
+		{
+			return false;
+		}
 	}
 
-	PxgD6JointData& jointData = jointDataEntries[jointDataId];
+	PxgD6JointData& jointData = jointDataEntriesMapped[jointDataId];
 
 	PxMemCopy(&jointData, constraint.constantBlock, constraint.constantBlockSize);
 
 	//mark dirty
-	dirtyJointDataIndices.pushBack(jointDataId);
+	if(!dirtyJointDataIndicesMapped.pushBack(jointDataId))
+	{
+		return false;
+	}
 
 	constraintIndexMap.insert(edgeIndex, jointDataId);
 
-	::setupConstraintPrepPrep(constraintPrePrepEntries[jointDataId], &constraint, islandSim, nodeIndex0, nodeIndex1);
+	::setupConstraintPrepPrep(constraintPrePrepEntriesMapped[jointDataId], &constraint, islandSim, nodeIndex0, nodeIndex1);
 
 	jointIndices[uniqueId] = jointDataId;
 
@@ -272,6 +302,7 @@ static PX_FORCE_INLINE void addJointGpu(const Dy::Constraint& constraint, PxU32 
 
 		isGpuConstraintIdMapDirty = true;
 	}
+	return true;
 }
 
 static PX_FORCE_INLINE void addJointCpu(const Dy::Constraint& constraint, PxU32 edgeIndex, PxU32 uniqueId,
@@ -280,7 +311,7 @@ static PX_FORCE_INLINE void addJointCpu(const Dy::Constraint& constraint, PxU32 
 	PxArray<PxU32>& constraintEdgeIndices,
 	PxArray<PxU32>& uniqueIndices,
 	PxArray<PxU32>& jointIndices, 
-	PxPinnedArray<PxgSolverConstraintManagerConstants>& managerIter)
+	Cm::PinnableArray<PxgSolverConstraintManagerConstants>& managerIter)
 {
 	const PxU32 index = constraintList.size();
 	//In CPU, we work with Dy::Constraint and fill in PxgConstraintData
@@ -295,8 +326,13 @@ static PX_FORCE_INLINE void addJointCpu(const Dy::Constraint& constraint, PxU32 
 }
 
 void PxgJointManager::addJoint(PxU32 edgeIndex, const Dy::Constraint* constraint, IG::IslandSim& islandSim, PxArray<PxU32>& jointIndices, 
-	PxPinnedArray<PxgSolverConstraintManagerConstants>& managerIter, PxU32 uniqueId)
+	Cm::PinnableArray<PxgSolverConstraintManagerConstants>& managerIter, PxU32 uniqueId)
 {
+	if(mCudaContext->isInAbortMode())
+	{
+		return;
+	}
+
 	const PxNodeIndex nodeIndex0 = islandSim.mCpuData.getNodeIndex1(edgeIndex);
 	const PxNodeIndex nodeIndex1 = islandSim.mCpuData.getNodeIndex2(edgeIndex);
 
@@ -305,119 +341,122 @@ void PxgJointManager::addJoint(PxU32 edgeIndex, const Dy::Constraint* constraint
 	if ((constraint->flags & PxConstraintFlag::eGPU_COMPATIBLE) && GPU_JOINT_PREP)
 	{
 		//GPU shader
-		if (isArticulationJoint)
+		GpuJoints& gpuJoints = isArticulationJoint ? mGpuArtiJoints : mGpuRigidJoints;
+
+		bool added = addJointGpu(*constraint, edgeIndex, uniqueId, nodeIndex0, nodeIndex1, 
+						gpuJoints.mIDPool, gpuJoints.mJointDataMapped, gpuJoints.mJointPrePrepMapped,
+						gpuJoints.mDirtyIndicesMapped, gpuJoints.mConstraintIndices,
+						jointIndices, managerIter, islandSim, mGpuConstraintIdMapHost, 
+						mEdgeIndexToGpuConstraintIdMap, mIsGpuConstraintIdMapDirty, mIsDirectGpuApiEnabled);
+
+		if(!added)
 		{
-			addJointGpu(*constraint, edgeIndex, uniqueId, nodeIndex0, nodeIndex1,
-				mGpuArtiJointDataIDPool, mGpuArtiJointData, mGpuArtiJointPrePrep,
-				mDirtyGPUArtiJointDataIndices, mGpuArtiConstraintIndices,
-				jointIndices, managerIter, islandSim,
-				mGpuConstraintIdMapHost, mEdgeIndexToGpuConstraintIdMap,
-				mIsGpuConstraintIdMapDirty, mIsDirectGpuApiEnabled);
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgJointManager::addJoint: failed to allocate pinned host buffer");
+			mCudaContext->setAbortMode(true);
 		}
-		else
-		{
-			addJointGpu(*constraint, edgeIndex, uniqueId, nodeIndex0, nodeIndex1,
-				mGpuRigidJointDataIDPool, mGpuRigidJointData, mGpuRigidJointPrePrep,
-				mDirtyGPURigidJointDataIndices, mGpuRigidConstraintIndices,
-				jointIndices, managerIter, islandSim,
-				mGpuConstraintIdMapHost, mEdgeIndexToGpuConstraintIdMap,
-				mIsGpuConstraintIdMapDirty, mIsDirectGpuApiEnabled);
-		}	
 	}
 	else
 	{
 		//CPU
-		if (isArticulationJoint)
-		{
-			addJointCpu(*constraint, edgeIndex, uniqueId, mCpuArtiConstraints, mCpuArtiConstraintIndices,
-				mCpuArtiConstraintEdgeIndices, mCpuArtiUniqueIndex, jointIndices, managerIter);
-		}
-		else
-		{
-			addJointCpu(*constraint, edgeIndex, uniqueId, mCpuRigidConstraints, mCpuRigidConstraintIndices,
-				mCpuRigidConstraintEdgeIndices, mCpuRigidUniqueIndex, jointIndices, managerIter);
-		}
+		CpuJoints& cpuJoints = isArticulationJoint ? mCpuArtiJoints : mCpuRigidJoints;
+		addJointCpu(*constraint, edgeIndex, uniqueId, cpuJoints.mConstraints, cpuJoints.mConstraintIndices,
+					cpuJoints.mConstraintEdgeIndices, cpuJoints.mUniqueIndex, jointIndices, managerIter);
 	}
 }
 
-static PX_FORCE_INLINE bool updateJointGpu(const Dy::Constraint& constraint, PxU32 edgeIndex,
-	const PxHashMap<PxU32, PxU32>& constraintIndexMap,
-	PxPinnedArray<PxgD6JointData>& jointDataEntries,
-	PxPinnedArray<PxgConstraintPrePrep>& constraintPrePrepEntries,
-	PxInt32ArrayPinned& dirtyJointDataIndices)
+static PX_FORCE_INLINE bool updateJointGpu(const Dy::Constraint& constraint, const PxU32 jointDataId,
+	Cm::PinnableArray<PxgD6JointData>& jointDataEntriesMapped,
+	Cm::PinnableArray<PxgConstraintPrePrep>& constraintPrePrepEntriesMapped,
+	Cm::PinnableArray<PxU32>& dirtyJointDataIndicesMapped)
 {
-	const PxPair<const PxU32, PxU32>* pair = constraintIndexMap.find(edgeIndex);
+	PxgD6JointData jointDataCopy = *reinterpret_cast<const PxgD6JointData*>(constraint.constantBlock);
 
-	//ML:: if pair is NULL, this means the pair this constraint connect to asleep. In this case, we will let the updateIncrementalIslands to
-	//activate this pair of objects and create new gpu joint data in addJoint(). Otherwise, we need to update the jointData and push the jointDataId to the dirty
-	//list
-	if (pair)
+	jointDataEntriesMapped[jointDataId] = jointDataCopy;
+	if (!dirtyJointDataIndicesMapped.pushBack(jointDataId))
 	{
-		const PxU32 jointDataId = pair->second;
-			
-		PxgD6JointData jointDataCopy = *reinterpret_cast<const PxgD6JointData*>(constraint.constantBlock);
-
-		jointDataEntries[jointDataId] = jointDataCopy;
-		dirtyJointDataIndices.pushBack(jointDataId);
-
-		::setupConstraintPrepPrep(constraintPrePrepEntries[jointDataId], &constraint);
-
-		return true;
+		return false;
 	}
 
-	return false;
+	::setupConstraintPrepPrep(constraintPrePrepEntriesMapped[jointDataId], &constraint);
+	return true;
 }
 
 void PxgJointManager::updateJoint(PxU32 edgeIndex, const Dy::Constraint* constraint)
 {
+	if(mCudaContext->isInAbortMode())
+	{
+		return;
+	}
+
 	if (constraint->flags & PxConstraintFlag::eGPU_COMPATIBLE && GPU_JOINT_PREP)
 	{
-		if (updateJointGpu(*constraint, edgeIndex, mGpuRigidConstraintIndices,
-			mGpuRigidJointData, mGpuRigidJointPrePrep, mDirtyGPURigidJointDataIndices))
+		// ML:: if pair is NULL, this means the pair this constraint connect to asleep. In this case, we will let the
+		// updateIncrementalIslands to
+		// activate this pair of objects and create new gpu joint data in addJoint(). Otherwise, we need to update the jointData and
+		// push the jointDataId to the dirty list
+		GpuJoints* gpuJoints = NULL;
+		PxU32 jointDataId = PX_INVALID_U32;
+
+		const PxPair<const PxU32, PxU32>* rigidPair = mGpuRigidJoints.mConstraintIndices.find(edgeIndex);
+		if(rigidPair)
 		{
+			jointDataId = rigidPair->second;
+			gpuJoints = &mGpuRigidJoints;
 			// if a joint does not involve an articulation link, it should not be
 			// tracked in mGpuArtiConstraintIndices. Keep in mind though that this
 			// function might get called for joints that are asleep, in which case
 			// it will not be tracked in either of the two maps.
-
-			PX_ASSERT(mGpuArtiConstraintIndices.find(edgeIndex) == NULL);
+			PX_ASSERT(mGpuArtiJoints.mConstraintIndices.find(edgeIndex) == NULL);
 		}
 		else
 		{
-			updateJointGpu(*constraint, edgeIndex, mGpuArtiConstraintIndices,
-				mGpuArtiJointData, mGpuArtiJointPrePrep, mDirtyGPUArtiJointDataIndices);
+			const PxPair<const PxU32, PxU32>* artiPair = mGpuArtiJoints.mConstraintIndices.find(edgeIndex);
+			if(artiPair)
+			{
+				jointDataId = artiPair->second;
+				gpuJoints = &mGpuArtiJoints;
+			}
+		}
+
+		if(jointDataId != PX_INVALID_U32 && !updateJointGpu(*constraint, jointDataId,
+															gpuJoints->mJointDataMapped, gpuJoints->mJointPrePrepMapped, 
+															gpuJoints->mDirtyIndicesMapped))
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL,
+									"PxgJointManager: failed to allocate pinned host buffer for dirty indices");
+			mCudaContext->setAbortMode(true);
 		}
 	}
 }
 
 PxU32 PxgJointManager::getGpuNbRigidConstraints()
 {
-	return mGpuRigidJointDataIDPool.getMaxID();
+	return mGpuRigidJoints.mIDPool.getMaxID();
 }
 
 PxU32 PxgJointManager::getGpuNbArtiConstraints()
 {
-	return mGpuArtiJointDataIDPool.getMaxID();
+	return mGpuArtiJoints.mIDPool.getMaxID();
 }
 
 PxU32 PxgJointManager::getGpuNbActiveRigidConstraints()
 {
-	return mGpuRigidJointDataIDPool.getNumUsedID();
+	return mGpuRigidJoints.mIDPool.getNumUsedID();
 }
 
 PxU32 PxgJointManager::getGpuNbActiveArtiConstraints()
 {
-	return mGpuArtiJointDataIDPool.getNumUsedID();
+	return mGpuArtiJoints.mIDPool.getNumUsedID();
 }
 
 PxU32 PxgJointManager::getCpuNbRigidConstraints()
 {
-	return mCpuRigidConstraints.size();
+	return mCpuRigidJoints.mConstraints.size();
 }
 
 PxU32 PxgJointManager::getCpuNbArtiConstraints()
 {
-	return mCpuArtiConstraints.size();
+	return mCpuArtiJoints.mConstraints.size();
 }
 
 void PxgJointManager::update(PxArray<PxU32>& jointOutputIndex)
@@ -425,27 +464,27 @@ void PxgJointManager::update(PxArray<PxU32>& jointOutputIndex)
 	PX_PROFILE_ZONE("PxgJointManager.update", 0);
 		
 	//update constraints transform
-	const PxU32 nbGpuRigidConstraints = mGpuRigidJointDataIDPool.getMaxID() ;//mGpuConstraints.size();
+	const PxU32 nbGpuRigidConstraints = mGpuRigidJoints.mIDPool.getMaxID() ;//mGpuConstraints.size();
 
 	//reassign cpu rigid index
-	const PxU32 nbCpuRigidConstraints = mCpuRigidConstraints.size();
+	const PxU32 nbCpuRigidConstraints = mCpuRigidJoints.mConstraints.size();
 	for (PxU32 i = 0; i < nbCpuRigidConstraints; ++i)
 	{
-		jointOutputIndex[mCpuRigidUniqueIndex[i]] = nbGpuRigidConstraints + i;
+		jointOutputIndex[mCpuRigidJoints.mUniqueIndex[i]] = nbGpuRigidConstraints + i;
 	}
 		
-	const PxU32 nbGpuArtiConstraints = mGpuArtiJointDataIDPool.getMaxID();
+	const PxU32 nbGpuArtiConstraints = mGpuArtiJoints.mIDPool.getMaxID();
 
 	//reassign cpu rigid index
-	const PxU32 nbCpuArtiConstraints = mCpuArtiConstraints.size();
+	const PxU32 nbCpuArtiConstraints = mCpuArtiJoints.mConstraints.size();
 	for (PxU32 i = 0; i < nbCpuArtiConstraints; ++i)
 	{
-		jointOutputIndex[mCpuArtiUniqueIndex[i]] = nbGpuArtiConstraints + i;
+		jointOutputIndex[mCpuArtiJoints.mUniqueIndex[i]] = nbGpuArtiConstraints + i;
 	}
 }
 
 void PxgJointManager::reset()
 {
-	mDirtyGPURigidJointDataIndices.resize(0);
-	mDirtyGPUArtiJointDataIndices.resize(0);
+	mGpuRigidJoints.mDirtyIndicesMapped.forceSize_Unsafe(0);
+	mGpuArtiJoints.mDirtyIndicesMapped.forceSize_Unsafe(0);
 }

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2024-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -116,8 +116,8 @@ void forEachScene(uint64_t stageId, Lambda&& lambda)
     {
         for (auto& usdrtPath : usdrtStage->GetPrimsWithTypeName(usdrt::TfToken("UsdPhysicsScene")))
         {
-            const omni::fabric::PathC pathC(usdrtPath);
-            const pxr::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+            const omni::fabric::Path fabricPath(usdrtPath);
+            const pxr::SdfPath usdPath = omni::fabric::toSdfPath(fabricPath);
             if (!usdPath.IsEmpty())
             {
                 scene = static_cast<PxScene*>(iPhysx->getPhysXPtr(usdPath, omni::physx::ePTScene));

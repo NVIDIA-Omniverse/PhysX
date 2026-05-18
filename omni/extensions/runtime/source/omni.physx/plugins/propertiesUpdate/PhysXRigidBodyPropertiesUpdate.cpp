@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -236,7 +236,7 @@ void updateLinearVelocity(InternalActor* internalActor, PxRigidActor* actor, boo
         PxTransform tf = actor->getGlobalPose();
 
         const pxr::GfRotation rot(pxr::GfQuaternion(tf.q.w, pxr::GfVec3f(tf.q.x, tf.q.y, tf.q.z)));
-        outVelocity = rot.TransformDir(outVelocity);
+        outVelocity = pxr::GfVec3f(rot.TransformDir(outVelocity));
         const pxr::GfVec3f scale(internalActor->mScale.x, internalActor->mScale.y, internalActor->mScale.z);
         outVelocity = GfCompMult(scale, outVelocity);
     }
@@ -311,7 +311,7 @@ void updateAngularVelocity(InternalActor* internalActor,
         PxTransform tf = actor->getGlobalPose();
 
         const pxr::GfRotation rot(pxr::GfQuaternion(tf.q.w, pxr::GfVec3f(tf.q.x, tf.q.y, tf.q.z)));
-        outVelocity = rot.TransformDir(outVelocity);
+        outVelocity = pxr::GfVec3f(rot.TransformDir(outVelocity));
     }
 }
 
@@ -750,10 +750,14 @@ bool omni::physx::updateBodyEnableKinematics(AttachedStage& attachedStage, omni:
             dyn->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, (data));
             if (!data)
             {
-                // Need to block USD update, we can get a resync operation from the xformOp sanitation code 
-                UsdLoad::getUsdLoad()->blockUSDUpdate(true);
+                // Need to block USD update, we can get a resync operation from the xformOp sanitation code
+                const bool changeTrackingPaused =
+                    UsdLoad::getUsdLoad()->isChangeTrackingPaused(attachedStage.getStageId());
+                UsdLoad::getUsdLoad()->pauseChangeTracking(attachedStage.getStageId(), true);
+                UsdLoad::getUsdLoad()->blockUSDUpdate(true);                
                 intActor->switchFromKinematic();
                 UsdLoad::getUsdLoad()->blockUSDUpdate(false);
+                UsdLoad::getUsdLoad()->pauseChangeTracking(attachedStage.getStageId(), changeTrackingPaused);
                 dyn->wakeUp();
             }
             else

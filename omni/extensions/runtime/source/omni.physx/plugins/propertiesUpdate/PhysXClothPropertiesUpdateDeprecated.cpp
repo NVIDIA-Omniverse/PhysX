@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -200,7 +200,7 @@ bool omni::physx::updateParticleClothPointsDeprecated(AttachedStage& attachedSta
                     {
                         PxVec4& dst = internalCloth->mPositions[i];
                         uint32_t srcIndex = internalCloth->mVerticesRemapToOrig[i];
-                        GfVec3f srcWorld = internalCloth->mLocalToWorld.Transform(pointsSrc[srcIndex]);
+                        GfVec3f srcWorld = pxr::GfVec3f(internalCloth->mLocalToWorld.Transform(pointsSrc[srcIndex]));
                         dst =  PxVec4(toPhysX(srcWorld), dst.w);
                     }
                 }
@@ -209,7 +209,7 @@ bool omni::physx::updateParticleClothPointsDeprecated(AttachedStage& attachedSta
                     for (uint32_t i = 0; i < internalCloth->mNumParticles; ++i)
                     {
                         PxVec4& dst = internalCloth->mPositions[i];
-                        GfVec3f srcWorld = internalCloth->mLocalToWorld.Transform(pointsSrc[i]);
+                        GfVec3f srcWorld = pxr::GfVec3f(internalCloth->mLocalToWorld.Transform(pointsSrc[i]));
                         dst =  PxVec4(toPhysX(srcWorld), dst.w);
                     }
                 }

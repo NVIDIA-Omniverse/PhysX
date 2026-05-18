@@ -12,10 +12,11 @@
     <filter include="imgui" />
     <filter include="omni_client_library" />
     <filter include="gsl" />
+    <filter include="boost_preprocessor" />
     <filter include="premake" linkPath="../_build/host-deps/premake" />
   </import>
 
-    <!-- override doctest version ,the kit one is not yet publicly available -->
+  <!-- override doctest version, the kit one is not yet publicly available -->
   <dependency name="doctest">
     <package name="doctest" version="2.4.5+nv1-3" />
   </dependency>
@@ -31,5 +32,6 @@
   <dependency name="imgui" linkPath="../_build/target-deps/imgui" />
   <dependency name="omni_client_library" linkPath="../_build/target-deps/client-library" />
   <dependency name="gsl" linkPath="../_build/target-deps/gsl" />
+  <dependency name="boost_preprocessor" linkPath="../_build/target-deps/boost_preprocessor" />
 
   </project>

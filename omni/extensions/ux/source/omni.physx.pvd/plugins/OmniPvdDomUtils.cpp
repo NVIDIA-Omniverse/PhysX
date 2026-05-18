@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -251,9 +251,15 @@ uint8_t* getAttribData(int32_t& attribIndex, int32_t& classIndex, const char* at
         CARB_LOG_ERROR("classIndex of the attribute does not fit in the object instance class (%d, %d)", classIndex, nbrInheritedClasses);
         return NULL;
     }
-    if (omniPvdObject->mInheritedClassInstances.size() < 1)
+    const int nbrObjectClassInstances = static_cast<int>(omniPvdObject->mInheritedClassInstances.size());
+    if (nbrObjectClassInstances < 1)
     {
         CARB_LOG_ERROR("object has no inheritance chain (%s)", omniPvdObject->mOmniPvdClass->mClassName.c_str());
+        return NULL;
+    }
+    if (classIndex >= nbrObjectClassInstances)
+    {
+        CARB_LOG_ERROR("classIndex exceeds object's inherited class instances (%d, %d)", classIndex, nbrObjectClassInstances);
         return NULL;
     }
 
@@ -283,6 +289,12 @@ OmniPvdAttributeInstList* getAttribList(int32_t& attribIndex, int32_t& classInde
     }
     const int nbrInheritedClasses = static_cast<int>(omniPvdObject->mOmniPvdClass->mInheritanceChain.size());
     if (classIndex >= nbrInheritedClasses)
+    {
+        return NULL;
+    }
+
+    // Validate classIndex against the object's instance data (not just the class definition)
+    if (classIndex >= static_cast<int>(omniPvdObject->mInheritedClassInstances.size()))
     {
         return NULL;
     }

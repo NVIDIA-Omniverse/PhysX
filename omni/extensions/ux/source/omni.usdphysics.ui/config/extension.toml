@@ -6,7 +6,7 @@ keywords = ["physics", "ui"]
 category = "simulation"
 authors = ["PhysX"]
 
-version = "107.3.0-oss.0"
+version = "110.0.7"
 
 icon = "data/icon.png"
 preview_image = "data/preview.png"
@@ -21,7 +21,7 @@ python = true
 usd = true
 
 [dependencies]
-"omni.usdphysics" = { version = "107.3.0-oss.0", exact = true }
+"omni.usdphysics" = { version = "110.0.7", exact = true }
 "omni.debugdraw" = {}
 "omni.ui" = {}
 "omni.kit.renderer.imgui" = {}

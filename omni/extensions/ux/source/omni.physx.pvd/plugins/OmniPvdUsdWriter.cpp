@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -9,6 +9,8 @@
 
 #include "OmniPvdSdfUtils.h"
 #include "OmniPvdUsdUtils.h"
+
+#include <carb/logging/Log.h>
 
 #include <omni/usd/UsdContextIncludes.h>
 #include <omni/usd/UsdContext.h>
@@ -320,21 +322,44 @@ void setDisplayColour(pxr::UsdPrim* prim, float r, float g, float b)
 //     If the attribute was set : set the value stored in the object
 ////////////////////////////////////////////////////////////////////////////////
 
-void updateMaps()
+void populateEnumMapFromClass(pxr::TfHashMap<uint32_t, pxr::TfToken>& targetMap, const std::string& enumClassName, const OmniPvdDOMState& domState)
 {
-    OmniPvd::articulationJointMotionMap.insert(std::pair<uint32_t, pxr::TfToken>(uint32_t(0), pxr::TfToken("eLOCKED")));
-    OmniPvd::articulationJointMotionMap.insert(std::pair<uint32_t, pxr::TfToken>(uint32_t(1), pxr::TfToken("eLIMITED")));
-    OmniPvd::articulationJointMotionMap.insert(std::pair<uint32_t, pxr::TfToken>(uint32_t(2), pxr::TfToken("eFREE")));
-
-    OmniPvd::articulationJointDriveTypeMap.insert(std::pair<uint32_t, pxr::TfToken>(uint32_t(0), pxr::TfToken("eFORCE")));
-    OmniPvd::articulationJointDriveTypeMap.insert(std::pair<uint32_t, pxr::TfToken>(uint32_t(1), pxr::TfToken("eACCELERATION")));
-    OmniPvd::articulationJointDriveTypeMap.insert(std::pair<uint32_t, pxr::TfToken>(uint32_t(2), pxr::TfToken("eTARGET")));
-    OmniPvd::articulationJointDriveTypeMap.insert(std::pair<uint32_t, pxr::TfToken>(uint32_t(3), pxr::TfToken("eVELOCITY")));
-    OmniPvd::articulationJointDriveTypeMap.insert(std::pair<uint32_t, pxr::TfToken>(uint32_t(4), pxr::TfToken("eNONE")));
+    // Clear existing entries
+    targetMap.clear();
     
-    OmniPvd::jointD6MotionMap.insert(std::pair<uint32_t, pxr::TfToken>(uint32_t(0), pxr::TfToken("eLOCKED")));
-    OmniPvd::jointD6MotionMap.insert(std::pair<uint32_t, pxr::TfToken>(uint32_t(1), pxr::TfToken("eLIMITED")));
-    OmniPvd::jointD6MotionMap.insert(std::pair<uint32_t, pxr::TfToken>(uint32_t(2), pxr::TfToken("eFREE")));
+    // Find the enum class in the parsed DOM
+    std::unordered_map<OmniPvdClassHandle, OmniPvdClass*>::const_iterator it;
+    for (it = domState.mClassHandleToClassMap.begin(); it != domState.mClassHandleToClassMap.end(); ++it) {
+        OmniPvdClass* omniClass = it->second;
+        if (omniClass->mIsEnumClass && omniClass->mClassName == enumClassName) {
+            // Found the enum class - populate map from its attribute definitions
+            for (size_t i = 0; i < omniClass->mAttributeDefinitions.size(); ++i) {
+                OmniPvdAttributeDef* attrDef = omniClass->mAttributeDefinitions[i];
+                if (attrDef) {
+                    // In enum classes, mNbrFields stores the enum value
+                    uint32_t enumValue = attrDef->mNbrFields;
+                    pxr::TfToken enumName(attrDef->mAttributeName);
+                    targetMap[enumValue] = enumName;
+                    
+                    /*
+                    CARB_LOG_INFO("Populated enum %s: %u -> %s", 
+                                  enumClassName.c_str(), enumValue, enumName.GetText());
+                    */
+                }
+            }
+            return;
+        }
+    }
+    
+    // Enum class not found - log warning
+    CARB_LOG_WARN("Enum class '%s' not found in OVD stream", enumClassName.c_str());
+}
+
+void updateMaps(const OmniPvdDOMState& domState)
+{
+    populateEnumMapFromClass(OmniPvd::articulationJointMotionMap, "PxArticulationMotion", domState);
+    populateEnumMapFromClass(OmniPvd::articulationJointDriveTypeMap, "PxArticulationDriveType", domState);        
+    populateEnumMapFromClass(OmniPvd::jointD6MotionMap, "PxD6Motion", domState);
 }
 
 void createAndSetUSDAttribPass(
@@ -347,7 +372,7 @@ void createAndSetUSDAttribPass(
     OmniPvdDOMState& domState,
     std::string& sharedlayerIdentifier)
 {
-    updateMaps();
+    updateMaps(domState);
 
     std::list<OmniPvdObject*>::iterator it;
     for (it = objectCreations.begin(); it != objectCreations.end(); it++)
@@ -605,22 +630,15 @@ void createAndSetUSDAttribPass(
                                             attrib = (OmniPvdAttributeSample*)(attrib->mNextAttribute);
                                         }
                                     }
-                                    /*
                                     else // it's a unique list or set
                                     {
-                                        OmniPvdUniqueList *attrib = (OmniPvdUniqueList*)attributeInstList->mFirst;
-                                        while (attrib)
+                                        OmniPvdUniqueList *uniqueListAttrib = (OmniPvdUniqueList*)attributeInstList->mFirst;
+                                        while (uniqueListAttrib)
                                         {
-                                            switch (attributeInstList->mAttributeDef->mUsdAttributeId)
-                                            {
-                                            case OmniPvdUsdAttributeEnum::eUSDAttributeCustom:
-                                                processCustomAttribute(prim, attrib, attributeInstList->mAttributeDef);
-                                                break;
-                                            }
-                                            attrib = (OmniPvdUniqueList*)(attrib->mNextAttribute);
+                                            processCustomAttribute(prim, uniqueListAttrib, attributeInstList->mAttributeDef);
+                                            uniqueListAttrib = (OmniPvdUniqueList*)(uniqueListAttrib->mNextAttribute);
                                         }
                                     }
-                                    */
                                 }
                             }
                         }
@@ -767,10 +785,60 @@ bool getGravity(OmniPvdDOMState &domState, float* gravity)
     return false;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Gets the tolerancesScale from the PxScene in the DOM state
+// tolerancesScale[0] = length, tolerancesScale[1] = speed
+// Returns true if the tolerancesScale was found, false otherwise
+////////////////////////////////////////////////////////////////////////////////
+bool getTolerancesScale(OmniPvdDOMState &domState, float* tolerancesScale)
+{
+    OmniPvdObject* sceneRoot = domState.mSceneLayerRoot;
+    if (!sceneRoot)
+    {
+        return false;
+    }
+    OmniPvdObject* scene = sceneRoot->mLastChild;
+    while (scene && scene->mOmniPvdClass->mClassName != "PxScene")
+    {
+        scene = scene->mPrevSibling;
+    }
+    if (!scene)
+    {
+        return false;
+    }
+    while (scene)
+    {
+        ////////////////////////////////////////////////////////////////////////////////
+        // We have a scene, now get the tolerancesScale attribute
+        ////////////////////////////////////////////////////////////////////////////////
+        int32_t attribIndex = -1;
+        int32_t classIndex = -1;
+        OmniPvdAttributeInstList* tolList = getAttribList(attribIndex, classIndex, "tolerancesScale", scene);
+        if (!tolList)
+        {
+            scene = scene->mNextSibling;
+            continue;
+        }
+        ////////////////////////////////////////////////////////////////////////////////
+        // Get the first tolerancesScale attribute sample
+        ////////////////////////////////////////////////////////////////////////////////
+        OmniPvdAttributeSample* attrib = (OmniPvdAttributeSample*)tolList->mFirst;
+        if (attrib && attrib->mData)
+        {
+            float* tolVec = (float*)attrib->mData;
+            tolerancesScale[0] = tolVec[0];
+            tolerancesScale[1] = tolVec[1];
+            return true;
+        }
+        scene = scene->mNextSibling;
+    }
+    return false;
+}
+
 void writeUSDFile(char *usdStageDir, int upAxis, int isUSDA, OmniPvdDOMState &domState)
 {
     if (!usdStageDir) return;
-    if (strlen(usdStageDir) == 0) return;
+    if (usdStageDir[0] == '\0') return;
 
     std::string mOutputDir(usdStageDir);
 
@@ -890,6 +958,21 @@ void writeUSDFile(char *usdStageDir, int upAxis, int isUSDA, OmniPvdDOMState &do
     }
 
     ////////////////////////////////////////////////////////////////////////////////
+    // Set metersPerUnit based on the PhysX tolerancesScale::length
+    // tolerancesScale[0] is the length scale factor (1.0 for meters, 100.0 for cm)
+    // metersPerUnit = 1.0 / tolerancesScale[0]
+    ////////////////////////////////////////////////////////////////////////////////
+    float tolerancesScale[2];
+    if (getTolerancesScale(domState, tolerancesScale))
+    {
+        if (tolerancesScale[0] > 0.0f)
+        {
+            double metersPerUnit = 1.0 / (double)tolerancesScale[0];
+            pxr::UsdGeomSetStageMetersPerUnit(mStage, metersPerUnit);
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
     // Create and set attributes using USD
     ////////////////////////////////////////////////////////////////////////////////
     std::string sharedLayerIdentifier = mSharedSublayer->GetIdentifier();
@@ -982,6 +1065,21 @@ long int createUSDFileInMemory(int upAxis, OmniPvdDOMState& domState)
         }
     }
 
+    ////////////////////////////////////////////////////////////////////////////////
+    // Set metersPerUnit based on the PhysX tolerancesScale::length
+    // tolerancesScale[0] is the length scale factor (1.0 for meters, 100.0 for cm)
+    // metersPerUnit = 1.0 / tolerancesScale[0]
+    ////////////////////////////////////////////////////////////////////////////////
+    float tolerancesScale[2];
+    if (getTolerancesScale(domState, tolerancesScale))
+    {
+        if (tolerancesScale[0] > 0.0f)
+        {
+            double metersPerUnit = 1.0 / (double)tolerancesScale[0];
+            pxr::UsdGeomSetStageMetersPerUnit(stage, metersPerUnit);
+        }
+    }
+
     // Create and set attributes using USD
     std::unordered_map<std::string, pxr::TfToken*> tokenMap;
     std::string sharedLayerIdentifier = mSharedSublayer->GetIdentifier();
@@ -1006,4 +1104,3 @@ long int createUSDFileInMemory(int upAxis, OmniPvdDOMState& domState)
 
     return stageId;
 }
-

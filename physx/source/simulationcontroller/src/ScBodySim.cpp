@@ -22,22 +22,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "ScBodySim.h"
 #include "ScShapeSim.h"
-#include "ScScene.h"
 #include "ScArticulationSim.h"
-#include "PxsContext.h"
-#include "PxsSimpleIslandManager.h"
-#include "PxsSimulationController.h"
-#include "ScSimStateData.h"
+#include "ScArticulationCore.h"
 
 using namespace physx;
 using namespace Dy;
 using namespace Sc;
+using namespace Cm;
 
 #define PX_FREEZE_INTERVAL 1.5f
 #define PX_FREE_EXIT_THRESHOLD 4.f
@@ -163,7 +160,7 @@ BodySim::~BodySim()
 	mCore.setSim(NULL);
 }
 
-void BodySim::updateCached(PxBitMapPinned* shapeChangedMap)
+void BodySim::updateCached_NotThreadSafe(const UpdateCachedParams& params, PinnableBitMap* shapeChangedMap)
 {
 	if(!(mLLBody.mInternalFlags & PxsRigidBody::eFROZEN))
 	{
@@ -172,12 +169,12 @@ void BodySim::updateCached(PxBitMapPinned* shapeChangedMap)
 		while (nbElems--)
 		{
 			ShapeSim* current = static_cast<ShapeSim*>(*elems++);
-			current->updateCached(0, shapeChangedMap);
+			current->updateCached_NotThreadSafe(params, shapeChangedMap);
 		}
 	}
 }
 
-void BodySim::updateCached(PxsTransformCache& transformCache, Bp::BoundsArray& boundsArray)
+void BodySim::updateCached_ThreadSafe(const UpdateCachedParams& params)
 {
 	PX_ASSERT(!(mLLBody.mInternalFlags & PxsRigidBody::eFROZEN));	// PT: should not be called otherwise
 
@@ -186,7 +183,7 @@ void BodySim::updateCached(PxsTransformCache& transformCache, Bp::BoundsArray& b
 	while (nbElems--)
 	{
 		ShapeSim* current = static_cast<ShapeSim*>(*elems++);
-		current->updateCached(transformCache, boundsArray);
+		current->updateCached_ThreadSafe(params);
 	}
 }
 
@@ -297,6 +294,9 @@ void BodySim::setKinematicTarget(const PxTransform& p)
 
 	raiseInternalFlag(BF_KINEMATIC_MOVED);	// Important to set this here already because trigger interactions need to have this information when being activated.
 	clearInternalFlag(BF_KINEMATIC_SURFACE_VELOCITY);
+
+	// Reset acceleration state to avoid spurious spike after kinematic target change
+	getBodyCore().resetAccelerationState();
 }
 
 void BodySim::addSpatialAcceleration(const PxVec3* linAcc, const PxVec3* angAcc)
@@ -508,6 +508,9 @@ void BodySim::wakeUp()
 {
 	setActive(true);
 	notifyWakeUp();
+
+	// Reset acceleration state to avoid spurious spike after wake-up
+	getBodyCore().resetAccelerationState();
 }
 
 void BodySim::putToSleep()
@@ -546,9 +549,12 @@ void BodySim::internalWakeUpBase(PxReal wakeCounterValue)	//this one can only in
 		getBodyCore().setWakeCounterFromSim(wakeCounterValue);
 
 		//we need to update the gpu body sim because we reset the wake counter for the body core
-		mScene.updateBodySim(*this);
+		mScene.gpu_updateBodySim(*this);
 		setActive(true);
 		notifyWakeUp();
+
+		// Reset acceleration state to avoid spurious spike after wake-up
+		getBodyCore().resetAccelerationState();
 
 		if(0)	// PT: commented-out for PX-2197
 			mLLBody.mInternalFlags &= (~PxsRigidBody::eFROZEN);
@@ -564,6 +570,31 @@ void BodySim::notifyReadyForSleeping()
 void BodySim::notifyNotReadyForSleeping()
 {
 	mScene.getSimpleIslandManager()->activateNode(mNodeIndex);
+}
+
+bool BodySim::checkSleepReadinessBesidesWakeCounter()
+{
+	// If sleeping is disabled in the scene, bodies are never ready for sleep
+	if(mScene.getFlags() & PxSceneFlag::eDISABLE_SLEEPING)
+		return false;
+
+	const BodyCore& bodyCore = getBodyCore();
+	const SimStateData* simStateData = getSimStateData(false);
+	const VelocityMod* velmod = simStateData ? simStateData->getVelocityModData() : NULL;
+
+	bool readyForSleep = bodyCore.getLinearVelocity().isZero() && bodyCore.getAngularVelocity().isZero();
+	if (readVelocityModFlag(VMF_ACC_DIRTY))
+	{
+		readyForSleep = readyForSleep && (!velmod || velmod->getLinearVelModPerSec().isZero());
+		readyForSleep = readyForSleep && (!velmod || velmod->getAngularVelModPerSec().isZero());
+	}
+	if (readVelocityModFlag(VMF_VEL_DIRTY))
+	{
+		readyForSleep = readyForSleep && (!velmod || velmod->getLinearVelModPerStep().isZero());
+		readyForSleep = readyForSleep && (!velmod || velmod->getAngularVelModPerStep().isZero());
+	}
+
+	return readyForSleep;
 }
 
 void BodySim::notifyWakeUp()
@@ -587,11 +618,11 @@ PxReal BodySim::updateWakeCounter(PxReal dt, PxReal energyThreshold, const Cm::S
 
 	PxReal wc = core.getWakeCounter();
 	
+	if(wc < wakeCounterResetTime * 0.5f || wc < dt)
 	{
 		PxVec3 bcSleepLinVelAcc = mLLBody.mSleepLinVelAcc;
 		PxVec3 bcSleepAngVelAcc = mLLBody.mSleepAngVelAcc;
 
-		if(wc < wakeCounterResetTime * 0.5f || wc < dt)
 		{
 			const PxTransform& body2World = getBody2World();
 
@@ -599,7 +630,7 @@ PxReal BodySim::updateWakeCounter(PxReal dt, PxReal energyThreshold, const Cm::S
 			const PxVec3 t = core.getInverseInertia();
 			const PxVec3 inertia(t.x > 0.0f ? 1.0f/t.x : 1.0f, t.y > 0.0f ? 1.0f/t.y : 1.0f, t.z > 0.0f ? 1.0f/t.z : 1.0f);
 
-			PxVec3 sleepLinVelAcc = motionVelocity.linear;
+			const PxVec3& sleepLinVelAcc = motionVelocity.linear;
 			PxVec3 sleepAngVelAcc = body2World.q.rotateInv(motionVelocity.angular);
 
 			bcSleepLinVelAcc += sleepLinVelAcc;
@@ -698,7 +729,20 @@ bool BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* upd
 		}
 		else
 		{
-			if (mScene.getFlags() & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS)
+			// PdHC: For GPU dynamics mode with body accelerations enabled, we must use external 
+			// accelerations instead of directly modifying CPU velocity. This ensures that the 
+			// velocity-delta method for acceleration computation works correctly:
+			// - If we modify CPU velocity directly, the "previous" velocity capture sees the post-force
+			//   velocity, causing the force effect to cancel out in the delta.
+			// - With external accelerations, the GPU integrates forces during simulation, so
+			//   velocity-delta correctly captures: accel = (curVel - prevVel) / dt = gravity + force/mass
+			// Note: Only enable for GPU when eENABLE_BODY_ACCELERATIONS is set, otherwise use the
+			// original updateVelocities path to avoid breaking eRETAIN_ACCELERATIONS behavior.
+			const bool useExternalAccelerations = 
+				(mScene.getFlags() & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS) ||
+				(mScene.isUsingGpuDynamics() && (mScene.getFlags() & PxSceneFlag::eENABLE_BODY_ACCELERATIONS));
+			
+			if (useExternalAccelerations)
 			{
 				if (linVelDt != PxVec3(0.0f) || angVelDt != PxVec3(0.0f)) 
 				{
@@ -842,14 +886,16 @@ void BodySim::destroySqBounds()
 	}
 }
 
-void BodySim::freezeTransforms(PxBitMapPinned* shapeChangedMap)
+void BodySim::freezeTransforms(const UpdateCachedParams& params, PinnableBitMap* shapeChangedMap)
 {
+	const UpdateCachedParams frozenParams(params.mTransformCache, params.mBoundsArray, PxsTransformFlag::eFROZEN);
+	
 	PxU32 nbElems = getNbElements();
 	ElementSim** elems = getElements();
 	while (nbElems--)
 	{
 		ShapeSim* sim = static_cast<ShapeSim*>(*elems++);
-		sim->updateCached(PxsTransformFlag::eFROZEN, shapeChangedMap);
+		sim->updateCached_NotThreadSafe(frozenParams, shapeChangedMap);
 		sim->destroySqBounds();
 	}
 }

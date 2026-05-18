@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -16,7 +16,7 @@ namespace tensors
 {
 class SimulationBackend;
 
-SimulationBackend& GetSimulationBackend();
+SimulationBackend* GetSimulationBackend();  // Returns nullptr if backend not initialized or already shutdown
 
 extern omni::physx::IPhysx* g_physx;
 extern omni::physx::IPhysxSimulation* g_physxSimulation;

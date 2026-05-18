@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -434,10 +434,10 @@ bool onMenuDraw()
             ImGui::EndMenu();
         }
 
-        bool deformableBetaEnabled = gSettings->getAsBool(omni::physx::kSettingEnableDeformableBeta);
+        bool deformableDeprecatedEnabled = gSettings->getAsBool(omni::physx::kSettingEnableDeformableDeprecated);
 
         // DEPRECATED
-        if (!deformableBetaEnabled)
+        if (deformableDeprecatedEnabled)
         {
             if (ImGui::BeginMenu(
                     (std::string(showtypeGlyph.code) + " Deformable Body (deprecated)###ViewportWindowDeformableBody(deprecated)").c_str(), true))
@@ -509,10 +509,10 @@ bool onMenuDraw()
         }
         //~DEPRECATED
 
-        if (deformableBetaEnabled)
+        if (!deformableDeprecatedEnabled)
         {
             if (ImGui::BeginMenu(
-                    (std::string(showtypeGlyph.code) + " Deformables (beta)###ViewportWindowDeformables(beta)").c_str(), true))
+                    (std::string(showtypeGlyph.code) + " Deformables###ViewportWindowDeformables").c_str(), true))
             {
                 auto MenuItemMode = [&](VisualizerMode menuMode, const char* title) {
                     VisualizerMode vizMode = VisualizerMode(gSettings->getAsInt(omni::physx::kSettingDisplayDeformables));

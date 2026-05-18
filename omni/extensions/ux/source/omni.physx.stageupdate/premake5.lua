@@ -24,12 +24,14 @@ project ("omni.physx.stageupdate")
     carbonitePlugin { ifaces = "%{root}/include/omni/physx", impl = "plugins", targetname = "omni.physx.stageupdate.plugin" }
     staticruntime "Off"
     rtti "On"
+    extension_usd_deps(targetDeps_dir, hostDeps_dir)
     targetdir (targetDir.."/"..ext_dir.."/bin/")
     dependson { "prebuild", "omni.physx" }
     includedirs {
         runtime_include_dir,
         targetDeps_dir.."/carbonite/include",
         kit_sdk_includes,
+        targetDeps_dir.."/usd/%{cfg.buildcfg}/include",
     }
 
     filter { "system:linux" }

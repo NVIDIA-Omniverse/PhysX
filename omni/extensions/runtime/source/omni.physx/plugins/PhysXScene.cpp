@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -22,12 +22,15 @@
 #include <omni/physx/TriggerEvent.h>
 
 #include <utils/SplinesCurve.h>
+#include <utils/Profile.h>
 
 #include <PxPhysicsAPI.h>
 #include "gpu/PxPhysicsGpu.h"
 
 #include <carb/profiler/Profile.h>
 #include <common/utilities/MemoryMacros.h>
+#include <carb/tasking/TaskingTypes.h>
+#include <carb/tasking/TaskingUtils.h>
 
 #include <deformables/PhysXDeformablePost.h>
 
@@ -36,6 +39,7 @@ using namespace carb;
 using namespace ::physx;
 using namespace omni::physx::usdparser;
 using namespace omni::physx::internal;
+using namespace carb::tasking;
 
 OMNI_LOG_DECLARE_CHANNEL(kSceneMultiGPULogChannel)
 
@@ -373,39 +377,104 @@ void OmniContactReportCallback::onContact(const PxContactPairHeader& pairHeader,
 
 bool getSurfaceVelocities(internal::InternalPhysXDatabase& db,
                           const PxRigidActor& actor,
+                          const PxRigidActor& dynamicBody,
                           const PxContactSet& contacts,
-                          PxVec3& linearVelocity,
+                          std::vector<PxVec3>& linearVelocities,
                           PxVec3& angularVelocity,
                           PxTransform& angularVelocityPivot)
 {
     const size_t index = size_t(actor.userData);
-    if (index < db.getRecords().size())
+    if (index < db.getRecords().size() && contacts.size() > 0)
     {
         const internal::InternalActor* intActor = (const internal::InternalActor*)db.getRecords()[index].mInternalPtr;
         if (intActor->mSplinesCurve)
         {
             CARB_PROFILE_ZONE(0, "ContactModify::splineEvaluation");
+            ITasking* tasking = carb::getCachedInterface<ITasking>();
             // First transform the point to the spline local space
-            const PxTransform splineWorldPose = actor.getGlobalPose() * intActor->mSplineLocalSpace;
-            // Computation is expensive, we take just the first point
-            const PxVec3 localPoint = splineWorldPose.transformInv(contacts.getPoint(0));
-
-            GfVec3f pointOnCurve;
-            GfVec3f tangent;
-            const bool retVal = intActor->mSplinesCurve->getClosestPoint(toVec3f(localPoint), pointOnCurve, tangent);
-            
-            if (retVal)
-            {
-                linearVelocity = splineWorldPose.transform(toPhysX(tangent));
-                linearVelocity.normalize();
-                linearVelocity *= intActor->mSplinesSurfaceVelocityMagnitude;
-            }
-            else
-            {
-                linearVelocity = PxVec3(0.0f, 0.0f, 0.0f);
-            }
-            angularVelocity = PxVec3(0.0f, 0.0f, 0.0f);
+            const PxTransform splineWorldPose = actor.getGlobalPose() * intActor->mSplineLocalSpace;          
+                angularVelocity = PxVec3(0.0f, 0.0f, 0.0f);
             angularVelocityPivot = PxTransform(PxIdentity);
+
+            const internal::InternalActor* intActor = (const internal::InternalActor*)db.getRecords()[index].mInternalPtr;
+
+            auto&& computeFunc = [splineWorldPose, contacts, intActor, &linearVelocities](size_t index)
+            {
+                const PxVec3 contactPoint = contacts.getPoint(PxU32(index));
+                const PxVec3 localPoint = splineWorldPose.transformInv(contactPoint);
+
+                GfVec3f pointOnCurve;
+                GfVec3f tangent;
+                GfVec3f curvaturePoint;
+                const bool retVal =
+                    intActor->mSplinesCurve->getClosestPoint(toVec3f(localPoint), pointOnCurve, tangent, curvaturePoint);
+
+                if (retVal)
+                {
+                    // Check if we have valid curvature (not a straight line)
+                    const bool hasCurvature = (curvaturePoint[0] != FLT_MAX);
+
+                    float radiusScale = 1.0f;
+
+                    if (hasCurvature)
+                    {
+                        const PxVec3 worldPointOnCurve = splineWorldPose.transform(toPhysX(pointOnCurve));
+                        const PxVec3 worldCurvaturePoint = splineWorldPose.transform(toPhysX(curvaturePoint));
+
+
+                        // Get contact point and normal
+                        const PxVec3 contactNormal = contacts.getNormal(PxU32(index));
+
+                        // Project curvature point onto the plane defined by contact normal and contact point
+                        // Plane projection formula: P_projected = P - N * dot(P - Q, N)
+                        const PxVec3 curvatureToContact = worldCurvaturePoint - contactPoint;
+                        const float distanceToPlane = curvatureToContact.dot(contactNormal);
+                        const PxVec3 projectedCurvaturePoint = worldCurvaturePoint - contactNormal *
+                        distanceToPlane;
+
+                        // Project world point on curve onto the same plane
+                        const PxVec3 curvePointToContact = worldPointOnCurve - contactPoint;
+                        const float curvePointDistanceToPlane = curvePointToContact.dot(contactNormal);
+                        const PxVec3 projectedWorldPointOnCurve =
+                            worldPointOnCurve - contactNormal * curvePointDistanceToPlane;
+
+                        const PxVec3 radiusVector = projectedWorldPointOnCurve - projectedCurvaturePoint;
+                        const float radiusMagnitude = radiusVector.magnitude();
+
+                        const PxVec3 contactVector = contactPoint - projectedCurvaturePoint;
+                        const float contactRadiusMagnitude = contactVector.magnitude();
+
+                        if (radiusMagnitude > 1e-5)
+                        {
+                            radiusScale = contactRadiusMagnitude / radiusMagnitude;
+                        }
+                    }
+
+                    {
+                        linearVelocities[index] = splineWorldPose.rotate(toPhysX(tangent));
+                        linearVelocities[index].normalize();
+                        linearVelocities[index] *= intActor->mSplinesSurfaceVelocityMagnitude * radiusScale;
+                    }
+                }
+                else
+                {
+                    linearVelocities[index] = PxVec3(0.0f, 0.0f, 0.0f);
+                }
+            };
+
+            {
+                tasking->parallelFor(size_t(0), size_t(contacts.size()), computeFunc);
+            }
+
+            if (db.getDebugDrawFlags() & InternalDebugDrawFlags::eDEBUG_DRAW_SPLINES)
+            {
+                ::physx::PxRenderBuffer& debugRenderBuffer = db.getDebugRenderBuffer();
+                for (PxU32 i = 0; i < contacts.size(); ++i)
+                {                    
+                    debugRenderBuffer.addLine(PxDebugLine(contacts.getPoint(i), contacts.getPoint(i) + linearVelocities[i],
+                                                          ::physx::PxDebugColor::eARGB_YELLOW));
+                }
+            }
         }
         else
         {
@@ -413,12 +482,20 @@ bool getSurfaceVelocities(internal::InternalPhysXDatabase& db,
             {
                 PxQuat q = actor.getGlobalPose().q;
                 angularVelocity = q.rotate(intActor->mSurfaceAngularVelocity);
-                linearVelocity = q.rotate(intActor->mSurfaceVelocity);
+                const PxVec3 linearVelocity = q.rotate(intActor->mSurfaceVelocity);
+                for (PxU32 i = 0; i < contacts.size(); ++i)
+                {
+                    linearVelocities[i] = linearVelocity;
+                }                
             }
             else
             {
                 angularVelocity = intActor->mSurfaceAngularVelocity;
-                linearVelocity = intActor->mSurfaceVelocity;
+                const PxVec3 linearVelocity = intActor->mSurfaceVelocity;
+                for (PxU32 i = 0; i < contacts.size(); ++i)
+                {
+                    linearVelocities[i] = linearVelocity;
+                }
             }
             angularVelocityPivot = intActor->mSurfaceAngularVelocityPivot;
         }
@@ -430,7 +507,7 @@ bool getSurfaceVelocities(internal::InternalPhysXDatabase& db,
     }
 }
 
-void applyTargetVelocity(PxContactSet& contacts, const PxVec3& linearVelocity, const PxVec3& surfaceAngularVelocity, const PxTransform& surfaceAngularVelocityPivot)
+void applyTargetVelocity(PxContactSet& contacts, const std::vector<PxVec3>& linearVelocities, const PxVec3& surfaceAngularVelocity, const PxTransform& surfaceAngularVelocityPivot)
 {
     for (PxU32 i = 0; i < contacts.size(); ++i)
     {
@@ -438,40 +515,44 @@ void applyTargetVelocity(PxContactSet& contacts, const PxVec3& linearVelocity, c
         const PxVec3 pivot = surfaceAngularVelocityPivot.p;
         const PxVec3 radius = contacts.getPoint(i) - pivot;
         const PxVec3 tangentVelocity = surfaceAngularVelocity.cross(radius);
-        const PxVec3 compoundVelocity = linearVelocity + tangentVelocity;
+        const PxVec3 compoundVelocity = linearVelocities[i] + tangentVelocity;
         contacts.setTargetVelocity(i, compoundVelocity);
     }
 }
 
 void computeContactsSurfaceVelocities(internal::InternalPhysXDatabase& db,
                                       const PxRigidActor& actor,
+                                      const PxRigidActor& dynamicBody,
                                       PxContactSet& contacts)
 {
-    PxVec3 linearVelocity;
-    PxVec3 surfaceAngularVelocity;
+    std::vector<PxVec3> linearVelocities;
+    linearVelocities.resize(contacts.size());
+    PxVec3 surfaceAngularVelocity;  
     PxTransform surfaceAngularVelocityPivot;
-    if (getSurfaceVelocities(db, actor, contacts, linearVelocity, surfaceAngularVelocity, surfaceAngularVelocityPivot))
+    if (getSurfaceVelocities(db, actor, dynamicBody, contacts, linearVelocities, surfaceAngularVelocity, surfaceAngularVelocityPivot))
     {
-        applyTargetVelocity(contacts, linearVelocity, surfaceAngularVelocity, surfaceAngularVelocityPivot);
+        applyTargetVelocity(contacts, linearVelocities, surfaceAngularVelocity, surfaceAngularVelocityPivot);
     }
 }
 
-void computeContactsSurfaceVelocities(internal::InternalPhysXDatabase& db,
+void computeContactsSurfaceVelocitiesBoth(internal::InternalPhysXDatabase& db,
                                       const PxRigidActor& actor0,
                                       const PxRigidActor& actor1,
                                       PxContactSet& contacts)
 {
-    PxVec3 linearVelocity0;
+    std::vector<PxVec3> linearVelocity0;
+    linearVelocity0.resize(contacts.size());
     PxVec3 surfaceAngularVelocity0;
     PxTransform surfaceAngularVelocityPivot0;
     const bool velocity0Valid = getSurfaceVelocities(
-        db, actor0, contacts, linearVelocity0, surfaceAngularVelocity0, surfaceAngularVelocityPivot0);
+        db, actor0, actor1, contacts, linearVelocity0, surfaceAngularVelocity0, surfaceAngularVelocityPivot0);
 
-    PxVec3 linearVelocity1;
+    std::vector<PxVec3> linearVelocity1;
+    linearVelocity1.resize(contacts.size());
     PxVec3 surfaceAngularVelocity1;
     PxTransform surfaceAngularVelocityPivot1;
     const bool velocity1Valid = getSurfaceVelocities(
-        db, actor1, contacts, linearVelocity1, surfaceAngularVelocity1, surfaceAngularVelocityPivot1);
+        db, actor1, actor0, contacts, linearVelocity1, surfaceAngularVelocity1, surfaceAngularVelocityPivot1);
     if (velocity0Valid && velocity1Valid)
     {
         for (PxU32 i = 0; i < contacts.size(); ++i)
@@ -488,7 +569,7 @@ void computeContactsSurfaceVelocities(internal::InternalPhysXDatabase& db,
             const PxVec3 radius1 = contacts.getPoint(i) - pivot1;
             const PxVec3 tangentVelocity1 = surfaceAngularVelocity1.cross(radius1);
 
-            const PxVec3 compoundVelocity = linearVelocity0 + linearVelocity1 + tangentVelocity0 + tangentVelocity1;
+            const PxVec3 compoundVelocity = linearVelocity0[i] + linearVelocity1[i] + tangentVelocity0 + tangentVelocity1;
             contacts.setTargetVelocity(i, compoundVelocity);
         }
     }
@@ -510,15 +591,15 @@ void OmniContactReportCallback::onContactModify(PxContactModifyPair* pairs, PxU3
         PxContactModifyPair& pair = pairs[i];
         if (pair.shape[0]->getSimulationFilterData().word3 & CONTACT_MODIFY_SURFACE_VELOCITY && pair.shape[1]->getSimulationFilterData().word3 & CONTACT_MODIFY_SURFACE_VELOCITY)
         {
-            computeContactsSurfaceVelocities(mOmniPhysX->getInternalPhysXDatabase(), * pair.actor[0], * pair.actor[1], pair.contacts);
+            computeContactsSurfaceVelocitiesBoth(mOmniPhysX->getInternalPhysXDatabase(), * pair.actor[0], * pair.actor[1], pair.contacts);
         }
         else if (pair.shape[0]->getSimulationFilterData().word3 & CONTACT_MODIFY_SURFACE_VELOCITY)
         {
-            computeContactsSurfaceVelocities(mOmniPhysX->getInternalPhysXDatabase(), * pair.actor[0], pair.contacts);
+            computeContactsSurfaceVelocities(mOmniPhysX->getInternalPhysXDatabase(), * pair.actor[0], * pair.actor[1], pair.contacts);
         }
         else if (pair.shape[1]->getSimulationFilterData().word3 & CONTACT_MODIFY_SURFACE_VELOCITY)
         {
-            computeContactsSurfaceVelocities(mOmniPhysX->getInternalPhysXDatabase(), * pair.actor[1], pair.contacts);
+            computeContactsSurfaceVelocities(mOmniPhysX->getInternalPhysXDatabase(), * pair.actor[1], * pair.actor[0], pair.contacts);
         }
     }
 }
@@ -556,7 +637,7 @@ public:
             PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
             InternalVehicle** vehicles = mInternalScene->mVehicles.data();
             const InternalVehicleContext& internalContext = mInternalScene->getVehicleContext();
-            ::physx::vehicle2::PxVehiclePhysXSimulationContext simContext = internalContext.getContext();
+            ::physx::PxVehiclePhysXSimulationContext simContext = internalContext.getContext();
 
             do
             {
@@ -600,18 +681,18 @@ PhysXStepper::~PhysXStepper()
     mVehicleUpdateTasks.clear();
 };
 
-void PhysXStepper::customizeVehicleSimulationContext(::physx::vehicle2::PxVehiclePhysXSimulationContext& context,
+void PhysXStepper::customizeVehicleSimulationContext(::physx::PxVehiclePhysXSimulationContext& context,
     const PhysXActorVehicleBase& vehicle, PhysXSetup& physxSetup)
 {
-    if (vehicle.getRoadGeometryQueryType() == ::physx::vehicle2::PxVehiclePhysXRoadGeometryQueryType::eSWEEP)
+    if (vehicle.getRoadGeometryQueryType() == ::physx::PxVehiclePhysXRoadGeometryQueryType::eSWEEP)
     {
         // to ensure the code further below stays valid
-        static_assert(::physx::vehicle2::PxVehicleAxes::ePosX == 0, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::eNegX == 1, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::ePosY == 2, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::eNegY == 3, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::ePosZ == 4, "");
-        static_assert(::physx::vehicle2::PxVehicleAxes::eNegZ == 5, "");
+        static_assert(::physx::PxVehicleAxes::ePosX == 0, "");
+        static_assert(::physx::PxVehicleAxes::eNegX == 1, "");
+        static_assert(::physx::PxVehicleAxes::ePosY == 2, "");
+        static_assert(::physx::PxVehicleAxes::eNegY == 3, "");
+        static_assert(::physx::PxVehicleAxes::ePosZ == 4, "");
+        static_assert(::physx::PxVehicleAxes::eNegZ == 5, "");
         static_assert(usdparser::Axis::eX == 0, "");
         static_assert(usdparser::Axis::eY == 1, "");
         static_assert(usdparser::Axis::eZ == 2, "");
@@ -626,11 +707,11 @@ void PhysXStepper::customizeVehicleSimulationContext(::physx::vehicle2::PxVehicl
 
     context.tireSlipParams = vehicle.getTireSlipParams();
 
-    const ::physx::vehicle2::PxVehicleTireStickyParams& tireStickyParams = vehicle.getTireStickyParams();
-    context.tireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLONGITUDINAL] =
-        tireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLONGITUDINAL];
-    context.tireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLATERAL] =
-        tireStickyParams.stickyParams[::physx::vehicle2::PxVehicleTireDirectionModes::eLATERAL];
+    const ::physx::PxVehicleTireStickyParams& tireStickyParams = vehicle.getTireStickyParams();
+    context.tireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLONGITUDINAL] =
+        tireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLONGITUDINAL];
+    context.tireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLATERAL] =
+        tireStickyParams.stickyParams[::physx::PxVehicleTireDirectionModes::eLATERAL];
 }
 
 void PhysXStepper::createVehicleUpdateTasks()
@@ -876,12 +957,12 @@ void PhysXStepper::updateVehicles()
         PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
         InternalVehicle** vehicles = internalScene.mVehicles.data();
         InternalVehicleContext& internalContext = internalScene.getVehicleContext();
-        ::physx::vehicle2::PxVehiclePhysXSimulationContext& simContext = internalContext.getContext();
+        ::physx::PxVehiclePhysXSimulationContext& simContext = internalContext.getContext();
         PxScene* pxScene = mPhysXScene->getScene();
         simContext.gravity = pxScene->getGravity();  // in case gravity is modified during simulation
 
         // creating a copy that can get modified per vehicle instance
-        ::physx::vehicle2::PxVehiclePhysXSimulationContext simContextMod = simContext;
+        ::physx::PxVehiclePhysXSimulationContext simContextMod = simContext;
 
         {
             CARB_PROFILE_ZONE(0, "PhysXVehicleSimBeginUpdate");
@@ -1078,7 +1159,7 @@ void PhysXStepper::updateDeformables(int step, int numSteps)
 
             if (internalScene.mVolumeDeformablePostSolveCallback)
             {
-                internalScene.mVolumeDeformablePostSolveCallback->copySkinnedVerticesDtoHAsync(i, deformableBody->mAllSkinnedVerticesH);
+                internalScene.mVolumeDeformablePostSolveCallback->copySkinnedVerticesDtoHAsync(deformableVolume, deformableBody->mAllSkinnedVerticesH);
             }
         }
     }
@@ -1102,7 +1183,7 @@ void PhysXStepper::updateDeformables(int step, int numSteps)
 
             if (internalScene.mSurfaceDeformablePostSolveCallback)
             {
-                internalScene.mSurfaceDeformablePostSolveCallback->copySkinnedVerticesDtoHAsync(i, deformableBody->mAllSkinnedVerticesH);
+                internalScene.mSurfaceDeformablePostSolveCallback->copySkinnedVerticesDtoHAsync(deformableSurface, deformableBody->mAllSkinnedVerticesH);
             }
         }
     }
@@ -1303,7 +1384,6 @@ static uint32_t roundUpToNextPowerOfTwo(uint32_t value)
 static PxScene* createPhysicsScene(PhysXSetup& physxSetup, double metersPerUnit, const PhysxSceneDesc& physxSceneDesc,
     OmniFilterCallback* filterCallback, OmniContactReportCallback* reportCallback)
 {
-    PxScene* physxScene = nullptr;
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     carb::settings::ISettings* iSettings = omniPhysX.getISettings();
     ::physx::PxTolerancesScale tolerances = physxSetup.getDefaultTolerances(metersPerUnit);
@@ -1326,7 +1406,15 @@ static PxScene* createPhysicsScene(PhysXSetup& physxSetup, double metersPerUnit,
     carb::Framework* framework = carb::getFramework();
     carb::settings::ISettings* settings = carb::getCachedInterface<carb::settings::ISettings>();
     const bool suppressReadback = settings->getAsBool(kSettingSuppressReadback);
-    const int multiGPUMode = settings->getAsInt(kSettingSceneMultiGPUMode);
+    int multiGPUMode = settings->getAsInt(kSettingSceneMultiGPUMode);
+
+    // If no CUDA context manager exists (CPU-only mode or GPU init not performed),
+    // MultiGPU mode must be treated as disabled to avoid selecting a null manager
+    // and tripping assertions.
+    if (multiGPUMode && !physxSetup.getCudaContextManager())
+    {
+        multiGPUMode = 0;
+    }
 
     sceneDesc.cudaContextManager = multiGPUMode ? physxSetup.getNextCudaContextManager()  : physxSetup.getCudaContextManager();
     if (multiGPUMode)
@@ -1345,6 +1433,18 @@ static PxScene* createPhysicsScene(PhysXSetup& physxSetup, double metersPerUnit,
         sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
     }
 
+    // CPU-only mode (or no CUDA context manager): never enable GPU dynamics/DirectGPU even if USD requests it.
+    // This prevents inconsistent configurations (GPU flags without a valid PxCudaContextManager).
+    if (!sceneDesc.cudaContextManager)
+    {
+        if (sceneDesc.flags.isSet(PxSceneFlag::eENABLE_GPU_DYNAMICS) || sceneDesc.flags.isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API))
+        {
+            CARB_LOG_WARN("No CUDA context manager available; forcing CPU simulation (GPU dynamics/DirectGPU disabled for this scene).");
+        }
+        sceneDesc.flags &= ~PxSceneFlag::eENABLE_GPU_DYNAMICS;
+        sceneDesc.flags &= ~PxSceneFlag::eENABLE_DIRECT_GPU_API;
+    }
+
     if(physxSceneDesc.solveArticulationContactLast)
     {
         sceneDesc.flags |= PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST;
@@ -1354,13 +1454,14 @@ static PxScene* createPhysicsScene(PhysXSetup& physxSetup, double metersPerUnit,
         sceneDesc.flags &= ~PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST;
     }
 
-    if (physxSceneDesc.enableResidualReporting)
-        sceneDesc.flags |= PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING;
+    if (physxSceneDesc.disableSleeping)
+        sceneDesc.flags |= PxSceneFlag::eDISABLE_SLEEPING;
 
     // suppress readback
     if (sceneDesc.flags.isSet(PxSceneFlag::eENABLE_GPU_DYNAMICS) && suppressReadback)
     {
         sceneDesc.flags |= PxSceneFlag::eENABLE_DIRECT_GPU_API;
+        sceneDesc.flags |= PxSceneFlag::eDISABLE_SLEEPING; // Raise the disable sleeping flag to not raise a warning
 
         // Disable active actors feature if suppress readback is enabled
         sceneDesc.flags &= ~PxSceneFlag::eENABLE_ACTIVE_ACTORS;
@@ -1487,7 +1588,7 @@ static PxScene* createPhysicsScene(PhysXSetup& physxSetup, double metersPerUnit,
         sceneDesc.filterCallback = filterCallback;
     }
 
-    physxScene = physxSetup.getPhysics()->createScene(sceneDesc);
+    PxScene* physxScene = physxSetup.getPhysics()->createScene(sceneDesc);
 
     if (!physxScene)
     {
@@ -1496,6 +1597,7 @@ static PxScene* createPhysicsScene(PhysXSetup& physxSetup, double metersPerUnit,
         {
             CARB_LOG_WARN("Not enough GPU memory available to create a PhysicsScene, falling back to CPU simulation.");
             sceneDesc.flags.clear(PxSceneFlag::eENABLE_GPU_DYNAMICS);
+            sceneDesc.flags.clear(PxSceneFlag::eENABLE_DIRECT_GPU_API);
             sceneDesc.broadPhaseType = PxBroadPhaseType::ePABP;
 
             // AD: we don't reset the cudaContextManager skip state here - CPU sim does not need it and it will be
@@ -1529,12 +1631,13 @@ static PxScene* createPhysicsScene(PhysXSetup& physxSetup, double metersPerUnit,
 
     if (omniPhysX.isDebugVisualizationEnabled())
     {
-        physxScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, omniPhysX.getVisualizationScale());
-        const uint32_t visMask = omniPhysX.getVisualizationBitMask();
-        // A.B. store the size somewhere!
-        for (uint32_t i = 0; i < 32; i++)
+        const float gizmoScale = omniPhysX.getCachedSettings().viewportGizmoScale;
+        physxScene->setVisualizationParameter(
+            PxVisualizationParameter::eSCALE, gizmoScale * omniPhysX.getVisualizationScale());
+        const uint64_t visMask = omniPhysX.getVisualizationBitMask();
+        for (uint64_t i = 0; i < uint64_t(ePhysXNumValues); i++)
         {
-            if (visMask & (1 << i))
+            if (visMask & (1ull << i))
             {
                 physxScene->setVisualizationParameter(PxVisualizationParameter::Enum(i), 1.0f);
             }

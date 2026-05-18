@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,14 +35,23 @@
 
 using namespace physx;
 
-static void updateBodySim(Sc::BodyCore& bodyCore)
+static void gpu_updateBodySim(Sc::BodyCore& bodyCore)
 {
+#if PX_SUPPORT_GPU_PHYSX
 	Sc::BodySim* bodySim = bodyCore.getSim();
 	if(bodySim)
-		bodySim->getScene().updateBodySim(*bodySim);
+		bodySim->getScene().gpu_updateBodySim(*bodySim);
+#else
+	PX_UNUSED(bodyCore);
+#endif
 }
 
-Sc::BodyCore::BodyCore(PxActorType::Enum type, const PxTransform& bodyPose) : RigidCore(type)
+Sc::BodyCore::BodyCore(PxActorType::Enum type, const PxTransform& bodyPose) : 
+	RigidCore(type),
+	mLinAccel(0.0f),
+	mAngAccel(0.0f),
+	mPrevLinVel(0.0f),
+	mPrevAngVel(0.0f)
 {
 	const PxTolerancesScale& scale = Physics::getInstance().getTolerancesScale();
 
@@ -73,6 +82,9 @@ void Sc::BodyCore::restoreDynamicData()
 	PX_ASSERT(simStateData);
 	PxsBodyCore& core = getCore();
 	simStateRestoreBodyProperties(simStateData, core);
+
+	// Reset acceleration state to avoid spurious spike after deserialization
+	resetAccelerationState();
 }
 
 //--------------------------------------------------------------
@@ -91,7 +103,10 @@ void Sc::BodyCore::setBody2World(const PxTransform& p)
 	if(sim)
 	{
 		sim->postBody2WorldChange();
-		sim->getScene().updateBodySim(*sim);
+		sim->getScene().gpu_updateBodySim(*sim);
+
+		// Reset acceleration state to avoid spurious spike after teleport
+		resetAccelerationState();
 	}
 }
 
@@ -105,6 +120,10 @@ void Sc::BodyCore::setCMassLocalPose(const PxTransform& newBody2Actor)
 	mCore.body2World = newBody2World;
 
 	setBody2Actor(newBody2Actor);
+
+	// Reset acceleration state to avoid spurious spike after center of mass change
+	if(getSim())
+		resetAccelerationState();
 }
 
 void Sc::BodyCore::setLinearVelocity(const PxVec3& v, bool skipBodySimUpdate)
@@ -114,7 +133,7 @@ void Sc::BodyCore::setLinearVelocity(const PxVec3& v, bool skipBodySimUpdate)
 	PX_ASSERT(!skipBodySimUpdate || (getFlags() & PxRigidBodyFlag::eKINEMATIC));
 
 	if(!skipBodySimUpdate)
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 }
 
 void Sc::BodyCore::setAngularVelocity(const PxVec3& v, bool skipBodySimUpdate)
@@ -124,14 +143,14 @@ void Sc::BodyCore::setAngularVelocity(const PxVec3& v, bool skipBodySimUpdate)
 	PX_ASSERT(!skipBodySimUpdate || (getFlags() & PxRigidBodyFlag::eKINEMATIC));
 
 	if(!skipBodySimUpdate)
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 }
 
 void Sc::BodyCore::setCfmScale(PxReal cfmScale)
 {
 	mCore.cfmScale = cfmScale;
 
-	updateBodySim(*this);
+	gpu_updateBodySim(*this);
 }
 
 void Sc::BodyCore::setBody2Actor(const PxTransform& p)
@@ -141,7 +160,7 @@ void Sc::BodyCore::setBody2Actor(const PxTransform& p)
 
 	mCore.setBody2Actor(p);
 
-	updateBodySim(*this);
+	gpu_updateBodySim(*this);
 }
 
 void Sc::BodyCore::addSpatialAcceleration(const PxVec3* linAcc, const PxVec3* angAcc)
@@ -203,7 +222,7 @@ void Sc::BodyCore::setInverseMass(PxReal m)
 	if (!sim || (!(getFlags() & PxRigidBodyFlag::eKINEMATIC)))
 	{
 		mCore.inverseMass = m;
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 	}
 	else
 	{
@@ -236,7 +255,7 @@ void Sc::BodyCore::setInverseInertia(const PxVec3& i)
 	if (!sim || (!(getFlags() & PxRigidBodyFlag::eKINEMATIC)))
 	{
 		mCore.inverseInertia = i;
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 	}
 	else
 	{
@@ -269,7 +288,7 @@ void Sc::BodyCore::setLinearDamping(PxReal d)
 	if (!sim || (!(getFlags() & PxRigidBodyFlag::eKINEMATIC)))
 	{
 		mCore.linearDamping = d;
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 	}
 	else
 	{
@@ -302,7 +321,7 @@ void Sc::BodyCore::setAngularDamping(PxReal v)
 	if (!sim || (!(getFlags() & PxRigidBodyFlag::eKINEMATIC)))
 	{
 		mCore.angularDamping = v;
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 	}
 	else
 	{
@@ -335,7 +354,7 @@ void Sc::BodyCore::setMaxAngVelSq(PxReal v)
 	if (!sim || (!(getFlags() & PxRigidBodyFlag::eKINEMATIC)))
 	{
 		mCore.maxAngularVelocitySq = v;
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 	}
 	else
 	{
@@ -368,7 +387,7 @@ void Sc::BodyCore::setMaxLinVelSq(PxReal v)
 	if (!sim || (!(getFlags() & PxRigidBodyFlag::eKINEMATIC)))
 	{
 		mCore.maxLinearVelocitySq = v;
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 	}
 	else
 	{
@@ -401,10 +420,18 @@ void Sc::BodyCore::setFlags(PxRigidBodyFlags f)
 			// our current behavior is that you are not allowed to set a kinematic target unless the object is in a scene.
 			// Thus, the kinematic data should only be created/destroyed when we know for sure that we are in a scene.
 
-			if(switchToKinematic)
-				sim->switchToKinematic();
-			else if(switchToDynamic)
-				sim->switchToDynamic();
+		if(switchToKinematic)
+		{
+			sim->switchToKinematic();
+			// Reset acceleration state to avoid spurious spike after kinematic switch
+			resetAccelerationState();
+		}
+		else if(switchToDynamic)
+		{
+			sim->switchToDynamic();
+			// Reset acceleration state to avoid spurious spike after dynamic switch
+			resetAccelerationState();
+		}
 
 			const PxU32 wasSpeculativeCCD = old & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD;
 			const PxU32 isSpeculativeCCD = f & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD;
@@ -449,8 +476,7 @@ void Sc::BodyCore::setFlags(PxRigidBodyFlags f)
 			}
 
 			//Force flag change through...
-			sim->getScene().updateBodySim(*sim);
-			
+			sim->getScene().gpu_updateBodySim(*sim);
 		}
 
 		if(switchToKinematic)
@@ -477,13 +503,13 @@ void Sc::BodyCore::setFlags(PxRigidBodyFlags f)
 void Sc::BodyCore::setMaxContactImpulse(PxReal m)	
 { 
 	mCore.maxContactImpulse = m; 
-	updateBodySim(*this);
+	gpu_updateBodySim(*this);
 }
 
 void Sc::BodyCore::setOffsetSlop(PxReal slop)
 {
 	mCore.offsetSlop = slop;
-	updateBodySim(*this);
+	gpu_updateBodySim(*this);
 }
 
 PxNodeIndex Sc::BodyCore::getInternalIslandNodeIndex() const
@@ -499,7 +525,7 @@ void Sc::BodyCore::setWakeCounter(PxReal wakeCounter, bool forceWakeUp)
 	if(sim)
 	{
 		//wake counter change, we need to trigger dma pxgbodysim data again
-		sim->getScene().updateBodySim(*sim);
+		sim->getScene().gpu_updateBodySim(*sim);
 		if ((wakeCounter > 0.0f) || forceWakeUp)
 			sim->wakeUp();
 		sim->postSetWakeCounter(wakeCounter, forceWakeUp);
@@ -509,13 +535,13 @@ void Sc::BodyCore::setWakeCounter(PxReal wakeCounter, bool forceWakeUp)
 void Sc::BodyCore::setSleepThreshold(PxReal t)
 {
 	mCore.sleepThreshold = t;
-	updateBodySim(*this);
+	gpu_updateBodySim(*this);
 }
 
 void Sc::BodyCore::setFreezeThreshold(PxReal t)
 {
 	mCore.freezeThreshold = t;
-	updateBodySim(*this);
+	gpu_updateBodySim(*this);
 }
 
 bool Sc::BodyCore::isSleeping() const

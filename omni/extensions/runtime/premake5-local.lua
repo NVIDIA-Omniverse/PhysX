@@ -2,6 +2,7 @@
 group "runtime"
     dofile ("source/omni.convexdecomposition/premake5.lua")
     dofile ("source/omni.physx/premake5.lua")
+    dofile ("source/omni.physx.cooking/premake5.lua")
     dofile ("source/omni.physx.foundation/premake5.lua")
     dofile ("source/omni.physx.fabric/premake5.lua")
     dofile ("source/omni.usdphysics/premake5.lua")
@@ -23,18 +24,16 @@ group "tests"
 
     project "test.unit"
         kind "ConsoleApp"
-        dependson { "prebuild", "omni.physx.plugin" }
+        dependson { "prebuild", "omni.physx.plugin", "omni.physx.fabric.plugin" }
         includedirs {
             "include",
             kit_sdk_includes,
-            repo_root_dir.."/include/extras",
-            targetDeps_dir.."/rtx_plugins/include",
-            schema_package_dir.."/include",
             kit_sdk_dir.."/dev/fabric/include",
+            schema_package_dir.."/include",
             targetDeps_dir.."/usdrt/include",
             targetDeps_dir.."/gsl/include",   -- Support for std::span
             targetDeps_dir.."/doctest/include",
-            "../common/include",
+            "source/common/include",
         }
 
         targetdir (targetPluginsDir)
@@ -72,22 +71,17 @@ group "tests"
         filter { "system:windows" }
             libdirs { targetDeps_dir.."/python/libs" }
             links {  "physicsSchemaTools", "physxSchema" }
-            debugenvs { "PATH=%%PATH%%;"..winTargetDir.."/kit;"..winTargetDir.."/kit/kernel/plugins;"..winTargetDir.."/exts/omni.usd.libs/bin;"..winTargetDir.."/extsPhysics/omni.usd.schema.physics/bin;"..winTargetDir.."/extsPhysics/omni.usd.schema.physx/bin" }
+            debugenvs { "PATH=%%PATH%%;"..winTargetDir.."/kit;"..winTargetDir.."/kit/kernel/plugins;"..winTargetDir.."/kit/exts/omni.usd.libs/bin;"..winTargetDir.."/exts/omni.usd.libs/bin;"..winTargetDir.."/extsPhysics/omni.usd.schema.physics/bin;"..winTargetDir.."/extsPhysics/omni.usd.schema.physx/bin" }
         filter { "system:linux" }
             buildoptions { "-pthread" }
             buildoptions { "-fPIC" }
-            links { "physicsSchemaTools", "physxSchema", BOOST_LIB, PYTHON_LIB, "dl", "pthread", "rt" }
+            links { "physicsSchemaTools", "physxSchema", PYTHON_LIB, "dl", "pthread", "rt" }
             libdirs {
                 targetDeps_dir.."/cuda/lib64",
                 targetDeps_dir.."/cuda/lib64/stubs",
                 kit_sdk_dir.."/python/lib",
             }
             disablewarnings { "error=switch", "error=sign-compare" }
-        filter { "system:linux", "configurations:debug" }
-            links { "tbb_debug" }
-        filter { "system:linux", "configurations:release" }
-            links { "tbb" }
-        filter {}
 
 if os.target() == "windows" then
     usd_env_var = "%~dp0kit;%~dp0kit/kernel/plugins;%~dp0exts/omni.usd.libs/bin;%~dp0extsPhysics/omni.usd.schema.physx/bin;%~dp0extsPhysics/omni.usd.schema.physics/bin"

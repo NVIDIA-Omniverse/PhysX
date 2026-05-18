@@ -1,6 +1,7 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
+
 
 #include "UsdPCH.h"
 #include "PhysXSettings.h"
@@ -17,12 +18,11 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
     // bool
     {
         { kSettingUpdateToUsd, true },
+        { kSettingUpdateToUsdUsingXformCommonAPI, false },
         { kSettingUpdateVelocitiesToUsd, true },
         { kSettingOutputVelocitiesLocalSpace, false },
         { kSettingUpdateParticlesToUsd, true },
-        { kSettingUpdateResidualsToUsd, true },
         { kSettingAutocreatePhysicsScene, true },
-        { kSettingUseLocalMeshCache, true },
         { kSettingUjitsoCollisionCooking, true },
         { kSettingUjitsoRemoteCacheEnabled, false },
         { kSettingResetOnStop, true },
@@ -43,7 +43,6 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingEnableParticleAuthoring, true },
         { kSettingEnableAttachmentAuthoring, true },
         { kSettingDisplaySimulationOutput, false },
-        { kSettingDisplaySimulationDataVisualizer, false },
         { kSettingAutoPopupSimulationOutputWindow, true },
         { kSettingSuppressReadback, false },
         { kSettingExposeProfilerData, true },
@@ -64,7 +63,6 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingLogRobotics, false },
         { kSettingLogSceneMultiGPU, false },
         { kSettingSimulateEmptyScene, false },
-        { kSettingDisableSleeping, false },
         { kSettingSynchronousKernelLaunches, false },
         { kSettingShowCollisionGroupsWindow, false },
         { kSettingDisableContactProcessing, false },
@@ -76,7 +74,6 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingOverrideGPU, -1 },
         { kSettingNumThreads, 8 },
         { kSettingMaxNumberOfPhysXErrors, 1000 },
-        { kSettingLocalMeshCacheSizeMB, 1024 },
         { kSettingTestRunnerRepeats, 1 },
         { kSettingDisplayColliders, int(ui::VisualizerMode::eNone) },
         { kSettingDisplayMassProperties, int(ui::VisualizerMode::eNone) },
@@ -90,7 +87,7 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingDisplayDeformables, int(ui::VisualizerMode::eNone) },
         { kSettingDisplayDeformableMeshType, 0 },
         { kSettingDisplayDeformableAttachments, false },
-        { kSettingEnableDeformableBeta, false },
+        { kSettingEnableDeformableDeprecated, false },
         { kSettingDisplayParticles, int(ui::VisualizerMode::eNone) },
         { kSettingDisplayParticlesParticlePositions, int(ui::ParticlePositionType::eSimPositions) },
         { kSettingDisplayParticlesParticleRadius, int(ui::ParticleRadiusType::eParticleContactOffset) },
@@ -237,9 +234,6 @@ void PhysXSettings::resetSettingsInPreferences()
 
     resetSettingAtPath(kSettingExposeProfilerData);
 
-    resetSettingAtPath(kSettingUseLocalMeshCache);
-    resetSettingAtPath(kSettingLocalMeshCacheSizeMB);
-
     resetSettingAtPath(kSettingUjitsoCookingDevKey);
     resetSettingAtPath(kSettingUjitsoCollisionCooking);
     resetSettingAtPath(kSettingUjitsoRemoteCacheEnabled);
@@ -258,6 +252,7 @@ void PhysXSettings::resetSettingsInStage()
     auto* settings = carb::getCachedInterface<carb::settings::ISettings>();
 
     resetSettingAtPath(kSettingUpdateToUsd);
+    resetSettingAtPath(kSettingUpdateToUsdUsingXformCommonAPI);
     resetSettingAtPath(kSettingUpdateVelocitiesToUsd);
     resetSettingAtPath(kSettingOutputVelocitiesLocalSpace);
     resetSettingAtPath(kSettingUpdateParticlesToUsd);

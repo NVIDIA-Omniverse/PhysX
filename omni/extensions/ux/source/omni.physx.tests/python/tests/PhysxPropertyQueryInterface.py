@@ -1,10 +1,12 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import omni.physx.scripts.utils
 import omni.physx.scripts.physicsUtils as physicsUtils
 from omni.physxtests.utils.physicsBase import PhysicsKitStageAsyncTestCase, TestCategory
-from omni.physx import get_physx_property_query_interface, get_physx_cooking_interface, get_physx_cooking_private_interface
+from omni.physx import get_physx_property_query_interface, get_physx_cooking_interface
+from omni.physx.scripts.ifaces import get_physx_cooking_private_interface
 from omni.physx.bindings._physx import PhysxPropertyQueryArticulationResponse, PhysxPropertyQueryRigidBodyResponse, PhysxPropertyQueryColliderResponse, PhysxPropertyQueryResult, PhysxPropertyQueryMode
 from pxr import Gf, UsdGeom, UsdPhysics, UsdUtils, PhysicsSchemaTools, PhysxSchema
 import time
@@ -144,8 +146,6 @@ class PhysxPropertyQueryInterfaceTestKitStage(PhysicsKitStageAsyncTestCase):
         # We need also to make sure that cache is disabled to avoid query_prim returning before next update
         # because it got the cooked data from cache
         settings = carb.settings.get_settings()
-        use_local_cache = settings.get_as_bool(physx_bindings.SETTING_USE_LOCAL_MESH_CACHE)
-        settings.set_bool(physx_bindings.SETTING_USE_LOCAL_MESH_CACHE, False)
         
         path = self.defaultPrimPath + "/concave"
         # we are using a unique size to enforce not using any cooking task that may be in flight from previous tests
@@ -154,7 +154,6 @@ class PhysxPropertyQueryInterfaceTestKitStage(PhysicsKitStageAsyncTestCase):
         get_physx_property_query_interface().query_prim(stage_id = self.stage_id, prim_id = prim_id, rigid_body_fn = query_report)
         stage = await self.new_stage()
         await omni.kit.app.get_app().next_update_async()
-        settings.set_bool(physx_bindings.SETTING_USE_LOCAL_MESH_CACHE, use_local_cache)
         self.assertTrue(self.callback_called)
 
     async def test_property_query_rb_mesh_invalid_usd_prim(self):

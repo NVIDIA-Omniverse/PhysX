@@ -1,10 +1,10 @@
 [package]
-version = "107.3.0-oss.0"
+version = "110.0.7"
 title = "Metrics Assembler Physics"
 description = "Metrics Assembler rules for physics"
 authors = ["PhysX"]
 category = "USD, Physics"
-repository=""
+repository = ""
 readme  = "docs/README.md"
 keywords = ["usd","physics"]
 changelog = "docs/CHANGELOG.md"
@@ -19,8 +19,8 @@ usd = true
 
 [dependencies]
 "omni.usd.metrics.assembler" = {}
-"omni.usd.schema.physx" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.ui" = { version = "107.3.0-oss.0", exact = true, optional=true }
+"omni.usd.schema.physx" = { version = "110.0.7", exact = true }
+"omni.physx.ui" = { version = "110.0.7", exact = true, optional=true }
 
 [[python.module]]
 name = "omni.metrics.assembler.physics"

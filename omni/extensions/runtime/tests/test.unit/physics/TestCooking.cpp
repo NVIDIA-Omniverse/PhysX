@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -456,6 +456,117 @@ TEST_CASE("Pre-Cooking",
     }
 #endif
 #endif
+
+    physxSim->detachStage();
+
+    pxr::UsdUtilsStageCache::Get().Erase(stage);
+    stage = nullptr;
+}
+
+TEST_CASE("Pre-Cooking Variant Switch",
+          "[omniphysics]"
+          "[component=OmniPhysics][owner=aborovicka][priority=mandatory]")
+{
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+
+    omni::physx::IPhysxCooking* physxCooking = physicsTests.acquirePhysxCookingInterface();
+    REQUIRE(physxCooking);
+    IPhysx* physx = physicsTests.acquirePhysxInterface();
+    REQUIRE(physx);
+    IPhysxSimulation* physxSim = physicsTests.acquirePhysxSimulationInterface();
+    REQUIRE(physxSim);
+    omni::physx::IPhysxUnitTests* physxTests = physicsTests.acquirePhysxUnitTestInterface();
+    REQUIRE(physxTests);
+
+    // setup basic stage
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    pxr::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    const double metersPerUnit = pxr::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+
+    pxr::UsdUtilsStageCache::Get().Insert(stage);
+    const long stageId = pxr::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    UsdGeomXform topXform = UsdGeomXform::Define(stage, defaultPrimPath.AppendChild(TfToken("topPrim")));
+
+    UsdVariantSet vset = topXform.GetPrim().GetVariantSets().AddVariantSet("collisions");
+
+    // Create variant options.
+    vset.AddVariant("collision0");
+    vset.AddVariant("collision1");
+
+    float halfSize = 100.0f;
+    GfVec3f position(200.0f);
+    GfVec3f scale(1.0f, 2.0f, 3.0f);
+    const SdfPath shapePath = topXform.GetPrim().GetPrimPath().AppendChild(TfToken("shape"));
+
+    {
+        vset.SetVariantSelection("collision0");
+        UsdEditContext ctx(vset.GetVariantEditContext());
+
+        UsdGeomMesh shape = createConcaveMesh(stage, shapePath, halfSize);
+    }
+
+    {
+        vset.SetVariantSelection("collision1");
+        UsdEditContext ctx(vset.GetVariantEditContext());
+
+        UsdGeomMesh shape = createMeshBox(stage, shapePath, GfVec3f(halfSize));
+    }
+
+    vset.SetVariantSelection("collision0");
+
+    physxSim->attachStage(stageId);
+
+    struct CookedData
+    {
+        uint64_t stageId{ 0ull };
+        uint64_t cookedPrim{ 0ull };
+    };
+
+    CookedData cookedData;
+
+    IPhysxCookingCallback cb = { (void*)(&cookedData), nullptr };
+    cb.cookingFinishedCallback = [](uint64_t stageIdIn, uint64_t primPathIn, PhysxCookingResult::Enum result,
+                                    void* userData) {
+        CHECK(result == PhysxCookingResult::eVALID);
+        CookedData* cd = (CookedData*)userData;
+        cd->cookedPrim = primPathIn;
+        cd->stageId = stageIdIn;
+    };
+
+    physxCooking->releaseLocalMeshCache();
+
+    SECTION("Cook Mesh - synchronous")
+    {
+        PxPhysics* pxPhysics = reinterpret_cast<PxPhysics*>(physx->getPhysXPtr(pxr::SdfPath(), omni::physx::ePTPhysics));
+        REQUIRE(pxPhysics);
+
+        // initially we should have 9 hulls
+        CHECK(pxPhysics->getNbConvexMeshes() == 9);
+        CHECK(pxPhysics->getNbShapes() == 0);
+
+        ConvexMeshCookingParams params;
+        bool retVal = physxCooking->precookMesh(stageId, sdfPathToInt(shapePath), params, nullptr);
+        CHECK(retVal);
+        // precook, we should have one more hull
+        CHECK(pxPhysics->getNbConvexMeshes() == 10);
+        CHECK(pxPhysics->getNbShapes() == 0);
+
+        physxSim->simulate(1.0f / 60.0f, 1.0f / 60.0f);
+        physxSim->fetchResults();
+
+        // switch the variant
+        vset.SetVariantSelection("collision1");        
+        retVal = physxCooking->precookMesh(stageId, sdfPathToInt(shapePath), params, nullptr);
+        CHECK(retVal);
+        // precook, we should have one more hull
+        CHECK(pxPhysics->getNbConvexMeshes() == 11);
+        CHECK(pxPhysics->getNbShapes() == 0);
+    }
 
     physxSim->detachStage();
 

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "ScShapeSimBase.h"
 #include "ScSqBoundsManager.h"
@@ -31,11 +31,19 @@
 #include "CmTransformUtils.h"
 #include "ScShapeInteraction.h"
 
+#if PX_SUPPORT_GPU_PHYSX
+	#include "cudamanager/PxCudaContextManager.h"
+	#include "cudamanager/PxCudaContext.h"
+#endif
+
 using namespace physx;
 using namespace Sc;
+using namespace Cm;
 
 // PT: keep local functions in cpp, no need to pollute the header. Don't force conversions to bool if not necessary.
-static PX_FORCE_INLINE PxU32 hasTriggerFlags(PxShapeFlags flags) { return PxU32(flags) & PxU32(PxShapeFlag::eTRIGGER_SHAPE); }
+static PX_FORCE_INLINE PxU32 hasTriggerFlags(PxShapeFlags flags)	{ return PxU32(flags) & PxU32(PxShapeFlag::eTRIGGER_SHAPE);	}
+static PX_FORCE_INLINE PxU32 isBroadPhase(PxShapeFlags flags)		{ return PxU32(flags) & PxU32(PxShapeFlag::eTRIGGER_SHAPE | PxShapeFlag::eSIMULATION_SHAPE);	}
+static PX_FORCE_INLINE PxU32 needsBounds(PxShapeFlags flags)		{ return PxU32(flags) & PxU32(PxShapeFlag::eTRIGGER_SHAPE | PxShapeFlag::eSIMULATION_SHAPE | PxShapeFlag::eSCENE_QUERY_SHAPE);	}
 
 void resetElementID(Scene& scene, ShapeSimBase& shapeSim)
 {
@@ -138,7 +146,17 @@ void ShapeSimBase::reinsertBroadPhase()
 
 		// Call ElementSim ctor
 		{
+#if PX_SUPPORT_GPU_PHYSX
+			if (!initID())
+			{
+				PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL,
+										"Sc::ElementSim::ElementSim failed to allocate pinned memory bounds array");
+				scene.getCudaContextManager()->getCudaContext()->setAbortMode(true);
+				// code below is safe to execute after failure, as elementID is always obtained and bounds array accesses are guarded.
+			}
+#else
 			initID();
+#endif
 		}
 	}
 
@@ -185,8 +203,27 @@ void ShapeSimBase::initSubsystemsDependingOnElementID(PxU32 indexFrom)
 	getAbsPoseAligned(&absPos);
 
 	PxsTransformCache& cache = scScene.getLowLevelContext()->getTransformCache();
+#if PX_SUPPORT_GPU_PHYSX
+	PxCudaContextManager* ctxm = scScene.getCudaContextManager();
+	if(ctxm && ctxm->getCudaContext()->isInAbortMode())
+	{
+		return;
+	}
+	
+	if(!cache.initEntry(index))
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL,
+			"ShapeSimBase::initSubsystemsDependingOnElementID: failed to allocate pinned memory transform cache");
+		if(ctxm)
+		{
+			ctxm->getCudaContext()->setAbortMode(true);
+		}
+		return;
+	}
+#else
 	cache.initEntry(index);
-	cache.setTransformCache(absPos, 0, index, indexFrom);
+#endif
+	cache.setTransformCache(absPos, 0, index);
 
 	boundsArray.updateBounds(absPos, getCore().getGeometryUnion().getGeometry(), index, indexFrom);
 
@@ -304,33 +341,68 @@ PxsRigidCore& ShapeSimBase::getPxsRigidCore() const
 		: static_cast<StaticSim&>(a).getStaticCore().getCore();
 }
 
-void ShapeSimBase::updateCached(PxU32 transformCacheFlags, PxBitMapPinned* shapeChangedMap)
+// PT: TODO: unify the two updateCached() implementations?
+
+// PT: use this version when calling from a single thread. In particular the code is not thread-safe
+// when shapeChangedMap is not null. If shapeChangedMap is null, the code should be safe to call from
+// multiple threads but it could be suboptimal, as we will write to the same cache line from multiple
+// threads.
+void ShapeSimBase::updateCached_NotThreadSafe(const UpdateCachedParams& params, PinnableBitMap* shapeChangedMap)
 {
+	// PT: we don't need to update the transforms & bounds for pure visual shapes
+	const ShapeCore& shapeCore = getCore();
+	if(!needsBounds(shapeCore.getFlags()))
+		return;
+
 	PX_ALIGN(16, PxTransform absPose);
 	getAbsPoseAligned(&absPose);
 
-	Scene& scene = getScene();
 	const PxU32 index = getElementID();
 
-	scene.getLowLevelContext()->getTransformCache().setTransformCache(absPose, transformCacheFlags, index, index);
-	scene.getBoundsArray().updateBounds(absPose, getCore().getGeometryUnion().getGeometry(), index, index);
+	// PT: this won't be optimal from multiple threads:
+	// - PxsTransformCache::mHasAnythingChanged will be set repeatedly from N threads
+	// - contiguous indices could suffer from false sharing when sizeof(PxsCachedTransform) < sizeof(cache line)
+	PxsTransformCache& transformCache = params.mTransformCache;
+	transformCache.setTransformCache(absPose, params.mTransformFlags, index);
+
+	// PT: this won't be safe from multiple threads:
+	// - BoundsArray::mHasAnythingChanged will be set repeatedly from N threads
+	// - contiguous indices could suffer from false sharing when sizeof(PxBounds3) < sizeof(cache line)
+	// - updateBounds is now virtual, and the Pxg version is unsafe (writes to array from N threads)
+	params.mBoundsArray.updateBounds(absPose, shapeCore.getGeometryUnion().getGeometry(), index, index);
+
+	// PT: this won't be safe from multiple threads:
+	// - the write to the bitmap is not thread safe and could lead to data corruption from N threads
 	if (shapeChangedMap && isInBroadPhase())
 		shapeChangedMap->growAndSet(index);
 }
 
-void ShapeSimBase::updateCached(PxsTransformCache& transformCache, Bp::BoundsArray& boundsArray)
+// PT: use this version when calling from multiple threads. It still has potential performance issues
+// from false sharing but it should be safe. Callers are expected to:
+// - set PxsTransformCache::mHasAnythingChanged and BoundsArray::mHasAnythingChanged themselves
+// - do the changed bitmap update outside of the call (although we could use atomic ORs these days)
+void ShapeSimBase::updateCached_ThreadSafe(const UpdateCachedParams& params)
 {
+	// PT: we don't need to update the transforms & bounds for pure visual shapes
+	const ShapeCore& shapeCore = getCore();
+	if(!needsBounds(shapeCore.getFlags()))
+		return;
+
+	// PT: for SQ we need the transform to update the SQ pose of each object, but we also need the bounds to update the AABB tree.
+
 	const PxU32 index = getElementID();
 
-	PxsCachedTransform& ct = transformCache.getTransformCache(index);
+	PxsCachedTransform& ct = params.mTransformCache.getTransformCache(index);
 	PxPrefetchLine(&ct);
 
+	// PT: we write the pose directly to the destination address, avoiding a copy. Potential false sharing here.
 	getAbsPoseAligned(&ct.transform);
 
-	ct.flags = 0;
+	ct.flags = params.mTransformFlags;
 
-	PxBounds3& b = boundsArray.begin()[index];
-	Gu::computeBounds(b, getCore().getGeometryUnion().getGeometry(), ct.transform, 0.0f, 1.0f);
+	// PT: we write the bounds directly to the destination address, avoiding a copy. Potential false sharing here.
+	PxBounds3& b = params.mBoundsArray.begin()[index];
+	Gu::computeBounds(b, shapeCore.getGeometryUnion().getGeometry(), ct.transform, 0.0f, 1.0f);
 }
 
 void ShapeSimBase::updateBPGroup()
@@ -388,18 +460,8 @@ void ShapeSimBase::onVolumeOrTransformChange()
 
 void notifyActorInteractionsOfTransformChange(ActorSim& actor)
 {
-	bool isDynamic;
-	bool isAsleep;
-	if (actor.isDynamicRigid())
-	{
-		isDynamic = true;
-		isAsleep = !static_cast<BodySim&>(actor).isActive();
-	}
-	else
-	{
-		isDynamic = false;
-		isAsleep = true;
-	}
+	const bool isDynamic = actor.isDynamicRigid()!=0;
+	const bool isAsleep = isDynamic ? !static_cast<BodySim&>(actor).isActive() : true;
 
 	Scene& scene = actor.getScene();
 
@@ -429,4 +491,3 @@ void ShapeSimBase::destroySqBounds()
 	if (mSqBoundsId != PX_INVALID_U32)
 		getScene().getSqBoundsManager().removeSyncShape(*this);
 }
-

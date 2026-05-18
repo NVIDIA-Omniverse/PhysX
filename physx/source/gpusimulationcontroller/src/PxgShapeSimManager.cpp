@@ -22,31 +22,32 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "PxgShapeSimManager.h"
-#include "PxgHeapMemAllocator.h"
 #include "PxgNarrowphaseCore.h"
+#include "PxvGeometry.h"
 #include "GuBounds.h"
 #include "CmTask.h"
 #include "CmFlushPool.h"
 #include "PxgSimulationCoreDesc.h"
-#include "PxgCudaMemoryAllocator.h"
 #include "cudamanager/PxCudaContext.h"
 #include "CudaKernelWrangler.h"
 #include "PxgKernelIndices.h"
 #include "PxgSimulationCoreKernelIndices.h"
+#include "PxsCachedTransform.h"
+#include "BpAABBManagerBase.h"
 
 #define SSM_GPU_DEBUG	0
 
 using namespace physx;
 
-PxgShapeSimManager::PxgShapeSimManager(PxgHeapMemoryAllocatorManager* heapMemoryManager) :
+PxgShapeSimManager::PxgShapeSimManager(PxgAllocatorDesc& allocDesc) :
 	mTotalNumShapes		(0),
 	mNbTotalShapeSim	(0),
-	mPxgShapeSimPool	(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mShapeSimBuffer		(heapMemoryManager, PxsHeapStats::eSIMULATION),
-	mNewShapeSimBuffer	(heapMemoryManager, PxsHeapStats::eSIMULATION)
+	mPxgShapeSimPool	(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+	mShapeSimBuffer		(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
+	mNewShapeSimBuffer	(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION)
 {
 }
 
@@ -174,7 +175,7 @@ void PxgShapeSimManager::gpuMemDmaUpShapeSim(PxCudaContext* cudaContext, CUstrea
 {
 	const PxU32 nbTotalShapes = mTotalNumShapes;
 		
-	const PxPinnedArray<PxgNewShapeSim>& newShapeSimPool = mPxgShapeSimPool;
+	const Cm::PinnableArray<PxgNewShapeSim>& newShapeSimPool = mPxgShapeSimPool;
 
 	const PxU32 nbNewShapes = newShapeSimPool.size();
 
@@ -217,3 +218,32 @@ void PxgShapeSimManager::gpuMemDmaUpShapeSim(PxCudaContext* cudaContext, CUstrea
 
 	mNewShapeSims.clear();
 }
+
+#if PXG_SC_DEBUG
+void PxgShapeSimManager::validateCacheAndBounds(const PxBounds3* bounds, const PxsCachedTransform* cachedTransforms)
+{
+	for(PxU32 i = 0; i < mTotalNumShapes; ++i)
+	{
+		PxgShapeSimData& shapeSim = mShapeSims[i];
+		if(shapeSim.mBodySimIndex_GPU.index() != 0xffffffff)
+		{
+
+			const PxBounds3& bound = bounds[shapeSim.mElementIndex_GPU];
+			if(!bound.isValid())
+			{
+				int bob = 0;
+				PX_UNUSED(bob);
+			}
+			PX_ASSERT(bound.isValid());
+			const PxsCachedTransform& cache = cachedTransforms[shapeSim.mElementIndex_GPU];
+			PX_ASSERT(cache.transform.isSane());
+			if(!cache.transform.isSane())
+			{
+				int bob = 0;
+				PX_UNUSED(bob);
+			}
+		}
+	}
+}
+#endif
+

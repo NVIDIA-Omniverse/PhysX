@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -67,42 +67,32 @@ namespace physx
 				return tDof;
 			}
 
-			PX_FORCE_INLINE PxU8 configureJointDofs(ArticulationJointCore* joint, Cm::UnAlignedSpatialVector* jointAxis)
+			PX_FORCE_INLINE PxU8 configureJointDofs(ArticulationJointCore* joint)
 			{
-					nbDof = 0;
-					dofLimitMask = 0;
+				nbDof = 0;
+				dofLimitMask = 0;
 
-					//KS - no need to zero memory here.
-					//PxMemZero(jointAxis, sizeof(jointAxis));
-
-					for (PxU8 i = 0; i < DY_MAX_DOF; ++i)
+				for (PxU8 i = 0; i < DY_MAX_DOF; ++i)
+				{
+					if (joint->motion[i] != PxArticulationMotion::eLOCKED)
 					{
-						if (joint->motion[i] != PxArticulationMotion::eLOCKED)
-						{
-							Cm::UnAlignedSpatialVector axis = Cm::UnAlignedSpatialVector::Zero();
-							//axis is in the local space of joint
-							axis[i] = 1.f;
+						joint->invDofIds[i] = nbDof;
+						joint->dofIds[nbDof] = i;
 
-							jointAxis[nbDof] = axis;
+						if (joint->motion[i] == PxArticulationMotion::eLIMITED)
+							dofLimitMask |= 1 << nbDof;
 
-							joint->invDofIds[i] = nbDof;
-							joint->dofIds[nbDof] = i;
-
-							if (joint->motion[i] == PxArticulationMotion::eLIMITED)
-								dofLimitMask |= 1 << nbDof;
-
-							nbDof++;
-						}
+						nbDof++;
 					}
+				}
 			
 				return nbDof;
 			}
 
-			PxU32	jointOffset;				//4
+			PxU32	jointOffset;	//4
 			//degree of freedom
-			PxU8	nbDof;						//1
-			PxU8	dofLimitMask;					//1	
-
+			PxU8	nbDof;			//1
+			PxU8	dofLimitMask;	//1	
 		};
 
 	}//namespace Dy

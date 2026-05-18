@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -36,6 +36,11 @@ public:
     bool setSpringDamping(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool getSpringStiffness(const TensorDesc* dstTensor) const override;
     bool setSpringStiffness(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
+    bool setPositionsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setMassesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setSpringDampingMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
+    bool setSpringStiffnessMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
 private:
     int mDevice = -1;
@@ -55,6 +60,16 @@ private:
     ::physx::PxU32* mDirtyPcIndicesDev = nullptr; // index into indexPair list, global index
     ::physx::PxGpuParticleBufferIndexPair* mPcIndexPairsDev = nullptr; // list of indexpairs, indexed by global index.
     std::unordered_map<uint64_t, uint32_t> mIndexPair2ClothMap;
+
+    // Mask -> indices scratch (cached). Declared mutable because resolveMask()
+    // is const - some interface setters (e.g. material/shape properties) are
+    // const by pre-existing TensorAPI convention ("const" = view object unchanged,
+    // simulation state may be mutated via pointer indirection). These buffers are
+    // internal caching state, not logical view state.
+    mutable ::physx::PxU32* mMaskIndicesDev = nullptr;
+    mutable ::physx::PxU32 mMaskIndicesCapacity = 0;
+    mutable SingleAllocPolicy mMaskAllocPolicy;
+    bool resolveMask(const TensorDesc* maskTensor, ::physx::PxU32& outK) const;
 };
 
 } // namespace tensors

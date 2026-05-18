@@ -22,13 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "PxgFEMCloth.h"
-#include "PxgFEMCore.h"
-#include "PxgFEMClothCore.h"
 #include "vector_types.h"
 #include "foundation/PxVec3.h"
 #include "foundation/PxMathUtils.h"
@@ -39,7 +37,7 @@
 #include "PxgSolverCoreDesc.h"
 #include "PxNodeIndex.h"
 #include "PxgBodySim.h"
-#include "PxgArticulation.h"
+#include "PxgArticulationBlockData.h"
 #include "PxgArticulationCoreDesc.h"
 #include "PxgParticleSystem.h"
 #include "PxsDeformableSurfaceMaterialCore.h"
@@ -49,8 +47,6 @@
 #include "attachments.cuh"
 #include "deformableCollision.cuh"
 #include "FEMClothUtil.cuh"
-
-#define FEMCLOTH_BIAS_COEFFICIENT 0.7f
 
 using namespace physx;
 
@@ -1163,7 +1159,8 @@ void cloth_solveCPOutputClothDeltaVLaunch(
 	PxgFEMParticleConstraintBlock* constraints,
 	PxU32* numContacts,
 	float2* appliedForces, // output    
-	PxsDeformableSurfaceMaterialData* materials)
+	PxsDeformableSurfaceMaterialData* materials,
+	const PxReal biasCoefficient)
 {
 	const PxU32 tNumContacts = *numContacts;
 
@@ -1251,7 +1248,7 @@ void cloth_solveCPOutputClothDeltaVLaunch(
 			PxReal deltaFr = PxMin(requiredForce + appliedForce.y, friction) - appliedForce.y;
 			appliedForce.y += deltaFr;
 
-			PxVec3 deltaPos = ((normal * deltaF) - tanDir * deltaFr) * FEMCLOTH_BIAS_COEFFICIENT;
+			PxVec3 deltaPos = ((normal * deltaF) - tanDir * deltaFr) * biasCoefficient;
 
 			// updateTetraPosDelta(invMasses0, barycentric0, tetrahedronId0, deltaPos, softbody0.mDelta);
 			updateTrianglePosDelta(invMasses1, barycentric, triVertId, deltaPos, cloth.mDeltaPos, elementId);
@@ -1271,7 +1268,8 @@ void cloth_solveCPOutputParticleDeltaVLaunch(
 	PxU32* numContacts,
 	float4* deltaP,        // output    
 	float2* appliedForces, // output    
-	PxsDeformableSurfaceMaterialData* materials
+	PxsDeformableSurfaceMaterialData* materials,
+	const PxReal biasCoefficient
 )
 {
 	const PxU32 tNumContacts = *numContacts;
@@ -1357,7 +1355,7 @@ void cloth_solveCPOutputParticleDeltaVLaunch(
 			PxReal deltaFr = PxMin(requiredForce + appliedForce.y, friction) - appliedForce.y;
 			appliedForce.y += deltaFr;
 
-			const PxVec3 deltaV = ((-normal * deltaF) + tanDir * deltaFr) * invMass0 * FEMCLOTH_BIAS_COEFFICIENT;
+			const PxVec3 deltaV = ((-normal * deltaF) + tanDir * deltaFr) * invMass0 * biasCoefficient;
 			PxReal w = 0.f;
 			if(deltaF != 0.f || deltaFr != 0.f)
 				w = 1.f;
@@ -1378,7 +1376,8 @@ void cloth_solveRigidClothAttachmentLaunch(
 	PxgArticulationCoreDesc* artiCoreDesc,
 	PxgSolverSharedDesc<IterativeSolveData>* sharedDesc, 
 	const PxReal dt,
-	float4* rigidDeltaVel // output
+	const PxReal biasCoefficient,
+	float4* rigidDeltaVel // output,
 )
 {
 	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
@@ -1449,7 +1448,7 @@ void cloth_solveRigidClothAttachmentLaunch(
 		PxVec3 deltaLinVel, deltaAngVel;
 		const PxVec3 deltaImpulse = calculateAttachmentDeltaImpulsePGS(
 			constraint.raXn0_biasW[offset], constraint.raXn0_biasW[offset], constraint.raXn0_biasW[offset], velMultiplierXYZ_invMassW,
-			constraint.low_high_limits[offset], constraint.axis_angle[offset], vel0, linVel1, 1.f / dt, 0.5f, deltaLinVel, deltaAngVel);
+			constraint.low_high_limits[offset], constraint.axis_angle[offset], vel0, linVel1, 1.f / dt, biasCoefficient, deltaLinVel, deltaAngVel);
 
 		// Update rigid body
 		if(!rigidId.isStaticBody())
@@ -1577,7 +1576,8 @@ extern "C" __global__ void cloth_solveRigidClothAttachmentTGSLaunch(
 	PxgArticulationCoreDesc* artiCoreDesc,
 	PxgSolverSharedDesc<IterativeSolveData>* sharedDesc, 
 	const PxReal dt,
-	float4* rigidDeltaVel // output
+	const PxReal biasCoefficient,
+	float4* rigidDeltaVel // output,
 )
 {
 	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
@@ -1644,7 +1644,7 @@ extern "C" __global__ void cloth_solveRigidClothAttachmentTGSLaunch(
 
 		// Compute impulses
 		PxVec3 deltaLinVel, deltaAngVel;
-		PxVec3 deltaImpulse = calculateAttachmentDeltaImpulseTGS(offset, constraint, vel0, linDelta1, dt, FEMCLOTH_BIAS_COEFFICIENT, false,
+		PxVec3 deltaImpulse = calculateAttachmentDeltaImpulseTGS(offset, constraint, vel0, linDelta1, dt, biasCoefficient, false,
 																 deltaLinVel, deltaAngVel);
 
 		// Update rigid body

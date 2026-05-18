@@ -21,13 +21,12 @@ project ("omni.physx.tensors.plugin")
     targetdir (targetDir.."/"..ext_dir.."/bin")
     dependson { "prebuild", "carb.physics-usd.plugin", "omni.physx.plugin" }
     includedirs {
-        targetDeps_dir.."/carb_sdk_plugins/include",          
+        targetDeps_dir.."/carb_sdk_plugins/include",
         kit_sdk_includes,
         kit_sdk_dir.."/dev/fabric/include",
-        targetDeps_dir.."/rtx_plugins/include",
         targetDeps_dir.."/gsl/include",
     }
-    links { "physxSchema", "physicsSchemaTools", "omni.usd", "foundation", "carb" }
+    links { "physxSchema", "physicsSchemaTools", "foundation", "carb" }
     filter { "configurations:debug" }
         runtime "Debug"
     filter  { "configurations:release" }
@@ -52,5 +51,8 @@ project ("omni.physx.tensors.plugin")
     add_cuda_dirs()
     add_nvcc_commands()
 
-    -- cuda libs
-    links { "cuda", "cudart_static" }
+    -- NOTE: "cuda" intentionally NOT linked -- all cu* driver API calls go through
+    -- IOptionalCuda (runtime-loaded shim in foundation). This eliminates the
+    -- DT_NEEDED libcuda.so.1 entry, allowing the plugin to load on CPU-only machines.
+    -- cudart_static is a static archive (.a) that embeds without creating DT_NEEDED.
+    links { "cudart_static" }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -93,7 +93,6 @@ OMNI_PVD_ENUM_END		(PxD6Motion)
 OMNI_PVD_ENUM_BEGIN		(PxD6AngularDriveConfig)
 OMNI_PVD_ENUM_VALUE		(PxD6AngularDriveConfig,	eSWING_TWIST)
 OMNI_PVD_ENUM_VALUE		(PxD6AngularDriveConfig,	eSLERP)
-OMNI_PVD_ENUM_VALUE		(PxD6AngularDriveConfig,	eLEGACY)
 OMNI_PVD_ENUM_END		(PxD6AngularDriveConfig)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -257,11 +256,10 @@ OMNI_PVD_ATTRIBUTE						(PxD6Joint,	pyramidSwingLimitDamping,			PxReal, OmniPvdD
 OMNI_PVD_ATTRIBUTE						(PxD6Joint,	driveX,								PxD6JointDrive* const, OmniPvdDataType::eOBJECT_HANDLE)
 OMNI_PVD_ATTRIBUTE						(PxD6Joint,	driveY,								PxD6JointDrive* const, OmniPvdDataType::eOBJECT_HANDLE)
 OMNI_PVD_ATTRIBUTE						(PxD6Joint,	driveZ,								PxD6JointDrive* const, OmniPvdDataType::eOBJECT_HANDLE)
-OMNI_PVD_ATTRIBUTE						(PxD6Joint,	driveSwing,							PxD6JointDrive* const, OmniPvdDataType::eOBJECT_HANDLE)
 OMNI_PVD_ATTRIBUTE						(PxD6Joint,	driveTwist,							PxD6JointDrive* const, OmniPvdDataType::eOBJECT_HANDLE)
-OMNI_PVD_ATTRIBUTE						(PxD6Joint,	driveSlerp,							PxD6JointDrive* const, OmniPvdDataType::eOBJECT_HANDLE)
 OMNI_PVD_ATTRIBUTE						(PxD6Joint,	driveSwing1,						PxD6JointDrive* const, OmniPvdDataType::eOBJECT_HANDLE)
 OMNI_PVD_ATTRIBUTE						(PxD6Joint,	driveSwing2,						PxD6JointDrive* const, OmniPvdDataType::eOBJECT_HANDLE)
+OMNI_PVD_ATTRIBUTE						(PxD6Joint,	driveSlerp,							PxD6JointDrive* const, OmniPvdDataType::eOBJECT_HANDLE)
 OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE		(PxD6Joint,	drivePosition,						PxTransform, OmniPvdDataType::eFLOAT32, 7)
 OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE		(PxD6Joint,	driveLinVelocity,					PxVec3, OmniPvdDataType::eFLOAT32, 3)
 OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE		(PxD6Joint,	driveAngVelocity,					PxVec3, OmniPvdDataType::eFLOAT32, 3)

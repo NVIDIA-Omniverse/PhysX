@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -293,7 +293,7 @@ void parseSkinBindPointsWorld(VtArray<GfVec3f>& allSkinMeshBindPointsWorld,
             {
                 for (const GfVec3f& point : skinMeshBindPointsLocal)
                 {
-                    allSkinMeshBindPointsWorld[offsetSkinMeshPoints++] = skinGeomToWorld.Transform(point);
+                    allSkinMeshBindPointsWorld[offsetSkinMeshPoints++] = GfVec3f(skinGeomToWorld.Transform(point));
                 }
             }
         }
@@ -771,7 +771,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     if (!scene || !scene->isFullGpuPipelineAvailable())
     {
         PhysXUsdPhysicsInterface::reportLoadError(
-            ErrorCode::eError,
+            usdparser::ErrorCode::eError,
             "Deformable Body feature is only supported on GPU. Please enable GPU dynamics flag in Property/Scene of physics scene!");
         return kInvalidObjectId;
     }
@@ -779,7 +779,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     if (!checkScenes())
     {
         PhysXUsdPhysicsInterface::reportLoadError(
-            ErrorCode::eError, "No physics scene created, please add physics scene into stage!");
+            usdparser::ErrorCode::eError, "No physics scene created, please add physics scene into stage!");
         return kInvalidObjectId;
     }
 
@@ -1022,9 +1022,8 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
         deformableVolume->setDeformableBodyFlag(PxDeformableBodyFlag::eDISABLE_SELF_COLLISION, !desc.selfCollision);
     }
     {
-        const bool disableSleeping = OmniPhysX::getInstance().getCachedSettings().disableSleeping;
-        deformableVolume->setSleepThreshold(disableSleeping ? 0.0f : desc.sleepThreshold);
-        deformableVolume->setSettlingThreshold(disableSleeping ? 0.0f : desc.settlingThreshold);
+        deformableVolume->setSleepThreshold(desc.sleepThreshold);
+        deformableVolume->setSettlingThreshold(desc.settlingThreshold);
         deformableVolume->setSettlingDamping(desc.settlingDamping);
     }
     deformableVolume->setDeformableBodyFlag(PxDeformableBodyFlag::eKINEMATIC, desc.kinematicBody);
@@ -1073,7 +1072,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
 
     for (PxU32 i = 0; i < internalBody->mNumSimMeshVertices; ++i)
     {
-        GfVec3f simPosition = simMeshToWorld.Transform(simMeshPoints[i]);
+        GfVec3f simPosition = GfVec3f(simMeshToWorld.Transform(simMeshPoints[i]));
         internalBody->mSimMeshPositionInvMassH[i] = PxVec4(toPhysX(simPosition), internalBody->mSimMeshPositionInvMassH[i].w);
     }
 
@@ -1183,7 +1182,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
         PxArray<PxVec3> guideVertices((uint32_t)simMeshBindPoints.size());
         for (uint32_t i = 0; i < guideVertices.size(); ++i)
         {
-            const GfVec3f point = simMeshToCooking.Transform(simMeshBindPoints[i]);
+            const GfVec3f point = GfVec3f(simMeshToCooking.Transform(simMeshBindPoints[i]));
             guideVertices[i] = PxVec3(point[0], point[1], point[2]);
         }
 
@@ -1191,7 +1190,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
         PxArray<PxVec3> embeddedVertices((uint32_t)allSkinMeshBindPointsWorld.size());
         for (uint32_t i = 0; i < embeddedVertices.size(); ++i)
         {
-            const GfVec3f point = worldToCooking.Transform(allSkinMeshBindPointsWorld[i]);
+            const GfVec3f point = GfVec3f(worldToCooking.Transform(allSkinMeshBindPointsWorld[i]));
             embeddedVertices[i] = PxVec3(point[0], point[1], point[2]);
         }
 
@@ -1229,7 +1228,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     if (!scene || !scene->isFullGpuPipelineAvailable())
     {
         PhysXUsdPhysicsInterface::reportLoadError(
-            ErrorCode::eError,
+            usdparser::ErrorCode::eError,
             "Deformable Body feature is only supported on GPU. Please enable GPU dynamics flag in Property/Scene of physics scene!");
         return kInvalidObjectId;
     }
@@ -1237,7 +1236,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     if (!checkScenes())
     {
         PhysXUsdPhysicsInterface::reportLoadError(
-            ErrorCode::eError, "No physics scene created, please add physics scene into stage!");
+            usdparser::ErrorCode::eError, "No physics scene created, please add physics scene into stage!");
         return kInvalidObjectId;
     }
 
@@ -1419,8 +1418,8 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         positions.resize(simMeshRestShapePoints.size());
         for (PxU32 i = 0; i < positions.size(); ++i)
         {
-            const pxr::GfVec3f& simRestPos = simMeshRestShapePoints[i];
-            positions[i] = simMeshToCooking.Transform(simRestPos);
+            const GfVec3f& simRestPos = simMeshRestShapePoints[i];
+            positions[i] = GfVec3f(simMeshToCooking.Transform(simRestPos));
         }
 
         // cook triangle mesh
@@ -1525,9 +1524,8 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         deformableSurface->setDeformableBodyFlag(PxDeformableBodyFlag::eDISABLE_SELF_COLLISION, !desc.selfCollision);
     }
     {
-        const bool disableSleeping = OmniPhysX::getInstance().getCachedSettings().disableSleeping;
-        deformableSurface->setSleepThreshold(disableSleeping ? 0.0f : desc.sleepThreshold);
-        deformableSurface->setSettlingThreshold(disableSleeping ? 0.0f : desc.settlingThreshold);
+        deformableSurface->setSleepThreshold(desc.sleepThreshold);
+        deformableSurface->setSettlingThreshold(desc.settlingThreshold);
         deformableSurface->setSettlingDamping(desc.settlingDamping);
     }
 
@@ -1691,7 +1689,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         PxArray<PxVec3> guideVertices((uint32_t)simMeshBindPoints.size());
         for (uint32_t i = 0; i < guideVertices.size(); ++i)
         {
-            const GfVec3f point = simMeshToCooking.Transform(simMeshBindPoints[i]);
+            const GfVec3f point = GfVec3f(simMeshToCooking.Transform(simMeshBindPoints[i]));
             guideVertices[i] = PxVec3(point[0], point[1], point[2]);
         }
 
@@ -1699,7 +1697,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         PxArray<PxVec3> embeddedVertices((uint32_t)allSkinMeshBindPointsWorld.size());
         for (uint32_t i = 0; i < embeddedVertices.size(); ++i)
         {
-            const GfVec3f point = worldToCooking.Transform(allSkinMeshBindPointsWorld[i]);
+            const GfVec3f point = GfVec3f(worldToCooking.Transform(allSkinMeshBindPointsWorld[i]));
             embeddedVertices[i] = PxVec3(point[0], point[1], point[2]);
         }
 

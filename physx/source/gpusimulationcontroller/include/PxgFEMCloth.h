@@ -22,30 +22,30 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PXG_FEMCLOTH_H
 #define PXG_FEMCLOTH_H
 
-#include "PxDeformableSurface.h"
-#include "PxgCudaBuffer.h"
-#include "PxsHeapMemoryAllocator.h"
-#include "cutil_math.h"
-#include "foundation/PxUserAllocated.h"
-#include "foundation/PxVec2.h"
-#include "foundation/PxVec4.h"
+#include "foundation/PxArray.h"
+#include "foundation/PxBounds3.h"
+#include <vector_types.h>
 
 namespace physx
 {
 namespace Gu
 {
 class TriangleMesh;
-};
+}
+namespace Cm
+{
+class VirtualAllocatorCallback;
+}
 
-struct PxgFemRigidConstraintBlock;
 struct PxsDeformableSurfaceMaterialData;
+struct PxgFemRigidConstraintBlock;
 
 #if PX_VC
 #pragma warning(push)
@@ -72,7 +72,7 @@ class PxgFEMCloth
   public:
 
 	// to deallocate the host mirror. Make sure you pass in the right allocator!
-	void deallocate(PxsHeapMemoryAllocator* allocator);
+	void deallocate(Cm::VirtualAllocatorCallback& hostAlloc);
 
 	void* mTriMeshData;
 
@@ -191,65 +191,6 @@ class PxgFEMCloth
 #pragma warning(pop)
 #endif
 
-class PxgFEMClothBuffer : public PxUserAllocated
-{
-  public:
-	PxgFEMClothBuffer(PxgHeapMemoryAllocatorManager* heapMemoryManager);
-
-	PxgCudaBuffer triangleMeshData;
-
-	PxgTypedCudaBuffer<float4> deltaPos;
-	PxgTypedCudaBuffer<float4> accumulatedDeltaPos;
-	PxgTypedCudaBuffer<float4> accumulatedDeltaVel; // Used for damping
-
-	PxgTypedCudaBuffer<float4> prevPositionInContactOffset; // After contact pairs are updated, cloth vertices have moved by
-															// mPosition_InvMass - mPrevPositionInContactOffset.
-	PxgTypedCudaBuffer<float4> prevPositionInRestOffset;	// After cloth-cloth distance is measured, cloth vertices have moved by
-															// mPosition_InvMass - mPrevPositionInRestOffset.
-
-
-	PxgTypedCudaBuffer<PxU16> materialIndices;
-	PxgTypedCudaBuffer<float> dynamicfrictions;
-
-	PxgTypedCudaBuffer<PxU32> trianglesWithActiveEdges;
-	PxgTypedCudaBuffer<uint4> triangleVertexIndices;
-	PxgTypedCudaBuffer<uint4> orderedNonSharedTriangleVertexIndices_triIndex;
-
-	PxgTypedCudaBuffer<float2> orderedSharedTriangleLambdas;
-	PxgTypedCudaBuffer<float2> orderedNonSharedTriangleLambdas;
-	
-	PxgTypedCudaBuffer<float4> orderedNonSharedTriangleRestPoseInv;
-
-	PxgTypedCudaBuffer<uint4> orderedSharedTrianglePairVertexIndices;
-	PxgTypedCudaBuffer<uint4> orderedNonSharedTrianglePairVertexIndices;
-	
-	PxgTypedCudaBuffer<float4> orderedSharedRestBendingAngle_flexuralStiffness_damping;
-	PxgTypedCudaBuffer<float4> orderedNonSharedRestBendingAngle_flexuralStiffness_damping;
-
-	PxgTypedCudaBuffer<float4> orderedSharedRestEdge0_edge1;
-	PxgTypedCudaBuffer<float4> orderedSharedRestEdgeLength_material0_material1;
-
-	PxgTypedCudaBuffer<float> sharedBendingLambdas;
-	PxgTypedCudaBuffer<float> nonSharedBendingLambdas;
-
-	PxgTypedCudaBuffer<float4> position_InvMassCP;
-
-	PxgTypedCudaBuffer<PxU32> nonSharedTriAccumulatedPartitionsCP;
-
-	PxgTypedCudaBuffer<PxU32> sharedTriPairRemapOutputCP;
-	PxgTypedCudaBuffer<PxU32> nonSharedTriPairRemapOutputCP;
-
-	PxgTypedCudaBuffer<PxU32> sharedTriPairAccumulatedCopiesCP;
-	PxgTypedCudaBuffer<PxU32> nonSharedTriPairAccumulatedCopiesCP;
-
-	PxgTypedCudaBuffer<PxU32> sharedTriPairAccumulatedPartitionsCP;
-	PxgTypedCudaBuffer<PxU32> nonSharedTriPairAccumulatedPartitionsCP;
-
-	PxgTypedCudaBuffer<PxBounds3> packedNodeBounds; // for refit
-
-	PxgTypedCudaBuffer<PxU32> numPenetratedTets;
-};
-
 struct EdgeEncoding
 {
 	// TYPE0 layout (lower 16 bits)
@@ -304,10 +245,12 @@ class PxgFEMClothUtil
   public:
 	static PxU32 computeTriangleMeshByteSize(const Gu::TriangleMesh* triangleMesh);
 	static PxU32 loadOutTriangleMesh(void* mem, const Gu::TriangleMesh* triangleMesh);
+
 	static PxU32 initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>& trianglePairTriangleIndices,
 									 PxArray<uint4>& trianglePairVertexIndices, const Gu::TriangleMesh* triangleMesh,
 									 const PxU16* materialHandles, PxsDeformableSurfaceMaterialData* materials, const PxU32 nbMaterials,
-									 PxsHeapMemoryAllocator* alloc);
+									 Cm::VirtualAllocatorCallback& hostAlloc);
+
 	static void categorizeClothConstraints(PxArray<PxU32>& sharedTrianglePairs, PxArray<PxU32>& nonSharedTriangles,
 										   PxArray<PxU32>& nonSharedTrianglePairs, PxgFEMCloth& femCloth,
 										   const PxArray<uint2>& trianglePairTriangleIndices);

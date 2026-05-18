@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -6,7 +6,8 @@
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
-
+#include <carb/dictionary/IDictionary.h>
+#include "simulator/Simulation.h"
 
 namespace omni
 {
@@ -25,8 +26,10 @@ struct IPhysicsInteraction
 
     /// Returns the current state of the ResetOnStop setting.
     ///
+    /// \param simulationId simulation id for simulation to query
+    ///
     /// \return Disable/enable for the reset on stop.
-    bool(CARB_ABI* isDisabledResetOnStop)();
+    bool(CARB_ABI* isDisabledResetOnStop)(SimulationId simId);
 
     /// Called when a raycast request is executed - used for picking.
     ///
@@ -34,6 +37,12 @@ struct IPhysicsInteraction
     /// \param dir Direction of the raycast
     /// \param[in] input Whether the input control is set or reset (e.g. mouse down).
     void(CARB_ABI* handleRaycast)(const float* orig, const float* dir, bool input);
+
+    /// Get debug data for a prim
+    ///
+    /// \param[in] primPath The prim path as a string (e.g., "/World/Cube")
+    /// \return List of engine-defined debug data entries
+    carb::dictionary::Item*(CARB_ABI* getPrimDebugData)(const char* primPath);
 };
 
 } // namespace physics

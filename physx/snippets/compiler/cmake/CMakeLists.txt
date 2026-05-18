@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 cmake_minimum_required(VERSION 3.16)
 project(Snippets C CXX)
@@ -97,11 +97,27 @@ ENDIF()
 INCLUDE(SnippetUtils.cmake)
 SET_PROPERTY(TARGET SnippetUtils PROPERTY FOLDER "Snippets/Libraries only")
 
+# SnippetOmniPvd is non-functional in release (PX_SUPPORT_OMNI_PVD=0), producing a
+# stub binary. Exclude it from release builds in two parts:
+# Part 1: Single-config generators (Ninja, Make) - remove from list before the loop.
+# Part 2: Multi-config generators (Visual Studio) - see below after the FOREACH.
+IF(NOT CMAKE_CONFIGURATION_TYPES)
+	STRING(TOLOWER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE_LOWER)
+	IF(_BUILD_TYPE_LOWER STREQUAL "release")
+		LIST(REMOVE_ITEM SNIPPETS_LIST OmniPvd)
+	ENDIF()
+ENDIF()
+
 # Compile snippets
 FOREACH(SNIPPET_NAME ${SNIPPETS_LIST})
 	INCLUDE(SnippetTemplate.cmake)
 	SET_PROPERTY(TARGET Snippet${SNIPPET_NAME} PROPERTY FOLDER "Snippets")
 ENDFOREACH()
+
+# Part 2: Multi-config generators (Visual Studio) - exclude SnippetOmniPvd from Release.
+IF(CMAKE_CONFIGURATION_TYPES AND TARGET SnippetOmniPvd)
+	SET_TARGET_PROPERTIES(SnippetOmniPvd PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_RELEASE TRUE)
+ENDIF()
 
 # Compile vehicle snippets
 FOREACH(SNIPPET_NAME ${SNIPPETS_VEHICLE_LIST})

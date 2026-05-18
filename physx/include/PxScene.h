@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -41,7 +41,6 @@
 #include "PxSoftBodyFlag.h" // deprecated
 #include "PxParticleSystemFlag.h"
 #include "PxParticleSolverType.h"
-#include "PxResidual.h"
 
 #include "cudamanager/PxCudaTypes.h"
 
@@ -1722,15 +1721,6 @@ class PxScene : public PxSceneSQSystem
 	Each object of PxDirectGPUAPI is directly associated with a PxScene, and there is only one PxDirectGPUAPI object per scene.
 	*/
 	virtual 	PxDirectGPUAPI&	  getDirectGPUAPI() = 0;
-	
-	/**
-	\brief Provides a metric that describes how well the solver converged. The smaller the returned error, the more accurate the solution.
-
-	\note The scene flag eENABLE_SOLVER_RESIDUAL_REPORTING must be set, otherwise the residual will not be computed and the function will return zero.
-
-	\return The residual as a root mean squared or max value of the all corrections applied by the solver in the last position and in the last velocity iteration.
-	*/
-	virtual		PxSceneResidual		getSolverResidual() const = 0;
 
 	/**
 	\brief Sets the post-solve callback for deformable surface GPU computations. Allows to schedule custom work to be done by the GPU as soon as possible after the deformable surface solver finishes.

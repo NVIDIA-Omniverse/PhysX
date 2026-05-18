@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -131,7 +131,7 @@ public:
                         numErrors++;
                     }
                 }
-                uint64_t triggerUsdPrim = omni::fabric::asInt(primPath).path;
+                uint64_t triggerUsdPrim = omni::fabric::sdfPathToHandle(primPath);
                 auto subId = mPhysxSimulationInterface->subscribePhysicsTriggerReportEvents(
                     stageId, triggerUsdPrim, &OgnPhysXOnTriggerCollider::OnTriggerEventReportFunction,
                     (void*)nodeObj.nodeHandle);
@@ -233,6 +233,12 @@ public:
         {
             db.logError("%s", state.permanentError.c_str());
         }
+
+        omni::graph::core::BackendId backendId;
+        omni::graph::core::GraphObj graphObj = db.abi_context().iContext->getGraph(db.abi_context());
+        graphObj.iGraph->getBackendId(graphObj, backendId);
+        omni::fabric::FabricId fabricId(backendId.id);
+
         auto& nodeObj = db.abi_node();
         const bool isExecutionEnterPinConnected = needOutput(nodeObj, outputs::enterExecOut.m_token);
         const bool isExecutionLeavePinConnected = needOutput(nodeObj, outputs::leaveExecOut.m_token);
@@ -244,10 +250,14 @@ public:
             const bool isLeaveEvent = tdata.eventType == omni::physx::TriggerEventType::eTRIGGER_ON_LEAVE;
             if ((isExecutionEnterPinConnected && isEnterEvent) || (isExecutionLeavePinConnected && isLeaveEvent))
             {
-                db.outputs.triggerCollider() = omni::physx::graph::asNameToken(tdata.triggerColliderPrimId);
-                db.outputs.otherCollider() = omni::physx::graph::asNameToken(tdata.otherColliderPrimId);
-                db.outputs.triggerBody() = omni::physx::graph::asNameToken(tdata.triggerBodyPrimId);
-                db.outputs.otherBody() = omni::physx::graph::asNameToken(tdata.otherBodyPrimId);
+                db.outputs.triggerCollider() = omni::fabric::StageReaderWriterUsd(fabricId).registerToken(
+                    omni::fabric::handleToSdfPath(tdata.triggerColliderPrimId).GetText());
+                db.outputs.otherCollider() = omni::fabric::StageReaderWriterUsd(fabricId).registerToken(
+                    omni::fabric::handleToSdfPath(tdata.otherColliderPrimId).GetText());
+                db.outputs.triggerBody() = omni::fabric::StageReaderWriterUsd(fabricId).registerToken(
+                    omni::fabric::handleToSdfPath(tdata.triggerBodyPrimId).GetText());
+                db.outputs.otherBody() = omni::fabric::StageReaderWriterUsd(fabricId).registerToken(
+                    omni::fabric::handleToSdfPath(tdata.otherBodyPrimId).GetText());                
                 if (isEnterEvent)
                 {
                     db.outputs.enterExecOut() = state.bufferedTriggers.empty() ? kExecutionAttributeStateEnabled :

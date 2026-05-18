@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -23,7 +23,6 @@
 #include "ContactReport.h"
 #include "PhysXDefines.h"
 #include "PhysXSimulationCallbacks.h"
-#include "particles/FabricParticles.h"
 #include "ScopedNoticeLock.h"
 
 #include <private/omni/physx/PhysxUsd.h>
@@ -177,11 +176,21 @@ static void physXUpdateNonRenderInternal(const pxr::SdfPath& scenePath, float el
         getPhysXUsdPhysicsInterface().finalizeDeformableRigidAttachmentsDeprecated();
         getPhysXUsdPhysicsInterface().updateDeformableAttachmentsDeprecated();
     }
-    
+
     {
         CARB_PROFILE_ZONE(0, "ProcessDeformableAttachmentAndCollisionFilterShapeEvents");
         getPhysXUsdPhysicsInterface().processDeformableAttachmentShapeEvents();
         getPhysXUsdPhysicsInterface().processDeformableCollisionFilterShapeEvents();
+    }
+
+    {
+        CARB_PROFILE_ZONE(0, "PhysicsUpdate::debugDraw");
+        omniPhysX.getInternalPhysXDatabase().debugDraw();
+    }
+
+    {
+        CARB_PROFILE_ZONE(0, "PhysicsUpdate::updateStats");
+        omniPhysX.getInternalPhysXDatabase().updateStats();
     }
 
     if (physxScenes.empty())
@@ -202,7 +211,7 @@ static void physXUpdateNonRenderInternal(const pxr::SdfPath& scenePath, float el
                 attachements[i]->refreshAttachment();
             }
         }
-        
+
         {
             CARB_PROFILE_ZONE(0, "UpdateDeformableAttachmentsAndCollisionFilters");
 
@@ -223,10 +232,11 @@ static void physXUpdateNonRenderInternal(const pxr::SdfPath& scenePath, float el
         if (scene)
         {
             // setup debug render scale
-            if (OmniPhysX::getInstance().isDebugVisualizationEnabled())
+            if (OmniPhysX::getInstance().isDebugVisualizationDirty())
             {
                 const float gizmoScale = omniPhysX.getCachedSettings().viewportGizmoScale;
                 scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, gizmoScale * OmniPhysX::getInstance().getVisualizationScale());
+                OmniPhysX::getInstance().setDebugVisualizationDirty(false);
             }
 
             if (elapsedSecs > 0.0f)
@@ -266,7 +276,7 @@ static void physXUpdateNonRenderInternal(const pxr::SdfPath& scenePath, float el
     if (!needStepping)
     {
         if (elapsedSecs > 0.0f)
-        {     
+        {
             CARB_PROFILE_ZONE(0, "UpdateRaycast");
             omniPhysX.getRaycastManager().onUpdateRaycasts(elapsedSecs);
         }
@@ -422,7 +432,7 @@ void physXUpdateUsd()
         const PhysXScene* sc = ref.second;
         if (!sc->isReadbackSuppressed())
         {
-            sc->getInternalScene()->updateSimulationOutputs(true, false, false, false, false);
+            sc->getInternalScene()->updateSimulationOutputs(true, false, false, false);
         }
     }
 }
@@ -468,7 +478,6 @@ static void physxFetchResultsInternal(const pxr::SdfPath& scenePath)
     const OmniCachedSettings& cachedSettings = OmniPhysX::getInstance().getCachedSettings();
     const bool updateToUsd = cachedSettings.updateToUsd;
     const bool updateVelocitiesToUsd = cachedSettings.updateVelocitiesToUsd;
-    const bool updateResidualsToUsd = cachedSettings.updateResidualsToUsd;
     const bool outputVelocitiesLocalSpace = cachedSettings.outputVelocitiesLocalSpace;
     const bool updateParticlesToUsd = cachedSettings.updateParticlesToUsd;
 
@@ -486,23 +495,20 @@ static void physxFetchResultsInternal(const pxr::SdfPath& scenePath)
 
             if (!sc->isReadbackSuppressed())
             {
-                sc->getInternalScene()->updateSimulationOutputs(updateToUsd, updateVelocitiesToUsd, outputVelocitiesLocalSpace, updateParticlesToUsd, updateResidualsToUsd);
+                sc->getInternalScene()->updateSimulationOutputs(updateToUsd, updateVelocitiesToUsd, outputVelocitiesLocalSpace, updateParticlesToUsd);
             }
         }
     }
 
     {
-        OmniPhysX::getInstance().getInternalPhysXDatabase().updateSimulationOutputs(updateResidualsToUsd);
+        CARB_PROFILE_ZONE(0, "fetchResults::fireProfileStatsSubscription");
+        OmniPhysX::getInstance().fireProfileStatsSubscription();
     }
 
-
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    FabricParticles* fabricParticles = OmniPhysX::getInstance().getFabricParticles();
-    if(fabricParticles) // can be nullptr in memory stages
-        fabricParticles->update();
-#endif
-
-    OmniPhysX::getInstance().fireProfileStatsSubscription();
+    {
+        PHYSICS_PROFILE("Physics Update Stats");
+        OmniPhysX::getInstance().getInternalPhysXDatabase().updateStats();
+    }
 }
 
 void physxFetchResultsScene(uint64_t scenePath)
@@ -611,22 +617,8 @@ void physXUpdate(float currentTime, float elapsedSecs, bool enableUpdate)
     OmniCachedSettings& cachedSettings = OmniPhysX::getInstance().getCachedSettings();
     const bool updateToUsd = cachedSettings.updateToUsd;
     const bool updateVelocitiesToUsd = cachedSettings.updateVelocitiesToUsd;
-    const bool updateResidualsToUsd = cachedSettings.updateResidualsToUsd;
     const bool outputVelocitiesLocalSpace = cachedSettings.outputVelocitiesLocalSpace;
     const bool updateParticlesToUsd = cachedSettings.updateParticlesToUsd;
-
-    // This flag is set in OmniPhysX::subscribeToSettingsChangeEvents but we re-init local mesh cache
-    // here to wait for the cooking async pump to be finished completely
-    if(cachedSettings.delayedInitLocalMeshCache)
-    {
-        cookingdataasync::CookingDataAsync* cookingDataAsync = OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
-        if(cookingDataAsync)
-        {
-            cookingDataAsync->setLocalMeshCacheEnabled(cachedSettings.localMeshCacheEnabled);
-            cookingDataAsync->setLocalMeshCacheSize(cachedSettings.localMeshCacheSize);
-        }
-        cachedSettings.delayedInitLocalMeshCache = false;
-    }
 
     {
         PHYSICS_PROFILE("Physics Update Transforms");
@@ -638,14 +630,10 @@ void physXUpdate(float currentTime, float elapsedSecs, bool enableUpdate)
                     CARB_PROFILE_ZONE(0, "updateRenderTransforms");
                     if (!sc->isReadbackSuppressed())
                     {
-                        sc->getInternalScene()->updateSimulationOutputs(updateToUsd, updateVelocitiesToUsd, outputVelocitiesLocalSpace, updateParticlesToUsd, updateResidualsToUsd);
+                        sc->getInternalScene()->updateSimulationOutputs(updateToUsd, updateVelocitiesToUsd, outputVelocitiesLocalSpace, updateParticlesToUsd);
                     }
                 }
             }
-        }
-        {
-            CARB_PROFILE_ZONE(0, "updateJointResiduals");
-            OmniPhysX::getInstance().getInternalPhysXDatabase().updateSimulationOutputs(updateResidualsToUsd);
         }
 
         // update transformation callback
@@ -669,10 +657,6 @@ void physXUpdate(float currentTime, float elapsedSecs, bool enableUpdate)
             physXUpdateNonRenderDispatch(sc, elapsedSecs, currentTime);
         }
     }
-
-#if ENABLE_FABRIC_FOR_PARTICLE_SETS
-    omniPhysX.getFabricParticles()->update();
-#endif
 
     OmniPhysX::getInstance().fireProfileStatsSubscription();
 }

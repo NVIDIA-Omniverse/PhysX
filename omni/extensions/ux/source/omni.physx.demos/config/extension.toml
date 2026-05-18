@@ -3,10 +3,10 @@ category = "simulation"
 authors = ["PhysX"]
 title = "PhysX Demos"
 description="Physics demos"
-repository=""
+repository = ""
 keywords = ["physics", "physx", "samples", "demos"]
 
-version = "107.3.0-oss.0"
+version = "110.0.7"
 
 icon = "icons/icon.png"
 preview_image = "icons/preview.png"
@@ -24,8 +24,8 @@ usd = true
 "omni.usd" = {}
 "usdrt.scenegraph" = {}
 "omni.ui" = {}
-"omni.physx" = { version = "107.3.0-oss.0", exact = true }
-"omni.physx.ui" = { version = "107.3.0-oss.0", exact = true }
+"omni.physx" = { version = "110.0.7", exact = true }
+"omni.physx.ui" = { version = "110.0.7", exact = true }
 "omni.debugdraw" = {}
 "omni.kit.stage_templates" = {}
 "omni.kit.window.file" = {}
@@ -33,8 +33,8 @@ usd = true
 "omni.kit.viewport.utility" = {}
 "omni.kit.primitive.mesh" = {}
 "omni.kit.material.library" = {optional=true}  # to get CreateAndBindMdlMaterialFromLibrary, optional to prevent loading iray in stubgen phase ...
-"omni.physx.tests" = { version = "107.3.0-oss.0", exact = true, optional=true }
-"omni.physx.tests.visual" = { version = "107.3.0-oss.0", exact = true, optional=true }
+"omni.physx.tests" = { version = "110.0.7", exact = true, optional=true }
+"omni.physx.tests.visual" = { version = "110.0.7", exact = true, optional=true }
 
 [settings]
 # physics demo asset path setting: if not overriden from command line or kit file it will get set when demo ext is started 
@@ -47,16 +47,21 @@ physics.demoDevelopmentMode = false
 name = "omni.physxdemos"
 
 [[test]]
+name = "base"
 dependencies = [
     "omni.physx.tests",
     "omni.physx.tests.visual",
     "omni.hydra.rtx",
     "omni.kit.material.library",
+    "omni.population"
 ]
 args = [
     "--/rtx-transient/post/aa/limitedOps=false",
     "--/renderer/enabled=rtx",
     "--/renderer/active=rtx",
+    "--/persistent/rtx/modes/rt/enabled=false",
+    "--/persistent/rtx/modes/rt2/enabled=true",
+    "--/persistent/rtx/modes/pt/enabled=true",
     "--/rtx/materialDb/syncLoads=true",
     "--/rtx/hydra/materialSyncLoads=true",
     "--/app/asyncRendering=false",

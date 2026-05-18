@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -39,6 +39,7 @@
 #include "PxgArticulationCoreDesc.h"
 #include "PxgSoftBody.h"
 #include "DyArticulationJointCore.h"
+#include "DyArticulationMimicJointCore.h"
 #include "DyFeatherstoneArticulationJointData.h"
 #include "PxgSimulationCoreKernelIndices.h"
 #include "CmUtils.h"
@@ -46,13 +47,13 @@
 #include "DyFeatherstoneArticulation.h"
 #include "PxArticulationTendonData.h"
 #include "updateCacheAndBound.cuh"
-#include "PxgMemCopyDispatcher.h"
 #include "assert.h"
 #include "CmSpatialVector.h"
 #include "utils.cuh"
 #include "reduction.cuh"
 #include "PxgConstraintWriteBack.h"
 #include "PxgConstraintIdMap.h"
+#include "PxgSimulationCore.h"
 
 using namespace physx;
 
@@ -109,6 +110,9 @@ extern "C" __global__ void updateBodiesLaunchDirectAPI(const PxgNewBodiesDesc* s
 
 	//persistent data
 	uint4* gBodySimPool = reinterpret_cast<uint4*>(scDesc->mBodySimBufferDeviceData);
+	
+	// PdHC: Previous velocities buffer for acceleration computation
+	PxgBodySimVelocities* gPrevVelocities = scDesc->mPrevVelocitiesBuffer;
 
 	const PxU32 idx = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -141,6 +145,20 @@ extern "C" __global__ void updateBodiesLaunchDirectAPI(const PxgNewBodiesDesc* s
 			if(firstTransfer)
 			{
 				gBodySimPool[bodyIndex * PXG_BODY_SIM_UINT4_SIZE + index] = data;
+				
+				// PdHC: For new bodies, also initialize their previous velocity to their initial velocity.
+				// This ensures correct acceleration computation on the first frame.
+				// Only thread 0 writes the velocity (index 0 = linear, index 1 = angular)
+				if(index == 0 && gPrevVelocities)
+				{
+					// data at index 0 is linearVelocityXYZ_inverseMassW
+					gPrevVelocities[bodyIndex].linearVelocity = reinterpret_cast<const float4&>(data);
+				}
+				else if(index == 1 && gPrevVelocities)
+				{
+					// data at index 1 is angularVelocityXYZ_maxPenBiasW
+					gPrevVelocities[bodyIndex].angularVelocity = reinterpret_cast<const float4&>(data);
+				}
 			}
 			else if (index < PXG_BODY_SIM_SIZE_WITHOUT_ACCELERATION)
 			{
@@ -463,7 +481,7 @@ extern "C" __global__ void newArticulationsLaunch(const PxgUpdateArticulationDes
 		//initialize articulation link data to zero
 		uint* c0 = reinterpret_cast<uint*>(msArticulation.motionVelocities);		//Cannot guarantee 8-byte alignment so need to use uint
 		uint* c1 = reinterpret_cast<uint*>(msArticulation.motionAccelerations);		//Cannot guarantee 8-byte alignment so need to use uint
-		uint2* c2 = reinterpret_cast<uint2*>(msArticulation.corioliseVectors);
+		uint2* c2 = reinterpret_cast<uint2*>(msArticulation.coriolisVectors);
 		uint2 zero2 = make_uint2(0, 0);
 
 		PxU32 totalSize = (sizeof(Cm::UnAlignedSpatialVector) * nbLinks);
@@ -1052,43 +1070,48 @@ extern "C" __global__ void getRigidDynamicAngularVelocity(
 	}
 }
 
-// PT: the accelerations are computed in these kernels (and not directly in the integration kernels)
-// to minimize the amount of work done for all bodies. In this version the accelerations are only
-// computed for a subset of bodies (the ones passed to the Direct GPU API), while computing them
-// during integration would mean computing them for all bodies all the time.
-// Also we have two integration kernels (PGS / TGS), so doing the work there would cause more code
-// duplication and potential divergences if we only change one version one day, etc.
-
-// PT: for acceleration getters (eENABLE_BODY_ACCELERATIONS)
-extern "C" __global__ void getRigidDynamicLinearAcceleration(
-	PxVec3* PX_RESTRICT data,
-	const PxRigidDynamicGPUIndex* PX_RESTRICT gpuIndices,
+// Computes linear and angular accelerations for all rigid bodies.
+// This is the single source of truth for acceleration computation, used by both:
+// - DirectGPU API (via getRigidDynamicLinearAcceleration/getRigidDynamicAngularAcceleration gather kernels)
+// - CPU path (via DMA back to mBodySimAccelerationsPinned)
+extern "C" __global__ void computeRigidBodyAccelerations(
+	PxgRigidBodyAcceleration* PX_RESTRICT accelerations,
 	const PxgBodySim* PX_RESTRICT bodySimBufferDeviceData,
 	const PxgBodySimVelocities* PX_RESTRICT prevVelocities,
-	const PxU32 nbElements, const float oneOverDt
+	const PxU32 nbElements,
+	const float oneOverDt
 )
 {
-	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
+	const PxU32 index = threadIdx.x + blockDim.x * blockIdx.x;
 
-	if (globalThreadIndex < nbElements)
+	if (index < nbElements)
 	{
-		const PxU32 index = gpuIndices[globalThreadIndex];
 		const PxgBodySim& bodySim = bodySimBufferDeviceData[index];
+		const PxgBodySimVelocities& prev = prevVelocities[index];
 
+		// Linear Acceleration
 		const float4 linVel = bodySim.linearVelocityXYZ_inverseMassW;
-		const float4 deltaLinVel = linVel - prevVelocities[index].linearVelocity;
+		const float4 deltaLinVel = linVel - prev.linearVelocity;
 		const float4 linAccel = deltaLinVel * oneOverDt;
-		data[globalThreadIndex] = PxLoad3(linAccel);
+		accelerations[index].linear = PxLoad3(linAccel);
+
+		// Angular Acceleration
+		const float4 angVel = bodySim.angularVelocityXYZ_maxPenBiasW;
+		const float4 deltaAngVel = angVel - prev.angularVelocity;
+		const float4 angAccel = deltaAngVel * oneOverDt;
+		accelerations[index].angular = PxLoad3(angAccel);
 	}
 }
 
-// PT: for acceleration getters (eENABLE_BODY_ACCELERATIONS)
-extern "C" __global__ void getRigidDynamicAngularAcceleration(
+// Gather kernels for DirectGPU API - read from pre-computed accelerations buffer
+// These are simple gather operations, no computation needed since computeRigidBodyAccelerations
+// already computed all accelerations during gpuMemDmaBack.
+
+extern "C" __global__ void getRigidDynamicLinearAcceleration(
 	PxVec3* PX_RESTRICT data,
 	const PxRigidDynamicGPUIndex* PX_RESTRICT gpuIndices,
-	const PxgBodySim* PX_RESTRICT bodySimBufferDeviceData,
-	const PxgBodySimVelocities* PX_RESTRICT prevVelocities,
-	const PxU32 nbElements, const float oneOverDt
+	const PxgRigidBodyAcceleration* PX_RESTRICT accelerations,
+	const PxU32 nbElements
 )
 {
 	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
@@ -1096,12 +1119,23 @@ extern "C" __global__ void getRigidDynamicAngularAcceleration(
 	if (globalThreadIndex < nbElements)
 	{
 		const PxU32 index = gpuIndices[globalThreadIndex];
-		const PxgBodySim& bodySim = bodySimBufferDeviceData[index];
+		data[globalThreadIndex] = accelerations[index].linear;
+	}
+}
 
-		const float4 angVel = bodySim.angularVelocityXYZ_maxPenBiasW;
-		const float4 deltaAngVel = angVel - prevVelocities[index].angularVelocity;
-		const float4 angAccel = deltaAngVel * oneOverDt;
-		data[globalThreadIndex] = PxLoad3(angAccel);
+extern "C" __global__ void getRigidDynamicAngularAcceleration(
+	PxVec3* PX_RESTRICT data,
+	const PxRigidDynamicGPUIndex* PX_RESTRICT gpuIndices,
+	const PxgRigidBodyAcceleration* PX_RESTRICT accelerations,
+	const PxU32 nbElements
+)
+{
+	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
+
+	if (globalThreadIndex < nbElements)
+	{
+		const PxU32 index = gpuIndices[globalThreadIndex];
+		data[globalThreadIndex] = accelerations[index].angular;
 	}
 }
 
@@ -1277,24 +1311,6 @@ extern "C" __global__ void setRigidDynamicTorque(
 	}
 }
 
-extern "C" __global__ void copyUserData(PxgPtrPair* pairs, const PxU32 numToProcess)
-{
-	if (blockIdx.y < numToProcess)
-	{
-		const PxU32 globalThreadIdx = threadIdx.x + blockIdx.x * blockDim.x;
-		const PxU32 totalThreads = blockDim.x * gridDim.x;
-		PxgPtrPair& pair = pairs[blockIdx.y];
-		const PxU32 size = (PxU32)(pair.size/4);
-		const PxU32* src = (PxU32*)pair.src;
-		PxU32* dst = (PxU32*)pair.dst;
-
-		for (size_t i = globalThreadIdx; i < size; i += totalThreads)
-		{
-			dst[i] = src[i];
-		}
-	}
-}
-
 // only used for template instantiation to describe the meaning of the template integer parameter
 static const PxU32 gExtractForce = 0;
 static const PxU32 gExtractTorque = 1;
@@ -1327,7 +1343,7 @@ static PX_FORCE_INLINE __device__  void getD6JointForceOrTorque(
 			if (tExtractOperation == gExtractForce)
 				data[globalThreadIndex] = PxLoad3(constraintWriteBack.linearImpulse_broken) * oneOverDt;
 			else
-				data[globalThreadIndex] = PxLoad3(constraintWriteBack.angularImpulse_residual) * oneOverDt;
+				data[globalThreadIndex] = PxLoad3(constraintWriteBack.angularImpulse) * oneOverDt;
 		}
 		else
 		{
@@ -1381,4 +1397,20 @@ extern "C" __global__ void getD6JointTorques(
 		data, gpuIndices, nbElements,
 		constraintWriteBackBuffer, oneOverDt, 
 		constraintIdMap, constraintIdMapSize);
+}
+
+extern "C" __global__ void copyRigidBodyVelocitiesToPrevious(
+	PxgBodySimVelocities* PX_RESTRICT prevVelocities,
+	const PxgBodySim* PX_RESTRICT bodySimBufferDeviceData,
+	const PxU32 nbElements
+)
+{
+	const PxU32 index = threadIdx.x + blockDim.x * blockIdx.x;
+
+	if (index < nbElements)
+	{
+		const PxgBodySim& bodySim = bodySimBufferDeviceData[index];
+		prevVelocities[index].linearVelocity = bodySim.linearVelocityXYZ_inverseMassW;
+		prevVelocities[index].angularVelocity = bodySim.angularVelocityXYZ_maxPenBiasW;
+	}
 }

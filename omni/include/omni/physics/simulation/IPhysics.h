@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -14,9 +14,34 @@ namespace omni
 namespace physics
 {
 
+// Event types for simulation registry events. The events are triggered after the associated action has been executed.
+struct SimulationRegistryEventType
+{
+    enum Enum
+    {
+        eSIMULATION_REGISTERED, //!< A new simulation has been registered
+        eSIMULATION_UNREGISTERED, //!< An existing simulation has been unregistered. Since the event is triggered after
+                                  //!< unregistration, the simulation id is no longer valid for use with the API at this
+                                  //!< point
+        eSIMULATION_ACTIVATED, //!< A simulation has been activated (note that upon registration, simulations are
+                               //!< already in an activated state, but will not trigger this event upon registration)
+        eSIMULATION_DEACTIVATED, //!< A simulation has been deactivated
+    };
+};
+
+// Callback function for simulation registry events
+//
+// \param eventType The SimulationRegistryEventType identifier for the triggered event
+// \param id The SimulationId of the simulation that triggered the event
+// \param simulationName The name of the simulation that triggered the event
+// \param userData Pointer to user data that was provided when subscribing to the event
+using OnSimulationRegistryEventFn = std::function<void(
+    const SimulationRegistryEventType::Enum eventType, const SimulationId& id, const char* simulationName, void* userData)>;
+
+
 struct IPhysics
 {
-    CARB_PLUGIN_INTERFACE("omni::physics::IPhysics", 0, 1)
+    CARB_PLUGIN_INTERFACE("omni::physics::IPhysics", 0, 2)
 
     /// Register a simulation with the physics system.
     /// \param simulation The simulation to register.
@@ -59,6 +84,17 @@ struct IPhysics
     /// \param id The simulation id.
     /// \return True if the simulation is active, false otherwise.
     bool(CARB_ABI* isSimulationActive)(const SimulationId& id);
+
+    /// Subscribe to simulation registry events.
+    /// \param onEvent The callback function to be called on simulation registry events.
+    /// \param userData User data pointer that will be passed to the callback function. Default is nullptr.
+    /// \return A subscription id used for unsubscribing.
+    SubscriptionId(CARB_ABI* subscribeSimulationRegistryEvents)(OnSimulationRegistryEventFn onEvent,
+                                                                void* userData /* = nullptr */);
+
+    /// Unsubscribe from simulation registry events.
+    /// \param subscriptionId The subscription id returned when subscribing.
+    void(CARB_ABI* unsubscribeSimulationRegistryEvents)(SubscriptionId subscriptionId);
 };
 
 } // namespace physics

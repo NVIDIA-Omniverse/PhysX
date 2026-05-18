@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -442,6 +442,34 @@ bool fetchFrictionCount(::physx::PxU32* countMatrix,
                         const ::physx::PxU32* rdContactIndices,
                         const ::physx::PxU32* linkContactIndices,
                         const GpuRigidContactFilterIdPair* filterLookup);
+
+// Raw contact data (no filter matching - returns all contacts for sensors)
+bool fetchRawRigidContactCount(::physx::PxU32* countBuffer,
+                               const ::physx::PxGpuContactPair* contactPairs,
+                               ::physx::PxU32 numContactPairs,
+                               ::physx::PxU32 maxLinks,
+                               const ::physx::PxU32* nodeIdx2ArtiGpuIdx,
+                               const ::physx::PxU32* rdContactIndices,
+                               const ::physx::PxU32* linkContactIndices);
+
+bool fetchRawRigidContactData(::physx::PxReal* forceBuffer,
+                              ::physx::PxVec3* pointBuffer,
+                              ::physx::PxVec3* normalBuffer,
+                              ::physx::PxReal* separationBuffer,
+                              uint64_t* actorIdBuffer,
+                              ::physx::PxU32* countBuffer,
+                              ::physx::PxU32* startIndicesBuffer,
+                              const ::physx::PxGpuContactPair* contactPairs,
+                              ::physx::PxU32 numContactPairs,
+                              ::physx::PxU32 numDataPoints,
+                              ::physx::PxU32 maxLinks,
+                              float timeStepInv,
+                              const ::physx::PxU32* nodeIdx2ArtiGpuIdx,
+                              const ::physx::PxU32* rdContactIndices,
+                              const ::physx::PxU32* linkContactIndices,
+                              const GpuActorPathIdPair* actorPathLookup,
+                              ::physx::PxU32 numActorPathPairs);
+
 //
 // Particle Cloth
 //
@@ -615,6 +643,19 @@ bool submitDeformableBodyVec4Data(const ::physx::PxVec4* src,
                                   const ::physx::PxU32 numBodies,
                                   const ::physx::PxU32 srcMaxElementsPerBody);
 
+
+//
+// mask -> indices compaction
+//
+// Converts a uint8 mask [N] into a compact indices array [K] where K = number of nonzero mask elements.
+// Uses Thrust's copy_if for GPU-friendly parallel stream compaction.
+// This runs on the CUDA stream associated with the provided execution policy (currently the default stream).
+// Returns true on success and writes K (number of selected indices) to outK.
+bool compactMaskToIndices(SingleAllocPolicy& policy,
+                          ::physx::PxU32* indicesOut,
+                          const uint8_t* maskDev,
+                          ::physx::PxU32 N,
+                          ::physx::PxU32& outK);
 
 } // namespace tensors
 } // namespace physx

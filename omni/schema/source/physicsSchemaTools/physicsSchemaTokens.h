@@ -150,8 +150,9 @@ struct PhysxAdditionAttrTokensType {
     const TfToken viscousFrictionCoefficientRotY;
     const TfToken viscousFrictionCoefficientRotZ;
     const TfToken surfaceVelocityEnabled;
-    const TfToken surfaceVelocityMagnitude;
+    const TfToken surfaceVelocityMagnitude;    
     const TfToken surfaceVelocityCurve;
+    const TfToken surfaceVelocityForceBased;
     const TfToken solverPositionIterationCount;
     const TfToken linearDamping;
     const TfToken maxLinearVelocity;

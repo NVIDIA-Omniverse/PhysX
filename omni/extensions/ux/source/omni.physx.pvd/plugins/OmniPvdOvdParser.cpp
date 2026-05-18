@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -14,6 +14,7 @@
 #include <carb/Framework.h>
 #include <carb/PluginUtils.h>
 
+#include <cstdio>
 #include <string.h>
 
 const std::string gOmniPVDAttribPrefix("omni:pvd:");
@@ -1489,8 +1490,8 @@ bool buildPvdDomState(char *omniPvdFile, OmniPvdDOMState &domState)
                 {
                     uint64_t contextId = reader->getContextHandle();
                     uint64_t frameId = getLastFrameIdFromScene(&domState);
-                    memcpy(message.message, pMessage, std::min(strlen(pMessage) + 1, (size_t)OMNI_PVD_MESSAGE_LENGTH));
-                    memcpy(message.file, pFileName, std::min(strlen(pFileName) + 1, (size_t)OMNI_PVD_MESSAGE_LENGTH));
+                    snprintf(message.message, OMNI_PVD_MESSAGE_LENGTH, "%s", pMessage);
+                    snprintf(message.file, OMNI_PVD_MESSAGE_LENGTH, "%s", pFileName);
                     message.frameId = frameId;
 
                     // Look up the enum value
@@ -1506,9 +1507,7 @@ bool buildPvdDomState(char *omniPvdFile, OmniPvdDOMState &domState)
                             {
                                 if (message.type == errorCodeClass->mAttributeDefinitions[i]->mNbrFields)
                                 {
-                                    memcpy(message.typeName, errorCodeClass->mAttributeDefinitions[i]->mAttributeName.c_str(),
-                                        std::min(errorCodeClass->mAttributeDefinitions[i]->mAttributeName.size() + 1, (size_t)OMNI_PVD_MESSAGE_LENGTH)
-                                    );
+                                    snprintf(message.typeName, OMNI_PVD_MESSAGE_LENGTH, "%s", errorCodeClass->mAttributeDefinitions[i]->mAttributeName.c_str());
 
                                     break;
                                 }
@@ -1541,4 +1540,3 @@ bool buildPvdDomState(char *omniPvdFile, OmniPvdDOMState &domState)
     loader.mDestroyOmniPvdReader(*reader);
     return true;
 }
-

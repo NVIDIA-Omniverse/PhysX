@@ -1,9 +1,10 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb, math, omni.timeline, carb.windowing
 from omni.physx.scripts.physicsUtils import *
-from pxr import UsdLux, UsdGeom, UsdPhysics, Gf, Vt, PhysxSchema, UsdUtils, PhysicsSchemaTools
+from pxr import Sdf, Usd, UsdLux, UsdGeom, UsdPhysics, Gf, Vt, PhysxSchema, UsdUtils, PhysicsSchemaTools
 import omni.physxdemos as demo
 from omni.physx import get_physx_scene_query_interface, get_physx_simulation_interface
 from omni.debugdraw import get_debug_draw_interface

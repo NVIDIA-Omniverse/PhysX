@@ -22,19 +22,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "PxsMemoryManager.h"
-#include "foundation/PxAllocator.h"
-#include "foundation/PxArray.h"
+#include "CmVirtualAllocatorCallback.h"
 
 using namespace physx;
 
 namespace
 {
-	class PxsDefaultMemoryAllocator : public PxVirtualAllocatorCallback
+	class PxsDefaultMemoryAllocator : public Cm::VirtualAllocatorCallback
 	{
 	public:
 		virtual void* allocate(size_t size, int, const char*, int)	PX_OVERRIDE	PX_FINAL	{ return PX_ALLOC(size, "unused");	}
@@ -45,8 +44,8 @@ namespace
 	{
 	public:
 		// PxsMemoryManager
-		virtual PxVirtualAllocatorCallback*	getHostMemoryAllocator()	PX_OVERRIDE	PX_FINAL	{ return &mDefaultMemoryAllocator;	}
-		virtual PxVirtualAllocatorCallback*	getDeviceMemoryAllocator()	PX_OVERRIDE	PX_FINAL	{ return  NULL;						}
+		virtual Cm::VirtualAllocatorCallback* getPinnedHostMemoryAllocator()	PX_OVERRIDE	PX_FINAL	{ return &mDefaultMemoryAllocator; }
+		virtual Cm::VirtualAllocatorCallback* getDeviceMemoryAllocator()		PX_OVERRIDE	PX_FINAL	{ return NULL; }
 		//~PxsMemoryManager
 		PxsDefaultMemoryAllocator	mDefaultMemoryAllocator;
 	};

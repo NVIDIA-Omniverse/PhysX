@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2020-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 #pragma once
@@ -7,6 +7,7 @@
 #include "../base/BaseRigidContactView.h"
 #include "CpuSimulationData.h"
 
+#include <string>
 #include <vector>
 
 namespace omni
@@ -46,6 +47,15 @@ public:
                          const TensorDesc* contactCountTensor,
                          const TensorDesc* contactStartIndicesTensor,
                          float dt) const override;
+
+    bool getRawContactData(const TensorDesc* contactForceTensor,
+                           const TensorDesc* contactPointTensor,
+                           const TensorDesc* contactNormalTensor,
+                           const TensorDesc* contactSeparationTensor,
+                           const TensorDesc* contactCountTensor,
+                           const TensorDesc* contactStartIndicesTensor,
+                           const TensorDesc* otherActorIdsTensor,
+                           float dt) const override;
 
 private:
     CpuSimulationDataPtr mCpuSimData;

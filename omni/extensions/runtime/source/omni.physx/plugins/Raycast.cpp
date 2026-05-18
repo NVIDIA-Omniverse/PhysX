@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
@@ -336,6 +336,9 @@ static bool raycastSingle(const PxVec3& orig,
         {
             internal::InternalVolumeDeformableBody* body = intScene->mVolumeDeformableBodies[i];
 
+            if (!body->mBodyPrim)
+                continue;
+
             if ((pxr::UsdGeomImageable(body->mBodyPrim).ComputeVisibility() == pxr::UsdGeomTokens->invisible))
                 continue;
 
@@ -380,6 +383,9 @@ static bool raycastSingle(const PxVec3& orig,
         for (size_t i = 0; i < intScene->mSurfaceDeformableBodies.size(); ++i)
         {
             internal::InternalSurfaceDeformableBody* body = intScene->mSurfaceDeformableBodies[i];
+
+            if (!body->mBodyPrim)
+                continue;
 
             if ((pxr::UsdGeomImageable(body->mBodyPrim).ComputeVisibility() == pxr::UsdGeomTokens->invisible))
                 continue;

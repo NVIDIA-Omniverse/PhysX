@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 import carb
 from omni.physxtests.utils.physicsBase import PhysicsMemoryStageBaseAsyncTestCase, TestCategory
 from omni.physx.bindings._physx import SETTING_LOG_ROBOTICS
@@ -78,12 +79,12 @@ class PhysicsLimitAPITestMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, Articu
         self.step()
 
         # now we expect the error to be risen anyway as we cannot switch to unwrapped joint (or even change setMotion state)
-        message = f"Cannot change low limit to -720 on {self.joint.GetPath()} during simulation. This change requires a simulation restart."
+        message = f"Cannot update articulation joint low limit because the joint was not initially configured with limits: ({self.joint.GetPath()})"
         with utils.ExpectMessage(self, message, expected_result=True):
             self.joint.CreateLowerLimitAttr(-720)
             self.step()
 
-        message = f"Cannot change high limit to 720 on {self.joint.GetPath()} during simulation. This change requires a simulation restart."
+        message = f"Cannot update articulation joint high limit because the joint was not initially configured with limits: ({self.joint.GetPath()})"
         with utils.ExpectMessage(self, message, expected_result=True):
             self.joint.CreateUpperLimitAttr(+720)
             self.step(reset_simulation_after=True)

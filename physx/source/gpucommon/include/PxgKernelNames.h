@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -165,9 +165,6 @@ KERNEL_DEF(INTEGRATE_CORE_PARALLEL, "integrateCoreParallelLaunch")
 KERNEL_DEF(CLEAR_FRICTION_PATCH_COUNTS, "clearFrictionPatchCounts")
 KERNEL_DEF(DMA_CHANGED_ELEMS, "dmaBackChangedElems")
 KERNEL_DEF(BP_SIGNAL_COMPLETE, "bpSignalComplete")
-
-KERNEL_DEF(DMA_CONSTRAINT_RESIDUAL, "dmaConstraintResidual")
-KERNEL_DEF(DMA_ARTICULATION_RESIDUAL, "dmaArticulationResidual")
 
 ////////////////////////////////////////////////////////////////
 //articulation kernels
@@ -417,6 +414,8 @@ KERNEL_DEF(RIGID_DYNAMIC_SET_LINVEL, "setRigidDynamicLinearVelocity")
 KERNEL_DEF(RIGID_DYNAMIC_SET_ANGVEL, "setRigidDynamicAngularVelocity")
 KERNEL_DEF(RIGID_DYNAMIC_SET_FORCE, "setRigidDynamicForce")
 KERNEL_DEF(RIGID_DYNAMIC_SET_TORQUE, "setRigidDynamicTorque")
+KERNEL_DEF(RIGID_DYNAMIC_COMPUTE_ACCELERATIONS, "computeRigidBodyAccelerations")
+KERNEL_DEF(RIGID_DYNAMIC_COPY_PREVIOUS_VELOCITIES, "copyRigidBodyVelocitiesToPrevious")
 KERNEL_DEF(ARTI_GET_DOF_STATES, "getArtiDofStates")
 KERNEL_DEF(ARTI_GET_TRANSFORM_STATES, "getArtiTransformStates")
 KERNEL_DEF(ARTI_GET_VELOCITY_STATES, "getArtiVelocityStates")
@@ -451,7 +450,6 @@ KERNEL_DEF(AGG_REMOVE_AGGPAIRS_STAGE_2, "removeAggPairsStage2")
 KERNEL_DEF(AGG_REMOVE_AGGPAIRS_STAGE_3, "removeAggPairsStage3")
 KERNEL_DEF(AGG_COPY_REPORTS, "aggCopyReports")
 KERNEL_DEF(CLEAR_DIRTY_AGGS, "clearDirtyAggregates")
-KERNEL_DEF(COPY_USER_DATA, "copyUserData")
 KERNEL_DEF(AGG_MARK_ADDED_DELETED_AGGREGATED_BOUNDS, "markAddedAndDeletedAggregatedBounds")
 
 //////////////////////////////////////////////////////////

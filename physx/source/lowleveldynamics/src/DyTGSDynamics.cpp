@@ -22,50 +22,24 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "foundation/PxTime.h"
-#include "foundation/PxAtomic.h"
-#include "foundation/PxSIMDHelpers.h"
-#include "PxvDynamics.h"
+#include "DyTGSDynamics.h"
 
 #include "common/PxProfileZone.h"
-#include "PxsRigidBody.h"
-#include "PxsContactManager.h"
-#include "DyTGSDynamics.h"
 #include "DyBodyCoreIntegrator.h"
 #include "DySolverCore.h"
-#include "DySolverControl.h"
-#include "DySolverContact.h"
-#include "DyArticulationContactPrep.h"
-#include "DySolverBody.h"
-
 #include "DyConstraintPrep.h"
 #include "DyConstraintPartition.h"
-
 #include "CmFlushPool.h"
-#include "DyArticulationPImpl.h"
-#include "PxsMaterialManager.h"
-#include "DyContactReduction.h"
-#include "PxcNpContactPrepShared.h"
-#include "DyContactPrep.h"
-#include "PxSceneDesc.h"
 #include "PxsSimpleIslandManager.h"
-#include "PxvNphaseImplementationContext.h"
-#include "PxsContactManagerState.h"
 #include "DyContactPrepShared.h"
 #include "DySolverContext.h"
-#include "DyDynamics.h"
-#include "DySolverConstraint1D.h"
-#include "PxvSimStats.h"
 #include "DyTGSContactPrep.h"
-#include "DyFeatherstoneArticulation.h"
 #include "DySleep.h"
 #include "DyTGS.h"
-#include "DyResidualAccumulator.h"
-#include "DyThreadContext.h"
 #include "DyIslandManager.h"
 
 #define PX_USE_BLOCK_SOLVER 1
@@ -75,6 +49,11 @@ namespace physx
 {
 namespace Dy
 {
+constexpr bool tUpdateDeltaMotion = true;
+constexpr bool tSaveVelocity = true;
+constexpr bool tIsVelIter = true;
+constexpr bool tIsLastPosIter = true;
+
 	static inline void waitForBodyProgress(PxTGSSolverBodyVel& body, PxU32 desiredProgress, PxU32 iteration)
 	{
 		const PxI32 target = PxI32(desiredProgress + body.nbStaticInteractions * iteration);
@@ -130,25 +109,17 @@ namespace Dy
 			incrementArticulationProgress(*getArticulationB(desc));
 	}
 
-Context* createTGSDynamicsContext(	PxcNpMemBlockPool* memBlockPool, PxcScratchAllocator& scratchAllocator, Cm::FlushPool& taskPool,
-									PxvSimStats& simStats, PxTaskManager* taskManager, PxVirtualAllocatorCallback* allocatorCallback,
-									PxsMaterialManager* materialManager, IG::SimpleIslandManager& islandManager, PxU64 contextID,
-									bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
-									PxReal lengthScale, bool externalForcesEveryTgsIterationEnabled, bool isResidualReportingEnabled)
+Context* createTGSDynamicsContext(	PxcNpMemBlockPool* memBlockPool, Cm::FlushPool& taskPool, PxvSimStats& simStats,
+									Cm::VirtualAllocatorCallback& allocator, PxsMaterialManager* materialManager,
+									IG::SimpleIslandManager& islandManager, PxU64 contextID, PxReal lengthScale, PxSceneFlags sceneFlags)
 {
-	return PX_NEW(DynamicsTGSContext)(	memBlockPool, scratchAllocator, taskPool, simStats, taskManager, allocatorCallback, materialManager, islandManager, contextID,
-										enableStabilization, useEnhancedDeterminism, solveArticulationContactLast, lengthScale, externalForcesEveryTgsIterationEnabled, isResidualReportingEnabled);
+	return PX_NEW(DynamicsTGSContext)(memBlockPool, taskPool, simStats, allocator, materialManager, islandManager, contextID, lengthScale, sceneFlags);
 }
 
 void DynamicsTGSContext::destroy()
 {
 	this->~DynamicsTGSContext();
 	PX_FREE_THIS;
-}
-
-PX_FORCE_INLINE PxVec3 safeRecip(const PxVec3& v)
-{
-	return PxVec3(v.x == 0.f ? 0.f : 1.f/v.x, v.y == 0.f ? 0.f : 1.f/v.y, v.z == 0.f ? 0.f : 1.f/v.z);
 }
 
 void copyToSolverBodyDataStep(const PxVec3& linearVelocity, const PxVec3& angularVelocity, PxReal invMass, const PxVec3& invInertia, const PxTransform& globalPose,
@@ -161,7 +132,7 @@ void copyToSolverBodyDataStep(const PxVec3& linearVelocity, const PxVec3& angula
 
 	const PxVec3 sqrtInvInertia = computeSafeSqrtInertia(invInertia);
 
-	const PxVec3 sqrtBodySpaceInertia = safeRecip(sqrtInvInertia);
+	const PxVec3 sqrtBodySpaceInertia = Cm::safeRecip<PxVec3>(sqrtInvInertia);
 
 	Cm::transformInertiaTensor(sqrtInvInertia, rotation, solverBodyTxInertia.sqrtInvInertia);	
 
@@ -176,10 +147,7 @@ void copyToSolverBodyDataStep(const PxVec3& linearVelocity, const PxVec3& angula
 
 	if (gyroscopicForces)
 	{
-		const PxVec3 localInertia(
-			invInertia.x == 0.f ? 0.f : 1.f / invInertia.x,
-			invInertia.y == 0.f ? 0.f : 1.f / invInertia.y,
-			invInertia.z == 0.f ? 0.f : 1.f / invInertia.z);
+		const PxVec3 localInertia = Cm::safeRecip<PxVec3>(invInertia);
 
 		PxVec3 localAngVel = globalPose.q.rotateInv(av);
 		PxVec3 origMom = localInertia.multiply(localAngVel);
@@ -242,7 +210,7 @@ void copyToSolverBodyDataStep(const PxVec3& linearVelocity, const PxVec3& angula
 	PX_ASSERT(av.isFinite());
 }
 
-void copyToSolverBodyDataStepKinematic(const PxVec3& linearVelocity, const PxVec3& angularVelocity, const PxTransform& globalPose,
+static void copyToSolverBodyDataStepKinematic(const PxVec3& linearVelocity, const PxVec3& angularVelocity, const PxTransform& globalPose,
 	PxReal maxDepenetrationVelocity, PxReal maxContactImpulse, PxU32 nodeIndex, PxReal reportThreshold, PxReal maxAngVelSq,
 	PxTGSSolverBodyVel& solverVel, PxTGSSolverBodyTxInertia& solverBodyTxInertia, PxTGSSolverBodyData& solverBodyData)
 {
@@ -274,28 +242,17 @@ void copyToSolverBodyDataStepKinematic(const PxVec3& linearVelocity, const PxVec
 }
 
 DynamicsTGSContext::DynamicsTGSContext(	PxcNpMemBlockPool* memBlockPool,
-										PxcScratchAllocator& /*scratchAllocator*/,
 										Cm::FlushPool& taskPool,
 										PxvSimStats& simStats,
-										PxTaskManager* /*taskManager*/,
-										PxVirtualAllocatorCallback* allocatorCallback,
+										Cm::VirtualAllocatorCallback& allocator,
 										PxsMaterialManager* materialManager,
 										IG::SimpleIslandManager& islandManager,
 										PxU64 contextID,
-										bool enableStabilization,
-										bool useEnhancedDeterminism,
-										bool solveArticulationContactLast,
 										PxReal lengthScale,
-										bool isExternalForcesEveryTgsIterationEnabled,
-										bool isResidualReportingEnabled) :
-	DynamicsContextBase	(memBlockPool, taskPool, simStats, allocatorCallback, materialManager, islandManager, contextID, PX_MAX_F32, lengthScale, enableStabilization, useEnhancedDeterminism, solveArticulationContactLast, isResidualReportingEnabled),
-	mIsExternalForcesEveryTgsIterationEnabled(isExternalForcesEveryTgsIterationEnabled)
+										PxSceneFlags sceneFlags) :
+	DynamicsContextBase	(memBlockPool, taskPool, simStats, allocator, materialManager, islandManager, contextID, PX_MAX_F32, lengthScale, sceneFlags),
+	mIsExternalForcesEveryTgsIterationEnabled(sceneFlags & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS)
 {
-	createThresholdStream(*allocatorCallback);
-	createForceChangeThresholdStream(*allocatorCallback);
-	mExceededForceThresholdStream[0] = PX_NEW(ThresholdStream)(*allocatorCallback);
-	mExceededForceThresholdStream[1] = PX_NEW(ThresholdStream)(*allocatorCallback);
-
 	PxMemZero(&mWorldSolverBodyVel, sizeof(mWorldSolverBodyVel));
 	
 	mWorldSolverBodyVel.lockFlags = 0;
@@ -312,11 +269,7 @@ DynamicsTGSContext::DynamicsTGSContext(	PxcNpMemBlockPool* memBlockPool,
 	mWorldSolverBodyData2.originalAngularVelocity = PxVec3(0.f);
 }
 
-DynamicsTGSContext::~DynamicsTGSContext()
-{
-	PX_DELETE(mExceededForceThresholdStream[1]);
-	PX_DELETE(mExceededForceThresholdStream[0]);
-}
+DynamicsTGSContext::~DynamicsTGSContext() {}
 
 PX_COMPILE_TIME_ASSERT(PxsIndexedInteraction::eBODY == 0);
 PX_COMPILE_TIME_ASSERT(PxsIndexedInteraction::eKINEMATIC == 1);
@@ -496,7 +449,6 @@ public:
 class UpdateContinuationTGSTask : public Cm::Task
 {
 	DynamicsTGSContext& mContext;
-	IG::SimpleIslandManager& mSimpleIslandManager;
 	PxBaseTask* mLostTouchTask;
 	PxU32 mMaxArticulationLinks;
 
@@ -504,9 +456,8 @@ class UpdateContinuationTGSTask : public Cm::Task
 public:
 
 	UpdateContinuationTGSTask(DynamicsTGSContext& context,
-	IG::SimpleIslandManager& simpleIslandManager,
 	PxBaseTask* lostTouchTask, PxU64 contextID, PxU32 maxLinks) :
-		Cm::Task(contextID), mContext(context), mSimpleIslandManager(simpleIslandManager),
+		Cm::Task(contextID), mContext(context),
 		mLostTouchTask(lostTouchTask), mMaxArticulationLinks(maxLinks)
 	{
 	}
@@ -515,7 +466,7 @@ public:
 
 	virtual void runInternal()
 	{
-		mContext.updatePostKinematic(mSimpleIslandManager, mCont, mLostTouchTask, mMaxArticulationLinks);
+		mContext.updatePostKinematic(mCont, mLostTouchTask, mMaxArticulationLinks);
 		//Allow lost touch task to run once all tasks have be scheduled
 		mLostTouchTask->removeReference();
 	}
@@ -524,65 +475,18 @@ public:
 
 void DynamicsTGSContext::update(Cm::FlushPool& /*flushPool*/, PxBaseTask* continuation, PxBaseTask* /*postPartitioningTask*/, PxBaseTask* lostTouchTask,
 	PxvNphaseImplementationContext* nphase, PxU32 /*maxPatchesPerCM*/, PxU32 maxArticulationLinks,
-	PxReal dt, const PxVec3& gravity, PxBitMapPinned& /*changedHandleMap*/)
+	PxReal dt, const PxVec3& gravity, Cm::PinnableBitMap& /*changedHandleMap*/)
 {
-	PX_PROFILE_ZONE("Dynamics.solverQueueTasks", mContextID);
-
-	mOutputIterator = nphase->getContactManagerOutputs();
-
-	// PT: TODO: refactor
-	mDt = dt;
-	mInvDt = 1.0f / dt;
-	mGravity = gravity;
-
-	const IG::IslandSim& islandSim = mIslandManager.getAccurateIslandSim();
-
-	const PxU32 islandCount = islandSim.getNbActiveIslands();
-
-	const PxU32 activatedContactCount = islandSim.getNbActivatedEdges(IG::Edge::eCONTACT_MANAGER);
-	const IG::EdgeIndex* const activatingEdges = islandSim.getActivatedEdges(IG::Edge::eCONTACT_MANAGER);
-
-	{
-		PX_PROFILE_ZONE("resetFrictionPatchCount", mContextID);
-
-		for (PxU32 a = 0; a < activatedContactCount; ++a)
-		{
-			PxsContactManager* cm = mIslandManager.getContactManager(activatingEdges[a]);
-			if (cm)
-				cm->getWorkUnit().mFrictionPatchCount = 0; //KS - zero the friction patch count on any activating edges
-		}
-	}
-
-#if PX_ENABLE_SIM_STATS
-	if (islandCount > 0)
-	{
-		mSimStats.mNbActiveKinematicBodies = islandSim.getNbActiveKinematics();
-		mSimStats.mNbActiveDynamicBodies = islandSim.getNbActiveNodes(IG::Node::eRIGID_BODY_TYPE);
-		mSimStats.mNbActiveConstraints = islandSim.getNbActiveEdges(IG::Edge::eCONSTRAINT);
-	}
-	else
-	{
-		mSimStats.mNbActiveKinematicBodies = islandSim.getNbActiveKinematics();
-		mSimStats.mNbActiveDynamicBodies = 0;
-		mSimStats.mNbActiveConstraints = 0;
-	}
-#else
-	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
-#endif
-
-	mThresholdStreamOut = 0;
-
-	resetThreadContexts();
-
-	//If there is no work to do then we can do nothing at all.
-	if(!islandCount)
+	if(!updateShared(nphase, dt, gravity))
 		return;
+
+	PX_PROFILE_ZONE("Dynamics.solverQueueTasks", mContextID);
 
 	//Block to make sure it doesn't run before stage2 of update!
 	lostTouchTask->addReference();
 
 	UpdateContinuationTGSTask* task = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(UpdateContinuationTGSTask)), UpdateContinuationTGSTask)
-		(*this, mIslandManager, lostTouchTask, mContextID, maxArticulationLinks);
+		(*this, lostTouchTask, mContextID, maxArticulationLinks);
 
 	task->setContinuation(continuation);
 
@@ -595,6 +499,7 @@ void DynamicsTGSContext::update(Cm::FlushPool& /*flushPool*/, PxBaseTask* contin
 
 	mWorldSolverBodyVel.linearVelocity = mWorldSolverBodyVel.angularVelocity = PxVec3(0.f);
 
+	const IG::IslandSim& islandSim = mIslandManager.getAccurateIslandSim();
 	const PxU32 kinematicCount = islandSim.getNbActiveKinematics();
 	const PxNodeIndex* const kinematicIndices = islandSim.getActiveKinematics();
 	mKinematicCount = kinematicCount;
@@ -668,9 +573,9 @@ void DynamicsTGSContext::update(Cm::FlushPool& /*flushPool*/, PxBaseTask* contin
 	task->removeReference();
 }
 
-void DynamicsTGSContext::updatePostKinematic(IG::SimpleIslandManager& simpleIslandManager, PxBaseTask* continuation, PxBaseTask* lostTouchTask, PxU32 maxLinks)
+void DynamicsTGSContext::updatePostKinematic(PxBaseTask* continuation, PxBaseTask* lostTouchTask, PxU32 maxLinks)
 {
-	const IG::IslandSim& islandSim = simpleIslandManager.getAccurateIslandSim();
+	const IG::IslandSim& islandSim = mIslandManager.getAccurateIslandSim();
 
 	const IG::IslandId*const islandIds = islandSim.getActiveIslands();
 
@@ -717,33 +622,34 @@ void DynamicsTGSContext::updatePostKinematic(IG::SimpleIslandManager& simpleIsla
 		PxU32 nbConstraints = 0;
 		PxU32 nbContactManagers = 0;
 
+		// PT: TODO: why is this sequence of code different from PGS?
 		while (nbBodies < minIslandSize && currentIsland < islandCount && nbArticulations < articulationBatchSize)
 		{
 			const IG::Island& island = islandSim.getIsland(islandIds[currentIsland]);
 
 			nbBodies += island.mNodeCount[IG::Node::eRIGID_BODY_TYPE];
 			nbArticulations += island.mNodeCount[IG::Node::eARTICULATION_TYPE];
-			nbConstraints += island.mEdgeCount[IG::Edge::eCONSTRAINT];
-			nbContactManagers += island.mEdgeCount[IG::Edge::eCONTACT_MANAGER];
+			nbConstraints += island.mEdges.mEdgeCount[IG::Edge::eCONSTRAINT];
+			nbContactManagers += island.mEdges.mEdgeCount[IG::Edge::eCONTACT_MANAGER];
 			constraintCount = nbConstraints + nbContactManagers;
 			currentIsland++;
+
+			if(mUseEnhancedDeterminism)
+				break;
 		}
 
 		objectStarts.numIslands = currentIsland - startIsland;
 
-		constraintIndex += nbArticulations* maxLinks;
+		constraintIndex += nbArticulations * maxLinks;
 
 		PxsIslandIndices counts;
-
-		counts.articulations = nbArticulations;
-		counts.bodies = nbBodies;
-
-		counts.constraints = nbConstraints;
-		counts.contactManagers = nbContactManagers;
+		counts.bodies			= nbBodies;
+		counts.articulations	= nbArticulations;
+		counts.contactManagers	= nbContactManagers;
+		counts.constraints		= nbConstraints;
 		
 		solveIsland(objectStarts, counts,
-			mKinematicCount + currentBodyIndex, simpleIslandManager, mSolverBodyRemapTable.begin(), mMaterialManager, mOutputIterator,
-			mergeTask);
+			mKinematicCount + currentBodyIndex, mSolverBodyRemapTable.begin(), mMaterialManager, mOutputIterator, mergeTask);
 
 		currentBodyIndex += nbBodies;
 		currentArticulation += nbArticulations;
@@ -755,178 +661,43 @@ void DynamicsTGSContext::updatePostKinematic(IG::SimpleIslandManager& simpleIsla
 	mergeTask->removeReference();
 }
 
-void DynamicsTGSContext::prepareBodiesAndConstraints(const SolverIslandObjectsStep& objects,
-	IG::SimpleIslandManager& islandManager, IslandContextStep& islandContext)
+void DynamicsTGSContext::prepareBodiesAndConstraints(const SolverIslandObjectsStep& objects, IslandContextStep& islandContext)
 {
-	Dy::ThreadContext& mThreadContext = *islandContext.mThreadContext;
+	Dy::ThreadContext& threadContext = *islandContext.mThreadContext;
 
-	mThreadContext.mMaxSolverPositionIterations = 0;
-	mThreadContext.mMaxSolverVelocityIterations = 0;
-	mThreadContext.mAxisConstraintCount = 0;
-	mThreadContext.mContactDescPtr = mThreadContext.contactConstraintDescArray;
-	mThreadContext.mNumDifferentBodyConstraints = 0;
-	mThreadContext.mNumStaticConstraints = 0;
-	mThreadContext.numContactConstraintBatches = 0;
-	mThreadContext.contactDescArraySize = 0;
+	threadContext.mMaxSolverPositionIterations = 0;
+	threadContext.mMaxSolverVelocityIterations = 0;
+	threadContext.mAxisConstraintCount = 0;
+	threadContext.mContactDescPtr = threadContext.contactConstraintDescArray;
+	threadContext.mNumDifferentBodyConstraints = 0;
+	threadContext.mNumStaticConstraints = 0;
+	threadContext.numContactConstraintBatches = 0;
+	threadContext.contactDescArraySize = 0;
 
-	mThreadContext.motionVelocityArray = objects.motionVelocities;
-	mThreadContext.mBodyCoreArray = objects.bodyCoreArray;
-	mThreadContext.mRigidBodyArray = objects.bodies;
-	mThreadContext.mArticulationArray = objects.articulations;
-	mThreadContext.bodyRemapTable = objects.bodyRemapTable;
-	mThreadContext.mNodeIndexArray = objects.nodeIndexArray;
+	threadContext.motionVelocityArray = objects.motionVelocities;
+	threadContext.mBodyCoreArray = objects.bodyCoreArray;
+	threadContext.mRigidBodyArray = objects.bodies;
+	threadContext.mArticulationArray = objects.articulations;
+	threadContext.bodyRemapTable = objects.bodyRemapTable;
+	threadContext.mNodeIndexArray = objects.nodeIndexArray;
 
-	mThreadContext.resizeArrays(islandContext.mCounts.articulations);
+	threadContext.resizeArrays(islandContext.mCounts.articulations);
 
-	PxsBodyCore** PX_RESTRICT bodyArrayPtr = mThreadContext.mBodyCoreArray;
-	PxsRigidBody** PX_RESTRICT rigidBodyPtr = mThreadContext.mRigidBodyArray;
-	FeatherstoneArticulation** PX_RESTRICT articulationPtr = mThreadContext.mArticulationArray;
-	PxU32* PX_RESTRICT bodyRemapTable = mThreadContext.bodyRemapTable;
-	PxU32* PX_RESTRICT nodeIndexArray = mThreadContext.mNodeIndexArray;
-
-	PxU32 nbIslands = objects.numIslands;
+	const PxU32 nbIslands = objects.numIslands;
 	const IG::IslandId* const islandIds = objects.islandIds;
+	PxU32* PX_RESTRICT bodyRemapTable = threadContext.bodyRemapTable;
 
-	const IG::IslandSim& islandSim = islandManager.getAccurateIslandSim();
+	iterateIslandsNodes(islandContext.mCounts, nbIslands, islandIds, threadContext.mBodyCoreArray, threadContext.mRigidBodyArray, threadContext.mArticulationArray, bodyRemapTable, threadContext.mNodeIndexArray);
 
-	{
-		PX_PROFILE_ZONE("IterateIslandsNodes", mContextID);
-
-		PxU32 bodyIndex = 0, articIndex = 0;
-		for (PxU32 i = 0; i < nbIslands; ++i)
-		{
-			const IG::Island& island = islandSim.getIsland(islandIds[i]);
-
-			PxNodeIndex currentIndex = island.mRootNode;
-
-			while (currentIndex.isValid())
-			{
-				const IG::Node& node = islandSim.getNode(currentIndex);
-
-				if (node.getNodeType() == IG::Node::eARTICULATION_TYPE)
-				{
-					articulationPtr[articIndex++] = getObjectFromIG<FeatherstoneArticulation>(node);
-				}
-				else
-				{
-					PxsRigidBody* rigid = getObjectFromIG<PxsRigidBody>(node);
-					PX_ASSERT(bodyIndex < (islandContext.mCounts.bodies + mKinematicCount + 1));
-					rigidBodyPtr[bodyIndex] = rigid;
-					bodyArrayPtr[bodyIndex] = &rigid->getCore();
-					nodeIndexArray[bodyIndex] = currentIndex.index();
-					bodyRemapTable[islandSim.getActiveNodeIndex(currentIndex)] = bodyIndex++;
-				}
-
-				currentIndex = node.mNextNode;
-			}
-		}
-	}
-
-	{
-		PX_PROFILE_ZONE("IterateIslandsContactEdges", mContextID);
-
-		PxsIndexedContactManager* indexedManagers = objects.contactManagers;
-
-		PxU32 currentContactIndex = 0;
-		for (PxU32 i = 0; i < nbIslands; ++i)
-		{
-			const IG::Island& island = islandSim.getIsland(islandIds[i]);
-
-			IG::EdgeIndex contactEdgeIndex = island.mFirstEdge[IG::Edge::eCONTACT_MANAGER];
-
-			while (contactEdgeIndex != IG_INVALID_EDGE)
-			{
-				const IG::Edge& edge = islandSim.getEdge(contactEdgeIndex);
-
-				PxsContactManager* contactManager = islandManager.getContactManager(contactEdgeIndex);
-
-				if (contactManager)
-				{
-					const PxNodeIndex nodeIndex1 = islandSim.mCpuData.getNodeIndex1(contactEdgeIndex);
-					const PxNodeIndex nodeIndex2 = islandSim.mCpuData.getNodeIndex2(contactEdgeIndex);
-
-					PxsIndexedContactManager& indexedManager = indexedManagers[currentContactIndex++];
-					indexedManager.contactManager = contactManager;
-
-					PX_ASSERT(!nodeIndex1.isStaticBody());
-					{
-						const IG::Node& node1 = islandSim.getNode(nodeIndex1);
-
-						//Is it an articulation or not???
-						if (node1.getNodeType() == IG::Node::eARTICULATION_TYPE)
-						{
-							indexedManager.articulation0 = nodeIndex1.getInd();
-							indexedManager.indexType0 = PxsIndexedInteraction::eARTICULATION;
-						}
-						else
-						{
-							if (node1.isKinematic())
-							{
-								indexedManager.indexType0 = PxsIndexedInteraction::eKINEMATIC;
-								indexedManager.solverBody0 = islandSim.getActiveNodeIndex(nodeIndex1);
-							}
-							else
-							{
-								indexedManager.indexType0 = PxsIndexedInteraction::eBODY;
-								indexedManager.solverBody0 = bodyRemapTable[islandSim.getActiveNodeIndex(nodeIndex1)];
-							}
-							PX_ASSERT(indexedManager.solverBody0 < (islandContext.mCounts.bodies + mKinematicCount + 1));
-						}
-					}
-
-					if (nodeIndex2.isStaticBody())
-					{
-						indexedManager.indexType1 = PxsIndexedInteraction::eWORLD;
-					}
-					else
-					{
-						const IG::Node& node2 = islandSim.getNode(nodeIndex2);
-
-						//Is it an articulation or not???
-						if (node2.getNodeType() == IG::Node::eARTICULATION_TYPE)
-						{
-							indexedManager.articulation1 = nodeIndex2.getInd();
-							indexedManager.indexType1 = PxsIndexedInteraction::eARTICULATION;
-						}
-						else
-						{
-							if (node2.isKinematic())
-							{
-								indexedManager.indexType1 = PxsIndexedInteraction::eKINEMATIC;
-								indexedManager.solverBody1 = islandSim.getActiveNodeIndex(nodeIndex2);
-							}
-							else
-							{
-								indexedManager.indexType1 = PxsIndexedInteraction::eBODY;
-								indexedManager.solverBody1 = bodyRemapTable[islandSim.getActiveNodeIndex(nodeIndex2)];
-							}
-							PX_ASSERT(indexedManager.solverBody1 < (islandContext.mCounts.bodies + mKinematicCount + 1));
-						}
-					}
-
-				}
-				contactEdgeIndex = edge.mNextIslandEdge;
-			}
-		}
-
-		islandContext.mCounts.contactManagers = currentContactIndex;
-	}
+	islandContext.mCounts.contactManagers = iterateIslandsContactEdges(islandContext.mCounts, nbIslands, islandIds, objects.contactManagers, bodyRemapTable);
 }
-
-struct ConstraintLess
-{
-	bool operator()(const PxSolverConstraintDesc& left, const PxSolverConstraintDesc& right) const
-	{
-		return reinterpret_cast<Constraint*>(left.constraint)->index > reinterpret_cast<Constraint*>(right.constraint)->index;
-	}
-};
 
 void DynamicsTGSContext::setupDescs(IslandContextStep& mIslandContext, const SolverIslandObjectsStep& mObjects,
 	PxU32* mBodyRemapTable, PxU32 mSolverBodyOffset, PxsContactManagerOutputIterator& /*outputs*/)
 {
 	PX_PROFILE_ZONE("setupDescs", mContextID);
 
-	ThreadContext& mThreadContext = *mIslandContext.mThreadContext;
+	ThreadContext& threadContext = *mIslandContext.mThreadContext;
 	PxSolverConstraintDesc* contactDescPtr = mObjects.constraintDescs;
 
 	//PxU32 constraintCount = mCounts.constraints + mCounts.contactManagers;
@@ -937,13 +708,14 @@ void DynamicsTGSContext::setupDescs(IslandContextStep& mIslandContext, const Sol
 	const IG::IslandSim& islandSim = mIslandManager.getAccurateIslandSim();
 
 	{
+		// PT: TODO: refactor with PGS
 		PX_PROFILE_ZONE("IterateIslandsConstraintEdges", mContextID);
 
 		for (PxU32 i = 0; i < nbIslands; ++i)
 		{
 			const IG::Island& island = islandSim.getIsland(islandIds[i]);
 
-			IG::EdgeIndex edgeId = island.mFirstEdge[IG::Edge::eCONSTRAINT];
+			IG::EdgeIndex edgeId = island.mEdges.mFirstEdge[IG::Edge::eCONSTRAINT];
 
 			while (edgeId != IG_INVALID_EDGE)
 			{
@@ -955,7 +727,7 @@ void DynamicsTGSContext::setupDescs(IslandContextStep& mIslandContext, const Sol
 				desc.constraint = reinterpret_cast<PxU8*>(constraint);
 				desc.constraintType = DY_SC_TYPE_RB_1D;
 				contactDescPtr++;
-				edgeId = edge.mNextIslandEdge;
+				edgeId = edge.mLinks.mNextIslandEdge;
 			}
 		}
 	}
@@ -965,9 +737,13 @@ void DynamicsTGSContext::setupDescs(IslandContextStep& mIslandContext, const Sol
 		PxSort(mObjects.constraintDescs, PxU32(contactDescPtr - mObjects.constraintDescs), ConstraintLess());
 	}
 
-	if (mIslandContext.mCounts.contactManagers)
+	const PxU32 nbCms = mIslandContext.mCounts.contactManagers;
+	if(nbCms)
 	{
-		for (PxU32 a = 0; a < mIslandContext.mCounts.contactManagers; ++a)
+		// PT: TODO: refactor with PGS
+		PX_PROFILE_ZONE("setDescFromIndices_contacts", mContextID);
+
+		for (PxU32 a = 0; a < nbCms; ++a)
 		{
 			//PxsContactManagerOutput& output = outputs.getContactManager(mObjects.contactManagers[a].contactManager->getWorkUnit().mNpIndex);
 			//if (output.nbContacts > 0)
@@ -986,7 +762,7 @@ void DynamicsTGSContext::setupDescs(IslandContextStep& mIslandContext, const Sol
 			//}
 		}
 	}
-	mThreadContext.contactDescArraySize = PxU32(contactDescPtr - mObjects.constraintDescs);
+	threadContext.contactDescArraySize = PxU32(contactDescPtr - mObjects.constraintDescs);
 }
 
 void DynamicsTGSContext::preIntegrateBodies(PxsBodyCore** bodyArray, PxsRigidBody** originalBodyArray,
@@ -1022,7 +798,7 @@ void DynamicsTGSContext::preIntegrateBodies(PxsBodyCore** bodyArray, PxsRigidBod
 
 void DynamicsTGSContext::createSolverConstraints(PxSolverConstraintDesc* contactDescPtr, PxConstraintBatchHeader* headers, PxU32 nbHeaders,
 	PxsContactManagerOutputIterator& outputs, Dy::ThreadContext& islandThreadContext, Dy::ThreadContext& threadContext, PxReal stepDt, PxReal totalDt, PxReal invStepDt,
-	const PxReal biasCoefficient)
+	const PxReal rigidContactBiasCoefficient, const PxReal jointBiasCoefficient)
 {
 	PX_UNUSED(totalDt);
 	//PX_PROFILE_ZONE("CreateConstraints", 0);
@@ -1078,8 +854,6 @@ void DynamicsTGSContext::createSolverConstraints(PxSolverConstraintDesc* contact
 				blockDesc.shapeInteraction = cm->getShapeInteraction();
 				blockDesc.contactForces = cmOutput->contactForces;
 				blockDesc.desc = &desc;
-				blockDesc.body0 = &b0;
-				blockDesc.body1 = &b1;
 				blockDesc.body0TxI = &txI0;
 				blockDesc.body1TxI = &txI1;
 				blockDesc.bodyData0 = &data0;
@@ -1138,7 +912,7 @@ void DynamicsTGSContext::createSolverConstraints(PxSolverConstraintDesc* contact
 					mBounceThreshold,
 					mFrictionOffsetThreshold,
 					mCorrelationDistance,
-					biasCoefficient,
+					rigidContactBiasCoefficient,
 					blockAllocator);
 			}
 #endif
@@ -1155,8 +929,8 @@ void DynamicsTGSContext::createSolverConstraints(PxSolverConstraintDesc* contact
 					//PX_ASSERT(output.nbContacts != 0);
 
 					createFinalizeSolverContactsStep(blockDescs[i], output, threadContext,
-						invStepDt, invTotalDt, totalDt, stepDt, mBounceThreshold, mFrictionOffsetThreshold, mCorrelationDistance, biasCoefficient,
-						blockAllocator);
+						invStepDt, invTotalDt, totalDt, stepDt, mBounceThreshold, mFrictionOffsetThreshold, mCorrelationDistance, 
+						rigidContactBiasCoefficient, blockAllocator);
 
 					getContactManagerConstraintDesc(output, *cm, desc);
 
@@ -1241,7 +1015,7 @@ void DynamicsTGSContext::createSolverConstraints(PxSolverConstraintDesc* contact
 			{
 				PxU32 totalRows;
 				buildState = setupSolverConstraintStep4
-				(shaderPrepDescs, prepDescs, stepDt, totalDt, invStepDt, invTotalDt, totalRows, blockAllocator, mLengthScale, biasCoefficient, mIsResidualReportingEnabled);
+				(shaderPrepDescs, prepDescs, stepDt, totalDt, invStepDt, invTotalDt, totalRows, blockAllocator, mLengthScale, jointBiasCoefficient);
 			}
 #endif
 #endif
@@ -1251,7 +1025,7 @@ void DynamicsTGSContext::createSolverConstraints(PxSolverConstraintDesc* contact
 				{
 					PxReal clampedInvDt = invStepDt;
 					SetupSolverConstraintStep(shaderPrepDescs[i], prepDescs[i], blockAllocator, stepDt, totalDt, clampedInvDt, invTotalDt, mLengthScale,
-						biasCoefficient);
+						jointBiasCoefficient);
 				}
 			}
 		}
@@ -1316,7 +1090,7 @@ TGSSolveConcludeMethod g_SolveConcludeTGSMethods[] =
 	solveConclude1D4,				// DY_SC_TYPE_BLOCK_1D,
 };
 
-void DynamicsTGSContext::solveConstraintsIteration(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders,
+static void solveConstraintsIteration(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders,
 	PxReal invStepDt, const PxTGSSolverBodyTxInertia* const solverTxInertia, PxReal elapsedTime, PxReal minPenetration, SolverContext& cache)
 {
 	PX_UNUSED(invStepDt);
@@ -1329,7 +1103,7 @@ void DynamicsTGSContext::solveConstraintsIteration(const PxSolverConstraintDesc*
 }
 
 template <bool TSync>
-void parallelSolveConstraints(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders,
+static void parallelSolveConstraints(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders,
 	PxTGSSolverBodyTxInertia* solverTxInertia, PxReal elapsedTime, PxReal minPenetration,
 	SolverContext& cache, PxU32 iterCount)
 {
@@ -1378,7 +1152,7 @@ void DynamicsTGSContext::parallelWritebackConstraintsIteration(const PxSolverCon
 }
 
 template <bool TSync>
-void solveConcludeConstraintsIteration(const PxSolverConstraintDesc* const contactDescPtr,
+static void solveConcludeConstraintsIteration(const PxSolverConstraintDesc* const contactDescPtr,
 	const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders, PxTGSSolverBodyTxInertia* solverTxInertia, 
 	PxReal elapsedTime, SolverContext& cache, PxU32 iterCount)
 {
@@ -1551,6 +1325,8 @@ void DynamicsTGSContext::copyBackBodies(const SolverIslandObjectsStep& objects,
 	PxTGSSolverBodyData* solverBodyDatas, PxReal invDt, IG::IslandSim& islandSim,
 	PxU32 startIdx, PxU32 endIdx)
 {
+	const bool sleepingDisabled = isSleepingDisabled();
+
 	for (PxU32 k = startIdx; k < endIdx; k++)
 	{
 		//PxStepSolverBody& solverBodyData = solverBodyData2[k + 1];
@@ -1568,14 +1344,17 @@ void DynamicsTGSContext::copyBackBodies(const SolverIslandObjectsStep& objects,
 		/*core.linearVelocity = (solverBodyVel.linearVelocity);
 		core.angularVelocity = solverBodyTxI.sqrtInvInertia*(solverBodyVel.angularVelocity);*/
 
-		PxVec3 linearVelocity = (solverBodyVel.linearVelocity);
+		const PxVec3& linearVelocity = solverBodyVel.linearVelocity;
 		PxVec3 angularVelocity = solverBodyTxI.sqrtInvInertia*(solverBodyVel.angularVelocity);
 
 		core.linearVelocity = linearVelocity;
 		core.angularVelocity = angularVelocity;
 
-		const PxU32 hasStaticTouch = islandSim.getIslandStaticTouchCount(PxNodeIndex(solverBodyData.nodeIndex));
-		sleepCheck(&rBody, mDt, mEnableStabilization, motionVel, hasStaticTouch);
+		if(!sleepingDisabled)
+		{
+			const PxU32 hasStaticTouch = islandSim.getIslandStaticTouchCount(PxNodeIndex(solverBodyData.nodeIndex));
+			sleepCheck(&rBody, mDt, mEnableStabilization, motionVel, hasStaticTouch);
+		}
 	}
 }
 
@@ -1583,31 +1362,27 @@ void DynamicsTGSContext::stepArticulations(Dy::ThreadContext& threadContext, con
 {
 	for (PxU32 a = 0; a < counts.articulations; ++a)
 	{
-		ArticulationSolverDesc& d = threadContext.getArticulations()[a];
 		//if(d.articulation->numTotalConstraints > 0)
 		//d.articulation->solveInternalConstraints(dt, 1.f / dt, threadContext.mZVector.begin(), threadContext.mDeltaV.begin(), false);
-		ArticulationPImpl::updateDeltaMotion(d, dt, threadContext.mDeltaV.begin());		
+		FeatherstoneArticulation::recordDeltaMotion(threadContext.mArticulationArray[a], dt, threadContext.mDeltaV.begin());		
 	}
 }
 
 void DynamicsTGSContext::updateArticulations(Dy::ThreadContext& threadContext, PxU32 startIdx, PxU32 endIdx, PxReal dt)
 {
 	for (PxU32 a = startIdx; a < endIdx; ++a)
-	{
-		ArticulationSolverDesc& d = threadContext.getArticulations()[a];
-		ArticulationPImpl::updateBodiesTGS(d, threadContext.mDeltaV.begin(), dt);
-	}
+		FeatherstoneArticulation::updateBodiesTGS(threadContext.mArticulationArray[a], threadContext.mDeltaV.begin(), dt);
 }
 
 void DynamicsTGSContext::applyArticulationTgsSubstepForces(Dy::ThreadContext& threadContext, PxU32 numArticulations, PxReal stepDt)
 {
 	for(PxU32 i = 0; i < numArticulations; ++i)
 	{
-		ArticulationSolverDesc& d = threadContext.getArticulations()[i];
+		FeatherstoneArticulation* articulation = threadContext.mArticulationArray[i];
 
 		// zVector just used as temp buffer
-		threadContext.mZVector.resizeUninitialized(d.linkCount);
-		FeatherstoneArticulation::applyTgsSubstepForces(d, stepDt, threadContext.mZVector.begin());
+		threadContext.mZVector.resizeUninitialized(articulation->getBodyCount());
+		FeatherstoneArticulation::applyTgsSubstepForces(articulation, stepDt, threadContext.mZVector.begin());
 	}
 
 }
@@ -1617,7 +1392,7 @@ namespace
 class ArticulationTask : public Cm::Task
 {
 	Dy::DynamicsTGSContext& mContext;
-	const ArticulationSolverDesc* const mDescs;
+	FeatherstoneArticulation** const mDescs;
 	const PxU32 mNbDescs;
 	const PxVec3 mGravity;
 	const PxReal mDt;
@@ -1628,7 +1403,7 @@ class ArticulationTask : public Cm::Task
 public:
 	static const PxU32 MaxNbPerTask = 32;
 
-	ArticulationTask(Dy::DynamicsTGSContext& context, const ArticulationSolverDesc* descs, PxU32 nbDescs,
+	ArticulationTask(Dy::DynamicsTGSContext& context, FeatherstoneArticulation** descs, PxU32 nbDescs,
 	                 const PxVec3& gravity, PxReal dt, PxU64 contextId, bool externalForcesEveryTgsIterationEnabled)
 	: Cm::Task(contextId)
 	, mContext(context)
@@ -1646,9 +1421,7 @@ public:
 	{
 		PxU32 maxLinks = 0;
 		for (PxU32 i = 0; i < mNbDescs; i++)
-		{
-			maxLinks = PxMax(maxLinks, PxU32(mDescs[i].linkCount));
-		}
+			maxLinks = PxMax(maxLinks, mDescs[i]->getBodyCount());
 
 		Dy::ThreadContext& threadContext = *mContext.getThreadContext();
 
@@ -1660,8 +1433,8 @@ public:
 
 		for (PxU32 a = 0; a < mNbDescs; ++a)
 		{			
-			ArticulationPImpl::computeUnconstrainedVelocitiesTGS(mDescs[a], mDt, 
-				mGravity, invLengthScale, mExternalForcesEveryTgsIterationEnabled);
+			FeatherstoneArticulation::computeUnconstrainedVelocities(mDescs[a], mDt, 
+				mGravity, invLengthScale, mExternalForcesEveryTgsIterationEnabled, true);
 		}
 
 		mContext.putThreadContext(&threadContext);
@@ -1672,7 +1445,8 @@ public:
 void DynamicsTGSContext::setupArticulations(IslandContextStep& islandContext, const PxVec3& gravity, PxReal dt, PxU32& posIters,
 	PxU32& velIters, PxBaseTask* continuation)
 {
-	Dy::FeatherstoneArticulation** articulations = islandContext.mThreadContext->mArticulationArray;
+	Dy::ThreadContext* threadContext = islandContext.mThreadContext;
+	Dy::FeatherstoneArticulation** articulations = threadContext->mArticulationArray;
 	PxU32 nbArticulations = islandContext.mCounts.articulations;
 
 	PxU32 maxVelIters = 0;
@@ -1680,20 +1454,16 @@ void DynamicsTGSContext::setupArticulations(IslandContextStep& islandContext, co
 
 	for (PxU32 a = 0; a < nbArticulations; a+= ArticulationTask::MaxNbPerTask)
 	{
+		// PT: TODO: why not do that in the task, like we do for PGS?
 		const PxU32 endIdx = PxMin(nbArticulations, a + ArticulationTask::MaxNbPerTask);
 		for (PxU32 b = a; b < endIdx; ++b)
 		{
-			ArticulationSolverDesc& desc = islandContext.mThreadContext->getArticulations()[b];
-			articulations[b]->getSolverDesc(desc);
-			articulations[b]->mArticulationIndex = PxU16(b);
-
 			const PxU16 iterWord = articulations[b]->getIterationCounts();
 			maxVelIters = PxMax<PxU32>(PxU32(iterWord >> 8), maxVelIters);
 			maxPosIters = PxMax<PxU32>(PxU32(iterWord & 0xff), maxPosIters);
 		}
 
-		Dy::ThreadContext* threadContext = islandContext.mThreadContext;
-		ArticulationTask* task = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(ArticulationTask)), ArticulationTask)(*this, threadContext->getArticulations().begin() + a,
+		ArticulationTask* task = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(ArticulationTask)), ArticulationTask)(*this, articulations + a,
 			endIdx - a, gravity, dt, getContextId(), mIsExternalForcesEveryTgsIterationEnabled);
 
 		task->setContinuation(continuation);
@@ -1704,7 +1474,7 @@ void DynamicsTGSContext::setupArticulations(IslandContextStep& islandContext, co
 	posIters = PxMax(maxPosIters, posIters);
 }
 
-PxU32 DynamicsTGSContext::setupArticulationInternalConstraints(IslandContextStep& islandContext, PxReal dt, PxReal invStepDt)
+void DynamicsTGSContext::setupArticulationInternalConstraints(IslandContextStep& islandContext, PxReal dt, PxReal invStepDt)
 {
 	Dy::FeatherstoneArticulation** articulations = islandContext.mThreadContext->mArticulationArray;
 	PxU32 nbArticulations = islandContext.mCounts.articulations;
@@ -1712,26 +1482,10 @@ PxU32 DynamicsTGSContext::setupArticulationInternalConstraints(IslandContextStep
 	ThreadContext* threadContext = getThreadContext();
 	threadContext->mConstraintBlockStream.reset();
 
-	PxU32 totalDescCount = 0;
-
 	for (PxU32 a = 0; a < nbArticulations; ++a)
-	{
-		ArticulationSolverDesc& desc = islandContext.mThreadContext->getArticulations()[a];
-		articulations[a]->getSolverDesc(desc);
-
-		PxU32 descCount = ArticulationPImpl::setupSolverInternalConstraintsTGS(desc, 
-			islandContext.mStepDt, invStepDt, dt);
-
-		desc.numInternalConstraints = PxTo8(descCount);
-
-		totalDescCount += descCount;
-	}
+		FeatherstoneArticulation::setupSolverConstraintsTGS(articulations[a], islandContext.mStepDt, invStepDt, dt);
 
 	putThreadContext(threadContext);
-
-	islandContext.mThreadContext->contactDescArraySize += totalDescCount;
-
-	return totalDescCount;
 }
 
 class SetupDescsTask : public Cm::Task
@@ -1896,8 +1650,8 @@ public:
 		PxReal dt = mContext.getDt();
 
 		mIslandContext.mStepDt = dt / PxReal(mIslandContext.mPosIters);
-		mIslandContext.mInvStepDt = 1.f/mIslandContext.mStepDt;//PxMin(1000.f, 1.f / mIslandContext.mStepDt);
-		mIslandContext.mBiasCoefficient = 2.f * PxSqrt(1.f/mIslandContext.mPosIters);
+		mIslandContext.mInvStepDt = 1.f/mIslandContext.mStepDt;
+		mIslandContext.mBiasCoefficients.set(false, true, mIslandContext.mPosIters);
 	}
 
 	virtual void release()
@@ -1974,7 +1728,8 @@ class SetupSolverConstraintsSubTask : public Cm::Task
 	PxReal mTotalDt;
 	PxReal mInvStepDt; 
 	PxReal mInvDtTotal;
-	PxReal mBiasCoefficient;
+	PxReal mRigidContactBiasCoefficient;
+	PxReal mJointBiasCoefficient;
 	DynamicsTGSContext& mContext;
 	ThreadContext& mIslandThreadContext;
 
@@ -1986,9 +1741,10 @@ public:
 
 	SetupSolverConstraintsSubTask(PxSolverConstraintDesc* contactDescPtr, PxConstraintBatchHeader* headers, PxU32 nbHeaders,
 		PxsContactManagerOutputIterator& outputs, PxReal stepDt, PxReal totalDt, PxReal invStepDt, PxReal invDtTotal, 
-		PxReal biasCoefficient, ThreadContext& islandThreadContext, DynamicsTGSContext& context) : Cm::Task(context.getContextId()),
+		PxReal rigidContactBiasCoefficient, PxReal jointBiasCoefficient, ThreadContext& islandThreadContext, DynamicsTGSContext& context) : Cm::Task(context.getContextId()),
 		mContactDescPtr(contactDescPtr), mHeaders(headers), mNbHeaders(nbHeaders), mOutputs(outputs), mStepDt(stepDt), mTotalDt(totalDt), mInvStepDt(invStepDt),
-		mInvDtTotal(invDtTotal), mBiasCoefficient(biasCoefficient), mContext(context), mIslandThreadContext(islandThreadContext)
+		mInvDtTotal(invDtTotal), mRigidContactBiasCoefficient(rigidContactBiasCoefficient), mJointBiasCoefficient(jointBiasCoefficient),
+		mContext(context), mIslandThreadContext(islandThreadContext)
 	{
 	}
 
@@ -1999,7 +1755,7 @@ public:
 		ThreadContext* tempContext = mContext.getThreadContext();
 		tempContext->mConstraintBlockStream.reset();
 		mContext.createSolverConstraints(mContactDescPtr, mHeaders, mNbHeaders, mOutputs, mIslandThreadContext, *tempContext, mStepDt, mTotalDt, mInvStepDt,
-			mBiasCoefficient);
+			mRigidContactBiasCoefficient, mJointBiasCoefficient);
 		mContext.putThreadContext(tempContext);
 	}
 };
@@ -2021,7 +1777,8 @@ public:
 		mNbArticulations(nbArticulations),
 		mSolverBodyData(solverBodyData),
 		mSolverBodyTxInertia(solverBodyTxInertia),
-		mThreadContext(threadContext), mDynamicsContext(context),
+		mThreadContext(threadContext),
+		mDynamicsContext(context),
 		mOutputs(outputs),
 		mIslandContext(islandContext)
 	{}
@@ -2047,7 +1804,7 @@ public:
 		{
 			mArticulations[i]->prepareStaticConstraintsTGS(mIslandContext.mStepDt, dt, invStepDt, invDt, mOutputs, *threadContext, correlationDist, bounceThreshold, frictionOffsetThreshold,
 				mSolverBodyData, mSolverBodyTxInertia, mThreadContext.mConstraintBlockManager, mDynamicsContext.getConstraintWriteBackPool().begin(),
-				mIslandContext.mBiasCoefficient, mDynamicsContext.getLengthScale());
+				mIslandContext.mBiasCoefficients.rigidContact, mIslandContext.mBiasCoefficients.joint, mDynamicsContext.getLengthScale());
 		}
 
 		mDynamicsContext.putThreadContext(threadContext);
@@ -2075,9 +1832,7 @@ class SetupSolverConstraintsTask : public Cm::Task
 	IslandContextStep& mIslandContext;
 	PxSolverConstraintDesc* mContactDescPtr;
 	PxsContactManagerOutputIterator& mOutputs;
-	Dy::ThreadContext& mThreadContext;
 	PxReal mTotalDt;
-
 	DynamicsTGSContext& mContext;
 
 	PX_NOCOPY(SetupSolverConstraintsTask)
@@ -2085,8 +1840,8 @@ class SetupSolverConstraintsTask : public Cm::Task
 public:
 
 	SetupSolverConstraintsTask(IslandContextStep& islandContext, PxSolverConstraintDesc* contactDescPtr,
-		PxsContactManagerOutputIterator& outputs, Dy::ThreadContext& threadContext, PxReal totalDt, DynamicsTGSContext& context) : Cm::Task(context.getContextId()),
-		mIslandContext(islandContext), mContactDescPtr(contactDescPtr), mOutputs(outputs), mThreadContext(threadContext), 
+		PxsContactManagerOutputIterator& outputs, PxReal totalDt, DynamicsTGSContext& context) : Cm::Task(context.getContextId()),
+		mIslandContext(islandContext), mContactDescPtr(contactDescPtr), mOutputs(outputs),
 		mTotalDt(totalDt), mContext(context)
 	{
 	}
@@ -2103,7 +1858,8 @@ public:
 		{
 			const PxU32 nbConstraints = PxMin(nbBatches - a, SetupSolverConstraintsSubTask::MaxPerTask);
 			SetupSolverConstraintsSubTask* task = PX_PLACEMENT_NEW(mContext.mTaskPool.allocate(sizeof(SetupSolverConstraintsSubTask)), SetupSolverConstraintsSubTask)
-				(mContactDescPtr, hdr + a, nbConstraints, mOutputs, mIslandContext.mStepDt, mTotalDt, mIslandContext.mInvStepDt, mContext.mInvDt, mIslandContext.mBiasCoefficient, mThreadContext, mContext);
+				(mContactDescPtr, hdr + a, nbConstraints, mOutputs, mIslandContext.mStepDt, mTotalDt, mIslandContext.mInvStepDt, mContext.mInvDt, 
+					mIslandContext.mBiasCoefficients.rigidContact, mIslandContext.mBiasCoefficients.joint, threadContext, mContext);
 
 			task->setContinuation(mCont);
 			task->removeReference();
@@ -2116,7 +1872,7 @@ public:
 			const PxU32 nbToProcess = PxMin(articCount - i, PxsCreateArticConstraintsSubTask::NbArticsPerTask);
 
 			PxsCreateArticConstraintsSubTask* task = PX_PLACEMENT_NEW(mContext.getTaskPool().allocate(sizeof(PxsCreateArticConstraintsSubTask)), PxsCreateArticConstraintsSubTask)
-				(mThreadContext.mArticulationArray + i, nbToProcess, mContext.mSolverBodyDataPool2.begin(), mContext.mSolverBodyTxInertiaPool.begin(), mThreadContext, mContext, mOutputs,
+				(threadContext.mArticulationArray + i, nbToProcess, mContext.mSolverBodyDataPool2.begin(), mContext.mSolverBodyTxInertiaPool.begin(), threadContext, mContext, mOutputs,
 					mIslandContext);
 
 			task->setContinuation(mCont);
@@ -2130,8 +1886,6 @@ class PartitionTask : public Cm::Task
 	IslandContextStep& mIslandContext;
 	const PxSolverConstraintDesc* mContactDescPtr;
 	PxTGSSolverBodyVel* mSolverBodyData;
-	Dy::ThreadContext& mThreadContext;
-
 	DynamicsTGSContext& mContext;
 
 	PX_NOCOPY(PartitionTask)
@@ -2139,8 +1893,8 @@ class PartitionTask : public Cm::Task
 public:
 
 	PartitionTask(IslandContextStep& islandContext, PxSolverConstraintDesc* contactDescPtr, PxTGSSolverBodyVel* solverBodyData,
-		Dy::ThreadContext& threadContext, DynamicsTGSContext& context) : Cm::Task(context.getContextId()),
-		mIslandContext(islandContext), mContactDescPtr(contactDescPtr), mSolverBodyData(solverBodyData), mThreadContext(threadContext),
+		DynamicsTGSContext& context) : Cm::Task(context.getContextId()),
+		mIslandContext(islandContext), mContactDescPtr(contactDescPtr), mSolverBodyData(solverBodyData),
 		mContext(context)
 	{
 	}
@@ -2149,37 +1903,34 @@ public:
 
 	virtual void runInternal()
 	{
-		const ArticulationSolverDesc* artics = mThreadContext.getArticulations().begin();
+		Dy::ThreadContext& threadContext = *mIslandContext.mThreadContext;
 
-		PxU32 totalDescCount = mThreadContext.contactDescArraySize;
+		const PxU32 totalDescCount = threadContext.contactDescArraySize;
 
-		mThreadContext.mConstraintsPerPartition.forceSize_Unsafe(0);
-		mThreadContext.mConstraintsPerPartition.resize(1);
-		mThreadContext.mConstraintsPerPartition[0] = 0;
+		threadContext.mConstraintsPerPartition.forceSize_Unsafe(0);
+		threadContext.mConstraintsPerPartition.resize(1);
+		threadContext.mConstraintsPerPartition[0] = 0;
 
-		const PxU32 numArticulations = mThreadContext.getArticulations().size();
-		PX_ALLOCA(_eaArticulations, Dy::FeatherstoneArticulation*, numArticulations);
-		Dy::FeatherstoneArticulation** eaArticulations = _eaArticulations;
-		for(PxU32 i=0;i<numArticulations;i++)
-			eaArticulations[i] = artics[i].articulation;
+		const PxU32 numArticulations = threadContext.mNbArticulations;
+		Dy::FeatherstoneArticulation** eaArticulations = threadContext.mArticulationArray;
 
 		// PT: maxPartitions = PX_MAX_U32 in PGS. Was there a reason to limit it for TGS?
 		const ConstraintPartitionIn in(	reinterpret_cast<PxU8*>(mSolverBodyData), mIslandContext.mCounts.bodies, sizeof(PxTGSSolverBodyVel),
 										eaArticulations, numArticulations, mContactDescPtr, totalDescCount, 64, false);
-		//args.mBitField = &mThreadContext.mPartitionNormalizationBitmap;	// PT: removed, unused
+		//args.mBitField = &threadContext.mPartitionNormalizationBitmap;	// PT: removed, unused
 
-		ConstraintPartitionOut out(mIslandContext.mObjects.orderedConstraintDescs, mIslandContext.mObjects.tempConstraintDescs, &mThreadContext.mConstraintsPerPartition);
+		ConstraintPartitionOut out(mIslandContext.mObjects.orderedConstraintDescs, mIslandContext.mObjects.tempConstraintDescs, &threadContext.mConstraintsPerPartition);
 
-		mThreadContext.mMaxPartitions = partitionContactConstraints(out, in);
-		mThreadContext.mNumDifferentBodyConstraints = out.mNumDifferentBodyConstraints;
-		mThreadContext.mNumStaticConstraints = out.mNumStaticConstraints;
-		mThreadContext.mHasOverflowPartitions = out.mNumOverflowConstraints != 0;
+		threadContext.mMaxPartitions = partitionContactConstraints(out, in);
+		threadContext.mNumDifferentBodyConstraints = out.mNumDifferentBodyConstraints;
+		threadContext.mNumStaticConstraints = out.mNumStaticConstraints;
+		threadContext.mHasOverflowPartitions = out.mNumOverflowConstraints != 0;
 
 		{
-			PxU32 descCount = mThreadContext.mNumDifferentBodyConstraints;
-			PxU32 selfConstraintDescCount = mThreadContext.contactDescArraySize - (mThreadContext.mNumDifferentBodyConstraints + mThreadContext.mNumStaticConstraints);
+			const PxU32 descCount = threadContext.mNumDifferentBodyConstraints;
+			const PxU32 selfConstraintDescCount = threadContext.contactDescArraySize - (threadContext.mNumDifferentBodyConstraints + threadContext.mNumStaticConstraints);
 
-			PxArray<PxU32>& accumulatedConstraintsPerPartition = mThreadContext.mConstraintsPerPartition;
+			PxArray<PxU32>& accumulatedConstraintsPerPartition = threadContext.mConstraintsPerPartition;
 
 			PxU32 numHeaders = 0;
 			PxU32 currentPartition = 0;
@@ -2187,8 +1938,7 @@ public:
 
 			const PxU32 maxBatchPartition = 0xFFFFFFFF;
 
-			//const PxU32 maxBatchSize2 = args.mEnhancedDeterminism ? 1u : 4u;
-			const PxU32 maxBatchSize2 = 4u;
+			const PxU32 maxBatchSize2 = mContext.isEnhancedDeterminismEnabled() ? 1u : 4u;
 
 			PxConstraintBatchHeader* batchHeaders = mIslandContext.mObjects.constraintBatchHeaders;
 
@@ -2236,7 +1986,7 @@ public:
 			if (descCount)
 				accumulatedConstraintsPerPartition[currentPartition] = headersPerPartition;
 
-			accumulatedConstraintsPerPartition.forceSize_Unsafe(mThreadContext.mMaxPartitions);
+			accumulatedConstraintsPerPartition.forceSize_Unsafe(threadContext.mMaxPartitions);
 
 			for (PxU32 a = 0; a < selfConstraintDescCount; ++a)
 			{
@@ -2246,7 +1996,7 @@ public:
 				header.constraintType = DY_SC_TYPE_EXT_1D;
 			}
 
-			mThreadContext.numContactConstraintBatches = numHeaders;
+			threadContext.numContactConstraintBatches = numHeaders;
 		}
 	}
 };
@@ -2257,17 +2007,15 @@ class ParallelSolveTask : public Cm::Task
 	const SolverIslandObjectsStep& mObjects;
 	const PxsIslandIndices& mCounts;
 	PxReal mTotalDt;
-	ThreadContext& mThreadContext;
-
 	DynamicsTGSContext& mContext;
 
 	PX_NOCOPY(ParallelSolveTask)
 
 public:
 
-	ParallelSolveTask(IslandContextStep& islandContext, const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, PxReal totalDt, ThreadContext& threadContext,
+	ParallelSolveTask(IslandContextStep& islandContext, const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, PxReal totalDt,
 		DynamicsTGSContext& context) : Cm::Task(context.getContextId()),
-		mIslandContext(islandContext), mObjects(objects), mCounts(counts), mTotalDt(totalDt), mThreadContext(threadContext), mContext(context)
+		mIslandContext(islandContext), mObjects(objects), mCounts(counts), mTotalDt(totalDt), mContext(context)
 	{
 	}
 
@@ -2275,10 +2023,11 @@ public:
 
 	virtual void runInternal()
 	{
-		mContext.iterativeSolveIslandParallel(mObjects, mCounts, mThreadContext, mIslandContext.mStepDt, mTotalDt, mIslandContext.mPosIters, mIslandContext.mVelIters,
+		mContext.iterativeSolveIslandParallel(mObjects, mCounts, *mIslandContext.mThreadContext, mIslandContext.mStepDt, mTotalDt, mIslandContext.mPosIters, mIslandContext.mVelIters,
+			mIslandContext.mBiasCoefficients.articulation,
 			&mIslandContext.mSharedSolverIndex, &mIslandContext.mSharedRigidBodyIndex, &mIslandContext.mSharedArticulationIndex, &mIslandContext.mSharedGravityIndex,
 			&mIslandContext.mSolvedCount, &mIslandContext.mRigidBodyIntegratedCount, &mIslandContext.mArticulationIntegratedCount, &mIslandContext.mGravityIntegratedCount,
-			4, 128, mIslandContext.mBiasCoefficient);
+			4, 128);
 	}
 };
 
@@ -2288,16 +2037,15 @@ class SolveIslandTask : public Cm::Task
 	const SolverIslandObjectsStep& mObjects;
 	const PxsIslandIndices& mCounts;
 	PxReal mTotalDt;
-	ThreadContext& mThreadContext;
 	DynamicsTGSContext& mContext;
 
 	PX_NOCOPY(SolveIslandTask)
 
 public:
 
-	SolveIslandTask(IslandContextStep& islandContext, const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, PxReal totalDt, ThreadContext& threadContext,
+	SolveIslandTask(IslandContextStep& islandContext, const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, PxReal totalDt,
 		DynamicsTGSContext& context) : Cm::Task(context.getContextId()),
-		mIslandContext(islandContext), mObjects(objects), mCounts(counts), mTotalDt(totalDt), mThreadContext(threadContext), mContext(context)
+		mIslandContext(islandContext), mObjects(objects), mCounts(counts), mTotalDt(totalDt), mContext(context)
 	{
 	}
 
@@ -2305,56 +2053,59 @@ public:
 
 	virtual void runInternal()
 	{
-		PxU32 j = 0, i = 0;
-
-		PxU32 numBatches = 0;
-
-		PxU32 currIndex = 0;
 		PxU32 totalCount = 0;
-
-		PxSolverConstraintDesc* contactDescBegin = mObjects.orderedConstraintDescs;
-		PxConstraintBatchHeader* headers = mObjects.constraintBatchHeaders;
-
 		PxU32 totalPartitions = 0;
-		for (PxU32 a = 0; a < mThreadContext.mConstraintsPerPartition.size(); ++a)
+
+		PxU32 j = 0, i = 0;
+		PxU32 numBatches = 0;
+		PxU32 currIndex = 0;
+
+		// PT: TODO: share with PGS
+
+		Dy::ThreadContext& threadContext = *mIslandContext.mThreadContext;
+
+		PxSolverConstraintDesc* PX_RESTRICT contactDescBegin = mObjects.orderedConstraintDescs;
+		PxConstraintBatchHeader* PX_RESTRICT headers = mObjects.constraintBatchHeaders;
+
+		for(PxU32 a = 0; a < threadContext.mConstraintsPerPartition.size(); ++a)
 		{
-			PxU32 endIndex = currIndex + mThreadContext.mConstraintsPerPartition[a];
+			const PxU32 endIndex = currIndex + threadContext.mConstraintsPerPartition[a];
 
 			PxU32 numBatchesInPartition = 0;
-			for (PxU32 b = currIndex; b < endIndex; ++b)
+			for(PxU32 b = currIndex; b < endIndex; ++b)
 			{
 				PxConstraintBatchHeader& _header = headers[b];
 				PxU16 stride = _header.stride, newStride = _header.stride;
 				PxU32 startIndex = j;
-				for (PxU16 c = 0; c < stride; ++c)
+				for(PxU16 c = 0; c < stride; ++c)
 				{
-					if (getConstraintLength(contactDescBegin[i]) == 0)
+					if(getConstraintLength(contactDescBegin[i]) == 0)
 					{
 						newStride--;
 						i++;
 					}
 					else
 					{
-						if (i != j)
+						if(i != j)
 							contactDescBegin[j] = contactDescBegin[i];
 						i++;
 						j++;
 					}
 				}
 
-				if (newStride != 0)
+				if(newStride != 0)
 				{
 					headers[numBatches].startIndex = startIndex;
 					headers[numBatches].stride = newStride;
 					PxU8 type = *contactDescBegin[startIndex].constraint;
-					if (type == DY_SC_TYPE_STATIC_CONTACT)
+					if(type == DY_SC_TYPE_STATIC_CONTACT)
 					{
 						//Check if any block of constraints is classified as type static (single) contact constraint.
 						//If they are, iterate over all constraints grouped with it and switch to "dynamic" contact constraint
 						//type if there's a dynamic contact constraint in the group.
-						for (PxU32 c = 1; c < newStride; ++c)
+						for(PxU32 c = 1; c < newStride; ++c)
 						{
-							if (*contactDescBegin[startIndex + c].constraint == DY_SC_TYPE_RB_CONTACT)
+							if(*contactDescBegin[startIndex + c].constraint == DY_SC_TYPE_RB_CONTACT)
 							{
 								type = DY_SC_TYPE_RB_CONTACT;
 							}
@@ -2366,62 +2117,61 @@ public:
 					numBatchesInPartition++;
 				}
 			}
-			currIndex += mThreadContext.mConstraintsPerPartition[a];
-			mThreadContext.mConstraintsPerPartition[totalPartitions] = numBatchesInPartition;
+
+			currIndex += threadContext.mConstraintsPerPartition[a];
+			threadContext.mConstraintsPerPartition[totalPartitions] = numBatchesInPartition;
+
 			if (numBatchesInPartition)
 				totalPartitions++;
 			else if (a == 0)
-				mThreadContext.mHasOverflowPartitions = false; //If our first partition is now empty, we have no overflows so clear the overflow flag
+				threadContext.mHasOverflowPartitions = false; //If our first partition is now empty, we have no overflows so clear the overflow flag
 			totalCount += numBatchesInPartition;
 		}
 
 		currIndex = totalCount;
 
 		processOverflowConstraints(reinterpret_cast<PxU8*>(mContext.mSolverBodyVelPool.begin() + mObjects.solverBodyOffset+1), sizeof(PxTGSSolverBodyVel),
-			mCounts.bodies, mThreadContext.getArticulations().begin(), mThreadContext.getArticulations().size(), contactDescBegin,
-			mThreadContext.mHasOverflowPartitions ? mThreadContext.mConstraintsPerPartition[0] : 0);
+			mCounts.bodies, threadContext.mArticulationArray, threadContext.mNbArticulations, contactDescBegin,
+			threadContext.mHasOverflowPartitions ? threadContext.mConstraintsPerPartition[0] : 0);
 
 		//Decision whether to spawn multi-threaded solver or single-threaded solver...
 
-		mThreadContext.mConstraintsPerPartition.forceSize_Unsafe(totalPartitions);
-		mThreadContext.numContactConstraintBatches = totalCount;
+		threadContext.mConstraintsPerPartition.forceSize_Unsafe(totalPartitions);
+		threadContext.numContactConstraintBatches = totalCount;
 
 		PxU32 maxLinks = 0;
 		for (PxU32 a = 0; a < mCounts.articulations; ++a)
-		{
-			ArticulationSolverDesc& desc = mThreadContext.getArticulations()[a];
-			maxLinks = PxMax(maxLinks, PxU32(desc.linkCount));
-		}
+			maxLinks = PxMax(maxLinks, threadContext.mArticulationArray[a]->getBodyCount());
 
-		mThreadContext.mDeltaV.forceSize_Unsafe(0);
-		mThreadContext.mDeltaV.reserve(maxLinks);
-		mThreadContext.mDeltaV.forceSize_Unsafe(maxLinks);
+		threadContext.mDeltaV.forceSize_Unsafe(0);
+		threadContext.mDeltaV.reserve(maxLinks);
+		threadContext.mDeltaV.forceSize_Unsafe(maxLinks);
 
-		mThreadContext.mZVector.forceSize_Unsafe(0);
-		mThreadContext.mZVector.reserve(maxLinks);
-		mThreadContext.mZVector.forceSize_Unsafe(maxLinks);
+		threadContext.mZVector.forceSize_Unsafe(0);
+		threadContext.mZVector.reserve(maxLinks);
+		threadContext.mZVector.forceSize_Unsafe(maxLinks);
 
 		SolverContext cache;
-		cache.deltaV = mThreadContext.mDeltaV.begin();
+		cache.deltaV = threadContext.mDeltaV.begin();
 		
-		if (mThreadContext.mConstraintsPerPartition.size())
+		if (threadContext.mConstraintsPerPartition.size())
 		{
 			const PxU32 threadCount = getTaskManager()->getCpuDispatcher()->getWorkerCount();
 
 			PxU32 nbHeadersPerPartition;
 			
-			if (mThreadContext.mHasOverflowPartitions)
+			if (threadContext.mHasOverflowPartitions)
 			{
 				// jcarius: mitigating potential divide-by-zero problem. It's unclear whether size originally includes
 				// the overflow partition or not.
-				const PxU32 size = mThreadContext.mConstraintsPerPartition.size();
+				const PxU32 size = threadContext.mConstraintsPerPartition.size();
 				const PxU32 nbPartitionsMinusOverflow = (size > 1) ? (size - 1) : 1;
 
-				PxU32 nbConstraintsMinusOverflow = currIndex - mThreadContext.mConstraintsPerPartition[0];
+				PxU32 nbConstraintsMinusOverflow = currIndex - threadContext.mConstraintsPerPartition[0];
 				nbHeadersPerPartition = ((nbConstraintsMinusOverflow + nbPartitionsMinusOverflow - 1) / nbPartitionsMinusOverflow);
 			}
 			else
-				nbHeadersPerPartition = ((currIndex + mThreadContext.mConstraintsPerPartition.size() - 1) / mThreadContext.mConstraintsPerPartition.size());
+				nbHeadersPerPartition = ((currIndex + threadContext.mConstraintsPerPartition.size() - 1) / threadContext.mConstraintsPerPartition.size());
 
 			const PxU32 NbBatchesPerThread = 8;
 			//const PxU32 NbBatchesPerThread = 4;
@@ -2429,8 +2179,8 @@ public:
 			const PxU32 nbIdealThreads = (nbHeadersPerPartition + NbBatchesPerThread-1) / NbBatchesPerThread;
 
 			if (threadCount < 2 || nbIdealThreads < 2) // not great if we have many articulations but no contact constraints => PX-4708
-				mContext.iterativeSolveIsland(mObjects, mCounts, mThreadContext, mIslandContext.mStepDt, mIslandContext.mInvStepDt, mTotalDt,
-					mIslandContext.mPosIters, mIslandContext.mVelIters, cache, mIslandContext.mBiasCoefficient);
+				mContext.iterativeSolveIsland(mObjects, mCounts, threadContext, mIslandContext.mStepDt, mIslandContext.mInvStepDt, mTotalDt,
+					mIslandContext.mPosIters, mIslandContext.mVelIters, mIslandContext.mBiasCoefficients.articulation, cache);
 			else
 			{
 				mIslandContext.mSharedSolverIndex = 0;
@@ -2448,7 +2198,7 @@ public:
 
 				for (PxU32 a = 0; a < nbThreads; ++a)
 				{
-					PX_PLACEMENT_NEW(&tasks[a], ParallelSolveTask)(mIslandContext, mObjects, mCounts, mTotalDt, mThreadContext, mContext);
+					PX_PLACEMENT_NEW(&tasks[a], ParallelSolveTask)(mIslandContext, mObjects, mCounts, mTotalDt, mContext);
 					tasks[a].setContinuation(mCont);
 					tasks[a].removeReference();
 				}
@@ -2456,9 +2206,9 @@ public:
 		}
 		else
 		{
-			mContext.iterativeSolveIsland(mObjects, mCounts, mThreadContext, mIslandContext.mStepDt,
-				mIslandContext.mInvStepDt, mTotalDt, mIslandContext.mPosIters, mIslandContext.mVelIters, cache,
-				mIslandContext.mBiasCoefficient);
+			mContext.iterativeSolveIsland(mObjects, mCounts, threadContext, mIslandContext.mStepDt,
+				mIslandContext.mInvStepDt, mTotalDt, mIslandContext.mPosIters, mIslandContext.mVelIters, 
+				mIslandContext.mBiasCoefficients.articulation, cache);
 		}
 	}
 };
@@ -2512,9 +2262,98 @@ public:
 	}
 };
 
-void DynamicsTGSContext::iterativeSolveIsland(const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, ThreadContext& mThreadContext,
-	PxReal stepDt, PxReal invStepDt, PxReal totalDt, PxU32 posIters, PxU32 velIters, SolverContext& cache, PxReal biasCoefficient)
+template<bool isVelIter, bool isLastPosIter>
+static void processIterationIsland
+(const PxReal totalDt, const PxReal stepDt, const PxReal recipStepDt, const PxReal elapsedTime, 
+ const bool isExternalForcesEveryTgsIterationEnabled,
+//solve artics:
+ const bool solveArticulationContactLast,
+ FeatherstoneArticulation** articulations, const PxU32 nbArticulations, const PxReal articulationBiasCoefficient,
+//solve rbodies:
+ const PxSolverConstraintDesc* const contactDescPtr,
+ const PxConstraintBatchHeader* const batchHeaders, const PxU32 nbHeaders, PxTGSSolverBodyTxInertia* solverTxInertia, 
+ const PxReal minPenetration, SolverContext& cache)
 {
+	if(solveArticulationContactLast)
+	{
+		const ArticulationConstraintProcessingConfigCPU firstPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getFirstPassConfig();
+		const ArticulationConstraintProcessingConfigCPU secondPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSecondPassConfig();
+
+		for (PxU32 i = 0; i < nbArticulations; ++i)
+		{	
+			//Note: this is the last pos iter so reset the pos error here.
+			FeatherstoneArticulation* articulation = articulations[i];
+
+			articulation->solveInternalConstraints(
+				totalDt, stepDt, recipStepDt, 
+				isVelIter, true, 
+				firstPassArticulationConstraintProcessingConfig,
+				elapsedTime, 
+				articulationBiasCoefficient,
+				isExternalForcesEveryTgsIterationEnabled);
+		}
+
+		if(isLastPosIter)
+		{
+			solveConcludeConstraintsIteration<false>(contactDescPtr, batchHeaders, nbHeaders,
+				solverTxInertia, elapsedTime, cache, 0);
+		}
+		else
+		{
+			solveConstraintsIteration(contactDescPtr, batchHeaders, nbHeaders, recipStepDt,
+				solverTxInertia, elapsedTime, minPenetration, cache);
+		}
+
+		for (PxU32 i = 0; i < nbArticulations; ++i)
+		{	
+			//Note: this is the last pos iter so reset the pos error here.
+			FeatherstoneArticulation* articulation = articulations[i];
+			articulation->solveInternalConstraints(
+				totalDt, stepDt, recipStepDt, 
+				isVelIter, true, 
+				secondPassArticulationConstraintProcessingConfig,
+				elapsedTime, 
+				articulationBiasCoefficient,
+				isExternalForcesEveryTgsIterationEnabled);
+
+			if(isLastPosIter)	
+				articulation->concludeInternalConstraints(true);
+		}
+	}
+	else
+	{
+		const ArticulationConstraintProcessingConfigCPU singlePassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSinglePassConfig(solveArticulationContactLast);
+
+		if(isLastPosIter)
+			solveConcludeConstraintsIteration<false>(contactDescPtr, batchHeaders, nbHeaders,
+				solverTxInertia, elapsedTime, cache, 0);
+		else
+			solveConstraintsIteration(contactDescPtr, batchHeaders, nbHeaders, recipStepDt,
+				solverTxInertia, elapsedTime, minPenetration, cache);
+
+		for (PxU32 i = 0; i < nbArticulations; ++i)
+		{	
+			//Note: this is the last pos iter so reset the pos error here.
+			FeatherstoneArticulation* articulation = articulations[i];
+
+			articulation->solveInternalConstraints(
+				totalDt, stepDt, recipStepDt, 
+				isVelIter, true, 
+				singlePassArticulationConstraintProcessingConfig,
+				elapsedTime, 
+				articulationBiasCoefficient,
+				isExternalForcesEveryTgsIterationEnabled);
+
+			if(isLastPosIter)
+				articulation->concludeInternalConstraints(true);
+		}
+	}
+}
+
+void DynamicsTGSContext::iterativeSolveIsland(const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, ThreadContext& threadContext,
+	PxReal stepDt, PxReal invStepDt, PxReal totalDt, PxU32 posIters, PxU32 velIters, PxReal articulationBiasCoefficient, SolverContext& cache)
+{
+	PX_UNUSED(invStepDt);
 	PX_PROFILE_ZONE("Dynamics:solveIsland", mContextID);
 	PxReal elapsedTime = 0.0f;
 	const PxReal recipStepDt = 1.0f/stepDt;
@@ -2524,53 +2363,47 @@ void DynamicsTGSContext::iterativeSolveIsland(const SolverIslandObjectsStep& obj
 	const bool externalForcesEveryTgsIterationEnabled = mIsExternalForcesEveryTgsIterationEnabled;
 	const bool solveArticulationContactLast = mSolveArticulationContactLast;
 
-	const ArticulationConstraintProcessingConfigCPU singlePassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSinglePassConfig(solveArticulationContactLast);
-	const ArticulationConstraintProcessingConfigCPU firstPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getFirstPassConfig();
-	const ArticulationConstraintProcessingConfigCPU secondPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSecondPassConfig();
-
-	if (mThreadContext.numContactConstraintBatches == 0)
+	if (threadContext.numContactConstraintBatches == 0)
 	{
+		const ArticulationConstraintProcessingConfigCPU singlePassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSinglePassConfig(solveArticulationContactLast);
+
 		for (PxU32 i = 0; i < counts.articulations; ++i)
 		{
 			elapsedTime = 0.0f;
-			ArticulationSolverDesc& d = mThreadContext.getArticulations()[i];
+			FeatherstoneArticulation* articulation = threadContext.mArticulationArray[i];
 			for (PxU32 a = 0; a < posIters; a++)
 			{
 				if (externalForcesEveryTgsIterationEnabled)
 				{
-					PX_ASSERT(mThreadContext.mZVector.size() >= d.linkCount);
-					FeatherstoneArticulation::applyTgsSubstepForces(d, stepDt, mThreadContext.mZVector.begin());
+					PX_ASSERT(threadContext.mZVector.size() >= articulation->getBodyCount());
+					FeatherstoneArticulation::applyTgsSubstepForces(articulation, stepDt, threadContext.mZVector.begin());
 				}
-				d.articulation->mContactErrorAccumulatorPosIter.reset();
-				d.articulation->mInternalErrorAccumulatorPosIter.reset();
-				d.articulation->solveInternalConstraints(
+				articulation->solveInternalConstraints(
 					totalDt, stepDt, recipStepDt, 
 					false, true, 
 					singlePassArticulationConstraintProcessingConfig,
 					elapsedTime, 
-					biasCoefficient,
-					mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled);
-				ArticulationPImpl::updateDeltaMotion(d, stepDt, mThreadContext.mDeltaV.begin());
+					articulationBiasCoefficient,
+					mIsExternalForcesEveryTgsIterationEnabled);
+				FeatherstoneArticulation::recordDeltaMotion(articulation, stepDt, threadContext.mDeltaV.begin());
 				elapsedTime += stepDt;
 			}
 
-			ArticulationPImpl::saveVelocityTGS(d.articulation, mInvDt);
+			FeatherstoneArticulation::saveVelocityTGS(articulation, mInvDt);
 
-			d.articulation->concludeInternalConstraints(true);
+			articulation->concludeInternalConstraints(true);
 
 			for (PxU32 a = 0; a < velIters; ++a)
 			{
-				d.articulation->mContactErrorAccumulatorVelIter.reset();
-				d.articulation->mInternalErrorAccumulatorVelIter.reset();
-				d.articulation->solveInternalConstraints(
+				articulation->solveInternalConstraints(
 					totalDt, stepDt, recipStepDt, 
 					true, true, 
 					singlePassArticulationConstraintProcessingConfig,
-					elapsedTime, biasCoefficient,
-					mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled);
+					elapsedTime, articulationBiasCoefficient,
+					mIsExternalForcesEveryTgsIterationEnabled);
 			}
 
-			d.articulation->writebackInternalConstraints(true);
+			articulation->writebackInternalConstraints(true);
 		}
 
 		if (externalForcesEveryTgsIterationEnabled)
@@ -2580,216 +2413,81 @@ void DynamicsTGSContext::iterativeSolveIsland(const SolverIslandObjectsStep& obj
 		return;
 	}
 
-	cache.contactErrorAccumulator = mIsResidualReportingEnabled ? &mThreadContext.getSimStats().contactErrorAccumulator.mPositionIterationErrorAccumulator : NULL;
-	cache.isPositionIteration = true;
 	for (PxU32 a = 1; a < posIters; a++)
 	{
-		if (cache.contactErrorAccumulator)
-			cache.contactErrorAccumulator->reset();
 		if(externalForcesEveryTgsIterationEnabled)
 		{
 			applySubstepGravity(objects.bodies, *objects.externalAccelerations, counts.bodies, mSolverBodyVelPool.begin() + bodyOffset, stepDt, mSolverBodyTxInertiaPool.begin() + bodyOffset, objects.nodeIndexArray);
-			applyArticulationTgsSubstepForces(mThreadContext, counts.articulations, stepDt);
+			applyArticulationTgsSubstepForces(threadContext, counts.articulations, stepDt);
 		}
 
-		if(solveArticulationContactLast)
-		{
-			for (PxU32 i = 0; i < counts.articulations; ++i)
-			{
-				//Note: only need to reset accumulated error on last pos iter, which comes later.
-				ArticulationSolverDesc& d = mThreadContext.getArticulations()[i];
-				d.articulation->solveInternalConstraints(
-					totalDt, stepDt, recipStepDt, 
-					false, true,	
-					firstPassArticulationConstraintProcessingConfig,
-					elapsedTime, biasCoefficient,
-					mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled);
-			}
-
-			solveConstraintsIteration(objects.orderedConstraintDescs, objects.constraintBatchHeaders, mThreadContext.numContactConstraintBatches, invStepDt,
-				mSolverBodyTxInertiaPool.begin(), elapsedTime, -PX_MAX_F32, cache);
-
-			for (PxU32 i = 0; i < counts.articulations; ++i)
-			{
-				//Note: only need to reset accumulated error on last pos iter, which comes later.
-				ArticulationSolverDesc& d = mThreadContext.getArticulations()[i];
-				d.articulation->solveInternalConstraints(
-					totalDt, stepDt, recipStepDt, 
-					false, true,	
-					secondPassArticulationConstraintProcessingConfig,
-					elapsedTime, biasCoefficient,
-					mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled);
-			}
-		}
-		else
-		{
-			solveConstraintsIteration(objects.orderedConstraintDescs, objects.constraintBatchHeaders, mThreadContext.numContactConstraintBatches, invStepDt,
-				mSolverBodyTxInertiaPool.begin(), elapsedTime, -PX_MAX_F32, cache);
-
-			for (PxU32 i = 0; i < counts.articulations; ++i)
-			{
-				//Note: only need to reset accumulated error on last pos iter, which comes later.
-				ArticulationSolverDesc& d = mThreadContext.getArticulations()[i];
-				d.articulation->solveInternalConstraints(
-					totalDt, stepDt, recipStepDt, 
-					false, true,	
-					singlePassArticulationConstraintProcessingConfig,
-					elapsedTime, biasCoefficient,
-					mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled);
-			}
-		}
+		processIterationIsland<!tIsVelIter, !tIsLastPosIter>(
+			 totalDt, stepDt, recipStepDt, elapsedTime,
+			 mIsExternalForcesEveryTgsIterationEnabled,
+			 //solve artics:
+			 solveArticulationContactLast,
+			 threadContext.mArticulationArray, counts.articulations, articulationBiasCoefficient,
+			 //solve rbodies:
+			 objects.orderedConstraintDescs, objects.constraintBatchHeaders,
+			 threadContext.numContactConstraintBatches, mSolverBodyTxInertiaPool.begin(),
+			 -PX_MAX_F32, cache);
 
 		integrateBodies(counts.bodies, mSolverBodyVelPool.begin() + bodyOffset, mSolverBodyTxInertiaPool.begin() + bodyOffset, stepDt);
-		stepArticulations(mThreadContext, counts, stepDt);
+		stepArticulations(threadContext, counts, stepDt);
 		elapsedTime += stepDt;
 	}
 
 	//last pos iter
 	{
-		if (cache.contactErrorAccumulator)
-			cache.contactErrorAccumulator->reset();
 		if(externalForcesEveryTgsIterationEnabled)
 		{
 			applySubstepGravity(objects.bodies, *objects.externalAccelerations, counts.bodies, mSolverBodyVelPool.begin() + bodyOffset, stepDt, mSolverBodyTxInertiaPool.begin() + bodyOffset, objects.nodeIndexArray);
-			applyArticulationTgsSubstepForces(mThreadContext, counts.articulations, stepDt);
+			applyArticulationTgsSubstepForces(threadContext, counts.articulations, stepDt);
 		}
 
-		if(solveArticulationContactLast)
-		{
-			for (PxU32 i = 0; i < counts.articulations; ++i)
-			{	
-				//Note: this is the last pos iter so reset the pos error here.
-				ArticulationSolverDesc& d = mThreadContext.getArticulations()[i];
-				d.articulation->mContactErrorAccumulatorPosIter.reset();
-				d.articulation->mInternalErrorAccumulatorPosIter.reset();
-				d.articulation->solveInternalConstraints(
-					totalDt, stepDt, recipStepDt, 
-					false, true, 
-					firstPassArticulationConstraintProcessingConfig,
-					elapsedTime, 
-					biasCoefficient,
-					mIsResidualReportingEnabled, 
-					mIsExternalForcesEveryTgsIterationEnabled);
-			}
-
-			solveConcludeConstraintsIteration<false>(objects.orderedConstraintDescs, objects.constraintBatchHeaders, mThreadContext.numContactConstraintBatches,
-				mSolverBodyTxInertiaPool.begin(), elapsedTime, cache, 0);
-
-			for (PxU32 i = 0; i < counts.articulations; ++i)
-			{	
-				//Note: this is the last pos iter so reset the pos error here.
-				ArticulationSolverDesc& d = mThreadContext.getArticulations()[i];
-				d.articulation->solveInternalConstraints(
-					totalDt, stepDt, recipStepDt, 
-					false, true, 
-					secondPassArticulationConstraintProcessingConfig,
-					elapsedTime, 
-					biasCoefficient,
-					mIsResidualReportingEnabled, 
-					mIsExternalForcesEveryTgsIterationEnabled);
-				d.articulation->concludeInternalConstraints(true);
-			}
-		}
-		else
-		{
-			solveConcludeConstraintsIteration<false>(objects.orderedConstraintDescs, objects.constraintBatchHeaders, mThreadContext.numContactConstraintBatches,
-				mSolverBodyTxInertiaPool.begin(), elapsedTime, cache, 0);
-
-			for (PxU32 i = 0; i < counts.articulations; ++i)
-			{	
-				//Note: this is the last pos iter so reset the pos error here.
-				ArticulationSolverDesc& d = mThreadContext.getArticulations()[i];
-				d.articulation->mContactErrorAccumulatorPosIter.reset();
-				d.articulation->mInternalErrorAccumulatorPosIter.reset();
-				d.articulation->solveInternalConstraints(
-					totalDt, stepDt, recipStepDt, 
-					false, true, 
-					singlePassArticulationConstraintProcessingConfig,
-					elapsedTime, 
-					biasCoefficient,
-					mIsResidualReportingEnabled, 
-					mIsExternalForcesEveryTgsIterationEnabled);
-				d.articulation->concludeInternalConstraints(true);
-			}
-		}
+		processIterationIsland<!tIsVelIter, tIsLastPosIter>(
+			 totalDt, stepDt, recipStepDt, elapsedTime,
+			 mIsExternalForcesEveryTgsIterationEnabled,
+			 //solve artics:
+			 solveArticulationContactLast,
+			 threadContext.mArticulationArray, counts.articulations, articulationBiasCoefficient,
+			 //solve rbodies:
+			 objects.orderedConstraintDescs, objects.constraintBatchHeaders,
+			 threadContext.numContactConstraintBatches, mSolverBodyTxInertiaPool.begin(),
+			 -PX_MAX_F32, cache);
 
 		elapsedTime += stepDt;
 			
 		integrateBodies(counts.bodies, mSolverBodyVelPool.begin() + bodyOffset, mSolverBodyTxInertiaPool.begin() + bodyOffset, 
 			stepDt);
-		stepArticulations(mThreadContext, counts, stepDt);
+		stepArticulations(threadContext, counts, stepDt);
 	}
 
 	const PxReal invDt = mInvDt;
 	for(PxU32 a = 0; a < counts.articulations; ++a)
 	{
-		Dy::ArticulationSolverDesc& desc = mThreadContext.getArticulations()[a];
-
-		//ArticulationPImpl::updateDeltaMotion(desc, stepDt, mThreadContext.mDeltaV.begin());
-		ArticulationPImpl::saveVelocityTGS(desc.articulation, invDt);
+		//ArticulationPImpl::updateDeltaMotion(desc, stepDt, threadContext.mDeltaV.begin());
+		FeatherstoneArticulation::saveVelocityTGS(threadContext.mArticulationArray[a], invDt);
 	}
 
-	cache.contactErrorAccumulator = mIsResidualReportingEnabled ? &mThreadContext.getSimStats().contactErrorAccumulator.mVelocityIterationErrorAccumulator : NULL;
-	cache.isPositionIteration = false;
 	for (PxU32 a = 0; a < velIters; ++a)
 	{
-		if (cache.contactErrorAccumulator)
-			cache.contactErrorAccumulator->reset();
+		processIterationIsland<tIsVelIter, !tIsLastPosIter>(
+			 totalDt, stepDt, recipStepDt, elapsedTime,
+			 mIsExternalForcesEveryTgsIterationEnabled,
+			 //solve artics:
+			 solveArticulationContactLast,
+			 threadContext.mArticulationArray, counts.articulations, articulationBiasCoefficient,
+			 //solve rbodies:
+			 objects.orderedConstraintDescs, objects.constraintBatchHeaders,
+			 threadContext.numContactConstraintBatches, mSolverBodyTxInertiaPool.begin(),
+			 0.0f, cache);
 
-		if(solveArticulationContactLast)
-		{
-			for (PxU32 i = 0; i < counts.articulations; ++i)
-			{
-				ArticulationSolverDesc& d = mThreadContext.getArticulations()[i];
-				d.articulation->mContactErrorAccumulatorVelIter.reset();
-				d.articulation->mInternalErrorAccumulatorVelIter.reset();
-				d.articulation->solveInternalConstraints(
-					totalDt, stepDt, recipStepDt, 
-					true, true,			
-					firstPassArticulationConstraintProcessingConfig,
-					elapsedTime, biasCoefficient,
-					mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled);
-			}
-
-			solveConstraintsIteration(objects.orderedConstraintDescs, objects.constraintBatchHeaders, mThreadContext.numContactConstraintBatches, invStepDt,
-				mSolverBodyTxInertiaPool.begin(), elapsedTime, /*-PX_MAX_F32*/0.f, cache);
-
-			for (PxU32 i = 0; i < counts.articulations; ++i)
-			{
-				ArticulationSolverDesc& d = mThreadContext.getArticulations()[i];
-				d.articulation->solveInternalConstraints(
-					totalDt, stepDt, recipStepDt, 
-					true, true,			
-					secondPassArticulationConstraintProcessingConfig,
-					elapsedTime, biasCoefficient,
-					mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled);
-			}
-		}
-		else
-		{
-			solveConstraintsIteration(objects.orderedConstraintDescs, objects.constraintBatchHeaders, mThreadContext.numContactConstraintBatches, invStepDt,
-				mSolverBodyTxInertiaPool.begin(), elapsedTime, /*-PX_MAX_F32*/0.f, cache);
-			for (PxU32 i = 0; i < counts.articulations; ++i)
-			{
-				ArticulationSolverDesc& d = mThreadContext.getArticulations()[i];
-				d.articulation->mContactErrorAccumulatorVelIter.reset();
-				d.articulation->mInternalErrorAccumulatorVelIter.reset();
-				d.articulation->solveInternalConstraints(
-					totalDt, stepDt, recipStepDt, 
-					true, true,			
-					singlePassArticulationConstraintProcessingConfig,
-					elapsedTime, biasCoefficient,
-					mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled);
-			}
-		}
 	}
 
-	writebackConstraintsIteration(objects.constraintBatchHeaders, objects.orderedConstraintDescs, mThreadContext.numContactConstraintBatches, cache);
+	writebackConstraintsIteration(objects.constraintBatchHeaders, objects.orderedConstraintDescs, threadContext.numContactConstraintBatches, cache);
 	for (PxU32 i = 0; i < counts.articulations; ++i)
-	{
-		ArticulationSolverDesc& d = mThreadContext.getArticulations()[i];
-		d.articulation->writebackInternalConstraints(true);
-	}
+		threadContext.mArticulationArray[i]->writebackInternalConstraints(true);
 }
 
 void DynamicsTGSContext::applySubstepGravityParallel(const SolverIslandObjectsStep& objects, PxTGSSolverBodyVel* solverVels, const PxU32 bodyOffset, PxReal stepDt,
@@ -2828,15 +2526,14 @@ void DynamicsTGSContext::applySubstepGravityParallel(const SolverIslandObjectsSt
 
 void DynamicsTGSContext::applyArticulationSubstepGravityParallel(
     PxU32& startArticulationIdx, PxU32& targetArticulationProgressCount, PxI32* articulationProgressCount,
-    PxI32* articulationIntegrationCounts, ArticulationSolverDesc* articulationDescs, PxU32 nbArticulations,
+    PxI32* articulationIntegrationCounts, FeatherstoneArticulation** articulationDescs, PxU32 nbArticulations,
     PxReal stepDt, ThreadContext& threadContext)
 {
 	PxU32 artIcStartIdx = startArticulationIdx - targetArticulationProgressCount;
 	PxU32 nbArticsProcessed = 0;
 	while(artIcStartIdx < nbArticulations)
 	{
-		ArticulationSolverDesc& d = articulationDescs[artIcStartIdx];
-		FeatherstoneArticulation::applyTgsSubstepForces(d, stepDt, threadContext.mZVector.begin());
+		FeatherstoneArticulation::applyTgsSubstepForces(articulationDescs[artIcStartIdx], stepDt, threadContext.mZVector.begin());
 
 		nbArticsProcessed++;
 
@@ -2850,7 +2547,7 @@ void DynamicsTGSContext::applyArticulationSubstepGravityParallel(
 	targetArticulationProgressCount += nbArticulations;
 }
 
-void solveParallelPartition
+static void solveParallelPartition
 (const PxU32 b, const PxU32 solverUnrollSize, const PxReal elapsedTime, const bool overflow, const PxU32 iterCount, const PxReal minPenetration,
  const bool isLastPositionIteration,
  const PxU32* constraintsPerPartitions, 
@@ -2889,7 +2586,6 @@ void solveParallelPartition
 						solverTxInertias, elapsedTime, cache, iterCount);
 		}
 
-
 		nbSolveRemaining -= nbToSolve;
 		startSolveIdx += nbToSolve;
 		startIdx += nbToSolve;
@@ -2909,12 +2605,11 @@ void solveParallelPartition
 
 	targetSolverProgressCount += nbBatches;
 	offset += nbBatches;
-
 }
 
-void solveParallelPartitionsAndWaitForCompletion
+template<bool isLastPositionIteration>
+static void solveParallelPartitionsAndWaitForCompletion
 (const PxU32 nbPartitions, const PxU32 solverUnrollSize, const PxReal elapsedTime, const bool overflow, const PxU32 iterCount, const PxReal minPenetration,
- const bool isLastPositionIteration,
  const PxU32* constraintsPerPartitions, 
  PxSolverConstraintDesc* contactDescs, PxConstraintBatchHeader* batchHeaders, PxTGSSolverBodyTxInertia* solverTxInertias,
  SolverContext& cache,
@@ -2981,51 +2676,37 @@ struct SolverDt
 	PxReal invStepDt;
 };
 
-constexpr bool tResetPosError = true;
-constexpr bool tResetVelError = true;
-constexpr bool tUpdateDeltaMotion = true;
-constexpr bool tSaveVelocity = true;
-
-template<bool resetPosError, bool resetVelError, bool updateDeltaMotion, bool saveVelocity>
-void parallelSolveInternalConstraintsAndWaitForCompletion
-(SolverContext& cache, ThreadContext& mThreadContext,
- const bool isVelocityIteration, const bool isTGS,
+template<bool isVelocityIteration, bool updateDeltaMotion, bool saveVelocity>
+static void parallelSolveInternalConstraintsAndWaitForCompletion
+(SolverContext& cache, ThreadContext& threadContext,
  const PxU32 nbArticulations,
- const bool isResidualReportingEnabled, const bool isExternalForcesEveryTgsIterationEnabled,
+ const bool isExternalForcesEveryTgsIterationEnabled,
  const SolverDt& solverDt, const PxReal elapsedTime, 
  const ArticulationConstraintProcessingConfigCPU& articulationConstraintProcessingConfig,
  const PxReal biasCoefficient,
  PxU32& startArticulationIdx, PxU32& targetArticulationProgressCount,
  PxI32* articulationProgressCount, PxI32* articulationIntegrationCounts)
 {
+	constexpr bool isTGS = true;
+
 	PxU32 artIcStartIdx = startArticulationIdx - targetArticulationProgressCount;
 	PxU32 nbArticsProcessed = 0;
 	while (artIcStartIdx < nbArticulations)
 	{
-		ArticulationSolverDesc& d = mThreadContext.getArticulations()[artIcStartIdx];
+		FeatherstoneArticulation* articulation = threadContext.mArticulationArray[artIcStartIdx];
 
-		if(resetPosError)
-		{
-			d.articulation->mInternalErrorAccumulatorPosIter.reset();
-			d.articulation->mContactErrorAccumulatorPosIter.reset();
-		}
-		if(resetVelError)
-		{
-			d.articulation->mInternalErrorAccumulatorVelIter.reset();
-			d.articulation->mContactErrorAccumulatorVelIter.reset();
-		}
-		d.articulation->solveInternalConstraints(
+		articulation->solveInternalConstraints(
 			solverDt.totalDt, solverDt.stepDt, solverDt.invStepDt, 
 			isVelocityIteration, isTGS, 
 			articulationConstraintProcessingConfig, 
 			elapsedTime, biasCoefficient,
-			isResidualReportingEnabled, isExternalForcesEveryTgsIterationEnabled);
+			isExternalForcesEveryTgsIterationEnabled);
 
 		if(updateDeltaMotion)
-			ArticulationPImpl::updateDeltaMotion(d, solverDt.stepDt, cache.deltaV);
+			FeatherstoneArticulation::recordDeltaMotion(articulation, solverDt.stepDt, cache.deltaV);
 		
 		if(saveVelocity)
-			ArticulationPImpl::saveVelocityTGS(d.articulation, solverDt.invTotalDt);
+			FeatherstoneArticulation::saveVelocityTGS(articulation, solverDt.invTotalDt);
 
 		nbArticsProcessed++;
 
@@ -3041,13 +2722,120 @@ void parallelSolveInternalConstraintsAndWaitForCompletion
 	WAIT_FOR_PROGRESS(articulationProgressCount, PxI32(targetArticulationProgressCount));
 }
 
-void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, ThreadContext& mThreadContext,
-	PxReal stepDt, PxReal totalDt, PxU32 posIters, PxU32 velIters, PxI32* solverCounts, PxI32* integrationCounts, PxI32* articulationIntegrationCounts, PxI32* gravityCounts,
-	PxI32* solverProgressCount, PxI32* integrationProgressCount, PxI32* articulationProgressCount, PxI32* gravityProgressCount, PxU32 solverUnrollSize, PxU32 integrationUnrollSize,
-	PxReal biasCoefficient)
+template<bool updateDeltaMotion, bool saveVelocity, bool isVelocityIteration, bool isLastPositionIteration>
+static void processSolverIterationParallel
+(const bool solveArticulationContactLast, const bool isExternalForcesEveryTgsIterationEnabled,
+ PxU32& iterCount, const SolverDt& solverDt, const PxReal elapsedTime, 
+ SolverContext& cache, ThreadContext& threadContext,
+ //artic solve:
+ const PxU32 nbArticulations,
+ const PxReal articulationBiasCoefficient,
+ PxU32& startArticulationIdx, PxU32& targetArticulationProgressCount,
+ PxI32* articulationProgressCount, PxI32* articulationIntegrationCounts,
+ //rbody solve:
+ const PxU32 nbPartitions, const PxU32 solverUnrollSize, const bool overflow, const PxReal minPenetration,
+ const PxU32* constraintsPerPartitions, 
+ PxSolverConstraintDesc* contactDescs, PxConstraintBatchHeader* batchHeaders, PxTGSSolverBodyTxInertia* solverTxInertias,
+ PxU32& targetSolverProgressCount, PxU32& startSolveIdx, PxU32& nbSolveRemaining,
+ PxI32* solverProgressCount, PxI32* solverCounts,
+ //rbody integration:
+ const PxU32 integrationUnrollSize, const PxU32 nbBodies, const PxU32 bodyOffset,
+ PxTGSSolverBodyVel* solverVels,
+ PxU32& startIntegrateIdx, PxU32& targetIntegrationProgressCount, PxU32& nbIntegrateRemaining,
+ PxI32* integrationCounts, PxI32* integrationProgressCount)
+{
+	if(solveArticulationContactLast)
+	{
+		const ArticulationConstraintProcessingConfigCPU firstPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getFirstPassConfig();
+		const ArticulationConstraintProcessingConfigCPU secondPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSecondPassConfig();
+
+		parallelSolveInternalConstraintsAndWaitForCompletion<isVelocityIteration, false, false>
+			(cache, threadContext,
+				nbArticulations,
+				isExternalForcesEveryTgsIterationEnabled,
+				solverDt, elapsedTime,
+				firstPassArticulationConstraintProcessingConfig,
+				articulationBiasCoefficient,
+				startArticulationIdx, targetArticulationProgressCount,
+				articulationProgressCount, articulationIntegrationCounts);
+
+		solveParallelPartitionsAndWaitForCompletion<isLastPositionIteration>
+			(nbPartitions, solverUnrollSize, elapsedTime, overflow, iterCount, minPenetration, 
+				constraintsPerPartitions, 
+				contactDescs, batchHeaders, solverTxInertias,
+				cache,
+				targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
+				solverProgressCount, solverCounts);
+
+		iterCount++;
+
+		if(updateDeltaMotion)
+		{
+			parallelIntegrateBodiesAndNoWait
+				(integrationUnrollSize, iterCount, nbBodies, bodyOffset,
+					solverDt.stepDt,
+					solverTxInertias, solverVels,
+					startIntegrateIdx, targetIntegrationProgressCount, nbIntegrateRemaining,
+					integrationCounts, integrationProgressCount);
+		}
+
+		// Note: Articulation internal constraints do not need to wait for rigid bodies integration because they don't need the
+		// rigid velocities anymore.
+ 		parallelSolveInternalConstraintsAndWaitForCompletion<isVelocityIteration, updateDeltaMotion, saveVelocity>
+			(cache, threadContext,
+			 nbArticulations,
+			 isExternalForcesEveryTgsIterationEnabled,
+			 solverDt, elapsedTime,
+			 secondPassArticulationConstraintProcessingConfig,
+			 articulationBiasCoefficient,
+			 startArticulationIdx, targetArticulationProgressCount,
+			 articulationProgressCount, articulationIntegrationCounts);
+	}
+	else
+	{
+		const ArticulationConstraintProcessingConfigCPU singlePassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSinglePassConfig(solveArticulationContactLast);
+
+		solveParallelPartitionsAndWaitForCompletion<isLastPositionIteration>
+			(nbPartitions, solverUnrollSize, elapsedTime, overflow, iterCount, minPenetration,
+			 constraintsPerPartitions, 
+			 contactDescs, batchHeaders, solverTxInertias,
+			 cache,
+			 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
+			 solverProgressCount, solverCounts);
+
+		iterCount++;
+
+		if(updateDeltaMotion)
+		{
+			parallelIntegrateBodiesAndNoWait
+				(integrationUnrollSize, iterCount, nbBodies, bodyOffset,
+					solverDt.stepDt,
+					solverTxInertias, solverVels,
+					startIntegrateIdx, targetIntegrationProgressCount, nbIntegrateRemaining,
+					integrationCounts, integrationProgressCount);
+		}
+
+		// Note: Articulation internal constraints do not need to wait for rigid bodies integration because they don't need the
+		// rigid velocities anymore.
+		parallelSolveInternalConstraintsAndWaitForCompletion<isVelocityIteration, updateDeltaMotion, saveVelocity>
+			(cache, threadContext,
+			 nbArticulations,
+			 isExternalForcesEveryTgsIterationEnabled,
+			 solverDt, elapsedTime,
+			 singlePassArticulationConstraintProcessingConfig,
+			 articulationBiasCoefficient,
+			 startArticulationIdx, targetArticulationProgressCount,
+			 articulationProgressCount, articulationIntegrationCounts);
+	}
+}
+
+void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, ThreadContext& threadContext,
+	PxReal stepDt, PxReal totalDt, PxU32 posIters, PxU32 velIters, PxReal articulationBiasCoefficient, 
+	PxI32* solverCounts, PxI32* integrationCounts, PxI32* articulationIntegrationCounts, PxI32* gravityCounts,
+	PxI32* solverProgressCount, PxI32* integrationProgressCount, PxI32* articulationProgressCount, PxI32* gravityProgressCount, PxU32 solverUnrollSize, PxU32 integrationUnrollSize)
 {
 	PX_PROFILE_ZONE("Dynamics:solveIslandParallel", mContextID);
-	Dy::ThreadContext& threadContext = *getThreadContext();
+	Dy::ThreadContext& threadContextLocal = *getThreadContext();
 	PxU32 startSolveIdx = PxU32(PxAtomicAdd(solverCounts, PxI32(solverUnrollSize))) - solverUnrollSize;
 	PxU32 nbSolveRemaining = solverUnrollSize;
 	
@@ -3062,7 +2850,7 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 
 	PxU32 targetSolverProgressCount = 0, targetIntegrationProgressCount = 0, targetArticulationProgressCount = 0, targetGravityProgressCount = 0;
 
-	const PxU32 nbSolverBatches = mThreadContext.numContactConstraintBatches;
+	const PxU32 nbSolverBatches = threadContext.numContactConstraintBatches;
 	const PxU32 nbBodies = counts.bodies;// + mKinematicCount;
 	const PxU32 nbArticulations = counts.articulations;
 
@@ -3072,44 +2860,34 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 	PxTGSSolverBodyVel* solverVels = mSolverBodyVelPool.begin();
 	PxTGSSolverBodyTxInertia* solverTxInertias = mSolverBodyTxInertiaPool.begin();
 
-	PxU32* constraintsPerPartitions = mThreadContext.mConstraintsPerPartition.begin();
-	const PxU32 nbPartitions = mThreadContext.mConstraintsPerPartition.size();
+	PxU32* constraintsPerPartitions = threadContext.mConstraintsPerPartition.begin();
+	const PxU32 nbPartitions = threadContext.mConstraintsPerPartition.size();
 
 	const PxU32 bodyOffset = objects.solverBodyOffset;
 
-	threadContext.mDeltaV.reserve(mThreadContext.mDeltaV.size());
-	threadContext.mZVector.resizeUninitialized(mThreadContext.mZVector.size());
+	threadContextLocal.mDeltaV.reserve(threadContext.mDeltaV.size());
+	threadContextLocal.mZVector.resizeUninitialized(threadContext.mZVector.size());
 	
 	SolverContext cache;
-	cache.deltaV = threadContext.mDeltaV.begin();
-	cache.contactErrorAccumulator = isResidualReportingEnabled() ? &mThreadContext.getSimStats().contactErrorAccumulator.mPositionIterationErrorAccumulator : NULL;
-	cache.isPositionIteration = true;
+	cache.deltaV = threadContextLocal.mDeltaV.begin();
 
 	PxReal elapsedTime = 0.0f;
 
 	PxReal invStepDt = 1.0f/ stepDt;
 
-	const bool overflow = mThreadContext.mHasOverflowPartitions;
+	const bool overflow = threadContext.mHasOverflowPartitions;
 
 	const SolverDt solverDt = {totalDt, mInvDt, stepDt, invStepDt};
 
 	PxU32 iterCount = 0;
 
-	const bool isTGS = true;
-
 	const bool externalForcesEveryTgsIterationEnabled = mIsExternalForcesEveryTgsIterationEnabled;
 	const bool solveArticulationContactLast = mSolveArticulationContactLast;
-
-	const ArticulationConstraintProcessingConfigCPU singlePassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSinglePassConfig(solveArticulationContactLast);
-	const ArticulationConstraintProcessingConfigCPU firstPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getFirstPassConfig();
-	const ArticulationConstraintProcessingConfigCPU secondPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSecondPassConfig();
 
 	//Run (posIters-1) position iterations.
 	//We'll run the final pos iter later because we need custom code to conclude constraints when we do that.
 	for (PxU32 a = 1; a < posIters; ++a)
 	{
-		if (cache.contactErrorAccumulator)
-			cache.contactErrorAccumulator->reset();
 		if(externalForcesEveryTgsIterationEnabled)
 		{
 			applySubstepGravityParallel(objects, solverVels, bodyOffset, stepDt, nbBodies, startGravityIdx,
@@ -3117,8 +2895,8 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 			                            gravityCounts, integrationUnrollSize);
 			applyArticulationSubstepGravityParallel(startArticulationIdx, targetArticulationProgressCount,
 			                                        articulationProgressCount, articulationIntegrationCounts,
-			                                        mThreadContext.getArticulations().begin(), nbArticulations, stepDt,
-			                                        threadContext);
+			                                        threadContext.mArticulationArray, nbArticulations, stepDt,
+			                                        threadContextLocal);
 
 			// Make all threads wait until gravity is applied to all articulations and all bodies.
 			// The target progress counters have been incremented inside the substep gravity functions.
@@ -3126,98 +2904,26 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 			WAIT_FOR_PROGRESS(gravityProgressCount, PxI32(targetGravityProgressCount));
 		}
 
-		if(solveArticulationContactLast)
-		{
-			// Note: Articulation internal constraints do not need to wait for rigid bodies integration because they don't need the
-			// rigid velocities anymore.
-			//resetPosError=false (do this only on the last pos iter)
-			//resetVelError=false (do this only on the last vel iter)
-			//updateDeltaMotion=false (do this on 2nd pass of pos iters)
-			//saveVelocity=false (do this only on the last pos iter)
-			parallelSolveInternalConstraintsAndWaitForCompletion<!tResetPosError, !tResetVelError, !tUpdateDeltaMotion, !tSaveVelocity>
-				(cache, mThreadContext, 
-				 false,	isTGS,				//isVelIter = false
-				 nbArticulations,
-				 mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled,
-				 solverDt, elapsedTime, 
-				 firstPassArticulationConstraintProcessingConfig,
-				 biasCoefficient,
-				 startArticulationIdx, targetArticulationProgressCount,
-				 articulationProgressCount, articulationIntegrationCounts);
-
-
-			//Note the use of "false" here to denote that we are not performing the conclude iteration step.
-			solveParallelPartitionsAndWaitForCompletion
-				(nbPartitions, solverUnrollSize, elapsedTime, overflow, iterCount, -PX_MAX_F32, false,
-				 constraintsPerPartitions, 
-				 contactDescs, batchHeaders, solverTxInertias,
-				 cache,
-				 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
-				 solverProgressCount, solverCounts);
-
-			iterCount++;
-
-			parallelIntegrateBodiesAndNoWait
-				(integrationUnrollSize, iterCount, nbBodies, bodyOffset,
-				 stepDt,
-				 solverTxInertias, solverVels,
-				 startIntegrateIdx, targetIntegrationProgressCount, nbIntegrateRemaining,
-				 integrationCounts, integrationProgressCount);
-
-			// Note: Articulation internal constraints do not need to wait for rigid bodies integration because they don't need the
-			// rigid velocities anymore.
-			//resetPosError=false (do this only on the last pos iter)
-			//resetVelError=false (do this only on the last vel iter)
-			//updateDeltaMotion=true (do this on all pos iters)
-			//saveVelocity=false (do this only on the last pos iter)
- 			parallelSolveInternalConstraintsAndWaitForCompletion<!tResetPosError, !tResetVelError, tUpdateDeltaMotion, !tSaveVelocity>
-				(cache, mThreadContext, 
-				 false,	isTGS,				//isVelIter = false
-				 nbArticulations,
-				 mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled,
-				 solverDt, elapsedTime, 
-				 secondPassArticulationConstraintProcessingConfig,
-				 biasCoefficient,
-				 startArticulationIdx, targetArticulationProgressCount,
-				 articulationProgressCount, articulationIntegrationCounts);
-		}
-		else
-		{
-			//Note the use of "false" here to denote that we are not performing the conclude iteration step.
-			solveParallelPartitionsAndWaitForCompletion
-				(nbPartitions, solverUnrollSize, elapsedTime, overflow, iterCount, -PX_MAX_F32, false,
-				 constraintsPerPartitions, 
-				 contactDescs, batchHeaders, solverTxInertias,
-				 cache,
-				 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
-				 solverProgressCount, solverCounts);
-
-			iterCount++;
-
-			parallelIntegrateBodiesAndNoWait
-				(integrationUnrollSize, iterCount, nbBodies, bodyOffset,
-				 stepDt,
-				 solverTxInertias, solverVels,
-				 startIntegrateIdx, targetIntegrationProgressCount, nbIntegrateRemaining,
-				 integrationCounts, integrationProgressCount);
-
-			// Note: Articulation internal constraints do not need to wait for rigid bodies integration because they don't need the
-			// rigid velocities anymore.
-			//resetPosError=false (do this only on the last pos iter)
-			//resetVelError=false (do this only on the last vel iter)
-			//updateDeltaMotion=true (do this on all pos iters)
-			//saveVelocity=false (do this only on the last pos iter)
-			parallelSolveInternalConstraintsAndWaitForCompletion<!tResetPosError, !tResetVelError, tUpdateDeltaMotion, !tSaveVelocity>
-				(cache, mThreadContext, 
-				 false,	isTGS,				//isVelIter = false
-				 nbArticulations,
-				 mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled,
-				 solverDt, elapsedTime, 
-				 singlePassArticulationConstraintProcessingConfig,
-				 biasCoefficient,
-				 startArticulationIdx, targetArticulationProgressCount,
-				 articulationProgressCount, articulationIntegrationCounts);
-		}
+		processSolverIterationParallel<tUpdateDeltaMotion, !tSaveVelocity, !tIsVelIter, !tIsLastPosIter>
+			(solveArticulationContactLast, mIsExternalForcesEveryTgsIterationEnabled,
+			 iterCount, solverDt, elapsedTime, 
+			 cache, threadContext,
+			 //artic solve:
+			 nbArticulations,
+			 articulationBiasCoefficient,
+			 startArticulationIdx, targetArticulationProgressCount,
+			 articulationProgressCount, articulationIntegrationCounts,
+			 //rbody solve:
+			 nbPartitions, solverUnrollSize, overflow, -PX_MAX_F32, //minPen=-PX_MAX_F32
+			 constraintsPerPartitions, 
+			 contactDescs, batchHeaders, solverTxInertias,
+			 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
+			 solverProgressCount, solverCounts,
+			 //rbody integration:
+			 integrationUnrollSize, nbBodies, bodyOffset,
+			 solverVels,
+			 startIntegrateIdx, targetIntegrationProgressCount, nbIntegrateRemaining,
+			 integrationCounts, integrationProgressCount);
 
 		//Now is the time to wait for the body integration to complete.
 		WAIT_FOR_PROGRESS(integrationProgressCount, PxI32(targetIntegrationProgressCount));
@@ -3227,8 +2933,6 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 
 	// Perform the last position iteration with conclude constraint.
 	{
-		if (cache.contactErrorAccumulator)
-			cache.contactErrorAccumulator->reset();
 		if(externalForcesEveryTgsIterationEnabled)
 		{
 			applySubstepGravityParallel(objects, solverVels, bodyOffset, stepDt, nbBodies, startGravityIdx,
@@ -3236,8 +2940,8 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 			                            gravityCounts, integrationUnrollSize);
 			applyArticulationSubstepGravityParallel(startArticulationIdx, targetArticulationProgressCount,
 			                                        articulationProgressCount, articulationIntegrationCounts,
-			                                        mThreadContext.getArticulations().begin(), nbArticulations, stepDt,
-			                                        threadContext);
+			                                        threadContext.mArticulationArray, nbArticulations, stepDt,
+			                                        threadContextLocal);
 
 			// Make all threads wait until gravity is applied to all articulations and all bodies.
 			// The target progress counters have been incremented inside the substep gravity functions.
@@ -3245,97 +2949,28 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 			WAIT_FOR_PROGRESS(gravityProgressCount, PxI32(targetGravityProgressCount));
 		}
 
-		if(solveArticulationContactLast)
-		{
-			//restPosError=true (do this on last pos iter, which is now)
-			//resetVel=false (do this only on last vel iter)
-			//updateDeltaMotion=false (do this on 2nd pass of pos iters)
-			//saveVelocity=false (do this on 2nd pass of last pos iter, which is now)
-			parallelSolveInternalConstraintsAndWaitForCompletion<tResetPosError, !tResetVelError, !tUpdateDeltaMotion, !tSaveVelocity>
-				(cache, mThreadContext, 
-				 false,  isTGS,	//isVelIter = false
-				 nbArticulations,
-				 mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled,
-				 solverDt, elapsedTime,
-				 firstPassArticulationConstraintProcessingConfig,
-				 biasCoefficient,
-				 startArticulationIdx, targetArticulationProgressCount,
-				 articulationProgressCount, articulationIntegrationCounts);
+		processSolverIterationParallel<tUpdateDeltaMotion, tSaveVelocity, !tIsVelIter, tIsLastPosIter>
+			(solveArticulationContactLast, mIsExternalForcesEveryTgsIterationEnabled,
+			 iterCount, solverDt, elapsedTime, 
+			 cache, threadContext,
+			 //artic solve:
+			 nbArticulations,			
+			 articulationBiasCoefficient,
+			 startArticulationIdx, targetArticulationProgressCount,
+			 articulationProgressCount, articulationIntegrationCounts,
+			 //rbody solve:
+			 nbPartitions, solverUnrollSize, overflow, -PX_MAX_F32, //minPen=-PX_MAX_F32
+			 constraintsPerPartitions, 
+			 contactDescs, batchHeaders, solverTxInertias,
+			 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
+			 solverProgressCount, solverCounts,
+			 //rbody integration:
+			 integrationUnrollSize, nbBodies, bodyOffset,
+			 solverVels,
+			 startIntegrateIdx, targetIntegrationProgressCount, nbIntegrateRemaining,
+			 integrationCounts, integrationProgressCount);
 
-			//Note the use of "true" here to denote that we are are performing the conclude iteration step.
-			solveParallelPartitionsAndWaitForCompletion
-				(nbPartitions, solverUnrollSize, elapsedTime, overflow, iterCount, -PX_MAX_F32, true,
-				 constraintsPerPartitions, 
-				 contactDescs, batchHeaders, solverTxInertias,
-				 cache,
-				 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
-				 solverProgressCount, solverCounts);
-
-			iterCount++;
-
-			parallelIntegrateBodiesAndNoWait
-				(integrationUnrollSize, iterCount, nbBodies, bodyOffset,
-				 stepDt,
-				 solverTxInertias, solverVels,
-				 startIntegrateIdx, targetIntegrationProgressCount, nbIntegrateRemaining,
-				 integrationCounts, integrationProgressCount);
-
-			// Note: Articulation internal constraints do not need to wait for rigid bodies integration because they don't need the
-			// rigid velocities anymore.
-			//restPosError=true (do this on last pos iter, which is now)
-			//resetVel=false (do this only on last vel iter)
-			//updateDeltaMotion=true (do this on all pos iters)
-			//saveVelocity=true (do this on last pos iter, which is now)
-			parallelSolveInternalConstraintsAndWaitForCompletion<!tResetPosError, !tResetVelError, tUpdateDeltaMotion, tSaveVelocity>
-				(cache, mThreadContext, 
-				 false,  isTGS,	//isVelIter = false
-				 nbArticulations,
-				 mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled,
-				 solverDt, elapsedTime,
-				 secondPassArticulationConstraintProcessingConfig,
-				 biasCoefficient,
-				 startArticulationIdx, targetArticulationProgressCount,
-				 articulationProgressCount, articulationIntegrationCounts);
-		}
-		else
-		{
-			//Note the use of "true" here to denote that we are are performing the conclude iteration step.
-			solveParallelPartitionsAndWaitForCompletion
-				(nbPartitions, solverUnrollSize, elapsedTime, overflow, iterCount, -PX_MAX_F32, true,
-				 constraintsPerPartitions, 
-				 contactDescs, batchHeaders, solverTxInertias,
-				 cache,
-				 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
-				 solverProgressCount, solverCounts);
-
-			iterCount++;
-
-			parallelIntegrateBodiesAndNoWait
-				(integrationUnrollSize, iterCount, nbBodies, bodyOffset,
-				 stepDt,
-				 solverTxInertias, solverVels,
-				 startIntegrateIdx, targetIntegrationProgressCount, nbIntegrateRemaining,
-				 integrationCounts, integrationProgressCount);
-
-			// Note: Articulation internal constraints do not need to wait for rigid bodies integration because they don't need the
-			// rigid velocities anymore.
-			//restPosError=true (do this on last pos iter, which is now)
-			//resetVel=false (do this only on last vel iter)
-			//updateDeltaMotion=true (do this on all pos iters)
-			//saveVelocity=true (do this on last pos iter, which is now)
-			parallelSolveInternalConstraintsAndWaitForCompletion<tResetPosError, !tResetVelError, tUpdateDeltaMotion, tSaveVelocity>
-				(cache, mThreadContext, 
-				 false,  isTGS,	//isVelIter = false
-				 nbArticulations,
-				 mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled,
-				 solverDt, elapsedTime,
-				 singlePassArticulationConstraintProcessingConfig,
-				 biasCoefficient,
-				 startArticulationIdx, targetArticulationProgressCount,
-				 articulationProgressCount, articulationIntegrationCounts);
-		}
-
-		putThreadContext(&threadContext);
+		putThreadContext(&threadContextLocal);
 
 		//Wait for parallelIntegrateBodiesAndNoWait to complete.
 		WAIT_FOR_PROGRESS(integrationProgressCount, PxI32(targetIntegrationProgressCount));
@@ -3343,157 +2978,55 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 		elapsedTime += stepDt;		
 	}
 
-
-	cache.contactErrorAccumulator = isResidualReportingEnabled() ? &mThreadContext.getSimStats().contactErrorAccumulator.mVelocityIterationErrorAccumulator : NULL;
-	cache.isPositionIteration = false;
 	// Velocity Iterations. It's legal to skip them (velIters == 0).
 	const PxU32 nbVelItersMinusOne = (velIters > 1) ? velIters-1 : 0; 
 	for (PxU32 a = 0; a < nbVelItersMinusOne; ++a)
 	{
-		if (cache.contactErrorAccumulator)
-			cache.contactErrorAccumulator->reset();
-
-		if(solveArticulationContactLast)
-		{
-			//resetPosError = false (do this only on last pos iter)
-			//resetVelError = false (do this only on last vel iter)
-			//updateDeltaMotion = false (do this only on pos iters)
-			//saveVelocity = false (do this only on last pos iter)
-			parallelSolveInternalConstraintsAndWaitForCompletion<!tResetPosError, !tResetVelError, !tUpdateDeltaMotion, !tSaveVelocity>
-				(cache, mThreadContext, 
-				 true,	isTGS,		//isVelIter = true, 
-				 nbArticulations,
-				 mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled,
-				 solverDt, elapsedTime, 
-				 firstPassArticulationConstraintProcessingConfig,
-				 biasCoefficient,
-				 startArticulationIdx, targetArticulationProgressCount,
-				 articulationProgressCount, articulationIntegrationCounts);
-
-			solveParallelPartitionsAndWaitForCompletion
-				(nbPartitions, solverUnrollSize, elapsedTime, overflow, iterCount, 0.0f, false,
-				 constraintsPerPartitions, 
-				 contactDescs, batchHeaders, solverTxInertias,
-				 cache,
-				 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
-				 solverProgressCount, solverCounts);
-
-			//resetPosError = false (do this only on last pos iter)
-			//resetVelError = false (do this only on last vel iter)
-			//updateDeltaMotion = false (do this only on pos iters)
-			//saveVelocity = false (do this only on last pos iter)
-			parallelSolveInternalConstraintsAndWaitForCompletion<!tResetPosError, !tResetVelError, !tUpdateDeltaMotion, !tSaveVelocity>
-				(cache, mThreadContext, 
-				 true,	isTGS,		//isVelIter = true, 
-				 nbArticulations,
-				 mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled,
-				 solverDt, elapsedTime, 
-				 secondPassArticulationConstraintProcessingConfig,
-				 biasCoefficient,
-				 startArticulationIdx, targetArticulationProgressCount,
-				 articulationProgressCount, articulationIntegrationCounts);
-		}
-		else
-		{
-			solveParallelPartitionsAndWaitForCompletion
-				(nbPartitions, solverUnrollSize, elapsedTime, overflow, iterCount, 0.0f, false,
-				 constraintsPerPartitions, 
-				 contactDescs, batchHeaders, solverTxInertias,
-				 cache,
-				 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
-				 solverProgressCount, solverCounts);
-
-			//resetPosError = false (do this only on last pos iter)
-			//resetVelError = false (do this only on last vel iter)
-			//updateDeltaMotion = false (do this only on pos iters)
-			//saveVelocity = false (do this only on last pos iter)
-			parallelSolveInternalConstraintsAndWaitForCompletion<!tResetPosError, !tResetVelError, !tUpdateDeltaMotion, !tSaveVelocity>
-				(cache, mThreadContext, 
-				 true,	isTGS,		//isVelIter = true, 
-				 nbArticulations,
-				 mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled,
-				 solverDt, elapsedTime, 
-				 singlePassArticulationConstraintProcessingConfig,
-				 biasCoefficient,
-				 startArticulationIdx, targetArticulationProgressCount,
-				 articulationProgressCount, articulationIntegrationCounts);
-		}
-
-		iterCount++;
+		processSolverIterationParallel<!tUpdateDeltaMotion, !tSaveVelocity, tIsVelIter, !tIsLastPosIter>
+			(solveArticulationContactLast, mIsExternalForcesEveryTgsIterationEnabled,
+			 iterCount, solverDt, elapsedTime, 
+			 cache, threadContext,
+			 //artic solve:
+			 nbArticulations,
+			 articulationBiasCoefficient,
+			 startArticulationIdx, targetArticulationProgressCount,
+			 articulationProgressCount, articulationIntegrationCounts,
+			 //rbody solve:
+			 nbPartitions, solverUnrollSize, overflow, 0.0f, //minPen=0
+			 constraintsPerPartitions, 
+			 contactDescs, batchHeaders, solverTxInertias,
+			 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
+			 solverProgressCount, solverCounts,
+			 //rbody integration:
+			 integrationUnrollSize, nbBodies, bodyOffset,
+			 solverVels,
+			 startIntegrateIdx, targetIntegrationProgressCount, nbIntegrateRemaining,
+			 integrationCounts, integrationProgressCount);
 	}
+
 	//Last vel iter
 	for (PxU32 a = nbVelItersMinusOne; a < velIters; ++a)
 	{
-		if (cache.contactErrorAccumulator)
-			cache.contactErrorAccumulator->reset();
-
-		if(solveArticulationContactLast)
-		{
-			//resetPosError = false (do this only on last pos iter)
-			//resetVelError = true (do this only on last vel iter, which is now)
-			//updateDeltaMotion = false (do this only on pos iters)
-			//saveVelocity = false (do this only on last pos iter)
-			parallelSolveInternalConstraintsAndWaitForCompletion<!tResetPosError, tResetVelError, !tUpdateDeltaMotion, !tSaveVelocity>
-				(cache, mThreadContext, 
-				 true,	isTGS,		//isVelIter = true, 
-				 nbArticulations,
-				 mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled,
-				 solverDt, elapsedTime, 
-				 firstPassArticulationConstraintProcessingConfig,
-				 biasCoefficient,
-				 startArticulationIdx, targetArticulationProgressCount,
-				 articulationProgressCount, articulationIntegrationCounts);
-
-			solveParallelPartitionsAndWaitForCompletion
-				(nbPartitions, solverUnrollSize, elapsedTime, overflow, iterCount, 0.0f, false,
-				 constraintsPerPartitions, 
-				 contactDescs, batchHeaders, solverTxInertias,
-				 cache,
-				 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
-				 solverProgressCount, solverCounts);
-
-			//resetPosError = false (do this only on last pos iter)
-			//resetVelError = true (do this only on last vel iter, which is now)
-			//updateDeltaMotion = false (do this only on pos iters)
-			//saveVelocity = false (do this only on last pos iter)
-			parallelSolveInternalConstraintsAndWaitForCompletion<!tResetPosError, !tResetVelError, !tUpdateDeltaMotion, !tSaveVelocity>
-				(cache, mThreadContext, 
-				 true,	isTGS,		//isVelIter = true, 
-				 nbArticulations,
-				 mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled,
-				 solverDt, elapsedTime, 
-				 secondPassArticulationConstraintProcessingConfig,
-				 biasCoefficient,
-				 startArticulationIdx, targetArticulationProgressCount,
-				 articulationProgressCount, articulationIntegrationCounts);
-		}
-		else
-		{
-			solveParallelPartitionsAndWaitForCompletion
-				(nbPartitions, solverUnrollSize, elapsedTime, overflow, iterCount, 0.0f, false,
-				 constraintsPerPartitions, 
-				 contactDescs, batchHeaders, solverTxInertias,
-				 cache,
-				 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
-				 solverProgressCount, solverCounts);
-
-			//resetPosError = false (do this only on last pos iter)
-			//resetVelError = true (do this only on last vel iter, which is now)
-			//updateDeltaMotion = false (do this only on pos iters)
-			//saveVelocity = false (do this only on last pos iter)
-			parallelSolveInternalConstraintsAndWaitForCompletion<!tResetPosError, tResetVelError, !tUpdateDeltaMotion, !tSaveVelocity>
-				(cache, mThreadContext, 
-				 true,	isTGS,		//isVelIter = true, 
-				 nbArticulations,
-				 mIsResidualReportingEnabled, mIsExternalForcesEveryTgsIterationEnabled,
-				 solverDt, elapsedTime, 
-				 singlePassArticulationConstraintProcessingConfig,
-				 biasCoefficient,
-				 startArticulationIdx, targetArticulationProgressCount,
-				 articulationProgressCount, articulationIntegrationCounts);
-		}
-
-		iterCount++;
+		processSolverIterationParallel<!tUpdateDeltaMotion, !tSaveVelocity, tIsVelIter, !tIsLastPosIter>
+			(solveArticulationContactLast, mIsExternalForcesEveryTgsIterationEnabled,
+			 iterCount, solverDt, elapsedTime, 
+			 cache, threadContext,
+			 //artic solve:
+			 nbArticulations,
+			 articulationBiasCoefficient,
+			 startArticulationIdx, targetArticulationProgressCount,
+			 articulationProgressCount, articulationIntegrationCounts,
+			 //rbody solve:
+			 nbPartitions, solverUnrollSize, overflow, 0.0f, //minPen=0
+			 constraintsPerPartitions, 
+			 contactDescs, batchHeaders, solverTxInertias,
+			 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
+			 solverProgressCount, solverCounts,
+			 //rbody integration:
+			 integrationUnrollSize, nbBodies, bodyOffset,
+			 solverVels,
+			 startIntegrateIdx, targetIntegrationProgressCount, nbIntegrateRemaining,
+			 integrationCounts, integrationProgressCount);
 	}
 
 	//Write back constraints...
@@ -3530,9 +3063,7 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 
 			while(artIcStartIdx < nbArticulations)
 			{
-				ArticulationSolverDesc& d = mThreadContext.getArticulations()[artIcStartIdx];
-
-				d.articulation->writebackInternalConstraints(true);
+				threadContext.mArticulationArray[artIcStartIdx]->writebackInternalConstraints(true);
 
 				startArticulationIdx = PxU32(PxAtomicAdd(articulationIntegrationCounts, PxI32(1))) - 1;
 				artIcStartIdx = startArticulationIdx - targetArticulationProgressCount;
@@ -3584,9 +3115,9 @@ public:
 class UpdateArticTask : public Cm::Task
 {
 	Dy::ThreadContext& mThreadContext;
-	PxU32 mStartIdx;
-	PxU32 mEndIdx;
-	PxReal mDt;
+	const PxU32 mStartIdx;
+	const PxU32 mEndIdx;
+	const PxReal mDt;
 	DynamicsTGSContext& mContext;
 
 	PX_NOCOPY(UpdateArticTask)
@@ -3607,11 +3138,11 @@ public:
 	}
 };
 
-void DynamicsTGSContext::finishSolveIsland(ThreadContext& mThreadContext, const SolverIslandObjectsStep& objects,
+void DynamicsTGSContext::finishSolveIsland(ThreadContext& threadContext, const SolverIslandObjectsStep& objects,
 	const PxsIslandIndices& counts, IG::SimpleIslandManager& islandManager, PxBaseTask* continuation)
 {
-	mThreadContext.mConstraintBlockManager.reset();
-	mThreadContext.mConstraintBlockStream.reset();
+	threadContext.mConstraintBlockManager.reset();
+	threadContext.mConstraintBlockStream.reset();
 
 	const PxU32 NbBodiesPerTask = 512;
 
@@ -3631,37 +3162,36 @@ void DynamicsTGSContext::finishSolveIsland(ThreadContext& mThreadContext, const 
 	for (PxU32 a = 0; a < counts.articulations; a += NbArticsPerTask)
 	{
 		UpdateArticTask* task = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(UpdateArticTask)), UpdateArticTask)
-			(mThreadContext, a, PxMin(counts.articulations, a+NbArticsPerTask), mDt, *this);
+			(threadContext, a, PxMin(counts.articulations, a+NbArticsPerTask), mDt, *this);
 
 		task->setContinuation(continuation);
 		task->removeReference();
 	}
 }
 
-void DynamicsTGSContext::endIsland(ThreadContext& mThreadContext)
+void DynamicsTGSContext::endIsland(ThreadContext& threadContext)
 {
-	putThreadContext(&mThreadContext);
+	putThreadContext(&threadContext);
 }
 
 void DynamicsTGSContext::solveIsland(const SolverIslandObjectsStep& objects,
 	const PxsIslandIndices& counts,
 	PxU32 solverBodyOffset,
-	IG::SimpleIslandManager& islandManager,
 	PxU32* bodyRemapTable, PxsMaterialManager* /*materialManager*/,
 	PxsContactManagerOutputIterator& iterator,
 	PxBaseTask* continuation)
 {
-	ThreadContext& mThreadContext = *getThreadContext();
+	ThreadContext& threadContext = *getThreadContext();
 
 	IslandContextStep& islandContext = *reinterpret_cast<IslandContextStep*>(mTaskPool.allocate(sizeof(IslandContextStep)));
-	islandContext.mThreadContext = &mThreadContext;
+	islandContext.mThreadContext = &threadContext;
 	islandContext.mCounts = counts;
 	islandContext.mObjects = objects;
 	islandContext.mPosIters = 0;
 	islandContext.mVelIters = 0;
 	islandContext.mObjects.solverBodyOffset = solverBodyOffset;
 
-	prepareBodiesAndConstraints(islandContext.mObjects, islandManager, islandContext);
+	prepareBodiesAndConstraints(islandContext.mObjects, islandContext);
 
 	////Create task chain...
 	SetupDescsTask* descTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(SetupDescsTask)), SetupDescsTask)(islandContext, islandContext.mObjects, 
@@ -3669,7 +3199,7 @@ void DynamicsTGSContext::solveIsland(const SolverIslandObjectsStep& objects,
 	PreIntegrateTask* intTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(PreIntegrateTask)), PreIntegrateTask)(islandContext.mObjects.bodyCoreArray, islandContext.mObjects.bodies,
 		mSolverBodyVelPool.begin() + solverBodyOffset,
 		mSolverBodyTxInertiaPool.begin() + solverBodyOffset, mSolverBodyDataPool2.begin() + solverBodyOffset,
-		mThreadContext.mNodeIndexArray, islandContext.mCounts.bodies, mGravity, mDt, islandContext.mPosIters,
+		threadContext.mNodeIndexArray, islandContext.mCounts.bodies, mGravity, mDt, islandContext.mPosIters,
 		islandContext.mVelIters, *this);
 	SetupArticulationTask* articTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(SetupArticulationTask)), SetupArticulationTask)(islandContext, mGravity, 
 		mDt, islandContext.mPosIters, islandContext.mVelIters, *this);
@@ -3677,17 +3207,15 @@ void DynamicsTGSContext::solveIsland(const SolverIslandObjectsStep& objects,
 	SetupArticulationInternalConstraintsTask* articConTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(SetupArticulationInternalConstraintsTask)), SetupArticulationInternalConstraintsTask)
 		(islandContext, mDt, mInvDt, *this);
 	PartitionTask* partitionTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(PartitionTask)), PartitionTask)
-		(islandContext, islandContext.mObjects.constraintDescs, mSolverBodyVelPool.begin()+solverBodyOffset+1, mThreadContext,
-			*this);
+		(islandContext, islandContext.mObjects.constraintDescs, mSolverBodyVelPool.begin()+solverBodyOffset+1, *this);
 	SetupSolverConstraintsTask* constraintTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(SetupSolverConstraintsTask)), SetupSolverConstraintsTask)
-		(islandContext, islandContext.mObjects.orderedConstraintDescs, iterator, mThreadContext,
-			mDt, *this);
+		(islandContext, islandContext.mObjects.orderedConstraintDescs, iterator, mDt, *this);
 
-	SolveIslandTask* solveTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(SolveIslandTask)), SolveIslandTask)(islandContext, islandContext.mObjects, islandContext.mCounts,  mDt, mThreadContext, *this);
+	SolveIslandTask* solveTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(SolveIslandTask)), SolveIslandTask)(islandContext, islandContext.mObjects, islandContext.mCounts, mDt, *this);
 
-	FinishSolveIslandTask* finishTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(FinishSolveIslandTask)), FinishSolveIslandTask)(mThreadContext, islandContext.mObjects, islandContext.mCounts, islandManager, *this);
+	FinishSolveIslandTask* finishTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(FinishSolveIslandTask)), FinishSolveIslandTask)(threadContext, islandContext.mObjects, islandContext.mCounts, mIslandManager, *this);
 
-	EndIslandTask* endTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(EndIslandTask)), EndIslandTask)(mThreadContext, *this);
+	EndIslandTask* endTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(EndIslandTask)), EndIslandTask)(threadContext, *this);
 
 	endTask->setContinuation(continuation);
 	finishTask->setContinuation(endTask);
@@ -3717,33 +3245,6 @@ void DynamicsTGSContext::solveIsland(const SolverIslandObjectsStep& objects,
 
 void DynamicsTGSContext::mergeResults()
 {
-	PX_PROFILE_ZONE("Dynamics.solverMergeResults", mContextID);
-	//OK. Sum up sim stats here...
-
-#if PX_ENABLE_SIM_STATS	
-	{
-		PxcThreadCoherentCacheIterator<ThreadContext, PxcNpMemBlockPool> threadContextIt(mThreadContextPool);
-		ThreadContext* threadContext = threadContextIt.getNext();
-
-		mTotalContactError.reset();
-		mContactErrorPosIter = &mTotalContactError.mPositionIterationErrorAccumulator;
-		mContactErrorVelIter = &mTotalContactError.mVelocityIterationErrorAccumulator;
-
-		while (threadContext != NULL)
-		{
-			if (mIsResidualReportingEnabled)
-			{
-				Dy::ErrorAccumulatorEx& error = threadContext->getSimStats().contactErrorAccumulator;
-				mTotalContactError.combine(error);
-				threadContext->getSimStats().contactErrorAccumulator.reset();
-			}
-
-			threadContext = threadContextIt.getNext();
-		}
-	}
-#else
-	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
-#endif
 }
 
 }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.  
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.  
 
 // ****************************************************************************
 // This snippet illustrates the use of PhysX immediate mode.
@@ -1102,7 +1102,7 @@ void stepPhysics(bool /*interactive*/)
 
 #if PROFILE_STEP
 	time = __rdtsc() - time;
-	printf("Time: %d\n", PxU32(time/1024));
+	printf("Time: %u\n", PxU32(time/1024));
 #endif
 }
 	

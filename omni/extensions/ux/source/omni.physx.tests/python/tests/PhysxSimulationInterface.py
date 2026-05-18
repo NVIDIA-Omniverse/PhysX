@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.physxcommands import SetRigidBodyCommand
 from omni.physx.scripts import physicsUtils
 from omni.physxtests import utils
@@ -263,3 +264,7 @@ class PhysxSimulationInterfaceTestPointInstancer(rigidbody.AsyncTestCase):
         self.assertTrue(simulateI.is_sleeping_instanced(stageId, point_instancer_path_encoded, 3))
 
         simulateI.detach_stage()
+
+    async def test_stage_update_no_attach(self): 
+        # stepping immediately should not crash               
+        get_physx_simulation_interface().simulate(0.1, 0.1)

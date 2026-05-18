@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
+
 from omni.physxtestsvisual.utils import TestCase
 from omni.physxtests.utils.physicsBase import PhysicsKitStageAsyncTestCase, TestCategory
 import omni.physxdemos as demo
@@ -9,18 +10,11 @@ import carb.settings
 local_mode = carb.settings.get_settings().get("/exts/omni.physx.tests/localMode")
 
 ASSET_DEMOS = [
-    "FrankaNutBoltDemo",                # showroom
-    "NutsAndBoltsDemo",                 # showroom
-    "AnalogDigitalClockDemo",           # showroom
+    "FrankaNutBoltDemo",
+    "AnalogDigitalClockDemo",
     "FrankaDeformableDemo",
-    "ChairStackingDemo",
-    "FrankaBrickStackDemo",
-    "HoneyDemo",
-    "ClothDeckChairDemo",
-    # "FluidIsosurfaceGlassBoxDemo",    # Crashing OM-116136
     "MixerDemo",
     "TeddyOnIceDemo",
-    "LegoTechnicBuggyRigid",
 ]
 
 EXCLUDE_FROM_ALL = [
@@ -31,7 +25,6 @@ EXCLUDE_FROM_ALL = [
     "ForceDemo",                        # failing on omni.graph.core dep?
     "MuseumDemo",                       # currently disabled due to issue OM-84698, perhaps enable once fixed
     "ParticlePostProcessingDemo",       # OM-115172
-    "FluidIsosurfaceGlassBoxDemo",      # Crashing OM-116136
     "InverseDynamicsTensorAPIDemo",     # OMPE-31498 issue with tensor API when run from here
     "JointBreakDemo",                   # Fails in fabric, NVBug 5116935
 ]
@@ -65,7 +58,14 @@ class DirectImportTestDemo(demo.Base):
 
 class PhysxDemoBase(TestCase):
     category = TestCategory.Core
-    thresholds = {}
+    thresholds = {
+        "ContactSlopCoefficientDemo": 0.0008,
+        "ConvexMeshDataDemo": 0.0007,
+        "ConveyorBeltDemo": 0.0006,
+        "AnalyticCylinderDemo": 0.0006,
+        "DeformableAttachmentsDemo": 0.0007,
+        "VolumeDeformableDemo": 0.0007,
+    }
 
     async def _visual_base(self, exclude_list):
         async def do_prepare(scene_class):

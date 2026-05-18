@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -190,11 +190,11 @@ namespace physx {
 		PxTriangleMeshDesc theDesc;
 		readStridedBufferProperty<PxVec3>( inReader, "points", theDesc.points, inAllocator);
 		readStridedBufferProperty<Triangle<PxU32> >( inReader, "triangles", theDesc.triangles, inAllocator);
-		PxU32 triCount;
+		PxU64 triCount;
 		readStridedBufferProperty<PxMaterialTableIndex>( inReader, "materialIndices", theDesc.materialIndices, triCount, inAllocator);
 		PxStridedData cookedData;
 		cookedData.stride = sizeof(PxU8);
-		PxU32 dataSize;
+		PxU64 dataSize;
 		readStridedBufferProperty<PxU8>( inReader, "CookedData", cookedData, dataSize, inAllocator);
 
 		TMemoryPoolManager theManager(inAllocator.getAllocator());	
@@ -291,11 +291,11 @@ namespace physx {
 		PxTriangleMeshDesc theDesc;
 		readStridedBufferProperty<PxVec3>( inReader, "points", theDesc.points, inAllocator);
 		readStridedBufferProperty<Triangle<PxU32> >( inReader, "triangles", theDesc.triangles, inAllocator);
-		PxU32 triCount;
+		PxU64 triCount;
 		readStridedBufferProperty<PxMaterialTableIndex>( inReader, "materialIndices", theDesc.materialIndices, triCount, inAllocator);
 		PxStridedData cookedData;
 		cookedData.stride = sizeof(PxU8);
-		PxU32 dataSize;
+		PxU64 dataSize;
 		readStridedBufferProperty<PxU8>( inReader, "CookedData", cookedData, dataSize, inAllocator);
 
 		TMemoryPoolManager theManager(inAllocator.getAllocator());	
@@ -360,7 +360,7 @@ namespace physx {
 		PxHeightFieldDesc theDesc;
 		readAllProperties( inArgs, inReader, &theDesc, inAllocator, *inCollection );
 		//Now read the data...
-		PxU32 count = 0; //ignored becaues numRows and numColumns tells the story
+		PxU64 count = 0; //ignored because numRows and numColumns tells the story
 		readStridedBufferProperty<PxHeightFieldSample>( inReader, "samples", theDesc.samples, count, inAllocator);
 		PxHeightField* retval = PxCreateHeightField( theDesc, inArgs.physics.getPhysicsInsertionCallback() );
 		return PxCreateRepXObject(retval);
@@ -400,7 +400,7 @@ namespace physx {
 
 		PxStridedData cookedData;
 		cookedData.stride = sizeof(PxU8);
-		PxU32 dataSize;
+		PxU64 dataSize;
 		readStridedBufferProperty<PxU8>( inReader, "CookedData", cookedData, dataSize, inAllocator);
 
 		TMemoryPoolManager theManager(inAllocator.getAllocator());
