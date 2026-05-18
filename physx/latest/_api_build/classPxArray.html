@@ -1,0 +1,1347 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PxArray &#8212; PhysX SDK Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=c5edffae" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=27868d4c"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_api_build/classPxArray';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '5.8.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = true;
+        </script>
+    <script src="../_static/version-patch.js?v=c24f8c5d"></script>
+    <script rel="preload" src="../_static/toctree.js"></script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxArrayConverter" href="classPxArrayConverter.html" />
+    <link rel="prev" title="PxAnisotropyGenerator" href="classPxAnisotropyGenerator.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="May 18, 2026"/>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="PhysX SDK Documentation - Home"/>
+    <script>document.write(`<img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark" alt="PhysX SDK Documentation - Home"/>`);</script>
+  
+  
+    <p class="title logo__title">PhysX SDK Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+
+
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="physx_api.html" class="nav-link">PhysX SDK API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="classes.html" class="nav-link">Classes</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">PxArray</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pxarray">
+<h1>PxArray<a class="headerlink" href="#pxarray" title="Link to this heading">#</a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxArray.h.html#pxarray-8h"><span class="std std-ref">include/foundation/PxArray.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I00E7PxArray">
+<span id="_CPPv3I00E7PxArray"></span><span id="_CPPv2I00E7PxArray"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxarray"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArray</span></span></span><a class="headerlink" href="#_CPPv4I00E7PxArray" title="Link to this definition">#</a><br /></dt>
+<dd><p>An array is a sequential container. </p>
+<p>Implementation note:<ul class="simple">
+<li><p>entries between 0 and size are valid objects</p></li>
+<li><p>we use inheritance to build this because the array is included inline in a lot of objects and we want the allocator to take no space if it’s not stateful, which aggregation doesn’t allow. Also, we want the metadata at the front for the inline case where the allocator contains some inline storage space</p></li>
+</ul>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>T</strong> – Element type </p></li>
+<li><p><strong>Alloc</strong> – Allocator type (defaults to PxAllocatorTraits&lt;T&gt;::Type) </p></li>
+</ul>
+</dd>
+</dl>
+<p>Subclassed by <a class="reference internal" href="classPxInlineArray.html#classpxinlinearray"><span class="std std-ref">PxInlineArray&lt; T, N, Alloc &gt;</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray8IteratorE">
+<span id="_CPPv3N7PxArray8IteratorE"></span><span id="_CPPv2N7PxArray8IteratorE"></span><span id="PxArray::Iterator"></span><span class="target" id="classpxarray_1aced3d4618d77709d9e45ddec45864a98"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">Iterator</span></span></span><a class="headerlink" href="#_CPPv4N7PxArray8IteratorE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray13ConstIteratorE">
+<span id="_CPPv3N7PxArray13ConstIteratorE"></span><span id="_CPPv2N7PxArray13ConstIteratorE"></span><span id="PxArray::ConstIterator"></span><span class="target" id="classpxarray_1ab9f040aa684f99827048a780bf61498c"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">ConstIterator</span></span></span><a class="headerlink" href="#_CPPv4N7PxArray13ConstIteratorE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray7PxArrayEK7PxEMPTY">
+<span id="_CPPv3N7PxArray7PxArrayEK7PxEMPTY"></span><span id="_CPPv2N7PxArray7PxArrayEK7PxEMPTY"></span><span id="PxArray::PxArray__PxEMPTYC"></span><span class="target" id="classpxarray_1a0553b3a330f355dc2a067e88659d2f59"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArray</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">PxEMPTY</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray7PxArrayEK7PxEMPTY" title="Link to this definition">#</a><br /></dt>
+<dd><p>Deserialization constructor. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>v</strong> – Empty tag for deserialization </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray7PxArrayERK5Alloc">
+<span id="_CPPv3N7PxArray7PxArrayERK5Alloc"></span><span id="_CPPv2N7PxArray7PxArrayERK5Alloc"></span><span id="PxArray::PxArray__AllocCR"></span><span class="target" id="classpxarray_1a77d9b47549c1a06180d7b9117f0a5832"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArray</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alloc</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray7PxArrayERK5Alloc" title="Link to this definition">#</a><br /></dt>
+<dd><p>Default array constructor. Initialize an empty array. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>alloc</strong> – Allocator to use </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray7PxArrayE8uint32_tRK1TRK5Alloc">
+<span id="_CPPv3N7PxArray7PxArrayE8uint32_tRK1TRK5Alloc"></span><span id="_CPPv2N7PxArray7PxArrayE8uint32_tRK1TRK5Alloc"></span><span id="PxArray::PxArray__uint32_t.TCR.AllocCR"></span><span class="target" id="classpxarray_1ac05b7a43ee74b652f874547c7c7f9993"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArray</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alloc</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray7PxArrayE8uint32_tRK1TRK5Alloc" title="Link to this definition">#</a><br /></dt>
+<dd><p>Initialize array with given size. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>size</strong> – Initial size (and capacity) of the array </p></li>
+<li><p><strong>a</strong> – Default value for elements </p></li>
+<li><p><strong>alloc</strong> – Allocator to use </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN7PxArray7PxArrayERK7PxArrayI1T1AERK5Alloc">
+<span id="_CPPv3I0EN7PxArray7PxArrayERK7PxArrayI1T1AERK5Alloc"></span><span id="_CPPv2I0EN7PxArray7PxArrayERK7PxArrayI1T1AERK5Alloc"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">A</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxarray_1a5b2d252381b98bd043ecf85edf1eb1d5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArray</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN7PxArray7PxArrayERK7PxArrayI1T1AERK5Alloc" title="PxArray::PxArray"><span class="n"><span class="pre">PxArray</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN7PxArray7PxArrayERK7PxArrayI1T1AERK5Alloc" title="PxArray::PxArray::A"><span class="n"><span class="pre">A</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alloc</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN7PxArray7PxArrayERK7PxArrayI1T1AERK5Alloc" title="Link to this definition">#</a><br /></dt>
+<dd><p>Copy-constructor. Copy all entries from other array. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>other</strong> – Source array to copy from </p></li>
+<li><p><strong>alloc</strong> – Allocator to use </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray7PxArrayERK7PxArrayRK5Alloc">
+<span id="_CPPv3N7PxArray7PxArrayERK7PxArrayRK5Alloc"></span><span id="_CPPv2N7PxArray7PxArrayERK7PxArrayRK5Alloc"></span><span id="PxArray::PxArray__PxArrayCR.AllocCR"></span><span class="target" id="classpxarray_1a1c139480e64cc106e91217d19ef58594"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArray</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N7PxArray7PxArrayERK7PxArrayRK5Alloc" title="PxArray::PxArray"><span class="n"><span class="pre">PxArray</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span></em>, <em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alloc</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray7PxArrayERK7PxArrayRK5Alloc" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray7PxArrayEPK1TPK1TRK5Alloc">
+<span id="_CPPv3N7PxArray7PxArrayEPK1TPK1TRK5Alloc"></span><span id="_CPPv2N7PxArray7PxArrayEPK1TPK1TRK5Alloc"></span><span id="PxArray::PxArray__TCP.TCP.AllocCR"></span><span class="target" id="classpxarray_1a0682a5f3a112f62443091b7795164bb4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArray</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">first</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">last</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alloc</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray7PxArrayEPK1TPK1TRK5Alloc" title="Link to this definition">#</a><br /></dt>
+<dd><p>Initialize array with given length. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>first</strong> – Pointer to the first element to copy </p></li>
+<li><p><strong>last</strong> – Pointer past the last element to copy </p></li>
+<li><p><strong>alloc</strong> – Allocator to use </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArrayD0Ev">
+<span id="_CPPv3N7PxArrayD0Ev"></span><span id="_CPPv2N7PxArrayD0Ev"></span><span id="PxArray::~PxArray"></span><span class="target" id="classpxarray_1a8e1eb9d62de44830110f908a343006dc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxArray</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArrayD0Ev" title="Link to this definition">#</a><br /></dt>
+<dd><p>Destructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN7PxArrayaSER7PxArrayRK7PxArrayI1T1AE">
+<span id="_CPPv3I0EN7PxArrayaSERK7PxArrayI1T1AE"></span><span id="_CPPv2I0EN7PxArrayaSERK7PxArrayI1T1AE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">A</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxarray_1adcfa8281508fab9f2b10bc4b180ca836"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray"><span class="n"><span class="pre">PxArray</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray"><span class="n"><span class="pre">PxArray</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN7PxArrayaSER7PxArrayRK7PxArrayI1T1AE" title="PxArray::operator=::A"><span class="n"><span class="pre">A</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN7PxArrayaSER7PxArrayRK7PxArrayI1T1AE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Assignment operator. Copy content (deep-copy) </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rhs</strong> – Source array to copy from </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reference to this array </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArrayaSERK7PxArray">
+<span id="_CPPv3N7PxArrayaSERK7PxArray"></span><span id="_CPPv2N7PxArrayaSERK7PxArray"></span><span id="PxArray::assign-operator__PxArrayCR"></span><span class="target" id="classpxarray_1aa210507b0b62de2aab5f4c4692a7d05f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray"><span class="n"><span class="pre">PxArray</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray"><span class="n"><span class="pre">PxArray</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArrayaSERK7PxArray" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxArrayixE8uint32_t">
+<span id="_CPPv3NK7PxArrayixE8uint32_t"></span><span id="_CPPv2NK7PxArrayixE8uint32_t"></span><span id="PxArray::subscript-operator__uint32_tC"></span><span class="target" id="classpxarray_1ac6ba663f7b1faba3efb3789fbcad0cff"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxArrayixE8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Array indexing operator. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – The index of the element that will be returned. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The element i in the array. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArrayixE8uint32_t">
+<span id="_CPPv3N7PxArrayixE8uint32_t"></span><span id="_CPPv2N7PxArrayixE8uint32_t"></span><span id="PxArray::subscript-operator__uint32_t"></span><span class="target" id="classpxarray_1aa88585df04ab77bf48a5d795da309a57"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArrayixE8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Array indexing operator. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – The index of the element that will be returned. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The element i in the array. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxArray5beginEv">
+<span id="_CPPv3NK7PxArray5beginEv"></span><span id="_CPPv2NK7PxArray5beginEv"></span><span id="PxArray::beginC"></span><span class="target" id="classpxarray_1a735b86d695801500f80533ce03646af8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N7PxArray13ConstIteratorE" title="PxArray::ConstIterator"><span class="n"><span class="pre">ConstIterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">begin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxArray5beginEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns a pointer to the first element of the array. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Pointer to the first element of the array. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray5beginEv">
+<span id="_CPPv3N7PxArray5beginEv"></span><span id="_CPPv2N7PxArray5beginEv"></span><span id="PxArray::begin"></span><span class="target" id="classpxarray_1ad952d949ffa25f56065b7387bab925da"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N7PxArray8IteratorE" title="PxArray::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">begin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray5beginEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxArray3endEv">
+<span id="_CPPv3NK7PxArray3endEv"></span><span id="_CPPv2NK7PxArray3endEv"></span><span id="PxArray::endC"></span><span class="target" id="classpxarray_1a24928307aee787c52595de1fdb809674"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N7PxArray13ConstIteratorE" title="PxArray::ConstIterator"><span class="n"><span class="pre">ConstIterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">end</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxArray3endEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns a pointer beyond the last element of the array. Do not dereference. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Pointer to the element beyond the last element of the array. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray3endEv">
+<span id="_CPPv3N7PxArray3endEv"></span><span id="_CPPv2N7PxArray3endEv"></span><span id="PxArray::end"></span><span class="target" id="classpxarray_1a19009691b64e4037f88b44177d746c16"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N7PxArray8IteratorE" title="PxArray::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">end</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray3endEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxArray5frontEv">
+<span id="_CPPv3NK7PxArray5frontEv"></span><span id="_CPPv2NK7PxArray5frontEv"></span><span id="PxArray::frontC"></span><span class="target" id="classpxarray_1a0cd92846cc304bfe153fd091599172fd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">front</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxArray5frontEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns a reference to the first element of the array. Undefined if the array is empty. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Reference to the first element of the array </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray5frontEv">
+<span id="_CPPv3N7PxArray5frontEv"></span><span id="_CPPv2N7PxArray5frontEv"></span><span id="PxArray::front"></span><span class="target" id="classpxarray_1ab0c1540768a3401eba203521ea8c51a0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">front</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray5frontEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxArray4backEv">
+<span id="_CPPv3NK7PxArray4backEv"></span><span id="_CPPv2NK7PxArray4backEv"></span><span id="PxArray::backC"></span><span class="target" id="classpxarray_1a54ca2bbb2f0abba9e2ae4bf971277c1e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">back</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxArray4backEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns a reference to the last element of the array. Undefined if the array is empty. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Reference to the last element of the array </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray4backEv">
+<span id="_CPPv3N7PxArray4backEv"></span><span id="_CPPv2N7PxArray4backEv"></span><span id="PxArray::back"></span><span class="target" id="classpxarray_1a17b6bb0cfd51f0ca603bd3a5e2b55a51"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">back</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray4backEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxArray4sizeEv">
+<span id="_CPPv3NK7PxArray4sizeEv"></span><span id="_CPPv2NK7PxArray4sizeEv"></span><span id="PxArray::sizeC"></span><span class="target" id="classpxarray_1a2df6a8611d06e0b27277b1a21d9dc014"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxArray4sizeEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns the number of entries in the array. This can, and probably will, differ from the array capacity. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of entries in the array. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray5clearEv">
+<span id="_CPPv3N7PxArray5clearEv"></span><span id="_CPPv2N7PxArray5clearEv"></span><span id="PxArray::clear"></span><span class="target" id="classpxarray_1a3b6bde9975e5db24aad1f03a10cb0d0a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray5clearEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Clears the array. Calls destructor on all elements. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxArray5emptyEv">
+<span id="_CPPv3NK7PxArray5emptyEv"></span><span id="_CPPv2NK7PxArray5emptyEv"></span><span id="PxArray::emptyC"></span><span class="target" id="classpxarray_1ac7963f12c29478fe7bf359182351a939"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">empty</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxArray5emptyEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Returns whether the array is empty (i.e. whether its size is 0). </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the array is empty </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray4findERK1T">
+<span id="_CPPv3N7PxArray4findERK1T"></span><span id="_CPPv2N7PxArray4findERK1T"></span><span id="PxArray::find__TCR"></span><span class="target" id="classpxarray_1a49036a0fcb57060fb76f77b81590f391"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N7PxArray8IteratorE" title="PxArray::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">find</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray4findERK1T" title="Link to this definition">#</a><br /></dt>
+<dd><p>Finds the first occurrence of an element in the array. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>a</strong> – The element to find. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pointer to the found element or end() if not found </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxArray4findERK1T">
+<span id="_CPPv3NK7PxArray4findERK1T"></span><span id="_CPPv2NK7PxArray4findERK1T"></span><span id="PxArray::find__TCRC"></span><span class="target" id="classpxarray_1ab1147a624f9670b0ff2c90d14932de1c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N7PxArray13ConstIteratorE" title="PxArray::ConstIterator"><span class="n"><span class="pre">ConstIterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">find</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span></em><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxArray4findERK1T" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray8pushBackERK1T">
+<span id="_CPPv3N7PxArray8pushBackERK1T"></span><span id="_CPPv2N7PxArray8pushBackERK1T"></span><span id="PxArray::pushBack__TCR"></span><span class="target" id="classpxarray_1a19aaff46c79e2799819450cdb3bbeba2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">pushBack</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray8pushBackERK1T" title="Link to this definition">#</a><br /></dt>
+<dd><p>Adds one element to the end of the array. Operation is O(1). </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>a</strong> – The element that will be added to this array. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pointer to the element that has been added, NULL if operation failed. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray7popBackEv">
+<span id="_CPPv3N7PxArray7popBackEv"></span><span id="_CPPv2N7PxArray7popBackEv"></span><span id="PxArray::popBack"></span><span class="target" id="classpxarray_1ac9c96aa52215464687c2c7837889c96b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">popBack</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray7popBackEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Removes and returns the element at the end of the array. Only legal if the array is non-empty. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The last element of the array </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray6insertEv">
+<span id="_CPPv3N7PxArray6insertEv"></span><span id="_CPPv2N7PxArray6insertEv"></span><span id="PxArray::insert"></span><span class="target" id="classpxarray_1acccc37c83409fb84808a7a5552c22863"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray6insertEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Construct one element at the end of the array. Operation is O(1). </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Pointer to the element that has been inserted, NULL if operation failed. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray15replaceWithLastE8uint32_t">
+<span id="_CPPv3N7PxArray15replaceWithLastE8uint32_t"></span><span id="_CPPv2N7PxArray15replaceWithLastE8uint32_t"></span><span id="PxArray::replaceWithLast__uint32_t"></span><span class="target" id="classpxarray_1a218582a747450e7e04f618f60225e249"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">replaceWithLast</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray15replaceWithLastE8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Removes the element at position i from the array and replaces it with the last element. Operation is O(1) </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – The position of the element that will be removed from this array. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray15replaceWithLastE8Iterator">
+<span id="_CPPv3N7PxArray15replaceWithLastE8Iterator"></span><span id="_CPPv2N7PxArray15replaceWithLastE8Iterator"></span><span id="PxArray::replaceWithLast__Iterator"></span><span class="target" id="classpxarray_1a2fa3e990327b4be824bbb54ee5a7c507"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">replaceWithLast</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4N7PxArray8IteratorE" title="PxArray::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray15replaceWithLastE8Iterator" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray22findAndReplaceWithLastERK1T">
+<span id="_CPPv3N7PxArray22findAndReplaceWithLastERK1T"></span><span id="_CPPv2N7PxArray22findAndReplaceWithLastERK1T"></span><span id="PxArray::findAndReplaceWithLast__TCR"></span><span class="target" id="classpxarray_1a9f62d08c6269d87679cca8807b36d718"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">findAndReplaceWithLast</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray22findAndReplaceWithLastERK1T" title="Link to this definition">#</a><br /></dt>
+<dd><p>Replaces the first occurrence of the element a with the last element. Operation is O(n) </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>a</strong> – The element to find and remove from this array. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the element has been removed. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray6removeE8uint32_t">
+<span id="_CPPv3N7PxArray6removeE8uint32_t"></span><span id="_CPPv2N7PxArray6removeE8uint32_t"></span><span id="PxArray::remove__uint32_t"></span><span class="target" id="classpxarray_1afbe1560f7d3177e9430e69bf39bfdfbd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">remove</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray6removeE8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Subtracts the element on position i from the array. Shift the entire array one step. Operation is O(n) </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>i</strong> – The position of the element that will be subtracted from this array. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray11removeRangeE8uint32_t8uint32_t">
+<span id="_CPPv3N7PxArray11removeRangeE8uint32_t8uint32_t"></span><span id="_CPPv2N7PxArray11removeRangeE8uint32_t8uint32_t"></span><span id="PxArray::removeRange__uint32_t.uint32_t"></span><span class="target" id="classpxarray_1a050681720ac2eb815b72374164c68897"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeRange</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">begin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">count</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray11removeRangeE8uint32_t8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Removes a range from the array. Shifts the array so order is maintained. Operation is O(n) </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>begin</strong> – The starting position of the element that will be subtracted from this array. </p></li>
+<li><p><strong>count</strong> – The number of elements that will be subtracted from this array. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray6resizeEK8uint32_tRK1T">
+<span id="_CPPv3N7PxArray6resizeEK8uint32_tRK1T"></span><span id="_CPPv2N7PxArray6resizeEK8uint32_tRK1T"></span><span id="PxArray::resize__uint32_tC.TCR"></span><span class="target" id="classpxarray_1abac20bc60f48d5a464dc15c3eb596be8"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">resize</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray6resizeEK8uint32_tRK1T" title="Link to this definition">#</a><br /></dt>
+<dd><p>Resize array. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>size</strong> – New size of the array </p></li>
+<li><p><strong>a</strong> – Default value for new elements </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if operation succeeded </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray19resizeUninitializedEK8uint32_t">
+<span id="_CPPv3N7PxArray19resizeUninitializedEK8uint32_t"></span><span id="_CPPv2N7PxArray19resizeUninitializedEK8uint32_t"></span><span id="PxArray::resizeUninitialized__uint32_tC"></span><span class="target" id="classpxarray_1ac07223ed56fe577ec0d62442d20a799c"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">resizeUninitialized</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray19resizeUninitializedEK8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Resize array without initializing new elements. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>size</strong> – New size of the array </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if operation succeeded </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray6shrinkEv">
+<span id="_CPPv3N7PxArray6shrinkEv"></span><span id="_CPPv2N7PxArray6shrinkEv"></span><span id="PxArray::shrink"></span><span class="target" id="classpxarray_1af1caa97166545340fda0d894f4a47b5e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">shrink</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray6shrinkEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Resize array such that only as much memory is allocated to hold the existing elements. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if operation succeeds, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray5resetEv">
+<span id="_CPPv3N7PxArray5resetEv"></span><span id="_CPPv2N7PxArray5resetEv"></span><span id="PxArray::reset"></span><span class="target" id="classpxarray_1ad1fba36ffe1025c10c608e824fe4a84f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray5resetEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Deletes all array elements and frees memory. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray12resetOrClearEv">
+<span id="_CPPv3N7PxArray12resetOrClearEv"></span><span id="_CPPv2N7PxArray12resetOrClearEv"></span><span id="PxArray::resetOrClear"></span><span class="target" id="classpxarray_1a1c7023515a2747c8cc28d986562eb111"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">resetOrClear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray12resetOrClearEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Resets or clears the array depending on occupancy. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray7reserveEK8uint32_t">
+<span id="_CPPv3N7PxArray7reserveEK8uint32_t"></span><span id="_CPPv2N7PxArray7reserveEK8uint32_t"></span><span id="PxArray::reserve__uint32_tC"></span><span class="target" id="classpxarray_1a1f9eb01103c1217f913daad189c73352"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reserve</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">capacity</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray7reserveEK8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Ensure that the array has at least the requested capacity. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>capacity</strong> – Minimum capacity to reserve </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if operation succeeds, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxArray8capacityEv">
+<span id="_CPPv3NK7PxArray8capacityEv"></span><span id="_CPPv2NK7PxArray8capacityEv"></span><span id="PxArray::capacityC"></span><span class="target" id="classpxarray_1a7d45c7a547d3e5970263c4866a72a49f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">capacity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxArray8capacityEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>Query the capacity(allocated mem) for the array. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The capacity of the array </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray16forceSize_UnsafeE8uint32_t">
+<span id="_CPPv3N7PxArray16forceSize_UnsafeE8uint32_t"></span><span id="_CPPv2N7PxArray16forceSize_UnsafeE8uint32_t"></span><span id="PxArray::forceSize_Unsafe__uint32_t"></span><span class="target" id="classpxarray_1a3b55d211e47fd997d26d706674e16b9e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">forceSize_Unsafe</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray16forceSize_UnsafeE8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Unsafe function to force the size of the array. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>size</strong> – New size to force </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray4swapER7PxArrayI1T5AllocE">
+<span id="_CPPv3N7PxArray4swapER7PxArrayI1T5AllocE"></span><span id="_CPPv2N7PxArray4swapER7PxArrayI1T5AllocE"></span><span id="PxArray::swap__PxArray:T.Alloc:R"></span><span class="target" id="classpxarray_1a8d3619930956990c4db97f08c1f18d26"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">swap</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray"><span class="n"><span class="pre">PxArray</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray4swapER7PxArrayI1T5AllocE" title="Link to this definition">#</a><br /></dt>
+<dd><p>Swap contents of an array without allocating temporary storage. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> – Array to swap with </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray6assignEPK1TPK1T">
+<span id="_CPPv3N7PxArray6assignEPK1TPK1T"></span><span id="_CPPv2N7PxArray6assignEPK1TPK1T"></span><span id="PxArray::assign__TCP.TCP"></span><span class="target" id="classpxarray_1a0aebaf1814a102cb4d276a1c55f97176"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">assign</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">first</span></span></em>, <em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">last</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray6assignEPK1TPK1T" title="Link to this definition">#</a><br /></dt>
+<dd><p>Assign a range of values to this array (resizes to length of range) </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>first</strong> – Pointer to the first element to copy </p></li>
+<li><p><strong>last</strong> – Pointer past the last element to copy </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if operation succeeds, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxArray14isInUserMemoryEv">
+<span id="_CPPv3NK7PxArray14isInUserMemoryEv"></span><span id="_CPPv2NK7PxArray14isInUserMemoryEv"></span><span id="PxArray::isInUserMemoryC"></span><span class="target" id="classpxarray_1ab14d01be699c5d32d39fa289935b1d1e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isInUserMemory</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxArray14isInUserMemoryEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray12getAllocatorEv">
+<span id="_CPPv3N7PxArray12getAllocatorEv"></span><span id="_CPPv2N7PxArray12getAllocatorEv"></span><span id="PxArray::getAllocator"></span><span class="target" id="classpxarray_1a6154277132fe5757084b790393556679"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getAllocator</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray12getAllocatorEv" title="Link to this definition">#</a><br /></dt>
+<dd><p>return reference to allocator </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray7PxArrayEP1T8uint32_t8uint32_tRK5Alloc">
+<span id="_CPPv3N7PxArray7PxArrayEP1T8uint32_t8uint32_tRK5Alloc"></span><span id="_CPPv2N7PxArray7PxArrayEP1T8uint32_t8uint32_tRK5Alloc"></span><span id="PxArray::PxArray__TP.uint32_t.uint32_t.AllocCR"></span><span class="target" id="classpxarray_1afc21585a84b97b02aa9388bf876ae0ea"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArray</span></span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">memory</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">capacity</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alloc</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray7PxArrayEP1T8uint32_t8uint32_tRK5Alloc" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN7PxArray4copyEvRK7PxArrayI1T1AE">
+<span id="_CPPv3I0EN7PxArray4copyERK7PxArrayI1T1AE"></span><span id="_CPPv2I0EN7PxArray4copyERK7PxArrayI1T1AE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname sig-name-template"><span class="n"><span class="pre">A</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxarray_1aae488eac2fcdd668f2961cd92da3ddbb"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copy</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray"><span class="n"><span class="pre">PxArray</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN7PxArray4copyEvRK7PxArrayI1T1AE" title="PxArray::copy::A"><span class="n"><span class="pre">A</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN7PxArray4copyEvRK7PxArrayI1T1AE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray8allocateE8uint32_tP8uint32_t">
+<span id="_CPPv3N7PxArray8allocateE8uint32_tP8uint32_t"></span><span id="_CPPv2N7PxArray8allocateE8uint32_tP8uint32_t"></span><span id="PxArray::allocate__uint32_t.uint32_tP"></span><span class="target" id="classpxarray_1ac89d84a21f3ca685bfc8dbd359d6f911"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">allocate</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cookie</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray8allocateE8uint32_tP8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray10deallocateEPvP8uint32_t">
+<span id="_CPPv3N7PxArray10deallocateEPvP8uint32_t"></span><span id="_CPPv2N7PxArray10deallocateEPvP8uint32_t"></span><span id="PxArray::deallocate__voidP.uint32_tP"></span><span class="target" id="classpxarray_1a575c8f9cf84082dd23e814d59c83939c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">deallocate</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">mem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cookie</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray10deallocateEPvP8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray15growAndPushBackERK1T">
+<span id="_CPPv3N7PxArray15growAndPushBackERK1T"></span><span id="_CPPv2N7PxArray15growAndPushBackERK1T"></span><span id="PxArray::growAndPushBack__TCR"></span><span class="target" id="classpxarray_1a86ae3d7831b46966881a3d3425332530"></span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">growAndPushBack</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray15growAndPushBackERK1T" title="Link to this definition">#</a><br /></dt>
+<dd><p>Called when <a class="reference internal" href="classPxInlineArray.html#classpxarray_1a19aaff46c79e2799819450cdb3bbeba2"><span class="std std-ref">pushBack()</span></a> needs to grow the array. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>a</strong> – The element that will be added to this array. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pointer to the pushed element or NULL if the operation failed </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray4growE8uint32_t">
+<span id="_CPPv3N7PxArray4growE8uint32_t"></span><span id="_CPPv2N7PxArray4growE8uint32_t"></span><span id="PxArray::grow__uint32_t"></span><span class="target" id="classpxarray_1a5a3ae39231bab442c7dc99e1d7defc85"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">grow</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">capacity</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray4growE8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Resizes the available memory for the array. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>capacity</strong> – The number of entries that the array should be able to hold. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if operation succeeds, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray8recreateE8uint32_t">
+<span id="_CPPv3N7PxArray8recreateE8uint32_t"></span><span id="_CPPv2N7PxArray8recreateE8uint32_t"></span><span id="PxArray::recreate__uint32_t"></span><span class="target" id="classpxarray_1a300730868966c4f50564aee7af11d7f3"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">recreate</span></span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">capacity</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray8recreateE8uint32_t" title="Link to this definition">#</a><br /></dt>
+<dd><p>Creates a new memory block, copies all entries to the new block and destroys old entries. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>capacity</strong> – The number of entries that the array should be able to hold. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if operation succeeds, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7PxArray17capacityIncrementEv">
+<span id="_CPPv3NK7PxArray17capacityIncrementEv"></span><span id="_CPPv2NK7PxArray17capacityIncrementEv"></span><span id="PxArray::capacityIncrementC"></span><span class="target" id="classpxarray_1aec002e291543af40d098c19924af763d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">capacityIncrement</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7PxArray17capacityIncrementEv" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray5mDataE">
+<span id="_CPPv3N7PxArray5mDataE"></span><span id="_CPPv2N7PxArray5mDataE"></span><span id="PxArray::mData__TP"></span><span class="target" id="classpxarray_1afaec7f5b200c25da052195b67caa6ed5"></span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">mData</span></span></span><a class="headerlink" href="#_CPPv4N7PxArray5mDataE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray5mSizeE">
+<span id="_CPPv3N7PxArray5mSizeE"></span><span id="_CPPv2N7PxArray5mSizeE"></span><span id="PxArray::mSize__uint32_t"></span><span class="target" id="classpxarray_1a950cafbde38e9d3298301d4ded6ad360"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mSize</span></span></span><a class="headerlink" href="#_CPPv4N7PxArray5mSizeE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray9mCapacityE">
+<span id="_CPPv3N7PxArray9mCapacityE"></span><span id="_CPPv2N7PxArray9mCapacityE"></span><span id="PxArray::mCapacity__uint32_t"></span><span class="target" id="classpxarray_1a601fa428290a08d7597805a356625531"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mCapacity</span></span></span><a class="headerlink" href="#_CPPv4N7PxArray9mCapacityE" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-static-functions">Protected Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray6createEP1TP1TRK1T">
+<span id="_CPPv3N7PxArray6createEP1TP1TRK1T"></span><span id="_CPPv2N7PxArray6createEP1TP1TRK1T"></span><span id="PxArray::create__TP.TP.TCR"></span><span class="target" id="classpxarray_1a05751019cc411db8d021c7b9224cb985"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">create</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">first</span></span></em>, <em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">last</span></span></em>, <em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray6createEP1TP1TRK1T" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray4copyEP1TP1TPK1T">
+<span id="_CPPv3N7PxArray4copyEP1TP1TPK1T"></span><span id="_CPPv2N7PxArray4copyEP1TP1TPK1T"></span><span id="PxArray::copy__TP.TP.TCP"></span><span class="target" id="classpxarray_1ac8a058fe1404aede43d27a3fc5ecf242"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copy</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">first</span></span></em>, <em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">last</span></span></em>, <em class="sig-param"><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">src</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray4copyEP1TP1TPK1T" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxArray7destroyEP1TP1T">
+<span id="_CPPv3N7PxArray7destroyEP1TP1T"></span><span id="_CPPv2N7PxArray7destroyEP1TP1T"></span><span id="PxArray::destroy__TP.TP"></span><span class="target" id="classpxarray_1a3d35d02c4e333ea049556e26ffec9db5"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">destroy</span></span></span><span class="sig-paren">(</span><em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">first</span></span></em>, <em class="sig-param"><a class="reference internal" href="#_CPPv4I00E7PxArray" title="PxArray::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">last</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxArray7destroyEP1TP1T" title="Link to this definition">#</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="classPxAnisotropyGenerator.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PxAnisotropyGenerator</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="classPxArrayConverter.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">PxArrayConverter</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I00E7PxArray"><code class="docutils literal notranslate"><span class="pre">PxArray</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray8IteratorE"><code class="docutils literal notranslate"><span class="pre">Iterator</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray13ConstIteratorE"><code class="docutils literal notranslate"><span class="pre">ConstIterator</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray7PxArrayEK7PxEMPTY"><code class="docutils literal notranslate"><span class="pre">PxArray()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray7PxArrayERK5Alloc"><code class="docutils literal notranslate"><span class="pre">PxArray()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray7PxArrayE8uint32_tRK1TRK5Alloc"><code class="docutils literal notranslate"><span class="pre">PxArray()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN7PxArray7PxArrayERK7PxArrayI1T1AERK5Alloc"><code class="docutils literal notranslate"><span class="pre">PxArray()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray7PxArrayERK7PxArrayRK5Alloc"><code class="docutils literal notranslate"><span class="pre">PxArray()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray7PxArrayEPK1TPK1TRK5Alloc"><code class="docutils literal notranslate"><span class="pre">PxArray()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArrayD0Ev"><code class="docutils literal notranslate"><span class="pre">~PxArray()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN7PxArrayaSER7PxArrayRK7PxArrayI1T1AE"><code class="docutils literal notranslate"><span class="pre">operator=()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArrayaSERK7PxArray"><code class="docutils literal notranslate"><span class="pre">operator=()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxArrayixE8uint32_t"><code class="docutils literal notranslate"><span class="pre">operator[]()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArrayixE8uint32_t"><code class="docutils literal notranslate"><span class="pre">operator[]()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxArray5beginEv"><code class="docutils literal notranslate"><span class="pre">begin()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray5beginEv"><code class="docutils literal notranslate"><span class="pre">begin()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxArray3endEv"><code class="docutils literal notranslate"><span class="pre">end()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray3endEv"><code class="docutils literal notranslate"><span class="pre">end()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxArray5frontEv"><code class="docutils literal notranslate"><span class="pre">front()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray5frontEv"><code class="docutils literal notranslate"><span class="pre">front()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxArray4backEv"><code class="docutils literal notranslate"><span class="pre">back()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray4backEv"><code class="docutils literal notranslate"><span class="pre">back()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxArray4sizeEv"><code class="docutils literal notranslate"><span class="pre">size()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray5clearEv"><code class="docutils literal notranslate"><span class="pre">clear()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxArray5emptyEv"><code class="docutils literal notranslate"><span class="pre">empty()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray4findERK1T"><code class="docutils literal notranslate"><span class="pre">find()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxArray4findERK1T"><code class="docutils literal notranslate"><span class="pre">find()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray8pushBackERK1T"><code class="docutils literal notranslate"><span class="pre">pushBack()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray7popBackEv"><code class="docutils literal notranslate"><span class="pre">popBack()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray6insertEv"><code class="docutils literal notranslate"><span class="pre">insert()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray15replaceWithLastE8uint32_t"><code class="docutils literal notranslate"><span class="pre">replaceWithLast()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray15replaceWithLastE8Iterator"><code class="docutils literal notranslate"><span class="pre">replaceWithLast()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray22findAndReplaceWithLastERK1T"><code class="docutils literal notranslate"><span class="pre">findAndReplaceWithLast()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray6removeE8uint32_t"><code class="docutils literal notranslate"><span class="pre">remove()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray11removeRangeE8uint32_t8uint32_t"><code class="docutils literal notranslate"><span class="pre">removeRange()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray6resizeEK8uint32_tRK1T"><code class="docutils literal notranslate"><span class="pre">resize()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray19resizeUninitializedEK8uint32_t"><code class="docutils literal notranslate"><span class="pre">resizeUninitialized()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray6shrinkEv"><code class="docutils literal notranslate"><span class="pre">shrink()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray5resetEv"><code class="docutils literal notranslate"><span class="pre">reset()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray12resetOrClearEv"><code class="docutils literal notranslate"><span class="pre">resetOrClear()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray7reserveEK8uint32_t"><code class="docutils literal notranslate"><span class="pre">reserve()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxArray8capacityEv"><code class="docutils literal notranslate"><span class="pre">capacity()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray16forceSize_UnsafeE8uint32_t"><code class="docutils literal notranslate"><span class="pre">forceSize_Unsafe()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray4swapER7PxArrayI1T5AllocE"><code class="docutils literal notranslate"><span class="pre">swap()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray6assignEPK1TPK1T"><code class="docutils literal notranslate"><span class="pre">assign()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxArray14isInUserMemoryEv"><code class="docutils literal notranslate"><span class="pre">isInUserMemory()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray12getAllocatorEv"><code class="docutils literal notranslate"><span class="pre">getAllocator()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray7PxArrayEP1T8uint32_t8uint32_tRK5Alloc"><code class="docutils literal notranslate"><span class="pre">PxArray()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4I0EN7PxArray4copyEvRK7PxArrayI1T1AE"><code class="docutils literal notranslate"><span class="pre">copy()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray8allocateE8uint32_tP8uint32_t"><code class="docutils literal notranslate"><span class="pre">allocate()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray10deallocateEPvP8uint32_t"><code class="docutils literal notranslate"><span class="pre">deallocate()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray15growAndPushBackERK1T"><code class="docutils literal notranslate"><span class="pre">growAndPushBack()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray4growE8uint32_t"><code class="docutils literal notranslate"><span class="pre">grow()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray8recreateE8uint32_t"><code class="docutils literal notranslate"><span class="pre">recreate()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4NK7PxArray17capacityIncrementEv"><code class="docutils literal notranslate"><span class="pre">capacityIncrement()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray5mDataE"><code class="docutils literal notranslate"><span class="pre">mData</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray5mSizeE"><code class="docutils literal notranslate"><span class="pre">mSize</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray9mCapacityE"><code class="docutils literal notranslate"><span class="pre">mCapacity</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray6createEP1TP1TRK1T"><code class="docutils literal notranslate"><span class="pre">create()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray4copyEP1TP1TPK1T"><code class="docutils literal notranslate"><span class="pre">copy()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#_CPPv4N7PxArray7destroyEP1TP1T"><code class="docutils literal notranslate"><span class="pre">destroy()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2022-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on May 18, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
