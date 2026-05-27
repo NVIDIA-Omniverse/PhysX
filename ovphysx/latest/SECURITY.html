@@ -9,7 +9,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>ovphysx &#8212; ovphysx SDK</title>
+    <title>Security &#8212; ovphysx SDK</title>
   
   
   
@@ -53,7 +53,7 @@
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="_static/copybutton.js?v=65e89d2a"></script>
     <script src="_static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'SECURITY';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
@@ -68,7 +68,7 @@
 
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="ovphysx Overview" href="ovphysx_overview.html" />
+    <link rel="prev" title="C API Reference" href="api.html" />
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -138,7 +138,7 @@
     
   
 
-<a class="navbar-brand logo" href="#">
+<a class="navbar-brand logo" href="index.html">
   
   
   
@@ -337,7 +337,7 @@
     
   
 
-<a class="navbar-brand logo" href="#">
+<a class="navbar-brand logo" href="index.html">
   
   
   
@@ -525,8 +525,8 @@
 <li class="toctree-l1"><a class="reference internal" href="api.html">C API Reference</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security</a></li>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Security</a></li>
 </ul>
 </div>
 </nav></div>
@@ -546,7 +546,31 @@
           <div class="bd-content">
             <div class="bd-article-container">
               
-              <div class="bd-header-article d-print-none"></div>
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Security</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
               
               
               
@@ -554,63 +578,32 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="ovphysx">
-<h1>ovphysx<a class="headerlink" href="#ovphysx" title="Link to this heading">#</a></h1>
-<p>ovphysx is a self-contained library package offering the PhysX SDK and Omni PhysX capabilities behind a C API and corresponding Python bindings for inclusion in user applications.
-It loads USD scenes, runs simulation, and allows reading and writing simulation data with DLPack interoperability.</p>
-<p>To get started, see the <a class="reference internal" href="tutorials/quickstart.html"><span class="std std-doc">Quickstart</span></a>.</p>
-<blockquote>
-<div><p><strong>Note</strong></p>
+  <section id="security">
+<h1>Security<a class="headerlink" href="#security" title="Link to this heading">#</a></h1>
+<p>NVIDIA is dedicated to the security and trust of our software products and services, including all source code repositories managed through our organization.</p>
+<p>If you need to report a security issue, please use the appropriate contact points outlined below. <strong>Please do not report security vulnerabilities through GitHub.</strong></p>
+<section id="reporting-potential-security-vulnerability-in-an-nvidia-product">
+<h2>Reporting Potential Security Vulnerability in an NVIDIA Product<a class="headerlink" href="#reporting-potential-security-vulnerability-in-an-nvidia-product" title="Link to this heading">#</a></h2>
+<p>To report a potential security vulnerability in any NVIDIA product:</p>
 <ul class="simple">
-<li><p><strong>Maturity</strong>: ovphysx is pre-release software and not yet mature.</p></li>
-<li><p><strong>USD coexistence</strong>: ovphysx ships an OV namespaced monolithic OpenUSD runtime. It can reuse an already-loaded compatible OV namespaced USD runtime from another OV library, but it does not treat a classic <code class="docutils literal notranslate"><span class="pre">usd-core</span></code> or host USD import as its runtime. In mixed OV processes, register each subsystem’s schema paths before the first USD stage open or schema-registry access.</p></li>
-<li><p><strong>API stability</strong>: Parts of the API are still being completed and may change before 1.0.</p></li>
-</ul>
-</div></blockquote>
-<p>ovphysx packages the Omni PhysX runtime (providing in particular USD-aware simulation and tensorized data access) on top of the PhysX SDK.
-The dependency stack is: PhysX SDK → omni.physx (Omniverse integration) → ovphysx (standalone C/Python SDK).</p>
-<p>The source repository of ovphysx can be found at <a class="reference external" href="https://github.com/NVIDIA-Omniverse/PhysX/">https://github.com/NVIDIA-Omniverse/PhysX/</a>.</p>
-<p>External references of contained functionality:</p>
-<ul class="simple">
-<li><p><a class="reference external" href="https://docs.omniverse.nvidia.com/kit/docs/omni_physics/latest/index.html">Omni PhysX User Guide</a></p></li>
-<li><p><a class="reference external" href="https://nvidia-omniverse.github.io/PhysX/">PhysX SDK Documentation</a></p></li>
-</ul>
-<section id="table-of-contents">
-<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">#</a></h2>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<li><p>Web: <a class="reference external" href="https://www.nvidia.com/object/submit-security-vulnerability.html">Security Vulnerability Submission Form</a></p></li>
+<li><p>E-Mail: psirt&#64;nvidia.com</p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li><p>We encourage you to use the following PGP key for secure email communication: <a class="reference external" href="https://www.nvidia.com/en-us/security/pgp-key">NVIDIA public PGP Key for communication</a></p></li>
+<li><p>Please include the following information:</p></li>
+<li><p>Product/Driver name and version/branch that contains the vulnerability</p></li>
+<li><p>Type of vulnerability (code execution, denial of service, buffer overflow, etc.)</p></li>
+<li><p>Instructions to reproduce the vulnerability</p></li>
+<li><p>Proof-of-concept or exploit code</p></li>
+<li><p>Potential impact of the vulnerability, including how an attacker could exploit the vulnerability</p></li>
 </ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/hello_world.html">Hello World: Load USD and Step</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/cloning.html">Cloning: Replicate Environments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording: Capture Physics Internals to .ovd</a></li>
+</li>
 </ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">C API Reference</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security</a></li>
-</ul>
-</div>
+<p>While NVIDIA currently does not have a bug bounty program, we do offer acknowledgement when an externally reported security issue is addressed under our coordinated vulnerability disclosure policy. Please visit our <a class="reference external" href="https://www.nvidia.com/en-us/security/psirt-policies/">Product Security Incident Response Team (PSIRT)</a> policies page for more information.</p>
+</section>
+<section id="nvidia-product-security">
+<h2>NVIDIA Product Security<a class="headerlink" href="#nvidia-product-security" title="Link to this heading">#</a></h2>
+<p>For all security-related concerns, please visit NVIDIA’s Product Security portal at https://www.nvidia.com/en-us/security</p>
 </section>
 </section>
 
@@ -624,14 +617,14 @@ The dependency stack is: PhysX SDK → omni.physx (Omniverse integration) → ov
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
-    <a class="right-next"
-       href="ovphysx_overview.html"
-       title="next page">
+    <a class="left-prev"
+       href="api.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">ovphysx Overview</p>
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">C API Reference</p>
       </div>
-      <i class="fa-solid fa-angle-right"></i>
     </a>
 </div>
                 </footer>
@@ -654,9 +647,8 @@ The dependency stack is: PhysX SDK → omni.physx (Omniverse integration) → ov
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#table-of-contents">Table of Contents</a><ul class="nav section-nav flex-column">
-</ul>
-</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reporting-potential-security-vulnerability-in-an-nvidia-product">Reporting Potential Security Vulnerability in an NVIDIA Product</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#nvidia-product-security">NVIDIA Product Security</a></li>
 </ul>
   </nav></div>
 

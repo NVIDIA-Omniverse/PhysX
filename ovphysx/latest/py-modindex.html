@@ -7,9 +7,8 @@
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <title>ovphysx &#8212; ovphysx SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Python Module Index &#8212; ovphysx SDK</title>
   
   
   
@@ -53,7 +52,7 @@
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="_static/copybutton.js?v=65e89d2a"></script>
     <script src="_static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'py-modindex';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
@@ -68,7 +67,7 @@
 
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="ovphysx Overview" href="ovphysx_overview.html" />
+
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -81,6 +80,8 @@
     <script src="_static/language_data.js"></script>
     <script src="searchindex.js"></script>
   
+
+
 
 
   </head>
@@ -138,7 +139,7 @@
     
   
 
-<a class="navbar-brand logo" href="#">
+<a class="navbar-brand logo" href="index.html">
   
   
   
@@ -313,10 +314,6 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
-      <span class="fa-solid fa-outdent"></span>
-    </button>
-  
 </div>
 
     </header>
@@ -337,7 +334,7 @@
     
   
 
-<a class="navbar-brand logo" href="#">
+<a class="navbar-brand logo" href="index.html">
   
   
   
@@ -554,65 +551,49 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="ovphysx">
-<h1>ovphysx<a class="headerlink" href="#ovphysx" title="Link to this heading">#</a></h1>
-<p>ovphysx is a self-contained library package offering the PhysX SDK and Omni PhysX capabilities behind a C API and corresponding Python bindings for inclusion in user applications.
-It loads USD scenes, runs simulation, and allows reading and writing simulation data with DLPack interoperability.</p>
-<p>To get started, see the <a class="reference internal" href="tutorials/quickstart.html"><span class="std std-doc">Quickstart</span></a>.</p>
-<blockquote>
-<div><p><strong>Note</strong></p>
-<ul class="simple">
-<li><p><strong>Maturity</strong>: ovphysx is pre-release software and not yet mature.</p></li>
-<li><p><strong>USD coexistence</strong>: ovphysx ships an OV namespaced monolithic OpenUSD runtime. It can reuse an already-loaded compatible OV namespaced USD runtime from another OV library, but it does not treat a classic <code class="docutils literal notranslate"><span class="pre">usd-core</span></code> or host USD import as its runtime. In mixed OV processes, register each subsystem’s schema paths before the first USD stage open or schema-registry access.</p></li>
-<li><p><strong>API stability</strong>: Parts of the API are still being completed and may change before 1.0.</p></li>
-</ul>
-</div></blockquote>
-<p>ovphysx packages the Omni PhysX runtime (providing in particular USD-aware simulation and tensorized data access) on top of the PhysX SDK.
-The dependency stack is: PhysX SDK → omni.physx (Omniverse integration) → ovphysx (standalone C/Python SDK).</p>
-<p>The source repository of ovphysx can be found at <a class="reference external" href="https://github.com/NVIDIA-Omniverse/PhysX/">https://github.com/NVIDIA-Omniverse/PhysX/</a>.</p>
-<p>External references of contained functionality:</p>
-<ul class="simple">
-<li><p><a class="reference external" href="https://docs.omniverse.nvidia.com/kit/docs/omni_physics/latest/index.html">Omni PhysX User Guide</a></p></li>
-<li><p><a class="reference external" href="https://nvidia-omniverse.github.io/PhysX/">PhysX SDK Documentation</a></p></li>
-</ul>
-<section id="table-of-contents">
-<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">#</a></h2>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/hello_world.html">Hello World: Load USD and Step</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/cloning.html">Cloning: Replicate Environments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording: Capture Physics Internals to .ovd</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">C API Reference</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security</a></li>
-</ul>
-</div>
-</section>
-</section>
+
+   <h1>Python Module Index</h1>
+
+   <div class="modindex-jumpbox">
+   <a href="#cap-o"><strong>o</strong></a>
+   </div>
+
+   <table class="indextable modindextable">
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-o"><td></td><td>
+       <strong>o</strong></td><td></td></tr>
+     <tr>
+       <td><img src="_static/minus.png" class="toggler"
+              id="toggle-1" style="display: none" alt="-" /></td>
+       <td>
+       <code class="xref">ovphysx</code></td><td>
+       <em></em></td></tr>
+     <tr class="cg-1">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="python_api.html#module-ovphysx.api"><code class="xref">ovphysx.api</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-1">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="python_api.html#module-ovphysx.config"><code class="xref">ovphysx.config</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-1">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="python_api.html#module-ovphysx.contact_types"><code class="xref">ovphysx.contact_types</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-1">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="python_api.html#module-ovphysx.dlpack"><code class="xref">ovphysx.dlpack</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-1">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="python_api.html#module-ovphysx.types"><code class="xref">ovphysx.types</code></a></td><td>
+       <em></em></td></tr>
+   </table>
 
 
                 </article>
@@ -624,15 +605,6 @@ The dependency stack is: PhysX SDK → omni.physx (Omniverse integration) → ov
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
-    <a class="right-next"
-       href="ovphysx_overview.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">ovphysx Overview</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
-    </a>
 </div>
                 </footer>
               
@@ -640,27 +612,9 @@ The dependency stack is: PhysX SDK → omni.physx (Omniverse integration) → ov
             
             
 
-
-              
-                <dialog id="pst-secondary-sidebar-modal"></dialog>
-                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+<div class="bd-sidebar-secondary"></div>
 
 
-  <div class="sidebar-secondary-item">
-<div
-    id="pst-page-navigation-heading-2"
-    class="page-toc tocsection onthispage">
-    <i class="fa-solid fa-list"></i> On this page
-  </div>
-  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
-    <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#table-of-contents">Table of Contents</a><ul class="nav section-nav flex-column">
-</ul>
-</li>
-</ul>
-  </nav></div>
-
-</div></div>
               
             
 

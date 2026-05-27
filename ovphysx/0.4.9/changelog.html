@@ -1,0 +1,853 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Changelog &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="_static/modal-table.js"></script>
+    <script src="_static/documentation_options.js?v=81270f23"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=65e89d2a"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'changelog';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.4.9';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quickstart" href="tutorials/quickstart.html" />
+    <link rel="prev" title="Developer Guide" href="developer_guide.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="May 28, 2026"/>
+  
+    
+    <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/hello_world.html">Hello World: Load USD and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/cloning.html">Cloning: Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording: Capture Physics Internals to .ovd</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Changelog</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">#</a></h1>
+<p>All notable changes to <code class="docutils literal notranslate"><span class="pre">ovphysx</span></code> are documented in this file.</p>
+<section id="id1">
+<h2>[0.4] - 2026-05-27<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<section id="breaking-changes">
+<h3>Breaking Changes<a class="headerlink" href="#breaking-changes" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">gpu_index</span></code> replaced by <code class="docutils literal notranslate"><span class="pre">active_cuda_gpus</span></code> on <code class="docutils literal notranslate"><span class="pre">ovphysx_create_args</span></code>.</strong> The <code class="docutils literal notranslate"><span class="pre">int32_t</span> <span class="pre">gpu_index</span></code> field is removed. Use <code class="docutils literal notranslate"><span class="pre">ovphysx_string_t</span> <span class="pre">active_cuda_gpus</span></code> instead: a comma-separated string of CUDA device ordinals. Single-GPU usage: <code class="docutils literal notranslate"><span class="pre">args.active_cuda_gpus</span> <span class="pre">=</span> <span class="pre">ovphysx_cstr(&quot;2&quot;)</span></code> (C), <code class="docutils literal notranslate"><span class="pre">PhysX(active_cuda_gpus=&quot;2&quot;)</span></code> (Python), <code class="docutils literal notranslate"><span class="pre">createArgs.setActiveCudaGpus(&quot;2&quot;)</span></code> (C++). Default (empty) selects GPU 0, matching the old <code class="docutils literal notranslate"><span class="pre">gpu_index=0</span></code> default. Multi-GPU patterns <code class="docutils literal notranslate"><span class="pre">&quot;0,1,...,N-1&quot;</span></code> (all GPUs, round-robin) and <code class="docutils literal notranslate"><span class="pre">&quot;1,2,...,N-1&quot;</span></code> (all except first) are now supported. The C++ <code class="docutils literal notranslate"><span class="pre">CreateArgs::setGpuIndex(int32_t)</span></code> is replaced by <code class="docutils literal notranslate"><span class="pre">setActiveCudaGpus(const</span> <span class="pre">std::string&amp;)</span></code>.</p></li>
+<li><p><strong>Pre-loaded Carbonite PhysX stacks are rejected.</strong> ovphysx can share a process with other OV libraries through namespaced USD reuse, but it no longer reuses a pre-existing <code class="docutils literal notranslate"><span class="pre">omni.physx.plugin</span></code> / <code class="docutils literal notranslate"><span class="pre">IPhysxSimulation</span></code> stack. If another Carbonite user already registered PhysX plugins before <code class="docutils literal notranslate"><span class="pre">ovphysx_create_instance()</span></code>, creation fails with a clear error. Conflicting pre-set <code class="docutils literal notranslate"><span class="pre">/physics/cudaDevice</span></code> or <code class="docutils literal notranslate"><span class="pre">/physics/suppressReadback</span></code> values now fail instead of being silently accepted.</p></li>
+<li><p><strong>DirectGPU mode is now opt-in instead of auto-enabled for GPU instances.</strong> Previously, <code class="docutils literal notranslate"><span class="pre">ovphysx_create_instance(device=GPU)</span></code> unconditionally set <code class="docutils literal notranslate"><span class="pre">/physics/suppressReadback=true</span></code> and <code class="docutils literal notranslate"><span class="pre">/physics/suppressFabricUpdate=true</span></code> (via two paths: a startup-time <code class="docutils literal notranslate"><span class="pre">CarboniteLoader::setStartupSuppressReadback</span></code> write before PhysX plugins loaded, and a per-instance write at GPU bootstrap), which routes PhysX into <code class="docutils literal notranslate"><span class="pre">eENABLE_DIRECT_GPU_API</span></code> mode. DirectGPU is incompatible with contact modification (per PhysX SDK guidance: contact-modify requires a CPU roundtrip), so any scene relying on <code class="docutils literal notranslate"><span class="pre">eMODIFY_CONTACTS</span></code> – including the surface-velocity / conveyor pattern, custom contact callbacks, and contact-shaping filter rules – silently failed to form kinematic-vs-dynamic broadphase pairs in GPU mode. <strong>Both</strong> write paths are removed: ovphysx no longer touches <code class="docutils literal notranslate"><span class="pre">/physics/suppressReadback</span></code> or <code class="docutils literal notranslate"><span class="pre">/physics/suppressFabricUpdate</span></code> at any point in its lifecycle. The previously-public <code class="docutils literal notranslate"><span class="pre">CarboniteLoader::setStartupSuppressReadback</span></code> static method is removed (internal API; no public callers). Hosts that want DirectGPU’s tensor-pipeline performance (e.g. Isaac Lab) opt in by either (a) setting <code class="docutils literal notranslate"><span class="pre">/physics/suppressReadback=true</span></code> via Carbonite settings <em>before</em> <code class="docutils literal notranslate"><span class="pre">ovphysx_create_instance</span></code> if they have direct ISettings access, or (b) passing <code class="docutils literal notranslate"><span class="pre">ovphysx_config_entry_carbonite(&quot;/physics/suppressReadback&quot;,</span> <span class="pre">&quot;true&quot;)</span></code> in <code class="docutils literal notranslate"><span class="pre">create_args.config_entries</span></code> (Python: <code class="docutils literal notranslate"><span class="pre">PhysXConfig(carbonite_overrides={&quot;/physics/suppressReadback&quot;:</span> <span class="pre">True})</span></code>). At startup ovphysx now logs a <code class="docutils literal notranslate"><span class="pre">[CarboniteLoader]</span> <span class="pre">/physics/suppressReadback=...</span></code> INFO line so misconfigurations are visible. See <code class="docutils literal notranslate"><span class="pre">ovphysx_create_args</span></code> in <a class="reference download internal" download="" href="_downloads/27d649e8afcaadd358fbe2108bab57a9/ovphysx_types.h"><span class="xref download myst"><code class="docutils literal notranslate"><span class="pre">include/ovphysx/ovphysx_types.h</span></code></span></a> for the full trade-off documentation. <strong>Migration:</strong> GPU users who relied on suppressReadback being auto-enabled must set it explicitly via one of the routes above. <strong>Perf note:</strong> DirectGPU is the faster simulation path for tensor-pipeline workloads, so existing GPU consumers will see slower per-step times until they opt in – the change here is correctness (contact-modify scenes now work in GPU mode), not a perf regression of the new default. Users who need contact-modify in GPU mode now get correct behavior with no code change.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ovphysx</span></code>’s Python <code class="docutils literal notranslate"><span class="pre">import</span></code> now auto-registers ovphysx’s namespaced USD schema/plugin path</strong> by appending it to <code class="docutils literal notranslate"><span class="pre">OV_PXR_PLUGINPATH_2511</span></code> once at module load. Eliminates a class of silent-schema-drop bugs in mixed-process apps (<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">ovphysx;</span> <span class="pre">import</span> <span class="pre">ovrtx</span></code> or vice versa) where USD’s <code class="docutils literal notranslate"><span class="pre">PlugRegistry</span></code> is populated lazily on first stage open and never re-scans, so any subsystem that didn’t get its plugin path published <em>before that moment</em> has its applied schemas silently dropped. The implicit registration in <code class="docutils literal notranslate"><span class="pre">CarboniteLoader</span></code> continues to cover the ovphysx-only-in-process case; this Python-side change is purely additive. The auto-call is pure-Python (env-var append only) and does not trigger native loading – libcarb / USD / <code class="docutils literal notranslate"><span class="pre">_bindings</span></code> remain deferred to first native-attribute access (<code class="docutils literal notranslate"><span class="pre">PhysX</span></code>, <code class="docutils literal notranslate"><span class="pre">ContactBinding</span></code>, …). Failures (e.g. partially-installed checkout with no <code class="docutils literal notranslate"><span class="pre">plugins/usd</span></code> directory) are surfaced as a logged warning rather than raised so <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">ovphysx</span></code> does not hard-fail. The existing public <code class="docutils literal notranslate"><span class="pre">register_schema_paths()</span></code> is unchanged and remains idempotent (already-called guard); apps that called it explicitly continue to work and the explicit call becomes a cheap no-op on success. C/C++ apps are unaffected – still use <code class="docutils literal notranslate"><span class="pre">ovphysx_register_schema_paths()</span></code> explicitly. <strong>Migration:</strong> none required. Apps that need an env-var-pure import can <code class="docutils literal notranslate"><span class="pre">os.environ.pop(&quot;OV_PXR_PLUGINPATH_2511&quot;)</span></code> after <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">ovphysx</span></code>.</p></li>
+</ul>
+</section>
+<section id="added">
+<h3>Added<a class="headerlink" href="#added" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Clone events from <code class="docutils literal notranslate"><span class="pre">ovstage_clone_subtree()</span></code> are consumed by ovphysx during step ingest.</strong> When an ovstage Stage is attached, <code class="docutils literal notranslate"><span class="pre">physx.step()</span></code> consumes <code class="docutils literal notranslate"><span class="pre">OVSTAGE_EVENT_CLONE</span></code> events surfaced by <code class="docutils literal notranslate"><span class="pre">ovstage_query_changes()</span></code> and drives PhysX-side replication via the clone plugin — same plugin the existing <code class="docutils literal notranslate"><span class="pre">ovphysx_clone()</span></code> entrypoint calls, just routed through ovstage instead of an explicit C / Python call. The standalone clone APIs (<code class="docutils literal notranslate"><span class="pre">ovphysx_clone()</span></code> C, <code class="docutils literal notranslate"><span class="pre">PhysX::clone()</span></code> C++, <code class="docutils literal notranslate"><span class="pre">PhysX.clone()</span></code> Python) remain fully supported for callers that don’t have an attached Stage or that want the async multi-target convenience; both paths funnel into the same <code class="docutils literal notranslate"><span class="pre">ovphysx_clone_replicate_internal</span></code> helper. <strong>Known limitation:</strong> clones that arrive <em>after</em> the bridge’s first successful <code class="docutils literal notranslate"><span class="pre">publish_outbound</span></code> (i.e. once <code class="docutils literal notranslate"><span class="pre">ensure_publish_initialized</span></code> has bound a non-zero <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_POSE</span></code> prim list) simulate on the PhysX side but their poses are NOT published back to ovstage — the publish prim list is frozen at first publish. Issue a <code class="docutils literal notranslate"><span class="pre">[OvstageBridge]</span> <span class="pre">clone-after-publish:</span></code> warning per affected target identifies this case in logs. Workarounds: clone everything before the first non-empty <code class="docutils literal notranslate"><span class="pre">physx.step()</span></code>, or detach + re-attach the stage to rebuild the publish bindings. Refresh-on-clone is tracked as a follow-up because it requires <code class="docutils literal notranslate"><span class="pre">ovstage_unregister_consumer</span></code> + re-registration through the bridge state machine.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ovphysx_attach_stage()</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx_detach_stage()</span></code> for ovstage consumer integration.</strong> Pair an <code class="docutils literal notranslate"><span class="pre">ovstage_instance_t*</span></code> with an ovphysx instance and <code class="docutils literal notranslate"><span class="pre">physx.step()</span></code> becomes the canonical “consume control attributes from ovstage and publish poses back” step: the OvstageBridge pulls dirty <code class="docutils literal notranslate"><span class="pre">drive:force</span></code>, <code class="docutils literal notranslate"><span class="pre">physics:mass</span></code>, <code class="docutils literal notranslate"><span class="pre">drive:velocity</span></code>, <code class="docutils literal notranslate"><span class="pre">drive:position_target</span></code> (Tensor route), <code class="docutils literal notranslate"><span class="pre">physxSurfaceVelocity:surfaceVelocity</span></code>, <code class="docutils literal notranslate"><span class="pre">physics:gravityMagnitude</span></code>, <code class="docutils literal notranslate"><span class="pre">physics:gravityDirection</span></code> (Fabric route), and clone events (<code class="docutils literal notranslate"><span class="pre">ovstage_query_changes</span></code>) ahead of integrate; after <code class="docutils literal notranslate"><span class="pre">fetchResults</span></code> it publishes <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_POSE</span></code> as <code class="docutils literal notranslate"><span class="pre">xformOp:transform</span></code> (float64 row-major mat4) to ovstage’s output-buffer contract. Init-only attach (rejects re-attach with <code class="docutils literal notranslate"><span class="pre">OVPHYSX_API_ERROR</span></code>); idempotent detach. Python: <code class="docutils literal notranslate"><span class="pre">PhysX.attach_stage(stage)</span></code> auto-unwraps via <code class="docutils literal notranslate"><span class="pre">Stage.handle()</span></code>.</p></li>
+<li><p><strong>Cross-device staged reads AND writes in <code class="docutils literal notranslate"><span class="pre">ovphysx_read_tensor_binding</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx_write_tensor_binding</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx_write_tensor_binding_masked</span></code>.</strong> A CPU-declared <code class="docutils literal notranslate"><span class="pre">src</span></code>/<code class="docutils literal notranslate"><span class="pre">dst</span></code>/<code class="docutils literal notranslate"><span class="pre">mask</span></code>/<code class="docutils literal notranslate"><span class="pre">index</span></code> tensor now works against a GPU-bound binding, and a GPU-declared tensor works against a CPU-bound binding: the call transparently allocates a staging buffer on the binding’s device (or host) and routes through <code class="docutils literal notranslate"><span class="pre">IOptionalCuda::memcpyDtoH</span></code> / <code class="docutils literal notranslate"><span class="pre">memcpyHtoD</span></code>. Reads stage-and-copy after the simView read; writes copy-and-stage before the simView write. Same-device combinations are unchanged. Cross-GPU (different ordinals) still returns <code class="docutils literal notranslate"><span class="pre">OVPHYSX_API_DEVICE_MISMATCH</span></code>.</p></li>
+<li><p><strong>Schema path pre-registration API for multi-subsystem USD processes.</strong> New C API <code class="docutils literal notranslate"><span class="pre">ovphysx_register_schema_paths()</span></code> and Python helper <code class="docutils literal notranslate"><span class="pre">ovphysx.register_schema_paths()</span></code> append ovphysx’s namespaced USD schema/plugin root to <code class="docutils literal notranslate"><span class="pre">OV_PXR_PLUGINPATH_2511</span></code> before ovphysx initialization. Use this with peer subsystem equivalents such as <code class="docutils literal notranslate"><span class="pre">ovrtx_register_schema_paths()</span></code> before the first USD stage open or schema-registry access.</p></li>
+<li><p><strong>Safer behavior when loading into a process with another Carbonite-owning library.</strong> Previously, ovphysx would blindly load its own USD-dependent plugin stack on top of any framework already bootstrapped in the process. <code class="docutils literal notranslate"><span class="pre">loadUsdDependentPlugins</span></code>’ <code class="docutils literal notranslate"><span class="pre">usdrt::population::IUtils</span></code>-availability guard is now narrowed to fire only in full-host mode (Kit / Isaac Sim, i.e. <code class="docutils literal notranslate"><span class="pre">IPhysxSimulation</span></code> already registered) rather than any-usdrt-user, so partial hosts that provide <code class="docutils literal notranslate"><span class="pre">IUtils</span></code> but not the physics-schema plugins now trigger ovphysx’s own <code class="docutils literal notranslate"><span class="pre">omni.usdphysics.plugin</span></code> load instead of silently skipping it. In-process coexistence remains subject to ABI compatibility of the shared deps that both libraries link against (Fabric interface version, Carbonite version, USD build-package); when those don’t line up, the new drift diagnostics (see <code class="docutils literal notranslate"><span class="pre">OVPHYSX_COEXIST_DIAGNOSTICS</span></code> and <code class="docutils literal notranslate"><span class="pre">config.toml</span> <span class="pre">build_package</span></code> below, plus the refuse-branch in <code class="docutils literal notranslate"><span class="pre">CarboniteLoader::initialize()</span></code> under <em>Changed or Fixed</em>) convert the failure into a named, actionable error instead of a silent plugin-resolution cascade.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">OVPHYSX_COEXIST_DIAGNOSTICS=1</span></code> diagnostic env var.</strong> Set to enable stderr-only diagnostic logging of the plugin-load and Fabric-acquire paths inside <code class="docutils literal notranslate"><span class="pre">ovphysx_create_instance</span></code> – useful when triaging a “Dependency: [omni::physics::schema::IUsdPhysics v1.1] failed to be resolved” cascade or “Fabric interfaces unavailable” error in a coexistence context. Logs the Framework pointer, plugin-registry contents, <code class="docutils literal notranslate"><span class="pre">omni.physicsschema.plugin</span></code> registration state, and the Fabric interface-version list as seen by ovphysx. Unset: no behavior change.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">OVPHYSX_COEXIST_REFUSE=1</span></code> opt-out env var.</strong> Restores the legacy fail-fast-at-load behavior for users who would rather not attempt coexistence with another Carbonite-owning library. With the default coexistence flip (see <em>Changed or Fixed</em> below), <code class="docutils literal notranslate"><span class="pre">OVPHYSX_COEXIST_REFUSE=1</span></code> is the explicit off-ramp: ovphysx detects a foreign Carbonite framework and refuses to initialize with a sharp error message instead of proceeding. Default unset: ovphysx proceeds with coexistence and lets per-phase interface probes name any version skew at the failing plugin.</p></li>
+<li><p><strong>Per-phase plugin-interface probes after <code class="docutils literal notranslate"><span class="pre">loadPlugins()</span></code>.</strong> <code class="docutils literal notranslate"><span class="pre">CarboniteLoader::initialize()</span></code> now runs <code class="docutils literal notranslate"><span class="pre">tryAcquireInterface&lt;&gt;</span></code> against the primary interface of each plugin loaded in the foundation and early-PhysX phases (<code class="docutils literal notranslate"><span class="pre">carb.dictionary</span></code>, <code class="docutils literal notranslate"><span class="pre">carb.settings</span></code>, <code class="docutils literal notranslate"><span class="pre">carb.tokens</span></code>, <code class="docutils literal notranslate"><span class="pre">carb.tasking</span></code>, <code class="docutils literal notranslate"><span class="pre">carb.filesystem</span></code>, <code class="docutils literal notranslate"><span class="pre">omni.physx.foundation</span></code>). If any returns null – because a foreign-host plugin advertises an incompatible major/minor or because the plugin failed to load – ovphysx fails fast with a single error line that names every plugin that did not satisfy ovphysx’s expected interface version. Standalone ovphysx is unaffected. The probe converts what was previously an opaque <code class="docutils literal notranslate"><span class="pre">nullptr</span></code> cascade two layers down into a named, actionable error at load time, mirroring the existing <code class="docutils literal notranslate"><span class="pre">UsdVersionCheck</span></code> pattern for USD.</p></li>
+<li><p><strong>USD build-package drift diagnostic in <code class="docutils literal notranslate"><span class="pre">config.toml</span></code>.</strong> <code class="docutils literal notranslate"><span class="pre">config.toml</span></code> now records the exact USD packman package identifier ovphysx was linked against (e.g. <code class="docutils literal notranslate"><span class="pre">build_package</span> <span class="pre">=</span> <span class="pre">&quot;0.25.11.kit.2-gl.19811&quot;</span></code>, auto-populated at build time from the resolved <code class="docutils literal notranslate"><span class="pre">_build/target-deps/usd/release</span></code> symlink). At runtime, <code class="docutils literal notranslate"><span class="pre">UsdVersionCheck</span></code> resolves the loaded USD’s canonical path, extracts its packman id, and compares. If the two differ – e.g. ovphysx built against <code class="docutils literal notranslate"><span class="pre">0.25.11.kit.2</span></code> but another library preloaded <code class="docutils literal notranslate"><span class="pre">0.25.11.kit.1</span></code> – a single warning line names both ids and points at Carbonite-plugin-resolution failure as the probable downstream symptom. Same-build case is silent.</p></li>
+<li><p><strong>New <code class="docutils literal notranslate"><span class="pre">--devschema</span></code> flag</strong> forwards to ovruntime for local physics schema builds.</p></li>
+<li><p><strong>Multi-GPU scene distribution.</strong> Pass <code class="docutils literal notranslate"><span class="pre">active_cuda_gpus=&quot;0,1,2&quot;</span></code> (all N GPUs) or <code class="docutils literal notranslate"><span class="pre">active_cuda_gpus=&quot;1,2&quot;</span></code> (all except GPU 0) to distribute scenes round-robin across the specified devices. Internally maps to <code class="docutils literal notranslate"><span class="pre">/physics/sceneMultiGPUMode</span> <span class="pre">=</span> <span class="pre">eAll</span></code> or <code class="docutils literal notranslate"><span class="pre">eSkipFirst</span></code>. Other patterns (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;0,2&quot;</span></code> on a 4-GPU machine) return <code class="docutils literal notranslate"><span class="pre">OVPHYSX_API_INVALID_ARGUMENT</span></code> with a descriptive error; arbitrary subset support can be added in a future release without API changes.</p></li>
+<li><p><strong>TensorBindingsAPI: standalone rigid body read-only queries</strong> - <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_ACCELERATION</span></code> (<code class="docutils literal notranslate"><span class="pre">[N,6]</span></code>), <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_INV_MASS</span></code> (<code class="docutils literal notranslate"><span class="pre">[N]</span></code>), and <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_INV_INERTIA</span></code> (<code class="docutils literal notranslate"><span class="pre">[N,9]</span></code>). The enum values use previously unused slots after <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_WRENCH</span></code>; existing tensor enum values were not reordered.</p></li>
+<li><p><strong>Articulation kinematic update API.</strong> New C <code class="docutils literal notranslate"><span class="pre">ovphysx_update_articulations_kinematic()</span></code>, Python <code class="docutils literal notranslate"><span class="pre">PhysX.update_articulations_kinematic()</span></code>, and experimental C++ <code class="docutils literal notranslate"><span class="pre">PhysX::updateArticulationsKinematic()</span></code> recompute articulation link poses from current DOF positions. In GPU mode the first call may perform the standard DirectGPU warmup step; after warmup, the FK refresh does not run a normal simulation step or collision/contact work.</p></li>
+<li><p><strong>TensorBinding row metadata for tensor bindings.</strong> Python <code class="docutils literal notranslate"><span class="pre">TensorBinding.prim_paths</span></code> and C <code class="docutils literal notranslate"><span class="pre">ovphysx_tensor_binding_get_prim_paths()</span></code> return the resolved USD prim path for each rigid-body tensor row and the articulation root prim path for each articulation row.</p></li>
+<li><p><strong>Python tensor-binding empty-match guard.</strong> <code class="docutils literal notranslate"><span class="pre">PhysX.create_tensor_binding(...,</span> <span class="pre">raise_if_empty=True)</span></code> now raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> when the binding would match zero prims. The default remains <code class="docutils literal notranslate"><span class="pre">False</span></code>, preserving zero-count bindings for optional scene elements.</p></li>
+<li><p><strong>Python binding lifetime warnings.</strong> <code class="docutils literal notranslate"><span class="pre">TensorBinding</span></code> and <code class="docutils literal notranslate"><span class="pre">ContactBinding</span></code> now emit <code class="docutils literal notranslate"><span class="pre">ResourceWarning</span></code> if garbage collection cleans them up without an explicit <code class="docutils literal notranslate"><span class="pre">destroy()</span></code> or context-manager exit. This does not affect normal read/write paths; create bindings once outside simulation loops and reuse or destroy them explicitly.</p></li>
+<li><p><strong>ContactBinding detailed contact/friction reads.</strong> Added <code class="docutils literal notranslate"><span class="pre">sensor_paths</span></code>, <code class="docutils literal notranslate"><span class="pre">filter_paths</span></code>, <code class="docutils literal notranslate"><span class="pre">max_contact_data_count</span></code>, C <code class="docutils literal notranslate"><span class="pre">ovphysx_contact_binding_get_sensor_paths()</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_contact_binding_get_filter_paths()</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_get_contact_binding_capacity()</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_read_contact_data()</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_read_friction_data()</span></code>, and matching Python methods. The API uses flat <code class="docutils literal notranslate"><span class="pre">[C,*]</span></code> buffers with <code class="docutils literal notranslate"><span class="pre">[S,F]</span></code> count/start-index tensors. Detailed reads require filtered bindings (<code class="docutils literal notranslate"><span class="pre">filters_per_sensor</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>); unfiltered bindings remain valid for aggregate net-force reads.</p></li>
+<li><p><strong>Experimental C++ <code class="docutils literal notranslate"><span class="pre">CreateArgs</span></code> type and <code class="docutils literal notranslate"><span class="pre">PhysX::create(out,</span> <span class="pre">CreateArgs)</span></code>.</strong> <code class="docutils literal notranslate"><span class="pre">CreateArgs</span></code> is a safe C++ wrapper for <code class="docutils literal notranslate"><span class="pre">ovphysx_create_args</span></code> that default-constructs to <code class="docutils literal notranslate"><span class="pre">OVPHYSX_CREATE_ARGS_DEFAULT</span></code> and exposes setters for <code class="docutils literal notranslate"><span class="pre">device</span></code>, <code class="docutils literal notranslate"><span class="pre">active_cuda_gpus</span></code>, <code class="docutils literal notranslate"><span class="pre">bundled_deps_path</span></code>, and config entries. Replaces the previous <code class="docutils literal notranslate"><span class="pre">create(PhysX&amp;,</span> <span class="pre">config_entries,</span> <span class="pre">count)</span></code> overload.</p></li>
+<li><p><strong>OmniPVD recording support via typed config.</strong> Two new config entries enable <code class="docutils literal notranslate"><span class="pre">.ovd</span></code> recording: <code class="docutils literal notranslate"><span class="pre">omnipvd_output_enabled</span></code> (bool) and <code class="docutils literal notranslate"><span class="pre">omnipvd_ovd_recording_directory</span></code> (string). Both must be set at instance creation via <code class="docutils literal notranslate"><span class="pre">PhysXConfig</span></code> (Python) or <code class="docutils literal notranslate"><span class="pre">config_entries</span></code> on <code class="docutils literal notranslate"><span class="pre">ovphysx_create_args</span></code> (C/C++). These entries were previously available only via <code class="docutils literal notranslate"><span class="pre">carbonite_overrides</span></code>; they now have first-class typed fields. See <a class="reference internal" href="tutorials/omnipvd_recording.html"><span class="std std-doc">OmniPVD Recording tutorial</span></a>.</p></li>
+</ul>
+</section>
+<section id="changed-or-fixed">
+<h3>Changed or Fixed<a class="headerlink" href="#changed-or-fixed" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>ContactBinding device-mismatch errors now explain the DirectGPU opt-in.</strong>
+When a CPU-backed ContactBinding receives a CUDA output tensor, the error now
+points out that <code class="docutils literal notranslate"><span class="pre">device=&quot;gpu&quot;</span></code> enables GPU dynamics only and that
+TensorAPI/ContactBinding CUDA views require <code class="docutils literal notranslate"><span class="pre">/physics/suppressReadback=true</span></code>
+before instance creation. Behavior is unchanged.</p></li>
+<li><p><strong>ovphysx startup now appends its namespaced USD schema path when <code class="docutils literal notranslate"><span class="pre">OV_PXR_PLUGINPATH_2511</span></code> is already set.</strong> Previously <code class="docutils literal notranslate"><span class="pre">CarboniteLoader</span></code> only set the variable when it was empty, so pre-existing ovrtx or application paths could prevent ovphysx’s own schema root from being published. Startup now shares the same append/dedupe logic as <code class="docutils literal notranslate"><span class="pre">ovphysx_register_schema_paths()</span></code> and does not modify <code class="docutils literal notranslate"><span class="pre">PXR_PLUGINPATH_NAME</span></code>. Startup and explicit pre-registration fail fast if ovphysx cannot find an existing <code class="docutils literal notranslate"><span class="pre">plugins/usd</span></code> directory, rather than publishing a missing path that USD silently ignores.</p></li>
+<li><p><strong>Improved automatic GPU selection on multi-GPU systems.</strong> When the physics device is not set explicitly, ovphysx now prefers the GPU already in use by the renderer, and otherwise picks the discrete GPU with the most memory. Previously device 0 was always chosen, which could result in physics running on a different GPU than the renderer on multi-GPU workstations. Users on single-GPU machines are unaffected; users on multi-GPU systems may see a different device selected than before.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ovphysx_clone()</span></code> now preserves <code class="docutils literal notranslate"><span class="pre">xformOp:scale</span></code> from source prims.</strong> Previously, clones of prims with non-unit scale appeared at incorrect world-space size. The fix reads the source’s scale (supporting both <code class="docutils literal notranslate"><span class="pre">double3</span></code> and <code class="docutils literal notranslate"><span class="pre">float3</span></code> attributes), writes it to each target, includes it in <code class="docutils literal notranslate"><span class="pre">xformOpOrder</span></code>, and incorporates it into the <code class="docutils literal notranslate"><span class="pre">localMatrix</span></code>.</p></li>
+<li><p><strong>Contact binding now matches runtime-cloned sensor bodies.</strong> Runtime clones created with <code class="docutils literal notranslate"><span class="pre">ovphysx_clone()</span></code> can exist only in Fabric/usdrt, where copied USD API-schema metadata may not be visible. Contact binding now keeps the strict <code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code> requirement for real USD prims while allowing clone-only runtime paths to validate through their PhysX actor pointer, so cloned environments produce the same contact-binding rows as rigid-body tensor bindings.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ovphysx_step_sync()</span></code> now calls <code class="docutils literal notranslate"><span class="pre">ensure_physics_attached()</span></code> before stepping</strong>, matching the async <code class="docutils literal notranslate"><span class="pre">ovphysx_step()</span></code> path. Previously, the first <code class="docutils literal notranslate"><span class="pre">step_sync</span></code> after <code class="docutils literal notranslate"><span class="pre">add_usd</span></code> would run against an unattached stage — features like OmniPVD recording finalization silently failed.</p></li>
+<li><p><strong>Config entries are now applied before PhysX plugin loading</strong> so that settings read during <code class="docutils literal notranslate"><span class="pre">createPhysics()</span></code> (e.g., OmniPVD recording) are in place at initialization time.</p></li>
+<li><p><strong>TensorBindingsAPI shape property tensors now accept CPU buffers in GPU simulations.</strong> Rigid-body and articulation material/contact/rest-offset tensors are PhysX parameter tensors and remain CPU-resident even when state tensors use CUDA buffers.</p></li>
+<li><p><strong>ovphysx wheel bootstrap no longer sets <code class="docutils literal notranslate"><span class="pre">PYTHONHOME</span></code>.</strong> Fixes mis-resolution of <code class="docutils literal notranslate"><span class="pre">sys.prefix</span></code> in child processes that spawn venv interpreters (Windows; e.g. rerun.io).</p></li>
+<li><p><strong>Unified build flags.</strong> <code class="docutils literal notranslate"><span class="pre">build.sh</span></code> / <code class="docutils literal notranslate"><span class="pre">build.bat</span></code> now accept the same flags as ovruntime: <code class="docutils literal notranslate"><span class="pre">-c</span></code>/<code class="docutils literal notranslate"><span class="pre">--clean</span></code>, <code class="docutils literal notranslate"><span class="pre">-x</span></code>/<code class="docutils literal notranslate"><span class="pre">--rebuild</span></code>, <code class="docutils literal notranslate"><span class="pre">-d</span></code>/<code class="docutils literal notranslate"><span class="pre">--debug</span></code>, <code class="docutils literal notranslate"><span class="pre">-r</span></code>/<code class="docutils literal notranslate"><span class="pre">--release</span></code> (default), <code class="docutils literal notranslate"><span class="pre">-t</span></code>/<code class="docutils literal notranslate"><span class="pre">--target</span> <span class="pre">&lt;name&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">-g</span></code>/<code class="docutils literal notranslate"><span class="pre">--generate</span></code>. <strong>Note:</strong> default is now release-only (was debug+release); <code class="docutils literal notranslate"><span class="pre">-t</span></code> is now <code class="docutils literal notranslate"><span class="pre">--target</span> <span class="pre">&lt;name&gt;</span></code> (use <code class="docutils literal notranslate"><span class="pre">--test-venv</span></code> for the old test-venv behavior).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">create_articulation_view()</span></code> and <code class="docutils literal notranslate"><span class="pre">create_rigid_body_view()</span></code> pattern matching extended to reach nested bodies.</strong> Patterns now support <code class="docutils literal notranslate"><span class="pre">**</span></code> for recursive descent and — by default — match a named final component against descendants at any depth so patterns like <code class="docutils literal notranslate"><span class="pre">/World/envs/env_*/Robot/&lt;name&gt;</span></code> keep working on deeper hierarchies. Views dedup by backing PhysX pointer. Set <code class="docutils literal notranslate"><span class="pre">/physics/tensors/recursiveLeafPatternMatch</span></code> to <code class="docutils literal notranslate"><span class="pre">false</span></code> to restore strict per-level matching. <strong>Migration:</strong> existing patterns may pick up additional prims at deeper levels. If that changes behavior, either set the Carbonite flag to <code class="docutils literal notranslate"><span class="pre">false</span></code> or switch to explicit absolute paths.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">/ovphysx/latest/</span></code> on GitHub Pages now serves the docs directly</strong> instead of redirecting to <code class="docutils literal notranslate"><span class="pre">/ovphysx/&lt;version&gt;/</span></code>. This fixes deep links such as the PyPI Changelog URL (<code class="docutils literal notranslate"><span class="pre">/latest/changelog.html</span></code>) which previously 404’d. Bookmarks to <code class="docutils literal notranslate"><span class="pre">/latest/</span></code> continue to work; bookmarks to versioned URLs are unchanged.</p></li>
+</ul>
+</section>
+<section id="removed">
+<h3>Removed<a class="headerlink" href="#removed" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Environment variables <code class="docutils literal notranslate"><span class="pre">OVPHYSX_ROOT</span></code>, <code class="docutils literal notranslate"><span class="pre">OVPHYSX_BIN_DIR</span></code>, <code class="docutils literal notranslate"><span class="pre">OVPHYSX_PLUGINS_DIR</span></code> removed.</strong> All runtime paths are now derived from <code class="docutils literal notranslate"><span class="pre">OVPHYSX_LIB</span></code> (the single dev-mode override for the shared library path). <strong>Migration:</strong> replace any of the removed env vars with <code class="docutils literal notranslate"><span class="pre">OVPHYSX_LIB</span></code> pointing at the shared library.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ovphysx_set_shutting_down()</span></code> removed.</strong> Full teardown now happens automatically when the last instance is destroyed via <code class="docutils literal notranslate"><span class="pre">ovphysx_destroy_instance()</span></code> (C/C++) or <code class="docutils literal notranslate"><span class="pre">release()</span></code> (Python). <strong>Migration:</strong> remove any <code class="docutils literal notranslate"><span class="pre">ovphysx_set_shutting_down()</span></code> calls.</p></li>
+<li><p><strong>Legacy Python TensorAPI compatibility removed.</strong> <code class="docutils literal notranslate"><span class="pre">ovphysx.tensors</span></code> is no longer shipped or exported. <strong>Migration:</strong> replace <code class="docutils literal notranslate"><span class="pre">ovphysx.tensors</span></code> imports with TensorBindingsAPI: use <code class="docutils literal notranslate"><span class="pre">physx.create_tensor_binding()</span></code> to create bindings, then <code class="docutils literal notranslate"><span class="pre">binding.read()</span></code> / <code class="docutils literal notranslate"><span class="pre">binding.write()</span></code> for data access.</p></li>
+</ul>
+</section>
+</section>
+<section id="id2">
+<h2>[0.3] - 2026-03-31<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<section id="id3">
+<h3>Breaking Changes<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Settings API replaced with typed config system.</strong> The old string-based settings (<code class="docutils literal notranslate"><span class="pre">settings_keys</span></code>/<code class="docutils literal notranslate"><span class="pre">settings_values</span></code>/<code class="docutils literal notranslate"><span class="pre">settings_count</span></code> on <code class="docutils literal notranslate"><span class="pre">ovphysx_create_args</span></code>; <code class="docutils literal notranslate"><span class="pre">ovphysx_set_global_setting()</span></code>/<code class="docutils literal notranslate"><span class="pre">ovphysx_get_global_setting()</span></code>; Python <code class="docutils literal notranslate"><span class="pre">PhysX(settings=...)</span></code>, <code class="docutils literal notranslate"><span class="pre">set_setting()</span></code>, <code class="docutils literal notranslate"><span class="pre">get_setting()</span></code>; C++ <code class="docutils literal notranslate"><span class="pre">PhysX::setSetting()</span></code>/<code class="docutils literal notranslate"><span class="pre">getSetting()</span></code>) are all removed. <strong>Migration:</strong> C — use <code class="docutils literal notranslate"><span class="pre">ovphysx_config_entry_t</span></code> array on <code class="docutils literal notranslate"><span class="pre">config_entries</span></code>/<code class="docutils literal notranslate"><span class="pre">config_entry_count</span></code> with builders from <code class="docutils literal notranslate"><span class="pre">ovphysx_config.h</span></code>, runtime <code class="docutils literal notranslate"><span class="pre">ovphysx_set_global_config()</span></code> and typed getters <code class="docutils literal notranslate"><span class="pre">ovphysx_get_global_config_bool/int32/float/string()</span></code>. Python — use <code class="docutils literal notranslate"><span class="pre">PhysX(config=PhysXConfig(num_threads=4))</span></code>, runtime <code class="docutils literal notranslate"><span class="pre">set_config_bool()</span></code>/<code class="docutils literal notranslate"><span class="pre">set_config_int32()</span></code> and matching getters. Arbitrary Carbonite paths remain accessible via <code class="docutils literal notranslate"><span class="pre">ovphysx_config_entry_carbonite()</span></code> (C/C++) or <code class="docutils literal notranslate"><span class="pre">PhysXConfig(carbonite_overrides={...})</span></code> (Python).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">OVPHYSX_CONFIG_CUDA_DEVICE</span></code> removed</strong> from <code class="docutils literal notranslate"><span class="pre">ovphysx_config_int32_t</span></code>. <strong>Migration:</strong> use <code class="docutils literal notranslate"><span class="pre">active_cuda_gpus</span></code> on <code class="docutils literal notranslate"><span class="pre">ovphysx_create_args</span></code> (C) or <code class="docutils literal notranslate"><span class="pre">PhysX(active_cuda_gpus=...)</span></code> (Python). Setting <code class="docutils literal notranslate"><span class="pre">/physics/cudaDevice</span></code> via <code class="docutils literal notranslate"><span class="pre">carbonite_overrides</span></code> now raises an error.</p></li>
+<li><p><strong>Removed typed config entries</strong> for settings not in Physics Preferences: <code class="docutils literal notranslate"><span class="pre">OVPHYSX_CONFIG_PHYSX_DISPATCHER</span></code>, <code class="docutils literal notranslate"><span class="pre">OVPHYSX_CONFIG_OMNI_PVD_OUTPUT_ENABLED</span></code>, <code class="docutils literal notranslate"><span class="pre">OVPHYSX_CONFIG_UJITSO_COLLISION_COOKING</span></code> (bool); <code class="docutils literal notranslate"><span class="pre">OVPHYSX_CONFIG_PVD_RECORDING_DIRECTORY</span></code> (string). <strong>Migration:</strong> these settings remain accessible via <code class="docutils literal notranslate"><span class="pre">carbonite_overrides</span></code>.</p></li>
+<li><p><strong>Log level enum reordered to ascending severity</strong> (matches ovrtx and industry convention). New values: <code class="docutils literal notranslate"><span class="pre">OVPHYSX_LOG_VERBOSE=0</span></code>, <code class="docutils literal notranslate"><span class="pre">OVPHYSX_LOG_INFO=1</span></code>, <code class="docutils literal notranslate"><span class="pre">OVPHYSX_LOG_WARNING=2</span></code> (unchanged), <code class="docutils literal notranslate"><span class="pre">OVPHYSX_LOG_ERROR=3</span></code>, <code class="docutils literal notranslate"><span class="pre">OVPHYSX_LOG_NONE=4</span></code>. <strong>Migration:</strong> code using symbolic names is unaffected; code using raw integer values must update.</p></li>
+<li><p><strong>Error handling switched from inline error strings to thread-local <code class="docutils literal notranslate"><span class="pre">get_last_error()</span></code> query.</strong> <code class="docutils literal notranslate"><span class="pre">ovphysx_result_t</span></code> and <code class="docutils literal notranslate"><span class="pre">ovphysx_enqueue_result_t</span></code> no longer have an <code class="docutils literal notranslate"><span class="pre">error</span></code> field. <strong>Migration:</strong> on failure, call <code class="docutils literal notranslate"><span class="pre">ovphysx_get_last_error()</span></code> on the same thread to retrieve the error message (valid until the next ovphysx API call on that thread). For <code class="docutils literal notranslate"><span class="pre">wait_op</span></code>, iterate <code class="docutils literal notranslate"><span class="pre">error_op_indices</span></code> and call <code class="docutils literal notranslate"><span class="pre">ovphysx_get_last_op_error()</span></code> per failed index, then <code class="docutils literal notranslate"><span class="pre">ovphysx_destroy_wait_result(&amp;result)</span></code>. Removed: <code class="docutils literal notranslate"><span class="pre">ovphysx_destroy_error()</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_destroy_errors()</span></code>. Python API is unaffected (errors are raised as exceptions).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ContactEventHeader.stageId</span></code> type changed from <code class="docutils literal notranslate"><span class="pre">long</span></code> to <code class="docutils literal notranslate"><span class="pre">int64_t</span></code></strong> for cross-platform ABI stability. This changes the struct layout on Windows.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ovphysx_get_contact_report()</span></code> C signature changed</strong>: now returns typed pointers (<code class="docutils literal notranslate"><span class="pre">const</span> <span class="pre">ovphysx_contact_event_header_t**</span></code>, <code class="docutils literal notranslate"><span class="pre">const</span> <span class="pre">ovphysx_contact_point_t**</span></code>) instead of <code class="docutils literal notranslate"><span class="pre">const</span> <span class="pre">void**</span></code>, and gained 2 new parameters (<code class="docutils literal notranslate"><span class="pre">out_friction_anchors</span></code>, <code class="docutils literal notranslate"><span class="pre">out_num_friction_anchors</span></code>). <strong>Migration:</strong> update pointer types and append <code class="docutils literal notranslate"><span class="pre">,</span> <span class="pre">NULL,</span> <span class="pre">NULL</span></code> for friction anchor parameters. C++ callers are unaffected (new params default to <code class="docutils literal notranslate"><span class="pre">nullptr</span></code>).</p></li>
+<li><p><strong>Removed</strong> <code class="docutils literal notranslate"><span class="pre">ovphysx_articulation_get_dof_count</span></code>, <code class="docutils literal notranslate"><span class="pre">_body_count</span></code>, <code class="docutils literal notranslate"><span class="pre">_joint_count</span></code>, <code class="docutils literal notranslate"><span class="pre">_is_fixed_base</span></code>, <code class="docutils literal notranslate"><span class="pre">_fixed_tendon_count</span></code>, <code class="docutils literal notranslate"><span class="pre">_spatial_tendon_count</span></code>. <strong>Migration:</strong> use <code class="docutils literal notranslate"><span class="pre">ovphysx_get_articulation_metadata(handle,</span> <span class="pre">binding,</span> <span class="pre">&amp;meta)</span></code>. Python <code class="docutils literal notranslate"><span class="pre">TensorBinding</span></code> properties are unchanged.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ovphysx_clone()</span></code> parameter <code class="docutils literal notranslate"><span class="pre">parent_positions_xyz</span></code> replaced with <code class="docutils literal notranslate"><span class="pre">parent_transforms</span></code></strong> (7 floats per target: px, py, pz, qx, qy, qz, qw). <strong>Migration:</strong> replace <code class="docutils literal notranslate"><span class="pre">parent_positions_xyz=[x,</span> <span class="pre">y,</span> <span class="pre">z]</span></code> with <code class="docutils literal notranslate"><span class="pre">parent_transforms=[px,</span> <span class="pre">py,</span> <span class="pre">pz,</span> <span class="pre">0,</span> <span class="pre">0,</span> <span class="pre">0,</span> <span class="pre">1]</span></code> (append identity quaternion).</p></li>
+<li><p><strong>Removed</strong> <code class="docutils literal notranslate"><span class="pre">ovphysx_set_clone_env_root()</span></code> (C) and <code class="docutils literal notranslate"><span class="pre">set_clone_env_root()</span></code> (Python). <strong>Migration:</strong> no replacement needed — the first <code class="docutils literal notranslate"><span class="pre">clone()</span></code>, <code class="docutils literal notranslate"><span class="pre">simulate()</span></code>, or <code class="docutils literal notranslate"><span class="pre">warmup_gpu()</span></code> call triggers stage attach lazily.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ovphysx_device_t</span></code> enum reordered:</strong> <code class="docutils literal notranslate"><span class="pre">OVPHYSX_DEVICE_AUTO</span> <span class="pre">=</span> <span class="pre">0</span></code> (was 2) so zero-initialized args default to AUTO. <strong>Migration:</strong> code using symbolic names is unaffected; code using raw integers must update (<code class="docutils literal notranslate"><span class="pre">0=AUTO,</span> <span class="pre">1=GPU,</span> <span class="pre">2=CPU</span></code>).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_ARTICULATION_CORIOLIS_FORCE_F32</span></code> renamed</strong> to <code class="docutils literal notranslate"><span class="pre">ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE</span></code> (enum value 72 unchanged). <strong>Migration:</strong> update references to the old name.</p></li>
+<li><p>Scene query enum constants disambiguated: <code class="docutils literal notranslate"><span class="pre">OVPHYSX_SCENE_QUERY_CLOSEST</span></code> → <code class="docutils literal notranslate"><span class="pre">OVPHYSX_SCENE_QUERY_MODE_CLOSEST</span></code> (and <code class="docutils literal notranslate"><span class="pre">_ANY</span></code>, <code class="docutils literal notranslate"><span class="pre">_ALL</span></code>); <code class="docutils literal notranslate"><span class="pre">OVPHYSX_SCENE_QUERY_SPHERE</span></code> → <code class="docutils literal notranslate"><span class="pre">OVPHYSX_SCENE_QUERY_GEOMETRY_SPHERE</span></code> (and <code class="docutils literal notranslate"><span class="pre">_BOX</span></code>, <code class="docutils literal notranslate"><span class="pre">_SHAPE</span></code>). <strong>Migration:</strong> update to the new constant names.</p></li>
+<li><p><strong>Python enum cleanup.</strong> All <code class="docutils literal notranslate"><span class="pre">OVPHYSX_TENSOR_*_F32</span></code> bare-int constants removed (use <code class="docutils literal notranslate"><span class="pre">TensorType.*</span></code> members); <code class="docutils literal notranslate"><span class="pre">OVPHYSX_API_*</span></code>, <code class="docutils literal notranslate"><span class="pre">OVPHYSX_LOG_*</span></code>, <code class="docutils literal notranslate"><span class="pre">OVPHYSX_DEVICE_*</span></code> constants removed (use <code class="docutils literal notranslate"><span class="pre">ApiStatus.*</span></code>, <code class="docutils literal notranslate"><span class="pre">LogLevel.*</span></code>, <code class="docutils literal notranslate"><span class="pre">DeviceType.*</span></code>); <code class="docutils literal notranslate"><span class="pre">OVPHYSX_OP_INDEX_ALL</span></code> renamed to <code class="docutils literal notranslate"><span class="pre">OP_INDEX_ALL</span></code>; <code class="docutils literal notranslate"><span class="pre">kDLCPU</span></code>, <code class="docutils literal notranslate"><span class="pre">kDLCUDA</span></code>, <code class="docutils literal notranslate"><span class="pre">kDLInt</span></code>, <code class="docutils literal notranslate"><span class="pre">kDLUInt</span></code>, <code class="docutils literal notranslate"><span class="pre">kDLFloat</span></code> removed (use <code class="docutils literal notranslate"><span class="pre">DLDeviceType.kDLCPU</span></code> / <code class="docutils literal notranslate"><span class="pre">DLDataTypeCode.kDLFloat</span></code>).</p></li>
+<li><p><strong>Removed <code class="docutils literal notranslate"><span class="pre">ovphysx_finalize()</span></code></strong>. Full Carbonite framework teardown now happens automatically when the last instance is destroyed. <strong>Migration:</strong> remove any <code class="docutils literal notranslate"><span class="pre">ovphysx_finalize()</span></code> calls.</p></li>
+</ul>
+</section>
+<section id="id4">
+<h3>Added<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ovphysx_articulation_metadata_t</span></code> struct and <code class="docutils literal notranslate"><span class="pre">ovphysx_get_articulation_metadata()</span></code> — fills 6 scalar topology fields in one call, one lock acquire, one stream fence.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_CONFIG_SCENE_MULTI_GPU_MODE</span></code> (int32) config entry for <code class="docutils literal notranslate"><span class="pre">/physics/sceneMultiGPUMode</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ConfigBool</span></code>, <code class="docutils literal notranslate"><span class="pre">ConfigInt32</span></code>, <code class="docutils literal notranslate"><span class="pre">ConfigFloat</span></code>, <code class="docutils literal notranslate"><span class="pre">ConfigString</span></code> IntEnums in Python for typed config key access.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PhysXConfig</span></code> dataclass in Python for typed initialization config.</p></li>
+<li><p>Remote USD loading: <code class="docutils literal notranslate"><span class="pre">add_usd()</span></code> now accepts remote URIs (<code class="docutils literal notranslate"><span class="pre">omniverse://</span></code>, S3, Azure Blob). Use HTTPS virtual-hosted S3 URLs. New <code class="docutils literal notranslate"><span class="pre">ovphysx_configure_s3()</span></code> / <code class="docutils literal notranslate"><span class="pre">configure_s3()</span></code> and <code class="docutils literal notranslate"><span class="pre">ovphysx_configure_azure_sas()</span></code> / <code class="docutils literal notranslate"><span class="pre">configure_azure_sas()</span></code> for credential setup.</p></li>
+<li><p>TensorBindingsAPI: DOF property tensors — stiffness, damping, limits, max velocity, max force, armature, friction properties (read/write, indexed, masked).</p></li>
+<li><p>TensorBindingsAPI: body property tensors — mass, center-of-mass pose, inertia tensor (read/write, indexed, masked).</p></li>
+<li><p>TensorBindingsAPI: link acceleration tensor (<code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">L,</span> <span class="pre">6]</span></code>, read-only).</p></li>
+<li><p>TensorBindingsAPI: dynamics query tensors (read-only) — Jacobian, generalized mass matrix, Coriolis + centrifugal forces, gravity compensation, link incoming joint force, DOF projected joint forces.</p></li>
+<li><p>TensorBindingsAPI: standalone rigid body properties — mass, inertia, COM pose (read/write with indexed/masked write support). Articulation body inverse mass and inverse inertia (read-only).</p></li>
+<li><p>TensorBindingsAPI: fixed tendon properties — stiffness, damping, limit stiffness, limits, rest length, offset (read/write, indexed, masked).</p></li>
+<li><p>TensorBindingsAPI: spatial tendon properties — stiffness, damping, limit stiffness, offset (read/write, indexed, masked).</p></li>
+<li><p>TensorBindingsAPI: shape-level tensors — <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_SHAPE_FRICTION_AND_RESTITUTION</span></code> (<code class="docutils literal notranslate"><span class="pre">[N,S,3]</span></code>), <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_CONTACT_OFFSET</span></code> (<code class="docutils literal notranslate"><span class="pre">[N,S]</span></code>), <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_REST_OFFSET</span></code> (<code class="docutils literal notranslate"><span class="pre">[N,S]</span></code>), and articulation equivalents. All support read, indexed write, and masked write.</p></li>
+<li><p>Articulation metadata name queries: <code class="docutils literal notranslate"><span class="pre">ovphysx_articulation_get_dof_names</span></code>, <code class="docutils literal notranslate"><span class="pre">get_body_names</span></code>, <code class="docutils literal notranslate"><span class="pre">get_joint_names</span></code>.</p></li>
+<li><p>Contact binding API: <code class="docutils literal notranslate"><span class="pre">ovphysx_create_contact_binding</span></code> / <code class="docutils literal notranslate"><span class="pre">destroy</span></code> / <code class="docutils literal notranslate"><span class="pre">get_spec</span></code> / <code class="docutils literal notranslate"><span class="pre">read_net_forces</span></code> / <code class="docutils literal notranslate"><span class="pre">read_force_matrix</span></code>. Python <code class="docutils literal notranslate"><span class="pre">ContactBinding</span></code> class for reading contact forces via DLPack tensors.</p></li>
+<li><p>PhysX object interop: <code class="docutils literal notranslate"><span class="pre">ovphysx_get_physx_ptr()</span></code> returns raw PhysX SDK pointers by USD prim path and type enum. SDK ships PhysX headers under <code class="docutils literal notranslate"><span class="pre">include/physx/</span></code>. See <a class="reference internal" href="tutorials/physx_interop.html"><span class="std std-doc">PhysX Interop tutorial</span></a>.</p></li>
+<li><p>Contact report API: <code class="docutils literal notranslate"><span class="pre">ovphysx_get_contact_report()</span></code> exposes per-step contact data as typed C struct pointers. Python <code class="docutils literal notranslate"><span class="pre">PhysX.get_contact_report()</span></code> returns a dict with ctypes arrays.</p></li>
+<li><p>Scene query API: <code class="docutils literal notranslate"><span class="pre">ovphysx_raycast()</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_sweep()</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_overlap()</span></code> — raycast, geometry sweep, and overlap queries. Supports CLOSEST/ANY/ALL hit modes with sphere, box, and arbitrary-shape geometry.</p></li>
+<li><p>Synchronous stepping: <code class="docutils literal notranslate"><span class="pre">ovphysx_step_sync()</span></code> / <code class="docutils literal notranslate"><span class="pre">step_sync()</span></code> combines step + wait into one call. <code class="docutils literal notranslate"><span class="pre">ovphysx_step_n_sync()</span></code> / <code class="docutils literal notranslate"><span class="pre">step_n_sync()</span></code> batches N steps.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_API_BUFFER_TOO_SMALL</span> <span class="pre">=</span> <span class="pre">6</span></code> status code.</p></li>
+<li><p>CMake package config: <code class="docutils literal notranslate"><span class="pre">find_package(ovphysx)</span></code> provides <code class="docutils literal notranslate"><span class="pre">ovphysx::ovphysx</span></code> target and Windows <code class="docutils literal notranslate"><span class="pre">ovphysx_copy_runtime_dlls()</span></code> helper.</p></li>
+<li><p>Visual sample using <a class="reference external" href="https://rerun.io">Rerun</a> for rigid body visualization (<a class="reference internal" href="tutorials/render_handoff.html"><span class="std std-doc">Rendering Handoff</span></a>).</p></li>
+<li><p>Linux aarch64 support.</p></li>
+</ul>
+</section>
+<section id="id5">
+<h3>Changed or Fixed<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Physics scene is now parsed lazily on the first <code class="docutils literal notranslate"><span class="pre">simulate()</span></code> call instead of during <code class="docutils literal notranslate"><span class="pre">add_usd()</span></code>. This avoids GPU buffer corruption when <code class="docutils literal notranslate"><span class="pre">clone()</span></code> adds environments after the initial load. Correct sequence: <code class="docutils literal notranslate"><span class="pre">add_usd()</span></code> → <code class="docutils literal notranslate"><span class="pre">clone()</span></code> → <code class="docutils literal notranslate"><span class="pre">warmup_gpu()</span></code>/<code class="docutils literal notranslate"><span class="pre">step()</span></code>.</p></li>
+<li><p>A GPU and CUDA installation is no longer required for CPU-only simulation.</p></li>
+<li><p>Fixed a fatal TF_DEBUG crash when ovphysx and OVRTX co-loaded in Python due to a collision with USD libraries.</p></li>
+<li><p>Fixed various memory leaks across C, C++, and Python error-handling and cleanup paths.</p></li>
+<li><p>Contact binding read functions now validate dtype is float32 before dispatching.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ContactBinding.destroy()</span></code> now checks status and raises on failure; validates parent SDK is alive.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">create_contact_binding</span></code> now validates <code class="docutils literal notranslate"><span class="pre">sensor_patterns</span></code> is non-empty and <code class="docutils literal notranslate"><span class="pre">filter_patterns</span></code> length.</p></li>
+<li><p>Wheel metadata corrected: <code class="docutils literal notranslate"><span class="pre">Root-Is-Purelib:</span> <span class="pre">false</span></code>, OS classifiers set to Linux and Windows.</p></li>
+<li><p>Fixed shutdown crash where stepper tasks could access freed CUDA context.</p></li>
+<li><p>Fixed process-exit crashes caused by non-deterministic DLL/SO unload ordering. <code class="docutils literal notranslate"><span class="pre">ovphysx_destroy_instance()</span></code> now performs full teardown when the last instance is destroyed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ovphysx_remove_usd()</span></code> now validates <code class="docutils literal notranslate"><span class="pre">usd_handle</span></code> and returns <code class="docutils literal notranslate"><span class="pre">OVPHYSX_API_NOT_FOUND</span></code> for unknown handles.</p></li>
+</ul>
+</section>
+<section id="id6">
+<h3>Removed<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ovphysx.pc</span></code> (pkg-config file) removed; CMake is the supported integration path.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hdStorm</span></code> (Hydra Storm renderer) removed from SDK; not needed for headless physics simulation.</p></li>
+</ul>
+</section>
+</section>
+<section id="id7">
+<h2>[0.2] - 2026-03-03<a class="headerlink" href="#id7" title="Link to this heading">#</a></h2>
+<p>First released version. No changelog was maintained prior to v0.3.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="developer_guide.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Developer Guide</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="tutorials/quickstart.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Quickstart</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">[0.4] - 2026-05-27</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#breaking-changes">Breaking Changes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#added">Added</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed-or-fixed">Changed or Fixed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#removed">Removed</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">[0.3] - 2026-03-31</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Breaking Changes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Added</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">Changed or Fixed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Removed</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">[0.2] - 2026-03-03</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on May 28, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -9,7 +9,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>ovphysx &#8212; ovphysx SDK</title>
+    <title>ovphysx Overview &#8212; ovphysx SDK</title>
   
   
   
@@ -53,7 +53,7 @@
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="_static/copybutton.js?v=65e89d2a"></script>
     <script src="_static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'ovphysx_overview';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
@@ -68,7 +68,8 @@
 
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="ovphysx Overview" href="ovphysx_overview.html" />
+    <link rel="next" title="Developer Guide" href="developer_guide.html" />
+    <link rel="prev" title="ovphysx" href="index.html" />
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -138,7 +139,7 @@
     
   
 
-<a class="navbar-brand logo" href="#">
+<a class="navbar-brand logo" href="index.html">
   
   
   
@@ -337,7 +338,7 @@
     
   
 
-<a class="navbar-brand logo" href="#">
+<a class="navbar-brand logo" href="index.html">
   
   
   
@@ -503,8 +504,8 @@
      aria-label="Table of Contents">
   <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
   <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
@@ -546,7 +547,31 @@
           <div class="bd-content">
             <div class="bd-article-container">
               
-              <div class="bd-header-article d-print-none"></div>
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">ovphysx Overview</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
               
               
               
@@ -554,63 +579,168 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="ovphysx">
-<h1>ovphysx<a class="headerlink" href="#ovphysx" title="Link to this heading">#</a></h1>
-<p>ovphysx is a self-contained library package offering the PhysX SDK and Omni PhysX capabilities behind a C API and corresponding Python bindings for inclusion in user applications.
-It loads USD scenes, runs simulation, and allows reading and writing simulation data with DLPack interoperability.</p>
-<p>To get started, see the <a class="reference internal" href="tutorials/quickstart.html"><span class="std std-doc">Quickstart</span></a>.</p>
-<blockquote>
-<div><p><strong>Note</strong></p>
+  <section id="ovphysx-overview">
+<h1>ovphysx Overview<a class="headerlink" href="#ovphysx-overview" title="Link to this heading">#</a></h1>
+<p>ovphysx is a self-contained PhysX runtime with Omni PhysX capabilities, exposed as a C API with Python bindings.
+It loads USD scenes, runs simulation, and reads or writes data via DLPack for zero-copy tensor exchange.
+It currently supports Windows (x86_64) and Linux (x86_64, aarch64) platforms.</p>
+<p>This library is AI-agent friendly: <code class="docutils literal notranslate"><span class="pre">SKILLS.md</span></code> and the <code class="docutils literal notranslate"><span class="pre">skills/</span></code> directory ship with both the Python wheel and the C SDK package. <code class="docutils literal notranslate"><span class="pre">AGENTS.md</span></code> is also available in the source repository for quick codebase onboarding.</p>
+<p>This page explains how ovphysx fits into the stack, what workflows it supports, and where to find build, tutorial, and API details.</p>
+<section id="who-this-is-for">
+<h2>Who This Is For<a class="headerlink" href="#who-this-is-for" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p><strong>Maturity</strong>: ovphysx is pre-release software and not yet mature.</p></li>
-<li><p><strong>USD coexistence</strong>: ovphysx ships an OV namespaced monolithic OpenUSD runtime. It can reuse an already-loaded compatible OV namespaced USD runtime from another OV library, but it does not treat a classic <code class="docutils literal notranslate"><span class="pre">usd-core</span></code> or host USD import as its runtime. In mixed OV processes, register each subsystem’s schema paths before the first USD stage open or schema-registry access.</p></li>
-<li><p><strong>API stability</strong>: Parts of the API are still being completed and may change before 1.0.</p></li>
+<li><p>Python-first users who consume the wheel and integrate ovphysx into apps or pipelines.</p></li>
+<li><p>C/C++ users who integrate the SDK in native applications.</p></li>
 </ul>
-</div></blockquote>
-<p>ovphysx packages the Omni PhysX runtime (providing in particular USD-aware simulation and tensorized data access) on top of the PhysX SDK.
-The dependency stack is: PhysX SDK → omni.physx (Omniverse integration) → ovphysx (standalone C/Python SDK).</p>
-<p>The source repository of ovphysx can be found at <a class="reference external" href="https://github.com/NVIDIA-Omniverse/PhysX/">https://github.com/NVIDIA-Omniverse/PhysX/</a>.</p>
-<p>External references of contained functionality:</p>
+</section>
+<section id="what-you-can-do">
+<h2>What You Can Do<a class="headerlink" href="#what-you-can-do" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Load USD scenes into a runtime stage.</p></li>
+<li><p>Replicate subtrees for large-scale parallel environments by pairing with <code class="docutils literal notranslate"><span class="pre">ovstage</span></code> and calling <code class="docutils literal notranslate"><span class="pre">stage.clone_subtree()</span></code> (the bridge consumes clone events and drives PhysX-side replication).</p></li>
+<li><p>Write simulation inputs (positions, velocities, controls) via tensor bindings or, when paired with <code class="docutils literal notranslate"><span class="pre">ovstage</span></code>, via attribute writes through the stage.</p></li>
+<li><p>Step the simulation.</p></li>
+<li><p>Read results (updated simulation state) back into your tensors or out through the attached stage.</p></li>
+</ul>
+<p>To get started, see the <a class="reference internal" href="tutorials/quickstart.html"><span class="std std-doc">Quickstart</span></a>.</p>
+</section>
+<section id="relationship-to-physx-sdk-and-omni-physx">
+<h2>Relationship to PhysX SDK and Omni PhysX<a class="headerlink" href="#relationship-to-physx-sdk-and-omni-physx" title="Link to this heading">#</a></h2>
+<p>ovphysx packages the Omni PhysX runtime (USD integration, streaming execution model, extensions) on top of the PhysX SDK.
+In other words, it is the standalone SDK layer that exposes omni.physx capabilities through a stable C API and Python bindings.
+The dependency stack is: PhysX SDK → omni.physx → ovphysx.</p>
+</section>
+<section id="core-concepts">
+<h2>Core Concepts<a class="headerlink" href="#core-concepts" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Stream-ordered execution: calls run in submission order and see prior writes without extra sync.</p></li>
+<li><p>Tensor bindings: synchronous read/write operations for physics data (rigid body poses, velocities, etc.). Includes pattern matching (glob patterns) to bind to multiple prims at once (<code class="docutils literal notranslate"><span class="pre">/World/robot*</span></code>, <code class="docutils literal notranslate"><span class="pre">/World/env[N]/robot</span></code>).</p></li>
+<li><p>Thread safety: multiple instances are safe across threads, a single instance is not.</p></li>
+<li><p>DLPack interoperability: share memory with NumPy, PyTorch, and other DLPack consumers.</p></li>
+</ul>
+</section>
+<section id="end-to-end-usage-in-python">
+<h2>End-to-End Usage in Python<a class="headerlink" href="#end-to-end-usage-in-python" title="Link to this heading">#</a></h2>
+<p>Typical usage of ovphysx:</p>
+<ul class="simple">
+<li><p>Create and release instances with <code class="docutils literal notranslate"><span class="pre">PhysX()</span></code> and <code class="docutils literal notranslate"><span class="pre">physx.release()</span></code>.</p></li>
+<li><p>Load or remove USD with <code class="docutils literal notranslate"><span class="pre">physx.add_usd()</span></code> and <code class="docutils literal notranslate"><span class="pre">physx.remove_usd()</span></code>.</p></li>
+<li><p>Pair with an <code class="docutils literal notranslate"><span class="pre">ovstage.Stage</span></code> via <code class="docutils literal notranslate"><span class="pre">physx.attach_stage(stage)</span></code> to drive control attributes (and clone propagation) from the application through ovstage.</p></li>
+<li><p>Create tensor bindings with <code class="docutils literal notranslate"><span class="pre">physx.create_tensor_binding()</span></code> specifying tensor type and a prim path pattern or explicit prim paths.</p></li>
+<li><p>Write and read tensor data with <code class="docutils literal notranslate"><span class="pre">binding.write()</span></code> and <code class="docutils literal notranslate"><span class="pre">binding.read()</span></code> using NumPy arrays or dlpack-compatible buffers.</p></li>
+<li><p>Step the simulation with <code class="docutils literal notranslate"><span class="pre">physx.step()</span></code>.</p></li>
+</ul>
+<p>See the <a class="reference internal" href="python_api.html"><span class="std std-doc">Python API Reference</span></a> for the full Python API surface.</p>
+</section>
+<section id="c-c-sdk">
+<h2>C/C++ SDK<a class="headerlink" href="#c-c-sdk" title="Link to this heading">#</a></h2>
+<p>The C API mirrors the Python flow:</p>
+<ul class="simple">
+<li><p>Create and destroy instances with <code class="docutils literal notranslate"><span class="pre">ovphysx_create_instance()</span></code> and <code class="docutils literal notranslate"><span class="pre">ovphysx_destroy_instance()</span></code>.</p></li>
+<li><p>Load or reset USD with <code class="docutils literal notranslate"><span class="pre">ovphysx_add_usd()</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_remove_usd()</span></code>, and <code class="docutils literal notranslate"><span class="pre">ovphysx_reset()</span></code>.</p></li>
+<li><p>Create tensor bindings with <code class="docutils literal notranslate"><span class="pre">ovphysx_create_tensor_binding()</span></code> specifying tensor type and prim paths.</p></li>
+<li><p>Write and read tensor data with <code class="docutils literal notranslate"><span class="pre">ovphysx_write_tensor_binding()</span></code> and <code class="docutils literal notranslate"><span class="pre">ovphysx_read_tensor_binding()</span></code>.</p></li>
+<li><p>Step the simulation with <code class="docutils literal notranslate"><span class="pre">ovphysx_step()</span></code>.</p></li>
+</ul>
+<p>See the <a class="reference internal" href="api.html"><span class="std std-doc">C API Reference</span></a> for the full C API surface.</p>
+</section>
+<section id="release-and-distribution">
+<h2>Release and Distribution<a class="headerlink" href="#release-and-distribution" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Python users consume the wheel as the primary distribution (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">ovphysx</span></code>).</p></li>
+<li><p>C/C++ users consume the SDK package with headers and shared libraries (see the <a class="reference external" href="https://github.com/NVIDIA-Omniverse/PhysX/releases">GitHub release page</a>).</p></li>
+</ul>
+<section id="wheel-contents-and-environment-notes">
+<h3>Wheel Contents and Environment Notes<a class="headerlink" href="#wheel-contents-and-environment-notes" title="Link to this heading">#</a></h3>
+<p>The Python wheel (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">ovphysx</span></code>) is intentionally large because it ships a complete, self-contained runtime.
+No external NVIDIA or USD packages are required.</p>
+<section id="what-the-wheel-bundles">
+<h4>What the Wheel Bundles<a class="headerlink" href="#what-the-wheel-bundles" title="Link to this heading">#</a></h4>
+<ul class="simple">
+<li><p><strong>ovphysx shared libraries</strong> (<code class="docutils literal notranslate"><span class="pre">libovphysx.so</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx.dll</span></code>)</p></li>
+<li><p><strong>Carbonite runtime</strong> (<code class="docutils literal notranslate"><span class="pre">libcarb.so</span></code> and plugins)</p></li>
+<li><p><strong>PhysX plugins</strong> (simulation, tensors)</p></li>
+<li><p><strong>USD libraries</strong> (scene loading and schema support)</p></li>
+</ul>
+<p>The only Python dependency is <code class="docutils literal notranslate"><span class="pre">packaging</span></code>.</p>
+</section>
+</section>
+<section id="usd-coexistence-and-version-checking">
+<h3>USD Coexistence and Version Checking<a class="headerlink" href="#usd-coexistence-and-version-checking" title="Link to this heading">#</a></h3>
+<p>ovphysx includes runtime safeguards for processes where an OV namespaced USD runtime may already be loaded by another package, such as another NVIDIA Omniverse library. Classic host USD, including <code class="docutils literal notranslate"><span class="pre">usd-core</span></code>, is intentionally separate and is not reused as ovphysx’s runtime.</p>
+<p>When ovphysx shares a process with another OV USD-aware subsystem such as ovrtx,
+call <code class="docutils literal notranslate"><span class="pre">ovphysx_register_schema_paths()</span></code> and the peer subsystem’s equivalent
+before the first USD stage open so USD’s schema registry sees all plugin roots.</p>
+<p>When ovphysx starts, it checks whether a namespaced USD runtime is already loaded in the process. ovphysx then takes one of three paths:</p>
+<ul class="simple">
+<li><p><strong>No USD loaded</strong>: ovphysx preloads its own bundled USD libraries automatically.</p></li>
+<li><p><strong>Compatible OV namespaced USD loaded</strong>: ovphysx uses the existing USD (skips preload).</p></li>
+<li><p><strong>Incompatible OV namespaced USD loaded</strong>: ovphysx fails with a detailed error message showing the required vs. found version and remediation steps.</p></li>
+</ul>
+<p>Detection uses <code class="docutils literal notranslate"><span class="pre">dlopen(RTLD_NOLOAD)</span></code> on Linux and <code class="docutils literal notranslate"><span class="pre">GetModuleHandle</span></code> on Windows to inspect process memory without side effects.
+The required USD version is specified in <code class="docutils literal notranslate"><span class="pre">config.toml</span></code> using PEP 440 version specifiers (e.g. <code class="docutils literal notranslate"><span class="pre">==25.11</span></code>).</p>
+<p>You can control this behavior with <code class="docutils literal notranslate"><span class="pre">/ovphysx/skipUsdLibPreload</span></code> to bypass automatic USD preload.</p>
+</section>
+</section>
+<section id="versioning-and-compatibility">
+<h2>Versioning and Compatibility<a class="headerlink" href="#versioning-and-compatibility" title="Link to this heading">#</a></h2>
+<p>ovphysx follows semantic versioning for the SDK surface (C API and Python bindings).</p>
+<p>Backward compatibility guarantees that come with semantic versioning apply only to releases at or after v1.0; pre-1.0 releases may include breaking changes between minor and patch versions.</p>
+<p>Functions exposed in experimental or internal folders (or prefixes) have no guarantees and may change or be removed without notice.</p>
+<section id="version-management">
+<h3>Version Management<a class="headerlink" href="#version-management" title="Link to this heading">#</a></h3>
+<p>The project version is defined in <code class="docutils literal notranslate"><span class="pre">VERSION</span></code> (e.g., <code class="docutils literal notranslate"><span class="pre">0.1.0</span></code> or <code class="docutils literal notranslate"><span class="pre">0.1.4-specialFeature</span></code>).</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> reads <code class="docutils literal notranslate"><span class="pre">VERSION</span></code> and generates <code class="docutils literal notranslate"><span class="pre">include/ovphysx/version.h</span></code></p></li>
+<li><p>Python wheels convert to PEP 440 (<code class="docutils literal notranslate"><span class="pre">X.Y.Z-suffix</span></code> → <code class="docutils literal notranslate"><span class="pre">X.Y.Z.suffix</span></code>)</p></li>
+<li><p>C++ archives keep the original semver format</p></li>
+</ul>
+</section>
+<section id="api-abi-policy">
+<h3>API/ABI Policy<a class="headerlink" href="#api-abi-policy" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Major</strong>: breaking C API or ABI changes, removed symbols, or incompatible data layout changes.</p></li>
+<li><p><strong>Minor</strong>: backwards-compatible API additions, new symbols, or optional features.</p></li>
+<li><p><strong>Patch</strong>: backwards-compatible bug fixes and internal changes only.</p></li>
+</ul>
+<p>For v1.0 and later releases, backward compatibility is expected across patch and minor releases for the published C API and Python API. ABI compatibility is maintained within a major line; SONAME uses the major version on Linux to make ABI expectations explicit.</p>
+<p>When a breaking change is required at the C API level, consider adding a versioned entrypoint (e.g., <code class="docutils literal notranslate"><span class="pre">ovphysx_create_instance_v2</span></code>) to preserve compatibility, similar to CUDA-style <code class="docutils literal notranslate"><span class="pre">*_v2</span></code> APIs. Deprecated APIs should remain for at least one minor release with clear deprecation notes.</p>
+<p>Python bindings validate that the package version and native library version match at runtime (base semver), and will raise a clear error if they diverge. This check can be bypassed for advanced cases via <code class="docutils literal notranslate"><span class="pre">ignore_version_mismatch=True</span></code> on <code class="docutils literal notranslate"><span class="pre">PhysX</span></code>.</p>
+</section>
+</section>
+<section id="runtime-warnings">
+<h2>Runtime Warnings<a class="headerlink" href="#runtime-warnings" title="Link to this heading">#</a></h2>
+<p>ovphysx bundles PhysX, Carbonite, and USD runtime components. On startup and during
+simulation, you may see warnings from these downstream dependencies such as:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">[Warning]</span> <span class="pre">PhysXFoundation:</span> <span class="pre">Unable</span> <span class="pre">to</span> <span class="pre">create</span> <span class="pre">GPU</span> <span class="pre">Foundation</span></code> — appears on machines
+without an NVIDIA GPU; the SDK falls back to CPU simulation transparently.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[Error]</span> <span class="pre">[omni.physx.cooking.plugin]</span> <span class="pre">registry</span> <span class="pre">is</span> <span class="pre">false</span></code> — a non-fatal initialization
+message from the cooking subsystem.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Warning:</span> <span class="pre">Error</span> <span class="pre">loading</span> <span class="pre">lib</span> <span class="pre">...</span> <span class="pre">module</span> <span class="pre">'pxr.*':</span> <span class="pre">ModuleNotFoundError</span></code> — the bundled
+USD libraries attempt to load optional Python USD bindings (<code class="docutils literal notranslate"><span class="pre">pxr</span></code>). These warnings
+are harmless when using ovphysx standalone without a separate USD Python installation.</p></li>
+</ul>
+<p>These messages do not indicate a problem with your application. They originate from
+the bundled runtime dependencies and will be addressed in future releases.</p>
+<p>To suppress most startup noise, set the log level before creating an instance:</p>
+<ul class="simple">
+<li><p><strong>C:</strong> <code class="docutils literal notranslate"><span class="pre">ovphysx_set_log_level(OVPHYSX_LOG_ERROR);</span></code></p></li>
+<li><p><strong>Python:</strong> <code class="docutils literal notranslate"><span class="pre">ovphysx.set_log_level(ovphysx.LogLevel.ERROR)</span></code></p></li>
+</ul>
+</section>
+<section id="physx-sdk-and-omni-physx-documentation">
+<h2>PhysX SDK and Omni PhysX Documentation<a class="headerlink" href="#physx-sdk-and-omni-physx-documentation" title="Link to this heading">#</a></h2>
+<p>ovphysx uses the PhysX SDK and Omni PhysX plugins under the hood.
+For broader PhysX and Omni PhysX guidance see the respective developer resources:</p>
 <ul class="simple">
 <li><p><a class="reference external" href="https://docs.omniverse.nvidia.com/kit/docs/omni_physics/latest/index.html">Omni PhysX User Guide</a></p></li>
-<li><p><a class="reference external" href="https://nvidia-omniverse.github.io/PhysX/">PhysX SDK Documentation</a></p></li>
+<li><p><a class="reference external" href="https://nvidia-omniverse.github.io/PhysX/">PhysX Documentation</a></p></li>
 </ul>
-<section id="table-of-contents">
-<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">#</a></h2>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/hello_world.html">Hello World: Load USD and Step</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/cloning.html">Cloning: Replicate Environments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording: Capture Physics Internals to .ovd</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">C API Reference</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security</a></li>
-</ul>
-</div>
+</section>
+<section id="conclusion">
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Link to this heading">#</a></h2>
+<p>You now have a high-level view of ovphysx capabilities, compatibility policy, and distribution options. For build and runtime details, see the <a class="reference internal" href="developer_guide.html"><span class="std std-doc">Developer Guide</span></a>. For hands-on usage, continue with <a class="reference internal" href="tutorials/hello_world.html"><span class="std std-doc">Hello World</span></a>.</p>
 </section>
 </section>
 
@@ -624,12 +754,21 @@ The dependency stack is: PhysX SDK → omni.physx (Omniverse integration) → ov
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">ovphysx</p>
+      </div>
+    </a>
     <a class="right-next"
-       href="ovphysx_overview.html"
+       href="developer_guide.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">ovphysx Overview</p>
+        <p class="prev-next-title">Developer Guide</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -654,9 +793,28 @@ The dependency stack is: PhysX SDK → omni.physx (Omniverse integration) → ov
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#table-of-contents">Table of Contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#who-this-is-for">Who This Is For</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-you-can-do">What You Can Do</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#relationship-to-physx-sdk-and-omni-physx">Relationship to PhysX SDK and Omni PhysX</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#core-concepts">Core Concepts</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#end-to-end-usage-in-python">End-to-End Usage in Python</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#c-c-sdk">C/C++ SDK</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#release-and-distribution">Release and Distribution</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#wheel-contents-and-environment-notes">Wheel Contents and Environment Notes</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-wheel-bundles">What the Wheel Bundles</a></li>
 </ul>
 </li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#usd-coexistence-and-version-checking">USD Coexistence and Version Checking</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#versioning-and-compatibility">Versioning and Compatibility</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#version-management">Version Management</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#api-abi-policy">API/ABI Policy</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#runtime-warnings">Runtime Warnings</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#physx-sdk-and-omni-physx-documentation">PhysX SDK and Omni PhysX Documentation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusion">Conclusion</a></li>
 </ul>
   </nav></div>
 
