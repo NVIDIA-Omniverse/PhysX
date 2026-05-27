@@ -68,11 +68,11 @@ static inline ovphysx_config_entry_t ovphysx_config_entry_string(ovphysx_config_
 }
 
 /**
- * Build a config entry for an arbitrary Carbonite setting (escape hatch).
+ * Build a config entry for an arbitrary Carbonite setting (direct override).
  *
  * The key is a Carbonite settings path (e.g., "/physics/fabricUpdateVelocities")
  * and the value is a string whose type is auto-detected at runtime:
- * "true"/"false" → bool, integer string → int, float string → float, else string.
+ * "true"/"false" -> bool, integer string -> int, float string -> float, else string.
  *
  * Both key.ptr and value.ptr must remain valid until the API call returns.
  */
@@ -117,6 +117,24 @@ static inline ovphysx_config_entry_t ovphysx_config_entry_num_threads(int32_t va
 static inline ovphysx_config_entry_t ovphysx_config_entry_scene_multi_gpu_mode(int32_t value)
 {
     return ovphysx_config_entry_int32(OVPHYSX_CONFIG_SCENE_MULTI_GPU_MODE, value);
+}
+
+/** Set OmniPVD OVD recording directory (/persistent/physics/omniPvdOvdRecordingDirectory).
+ *  Both this and omnipvd_output_enabled must be set before instance creation.
+ *  When passed together in config_entries, order within the array does not matter
+ *  (both are applied before the physics engine reads them).
+ *  value.ptr must remain valid until the API call returns. */
+static inline ovphysx_config_entry_t ovphysx_config_entry_omnipvd_ovd_recording_directory(ovphysx_string_t value)
+{
+    return ovphysx_config_entry_string(OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY, value);
+}
+
+/** Enable/disable OmniPVD recording (/physics/omniPvdOutputEnabled).
+ *  Both this and omnipvd_ovd_recording_directory must be set before instance creation.
+ *  When passed together in config_entries, order within the array does not matter. */
+static inline ovphysx_config_entry_t ovphysx_config_entry_omnipvd_output_enabled(bool value)
+{
+    return ovphysx_config_entry_bool(OVPHYSX_CONFIG_OMNIPVD_OUTPUT_ENABLED, value);
 }
 
 #ifdef __cplusplus

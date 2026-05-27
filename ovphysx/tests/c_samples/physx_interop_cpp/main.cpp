@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
-// NOTE: This file is included verbatim in documentation.
-// When editing, keep tutorial line ranges in sync.
+// NOTE: This file is included verbatim in documentation via literalinclude.
+// Tutorial marker comments below define the included range.
 
+// [tutorial-start]
 #include "ovphysx/ovphysx.h"
 #include "ovphysx/ovphysx_types.h"
 
@@ -185,7 +186,8 @@ int main() {
     // 8. Cleanup
     ovphysx_destroy_tensor_binding(handle, pose_binding);
     ovphysx_destroy_instance(handle);
+    printf("Cleanup complete\n");
 
-    printf("=== PhysX interop sample completed successfully ===\n");
     return 0;
 }
+// [tutorial-end]

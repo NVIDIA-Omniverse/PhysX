@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
-# NOTE: This file is included verbatim in documentation.
-# When editing, keep tutorial line ranges in sync.
+# NOTE: This file is included verbatim in documentation via literalinclude.
+# Tutorial marker comments below define the included range.
 
 """
 Clone sample demonstrating scene replication with the clone API.
@@ -22,6 +22,7 @@ from ovphysx import PhysX
 from ovphysx.types import TensorType
 
 
+# [tutorial-start]
 def main():
     # Initialize PhysX SDK
     physx = PhysX(device="cpu")
@@ -64,11 +65,13 @@ def main():
         px, py, pz = poses[env_idx, 0:3]
         print(f"  env{env_idx}: pos=({px:.4f}, {py:.4f}, {pz:.4f})")
 
+    print("Clone sample completed successfully")
+
     pose_binding.destroy()
     physx.remove_usd(usd_handle)
     physx.release()
-
-    print("[SUCCESS]", flush=True)
+    print("Cleanup complete")
+# [tutorial-end]
 
 
 if __name__ == "__main__":

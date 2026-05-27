@@ -13,9 +13,9 @@ Keeping this module dependency-free is intentional: downstream consumers
 like IsaacLab can import TensorType without triggering ovphysx's native
 bootstrap or USD version checks.
 
-Naming convention: strip OVPHYSX_TENSOR_ prefix and _F32 suffix from the
-C enum name. This keeps names unambiguous (ARTICULATION_ vs RIGID_BODY_)
-and makes the _bindings.py aliases mechanically verifiable.
+Naming convention: strip the ``OVPHYSX_TENSOR_`` prefix and ``_F32`` suffix
+from the C enum name. This keeps names unambiguous (``ARTICULATION_`` vs
+``RIGID_BODY_``) and makes the ``_bindings.py`` aliases mechanically verifiable.
 """
 
 from enum import IntEnum
@@ -34,11 +34,14 @@ class TensorType(IntEnum):
     # -- Rigid body state (2D, read/write) --
     RIGID_BODY_POSE = 1           # [N, 7]  world-frame pose: (px,py,pz,qx,qy,qz,qw)
     RIGID_BODY_VELOCITY = 2       # [N, 6]  linear (xyz) + angular (xyz) velocity
+    RIGID_BODY_ACCELERATION = 6   # [N, 6]  read-only; linear + angular acceleration
 
     # -- Rigid body properties (2D, read/write) --
     RIGID_BODY_MASS = 3           # [N]     mass per body
     RIGID_BODY_INERTIA = 4        # [N, 9]  row-major 3x3 inertia tensor
     RIGID_BODY_COM_POSE = 5       # [N, 7]  center-of-mass pose in local frame
+    RIGID_BODY_INV_MASS = 7       # [N]     read-only; inverse mass
+    RIGID_BODY_INV_INERTIA = 8    # [N, 9]  read-only; inverse inertia
 
     # -- Articulation root (2D, read/write) --
     ARTICULATION_ROOT_POSE = 10                # [N, 7]  root link world-frame pose
@@ -132,8 +135,8 @@ class PhysXType(IntEnum):
 
     Values match ``ovphysx_physx_type_t`` in ``ovphysx_types.h`` (which in
     turn matches ``omni::physx::PhysXType``).  Alignment is enforced by
-    static_asserts in ovphysxClone.cpp (C ↔ internal) and by
-    test_types_sync.py (C ↔ Python).
+    static_asserts in ovphysxClone.cpp (C <-> internal) and by
+    test_types_sync.py (C <-> Python).
     """
 
     SCENE          = 1   # PxScene
@@ -189,6 +192,7 @@ class ConfigBool(IntEnum):
     DISABLE_CONTACT_PROCESSING = 0
     COLLISION_CONE_CUSTOM_GEOMETRY = 1
     COLLISION_CYLINDER_CUSTOM_GEOMETRY = 2
+    OMNIPVD_OUTPUT_ENABLED = 3
 
 
 class ConfigInt32(IntEnum):
@@ -204,8 +208,9 @@ class ConfigFloat(IntEnum):
 
 
 class ConfigString(IntEnum):
-    """String config keys (reserved). Mirrors ovphysx_config_string_t."""
-    pass
+    """String config keys. Mirrors ovphysx_config_string_t."""
+
+    OMNIPVD_OVD_RECORDING_DIRECTORY = 0
 
 
 class PhysXDeviceError(RuntimeError):

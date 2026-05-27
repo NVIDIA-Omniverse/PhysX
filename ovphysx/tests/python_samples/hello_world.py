@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
-# NOTE: This file is included verbatim in documentation.
-# When editing, keep tutorial line ranges in sync.
+# NOTE: This file is included verbatim in documentation via literalinclude.
+# Tutorial marker comments below define the included range.
 
+# [tutorial-start]
 import ovphysx
 from ovphysx import PhysX
 from pathlib import Path
@@ -24,6 +25,8 @@ dt = 1.0 / 60.0
 elapsed_time = 0.0
 physx.step(dt, elapsed_time)
 
-physx.release()
+print("Simulation step completed successfully")
 
-print("[SUCCESS]", flush=True)
+physx.release()
+print("Cleanup complete")
+# [tutorial-end]

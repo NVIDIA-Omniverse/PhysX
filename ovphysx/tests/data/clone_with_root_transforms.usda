@@ -1,0 +1,51 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Scene with non-trivial root transforms (translate + orient + scale) for clone testing"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    def Scope "envs"
+    {
+        # env0 has translate + orient + scale on the root -- mimics a robot prim
+        # with non-trivial transforms (the scenario that triggers the clone bug).
+        def Xform "env0"
+        {
+            double3 xformOp:translate = (0, 0, 1.0)
+            quatd xformOp:orient = (0.7071067811865476, 0, 0, -0.7071067811865476)
+            double3 xformOp:scale = (0.5, 0.5, 0.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+            def Xform "box" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                double3 xformOp:translate = (0, 2, 0)
+                quatd xformOp:orient = (1, 0, 0, 0)
+                double3 xformOp:scale = (1, 1, 1)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                float physics:mass = 1.0
+                vector3f physics:velocity = (0, 0, 0)
+                vector3f physics:angularVelocity = (0, 0, 0)
+
+                def Cube "Geom" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI"]
+                )
+                {
+                    float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                    double size = 1
+                }
+            }
+        }
+    }
+}

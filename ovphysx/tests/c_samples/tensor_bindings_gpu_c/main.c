@@ -63,19 +63,22 @@ int main(void)
     printf("=== Tensor Binding API Sample ===\n\n");
 
     // 1. Create instance with GPU mode (default)
-    // GPU mode automatically enables DirectGPU API required for TensorBinding
+    // GPU mode runs PhysX with eENABLE_GPU_DYNAMICS + eGPU broadphase and lets
+    // TensorBinding work directly with kDLCUDA tensors. It does NOT auto-enable
+    // DirectGPU (eENABLE_DIRECT_GPU_API); DirectGPU is an opt-in optimization
+    // gated by the Carbonite setting /physics/suppressReadback=true and is
+    // incompatible with contact-modify callbacks (e.g. PhysxSurfaceVelocityAPI).
     ovphysx_handle_t handle = 0;
     ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
     // args.device = OVPHYSX_DEVICE_GPU;  // default, enables TensorBinding support
     //
     // Optional: explicitly select which GPU PhysX should use.
-    // This sets the Carbonite setting `/physics/cudaDevice` BEFORE PhysX plugins load.
     //
     // Example (uncomment to use):
     //   args.device = OVPHYSX_DEVICE_GPU;
-    //   args.gpu_index = 1; // run PhysX on CUDA device 1
+    //   args.active_cuda_gpus = ovphysx_cstr("1"); // run PhysX on CUDA device 1
     //
-    // Note: gpu_index on create_args is the recommended way to select the CUDA device.
+    // Note: active_cuda_gpus on create_args is the recommended way to select the CUDA device.
 
     ovphysx_result_t result = ovphysx_create_instance(&args, &handle);
     if (!check_result(result, "create_instance"))
@@ -221,10 +224,14 @@ int main(void)
         return 1;
     }
 
-    // Create DLTensor wrappers - use args.gpu_index to match PhysX device
+    // Use the first CUDA ordinal from active_cuda_gpus as the DLTensor device so
+    // the tensor allocation matches wherever PhysX is actually running.
+    // Default (empty active_cuda_gpus) means GPU 0; "1" means GPU 1; "0,1" means
+    // primary ordinal 0, etc.  strtol stops at the first comma, giving the first ordinal.
     int64_t rb_shape[2] = { (int64_t)rb_count, (int64_t)rb_components };
     int64_t dof_shape[2] = { (int64_t)dof_count, (int64_t)dof_components };
-    int32_t device_id = args.gpu_index;
+    int32_t device_id = (args.active_cuda_gpus.ptr && args.active_cuda_gpus.length > 0)
+        ? (int32_t)strtol(args.active_cuda_gpus.ptr, NULL, 10) : 0;
 
     DLTensor rb_tensor = {
         .data = rb_device,
@@ -438,8 +445,8 @@ int main(void)
     printf("\nTensor Binding sample completed successfully!\n");
 
     ovphysx_destroy_instance(handle);
+    printf("Cleanup complete\n");
 
-    printf("[SUCCESS]\n");
     return 0;
 #endif
 }

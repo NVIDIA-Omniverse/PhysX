@@ -41,6 +41,7 @@ Thread Safety
 import ctypes
 import os
 import threading
+import warnings
 from ctypes import (
     POINTER,
     byref,
@@ -145,6 +146,15 @@ _CacheEntry = namedtuple("_CacheEntry", [
 ])
 
 
+def _warn_unclosed_resource(resource_name: str, source: object) -> None:
+    warnings.warn(
+        f"{resource_name} was garbage-collected without explicit destroy(); "
+        "use destroy() or a context manager to release native resources promptly.",
+        ResourceWarning,
+        source=source,
+    )
+
+
 def _detect_data_ptr(tensor):
     """The cache checks ``tensor is cached_tensor`` (Python object identity),
     but a numpy array can be resized in place -- ``buf.resize((bigger,),
@@ -244,6 +254,44 @@ class TensorBinding:
         """Ensure the parent PhysX instance is still alive."""
         if self._sdk._omni_physx_sdk_handle is None:
             raise RuntimeError("Cannot use TensorBinding: parent PhysX instance has been released.")
+
+    @property
+    def prim_paths(self) -> list[str]:
+        """Resolved USD prim paths in tensor row order.
+
+        Rigid-body bindings return one path per rigid-body tensor row.
+        Articulation bindings return one root prim path per articulation row.
+        For per-articulation link names, use :attr:`body_names`.
+        """
+        with self._lock:
+            if self._destroyed:
+                raise RuntimeError("TensorBinding has been destroyed")
+            self._check_sdk_valid()
+            count = self.count
+            if count == 0:
+                return []
+            paths_arr = (ovphysx_string_t * count)()
+            out_count = c_uint32(0)
+            result = _lib.ovphysx_tensor_binding_get_prim_paths(
+                self._sdk._omni_physx_sdk_handle.value,
+                self._handle,
+                paths_arr,
+                count,
+                ctypes.byref(out_count),
+            )
+            if result.status != ApiStatus.SUCCESS:
+                error_msg = self._sdk._get_last_error()
+                raise RuntimeError(f"Failed to get tensor binding prim paths: {error_msg}")
+            if out_count.value > count:
+                # Native layer wrote past the buffer we sized to `count` -- this
+                # is a real bug in the C library, not an expected truncation.
+                # The min() below keeps us from indexing past the buffer.
+                import logging as _logging
+                _logging.getLogger(__name__).warning(
+                    "ovphysx_tensor_binding_get_prim_paths: native out_count=%d > buffer size=%d; truncating",
+                    out_count.value, count,
+                )
+            return [str(paths_arr[i]) for i in range(min(out_count.value, count))]
 
     def _get_artic_metadata(self) -> ovphysx_articulation_metadata_t:
         """Return cached articulation metadata struct (one C call total per binding)."""
@@ -620,6 +668,11 @@ class TensorBinding:
         except Exception:
             return
         if not self._destroyed:
+            if getattr(getattr(self, "_sdk", None), "_omni_physx_sdk_handle", None) is not None:
+                try:
+                    _warn_unclosed_resource("TensorBinding", self)
+                except Exception:
+                    pass
             try:
                 self.destroy()
             except Exception:
@@ -627,17 +680,19 @@ class TensorBinding:
 
 
 class ContactBinding:
-    """Contact force binding backed by IRigidContactView.
+    """Contact tensor binding backed by IRigidContactView.
 
     Do not instantiate directly. Use :meth:`PhysxSDK.create_contact_binding` to
-    obtain an instance.
+    obtain an instance. The :attr:`sensor_paths` and :attr:`filter_paths`
+    properties expose the row/column metadata for the returned tensors.
     """
 
-    def __init__(self, sdk, handle: int, sensor_count: int, filter_count: int):
+    def __init__(self, sdk, handle: int, sensor_count: int, filter_count: int, max_contact_data_count: int):
         self._sdk = sdk
         self._handle = handle
         self._sensor_count = sensor_count
         self._filter_count = filter_count
+        self._max_contact_data_count = max_contact_data_count
         self._destroyed = False
         self._lock = threading.Lock()
 
@@ -654,6 +709,75 @@ class ContactBinding:
     def filter_count(self) -> int:
         """Number of filter bodies per sensor (0 when no filters specified)."""
         return self._filter_count
+
+    @property
+    def max_contact_data_count(self) -> int:
+        """Flat-buffer capacity for detailed contact and friction reads."""
+        return self._max_contact_data_count
+
+    @property
+    def sensor_paths(self) -> list[str]:
+        """Resolved sensor USD prim paths in contact tensor row order."""
+        with self._lock:
+            if self._destroyed:
+                raise RuntimeError("ContactBinding has been destroyed")
+            self._check_sdk_valid()
+            if self._sensor_count <= 0:
+                return []
+            paths_arr = (ovphysx_string_t * self._sensor_count)()
+            out_count = c_uint32(0)
+            result = _lib.ovphysx_contact_binding_get_sensor_paths(
+                self._sdk._omni_physx_sdk_handle.value,
+                self._handle,
+                paths_arr,
+                self._sensor_count,
+                ctypes.byref(out_count),
+            )
+            if result.status != ApiStatus.SUCCESS:
+                raise RuntimeError(f"Failed to get contact sensor paths: {self._sdk._get_last_error()}")
+            if out_count.value > self._sensor_count:
+                # Same defensive log as TensorBinding.prim_paths -- a native
+                # out_count exceeding the buffer size is a C-library bug.
+                import logging as _logging
+                _logging.getLogger(__name__).warning(
+                    "ovphysx_contact_binding_get_sensor_paths: native out_count=%d > buffer size=%d; truncating",
+                    out_count.value, self._sensor_count,
+                )
+            return [str(paths_arr[i]) for i in range(min(out_count.value, self._sensor_count))]
+
+    @property
+    def filter_paths(self) -> list[list[str]]:
+        """Resolved filter USD prim paths in contact tensor column order.
+
+        The outer list is indexed by sensor row and the inner list by filter
+        column. Each inner list is empty for unfiltered contact bindings
+        (i.e. when ``filter_count == 0``).
+        """
+        with self._lock:
+            if self._destroyed:
+                raise RuntimeError("ContactBinding has been destroyed")
+            self._check_sdk_valid()
+            total = self._sensor_count * self._filter_count
+            if total <= 0:
+                return [[] for _ in range(max(self._sensor_count, 0))]
+            paths_arr = (ovphysx_string_t * total)()
+            out_count = c_uint32(0)
+            result = _lib.ovphysx_contact_binding_get_filter_paths(
+                self._sdk._omni_physx_sdk_handle.value,
+                self._handle,
+                paths_arr,
+                total,
+                ctypes.byref(out_count),
+            )
+            if result.status != ApiStatus.SUCCESS:
+                raise RuntimeError(f"Failed to get contact filter paths: {self._sdk._get_last_error()}")
+            if out_count.value != total:
+                raise RuntimeError(f"Expected {total} contact filter paths, got {out_count.value}")
+            flat = [str(paths_arr[i]) for i in range(out_count.value)]
+            return [
+                flat[sensor_idx * self._filter_count:(sensor_idx + 1) * self._filter_count]
+                for sensor_idx in range(self._sensor_count)
+            ]
 
     def read_net_forces(self, output) -> None:
         """Read net contact forces into output. Expected shape: [sensor_count, 3].
@@ -695,6 +819,96 @@ class ContactBinding:
             if result.status != ApiStatus.SUCCESS:
                 raise RuntimeError(f"Failed to read contact force matrix: {self._sdk._get_last_error()}")
 
+    def read_contact_data(self, contact_forces, positions, normals, separations, counts, start_indices) -> None:
+        """Read detailed contact data into flat buffers.
+
+        Expected shapes are ``[C, 1]`` for ``contact_forces`` and ``separations``,
+        ``[C, 3]`` for ``positions`` and ``normals``, and ``[sensor_count,
+        filter_count]`` for ``counts`` and ``start_indices``. ``C`` is
+        :attr:`max_contact_data_count`; both ``C`` and ``filter_count`` must
+        be positive. Count and start-index tensors may be int32 or uint32.
+        """
+        with self._lock:
+            if self._destroyed:
+                raise RuntimeError("ContactBinding has been destroyed")
+            self._check_sdk_valid()
+            if self._max_contact_data_count <= 0:
+                raise RuntimeError(
+                    "Detailed contact reads require max_contact_data_count > 0 "
+                    "when creating the contact binding."
+                )
+            if self._filter_count <= 0:
+                raise RuntimeError(
+                    "Detailed contact reads require filters_per_sensor > 0 "
+                    "when creating the contact binding."
+                )
+            from ._dlpack_utils import acquire_dltensor
+
+            force_dl, force_keepalive = acquire_dltensor(contact_forces)
+            pos_dl, pos_keepalive = acquire_dltensor(positions)
+            normal_dl, normal_keepalive = acquire_dltensor(normals)
+            sep_dl, sep_keepalive = acquire_dltensor(separations)
+            count_dl, count_keepalive = acquire_dltensor(counts)
+            start_dl, start_keepalive = acquire_dltensor(start_indices)
+
+            result = _lib.ovphysx_read_contact_data(
+                self._sdk._omni_physx_sdk_handle.value,
+                self._handle,
+                ctypes.byref(force_dl),
+                ctypes.byref(pos_dl),
+                ctypes.byref(normal_dl),
+                ctypes.byref(sep_dl),
+                ctypes.byref(count_dl),
+                ctypes.byref(start_dl),
+            )
+            _ = (force_keepalive, pos_keepalive, normal_keepalive, sep_keepalive, count_keepalive, start_keepalive)
+            if result.status != ApiStatus.SUCCESS:
+                raise RuntimeError(f"Failed to read detailed contact data: {self._sdk._get_last_error()}")
+
+    def read_friction_data(self, friction_forces, friction_points, counts, start_indices) -> None:
+        """Read detailed friction data into flat buffers.
+
+        Expected shapes are ``[C, 3]`` for ``friction_forces`` and
+        ``friction_points``, and ``[sensor_count, filter_count]`` for ``counts``
+        and ``start_indices``. ``C`` is :attr:`max_contact_data_count` and must
+        be positive; ``filter_count`` must also be positive. Count and
+        start-index tensors may be int32 or uint32.
+        Friction entries are per-anchor; sum each flat slice to build a
+        pair-level ``[sensor_count, filter_count, 3]`` force tensor.
+        """
+        with self._lock:
+            if self._destroyed:
+                raise RuntimeError("ContactBinding has been destroyed")
+            self._check_sdk_valid()
+            if self._max_contact_data_count <= 0:
+                raise RuntimeError(
+                    "Detailed friction reads require max_contact_data_count > 0 "
+                    "when creating the contact binding."
+                )
+            if self._filter_count <= 0:
+                raise RuntimeError(
+                    "Detailed friction reads require filters_per_sensor > 0 "
+                    "when creating the contact binding."
+                )
+            from ._dlpack_utils import acquire_dltensor
+
+            force_dl, force_keepalive = acquire_dltensor(friction_forces)
+            point_dl, point_keepalive = acquire_dltensor(friction_points)
+            count_dl, count_keepalive = acquire_dltensor(counts)
+            start_dl, start_keepalive = acquire_dltensor(start_indices)
+
+            result = _lib.ovphysx_read_friction_data(
+                self._sdk._omni_physx_sdk_handle.value,
+                self._handle,
+                ctypes.byref(force_dl),
+                ctypes.byref(point_dl),
+                ctypes.byref(count_dl),
+                ctypes.byref(start_dl),
+            )
+            _ = (force_keepalive, point_keepalive, count_keepalive, start_keepalive)
+            if result.status != ApiStatus.SUCCESS:
+                raise RuntimeError(f"Failed to read detailed friction data: {self._sdk._get_last_error()}")
+
     def destroy(self) -> None:
         """Release contact binding resources.
 
@@ -723,6 +937,11 @@ class ContactBinding:
         except Exception:
             return
         if not self._destroyed:
+            if getattr(getattr(self, "_sdk", None), "_omni_physx_sdk_handle", None) is not None:
+                try:
+                    _warn_unclosed_resource("ContactBinding", self)
+                except Exception:
+                    pass
             try:
                 self.destroy()
             except Exception:
@@ -965,7 +1184,7 @@ class PhysX:
         config: "PhysXConfig | None" = None,
         ignore_version_mismatch: bool = False,
         device: str | int | None = None,
-        gpu_index: int = 0,
+        active_cuda_gpus: str | None = None,
     ) -> None:
         """Initialize PhysX SDK.
 
@@ -984,7 +1203,7 @@ class PhysX:
                 - "auto" or 0: AUTO (GPU preferred). If CUDA is available, use GPU.
                   Otherwise, fall back to CPU. This is the recommended default.
                 - "gpu" or 1: GPU REQUIRED. If CUDA is unavailable, initialization fails.
-                - "cpu" or 2: CPU ONLY (required for the TensorAPI "numpy" frontend)
+                - "cpu" or 2: CPU ONLY (useful for CPU-only environments and deterministic tests)
 
                 .. warning::
 
@@ -994,9 +1213,16 @@ class PhysX:
                     Creating a CPU instance after a GPU instance (or vice versa) in the
                     same process will raise an error.
 
-            gpu_index: CUDA device ordinal to use when device="gpu" (default: 0).
-                Special value: -1 requests PhysX's default CUDA selection
-                (equivalent to /physics/cudaDevice=-1).
+            active_cuda_gpus: Comma-separated CUDA device ordinals (default: None = GPU 0).
+                Supported patterns:
+
+                - ``None`` or ``"0"``: single GPU 0 (default)
+                - ``"N"``: single GPU N
+                - ``"-1"``: PhysX default CUDA selection
+                - ``"0,1,...,N-1"``: all N GPUs, scenes distributed round-robin
+                - ``"1,2,...,N-1"``: all GPUs except first, round-robin
+
+                Other patterns raise ``RuntimeError``.
 
         Preconditions:
             - The ovphysx native library is available in the environment or bundled deps.
@@ -1045,14 +1271,11 @@ class PhysX:
                 )
             args.device = d
 
-        args.gpu_index = int(gpu_index)
+        args.active_cuda_gpus = ovphysx_string_t(active_cuda_gpus or "")
 
-        # Set up bundled dependencies path (for self-contained wheel)
-        bundled_deps_path = self._get_bundled_deps_path()
-        if bundled_deps_path:
-            args.bundled_deps_path = ovphysx_string_t(bundled_deps_path)
-        else:
-            args.bundled_deps_path = ovphysx_string_t()
+        # Current wheel/source layouts use runtime discovery from lib/ and
+        # plugins/, so the Python wrapper leaves bundled_deps_path empty.
+        args.bundled_deps_path = ovphysx_string_t()
 
         # Build config entries from PhysXConfig dataclass
         all_entries = []
@@ -1089,11 +1312,6 @@ class PhysX:
             self._omni_physx_sdk_handle = None
             raise RuntimeError("ovphysx_create_instance() returned invalid handle")
 
-        # Register this instance so tensor plugins know Carbonite is ready
-        from . import _register_physx_instance
-
-        _register_physx_instance(self)
-
     def _check_valid(self) -> None:
         if self._omni_physx_sdk_handle is None:
             raise RuntimeError(
@@ -1112,41 +1330,6 @@ class PhysX:
         """
         self._check_valid()
         return self._omni_physx_sdk_handle.value
-
-    def _get_bundled_deps_path(self) -> str:
-        """Get the path to bundled dependencies.
-
-        Returns:
-        - Path to complete bundle (wheel mode): Use pre-packaged deps
-        - None (no bundle): Use default runtime discovery (RPATH/OVPHYSX_PLUGINS_DIR)
-
-        The bundle must be complete (carbonite_plugins + v2/extensions).
-        Returns None if bundle doesn't exist - runtime discovery is used.
-
-        Development mode: If OVPHYSX_ROOT points to _build directory,
-        skip bundled deps and use live build output.
-        """
-        # Check if we're in development mode (tests use live build from _build)
-        # If OVPHYSX_ROOT ends with "_build", prefer live build output over bundled deps
-        sdk_root = os.environ.get("OVPHYSX_ROOT", "")
-        if sdk_root.endswith("_build") or sdk_root.endswith("_build/"):
-            # Development mode - use _build/lib/deps
-            return None
-
-        module_dir = Path(__file__).parent
-        bundled_deps_dir = module_dir / "deps"
-
-        # Only use bundled deps if COMPLETE bundle exists
-        # (both carbonite_plugins AND v2 with extensions)
-        carbonite_plugins = bundled_deps_dir / "carbonite_plugins"
-        v2_dir = bundled_deps_dir / "v2"
-
-        if carbonite_plugins.exists() and v2_dir.exists():
-            # Complete bundle - use wheel mode
-            return str(bundled_deps_dir)
-
-        # No complete bundle - use runtime discovery
-        return None
 
     @staticmethod
     def _ovx_to_str(s: ovphysx_string_t) -> str:
@@ -1289,6 +1472,14 @@ class PhysX:
         Creates physics-optimized clones in Fabric for high-performance simulation.
         The source prim must exist in the loaded USD stage and have physics properties.
         Due to stream-ordered execution, subsequent operations automatically see the result of clone.
+
+        When an ovstage Stage is attached via :meth:`attach_stage`, the canonical
+        user-facing clone path is ``stage.clone_subtree(source, [targets])`` on
+        the attached Stage; the OvstageBridge consumes the resulting clone events
+        during step ingest and drives PhysX-side replication via the same plugin
+        this method uses. This direct method remains supported for standalone
+        callers (no ovstage attached) and for callers that want the async
+        multi-target convenience.
 
         Args:
             source_path: USD path of the source prim hierarchy to clone (e.g., "/World/env0")
@@ -1436,6 +1627,29 @@ class PhysX:
             error_msg = self._get_last_error()
             raise RuntimeError(f"step_n_sync failed: {error_msg}")
 
+    def update_articulations_kinematic(self) -> None:
+        """Update articulation link poses from current joint positions.
+
+        This performs a synchronous articulation forward-kinematics update
+        without running a normal simulation step, collision detection, or
+        contact generation. Call it after writing articulation DOF positions
+        and before reading articulation link pose tensors when fresh link poses
+        are needed in the same frame.
+
+        In GPU mode, the first kinematic update after loading USD may perform
+        the same automatic DirectGPU warmup step used by tensor reads/writes.
+
+        Raises:
+            RuntimeError: If the update fails.
+        """
+        self._check_valid()
+        result = self._lib.ovphysx_update_articulations_kinematic(
+            self._omni_physx_sdk_handle.value
+        )
+        if result.status != ApiStatus.SUCCESS:
+            error_msg = self._get_last_error()
+            raise RuntimeError(f"update_articulations_kinematic failed: {error_msg}")
+
     def wait_op(self, op_index: int, timeout_ns: int = None) -> None:
         """Wait for operation(s) to complete.
 
@@ -1538,6 +1752,72 @@ class PhysX:
             return -1
 
         return int(sid.value)
+
+    def attach_stage(self, stage) -> None:
+        """Attach an ovstage Stage as the orchestration data surface.
+
+        Once attached, :meth:`step` pulls dirty control attributes from the
+        Stage (``drive:force``, ``drive:velocity``, ``drive:position_target``,
+        ``physics:mass``, ``physics:gravityMagnitude``, ``physics:gravityDirection``)
+        before integrating, and publishes ``xformOp:transform`` per rigid
+        body / articulation link to the Stage after integrating. The
+        application then writes data only to ovstage; tensor bindings remain
+        available as a perf escape hatch.
+
+        Interest registration (the dispatch table's input attributes) runs
+        eagerly during this call, but output-buffer registration for the
+        ``xformOp:transform`` pose channel is deferred to the first
+        :meth:`step` that observes a non-empty rigid-body set, since the
+        prim list is not known at attach time. Steps issued before any
+        rigid bodies exist on the Stage are no-ops on the publish side and
+        re-attempt initialisation on the next step.
+
+        Args:
+            stage: An ``ovstage.Stage`` (with ``handle()`` returning the int
+                cast of ``ovstage_instance_t*``), or a raw int handle.
+
+        Preconditions:
+            - Instance must be valid.
+            - Not already attached to a Stage.
+            - ``stage`` must outlive this attachment -- call
+              :meth:`detach_stage` (or destroy this instance) before
+              destroying the Stage.
+
+        Errors:
+            - Raises ``RuntimeError`` if already attached, ``stage`` is null,
+              or interest registration fails. Instance remains unattached on
+              failure.
+        """
+        self._check_valid()
+        if stage is None:
+            raise RuntimeError("attach_stage: stage is None")
+        if hasattr(stage, "handle"):
+            ptr = stage.handle()
+        else:
+            ptr = int(stage)
+        if not ptr:
+            raise RuntimeError("attach_stage: stage handle is null")
+        result = self._lib.ovphysx_attach_stage(
+            self._omni_physx_sdk_handle.value, ctypes.c_void_p(ptr))
+        if result.status != ApiStatus.SUCCESS:
+            raise RuntimeError(f"Failed to attach stage: {self._get_last_error()}")
+
+    def detach_stage(self) -> None:
+        """Detach the currently-attached ovstage Stage.
+
+        Idempotent -- calling on an unattached instance is a no-op success.
+        Clears registered interests and output-buffer registrations, so a
+        subsequent :meth:`attach_stage` to a different Stage starts clean.
+        After detach, :meth:`step` reverts to unattached behaviour (tensor
+        bindings still work; no auto-pull from ovstage).
+
+        Errors:
+            - Raises ``RuntimeError`` on internal failures.
+        """
+        self._check_valid()
+        result = self._lib.ovphysx_detach_stage(self._omni_physx_sdk_handle.value)
+        if result.status != ApiStatus.SUCCESS:
+            raise RuntimeError(f"Failed to detach stage: {self._get_last_error()}")
 
     def set_config(self, entry: ovphysx_config_entry_t) -> None:
         """Set a typed global config entry at runtime (process-global).
@@ -1692,14 +1972,6 @@ class PhysX:
                 pass
             self._omni_physx_sdk_handle = None
 
-        # Unregister this instance so tensor modules can give accurate errors.
-        try:
-            from . import _unregister_physx_instance
-
-            _unregister_physx_instance(self)
-        except Exception:
-            pass
-
     # -------------------------------------------------------------------------
     # Tensor Binding API - efficient bulk access to physics simulation data
     # -------------------------------------------------------------------------
@@ -1709,6 +1981,8 @@ class PhysX:
         pattern: str = None,
         prim_paths: list[str] = None,
         tensor_type: int = TensorType.RIGID_BODY_POSE,
+        *,
+        raise_if_empty: bool = False,
     ) -> TensorBinding:
         """Create tensor binding for bulk physics data access (synchronous).
 
@@ -1719,8 +1993,11 @@ class PhysX:
             Mutually exclusive with ``prim_paths``.
         :param prim_paths: Explicit list of prim paths. Mutually exclusive with ``pattern``.
         :param tensor_type: Tensor type enum value (``TensorType.*``).
+        :param raise_if_empty: If ``True``, raise ``ValueError`` when the
+            binding matches zero prims. The default keeps empty bindings valid.
         :returns: TensorBinding object for reading/writing tensor data.
-        :raises ValueError: If neither ``pattern`` nor ``prim_paths`` is provided, or both are.
+        :raises ValueError: If neither ``pattern`` nor ``prim_paths`` is provided, both are,
+            or ``raise_if_empty`` is true and no prims match.
         :raises RuntimeError: If binding creation fails.
 
         Examples::
@@ -1809,6 +2086,25 @@ class PhysX:
         # Extract shape from spec
         ndim = spec.ndim
         shape = tuple(spec.shape[i] for i in range(ndim))
+
+        if raise_if_empty and (not shape or shape[0] == 0):
+            cleanup_result = self._lib.ovphysx_destroy_tensor_binding(self._omni_physx_sdk_handle.value, handle.value)
+            cleanup_error = None
+            if cleanup_result.status != ApiStatus.SUCCESS:
+                cleanup_error = self._get_last_error() or "unknown error"
+            if prim_paths is not None:
+                source = f"prim_paths ({len(prim_paths)} entries)"
+            else:
+                source = f"pattern {pattern!r}"
+            if cleanup_error is not None:
+                warnings.warn(
+                    f"Failed to destroy empty tensor binding after {source} matched 0 prims: {cleanup_error}",
+                    RuntimeWarning,
+                )
+            raise ValueError(
+                f"create_tensor_binding matched 0 prims for {source}. "
+                "Check the path input and ensure USDs are loaded before creating the binding."
+            )
 
         return TensorBinding(self, handle.value, tensor_type, ndim, shape)
 
@@ -2176,12 +2472,13 @@ class PhysX:
         filters_per_sensor: int = 0,
         max_contact_data_count: int = 0,
     ) -> ContactBinding:
-        """Create a contact binding for reading aggregate force tensors.
+        """Create a contact binding for reading aggregate and detailed contact tensors.
 
         Returns DLPack-compatible tensors of net forces ``[S, 3]`` or force
-        matrices ``[S, F, 3]`` — suitable for RL rewards, safety limits, or
-        force monitoring. GPU-compatible. For **per-contact-point geometry**
-        (position, normal, impulse), use :meth:`get_contact_report` instead.
+        matrices ``[S, F, 3]``. Detailed contact and friction data are exposed
+        as flat ``[C, ...]`` buffers plus ``[S, F]`` count/start-index tensors
+        via :meth:`ContactBinding.read_contact_data` and
+        :meth:`ContactBinding.read_friction_data`.
 
         A **sensor** is a set of rigid body prims matched by a USD prim path
         pattern. A **filter** is a second set of bodies whose contacts with each
@@ -2196,6 +2493,12 @@ class PhysX:
         Result tensor shapes after step:
           - net forces:    ``[S, 3]``   where S = matched sensor count
           - force matrix:  ``[S, F, 3]`` where F = matched filter count per sensor
+          - detailed data: flat ``[C, 1]`` or ``[C, 3]`` buffers indexed by
+            ``counts`` and ``start_indices`` with shape ``[S, F]``
+
+        Use :attr:`ContactBinding.sensor_paths` and
+        :attr:`ContactBinding.filter_paths` to map rows and columns back to
+        resolved USD prim paths.
 
         Example::
 
@@ -2215,7 +2518,10 @@ class PhysX:
                 Total length must equal ``len(sensor_patterns) * filters_per_sensor``.
                 Pass ``None`` with ``filters_per_sensor=0`` to get contacts with all bodies.
             filters_per_sensor: Number of filter patterns per sensor (same for all sensors).
-            max_contact_data_count: Max raw contact pairs to track (passed to TensorAPI).
+            max_contact_data_count: Max raw contact pairs to track in the native
+                backend; also caps the detailed contact/friction flat-buffer reads.
+                Detailed reads require this value and ``filters_per_sensor`` to
+                be positive.
         """
         self._check_valid()
         n_sensors = len(sensor_patterns)
@@ -2268,7 +2574,15 @@ class PhysX:
             self._lib.ovphysx_destroy_contact_binding(self._omni_physx_sdk_handle.value, out_handle.value)
             raise RuntimeError(f"Failed to get contact spec: {self._get_last_error()}")
 
-        return ContactBinding(self, out_handle.value, sensor_count.value, filter_count.value)
+        capacity = c_uint32(0)
+        capacity_result = self._lib.ovphysx_get_contact_binding_capacity(
+            self._omni_physx_sdk_handle.value, out_handle.value, byref(capacity)
+        )
+        if capacity_result.status != ApiStatus.SUCCESS:
+            self._lib.ovphysx_destroy_contact_binding(self._omni_physx_sdk_handle.value, out_handle.value)
+            raise RuntimeError(f"Failed to get contact capacity: {self._get_last_error()}")
+
+        return ContactBinding(self, out_handle.value, sensor_count.value, filter_count.value, capacity.value)
 
     def __enter__(self) -> "PhysX":
         """Enter context manager.

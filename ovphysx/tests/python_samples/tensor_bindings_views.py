@@ -3,14 +3,14 @@
 #
 
 """
-Sample: "TensorAPI-like" views built on TensorBindingsAPI (ctypes).
+Sample: lightweight view wrappers built on TensorBindingsAPI (ctypes).
 
 Purpose
 -------
 This file is intentionally copy/paste-friendly for downstream users (e.g. IsaacLab)
-who want some of the legacy TensorAPI ergonomics (SimulationView/ArticulationView)
-without depending on the CPython-minor-specific pybind11 bindings from
-`omni.physics.tensors`.
+who want convenient SimulationView/ArticulationView-style helpers on top of the
+official TensorBindingsAPI, without depending on any CPython-minor-specific
+pybind11 bindings.
 
 This is *not* an ovphysx-maintained library module; it is a sample that shows
 how easy it is to build these helpers on top of the official TensorBindingsAPI.
@@ -120,6 +120,7 @@ if __name__ == "__main__":
     delta = float(np.abs(pos1 - pos0).max())
     print(f"Max DOF position change after 5 steps: {delta:.6f}")
 
-    physx.release()
+    print("Tensor bindings views sample completed successfully")
 
-    print("[SUCCESS]", flush=True)
+    physx.release()
+    print("Cleanup complete")

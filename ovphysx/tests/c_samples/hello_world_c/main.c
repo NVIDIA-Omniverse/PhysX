@@ -2,14 +2,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
-// NOTE: This file is included verbatim in documentation.
-// When editing, keep tutorial line ranges in sync.
+// NOTE: This file is included verbatim in documentation via literalinclude.
+// Tutorial marker comments below define the included range.
 
 // Compile-time check: fail compilation if C++ compiler is used (for internal testing)
 #ifdef __cplusplus
 #error "This file should be compiled as C, not C++"
 #endif
 
+// [tutorial-start]
 #include "ovphysx/ovphysx.h"
 #include <stdio.h>
 
@@ -58,7 +59,8 @@ int main() {
   printf("Simulation step completed successfully\n");
 
   ovphysx_destroy_instance(handle);
+  printf("Cleanup complete\n");
 
-  printf("[SUCCESS]\n");
   return 0;
 }
+// [tutorial-end]

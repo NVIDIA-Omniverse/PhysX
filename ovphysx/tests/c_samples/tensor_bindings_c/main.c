@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
+// NOTE: This file is included verbatim in documentation via literalinclude.
+// Tutorial marker comments below define the included range.
+
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_types.h>
 #include <stdio.h>
@@ -148,6 +151,7 @@ int main(void) {
 
     printf("USD scene loaded.\n");
 
+    // [tutorial-start]
     // 3. Create tensor bindings
     // 3a. DOF velocity target binding (write control targets)
     ovphysx_tensor_binding_handle_t dof_target_binding = 0;
@@ -315,9 +319,10 @@ int main(void) {
     ovphysx_destroy_tensor_binding(handle, link_pose_binding);
 
     printf("=== Articulation control sample completed successfully ===\n");
+    // [tutorial-end]
 
     ovphysx_destroy_instance(handle);
+    printf("Cleanup complete\n");
 
-    printf("[SUCCESS]\n");
     return 0;
 }
