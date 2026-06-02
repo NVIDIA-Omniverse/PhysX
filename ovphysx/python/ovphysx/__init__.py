@@ -61,6 +61,22 @@ import logging as _logging
 _logger = _logging.getLogger("ovphysx")
 _logger.addHandler(_logging.NullHandler())
 
+# Silence USD's TfScriptModuleLoader auto-import warnings for pxr.<Name>
+# Python peers that the ovphysx wheel does not ship (PhysxSchema,
+# PhysicsSchemaTools, CameraUtil, PxOsd). Must run BEFORE any code that
+# triggers USD's native plugin scan -- i.e. before any native ovphysx
+# attribute access via __getattr__ -- and ideally before any other USD
+# library loads. See _pxr_stubs.py for the full rationale.
+#
+# This is a temporary runtime workaround. It is removed once the schema C++
+# plugins that register pxr.PhysxSchema / pxr.PhysicsSchemaTools stop being
+# built (which eliminates two of the four warnings at the source) and the
+# bundled USD runtime stops registering pxr.CameraUtil / pxr.PxOsd without
+# shipping their Python wrappers. When both are addressed, drop this block
+# and _pxr_stubs.py entirely.
+from . import _pxr_stubs as _pxr_stubs
+_pxr_stubs.install_pxr_stubs()
+
 from .types import (
     ApiStatus,
     BindingPrimMode,
