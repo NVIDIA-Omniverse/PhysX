@@ -934,34 +934,62 @@ bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc, PxTriangleM
 
 		PxSDFDesc& sdfDesc = *desc.sdfDesc;
 
-		PxReal* sdf = mMeshData.mSdfData.allocateSdfs(sdfDesc.meshLower, sdfDesc.spacing, sdfDesc.dims.x, sdfDesc.dims.y, sdfDesc.dims.z, 
-			sdfDesc.subgridSize, sdfDesc.sdfSubgrids3DTexBlockDim.x, sdfDesc.sdfSubgrids3DTexBlockDim.y, sdfDesc.sdfSubgrids3DTexBlockDim.z,
-			sdfDesc.subgridsMinSdfValue, sdfDesc.subgridsMaxSdfValue, sdfDesc.bitsPerSubgridPixel);
-		
-		if (sdfDesc.subgridSize > 0)
+		if (sdfDesc.lazyEvaluation)
 		{
-			//Sparse sdf
-			immediateCooking::gatherStrided(sdfDesc.sdf.data, sdf, sdfDesc.sdf.count, sizeof(PxReal), sdfDesc.sdf.stride);
+			// Lazy SDF: initialize with NaN grid and create the lazy evaluator
+			// that will compute SDF values on-demand during collision detection.
+			// By this point in the cooking pipeline, indices are always 32-bit.
+			const PxU32* indices32 = reinterpret_cast<const PxU32*>(mMeshData.mTriangles);
+			mMeshData.mSdfData.initLazy(sdfDesc.meshLower, sdfDesc.spacing,
+				sdfDesc.dims.x, sdfDesc.dims.y, sdfDesc.dims.z,
+				mMeshData.mVertices, mMeshData.mNbVertices,
+				indices32, mMeshData.mNbTriangles * 3);
 
-			immediateCooking::gatherStrided(sdfDesc.sdfSubgrids.data, mMeshData.mSdfData.mSubgridSdf, 
-				sdfDesc.sdfSubgrids.count,
-				sizeof(PxU8), sdfDesc.sdfSubgrids.stride);
-			immediateCooking::gatherStrided(sdfDesc.sdfStartSlots.data, mMeshData.mSdfData.mSubgridStartSlots, sdfDesc.sdfStartSlots.count, sizeof(PxU32), sdfDesc.sdfStartSlots.stride);
+			// Inertia: buildInertiaTensorFromSDF()'s non-watertight branch
+			// extracts an isosurface from the SDF grid, but in lazy mode the
+			// grid is still NaN at this point. For watertight meshes its
+			// watertight branch never reads the grid, so we can run that
+			// path safely. Non-watertight meshes get no SDF-derived inertia
+			// in lazy mode; the application is expected to provide mass /
+			// inertia externally.
+			if (MeshAnalyzer::checkMeshWatertightness(reinterpret_cast<const Gu::Triangle*>(mMeshData.mTriangles), mMeshData.mNbTriangles))
+			{
+				buildInertiaTensor();
+				if (mMeshData.mMass < 0.0f)
+					buildInertiaTensor(true);
+			}
 		}
 		else
 		{
-			//copy, and compact to get rid of strides:
-			immediateCooking::gatherStrided(sdfDesc.sdf.data, sdf, sdfDesc.dims.x*sdfDesc.dims.y*sdfDesc.dims.z, sizeof(PxReal), sdfDesc.sdf.stride);
-		}
+			PxReal* sdf = mMeshData.mSdfData.allocateSdfs(sdfDesc.meshLower, sdfDesc.spacing, sdfDesc.dims.x, sdfDesc.dims.y, sdfDesc.dims.z,
+				sdfDesc.subgridSize, sdfDesc.sdfSubgrids3DTexBlockDim.x, sdfDesc.sdfSubgrids3DTexBlockDim.y, sdfDesc.sdfSubgrids3DTexBlockDim.z,
+				sdfDesc.subgridsMinSdfValue, sdfDesc.subgridsMaxSdfValue, sdfDesc.bitsPerSubgridPixel);
 
-		//Make sure there is always a valid inertia tensor for meshes with an SDF
-		buildInertiaTensorFromSDF();		
+			if (sdfDesc.subgridSize > 0)
+			{
+				//Sparse sdf
+				immediateCooking::gatherStrided(sdfDesc.sdf.data, sdf, sdfDesc.sdf.count, sizeof(PxReal), sdfDesc.sdf.stride);
+
+				immediateCooking::gatherStrided(sdfDesc.sdfSubgrids.data, mMeshData.mSdfData.mSubgridSdf,
+					sdfDesc.sdfSubgrids.count,
+					sizeof(PxU8), sdfDesc.sdfSubgrids.stride);
+				immediateCooking::gatherStrided(sdfDesc.sdfStartSlots.data, mMeshData.mSdfData.mSubgridStartSlots, sdfDesc.sdfStartSlots.count, sizeof(PxU32), sdfDesc.sdfStartSlots.stride);
+			}
+			else
+			{
+				//copy, and compact to get rid of strides:
+				immediateCooking::gatherStrided(sdfDesc.sdf.data, sdf, sdfDesc.dims.x*sdfDesc.dims.y*sdfDesc.dims.z, sizeof(PxReal), sdfDesc.sdf.stride);
+			}
 
 #if PX_CHECKED
-		// SN: check all input sdf values are valid
-		if(!checkInputFloats(sdfDesc.sdf.count, sdf, PX_FL, "input sdf contains corrupted data"))
-			return false;
+			// SN: check all input sdf values are valid
+			if(!checkInputFloats(sdfDesc.sdf.count, sdf, PX_FL, "input sdf contains corrupted data"))
+				return false;
 #endif
+
+			//Make sure there is always a valid inertia tensor for meshes with an SDF
+			buildInertiaTensorFromSDF();
+		}
 	}
 
 	return true;

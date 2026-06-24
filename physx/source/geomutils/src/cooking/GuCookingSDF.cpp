@@ -291,8 +291,74 @@ static bool createSDFSparse(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArra
 	return success; // false if we had GPU errors.
 }
 
+// Compute SDF grid dimensions and meshLower from mesh bounds and spacing.
+// Shared by both the eager (baked) and lazy evaluation paths.
+static void computeSDFGridDimensions(const PxVec3& meshLowerIn, const PxVec3& meshUpperIn, PxReal spacing,
+	PxVec3& meshLowerOut, PxI32& dx, PxI32& dy, PxI32& dz)
+{
+	PxVec3 edges = meshUpperIn - meshLowerIn;
+
+	// tweak spacing to avoid edge cases for vertices laying on the boundary
+	PxReal spacingEps = spacing * (1.0f - 1e-4f);
+
+	dx = spacing > edges.x ? 1 : PxI32(edges.x / spacingEps);
+	dy = spacing > edges.y ? 1 : PxI32(edges.y / spacingEps);
+	dz = spacing > edges.z ? 1 : PxI32(edges.z / spacingEps);
+
+	dx += 4;
+	dy += 4;
+	dz += 4;
+
+	// Shift voxelization bounds so that voxel centers lie symmetrically to the center of the object
+	PxVec3 meshOffset;
+	meshOffset.x = 0.5f * (spacing - (edges.x - (dx - 1)*spacing));
+	meshOffset.y = 0.5f * (spacing - (edges.y - (dy - 1)*spacing));
+	meshOffset.z = 0.5f * (spacing - (edges.z - (dz - 1)*spacing));
+	meshLowerOut = meshLowerIn - meshOffset;
+}
+
+static bool createSDFLazy(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc)
+{
+	PX_ASSERT(sdfDesc.lazyEvaluation);
+	PX_ASSERT(sdfDesc.subgridSize == 0); // lazy mode only supports dense SDFs
+
+	MeshData mesh(desc);
+
+	PxVec3 meshLower, meshUpper;
+	if (sdfDesc.sdfBounds.isEmpty())
+		mesh.GetBounds(meshLower, meshUpper);
+	else
+	{
+		meshLower = sdfDesc.sdfBounds.minimum;
+		meshUpper = sdfDesc.sdfBounds.maximum;
+	}
+
+	PxI32 dx, dy, dz;
+	computeSDFGridDimensions(meshLower, meshUpper, sdfDesc.spacing, meshLower, dx, dy, dz);
+
+	sdfDesc.meshLower = meshLower;
+	sdfDesc.dims.x = dx;
+	sdfDesc.dims.y = dy;
+	sdfDesc.dims.z = dz;
+
+	// Lazy mode does not pre-bake voxel data. SDF::initLazy() (called from the
+	// TriangleMesh builder) is the sole owner of the dense grid allocation, so
+	// we leave sdfDesc.sdf empty here to avoid a redundant alloc + NaN-fill.
+	sdfDesc.sdf.count = 0;
+	sdfDesc.sdf.stride = 0;
+	sdfDesc.sdf.data = NULL;
+
+	return true;
+}
+
 static bool createSDF(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArray<PxReal>& sdf, PxArray<PxU8>& sdfDataSubgrids, PxArray<PxU32>& sdfSubgridsStartSlots)
 {
+	if (sdfDesc.lazyEvaluation)
+	{
+		PX_UNUSED(sdf);
+		return createSDFLazy(desc, sdfDesc);
+	}
+
 	if (sdfDesc.subgridSize > 0)
 	{
 		return createSDFSparse(desc, sdfDesc, sdf, sdfDataSubgrids, sdfSubgridsStartSlots);
@@ -330,7 +396,7 @@ static bool createSDF(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArray<PxRe
 	const PxU32 numVoxels = dx * dy * dz;
 
 	// we shift the voxelization bounds so that the voxel centers
-	// lie symmetrically to the center of the object. this reduces the 
+	// lie symmetrically to the center of the object. this reduces the
 	// chance of missing features, and also better aligns the particles
 	// with the mesh
 	PxVec3 meshOffset;
@@ -370,8 +436,8 @@ static bool createSDF(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArray<PxRe
 	const PxVec3* verts = baseMeshSpecified ? verticesPtr : &mesh.m_positions[0];
 	PxU32 numVertices = baseMeshSpecified ? sdfDesc.baseMesh.points.count : mesh.m_positions.size();
 
-	if (sdfDesc.sdfBuilder == NULL) 
-	{			
+	if (sdfDesc.sdfBuilder == NULL)
+	{
 		Gu::SDFUsingWindingNumbers(verts, indices, numTriangleIndices, dx, dy, dz, &sdf[0], meshLower,
 			meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, NULL, true,
 			sdfDesc.numThreadsForSdfConstruction, sdfDesc.sdfBuilder);
