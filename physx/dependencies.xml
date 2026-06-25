@@ -1,7 +1,12 @@
 <project toolsVersion="6.4">
+	<!-- Metadata generation dependency removed - auto-generated files are checked into the repository.
+	     The clang-physxmetadata tool is only needed if you want to regenerate metadata files,
+	     which is not required for normal builds. -->
+	<!--
 	<dependency name="clangMetadata" tags="requiredForDistro requiredForMetaGen">
 		<package name="clang-physxmetadata" version="4.0.0.32489833_1"/>
 	</dependency>
+	-->
 
 	<dependency name="vswhere">
 		<package name="VsWhere" version="2.7.3111.17308_1.0"  platforms="vc15win64* vc16win64* vc17win64* linux-crosscompile linux-aarch64-crosscompile "/>
@@ -9,10 +14,6 @@
 
 	<dependency name="freeglut">
 		<package name="freeglut-windows" version="3.4_1.1"  platforms="vc15win64* vc16win64* vc17win64*"/>
-	</dependency>
-
-	<dependency name="opengllinux" tags="requiredForDistro">
-		<package name="opengl-linux" version="2017.5.19.1"  platforms="linux-gcc* linux-clang*"/>
 	</dependency>
 
     <dependency name="rapidjson">

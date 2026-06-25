@@ -29,7 +29,24 @@
 #
 
 IF(NOT FREEGLUT_PATH)
-	SET(FREEGLUT_PATH $ENV{PM_freeglut_PATH} CACHE INTERNAL "Freeglut package path")
+	# Detect if using vcpkg or packman
+	IF(DEFINED ENV{VCPKG_ROOT} OR CMAKE_TOOLCHAIN_FILE MATCHES "vcpkg")
+		# Using vcpkg mode
+		IF(DEFINED ENV{VCPKG_ROOT})
+			FILE(TO_CMAKE_PATH "$ENV{VCPKG_ROOT}/installed/x64-windows" FREEGLUT_PATH)
+			SET(FREEGLUT_PATH "${FREEGLUT_PATH}" CACHE INTERNAL "Freeglut package path (vcpkg)")
+		ELSE()
+			# Extract vcpkg root from CMAKE_TOOLCHAIN_FILE
+			GET_FILENAME_COMPONENT(VCPKG_ROOT_FROM_TOOLCHAIN "${CMAKE_TOOLCHAIN_FILE}" DIRECTORY)
+			GET_FILENAME_COMPONENT(VCPKG_ROOT_FROM_TOOLCHAIN "${VCPKG_ROOT_FROM_TOOLCHAIN}" DIRECTORY)
+			GET_FILENAME_COMPONENT(VCPKG_ROOT_FROM_TOOLCHAIN "${VCPKG_ROOT_FROM_TOOLCHAIN}" DIRECTORY)
+			FILE(TO_CMAKE_PATH "${VCPKG_ROOT_FROM_TOOLCHAIN}/installed/x64-windows" FREEGLUT_PATH)
+			SET(FREEGLUT_PATH "${FREEGLUT_PATH}" CACHE INTERNAL "Freeglut package path (vcpkg)")
+		ENDIF()
+	ELSE()
+		# Using packman mode
+		SET(FREEGLUT_PATH $ENV{PM_freeglut_PATH} CACHE INTERNAL "Freeglut package path")
+	ENDIF()
 ENDIF()
 
 SET(SNIPPET_COMPILE_DEFS
@@ -55,13 +72,24 @@ SET(SNIPPET_PLATFORM_INCLUDES
 	${FREEGLUT_PATH}/include
 )
 
-#LINK_DIRECTORIES(${FREEGLUT_PATH}/lib/win${LIBPATH_SUFFIX})
-SET(FREEGLUT_LIB
-	$<$<CONFIG:debug>:${FREEGLUT_PATH}/lib/win${LIBPATH_SUFFIX}/freeglutd.lib>
-	$<$<CONFIG:checked>:${FREEGLUT_PATH}/lib/win${LIBPATH_SUFFIX}/freeglut.lib>
-	$<$<CONFIG:profile>:${FREEGLUT_PATH}/lib/win${LIBPATH_SUFFIX}/freeglut.lib>
-	$<$<CONFIG:release>:${FREEGLUT_PATH}/lib/win${LIBPATH_SUFFIX}/freeglut.lib>
-)
+# Set freeglut library paths - different for vcpkg vs packman
+IF(DEFINED ENV{VCPKG_ROOT} OR CMAKE_TOOLCHAIN_FILE MATCHES "vcpkg")
+	# vcpkg mode: libraries in lib/ and debug/lib/ without win64 subdirectory
+	SET(FREEGLUT_LIB
+		$<$<CONFIG:debug>:${FREEGLUT_PATH}/debug/lib/freeglutd.lib>
+		$<$<CONFIG:checked>:${FREEGLUT_PATH}/lib/freeglut.lib>
+		$<$<CONFIG:profile>:${FREEGLUT_PATH}/lib/freeglut.lib>
+		$<$<CONFIG:release>:${FREEGLUT_PATH}/lib/freeglut.lib>
+	)
+ELSE()
+	# packman mode: libraries in lib/win${LIBPATH_SUFFIX}/ subdirectory
+	SET(FREEGLUT_LIB
+		$<$<CONFIG:debug>:${FREEGLUT_PATH}/lib/win${LIBPATH_SUFFIX}/freeglutd.lib>
+		$<$<CONFIG:checked>:${FREEGLUT_PATH}/lib/win${LIBPATH_SUFFIX}/freeglut.lib>
+		$<$<CONFIG:profile>:${FREEGLUT_PATH}/lib/win${LIBPATH_SUFFIX}/freeglut.lib>
+		$<$<CONFIG:release>:${FREEGLUT_PATH}/lib/win${LIBPATH_SUFFIX}/freeglut.lib>
+	)
+ENDIF()
 
 IF(PX_GENERATE_STATIC_LIBRARIES)
 	SET(SNIPPET_PLATFORM_LINKED_LIBS
