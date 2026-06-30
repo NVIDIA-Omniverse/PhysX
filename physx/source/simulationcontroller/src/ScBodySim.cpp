@@ -670,11 +670,14 @@ bool BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* upd
 	if( (accDirty || velDirty) && ((simStateData = getSimStateData(false)) != NULL) )
 	{
 		VelocityMod* velmod = simStateData->getVelocityModData();
+		PxReal accelScale = 1.f;
 
 		//we don't have support for articulation yet
 		if (updatedBodySims)
 		{
-			updatedBodySims[index] = &getLowLevelBody();
+			PxsRigidBody& body = getLowLevelBody();
+			accelScale = body.mAccelScale;
+			updatedBodySims[index] = &body;
 			updatedBodyNodeIndices[index++] = getNodeIndex().index();
 		}
 
@@ -686,7 +689,7 @@ bool BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* upd
 		
 		if (accDirty)
 		{
-			linVelDt += velmod->getLinearVelModPerSec()*dt;
+			linVelDt += velmod->getLinearVelModPerSec()*dt*accelScale;
 			angVelDt += velmod->getAngularVelModPerSec()*dt;
 		}
 
