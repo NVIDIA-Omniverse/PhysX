@@ -51,7 +51,7 @@ void PxCollectionExt::releaseObjects(PxCollection& collection, bool releaseExclu
 	PxArray<PxBase*> releasableObjects;
 
 	for (PxU32 i = 0; i < collection.getNbObjects(); ++i)
-	{	
+	{
 		PxBase* s = &collection.getObject(i);
 		// pruning structure must be released before its actors
 		if(s->is<PxPruningStructure>())
@@ -79,7 +79,7 @@ void PxCollectionExt::releaseObjects(PxCollection& collection, bool releaseExclu
 
 
 void PxCollectionExt::remove(PxCollection& collection, PxType concreteType, PxCollection* to)
-{	
+{
 	PxArray<PxBase*> removeObjects;
 	
 	for (PxU32 i = 0; i < collection.getNbObjects(); i++)

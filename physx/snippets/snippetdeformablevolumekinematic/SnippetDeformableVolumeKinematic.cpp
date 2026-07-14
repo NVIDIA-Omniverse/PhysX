@@ -83,7 +83,7 @@ void addDeformableVolume(PxDeformableVolume* deformableVolume, const PxTransform
 static PxDeformableVolume* createDeformableVolume(const PxCookingParams& params, const PxArray<PxVec3>& triVerts, const PxArray<PxU32>& triIndices, bool useCollisionMeshForSimulation = false)
 {
 	PxDeformableVolumeMaterial* material = PxGetPhysics().createDeformableVolumeMaterial(1e+6f, 0.45f, 0.5f);
-	material->setDamping(0.005f);
+	material->setElasticityDamping(0.005f);
 
 	PxDeformableVolumeMesh* deformableVolumeMesh;
 

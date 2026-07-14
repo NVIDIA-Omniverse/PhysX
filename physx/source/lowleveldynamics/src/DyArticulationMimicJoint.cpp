@@ -44,7 +44,7 @@ namespace Dy
 \note dof is in range (0,3) because articulation joints only support 3 degrees of freedom.
 */
 PX_INLINE PxReal computeMimicJointSelfResponse(const PxU32 linkIndex, const PxU32 dof, const ArticulationData& artData)
-{			
+{
 	const ArticulationLink* links = artData.getLinks();
 
 	const PxU32 parentLinkIndex = links[linkIndex].parent;
@@ -127,7 +127,7 @@ PX_INLINE PxReal computeMimicJointCrossResponse
 	// Propagate test joint impulse from inbound joint of start link to its parent link.
 	// This generates a link impulse that we can propagate to root.
 	Cm::SpatialVectorF Zp;
-	{					
+	{
 		const PxU32 linkIndex = pathFromRootToLink[numFromRootToLink - 1];
 		PX_ASSERT(linkA == linkIndex);
 
@@ -305,7 +305,7 @@ void FeatherstoneArticulation::solveInternalMimicJointConstraints(const PxReal d
 		//We can now compute the joint impulses to apply to the inbound joints of links A and B.
 		PxReal jointImpulseA[3] = {0, 0, 0};
 		PxReal jointImpulseB[3] = {0, 0, 0};
-		{			
+		{
 			PxReal jointDofImpA = 0;
 			PxReal jointdofImpB = 0;
 			computeMimicJointImpulses(

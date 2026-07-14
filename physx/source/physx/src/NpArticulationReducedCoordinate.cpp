@@ -332,6 +332,8 @@ void NpArticulationReducedCoordinate::computeMassMatrix(PxArticulationCache& cac
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::computeMassMatrix() not allowed while simulation is running. Call will be ignored.");
 
+	PX_SIMD_GUARD
+
 	mCore.computeGeneralizedMassMatrix(cache);
 }
 
@@ -770,7 +772,7 @@ PxArticulationJointReducedCoordinate* NpArticulationReducedCoordinate::createArt
 	const PxTransform& parentFrame,
 	PxArticulationLink& child,
 	const PxTransform& childFrame)
-{	
+{
 	return NpFactory::getInstance().createNpArticulationJointRC(static_cast<NpArticulationLink&>(parent), parentFrame, static_cast<NpArticulationLink&>(child), childFrame);
 }
 

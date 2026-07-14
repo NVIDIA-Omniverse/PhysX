@@ -323,7 +323,7 @@ static void getCornerAccessCounter(TetEdge edges[6], PxI32 edgesLength, PxI32 co
 			else if (indexer == 1)
 				result.second = tet[i];
 			++indexer;
-		}			
+		}
 	}
 	return result;
 }*/
@@ -331,7 +331,7 @@ static void getCornerAccessCounter(TetEdge edges[6], PxI32 edgesLength, PxI32 co
 static PX_FORCE_INLINE TetCorner getOtherCorner(TetEdge edge, TetCorner corner)
 {
 	return edge ^ corner;
-}	
+}
 
 static PX_FORCE_INLINE Tetrahedron flip(bool doFlip, Tetrahedron t)
 {

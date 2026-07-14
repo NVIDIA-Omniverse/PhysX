@@ -294,15 +294,6 @@ public:
 	virtual		void	setDeformableVolumeMaterials(PxDeformableVolumeMaterial* const* materials, PxU16 materialCount) = 0;
 
 	/**
-	\brief Deprecated
-	\see setDeformableVolumeMaterials
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE void setSoftBodyMaterials(PxDeformableVolumeMaterial* const* materials, PxU16 materialCount)
-	{
-		setDeformableVolumeMaterials(materials, materialCount);
-	}
-
-	/**
 	\brief Returns the number of materials assigned to the shape.
 
 	You can use #getMaterials() to retrieve the material pointers.
@@ -360,15 +351,6 @@ public:
 	\see PxDeformableVolumeMaterial getNbMaterials() PxMaterial::release()
 	*/
 	virtual		PxU32	getDeformableVolumeMaterials(PxDeformableVolumeMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
-
-	/**
-	\brief Deprecated
-	\see getDeformableVolumeMaterials
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE PxU32 getSoftBodyMaterials(PxDeformableVolumeMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const
-	{
-		return getDeformableVolumeMaterials(userBuffer, bufferSize, startIndex);
-	}
 
 	/**
 	\brief Retrieve material from given triangle index.

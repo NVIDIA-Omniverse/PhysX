@@ -216,7 +216,7 @@ bool IncrementalAABBPruner::overlap(const ShapeData& queryVolume, PrunerOverlapC
 			case PxGeometryType::eBOX:
 			{
 				if(queryVolume.isOBB())
-				{	
+				{
 					const DefaultOBBAABBTest test(queryVolume);
 					again = AABBTreeOverlap<true, OBBAABBTest, IncrementalAABBTree, IncrementalAABBTreeNode, OverlapCallbackAdapter>()(mPool.getCurrentAABBTreeBounds(), *mAABBTree, test, pcb);
 				}

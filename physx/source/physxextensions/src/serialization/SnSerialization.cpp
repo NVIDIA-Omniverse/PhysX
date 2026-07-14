@@ -45,7 +45,7 @@ namespace
 	{
 		RequiresCallback(physx::PxCollection& c) : collection(c) {}
 		void process(PxBase& base)
-		{			
+		{
 			  if(!collection.contains(base))
 				  collection.add(base);
 		}
@@ -95,7 +95,7 @@ namespace
 						PxU32 typeId;
 						PxJoint* joint = reinterpret_cast<PxJoint*>(objects[j]->getExternalReference(typeId));				
 						if(typeId == PxConstraintExtIDs::eJOINT)
-						{							
+						{
 							const PxSerializer* sj = sr.getSerializer(joint->getConcreteType());
 							PX_ASSERT(sj);
 							sj->requiresObjects(*joint, callback);
@@ -105,12 +105,12 @@ namespace
 					}
 				}
 			}
-		}	
+		}
 	}
 }
 
 bool PxSerialization::isSerializable(PxCollection& collection, PxSerializationRegistry& sr, const PxCollection* externalReferences) 
-{		
+{
 	PxCollection* subordinateCollection = PxCreateCollection();
 	PX_ASSERT(subordinateCollection);
 
@@ -129,14 +129,14 @@ bool PxSerialization::isSerializable(PxCollection& collection, PxSerializationRe
 			{
 				PxBase* object = externalReferences->find(id);
 				if(object && (object != &s))
-				{					
+				{
 					subordinateCollection->release();					
 					return PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 						"PxSerialization::isSerializable: Reference id %llu used both in current collection and in externalReferences. "
 						"Please use unique identifiers.", id);	
 				}
 			}
-		}		
+		}
 	}
 
 	PxCollection* requiresCollection = PxCreateCollection();
@@ -169,14 +169,14 @@ bool PxSerialization::isSerializable(PxCollection& collection, PxSerializationRe
 				if(externalReferences)
 				{
 					if(!externalReferences->contains(s0))
-					{						
+					{
 						PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 							"PxSerialization::isSerializable: Object of type %s references a missing object of type %s. "
 							"The missing object needs to be added to either the current collection or the externalReferences collection.",
 							s.getConcreteTypeName(), s0.getConcreteTypeName());						
 					}
 					else if(externalReferences->getId(s0) == PX_SERIAL_OBJECT_ID_INVALID)
-					{						
+					{
 						PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 							"PxSerialization::isSerializable: Object of type %s in externalReferences collection requires an id.", 
 							s0.getConcreteTypeName());
@@ -185,7 +185,7 @@ bool PxSerialization::isSerializable(PxCollection& collection, PxSerializationRe
 						continue;
 				}
 				else
-				{				
+				{
 					PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 						"PxSerialization::isSerializable: Object of type %s references a missing serial object of type %s. "
 						"Please completed the collection or specify an externalReferences collection containing the object.",
@@ -194,7 +194,7 @@ bool PxSerialization::isSerializable(PxCollection& collection, PxSerializationRe
 				subordinateCollection->release();
 				requiresCollection->release();
 				return false;	
-			}		
+			}
 		}
 		cmRequiresCollection->mObjects.clear();
 	}
@@ -256,7 +256,7 @@ bool PxSerialization::isSerializable(PxCollection& collection, PxSerializationRe
 }
 
 void PxSerialization::complete(PxCollection& collection, PxSerializationRegistry& sr, const PxCollection* exceptFor, bool followJoints)
-{	
+{
 	PxCollection* curCollection = PxCreateCollection();
 	PX_ASSERT(curCollection);	
 	curCollection->add(collection);
@@ -265,7 +265,7 @@ void PxSerialization::complete(PxCollection& collection, PxSerializationRegistry
 	PX_ASSERT(requiresCollection);
 
 	do
-	{		
+	{
 		getRequiresCollection(*requiresCollection, *curCollection, collection, exceptFor, sr, followJoints);		
 		
 		collection.add(*requiresCollection);

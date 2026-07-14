@@ -64,7 +64,7 @@ static void copyTetraRestPoses(PxU16* destOrderedMaterialIndices, PxU16* destMat
 		const PxU32 offCount = PxMin(numElements -i, 32u);
 
 		for (PxU32 elem = 0; elem < numTetsPerElement; elem++)
-		{				
+		{
 			for (PxU32 off = 0; off < offCount; off++)
 			{
 				const PxU32 index = indices[i + off] + elem;
@@ -286,7 +286,7 @@ PxU32 PxgSoftBodyUtil::loadOutTetMesh(void* mem, const Gu::BVTetrahedronMesh* te
 void PxgSoftBodyUtil::initialTetData(PxgSoftBody& softbody, const Gu::BVTetrahedronMesh* colTetMesh, 
 	const Gu::TetrahedronMesh* simTetMesh, const Gu::DeformableVolumeAuxData* softBodyAuxData, const PxU16* materialsHandles,
 	Cm::VirtualAllocatorCallback& hostAlloc)
-{	
+{
 	const PxU32 numTets = colTetMesh->getNbTetrahedronsFast();
 	uint4* tetIndices = softbody.mTetIndices;
 
@@ -339,7 +339,7 @@ void PxgSoftBodyUtil::initialTetData(PxgSoftBody& softbody, const Gu::BVTetrahed
 		}
 	}
 	else
-	{		
+	{
 		const PxU32* tetIndsGM = reinterpret_cast<const PxU32*>(simTetMesh->getTetrahedrons());
 		for (PxU32 i = 0; i < numTetsGM; ++i)
 		{
@@ -577,38 +577,6 @@ void PxgSoftBodyUtil::computeBasisMatrix(PxMat33* restPoses, const Gu::Deformabl
 			restPoses[i] = D.getInverse();
 		}
 	}
-}
-
-PxU32 PxgSoftBody::dataIndexFromFlagDEPRECATED(PxSoftBodyGpuDataFlag::Enum flag)
-{
-	switch (flag)
-	{
-	case PxSoftBodyGpuDataFlag::eTET_INDICES:
-		return PX_OFFSET_OF_RT(PxgSoftBody, mTetIndices) / sizeof(CUdeviceptr);
-
-	case PxSoftBodyGpuDataFlag::eTET_REST_POSES:
-		return PX_OFFSET_OF_RT(PxgSoftBody, mTetraRestPoses) / sizeof(CUdeviceptr);
-
-	case PxSoftBodyGpuDataFlag::eTET_ROTATIONS:
-		return PX_OFFSET_OF_RT(PxgSoftBody, mTetraRotations) / sizeof(CUdeviceptr);
-
-	case PxSoftBodyGpuDataFlag::eTET_POSITION_INV_MASS:
-		return PX_OFFSET_OF_RT(PxgSoftBody, mPosition_InvMass) / sizeof(CUdeviceptr);
-
-	case PxSoftBodyGpuDataFlag::eSIM_TET_INDICES:
-		return PX_OFFSET_OF_RT(PxgSoftBody, mSimTetIndices) / sizeof(CUdeviceptr);
-
-	case PxSoftBodyGpuDataFlag::eSIM_TET_ROTATIONS:
-		return PX_OFFSET_OF_RT(PxgSoftBody, mSimTetraRotations) / sizeof(CUdeviceptr);
-
-	case PxSoftBodyGpuDataFlag::eSIM_VELOCITY_INV_MASS:
-		return PX_OFFSET_OF_RT(PxgSoftBody, mSimVelocity_InvMass) / sizeof(CUdeviceptr);
-
-	case PxSoftBodyGpuDataFlag::eSIM_POSITION_INV_MASS:
-		return PX_OFFSET_OF_RT(PxgSoftBody, mSimPosition_InvMass) / sizeof(CUdeviceptr);
-	}
-	PX_ASSERT(false);
-	return 0;
 }
 
 void PxgSoftBody::deallocate(Cm::VirtualAllocatorCallback& hostAlloc)

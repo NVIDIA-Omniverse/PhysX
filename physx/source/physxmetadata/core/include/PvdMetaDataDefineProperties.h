@@ -40,7 +40,7 @@
 namespace physx
 {
 namespace Vd
-{	
+{
 	using namespace physx::pvdsdk;
 
 	template<typename TPropType>

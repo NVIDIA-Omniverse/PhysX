@@ -110,11 +110,11 @@ namespace Bp
 		{
 		}
 
-		virtual const char* getName() const { return "PostBroadPhaseStage2Task"; }
+		virtual const char* getName() const PX_OVERRIDE { return "PostBroadPhaseStage2Task"; }
 
 		void setFlushPool(Cm::FlushPool* pool) { mFlushPool = pool; }
 
-		virtual void runInternal();
+		virtual void runInternal() PX_OVERRIDE;
 	};
 
 	class ProcessAggPairsBase;

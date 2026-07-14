@@ -133,7 +133,7 @@ static void initParticles(const PxU32 numX, const PxU32 numY, const PxU32 numZ, 
 	particleSystem->setSolidRestOffset(solidRestOffset);
 	particleSystem->setFluidRestOffset(fluidRestOffset);
 	particleSystem->setParticleFlag(PxParticleFlag::eENABLE_SPECULATIVE_CCD, false);
-	particleSystem->setMaxVelocity(solidRestOffset*100.f);
+	particleSystem->setMaxLinearVelocity(solidRestOffset*100.f);
 
 	gScene->addActor(*particleSystem);
 	

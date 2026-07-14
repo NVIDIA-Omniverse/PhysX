@@ -51,11 +51,11 @@ public:
 					NpDeformableAttachment(const PxDeformableAttachmentData& data, const AttachmentInfo& info);
 	virtual			~NpDeformableAttachment();
 
-	virtual void	getActors(PxActor*& actor0, PxActor*& actor1) const;
+	virtual void	getActors(PxActor*& actor0, PxActor*& actor1) const PX_OVERRIDE;
 
-	virtual void	updatePose(const PxTransform& pose);
+	virtual void	updatePose(const PxTransform& pose) PX_OVERRIDE;
 
-	virtual void	release();
+	virtual void	release() PX_OVERRIDE;
 
 	NpScene*		getSceneFromActors();
 	void			addAttachment();

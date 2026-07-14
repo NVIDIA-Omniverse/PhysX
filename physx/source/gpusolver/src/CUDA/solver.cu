@@ -257,6 +257,6 @@ void artiSolveBlockPartition(PxgSolverCoreDesc* PX_RESTRICT solverDesc, const Px
 				vel1.top.x, vel1.top.y, vel1.top.z, vel1.bottom.x, vel1.bottom.y, vel1.bottom.z);*/
 			//printf("%i: Output ArticB index = %i, articId = %i (%f, %f, %f, %f, %f, %f)\n", threadIndexInWarp, index, solverBodyId1,
 			//	impulse1.top.x, impulse1.top.y, impulse1.top.z, impulse1.bottom.x, impulse1.bottom.y, impulse1.bottom.z);
-		}		
+		}
 	}
 }

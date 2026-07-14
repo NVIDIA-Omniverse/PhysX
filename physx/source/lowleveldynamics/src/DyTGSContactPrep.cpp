@@ -270,9 +270,9 @@ namespace Dy
 		}
 	}
 
-	PxReal getImpulseResponse(const SolverExtBodyStep& b0, const Cm::SpatialVector& impulse0, Cm::SpatialVector& deltaV0, PxReal dom0, PxReal angDom0,
-		const SolverExtBodyStep& b1, const Cm::SpatialVector& impulse1, Cm::SpatialVector& deltaV1, PxReal dom1, PxReal angDom1,
-		bool allowSelfCollision)
+	PxReal getImpulseResponse(	const SolverExtBodyStep& b0, const Cm::SpatialVector& impulse0, Cm::SpatialVector& deltaV0, PxReal dom0, PxReal angDom0,
+								const SolverExtBodyStep& b1, const Cm::SpatialVector& impulse1, Cm::SpatialVector& deltaV1, PxReal dom1, PxReal angDom1,
+								bool allowSelfCollision)
 	{
 		PxReal response;
 		if (allowSelfCollision && b0.mArticulation == b1.mArticulation)
@@ -320,9 +320,9 @@ namespace Dy
 		}
 	}
 
-	FloatV getImpulseResponse(const SolverExtBodyStep& b0, const Cm::SpatialVectorV& impulse0, Cm::SpatialVectorV& deltaV0, const FloatV& dom0, const FloatV& angDom0,
-		const SolverExtBodyStep& b1, const Cm::SpatialVectorV& impulse1, Cm::SpatialVectorV& deltaV1, const FloatV& dom1, const FloatV& angDom1,
-		bool /*allowSelfCollision*/)
+	FloatV getImpulseResponse(	const SolverExtBodyStep& b0, const Cm::SpatialVectorV& impulse0, Cm::SpatialVectorV& deltaV0, const FloatV& dom0, const FloatV& angDom0,
+								const SolverExtBodyStep& b1, const Cm::SpatialVectorV& impulse1, Cm::SpatialVectorV& deltaV1, const FloatV& dom1, const FloatV& angDom1,
+								bool /*allowSelfCollision*/)
 	{
 		Vec3V response;
 		{
@@ -720,7 +720,6 @@ namespace Dy
 					const Vec3V rb = QuatRotate(bodyFrame1q, body1Anchor);
 
 					PxU32 index = c.contactID[i][j];
-
 					index = index == 0xFFFF ? c.contactPatches[c.correlationListHeads[i]].start : index;
 
 					const Vec3V tvel = V3LoadA(buffer[index].targetVel);
@@ -1417,7 +1416,7 @@ namespace Dy
 
 			//Initialise solverConstraint buffer.
 			if (solverConstraint)
-			{				
+			{
 				if (useExtContacts)
 				{
 					const SolverExtBodyStep b0(reinterpret_cast<const void*>(contactDesc.body0), contactDesc.body0TxI, contactDesc.bodyData0, desc.linkIndexA);
@@ -2051,7 +2050,7 @@ PxU32 setupSolverConstraintStep(
 		PxReal initJointSpeed = 0.0f;
 
 		if (!isExtended)
-		{		
+		{
 			const PxVec3 angSqrtInvInertia0V3(angSqrtInvInertia0[i].x, angSqrtInvInertia0[i].y, angSqrtInvInertia0[i].z);
 			const PxVec3 angSqrtInvInertia1V3(angSqrtInvInertia1[i].x, angSqrtInvInertia1[i].y, angSqrtInvInertia1[i].z);
 			init(s, c.linear0, c.linear1, c.angular0, c.angular1, minImpulse, maxImpulse);
@@ -2079,7 +2078,7 @@ PxU32 setupSolverConstraintStep(
 				s.ang0 = PxVec3(0.f);
 				s.ang1 = PxVec3(0.f);
 				s.angularErrorScale = 0.f;
-			}		
+			}
 		}
 		else
 		{

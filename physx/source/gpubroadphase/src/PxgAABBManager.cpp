@@ -302,7 +302,13 @@ AggregateHandle PxgAABBManager::createAggregate(BoundsIndex index, FilterGroup::
 		mDirtyAggregateIndices.pushBack(handle);
 	}
 
-	mAddedHandleMap.growAndSet(index);
+	// Defer BP registration until addBounds() adds the first shape - matches
+	// AABBManager::createAggregate. Aggregates with no aggregated shapes (e.g. a shapeless
+	// articulation) would otherwise let PxBounds3::empty() flow into translateAABBsLaunch and
+	// stomp memory adjacent to the active-histogram buffer (OMPE-92788). See the PX_DEBUG
+	// assertion in updateBPFirstPass for the regression guard. growAndReset still extends the
+	// bitmap so test() on this index stays in-bounds.
+	mAddedHandleMap.growAndReset(index);
 	mAggregatedBoundMap.growAndReset(index);
 
 	return handle;
@@ -526,6 +532,18 @@ void PxgAABBManager::updateBPFirstPass(PxU32 /*numCpuTasks*/,
 				{
 					const BoundsIndex handle = PxU32(w << 5 | PxLowestSetBit(b));
 					PX_ASSERT(!mVolumeData[handle].isAggregated());
+					// OMPE-92788 regression guard: an aggregate handle must never enter the GPU BP
+					// while still empty. Empty PxBounds3 (min=PX_MAX_BOUNDS_EXTENTS,
+					// max=-PX_MAX_BOUNDS_EXTENTS) survives translateAABBsLaunch with min>max,
+					// underflows the region-grid math in writeOutStartAndActiveRegionHistogram, and
+					// stomps memory adjacent to mActiveRegionTotalBuf. createAggregate now defers
+					// mAddedHandleMap registration until addBounds() adds the first sub-shape; this
+					// catches any future path that re-introduces shapeless aggregates here.
+					PX_ASSERT_WITH_MESSAGE(
+						!mVolumeData[handle].isAggregate() ||
+						mAggregates[mVolumeData[handle].getAggregate()].size > 0,
+						"PxgAABBManager::updateBPFirstPass: shapeless aggregate registered with "
+						"GPU broadphase. See OMPE-92788.");
 					mAddedHandles.pushBack(handle);		// PT: TODO: BoundsIndex-to-ShapeHandle confusion here
 				}
 			}

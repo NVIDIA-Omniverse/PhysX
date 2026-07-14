@@ -58,19 +58,23 @@ BodySim::BodySim(Scene& scene, BodyCore& core, bool compound) :
 	RigidSim		(scene, core),
 	mLLBody			(&core.getCore(), PX_FREEZE_INTERVAL),
 	mSimStateData	(NULL),
-	mVelModState	(VMF_GRAVITY_DIRTY),
 	mArticulation	(NULL)
 {
+	PxU16 internalFlags = mLLBody.mInternalFlags | VMF_GRAVITY_DIRTY;
+
 	core.getCore().numCountedInteractions = 0;
 	core.getCore().disableGravity = core.getActorFlags() & PxActorFlag::eDISABLE_GRAVITY;
+
 	if(core.getFlags() & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD)
-		mLLBody.mInternalFlags |= PxsRigidBody::eSPECULATIVE_CCD;
+		internalFlags |= PxsRigidBody::eSPECULATIVE_CCD_GPU;
 
 	if(core.getFlags() & PxRigidBodyFlag::eENABLE_GYROSCOPIC_FORCES)
-		mLLBody.mInternalFlags |= PxsRigidBody::eENABLE_GYROSCOPIC;
+		internalFlags |= PxsRigidBody::eENABLE_GYROSCOPIC_GPU;
 
 	if(core.getFlags() & PxRigidBodyFlag::eRETAIN_ACCELERATIONS)
-		mLLBody.mInternalFlags |= PxsRigidBody::eRETAIN_ACCELERATION;
+		internalFlags |= PxsRigidBody::eRETAIN_ACCELERATION_GPU;
+
+	mLLBody.mInternalFlags = internalFlags;
 
 	// PT: don't read the core ptr we just wrote, use input param
 	// PT: at time of writing we get a big L2 here because even though bodycore has been prefetched, the wake counter is 160 bytes away
@@ -87,6 +91,7 @@ BodySim::BodySim(Scene& scene, BodyCore& core, bool compound) :
 	}
 	else
 	{
+		// PT: ?? can mArticulation be non null here?
 		if(mArticulation)
 		{
 			const PxU32 linkIndex = mArticulation->findBodyIndex(*this);
@@ -158,33 +163,6 @@ BodySim::~BodySim()
 	mActiveCompoundListIndex = SC_NOT_IN_SCENE_INDEX;
 
 	mCore.setSim(NULL);
-}
-
-void BodySim::updateCached_NotThreadSafe(const UpdateCachedParams& params, PinnableBitMap* shapeChangedMap)
-{
-	if(!(mLLBody.mInternalFlags & PxsRigidBody::eFROZEN))
-	{
-		PxU32 nbElems = getNbElements();
-		ElementSim** elems = getElements();
-		while (nbElems--)
-		{
-			ShapeSim* current = static_cast<ShapeSim*>(*elems++);
-			current->updateCached_NotThreadSafe(params, shapeChangedMap);
-		}
-	}
-}
-
-void BodySim::updateCached_ThreadSafe(const UpdateCachedParams& params)
-{
-	PX_ASSERT(!(mLLBody.mInternalFlags & PxsRigidBody::eFROZEN));	// PT: should not be called otherwise
-
-	PxU32 nbElems = getNbElements();
-	ElementSim** elems = getElements();
-	while (nbElems--)
-	{
-		ShapeSim* current = static_cast<ShapeSim*>(*elems++);
-		current->updateCached_ThreadSafe(params);
-	}
 }
 
 bool BodySim::setupSimStateData(bool isKinematic)
@@ -294,9 +272,6 @@ void BodySim::setKinematicTarget(const PxTransform& p)
 
 	raiseInternalFlag(BF_KINEMATIC_MOVED);	// Important to set this here already because trigger interactions need to have this information when being activated.
 	clearInternalFlag(BF_KINEMATIC_SURFACE_VELOCITY);
-
-	// Reset acceleration state to avoid spurious spike after kinematic target change
-	getBodyCore().resetAccelerationState();
 }
 
 void BodySim::addSpatialAcceleration(const PxVec3* linAcc, const PxVec3* angAcc)
@@ -395,7 +370,7 @@ void BodySim::postActorFlagChange(PxU32 oldFlags, PxU32 newFlags)
 
 	if (isWeightless != wasWeightless)
 	{
-		if (mVelModState == 0)
+		if ((mLLBody.mInternalFlags & VMF_ALL_FLAGS) == 0)
 			raiseVelocityModFlag(VMF_GRAVITY_DIRTY);
 
 		getBodyCore().getCore().disableGravity = isWeightless!=0;
@@ -446,7 +421,7 @@ void BodySim::activate()
 																								// exception: object gets newly added, then the state change will happen later
 		if(!isArticulationLink())
 		{
-			mLLBody.mInternalFlags &= (~PxsRigidBody::eFROZEN);
+			mLLBody.mInternalFlags &= ~PxsRigidBody::eFROZEN;
 			// Put in list of activated bodies. The list gets cleared at the end of a sim step after the sleep callbacks have been fired.
 			mScene.onBodyWakeUp(this);
 		}
@@ -506,11 +481,16 @@ void BodySim::deactivate()
 
 void BodySim::wakeUp()
 {
+	// Reset acceleration state only on genuine sleep-to-wake transition for
+	// dynamic bodies. Kinematic sleep/wake is a normal part of their lifecycle
+	// (sleep when idle, wake on setKinematicTarget) and prevVel is still valid.
+	const bool resetAccel = !isActive() && !isKinematic();
+
 	setActive(true);
 	notifyWakeUp();
 
-	// Reset acceleration state to avoid spurious spike after wake-up
-	getBodyCore().resetAccelerationState();
+	if(resetAccel)
+		raiseInternalFlag(BF_RESET_ACCELERATION);
 }
 
 void BodySim::putToSleep()
@@ -554,10 +534,10 @@ void BodySim::internalWakeUpBase(PxReal wakeCounterValue)	//this one can only in
 		notifyWakeUp();
 
 		// Reset acceleration state to avoid spurious spike after wake-up
-		getBodyCore().resetAccelerationState();
+		raiseInternalFlag(BF_RESET_ACCELERATION);
 
 		if(0)	// PT: commented-out for PX-2197
-			mLLBody.mInternalFlags &= (~PxsRigidBody::eFROZEN);
+			mLLBody.mInternalFlags &= ~PxsRigidBody::eFROZEN;
 	}
 }
 
@@ -583,11 +563,13 @@ bool BodySim::checkSleepReadinessBesidesWakeCounter()
 	const VelocityMod* velmod = simStateData ? simStateData->getVelocityModData() : NULL;
 
 	bool readyForSleep = bodyCore.getLinearVelocity().isZero() && bodyCore.getAngularVelocity().isZero();
+
 	if (readVelocityModFlag(VMF_ACC_DIRTY))
 	{
 		readyForSleep = readyForSleep && (!velmod || velmod->getLinearVelModPerSec().isZero());
 		readyForSleep = readyForSleep && (!velmod || velmod->getAngularVelModPerSec().isZero());
 	}
+
 	if (readVelocityModFlag(VMF_VEL_DIRTY))
 	{
 		readyForSleep = readyForSleep && (!velmod || velmod->getLinearVelModPerStep().isZero());
@@ -802,7 +784,7 @@ void BodySim::setArticulation(ArticulationSim* a, PxReal wakeCounter, bool aslee
 			while (nbElements--)
 			{
 				ShapeSim* sim = static_cast<ShapeSim*>(*current++);
-				ctx->registerShape(mNodeIndex, sim->getCore().getCore(), sim->getElementID(), sim->getActor().getPxActor());
+				ctx->registerShape(mNodeIndex, sim->getCore(), sim->getElementID(), sim->getActor().getPxActor());
 			}
 		}
 
@@ -883,20 +865,6 @@ void BodySim::destroySqBounds()
 	{
 		ShapeSim* current = static_cast<ShapeSim*>(*elems++);
 		current->destroySqBounds();
-	}
-}
-
-void BodySim::freezeTransforms(const UpdateCachedParams& params, PinnableBitMap* shapeChangedMap)
-{
-	const UpdateCachedParams frozenParams(params.mTransformCache, params.mBoundsArray, PxsTransformFlag::eFROZEN);
-	
-	PxU32 nbElems = getNbElements();
-	ElementSim** elems = getElements();
-	while (nbElems--)
-	{
-		ShapeSim* sim = static_cast<ShapeSim*>(*elems++);
-		sim->updateCached_NotThreadSafe(frozenParams, shapeChangedMap);
-		sim->destroySqBounds();
 	}
 }
 

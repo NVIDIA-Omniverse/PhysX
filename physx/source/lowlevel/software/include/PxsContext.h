@@ -123,9 +123,9 @@ public:
 	// Manager status change
 					bool						getManagerTouchEventCount(PxU32* newTouch, PxU32* lostTouch, PxU32* ccdTouch) const;
 					void						fillManagerTouchEvents(
-													PxvContactManagerTouchEvent* newTouch, PxU32& newTouchCount,
-													PxvContactManagerTouchEvent* lostTouch, PxU32& lostTouchCount,
-													PxvContactManagerTouchEvent* ccdTouch, PxU32& ccdTouchCount);
+												PxArray<PxvContactManagerTouchEvent>& newTouchEvents,
+												PxArray<PxvContactManagerTouchEvent>& lostTouchEvents,
+												PxArray<PxvContactManagerTouchEvent>* ccdTouchEvents);
 
 					void						beginUpdate();
 

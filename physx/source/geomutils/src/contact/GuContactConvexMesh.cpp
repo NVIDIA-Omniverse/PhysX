@@ -672,7 +672,7 @@ struct ConvexMeshContactGenerationCallback : MeshHitCallback<PxGeomRaycastHit>
 	}
 
 	virtual PxAgain processHit( // all reported coords are in mesh local space including hit.position
-		const PxGeomRaycastHit& hit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32* vinds)
+		const PxGeomRaycastHit& hit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32* vinds) PX_OVERRIDE
 	{
 		// PT: this one is safe because incoming vertices from midphase are always safe to V4Load (by design)
 		// PT: TODO: is this test really needed? Not done in midphase already?
@@ -1336,7 +1336,7 @@ struct ConvexVsHeightfieldContactGenerationCallback : OverlapReport
 	}
 
 	// PT: TODO: refactor/unify with similar code in other places
-	virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
+	virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices) PX_OVERRIDE
 	{
 		const PxU8 nextInd[] = {2,0,1};
 

@@ -99,7 +99,7 @@ SweepShapeMeshHitCallback::SweepShapeMeshHitCallback(CallbackMode::Enum inMode, 
 	mInitialOverlap						(false),
 	mFlipNormal							(flipNormal),
 	mDistCoeff							(distCoef)
-{		
+{
 }
 
 ///////////////////////////////////////////////////////////////////////////////

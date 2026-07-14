@@ -141,7 +141,7 @@ namespace physx {
 				, mEventFilter(inEventFilter)
 				, mReserved(0)
 				, mWritten(0)		 
-			{				
+			{
 			}
 
 			TContextProvider& getContextProvider() { return mContextProvider; }
@@ -244,12 +244,12 @@ namespace physx {
 			//starts over again.
 			//only called when the buffer mutex is held
 			void clearCachedData()
-			{								
+			{
 			}
 
 			template<typename TProfileEventType>
 			PX_FORCE_INLINE void doAddProfileEvent(uint16_t eventId, const TProfileEventType& inType)
-			{				
+			{
 				doAddEvent(static_cast<uint8_t>(getEventType<TProfileEventType>()), eventId, inType);
 			}
 
@@ -276,7 +276,7 @@ namespace physx {
 					{
 						// I32 overflow 
 						if (mReserved < int32_t(TBaseType::mBufferFullAmount))
-						{							
+						{
 							reserved = PxAtomicAdd(&mReserved, sizeToWrite);
 						}
 					}
@@ -301,7 +301,7 @@ namespace physx {
 				PxAtomicAdd(&mWritten, sizeToWrite);
 
 				if (reserved >= int32_t(TBaseType::mBufferFullAmount))
-				{	
+				{
 					TScopedLockType lock(TBaseType::mBufferMutex);
 					// we flush the buffer if its full and we did not flushed him in the meantime
 					if(mReserved >= reserved)

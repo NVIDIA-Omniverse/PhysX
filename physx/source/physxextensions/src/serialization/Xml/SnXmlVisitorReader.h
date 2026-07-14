@@ -167,7 +167,7 @@ namespace physx { namespace Sn {
 	
 	template<typename TReaderType, typename TGeomType>
 	inline PxGeometry* parseGeometry( TReaderType& reader, TGeomType& /*inGeom*/)
-	{	
+	{
 		PxAllocatorCallback& inAllocator = reader.mAllocator.getAllocator();
 		
 		TGeomType* shape = PX_PLACEMENT_NEW((inAllocator.allocate(sizeof(TGeomType), "parseGeometry", PX_FL)), TGeomType);
@@ -317,9 +317,9 @@ namespace physx { namespace Sn {
 					case PxGeometryType::eGEOMETRY_COUNT:
 					case PxGeometryType::eINVALID:
 						PX_ASSERT(0);			
-					}		
+					}
 					visitor.mAllocator.getAllocator().deallocate(geometry);
-				}				
+				}
 			}
 		}
 		visitor.popCurrentContext();
@@ -630,7 +630,7 @@ namespace physx { namespace Sn {
 					TPropertyType propVal;
 					readComplexObj( *this, &propVal, inInfo );
 					theData.pushBack(propVal);
-				}	
+				}
 			}
 			this->popCurrentContext();
 
@@ -654,7 +654,7 @@ namespace physx { namespace Sn {
 					readComplexObj( *this, &propVal, inInfo );
 					inProp.set(mObj, index, propVal);
 					++index;
-				}	
+				}
 			}
 			this->popCurrentContext();
 		}
@@ -679,8 +679,8 @@ namespace physx { namespace Sn {
 						TPropertyType propYVal;
 						readComplexObj( *this, &propYVal, inInfo );
 						const_cast<TAccessorType&>(inProp).addPair(mObj, propXVal, propYVal);
-					}					
-				}	
+					}
+				}
 			}
 			this->popCurrentContext();
 		}
@@ -741,7 +741,7 @@ namespace physx { namespace Sn {
 				if (parentReader->read( "RigidBodyFlags", value ))
 				{
 					if(strstr(value, "eKINEMATIC"))
-					{						
+					{
 						mObj->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 					}
 				}

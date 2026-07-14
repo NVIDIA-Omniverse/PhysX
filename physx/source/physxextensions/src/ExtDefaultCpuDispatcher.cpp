@@ -135,7 +135,7 @@ void Ext::DefaultCpuDispatcher::submitTask(PxBaseTask& task)
 		runTask(task);
 		task.release();
 		return;
-	}	
+	}
 
 	// TODO: Could use TLS to make this more efficient
 	const PxThread::Id currentThread = PxThread::getId();

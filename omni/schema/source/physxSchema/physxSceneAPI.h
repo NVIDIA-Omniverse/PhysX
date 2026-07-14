@@ -530,6 +530,7 @@ public:
     // --------------------------------------------------------------------- //
     // TIMESTEPSPERSECOND 
     // --------------------------------------------------------------------- //
+    /// Deprecated: use newton:timeStepsPerSecond (NewtonSceneAPI) instead.
     /// Simulation scene step defined as number of steps per second.
     /// Note that application might cap the number of simulation steps to avoid
     /// running more simulations steps with a low frame rate.
@@ -706,25 +707,25 @@ public:
 
 public:
     // --------------------------------------------------------------------- //
-    // GPUMAXSOFTBODYCONTACTS 
+    // GPUMAXDEFORMABLEVOLUMECONTACTS 
     // --------------------------------------------------------------------- //
-    /// Gpu max soft body contacts.
+    /// Gpu max deformable volume contacts.
     ///
     /// | ||
     /// | -- | -- |
-    /// | Declaration | `uint physxScene:gpuMaxSoftBodyContacts = 1048576` |
+    /// | Declaration | `uint physxScene:gpuMaxDeformableVolumeContacts = 1048576` |
     /// | C++ Type | unsigned int |
     /// | \ref Usd_Datatypes "Usd Type" | SdfValueTypeNames->UInt |
     PHYSXSCHEMA_API
-    UsdAttribute GetGpuMaxSoftBodyContactsAttr() const;
+    UsdAttribute GetGpuMaxDeformableVolumeContactsAttr() const;
 
-    /// See GetGpuMaxSoftBodyContactsAttr(), and also 
+    /// See GetGpuMaxDeformableVolumeContactsAttr(), and also 
     /// \ref Usd_Create_Or_Get_Property for when to use Get vs Create.
     /// If specified, author \p defaultValue as the attribute's default,
     /// sparsely (when it makes sense to do so) if \p writeSparsely is \c true -
     /// the default for \p writeSparsely is \c false.
     PHYSXSCHEMA_API
-    UsdAttribute CreateGpuMaxSoftBodyContactsAttr(VtValue const &defaultValue = VtValue(), bool writeSparsely=false) const;
+    UsdAttribute CreateGpuMaxDeformableVolumeContactsAttr(VtValue const &defaultValue = VtValue(), bool writeSparsely=false) const;
 
 public:
     // --------------------------------------------------------------------- //
@@ -891,7 +892,7 @@ public:
     // --------------------------------------------------------------------- //
     // MINPOSITIONITERATIONCOUNT 
     // --------------------------------------------------------------------- //
-    /// Minimum position iteration count for all actors (rigid bodies, cloth, particles etc).
+    /// Minimum position iteration count for all actors (rigid bodies, deformables, particles etc).
     /// Range: [1, 255]
     ///
     /// | ||
@@ -915,7 +916,7 @@ public:
     // --------------------------------------------------------------------- //
     // MAXPOSITIONITERATIONCOUNT 
     // --------------------------------------------------------------------- //
-    /// Maximum position iteration count for all actors (rigid bodies, cloth, particles etc).
+    /// Maximum position iteration count for all actors (rigid bodies, deformables, particles etc).
     /// Note that this setting will override solver iteration settings of individual actors that have requested more iterations.
     /// Range: [1, 255]
     ///
@@ -940,7 +941,7 @@ public:
     // --------------------------------------------------------------------- //
     // MINVELOCITYITERATIONCOUNT 
     // --------------------------------------------------------------------- //
-    /// Minimum velocity iteration count for all actors (rigid bodies, cloth, particles etc).
+    /// Minimum velocity iteration count for all actors (rigid bodies, deformables, particles etc).
     /// Range: [0, 255]
     ///
     /// | ||
@@ -964,7 +965,7 @@ public:
     // --------------------------------------------------------------------- //
     // MAXVELOCITYITERATIONCOUNT 
     // --------------------------------------------------------------------- //
-    /// Maximum velocity iteration count for all actors (rigid bodies, cloth, particles etc).
+    /// Maximum velocity iteration count for all actors (rigid bodies, deformables, particles etc).
     /// Note that this setting will override solver iteration settings of individual actors that have requested more iterations.
     /// Range: [0, 255]
     ///

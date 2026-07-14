@@ -101,7 +101,7 @@ extern "C" __global__ void ZeroBodiesTGS(const PxgSolverCoreDesc* constraintPrep
 extern "C" __global__ void writebackBlocksTGS(
 	PxgSolverCoreDesc* constraintPrepDesc,
 	const PxgSolverSharedDesc<IterativeSolveDataTGS>* sharedDesc, const PxU32 islandIndex)
-{	
+{
 	PxgIslandContext& island = constraintPrepDesc->islandContextPool[islandIndex];
 
 	const PxU32 startIndex = island.mBatchStartIndex;
@@ -202,7 +202,7 @@ extern "C" __global__ void writebackBlocksTGS(
 extern "C" __global__ void concludeBlocksTGS(
 	const PxgSolverCoreDesc* constraintPrepDesc,
 	const PxgSolverSharedDesc<IterativeSolveDataTGS>* sharedDesc, const PxU32 islandIndex)
-{	
+{
 	PxgIslandContext& island = constraintPrepDesc->islandContextPool[islandIndex];
 
 	const PxU32 startIndex = island.mBatchStartIndex;
@@ -254,7 +254,7 @@ extern "C" __global__ void concludeBlocksTGS(
 extern "C" __global__ void writeBackBodiesTGS(
 	const PxgSolverCoreDesc* solverCoreDesc ,
 	const PxgSolverSharedDesc<IterativeSolveDataTGS>* sharedDesc, const PxU32 islandIndex)
-{	
+{
 	__shared__ float4* bodyVelocities;
 	__shared__ float4* motionVelocities;
 	__shared__ PxU32 bodyOffset;
@@ -706,7 +706,7 @@ extern "C" __global__ void initializeSolverVelocitiesTGS(
 	const PxU32 outputOffset = solverDesc->accumulatedBodyDeltaVOffset;
 
 	if (bodyId < allBodiesCount)
-	{		
+	{
 		float4 linVel = velocities[bodyId];
 		float4 angVel = velocities[bodyId + allBodiesCount];
 
@@ -1744,7 +1744,7 @@ void solveWholeIslandTGS(
 
 			 //Pull out shared memory into float4 format in registers to solve constraints
 			 if (threadIndexInWarp < batch.mDescStride)
-			 {			
+			 {
 				 const PxU32 readIndexA = bodyAIndex + slabId * totalBodiesIncKinematics;
 				 const PxU32 readIndexB = bodyBIndex + slabId * totalBodiesIncKinematics;
 

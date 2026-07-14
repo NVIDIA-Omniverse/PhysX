@@ -98,11 +98,11 @@ namespace Sc
 
 					bool					isSleeping() const;
 					void					internalWakeUp(PxReal wakeCounter);	// called when sim sets sleep timer
-					void					sleepCheck(PxReal dt);
+					void					sleepCheck(PxReal dt, PxMutex& articulationSleepLock);
 					void					putToSleep();
-					void					updateCached_NotThreadSafe(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap);
 
-					void					markShapesUpdated(Cm::PinnableBitMap* shapeChangedMap);
+					void					updateCached(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics);
+					void					updateCached_NotThreadSafe(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics);
 
 					void					setActive(bool b, bool asPartOfCreation=false);
 

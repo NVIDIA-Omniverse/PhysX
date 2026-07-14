@@ -42,7 +42,7 @@
 namespace physx
 {
 #if ENABLE_KERNEL_LAUNCH_ERROR_CHECK
-#define checkCudaError() { cudaError_t err = cudaDeviceSynchronize(); if (err != 0) printf("Cuda error file: %s, line: %i, error: %i\n", PX_FL, err); }	
+#define checkCudaError() { cudaError_t err = cudaDeviceSynchronize(); if (err != 0) printf("Cuda error file: %s, line: %i, error: %i\n", PX_FL, err); }
 #else
 #define checkCudaError() { }
 #endif
@@ -252,5 +252,5 @@ namespace physx
 	{
 		PxU32* totalCountPointer = updateSubgrids(deviceParticlePos, numParticles, devicePhases, stream, validPhase, activeIndices);			
 		updateSubgridNeighbors(totalCountPointer, stream);
-	}	
+	}
 }

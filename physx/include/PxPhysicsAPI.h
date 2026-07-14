@@ -152,7 +152,6 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "PxArticulationJointReducedCoordinate.h"
 #include "PxArticulationLink.h"
 #include "PxClient.h"
-#include "PxConeLimitedConstraint.h"
 #include "PxConstraint.h"
 #include "PxConstraintDesc.h"
 #include "PxContact.h"
@@ -162,7 +161,6 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "PxDeformableVolume.h"
 #include "PxDeformableVolumeMaterial.h"
 #include "PxDeletionListener.h"
-#include "PxFEMSoftBodyMaterial.h" // deprecated, include PxDeformableVolumeMaterial.h
 #include "PxFiltering.h"
 #include "PxMaterial.h"
 #include "PxParticleBuffer.h"
@@ -183,7 +181,6 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "PxShape.h"
 #include "PxSimulationEventCallback.h"
 #include "PxSimulationStatistics.h"
-#include "PxSoftBody.h" //deprecated, include PxDeformableVolume.h
 #include "PxVisualizationParameter.h"
 #include "PxPruningStructure.h"
 

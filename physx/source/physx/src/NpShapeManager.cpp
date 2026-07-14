@@ -56,7 +56,7 @@ static void getSQGlobalPose(PxTransform& globalPose, const NpShape& npShape, con
 	{
 		actor2World = &static_cast<const NpRigidStatic&>(npActor).getCore().getActor2World();
 
-		if(npShape.getCore().getCore().mShapeCoreFlags.isSet(PxShapeCoreFlag::eIDT_TRANSFORM))
+		if(npShape.getCore().mShapeCoreFlags.isSet(PxShapeCoreFlag::eIDT_TRANSFORM))
 		{
 			PX_ASSERT(shape2Actor.p.isZero() && shape2Actor.q.isIdentity());
 			globalPose = *actor2World;
@@ -111,7 +111,7 @@ NpShapeManager::NpShapeManager() :
 // PX_SERIALIZATION
 NpShapeManager::NpShapeManager(const PxEMPTY) :
 	mShapes			(PxEmpty)
-{	
+{
 }
 
 NpShapeManager::~NpShapeManager() 

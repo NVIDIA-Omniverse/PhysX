@@ -330,7 +330,7 @@ static __device__ void setUp1DConstraintBlock(PxU32* sortedRowIndices, PxgBlockC
 				c_linear1XYZ_minImpulseW.w, c_angular1XYZ_maxImpulseW.w,
 				hasDriveLimit, driveLimitsAreForces, dt,
 				minImpulse, maxImpulse);
-		}	
+		}
 	
 		cmod.ang0Writeback[threadIndex] = cang0;
 

@@ -37,7 +37,7 @@ namespace physx
 }
 
 namespace
-{	
+{
 	// PT: this one calls PxgPinnedMemoryAllocate/PxgPinnedMemoryDeallocate, i.e. cuMemHostAlloc/cuMemFreeHost
 	template<PxU32 Flags>
 	class PxgCudaHostMemoryAllocatorCallback : public PxgCudaAllocatorCallbackBase

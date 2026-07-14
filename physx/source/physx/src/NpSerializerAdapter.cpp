@@ -87,7 +87,7 @@ namespace physx
 
 	template<>
 	void PxSerializerDefaultAdapter<NpShape>::registerReferences(PxBase& obj, PxSerializationContext& context) const 
-	{	
+	{
 		NpShape& shape = static_cast<NpShape&>(obj);
 
 		context.registerReference(obj, PX_SERIAL_REF_KIND_PXBASE, size_t(&obj));

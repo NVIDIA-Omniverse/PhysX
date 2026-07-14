@@ -153,7 +153,7 @@ namespace physx
 		}
 
 		if (s_library && (freshlyLoaded || g_PxCreatePhysXGpu_Func == NULL))
-		{			
+		{
 			g_PxCreatePhysXGpu_Func = (PxCreatePhysXGpu_FUNC*)GetProcAddress(s_library, "PxCreatePhysXGpu");
 			g_PxCreateCudaContextManager_Func = (PxCreateCudaContextManager_FUNC*)GetProcAddress(s_library, "PxCreateCudaContextManager");
 			g_PxGetSuggestedCudaDeviceOrdinal_Func = (PxGetSuggestedCudaDeviceOrdinal_FUNC*)GetProcAddress(s_library, "PxGetSuggestedCudaDeviceOrdinal");
@@ -203,7 +203,7 @@ namespace physx
 				char* error = dlerror();
 				reportError(PX_FL, "Could not load libcuda.so.1: %s\n", error);
 				return;
-			}	
+			}
 		}
 
 		// no UpdateLoader

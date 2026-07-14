@@ -775,7 +775,7 @@ PxVec3 Gu::depenetrateMeshesRef(const PxTriangleMeshGeometry& meshGeom0, const P
 	if(inputDir.isZero())
 		return PxVec3(0.0f);
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	const TriangleProvider triangleProvider0(meshGeom0, pose0.q);
 	const TriangleProvider triangleProvider1(meshGeom1, pose1.q);
@@ -962,7 +962,7 @@ PxVec3 Gu::depenetrateMeshes(const PxTriangleMeshGeometry& meshGeom0, const PxTr
 	if(inputDir.isZero())
 		return PxVec3(0.0f);
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	const TriangleMesh* tm0 = static_cast<const TriangleMesh*>(meshGeom0.triangleMesh);
 	const TriangleMesh* tm1 = static_cast<const TriangleMesh*>(meshGeom1.triangleMesh);
@@ -1006,7 +1006,7 @@ PxVec3 Gu::depenetrateMeshes(const PxTriangleMeshGeometry& meshGeom0, const PxTr
 			mSep = 0.0f;
 		}
 
-		virtual	bool	flushResults(PxU32 nbItems, const PxGeomIndexPair* pair)
+		virtual	bool	flushResults(PxU32 nbItems, const PxGeomIndexPair* pair) PX_OVERRIDE
 		{
 			PX_UNUSED(nbItems);
 			PX_ASSERT(nbItems == 1);

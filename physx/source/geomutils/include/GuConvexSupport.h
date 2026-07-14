@@ -690,6 +690,7 @@ namespace physx
 				PxU32 numClipPlanes = 0;
 				PxVec4 clipPlanes[MAX_CLIP_PLANES];
 				makePlanes(clipPlanes, numClipPlanes);
+				PX_ASSERT(numClipPlanes <= MAX_CLIP_PLANES);
 
 				PxU32 numPolyPoints = 0;
 				PxVec3 polyPoints[MAX_POLYGON_POINTS];
@@ -770,6 +771,11 @@ namespace physx
 
 						if (posCount)
 							n = -n;
+
+						// degenerate (e.g. collinear) face points can produce more
+						// pairs than actual edges, cap to avoid buffer overrun
+						if (numPlanes >= MAX_CLIP_PLANES)
+							return;
 
 						planes[numPlanes++] = PxVec4(-n, n.dot(s));
 					}

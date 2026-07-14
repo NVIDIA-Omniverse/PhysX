@@ -69,8 +69,6 @@ namespace physx
 		
 		Cm::UnAlignedSpatialVector*				externalAccelerations;			
 
-		Cm::UnAlignedSpatialVector*				rootPreMotionVelocity;
-
 		PxReal*									jointPositions;					
 		PxReal*									jointVelocities;				
 		PxReal*									jointAccelerations;				
@@ -154,7 +152,6 @@ namespace physx
 			byteSizePerArt += sizeof(PxReal) * maxNbDofs; //joint pos
 			byteSizePerArt += sizeof(PxReal) * maxNbDofs; //joint vel
 			byteSizePerArt += sizeof(PxReal) * maxNbDofs; //joint accel
-			byteSizePerArt += sizeof(Cm::UnAlignedSpatialVector);											//root pre-sim vel
 			return byteSizePerArt;
 		}
 
@@ -209,14 +206,12 @@ namespace physx
 		\param[out] jointPositions is a pointer to an array of joint positions with one element per dof.
 		\param[out] jointVelocities is a pointer to an array of joint velocities with one element per link.
 		\param[out] jointAccelerations is a pointer to an array of joint accelerations with one element per dof.
-		\param[out] rootPreVel is a pointer to the pre-sim velocity of the single articulation's root link. 
 		*/
 		static PX_CUDA_CALLABLE PX_FORCE_INLINE void decomposeArticulationStateDataBuffer
 		(PxU8* singleArticulationStateBuffer,
 		 const PxU32 nbLinks, const PxU32 nbDofs,
 		 PxTransform*& linkBody2Worlds, Cm::UnAlignedSpatialVector*& linkVels, Cm::UnAlignedSpatialVector*& linkAccels, Cm::UnAlignedSpatialVector*& linkIncomingJointForces,
-		 PxReal*& jointPositions, PxReal*& jointVelocities, PxReal*& jointAccelerations,
-		 Cm::UnAlignedSpatialVector*& rootPreVel)
+		 PxReal*& jointPositions, PxReal*& jointVelocities, PxReal*& jointAccelerations)
 		{
 			PxU8* buffer = singleArticulationStateBuffer;
 			linkBody2Worlds = reinterpret_cast<PxTransform*>(buffer);
@@ -233,10 +228,9 @@ namespace physx
 			buffer += sizeof(PxReal) * nbDofs;
 			jointAccelerations = reinterpret_cast<PxReal*>(buffer);
 			buffer += sizeof(PxReal) * nbDofs;
-			rootPreVel =  reinterpret_cast<Cm::UnAlignedSpatialVector*>(buffer);
 			PX_ASSERT(
 				singleArticulationStateBuffer + computeStateDataBufferByteSizeAligned16(nbLinks, nbDofs, 1) == 
-				reinterpret_cast<PxU8*>(((reinterpret_cast<size_t>(buffer) + sizeof(Cm::UnAlignedSpatialVector) + 15) & ~15)));
+				reinterpret_cast<PxU8*>(((reinterpret_cast<size_t>(buffer) + 15) & ~15)));
 		}
 
 		/**
@@ -258,14 +252,12 @@ namespace physx
 			PxReal* jointPositions;
 			PxReal* jointVelocities;
 			PxReal* jointAccelerations;
-			Cm::UnAlignedSpatialVector* rootPreVel;
 
 			decomposeArticulationStateDataBuffer(
 				singleArticulationStateBuffer,
 				nbLinks, nbDofs, 
 				linkBody2Worlds, linkVels, linkAccels, linkIncomingJointForces,
-				jointPositions, jointVelocities, jointAccelerations,
-				rootPreVel);
+				jointPositions, jointVelocities, jointAccelerations);
 	
 			return linkBody2Worlds;
 		}

@@ -57,7 +57,7 @@ namespace Dy
 	};
 
 	struct ContactPatch
-	{	
+	{
 		PxVec3 rootNormal;
 		ContactPatch* mNextPatch;
 		PxReal maxPenetration;
@@ -228,7 +228,7 @@ namespace Dy
 								}
 								tmpPatch = tmpPatch->mNextPatch;
 							}
-						}	
+						}
 						reducedPatch.contactPoints[0] = ind;
 						const PxVec3 p0 = mOriginalContacts[ind].point;
 
@@ -353,7 +353,7 @@ namespace Dy
 						{
 							reducedPatch.contactPoints[i] = deepestInd[i];
 							chosen[deepestInd[i]] = true;
-						}						
+						}
 						
 						for(PxU32 i = 4; i < MaxContactsPerPatch; ++i)
 						{

@@ -1,0 +1,37 @@
+@PACKAGE_INIT@
+
+# PhysX CMake configuration file
+# Generated for find_package(PhysX) after installation
+
+include(CMakeFindDependencyMacro)
+
+# Find dependencies that PhysX requires
+if(@PX_GENERATE_GPU_PROJECTS@ OR @PX_GENERATE_GPU_PROJECTS_ONLY@)
+    find_dependency(CUDAToolkit REQUIRED)
+endif()
+
+# Include the targets file
+include("${CMAKE_CURRENT_LIST_DIR}/PhysXTargets.cmake")
+
+# Set convenience variables for legacy code
+# Note: After installation, all headers are in the include/ directory.
+# The source/*/include paths only exist in the source tree, not after install.
+set(PhysX_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include")
+
+# List of imported PhysX library targets
+set(PhysX_LIBRARIES 
+    PhysX::PhysX
+    PhysX::PhysXCommon
+    PhysX::PhysXFoundation
+    PhysX::PhysXCooking
+    PhysX::PhysXCharacterKinematic
+    PhysX::PhysXVehicle
+    PhysX::PhysXExtensions
+    PhysX::PhysXPvdSDK
+)
+
+if(TARGET PhysX::PhysXGpu)
+    list(APPEND PhysX_LIBRARIES PhysX::PhysXGpu)
+endif()
+
+check_required_components(PhysX)

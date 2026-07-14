@@ -46,7 +46,7 @@ namespace Cm
 	};
 
 	PX_INLINE FARPROC WINAPI physXCommonDliNotePreLoadLibrary(const char* libraryName, const physx::PxDelayLoadHook* delayLoadHook)
-	{	
+	{
 		if(!delayLoadHook)
 		{
 			return (FARPROC)loadLibrary(libraryName);

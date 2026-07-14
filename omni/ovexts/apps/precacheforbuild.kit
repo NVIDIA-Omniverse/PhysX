@@ -1,0 +1,31 @@
+[package]
+title = "Precache for build"
+description = "Extensions needed for building and stubgen"
+
+[dependencies]
+# Build-time (linking headers/libs)
+"omni.graph.core" = {}
+"omni.graph.tools" = {}
+"omni.ui" = {}
+"omni.kit.renderer.imgui" = {}
+"omni.ui.scene" = {}
+"omni.usd" = {}
+"omni.usd.core" = {}
+"omni.usd.libs" = {}
+
+# Stubgen runtime — Kit must resolve these when loading physics extensions for stub generation.
+# These are transitive deps of omni.physx, omni.physx.ui, etc. not in our extsPhysics tree.
+"omni.gpucompute.plugins" = {}
+"usdrt.scenegraph" = {}
+"omni.debugdraw" = {}
+"omni.timeline" = {}
+"omni.kit.usd.layers" = {}
+"omni.kit.viewport.window" = {}
+"omni.kit.viewport.utility" = {}
+"omni.kit.property.usd" = {}
+"omni.kit.material.library" = {}
+"omni.kit.stage_templates" = {}
+"omni.kit.window.property" = {}
+"omni.kit.ui_test" = {}
+"omni.usd.metrics.assembler" = {}
+"omni.ujitso.default" = {}

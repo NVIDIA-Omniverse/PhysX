@@ -48,7 +48,7 @@ using namespace aos;
 	extrudedTris[nbExtrudedTris].denormalizedNormal(extrudedTrisNormals[nbExtrudedTris]);	\
 	nbExtrudedTris++;}
 
-#define OUTPUT_TRI2(p0, p1, p2, d){				\
+#define OUTPUT_TRI2(p0, p1, p2, d){					\
 	PxTriangle& tri = extrudedTris[nbExtrudedTris];	\
 	tri.verts[0] = p0;								\
 	tri.verts[1] = p1;								\

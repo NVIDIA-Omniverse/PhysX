@@ -1,0 +1,9 @@
+<project toolsVersion="6.11">
+  <!-- Pulled into ovexts's target-deps so ovruntime (built as a subproject)
+       resolves its ujitso/fabric/blobkey headers and plugins from the same
+       ovruntime_deps package used by standalone ovruntime builds. Version is
+       pinned in omni/ovruntime/deps/ovruntime-deps.packman.xml. -->
+  <import path="../../ovruntime/deps/ovruntime-deps.packman.xml">
+    <filter include="ovruntime_deps_release" linkPath="../_build/target-deps/ovruntime_deps_release" />
+  </import>
+</project>

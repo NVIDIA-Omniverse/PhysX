@@ -104,8 +104,31 @@ namespace physx
 							void					createSqBounds();
 							void					destroySqBounds();
 
-							void					updateCached_NotThreadSafe(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap);
-							void					updateCached_ThreadSafe(const UpdateCachedParams& params);
+			// PT: we now use two separate bools to control what the code is doing:
+			// "fromTask" indicates whether this is called from a single-threaded caller or from multiple tasks. If true, the transform cache changed bool is not set,
+			// and the virtual calls from updateBounds are skipped.
+			// "useAtomics" tells the code to use atomic ORs to update the bitmap.
+							void					updateCached(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics);
+
+			// PT: use this version when calling from a single thread. In particular the code is not thread-safe
+			// when shapeChangedMap is not null. If shapeChangedMap is null, the code might be safe to call from
+			// multiple threads but it could be suboptimal, as we will write to the same cache line from multiple
+			// threads. If shapeChangedMap is not null, the 'useAtomics' parameter controls if writes to the map
+			// use atomics or not.
+			PX_FORCE_INLINE	void					updateCached_NotThreadSafe(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics)
+													{
+														updateCached(params, shapeChangedMap, fromTask, useAtomics);
+													}
+
+			// PT: use this version when calling from multiple threads. It still has potential performance issues
+			// from false sharing but it should be safe. Callers are expected to:
+			// - set PxsTransformCache::mHasAnythingChanged and BoundsArray::mHasAnythingChanged themselves
+			// - do the changed bitmap update outside of the call (although we could use atomic ORs these days)
+			PX_FORCE_INLINE	void					updateCached_ThreadSafe(const UpdateCachedParams& params)
+													{
+														updateCached(params, NULL, true, true);
+													}
+
 							void					updateBPGroup();
 		protected:
 
@@ -113,19 +136,19 @@ namespace physx
 			PX_FORCE_INLINE	bool					internalRemoveFromBroadPhase(bool wakeOnLostTouch = true);
 							void					initSubsystemsDependingOnElementID(PxU32 indexFrom);
 							
-							PxsShapeCore*			mShapeCore;
+							ShapeCore*				mShapeCore;
 							PxU32					mSqBoundsId;
 							PxU32					mPrunerIndex;
 		};
 
 		PX_FORCE_INLINE void ShapeSimBase::setCore(const ShapeCore* core)
 		{
-			mShapeCore = core ? const_cast<PxsShapeCore*>(&core->getCore()) : NULL;
+			mShapeCore = const_cast<ShapeCore*>(core);
 		}
 
 		PX_FORCE_INLINE const ShapeCore& ShapeSimBase::getCore() const
 		{
-			return Sc::ShapeCore::getCore(*mShapeCore);
+			return *mShapeCore;
 		}
 
 	} // namespace Sc

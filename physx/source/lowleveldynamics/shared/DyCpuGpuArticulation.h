@@ -832,7 +832,7 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE void computeTendonImpulse
  const PxReal restLengthError, const PxReal tendonSpeed, const PxReal limitError, 
  const PxReal accumulatedRestLengthImpulse, const PxReal accumulatedLimitImpulse,
  PxReal& restLengthImpulse, PxReal& limitImpulse, PxReal& deltaF)
-{		
+{
 	restLengthImpulse = 
 			(restLengthError * tendonImplicitSpringParams.biasCoefficient + tendonSpeed * tendonImplicitSpringParams.velMultiplier) * recipCoefficient
 			+ accumulatedRestLengthImpulse * tendonImplicitSpringParams.impulseMultiplier;
@@ -879,7 +879,7 @@ class ArticulationConstraintProcessingConfig
 	public:
 
 	struct VelLimit
-	{	
+	{
 		enum Enum
 		{
 			eNONE,
@@ -952,7 +952,7 @@ class ArticulationConstraintProcessingConfigCPU : public ArticulationConstraintP
 
 	//Case 1) with false==solveArticulationContactLast and Case 2) with true==solveArticulationContactLast
 	static PX_FORCE_INLINE ArticulationConstraintProcessingConfigCPU getSinglePassConfig(const bool solveArticulationContactLast)
-	{	
+	{
 		if(!solveArticulationContactLast)
 			return ArticulationConstraintProcessingConfigCPU(true, true, VelLimit::eBEFORE_STATIC_CONSTRAINTS, true);
 		else
@@ -969,7 +969,7 @@ class ArticulationConstraintProcessingConfigCPU : public ArticulationConstraintP
 	static PX_FORCE_INLINE ArticulationConstraintProcessingConfigCPU getSecondPassConfig()
 	{
 		return ArticulationConstraintProcessingConfigCPU(false, false, VelLimit::eAFTER_STATIC_CONSTRAINTS, true);
-	}		
+	}
 };
 
 struct ArticulationConstraintProcessingConfigGPU : public ArticulationConstraintProcessingConfig

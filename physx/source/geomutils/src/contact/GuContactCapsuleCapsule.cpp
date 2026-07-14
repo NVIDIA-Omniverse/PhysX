@@ -111,7 +111,7 @@ bool Gu::contactCapsuleCapsule(GU_CONTACT_METHOD_ARGS)
 						point += transform0.p;
 						contactBuffer.contact(point, normal, distance - radiusSum);
 						numCons++;
-					}					
+					}
 				}
 			}
 		}

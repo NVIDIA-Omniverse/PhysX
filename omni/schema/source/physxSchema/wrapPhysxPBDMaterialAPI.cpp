@@ -111,20 +111,6 @@ _CreateGravityScaleAttr(PhysxSchemaPhysxPBDMaterialAPI &self,
 }
         
 static UsdAttribute
-_CreateLiftAttr(PhysxSchemaPhysxPBDMaterialAPI &self,
-                                      object defaultVal, bool writeSparsely) {
-    return self.CreateLiftAttr(
-        UsdPythonToSdfType(defaultVal, SdfValueTypeNames->Float), writeSparsely);
-}
-        
-static UsdAttribute
-_CreateDragAttr(PhysxSchemaPhysxPBDMaterialAPI &self,
-                                      object defaultVal, bool writeSparsely) {
-    return self.CreateDragAttr(
-        UsdPythonToSdfType(defaultVal, SdfValueTypeNames->Float), writeSparsely);
-}
-        
-static UsdAttribute
 _CreateDensityAttr(PhysxSchemaPhysxPBDMaterialAPI &self,
                                       object defaultVal, bool writeSparsely) {
     return self.CreateDensityAttr(
@@ -275,20 +261,6 @@ void wrapPhysxSchemaPhysxPBDMaterialAPI()
              &This::GetGravityScaleAttr)
         .def("CreateGravityScaleAttr",
              &_CreateGravityScaleAttr,
-             (arg("defaultValue")=object(),
-              arg("writeSparsely")=false))
-        
-        .def("GetLiftAttr",
-             &This::GetLiftAttr)
-        .def("CreateLiftAttr",
-             &_CreateLiftAttr,
-             (arg("defaultValue")=object(),
-              arg("writeSparsely")=false))
-        
-        .def("GetDragAttr",
-             &This::GetDragAttr)
-        .def("CreateDragAttr",
-             &_CreateDragAttr,
              (arg("defaultValue")=object(),
               arg("writeSparsely")=false))
         

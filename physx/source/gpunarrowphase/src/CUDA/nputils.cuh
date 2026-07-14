@@ -88,12 +88,12 @@ static __device__ inline float splatX(float a)				// splat the x-component of ea
 }
 	
 static __device__ inline float normalize(float x)			// normalize each vector
-{	
+{
 	return x * splatX(rsqrt(dot(x,x)));		// TODO: precision
 }
 
 static __device__ inline float magnitude(float x)			// normalize each vector
-{	
+{
 	return splatX(sqrt(dot(x,x)));		// TODO: precision
 }
 

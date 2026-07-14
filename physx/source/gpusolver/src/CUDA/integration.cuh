@@ -53,7 +53,7 @@ static __device__ void updateWakeCounter(bool& freeze, float4& solverBodyLinVel,
 
 	PxReal wc = freezeThresholdX_wakeCounterY_sleepThresholdZ_bodySimIndex.y; //wakeCounter;
 
-	PxU32 flags = bodySim.internalFlags & (PxsRigidBody::eDISABLE_GRAVITY_GPU | PxsRigidBody::eFROZEN | PxsRigidBody::eENABLE_GYROSCOPIC | PxsRigidBody::eRETAIN_ACCELERATION);
+	PxU32 flags = bodySim.internalFlags & (PxsRigidBody::eFROZEN | PxsRigidBody::eGPU_FLAGS | PxsRigidBody::eFREE_FLAGS);
 	PxReal freezeCount = sleepLinVelAccXYZ_freezeCountW.w;
 	PxReal accelScale = sleepAngVelAccXYZ_accelScaleW.w;
 
@@ -126,18 +126,14 @@ static __device__ void updateWakeCounter(bool& freeze, float4& solverBodyLinVel,
 				bool wasNotFrozen = (flags & PxsRigidBody::eFROZEN) == 0;
 				flags |= PxsRigidBody::eFROZEN;
 				if (wasNotFrozen)
-				{
 					flags |= PxsRigidBody::eFREEZE_THIS_FRAME;
-				}
 			}
 			else
 			{
 				bool wasFrozen = (flags & PxsRigidBody::eFROZEN) != 0;
-				flags &= (PxsRigidBody::eDISABLE_GRAVITY_GPU | PxsRigidBody::eENABLE_GYROSCOPIC | PxsRigidBody::eRETAIN_ACCELERATION);
+				flags &= PxsRigidBody::eGPU_FLAGS | PxsRigidBody::eFREE_FLAGS;
 				if (wasFrozen)
-				{
 					flags |= PxsRigidBody::eUNFREEZE_THIS_FRAME;
-				}
 			}
 
 			/*KS: New algorithm for sleeping when using stabilization:
@@ -268,7 +264,7 @@ static __device__ void updateWakeCounter(bool& freeze, float4& solverBodyLinVel,
 	bodySim.sleepLinVelAccXYZ_freezeCountW = make_float4(sleepLinVelAcc.x, sleepLinVelAcc.y, sleepLinVelAcc.z, freezeCount);
 	bodySim.sleepAngVelAccXYZ_accelScaleW = make_float4(sleepAngVelAcc.x, sleepAngVelAcc.y, sleepAngVelAcc.z, accelScale);
 
-	if (!(flags & PxsRigidBody::eRETAIN_ACCELERATION))
+	if (!(flags & PxsRigidBody::eRETAIN_ACCELERATION_GPU))
 	{
 		bodySim.externalLinearAcceleration = make_float4(0.f, 0.f, 0.f, 0.f);
 		bodySim.externalAngularAcceleration = make_float4(0.f, 0.f, 0.f, 0.f);

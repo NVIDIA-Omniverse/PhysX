@@ -59,8 +59,8 @@ class PsPvd : public physx::PxPvd, public PxAllocationListener
 	virtual bool unRegisterObject(const void* inItem) = 0;
 
 	//AllocationListener
-	void onAllocation(size_t size, const char* typeName, const char* filename, int line, void* allocatedMemory) = 0;
-	void onDeallocation(void* addr) = 0;
+	virtual void onAllocation(size_t size, const char* typeName, const char* filename, int line, void* allocatedMemory) = 0;
+	virtual void onDeallocation(void* addr) = 0;
 
 	virtual PvdOMMetaDataProvider& getMetaDataProvider() = 0;
 	

@@ -1040,8 +1040,8 @@ void Sc::ShapeInteraction::createManager(PxsContactManager* contactManager)
 
 	const bool kinematicActor = bs1.isDynamicRigid() ? static_cast<BodySim&>(bs1).isKinematic() : false;
 
-	const PxsShapeCore* shapeCore0 = &shapeSim0.getCore().getCore();
-	const PxsShapeCore* shapeCore1 = &shapeSim1.getCore().getCore();
+	const PxsShapeCore* shapeCore0 = &shapeSim0.getCore();
+	const PxsShapeCore* shapeCore1 = &shapeSim1.getCore();
 
 	//Initialize the manager....
 

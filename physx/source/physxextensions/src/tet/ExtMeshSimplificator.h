@@ -111,6 +111,7 @@ namespace physx
 			PxReal flatnessDetectionThreshold;
 
 			PxArray<PxI32> simplificationMap;
+			PxArray<PxI32> borderVertices;
 
 			struct HeapElem 
 			{

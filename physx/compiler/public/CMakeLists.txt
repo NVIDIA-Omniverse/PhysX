@@ -24,7 +24,7 @@
 ##
 ## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 
 IF(NOT DEFINED PHYSX_CMAKE_MODULES_PATH OR PHYSX_CMAKE_MODULES_PATH STREQUAL "")
 	IF(DEFINED ENV{PM_cmake_PATH} AND NOT "$ENV{PM_cmake_PATH}" STREQUAL "")

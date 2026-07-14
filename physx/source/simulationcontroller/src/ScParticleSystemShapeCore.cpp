@@ -38,25 +38,24 @@
 using namespace physx;
 using namespace Sc;
 
-
 ParticleSystemShapeCore::ParticleSystemShapeCore()
 	: ShapeCore(PxEmpty)
 	, mGpuMemStat(0)
 {
 	mSimulationFilterData = PxFilterData();
-	mCore = PxsShapeCore();
+	mShapeCoreFlags |= PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY;
 
-	mCore.mShapeCoreFlags |= PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY;
+	mGeometry.set(PxParticleSystemGeometry());
+	reinterpret_cast<PxParticleSystemGeometryLL&>(mGeometry).materialsLL = MaterialIndicesStruct();
 
 	const PxTolerancesScale& scale = Physics::getInstance().getTolerancesScale();
-	mCore.setTransform(PxTransform(PxIdentity));
-	mCore.mContactOffset = 0.01f * scale.length;
-	mCore.mShapeFlags = 0;
-	mCore.mMaterialIndex = 0;
+	setTransform(PxTransform(PxIdentity));
+	mContactOffset = 0.01f * scale.length;
+	mShapeFlags = 0;
+	mMaterialIndex = 0;
 
-	mCore.mMinTorsionalPatchRadius = 0.f;
-	mCore.mTorsionalRadius = 0.f;
-
+	mMinTorsionalPatchRadius = 0.f;
+	mTorsionalRadius = 0.f;
 	mLLCore.sleepThreshold = 5e-5f * scale.speed * scale.speed;
 	mLLCore.wakeCounter = Physics::sWakeCounterOnCreation;
 	mLLCore.freezeThreshold = 5e-6f * scale.speed * scale.speed;

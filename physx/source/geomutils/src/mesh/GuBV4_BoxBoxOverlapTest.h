@@ -164,7 +164,7 @@
 		}
 
 		Vec4V tV;
-		{			
+		{
 			const Vec4V T_YZX_V = V4Perm<1, 2, 0, 3>(TV);
 			const Vec4V T_ZXY_V = V4Perm<2, 0, 1, 3>(TV);
 

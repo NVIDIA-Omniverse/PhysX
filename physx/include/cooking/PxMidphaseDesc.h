@@ -62,7 +62,7 @@ public:
 
 	\see PxBV33MidphaseDesc, PxBV34MidphaseDesc
 	*/
-	union {		
+	union {
 		PxBVH33MidphaseDesc  mBVH33Desc;
 		PxBVH34MidphaseDesc  mBVH34Desc;
     };
@@ -87,7 +87,7 @@ public:
 	\return true if the current settings are valid.
 	*/
 	bool isValid() const
-	{		
+	{
 		if(mType==PxMeshMidPhase::eBVH33)
 			return mBVH33Desc.isValid();
 		else if(mType==PxMeshMidPhase::eBVH34)

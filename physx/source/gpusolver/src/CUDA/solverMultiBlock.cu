@@ -372,7 +372,7 @@ extern "C" __global__
 void solveBlockPartition(
 	PxgSolverCoreDesc* PX_RESTRICT solverDesc, const PxgSolverSharedDesc<IterativeSolveData>* PX_RESTRICT sharedDesc,
 	const PxU32 islandIndex, const PxU32 partitionIndex, bool doFriction)
-{	
+{
 	const PxgIslandContext& island = solverDesc->islandContextPool[islandIndex];
 
 	const PxReal rigidContactBiasCoefficient = island.mBiasCoefficients.rigidContact;
@@ -523,7 +523,7 @@ void solveBlockPartition(
 extern "C" __global__ void writebackBlocks(
 	PxgSolverCoreDesc* constraintPrepDesc, 
 	PxgSolverSharedDesc<IterativeSolveData>* sharedDesc, const PxU32 islandIndex)
-{	
+{
 	PxgIslandContext& island = constraintPrepDesc->islandContextPool[islandIndex];
 
 	const PxU32 startIndex = island.mBatchStartIndex;
@@ -623,7 +623,7 @@ extern "C" __global__ void writebackBlocks(
 extern "C" __global__ void concludeBlocks(
 	PxgSolverCoreDesc* constraintPrepDesc,
 	PxgSolverSharedDesc<IterativeSolveData>* sharedDesc, const PxU32 islandIndex)
-{	
+{
 	PxgIslandContext& island = constraintPrepDesc->islandContextPool[islandIndex];
 
 	const PxU32 startIndex = island.mBatchStartIndex;
@@ -676,7 +676,7 @@ extern "C" __global__ void concludeBlocks(
 extern "C" __global__ void writeBackBodies(
 	const PxgSolverCoreDesc* constraintPrepDesc,
 	const PxgSolverSharedDesc<IterativeSolveData>* sharedDesc, const PxU32 islandIndex)
-{	
+{
 	__shared__ float4* bodyVelocities;
 	__shared__ float4* motionVelocities;
 	__shared__ PxU32 bodyStartIndex;

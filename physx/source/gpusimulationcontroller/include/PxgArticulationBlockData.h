@@ -555,7 +555,7 @@ namespace physx
 		PxReal						mHighLimit[32];
 
 		PX_CUDA_CALLABLE PX_FORCE_INLINE void setTendonImplicitSpringParams(const Dy::TendonImplicitSpringParams& springParams, const PxU32 threadIndexInWarp)
-		{		
+		{
 			mBiasCoefficient[threadIndexInWarp] = springParams.biasCoefficient;
 			mVelMultiplier[threadIndexInWarp] = springParams.velMultiplier;
 			mImpulseMultiplier[threadIndexInWarp] = springParams.impulseMultiplier;

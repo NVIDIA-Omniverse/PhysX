@@ -210,7 +210,7 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateEE(const Vec3VArg p, const V
 	const FloatV sqDist = V3Dot(v, v);
 	
 	if(FAllGrtr(sqInflatedRadius, sqDist))
-	{	
+	{
 		const Vec3V localPointB = V3Sub(localPointA, v);
 		const FloatV signedDist = V3Dot(v, normal);
 	
@@ -288,7 +288,7 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateEEContactsMTD(	const Vec3VAr
 																	PxU32 triangleIndex, const Vec3VArg p, 
 																	const Vec3VArg q, const FloatVArg inflatedRadius,
 																	MeshPersistentContact* manifoldContacts, PxU32& numContacts)
-{	
+{
 	generateEEMTD(p, q, inflatedRadius, normal, triangleIndex, a, b, manifoldContacts, numContacts);
 	generateEEMTD(p, q, inflatedRadius, normal, triangleIndex, b, c, manifoldContacts, numContacts);
 	generateEEMTD(p, q, inflatedRadius, normal, triangleIndex, a, c, manifoldContacts, numContacts);

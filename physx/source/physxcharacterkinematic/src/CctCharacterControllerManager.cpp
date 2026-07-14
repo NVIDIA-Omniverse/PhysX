@@ -279,7 +279,7 @@ void CharacterControllerManager::onRelease(const PxBase* observed, void* , PxDel
 }
 
 void CharacterControllerManager::registerObservedObject(const PxBase* obj)
-{	
+{
 	if(mLockingEnabled)
 		mWriteLock.lock();
 

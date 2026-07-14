@@ -46,7 +46,7 @@ namespace Gu
 	// Extended bucket pruner data, if an object belongs to the tree of trees, we need to
 	// remember node for the sub tree, the tree it belongs to and the main tree node
 	struct ExtendedBucketPrunerData
-	{		
+	{
 		PxU32			mTimeStamp;		// timestamp 		
 		TreeNodeIndex	mSubTreeNode;	// sub tree node index
 		PxU32			mMergeIndex;	// index in bounds and merged trees array

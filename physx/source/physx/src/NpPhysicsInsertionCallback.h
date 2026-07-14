@@ -43,7 +43,7 @@ namespace physx
 	public:
 		NpPhysicsInsertionCallback() {}
 
-		virtual PxBase* buildObjectFromData(PxConcreteType::Enum type, void* data)
+		virtual PxBase* buildObjectFromData(PxConcreteType::Enum type, void* data) PX_OVERRIDE
 		{
 			if(type == PxConcreteType::eTRIANGLE_MESH_BVH33 || type == PxConcreteType::eTRIANGLE_MESH_BVH34)
 				return NpFactory::getInstance().createTriangleMesh(data);

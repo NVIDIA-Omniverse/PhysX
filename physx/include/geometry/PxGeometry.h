@@ -79,7 +79,7 @@ public:
 	\brief Returns the type of the geometry.
 	\return The type of the object.
 	*/
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxGeometryType::Enum getType() const	{ return mType; }	
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxGeometryType::Enum getType() const	{ return mType; }
 
 	/**
 	\brief Assignment operator

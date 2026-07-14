@@ -127,10 +127,6 @@ namespace physx
 			PxSparseGridParams			getSparseGridParams() const { return mShapeCore.getLLCore().sparseGridParams; }
 			void						setSparseGridParams(const PxSparseGridParams& params) { mShapeCore.getLLCore().sparseGridParams = params; }
 
-			void						addRigidAttachment(Sc::BodyCore* core);
-
-			void						removeRigidAttachment(Sc::BodyCore* core);
-
 			//---------------------------------------------------------------------------------
 			// Internal API
 			//---------------------------------------------------------------------------------

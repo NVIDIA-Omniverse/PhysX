@@ -1781,7 +1781,7 @@ extern "C" __global__ void generateFoundPairsForNewBoundsRegion(PxgBroadPhaseDes
 	//printf("max_found_lost_pair %d\n", max_found_lost_pair);
 
 	for(ltype i=0; i<numIterationPerBlock; ++i)	// PT: using 64bit for the index because numIterationPerBlock is 64bit
-	{	
+	{
 		const ltype workIndex = i*blockDim.x + threadIdx.x + numIterationPerBlock * blockIdx.x * blockDim.x;
 		//CHECK64(workIndex)	// PT: this one fires so workIndex must be 64bit
 
@@ -2097,7 +2097,7 @@ extern "C" __global__ void computeIncrementalComparisonHistograms_Stage1(const P
 				const PxU32 res = warpScanAddWriteToSharedMem<WARP_PERBLOCK_SIZE>(mask_threadIndexInWarp, threadIndexInWarp, threadIndexInWarp, sBlockAccum1, val, val);
 				if(threadIndexInWarp == (WARP_PERBLOCK_SIZE-1))
 					sAccum1 += val+res;
-			}	
+			}
 		}
 		else if (warpIndex == 2)
 		{

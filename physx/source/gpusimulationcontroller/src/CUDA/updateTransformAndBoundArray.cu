@@ -150,7 +150,7 @@ extern "C" __global__ void updateTransformCacheAndBoundArrayLaunch(const PxgSimu
 					}
 
 					if (!(internalFlags & PxsRigidBody::eFROZEN) || (internalFlags & PxsRigidBody::eFREEZE_THIS_FRAME))
-					{					
+					{
 						if (isBP)
 							updated[elementIndex] = 1;
 
@@ -166,7 +166,7 @@ extern "C" __global__ void updateTransformCacheAndBoundArrayLaunch(const PxgSimu
 				}
 			}
 			else
-			{			
+			{
 				//This is articulation
 				const PxU32 articulationId = bodySim.articulationRemapId;
 				const PxgArticulation& articulation = gArticulations[articulationId];

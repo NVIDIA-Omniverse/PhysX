@@ -134,14 +134,14 @@ public:
 		mNbBodies				(0)
 	{}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		const PxU32 nb = mNbBodies;
 		for(PxU32 i=0; i<nb; i++)
 			mBodySims[i]->updateContactDistance(mContactDistances, mDt, mBoundsArray);
 	}
 
-	virtual const char* getName() const { return "SpeculativeCCDContactDistanceUpdateTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "SpeculativeCCDContactDistanceUpdateTask"; }
 
 private:
 	PX_NOCOPY(SpeculativeCCDContactDistanceUpdateTask)
@@ -157,12 +157,12 @@ public:
 		mArticulation			(sim)
 	{}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		updateLinksContactDistances(mArticulation, mContactDistances, mDt, mBoundsArray);
 	}
 
-	virtual const char* getName() const { return "SpeculativeCCDContactDistanceArticulationUpdateTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "SpeculativeCCDContactDistanceArticulationUpdateTask"; }
 
 private:
 	PX_NOCOPY(SpeculativeCCDContactDistanceArticulationUpdateTask)
@@ -449,7 +449,7 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "UpdateCCDBoundsTask";}
+	virtual const char* getName() const PX_OVERRIDE { return "UpdateCCDBoundsTask";}
 
 	PxIntBool	updateSweptBounds(ShapeSim* sim, BodySim* body)
 	{
@@ -499,7 +499,7 @@ public:
 		return isFastMoving;
 	}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		PxU32 activeShapes = 0;
 		const PxU32 nb = mNbToProcess;
@@ -670,20 +670,42 @@ void Sc::Scene::postCCDPass(PxBaseTask* /*continuation*/)
 	PxU32 currentPass = mCCDContext->getCurrentCCDPass();
 	PX_ASSERT(currentPass > 0); // to make sure changes to the CCD pass counting get noticed. For contact reports, 0 means discrete collision phase.
 
+	// Local array that uses a stack buffer for small counts, avoiding heap allocation in the common case.
+	// Falls back to heap allocation if the array grows beyond the inline capacity.
+	struct LocalArray : public PxArray<PxvContactManagerTouchEvent>
+	{
+		LocalArray()
+		{
+			mSize		= 0;
+			mCapacity	= 64|PX_SIGN_BITMASK;
+			mData		= mBuffer;
+		}
+
+		PxvContactManagerTouchEvent	mBuffer[64];
+	};
+
 	PxU32 newTouchCount, lostTouchCount, ccdTouchCount;
 	mLLContext->getManagerTouchEventCount(&newTouchCount, &lostTouchCount, &ccdTouchCount);
-	PX_ALLOCA(newTouches, PxvContactManagerTouchEvent, newTouchCount);
-	PX_ALLOCA(lostTouches, PxvContactManagerTouchEvent, lostTouchCount);
-	PX_ALLOCA(ccdTouches, PxvContactManagerTouchEvent, ccdTouchCount);
+
+	LocalArray newTouchEvents;
+	LocalArray lostTouchEvents;
+	LocalArray ccdTouchEvents;
+
+	if(newTouchCount > 64)
+		newTouchEvents.reserve(newTouchCount);
+	if(lostTouchCount > 64)
+		lostTouchEvents.reserve(lostTouchCount);
+	if(ccdTouchCount > 64)
+		ccdTouchEvents.reserve(ccdTouchCount);
 
 	PxsContactManagerOutputIterator outputs = mLLContext->getNphaseImplementationContext()->getContactManagerOutputs();
 
 	// Note: For contact notifications it is important that the new touch pairs get processed before the lost touch pairs.
 	//       This allows to know for sure if a pair of actors lost all touch (see eACTOR_PAIR_LOST_TOUCH).
-	mLLContext->fillManagerTouchEvents(newTouches, newTouchCount, lostTouches, lostTouchCount, ccdTouches, ccdTouchCount);
-	for(PxU32 i=0; i<newTouchCount; ++i)
+	mLLContext->fillManagerTouchEvents(newTouchEvents, lostTouchEvents, &ccdTouchEvents);
+	for(PxU32 i=0; i<newTouchEvents.size(); ++i)
 	{
-		ShapeInteraction* si = getSI(newTouches[i]);
+		ShapeInteraction* si = getSI(newTouchEvents[i]);
 		PX_ASSERT(si);
 		mNPhaseCore->managerNewTouch(*si);
 		si->managerNewTouch(currentPass, outputs);
@@ -692,18 +714,18 @@ void Sc::Scene::postCCDPass(PxBaseTask* /*continuation*/)
 			mSimpleIslandManager->setEdgeConnected(si->getEdgeIndex(), IG::Edge::eCONTACT_MANAGER);
 		}
 	}
-	for(PxU32 i=0; i<lostTouchCount; ++i)
+	for(PxU32 i=0; i<lostTouchEvents.size(); ++i)
 	{
-		ShapeInteraction* si = getSI(lostTouches[i]);
+		ShapeInteraction* si = getSI(lostTouchEvents[i]);
 		PX_ASSERT(si);
 		if (si->managerLostTouch(currentPass, outputs) && !si->readFlag(ShapeInteraction::CONTACTS_RESPONSE_DISABLED))
 			addToLostTouchList(si->getActor0(), si->getActor1());
 
 		mSimpleIslandManager->setEdgeDisconnected(si->getEdgeIndex());
 	}
-	for(PxU32 i=0; i<ccdTouchCount; ++i)
+	for(PxU32 i=0; i<ccdTouchEvents.size(); ++i)
 	{
-		ShapeInteraction* si = getSI(ccdTouches[i]);
+		ShapeInteraction* si = getSI(ccdTouchEvents[i]);
 		PX_ASSERT(si);
 		si->sendCCDRetouch(currentPass, outputs);
 	}
@@ -722,12 +744,12 @@ void Sc::Scene::postCCDPass(PxBaseTask* /*continuation*/)
 			PX_ASSERT(body->getBody2World().p.isFinite());
 			PX_ASSERT(body->getBody2World().q.isFinite());
 
-			body->updateCached_NotThreadSafe(params, &changedAABBMgrActorHandles);
+			body->updateCached_NotThreadSafe(params, &changedAABBMgrActorHandles, false, false);
 		}
 
 		ArticulationCore* const* articList = mArticulations.getEntries();
 		for(PxU32 i=0;i<mArticulations.size();i++)
-			articList[i]->getSim()->updateCached_NotThreadSafe(params, &changedAABBMgrActorHandles);
+			articList[i]->getSim()->updateCached_NotThreadSafe(params, &changedAABBMgrActorHandles, false, false);
 	}
 }
 

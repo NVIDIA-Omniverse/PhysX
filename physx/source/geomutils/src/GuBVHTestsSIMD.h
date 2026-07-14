@@ -113,7 +113,7 @@ struct AABBAABBTest
 	{ }
 
 	PX_FORCE_INLINE PxIntBool operator()(const Vec3V center, const Vec3V extents) const		
-	{	
+	{
 		//PxVec3 c; PxVec3_From_Vec3V(center, c);
 		//PxVec3 e; PxVec3_From_Vec3V(extents, e);
 		//if(PxAbs(c.x - mCenter.x) > mExtents.x + e.x) return IntFalse;
@@ -141,7 +141,7 @@ struct SphereAABBTest
 	{}
 	
 	PX_FORCE_INLINE PxIntBool operator()(const Vec3V boxCenter, const Vec3V boxExtents) const		
-	{	
+	{
 		const Vec3V offset = V3Sub(mCenter, boxCenter);
 		const Vec3V closest = V3Clamp(offset, V3Neg(boxExtents), boxExtents);
 		const Vec3V d = V3Sub(offset, closest);
@@ -197,7 +197,7 @@ struct OBBAABBTests
 
 	// TODO: force inline it?
 	PxIntBool operator()(const Vec3V center, const Vec3V extents) const
-	{	
+	{
 		const Vec3V t = V3Sub(mT, center);
 
 		// class I - axes of AABB

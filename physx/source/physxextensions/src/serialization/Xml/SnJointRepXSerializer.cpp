@@ -98,8 +98,8 @@ namespace physx {
 	{
 		PxRigidActor* actor0 = NULL;
 		PxRigidActor* actor1 = NULL;
-		PxTransform localPose0 = PxTransform(PxIdentity);
-		PxTransform localPose1 = PxTransform(PxIdentity);
+		const PxTransform localPose0(PxIdentity);
+		const PxTransform localPose1(PxIdentity);
 		bool ok = true;
 		if ( inReader.gotoChild( "Actors" ) )
 		{

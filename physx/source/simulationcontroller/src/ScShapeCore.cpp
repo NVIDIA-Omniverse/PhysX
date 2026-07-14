@@ -166,33 +166,33 @@ static PxHeightFieldGeometryLL extendForLL(const PxHeightFieldGeometry& hlGeom)
 ShapeCore::ShapeCore(const PxGeometry& geometry, PxShapeFlags shapeFlags, const PxU16* materialIndices, PxU16 materialCount, bool isExclusive, PxShapeCoreFlag::Enum coreFlags) :
 	mExclusiveSim(NULL)
 {
-	mCore.mShapeCoreFlags |= PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY;
-	if(isExclusive)
-		mCore.mShapeCoreFlags |= PxShapeCoreFlag::eIS_EXCLUSIVE;
-
-	mCore.mShapeCoreFlags |= coreFlags;
-
 	PX_ASSERT(materialCount > 0);
 
+	mShapeCoreFlags |= PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY;
+	if(isExclusive)
+		mShapeCoreFlags |= PxShapeCoreFlag::eIS_EXCLUSIVE;
+
+	mShapeCoreFlags |= coreFlags;
+
 	const PxTolerancesScale& scale = Physics::getInstance().getTolerancesScale();
-	mCore.mGeometry.set(geometry);
-	mCore.setTransform(PxTransform(PxIdentity));
-	mCore.mContactOffset			= 0.02f * scale.length;
-	mCore.mRestOffset				= 0.0f;
-	mCore.mTorsionalRadius			= 0.0f;
-	mCore.mMinTorsionalPatchRadius	= 0.0f;
-	mCore.mShapeFlags				= shapeFlags;
+	mGeometry.set(geometry);
+	setTransform(PxTransform(PxIdentity));
+	mContactOffset				= 0.02f * scale.length;
+	mRestOffset					= 0.0f;
+	mTorsionalRadius			= 0.0f;
+	mMinTorsionalPatchRadius	= 0.0f;
+	mShapeFlags					= shapeFlags;
 
 	setMaterialIndices(materialIndices, materialCount);
 }
 
 // PX_SERIALIZATION
 ShapeCore::ShapeCore(const PxEMPTY) : 
+	PxsShapeCore			(PxEmpty),
 	mSimulationFilterData	(PxEmpty),
-	mCore					(PxEmpty),
 	mExclusiveSim			(NULL)
 { 
-	mCore.mShapeCoreFlags.clear(PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY);
+	mShapeCoreFlags.clear(PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY);
 }
 //~PX_SERIALIZATION
 
@@ -213,9 +213,9 @@ static PX_FORCE_INLINE const MaterialIndicesStruct* getMaterials(const GeometryU
 
 ShapeCore::~ShapeCore()
 {
-	if(mCore.mShapeCoreFlags.isSet(PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY))
+	if(mShapeCoreFlags.isSet(PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY))
 	{
-		MaterialIndicesStruct* materialsLL = const_cast<MaterialIndicesStruct*>(getMaterials(mCore.mGeometry));
+		MaterialIndicesStruct* materialsLL = const_cast<MaterialIndicesStruct*>(getMaterials(mGeometry));
 		if(materialsLL)
 			materialsLL->deallocate();
 	}
@@ -223,14 +223,14 @@ ShapeCore::~ShapeCore()
 
 PxU16 Sc::ShapeCore::getNbMaterialIndices() const
 {
-	const MaterialIndicesStruct* materialsLL = getMaterials(mCore.mGeometry);
+	const MaterialIndicesStruct* materialsLL = getMaterials(mGeometry);
 	return materialsLL ? materialsLL->numIndices : 1;
 }
 
 const PxU16* Sc::ShapeCore::getMaterialIndices() const
 {
-	const MaterialIndicesStruct* materialsLL = getMaterials(mCore.mGeometry);
-	return materialsLL ? materialsLL->indices : &mCore.mMaterialIndex;
+	const MaterialIndicesStruct* materialsLL = getMaterials(mGeometry);
+	return materialsLL ? materialsLL->indices : &mMaterialIndex;
 }
 
 PX_FORCE_INLINE void setMaterialsHelper(MaterialIndicesStruct& materials, const PxU16* materialIndices, PxU16 materialIndexCount, PxShapeCoreFlags& shapeCoreFlags)
@@ -248,11 +248,11 @@ PX_FORCE_INLINE void setMaterialsHelper(MaterialIndicesStruct& materials, const 
 
 void ShapeCore::setMaterialIndices(const PxU16* materialIndices, PxU16 materialIndexCount)
 {
-	mCore.mMaterialIndex = materialIndices[0];
+	mMaterialIndex = materialIndices[0];
 
-	MaterialIndicesStruct* materialsLL = const_cast<MaterialIndicesStruct*>(getMaterials(mCore.mGeometry));
+	MaterialIndicesStruct* materialsLL = const_cast<MaterialIndicesStruct*>(getMaterials(mGeometry));
 	if(materialsLL)
-		setMaterialsHelper(*materialsLL, materialIndices, materialIndexCount, mCore.mShapeCoreFlags);
+		setMaterialsHelper(*materialsLL, materialIndices, materialIndexCount, mShapeCoreFlags);
 }
 
 void ShapeCore::setGeometry(const PxGeometry& geom)
@@ -263,16 +263,16 @@ void ShapeCore::setGeometry(const PxGeometry& geom)
 	MaterialIndicesStruct materials;
 	PX_ASSERT(materials.numIndices == 0);
 	
-	const MaterialIndicesStruct* materialsLL = getMaterials(mCore.mGeometry);
+	const MaterialIndicesStruct* materialsLL = getMaterials(mGeometry);
 	if(materialsLL)
 		materials = *materialsLL;
 
-	mCore.mGeometry.set(geom);
+	mGeometry.set(geom);
 
 	if((newGeomType == PxGeometryType::eTRIANGLEMESH) || (newGeomType == PxGeometryType::eHEIGHTFIELD) 
 		|| (newGeomType == PxGeometryType::eTETRAHEDRONMESH)|| (newGeomType == PxGeometryType::ePARTICLESYSTEM))
 	{
-		MaterialIndicesStruct* newMaterials = const_cast<MaterialIndicesStruct*>(getMaterials(mCore.mGeometry));
+		MaterialIndicesStruct* newMaterials = const_cast<MaterialIndicesStruct*>(getMaterials(mGeometry));
 		PX_ASSERT(newMaterials);
 
 		if(materials.numIndices != 0)  // old type was mesh type
@@ -280,11 +280,11 @@ void ShapeCore::setGeometry(const PxGeometry& geom)
 		else
 		{   // old type was non-mesh type
 			newMaterials->allocate(1);
-			*newMaterials->indices = mCore.mMaterialIndex;
-			mCore.mShapeCoreFlags |= PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY;
+			*newMaterials->indices = mMaterialIndex;
+			mShapeCoreFlags |= PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY;
 		}
 	}
-	else if((materials.numIndices != 0) && mCore.mShapeCoreFlags.isSet(PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY))
+	else if((materials.numIndices != 0) && mShapeCoreFlags.isSet(PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY))
 	{
 		// geometry changed to non-mesh type
 		materials.deallocate();
@@ -303,8 +303,7 @@ const PxShape* ShapeCore::getPxShape() const
 
 void ShapeCore::setContactOffset(const PxReal offset)
 {
-	mCore.mContactOffset = offset;
-
+	mContactOffset = offset;
 	ShapeSim* exclusiveSim = getExclusiveSim();
 	if(exclusiveSim)
 		exclusiveSim->getScene().updateContactDistance(exclusiveSim->getElementID(), offset);
@@ -320,14 +319,14 @@ PX_FORCE_INLINE void exportExtraDataMaterials(PxSerializationContext& stream, co
 
 void ShapeCore::exportExtraData(PxSerializationContext& stream)
 {
-	const MaterialIndicesStruct* materialsLL = getMaterials(mCore.mGeometry);
+	const MaterialIndicesStruct* materialsLL = getMaterials(mGeometry);
 	if(materialsLL)
 		exportExtraDataMaterials(stream, *materialsLL);
 }
 
 void ShapeCore::importExtraData(PxDeserializationContext& context)
 {
-	MaterialIndicesStruct* materialsLL = const_cast<MaterialIndicesStruct*>(getMaterials(mCore.mGeometry));
+	MaterialIndicesStruct* materialsLL = const_cast<MaterialIndicesStruct*>(getMaterials(mGeometry));
 	if(materialsLL)
 		materialsLL->indices = context.readExtraData<PxU16, PX_SERIAL_ALIGN>(materialsLL->numIndices);
 }
@@ -335,9 +334,9 @@ void ShapeCore::importExtraData(PxDeserializationContext& context)
 void ShapeCore::resolveMaterialReference(PxU32 materialTableIndex, PxU16 materialIndex)
 {
 	if(materialTableIndex == 0)
-		mCore.mMaterialIndex = materialIndex;
+		mMaterialIndex = materialIndex;
 
-	MaterialIndicesStruct* materialsLL = const_cast<MaterialIndicesStruct*>(getMaterials(mCore.mGeometry));
+	MaterialIndicesStruct* materialsLL = const_cast<MaterialIndicesStruct*>(getMaterials(mGeometry));
 	if(materialsLL)
 		materialsLL->indices[materialTableIndex] = materialIndex;
 }
@@ -345,8 +344,7 @@ void ShapeCore::resolveMaterialReference(PxU32 materialTableIndex, PxU16 materia
 void ShapeCore::resolveReferences(PxDeserializationContext& context)
 {
 	// Resolve geometry pointers if needed
-	PxGeometry& geom = const_cast<PxGeometry&>(mCore.mGeometry.getGeometry());	
-	
+	PxGeometry& geom = const_cast<PxGeometry&>(mGeometry.getGeometry());	
 	switch(geom.getType())
 	{
 	case PxGeometryType::eCONVEXMESH:
@@ -394,7 +392,7 @@ void ShapeCore::resolveReferences(PxDeserializationContext& context)
 	case PxGeometryType::eGEOMETRY_COUNT:
 	case PxGeometryType::eINVALID:
 	break;
-	}	
+	}
 }
 
 //~PX_SERIALIZATION

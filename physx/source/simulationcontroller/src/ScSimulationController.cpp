@@ -37,6 +37,7 @@
 using namespace physx;
 using namespace IG;
 using namespace Sc;
+using namespace Cm;
 
 void SimulationController::updateScBodyAndShapeSim(PxsTransformCache& /*cache*/, Bp::BoundsArray& /*boundArray*/, PxBaseTask* continuation)
 {
@@ -48,28 +49,32 @@ namespace
 class UpdateArticulationAfterIntegrationTask : public Cm::Task
 {
 	const UpdateCachedParams				mParams;
+	PinnableBitMap*							mChangedAABBMgrActorHandles;
 	IslandSim&								mIslandSim;
 	const PxNodeIndex* const PX_RESTRICT	mNodeIndices;
 	const PxU32								mNbArticulations;
 	const PxReal							mDt;
 	const bool								mIsSleepingDisabled;
+	PxMutex&								mArticulationSleepLock;
 
 	PX_NOCOPY(UpdateArticulationAfterIntegrationTask)
 public:
 	static const PxU32 NbArticulationsPerTask = 64;
 
-	UpdateArticulationAfterIntegrationTask(const UpdateCachedParams& params, PxU32 nbArticulations, PxReal dt, const PxNodeIndex* nodeIndices, IslandSim& islandSim, bool isSleepingDisabled) :
+	UpdateArticulationAfterIntegrationTask(const UpdateCachedParams& params, PxU32 nbArticulations, PxReal dt, const PxNodeIndex* nodeIndices, IslandSim& islandSim, PinnableBitMap* changedAABBMgrActorHandles, bool isSleepingDisabled, PxMutex& articulationSleepLock) :
 		Cm::Task(islandSim.getContextId()),
 		mParams(params),
+		mChangedAABBMgrActorHandles(changedAABBMgrActorHandles),
 		mIslandSim(islandSim),
 		mNodeIndices(nodeIndices),
 		mNbArticulations(nbArticulations),
 		mDt(dt),
-		mIsSleepingDisabled(isSleepingDisabled)
+		mIsSleepingDisabled(isSleepingDisabled),
+		mArticulationSleepLock(articulationSleepLock)
 	{
 	}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		const bool sleepingDisabled = mIsSleepingDisabled;
 		const PxU32 nb = mNbArticulations;
@@ -77,18 +82,20 @@ public:
 		{
 			ArticulationSim* articSim = getArticulationSim(mIslandSim, mNodeIndices[i]);
 			if(!sleepingDisabled)
-				articSim->sleepCheck(mDt);
-			articSim->updateCached_NotThreadSafe(mParams, NULL);
+				articSim->sleepCheck(mDt, mArticulationSleepLock);
+
+			// PT: this is only executed in the CPU version so we can call the version that bypasses the virtual calls
+			articSim->updateCached(mParams, mChangedAABBMgrActorHandles, true, true);
 		}
 	}
 
-	virtual const char* getName() const { return "UpdateArticulationAfterIntegrationTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "UpdateArticulationAfterIntegrationTask"; }
 };
 }
 
 void updateCCDLinks(Sc::ArticulationSim& artic, PxArray<BodySim*>& sims);
 
-//KS - TODO - parallelize this bit!!!!!
+// PT: warning, this runs in parallel with ScAfterIntegrationTask and updateKinematicCached, and all of these touching the getChangedAABBMgActorHandleMap() bitmap
 void SimulationController::updateArticulationAfterIntegration(PxsContext* llContext, Bp::AABBManagerBase* aabbManager,
 	PxArray<BodySim*>& ccdBodies, PxBaseTask* continuation, IslandSim& islandSim, float dt, bool isSleepingDisabled)
 {
@@ -103,35 +110,27 @@ void SimulationController::updateArticulationAfterIntegration(PxsContext* llCont
 
 	const PxNodeIndex* activeArticulations = islandSim.getActiveNodes(Node::eARTICULATION_TYPE);
 
+	PinnableBitMap& changedAABBMgrActorHandles = aabbManager->getChangedAABBMgActorHandleMap();
 	for (PxU32 i = 0; i < nbActiveArticulations; i += UpdateArticulationAfterIntegrationTask::NbArticulationsPerTask)
 	{
 		UpdateArticulationAfterIntegrationTask* task =
 			PX_PLACEMENT_NEW(flushPool.allocate(sizeof(UpdateArticulationAfterIntegrationTask)), UpdateArticulationAfterIntegrationTask)(params,
 				PxMin(UpdateArticulationAfterIntegrationTask::NbArticulationsPerTask, PxU32(nbActiveArticulations - i)), dt,
-				activeArticulations + i, islandSim, isSleepingDisabled);
+				activeArticulations + i, islandSim, &changedAABBMgrActorHandles, isSleepingDisabled, mArticulationSleepLock);
 
 		startTask(task, continuation);
 	}
 
+	if(llContext->getCCDFlag())
 	{
 		PX_PROFILE_ZONE("SimulationController::updateArticulationAfterIntegration_serial", llContext->getContextId());
-
-		PxMutex::ScopedLock lock(llContext->getLock());
-
-		Cm::PinnableBitMap& changedAABBMgrActorHandles = aabbManager->getChangedAABBMgActorHandleMap();
-
-		const bool ccdEnabled = llContext->getCCDFlag();
 
 		for (PxU32 i = 0; i < nbActiveArticulations; i++)
 		{
 			ArticulationSim* articSim = getArticulationSim(islandSim, activeArticulations[i]);
 
 			//KS - check links for CCD flags and add to mCcdBodies list if required....
-			if(ccdEnabled)
-				updateCCDLinks(*articSim, ccdBodies);
-
-			// PT: TODO: do this directly in ShapeSimBase::updateCached() with atomics, only serially process leftovers afterwards (the ones for which the map had to grow)
-			articSim->markShapesUpdated(&changedAABBMgrActorHandles);
+			updateCCDLinks(*articSim, ccdBodies);
 		}
 	}
 }

@@ -79,7 +79,7 @@ void Ext::CpuWorkerThread::execute()
 		{
 			const PxU32 pauseCounter = mOwner->getYieldProcessorCount();
 			for(PxU32 j = 0; j < pauseCounter; j++)
-				PxThread::yieldProcesor();
+				PxThread::yieldProcessor();
 		}
 		else
 		{

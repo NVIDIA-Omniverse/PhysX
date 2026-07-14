@@ -898,7 +898,7 @@ extern "C" __global__ void updateArticulationsLaunch(const PxgUpdateArticulation
 		}
 
 		if(flags & Dy::ArticulationDirtyFlag::eDIRTY_USER_FLAGS)
-		{			
+		{
 			scDesc->mArticulationPool[articIndex].data.flags = msUpdate.userFlags;
 			scDesc->mArticulationPool[articIndex].data.confiDirty = true;
 		}

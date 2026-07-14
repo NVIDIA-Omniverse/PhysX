@@ -1108,7 +1108,7 @@ __device__ void doTriangleTriangleCollision(const PxsCachedTransform& transform0
 					contact.pos = vertex2Shape(contact.pos, shape1.scale.scale, shape1.scale.rotation);
 
 					//if (bounds.contains(pos))
-					{	
+					{
 						if (sep < cullScale)
 						{
 							//dir.normalize(); //dir already normalized
@@ -1151,7 +1151,7 @@ __device__ void doTriangleTriangleCollision(const PxsCachedTransform& transform0
 								contact.normal = -dir; //PxVec3(0.0f, -1.0f, 0.0f); //
 							}
 						}
-					}					
+					}
 				}
 				else 
 				{
@@ -1191,7 +1191,7 @@ __device__ void doTriangleTriangleCollision(const PxsCachedTransform& transform0
 							contact.separation = sep;
 							contact.normal = aToB.rotate(dir);
 						}
-					}										
+					}
 				}
 			}
 			//needsRefinement = false;

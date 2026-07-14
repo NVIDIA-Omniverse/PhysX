@@ -33,9 +33,6 @@
 
 namespace physx
 {
-
-	struct PxsShapeCore;
-
 	/**
 	There is an implicit 1:1 mapping between PxgContactManagerInput and PxsContactManagerOutput. The structures are split because PxgNpContactManagerInput contains constant
 	data that is produced by the CPU code and PxgNpContactManagerOutput contains per-frame contact information produced by the NP.
@@ -46,7 +43,6 @@ namespace physx
 	information in PxsContactManager.
 	The NP will produce a list of pairs that found/lost patches for the solver along with updating the PxgNpContactManagerOutput for all pairs.
 	*/
-
 	struct PxsContactManagerStatusFlag
 	{
 		enum Enum
@@ -64,7 +60,6 @@ namespace physx
 		};
 	};
 		
-
 	struct PX_ALIGN_PREFIX(16) PxsContactManagerOutput
 	{
 		PxU8* contactPatches;				//Start index/ptr for contact patches
@@ -104,7 +99,6 @@ namespace physx
 		PxsTorsionalFrictionData(const PxReal patchRadius, const PxReal minPatchRadius) :
 			mTorsionalPatchRadius(patchRadius), mMinTorsionalRadius(minPatchRadius) {}
 	} PX_ALIGN_SUFFIX(8);
-
 }
 
 #endif //PXG_CONTACT_MANAGER_H

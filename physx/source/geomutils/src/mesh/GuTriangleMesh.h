@@ -83,32 +83,32 @@ public:
 								void					preExportDataReset() { Cm::RefCountable_preExportDataReset(*this); }
 	virtual						void					exportExtraData(PxSerializationContext& context);
 								void					importExtraData(PxDeserializationContext& context);
-	virtual						void					release();
-	virtual						void					requiresObjects(PxProcessPxBaseCallback&){}
+	virtual						void					release() PX_OVERRIDE;
+	virtual						void					requiresObjects(PxProcessPxBaseCallback&) {}
 //~PX_SERIALIZATION
 														TriangleMesh(MeshFactory* factory, TriangleMeshData& data);
 	virtual												~TriangleMesh();
 	
 	// PxBase
-	virtual						void					onRefCountZero();
+	virtual						void					onRefCountZero() PX_OVERRIDE;
 	//~PxBase
 
 	// PxRefCounted
-	virtual						void					acquireReference()					{ Cm::RefCountable_incRefCount(*this);			}
-	virtual						PxU32					getReferenceCount()			const	{ return Cm::RefCountable_getRefCount(*this);	}
+	virtual						void					acquireReference()					PX_OVERRIDE { Cm::RefCountable_incRefCount(*this);			}
+	virtual						PxU32					getReferenceCount()			const	PX_OVERRIDE { return Cm::RefCountable_getRefCount(*this);	}
 	//~PxRefCounted
 	
 	// PxTriangleMesh
-	virtual						PxU32					getNbVertices()				const	{ return mNbVertices;}
-	virtual						const PxVec3*			getVertices()				const	{ return mVertices; }
+	virtual						PxU32					getNbVertices()				const	PX_OVERRIDE { return mNbVertices;}
+	virtual						const PxVec3*			getVertices()				const	PX_OVERRIDE { return mVertices; }
 
-	virtual						PxVec3*					getVerticesForModification();
-	virtual						PxBounds3				refitBVH();
-	virtual						PxU32					getNbTriangles()			const	{ return mNbTriangles;					}
-	virtual						const void*				getTriangles()				const	{ return mTriangles;					}
-	virtual						PxTriangleMeshFlags		getTriangleMeshFlags()		const	{ return PxTriangleMeshFlags(mFlags);	}
-	virtual						const PxU32*			getTrianglesRemap()			const	{ return mFaceRemap;					}
-	virtual						void					setPreferSDFProjection(bool preferProjection)
+	virtual						PxVec3*					getVerticesForModification()		PX_OVERRIDE;
+	virtual						PxBounds3				refitBVH()							PX_OVERRIDE;
+	virtual						PxU32					getNbTriangles()			const	PX_OVERRIDE { return mNbTriangles;					}
+	virtual						const void*				getTriangles()				const	PX_OVERRIDE { return mTriangles;					}
+	virtual						PxTriangleMeshFlags		getTriangleMeshFlags()		const	PX_OVERRIDE { return PxTriangleMeshFlags(mFlags);	}
+	virtual						const PxU32*			getTrianglesRemap()			const	PX_OVERRIDE { return mFaceRemap;					}
+	virtual						void					setPreferSDFProjection(bool preferProjection) PX_OVERRIDE
 	{
 		if (preferProjection)
 			mFlags &= PxU8(~PxTriangleMeshFlag::ePREFER_NO_SDF_PROJ);
@@ -116,25 +116,25 @@ public:
 			mFlags |= PxTriangleMeshFlag::ePREFER_NO_SDF_PROJ;
 	}
 
-	virtual						bool					getPreferSDFProjection()	const { return !(mFlags & PxTriangleMeshFlag::ePREFER_NO_SDF_PROJ); }
+	virtual						bool					getPreferSDFProjection()	const PX_OVERRIDE { return !(mFlags & PxTriangleMeshFlag::ePREFER_NO_SDF_PROJ); }
 
-	virtual						PxMaterialTableIndex	getTriangleMaterialIndex(PxTriangleID triangleIndex)	const
+	virtual						PxMaterialTableIndex	getTriangleMaterialIndex(PxTriangleID triangleIndex)	const PX_OVERRIDE
 														{
 															return hasPerTriangleMaterials() ? getMaterials()[triangleIndex] : PxMaterialTableIndex(0xffff);
 														}
 
-	virtual						PxBounds3				getLocalBounds()			const
+	virtual						PxBounds3				getLocalBounds()	const PX_OVERRIDE
 														{
 															PX_ASSERT(mAABB.isValid());
 															return PxBounds3::centerExtents(mAABB.mCenter, mAABB.mExtents);
 														}
 
-	virtual						const PxReal*			getSDF()					const
+	virtual						const PxReal*			getSDF()	const PX_OVERRIDE
 														{
 															return mSdfData.mSdf;
 														}
 
-	virtual						void					getSDFDimensions(PxU32& numX, PxU32& numY, PxU32& numZ) const
+	virtual						void					getSDFDimensions(PxU32& numX, PxU32& numY, PxU32& numZ) const PX_OVERRIDE
 														{
 															if(mSdfData.mSdf)
 															{
@@ -146,7 +146,7 @@ public:
 																numX = numY = numZ = 0;
 														}
 
-	virtual						void					getMassInformation(PxReal& mass, PxMat33& localInertia, PxVec3& localCenterOfMass)	const
+	virtual						void					getMassInformation(PxReal& mass, PxMat33& localInertia, PxVec3& localCenterOfMass)	const PX_OVERRIDE
 														{
 															mass = mMass; localInertia = mInertia; localCenterOfMass = mLocalCenterOfMass;
 														}

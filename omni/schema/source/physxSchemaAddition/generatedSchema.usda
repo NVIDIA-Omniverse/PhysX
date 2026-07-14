@@ -23,7 +23,7 @@ class "PhysxJointAxisAPI" (
         displayGroup = "Advanced"
         displayName = "Dynamic Friction Effort"
     )
-    float physxJointAxis:__INSTANCE_NAME__:maxJointVelocity = 1000000 (
+    float physxJointAxis:__INSTANCE_NAME__:maxJointVelocity = inf (
         customData = {
             string userDocBrief = "Maximum joint velocity."
         }
@@ -208,7 +208,7 @@ class "PhysxSurfaceDeformableBodyAPI" (
     )
     uint physxDeformableBody:collisionPairUpdateFrequency = 1 (
         customData = {
-            string userDocBrief = "Determines how often cloth-to-cloth collision pairs are updated during each time step."
+            string userDocBrief = "Determines how often deformable surface collision pairs are updated during each time step."
         }
         displayGroup = "Advanced"
         displayName = "Collision Pair Update Frequency"

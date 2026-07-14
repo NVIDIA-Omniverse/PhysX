@@ -1523,7 +1523,7 @@ static __device__ void intializeTGSBlock1D(
 	using namespace physx;
 
 	PxReal maxBiasVelocity;
-	{	
+	{
 		const PxU16 flags = PxU16(rp.flags[threadIndex]);
 		const PxReal stiffness = rp.mods.spring.stiffness[threadIndex];
 		const PxReal damping = rp.mods.spring.damping[threadIndex];

@@ -135,7 +135,7 @@ public:
 		mSweepHit.faceIndex = 0xFFFFffff;
 	}
 
-	virtual bool onEvent(PxU32 nb, const PxU32* indices)
+	virtual bool onEvent(PxU32 nb, const PxU32* indices) PX_OVERRIDE
 	{
 		PX_ALIGN_PREFIX(16) PxU8 tribuf[HF_SWEEP_REPORT_BUFFER_SIZE*sizeof(PxTriangle)] PX_ALIGN_SUFFIX(16);
 		PxTriangle* tmpT = reinterpret_cast<PxTriangle*>(tribuf);
@@ -297,7 +297,7 @@ public:
 		mConvexHull.initialize(&hull, V3Zero(), vScale, vQuat, convexScale.isIdentity());
 	}
 
-	virtual bool onEvent(PxU32 nbEntities, const PxU32* entities)
+	virtual bool onEvent(PxU32 nbEntities, const PxU32* entities) PX_OVERRIDE
 	{
 		const PxTransform idt(PxIdentity);
 		for(PxU32 i=0; i<nbEntities; i++)
@@ -429,7 +429,7 @@ public:
 		mSweepHit.faceIndex = 0xFFFFffff;
 	}
 
-	virtual bool onEvent(PxU32 nb, const PxU32* indices)
+	virtual bool onEvent(PxU32 nb, const PxU32* indices) PX_OVERRIDE
 	{
 		const FloatV zero = FZero();
 		const Vec3V zeroV = V3Zero();

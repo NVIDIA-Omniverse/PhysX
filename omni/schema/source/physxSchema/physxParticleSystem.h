@@ -36,7 +36,7 @@ class SdfAssetPath;
 /// \class PhysxSchemaPhysxParticleSystem
 ///
 /// WARNING: This is a draft API; the design is not fixed and may change in the future.
-/// PhysX particle system, used to simulate fluids, cloth and inflatables. This prim allows the user to configure the
+/// PhysX particle system, used to simulate fluids and granular materials. This prim allows the user to configure the
 /// solver parameters that are common to the particle objects associated with this system via their particleSystem relationship.
 ///
 class PhysxSchemaPhysxParticleSystem : public UsdGeomGprim

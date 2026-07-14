@@ -202,9 +202,9 @@ _CreateGpuTotalAggregatePairsCapacityAttr(PhysxSchemaPhysxSceneAPI &self,
 }
         
 static UsdAttribute
-_CreateGpuMaxSoftBodyContactsAttr(PhysxSchemaPhysxSceneAPI &self,
+_CreateGpuMaxDeformableVolumeContactsAttr(PhysxSchemaPhysxSceneAPI &self,
                                       object defaultVal, bool writeSparsely) {
-    return self.CreateGpuMaxSoftBodyContactsAttr(
+    return self.CreateGpuMaxDeformableVolumeContactsAttr(
         UsdPythonToSdfType(defaultVal, SdfValueTypeNames->UInt), writeSparsely);
 }
         
@@ -523,10 +523,10 @@ void wrapPhysxSchemaPhysxSceneAPI()
              (arg("defaultValue")=object(),
               arg("writeSparsely")=false))
         
-        .def("GetGpuMaxSoftBodyContactsAttr",
-             &This::GetGpuMaxSoftBodyContactsAttr)
-        .def("CreateGpuMaxSoftBodyContactsAttr",
-             &_CreateGpuMaxSoftBodyContactsAttr,
+        .def("GetGpuMaxDeformableVolumeContactsAttr",
+             &This::GetGpuMaxDeformableVolumeContactsAttr)
+        .def("CreateGpuMaxDeformableVolumeContactsAttr",
+             &_CreateGpuMaxDeformableVolumeContactsAttr,
              (arg("defaultValue")=object(),
               arg("writeSparsely")=false))
         

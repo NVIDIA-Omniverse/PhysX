@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
-// NOTE: This file is included verbatim in documentation.
-// When editing, keep tutorial line ranges in sync.
+// NOTE: This file is included verbatim in documentation via literalinclude.
+// Tutorial marker comments below define the included range.
 
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_types.h>
@@ -22,6 +22,7 @@
 #error "This file must be compiled as C, not C++"
 #endif
 
+// [tutorial-start]
 static int wait_op_success(ovphysx_handle_t handle, ovphysx_enqueue_result_t res, uint64_t timeout_ns) {
   if (res.status != OVPHYSX_API_SUCCESS) {
     return 0;
@@ -101,10 +102,9 @@ int main() {
 
   printf("=== Clone Example Completed Successfully ===\n");
 
-  printf("Cleaning up...\n");
   ovphysx_result_t destroy_res = ovphysx_destroy_instance(handle);
-  printf("  [OK] PhysX instance destroyed\n\n");
+  printf("Cleanup complete\n");
 
-  printf("[SUCCESS]\n");
   return 0;
 }
+// [tutorial-end]

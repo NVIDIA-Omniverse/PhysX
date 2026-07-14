@@ -209,9 +209,7 @@ static const char* gAvoidedPhysXTypes[] =
 	"PxBase",
     "PxBaseFlag::Enum",
     "PxFLIPMaterial",
-    "PxMPMMaterial",
-    "PxFEMSoftBodyMaterial",
-    "PxSoftBody"
+    "PxMPMMaterial"
 };
 
 #include "PxPhysicsAPI.h"

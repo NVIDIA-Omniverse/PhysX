@@ -186,7 +186,7 @@ int Gu::intersectRayAABB(const PxVec3& minimum, const PxVec3& maximum, const PxV
 		{
 			if(ro[a]<minimum[a] || ro[a]>maximum[a])
 				return -1;
-		}	
+		}
 		else
 		{
 			const PxReal OneOverDir = 1.0f / rd[a];

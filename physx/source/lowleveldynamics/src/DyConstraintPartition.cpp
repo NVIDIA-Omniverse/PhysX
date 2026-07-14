@@ -499,7 +499,7 @@ static PxU32 classifyConstraintDesc(const PxSolverConstraintDesc* PX_RESTRICT de
 		const bool notContainsStatic = classification.classifyConstraint(*_desc, indexA, indexB, activeA, activeB, partitionsA, partitionsB);
 		
 		if(notContainsStatic)
-		{			
+		{
 			PxU32 availablePartition;
 			if(!computeAvailablePartition(availablePartition, partitionsA, partitionsB, activeA, activeB))
 			{

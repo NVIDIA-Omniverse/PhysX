@@ -49,7 +49,7 @@ namespace physx
 			PX_INLINE	Dy::ParticleSystem*		getLowLevelParticleSystem() const { return mLLParticleSystem; }
 			PX_INLINE	ParticleSystemCore&		getCore() const { return static_cast<ParticleSystemCore&>(mCore); }
 
-			virtual			PxActor*		getPxActor() const { return getCore().getPxActor(); }
+			virtual			PxActor*		getPxActor() const PX_OVERRIDE { return getCore().getPxActor(); }
 
 			bool							isSleeping() const;
 			bool							isActive() const { return true; }

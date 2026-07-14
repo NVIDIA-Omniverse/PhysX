@@ -59,7 +59,7 @@ namespace Dy
 // PT: TODO: what is const and what is not?
 struct SolverIslandObjects
 {
-	PxsRigidBody**				bodies;	
+	PxsRigidBody**				bodies;
 	FeatherstoneArticulation**	articulations;
 	PxsIndexedContactManager*	contactManagers;	// PT: points to DynamicsContext::mContactList
 
@@ -265,9 +265,9 @@ public:
 		mGravity					(gravity)
 	{}
 
-	virtual void runInternal();
+	virtual void runInternal() PX_OVERRIDE;
 
-	virtual const char* getName() const
+	virtual const char* getName() const PX_OVERRIDE
 	{
 		return "PxsDynamics.preIntegrate";
 	}
@@ -298,12 +298,12 @@ public:
 	{
 	}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		solveParallel(mContext, mParams, mIslandSim);
 	}
 
-	virtual const char* getName() const
+	virtual const char* getName() const PX_OVERRIDE
 	{
 		return "PxsDynamics.parallelSolver";
 	}
@@ -382,7 +382,7 @@ public:
 					}
 				}
 				PX_ASSERT(output.nbContacts == (size - origSize));
-			}	
+			}
 		}
 
 		PxU32 origSize = size;
@@ -447,7 +447,7 @@ public:
 			false, materialInfo, output.nbPatches, 0, &mThreadContext.mConstraintBlockManager, &threadContext.mConstraintBlockStream, false);
 	}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		PX_PROFILE_ZONE("ConstraintPostProcess", mContextID);
 
@@ -465,7 +465,7 @@ public:
 		mContext.putThreadContext(threadContext);
 	}
 
-	virtual const char* getName() const { return "PxsDynamics.solverConstraintPostProcess"; }
+	virtual const char* getName() const PX_OVERRIDE { return "PxsDynamics.solverConstraintPostProcess"; }
 
 	DynamicsContext&			mContext;
 	ThreadContext&				mThreadContext;
@@ -584,13 +584,13 @@ public:
 		}
 	}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		mDynamicsContext.getThresholdStream().forceSize_Unsafe(PxU32(mDynamicsContext.mThresholdStreamOut));
 		createForceChangeThresholdStream();
 	}
 
-	virtual const char* getName() const { return "PxsDynamics.createForceChangeThresholdStream"; }
+	virtual const char* getName() const PX_OVERRIDE { return "PxsDynamics.createForceChangeThresholdStream"; }
 };
 
 #if PGS_SUPPORT_COMPOUND_CONSTRAINTS
@@ -619,9 +619,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "SolverArticulationUpdateTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "SolverArticulationUpdateTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		ThreadContext& threadContext = *mContext.getThreadContext();
 
@@ -745,7 +745,7 @@ public:
 		PxSolverBody* solverBodies = mContext.mSolverBodyPool.begin() + mSolverBodyOffset;
 		PxSolverBodyData* solverBodyData = mContext.mSolverBodyDataPool.begin() + mSolverBodyOffset;
 
-		{			
+		{
 			PX_PROFILE_ZONE("Dynamics.updateVelocities", mContextID);
 
 			mContext.preIntegrationParallel(
@@ -802,19 +802,19 @@ public:
 			{
 				const IG::Island& island = islandSim.getIsland(islandIds[i]);
 
-				IG::EdgeIndex edgeId = island.mEdges.mFirstEdge[IG::Edge::eCONSTRAINT];
-
-				while(edgeId != IG_INVALID_EDGE)
+				START_ENUMERATING_ISLAND_EDGES(IG::Edge::eCONSTRAINT)
 				{
+					GET_CURRENT_ISLAND_EDGE
+
 					PxSolverConstraintDesc& desc = *contactDescPtr;
 				
-					const IG::Edge& edge = islandSim.getEdge(edgeId);
 					Dy::Constraint* constraint = mIslandManager.getConstraint(edgeId);
 					mContext.setDescFromIndices_Constraints(desc, islandSim, edgeId, mBodyRemapTable, mSolverBodyOffset);
 					desc.constraint = reinterpret_cast<PxU8*>(constraint);
 					desc.constraintType = DY_SC_TYPE_RB_1D;
 					contactDescPtr++;
-					edgeId = edge.mLinks.mNextIslandEdge;
+
+					GET_NEXT_ISLAND_EDGE
 				}
 			}
 		}
@@ -1097,7 +1097,7 @@ public:
 #endif
 	}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		setupThreadContext();
 		startTasks();
@@ -1106,7 +1106,7 @@ public:
 		articulationTask();
 	}
 
-	virtual const char* getName() const
+	virtual const char* getName() const PX_OVERRIDE
 	{
 		return "PxsDynamics.solverStart";
 	}
@@ -1174,12 +1174,12 @@ public:
 		mSolverBodyOffset	(solverBodyOffset)
 	{}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		partitionConstraints(mIslandContext, mContext.mSolverBodyPool.begin() + mSolverBodyOffset, mContext.getContextId());
 	}
 
-	virtual const char* getName() const { return "PxsDynamics.solverConstraintPartition"; }
+	virtual const char* getName() const PX_OVERRIDE { return "PxsDynamics.solverConstraintPartition"; }
 
 	DynamicsContext&	mContext;
 	IslandContext&		mIslandContext;
@@ -1226,7 +1226,7 @@ public:
 		mIslandSim			(islandSim)
 	{}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		ThreadContext& threadContext = *mIslandContext.mThreadContext;
 
@@ -1374,7 +1374,7 @@ public:
 					}
 
 					//Avoid kicking off one parallel task when we can do the work inline in this function
-					{						
+					{
 						PX_PROFILE_ZONE("Dynamics.parallelSolve", mContextID);
 
 						solveParallel(mContext, params, mIslandSim);
@@ -1386,7 +1386,7 @@ public:
 					WAIT_FOR_PROGRESS_NO_TIMER(numObjectsIntegrated, numBodiesPlusArtics);
 				}
 				else
-				{				
+				{
 					threadContext.mDeltaV.forceSize_Unsafe(0);
 					threadContext.mDeltaV.reserve(threadContext.mMaxArticulationLinks);
 					threadContext.mDeltaV.forceSize_Unsafe(threadContext.mMaxArticulationLinks);
@@ -1409,7 +1409,7 @@ public:
 		}
 	}
 
-	virtual const char* getName() const { return "PxsDynamics.solverSetupSolve"; }
+	virtual const char* getName() const PX_OVERRIDE { return "PxsDynamics.solverSetupSolve"; }
 
 	DynamicsContext&			mContext;
 	IslandContext&				mIslandContext;
@@ -1432,8 +1432,8 @@ public:
 		mOutputs			(cmOutputs)
 	{}
 
-	virtual void runInternal()
-	{		
+	virtual void runInternal() PX_OVERRIDE
+	{
 		PX_PROFILE_ZONE("Dynamics.endTask", getContextId());
 		ThreadContext& threadContext = *mIslandContext.mThreadContext;
 #if PX_ENABLE_SIM_STATS
@@ -1510,7 +1510,7 @@ public:
 		mContext.putThreadContext(&threadContext);
 	}
 
-	virtual const char* getName() const
+	virtual const char* getName() const PX_OVERRIDE
 	{
 		return "PxsDynamics.solverEnd";
 	}
@@ -1537,9 +1537,9 @@ public:
 	{
 	}
 	
-	virtual void runInternal();
+	virtual void runInternal() PX_OVERRIDE;
 
-	virtual const char* getName() const { return "PxsDynamics.solverCreateFinalizeConstraints"; }
+	virtual const char* getName() const PX_OVERRIDE { return "PxsDynamics.solverCreateFinalizeConstraints"; }
 
 	DynamicsContext&					mContext;
 	IslandContext&						mIslandContext;
@@ -1565,7 +1565,7 @@ public:
 	{
 	}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		partitionConstraints(mIslandContext, mContext.mSolverBodyPool.begin() + mSolverBodyOffset, mContext.getContextId());
 
@@ -1573,7 +1573,7 @@ public:
 		createFinalizeConstraints(mContext, mIslandContext, mContext.mSolverBodyDataPool.begin(), mOutputs, mCont, numThreads, mContextID, mEnhancedDeterminism);
 	}
 
-	virtual const char* getName() const { return "PxsDynamics.partitionAndCreateFinalizeConstraintsTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "PxsDynamics.partitionAndCreateFinalizeConstraintsTask"; }
 
 	DynamicsContext&					mContext;
 	IslandContext&						mIslandContext;
@@ -1712,9 +1712,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "UpdateContinuationTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "UpdateContinuationTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		mContext.updatePostKinematic(mSimpleIslandManager, mCont, mLostTouchTask, mMaxArticulationLinks);
 		//Allow lost touch task to run once all tasks have be scheduled
@@ -1743,9 +1743,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "KinematicCopyTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "KinematicCopyTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		for (PxU32 i = 0; i<mNbKinematics; i++)
 		{
@@ -1916,8 +1916,8 @@ void DynamicsContext::updatePostKinematic(IG::SimpleIslandManager& simpleIslandM
 			const IG::Island& island = islandSim.getIsland(islandIds[currentIsland]);
 			nbBodies += island.mNodeCount[IG::Node::eRIGID_BODY_TYPE];
 			nbArticulations += island.mNodeCount[IG::Node::eARTICULATION_TYPE];
-			nbConstraints += island.mEdges.mEdgeCount[IG::Edge::eCONSTRAINT];
-			nbContactManagers += island.mEdges.mEdgeCount[IG::Edge::eCONTACT_MANAGER];
+			nbConstraints += island.mEdges.getCount(IG::Edge::eCONSTRAINT);
+			nbContactManagers += island.mEdges.getCount(IG::Edge::eCONTACT_MANAGER);
 			constraintCount = nbConstraints + nbContactManagers;
 			currentIsland++;
 
@@ -1990,14 +1990,8 @@ static void preIntegrationParallel(
 	PxU32 localMaxPosIter = 0;
 	PxU32 localMaxVelIter = 0;
 
-	for(PxU32 a = 1; a < bodyCount; ++a)
+	for(PxU32 i = 0; i < bodyCount; ++i)
 	{
-		PxU32 i = a-1;
-		PxPrefetchLine(bodyArray[a]);
-		PxPrefetchLine(bodyArray[a],128);
-		PxPrefetchLine(&solverBodyDataPool[a]);
-		PxPrefetchLine(&solverBodyDataPool[a],128);
-
 		PxsBodyCore& core = *bodyArray[i];
 		const PxsRigidBody& rBody = *originalBodyArray[i];
 		
@@ -2005,26 +1999,12 @@ static void preIntegrationParallel(
 		localMaxPosIter = PxMax<PxU32>(PxU32(iterWord & 0xff), localMaxPosIter);
 		localMaxVelIter = PxMax<PxU32>(PxU32(iterWord >> 8), localMaxVelIter);
 
-		//const Cm::SpatialVector& accel = originalBodyArray[i]->getAccelerationV();
-		bodyCoreComputeUnconstrainedVelocity(gravity, dt, core.linearDamping, core.angularDamping, rBody.mAccelScale, core.maxLinearVelocitySq, core.maxAngularVelocitySq, 
+		bodyCoreComputeUnconstrainedVelocity(gravity, dt, core.linearDamping, core.angularDamping, rBody.mAccelScale, core.maxLinearVelocitySq, core.maxAngularVelocitySq,
 			core.linearVelocity, core.angularVelocity, core.disableGravity!=0);
 
 		copyToSolverBodyData(core.linearVelocity, core.angularVelocity, core.inverseMass, core.inverseInertia, core.body2World, core.maxPenBias, core.maxContactImpulse, nodeIndexArray[i], 
 			core.contactReportThreshold, solverBodyDataPool[i + 1], core.lockFlags, dt, core.mFlags & PxRigidBodyFlag::eENABLE_GYROSCOPIC_FORCES);
 	}
-	const PxU32 i = bodyCount - 1;
-	PxsBodyCore& core = *bodyArray[i];
-	const PxsRigidBody& rBody = *originalBodyArray[i];
-		
-	PxU16 iterWord = core.solverIterationCounts;
-	localMaxPosIter = PxMax<PxU32>(PxU32(iterWord & 0xff), localMaxPosIter);
-	localMaxVelIter = PxMax<PxU32>(PxU32(iterWord >> 8), localMaxVelIter);
-
-	bodyCoreComputeUnconstrainedVelocity(gravity, dt, core.linearDamping, core.angularDamping, rBody.mAccelScale, core.maxLinearVelocitySq, core.maxAngularVelocitySq,
-		core.linearVelocity, core.angularVelocity, core.disableGravity!=0);
-
-	copyToSolverBodyData(core.linearVelocity, core.angularVelocity, core.inverseMass, core.inverseInertia, core.body2World, core.maxPenBias, core.maxContactImpulse, nodeIndexArray[i], 
-		core.contactReportThreshold, solverBodyDataPool[i + 1], core.lockFlags, dt, core.mFlags & PxRigidBodyFlag::eENABLE_GYROSCOPIC_FORCES);
 
 	physx::PxAtomicMax(reinterpret_cast<volatile PxI32*>(maxSolverPositionIterations), PxI32(localMaxPosIter));
 	physx::PxAtomicMax(reinterpret_cast<volatile PxI32*>(maxSolverVelocityIterations), PxI32(localMaxVelIter));
@@ -2140,7 +2120,7 @@ void DynamicsContext::integrateCoreParallel(SolverIslandParams& params, Cm::Spat
 			index = physx::PxAtomicAdd(bodyIntegrationListIndex, unrollCount) - unrollCount;
 			bodyRemainder = unrollCount;
 		}
-	}	
+	}
 
 	index -= numArtics;
 
@@ -2407,12 +2387,12 @@ public:
 			mStartIndex(startIndex), mEndIndex(endIndex)
 	{}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		createFinalizeContacts_Parallel(mSolverBodyData, mThreadContext, mDynamicsContext, mStartIndex, mEndIndex, mOutputs);
 	}
 
-	virtual const char* getName() const
+	virtual const char* getName() const PX_OVERRIDE
 	{
 		return "PxsDynamics.createFinalizeContacts";
 	}
@@ -2457,7 +2437,7 @@ public:
 		mOutputs(outputs)
 	{}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		const PxReal correlationDist = mDynamicsContext.getCorrelationDistance();
 		const PxReal bounceThreshold = mDynamicsContext.getBounceThreshold();
@@ -2485,7 +2465,7 @@ public:
 		mDynamicsContext.putThreadContext(threadContext);
 	}
 
-	virtual const char* getName() const
+	virtual const char* getName() const PX_OVERRIDE
 	{
 		return "PxsDynamics.createFinalizeContacts";
 	}

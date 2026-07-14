@@ -1,0 +1,654 @@
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Ported from omni.physx.tests PhysxSurfaceVelocityAPI.py for standalone ovruntime testing.
+
+import _physics_setup  # noqa: F401 - loads Carbonite + physics plugins + PhysX schemas
+
+import unittest
+from physicsBase import PhysicsMemoryStageBaseTestCase, TestCategory, ExpectMessage
+from pxr import Sdf, Usd, Gf, UsdGeom, UsdPhysics, UsdUtils, PhysxSchema, Vt, PhysicsSchemaTools
+import math
+import carb
+import os
+
+
+class PhysicsSurfaceVelocityTestMemoryStage(PhysicsMemoryStageBaseTestCase):
+    category = TestCategory.Core
+
+    def setup_stage(self, stage, scenario, linear):
+        size = 100.0
+
+        # Physics scene
+        scene = UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+        # Kinematic
+        boxActorPath = "/kinematicActor"
+        cubeGeom = UsdGeom.Cube.Define(stage, boxActorPath)
+        kinematicCubePrim = stage.GetPrimAtPath(boxActorPath)
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddScaleOp().Set(Gf.Vec3f(1.0,1.0,20.0))
+
+        UsdPhysics.CollisionAPI.Apply(kinematicCubePrim)
+        self.physicsAPI = UsdPhysics.RigidBodyAPI.Apply(kinematicCubePrim)
+        self.physicsAPI.CreateKinematicEnabledAttr().Set(True)
+
+        # target velocities
+        targetSurfaceVelocity = Gf.Vec3f(0.0, 0.0, 80.0)
+        targetAngularSurfaceVelocity = Gf.Vec3f(0.0, 200.0, 0.0)
+
+        # dynamic actor
+        size = 50.0
+        boxActorPath = "/boxActor"
+
+        position = Gf.Vec3f(0.0, 8.0, 0.0)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, boxActorPath)
+        cubePrim = stage.GetPrimAtPath(boxActorPath)
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddTranslateOp().Set(position)
+        UsdPhysics.CollisionAPI.Apply(cubePrim)
+        self.rigidBodyAPI = UsdPhysics.RigidBodyAPI.Apply(cubePrim)
+
+        if scenario == "kinematic_legacy":
+            # kinematic box below with velocity set
+            if linear:
+                self.physicsAPI.GetVelocityAttr().Set(targetSurfaceVelocity)
+            else:
+                self.physicsAPI.GetAngularVelocityAttr().Set(targetAngularSurfaceVelocity)
+        elif scenario == "kinematic":
+            self.surfaceVelocityAPI = PhysxSchema.PhysxSurfaceVelocityAPI.Apply(kinematicCubePrim)
+            if linear:
+                self.surfaceVelocityAPI.GetSurfaceVelocityAttr().Set(targetSurfaceVelocity)
+            else:
+                self.surfaceVelocityAPI.GetSurfaceAngularVelocityAttr().Set(targetAngularSurfaceVelocity)
+        elif scenario == "dynamic":
+            self.surfaceVelocityAPI = PhysxSchema.PhysxSurfaceVelocityAPI.Apply(cubePrim)
+            self.surfaceVelocityAPI.GetSurfaceVelocityLocalSpaceAttr().Set(False)
+            if linear:
+                self.surfaceVelocityAPI.GetSurfaceVelocityAttr().Set(targetSurfaceVelocity)
+            else:
+                self.surfaceVelocityAPI.GetSurfaceAngularVelocityAttr().Set(targetAngularSurfaceVelocity)
+
+    def test_physics_kinematic_surface_velocity_legacy(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage,"kinematic_legacy", True)
+
+        for _ in range(50):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[2] > 40.0)
+
+    def test_physics_kinematic_surface_cylinder_angular_velocity_legacy(self):
+        stage = self.new_stage()
+        # Building a scene with a flat disk (made out of a scaled cylinder) and a cube that rotates around its perimeter
+        # We check that velocity goes in one direction and after some time it reverses (as it's after turning point)
+        scene = UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+        cylinderActorPath = "/kinematicActor"
+        cylinderGeom = UsdGeom.Cylinder.Define(stage, cylinderActorPath)
+        cylinderGeom.GetAxisAttr().Set("Y")
+        cylinderPrim = stage.GetPrimAtPath(cylinderActorPath)
+        cylinderGeom.AddScaleOp().Set(Gf.Vec3f(20.0,1.0,20.0))
+
+        UsdPhysics.CollisionAPI.Apply(cylinderPrim)
+        physicsAPI = UsdPhysics.RigidBodyAPI.Apply(cylinderPrim)
+        physicsAPI.CreateKinematicEnabledAttr().Set(True)
+        # Huge angular velocity to avoid needing doing too many steps in the test
+        targetAngularSurfaceVelocity = Gf.Vec3f(0.0, 200.0, 0.0)
+        physicsAPI.GetAngularVelocityAttr().Set(targetAngularSurfaceVelocity)
+
+        # dynamic actor
+        size = 1.0
+        boxActorPath = "/boxActor"
+
+        position = Gf.Vec3f(15.0, 2.0, 0.0)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, boxActorPath)
+        cubePrim = stage.GetPrimAtPath(boxActorPath)
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddTranslateOp().Set(position)
+        UsdPhysics.CollisionAPI.Apply(cubePrim)
+        rigidBodyAPI = UsdPhysics.RigidBodyAPI.Apply(cubePrim)
+
+        for _ in range(10):
+            self.step()
+
+        velocity = rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        # Velocity is along negative Z
+        self.assertTrue(velocity[2] < -20)
+
+        for _ in range(30):
+            self.step()
+        velocity = rigidBodyAPI.GetVelocityAttr().Get()
+        # Velocity turned direction to positive Z
+        self.assertTrue(velocity[2] > 20)
+        print(velocity)
+
+    def test_physics_kinematic_surface_angular_velocity_legacy(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage,"kinematic_legacy", False)
+
+        for _ in range(10):
+            self.step()
+
+        angular_velocity = self.rigidBodyAPI.GetAngularVelocityAttr().Get()
+        print(angular_velocity)
+        self.assertTrue(angular_velocity[1] > 180.0)
+
+    def test_physics_kinematic_surface_switch_velocity_legacy(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage,"kinematic_legacy", True)
+
+        self.physicsAPI.GetVelocityAttr().Set(Gf.Vec3f(0.0))
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[2] < 40.0)
+
+        targetSurfaceVelocity = Gf.Vec3f(0.0, 0.0, 80.0)
+        self.physicsAPI.GetVelocityAttr().Set(targetSurfaceVelocity)
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[2] > 40.0)
+
+    def test_physics_kinematic_surface_velocity(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage,"kinematic", True)
+
+        for _ in range(50):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[2] > 40.0)
+
+    def test_physics_kinematic_surface_angular_velocity(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage,"kinematic", False)
+
+        for _ in range(10):
+            self.step()
+
+        angular_velocity = self.rigidBodyAPI.GetAngularVelocityAttr().Get()
+        print(angular_velocity)
+        self.assertTrue(angular_velocity[1] > 180.0)
+
+    def test_physics_kinematic_surface_switch_velocity(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage,"kinematic", True)
+
+        self.surfaceVelocityAPI.GetSurfaceVelocityAttr().Set(Gf.Vec3f(0.0))
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[2] < 40.0)
+
+        targetSurfaceVelocity = Gf.Vec3f(0.0, 0.0, 80.0)
+        self.surfaceVelocityAPI.GetSurfaceVelocityAttr().Set(targetSurfaceVelocity)
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[2] > 40.0)
+
+
+    def test_physics_kinematic_surface_switch_angular_velocity(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage,"kinematic", False)
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetAngularVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[1] < 201 and velocity[1] > 190)
+
+        targetAngularSurfaceVelocity = Gf.Vec3f(0.0, 250.0, 0.0)
+        self.surfaceVelocityAPI.GetSurfaceAngularVelocityAttr().Set(targetAngularSurfaceVelocity)
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetAngularVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[1] > 240 and velocity[1] < 251)
+
+
+    def test_physics_kinematic_surface_enable_velocity(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage,"kinematic", True)
+
+        self.surfaceVelocityAPI.GetSurfaceVelocityEnabledAttr().Set(False)
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[2] < 40.0)
+
+        self.surfaceVelocityAPI.GetSurfaceVelocityEnabledAttr().Set(True)
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[2] > 40.0)
+
+    def test_physics_dynamic_surface_velocity(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage,"dynamic", True)
+
+        for _ in range(50):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[2] > 40.0)
+
+    def test_physics_dynamic_surface_angular_velocity(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage,"dynamic", False)
+
+        for _ in range(10):
+            self.step()
+
+        angular_velocity = self.rigidBodyAPI.GetAngularVelocityAttr().Get()
+        print(angular_velocity)
+        self.assertTrue(angular_velocity[1] > 180.0)
+
+    def test_physics_dynamic_surface_switch_velocity(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage,"dynamic", True)
+
+        self.surfaceVelocityAPI.GetSurfaceVelocityAttr().Set(Gf.Vec3f(0.0))
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[2] < 40.0)
+
+        targetSurfaceVelocity = Gf.Vec3f(0.0, 0.0, 80.0)
+        self.surfaceVelocityAPI.GetSurfaceVelocityAttr().Set(targetSurfaceVelocity)
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[2] > 40.0)
+
+
+    def test_physics_dynamic_surface_switch_angular_velocity(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage,"dynamic", False)
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetAngularVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[1] < 201 and velocity[1] > 190)
+
+        targetAngularSurfaceVelocity = Gf.Vec3f(0.0, 250.0, 0.0)
+        self.surfaceVelocityAPI.GetSurfaceAngularVelocityAttr().Set(targetAngularSurfaceVelocity)
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetAngularVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[1] > 240 and velocity[1] < 251)
+
+
+    def test_physics_dynamic_surface_enable_velocity(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage,"dynamic", True)
+
+        self.surfaceVelocityAPI.GetSurfaceVelocityEnabledAttr().Set(False)
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[2] < 40.0)
+
+        self.surfaceVelocityAPI.GetSurfaceVelocityEnabledAttr().Set(True)
+
+        for _ in range(10):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[2] > 40.0)
+
+
+class PhysicsSplineSurfaceVelocityTestMemoryStage(PhysicsMemoryStageBaseTestCase):
+    category = TestCategory.Core
+
+    def setup_stage(self, stage):
+        size = 100.0
+
+        # Physics scene
+        UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+        # Kinematic
+        kinematicActorPath = "/kinematicActor"
+        UsdGeom.Xform.Define(stage, kinematicActorPath)
+        kinematicPrim = stage.GetPrimAtPath(kinematicActorPath)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, kinematicActorPath + "/cubeGeom")
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddScaleOp().Set(Gf.Vec3f(20.0,1.0,1.0))
+        UsdPhysics.CollisionAPI.Apply(cubeGeom.GetPrim())
+
+        self.physicsAPI = UsdPhysics.RigidBodyAPI.Apply(kinematicPrim)
+        self.physicsAPI.CreateKinematicEnabledAttr().Set(True)
+
+        # target velocities
+        targetSurfaceVelocityMagnitude = 10.0
+
+        # dynamic actor
+        size = 5.0
+        boxActorPath = "/boxActor"
+
+        position = Gf.Vec3f(0.0, 55.0, 0.0)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, boxActorPath)
+        cubePrim = stage.GetPrimAtPath(boxActorPath)
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddTranslateOp().Set(position)
+        UsdPhysics.CollisionAPI.Apply(cubePrim)
+        self.rigidBodyAPI = UsdPhysics.RigidBodyAPI.Apply(cubePrim)
+
+        # spline
+        curveGeom = UsdGeom.BasisCurves.Define(stage, kinematicActorPath + "/basisCurve")
+        curveGeom.GetPointsAttr().Set([Gf.Vec3f(200.0, 50.0, 0.0), Gf.Vec3f(-200.0, 50.0, 0.0)])
+        curveGeom.GetWidthsAttr().Set([1.0, 1.0])
+        curveGeom.GetCurveVertexCountsAttr().Set([2])
+
+        # setup the splined
+        kinematicPrim.ApplyAPI("PhysxSplinesSurfaceVelocityAPI")
+        kinematicPrim.GetAttribute("physxSplinesSurfaceVelocity:surfaceVelocityMagnitude").Set(targetSurfaceVelocityMagnitude)
+        kinematicPrim.GetRelationship("physxSplinesSurfaceVelocity:surfaceVelocityCurve").AddTarget(curveGeom.GetPrim().GetPrimPath())
+
+    def test_physics_spline_surface_velocity(self):
+        stage = self.new_stage()
+
+        self.setup_stage(stage)
+
+        for _ in range(30):
+            self.step()
+
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        print(velocity)
+        self.assertTrue(velocity[0] < 9.8)
+
+    def test_physics_spline_surface_velocity_invalid_geometry(self):
+        stage = self.new_stage()
+        size = 100.0
+
+        # Physics scene
+        UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+        # Kinematic
+        kinematicActorPath = "/kinematicActor"
+        UsdGeom.Xform.Define(stage, kinematicActorPath)
+        kinematicPrim = stage.GetPrimAtPath(kinematicActorPath)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, kinematicActorPath + "/cubeGeom")
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddScaleOp().Set(Gf.Vec3f(20.0, 1.0, 1.0))
+        UsdPhysics.CollisionAPI.Apply(cubeGeom.GetPrim())
+
+        self.physicsAPI = UsdPhysics.RigidBodyAPI.Apply(kinematicPrim)
+        self.physicsAPI.CreateKinematicEnabledAttr().Set(True)
+
+        # target velocities
+        targetSurfaceVelocityMagnitude = 10.0
+
+        # dynamic actor
+        size = 5.0
+        boxActorPath = "/boxActor"
+
+        position = Gf.Vec3f(0.0, 55.0, 0.0)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, boxActorPath)
+        cubePrim = stage.GetPrimAtPath(boxActorPath)
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddTranslateOp().Set(position)
+        UsdPhysics.CollisionAPI.Apply(cubePrim)
+        self.rigidBodyAPI = UsdPhysics.RigidBodyAPI.Apply(cubePrim)
+
+        # Create spline at root level (not as child of kinematic actor)
+        curveGeom = UsdGeom.BasisCurves.Define(stage, "/basisCurve")
+        curveGeom.GetPointsAttr().Set([Gf.Vec3f(200.0, 50.0, 0.0), Gf.Vec3f(-200.0, 50.0, 0.0)])
+        curveGeom.GetWidthsAttr().Set([1.0, 1.0])
+        curveGeom.GetCurveVertexCountsAttr().Set([2])
+
+        # setup the splined
+        kinematicPrim.ApplyAPI("PhysxSplinesSurfaceVelocityAPI")
+        kinematicPrim.GetAttribute("physxSplinesSurfaceVelocity:surfaceVelocityMagnitude").Set(targetSurfaceVelocityMagnitude)
+        kinematicPrim.GetRelationship("physxSplinesSurfaceVelocity:surfaceVelocityCurve").AddTarget(curveGeom.GetPrim().GetPrimPath())
+
+        # Step simulation and verify error message
+        with ExpectMessage(self, "Splines surface velocity /kinematicActor spline curve is not a child of the rigid body."):
+            for _ in range(1):
+                self.step()
+
+        # Check that the dynamic actor's velocity is not affected by the invalid spline
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        self.assertTrue(velocity[0] < 0.1)  # Should be close to zero since spline is invalid
+
+    def test_physics_spline_surface_velocity_missing_curve(self):
+        stage = self.new_stage()
+        size = 100.0
+
+        # Physics scene
+        UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+        # Kinematic
+        kinematicActorPath = "/kinematicActor"
+        UsdGeom.Xform.Define(stage, kinematicActorPath)
+        kinematicPrim = stage.GetPrimAtPath(kinematicActorPath)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, kinematicActorPath + "/cubeGeom")
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddScaleOp().Set(Gf.Vec3f(20.0, 1.0, 1.0))
+        UsdPhysics.CollisionAPI.Apply(cubeGeom.GetPrim())
+
+        self.physicsAPI = UsdPhysics.RigidBodyAPI.Apply(kinematicPrim)
+        self.physicsAPI.CreateKinematicEnabledAttr().Set(True)
+
+        # target velocities
+        targetSurfaceVelocityMagnitude = 10.0
+
+        # dynamic actor
+        size = 5.0
+        boxActorPath = "/boxActor"
+
+        position = Gf.Vec3f(0.0, 55.0, 0.0)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, boxActorPath)
+        cubePrim = stage.GetPrimAtPath(boxActorPath)
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddTranslateOp().Set(position)
+        UsdPhysics.CollisionAPI.Apply(cubePrim)
+        self.rigidBodyAPI = UsdPhysics.RigidBodyAPI.Apply(cubePrim)
+
+        # setup the splined without setting the curve relationship
+        kinematicPrim.ApplyAPI("PhysxSplinesSurfaceVelocityAPI")
+        kinematicPrim.GetAttribute("physxSplinesSurfaceVelocity:surfaceVelocityMagnitude").Set(targetSurfaceVelocityMagnitude)
+
+        # Step simulation and verify error message
+        with ExpectMessage(self, "Splines surface velocity /kinematicActor does not have a valid spline curve defined."):
+            for _ in range(1):
+                self.step()
+
+        # Check that the dynamic actor's velocity is not affected by the missing spline
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        self.assertTrue(velocity[0] < 0.1)  # Should be close to zero since spline is missing
+
+    def test_physics_surface_velocity_conflict(self):
+        stage = self.new_stage()
+        size = 100.0
+
+        # Physics scene
+        UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+        # Kinematic
+        kinematicActorPath = "/kinematicActor"
+        UsdGeom.Xform.Define(stage, kinematicActorPath)
+        kinematicPrim = stage.GetPrimAtPath(kinematicActorPath)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, kinematicActorPath + "/cubeGeom")
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddScaleOp().Set(Gf.Vec3f(20.0, 1.0, 1.0))
+        UsdPhysics.CollisionAPI.Apply(cubeGeom.GetPrim())
+
+        self.physicsAPI = UsdPhysics.RigidBodyAPI.Apply(kinematicPrim)
+        self.physicsAPI.CreateKinematicEnabledAttr().Set(True)
+
+        # target velocities
+        targetSurfaceVelocity = Gf.Vec3f(0.0, 0.0, 80.0)
+        targetSurfaceVelocityMagnitude = 10.0
+
+        # dynamic actor
+        size = 5.0
+        boxActorPath = "/boxActor"
+
+        position = Gf.Vec3f(0.0, 55.0, 0.0)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, boxActorPath)
+        cubePrim = stage.GetPrimAtPath(boxActorPath)
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddTranslateOp().Set(position)
+        UsdPhysics.CollisionAPI.Apply(cubePrim)
+        self.rigidBodyAPI = UsdPhysics.RigidBodyAPI.Apply(cubePrim)
+
+        # Create spline
+        curveGeom = UsdGeom.BasisCurves.Define(stage, kinematicActorPath + "/basisCurve")
+        curveGeom.GetPointsAttr().Set([Gf.Vec3f(200.0, 50.0, 0.0), Gf.Vec3f(-200.0, 50.0, 0.0)])
+        curveGeom.GetWidthsAttr().Set([1.0, 1.0])
+        curveGeom.GetCurveVertexCountsAttr().Set([2])
+
+        # Setup both surface velocity APIs
+        surfaceVelocityAPI = PhysxSchema.PhysxSurfaceVelocityAPI.Apply(kinematicPrim)
+        surfaceVelocityAPI.GetSurfaceVelocityAttr().Set(targetSurfaceVelocity)
+
+        kinematicPrim.ApplyAPI("PhysxSplinesSurfaceVelocityAPI")
+        kinematicPrim.GetAttribute("physxSplinesSurfaceVelocity:surfaceVelocityMagnitude").Set(targetSurfaceVelocityMagnitude)
+        kinematicPrim.GetRelationship("physxSplinesSurfaceVelocity:surfaceVelocityCurve").AddTarget(curveGeom.GetPrim().GetPrimPath())
+
+        # Step simulation and verify error message
+        with ExpectMessage(self, "Detected rigid body (/kinematicActor) with both surface velocity and splines surface velocity, please disable one."):
+            for _ in range(1):
+                self.step()
+
+        # Check that the dynamic actor's velocity is not affected by the conflicting APIs
+        velocity = self.rigidBodyAPI.GetVelocityAttr().Get()
+        self.assertTrue(velocity[0] < 0.1)  # Should be close to zero since APIs conflict
+
+class PhysicsSplineSurfaceVelocityRotateTestMemoryStage(PhysicsMemoryStageBaseTestCase):
+    category = TestCategory.Core
+
+    def setup_stage(self, stage):
+        size = 1.0
+
+        # Physics scene
+        UsdPhysics.Scene.Define(stage, "/physicsScene")
+
+        # Kinematic
+        kinematicActorPath = "/kinematicActor"
+        UsdGeom.Xform.Define(stage, kinematicActorPath)
+        kinematicPrim = stage.GetPrimAtPath(kinematicActorPath)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, kinematicActorPath + "/cubeGeom")
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddScaleOp().Set(Gf.Vec3f(200.0,200.0,0.1))
+        UsdPhysics.CollisionAPI.Apply(cubeGeom.GetPrim())
+
+        self.physicsAPI = UsdPhysics.RigidBodyAPI.Apply(kinematicPrim)
+        self.physicsAPI.CreateKinematicEnabledAttr().Set(True)
+
+        # target velocities
+        targetSurfaceVelocityMagnitude = 4.0
+
+        # dynamic actor
+        size = 0.2
+        boxActorPath = "/boxActor"
+
+        position = Gf.Vec3f(-10.0, -10.0, 1.0)
+
+        cubeGeom = UsdGeom.Cube.Define(stage, boxActorPath)
+        cubePrim = stage.GetPrimAtPath(boxActorPath)
+        cubeGeom.CreateSizeAttr(size)
+        cubeGeom.AddTranslateOp().Set(position)
+        UsdPhysics.CollisionAPI.Apply(cubePrim)
+        self.rigidBodyAPI = UsdPhysics.RigidBodyAPI.Apply(cubePrim)
+
+        # spline
+        curveGeom = UsdGeom.BasisCurves.Define(stage, kinematicActorPath + "/basisCurve")
+        curveGeom.GetPointsAttr().Set([Gf.Vec3f(-10.0, -10.0, 0.0), Gf.Vec3f(10.0, -10.0, 0.0),Gf.Vec3f(10.0, 10.0, 0.0), Gf.Vec3f(-10.0, 10.0, 0.0)])
+        curveGeom.GetWidthsAttr().Set([0.25, 0.25,0.25,0.25])
+        curveGeom.GetCurveVertexCountsAttr().Set([4])
+
+        # setup the splined
+        kinematicPrim.ApplyAPI("PhysxSplinesSurfaceVelocityAPI")
+        kinematicPrim.GetAttribute("physxSplinesSurfaceVelocity:surfaceVelocityMagnitude").Set(targetSurfaceVelocityMagnitude)
+        kinematicPrim.GetRelationship("physxSplinesSurfaceVelocity:surfaceVelocityCurve").AddTarget(curveGeom.GetPrim().GetPrimPath())
+
+    def test_physics_spline_surface_velocity_rotate(self):
+        stage = self.new_stage(up=UsdGeom.Tokens.z, mpu=1.0)
+
+        self.setup_stage(stage)
+
+        translate_attr = stage.GetPrimAtPath("/boxActor").GetAttribute("xformOp:translate")
+        orient_attr = stage.GetPrimAtPath("/boxActor").GetAttribute("xformOp:orient")
+
+        for _ in range(500):
+            self.step()
+            pos = translate_attr.Get()
+            if (abs(pos[1]) < 0.1):
+                quat = orient_attr.Get()
+                rotation = Gf.Rotation(quat)
+                angles = rotation.Decompose(Gf.Vec3d(1.0,0.0,0.0), Gf.Vec3d(0.0,1.0,0.0), Gf.Vec3d(0.0,0.0,1.0))
+                self.assertTrue(abs(angles[2] - 90.0) < 2.0)
+                break
+
+
+if __name__ == "__main__":
+    unittest.main()

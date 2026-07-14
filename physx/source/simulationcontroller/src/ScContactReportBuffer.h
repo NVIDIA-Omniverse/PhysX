@@ -116,7 +116,7 @@ namespace physx
 		index = mCurrentBufferIndex + pad;
 
 		if (index + size > mCurrentBufferSize)
-		{		
+		{
 			PX_PROFILE_ZONE("ContactReportBuffer::Resize", 0);
 			if(mAllocationLocked)
 				return NULL;
@@ -147,7 +147,7 @@ namespace physx
 	//////////////////////////////////////////////////////////////////////////
 
 	PxU8* Sc::ContactReportBuffer::reallocateNotThreadSafe(PxU32 size, PxU32& index ,PxU32 alignment/* =16 */, PxU32 lastIndex)
-	{		
+	{
 		if(lastIndex != mLastBufferIndex)
 		{
 			return allocateNotThreadSafe(size,index,alignment);

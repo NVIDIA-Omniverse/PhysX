@@ -28,6 +28,7 @@
 #define	PXG_SIMULATION_CORE_DESC_H
 
 #include "foundation/PxSimpleTypes.h"
+#include "foundation/PxVec3.h"
 #include "DyVArticulation.h"
 #include "PxDeformableSurface.h"
 #include "PxDeformableVolume.h"
@@ -108,14 +109,6 @@ namespace physx
 		PX_ASSERT(elementId <= PX_MAX_NB_DEFORMABLE_SURFACE_TRI); 
 		PX_ASSERT(elementId <= PX_MAX_NB_DEFORMABLE_SURFACE_VTX);
 		return (clothId << PXG_BITSHIFT_ELEMENT_ID) | elementId;
-	}
-
-	// BUGFIX 5813869: returns true if clothId or elementId are out of encoding range.
-	// Cloth-cloth contact managers are not unregistered via ShapeInteraction (unlike other pair
-	// types), so stale pairs with invalid indices may persist for one frame during add/remove cycling.
-	PX_CUDA_CALLABLE PX_FORCE_INLINE bool PxIsClothIndexInvalid(const PxU32 clothId, const PxU32 elementId)
-	{
-		return clothId >= PX_MAX_NB_DEFORMABLE_SURFACE || elementId > PX_MAX_NB_DEFORMABLE_SURFACE_TRI;
 	}
 
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxEncodeSoftBodyIndex(const PxU32 softBodyId, const PxU32 tetId)
@@ -199,49 +192,19 @@ namespace physx
 	}PX_ALIGN_SUFFIX(16);
 
 
-	struct PxgConeLimitParams
-	{
-		union
-		{
-			float4 low_high_limits;
-			float4 low_high_angle;
-		};
-
-		union
-		{
-			float4 axis_angle;
-			float4 barycentric;
-		};
-	};
-
-	//KS - consider splitting into 2x structures - 16 bytes and 8 bytes!
-	//soft body/cloth with rigid
+	// Host-staged rigid-deformable (soft body or cloth) attachment. Uploaded on dirtyRigidAttachments
+	// and baked into PxgFEMRigidAttachmentConstraint by the rigid-attach prep kernel.
 	class PxgFEMRigidAttachment : public PxgRigidFilterPair
 	{
 	public:
-		union 
-		{
-			float4 localPose0;
-			float4 baryOrType0;
-		};
+		PxVec3 localPose0;
+		// Mass-splitting: count of active attachments sharing this rigid. Computed on the host at
+		// attachment-update time. Co-located with localPose0 so the pair fills one 16-byte slot.
+		PxU32 rigidBodyReferenceCount;
 
-		PxgConeLimitParams coneLimitParams;
 		float4 baryOrType1;
 	};
 	
-	PX_ALIGN_PREFIX(16)
-	struct PxgParticleRigidConstraint
-	{
-		float4	raXn0_biasW[32];
-		float4	raXn1_biasW[32];
-		float4	raXn2_biasW[32];
-		float4	velMultiplierXYZ_invMassW[32];
-		float4	low_high_limits[32];
-		float4	axis_angle[32];
-		PxU64	particleId[32];
-		PxU64	rigidId[32];
-	}PX_ALIGN_SUFFIX(16);
-
 	PX_ALIGN_PREFIX(16)
 	class PxgNonRigidFilterPair
 	{
@@ -276,12 +239,10 @@ namespace physx
 	class PxgFEMFEMAttachment
 	{
 	public:
-		PxgConeLimitParams coneLimitParams;
 		float4 barycentricCoordinates0;
 		float4 barycentricCoordinates1;
 		PxU64  index0;
 		PxU32  index1;
-		PxReal constraintOffset;
 
 	}PX_ALIGN_SUFFIX(16);
 

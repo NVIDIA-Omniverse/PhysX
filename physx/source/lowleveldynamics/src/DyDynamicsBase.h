@@ -98,9 +98,9 @@ public:
 
 	PxcThreadCoherentCache<ThreadContext, PxcNpMemBlockPool> mThreadContextPool;	// A thread context pool
 
-	PxsMaterialManager*				mMaterialManager;
-	Cm::FlushPool&					mTaskPool;
-	PxsContactManagerOutputIterator	mOutputIterator;
+	PxsMaterialManager*					mMaterialManager;
+	Cm::FlushPool&						mTaskPool;
+	PxsContactManagerOutputIterator		mOutputIterator;
 
 	PxArray<PxConstraintBatchHeader>	mContactConstraintBatchHeaders;	// An array of contact constraint batch headers
 	PxArray<Cm::SpatialVector>			mMotionVelocityArray;			// Array of motion velocities for all bodies in the scene.
@@ -123,9 +123,9 @@ protected:
 
 	bool	updateShared(PxvNphaseImplementationContext* nphase, PxReal dt, const PxVec3& gravity);
 
-	PxU32	iterateIslandsContactEdges(	PxsIslandIndices& counts, PxU32 nbIslands, const IG::IslandId* PX_RESTRICT const islandIds,
+	PxU32	iterateIslandsContactEdges(	const PxsIslandIndices& counts, PxU32 nbIslands, const IG::IslandId* PX_RESTRICT const islandIds,
 										PxsIndexedContactManager* PX_RESTRICT indexedManagers, const PxU32* PX_RESTRICT bodyRemapTable);
-	void	iterateIslandsNodes(PxsIslandIndices& counts, PxU32 nbIslands, const IG::IslandId* PX_RESTRICT const islandIds,
+	void	iterateIslandsNodes(const PxsIslandIndices& counts, PxU32 nbIslands, const IG::IslandId* PX_RESTRICT const islandIds,
 								PxsBodyCore** PX_RESTRICT bodyArrayPtr, PxsRigidBody** PX_RESTRICT rigidBodyPtr,
 								FeatherstoneArticulation** PX_RESTRICT articulationPtr,
 								PxU32* PX_RESTRICT bodyRemapTable, PxU32* PX_RESTRICT nodeIndexArray);

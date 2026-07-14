@@ -176,7 +176,7 @@ void NPhaseCore::managerNewTouch(ShapeInteraction& interaction)
 		actorPair = findActorPair(&s0, &s1, interaction.isReportPair());
 		actorPair->incRefCount(); //It's being referenced by a new pair...
 		interaction.setActorPair(*actorPair);
-	}	
+	}
 }
 
 static bool shouldSwapBodies(const ShapeSimBase& s0, const ShapeSimBase& s1)
@@ -627,7 +627,7 @@ public:
 	{
 	}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		SimStats::TriggerPairCountsNonVolatile triggerPairStats;
 #if PX_ENABLE_SIM_STATS
@@ -682,7 +682,7 @@ public:
 #endif
 	}
 
-	virtual const char* getName() const
+	virtual const char* getName() const PX_OVERRIDE
 	{
 		return "ScNPhaseCore.triggerInteractionWork";
 	}

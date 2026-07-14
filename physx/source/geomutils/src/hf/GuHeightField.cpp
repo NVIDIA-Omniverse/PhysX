@@ -295,7 +295,7 @@ bool HeightField::loadFromDesc(const PxHeightFieldDesc& desc)
 		PxI16 minHeight = PX_MAX_I16;
 		PxI16 maxHeight = PX_MIN_I16;
 		for(PxU32 i=0;i<nbVerts;i++)
-		{			
+		{
 			const PxHeightFieldSample& sample = *reinterpret_cast<const PxHeightFieldSample*>(src);
 			*dst++ = sample;
 			const PxI16 height = sample.height;

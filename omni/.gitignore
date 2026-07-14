@@ -87,11 +87,9 @@ CON
 exts.deps.generated.kit
 
 # allow anything in data and docs/images (both under Git LFS management)
-!data/**
-!docs/images/**
-!extensions/**/data/**
-!extensions/**/docs/**
-!samples/clashdetection/**/data/**
+!ovexts/data/**
+!ovexts/extensions/**/data/**
+!ovexts/extensions/**/docs/**
 
 # allow anything in schema/source except __pycache__
 !schema/source/**
@@ -125,11 +123,6 @@ test/
 # ignore models directory and all subdirectories
 data/models/
 
-# ignore composed/copied tomls and deps for ux and runtime
-extensions/**/prebuild.toml
-extensions/**/repo.toml
-extensions/**/repo_tools.toml
-extensions/**/deps
 nsight_ut_vs_call.bat
 
 # ignore symlinked compile_commands in root
@@ -137,15 +130,3 @@ nsight_ut_vs_call.bat
 
 # ignore clangd index
 .cache/clangd/index/*
-
-# docs generated version files
-VERSION_MAJOR
-VERSION_MAJOR_MINOR
-
-# EXCEPTIONS
-# readd image formats in the dev guide
-!dev_guide/**/*.png
-!dev_guide/**/*.jpg
-!dev_guide/**/*.jpeg
-!dev_guide/**/*.gif
-!extensions/doc_images/*.png

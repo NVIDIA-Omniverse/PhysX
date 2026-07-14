@@ -298,7 +298,7 @@ struct PxContactStreamIterator
 	*/
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxContactStreamIterator(const PxU8* contactPatches, const PxU8* contactPoints, const PxU32* contactFaceIndices, PxU32 nbPatches, PxU32 nbContacts) 
 		: zero(0.f)
-	{		
+	{
 		bool modify = false;
 		bool compressedModify = false;
 		bool response = false;

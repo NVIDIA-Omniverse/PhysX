@@ -125,7 +125,7 @@ class FastXml
 		virtual bool processDoctype(const char* /*rootElement*/, // Root element tag
 		                            const char* /*type*/,        // SYSTEM or PUBLIC
 		                            const char* /*fpi*/,         // Formal Public Identifier
-		                            const char* /*uri*/)         // Path to schema file
+		                            const char* /*uri*/) // Path to schema file
 		{
 			return true;
 		}

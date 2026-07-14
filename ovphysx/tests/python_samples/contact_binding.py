@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
-# NOTE: This file is included verbatim in documentation.
-# When editing, keep tutorial line ranges in sync.
+# NOTE: This file is included verbatim in documentation via literalinclude.
+# Markers [tutorial-*] define the included ranges.
 """
 ContactBinding sample: reading contact forces between sensor and filter bodies.
 
@@ -86,9 +86,10 @@ def main():
     # cb2 is automatically destroyed here
     # [tutorial-context-manager-end]
 
-    physx.release()
+    print("Contact binding sample completed successfully")
 
-    print("[SUCCESS]", flush=True)
+    physx.release()
+    print("Cleanup complete")
 
 
 if __name__ == "__main__":

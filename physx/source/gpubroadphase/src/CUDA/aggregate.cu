@@ -656,7 +656,7 @@ extern "C" __global__ void doSelfCollision(
 		if (threadIdx.x == 0)
 		{
 			agg.prevComparisons = totalCount;
-		}	
+		}
 	}
 }
 

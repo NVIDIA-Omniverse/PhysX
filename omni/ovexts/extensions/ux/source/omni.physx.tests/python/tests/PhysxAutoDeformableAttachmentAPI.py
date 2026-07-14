@@ -1,0 +1,782 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+#
+
+import carb
+import omni.kit.test
+import omni.kit.commands
+from pxr import Gf, Sdf, Vt, UsdGeom, Usd, UsdPhysics, UsdLux, PhysxSchema
+import omni.physx
+from omni.physxcommands import AddGroundPlaneCommand, SetRigidBodyCommand, SetStaticColliderCommand
+from omni.physxtests import utils
+from omni.physx import get_physx_interface, get_physx_cooking_interface
+from omni.physxui import get_physxui_interface
+import unittest
+from omni.physxtests.utils.physicsBase import PhysicsBaseAsyncTestCase, TestCategory, PhysicsKitStageAsyncTestCase, PhysicsMemoryStageBaseAsyncTestCase
+from omni.physxtests.utils.embeddedData import EmbeddedData
+import omni.usd
+from omni.physx.scripts import particleUtils, deformableUtils, physicsUtils, deformableMeshUtils
+import omni.physx.scripts.utils as core_utils
+from omni.usd.commands.usd_commands import DeletePrimsCommand
+from omni.physx.scripts.ifaces import get_physx_attachment_private_interface
+
+def set_prim_translation(prim: Usd.Prim, translate_vec: Gf.Vec3d):
+    xform = UsdGeom.Xformable(prim)
+    
+    # Check if a translate XformOp already exists
+    translate_ops = [op for op in xform.GetOrderedXformOps() 
+                    if op.GetOpType() == UsdGeom.XformOp.TypeTranslate]
+    
+    if translate_ops:
+        translate_op = translate_ops[0]
+    else:
+        # Create a new translate XformOp if none is found
+        translate_op = xform.AddTranslateOp()
+    
+    translate_op.Set(translate_vec)
+
+def create_transform(translate = Gf.Vec3d(0.0),
+                                    rotate = Gf.Rotation(Gf.Quatd(1.0)),
+                                    scale = Gf.Vec3d(1.0),
+                                    pivot_pos = Gf.Vec3d(0.0),
+                                    pivot_orient = Gf.Rotation(Gf.Quatd(1.0))):
+    return Gf.Transform(translate, rotate, scale, pivot_pos, pivot_orient)
+
+def setup_cube_trimesh(stage, path, transform: Gf.Transform, dim: int):
+    tri_points, tri_indices = deformableMeshUtils.createTriangleMeshCube(dim)
+    skinmesh = UsdGeom.Mesh.Define(stage, path)
+    skinmesh.AddTransformOp().Set(transform.GetMatrix())
+    skinmesh.GetPointsAttr().Set(tri_points)
+    skinmesh.GetFaceVertexCountsAttr().Set([3]*(len(tri_indices)//3))
+    skinmesh.GetFaceVertexIndicesAttr().Set(tri_indices)
+    return skinmesh
+
+def create_cube_mesh_prim(stage, path : Sdf.Path) -> list:
+    transform = create_transform()
+    mesh = setup_cube_trimesh(stage, path, transform, 2)
+    return mesh
+
+def create_deformable_actor(stage, deformable_type, starting_height = 0.0):
+    root_path = Sdf.Path(omni.usd.get_stage_next_free_path(stage, "/deformable", True))
+    xform = UsdGeom.Xform.Define(stage, root_path)
+    xform.AddTransformOp().Set(create_transform().GetMatrix())
+    mesh_path = Sdf.Path(omni.usd.get_stage_next_free_path(stage, str(root_path) + "/Cube", True))
+    mesh = create_cube_mesh_prim(stage, mesh_path)
+
+    if deformable_type == 'volume':
+        sim_mesh_path = Sdf.Path(omni.usd.get_stage_next_free_path(stage, str(root_path) + "/sim_mesh", True))
+        coll_mesh_path = Sdf.Path(omni.usd.get_stage_next_free_path(stage, str(root_path) + "/coll_mesh", True))
+        success = deformableUtils.create_auto_volume_deformable_hierarchy(stage,
+            root_prim_path=root_path,
+            simulation_tetmesh_path=sim_mesh_path,
+            collision_tetmesh_path=coll_mesh_path,
+            cooking_src_mesh_path=mesh_path,
+            simulation_hex_mesh_enabled=True,
+            cooking_src_simplification_enabled=True
+        )
+    elif deformable_type == 'surface':
+        sim_mesh_path = Sdf.Path(omni.usd.get_stage_next_free_path(stage, str(root_path) + "/sim_mesh", True))
+        success = deformableUtils.create_auto_surface_deformable_hierarchy(stage,
+            root_prim_path=root_path,
+            simulation_mesh_path=sim_mesh_path,
+            cooking_src_mesh_path=mesh_path,
+            cooking_src_simplification_enabled=False
+        )
+
+    set_prim_translation(xform.GetPrim(), Gf.Vec3d(0, 0, starting_height))
+    get_physx_cooking_interface().cook_auto_deformable_body(str(root_path))
+    return xform
+
+def create_xform_actor(stage, xform_type, starting_height = 0.0, child_xform_height = 0.0):
+    xform_actor = None
+    starting_pos = Gf.Vec3d(0, 0, starting_height)
+
+    if 'mesh' in xform_type:
+        if 'parentXform' in xform_type:
+            path = Sdf.Path(omni.usd.get_stage_next_free_path(stage, "/xform/Cube", True))
+            xform_actor = create_cube_mesh_prim(stage, path)
+        else:
+            path = Sdf.Path(omni.usd.get_stage_next_free_path(stage, "/Cube", True))
+            xform_actor = create_cube_mesh_prim(stage, path)
+        set_prim_translation(xform_actor.GetPrim(), starting_pos)
+    elif 'shape' in xform_type:
+        if 'parentXform' in xform_type:
+            xform_actor = omni.physx.scripts.physicsUtils.add_cube(stage, "/xform/cubeShape", 1.0, starting_pos)
+        else:
+            xform_actor = omni.physx.scripts.physicsUtils.add_cube(stage, "/cubeShape", 1.0, starting_pos)
+    elif 'xform' in xform_type:
+        path = Sdf.Path(omni.usd.get_stage_next_free_path(stage, "/xform", True))
+        xform = UsdGeom.Xform.Define(stage, path)
+        xform.AddTransformOp().Set(create_transform().GetMatrix())
+        xform_actor = xform
+        set_prim_translation(xform_actor.GetPrim(), starting_pos)
+
+    if 'childXform' in xform_type:
+        path = Sdf.Path(omni.usd.get_stage_next_free_path(stage, str(xform_actor.GetPath()) + "/xform", True))
+        xform = UsdGeom.Xform.Define(stage, path)
+        xform_actor = xform
+        set_prim_translation(xform.GetPrim(), Gf.Vec3d(0, 0, child_xform_height))
+
+    if 'rigid' in xform_type:
+        core_utils.setRigidBody(prim=xform_actor.GetPrim(), approximationShape="convexHull", kinematic=True)
+    if 'collider' in xform_type:
+        core_utils.setStaticCollider(prim=xform_actor.GetPrim(), approximationShape="convexHull")
+
+    return xform_actor
+
+def setup_articulation_with_link(stage, fixed_base, attach_to_root, link_height,
+                                 articulation_root_path="/articulation"):
+    """Build a 2-link articulation and return the path to the link the deformable
+    should attach to.
+
+    The two links are connected by a fixed inboard joint so the chain is rigid.
+    A base anchor (articulation root joint for fixed_base=True, maximal fixed
+    joint for fixed_base=False) holds the chain in place regardless of base
+    type, which keeps the assertion ('deformable falls iff the attachment was
+    dropped') uniform across the fixed/free-base variants.
+
+    The link selected for attachment is positioned at link_height; the other link
+    is offset along Y so that it does not overlap the deformable.
+
+    Args:
+        stage: USD stage.
+        fixed_base: True for a fixed-base articulation (extra UsdPhysicsFixedJoint
+            from world to root link, ArticulationRootAPI on the parent xform);
+            False for a free base (ArticulationRootAPI on the root link itself).
+        attach_to_root: True to position the root link at link_height and return
+            its path; False to position the child link there instead.
+        link_height: World Z position of the link to attach to.
+        articulation_root_path: Prim path for the articulation Xform parent.
+
+    Returns:
+        Sdf.Path to the link to attach to.
+    """
+    art_root = UsdGeom.Xform.Define(stage, articulation_root_path)
+
+    root_link_path = articulation_root_path + "/rootLink"
+    child_link_path = articulation_root_path + "/childLink"
+
+    if attach_to_root:
+        root_pos = Gf.Vec3f(0, 0, link_height)
+        child_pos = Gf.Vec3f(0, 1.5, link_height)
+    else:
+        root_pos = Gf.Vec3f(0, 1.5, link_height)
+        child_pos = Gf.Vec3f(0, 0, link_height)
+
+    root_link = physicsUtils.add_rigid_box(
+        stage, root_link_path, size=Gf.Vec3f(1.0), position=root_pos)
+    child_link = physicsUtils.add_rigid_box(
+        stage, child_link_path, size=Gf.Vec3f(1.0), position=child_pos)
+
+    inner_joint = UsdPhysics.FixedJoint.Define(
+        stage, articulation_root_path + "/innerJoint")
+    inner_joint.CreateBody0Rel().SetTargets([root_link_path])
+    inner_joint.CreateBody1Rel().SetTargets([child_link_path])
+    # Make the joint frames coincide with the authored body poses so PhysX
+    # doesn't have to snap childLink onto rootLink at sim step 1. Without
+    # this, free-base + non-root-link deformable attachments destabilize on
+    # the snap (the attached link teleports, yanking the deformable).
+    inner_joint.CreateLocalPos1Attr().Set(root_pos - child_pos)
+
+    if fixed_base:
+        outer_joint = UsdPhysics.FixedJoint.Define(
+            stage, articulation_root_path + "/baseFixedJoint")
+        outer_joint.CreateBody1Rel().SetTargets([root_link_path])
+        UsdPhysics.ArticulationRootAPI.Apply(art_root.GetPrim())
+    else:
+        UsdPhysics.ArticulationRootAPI.Apply(root_link)
+        # Anchor the chain to world via a maximal fixed joint authored outside
+        # the articulation prim, otherwise the gravity-on deformable drags the
+        # unanchored chain down through the falls-iff-attachment-dropped check.
+        anchor_joint = UsdPhysics.FixedJoint.Define(
+            stage, omni.usd.get_stage_next_free_path(stage, "/worldAnchor", True))
+        anchor_joint.CreateBody1Rel().SetTargets([root_link_path])
+        # Joint frame on world (body0) coincides with root_link's authored
+        # position; default localPos0=(0,0,0) would yank root_link to origin.
+        anchor_joint.CreateLocalPos0Attr().Set(root_pos)
+
+    return Sdf.Path(root_link_path if attach_to_root else child_link_path)
+
+def start():
+    physx_interface = get_physx_interface()
+    physx_interface.start_simulation()
+
+class PhysicsDeformableAttachmentTestAsyncKitStage(PhysicsKitStageAsyncTestCase, PhysicsBaseAsyncTestCase):
+    category = TestCategory.Kit
+
+    # runs before each test case
+    async def setUp(self):
+        await super().setUp()
+
+    # runs after each test case:
+    async def tearDown(self):
+        omni.kit.commands.execute("SelectPrims", old_selected_paths=[], new_selected_paths=[], expand_in_stage=False)
+        await super().tearDown()
+
+    async def base_setup(self):
+        self._stage = await utils.new_stage_setup(def_up_and_mpu=True, up=UsdGeom.Tokens.z, mpu=1.0)
+        sphereLight = UsdLux.SphereLight.Define(self._stage, Sdf.Path("/SphereLight"))
+        sphereLight.CreateRadiusAttr(150)
+        sphereLight.CreateIntensityAttr(30000)
+        sphereLight.AddTranslateOp().Set(Gf.Vec3f(650.0, 0.0, 1150.0))
+
+        self._upAxis = UsdGeom.GetStageUpAxis(self._stage)
+        self._defaultPrimPath = self._stage.GetDefaultPrim().GetPath()
+
+        # add physics scene
+        core_utils.addPhysicsScene(stage=self._stage, path='/World/PhysicsScene')
+
+    @staticmethod
+    def _get_time_step():
+        return 1.0 / 60.0
+
+    def _step(self, numSteps):
+        physx_interface = get_physx_interface()
+        time = 0.0
+        dtime = self._get_time_step()
+        for i in range(numSteps):
+            physx_interface.update_simulation(dtime, time)
+            physx_interface.update_transformations(True, True, True, False)
+            time = time + dtime
+
+    async def do_delete_undo(self, target_path: Sdf.Path, deformable_sim: UsdGeom.PointBased, starting_height):
+        # delete attachment
+        deletePrimsCmd = DeletePrimsCommand(paths=[target_path])
+        deletePrimsCmd.do()
+
+        self._step(30)
+
+        # target removed, deformable will fall to the ground
+        translate_height = core_utils.get_world_position(self._stage, deformable_sim.GetPath())[2]
+        self.assertTrue(translate_height < (starting_height / 2.0))
+
+        deletePrimsCmd.undo()
+        await self.wait(1)
+
+        self._step(50)
+
+        # target restored, deformable will reattach to xform actor
+        translate_height = core_utils.get_world_position(self._stage, deformable_sim.GetPath())[2]
+        self.assertTrue(translate_height > (starting_height / 2.0))
+
+
+    async def test_vtx_xform_attachments_basic(self):
+    # Attachments are connected directly to the rigidbody/collider
+        for test_type in ['delete_undo_attachment', 'delete_undo_xform_actor', 'undo_redo']:
+            for deformable_type in ['volume', 'surface']:
+                for xform_type in ['mesh_rigid', 'mesh_collider', 'shape_rigid', 'shape_collider', 'xform']:
+                    await self.base_setup()
+                    starting_height = 1.7
+
+                    deformable_actor = create_deformable_actor(self._stage, deformable_type, starting_height)
+                    translate_vec = deformable_actor.ComputeLocalToWorldTransform(Usd.TimeCode.Default()).ExtractTranslation()
+                    self.assertTrue(translate_vec[2] == starting_height)
+                    deformable_sim = UsdGeom.PointBased(self._stage.GetPrimAtPath(str(deformable_actor.GetPath()) + "/sim_mesh"))
+
+                    xform_actor = create_xform_actor(self._stage, xform_type, starting_height + 0.6)
+
+                    target_attachment_path = Sdf.Path(omni.usd.get_stage_next_free_path(self._stage, "/deformableAttachment", True))
+                    omni.kit.commands.execute("CreateAutoDeformableAttachment",
+                                                target_attachment_path=target_attachment_path,
+                                                attachable0_path=deformable_actor.GetPath(),
+                                                attachable1_path=xform_actor.GetPath())
+
+                    await self.wait(1)
+
+                    start()
+                    self._step(30)
+
+                    if test_type == 'delete_undo_attachment':
+                        await self.do_delete_undo(target_attachment_path, deformable_sim, starting_height)
+                    elif test_type == 'delete_undo_xform_actor':
+                        await self.do_delete_undo(xform_actor.GetPath(), deformable_sim, starting_height)
+                    elif test_type == 'undo_redo':
+                        # test undo and redo
+                        # this test is an edge case because this sequence of events is highly unusual
+                        omni.kit.undo.undo()
+                        await self.wait(1)
+
+                        self._step(30)
+
+                        # undo attachment, deformable will fall to the ground
+                        translate_vec = core_utils.get_world_position(self._stage, deformable_sim.GetPath())
+                        self.assertTrue(translate_vec[2] < (starting_height / 2.0))
+
+                        omni.kit.undo.redo()
+                        await self.wait(1)
+
+                        self._step(30)
+
+                        # redo attachment, a new attachment is recreated based on the new position of the deformable
+                        # since the deformable has fallen too far from the xform actor, no attachment points are computed
+                        # the exception is attachment to a xform (world attachment) and in this case, the attachment points are computed based on the current position of the deformable actor
+                        translate_vec = core_utils.get_world_position(self._stage, deformable_sim.GetPath())
+                        if xform_type == 'xform':
+                            self.assertTrue(translate_vec[2] > 0)
+                        else:
+                            self.assertTrue(translate_vec[2] < 0)
+
+
+    async def test_vtx_xform_attachments_with_child_xform(self):
+    # Attachments are connected to a child xform of the rigidbody/collider
+        for test_type in ['delete_undo_attachment', 'delete_undo_xform_actor']:
+            for deformable_type in ['volume', 'surface']:
+                for xform_type in ['mesh_rigid_childXform', 'mesh_collider_childXform', 'shape_rigid_childXform', 'shape_collider_childXform']:
+                    await self.base_setup()
+                    starting_height = 1.7
+
+                    deformable_actor = create_deformable_actor(self._stage, deformable_type, starting_height)
+                    translate_vec = deformable_actor.ComputeLocalToWorldTransform(Usd.TimeCode.Default()).ExtractTranslation()
+                    self.assertTrue(translate_vec[2] == starting_height)
+                    deformable_sim = UsdGeom.PointBased(self._stage.GetPrimAtPath(str(deformable_actor.GetPath()) + "/sim_mesh"))
+
+                    xform_actor = create_xform_actor(self._stage, xform_type, starting_height + 130, child_xform_height = -1)
+
+                    target_attachment_path = Sdf.Path(omni.usd.get_stage_next_free_path(self._stage, "/deformableAttachment", True))
+                    deformableUtils.create_auto_deformable_attachment(self._stage,
+                                                target_attachment_path=target_attachment_path,
+                                                attachable0_path=deformable_actor.GetPath(),
+                                                attachable1_path=xform_actor.GetPath())
+                    physx_attachment_private_interface = get_physx_attachment_private_interface()
+                    physx_attachment_private_interface.update_auto_deformable_attachment(str(target_attachment_path))
+
+                    await self.wait(1)
+
+                    start()
+                    self._step(30)
+
+                    if test_type == 'delete_undo_attachment':
+                        await self.do_delete_undo(target_attachment_path, deformable_sim, starting_height)
+                    elif test_type == 'delete_undo_xform_actor':
+                        await self.do_delete_undo(xform_actor.GetPath(), deformable_sim, starting_height)
+
+
+    async def test_vtx_xform_attachments_rigid_with_multiple_colliders(self):
+    # Attachments are connected to a collider of a rigidbody with multiple colliders
+        for test_type in ['delete_undo_attachment', 'delete_undo_xform_actor']:
+            for deformable_type in ['volume', 'surface']:
+                for collider0_type in ['shape_collider_parentXform', 'mesh_collider_parentXform']:
+                    for collider1_type in ['shape_collider_parentXform', 'mesh_collider_parentXform']:
+                        await self.base_setup()
+                        starting_height = 1.7
+
+                        deformable_actor = create_deformable_actor(self._stage, deformable_type, starting_height)
+                        translate_vec = deformable_actor.ComputeLocalToWorldTransform(Usd.TimeCode.Default()).ExtractTranslation()
+                        self.assertTrue(translate_vec[2] == starting_height)
+                        deformable_sim = UsdGeom.PointBased(self._stage.GetPrimAtPath(str(deformable_actor.GetPath()) + "/sim_mesh"))
+
+                        root_actor = create_xform_actor(self._stage, 'xform_rigid', 0)
+                        non_attached_actor = create_xform_actor(self._stage, collider0_type, starting_height + 1.8)
+                        xform_actor = create_xform_actor(self._stage, collider1_type, starting_height + 0.6)
+
+                        target_attachment_path = Sdf.Path(omni.usd.get_stage_next_free_path(self._stage, "/deformableAttachment", True))
+                        deformableUtils.create_auto_deformable_attachment(self._stage,
+                                                    target_attachment_path=target_attachment_path,
+                                                    attachable0_path=deformable_actor.GetPath(),
+                                                    attachable1_path=xform_actor.GetPath())
+                        physx_attachment_private_interface = get_physx_attachment_private_interface()
+                        physx_attachment_private_interface.update_auto_deformable_attachment(str(target_attachment_path))
+
+                        await self.wait(1)
+
+                        start()
+                        self._step(30)
+
+                        if test_type == 'delete_undo_attachment':
+                            await self.do_delete_undo(target_attachment_path, deformable_sim, starting_height)
+                        elif test_type == 'delete_undo_xform_actor':
+                            await self.do_delete_undo(xform_actor.GetPath(), deformable_sim, starting_height)
+
+
+    async def test_deformable_deformable_attachments(self):
+        for test_type in ['delete_undo_attachment', 'delete_undo_deformable_actor']:
+            for deformable0_type in ['volume', 'surface']:
+                for deformable1_type in ['volume', 'surface']:
+                    # surface/surface attachment is not supported yet
+                    if deformable0_type == 'surface' and deformable1_type == 'surface':
+                        continue
+
+                    await self.base_setup()
+                    starting_height = 1.7
+
+                    deformable0_actor = create_deformable_actor(self._stage, deformable0_type, starting_height + 1.0)
+                    deformable1_actor = create_deformable_actor(self._stage, deformable1_type, starting_height)
+                    #set smaller mass for bottom deformable, so we don't get that much stretching
+                    deformable0_actor.GetPrim().GetAttribute("omniphysics:mass").Set(1.0)
+                    deformable1_actor.GetPrim().GetAttribute("omniphysics:mass").Set(0.1)
+                    translate_vec = deformable1_actor.ComputeLocalToWorldTransform(Usd.TimeCode.Default()).ExtractTranslation()
+                    self.assertTrue(translate_vec[2] == starting_height)
+                    deformable1_sim = UsdGeom.PointBased(self._stage.GetPrimAtPath(str(deformable1_actor.GetPath()) + "/sim_mesh"))
+
+                    xform_actor = create_xform_actor(self._stage, 'xform', starting_height + 1.5)
+
+                    xform_attachment_path = Sdf.Path(omni.usd.get_stage_next_free_path(self._stage, "/xformAttachment", True))
+                    deformableUtils.create_auto_deformable_attachment(self._stage,
+                                                target_attachment_path=xform_attachment_path,
+                                                attachable0_path=deformable0_actor.GetPath(),
+                                                attachable1_path=xform_actor.GetPath())
+                    physx_attachment_private_interface = get_physx_attachment_private_interface()
+                    physx_attachment_private_interface.update_auto_deformable_attachment(str(xform_attachment_path))
+
+                    deformable_attachment_path = Sdf.Path(omni.usd.get_stage_next_free_path(self._stage, "/deformableAttachment", True))
+                    deformableUtils.create_auto_deformable_attachment(self._stage,
+                                                target_attachment_path=deformable_attachment_path,
+                                                attachable0_path=deformable0_actor.GetPath(),
+                                                attachable1_path=deformable1_actor.GetPath())
+                    physx_attachment_private_interface = get_physx_attachment_private_interface()
+                    physx_attachment_private_interface.update_auto_deformable_attachment(str(deformable_attachment_path))
+
+                    # set attachment offset
+                    scope = UsdGeom.Scope.Define(self._stage, deformable_attachment_path)
+                    scope.GetPrim().ApplyAPI("PhysxAutoDeformableAttachmentAPI")
+                    scope.GetPrim().GetAttribute("physxAutoDeformableAttachment:deformableVertexOverlapOffset").Set(0.01)
+                    scope.GetPrim().GetAttribute("physxAutoDeformableAttachment:collisionFilteringOffset").Set(0.5)
+                    await self.wait(1)
+
+                    start()
+                    self._step(30)
+
+                    if test_type == 'delete_undo_attachment':
+                        await self.do_delete_undo(deformable_attachment_path, deformable1_sim, starting_height)
+                    elif test_type == 'delete_undo_deformable_actor':
+                        await self.do_delete_undo(deformable0_actor.GetPath(), deformable1_sim, starting_height)
+
+#class PhysicsDeformableAttachmentTestAsyncDebugStage(PhysicsKitStageAsyncTestCase, PhysicsBaseAsyncTestCase):
+class PhysicsDeformableAttachmentTestAsyncMemoryStage(PhysicsMemoryStageBaseAsyncTestCase, PhysicsBaseAsyncTestCase):
+    category = TestCategory.Kit
+
+    async def new_stage(self):
+        class_name = self.__class__.__name__
+        if class_name == 'PhysicsDeformableAttachmentTestAsyncDebugStage':
+            return await utils.new_stage_setup(def_up_and_mpu=True, up=UsdGeom.Tokens.z, mpu=1.0)
+        else:
+            return await super().new_stage(def_up_and_mpu=True, up=UsdGeom.Tokens.z, mpu=1.0, attach_stage=False)
+
+    async def _step(self, num_steps):
+        class_name = self.__class__.__name__
+        if class_name == 'PhysicsDeformableAttachmentTestAsyncDebugStage':
+            await utils.play_and_step_and_pause(self, num_steps)
+        else:
+            super().step(num_steps=num_steps)
+
+    # runs before each test case
+    async def setUp(self):
+        await super().setUp()
+
+    # runs after each test case:
+    async def tearDown(self):
+        await super().tearDown()
+
+    async def base_setup(self):
+        self._stage = await self.new_stage()
+
+        self._upAxis = UsdGeom.GetStageUpAxis(self._stage)
+
+        # add physics scene
+        core_utils.addPhysicsScene(stage=self._stage, path='/World/PhysicsScene')
+
+        class_name = self.__class__.__name__
+        if class_name != 'PhysicsDeformableAttachmentTestAsyncDebugStage':
+            self.attach_stage()
+
+    async def test_vtx_xform_attachments_basic(self):
+    # Attachments are connected directly to the rigidbody/collider
+        for test_type in ['attachment', 'move']:
+            for deformable_type in ['volume', 'surface']:
+                for xform_type in ['mesh_rigid', 'mesh_collider', 'shape_rigid', 'shape_collider', 'xform']:
+                    await self.base_setup()
+                    starting_height = 1.7
+
+                    deformable_actor = create_deformable_actor(self._stage, deformable_type, starting_height)
+                    translate_vec = deformable_actor.ComputeLocalToWorldTransform(Usd.TimeCode.Default()).ExtractTranslation()
+                    self.assertTrue(translate_vec[2] == starting_height)
+                    deformable_sim = UsdGeom.PointBased(self._stage.GetPrimAtPath(str(deformable_actor.GetPath()) + "/sim_mesh"))
+
+                    xform_actor = create_xform_actor(self._stage, xform_type, starting_height + 0.6)
+
+                    target_attachment_path = Sdf.Path(omni.usd.get_stage_next_free_path(self._stage, "/deformableAttachment", True))
+                    deformableUtils.create_auto_deformable_attachment(self._stage,
+                                                target_attachment_path=target_attachment_path,
+                                                attachable0_path=deformable_actor.GetPath(),
+                                                attachable1_path=xform_actor.GetPath())
+                    physx_attachment_private_interface = get_physx_attachment_private_interface()
+                    physx_attachment_private_interface.update_auto_deformable_attachment(str(target_attachment_path))
+
+                    await self.wait(1)
+
+                    start()
+                    await self._step(30)
+
+                    if test_type == 'attachment':
+                        # if the deformable is attached, it will not fall to the ground
+                        translate_vec = core_utils.get_world_position(self._stage, deformable_sim.GetPath())
+                        self.assertTrue(translate_vec[2] > (starting_height / 2.0))
+                    elif test_type == 'move':
+                        # move xform actor
+                        move_delta = 0.5
+                        set_prim_translation(xform_actor.GetPrim(), Gf.Vec3d(move_delta, 0, starting_height + 0.6))
+
+                        await self._step(50)
+
+                        # if the deformable is attached, it will move with the xform actor
+                        translate_vec = core_utils.get_world_position(self._stage, deformable_sim.GetPath())
+                        self.assertTrue(translate_vec[0] > (move_delta / 2.0))
+
+
+    async def test_vtx_xform_attachments_with_child_xform(self):
+    # Attachments are connected to a child xform of the rigidbody/collider
+        for test_type in ['attachment', 'move']:
+            for deformable_type in ['volume', 'surface']:
+                for xform_type in ['mesh_rigid_childXform', 'mesh_collider_childXform', 'shape_rigid_childXform', 'shape_collider_childXform']:
+                    await self.base_setup()
+                    starting_height = 1.7
+
+                    deformable_actor = create_deformable_actor(self._stage, deformable_type, starting_height)
+                    translate_vec = deformable_actor.ComputeLocalToWorldTransform(Usd.TimeCode.Default()).ExtractTranslation()
+                    self.assertTrue(translate_vec[2] == starting_height)
+                    deformable_sim = UsdGeom.PointBased(self._stage.GetPrimAtPath(str(deformable_actor.GetPath()) + "/sim_mesh"))
+
+                    xform_actor = create_xform_actor(self._stage, xform_type, starting_height + 130, child_xform_height = -1)
+
+                    target_attachment_path = Sdf.Path(omni.usd.get_stage_next_free_path(self._stage, "/deformableAttachment", True))
+                    deformableUtils.create_auto_deformable_attachment(self._stage,
+                                                target_attachment_path=target_attachment_path,
+                                                attachable0_path=deformable_actor.GetPath(),
+                                                attachable1_path=xform_actor.GetPath())
+                    physx_attachment_private_interface = get_physx_attachment_private_interface()
+                    physx_attachment_private_interface.update_auto_deformable_attachment(str(target_attachment_path))
+
+                    await self.wait(1)
+
+                    start()
+                    await self._step(30)
+
+                    if test_type == 'attachment':
+                        # if the deformable is attached, it will not fall to the ground
+                        translate_vec = core_utils.get_world_position(self._stage, deformable_sim.GetPath())
+                        self.assertTrue(translate_vec[2] > (starting_height / 2.0))
+                    elif test_type == 'move':
+                        # move xform actor
+                        move_delta = 0.5
+                        set_prim_translation(xform_actor.GetPrim(), Gf.Vec3d(move_delta, 0, -1))
+
+                        await self._step(50)
+
+                        # if the deformable is attached, it will move with the xform actor
+                        translate_vec = core_utils.get_world_position(self._stage, deformable_sim.GetPath())
+                        self.assertTrue(translate_vec[0] > (move_delta / 2.0))
+
+                        # move parent actor
+                        move_delta = 0.5
+                        set_prim_translation(xform_actor.GetPrim().GetParent().GetPrim(), Gf.Vec3d(move_delta, 0, starting_height + 1.3))
+
+                        await self._step(50)
+
+                        # if the deformable is attached, it will move with the parent actor
+                        translate_vec = core_utils.get_world_position(self._stage, deformable_sim.GetPath())
+                        self.assertTrue(translate_vec[0] > move_delta)
+
+
+    async def test_vtx_xform_attachments_rigid_with_multiple_colliders(self):
+    # Attachments are connected to a collider of a rigidbody with multiple colliders
+        for test_type in ['attachment', 'move']:
+            for deformable_type in ['volume', 'surface']:
+                for collider0_type in ['shape_collider_parentXform', 'mesh_collider_parentXform']:
+                    for collider1_type in ['shape_collider_parentXform', 'mesh_collider_parentXform']:
+                        await self.base_setup()
+                        starting_height = 1.7
+
+                        deformable_actor = create_deformable_actor(self._stage, deformable_type, starting_height)
+                        translate_vec = deformable_actor.ComputeLocalToWorldTransform(Usd.TimeCode.Default()).ExtractTranslation()
+                        self.assertTrue(translate_vec[2] == starting_height)
+                        deformable_sim = UsdGeom.PointBased(self._stage.GetPrimAtPath(str(deformable_actor.GetPath()) + "/sim_mesh"))
+
+                        root_actor = create_xform_actor(self._stage, 'xform_rigid', 0)
+                        non_attached_actor = create_xform_actor(self._stage, collider0_type, starting_height + 1.8)
+                        xform_actor = create_xform_actor(self._stage, collider1_type, starting_height + 0.6)
+
+                        target_attachment_path = Sdf.Path(omni.usd.get_stage_next_free_path(self._stage, "/deformableAttachment", True))
+                        deformableUtils.create_auto_deformable_attachment(self._stage,
+                                                    target_attachment_path=target_attachment_path,
+                                                    attachable0_path=deformable_actor.GetPath(),
+                                                    attachable1_path=xform_actor.GetPath())
+                        physx_attachment_private_interface = get_physx_attachment_private_interface()
+                        physx_attachment_private_interface.update_auto_deformable_attachment(str(target_attachment_path))
+
+                        await self.wait(1)
+
+                        start()
+                        await self._step(30)
+
+                        if test_type == 'attachment':
+                            # if the deformable is attached, it will not fall to the ground
+                            translate_vec = core_utils.get_world_position(self._stage, deformable_sim.GetPath())
+                            self.assertTrue(translate_vec[2] > (starting_height / 2.0))
+                        elif test_type == 'move':
+                            # move xform actor
+                            translate_mtx = Gf.Matrix4d()
+                            if 'shape' in collider1_type:
+                                translate_mtx.SetScale(Gf.Vec3d(1.0))
+                            move_delta = 0.5
+                            set_prim_translation(xform_actor.GetPrim(), Gf.Vec3d(move_delta, 0, starting_height + 0.6))
+
+                            await self._step(50)
+
+                            # if the deformable is attached, it will move with the xform actor
+                            translate_vec = core_utils.get_world_position(self._stage, deformable_sim.GetPath())
+                            self.assertTrue(translate_vec[0] > (move_delta / 2.0))
+
+                            # move root actor
+                            move_delta = 0.5
+                            set_prim_translation(root_actor.GetPrim(), Gf.Vec3d(move_delta, 0, 0))
+
+                            await self._step(50)
+
+                            # if the deformable is attached, it will move with the root actor
+                            translate_vec = core_utils.get_world_position(self._stage, deformable_sim.GetPath())
+                            self.assertTrue(translate_vec[0] > move_delta)
+
+                            # move collider 0 which should not have any effect on attachment points
+                            if 'shape' in collider0_type:
+                                translate_mtx.SetScale(Gf.Vec3d(1.0))
+                            move_negative_delta = -1.0
+                            set_prim_translation(non_attached_actor.GetPrim(), Gf.Vec3d(move_negative_delta, 0, starting_height + 1.8))
+
+                            await self._step(50)
+
+                            # if the deformable is attached, it will not move with the non attached actor
+                            translate_vec = core_utils.get_world_position(self._stage, deformable_sim.GetPath())
+                            self.assertTrue(translate_vec[0] > move_delta)
+
+
+    async def test_deformable_deformable_attachments(self):
+        for test_type in ['attachment']:
+            for deformable0_type in ['volume', 'surface']:
+                for deformable1_type in ['volume', 'surface']:
+                    # surface/surface attachment is not supported yet
+                    if deformable0_type == 'surface' and deformable1_type == 'surface':
+                        continue
+
+                    await self.base_setup()
+                    starting_height = 1.7
+
+                    deformable0_actor = create_deformable_actor(self._stage, deformable0_type, starting_height + 1.0)
+                    deformable1_actor = create_deformable_actor(self._stage, deformable1_type, starting_height)
+                    #set smaller mass for bottom deformable, so we don't get that much stretching
+                    deformable0_actor.GetPrim().GetAttribute("omniphysics:mass").Set(1.0)
+                    deformable1_actor.GetPrim().GetAttribute("omniphysics:mass").Set(0.1)
+                    translate_vec = deformable1_actor.ComputeLocalToWorldTransform(Usd.TimeCode.Default()).ExtractTranslation()
+                    self.assertTrue(translate_vec[2] == starting_height)
+                    deformable1_sim = UsdGeom.PointBased(self._stage.GetPrimAtPath(str(deformable1_actor.GetPath()) + "/sim_mesh"))
+
+                    xform_actor = create_xform_actor(self._stage, 'xform', starting_height + 1.5)
+
+                    xform_attachment_path = Sdf.Path(omni.usd.get_stage_next_free_path(self._stage, "/xformAttachment", True))
+                    deformableUtils.create_auto_deformable_attachment(self._stage,
+                                                target_attachment_path=xform_attachment_path,
+                                                attachable0_path=deformable0_actor.GetPath(),
+                                                attachable1_path=xform_actor.GetPath())
+                    physx_attachment_private_interface = get_physx_attachment_private_interface()
+                    physx_attachment_private_interface.update_auto_deformable_attachment(str(xform_attachment_path))
+
+                    deformable_attachment_path = Sdf.Path(omni.usd.get_stage_next_free_path(self._stage, "/deformableAttachment", True))
+                    deformableUtils.create_auto_deformable_attachment(self._stage,
+                                                target_attachment_path=deformable_attachment_path,
+                                                attachable0_path=deformable0_actor.GetPath(),
+                                                attachable1_path=deformable1_actor.GetPath())
+                    physx_attachment_private_interface = get_physx_attachment_private_interface()
+                    physx_attachment_private_interface.update_auto_deformable_attachment(str(deformable_attachment_path))
+
+                    # set attachment offset
+                    scope = UsdGeom.Scope.Define(self._stage, deformable_attachment_path)
+                    scope.GetPrim().ApplyAPI("PhysxAutoDeformableAttachmentAPI")
+                    scope.GetPrim().GetAttribute("physxAutoDeformableAttachment:deformableVertexOverlapOffset").Set(0.01)
+                    scope.GetPrim().GetAttribute("physxAutoDeformableAttachment:collisionFilteringOffset").Set(0.5)
+                    await self.wait(1)
+
+                    start()
+                    await self._step(30)
+
+                    if test_type == 'attachment':
+                        # if the deformable is attached, it will not fall to the ground
+                        translate_vec = core_utils.get_world_position(self._stage, deformable1_sim.GetPath())
+                        self.assertTrue(translate_vec[2] > (starting_height / 3.0))
+
+
+    async def test_vtx_xform_attachments_articulation_link(self):
+        # Regression for OMPE-92466: attaching a deformable to a UsdPhysics
+        # articulation link silently failed to instantiate. Pre-fix,
+        # InternalDeformableAttachment::InternalDeformableAttachment resolved
+        # mInternalScene through mData[1].actor->getScene(). For an articulation
+        # link, getScene() returns null until finalizeArticulations runs - which
+        # happens AFTER createDeformableAttachments during stage load - so
+        # mInternalScene stayed null, isValid() short-circuited to false, and the
+        # attachment was SAFE_DELETEd before reaching the SDK. The deformable
+        # then just free-fell.
+        #
+        # The bug only reproduces during batch stage load (UsdLoad::update()
+        # processes deformables and articulation links in step (1) and
+        # finalizeArticulations runs in step (2)), so this test authors all the
+        # entities on a base_setup() stage and then forces a detach + re-attach
+        # to drive the batch-load path with everything present. Variants per the
+        # OMPE-92466 review:
+        #   - fixed base    vs free base
+        #   - root link     vs non-root link
+        starting_height = 1.7
+        for fixed_base in [True, False]:
+            for attach_to_root in [True, False]:
+                with self.subTest(fixed_base=fixed_base, attach_to_root=attach_to_root):
+                    # Phase 1: incrementally author the stage so cook_auto_deformable_body
+                    # and auto-attachment sample-point computation can run against an
+                    # attached stage. The bug does not manifest here (entities arrive via
+                    # individual change-tracking notifications, not batch load).
+                    await self.base_setup()
+
+                    deformable_actor = create_deformable_actor(self._stage, 'volume', starting_height)
+                    deformable_sim = UsdGeom.PointBased(
+                        self._stage.GetPrimAtPath(str(deformable_actor.GetPath()) + "/sim_mesh"))
+
+                    link_path = setup_articulation_with_link(
+                        self._stage,
+                        fixed_base=fixed_base,
+                        attach_to_root=attach_to_root,
+                        link_height=starting_height + 0.6)
+
+                    target_attachment_path = Sdf.Path(
+                        omni.usd.get_stage_next_free_path(self._stage, "/deformableAttachment", True))
+                    deformableUtils.create_auto_deformable_attachment(
+                        self._stage,
+                        target_attachment_path=target_attachment_path,
+                        attachable0_path=deformable_actor.GetPath(),
+                        attachable1_path=link_path)
+                    physx_attachment_private_interface = get_physx_attachment_private_interface()
+                    physx_attachment_private_interface.update_auto_deformable_attachment(
+                        str(target_attachment_path))
+
+                    await self.wait(1)
+
+                    # Phase 2: detach and re-attach with all entities already authored on
+                    # the stage. The re-attach goes through physXAttach() ->
+                    # UsdLoad::update() -> finishSetup(), which is the batch-load path
+                    # where InternalDeformableAttachment is constructed before the
+                    # articulation links are added to their PxScene - i.e. the
+                    # OMPE-92466 trigger.
+                    self.detach_stage()
+                    self.attach_stage()
+                    await self.wait(1)
+
+                    start()
+                    await self._step(30)
+
+                    # The chain is anchored to world (articulation root joint
+                    # for fixed_base=True, maximal fixed joint for
+                    # fixed_base=False), so it stays put regardless of base
+                    # type. If the attachment was created the deformable hangs
+                    # from a stationary link; if it was dropped at load time
+                    # the deformable free-falls.
+                    translate_vec = core_utils.get_world_position(self._stage, deformable_sim.GetPath())
+                    self.assertTrue(
+                        translate_vec[2] > (starting_height / 2.0),
+                        f"Deformable fell - attachment was likely dropped at load time "
+                        f"(fixed_base={fixed_base}, attach_to_root={attach_to_root}): "
+                        f"deformable_z={translate_vec[2]:.4f}")

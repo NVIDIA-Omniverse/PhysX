@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+
+# Per-project optimization overrides for debugging.
+#
+# Copy this file to cmake/UserOverrides.cmake (which is gitignored) and
+# uncomment the targets you want to build without optimization.
+#
+# When building Release, the listed targets will be compiled with -O0 -g
+# (GCC/Clang) or /Od (MSVC), making them debuggable while the rest of the
+# build stays fully optimized.
+#
+# This has no effect on Debug builds (already unoptimized).
+
+set(OVRUNTIME_DEBUG_TARGETS
+    # --- Libraries ---
+    # OvruntimeCommon
+    # OvruntimeConvexDecomposition
+    # OvruntimePhysXFoundation
+    # OvruntimeUsdPhysics
+    # OvruntimePhysXCooking
+    # OvruntimePhysX
+    # OvruntimePhysXFabric
+    # OvruntimePhysXTensors
+    # OvruntimePhysicsTensors
+    # OvruntimePhysicsPhysX
+
+    # --- Python bindings ---
+    # OvruntimeConvexDecompositionBindings
+    # OvruntimePhysXFoundationBindings
+    # OvruntimeUsdPhysicsBindings
+    # OvruntimePhysXCookingBindings
+    # OvruntimePhysXBindings
+    # OvruntimePhysicsTensorsBindings
+
+    # --- Tests ---
+    # OvruntimeUnitTests
+    # OvruntimeBenchmarks
+)

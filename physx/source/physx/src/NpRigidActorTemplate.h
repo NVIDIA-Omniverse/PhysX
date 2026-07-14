@@ -166,7 +166,7 @@ void NpRigidActorTemplate<APIClass>::resolveReferences(PxDeserializationContext&
 	const PxU32 nbShapes = mShapeManager.getNbShapes();
 	NpShape** shapes = const_cast<NpShape**>(mShapeManager.getShapes());
 	for(PxU32 j=0;j<nbShapes;j++)
-	{						
+	{
 		context.translatePxBase(shapes[j]);
 		shapes[j]->onActorAttach(*this);
 	}
@@ -219,9 +219,9 @@ bool NpRigidActorTemplate<APIClass>::attachShape(PxShape& shape)
 	NpShape& npShape = static_cast<NpShape&>(shape);
 	PX_CHECK_AND_RETURN_VAL(!static_cast<NpShape&>(shape).isExclusive() || shape.getActor()==NULL,
 		"PxRigidActor::attachShape: shape must be shared or unowned", false);
-	PX_CHECK_AND_RETURN_VAL(!(npShape.getCore().getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_VOLUME_SHAPE),
+	PX_CHECK_AND_RETURN_VAL(!(npShape.getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_VOLUME_SHAPE),
 		"PxRigidActor::attachShape() not allowed to attach a deformable volume shape to a rigid actor", false);
-	PX_CHECK_AND_RETURN_VAL(!(npShape.getCore().getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_SURFACE_SHAPE),
+	PX_CHECK_AND_RETURN_VAL(!(npShape.getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_SURFACE_SHAPE),
 		"PxRigidActor::attachShape() not allowed to attach a deformable surface shape to a rigid actor", false);
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(npScene, "PxRigidActor::attachShape() not allowed while simulation is running. Call will be ignored.", false);
@@ -303,7 +303,7 @@ PxBounds3 NpRigidActorTemplate<APIClass>::getWorldBounds(float inflation) const
 	NP_READ_CHECK(ActorTemplateClass::getNpScene());
 
 	PX_CHECK_SCENE_API_READ_FORBIDDEN_EXCEPT_COLLIDE_AND_RETURN_VAL(ActorTemplateClass::getNpScene(), "PxRigidActor::getWorldBounds() not allowed while simulation is running (except during PxScene::collide()).", PxBounds3::empty());
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	const PxBounds3 bounds = mShapeManager.getWorldBounds_(*this);
 	PX_ASSERT(bounds.isValid());

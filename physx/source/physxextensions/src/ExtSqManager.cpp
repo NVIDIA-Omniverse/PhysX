@@ -438,7 +438,7 @@ void ExtPrunerManager::addCompoundShape(const PxBVH& pxbvh, PrunerCompoundId com
 }
 
 void ExtPrunerManager::updateCompoundActor(PrunerCompoundId compoundId, const PxTransform& compoundTransform)
-{	
+{
 	PX_ASSERT(mCompoundPrunerExt.mPruner);
 	const bool isDynamic = mCompoundPrunerExt.mPruner->updateCompound(compoundId, compoundTransform);
 	if(!isDynamic)

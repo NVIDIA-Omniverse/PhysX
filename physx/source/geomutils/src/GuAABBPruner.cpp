@@ -224,7 +224,7 @@ bool AABBPruner::overlap(const ShapeData& queryVolume, PrunerOverlapCallback& pc
 			case PxGeometryType::eBOX:
 			{
 				if(queryVolume.isOBB())
-				{	
+				{
 					const DefaultOBBAABBTest test(queryVolume);
 					again = AABBTreeOverlap<true, OBBAABBTest, AABBTree, BVHNode, OverlapCallbackAdapter>()(mPool.getCurrentAABBTreeBounds(), *mAABBTree, test, pcb);
 				}

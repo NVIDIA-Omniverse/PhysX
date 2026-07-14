@@ -1870,7 +1870,7 @@ static __device__ void queryRigidSoftBodyContactReferenceCount(
 			FEMCollision<PxVec4> femCollision;
 			femCollision.isTGS = isTGS;
 
-			const int globalRigidBodyId = femCollision.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies);
+			const int globalRigidBodyId = femCollision.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies, artiCoreDesc->mMaxLinksPerArticulation);
 
 			const PxVec4 bcVec(bc.x, bc.y, bc.z, bc.w);
 			const PxVec4 deformableInvMasses = femCollision.readSoftBody(softbody, tetId, bc, NULL, checkOnlyActivity);
@@ -2009,7 +2009,7 @@ static __device__ void solveRigidSoftBodyContact(
 			FEMCollision<PxVec4> femCollision;
 			femCollision.isTGS = isTGS;
 
-			const int globalRigidBodyId = femCollision.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies);
+			const int globalRigidBodyId = femCollision.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies, artiCoreDesc->mMaxLinksPerArticulation);
 			PxVec3 deltaLinVel0(0.0f), deltaAngVel0(0.0f);
 			PxReal count = 0.0f;
 

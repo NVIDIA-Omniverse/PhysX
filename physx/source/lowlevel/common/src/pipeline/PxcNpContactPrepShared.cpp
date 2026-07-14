@@ -457,7 +457,7 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 						PxPrefetchLine(point, 128);
 					}
 					index = p.nextIndex;
-				}				
+				}
 			}
 		}
 	}

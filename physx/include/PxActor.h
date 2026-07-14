@@ -146,12 +146,6 @@ struct PxActorType
 		eDEFORMABLE_VOLUME,
 
 		/**
-		\brief Deprecated
-		\see eDEFORMABLE_VOLUME
-		*/
-		eSOFTBODY PX_DEPRECATED = eDEFORMABLE_VOLUME,
-
-		/**
 		\brief A PBD ParticleSystem
 		\see PxPBDParticleSystem
 		*/

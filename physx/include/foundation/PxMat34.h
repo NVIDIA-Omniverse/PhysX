@@ -60,7 +60,7 @@ class PxMat34T
 	//! Construct from Type[12]
 	explicit PX_CUDA_CALLABLE PX_FORCE_INLINE PxMat34T(Type values[]) :
 		m(values), p(values[9], values[10], values[11])
-	{		
+	{
 	}
 
 	//! Construct from a 3x3 matrix

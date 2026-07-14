@@ -195,11 +195,8 @@ public:
 	virtual		PxDeformableSurface*		createDeformableSurface(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
 	virtual		PxDeformableVolume*			createDeformableVolume(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
 	virtual		PxPBDParticleSystem*		createPBDParticleSystem(PxCudaContextManager& cudaContextManager, PxU32 maxNeighborhood, PxReal neighborhoodScale)	PX_OVERRIDE;
-	virtual		PxParticleBuffer*			createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
-	virtual		PxParticleAndDiffuseBuffer*	createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
-	virtual		PxParticleClothBuffer*		createParticleClothBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
-	virtual		PxParticleRigidBuffer*		createParticleRigidBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
-
+	virtual		PxParticleBuffer*			createParticleBuffer(PxU32 maxParticles, PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
+	virtual		PxParticleAndDiffuseBuffer*	createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
 	// Materials
 	virtual		PxMaterial*	createMaterial(PxReal staticFriction, PxReal dynamicFriction, PxReal restitution)	PX_OVERRIDE;
 	virtual		PxU32		getNbMaterials() const	PX_OVERRIDE;
@@ -346,9 +343,9 @@ private:
 	class OmniPvdListener : public physx::NpFactoryListener
 	{
 	public:
-		virtual void onMeshFactoryBufferRelease(const PxBase*, PxType) {}
-		virtual void onObjectAdd(const PxBase*);
-		virtual void onObjectRemove(const PxBase*);
+		virtual void onMeshFactoryBufferRelease(const PxBase*, PxType) PX_OVERRIDE {}
+		virtual void onObjectAdd(const PxBase*) PX_OVERRIDE;
+		virtual void onObjectRemove(const PxBase*) PX_OVERRIDE;
 	}
 	mOmniPvdListener;
 	private:

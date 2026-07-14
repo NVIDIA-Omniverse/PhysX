@@ -55,9 +55,9 @@ namespace physx
 			PxReal maxBiasCoefficient, PxvSimStats& simStats,
 			PxgAllocatorDesc& allocDesc, PxReal lengthScale, PxU64 contextID, PxSceneFlags sceneFlags);
 
-		virtual void						destroy();
+		virtual void						destroy() PX_OVERRIDE;
 
-		virtual PxSolverType::Enum			getSolverType()	const { return PxSolverType::ePGS; }
+		virtual PxSolverType::Enum			getSolverType()	const PX_OVERRIDE { return PxSolverType::ePGS; }
 	};
 }
 

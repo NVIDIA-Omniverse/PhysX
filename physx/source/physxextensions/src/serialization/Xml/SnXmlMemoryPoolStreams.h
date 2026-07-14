@@ -64,20 +64,20 @@ namespace physx {
 
 	template<>											
 	struct XmlDefaultValue<PxVec3>						
-	{													
-		PxVec3 getDefaultValue() { return PxVec3( 0,0,0 ); }	
+	{
+		PxVec3 getDefaultValue() { return PxVec3( 0,0,0 ); }
 	};
 	
 	template<>											
 	struct XmlDefaultValue<PxTransform>						
-	{													
-		PxTransform getDefaultValue() { return PxTransform(PxIdentity); }	
+	{
+		PxTransform getDefaultValue() { return PxTransform(PxIdentity); }
 	};
 
 	template<>											
 	struct XmlDefaultValue<PxQuat>	
-	{													
-		PxQuat getDefaultValue() { return PxQuat(PxIdentity); }	
+	{
+		PxQuat getDefaultValue() { return PxQuat(PxIdentity); }
 	};
 
 /** 
@@ -122,7 +122,7 @@ struct MemoryBufferBase : public PxOutputStream, public PxInputStream
 		mWriteOffset = mReadOffset = 0;
 	}
 
-	virtual PxU64 read(void* dest, PxU64 count)
+	virtual PxU64 read(void* dest, PxU64 count) PX_OVERRIDE
 	{
 		bool fits = ( mReadOffset + count ) <= mWriteOffset;
 		PX_ASSERT( fits );
@@ -152,7 +152,7 @@ struct MemoryBufferBase : public PxOutputStream, public PxInputStream
 		}
 	}
 
-	virtual PxU64 write(const void* src, PxU64 count)
+	virtual PxU64 write(const void* src, PxU64 count) PX_OVERRIDE
 	{
 		checkCapacity( mWriteOffset + count );
 		PxMemCopy( mBuffer + mWriteOffset, src, count );

@@ -36,10 +36,6 @@
 namespace physx
 {
 	class PxCudaContextManager;
-	struct PxParticleVolume;
-	struct PxParticleRigidFilterPair;
-	struct PxParticleRigidAttachment;
-
 	class PxsParticleBuffer
 	{
 	public:
@@ -48,21 +44,14 @@ namespace physx
 		virtual PxVec4* getPositionInvMassesD() const = 0;
 		virtual PxVec4* getVelocitiesD() const = 0;
 		virtual PxU32* getPhasesD() const = 0;
-		virtual PxParticleVolume* getParticleVolumesD() const = 0;
 
 		virtual PxVec4* getPositionInvMassesH() const = 0;
 		virtual PxVec4* getVelocitiesH() const = 0;
 		virtual PxU32* getPhasesH() const = 0;
-		virtual PxParticleVolume* getParticleVolumesH() const = 0;
 
 		virtual void setNbActiveParticles(PxU32 nbActiveParticles) = 0;
 		virtual PxU32 getNbActiveParticles() const = 0;
 		virtual PxU32 getMaxParticles() const = 0;
-		virtual PxU32 getNbParticleVolumes() const = 0;
-		virtual void setNbParticleVolumes(PxU32 nbParticleVolumes) = 0;
-		virtual PxU32 getMaxParticleVolumes() const = 0;
-		virtual void setRigidFilters(PxParticleRigidFilterPair* filters, PxU32 nbFilters) = 0;
-		virtual void setRigidAttachments(PxParticleRigidAttachment* attachments, PxU32 nbAttachments) = 0;
 		virtual PxU32 getFlatListStartIndex() const = 0;
 		virtual void raiseFlags(PxParticleBufferFlag::Enum flags) = 0;
 		virtual PxU32 getUniqueId() const = 0;
@@ -85,37 +74,6 @@ namespace physx
 
 	protected:
 		virtual ~PxsParticleAndDiffuseBuffer() {}
-	};
-
-	class PxsParticleClothBuffer : public PxsParticleBuffer
-	{
-	public:
-		virtual PxVec4* getRestPositionsD() = 0;
-		virtual PxU32* getTrianglesD() const = 0;
-		virtual void setNbTriangles(PxU32 nbTriangles) = 0;
-		virtual PxU32 getNbTriangles() const = 0;
-		virtual PxU32 getNbSprings() const = 0;
-		virtual PxParticleSpring* getSpringsD() = 0;
-		virtual void setCloths(PxPartitionedParticleCloth& cloths) = 0;
-
-	protected:
-		virtual ~PxsParticleClothBuffer() {}
-	};
-
-	class PxsParticleRigidBuffer : public PxsParticleBuffer
-	{
-	public:
-		virtual PxU32* getRigidOffsetsD() const = 0;
-		virtual PxReal* getRigidCoefficientsD() const = 0;
-		virtual PxVec4* getRigidLocalPositionsD() const = 0;
-		virtual PxVec4* getRigidTranslationsD() const = 0;
-		virtual PxVec4* getRigidRotationsD() const = 0;
-		virtual PxVec4* getRigidLocalNormalsD() const = 0;
-		virtual void setNbRigids(PxU32 nbRigids) = 0;
-		virtual PxU32 getNbRigids() const = 0;
-
-	protected:
-		virtual ~PxsParticleRigidBuffer() {}
 	};
 
 }

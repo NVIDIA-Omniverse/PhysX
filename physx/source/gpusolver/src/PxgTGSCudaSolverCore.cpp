@@ -1319,7 +1319,7 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 		const PxReal rigidContactBiasCoefficient = 0.0f;  // not needed here for TGS
 		const PxReal particlesAndDeformablesBiasCoefficient = context.mBiasCoefficients.particlesAndDeformables;
 		const PxReal femClothParticleBiasCoefficient = context.mBiasCoefficients.femClothParticle;
-		const PxReal femClothRigidAttachmentBiasCoefficient = context.mBiasCoefficients.femClothRigidAttachment;
+		const PxReal deformableRigidAttachmentBiasCoefficient = context.mBiasCoefficients.deformableRigidAttachment;
 
 		for (PxI32 b = 0; b < context.mNumPositionIterations; ++b)
 		{
@@ -1416,13 +1416,16 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 			{
 				femClothCore->solve(mPrePrepDescd, mSolverCoreDescd, mSharedDescd, artiDescd, stepDt, mStream, b,
 									context.mNumPositionIterations, false, gravity,
-									femClothParticleBiasCoefficient, femClothRigidAttachmentBiasCoefficient);
+									femClothParticleBiasCoefficient, deformableRigidAttachmentBiasCoefficient);
 			}
 
 			if (softbodyCore)
 			{
+				// Contact bias is pre-multiplied by invStepDt here (legacy soft-soft and
+				// soft-particle contact convention); attach bias is passed bare (the TGS
+				// attach kernel scales by invDt internally).
 				softbodyCore->solveTGS(mPrePrepDescd, mPrepareDescd, mSolverCoreDescd, mSharedDescd, artiDescd, stepDt, mStream,
-					false, particlesAndDeformablesBiasCoefficient * invStepDt, b == 0, gravity);
+					false, particlesAndDeformablesBiasCoefficient * invStepDt, deformableRigidAttachmentBiasCoefficient, b == 0, gravity);
 			}
 
 			for (PxU32 i = 0; i < numParticleCores; ++i)
@@ -1584,7 +1587,7 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 					doFriction, isTGS, externalForcesEveryTgsIterationEnabled);
 			}
 			else
-			{		
+			{
 				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction, accumulatedDt, minPen, anyArticulationConstraints, isVelocityIteration);
 
 				// Before solving internal constraints, ensure to propagate remaining impulses from solvePartitions to the
@@ -1617,7 +1620,7 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 			if (softbodyCore)
 			{
 				softbodyCore->solveTGS(mPrePrepDescd, mPrepareDescd, mSolverCoreDescd, mSharedDescd, artiDescd, stepDt, mStream,
-					true, particlesAndDeformablesBiasCoefficient * invStepDt, false, gravity);
+					true, particlesAndDeformablesBiasCoefficient * invStepDt, deformableRigidAttachmentBiasCoefficient, false, gravity);
 			}
 
 			for (PxU32 i = 0; i < numParticleCores; ++i)

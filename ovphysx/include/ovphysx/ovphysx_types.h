@@ -325,6 +325,13 @@ extern "C"
      *     Frame: World
      *     DType: float32
      * 
+     *   OVPHYSX_TENSOR_RIGID_BODY_ACCELERATION_F32
+     *     Shape: [N, 6] where N = number of rigid bodies
+     *     Layout: [ax, ay, az, alpha_x, alpha_y, alpha_z] (linear + angular acc)
+     *     Frame: World
+     *     DType: float32
+     *     Access: read-only
+     *
      * ============================================================================
      * ARTICULATION ROOT TENSORS
      * ============================================================================
@@ -405,11 +412,25 @@ extern "C"
      *     Units: kilograms
      *     DType: float32
      *
+     *   OVPHYSX_TENSOR_RIGID_BODY_INV_MASS_F32
+     *     Shape: [N] where N = number of rigid bodies
+     *     Layout: scalar inverse mass per body
+     *     Units: 1/kg
+     *     DType: float32
+     *     Access: read-only
+     *
      *   OVPHYSX_TENSOR_RIGID_BODY_INERTIA_F32
      *     Shape: [N, 9] where N = number of rigid bodies
      *     Layout: row-major 3x3 inertia tensor in center-of-mass frame
      *     Units: kg*m^2
      *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_RIGID_BODY_INV_INERTIA_F32
+     *     Shape: [N, 9] where N = number of rigid bodies
+     *     Layout: row-major 3x3 inverse inertia tensor in center-of-mass frame
+     *     Units: 1/(kg*m^2)
+     *     DType: float32
+     *     Access: read-only
      *
      *   OVPHYSX_TENSOR_RIGID_BODY_COM_POSE_F32
      *     Shape: [N, 7] where N = number of rigid bodies
@@ -601,11 +622,14 @@ extern "C"
         /* Rigid body tensors */
         OVPHYSX_TENSOR_RIGID_BODY_POSE_F32 = 1,          /**< [N, 7] poses in world frame */
         OVPHYSX_TENSOR_RIGID_BODY_VELOCITY_F32 = 2,      /**< [N, 6] velocities in world frame */
+        OVPHYSX_TENSOR_RIGID_BODY_ACCELERATION_F32 = 6,  /**< [N, 6] accelerations in world frame (READ-ONLY) */
 
         /* Rigid body property tensors (standalone non-articulated bodies) */
         OVPHYSX_TENSOR_RIGID_BODY_MASS_F32 = 3,          /**< [N] mass per body */
         OVPHYSX_TENSOR_RIGID_BODY_INERTIA_F32 = 4,       /**< [N, 9] row-major 3x3 inertia tensor */
         OVPHYSX_TENSOR_RIGID_BODY_COM_POSE_F32 = 5,      /**< [N, 7] COM local pose (px,py,pz,qx,qy,qz,qw) */
+        OVPHYSX_TENSOR_RIGID_BODY_INV_MASS_F32 = 7,      /**< [N] inverse mass per body (READ-ONLY) */
+        OVPHYSX_TENSOR_RIGID_BODY_INV_INERTIA_F32 = 8,   /**< [N, 9] inverse inertia tensor (READ-ONLY) */
 
         /* Articulation root tensors */
         OVPHYSX_TENSOR_ARTICULATION_ROOT_POSE_F32 = 10,      /**< [N, 7] root poses */
@@ -841,7 +865,7 @@ extern "C"
     /*--------------------------------------------------*/
 
     /**
-     * Contact event header — describes one contact pair.
+     * Contact event header - describes one contact pair.
      *
      * ABI-compatible with omni::physx::ContactEventHeader.
      * Each header references a slice of the contact data array
@@ -864,7 +888,7 @@ extern "C"
     } ovphysx_contact_event_header_t;
 
     /**
-     * Per-contact-point data — ABI-compatible with omni::physx::ContactData.
+     * Per-contact-point data - ABI-compatible with omni::physx::ContactData.
      *
      * position, normal, and impulse are float[3] in world space.
      */
@@ -881,7 +905,7 @@ extern "C"
     } ovphysx_contact_point_t;
 
     /**
-     * Friction anchor data — ABI-compatible with omni::physx::FrictionAnchor.
+     * Friction anchor data - ABI-compatible with omni::physx::FrictionAnchor.
      */
     typedef struct ovphysx_friction_anchor_t
     {
@@ -916,9 +940,16 @@ extern "C"
      *   - Recommended for portable applications that should work on any machine
      *
      * GPU mode (OVPHYSX_DEVICE_GPU):
-     *   - Enables PhysX GPU acceleration and DirectGPU API
-     *   - TensorBinding works with GPU tensors (kDLCUDA) for zero-copy access
-     *   - Requires a warmup step() before GPU tensor reads
+     *   - Enables PhysX GPU acceleration (does NOT auto-enable DirectGPU;
+     *     DirectGPU is opt-in via the Carbonite setting
+     *     `/physics/suppressReadback=true` before ovphysx_create_instance --
+     *     see "GPU mode notes" on ovphysx_create_args for details)
+     *   - With DirectGPU enabled, state TensorBinding/ContactBinding views can
+     *     use CUDA tensors without GPU-to-CPU readback copies
+     *   - Without DirectGPU, GPU dynamics can still run but tensor views may be
+     *     CPU-backed; use CPU tensors or opt into DirectGPU for tensor-heavy
+     *     workloads
+     *   - DirectGPU tensor reads require a warmup step()
      * 
      * CPU mode (OVPHYSX_DEVICE_CPU):
      *   - Uses standard PhysX CPU simulation
@@ -943,9 +974,7 @@ extern "C"
          * This is the recommended default for best developer UX: a single wheel/
          * SDK works on both GPU and CPU-only machines without special casing.
          *
-         * GPU ordinal handling:
-         * - If gpu_index >= 0, that ordinal is used when GPU is selected.
-         * - If gpu_index == -1, ovphysx uses PhysX's default CUDA selection.
+         * GPU selection is controlled by active_cuda_gpus on ovphysx_create_args.
          */
         OVPHYSX_DEVICE_AUTO = 0,
 
@@ -956,8 +985,9 @@ extern "C"
          * If CUDA is unavailable, ovphysx_create_instance() fails with
          * OVPHYSX_API_GPU_NOT_AVAILABLE. There is no silent fallback to CPU.
          *
-         * Use this when your application depends on GPU/DirectGPU behavior and
-         * you want an explicit error on CPU-only machines.
+         * Use this when your application depends on GPU simulation and you want
+         * an explicit error on CPU-only machines. (DirectGPU is a separate
+         * opt-in -- see "GPU mode notes" on ovphysx_create_args.)
          */
         OVPHYSX_DEVICE_GPU = 1,
 
@@ -974,7 +1004,7 @@ extern "C"
     /* Typed config system                              */
     /*--------------------------------------------------*/
 
-    /** Config key type discriminator — selects which key/value union members are valid. */
+    /** Config key type discriminator - selects which key/value union members are valid. */
     typedef enum ovphysx_config_key_type_t
     {
         OVPHYSX_CONFIG_KEY_TYPE_BOOL,       /**< Key from ovphysx_config_bool_t, value is bool */
@@ -991,6 +1021,7 @@ extern "C"
         OVPHYSX_CONFIG_DISABLE_CONTACT_PROCESSING,        /**< /physics/disableContactProcessing */
         OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY,     /**< /physics/collisionConeCustomGeometry */
         OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY, /**< /physics/collisionCylinderCustomGeometry */
+        OVPHYSX_CONFIG_OMNIPVD_OUTPUT_ENABLED,            /**< /physics/omniPvdOutputEnabled */
         OVPHYSX_CONFIG_BOOL_COUNT
     } ovphysx_config_bool_t;
 
@@ -1008,9 +1039,10 @@ extern "C"
         OVPHYSX_CONFIG_FLOAT_COUNT
     } ovphysx_config_float_t;
 
-    /** String config keys (reserved for future use). Value type: ovphysx_string_t. */
+    /** String config keys. Value type: ovphysx_string_t. */
     typedef enum ovphysx_config_string_t
     {
+        OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY, /**< /persistent/physics/omniPvdOvdRecordingDirectory */
         OVPHYSX_CONFIG_STRING_COUNT
     } ovphysx_config_string_t;
 
@@ -1060,6 +1092,49 @@ extern "C"
      *   ovphysx_create_instance(&args, &handle);
      *
      * Log level is configured globally via ovphysx_set_log_level(), not per-instance.
+     *
+     * GPU mode notes
+     * ==============
+     * When @ref device selects GPU (default), ovphysx runs PhysX with
+     * eENABLE_GPU_DYNAMICS + eGPU broadphase. This is the standard GPU mode
+     * suitable for general scenes (rigid bodies, kinematic actors with
+     * contact modification, surface velocity, custom contact callbacks).
+     *
+     * **DirectGPU mode is opt-in** and disabled by default. To enable it
+     * (gives faster steps by skipping GPU-to-CPU readback; required for
+     * Isaac Lab tensor-pipeline workloads that read state via the direct
+     * GPU API), set the Carbonite setting `/physics/suppressReadback=true`
+     * BEFORE calling ovphysx_create_instance:
+     *
+     *   carb::settings::ISettings* settings = ...;
+     *   settings->setBool("/physics/suppressReadback", true);
+     *   // optional, often paired:
+     *   settings->setBool("/physics/suppressFabricUpdate", true);
+     *   ovphysx_create_instance(&args, &handle);
+     *
+     * **Restrictions when DirectGPU is enabled** (eENABLE_DIRECT_GPU_API):
+     *  - Contact modification is disabled. The CPU-side onContactModify
+     *    callback is not invoked. This means **surface velocity does NOT
+     *    work** under DirectGPU (PhysxSurfaceVelocityAPI uses contact
+     *    modification internally), and any custom PxContactModifyCallback
+     *    will not fire. If your scene needs conveyor-belt-like behaviors,
+     *    either keep DirectGPU off or compute the per-frame velocity
+     *    contributions yourself and apply them as forces from outside the
+     *    contact-modify path.
+     *  - Host-side actor accessors (PxRigidActor::getGlobalPose,
+     *    setGlobalPose, etc.) return stale data / are illegal once the
+     *    direct-GPU API is initialized. Read state via
+     *    PxDirectGPUAPI::getRigidDynamicData() instead.
+     *  - Per the PhysX SDK, eENABLE_DIRECT_GPU_API requires
+     *    eDISABLE_SLEEPING and is mutually exclusive with eENABLE_CCD.
+     *    ovruntime sets these for you when suppressReadback is on.
+     *
+     * Prior to 0.4.x ovphysx auto-enabled DirectGPU for every GPU instance
+     * (forced /physics/suppressReadback=true). That broke surface velocity
+     * silently in any scene with a kinematic conveyor or similar feature.
+     * The behavior was changed to opt-in to align with PhysX SDK guidance:
+     * DirectGPU is a workflow-specific optimization, not a default for
+     * general scenes.
      */
     typedef struct ovphysx_create_args
     {
@@ -1069,22 +1144,26 @@ extern "C"
         uint32_t config_entry_count;                  /**< Number of config entries */
 
         ovphysx_device_t device;            /**< Simulation device (default: OVPHYSX_DEVICE_AUTO) */
-        int32_t gpu_index;                  /**< CUDA device ordinal (default: 0).
-                                                 Used when device selects GPU (OVPHYSX_DEVICE_GPU or OVPHYSX_DEVICE_AUTO and CUDA is available).
-                                                 Special values:
-                                                 -1 = PhysX default CUDA selection (equivalent to /physics/cudaDevice=-1) */
+        ovphysx_string_t active_cuda_gpus;  /**< Comma-separated CUDA device ordinals (default: empty = GPU 0).
+                                                 Used when device selects GPU. Supported patterns:
+                                                 - Empty or "0": single GPU 0 (default)
+                                                 - "N": single GPU N
+                                                 - "-1": PhysX default CUDA selection
+                                                 - "0,1,...,N-1": all N GPUs, round-robin across scenes
+                                                 - "1,2,...,N-1": all GPUs except first, round-robin
+                                                 Other patterns return OVPHYSX_API_INVALID_ARGUMENT. */
     } ovphysx_create_args;
 
     /**
      * Default initializer for ovphysx_create_args.
-     * Sets device=AUTO (GPU preferred), gpu_index=0.
+     * Sets device=AUTO (GPU preferred), active_cuda_gpus=empty (GPU 0).
      */
     #define OVPHYSX_CREATE_ARGS_DEFAULT { \
         {NULL, 0},           /* bundled_deps_path */ \
         NULL,                /* config_entries */ \
         0,                   /* config_entry_count */ \
         OVPHYSX_DEVICE_AUTO, /* device */ \
-        0                    /* gpu_index */ \
+        {NULL, 0}            /* active_cuda_gpus */ \
     }
 
 

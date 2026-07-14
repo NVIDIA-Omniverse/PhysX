@@ -44,13 +44,6 @@ over "GLOBAL" (
             This token represents sphere fill approximation.
             """
             }
-        dictionary clothConstaint = {
-            string doc = """
-            This token represents the collection name to use
-            with PhysxCookedDataAPI to represent cooked data
-            of a clothConstaint.
-            """
-            }
         dictionary physxCollisionCustomGeometry = {
             string doc = """
             This token represents the custom geometry option for
@@ -123,32 +116,6 @@ over "GLOBAL" (
 
 }
 
-
-//-----------------------------------------------------------------------------
-// Independent physics schema definitions that are not yet ready to be a part of PhysicsSchema
-//-----------------------------------------------------------------------------
-
-class TetrahedralMesh "TetrahedralMesh"
-(
-    customData = {
-        string className = "TetrahedralMesh"
-    }
-
-    doc = """Deprecated: Will be replaced by UsdGeom.TetMesh in a future release.
-          Describes a tetrahedral mesh in 3D space."""
-    # Inherits from </PointBased> defined in usdGeom/schema.usda.
-    inherits = </PointBased>
-)  
-{
-    int[] indices (
-        customData = {
-            string apiName = "indices"
-        }
-        displayGroup = "Advanced"
-        displayName = "Indices"
-        doc = """Flat list of the index (into the 'points' attribute) of each vertex of each tetrahedron in the mesh."""
-    )
-}
 
 //-----------------------------------------------------------------------------
 // PhysX engine dependent properties
@@ -340,8 +307,9 @@ class "PhysxSceneAPI"
             string apiName = "timeStepsPerSecond"
         }
 
-        displayName = "Time Steps Per Second"        
-        doc = """Simulation scene step defined as number of steps per second.
+        displayName = "Time Steps Per Second"
+        doc = """Deprecated: use newton:timeStepsPerSecond (NewtonSceneAPI) instead.
+        Simulation scene step defined as number of steps per second.
         Note that application might cap the number of simulation steps to avoid
         running more simulations steps with a low frame rate."""
     )
@@ -416,14 +384,14 @@ class "PhysxSceneAPI"
         doc = """Gpu total aggregate pairs capacity."""
     )
 
-    uint physxScene:gpuMaxSoftBodyContacts = 1048576 (
+    uint physxScene:gpuMaxDeformableVolumeContacts = 1048576 (
         customData = {
-            string apiName = "gpuMaxSoftBodyContacts"
+            string apiName = "gpuMaxDeformableVolumeContacts"
         }
 
-        displayName = "Gpu Max Softbody Contacts"
+        displayName = "Gpu Max Deformable Volume Contacts"
         displayGroup = "Gpu"
-        doc = """Gpu max soft body contacts."""
+        doc = """Gpu max deformable volume contacts."""
     )
 
     uint physxScene:gpuMaxDeformableSurfaceContacts = 1048576 (
@@ -505,7 +473,7 @@ class "PhysxSceneAPI"
         string apiName = "minPositionIterationCount"
     }
         displayName = "Minimum Position Iteration Count"
-        doc = """Minimum position iteration count for all actors (rigid bodies, cloth, particles etc).
+        doc = """Minimum position iteration count for all actors (rigid bodies, deformables, particles etc).
             Range: [1, 255]"""
     )
 
@@ -514,7 +482,7 @@ class "PhysxSceneAPI"
         string apiName = "maxPositionIterationCount"
     }
         displayName = "Maximum Position Iteration Count"
-        doc = """Maximum position iteration count for all actors (rigid bodies, cloth, particles etc).
+        doc = """Maximum position iteration count for all actors (rigid bodies, deformables, particles etc).
         Note that this setting will override solver iteration settings of individual actors that have requested more iterations.
             Range: [1, 255]"""
     )
@@ -524,7 +492,7 @@ class "PhysxSceneAPI"
         string apiName = "minVelocityIterationCount"
     }
         displayName = "Minimum Velocity Iteration Count"
-        doc = """Minimum velocity iteration count for all actors (rigid bodies, cloth, particles etc).
+        doc = """Minimum velocity iteration count for all actors (rigid bodies, deformables, particles etc).
             Range: [0, 255]"""
     )
 
@@ -533,7 +501,7 @@ class "PhysxSceneAPI"
         string apiName = "maxVelocityIterationCount"
     }
         displayName = "Maximum Velocity Iteration Count"
-        doc = """Maximum velocity iteration count for all actors (rigid bodies, cloth, particles etc).
+        doc = """Maximum velocity iteration count for all actors (rigid bodies, deformables, particles etc).
         Note that this setting will override solver iteration settings of individual actors that have requested more iterations.
             Range: [0, 255]"""
     )
@@ -816,7 +784,8 @@ class "PhysxCollisionAPI"
         }
         displayGroup = "Advanced"
         displayName = "Contact Offset"
-        doc = """Contact offset of a collision shape. Default value -inf means default is picked by the simulation based on the shape extent.
+        doc = """Deprecated: use newton:contactGap (NewtonCollisionAPI) instead.
+            Contact offset of a collision shape. Default value -inf means default is picked by the simulation based on the shape extent.
             Range: [maximum(0, restOffset), inf)
             Units: distance"""
     )
@@ -828,7 +797,8 @@ class "PhysxCollisionAPI"
 
         displayGroup = "Advanced"
         displayName = "Rest Offset"
-        doc = """Rest offset of a collision shape. Default value -inf means that the simulation sets a suitable value.
+        doc = """Deprecated: use newton:contactMargin (NewtonCollisionAPI) instead.
+            Rest offset of a collision shape. Default value -inf means that the simulation sets a suitable value.
             For rigid bodies, this value is zero.
             Range: [0, contactOffset]
             Units: distance"""
@@ -1519,7 +1489,7 @@ class "PhysxJointAPI"
             Units: dimensionless"""
     )
 
-    float physxJoint:maxJointVelocity = 1000000.0 (
+    float physxJoint:maxJointVelocity = inf (
         customData = {
             string apiName = "maxJointVelocity"
         }       
@@ -1797,10 +1767,11 @@ class "PhysxArticulationAPI"
     bool physxArticulation:enabledSelfCollisions = true (
         customData = {
             string apiName = "enabledSelfCollisions"
-        }       
+        }
 
         displayName = "Self Collisions Enabled"
-        doc = """Boolean defining whether self collisions should be enabled or disabled."""
+        doc = """Deprecated: use newton:selfCollisionEnabled (NewtonArticulationRootAPI) instead.
+        Boolean defining whether self collisions should be enabled or disabled."""
     )
 }
 
@@ -2446,10 +2417,15 @@ class "PhysxTendonAttachmentLeafAPI"
 
 class "PhysxMimicJointAPI"
 (
-    doc = """Applied to a Physics Joint that must be part of an articulation. Supported joint types are:
+    doc = """DEPRECATED: use NewtonMimicAPI (single-apply) from the Newton schema instead. PhysxMimicJointAPI
+          is kept for backward compatibility with existing assets; new content should author NewtonMimicAPI.
+          The NewtonMimicMigrationChecker validator in omni.physx.asset_validator can auto-migrate eligible
+          single-DOF usages. See the Newton schema documentation for the mapping and coefficient conventions.
+
+          Applied to a Physics Joint that must be part of an articulation. Supported joint types are:
           PhysicsRevoluteJoint (with a limit set), PhysicsPrismaticJoint as well as the more generic
           PhysicsJoint if all linear degrees of freedom are locked.
-          
+
           This schema allows to interconnect the degrees of freedom of two joints according to the relationship:
           jointPosition + (gearing * referenceJointPosition) + offset = 0. This can be used to have, for example,
           one joint mimic the motion of another joint. The term "position" does not necessarily mean a translational
@@ -4853,7 +4829,7 @@ class PhysxParticleSystem "PhysxParticleSystem"
     }
 
     doc = """WARNING: This is a draft API; the design is not fixed and may change in the future.
-    PhysX particle system, used to simulate fluids, cloth and inflatables. This prim allows the user to configure the
+    PhysX particle system, used to simulate fluids and granular materials. This prim allows the user to configure the
     solver parameters that are common to the particle objects associated with this system via their particleSystem relationship."""
     inherits = </Gprim>
 )
@@ -5385,7 +5361,7 @@ class "PhysxPBDMaterialAPI"
     }
 
     doc = """WARNING: This is a draft API; the design is not fixed and may change in the future.
-    Applied to a USD Material. PhysX position-based-dynamics (PBD) material for particles used to simulate fluids, cloth and inflatables.
+    Applied to a USD Material. PhysX position-based-dynamics (PBD) material for particles used to simulate fluids and granular materials.
     Currently, only a single material per particle system is supported which applies to all objects that are associated with the system."""
     inherits = </APISchemaBase>
 )
@@ -5520,30 +5496,6 @@ class "PhysxPBDMaterialAPI"
         doc = """Gravitational acceleration scaling factor, for example (-1.0 would invert gravity).
             Range: (-inf, inf)
             Units: dimensionless"""
-    )
-
-    float physxPBDMaterial:lift = 0.0 (
-        customData = {
-            string apiName = "lift"
-        }
-
-        displayName = "Lift"
-        doc = """Deprecated. PhysxParticleClothAPI is deprecated and will be replaced by a new deformable schema in a future release.
-            Particle cloth Lift coefficient for cloth and inflatable particle objects. Basic aerodynamic lift model coefficient.
-            Range: [0, inf)
-            Units: dimensionless """
-    )    
-    
-    float physxPBDMaterial:drag = 0.0 (
-        customData = {
-            string apiName = "drag"
-        }
-
-        displayName = "Drag"
-        doc = """Deprecated. PhysxParticleClothAPI is deprecated and will be replaced by a new deformable schema in a future release.
-            Drag coefficient for cloth and inflatable particle objects. Basic aerodynamic drag model coefficient.
-            Range: [0, inf)
-            Units: dimensionless """
     )
 
     float physxPBDMaterial:density = 0.0 (
@@ -5707,867 +5659,3 @@ class "PhysxParticleSamplingAPI"
     )
 }
 
-class "PhysxParticleClothAPI"
-(
-    customData = {
-        string className = "PhysxParticleClothAPI"
-    }
-
-    doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-    WARNING: This is a draft API; the design is not fixed and may change in the future.
-    Applied to a UsdGeomMesh. The mesh is simulated as a particle-based cloth or inflatable, depending on the mesh geometry
-    and the pressure attribute. See PhysxAutoParticleClothAPI for an auto-compute helper for cloth springs and dampings."""
-    inherits = </APISchemaBase>
-    prepend apiSchemas = ["PhysxParticleAPI"]
-)
-{
-    bool physxParticle:selfCollisionFilter = True (
-        customData = {
-            string apiName = "selfCollisionFilter"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Self Collision Filter"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Whether the simulation should filter particle-particle collisions based on their rest position distances."""
-    )
-
-    point3f[] physxParticle:restPoints (
-        customData = {
-            string apiName= "restPoints"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Rest Points"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Particle positions in cloth rest configuration."""
-    )
-
-    uniform int2[] physxParticle:springIndices (
-        customData = {
-            string apiName= "springIndices"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Spring Indices"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              List of index pairs describing which points are connected by spring constraints."""
-    )
-
-    float[] physxParticle:springStiffnesses (
-        customData = {
-            string apiName= "springStiffnesses"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Spring Stiffnesses"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Stiffness values for linear-distance springs between a pair of particles as defined by index pairs in springIndices.
-            Range: [0, inf)
-            Units: force / distance = mass / second / second"""
-    )
-
-    float[] physxParticle:springDampings (
-        customData = {
-            string apiName= "springDampings"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Spring Dampings"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Coefficients for linear-distance dampers between a pair of particles as defined by index pairs in springIndices.
-            Range: [0, inf)
-            Units: force * second / distance = mass / second"""
-    )
-
-    float[] physxParticle:springRestLengths (
-        customData = {
-            string apiName= "springRestLengths"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Spring Rest Lengths"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Spring rest lengths corresponding to spring index pairs.
-            Range: (-inf, inf)
-            Units: distance"""
-    )
-
-    float physxParticle:pressure = 0.0 (
-        customData = {
-            string apiName = "pressure"
-        }
-
-        displayName = "Pressure"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Pressure: If > 0, a particle cloth has an additional pressure constraint 
-            that provides inflatable (i.e. balloon-like) dynamics. The pressure times the rest volume defines 
-            the volume the inflatable tries to match. Pressure only works well for closed or approximately closed meshes.
-            Range: [0, inf)
-            Units: dimensionless"""
-    )
-}
-
-class "PhysxAutoParticleClothAPI"
-(
-    customData = {
-        string className = "PhysxAutoParticleClothAPI"
-    }
-
-    doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-    WARNING: This is a draft API; the design is not fixed and may change in the future.
-    Applied to a UsdGeomMesh with PhysxParticleClothAPI. Defines parameters to automatically compute spring constraints."""
-    inherits = </APISchemaBase>
-)
-{
-    float physxAutoParticleCloth:springStretchStiffness = 1.5 (
-        customData = {
-            string apiName = "springStretchStiffness"
-        }
-
-        displayName = "Stretch Stiffness"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Stretch stiffness. Represents a stiffness for linear springs placed between particles to counteract stretching.
-            Range: [0, inf)
-            Units: force / distance = mass / second / second"""
-    )
-
-    float physxAutoParticleCloth:springBendStiffness = 1.5 (
-        customData = {
-            string apiName = "springBendStiffness"
-        }
-
-        displayName = "Bend Stiffness"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Bend stiffness. Represents a stiffness for linear springs placed in a way to counteract bending.
-            Range: [0, inf)
-            Units:  force / distance = mass / second / second"""
-    )
-
-    float physxAutoParticleCloth:springShearStiffness = 1.5 (
-        customData = {
-            string apiName = "springShearStiffness"
-        }
-
-        displayName = "Shear Stiffness"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Shear stiffness. Represents a stiffness for linear springs placed in a way to counteract shear.
-            Range: [0, inf)
-            Units:  force / distance = mass / second / second"""
-    )
-
-    float physxAutoParticleCloth:springDamping = 10.0 (
-        customData = {
-            string apiName = "springDamping"
-        }
-
-        displayName = "Spring Damping"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Damping on cloth spring constraints. Applies to all constraints parametrized by stiffness attributes.
-            Range: [0, inf)
-            Units: force * second / distance = mass / second"""
-    )
-
-    bool physxAutoParticleCloth:disableMeshWelding = false (
-        customData = {
-            string apiName = "disableMeshWelding"
-        }
-
-        displayName = "Disable Mesh Welding"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Disable welding of the UsdGeomMesh vertices for cloth simulation."""
-    )
-}
-
-class "PhysxDeformableBodyMaterialAPI"
-(
-    customData = {
-        string className = "PhysxDeformableBodyMaterialAPI"
-    }
-
-    doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-    Applied to USD Material. Defines material properties for deformable bodies."""
-    inherits = </APISchemaBase>
-)
-{
-    float physxDeformableBodyMaterial:density = 0.0 (
-        customData = {
-            string apiName= "density"
-        }
-        
-        displayName = "Density"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Material density. If set to 0.0, the simulation determines a default density. A density or mass set with a PhysicsMassAPI overrides the material density.
-            Range: [0, inf)
-            Units: mass / distance / distance / distance"""
-    )
-    
-    float physxDeformableBodyMaterial:elasticityDamping = 0.005 (
-        customData = {
-            string apiName = "elasticityDamping"
-        }
-        
-        displayName = "Elasticity Damping"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Material damping parameter. Use values much smaller than one for good results.
-            Range: [0, inf)
-            Units: dimensionless"""
-    )
-    
-    float physxDeformableBodyMaterial:dynamicFriction = 0.25 (
-        customData = {
-            string apiName = "dynamicFriction"
-        }
-        
-        displayName = "Dynamic Friction"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Dynamic friction coefficient.
-            Range: [0, inf)
-            Units: dimensionless"""
-    )
-
-    float physxDeformableBodyMaterial:youngsModulus = 50000000.0 (
-        customData = {
-            string apiName = "youngsModulus"
-        }
-        
-        displayName = "Young's Modulus"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Young's modulus, i.e. the tensile stiffness of the material.
-            Range: [0, inf)
-            Units: force / area = mass / distance / seconds / seconds"""
-    )
-    
-    float physxDeformableBodyMaterial:poissonsRatio = 0.45 (
-        customData = {
-            string apiName = "poissonsRatio"
-        }
-        
-        displayName = "Poisson's Ratio"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Poissons's ratio which defines the material's volume preservation under stress.
-            Range: [0, 0.5]
-            Units: dimensionless"""
-    )
-    
-    float physxDeformableBodyMaterial:dampingScale = 1.0 (
-        customData = {
-            string apiName= "dampingScale"
-        }
-        
-        displayName = "Damping Scale"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            Experimental parameter. Try a high damping together with a scale of zero for a water-bed like effect.
-            Range: [0, 1]
-            Units: dimensionless"""
-    )
-}
-
-class "PhysxDeformableSurfaceMaterialAPI"
-(
-    customData = {
-        string className = "PhysxDeformableSurfaceMaterialAPI"
-    }
-    
-    doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-    WARNING: This is a draft API; the design is not fixed and may change in the future.
-    Applied to USD Material. Defines material properties for deformable surfaces."""
-    inherits = </APISchemaBase>
-)
-{
-    float physxDeformableSurfaceMaterial:density = 0.0 (
-        customData = {
-            string apiName= "density"
-        }
-        
-        displayName = "Density"
-        doc = """Material density. If set to 0.0, the simulation determines a default value. 
-            The mass of deformable surface is computed by density * area * thickness.
-            A density or mass set with a PhysicsMassAPI overrides the material density.
-            Range: [0, inf)
-            Units: mass / distance / distance / distance"""
-    )
-    
-    float physxDeformableSurfaceMaterial:dynamicFriction = 0.25 (
-        customData = {
-            string apiName = "dynamicFriction"
-        }
-        
-        displayName = "Dynamic Friction"
-        doc = """Dynamic friction coefficient.
-            Range: [0, inf)
-            Units: dimensionless"""
-    )
-
-    float physxDeformableSurfaceMaterial:youngsModulus = -inf (
-        customData = {
-           string apiName = "youngsModulus"
-        }
-        
-        displayName = "Young's Modulus"
-        doc = """Young's modulus, i.e. the tensile stiffness of the material. 
-            Used to determine in-plane and bending stiffness.
-            If set to a negative value, the simulation determines a default value.
-            Range: [0, inf)
-            Units: force / area = mass / distance / seconds / seconds"""
-    )
-    
-    float physxDeformableSurfaceMaterial:poissonsRatio = 0.0 (
-        customData = {
-            string apiName = "poissonsRatio"
-        }
-        
-        displayName = "Poisson's Ratio"
-        doc = """Poissons's ratio which defines the material's volume preservation under stress. 
-            Used to determine in-plane and bending stiffness.
-            Range: [0, 0.5]
-            Units: dimensionless"""
-    )
-    
-    float physxDeformableSurfaceMaterial:thickness = 0.0 (
-        customData = {
-            string apiName= "thickness"
-        }
-        
-        displayName = "Thickness"
-        doc = """Virtual thickness of cloth mesh. Used to determine in-plane and bending stiffness, and mass from density.
-            If set to 0.0, the simulation determines a default value.
-            Range: [0.0, inf)
-            Units: distance"""
-    )
-}
-
-class "PhysxDeformableAPI"
-(
-    customData = {
-        string className = "PhysxDeformableAPI"
-    }
-    
-    doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-          Do not apply. Base API that provides attributes common to both deformable bodies and surfaces.
-          Derived APIs are applied to UsdGeomMesh in order to create a deformable physics object.
-          Note that the UsdGeomMesh points attribute becomes a read-only attribute for a deformable as the mesh is driven by the simulation.
-          """
-    inherits = </APISchemaBase>
-)
-{
-    bool physxDeformable:deformableEnabled = True (
-        customData = {
-            string apiName = "deformableEnabled"
-        }
-
-        displayName = "Deformable Enabled"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Enable or disable the deformable object."""
-    )
-    
-    rel physxDeformable:simulationOwner (
-        customData = {
-            string apiName = "simulationOwner"
-        }
-
-        displayName = "Simulation Owner"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Single PhysicsScene that simulates this deformable. By default,
-              this is the first PhysicsScene found in the stage using UsdStage::Traverse()."""
-    )
-
-    uint physxDeformable:solverPositionIterationCount = 16 (
-        customData = {
-            string apiName= "solverPositionIterationCount"
-        }
-        
-        displayName = "Solver Position Iterations"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Number of solver position iterations per time step.
-              Range: [1, 255]"""
-    )
-
-    float physxDeformable:vertexVelocityDamping = 0.005 (
-        customData = {
-            string apiName= "vertexVelocityDamping"
-        }
-        
-        displayName = "Vertex Velocity Damping"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Artificial damping on the vertex velocity, which may approximate aerodynamic drag.
-              Range: [0, inf)
-              Units: 1 / seconds"""
-    )
-    
-    float physxDeformable:sleepDamping = 10.0 (
-        customData = {
-            string apiName= "sleepDamping"
-        }
-        
-        displayName = "Sleep Damping"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Additional damping term if vertex velocity drops below settlingThreshold.
-              Range: [0, inf)
-              Units: 1 / seconds"""
-    )
-    
-    float physxDeformable:sleepThreshold = 0.05 (
-        customData = {
-            string apiName= "sleepThreshold"
-        }
-        
-        displayName = "Sleep Threshold"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Velocity threshold under which the vertex becomes a candidate for sleeping.
-              Range: [0, inf)
-              Units: distance / seconds"""
-    )
-    
-    float physxDeformable:settlingThreshold = 0.10 (
-        customData = {
-            string apiName= "settlingThreshold"
-        }
-        
-        displayName = "Settling Threshold"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Threshold vertex velocity under which sleep damping is applied in addition to velocity damping.
-              Range: [0, inf]
-              Units: distance / seconds"""
-    )
-
-    float physxDeformable:maxDepenetrationVelocity = inf (
-        customData = {
-            string apiName = "maxDepenetrationVelocity"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Max Depenetration Velocity"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-            The maximum velocity permitted to be introduced by the solver to depenetrate intersections.
-            Range: [0, inf)
-            Units: distance / seconds"""
-    )
-
-    bool physxDeformable:selfCollision = False (
-        customData = {
-            string apiName= "selfCollision"
-        }
-        
-        displayName = "Enable Self Collision"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Enables self collisions on the deformable, preventing self intersections."""
-    )
-    
-    float physxDeformable:selfCollisionFilterDistance = -inf (
-        customData = {
-            string apiName= "selfCollisionFilterDistance"
-        }
-        
-        displayName = "Self Collision Filter Distance"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Distance under which self-collisions are disabled. Default value -inf means default is picked by the simulation.
-              Range: [2*physxCollision:restOffset, max_float]
-              Units: distance"""
-    )
-    
-    bool physxDeformable:enableCCD = False (
-        customData = {
-            string apiName = "enableCCD"
-        }
-
-        displayName = "Enable CCD"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Distance based CCD."""
-    )
-    
-    point3f[] physxDeformable:restPoints (
-        customData = {
-            string apiName= "restPoints"
-        }
-        
-        displayGroup = "Advanced"
-        displayName = "Rest Points"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Rest points of the UsdGeomMesh in local coordinates.
-              Units: distance"""
-    )
-    
-    point3f[] physxDeformable:simulationVelocities (
-        customData = {
-            string apiName= "simulationVelocities"
-        }
-        
-        displayGroup = "Advanced"
-        displayName = "Simulation Mesh Vertex Velocities"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Simulation mesh vertex velocities in local coordinates.
-              Units: distance / seconds"""
-    )
-    
-    uniform int[] physxDeformable:simulationIndices (
-        customData = {
-            string apiName= "simulationIndices"
-        }
-        
-        displayGroup = "Advanced"
-        displayName = "Simulation Mesh Indices"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Simulation mesh indices."""
-    )
-}
-
-class "PhysxDeformableBodyAPI"
-(
-    customData = {
-        string className = "PhysxDeformableBodyAPI"
-    }
-
-    doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-          Applied to a UsdGeomMesh that is to be driven by a deformable body simulation.
-          See PhysxDeformableAPI for information on how to define the deformable body's material properties."""
-    inherits = </APISchemaBase>
-    prepend apiSchemas = ["PhysxDeformableAPI"]
-)
-{
-    bool physxDeformable:disableGravity = False (
-        customData = {
-            string apiName = "disableGravity"
-        }
-
-        displayName = "Disable Gravity"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Disable gravity for the actor."""
-    )    
-
-    uniform int[] physxDeformable:collisionIndices (
-        customData = {
-            string apiName= "collisionIndices"
-        }
-        
-        displayGroup = "Advanced"
-        displayName = "Collision Mesh Indices"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Mesh indices that define the collision tetrahedral mesh together with the collisionPoints attribute."""
-    )
-    
-    point3f[] physxDeformable:collisionPoints (
-        customData = {
-            string apiName= "collisionPoints"
-        }
-        
-        displayGroup = "Advanced"
-        displayName = "Collision Mesh Points"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Mesh points in local coordinates that define the collision tetrahedral mesh together with the collisionIndices attribute.
-              This attribute is read-only and may be updated from simulation data to reflect the current simulation state."""
-    )
-    
-    point3f[] physxDeformable:collisionRestPoints (
-        customData = {
-            string apiName= "collisionRestPoints"
-        }
-        
-        displayGroup = "Advanced"
-        displayName = "Collision Mesh Rest Points"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Mesh rest points in local coordinates that define the rest pose of the collision tetrahedral mesh together with the collisionIndices attribute."""
-    )
-    
-    point3f[] physxDeformable:simulationPoints (
-        customData = {
-            string apiName= "simulationPoints"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Simulation Mesh Points"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Simulation mesh points in local coordinates that define the simulation tetrahedral mesh together with the simulationIndices attribute.
-              This attribute may be updated from simulation data to reflect the current simulation state."""
-    )
-    
-    point3f[] physxDeformable:simulationRestPoints (
-        customData = {
-            string apiName= "simulationRestPoints"
-        }
-        
-        displayGroup = "Advanced"
-        displayName = "Simulation Mesh Rest Points"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Mesh rest points in local coordinates that define the rest pose of the simulation tetrahedral mesh together with the simulationIndices attribute."""
-    )
-}
-
-class "PhysxDeformableSurfaceAPI"
-(
-    customData = {
-        string className = "PhysxDeformableSurfaceAPI"
-    }
-    
-    doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-          WARNING: This is a draft API; the design is not fixed and may change in the future.
-          Applied to a UsdGeomMesh that is to be simulated as a deformable surface.
-          See PhysxDeformableAPI for information on how to define the deformable surface's material properties."""
-    inherits = </APISchemaBase>
-    prepend apiSchemas = ["PhysxDeformableAPI"]
-)
-{
-    bool physxDeformableSurface:flatteningEnabled = False (
-        customData = {
-            string apiName = "flatteningEnabled"
-        }
-
-        displayName = "Flattening Enabled"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              If enabled, bending forces are applied such that the surface flattens, i.e., neighboring triangles become coplanar.
-              If disabled, the forces drive toward the bend at the rest state."""
-    )
-
-    float physxDeformableSurface:bendingStiffnessScale = 0.0 (
-        customData = {
-            string apiName= "bendingStiffnessScale"
-        }
-
-        displayName = "Bending Stiffness Scale"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Scales bending stiffness computed from Young's modulus, Poisson's ratio, and the cloth thickness.
-              Range: [0, inf)
-              Units: dimensionless"""
-    )
-
-    uint physxDeformableSurface:collisionPairUpdateFrequency = 1 (
-        customData = {
-            string apiName = "collisionPairUpdateFrequency"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Collision Pair Update Frequency"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Determines how often cloth-to-cloth collision pairs are updated during each time step. 
-              Increasing this value results in more frequent updates to the contact pairs, which provides better contact points. 
-              For example, a value of 2 means collision pairs are updated twice per time step: 
-              once at the beginning and once in the middle of the time step (i.e., during the middle solver iteration). 
-              If set to 0, the solver adaptively determines when to update the cloth-to-cloth contact pairs, instead of using a fixed frequency.
-              Range [1, solverPositionIterationCount]"""            
-    )
-
-    uint physxDeformableSurface:collisionIterationMultiplier = 1 (
-        customData = {
-            string apiName = "collisionIterationMultiplier"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Collision Iteration Multiplier"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Determines how many collision subiterations are used in each solver iteration.
-              By default, collision constraints are applied once per solver iteration.
-              Increasing this value applies collision constraints more frequently within each solver iteration.
-              For example, a value of 2 means collision constraints are applied twice per solver iteration 
-              (i.e., collision constraints are applied 2 x solverPositionIterationCount times per time step).
-              Increasing this value does not update collision pairs more frequently; refer to collisionPairUpdateFrequency for that.
-              Range [1, solverPositionIterationCount/2]"""            
-    )
-
-    float physxDeformableSurface:maxVelocity = inf (
-        customData = {
-            string apiName = "maxVelocity"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Max Velocity"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Maximum velocity: the velocity of each cloth vertex is clamped by this maximum velocity value.
-              If set to a negative value, the simulation determines a default value.
-              Range: [0, inf)
-              Units: distance / seconds"""
-    )
-}
-
-class PhysxPhysicsAttachment "PhysxPhysicsAttachment"
-(
-    customData = {
-        string className = "PhysxPhysicsAttachment"
-    }
-
-    doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-          Represents attachments between physics actors, for example, between a rigid body and a deformable body, or a deformable body and a particle cloth."""
-    inherits = </Typed>
-)
-{
-    bool attachmentEnabled = True (
-        customData = {
-            string apiName = "attachmentEnabled"
-        }
-
-        displayName = "Attachment Enabled"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Enable or disable the attachment."""
-    )
-
-    rel actor0 (
-        customData = {
-            string apiName = "actor0"
-        }
-
-        displayName = "Actor 0"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Reference to the first actor."""
-    )
-
-    rel actor1 (
-        customData = {
-            string apiName = "actor1"
-        }
-
-        displayName = "Actor 1"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Reference to the second actor."""
-    )
-
-    point3f[] points0 (
-        customData = {
-            string apiName = "points0"
-        }
-        displayGroup = "Advanced"
-        displayName = "Points Actor 0"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Attachment points in Actor 0 local space, defined in the actor's rest state, if it is deformable. Elements correspond one-to-one to elements in points1 attribute."""
-    )
-
-    point3f[] points1 (
-        customData = {
-            string apiName = "points1"
-        }
-        displayGroup = "Advanced"
-        displayName = "Points Actor 1"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Attachment points in Actor 1 local space, defined in the actor's rest state, if it is deformable. Elements correspond one-to-one to elements in points0 attribute."""
-    )
-
-    uint[] collisionFilterIndices0 (
-        customData = {
-            string apiName = "collisionFilterIndices0"
-        }
-        displayGroup = "Advanced"
-        displayName = "Collision Filter Indices Actor 0"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Indices to geometry of Actor 0 that should not generate collisions with Actor 1 as specified by filterType0. Ignored for rigid bodies."""
-    )
-
-    uniform token filterType0 (
-        customData = {
-            string apiName = "filterType0"
-        }
-        displayGroup = "Advanced"
-        displayName = "Filter Type 0"
-        allowedTokens = ["Vertices", "Geometry"]
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Specify if indices in collisionFilterIndices0 correspond to vertices; or mesh cell-geometry, i.e. triangles, tetrahedrons, etc."""
-    )
-
-    uint[] collisionFilterIndices1 (
-        customData = {
-            string apiName = "collisionFilterIndices1"
-        }
-        displayGroup = "Advanced"
-        displayName = "Collision Filter Indices Actor 1"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Indices to mesh triangle/tet/hex/etc. of Actor 1 that should not generate collisions with Actor 0. Ignored for rigid bodies."""
-    )
-
-    uniform token filterType1 (
-        customData = {
-            string apiName = "filterType1"
-        }
-        displayGroup = "Advanced"
-        displayName = "Filter Type 1"
-        allowedTokens = ["Vertices", "Geometry"]
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Specify if indices in collisionFilterIndices1 correspond to vertices; or mesh cell-geometry, i.e. triangles, tetrahedrons, etc."""
-    )
-}
-
-class "PhysxAutoAttachmentAPI"
-(
-    customData = {
-        string className = "PhysxAutoAttachmentAPI"
-    }
-
-    doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-          Auto generates the attachment points and filtering ids based on the attributes defined in the API."""
-    inherits = </APISchemaBase>
-)
-{
-    bool physxAutoAttachment:enableDeformableVertexAttachments = true (
-        customData = {
-            string apiName = "enableDeformableVertexAttachments"
-        }
-
-        displayName = "Enable Deformable Vertex Attachments"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Enables attaching deformable mesh vertices which overlap with the other actor's volume."""
-    )
-
-    float physxAutoAttachment:deformableVertexOverlapOffset = 0.0 (
-        customData = {
-            string apiName= "deformableVertexOverlapOffset"
-        }
-        
-        displayName = "Deformable Vertex Overlap Offset"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Deformable mesh vertices are attached if their distance to the other actor's volume is smaller than the offset.
-              Range: [0, inf)
-              Units: distance"""
-    )
-
-    bool physxAutoAttachment:enableRigidSurfaceAttachments = false (
-        customData = {
-            string apiName = "enableRigidSurfaceAttachments"
-        }
-
-        displayName = "Enable Rigid Surface Attachments"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Enables sampling attachment points on the rigid actor's surface."""
-    )
-
-    float physxAutoAttachment:rigidSurfaceSamplingDistance = -inf (
-        customData = {
-            string apiName= "rigidSurfaceSamplingDistance"
-        }
-        
-        displayName = "Rigid Surface Sampling Distance"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Attachment points on the rigid surface are positioned such that their typical neighbor distance matches the sampling distance. Use heuristic by default.
-              Range: [0, inf)
-              Units: distance"""
-    )
-
-    bool physxAutoAttachment:enableCollisionFiltering = true (
-        customData = {
-            string apiName = "enableCollisionFiltering"
-        }
-
-        displayName = "Enable Collision Filtering"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Enables adding collision filtering in the vicinity of the attachment points."""
-    )
-
-    float physxAutoAttachment:collisionFilteringOffset = -inf (
-        customData = {
-            string apiName= "collisionFilteringOffset"
-        }
-        
-        displayName = "Collision Filtering Offset"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Filtering ids are generated for deformable mesh vertices if their distance to the other actor's volume is smaller than the offset. Use heuristic by default.
-              Range: [0, inf)
-              Units: distance"""
-    )
-
-    bool physxAutoAttachment:enableDeformableFilteringPairs = false (
-        customData = {
-            string apiName = "enableDeformableFilteringPairs"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Enable Deformable Collision Filtering Pairs"
-        doc = """Deprecated: Will be replaced by a new deformable schema in a future release.
-              Enables geometry pair based collision filtering for deformable-deformable attachments. 
-              By default a filtered geometry of one actor is filtered against all geometries of the other actor."""
-    )
-}

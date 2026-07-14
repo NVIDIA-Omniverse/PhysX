@@ -51,7 +51,7 @@ namespace physx
 				PxMarkSerializedMemory(this, sizeof(ManifestEntry));
 				offset = _offset;
 				type = _type;
-			}			
+			}
 			PX_FORCE_INLINE	ManifestEntry() { PxMarkSerializedMemory(this, sizeof(ManifestEntry)); }
 			PX_FORCE_INLINE void operator =(const ManifestEntry& m)
 			{
@@ -186,7 +186,7 @@ namespace physx
 				mExtraDataAddress = extraData;
 			}
 
-			virtual	PxBase*	resolveReference(PxU32 kind, size_t reference) const;
+			virtual	PxBase*	resolveReference(PxU32 kind, size_t reference) const PX_OVERRIDE;
 
 		private:
 			//various pointers to deserialized data
@@ -218,10 +218,10 @@ namespace physx
 				}
 			}
 
-			virtual		void		writeData(const void* buffer, PxU64 size)		{	mMemStream.write(buffer, size);	}
-			virtual		PxU64		getTotalStoredSize()							{	return mMemStream.getSize(); }
-			virtual		void		alignData(PxU32 alignment = PX_SERIAL_ALIGN)		
-			{	
+			virtual		void		writeData(const void* buffer, PxU64 size) PX_OVERRIDE {	mMemStream.write(buffer, size);	}
+			virtual		PxU64		getTotalStoredSize() {	return mMemStream.getSize(); }
+			virtual		void		alignData(PxU32 alignment = PX_SERIAL_ALIGN) PX_OVERRIDE
+			{
 				if(!alignment)
 					return;
 
@@ -237,15 +237,15 @@ namespace physx
 				PX_ASSERT(!getPadding(getTotalStoredSize(), alignment));
 			}
 
-			virtual void writeName(const char*)
+			virtual void writeName(const char*) PX_OVERRIDE
 			{
 				PxGetFoundation().error(physx::PxErrorCode::eINVALID_OPERATION, PX_FL, 
 					"Cannot export names during exportData.");
 			}
 
-			const PxCollection& getCollection() const	{	return mCollection;		}
+			virtual	const PxCollection& getCollection() const	PX_OVERRIDE	{ return mCollection;	}
 
-			virtual void registerReference(PxBase& serializable, PxU32 kind, size_t reference);
+			virtual void registerReference(PxBase& serializable, PxU32 kind, size_t reference) PX_OVERRIDE;
 
 			const PxArray<ImportReference>& getImportReferences() { return mImportReferences; }
 			InternalPtrRefMap& getInternalPtrReferencesMap() { return mInternalPtrReferencesMap; }
@@ -253,8 +253,6 @@ namespace physx
 
 			PxU64		getSize()	const	{	return mMemStream.getSize(); }
 			PxU8*		getData()	const	{	return mMemStream.getData(); }
-
-
 
 		private:
 			//import reference map for unique registration of import references and corresponding buffer.

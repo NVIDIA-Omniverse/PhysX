@@ -9,7 +9,7 @@ description = "Self-contained Python library for USD-based physics simulation wi
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "packaging>=20.0",  # PEP 440 version checking for USD compatibility
+  "packaging>=20,<24",  # PEP 440 version checking for USD compatibility
 ]
 license = "LicenseRef-NVIDIA-Omniverse"
 license-files = ["LICENSE.txt", "ovphysx-LICENSES.zip"]
@@ -26,7 +26,7 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/NVIDIA-Omniverse/PhysX/tree/main/ovphysx"
+Homepage = "https://github.com/NVIDIA-Omniverse/PhysX/"
 Documentation = "https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/index.html"
 Repository = "https://github.com/NVIDIA-Omniverse/PhysX"
 Issues = "https://github.com/NVIDIA-Omniverse/PhysX/issues"
@@ -62,5 +62,4 @@ include = ["ovphysx*"]
   "samples/**/*",
   "docs/**/*",
 ]
-
 

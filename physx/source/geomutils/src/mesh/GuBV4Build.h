@@ -115,7 +115,7 @@ namespace Gu
 						PxU32				mTotalNbNodes;		//!< Number of nodes in the tree.
 	};
 
-	bool BuildBV4Ex(BV4Tree& tree, SourceMeshBase& mesh, float epsilon, PxU32 nbPrimitivePerLeaf, bool quantized, BV4_BuildStrategy strategy=BV4_SPLATTER_POINTS);
+	bool buildBV4Ex(BV4Tree& tree, SourceMeshBase& mesh, float epsilon, PxU32 nbPrimitivePerLeaf, bool quantized, BV4_BuildStrategy strategy=BV4_SPLATTER_POINTS);
 
 } // namespace Gu
 }

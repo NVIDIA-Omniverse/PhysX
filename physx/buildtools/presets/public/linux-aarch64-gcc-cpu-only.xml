@@ -4,7 +4,8 @@
   <CMakeSwitches>
     <cmakeSwitch name="PX_BUILDSNIPPETS" value="True" comment="Generate the snippets" />
     <cmakeSwitch name="PX_BUILDPVDRUNTIME" value="True" comment="Generate the OmniPVD project" />
-    <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libs" />    
+    <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libs" />
+    <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="False" comment="CPU-only preset: no CUDA/GPU" />
   </CMakeSwitches>
   <CMakeParams>
     <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/linux-aarch64-gcc-cpu-only/PhysX" comment="Install path relative to PhysX SDK root" />

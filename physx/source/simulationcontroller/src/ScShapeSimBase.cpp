@@ -30,6 +30,7 @@
 #include "ScSimulationController.h"
 #include "CmTransformUtils.h"
 #include "ScShapeInteraction.h"
+#include "ScArticulationSim.h"
 
 #if PX_SUPPORT_GPU_PHYSX
 	#include "cudamanager/PxCudaContextManager.h"
@@ -178,7 +179,7 @@ PX_FORCE_INLINE void ShapeSimBase::internalAddToBroadPhase()
 {
 	PX_ASSERT(!isInBroadPhase());
 
-	addToAABBMgr(getCore().getContactOffset(), getBPGroup(*this), (getCore().getCore().mShapeFlags & PxShapeFlag::eTRIGGER_SHAPE) ? Bp::ElementType::eTRIGGER : Bp::ElementType::eSHAPE);
+	addToAABBMgr(getCore().getContactOffset(), getBPGroup(*this), (getCore().mShapeFlags & PxShapeFlag::eTRIGGER_SHAPE) ? Bp::ElementType::eTRIGGER : Bp::ElementType::eSHAPE);
 }
 
 PX_FORCE_INLINE bool ShapeSimBase::internalRemoveFromBroadPhase(bool wakeOnLostTouch)
@@ -255,7 +256,7 @@ void ShapeSimBase::getAbsPoseAligned(PxTransform* PX_RESTRICT globalPose) const
 {
 	// PT: TODO: simplify dynamic case when shape2Actor = idt
 
-	const PxsShapeCore& shapeCore = getCore().getCore();
+	const PxsShapeCore& shapeCore = getCore();
 
 	const PxTransform& shape2Actor = shapeCore.getTransform();
 	const PxTransform* actor2World = NULL;
@@ -341,49 +342,15 @@ PxsRigidCore& ShapeSimBase::getPxsRigidCore() const
 		: static_cast<StaticSim&>(a).getStaticCore().getCore();
 }
 
-// PT: TODO: unify the two updateCached() implementations?
+///////////////////////////////////////////////////////////////////////////////
 
-// PT: use this version when calling from a single thread. In particular the code is not thread-safe
-// when shapeChangedMap is not null. If shapeChangedMap is null, the code should be safe to call from
-// multiple threads but it could be suboptimal, as we will write to the same cache line from multiple
-// threads.
-void ShapeSimBase::updateCached_NotThreadSafe(const UpdateCachedParams& params, PinnableBitMap* shapeChangedMap)
+void ShapeSimBase::updateCached(const UpdateCachedParams& params, PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics)
 {
+	///////////////////////////////////////////////////////////////////////////
+	// 1) filter out pure visual shapes
+
 	// PT: we don't need to update the transforms & bounds for pure visual shapes
-	const ShapeCore& shapeCore = getCore();
-	if(!needsBounds(shapeCore.getFlags()))
-		return;
-
-	PX_ALIGN(16, PxTransform absPose);
-	getAbsPoseAligned(&absPose);
-
-	const PxU32 index = getElementID();
-
-	// PT: this won't be optimal from multiple threads:
-	// - PxsTransformCache::mHasAnythingChanged will be set repeatedly from N threads
-	// - contiguous indices could suffer from false sharing when sizeof(PxsCachedTransform) < sizeof(cache line)
-	PxsTransformCache& transformCache = params.mTransformCache;
-	transformCache.setTransformCache(absPose, params.mTransformFlags, index);
-
-	// PT: this won't be safe from multiple threads:
-	// - BoundsArray::mHasAnythingChanged will be set repeatedly from N threads
-	// - contiguous indices could suffer from false sharing when sizeof(PxBounds3) < sizeof(cache line)
-	// - updateBounds is now virtual, and the Pxg version is unsafe (writes to array from N threads)
-	params.mBoundsArray.updateBounds(absPose, shapeCore.getGeometryUnion().getGeometry(), index, index);
-
-	// PT: this won't be safe from multiple threads:
-	// - the write to the bitmap is not thread safe and could lead to data corruption from N threads
-	if (shapeChangedMap && isInBroadPhase())
-		shapeChangedMap->growAndSet(index);
-}
-
-// PT: use this version when calling from multiple threads. It still has potential performance issues
-// from false sharing but it should be safe. Callers are expected to:
-// - set PxsTransformCache::mHasAnythingChanged and BoundsArray::mHasAnythingChanged themselves
-// - do the changed bitmap update outside of the call (although we could use atomic ORs these days)
-void ShapeSimBase::updateCached_ThreadSafe(const UpdateCachedParams& params)
-{
-	// PT: we don't need to update the transforms & bounds for pure visual shapes
+	// We also don't need to update the frozen flags of visual shapes as this is only used for contact gen, not for active actors.
 	const ShapeCore& shapeCore = getCore();
 	if(!needsBounds(shapeCore.getFlags()))
 		return;
@@ -392,18 +359,188 @@ void ShapeSimBase::updateCached_ThreadSafe(const UpdateCachedParams& params)
 
 	const PxU32 index = getElementID();
 
-	PxsCachedTransform& ct = params.mTransformCache.getTransformCache(index);
-	PxPrefetchLine(&ct);
+	///////////////////////////////////////////////////////////////////////////
+	// 2) compute new pose, write it to transform cache
+	// PT: these bits won't be optimal from multiple threads:
+	// - PxsTransformCache::mHasAnythingChanged will be set repeatedly from N threads
+	// - contiguous indices could suffer from false sharing when sizeof(PxsCachedTransform) < sizeof(cache line)
+	//
+	// Original code:
+	// PX_ALIGN(16, PxTransform absPose);
+	// sim.getAbsPoseAligned(&absPose);
+	// params.mTransformCache.setTransformCache(absPose, params.mTransformFlags, index);
+
+	PxsTransformCache& transformCache = params.mTransformCache;
+	PxsCachedTransform& ct = transformCache.getTransformCache(index);
+	//PxPrefetchLine(&ct);	// PT: disabled because it's questionable here
 
 	// PT: we write the pose directly to the destination address, avoiding a copy. Potential false sharing here.
 	getAbsPoseAligned(&ct.transform);
 
 	ct.flags = params.mTransformFlags;
 
+	// PT: PxsTransformCache::mHasAnythingChanged can be set repeatedly from N threads here. Prefer setting it once from the calling code.
+	if(!fromTask)
+		transformCache.setChangedState();
+
+	///////////////////////////////////////////////////////////////////////////
+	// 3) compute new bounds, write them to bounds array
+	// PT: these bits won't be safe from multiple threads:
+	// - BoundsArray::mHasAnythingChanged will be set repeatedly from N threads
+	// - contiguous indices could suffer from false sharing when sizeof(PxBounds3) < sizeof(cache line)
+	// - updateBounds is now virtual, and the Pxg version is unsafe (writes to array from N threads)
+
 	// PT: we write the bounds directly to the destination address, avoiding a copy. Potential false sharing here.
-	PxBounds3& b = params.mBoundsArray.begin()[index];
-	Gu::computeBounds(b, shapeCore.getGeometryUnion().getGeometry(), ct.transform, 0.0f, 1.0f);
+	Bp::BoundsArray& boundsArray = params.mBoundsArray;
+	if(fromTask)
+	{
+		// PT: this one bypasses the virtual call (that's why it is thread-safe) and skips the setChangedState() call
+		Gu::computeBounds(boundsArray.begin()[index], shapeCore.getGeometryUnion().getGeometry(), ct.transform, 0.0f, 1.0f);
+		//boundsArray.setChangedState();
+	}
+	else
+	{
+		boundsArray.updateBounds(ct.transform, shapeCore.getGeometryUnion().getGeometry(), index, index);
+	}
+
+	///////////////////////////////////////////////////////////////////////////
+	// 4) update bitmap
+
+	PX_ASSERT(isInBroadPhase() == (isBroadPhase(shapeCore.getFlags())!=0) );
+	if(shapeChangedMap && isInBroadPhase())
+	{
+		if(useAtomics)
+		{
+			PxU32* PX_RESTRICT dirtyMap = shapeChangedMap->getWords();
+			PX_ASSERT(index < shapeChangedMap->getWordCount() * 32);
+			/*PxI32 data = */PxAtomicOr(reinterpret_cast<volatile PxI32*>(&dirtyMap[index >> 5]), 1 << (index & 31));
+		}
+		else
+		{
+			// PT: this won't be safe from multiple threads:
+			// - the write to the bitmap is not thread safe and could lead to data corruption from N threads
+			shapeChangedMap->growAndSet(index);
+		}
+	}
 }
+
+void BodySim::updateCached(const UpdateCachedParams& params, PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics)
+{
+	if(!(mLLBody.mInternalFlags & PxsRigidBody::eFROZEN))
+	{
+		PxU32 nbElems = getNbElements();
+		ElementSim** elems = getElements();
+		while (nbElems--)
+		{
+			ShapeSim* current = static_cast<ShapeSim*>(*elems++);
+			current->updateCached(params, shapeChangedMap, fromTask, useAtomics);
+		}
+	}
+}
+
+void Sc::ArticulationSim::updateCached(const UpdateCachedParams& params, PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics)
+{
+	const PxU32 nbBodies = mBodies.size();
+	BodySim** bodies = mBodies.begin();
+	for(PxU32 i=0; i<nbBodies; i++)
+	{
+		bodies[i]->updateCached(params, shapeChangedMap, fromTask, useAtomics);
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void BodySim::updateCached_NotThreadSafe(const UpdateCachedParams& params, PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics)
+{
+	if(!(mLLBody.mInternalFlags & PxsRigidBody::eFROZEN))
+	{
+		PxU32 nbElems = getNbElements();
+		ElementSim** elems = getElements();
+		while (nbElems--)
+		{
+			ShapeSim* current = static_cast<ShapeSim*>(*elems++);
+			current->updateCached_NotThreadSafe(params, shapeChangedMap, fromTask, useAtomics);
+		}
+	}
+}
+
+void BodySim::updateCached_ThreadSafe(const UpdateCachedParams& params)
+{
+	PX_ASSERT(!(mLLBody.mInternalFlags & PxsRigidBody::eFROZEN));	// PT: should not be called otherwise
+
+	PxU32 nbElems = getNbElements();
+	ElementSim** elems = getElements();
+	while (nbElems--)
+	{
+		ShapeSim* current = static_cast<ShapeSim*>(*elems++);
+		current->updateCached_ThreadSafe(params);
+	}
+}
+
+void ArticulationSim::updateCached_NotThreadSafe(const UpdateCachedParams& params, PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics)
+{
+	for(PxU32 i=0; i<mBodies.size(); i++)
+		mBodies[i]->updateCached_NotThreadSafe(params, shapeChangedMap, fromTask, useAtomics);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+#define CHECK_FROZEN_TRANSFORMS	0
+
+// PT: this version doesn't update the cache & bounds, only the transform flags.
+// The poses & bounds don't need updating as they are frozen and haven't changed.
+void BodySim::freezeTransforms(PxsTransformCache& transformCache)
+{
+	PxU32 nbElems = getNbElements();
+	ElementSim** elems = getElements();
+	while (nbElems--)
+	{
+		ShapeSim* sim = static_cast<ShapeSim*>(*elems++);
+
+		// 1) filter out pure visual shapes
+		// PT: we don't need to update the transforms & bounds for pure visual shapes
+		// We also don't need to update the frozen flags of visual shapes as this is only used for contact gen, not for active actors.
+		const ShapeCore& shapeCore = sim->getCore();
+		if(needsBounds(shapeCore.getFlags()))		
+		{
+			// 2) make sure new pose is the same as current pose (otherwise we should not be frozen)
+			const PxU32 index = sim->getElementID();
+			PxsCachedTransform& ct = transformCache.getTransformCache(index);
+#if CHECK_FROZEN_TRANSFORMS
+			PX_ALIGN(16, PxTransform absPose);
+			sim->getAbsPoseAligned(&absPose);
+
+			PX_ASSERT(ct.transform == absPose);
+#endif
+			// PT: this is the only real change: mark transforms as frozen
+			// skip bounds update, as the bounds are derived from the pose, which hasn't changed
+			// skip bitmap update, as the data hasn't actually changed
+			ct.flags = PxsTransformFlag::eFROZEN;
+			transformCache.setChangedState();	// PT: TODO: is this necessary?
+		}
+
+		sim->destroySqBounds();
+	}
+}
+
+// PT: this variant (the original code) still updates the data, as it is now used in a case that explicitly
+// wants to rollback poses & bounds to their previous version.
+void BodySim::freezeTransforms(const UpdateCachedParams& params, PinnableBitMap* shapeChangedMap)
+{
+	const UpdateCachedParams frozenParams(params.mTransformCache, params.mBoundsArray, PxsTransformFlag::eFROZEN);
+	
+	PxU32 nbElems = getNbElements();
+	ElementSim** elems = getElements();
+	while (nbElems--)
+	{
+		ShapeSim* sim = static_cast<ShapeSim*>(*elems++);
+		// PT: we still need atomic ORs here, as this function is called from a place that can run in parallel with other bitmap updates.
+		sim->updateCached_NotThreadSafe(frozenParams, shapeChangedMap, false, true);
+		sim->destroySqBounds();
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 void ShapeSimBase::updateBPGroup()
 {

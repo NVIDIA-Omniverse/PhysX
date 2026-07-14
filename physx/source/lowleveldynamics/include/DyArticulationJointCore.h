@@ -160,7 +160,7 @@ namespace physx
 				// Cm::UnAlignedSpatialVector axis = Cm::UnAlignedSpatialVector::Zero();
 				// axis[i] = 1.f;
 				// So we could store and pass a simple index in [0;6] instead of the full spatial vector, and then
-				// use specialized rotateAndNormalize() functions that have advantage of zeros.
+				// use specialized rotateAndNormalize() functions that take advantage of zeros.
 
 				const PxVec3 childOffset = -childPose.p;
 

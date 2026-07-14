@@ -111,13 +111,13 @@ NpPhysics::NpPhysics(const PxTolerancesScale& scale, const PxvOffsetTable& pxvOf
 #if PX_SUPPORT_PVD	
 	mPvd = pvd;
 	if(pvd)
-	{		
+	{
 	    mPvdPhysicsClient = PX_NEW(Vd::PvdPhysicsClient)(mPvd);	
 	    foundation.registerErrorCallback(*mPvdPhysicsClient);
 		foundation.registerAllocationListener(*mPvd);	
 	}
 	else
-	{		
+	{
 		mPvdPhysicsClient = NULL;
 	}
 #else
@@ -200,13 +200,13 @@ NpPhysics::~NpPhysics()
 
 #if PX_SUPPORT_PVD	
 	if(mPvd)
-	{	
+	{
 		mPvdPhysicsClient->destroyPvdInstance(this);
 		mPvd->removeClient(mPvdPhysicsClient);
 		mFoundation.deregisterErrorCallback(*mPvdPhysicsClient);
 		PX_DELETE(mPvdPhysicsClient);	
 		mFoundation.deregisterAllocationListener(*mPvd);
-	}	
+	}
 #endif
 
 	const DeletionListenerMap::Entry* delListenerEntries = mDeletionListenerMap.getEntries();
@@ -274,7 +274,7 @@ void NpPhysics::initOffsetTables(PxvOffsetTable& pxvOffsetTable)
 	}
 	{
 		Sc::OffsetTable& scOffsetTable = Sc::gOffsetTable;
-		pxvOffsetTable.pxsShapeCore2PxShape			= scOffsetTable.scShape2Px				- ptrdiff_t(Sc::ShapeCore::getCoreOffset());
+		pxvOffsetTable.pxsShapeCore2PxShape			= scOffsetTable.scShape2Px;
 		pxvOffsetTable.pxsRigidCore2PxRigidBody		= scOffsetTable.scRigidDynamic2PxActor	- ptrdiff_t(Sc::BodyCore::getCoreOffset());
 		pxvOffsetTable.pxsRigidCore2PxRigidStatic	= scOffsetTable.scRigidStatic2PxActor	- ptrdiff_t(Sc::StaticCore::getCoreOffset());
 	}
@@ -321,7 +321,7 @@ NpPhysics* NpPhysics::createInstance(PxU32 version, PxFoundation& foundation, co
 
 #if PX_SUPPORT_PVD			
 	    if(pvd)
-		{			
+		{
 			NpFactory::getInstance().setNpFactoryListener( *mInstance->mPvdPhysicsClient );					
 			pvd->addClient(mInstance->mPvdPhysicsClient);
 		}
@@ -342,7 +342,7 @@ PxU32 NpPhysics::releaseInstance()
 
 #if PX_SUPPORT_PVD	
 	if(mInstance->mPvd)
-	{	
+	{
 		NpFactory::getInstance().removeFactoryListener( *mInstance->mPvdPhysicsClient );		
 	}
 #endif
@@ -951,70 +951,42 @@ PxU32 NpPhysics::getBVHs(PxBVH** userBuffer, PxU32 bufferSize, PxU32 startIndex)
 ///////////////////////////////////////////////////////////////////////////////
 
 #if PX_SUPPORT_GPU_PHYSX
-PxParticleBuffer* NpPhysics::createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager)
+PxParticleBuffer* NpPhysics::createParticleBuffer(PxU32 maxParticles, PxCudaContextManager* cudaContextManager)
 {
 	if (cudaContextManager)
 	{
-		return NpFactory::getInstance().createParticleBuffer(maxParticles, maxVolumes, *cudaContextManager);
+		return NpFactory::getInstance().createParticleBuffer(maxParticles, *cudaContextManager);
 	}
 	return NULL;
 }
 
-PxParticleAndDiffuseBuffer* NpPhysics::createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager)
+PxParticleAndDiffuseBuffer* NpPhysics::createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager)
 {
-	// Pinned host allocation may fail, but we still return a buffer with correspondingly disabled
-	// functionality.
 	if (cudaContextManager)
 	{
-		return NpFactory::getInstance().createParticleAndDiffuseBuffer(maxParticles, maxVolumes, maxDiffuseParticles, *cudaContextManager);
+		return NpFactory::getInstance().createParticleAndDiffuseBuffer(maxParticles, maxDiffuseParticles, *cudaContextManager);
 	}
 	return NULL;
 }
 
-PxParticleClothBuffer* NpPhysics::createParticleClothBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager)
-{
-	if (cudaContextManager)
-	{
-		return NpFactory::getInstance().createParticleClothBuffer(maxParticles, maxNumVolumes, maxNumCloths, maxNumTriangles, maxNumSprings, *cudaContextManager);
-	}
-	return NULL;
-}
-
-PxParticleRigidBuffer* NpPhysics::createParticleRigidBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager)
-{
-	if (cudaContextManager)
-	{
-		return NpFactory::getInstance().createParticleRigidBuffer(maxParticles, maxNumVolumes, maxNumRigids, *cudaContextManager);
-	}
-	return NULL;
-}
 #else
-PxParticleBuffer* NpPhysics::createParticleBuffer(PxU32, PxU32, PxCudaContextManager*)
+PxParticleBuffer* NpPhysics::createParticleBuffer(PxU32, PxCudaContextManager*)
 {
 	return NULL;
 }
 
-PxParticleAndDiffuseBuffer* NpPhysics::createParticleAndDiffuseBuffer(PxU32, PxU32, PxU32, PxCudaContextManager*)
+PxParticleAndDiffuseBuffer* NpPhysics::createParticleAndDiffuseBuffer(PxU32, PxU32, PxCudaContextManager*)
 {
 	return NULL;
 }
 
-PxParticleClothBuffer* NpPhysics::createParticleClothBuffer(PxU32, PxU32, PxU32, PxU32, PxU32, PxCudaContextManager*)
-{
-	return NULL;
-}
-
-PxParticleRigidBuffer* NpPhysics::createParticleRigidBuffer(PxU32, PxU32, PxU32, PxCudaContextManager*)
-{
-	return NULL;
-}
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
 PxPruningStructure* NpPhysics::createPruningStructure(PxRigidActor*const* actors, PxU32 nbActors)
 {
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	PX_ASSERT(actors);
 	PX_ASSERT(nbActors > 0);

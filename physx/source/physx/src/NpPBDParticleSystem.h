@@ -46,9 +46,6 @@ namespace physx
 	class NpScene;
 	class NpParticleBuffer;
 	class NpParticleAndDiffuseBuffer;
-	class NpParticleClothBuffer;
-	class NpParticleRigidBuffer;
-
 	class NpPBDParticleSystem : public NpActorTemplate<PxPBDParticleSystem>
 	{
 	public:
@@ -90,14 +87,11 @@ namespace physx
 		virtual	void				setMaxDepenetrationVelocity(PxReal v) PX_OVERRIDE { scSetMaxDepenetrationVelocity(v); }
 		virtual	PxReal				getMaxDepenetrationVelocity() const PX_OVERRIDE { return mCore.getMaxDepenetrationVelocity(); }
 
-		virtual	void				setMaxVelocity(PxReal v) PX_OVERRIDE { scSetMaxVelocity(v); }
-		virtual	PxReal				getMaxVelocity() const PX_OVERRIDE { return mCore.getMaxVelocity(); }
+		virtual	void				setMaxLinearVelocity(PxReal v) PX_OVERRIDE { scSetMaxVelocity(v); }
+		virtual	PxReal				getMaxLinearVelocity() const PX_OVERRIDE { return mCore.getMaxVelocity(); }
 
 		virtual void				setParticleSystemCallback(PxParticleSystemCallback* callback) PX_OVERRIDE { mCore.setParticleSystemCallback(callback); }
 		virtual PxParticleSystemCallback* getParticleSystemCallback() const PX_OVERRIDE { return mCore.getParticleSystemCallback(); }
-
-		//deprecated
-		virtual	void				enableCCD(bool enable) PX_OVERRIDE { scEnableCCD(enable); }
 
 		virtual PxParticleLockFlags getParticleLockFlags() const PX_OVERRIDE { return mCore.getLockFlags(); }
 		virtual void				setParticleLockFlag(PxParticleLockFlag::Enum flag, bool value) PX_OVERRIDE { scSetParticleLockFlag(flag, value); }
@@ -135,9 +129,6 @@ namespace physx
 
 		virtual void				addParticleBuffer(PxParticleBuffer* particleBuffer) PX_OVERRIDE;
 		virtual void				removeParticleBuffer(PxParticleBuffer* particleBuffer) PX_OVERRIDE;
-
-		virtual void				addRigidAttachment(PxRigidActor* actor) PX_OVERRIDE;
-		virtual void				removeRigidAttachment(PxRigidActor* actor) PX_OVERRIDE;
 
 		virtual PxU32				getGpuParticleSystemIndex() PX_OVERRIDE;
 		//~PxPBDParticleSystem
@@ -212,19 +203,6 @@ namespace physx
 			OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxPBDParticleSystem, fluidRestOffset, static_cast<PxPBDParticleSystem&>(*this), v);
 		}
 
-		PX_INLINE void scEnableCCD(bool enable)
-		{
-			PxParticleFlags flags = mCore.getFlags();
-			if (enable)
-				flags.raise(PxParticleFlag::eENABLE_SPECULATIVE_CCD);
-			else
-				flags.clear(PxParticleFlag::eENABLE_SPECULATIVE_CCD);
-
-			mCore.setFlags(flags);
-			scSetDirtyFlag();
-			OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxPBDParticleSystem, particleFlags, static_cast<PxPBDParticleSystem&>(*this), flags);
-		}
-
 		PX_INLINE void scSetParticleLockFlag(const PxParticleLockFlag::Enum flag, bool value)
 		{
 			PX_ASSERT(!NpBase::isAPIWriteForbidden());
@@ -291,7 +269,7 @@ namespace physx
 
 		PX_INLINE void scSetMaxVelocity(const PxReal v)
 		{
-			PX_CHECK_AND_RETURN(v > 0.f, "PxParticleSystem::setMaxVelocity: Max Velocity must be > 0!");
+			PX_CHECK_AND_RETURN(v > 0.f, "PxPBDParticleSystem::setMaxLinearVelocity: maxLinearVelocity must be > 0!");
 			PX_ASSERT(!NpBase::isAPIWriteForbidden());
 			mCore.setMaxVelocity(v);
 			scSetDirtyFlag();
@@ -330,8 +308,6 @@ namespace physx
 	public:
 		PxArray<NpParticleBuffer*>				mParticleBuffers;
 		PxArray<NpParticleAndDiffuseBuffer*>	mParticleDiffuseBuffers;
-		PxArray<NpParticleClothBuffer*>			mParticleClothBuffers;
-		PxArray<NpParticleRigidBuffer*>			mParticleRigidBuffers;
 
 	private:
 		Sc::ParticleSystemCore mCore;

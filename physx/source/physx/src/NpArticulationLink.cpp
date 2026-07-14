@@ -56,7 +56,7 @@ void NpArticulationLink::importExtraData(PxDeserializationContext& context)
 }
 
 void NpArticulationLink::resolveReferences(PxDeserializationContext& context)
-{	
+{
     context.translatePxBase(mRoot);
     context.translatePxBase(mInboundJoint);
     context.translatePxBase(mParent);

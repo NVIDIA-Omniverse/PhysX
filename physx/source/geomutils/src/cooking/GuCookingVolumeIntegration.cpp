@@ -485,7 +485,7 @@ namespace
 	*	\return		true if success
 	*/
 	bool VolumeIntegratorEberly::computeVolumeIntegralsSIMD(PxIntegrals& ir, const PxVec3& origin)
-	{		
+	{
 		FloatV	mult = FLoad(1.0f/6.0f);
 		const Vec4V multV = V4Load(1.0f/24.0f);
 		const Vec4V multV2 = V4Load(1.0f/60.0f);
@@ -557,7 +557,7 @@ namespace
 				const Vec4V ad2 = V4MulAdd(p2YZX, g2, ad1);
 				intgVV = V4MulAdd(d, ad2, intgVV); //intgVV += d.multiply(p0YZX.multiply(g0) + p1YZX.multiply(g1) + p2YZX.multiply(g2));
 			}
-		}		
+		}
 
 		intg = FMul(intg, mult); // intg *= mult;
 		intgV = V4Mul(intgV, multV);

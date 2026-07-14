@@ -31,7 +31,6 @@
 
 #include "foundation/PxMat33.h"
 #include "foundation/PxBounds3.h"
-#include "PxSoftBodyFlag.h" // deprecated
 #include <vector_types.h>
 
 #define MAX_SELF_COLLISION_CONTACTS		1000
@@ -79,8 +78,6 @@ namespace physx
 	class PxgSoftBody
 	{
 	public:
-
-		PX_DEPRECATED static PxU32 dataIndexFromFlagDEPRECATED(PxSoftBodyGpuDataFlag::Enum flag);
 
 		// AD: We only use this for the host mirror as the GPU-side are PxgCudaBuffers and we only assign the pointers. 
 		// Make sure to pass the right allocator in here!

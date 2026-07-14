@@ -75,7 +75,7 @@ namespace physx
 	{
 		PX_ASSERT(mInstance != NULL);
 		if (mInstance->mRefCount == 1)
-		{				
+		{
 			mInstance->~NpOmniPvd();			
 			PX_FREE(mInstance);
 			mInstance = NULL;			
@@ -198,7 +198,7 @@ namespace physx
 		if (mPhysXSampler)
 		{
 			return mPhysXSampler->startSampling();
-		}		
+		}
 		return false;
 #else
 		return false;

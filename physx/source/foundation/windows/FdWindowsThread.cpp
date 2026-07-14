@@ -242,7 +242,7 @@ void PxThreadImpl::start(uint32_t stackSize, PxRunnable* runnable)
 		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "FdWindowsThread::start: Failed to resume thread.");
 		getThread(this)->state = ThreadImpl::NotStarted;
 		return;
-	}	
+	}
 }
 
 void PxThreadImpl::signalQuit()

@@ -929,7 +929,7 @@ bool Gu::pcmContactBoxBox(GU_CONTACT_METHOD_ARGS)
 					manifold.mAIndice, manifold.mBIndice, manifold.mNumWarmStartPoints, output);
 
 				if(status == EPA_CONTACT)
-				{			
+				{
 					const RelativeConvex<BoxV> convexA1(box0, aToB);
 					const LocalConvex<BoxV> convexB1(box1);
 

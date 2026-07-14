@@ -51,7 +51,7 @@ public:
 	PX_INLINE	Dy::DeformableVolume*		getLowLevelDeformableVolume() const { return mLLDeformableVolume; }
 	PX_INLINE	DeformableVolumeCore&		getCore() const { return static_cast<DeformableVolumeCore&>(mCore); }
 
-	virtual		PxActor*					getPxActor() const { return getCore().getPxActor(); }
+	virtual		PxActor*					getPxActor() const PX_OVERRIDE { return getCore().getPxActor(); }
 
 				bool						isSleeping() const;
 				bool						isActive() const { return !isSleeping(); }

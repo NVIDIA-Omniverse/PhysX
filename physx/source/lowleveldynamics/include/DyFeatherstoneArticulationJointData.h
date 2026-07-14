@@ -43,7 +43,7 @@
 namespace physx
 {
 	namespace Dy
-	{	
+	{
 		class ArticulationJointCoreData
 		{
 		public:

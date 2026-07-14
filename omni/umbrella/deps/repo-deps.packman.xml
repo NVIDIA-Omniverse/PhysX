@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project toolsVersion="5.0">
+  <dependency name="repo_man" linkPath="../_repo/deps/repo_man">
+    <package name="repo_man" version="2.6.5" />
+  </dependency>
+  <dependency name="repo_format" linkPath="../_repo/deps/repo_format">
+    <package name="repo_format" version="2.19.3" />
+  </dependency>
+</project>

@@ -51,7 +51,7 @@ namespace physx
 		, stiffness(0)
 		, damping(0)
 		{
-		}	
+		}
 
 		/**
 		\brief Returns true if the current settings are valid.

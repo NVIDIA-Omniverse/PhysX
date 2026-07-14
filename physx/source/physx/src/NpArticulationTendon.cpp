@@ -283,7 +283,7 @@ void NpArticulationSpatialTendon::importExtraData(PxDeserializationContext& cont
 }
 
 void NpArticulationSpatialTendon::resolveReferences(PxDeserializationContext& context)
-{	
+{
 	const PxU32 nbAttachments = mAttachments.size();
 	for (PxU32 i = 0; i < nbAttachments; i++)
 	{
@@ -671,7 +671,7 @@ void NpArticulationFixedTendon::importExtraData(PxDeserializationContext& contex
 }
 
 void NpArticulationFixedTendon::resolveReferences(PxDeserializationContext& context)
-{	
+{
 	const PxU32 nbTendonJoints = mTendonJoints.size();
 	for (PxU32 i = 0; i < nbTendonJoints; i++)
 	{

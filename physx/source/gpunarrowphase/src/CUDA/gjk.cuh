@@ -271,7 +271,7 @@ restart:
 	bool degenerate;
 
 	do
-	{	
+	{
 		PxReal dV = closestPointV/cm, supportVertexV;
 
 #if GJK_LOGGING

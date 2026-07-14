@@ -45,20 +45,20 @@ class MeshFactory;
 class RTreeTriangleMesh : public TriangleMesh
 {
 	public:
-						virtual const char*				getConcreteTypeName()	const	{ return "PxBVH33TriangleMesh"; }
+						virtual const char*				getConcreteTypeName()	const PX_OVERRIDE { return "PxBVH33TriangleMesh"; }
 // PX_SERIALIZATION
 														RTreeTriangleMesh(PxBaseFlags baseFlags) : TriangleMesh(baseFlags), mRTree(PxEmpty) {}
-	PX_PHYSX_COMMON_API	virtual void					exportExtraData(PxSerializationContext& ctx);
+	PX_PHYSX_COMMON_API	virtual void					exportExtraData(PxSerializationContext& ctx)	PX_OVERRIDE;
 								void					importExtraData(PxDeserializationContext&);
 	PX_PHYSX_COMMON_API	static	TriangleMesh*			createObject(PxU8*& address, PxDeserializationContext& context);
 //~PX_SERIALIZATION
 														RTreeTriangleMesh(MeshFactory* factory, TriangleMeshData& data);
 						virtual							~RTreeTriangleMesh(){}
 
-						virtual	PxMeshMidPhase::Enum	getMidphaseID()			const	{ return PxMeshMidPhase::eBVH33; }
+						virtual	PxMeshMidPhase::Enum	getMidphaseID()			const PX_OVERRIDE { return PxMeshMidPhase::eBVH33; }
 
-						virtual PxVec3*					getVerticesForModification();
-						virtual PxBounds3				refitBVH();
+						virtual PxVec3*					getVerticesForModification() PX_OVERRIDE;
+						virtual PxBounds3				refitBVH() PX_OVERRIDE;
 
 	PX_FORCE_INLINE				const Gu::RTree&		getRTree()				const	{ return mRTree; }
 	private:

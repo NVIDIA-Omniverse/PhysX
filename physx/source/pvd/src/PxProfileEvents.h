@@ -269,7 +269,7 @@ namespace physx { namespace profile {
 		}
 
 		uint32_t getEventSize(const EventHeader& inHeader)
-		{	
+		{
 			uint32_t size = 0;
 			switch (inHeader.getTimestampCompressionFlags())
 			{

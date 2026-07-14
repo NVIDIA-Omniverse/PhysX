@@ -33,11 +33,11 @@
 #include "cooking/PxCooking.h"
 
 namespace physx
-{	
+{
 	//////////////////////////////////////////////////////////////////////////
 	// base class for the convex hull libraries - inflation based and quickhull
 	class ConvexHullLib
-	{		
+	{
 		PX_NOCOPY(ConvexHullLib)
 	public:
 		// functions

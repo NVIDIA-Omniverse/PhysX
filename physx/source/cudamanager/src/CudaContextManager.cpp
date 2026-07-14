@@ -196,6 +196,8 @@ protected:
 
 private:
 
+	friend void		addRef(PxCudaContextManager* cudaContextManager);
+
 	PxArray<CUmodule>	mCuModules;
 
 	bool            mIsValid;
@@ -218,6 +220,7 @@ private:
 	int				mSharedMemPerMultiprocessor;
 	int				mClockRate;
 	bool			mUsingConcurrentStreams;
+	volatile PxI32	mRefCount;
 	uint32_t		mContextRefCountTls;
 #if PX_DEBUG
 	volatile PxI32 mPushPopCount;
@@ -506,6 +509,7 @@ CudaCtxMgr::CudaCtxMgr(const PxCudaContextManagerDesc& desc, PxErrorCallback& er
 	: mOwnContext(false)
 	, mCudaCtx(NULL)
 	, mUsingConcurrentStreams(true)
+	, mRefCount(1)
 #if PX_DEBUG
 	, mPushPopCount(0)
 #endif
@@ -744,13 +748,21 @@ bool CudaCtxMgr::safeDelayImport(PxErrorCallback& errorCallback)
 	return true;
 }
 
+void addRef(PxCudaContextManager* cudaContextManager)
+{
+	if (cudaContextManager)
+		PxAtomicIncrement(&static_cast<CudaCtxMgr*>(cudaContextManager)->mRefCount);
+}
+
 void CudaCtxMgr::release()
 {
-	PX_DELETE_THIS;
+	if (PxAtomicDecrement(&mRefCount) == 0)
+		PX_DELETE_THIS;
 }
 
 CudaCtxMgr::~CudaCtxMgr()
 {
+	PX_ASSERT(mRefCount == 0);
 	if (mCudaCtx)
 	{
 		// unload CUDA modules
@@ -1102,6 +1114,9 @@ PxCUresult CudaCtx::eventCreate(CUevent* phEvent, unsigned int Flags)
 	}
 
 	mLastResult = cuEventCreate(phEvent, Flags);
+	if (mLastResult != CUDA_SUCCESS)
+		*phEvent = NULL;
+
 	return mLastResult;
 }
 
@@ -1488,7 +1503,7 @@ void CudaCtx::setAbortMode(bool abort)
 	mIsInAbortMode = abort;
 	
 	if ((abort == false) && (mLastResult == CUDA_ERROR_OUT_OF_MEMORY))
-	{	
+	{
 		mLastResult = CUDA_SUCCESS;
 	}
 }

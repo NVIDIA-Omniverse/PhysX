@@ -228,7 +228,7 @@ namespace
 				// set new filter data
 				shape->setSimulationFilterData(resultFd);
 			}
-			break;			
+			break;
 			default:
 			break;
 		}

@@ -126,27 +126,6 @@ void Sc::ArticulationSim::removeLoopConstraint(ConstraintSim* constraintSim)
 		mLoopConstraints.replaceWithLast(index);
 }
 
-void Sc::ArticulationSim::updateCached_NotThreadSafe(const UpdateCachedParams& params, PinnableBitMap* shapeChangedMap)
-{
-	for(PxU32 i=0; i<mBodies.size(); i++)
-		mBodies[i]->updateCached_NotThreadSafe(params, shapeChangedMap);
-}
-
-void Sc::ArticulationSim::markShapesUpdated(PinnableBitMap* shapeChangedMap)
-{
-	for (PxU32 a = 0; a < mBodies.size(); ++a)
-	{
-		PxU32 nbElems = mBodies[a]->getNbElements();
-		ElementSim** elems = mBodies[a]->getElements();
-		while (nbElems--)
-		{
-			ShapeSim* sim = static_cast<ShapeSim*>(*elems++);
-			if (sim->isInBroadPhase())
-				shapeChangedMap->growAndSet(sim->getElementID());
-		}
-	}
-}
-
 void Sc::ArticulationSim::addBody(BodySim& body, BodySim* parent, ArticulationJointSim* joint)
 {
 	mBodies.pushBack(&body);
@@ -420,13 +399,13 @@ void Sc::ArticulationSim::putToSleep()
 			PxReal* posIterJointVelocities = articulationData.getPosIterJointVelocities();
 			if (posIterJointVelocities)
 				PxMemZero(posIterJointVelocities, jointDataSize);
-		}		
+		}
 	}
 	
 	mScene.getSimulationController()->updateArticulation(this, mIslandNodeIndex);
 }
 
-void Sc::ArticulationSim::sleepCheck(PxReal dt)
+void Sc::ArticulationSim::sleepCheck(PxReal dt, PxMutex& articulationSleepLock)
 {
 	if(!mBodies.size())
 		return;
@@ -490,7 +469,10 @@ void Sc::ArticulationSim::sleepCheck(PxReal dt)
 		mBodies[i]->getLowLevelBody().resetSleepFilter();
 	}
 
+	// /PT: we are calling this function from multiple threads but deactivateNode() is not thread-safe. Using a lock as an initial fix.
+	articulationSleepLock.lock();
 	mScene.getSimpleIslandManager()->deactivateNode(mIslandNodeIndex);
+	articulationSleepLock.unlock();
 }
 
 bool Sc::ArticulationSim::isSleeping() const

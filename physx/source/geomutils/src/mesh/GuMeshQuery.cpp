@@ -61,7 +61,7 @@ namespace {
 			buildFrom(mBox2Hf, boxCenter, boxExtents, boxRot);
 		}
 
-		virtual bool reportTouchedTris(PxU32 nbEntities, const PxU32* entities)
+		virtual bool reportTouchedTris(PxU32 nbEntities, const PxU32* entities) PX_OVERRIDE
 		{
 			if(mAABBOverlap)
 			{
@@ -320,7 +320,7 @@ bool physx::PxMeshQuery::sweep(	const PxVec3& unitDir, const PxReal maxDistance,
 				return sweepBoxTriangles(	triangleCount, triangles, doubleSided, boxGeom, pose, unitDir, distance, sweepHit, cachedIndex,
 											inflation, hitFlags);
 			}
-		}	
+		}
 		default:
 			PX_CHECK_MSG(false, "PxMeshQuery::sweep(): geometry object parameter must be sphere, capsule or box geometry.");
 	}

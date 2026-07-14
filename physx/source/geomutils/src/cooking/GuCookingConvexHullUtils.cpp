@@ -372,7 +372,7 @@ bool ConvexHull::assertIntact(float epsilon) const
 
 // returns the maximum number of vertices on a face
 PxU32 ConvexHull::maxNumVertsPerFace() const
-{	
+{
 	PxU32 maxVerts = 0;
 	PxU32 currentVerts = 0;
 	PxU32 estart = 0;

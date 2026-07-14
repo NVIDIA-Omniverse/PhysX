@@ -92,7 +92,7 @@ namespace physx
 
 		void paramsToMCData();
 
-		virtual void setMaxVerticesAndTriangles(PxU32 maxIsosurfaceVertices, PxU32 maxIsosurfaceTriangles);
+		virtual void setMaxVerticesAndTriangles(PxU32 maxIsosurfaceVertices, PxU32 maxIsosurfaceTriangles) PX_OVERRIDE;
 
 		virtual void releaseGPUBuffers();
 
@@ -101,16 +101,16 @@ namespace physx
 	public:
 		PxgSparseGridIsosurfaceExtractor() : mShared() {}
 
-		virtual void setResultBufferDevice(PxVec4* vertices, PxU32* triIndices, PxVec4* normals);
+		virtual void setResultBufferDevice(PxVec4* vertices, PxU32* triIndices, PxVec4* normals) PX_OVERRIDE;
 
 		virtual ~PxgSparseGridIsosurfaceExtractor() { }
 
 		bool initialize(PxgKernelLauncher& kernelLauncher, const PxSparseGridParams sparseGridParams,
 			const PxIsosurfaceParams& isosurfaceParams, PxU32 maxNumParticles, PxU32 maxNumVertices, PxU32 maxNumTriangles);
 
-		virtual void release();
+		virtual void release() PX_OVERRIDE;
 
-		virtual void setIsosurfaceParams(const PxIsosurfaceParams& params)
+		virtual void setIsosurfaceParams(const PxIsosurfaceParams& params) PX_OVERRIDE
 		{
 			mShared.mIsosurfaceParams = params;
 			paramsToMCData();
@@ -118,63 +118,63 @@ namespace physx
 
 		virtual void clearDensity(CUstream stream);
 
-		virtual PxU32 getMaxParticles() const
+		virtual PxU32 getMaxParticles() const PX_OVERRIDE
 		{
 			return mSparseGrid.getMaxParticles();
 		}
 
-		virtual PxU32 getMaxVertices() const
+		virtual PxU32 getMaxVertices() const PX_OVERRIDE
 		{
 			return mData.maxVerts;
 		}
 
-		virtual PxU32 getMaxTriangles() const
+		virtual PxU32 getMaxTriangles() const PX_OVERRIDE
 		{
 			return mData.maxTriIds / 3;
 		}
 
-		virtual void setMaxParticles(PxU32 maxParticles);
+		virtual void setMaxParticles(PxU32 maxParticles) PX_OVERRIDE;
 
 		virtual void extractIsosurface(PxVec4* deviceParticlePos, const PxU32 numParticles, CUstream stream, PxU32* phases = NULL, PxU32 validPhaseMask = PxParticlePhaseFlag::eParticlePhaseFluid,
-			PxU32* activeIndices = NULL, PxVec4* anisotropy1 = NULL, PxVec4* anisotropy2 = NULL, PxVec4* anisotropy3 = NULL, PxReal anisotropyFactor = 1.0f);
+			PxU32* activeIndices = NULL, PxVec4* anisotropy1 = NULL, PxVec4* anisotropy2 = NULL, PxVec4* anisotropy3 = NULL, PxReal anisotropyFactor = 1.0f) PX_OVERRIDE;
 
-		virtual void setResultBufferHost(PxVec4* vertices, PxU32* triIndices, PxVec4* normals);
+		virtual void setResultBufferHost(PxVec4* vertices, PxU32* triIndices, PxVec4* normals) PX_OVERRIDE;
 
-		virtual PxIsosurfaceParams getIsosurfaceParams() const
+		virtual PxIsosurfaceParams getIsosurfaceParams() const PX_OVERRIDE
 		{
 			return mShared.mIsosurfaceParams;
 		}
 
-		virtual PxU32 getNumVertices() const
+		virtual PxU32 getNumVertices() const PX_OVERRIDE
 		{
 			if (!mShared.mNumVerticesNumIndices)
 				return 0;
 			return mShared.mNumVerticesNumIndices[0];
 		}
 
-		virtual PxU32 getNumTriangles() const
+		virtual PxU32 getNumTriangles() const PX_OVERRIDE
 		{
 			if (!mShared.mNumVerticesNumIndices)
 				return 0;
 			return mShared.mNumVerticesNumIndices[1] / 3;
 		}
 
-		virtual void setEnabled(bool enabled)
+		virtual void setEnabled(bool enabled) PX_OVERRIDE
 		{
 			mShared.mEnabled = enabled;
 		}
 
-		virtual bool isEnabled() const
+		virtual bool isEnabled() const PX_OVERRIDE
 		{
 			return mShared.mEnabled;
 		}
 
-		virtual PxSparseGridParams getSparseGridParams() const
+		virtual PxSparseGridParams getSparseGridParams() const PX_OVERRIDE
 		{
 			return mSparseGrid.getGridParameters();
 		}
 
-		virtual void setSparseGridParams(const PxSparseGridParams& params)
+		virtual void setSparseGridParams(const PxSparseGridParams& params) PX_OVERRIDE
 		{
 			mSparseGrid.setGridParameters(params);
 		}
@@ -194,7 +194,7 @@ namespace physx
 
 		void paramsToMCData();
 
-		virtual void setMaxVerticesAndTriangles(PxU32 maxIsosurfaceVertices, PxU32 maxIsosurfaceTriangles);
+		virtual void setMaxVerticesAndTriangles(PxU32 maxIsosurfaceVertices, PxU32 maxIsosurfaceTriangles) PX_OVERRIDE;
 
 		virtual void releaseGPUBuffers();
 
@@ -203,16 +203,16 @@ namespace physx
 	public:
 		PxgDenseGridIsosurfaceExtractor() : mShared() {}
 
-		virtual void setResultBufferDevice(PxVec4* vertices, PxU32* triIndices, PxVec4* normals);
+		virtual void setResultBufferDevice(PxVec4* vertices, PxU32* triIndices, PxVec4* normals) PX_OVERRIDE;
 
 		virtual ~PxgDenseGridIsosurfaceExtractor() { }
 
 		bool initialize(PxgKernelLauncher& kernelLauncher, const PxBounds3& worldBounds,
 			PxReal cellSize, const PxIsosurfaceParams& isosurfaceParams, PxU32 maxNumParticles, PxU32 maxNumVertices, PxU32 maxNumTriangles);
 
-		virtual void release();
+		virtual void release() PX_OVERRIDE;
 
-		virtual void setIsosurfaceParams(const PxIsosurfaceParams& params)
+		virtual void setIsosurfaceParams(const PxIsosurfaceParams& params) PX_OVERRIDE
 		{
 			mShared.mIsosurfaceParams = params;
 			paramsToMCData();
@@ -220,57 +220,57 @@ namespace physx
 
 		virtual void clearDensity(CUstream stream);
 
-		virtual PxU32 getMaxParticles() const
+		virtual PxU32 getMaxParticles() const PX_OVERRIDE
 		{
 			return mMaxParticles;
 		}
 
-		virtual PxU32 getMaxVertices() const
+		virtual PxU32 getMaxVertices() const PX_OVERRIDE
 		{
 			return mData.maxVerts;
 		}
 
-		virtual PxU32 getMaxTriangles() const
+		virtual PxU32 getMaxTriangles() const PX_OVERRIDE
 		{
 			return mData.maxTriIds / 3;
 		}
 
-		virtual void setMaxParticles(PxU32 maxParticles)
+		virtual void setMaxParticles(PxU32 maxParticles) PX_OVERRIDE
 		{
 			//No need to resize internal buffers on the dense grid isosurface;
 			mMaxParticles = maxParticles;
 		}
 
 		virtual void extractIsosurface(PxVec4* deviceParticlePos, const PxU32 numParticles, CUstream stream, PxU32* phases = NULL, PxU32 validPhaseMask = PxParticlePhaseFlag::eParticlePhaseFluid,
-			PxU32* activeIndices = NULL, PxVec4* anisotropy1 = NULL, PxVec4* anisotropy2 = NULL, PxVec4* anisotropy3 = NULL, PxReal anisotropyFactor = 1.0f);
+			PxU32* activeIndices = NULL, PxVec4* anisotropy1 = NULL, PxVec4* anisotropy2 = NULL, PxVec4* anisotropy3 = NULL, PxReal anisotropyFactor = 1.0f) PX_OVERRIDE;
 
-		virtual void setResultBufferHost(PxVec4* vertices, PxU32* triIndices, PxVec4* normals);
+		virtual void setResultBufferHost(PxVec4* vertices, PxU32* triIndices, PxVec4* normals) PX_OVERRIDE;
 
-		virtual PxIsosurfaceParams getIsosurfaceParams() const
+		virtual PxIsosurfaceParams getIsosurfaceParams() const PX_OVERRIDE
 		{
 			return mShared.mIsosurfaceParams;
 		}
 
-		virtual PxU32 getNumVertices() const
+		virtual PxU32 getNumVertices() const PX_OVERRIDE
 		{
 			if (!mShared.mNumVerticesNumIndices)
 				return 0;
 			return mShared.mNumVerticesNumIndices[0];
 		}
 
-		virtual PxU32 getNumTriangles() const
+		virtual PxU32 getNumTriangles() const PX_OVERRIDE
 		{
 			if (!mShared.mNumVerticesNumIndices)
 				return 0;
 			return mShared.mNumVerticesNumIndices[1] / 3;
 		}
 
-		virtual void setEnabled(bool enabled)
+		virtual void setEnabled(bool enabled) PX_OVERRIDE
 		{
 			mShared.mEnabled = enabled;
 		}
 
-		virtual bool isEnabled() const
+		virtual bool isEnabled() const PX_OVERRIDE
 		{
 			return mShared.mEnabled;
 		}

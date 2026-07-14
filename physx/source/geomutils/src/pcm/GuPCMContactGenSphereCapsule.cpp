@@ -306,7 +306,7 @@ static void generatedFaceContacts(const CapsuleV& capsule, const PolygonalData& 
 		manifoldContacts[numContacts].mLocalPointA = aToB.transformInv(capsule.p1);
 		manifoldContacts[numContacts].mLocalPointB = V3ScaleAdd(dir, tEnter, capsule.p1);
 		manifoldContacts[numContacts++].mLocalNormalPen = V4SetW(Vec4V_From_Vec3V(normal), tEnter);
-	}	
+	}
 }
 
 static void generateEE(const Vec3VArg p, const Vec3VArg q, const Vec3VArg normal, const Vec3VArg a, const Vec3VArg b, const PxMatTransformV& aToB, 
@@ -428,7 +428,7 @@ bool Gu::generateFullContactManifold(const CapsuleV& capsule, const PolygonalDat
 	Vec3V tNormal = normal;
 	
 	if(doOverlapTest)
-	{	
+	{
 		FloatV minOverlap;
 			
 		//overwrite the normal with the sperating axis
@@ -471,7 +471,7 @@ bool Gu::generateSphereFullContactManifold(const CapsuleV& capsule, const Polygo
 	const FloatVArg contactDist, Vec3V& normal, bool doOverlapTest)
 {
 	if(doOverlapTest)
-	{	
+	{
 		FloatV minOverlap;
 		//overwrite the normal with the sperating axis
 		if(!testPolyDataAxis(capsule, polyData, map, contactDist, minOverlap, normal))

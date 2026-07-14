@@ -1,6 +1,22 @@
 PhysxSchema Migration Guide
 ===========================
 
+March 2026
+----------
+
+* PhysxDeformableAPI, PhysxDeformableBodyAPI, PhysxDeformableSurfaceAPI:
+  - Removed. Use omniUsdPhysicsDeformableSchema: DeformableBodyAPI with VolumeDeformableSimAPI or SurfaceDeformableSimAPI, and physxSchemaAddition: PhysxBaseDeformableBodyAPI or PhysxSurfaceDeformableBodyAPI instead.
+* PhysxDeformableBodyMaterialAPI, PhysxDeformableSurfaceMaterialAPI:
+  - Removed. Use omniUsdPhysicsDeformableSchema: DeformableMaterialAPI or SurfaceDeformableMaterialAPI, and physxSchemaAddition: PhysxDeformableMaterialAPI or PhysxSurfaceDeformableMaterialAPI instead.
+* PhysxParticleClothAPI, PhysxAutoParticleClothAPI:
+  - Removed, along with the clothConstaint cooked-data token. Use omniUsdPhysicsDeformableSchema: DeformableBodyAPI with SurfaceDeformableSimAPI, and physxSchemaAddition: PhysxSurfaceDeformableBodyAPI instead.
+* PhysxPBDMaterialAPI:
+  - The `physxPBDMaterial:lift` and `physxPBDMaterial:drag` attributes are removed (were only used for particle cloth aerodynamics).
+* PhysxPhysicsAttachment, PhysxAutoAttachmentAPI:
+  - Removed. Use omniUsdPhysicsDeformableSchema: Attachment, VtxVtxAttachment, VtxTriAttachment, VtxTetAttachment, VtxXformAttachment, TetXformAttachment, TriTriAttachment, ElementCollisionFilter, and physxSchemaAddition: PhysxAutoDeformableAttachmentAPI instead.
+* PhysxSceneAPI:
+  - `physxScene:gpuMaxSoftBodyContacts` renamed to `physxScene:gpuMaxDeformableVolumeContacts`.
+
 May 2021
 ----------
 * PhysxMeshCollisionAPI was removed. It was replaced by PhysxConvexHullCollisionAPI, PhysxConvexDecompositionCollisionAPI and 

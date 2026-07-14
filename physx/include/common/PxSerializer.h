@@ -207,7 +207,7 @@ public:
 			RequiresCallback(PxSerializationContext& c) : context(c) {}
 			RequiresCallback& operator=(RequiresCallback&) { PX_ASSERT(0); return *this; }
 			void process(physx::PxBase& base)
-			{				
+			{
 				context.registerReference(base, PX_SERIAL_REF_KIND_PXBASE, size_t(&base));
 			}
 			PxSerializationContext& context;

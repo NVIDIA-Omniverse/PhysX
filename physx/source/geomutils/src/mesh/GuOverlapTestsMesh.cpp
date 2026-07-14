@@ -147,7 +147,7 @@ struct ConvexVsMeshOverlapCallback : MeshHitCallback<PxGeomRaycastHit>
 	virtual ~ConvexVsMeshOverlapCallback()	{}
 
 	virtual PxAgain processHit( // all reported coords are in mesh local space including hit.position
-		const PxGeomRaycastHit&, const PxVec3& v0a, const PxVec3& v1a, const PxVec3& v2a, PxReal&, const PxU32*)
+		const PxGeomRaycastHit&, const PxVec3& v0a, const PxVec3& v1a, const PxVec3& v2a, PxReal&, const PxU32*) PX_OVERRIDE
 	{
 		using namespace aos;
 		Vec3V v0 = V3LoadU(v0a);
@@ -268,7 +268,7 @@ bool GeomOverlapCallback_MeshMesh(GU_OVERLAP_FUNC_PARAMS)
 			mCapacity = 1;
 		}
 
-		virtual	bool	flushResults(PxU32, const PxGeomIndexPair*)
+		virtual	bool	flushResults(PxU32, const PxGeomIndexPair*) PX_OVERRIDE
 		{
 			return false;
 		}
@@ -305,7 +305,7 @@ bool GeomOverlapCallback_ConvexCoreMesh(GU_OVERLAP_FUNC_PARAMS)
 			Gu::makeConvexShape(geom, pose, convex);
 		}
 
-		virtual PxAgain processHit(const PxGeomRaycastHit& /*hit*/, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32*)
+		virtual PxAgain processHit(const PxGeomRaycastHit& /*hit*/, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32*) PX_OVERRIDE
 		{
 			const PxVec3 verts[] = { v0, v1, v2 };
 

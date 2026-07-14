@@ -26,13 +26,14 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
+#include "GuBV4Build.h"
+
 #include "foundation/PxVec4.h"
 #include "foundation/PxMemory.h"
 #include "GuAABBTreeBuildStats.h"
 #include "GuAABBTree.h"
 #include "GuSAH.h"
 #include "GuBounds.h"
-#include "GuBV4Build.h"
 #include "GuBV4.h"
 #include <stdio.h>
 
@@ -169,7 +170,7 @@ static bool local_Subdivide(AABBTreeNode* PX_RESTRICT node, BuildStats& stats, c
 			centerV = V4Mul(centerV, centerV);
 			varsV = V4Add(varsV, centerV);
 		}
-		const float coeffNb1 = 1.0f/float(nb-1);
+		const float coeffNb1 = nb>1 ? 1.0f/float(nb-1) : 0.0f;
 		varsV = V4Scale(varsV, FLoad(coeffNb1));
 
 //		BV4_ALIGN16(PxVec4 vars);
@@ -1412,9 +1413,9 @@ static bool flattenNQ(BVDataPackedNQ* const dest, const PxU64 box_id, PxU64& cur
 	return true;
 }
 
-static bool BuildBV4FromRoot(BV4Tree& tree, BV4Node* Root, BV4BuildParams& Params, bool quantized, float epsilon)
+static bool buildBV4FromRoot(BV4Tree& tree, BV4Node* Root, BV4BuildParams& Params, bool quantized, float epsilon)
 {
-	GU_PROFILE_ZONE("....BuildBV4FromRoot")
+	GU_PROFILE_ZONE("....buildBV4FromRoot")
 
 	BV4Tree* T = &tree;
 
@@ -1719,9 +1720,9 @@ static bool BuildBV4FromRoot(BV4Tree& tree, BV4Node* Root, BV4BuildParams& Param
 	return true;
 }
 
-static bool BuildBV4Internal(BV4Tree& tree, const BV4_AABBTree& source, SourceMeshBase* mesh, float epsilon, bool quantized)
+static bool buildBV4Internal(BV4Tree& tree, const BV4_AABBTree& source, SourceMeshBase* mesh, float epsilon, bool quantized)
 {
-	GU_PROFILE_ZONE("..BuildBV4Internal")
+	GU_PROFILE_ZONE("..buildBV4Internal")
 
 	if(mesh->getNbPrimitives()<=4)
 		return tree.init(mesh, source.getBV());
@@ -1790,7 +1791,7 @@ static bool BuildBV4Internal(BV4Tree& tree, const BV4_AABBTree& source, SourceMe
 	if(!tree.init(mesh, source.getBV()))
 		return false;
 	
-	return BuildBV4FromRoot(tree, Root, Params, quantized, epsilon);
+	return buildBV4FromRoot(tree, Root, Params, quantized, epsilon);
 }
 
 /////
@@ -1829,7 +1830,7 @@ static bool gReorderCallback(const AABBTreeNode* current, PxU32 /*depth*/, void*
 	return true;
 }
 
-bool physx::Gu::BuildBV4Ex(BV4Tree& tree, SourceMeshBase& mesh, float epsilon, PxU32 nbPrimitivePerLeaf, bool quantized, BV4_BuildStrategy strategy)
+bool physx::Gu::buildBV4Ex(BV4Tree& tree, SourceMeshBase& mesh, float epsilon, PxU32 nbPrimitivePerLeaf, bool quantized, BV4_BuildStrategy strategy)
 {
 	//either number of triangle or number of tetrahedron
 	const PxU32 nbPrimitives = mesh.getNbPrimitives();
@@ -1863,6 +1864,6 @@ bool physx::Gu::BuildBV4Ex(BV4Tree& tree, SourceMeshBase& mesh, float epsilon, P
 	if(mesh.getNbPrimitives() <= nbPrimitivePerLeaf)
 		return tree.init(&mesh, Source.getBV());
 
-	return BuildBV4Internal(tree, Source, &mesh, epsilon, quantized);
+	return buildBV4Internal(tree, Source, &mesh, epsilon, quantized);
 }
 

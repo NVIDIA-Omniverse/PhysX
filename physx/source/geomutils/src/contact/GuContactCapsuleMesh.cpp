@@ -304,7 +304,7 @@ struct CapsuleMeshContactGeneration
 	#if VISUALIZE_CULLING_BOX
 		{
 			PxRenderOutput& out = context.mRenderOutput;
-			PxTransform idt = PxTransform(PxIdentity);
+			const PxTransform idt(PxIdentity);
 			out << idt;
 			out << 0xffffffff;
 			out << PxDebugBox(mBC, mBE, true);
@@ -414,7 +414,7 @@ struct CapsuleMeshContactGenerationCallback_NoScale : MeshHitCallback<PxGeomRayc
 	}
 
 	virtual PxAgain processHit(
-		const PxGeomRaycastHit& hit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32* /*vInds*/)
+		const PxGeomRaycastHit& hit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32* /*vInds*/) PX_OVERRIDE
 	{
 		PxTrianglePadded tri;
 		// PT: TODO: revisit this, avoid the copy
@@ -451,7 +451,7 @@ struct CapsuleMeshContactGenerationCallback_Scale : CapsuleMeshContactGeneration
 	}
 
 	virtual PxAgain processHit(
-		const PxGeomRaycastHit& hit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32* /*vInds*/)
+		const PxGeomRaycastHit& hit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32* /*vInds*/) PX_OVERRIDE
 	{
 		PxTrianglePadded tri;
 		getScaledVertices(tri.verts, v0, v1, v2, false, mScaling);
@@ -550,7 +550,7 @@ struct CapsuleHeightfieldContactGenerationCallback : OverlapReport
 	}
 
 	// PT: TODO: refactor/unify with similar code in other places
-	virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
+	virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices) PX_OVERRIDE
 	{
 		const PxU8 nextInd[] = {2,0,1};
 

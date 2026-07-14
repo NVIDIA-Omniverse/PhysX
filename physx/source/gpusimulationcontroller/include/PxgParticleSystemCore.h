@@ -191,13 +191,6 @@ namespace physx
 			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, CUdeviceptr rigidIdsd, CUdeviceptr numIdsd, CUstream stream,
 			const bool isTGS);
 
-		void prepRigidAttachments(CUdeviceptr prePrepDescd, CUdeviceptr prepDescd, bool isTGS, const PxReal dt, CUstream stream,
-			const PxU32 nbActiveParticleSystems, CUdeviceptr activeParticleSystemsd, PxU32 numSolverBodies);
-
-		void solveRigidAttachments(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd, 
-			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, CUstream solverStream, const PxReal dt, 
-			const bool isTGS, 	const PxReal biasCoefficient, const bool isVelocityIteration, CUdeviceptr particleSystemd, CUdeviceptr activeParticleSystemd, const PxU32 nbActiveParticleSystems);
-
 		//integrate particle position and velocity based on contact constraints
 		void integrateSystem(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemd, const PxU32 nbActiveParticleSystems, const PxReal dt, const PxReal epsilonSq);
 				
@@ -233,11 +226,6 @@ namespace physx
 		PxgTypedCudaBuffer<PxVec4>		mTempBlockDeltaVelBuf;
 		PxgTypedCudaBuffer<PxU64>		mTempBlockRigidIdBuf;
 
-		PxgTypedCudaBuffer<PxgParticleRigidConstraint> mParticleRigidConstraints;
-		PxgTypedCudaBuffer<PxU64>		mParticleRigidAttachmentIds;
-		PxgTypedCudaBuffer<PxU32>		mParticleRigidConstraintCount;
-		PxgTypedCudaBuffer<PxReal>		mParticleRigidAttachmentScaleBuffer;
-		
 
 
 		//------------------------------------------------------------------------
@@ -269,8 +257,6 @@ namespace physx
 		PxU32									mMaxBuffersPerSystem;
 		PxU32									mMaxDiffusePerBuffer;
 		PxU32									mMaxDiffuseBuffersPerSystem;
-		PxU32									mMaxRigidAttachmentsPerSystem;
-		PxU32									mTotalRigidAttachments;
 		Cm::PinnableObject<PxU32>				mHostContactCount;
 
 		friend class PxgSoftBodyCore;

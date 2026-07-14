@@ -149,11 +149,13 @@ namespace physx
 			Cm::PinnableArray<PxgFEMRigidAttachment>& rigidAttachments,
 			Cm::PinnableArray<PxgRigidFilterPair>& rigidAttachmentIds,
 			bool dirtyRigidAttachments,
+			bool dirtyRigidFilterPairs,
 			Cm::PinnableArray<PxU32>& activeRigidAttachments,
 			bool dirtyActiveRigidAttachments,
 			Cm::PinnableArray<PxgFEMFEMAttachment>& clothAttachments,
 			Cm::PinnableArray<PxgNonRigidFilterPair>& clothVertTriFilterIds,
 			bool dirtyClothAttachments,
+			bool dirtyClothFilterPairs,
 			Cm::PinnableArray<PxU32>& activeClothAttachments,
 			bool dirtyActiveClothAttachments
 		);
@@ -250,7 +252,7 @@ namespace physx
 		PX_FORCE_INLINE PxgTypedCudaBuffer<PxgConstraintPrePrep>&  getD6RigidJointPrePreBuffer() { return mRigidJointPrePrepBuffer; }
 
 		PX_FORCE_INLINE PxgTypedCudaBuffer<PxgD6JointData>&  getD6ArtiJointBuffer() { return mArtiJointBuffer; }
-		PX_FORCE_INLINE PxgTypedCudaBuffer<PxgConstraintPrePrep>&  getD6ArtiJointPrePreBuffer() { return mArtiJointPrePrepBuffer; }	
+		PX_FORCE_INLINE PxgTypedCudaBuffer<PxgConstraintPrePrep>&  getD6ArtiJointPrePreBuffer() { return mArtiJointPrePrepBuffer; }
 		PX_FORCE_INLINE CUstream getStream() { return mStream; }
 
 		bool getD6JointData(void* data, const PxD6JointGPUIndex* gpuIndices, PxD6JointGPUAPIReadType::Enum dataType, PxU32 nbElements, PxF32 oneOverDt, 
@@ -323,14 +325,6 @@ namespace physx
 		PX_FORCE_INLINE PxgDevicePointer<PxgFEMFEMAttachmentConstraint> getSoftBodyClothConstraints() { return mSoftBodyClothConstraints.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxU32> getGpuSoftBodyClothCounter() { return mNumSoftBodyClothAttachments.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxgNonRigidFilterPair> getClothSoftBodyFilters() { return mSoftBodyClothFilterPairs.getTypedDevicePtr(); }
-
-
-		PX_FORCE_INLINE PxU32 getNbSoftBodyParticleAttachments() const { return mNbSoftBodyParticleAttachments; }
-		PX_FORCE_INLINE PxU32 getNbSoftBodyParticleFilters() const { return mNbSoftBodyParticleFilters; }
-		PX_FORCE_INLINE PxgDevicePointer<PxgFEMFEMAttachment> getSoftBodyParticleAttachments() { return mSoftBodyParticleAttachments.getTypedDevicePtr(); }
-		PX_FORCE_INLINE PxgDevicePointer<PxU32> getActiveSoftBodyParticleAttachments() { return mActiveSoftBodyParticleConstraints.getTypedDevicePtr(); }
-		PX_FORCE_INLINE PxgDevicePointer<PxgFEMFEMAttachmentConstraint> getSoftBodyParticleConstraints() { return mSoftBodyParticleConstraints.getTypedDevicePtr(); }
-		PX_FORCE_INLINE PxgDevicePointer<PxgNonRigidFilterPair> getSoftBodyParticleFilters() { return mSoftBodyParticleFilterPairs.getTypedDevicePtr(); }
 
 
 		PX_FORCE_INLINE PxU32 getNbActiveRigidClothAttachments() const { return mNbRigidClothAttachments; }
@@ -525,11 +519,6 @@ namespace physx
 		PxgTypedCudaBuffer<PxU32>	mActiveSoftBodyClothConstraints;
 		PxgTypedCudaBuffer<PxU32>	mNumSoftBodyClothAttachments;
 
-		PxgTypedCudaBuffer<PxgFEMFEMAttachment>	mSoftBodyParticleAttachments;
-		PxgTypedCudaBuffer<PxgNonRigidFilterPair>	mSoftBodyParticleFilterPairs;
-		PxgTypedCudaBuffer<PxgFEMFEMAttachmentConstraint>	mSoftBodyParticleConstraints;
-		PxgTypedCudaBuffer<PxU32>	mActiveSoftBodyParticleConstraints;
-
 		PxgTypedCudaBuffer<PxgFEMRigidAttachment>	mClothRigidAttachments;
 		PxgTypedCudaBuffer<PxU32>	mActiveClothRigidAttachments;
 		PxgTypedCudaBuffer<PxgRigidFilterPair>	mClothRigidFilterPairs;
@@ -552,9 +541,6 @@ namespace physx
 
 		PxU32			mNbClothSoftBodyAttachments;
 		PxU32			mNbClothSoftBodyFilters;
-
-		PxU32			mNbSoftBodyParticleAttachments;
-		PxU32			mNbSoftBodyParticleFilters;
 
 		PxU32			mNbRigidClothAttachments;
 		PxU32			mNbRigidClothFilters;

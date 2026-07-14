@@ -433,7 +433,7 @@ bool readSuspensionComplianceParams(const rapidjson::Document& config, const PxV
 			return false;
 		if (!suspensions[i].HasMember("SuspForceAppPoint"))
 			return false;
-		if (!suspensions[i].HasMember("SuspForceAppPoint"))
+		if (!suspensions[i].HasMember("TireForceAppPoint"))
 			return false;
 
 		const PxU32 wheelId = suspensions[i]["WheelId"].GetInt();

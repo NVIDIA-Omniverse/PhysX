@@ -477,7 +477,7 @@ const PxObstacle* ObstacleContext::raycastSingle(PxGeomRaycastHit& hit, const Px
 
 
 const PxObstacle* ObstacleContext::raycastSingle(PxGeomRaycastHit& hit, const PxObstacleHandle& obstacleHandle, const PxVec3& origin, const PxVec3& unitDir, PxReal distance) const
-{	
+{
 	const PxHitFlags hitFlags = PxHitFlags(0);
 
 #ifdef NEW_ENCODING
@@ -502,7 +502,7 @@ const PxObstacle* ObstacleContext::raycastSingle(PxGeomRaycastHit& hit, const Px
 			1, &hit, sizeof(PxGeomRaycastHit), UNUSED_RAYCAST_THREAD_CONTEXT);
 
 		if(status)
-		{								
+		{
 			return &userBoxObstacle;
 		}
 	}

@@ -464,8 +464,6 @@ __device__ static inline void psSdfMeshMidphaseCollision(
 		oneWayContactCounts = particleSystem.mOneWayContactCount;
 	}
 
-	const PxU32* PX_RESTRICT gridParticleIndex = particleSystem.mSortedToUnsortedMapping;
-
 	PxReal cullScale = contactDist;
 	cullScale /= trimeshShape.scale.scale.abs().minElement();
 
@@ -568,10 +566,6 @@ __device__ static inline void psSdfMeshMidphaseCollision(
 				}
 			}
 
-			const PxU64 particleMask = PxEncodeParticleIndex(particleSystemId, gridParticleIndex[ind]);
-
-			if (!isDiffuseParticlesThread && find(particleSystem, rigidId.getInd(), particleMask))
-				candidateContact = false;
 		}
 		
 
@@ -702,8 +696,6 @@ __device__ static inline void psMeshMidphaseCollision(
 	const PxU32 nbWarpsRequired = (numParticles + WARP_SIZE - 1) / WARP_SIZE;
 	const PxU32 totalNumWarps = PxgParticleSystemKernelGridDim::PS_MESH_COLLISION * PS_MIDPHASE_COLLISION_WAPRS_PER_BLOCK;
 	const PxU32 nbIterationsPerWarps = (nbWarpsRequired + totalNumWarps - 1) / totalNumWarps;
-	const PxU32* PX_RESTRICT gridParticleIndex = particleSystem.mSortedToUnsortedMapping;
-
 	for (PxU32 i = 0; i < nbIterationsPerWarps; ++i)
 	{
 		const PxU32 workIndex = i + (warpIdx + WarpsPerBlock * blockIdx.x) * nbIterationsPerWarps;
@@ -711,10 +703,6 @@ __device__ static inline void psMeshMidphaseCollision(
 		if (workIndex < nbWarpsRequired)
 		{
 			const PxU32 particleIndex = idxInWarp + workIndex * WARP_SIZE;
-			const PxU64 particleMask = PxEncodeParticleIndex(particleSystemId, gridParticleIndex[particleIndex]);
-
-			if (!isDiffuseParticlesThread && find(particleSystem, rigidId.getInd(), particleMask))
-				return;
 
 			PsTreeContactGenTraverser traverser(
 				s_warpScratch,

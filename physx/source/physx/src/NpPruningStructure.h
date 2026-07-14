@@ -53,11 +53,11 @@ namespace physx
 			//~PX_SERIALIZATION
 
 			// PxPruningStructure
-			virtual			void					release();
-			virtual			PxU32					getRigidActors(PxRigidActor** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const;
-			virtual			PxU32					getNbRigidActors()			const;
-			virtual			const void*				getStaticMergeData()		const;
-			virtual			const void*				getDynamicMergeData()		const;
+			virtual			void					release() PX_OVERRIDE;
+			virtual			PxU32					getRigidActors(PxRigidActor** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const PX_OVERRIDE;
+			virtual			PxU32					getNbRigidActors()			const PX_OVERRIDE;
+			virtual			const void*				getStaticMergeData()		const PX_OVERRIDE;
+			virtual			const void*				getDynamicMergeData()		const PX_OVERRIDE;
 			// ~PxPruningStructure
 													PruningStructure();
 			virtual									~PruningStructure();

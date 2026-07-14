@@ -67,7 +67,7 @@ struct JointConnectionHandler : public PvdClient
 	PvdDataStream*		getDataStream()
 	{
 		return NULL;
-	}	
+	}
 
 	void onPvdConnected()
 	{
@@ -77,7 +77,7 @@ struct JointConnectionHandler : public PvdClient
 			mConnected = true;
 			Ext::Pvd::sendClassDescriptions(*stream);	
 			stream->release();
-		}		
+		}
 	}
 
 	bool isConnected() const
@@ -181,7 +181,7 @@ void PxCloseExtensions()
 
 #if PX_SUPPORT_PVD
 	if(gPvdHandler.mConnected)
-	{	
+	{
 		PX_ASSERT(gPvdHandler.mPvd);
 		gPvdHandler.mPvd->removeClient(&gPvdHandler);
 		gPvdHandler.mPvd = NULL;

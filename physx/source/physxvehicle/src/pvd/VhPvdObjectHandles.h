@@ -41,7 +41,7 @@ namespace physx
 #endif
 
 struct PxVehiclePvdObjectHandles
-{	
+{
 #if PX_SUPPORT_OMNI_PVD
 
 	OmniPvdObjectHandle vehicleOH;

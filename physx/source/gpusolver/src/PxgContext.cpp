@@ -661,7 +661,11 @@ namespace physx
 
 				//copy sleep check data
 				bodyCore.solverWakeCounter = sleepData.wakeCounter;
-				originalBody.mInternalFlags = PxU8(sleepData.internalFlags);
+				// PT: set sleeping flags but preserve other non-sleeping-related flags (see similar code in DySleep.cpp)
+				PxU16 flags = originalBody.mInternalFlags;
+				flags &= ~PxsRigidBody::eSLEEPING_FLAGS;
+				flags |= sleepData.internalFlags;
+				originalBody.mInternalFlags = flags;
 
 				PX_ASSERT(bodyCore.linearVelocity.isFinite());
 				PX_ASSERT(bodyCore.angularVelocity.isFinite());
@@ -756,13 +760,11 @@ namespace physx
 				PxReal* sJointPositions = NULL;
 				PxReal* sJointVelocities = NULL;
 				PxReal* sJointAccels = NULL;
-				Cm::UnAlignedSpatialVector* sRootPreVel = NULL;
 				PxgArticulationLinkJointRootStateData::decomposeArticulationStateDataBuffer(
 					singleArticulationStateBuffer,
 					numLinks, numDofs, 
 					sBody2Worlds, sLinkVelocities, sLinkAccelerations, sLinkIncomingJointForces,
-					sJointPositions, sJointVelocities, sJointAccels,
-					sRootPreVel);
+					sJointPositions, sJointVelocities, sJointAccels);
 				
 				Dy::ArticulationCore* core = articulation.getCore();
 				core->wakeCounter = mSleepData[a].wakeCounter;
@@ -823,8 +825,6 @@ namespace physx
 					jointVelocities[i] = sJointVelocities[i];
 					jointAccelerations[i] = sJointAccels[i];
 				}
-
-				artiData.setRootPreMotionVelocity(*sRootPreVel);
 			}
 		}
 
@@ -923,10 +923,6 @@ namespace physx
 
 	static void copyToSolverBodyStaticAndKinematic(PxgSolverBodyData& data, PxgSolverTxIData& txIData, const PxsBodyCore& core, PxNodeIndex nodeIndex)
 	{
-		// PT: not needed for statics/kinematics
-//		if(core.disableGravity)
-//			sleepData.internalFlags |= PxsRigidBody::eDISABLE_GRAVITY_GPU;
-
 		//This data has been moved to pxgbodysim
 		//data.inverseInertia = make_float4(core.inverseInertia.x, core.inverseInertia.y, core.inverseInertia.z, 0.f);
 		//PxU32 islandNodeIndex = nodeIndex << 2;
@@ -959,6 +955,7 @@ namespace physx
 		data.body2World = PxAlignedTransform(core.body2World.p.x, core.body2World.p.y, core.body2World.p.z,
 			PxAlignedQuat(core.body2World.q.x, core.body2World.q.y, core.body2World.q.z, core.body2World.q.w));
 
+		// PT: I didn't see any place where this is cleared when we switch from kinematic to dynamic. What happens in that case?
 		data.flags = PxRigidBodyFlag::eKINEMATIC;
 	}
 
@@ -1061,8 +1058,9 @@ namespace physx
 				//activeNodeIndex[startIndex] = nodeId;
 				PxsRigidBody& rigidBody = *getRigidBodyFromIG(sim, nodeId);
 
-				localPosIters = PxMax<PxI32>(PxI32(rigidBody.mSolverIterationCounts & 0xff), localPosIters);
-				localVelIters = PxMax<PxI32>(PxI32(rigidBody.mSolverIterationCounts >> 8), localVelIters);
+				const PxU16 counts = rigidBody.mCore->solverIterationCounts;
+				localPosIters = PxMax<PxI32>(PxI32(counts & 0xff), localPosIters);
+				localVelIters = PxMax<PxI32>(PxI32(counts >> 8), localVelIters);
 			}
 
 			PxAtomicMax(mMaxPosIters, localPosIters);

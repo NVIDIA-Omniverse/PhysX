@@ -1243,7 +1243,7 @@ void BoxManager::purgeRemovedFromSleeping(ABP_Object* PX_RESTRICT objects, PxU32
 	PxU32 nbSleepingLeft = 0;
 	const PxU32 sleepCapacity = mSleepingBoxes.getCapacity();
 	if(expectedTotal>=sleepCapacity/2)
-	{	
+	{
 		// PT: remove holes, keep same data buffers
 		SIMD_AABB_X4* boxesX = mSleepingBoxes.getBoxes_X();
 		SIMD_AABB_YZ4* boxesYZ = mSleepingBoxes.getBoxes_YZ();

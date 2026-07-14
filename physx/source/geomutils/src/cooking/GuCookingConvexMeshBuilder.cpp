@@ -194,7 +194,7 @@ bool ConvexMeshBuilder::copy(Gu::ConvexHullInitData& hullData)
 
 	// big convex data
 	if(mBigConvexData)
-	{				
+	{
 		hullData.mHullData.mBigConvexRawData = &mBigConvexData->mData;
 		hullData.mBigConvexData = mBigConvexData;
 		mBigConvexData = NULL;
@@ -419,7 +419,7 @@ bool ConvexMeshBuilder::computeGaussMaps()
 // TEST_INTERNAL_OBJECTS
 
 static void ComputeInternalExtent(Gu::ConvexHullData& data, const Gu::HullPolygonData* hullPolys)
-{	
+{
 	const PxVec3 e = data.mAABB.getMax() - data.mAABB.getMin();
 
 	// PT: For that formula, see %SDKRoot%\InternalDocumentation\Cooking\InternalExtents.png

@@ -45,8 +45,6 @@ namespace physx
 			ACCUMULATE_DELTA = 512,
 			PS_SOLVE = 256,
 			PS_CELL_RECOMPUTE = 256,
-			PS_INFLATABLE = 256,
-			PS_SOLVE_SHAPE = 64,
 			SCAN = 512
 		};
 	};

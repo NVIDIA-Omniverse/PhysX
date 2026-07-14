@@ -1,0 +1,18 @@
+{
+    "Plugins": [
+        {
+            "Info": {
+                "SdfMetadata": {
+                    "hide_in_stage_window": {
+                        "type": "bool"
+                    },
+                    "no_delete": {
+                        "type": "bool"
+                    }
+                }
+            },
+            "Name": "omni_kit_prim_metadata",
+            "Type": "resource"
+        }
+    ]
+}

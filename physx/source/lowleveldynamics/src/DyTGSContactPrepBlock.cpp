@@ -2184,7 +2184,7 @@ SolverConstraintPrepState::Enum setupSolverConstraintStep4
 						velMultipliers4[i] = desc.velMultiplier;
 						targetScales4[i] = desc.targetVel;
 						maxBiasSpeeds4[i] = maxBiasVelocityI;
-					}	
+					}
 					else
 					{
 						biasScales4[i] = 0.0f;

@@ -81,6 +81,13 @@ extern "C" {
      *   - Users can call wait/sync functions from any thread without manual context management.
      */
 
+    /* Forward declaration: ovstage_instance_t is the opaque ovstage Stage handle.
+     * Attach an ovstage instance with ovphysx_attach_stage() to enable
+     * orchestration-through-ovstage data flow (control attrs in, poses out).
+     * The ovstage library defines this type; ovphysx forward-declares it here
+     * so its public header has no source-level dependency on ovstage. */
+    struct ovstage_instance_t;
+
     /**
      * @defgroup ovphysx_instance Instance management
      * Create, configure, and destroy ovphysx instances.
@@ -173,6 +180,32 @@ extern "C" {
     OVPHYSX_API ovphysx_result_t ovphysx_create_instance(const ovphysx_create_args* create_args, ovphysx_handle_t* out_handle);
 
     /**
+     * @brief Register ovphysx USD schema/plugin discovery paths before runtime initialization.
+     *
+     * This is intended for applications that share a namespaced OpenUSD runtime between multiple
+     * subsystems, such as ovphysx and ovrtx. USD's schema registry is populated only once for the
+     * process, so every subsystem that contributes schema/plugin paths must publish them before the
+     * registry is first consulted, typically before the first USD stage is opened.
+     *
+     * The function appends ovphysx's bundled USD plugin root to the namespaced USD plugin-path
+     * environment variable, `OV_PXR_PLUGINPATH_2511`. It preserves existing entries and does not
+     * modify `PXR_PLUGINPATH_NAME`.
+     *
+     * Notes:
+     * - Safe to call before @ref ovphysx_create_instance().
+     * - Idempotent; the first successful call performs registration, subsequent calls are no-ops.
+     * - Failed calls do not mark registration complete, so callers may fix the installation or
+     *   `OVPHYSX_LIB` override and retry.
+     * - This function does not initialize ovphysx, load USD, acquire Carbonite, or open a stage.
+     * - Calling this after USD has already populated its schema registry has no retroactive effect.
+     *
+     * @return
+     * - OVPHYSX_API_SUCCESS if the schema/plugin paths were registered successfully.
+     * - OVPHYSX_API_ERROR if registration failed. Use @ref ovphysx_get_last_error() for details.
+     */
+    OVPHYSX_API ovphysx_result_t ovphysx_register_schema_paths(void);
+
+    /**
      * @brief Destroy an ovphysx instance and release all associated resources.
      *
      * When the last instance is destroyed, performs full framework teardown:
@@ -204,31 +237,6 @@ extern "C" {
      * @endcode
      */
     OVPHYSX_API ovphysx_result_t ovphysx_destroy_instance(ovphysx_handle_t handle);
-
-    /**
-    * @brief Begin global shutdown for all instances of ovphysx.
-    *
-    * Call this before triggering any bulk unload/destroy operations during process exit so the
-    * SDK can enter shutdown mode and skip redundant teardown work safely.
-    * @return ovphysx_result_t with status. Never returns an error message.
-    *
-    * @pre None.
-    * @post Global shutdown mode is enabled.
-    *
-    * @par Side Effects
-    * Alters global shutdown behavior for all instances in the process.
-    *
-    * @par Threading
-    * Safe to call from any thread.
-    *
-    * @par Errors
-    * - OVPHYSX_API_ERROR for unexpected shutdown failures (no error string).
-    *
-    * @code
-    * ovphysx_set_shutting_down();
-    * @endcode
-    */
-    OVPHYSX_API ovphysx_result_t ovphysx_set_shutting_down(void);
 
     /** @} */
 
@@ -545,20 +553,93 @@ extern "C" {
     OVPHYSX_API ovphysx_result_t ovphysx_get_stage_id(ovphysx_handle_t handle, int64_t* out_stage_id);
 
     /**
-    * @brief Enqueue an asynchronous operation to clone the subtree under the source path to 
+    * @brief Attach an ovstage Stage as the orchestration data surface.
+    *
+    * Once attached, ovphysx_step() pulls dirty control attributes from the
+    * Stage (drive:force, drive:velocity, drive:position_target, physics:mass,
+    * physics:gravityMagnitude, physics:gravityDirection) before integrating,
+    * and publishes xformOp:transform (per-rigid-body, per-articulation-link)
+    * to the Stage after integrating. Applications then write data only to
+    * ovstage; ovphysx tensor bindings remain available as a perf escape hatch
+    * for callers that need direct control.
+    *
+    * The attachment is init-style -- call once per instance, before any
+    * ovphysx_step(). Replacing the attached Stage requires
+    * ovphysx_detach_stage() first.
+    *
+    * Interest registration is eager (this call subscribes to the dispatch
+    * table's input attributes), but output-buffer registration (e.g. for
+    * the xformOp:transform pose channel) is deferred to the first
+    * ovphysx_step() that observes a non-empty rigid-body set: the prim
+    * list isn't known at attach time, so the bridge registers the buffer
+    * lazily once the pose binding has resolved its prims. Steps issued
+    * before any rigid bodies exist on the Stage are no-ops on the publish
+    * side and re-attempt initialisation on the next step. ovphysx_detach_stage()
+    * still tears down whatever was registered.
+    *
+    * @param handle ovphysx instance handle.
+    * @param stage Opaque ovstage_instance_t pointer (caller-owned).
+    *
+    * @pre handle is valid; ovphysx is not already attached to a Stage; stage
+    *      is non-null.
+    * @pre stage outlives the attachment -- caller must call
+    *      ovphysx_detach_stage() before destroying the Stage.
+    * @post On success, subsequent ovphysx_step() calls observe Stage writes
+    *       through the registered interest set.
+    *
+    * @par Errors
+    * - OVPHYSX_API_INVALID_ARGUMENT if stage is null
+    * - OVPHYSX_API_ERROR if already attached, or interest registration fails
+    *
+    * @code
+    * ovstage_instance_t* stage = ...;
+    * ovphysx_result_t r = ovphysx_attach_stage(handle, stage);
+    * @endcode
+    */
+    OVPHYSX_API ovphysx_result_t ovphysx_attach_stage(ovphysx_handle_t handle,
+                                                       struct ovstage_instance_t* stage);
+
+    /**
+    * @brief Detach the currently-attached ovstage Stage.
+    *
+    * Idempotent: calling on an unattached instance is a no-op success.
+    * Clears registered interests and any output-buffer registrations, so a
+    * subsequent ovphysx_attach_stage() to a different Stage starts clean.
+    * After detach, ovphysx_step() reverts to the unattached behaviour
+    * (tensor bindings still work; no auto-pull from ovstage).
+    *
+    * @param handle ovphysx instance handle.
+    *
+    * @pre handle is valid.
+    * @post On success, ovphysx is unattached.
+    *
+    * @par Errors
+    * - OVPHYSX_API_ERROR for internal failures
+    */
+    OVPHYSX_API ovphysx_result_t ovphysx_detach_stage(ovphysx_handle_t handle);
+
+    /**
+    * @brief Enqueue an asynchronous operation to clone the subtree under the source path to
     * one or more target paths in the runtime stage representation (internal representation only, USD untouched).
     * The source path must exist in the stage.
     * The target paths must not already exist in the stage.
-    * 
+    *
     * Clones are created in the internal representation only (USD file will not be modified)
     * and immediately participate in physics simulation.
     * This is optimized for RL training scenarios with mass replication (1000s of instances).
-    * 
+    *
+    * @note When an ovstage Stage is attached via @ref ovphysx_attach_stage(), the canonical
+    *       user-facing clone path is `ovstage_clone_subtree()` on the attached Stage; the
+    *       OvstageBridge consumes the resulting clone events during `ovphysx_step()` and
+    *       drives PhysX-side replication via the same clone plugin this entrypoint uses.
+    *       This direct entrypoint remains supported for standalone callers (no ovstage
+    *       attached) and for callers that need the async multi-target convenience.
+    *
     * @note Collision isolation between clones (e.g., preventing clones in env1 from colliding with
     *       clones in env2) is configured through USD scene properties (collision groups, filtering)
     *       rather than through clone API parameters. Set up collision filtering in your USD scene
     *       before cloning if you need isolated parallel environments.
-    * 
+    *
     * @param handle PhysX instance handle
     * @param source_path_in_usd Path to the source subtree to clone (must exist)
     * @param target_paths Array of target paths to clone to (must not exist)
@@ -572,9 +653,9 @@ extern "C" {
     *        Identity rotation = (0, 0, 0, 1).
     *        Pass NULL to place all parent prims at identity (use it when you don't care about
     *        spatial separation).
-    * 
+    *
     * @return ovphysx_enqueue_result_t with status, error, and operation index for the clone
-    * 
+    *
     * @note This is an asynchronous operation. Use ovphysx_wait_op(handle, result.op_index, ...)
     *       to wait for completion before using the cloned objects outside of the stream operations.
     *
@@ -690,6 +771,27 @@ extern "C" {
                                                               int32_t n_steps,
                                                               float step_dt,
                                                               float current_time);
+
+    /**
+     * Recompute articulation link transforms from the current articulation
+     * generalized coordinates without running a normal simulation step.
+     *
+     * This is a synchronous kinematic forward-kinematics update. It is useful
+     * after writing articulation DOF positions through TensorBindingsAPI and
+     * before reading link pose tensors in the same frame.
+     *
+     * GPU MODE WARNING: On the first GPU kinematic update after loading USD, an
+     * automatic warmup simulation step may be performed to initialize PhysX
+     * DirectGPU buffers. See @ref ovphysx_gpu_tensor_auto_warmup_note
+     * "GPU tensor auto-warmup note".
+     *
+     * Once GPU warmup is complete, the FK refresh itself does not run collision
+     * detection, integration, solver work, or contact generation.
+     *
+     * @param handle Physics instance handle.
+     * @return ovphysx_result_t with OVPHYSX_API_SUCCESS on success.
+     */
+    OVPHYSX_API ovphysx_result_t ovphysx_update_articulations_kinematic(ovphysx_handle_t handle);
 
     /** @} */
 
@@ -956,6 +1058,8 @@ extern "C" {
      * Not all tensor types are writable:
      * - RIGID_BODY_FORCE_F32, RIGID_BODY_WRENCH_F32, ARTICULATION_LINK_WRENCH_F32 are WRITE-ONLY
      *   (external control inputs applied each step; reading them returns an error).
+     * - RIGID_BODY_ACCELERATION_F32, RIGID_BODY_INV_MASS_F32, RIGID_BODY_INV_INERTIA_F32
+     *   are READ-ONLY.
      * - ARTICULATION_LINK_POSE_F32, ARTICULATION_LINK_VELOCITY_F32, ARTICULATION_LINK_ACCELERATION_F32
      *   are READ-ONLY (no setter for individual link state).
      * - Dynamics query tensors (JACOBIAN, MASS_MATRIX, CORIOLIS_AND_CENTRIFUGAL_FORCE, GRAVITY_FORCE,
@@ -1076,7 +1180,7 @@ extern "C" {
      *
      * **Homogeneous topology requirement**: all articulations covered by this binding
      * must have the same topology (same dof_count, body_count, joint_count, etc.).
-     * This is a fundamental constraint of the TensorAPI -- tensor shapes are fixed at
+     * This is a fundamental constraint of the native tensor backend -- tensor shapes are fixed at
      * binding creation time.  If you need to work with articulations of different sizes
      * (e.g. a 7-DOF arm and a 30-DOF humanoid), create a separate binding for each.
      *
@@ -1159,6 +1263,30 @@ extern "C" {
         uint32_t max_names,
         uint32_t* out_count);
 
+    /**
+     * @brief Get resolved USD prim paths for a tensor binding.
+     *
+     * The returned array order matches row order for every `RIGID_BODY_*`
+     * tensor read/write on the same binding. For `ARTICULATION_*` tensor
+     * bindings, the returned paths are articulation root prim paths in the
+     * binding's first-dimension row order. ovphysx owns the returned string
+     * storage; string pointers remain valid until the binding is destroyed.
+     *
+     * @param handle Instance handle
+     * @param binding_handle Tensor binding
+     * @param out_paths [out] Array of ovphysx_string_t to fill
+     * @param max_paths Capacity of out_paths array; must be at least binding
+     *   count to receive all paths.
+     * @param out_count [out] Actual number of paths written
+     * @return ovphysx_result_t
+     */
+    OVPHYSX_API ovphysx_result_t ovphysx_tensor_binding_get_prim_paths(
+        ovphysx_handle_t handle,
+        ovphysx_tensor_binding_handle_t binding_handle,
+        ovphysx_string_t* out_paths,
+        uint32_t max_paths,
+        uint32_t* out_count);
+
     /** @} */
 
     /*--------------------------------------------------*/
@@ -1173,8 +1301,10 @@ extern "C" {
      * forces) or `[S, F, 3]` (force matrix), suitable for RL rewards, safety
      * limits, or force monitoring. GPU-compatible.
      *
-     * For **per-contact-point geometry** (position, normal, impulse) instead
-     * of aggregate forces, see ovphysx_get_contact_report().
+     * For tensorized **per-contact-point geometry** (position, normal,
+     * separation, force, and friction), use ovphysx_read_contact_data() and
+     * ovphysx_read_friction_data(). Use ovphysx_get_contact_report() when you
+     * need event headers or raw actor-pair report records.
      *
      * A **sensor** is a set of rigid body prims identified by a USD prim path
      * pattern that you pass to ovphysx_create_contact_binding().  A **filter**
@@ -1189,12 +1319,11 @@ extern "C" {
      * the PhysX contact-report callback; no contact data exists until at least
      * one `ovphysx_step()` has completed.
      *
-     * - Call `ovphysx_read_contact_net_forces()` or
-     *   `ovphysx_read_contact_force_matrix()` *after* `ovphysx_step()`.
-     * - Both functions reflect the contacts accumulated during the **last
-     *   completed simulation step**.
-     * - Calling either read function before any simulation step returns an
-     *   all-zeros tensor (no contacts have been reported yet).
+     * - Call contact binding read functions *after* `ovphysx_step()`.
+     * - Reads reflect the contacts accumulated during the **last completed
+     *   simulation step**.
+     * - Calling a read function before any simulation step returns all-zero
+     *   output tensors (no contacts have been reported yet).
      * - The `dt` for impulse-to-force conversion (`force = impulse / dt`) is
      *   automatically taken from the last `ovphysx_step()` call; you do not
      *   need to pass it explicitly.
@@ -1203,8 +1332,9 @@ extern "C" {
      *
      * Contact data has a fundamentally different shape and semantics from
      * articulation/rigid-body tensors:
-     * - Shape is `[S, F, 3]` (sensor × filter × xyz), determined at binding
-     *   creation time, not by a simple prim count.
+     * - Shape is `[S, F, 3]` (sensor x filter x xyz), determined at binding
+     *   creation time for aggregate force matrices, plus flat detailed contact
+     *   buffers indexed by `[S, F]` count/start-index tensors.
      * - Contact binding is read-only; there is no write path.
      * - Internally it uses the PhysX contact-report callback rather than
      *   DirectGPU buffers, so sharing a handle type with tensor binding would
@@ -1224,7 +1354,11 @@ extern "C" {
      *   have the same number of filters. Total length = sensor_patterns_count * filters_per_sensor.
      *   Pass NULL with filters_per_sensor=0 for unfiltered contacts.
      * @param filters_per_sensor Number of filter patterns per sensor (same for all sensors)
-     * @param max_contact_data_count Max contact pairs to track (for raw contact queries)
+     * @param max_contact_data_count Max detailed contact/friction entries to track.
+     *   Set this to a positive value before using ovphysx_read_contact_data()
+     *   or ovphysx_read_friction_data(). Detailed reads also require
+     *   filters_per_sensor > 0. Aggregate net-force reads do not need detailed
+     *   contact capacity or filters.
      * @param out_handle [out] Contact binding handle
      * @return ovphysx_result_t
      *
@@ -1283,6 +1417,69 @@ extern "C" {
         int32_t* out_filter_count);
 
     /**
+     * @brief Get resolved sensor USD prim paths for a contact binding.
+     *
+     * The returned array order matches row order for contact binding reads.
+     * ovphysx owns the returned string storage; string pointers remain valid
+     * until the binding is destroyed.
+     *
+     * @param handle Instance handle
+     * @param contact_handle Contact binding
+     * @param out_paths [out] Array of ovphysx_string_t to fill
+     * @param max_paths Capacity of out_paths array; must be at least
+     *   sensor_count to receive all sensor paths.
+     * @param out_count [out] Actual number of paths written
+     * @return ovphysx_result_t
+     */
+    OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_sensor_paths(
+        ovphysx_handle_t handle,
+        ovphysx_contact_binding_handle_t contact_handle,
+        ovphysx_string_t* out_paths,
+        uint32_t max_paths,
+        uint32_t* out_count);
+
+    /**
+     * @brief Get resolved filter USD prim paths for a contact binding.
+     *
+     * Paths are returned in row-major `[sensor, filter]` order with total
+     * count `sensor_count * filter_count`. ovphysx owns the returned string
+     * storage; string pointers remain valid until the binding is destroyed.
+     *
+     * @param handle Instance handle
+     * @param contact_handle Contact binding
+     * @param out_paths [out] Array of ovphysx_string_t to fill
+     * @param max_paths Capacity of out_paths array; must be at least
+     *   sensor_count * filter_count to receive all filter paths.
+     * @param out_count [out] Actual number of paths written
+     * @return ovphysx_result_t
+     */
+    OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_filter_paths(
+        ovphysx_handle_t handle,
+        ovphysx_contact_binding_handle_t contact_handle,
+        ovphysx_string_t* out_paths,
+        uint32_t max_paths,
+        uint32_t* out_count);
+
+    /**
+     * @brief Query detailed contact/friction flat-buffer capacity.
+     *
+     * This is the C dimension for `ovphysx_read_contact_data()` and
+     * `ovphysx_read_friction_data()` flat buffers. Allocate force/separation
+     * buffers as `[C, 1]`, point/normal/friction buffers as `[C, 3]`, and
+     * count/start-index buffers as `[S, F]`, where `C` is this value and
+     * `S`, `F` come from `ovphysx_get_contact_binding_spec()`.
+     *
+     * @param handle Instance handle
+     * @param contact_handle Contact binding
+     * @param out_max_contact_data_count [out] Max detailed contact/friction entries
+     * @return ovphysx_result_t
+     */
+    OVPHYSX_API ovphysx_result_t ovphysx_get_contact_binding_capacity(
+        ovphysx_handle_t handle,
+        ovphysx_contact_binding_handle_t contact_handle,
+        uint32_t* out_max_contact_data_count);
+
+    /**
      * @brief Read net contact forces. dst shape: [S, 3] where S = sensor_count.
      *
      * The dt for impulse-to-force conversion is taken automatically from the
@@ -1313,6 +1510,78 @@ extern "C" {
         ovphysx_handle_t handle,
         ovphysx_contact_binding_handle_t contact_handle,
         DLTensor* dst_tensor);
+
+    /**
+     * @brief Read detailed contact data into flat buffers.
+     *
+     * Required shapes:
+     * - contact_force_tensor: `[C, 1]` float32
+     * - contact_point_tensor: `[C, 3]` float32
+     * - contact_normal_tensor: `[C, 3]` float32
+     * - contact_separation_tensor: `[C, 1]` float32
+     * - contact_count_tensor: `[S, F]` int32 or uint32
+     * - contact_start_indices_tensor: `[S, F]` int32 or uint32
+     *
+     * `C` is `ovphysx_get_contact_binding_capacity()`, `S` is sensor_count,
+     * and `F` is filter_count. For each `(sensor, filter)` pair, the valid
+     * detailed contact slice is:
+     * `start = start_indices[s, f]`, `count = counts[s, f]`,
+     * `data[start : start + count]`.
+     * `C` and `F` must be positive; pass a positive max_contact_data_count
+     * and filters_per_sensor > 0 when creating the binding. Count and
+     * start-index tensors may be int32 or uint32.
+     *
+     * @param handle Instance handle
+     * @param contact_handle Contact binding
+     * @param contact_force_tensor Pre-allocated contact normal force magnitudes
+     * @param contact_point_tensor Pre-allocated world-frame contact points
+     * @param contact_normal_tensor Pre-allocated world-frame contact normals
+     * @param contact_separation_tensor Pre-allocated contact separations
+     * @param contact_count_tensor Pre-allocated count matrix
+     * @param contact_start_indices_tensor Pre-allocated start-index matrix
+     * @return ovphysx_result_t
+     */
+    OVPHYSX_API ovphysx_result_t ovphysx_read_contact_data(
+        ovphysx_handle_t handle,
+        ovphysx_contact_binding_handle_t contact_handle,
+        DLTensor* contact_force_tensor,
+        DLTensor* contact_point_tensor,
+        DLTensor* contact_normal_tensor,
+        DLTensor* contact_separation_tensor,
+        DLTensor* contact_count_tensor,
+        DLTensor* contact_start_indices_tensor);
+
+    /**
+     * @brief Read detailed friction data into flat buffers.
+     *
+     * Required shapes:
+     * - friction_force_tensor: `[C, 3]` float32
+     * - friction_point_tensor: `[C, 3]` float32
+     * - contact_count_tensor: `[S, F]` int32 or uint32
+     * - contact_start_indices_tensor: `[S, F]` int32 or uint32
+     *
+     * `C`, `S`, and `F` have the same meanings as in
+     * `ovphysx_read_contact_data()`. For each `(sensor, filter)` pair, use the
+     * count/start-index tensors to index valid entries in the flat friction
+     * buffers. `C` and `F` must be positive; pass a positive
+     * max_contact_data_count and filters_per_sensor > 0 when creating the
+     * binding. Count and start-index tensors may be int32 or uint32.
+     *
+     * @param handle Instance handle
+     * @param contact_handle Contact binding
+     * @param friction_force_tensor Pre-allocated world-frame friction forces
+     * @param friction_point_tensor Pre-allocated world-frame friction points
+     * @param contact_count_tensor Pre-allocated count matrix
+     * @param contact_start_indices_tensor Pre-allocated start-index matrix
+     * @return ovphysx_result_t
+     */
+    OVPHYSX_API ovphysx_result_t ovphysx_read_friction_data(
+        ovphysx_handle_t handle,
+        ovphysx_contact_binding_handle_t contact_handle,
+        DLTensor* friction_force_tensor,
+        DLTensor* friction_point_tensor,
+        DLTensor* contact_count_tensor,
+        DLTensor* contact_start_indices_tensor);
 
     /**
      * @brief Get raw contact report data for the current simulation step.
@@ -1402,7 +1671,7 @@ extern "C" {
      *
      * **Pointer lifetime:** Returned pointers are valid until the next call to
      * ovphysx_remove_usd(), ovphysx_reset(), or ovphysx_destroy(). Calls to
-     * ovphysx_step() and ovphysx_clone() do NOT invalidate existing pointers.
+     * ovphysx_step() do NOT invalidate existing pointers.
      * Do not call `release()` on returned pointers -- ovphysx owns them.
      *
      * **Thread safety:** PhysX APIs on returned pointers must only be called

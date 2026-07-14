@@ -34,7 +34,7 @@
 #include "ExtVec3.h"
 
 namespace physx
-{	
+{
 
 namespace Ext
 {
@@ -309,7 +309,7 @@ namespace Ext
 			A = a_;
 			B = b_;
 			Length = length_;
-		}		
+		}
 	};
 
 	PX_FORCE_INLINE bool operator <(const EdgeWithLength& lhs, const EdgeWithLength& rhs)
@@ -332,7 +332,7 @@ namespace Ext
 			Q = q;
 			L = l;
 			InteriorEdge = interiorEdge;
-		}		
+		}
 	};
 
 	PX_FORCE_INLINE bool operator >(const SplitEdge& lhs, const SplitEdge& rhs)

@@ -43,23 +43,22 @@ namespace Sc
 {
 	class ActorPair;
 
-
 	// Internal counterpart of PxContactPair
 	struct ContactShapePair
 	{
 	public:
-		PxShape*				shapes[2];
-		const PxU8*				contactPatches;
-		const PxU8*				contactPoints;
-		const PxReal*			contactForces;
-		const PxU8*				frictionPatches;
-		PxU32					requiredBufferSize;
-		PxU8					contactCount;
-		PxU8					patchCount;
-		PxU16					constraintStreamSize;
-		PxU16					flags;
-		PxU16					events;
-		PxU32					shapeID[2];
+		PxShape*		shapes[2];
+		const PxU8*		contactPatches;
+		const PxU8*		contactPoints;
+		const PxReal*	contactForces;
+		const PxU8*		frictionPatches;
+		PxU32			requiredBufferSize;
+		PxU8			contactCount;
+		PxU8			patchCount;
+		PxU16			constraintStreamSize;
+		PxU16			flags;
+		PxU16			events;
+		PxU32			shapeID[2];
 		//38 on 64bit
 	};
 	PX_COMPILE_TIME_ASSERT(sizeof(ContactShapePair) == sizeof(PxContactPair));
@@ -165,7 +164,6 @@ namespace Sc
 
 } // namespace Sc
 
-
 PX_FORCE_INLINE void Sc::ContactStreamManager::reset()
 {
 	currentPairCount = 0;
@@ -173,12 +171,10 @@ PX_FORCE_INLINE void Sc::ContactStreamManager::reset()
 	flags_and_maxExtraDataBlocks &= ~sFlagMask;
 }
 
-
 PX_FORCE_INLINE PxU16 Sc::ContactStreamManager::getFlags() const
 {
 	return (flags_and_maxExtraDataBlocks & sFlagMask);
 }
-
 
 PX_FORCE_INLINE void Sc::ContactStreamManager::raiseFlags(PxU16 flags)
 {
@@ -186,7 +182,6 @@ PX_FORCE_INLINE void Sc::ContactStreamManager::raiseFlags(PxU16 flags)
 
 	flags_and_maxExtraDataBlocks |= flags;
 }
-
 
 PX_FORCE_INLINE void Sc::ContactStreamManager::clearFlags(PxU16 flags)
 {
@@ -198,12 +193,10 @@ PX_FORCE_INLINE void Sc::ContactStreamManager::clearFlags(PxU16 flags)
 	raiseFlags(tmpFlags);
 }
 
-
 PX_FORCE_INLINE PxU32 Sc::ContactStreamManager::getMaxExtraDataSize() const
 {
 	return PxU32((flags_and_maxExtraDataBlocks >> sMaxExtraDataShift) << sExtraDataBlockSizePow2);
 }
-
 
 PX_FORCE_INLINE void Sc::ContactStreamManager::setMaxExtraDataSize(PxU32 size)
 {
@@ -211,12 +204,10 @@ PX_FORCE_INLINE void Sc::ContactStreamManager::setMaxExtraDataSize(PxU32 size)
 	flags_and_maxExtraDataBlocks = PxTo16((flags_and_maxExtraDataBlocks & sFlagMask) | (nbBlocks << sMaxExtraDataShift));
 }
 
-
 PX_FORCE_INLINE Sc::ContactShapePair* Sc::ContactStreamManager::getShapePairs(PxU8* contactReportPairData) const
 {
 	return reinterpret_cast<Sc::ContactShapePair*>(contactReportPairData + getMaxExtraDataSize());
 }
-
 
 PX_FORCE_INLINE void Sc::ContactStreamManager::convertDeletedShapesInContactStream(ContactShapePair* shapePairs, PxU32 pairCount, const ObjectIDTracker& tracker)
 {
@@ -239,7 +230,6 @@ PX_FORCE_INLINE void Sc::ContactStreamManager::convertDeletedShapesInContactStre
 	}
 }
 
-
 PX_FORCE_INLINE PxU32 Sc::ContactStreamManager::computeExtraDataBlockCount(PxU32 extraDataSize_)
 {
 	PxU32 nbBlocks;
@@ -251,12 +241,10 @@ PX_FORCE_INLINE PxU32 Sc::ContactStreamManager::computeExtraDataBlockCount(PxU32
 	return nbBlocks;
 }
 
-
 PX_FORCE_INLINE PxU32 Sc::ContactStreamManager::computeExtraDataBlockSize(PxU32 extraDataSize_)
 {
 	return (computeExtraDataBlockCount(extraDataSize_) << sExtraDataBlockSizePow2);
 }
-
 
 PX_FORCE_INLINE PxU16 Sc::ContactStreamManager::computeContactReportExtraDataSize(PxU32 extraDataFlags, bool addHeader)
 {
@@ -273,7 +261,6 @@ PX_FORCE_INLINE PxU16 Sc::ContactStreamManager::computeContactReportExtraDataSiz
 		extraDataSize_ += sizeof(ContactStreamHeader);
 	return extraDataSize_;
 }
-
 
 PX_FORCE_INLINE void Sc::ContactStreamManager::fillInContactReportExtraData(PxContactPairVelocity* cpVel, PxU32 index, const ActorSim& rs, bool isCCDPass)
 {
@@ -301,7 +288,6 @@ PX_FORCE_INLINE void Sc::ContactStreamManager::fillInContactReportExtraData(PxCo
 	}
 }
 
-
 PX_FORCE_INLINE void Sc::ContactStreamManager::fillInContactReportExtraData(PxContactPairPose* cpPose, PxU32 index, const ActorSim& rs, bool isCCDPass, const bool useCurrentTransform)
 {
 	if(rs.getActorType() != PxActorType::eRIGID_STATIC)
@@ -319,7 +305,6 @@ PX_FORCE_INLINE void Sc::ContactStreamManager::fillInContactReportExtraData(PxCo
 		cpPose->globalPose[index] = sc.getActor2World();
 	}
 }
-
 
 PX_FORCE_INLINE void Sc::ContactStreamManager::fillInContactReportExtraData(PxU8* stream, PxU32 extraDataFlags, const ActorSim& rs0, const ActorSim& rs1, PxU32 ccdPass, const bool useCurrentTransform,
 	PxU32 pairIndex, PxU32 sizeOffset)
@@ -382,7 +367,6 @@ PX_FORCE_INLINE void Sc::ContactStreamManager::fillInContactReportExtraData(PxU8
 	extraDataSize = PxTo16(sizeOffset + PxU32(edStream - stream));
 }
 
-
 PX_FORCE_INLINE void Sc::ContactStreamManager::setContactReportPostSolverVelocity(PxU8* stream, const ActorSim& rs0, const ActorSim& rs1)
 {
 	PX_ASSERT(extraDataSize > (sizeof(ContactStreamHeader) + sizeof(PxContactPairIndex)));
@@ -394,7 +378,6 @@ PX_FORCE_INLINE void Sc::ContactStreamManager::setContactReportPostSolverVelocit
 
 	clearFlags(ContactStreamManagerFlag::eNEEDS_POST_SOLVER_VELOCITY);
 }
-
 
 }
 

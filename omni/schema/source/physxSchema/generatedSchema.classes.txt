@@ -3,8 +3,6 @@
 # Public Classes
 jointStateAPI
 physxArticulationAPI
-physxAutoAttachmentAPI
-physxAutoParticleClothAPI
 physxCameraAPI
 physxCameraDroneAPI
 physxCameraFollowAPI
@@ -16,11 +14,6 @@ physxContactReportAPI
 physxConvexDecompositionCollisionAPI
 physxConvexHullCollisionAPI
 physxCookedDataAPI
-physxDeformableAPI
-physxDeformableBodyAPI
-physxDeformableBodyMaterialAPI
-physxDeformableSurfaceAPI
-physxDeformableSurfaceMaterialAPI
 physxDiffuseParticlesAPI
 physxForceAPI
 physxJointAPI
@@ -31,13 +24,11 @@ physxMimicJointAPI
 physxPBDMaterialAPI
 physxParticleAPI
 physxParticleAnisotropyAPI
-physxParticleClothAPI
 physxParticleIsosurfaceAPI
 physxParticleSamplingAPI
 physxParticleSetAPI
 physxParticleSmoothingAPI
 physxParticleSystem
-physxPhysicsAttachment
 physxPhysicsDistanceJointAPI
 physxPhysicsGearJoint
 physxPhysicsInstancer
@@ -81,15 +72,12 @@ physxVehicleTireFrictionTable
 physxVehicleWheelAPI
 physxVehicleWheelAttachmentAPI
 physxVehicleWheelControllerAPI
-tetrahedralMesh
 tokens
 
 # Python Module Files
 module.cpp
 wrapJointStateAPI.cpp
 wrapPhysxArticulationAPI.cpp
-wrapPhysxAutoAttachmentAPI.cpp
-wrapPhysxAutoParticleClothAPI.cpp
 wrapPhysxCameraAPI.cpp
 wrapPhysxCameraDroneAPI.cpp
 wrapPhysxCameraFollowAPI.cpp
@@ -101,11 +89,6 @@ wrapPhysxContactReportAPI.cpp
 wrapPhysxConvexDecompositionCollisionAPI.cpp
 wrapPhysxConvexHullCollisionAPI.cpp
 wrapPhysxCookedDataAPI.cpp
-wrapPhysxDeformableAPI.cpp
-wrapPhysxDeformableBodyAPI.cpp
-wrapPhysxDeformableBodyMaterialAPI.cpp
-wrapPhysxDeformableSurfaceAPI.cpp
-wrapPhysxDeformableSurfaceMaterialAPI.cpp
 wrapPhysxDiffuseParticlesAPI.cpp
 wrapPhysxForceAPI.cpp
 wrapPhysxJointAPI.cpp
@@ -116,13 +99,11 @@ wrapPhysxMimicJointAPI.cpp
 wrapPhysxPBDMaterialAPI.cpp
 wrapPhysxParticleAPI.cpp
 wrapPhysxParticleAnisotropyAPI.cpp
-wrapPhysxParticleClothAPI.cpp
 wrapPhysxParticleIsosurfaceAPI.cpp
 wrapPhysxParticleSamplingAPI.cpp
 wrapPhysxParticleSetAPI.cpp
 wrapPhysxParticleSmoothingAPI.cpp
 wrapPhysxParticleSystem.cpp
-wrapPhysxPhysicsAttachment.cpp
 wrapPhysxPhysicsDistanceJointAPI.cpp
 wrapPhysxPhysicsGearJoint.cpp
 wrapPhysxPhysicsInstancer.cpp
@@ -166,7 +147,6 @@ wrapPhysxVehicleTireFrictionTable.cpp
 wrapPhysxVehicleWheelAPI.cpp
 wrapPhysxVehicleWheelAttachmentAPI.cpp
 wrapPhysxVehicleWheelControllerAPI.cpp
-wrapTetrahedralMesh.cpp
 wrapTokens.cpp
 
 # Resource Files

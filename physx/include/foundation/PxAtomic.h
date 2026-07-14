@@ -63,11 +63,11 @@ PX_FOUNDATION_API PxI64 PxAtomicAdd(volatile PxI64* val, PxI64 delta);
 PX_FOUNDATION_API PxI32 PxAtomicMax(volatile PxI32* val, PxI32 val2);
 PX_FOUNDATION_API PxI64 PxAtomicMax(volatile PxI64* val, PxI64 val2);
 
-/* or mask to *val. Return the new value */
+/* or mask to *val. Return the old value */
 PX_FOUNDATION_API PxI32 PxAtomicOr(volatile PxI32* val, PxI32 mask);
 PX_FOUNDATION_API PxI64 PxAtomicOr(volatile PxI64* val, PxI64 mask);
 
-/* and mask to *val. Return the new value */
+/* and mask to *val. Return the old value */
 PX_FOUNDATION_API PxI32 PxAtomicAnd(volatile PxI32* val, PxI32 mask);
 PX_FOUNDATION_API PxI64 PxAtomicAnd(volatile PxI64* val, PxI64 mask);
 

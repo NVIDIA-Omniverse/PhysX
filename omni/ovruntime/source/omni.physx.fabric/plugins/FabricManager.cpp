@@ -1,0 +1,2200 @@
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
+
+#include "UsdPCH.h"
+
+#include "FabricManager.h"
+#include "FabricKernels.h"
+
+#include <omni/fabric/connectivity/Connectivity.h>
+#include <omni/fabric/IFabric.h>
+#include <omni/fabric/FabricUSD.h>
+#include <omni/fabric/SimStageWithHistory.h>
+#include <usdrt/scenegraph/usd/usd/stage.h>
+#include <usdrt/population/Tokens.h>
+#include <usdrt/hierarchy/IFabricHierarchy.h>
+
+#include <carb/settings/ISettings.h>
+#include <carb/tasking/TaskingTypes.h>
+#include <carb/tasking/TaskingUtils.h>
+
+#include <omni/physx/IPhysxSimulation.h>
+#include <omni/physx/IPhysxFabric.h>
+#include <omni/physx/IPhysxSettings.h>
+#include <private/omni/physx/IPhysxPrivate.h>
+#include <omni/physx/PhysxTokens.h>
+
+#include <omni/usd/UtilsIncludes.h>
+#include <omni/usd/UsdUtils.h>
+
+#include <cuda_runtime_api.h>
+
+#include <PxPhysicsAPI.h>
+#include <common/foundation/TypeCast.h>
+
+#include <tbb/concurrent_hash_map.h>
+
+#include "gpu/PxPhysicsGpu.h"
+#include "gpu/PxGpu.h"
+
+using namespace PXR_NS;
+using namespace carb;
+using namespace carb::tasking;
+using namespace omni::fabric;
+
+extern carb::settings::ISettings* gSettings;
+
+PXR_NS::UsdStageRefPtr gStage = nullptr;
+omni::physx::IPhysxPrivate* gPhysXPrivate = nullptr;
+
+extern omni::physx::FabricManager* gFabricManager;
+
+using namespace omni::fabric;
+using namespace omni::physx;
+using namespace physx;
+using ::physx::PxVec3;
+using ::physx::PxQuat;
+using ::physx::PxTransform;
+
+
+PXR_NS::GfMatrix4d computeMatrix(const PXR_NS::GfVec3d& translate, const PXR_NS::GfMatrix3d& rotate, const PXR_NS::GfVec3d& scale)
+{
+    // Order is scale*rotate*translate
+    return GfMatrix4d(rotate[0][0] * scale[0], rotate[0][1] * scale[0], rotate[0][2] * scale[0], 0,
+                            rotate[1][0] * scale[1], rotate[1][1] * scale[1], rotate[1][2] * scale[1], 0,
+                            rotate[2][0] * scale[2], rotate[2][1] * scale[2], rotate[2][2] * scale[2], 0,
+                            translate[0], translate[1], translate[2], 1);
+}
+
+PXR_NS::GfMatrix4d computeLocalMatrix(omni::fabric::USDHierarchy& usdHierarchy,
+                                   omni::fabric::StageReaderWriter& stage,
+                                const omni::fabric::Path& path, const GfMatrix4d& worldMatrix, 
+                                const omni::fabric::Token& worldMatrixToken)
+{
+    const bool* resetXformStack =
+        stage.getAttributeRd<bool>(path, usdrt::population::populationPrimParamTokens->resetXformStack);
+    if (resetXformStack && (*resetXformStack))
+        return worldMatrix;
+    
+    {
+        omni::fabric::Path parentPath = usdHierarchy.getParent(path);
+        while (parentPath != omni::fabric::Path())
+        {
+            const PXR_NS::GfMatrix4d* parentWorldMatrix =
+                stage.getAttributeRd<PXR_NS::GfMatrix4d>(parentPath, worldMatrixToken);
+            if (parentWorldMatrix)
+            {
+                return worldMatrix * parentWorldMatrix->GetInverse();
+            }
+            else
+            {
+                parentPath = usdHierarchy.getParent(parentPath);
+            }
+        }            
+    }
+
+    return worldMatrix;
+}
+
+namespace omni
+{
+namespace physx
+{
+inline float radToDeg(const float a)
+{
+    return 57.29577951308232286465f * a;
+}
+
+void FabricUsdNoticeListener::handle(const class PXR_NS::UsdNotice::ObjectsChanged& objectsChanged)
+{
+    // This is an old callback, ignore it
+    if (!gStage || !gFabricManager || gStage != objectsChanged.GetStage())
+    {
+        return;
+    }
+
+    TRACE_FUNCTION();
+
+    CARB_PROFILE_ZONE(0, "FabricManager::NoticeHandler");
+
+    for (const SdfPath& path : objectsChanged.GetResyncedPaths())
+    {
+        const SdfPath primPath = gStage->GetPseudoRoot().GetPath() == path ?
+            gStage->GetPseudoRoot().GetPath() :
+            path.GetPrimPath();
+
+        // If prim is removed, remove it and its descendants from selection.
+        const UsdPrim prim = gStage->GetPrimAtPath(primPath);
+        if (prim.IsValid() == false || !prim.IsActive()) // remove prim
+        {
+            gFabricManager->removePrim(primPath);
+        }
+        else // resync prim
+        {
+            gFabricManager->resyncPrim(primPath);
+        }
+    }
+
+    for (const SdfPath& path : objectsChanged.GetChangedInfoOnlyPaths())
+    {
+        const SdfPath primPath = gStage->GetPseudoRoot().GetPath() == path ? path : path.GetPrimPath();
+
+        const bool isAttributePath = path.IsPropertyPath();
+        if (isAttributePath)
+        {
+            TfToken const& attrName = path.GetNameToken();
+            if (attrName == UsdPhysicsTokens->physicsKinematicEnabled)
+            {
+                const UsdPrim prim = gStage->GetPrimAtPath(primPath);
+                if (prim)
+                {
+                    bool val = false;
+                    prim.GetAttribute(attrName).Get(&val);
+                    gFabricManager->toggleKinematics(val, prim);
+                }
+            }
+        }
+    }
+}
+
+void onPhysXObjectCreatedCallback(const PXR_NS::SdfPath& ,
+    usdparser::ObjectId ,
+    PhysXType ,
+    void* userData)
+{
+    FabricManager* fm = reinterpret_cast<FabricManager*>(userData);
+    fm->setPtrDirty();
+}
+
+void onPhysXObjectDeletedCallback(const PXR_NS::SdfPath& ,
+    usdparser::ObjectId ,
+    PhysXType type,
+    void* userData)
+{
+    FabricManager* fm = reinterpret_cast<FabricManager*>(userData);
+    fm->setPtrDirty();
+
+    // When a PhysX deformable body is destroyed, propagate dirty state to the corresponding
+    // deformable body manager so that its per-scene sets get rebuilt on the next update().
+    // Without this, the sets retain stale pointers to destroyed PhysX objects, causing
+    // use-after-free / NULL dereferences in updateInternal*().
+    if (type == omni::physx::ePTDeformableSurface)
+    {
+        fm->setSurfaceDeformableBodyDirty();
+    }
+    else if (type == omni::physx::ePTDeformableVolume)
+    {
+        fm->setVolumeDeformableBodyDirty();
+    }
+}
+
+void onPhysXObjectDeleteAllCallback(void* userData)
+{
+    FabricManager* fm = reinterpret_cast<FabricManager*>(userData);
+    fm->setPtrDirty();
+    fm->setSurfaceDeformableBodyDirty();
+    fm->setVolumeDeformableBodyDirty();
+}
+
+FabricManager::FabricManager()
+    : mPhysXSimulation(nullptr), mUpdate(false), mResumed(false), mPtrDirty(true), mKinematicBodyTransformationUpdateEnabled(true), mNoticeListener(nullptr)
+{
+    mStageId.id = 0;
+    carb::Framework * framework = carb::getFramework();
+    mPhysXSimulation = carb::getCachedInterface<omni::physx::IPhysxSimulation>();
+    mPhysX = carb::getCachedInterface<omni::physx::IPhysx>();
+
+    gPhysXPrivate = carb::getCachedInterface<omni::physx::IPhysxPrivate>();
+
+    mWorldMatrixToken = omni::fabric::Token::createImmortal(gWorldMatrixTokenString);
+    mLocalMatrixToken = omni::fabric::Token::createImmortal(gLocalMatrixTokenString);
+    mWorldForceToken = omni::fabric::Token::createImmortal(gWorldForceTokenString);
+    mWorldTorqueToken = omni::fabric::Token::createImmortal(gWorldTorqueTokenString);
+    mPointsToken = omni::fabric::Token::createImmortal(gPointsTokenString);
+    mInitPointsToken = omni::fabric::Token::createImmortal(gInitPointsTokenString);
+    mPhysXPtrToken = omni::fabric::Token::createImmortal(gPhysXPtrTokenString);
+    mPhysXPtrInstancedToken = omni::fabric::Token::createImmortal(gPhysXPtrInstancedTokenString);
+
+    mDynamicBodyToken = omni::fabric::Token::createImmortal(gDynamicBodyTokenString);
+    mNestedBodyToken = omni::fabric::Token::createImmortal(gNestedBodyTokenString);
+
+    mLinVelToken = omni::fabric::Token::createImmortal(UsdPhysicsTokens->physicsVelocity.GetText());
+    mAngVelToken = omni::fabric::Token::createImmortal(UsdPhysicsTokens->physicsAngularVelocity.GetText());
+
+    mRigidBodyWorldPositionToken = omni::fabric::Token::createImmortal(gRigidBodyWorldPositionTokenString);
+    mRigidBodyWorldOrientationToken = omni::fabric::Token::createImmortal(gRigidBodyWorldOrientationTokenString);
+    mRigidBodyWorldScaleToken = omni::fabric::Token::createImmortal(gRigidBodyWorldScaleTokenString);
+
+    mFloat1Type = omni::fabric::Type(
+        omni::fabric::BaseDataType::eFloat, 1, 0, omni::fabric::AttributeRole::eNone);
+    mFloat3Type = omni::fabric::Type(
+        omni::fabric::BaseDataType::eFloat, 3, 0, omni::fabric::AttributeRole::eNone);
+    mDouble3Type = omni::fabric::Type(
+        omni::fabric::BaseDataType::eDouble, 3, 0, omni::fabric::AttributeRole::eNone);
+    mQuatType = omni::fabric::Type(
+        omni::fabric::BaseDataType::eFloat, 4, 0, omni::fabric::AttributeRole::eQuaternion);
+    mMatrix4dType = omni::fabric::Type(
+        BaseDataType::eDouble, 16, 0, omni::fabric::AttributeRole::eMatrix);
+
+    mFloat3ArrayType = omni::fabric::Type(
+        omni::fabric::BaseDataType::eFloat, 3, 1, omni::fabric::AttributeRole::ePosition);
+
+    mPtrType = omni::fabric::Type(
+        omni::fabric::BaseDataType::eUInt64, 1, 0, omni::fabric::AttributeRole::eNone);
+
+    mTagType = omni::fabric::Type(BaseDataType::eTag, 1, 0, AttributeRole::eNone);
+
+    mPtrInstancedType = omni::fabric::Type(omni::fabric::BaseDataType::eUInt64, 1, 1, omni::fabric::AttributeRole::eNone);
+
+    mTokenJointStates[0] =
+        FabricJointStateToken{ Token("PhysicsJointStateAPI:angular"), Token("state:angular:physics:position"),
+                                  Token("state:angular:physics:velocity"), UsdPhysicsTokens->angular,
+                                  ::physx::PxArticulationAxis::eTWIST };
+    mTokenJointStates[1] =
+        FabricJointStateToken{ Token("PhysicsJointStateAPI:linear"), Token("state:linear:physics:position"),
+                                  Token("state:linear:physics:velocity"), UsdPhysicsTokens->linear,
+                                  ::physx::PxArticulationAxis::eX };
+    mTokenJointStates[2] =
+        FabricJointStateToken{ Token("PhysicsJointStateAPI:rotX"), Token("state:rotX:physics:position"),
+                                  Token("state:rotX:physics:velocity"), UsdPhysicsTokens->rotX,
+                                  ::physx::PxArticulationAxis::eTWIST };
+    mTokenJointStates[3] =
+        FabricJointStateToken{ Token("PhysicsJointStateAPI:rotY"), Token("state:rotY:physics:position"),
+                                  Token("state:rotY:physics:velocity"), UsdPhysicsTokens->rotY,
+                                  ::physx::PxArticulationAxis::eSWING1 };
+    mTokenJointStates[4] =
+        FabricJointStateToken{ Token("PhysicsJointStateAPI:rotZ"), Token("state:rotZ:physics:position"),
+                                  Token("state:rotZ:physics:velocity"), UsdPhysicsTokens->rotZ,
+                                  ::physx::PxArticulationAxis::eSWING2 };
+
+    omni::physx::IPhysicsObjectChangeCallback callback;
+    callback.objectDestructionNotifyFn = onPhysXObjectDeletedCallback;
+    callback.allObjectsDestructionNotifyFn = onPhysXObjectDeleteAllCallback;
+    callback.objectCreationNotifyFn = onPhysXObjectCreatedCallback;
+    callback.userData = this;
+    mSubscriptionObjId = mPhysX->subscribeObjectChangeNotifications(callback);
+
+    mSimulationEventListener = new SimulationEventListener([this](carb::events::IEvent* e) {
+        int eventType = int(e->type);
+
+        if (eventType == omni::physx::SimulationEvent::eStopped)
+        {
+            mPtrDirty = true;
+        }
+        else if (eventType == omni::physx::SimulationEvent::eResumed)
+        {
+            resume();
+        }
+        else if (eventType == omni::physx::SimulationEvent::ePaused)
+        {
+            pause();
+        }
+
+        });
+
+    mSimEvtSub = mPhysX->getSimulationEventStreamV2()->createSubscriptionToPop(
+        mSimulationEventListener, 0, "PhysX Fabric Simulation Event");
+}
+
+FabricManager::~FabricManager()
+{
+    mPhysX->unsubscribeObjectChangeNotifications(mSubscriptionObjId);
+    mSimEvtSub = nullptr; // calls release on mSimulationEventListener (--refCount)
+    pause();
+    release();
+
+    if (mSimulationEventListener != nullptr)
+    {
+        delete mSimulationEventListener;
+        mSimulationEventListener = nullptr;
+    }
+
+    gPhysXPrivate = nullptr;
+}
+
+PxCudaContextManager* FabricManager::getCudaContextManager()
+{
+    if (gPhysXPrivate)
+    {
+        return gPhysXPrivate->getCudaContextManager();
+    }
+    return nullptr;
+}
+
+void FabricManager::release()
+{
+    if (mPhysX)
+        mPhysX->disableResetOnStop(false);
+
+    mWheelVehicleMap.clear();
+    mPointInstanceProtos.clear();
+    mPhysXSimulation = nullptr;
+    mPhysX = nullptr;
+    mStageId.id = 0;
+}
+
+void FabricManager::attach(unsigned long stageId)
+{
+    mStageId.id = stageId;
+
+    mDirectGpuHelper.attach(stageId);
+}
+
+void FabricManager::detach()
+{
+
+    mStageId.id = 0;
+    mWheelVehicleMap.clear();
+    mPointInstanceProtos.clear();
+
+    mDirectGpuHelper.detach();
+
+    mResyncPaths.clear();
+}
+
+void updateFabric(float elapsedTime, float currentTime, void* userData)
+{
+    if (!userData)
+        return;
+
+    FabricManager* fcManager = (FabricManager*)userData;
+
+    fcManager->update(currentTime, elapsedTime);
+}
+
+void FabricManager::updateBucketsTransformations(const PrimBucketList& primBuckets,
+                                                 StageReaderWriter& stage,
+                                                 omni::physx::IPhysx* iPhysX,
+                                                 carb::tasking::ITasking* tasking,
+                                                 omni::fabric::USDHierarchy& usdHierarchy,
+                                                 PXR_NS::UsdGeomXformCache& xformCache,
+                                                 bool updateLocalMatrix)
+{
+    const size_t minBatchSize = 2000;
+    const size_t numThreads = tasking->getDesc().threadCount;
+
+    const size_t bucketCount = primBuckets.bucketCount();
+    for (size_t i = 0; i != bucketCount; i++)
+    {
+        gsl::span<PXR_NS::GfMatrix4d> worldMatrices =
+            stage.getAttributeArray<PXR_NS::GfMatrix4d>(primBuckets, i, mWorldMatrixToken);
+
+        gsl::span<PXR_NS::GfMatrix4d> localMatrices;
+        if (updateLocalMatrix)
+        {
+            localMatrices = stage.getAttributeArray<PXR_NS::GfMatrix4d>(primBuckets, i, mLocalMatrixToken);
+        }
+
+        gsl::span<carb::Float3> linVelocities = stage.getAttributeArray<carb::Float3>(primBuckets, i, mLinVelToken);
+        gsl::span<carb::Float3> angVelocities = stage.getAttributeArray<carb::Float3>(primBuckets, i, mAngVelToken);
+
+        gsl::span<uint64_t> physxPtrs = stage.getAttributeArray<uint64_t>(primBuckets, i, mPhysXPtrToken);
+
+        gsl::span<carb::Double3> rbWorldPositions =
+            stage.getAttributeArray<carb::Double3>(primBuckets, i, mRigidBodyWorldPositionToken);
+        gsl::span<carb::Float4> rbWorldOrientations =
+            stage.getAttributeArray<carb::Float4>(primBuckets, i, mRigidBodyWorldOrientationToken);
+        gsl::span<carb::Float3> rbWorldScales =
+            stage.getAttributeArray<carb::Float3>(primBuckets, i, mRigidBodyWorldScaleToken);
+
+        const gsl::span<const omni::fabric::Path> paths = stage.getPathArray(primBuckets, i);
+        const size_t numPaths = paths.size();
+        const size_t threadBatchSize = numPaths / numThreads;
+        const size_t batchSize = threadBatchSize > minBatchSize ? threadBatchSize : minBatchSize;
+        const size_t numBatches = (numPaths / batchSize) + 1;
+
+        auto&& computeFunc = [this, iPhysX, updateLocalMatrix, numPaths, batchSize, numBatches, paths, &stage,
+                              &usdHierarchy, &physxPtrs,
+                              &worldMatrices, &localMatrices, &linVelocities, &angVelocities, &rbWorldPositions,
+                              &rbWorldOrientations, &rbWorldScales, &xformCache](size_t batchIndex) {
+            // CARB_PROFILE_ZONE(0, "RigidBodyTransformsUpdateFn");
+            const size_t startIndex = batchIndex * batchSize;
+            const size_t endIndex = (batchIndex == (numBatches - 1)) ? numPaths : (batchIndex + 1) * batchSize;
+            for (size_t j = startIndex; j < endIndex; j++)
+            {
+                const omni::fabric::Path& path = paths[j];
+                if (updatePointInstancer(path, stage, xformCache))
+                {
+                    continue;
+                }
+
+                const ::physx::PxBase* physxPtr = nullptr;
+                if (mPtrDirty)
+                {
+                    const PXR_NS::SdfPath usdPath = omni::fabric::toSdfPath(path);
+                    physxPtr =
+                        reinterpret_cast<const ::physx::PxBase*>(iPhysX->getPhysXPtr(usdPath, omni::physx::ePTActor));
+                    if (!physxPtr)
+                        physxPtr =
+                            reinterpret_cast<const ::physx::PxBase*>(iPhysX->getPhysXPtr(usdPath, omni::physx::ePTLink));
+
+                    physxPtrs[j] = reinterpret_cast<uint64_t>(physxPtr);
+                }
+                else
+                {
+                    physxPtr = reinterpret_cast<const ::physx::PxBase*>(physxPtrs[j]);
+                }
+
+                if (!physxPtr)
+                {
+                    continue;
+                }
+
+                const ::physx::PxRigidBody* rigidBody = physxPtr->is<::physx::PxRigidBody>();
+                if (!rigidBody)
+                {
+                    continue;
+                }
+
+                const ::physx::PxTransform rigidBodyWorldTransformation = rigidBody->getGlobalPose();
+                const ::physx::PxVec3 rigidBodyLinearVelocity = rigidBody->getLinearVelocity();
+                const ::physx::PxVec3 rigidBodyAngularVelocity = rigidBody->getAngularVelocity();
+
+                PXR_NS::GfVec3d translation(double(rigidBodyWorldTransformation.p.x),
+                                         double(rigidBodyWorldTransformation.p.y),
+                                         double(rigidBodyWorldTransformation.p.z));
+                PXR_NS::GfQuatd rotation(rigidBodyWorldTransformation.q.w,
+                                      { rigidBodyWorldTransformation.q.x, rigidBodyWorldTransformation.q.y,
+                                        rigidBodyWorldTransformation.q.z });
+
+                PXR_NS::GfVec3d scale(1.0);
+                TransformationCache::const_iterator fit = mInitialTransformation.find(path);
+                if (fit != mInitialTransformation.end())
+                {
+
+                    scale = PXR_NS::GfVec3f(
+                        double(fit->second.scale.x), double(fit->second.scale.y), double(fit->second.scale.z));
+                }
+
+                worldMatrices[j] = computeMatrix(translation, PXR_NS::GfMatrix3d(rotation), scale);
+                if (updateLocalMatrix)
+                {
+                    localMatrices[j] = computeLocalMatrix(usdHierarchy, stage, path, worldMatrices[j], mWorldMatrixToken);
+                }
+
+                rbWorldPositions[j] = omni::physx::toDouble3(rigidBodyWorldTransformation.p);
+                rbWorldOrientations[j] = omni::physx::toFloat4(rigidBodyWorldTransformation.q);
+                rbWorldScales[j] = omni::physx::toFloat3(scale);
+
+                linVelocities[j] = omni::physx::toFloat3(rigidBodyLinearVelocity);
+                angVelocities[j] = omni::physx::toFloat3(rigidBodyAngularVelocity);
+            }
+        };
+        {
+            tasking->parallelFor(size_t(0), numBatches, computeFunc);
+        }
+    }
+}
+
+void FabricManager::update(float currentTime, float elapsedSecs, bool forceUpdate)
+{
+    const bool enabled = gSettings->getAsBool(kSettingFabricEnabled);
+
+    CARB_PROFILE_ZONE(0, "FabricManager::update");
+    if (mUpdate && enabled)
+    {
+        IStageReaderWriter* iSip = carb::getCachedInterface<IStageReaderWriter>();
+        StageReaderWriter stage = iSip->get(mStageId);
+
+        const bool updateTransformations = gSettings->getAsBool(kSettingFabricUpdateTransformations);
+        const bool updateVelocities = gSettings->getAsBool(kSettingFabricUpdateVelocities);
+        const bool updateJointStates = gSettings->getAsBool(kSettingFabricUpdateJointStates);
+        const bool updatePoints = gSettings->getAsBool(kSettingFabricUpdatePoints);
+
+        ITasking* tasking = carb::getCachedInterface<ITasking>();
+
+        if (!mResyncPaths.empty() && gStage)
+        {
+            UsdGeomXformCache xformCache;
+            for (const SdfPath& resyncPath : mResyncPaths)
+            {
+                const PXR_NS::UsdPrim prim = gStage->GetPrimAtPath(resyncPath);
+                if (!prim)
+                    continue;
+                if (prim.HasAPI<UsdPhysicsRigidBodyAPI>())
+                {                    
+                    StageReaderWriterId stageInProgress = iSip->get(mStageId);
+                    std::vector<usdrt::SdfPath> paths;
+                    paths.push_back(usdrt::SdfPath(prim.GetPrimPath().GetText()));
+                    initializeRigidBodyBatched(paths, iSip, stageInProgress);
+                }
+                else if (prim.HasAPI<PhysxSchemaPhysxVehicleWheelAttachmentAPI>())
+                {
+                    initializeWheel(xformCache, prim, iSip, stage.getId());
+                }
+                else if (prim.IsA<UsdGeomPointInstancer>())
+                {
+                    initializePointInstancer(gStage, UsdGeomPointInstancer{ prim }, xformCache, stage);
+                }
+                else if (prim.HasAPI(UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(OmniPhysicsDeformableAPITokens->DeformableBodyAPI)))
+                {
+                    initializeDeformableBody(xformCache, prim, iSip, stage.getId());
+                }
+            }
+
+            mResyncPaths.clear();
+        }
+
+        IPhysx* iPhysX = carb::getCachedInterface<IPhysx>();
+        CARB_ASSERT(iPhysX);
+
+        // pause change tracking so that we dont get transformations back
+        PauseChangeTrackingScope changeTrackingPauseScope(mPhysXSimulation);
+
+        // if readback is suppressed, let the GPU helper handle the update
+        if (iPhysX->isReadbackSuppressed())
+        {
+            mDirectGpuHelper.update(stage, forceUpdate);
+            mVolumeDeformableBodyManager.update(stage);
+            mSurfaceDeformableBodyManager.update(stage);
+            return;
+        }
+
+        const Type typePrimName(BaseDataType::eTag, 1, 0, AttributeRole::ePrimTypeName);
+        const Type typeAppliedSchema(BaseDataType::eTag, 1, 0, AttributeRole::eAppliedSchema);
+        const Type typeAppliedType(BaseDataType::eTag, 1, 0, AttributeRole::eNone);
+        const Type typeDouble3(BaseDataType::eDouble, 3, 0, AttributeRole::eNone);
+        const Type typeMatrix4d(BaseDataType::eDouble, 16, 0, AttributeRole::eMatrix);
+        const Type typeFloat3(BaseDataType::eFloat, 3, 0, AttributeRole::eVector);
+        const Type typeQuat(BaseDataType::eFloat, 4, 0, AttributeRole::eQuaternion);
+        const Type typeUint64(fabric::BaseDataType::eUInt64);
+        const Type typeFloat(fabric::BaseDataType::eFloat);
+
+        const Token tokenVehicleWheelAttachment("PhysxVehicleWheelAttachmentAPI");
+        const Token tokenVehicleWheel("PhysxVehicleWheel");
+        const Token tokenRigidBody("PhysicsRigidBodyAPI");
+
+        omni::fabric::USDHierarchy usdHierarchy(stage.getFabricId());
+
+        // Update rigid bodies
+        if (updateTransformations || updateVelocities)
+        {
+            CARB_PROFILE_ZONE(0, "FabricManager::update - Rigid Bodies");
+            UsdGeomXformCache xformCache;
+
+            // update all rigid bodies except for nested bodies
+            {
+                const omni::fabric::set<AttrNameAndType> requiredAll = {
+                    AttrNameAndType(typeAppliedSchema, tokenRigidBody), AttrNameAndType(typeAppliedType, mDynamicBodyToken)
+                };
+                const omni::fabric::set<AttrNameAndType> requiredAny = {
+                    AttrNameAndType(typeMatrix4d, mWorldMatrixToken),
+                    AttrNameAndType(typeMatrix4d, mLocalMatrixToken),
+                    AttrNameAndType(typeFloat3, mLinVelToken),
+                    AttrNameAndType(typeFloat3, mAngVelToken),
+                    AttrNameAndType(typeUint64, mPhysXPtrToken),
+                    AttrNameAndType(typeUint64, mPhysXPtrInstancedToken),
+                    AttrNameAndType(typeDouble3, mRigidBodyWorldPositionToken),
+                    AttrNameAndType(typeQuat, mRigidBodyWorldOrientationToken),
+                    AttrNameAndType(typeFloat3, mRigidBodyWorldScaleToken)
+                };
+                const omni::fabric::set<AttrNameAndType> requiredNone = { AttrNameAndType(
+                    typeAppliedType, mNestedBodyToken) };
+
+                PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny, requiredNone);
+                updateBucketsTransformations(primBuckets, stage, iPhysX, tasking, usdHierarchy, xformCache, true);
+            }
+
+            // update nested bodies
+            {
+                const omni::fabric::set<AttrNameAndType> requiredAll = {
+                    AttrNameAndType(typeAppliedSchema, tokenRigidBody),
+                    AttrNameAndType(typeAppliedType, mDynamicBodyToken),
+                    AttrNameAndType(typeAppliedType, mNestedBodyToken)
+                };
+                const omni::fabric::set<AttrNameAndType> requiredAny = {
+                    AttrNameAndType(typeMatrix4d, mWorldMatrixToken),
+                    AttrNameAndType(typeFloat3, mLinVelToken),
+                    AttrNameAndType(typeFloat3, mAngVelToken),
+                    AttrNameAndType(typeUint64, mPhysXPtrToken),
+                    AttrNameAndType(typeUint64, mPhysXPtrInstancedToken),
+                    AttrNameAndType(typeDouble3, mRigidBodyWorldPositionToken),
+                    AttrNameAndType(typeQuat, mRigidBodyWorldOrientationToken),
+                    AttrNameAndType(typeFloat3, mRigidBodyWorldScaleToken)
+                };
+
+                PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
+                const size_t bucketCount = primBuckets.bucketCount();
+                if (bucketCount)
+                {
+                    // we need to update the transformations
+                    auto iHierarchyMaker = omni::core::createType<usdrt::hierarchy::IFabricHierarchy>();
+                    if (iHierarchyMaker)
+                    {
+                        auto iHierarchy = iHierarchyMaker->getFabricHierarchy(stage.getFabricId(), mStageId);
+                        iHierarchy->updateWorldXforms();
+                    }
+                    updateBucketsTransformations(primBuckets, stage, iPhysX, tasking, usdHierarchy, xformCache, false);
+                    // we need to update the transformations again to not get localMatrix change back to physics
+                    if (iHierarchyMaker)
+                    {
+                        auto iHierarchy = iHierarchyMaker->getFabricHierarchy(stage.getFabricId(), mStageId);
+                        iHierarchy->updateWorldXforms();
+                    }
+                }
+            }
+        }
+        mPtrDirty = false;
+
+        // Update vehicle wheels
+        if (updateTransformations)
+        {
+            CARB_PROFILE_ZONE(0, "FabricManager::update - Vehicle Wheels");
+           const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenVehicleWheelAttachment),
+                                                                       AttrNameAndType(typeMatrix4d, mWorldMatrixToken),
+                                                                       AttrNameAndType(typeMatrix4d, mLocalMatrixToken)
+            };
+            //AttrNameAndType(typeFloat3, tokenScale) };
+
+            PrimBucketList primBuckets = stage.findPrims(requiredAll);
+            size_t bucketCount = primBuckets.bucketCount();
+
+            for (size_t i = 0; i != bucketCount; i++)
+            {
+                gsl::span<PXR_NS::GfMatrix4d> outWorldMatrices =
+                    stage.getAttributeArray<PXR_NS::GfMatrix4d>(primBuckets, i, mWorldMatrixToken);
+                gsl::span<PXR_NS::GfMatrix4d> outLocalMatrices =
+                   stage.getAttributeArray<PXR_NS::GfMatrix4d>(primBuckets, i, mLocalMatrixToken);
+
+                gsl::span<const omni::fabric::Path> paths = stage.getPathArray(primBuckets, i);
+
+                {
+                    size_t j = 0;
+                    for (const omni::fabric::Path& path : paths)
+                    {
+                        const PXR_NS::SdfPath usdPath = omni::fabric::toSdfPath(path);
+                        const int wheelIndex = iPhysX->getWheelIndex(usdPath);
+                        if (wheelIndex >= 0)
+                        {
+                            WheelMap::const_iterator fit = mWheelVehicleMap.find(path);
+                            if (fit != mWheelVehicleMap.end() && fit->second > 0)
+                            {
+                                omni::physx::usdparser::ObjectId vehicleId = fit->second;
+                                carb::Float3 wPos;
+                                carb::Float4 wOrient;
+
+                                const bool success = iPhysX->getWheelTransformations(vehicleId, &wheelIndex, 1, true, &wPos, &wOrient);
+
+                                if (success)
+                                {
+                                    PXR_NS::GfVec3d translation(double(wPos.x), double(wPos.y), double(wPos.z));
+                                    PXR_NS::GfQuatd rotation(wOrient.w, wOrient.x, wOrient.y, wOrient.z);
+                                    PXR_NS::GfVec3f scale(1.0f);
+                                    TransformationCache::const_iterator fit =
+                                        mInitialTransformation.find(path);
+                                    if (fit != mInitialTransformation.end())
+                                    {
+
+                                        scale = PXR_NS::GfVec3f(double(fit->second.scale.x), double(fit->second.scale.y),
+                                                             double(fit->second.scale.z));
+                                    }
+
+                                    outWorldMatrices[j] = computeMatrix(translation, PXR_NS::GfMatrix3d(rotation), scale);
+
+                                    outLocalMatrices[j] = computeLocalMatrix(usdHierarchy, stage, path, 
+                                                                             outWorldMatrices[j], mWorldMatrixToken);
+                                }
+                                else
+                                {
+                                    CARB_LOG_ERROR("Wheel transformation data were not found.");
+                                }
+                            }
+                            else
+                            {
+                                CARB_LOG_ERROR("Wheel vehicle was not found.");
+                            }
+                        }
+                        else
+                        {
+                            CARB_LOG_ERROR("Wheel index was not found.");
+                        }
+                        j++;
+                    }
+                }
+            }
+
+        }
+
+        if (updateJointStates)
+        {
+            CARB_PROFILE_ZONE(0, "FabricManager::update - Joint States");
+            for(auto& ts : mTokenJointStates)
+            {
+                const Token tokenJointStateAPI = ts.token;
+               const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenJointStateAPI) };
+               const omni::fabric::set<AttrNameAndType> requiredAny = { AttrNameAndType(typeFloat, ts.madPositionToken),
+                                                                        AttrNameAndType(typeFloat,  ts.madVelocityToken) };
+
+                PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
+                size_t bucketCount = primBuckets.bucketCount();
+                for (size_t i = 0; i != bucketCount; i++)
+                {
+                    gsl::span<float> jointPositions = stage.getAttributeArray<float>(primBuckets, i, ts.madPositionToken);
+                    gsl::span<float> jointVelocities = stage.getAttributeArray<float>(primBuckets, i, ts.madVelocityToken);
+                    if(jointPositions.empty())
+                    {
+                        CARB_LOG_ERROR("FabricManager::update - Joint positions are empty");
+                        continue;
+                    }
+                    if(jointVelocities.empty())
+                    {
+                        CARB_LOG_ERROR("FabricManager::update - Joint velocities are empty");
+                        continue;
+                    }
+                    gsl::span<const omni::fabric::Path> paths = stage.getPathArray(primBuckets, i);
+                    size_t fcItemIndex = 0;
+                    for (const omni::fabric::Path& path : paths)
+                    {
+                        PXR_NS::SdfPath usdPath = omni::fabric::toSdfPath(path);
+                        ::physx::PxArticulationJointReducedCoordinate* physxPtr = reinterpret_cast<::physx::PxArticulationJointReducedCoordinate*>(iPhysX->getPhysXPtr(usdPath, omni::physx::ePTLinkJoint));
+
+                        if (!physxPtr)
+                        {
+                            fcItemIndex++;
+                            continue;
+                        }
+
+                        JointStateCache::const_iterator it = mInitialJointStates.find(path);
+                        if (it != mInitialJointStates.end())
+                        {
+                            const omni::physx::JointStateData& jointStateData = it->second;
+
+                            for(int jointAxis = 0; jointAxis < 6; ++jointAxis)
+                            {
+                                if(!jointStateData.enabled[jointAxis])
+                                    continue;
+                                if (jointStateData.tfTokenHandle[jointAxis] != omni::fabric::tfTokenToHandle(ts.usdToken))
+                                    continue;
+                                if(jointStateData.physxAxis[jointAxis] != ts.physxAxis)
+                                    continue;
+                                float jointPos;
+                                float jointVel;
+                                if(jointStateData.body0IsParentLink)
+                                {
+                                    // We are consistent with InternalJoint::getArticulationJointPosition behaviour
+                                    jointPos = physxPtr->getJointPosition(ts.physxAxis);
+                                    jointVel = physxPtr->getJointVelocity(ts.physxAxis);
+                                }
+                                else
+                                {
+                                    jointPos = -physxPtr->getJointPosition(ts.physxAxis);
+                                    jointVel = -physxPtr->getJointVelocity(ts.physxAxis);
+                                }
+
+                                if(jointStateData.convertToDegrees[jointAxis])
+                                {
+                                    jointPositions[fcItemIndex]  = radToDeg(jointPos);
+                                    jointVelocities[fcItemIndex] = radToDeg(jointVel);
+                                }
+                                else
+                                {
+                                    jointPositions[fcItemIndex]  = jointPos;
+                                    jointVelocities[fcItemIndex] = jointVel;
+                                }
+                                break;
+                            }
+                        }
+                        fcItemIndex++;
+                    }
+                }
+            }
+        }
+
+        mVolumeDeformableBodyManager.update(stage);
+        mSurfaceDeformableBodyManager.update(stage);
+    }
+}
+
+void FabricManager::removePrim(const PXR_NS::SdfPath& path)
+{
+}
+
+void FabricManager::resyncPrim(const PXR_NS::SdfPath& path)
+{
+    mResyncPaths.insert(path);
+}
+
+static bool checkNestedBodyFabric( omni::fabric::USDHierarchy& usdHierarchy,
+                                   omni::fabric::StageReaderWriter& stage,
+                                   const omni::fabric::Path& path)
+{
+    // a nested body matches the following criteria:
+    // - prim has a parent with PhysicsRigidBodyAPI
+    // - prim is activated with physics:rigidBodyEnabled == true
+    // - prim has no omni:fabric:resetXformStack flag before the rigidBody parent
+
+    bool bodyParentFound = false;
+
+    omni::fabric::Path bodyParentPath = usdHierarchy.getParent(path);
+    while (bodyParentPath != omni::fabric::Path())
+    {
+        const bool rigidBodyAPITag = stage.attributeExists(bodyParentPath, usdrt::TfToken(gRigidBodyAPITokenString));
+        if (rigidBodyAPITag)
+        {
+            const bool* bodyEnabled =
+                stage.getAttributeRd<bool>(bodyParentPath, usdrt::TfToken(UsdPhysicsTokens->physicsRigidBodyEnabled));
+            if (bodyEnabled && *bodyEnabled == true)
+            {
+                bodyParentFound = true;
+                break;
+            }
+        }
+
+        bodyParentPath = usdHierarchy.getParent(bodyParentPath);
+    }
+
+    if (bodyParentFound)
+    {
+        bool hasResetXformStack = false;
+        omni::fabric::Path parentPath = usdHierarchy.getParent(path);
+        while (parentPath != omni::fabric::Path() && parentPath != bodyParentPath)
+        {
+            const bool* resetXformStack =
+                stage.getAttributeRd<bool>(parentPath, usdrt::population::populationPrimParamTokens->resetXformStack);
+
+            if (resetXformStack && (*resetXformStack == true))
+            {
+                hasResetXformStack = true;
+                break;
+            }
+
+            parentPath = usdHierarchy.getParent(parentPath);
+        }
+
+        if (!hasResetXformStack)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool checkNestedBodyUSD(const UsdPrim rigidPrim)
+{
+    bool bodyParentFound = false;
+    UsdPrim bodyParent = rigidPrim.GetParent();
+    while (bodyParent != rigidPrim.GetStage()->GetPseudoRoot())
+    {
+        const UsdPhysicsRigidBodyAPI rboAPI(bodyParent);
+        if (rboAPI)
+        {
+            bool bodyEnabled = false;
+            rboAPI.GetRigidBodyEnabledAttr().Get(&bodyEnabled);
+            if (bodyEnabled)
+            {
+                bodyParentFound = true;
+                break;
+            }
+        }
+        bodyParent = bodyParent.GetParent();
+    }
+
+
+    if (bodyParentFound)
+    {
+        bool hasResetXformStack = false;
+        UsdPrim parent = rigidPrim;
+        while (parent != rigidPrim.GetStage()->GetPseudoRoot() && parent != bodyParent)
+        {
+            UsdGeomXformable xformable(parent);
+            if (xformable && xformable.GetResetXformStack())
+            {
+                hasResetXformStack = true;
+                break;
+            }
+            parent = parent.GetParent();
+        }
+        if (!hasResetXformStack)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void FabricManager::initializeRigidBodyBatched(const std::vector<usdrt::SdfPath>& rbPaths,
+    IStageReaderWriter* iStageReaderWriter, StageReaderWriterId stageInProgress)
+{
+    ITasking* tasking = carb::getCachedInterface<ITasking>();
+    IPhysx* iPhysx = carb::getCachedInterface<IPhysx>();
+    StageReaderWriter stage(stageInProgress);
+
+    mPtrDirty = true;
+
+    struct RigidBodyInitData
+    {
+        bool validPath;
+        bool usdPath;
+        omni::fabric::Path path;
+        bool dynamicBody;
+        bool nestedBody;
+        GfTransform transform;
+    };
+
+    const size_t numPaths = rbPaths.size();
+    std::vector<RigidBodyInitData> rbInitData(numPaths);
+    std::unordered_map<omni::fabric::Path, GfTransform> rbInitTransforms;
+
+    usdrt::UsdStageRefPtr usdrtStage = usdrt::UsdStage::Attach(mStageId.id, stageInProgress);
+    omni::fabric::USDHierarchy usdHierarchy(stage.getFabricId());
+
+    // compute the transformations, get the 
+    const size_t batchSize = 200;
+    const size_t numBatches = (numPaths / batchSize) + 1;
+
+    auto&& computeFunc = [this, usdrtStage, &usdHierarchy, &stage, numPaths, batchSize, numBatches, rbPaths,
+                          &rbInitData](size_t batchIndex)
+    {
+        const size_t startIndex = batchIndex * batchSize;
+        const size_t endIndex = (batchIndex == (numBatches - 1)) ? numPaths : (batchIndex + 1) * batchSize;
+        for (size_t i = startIndex; i < endIndex; i++)
+        {
+            const omni::fabric::Path pathC(rbPaths[i]);
+            auto iterProto = mPointInstanceProtos.find(pathC);
+            const PXR_NS::SdfPath usdPath = (iterProto != mPointInstanceProtos.end()) ? iterProto->second.usdProtoPath : omni::fabric::toSdfPath(pathC);
+            const UsdPrim prim = gStage->GetPrimAtPath(usdPath);
+
+            rbInitData[i].nestedBody = false;
+
+            const TransformationCache::const_iterator initialtranformFit = mInitialTransformation.find(pathC);
+            if (initialtranformFit != mInitialTransformation.end())
+            {
+                // already initialized
+                rbInitData[i].validPath = false;
+            }
+            else
+            {
+                if (!prim)
+                {
+                    // Fabric codepath
+                    usdrt::UsdPrim usdrt_prim = usdrtStage->GetPrimAtPath(usdrt::SdfPath(pathC));
+                    if (!usdrt_prim)
+                    {
+                        rbInitData[i].validPath = false;
+                        continue;
+                    }
+                    else
+                    {
+                        bool isTrackedBody = true;
+                        if (!mKinematicBodyTransformationUpdateEnabled)
+                        {
+                            bool kinematic = false;
+                            usdrt_prim.GetAttribute(usdrt::TfToken(UsdPhysicsTokens->physicsKinematicEnabled)).Get(&kinematic);
+                            if (kinematic)
+                            {
+                                isTrackedBody = false;
+                                rbInitData[i].dynamicBody = false;
+                            }
+                        }
+                        if (isTrackedBody)
+                        {
+                            const omni::fabric::Token fabricTransform(gWorldMatrixTokenString);
+                            const PXR_NS::GfMatrix4d* worldPose =
+                                stage.getAttributeRd<PXR_NS::GfMatrix4d>(omni::fabric::Path(pathC), fabricTransform);
+
+                            if (worldPose)
+                            {
+                                const GfTransform tr(*worldPose);
+                                rbInitData[i].transform = tr;
+                            }
+                            rbInitData[i].dynamicBody = true;
+                        }
+                        rbInitData[i].path = omni::fabric::Path(rbPaths[i]);
+                        rbInitData[i].validPath = true;
+                        rbInitData[i].usdPath = false;
+                    }
+                }
+                else
+                {
+                    bool isTrackedBody = true;
+                    if (!mKinematicBodyTransformationUpdateEnabled)
+                    {
+                        bool kinematic = false;
+                        prim.GetAttribute(UsdPhysicsTokens->physicsKinematicEnabled).Get(&kinematic);
+                        if (kinematic)
+                        {
+                            isTrackedBody = false;
+                            rbInitData[i].dynamicBody = false;
+                        }
+                    }
+                    if (isTrackedBody)
+                    {
+                        const bool nestedBody = checkNestedBodyUSD(prim);
+                        if (nestedBody)
+                        {
+                            rbInitData[i].nestedBody = true;
+                        }
+
+                        const GfMatrix4d worldPose =
+                            UsdGeomXform(prim).ComputeLocalToWorldTransform(UsdTimeCode::Default());
+                        const GfTransform tr(worldPose);
+
+                        rbInitData[i].transform = tr;
+                        rbInitData[i].dynamicBody = true;
+                    }
+                    rbInitData[i].path = omni::fabric::Path(rbPaths[i]);                    
+                    rbInitData[i].validPath = true;
+                    rbInitData[i].usdPath = true;
+                }
+            }
+        }
+    };
+    {
+        CARB_PROFILE_ZONE(0, "FabricManager::resume:rigidBodyInitialization:transformationsGet");                
+        tasking->parallelFor(size_t(0), numBatches, computeFunc);
+    }
+
+    {
+        CARB_PROFILE_ZONE(0, "FabricManager::resume:rigidBodyInitialization:createFabricAttributes");
+        auto initTransformsTask = tasking->addTask(Priority::eHigh, nullptr, [&] {            
+            CARB_PROFILE_ZONE(0, "FabricManager::resume:rigidBodyInitialization:initTransforms");
+            for (const RigidBodyInitData& initData : rbInitData)
+            {
+                if (!initData.validPath)
+                    continue;
+
+                if (initData.dynamicBody)
+                {
+                    rbInitTransforms[initData.path] = initData.transform;
+
+                    const GfVec3d& wPos = initData.transform.GetTranslation();
+                    Float3 pos = { float(wPos[0]), float(wPos[1]), float(wPos[2]) };
+                                        
+                    const GfQuatd wRot = initData.transform.GetRotation().GetQuat();
+                    Float4 orient = { float(wRot.GetImaginary()[0]), float(wRot.GetImaginary()[1]),
+                                float(wRot.GetImaginary()[2]), float(wRot.GetReal()) };
+
+                    const GfVec3d& wScale = initData.transform.GetScale();
+                    Float3 scale = { float(wScale[0]), float(wScale[1]), float(wScale[2]) };
+
+                    auto& initTrans = mInitialTransformation[initData.path];
+                    initTrans.translation = pos;
+                    initTrans.orientation = orient;
+                    initTrans.scale = scale;
+
+                    if (iPhysx->isReadbackSuppressed())
+                    {
+                        const GfVec3d& wScale = initData.transform.GetScale();
+                        scale = { float(wScale[0]), float(wScale[1]), float(wScale[2]) };
+                        mDirectGpuHelper.registerRigidBody(initData.path, scale);
+                    }
+                }
+            }
+        });
+
+
+        static constexpr const size_t kNumPhysicsAttr = 12;
+        const std::array<AttrNameAndType, kNumPhysicsAttr> attrNameTypeVec = {
+            AttrNameAndType(mMatrix4dType, mWorldMatrixToken),
+            AttrNameAndType(mMatrix4dType, mLocalMatrixToken),
+
+            AttrNameAndType(mPtrType, mPhysXPtrToken),
+
+            AttrNameAndType(mFloat3Type, mWorldForceToken),
+            AttrNameAndType(mFloat3Type, mWorldTorqueToken),
+
+            AttrNameAndType(mFloat3Type, mLinVelToken),
+            AttrNameAndType(mFloat3Type, mAngVelToken),
+
+            // token
+            AttrNameAndType(mTagType, mDynamicBodyToken),
+
+            // world trs attributes
+            AttrNameAndType(mDouble3Type, mRigidBodyWorldPositionToken),
+            AttrNameAndType(mQuatType, mRigidBodyWorldOrientationToken),
+            AttrNameAndType(mFloat3Type, mRigidBodyWorldScaleToken),
+
+            // Technically not needed for all, but doing for simplicity
+            AttrNameAndType(mPtrInstancedType, mPhysXPtrInstancedToken),
+        };
+
+        struct TbbAttrNameAndTypeCompare
+        {
+            static size_t hash(const omni::fabric::BucketNamesAndTypes& x)
+            {
+                size_t hash = 0;
+                for (const auto& it : x)
+                {
+                    hash = hash ^ std::hash<omni::fabric::AttrNameAndType>()(it);
+                }
+                return hash;
+            }
+            static bool equal(const omni::fabric::BucketNamesAndTypes& x, const omni::fabric::BucketNamesAndTypes& y)
+            {
+                return x == y;
+            }
+        };
+        using PrimsByBucket = tbb::concurrent_hash_map<omni::fabric::BucketNamesAndTypes,
+                                                            std::vector<omni::fabric::Path>, TbbAttrNameAndTypeCompare>;
+
+        // Figure out the buckets we have
+        {
+            PrimsByBucket rbsByBucket;
+            auto bucketingFunc = [&](size_t index) {
+                const RigidBodyInitData& initData = rbInitData[index];
+                if (!initData.validPath || !initData.dynamicBody)
+                {
+                    return;
+                }
+
+                // Start building the bucket with  the attributes we already have on this prim
+                using NamesAndTypes = std::pair<std::vector<omni::fabric::Token>, std::vector<omni::fabric::Type>>;
+                omni::fabric::BucketNamesAndTypes bucket;
+                NamesAndTypes attrNamesAndTypes = stage.getAttributeNamesAndTypes(initData.path);
+                for (size_t i = 0; i < attrNamesAndTypes.first.size(); ++i)
+                {
+                    bucket.insert({ attrNamesAndTypes.second[i], attrNamesAndTypes.first[i] });
+                }
+
+                PrimsByBucket::accessor accessor;
+                if (rbsByBucket.insert(accessor, std::move(bucket)))
+                {
+                    accessor->second = std::vector<omni::fabric::Path>();
+                }
+                accessor->second.push_back(initData.path);
+            };
+            tasking->parallelFor(size_t(0), rbInitData.size(), bucketingFunc);
+
+            AttrCreateSpec physxAttributes[kNumPhysicsAttr];
+            for (size_t i = 0; i < kNumPhysicsAttr; ++i)
+            {
+                physxAttributes[i].nameAndType = attrNameTypeVec[i];
+                physxAttributes[i].value = nullptr;
+                physxAttributes[i].arrayElemCount = 0;
+            }
+
+            // For each bucket we will add the desired attributes.
+            IStageReaderWriterLegacy* srwLegacy = carb::getCachedInterface<omni::fabric::IStageReaderWriterLegacy>();
+            for (const auto& bucketIt : rbsByBucket)
+            {
+                const auto& bucket = bucketIt.first;
+                const auto& paths = bucketIt.second;
+
+                CARB_PROFILE_ZONE(0, "CreatePrims (%ld)", paths.size());
+
+                // Get the bucketId of the first path. They will all be equal:
+                omni::fabric::BucketIdAndIndex buckedAndIdx = srwLegacy->getBucketIdAndIndex(stage.getId(), paths[0]);
+
+                // Add all the attributes to the bucket in one go.
+                srwLegacy->addAttributesToBucket(stage.getId(), buckedAndIdx.bucketId, physxAttributes, kNumPhysicsAttr);
+            }
+        }
+
+        // nested body tag write
+        {
+            PrimsByBucket rbsByBucket;
+            auto bucketingFunc = [&](size_t index) {
+                const RigidBodyInitData& initData = rbInitData[index];
+                if (!initData.validPath || !initData.dynamicBody || !initData.nestedBody)
+                {
+                    return;
+                }
+
+                // Start building the bucket with  the attributes we already have on this prim
+                using NamesAndTypes = std::pair<std::vector<omni::fabric::Token>, std::vector<omni::fabric::Type>>;
+                omni::fabric::BucketNamesAndTypes bucket;
+                NamesAndTypes attrNamesAndTypes = stage.getAttributeNamesAndTypes(initData.path);
+                for (size_t i = 0; i < attrNamesAndTypes.first.size(); ++i)
+                {
+                    bucket.insert({ attrNamesAndTypes.second[i], attrNamesAndTypes.first[i] });
+                }
+
+                PrimsByBucket::accessor accessor;
+                if (rbsByBucket.insert(accessor, std::move(bucket)))
+                {
+                    accessor->second = std::vector<omni::fabric::Path>();
+                }
+                accessor->second.push_back(initData.path);
+            };
+            tasking->parallelFor(size_t(0), rbInitData.size(), bucketingFunc);
+
+            AttrCreateSpec physxAttribute;
+            physxAttribute.nameAndType = AttrNameAndType(mTagType, mNestedBodyToken);
+            physxAttribute.value = nullptr;
+            physxAttribute.arrayElemCount = 0;
+
+            // For each bucket we will add the desired attributes.
+            IStageReaderWriterLegacy* srwLegacy = carb::getCachedInterface<omni::fabric::IStageReaderWriterLegacy>();
+            for (const auto& bucketIt : rbsByBucket)
+            {
+                const auto& bucket = bucketIt.first;
+                const auto& paths = bucketIt.second;
+
+                CARB_PROFILE_ZONE(0, "CreatePrims (%ld)", paths.size());
+
+                // Get the bucketId of the first path. They will all be equal:
+                omni::fabric::BucketIdAndIndex buckedAndIdx = srwLegacy->getBucketIdAndIndex(stage.getId(), paths[0]);
+
+                // Add all the attributes to the bucket in one go.
+                srwLegacy->addAttributesToBucket(stage.getId(), buckedAndIdx.bucketId, &physxAttribute, 1);
+            }
+        }
+
+
+        initTransformsTask.wait();
+    }
+
+    {
+        CARB_PROFILE_ZONE(0, "FabricManager::resume:rigidBodyInitialization:writeToFabric");
+
+        const Type typeAppliedSchema(BaseDataType::eTag, 1, 0, AttributeRole::eAppliedSchema);
+        const Type typeAppliedType(BaseDataType::eTag, 1, 0, AttributeRole::eNone);
+        const Type typeFloat3(BaseDataType::eFloat, 3, 0, AttributeRole::eVector);
+        const Type typeMatrix4d(BaseDataType::eDouble, 16, 0, AttributeRole::eMatrix);
+
+        const Token tokenRigidBody(gRigidBodyAPITokenString);
+
+        omni::fabric::USDHierarchy usdHierarchy(stage.getFabricId());
+
+        const omni::fabric::set<AttrNameAndType> requiredAll = {
+            AttrNameAndType(typeAppliedSchema, tokenRigidBody), AttrNameAndType(typeAppliedType, mDynamicBodyToken)
+        };
+        const omni::fabric::set<AttrNameAndType> requiredAny = {
+             AttrNameAndType(typeMatrix4d, mWorldMatrixToken), AttrNameAndType(typeMatrix4d, mLocalMatrixToken)
+        };
+
+        PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
+        size_t bucketCount = primBuckets.bucketCount();
+        for (size_t i = 0; i != bucketCount; i++)
+        {
+            gsl::span<PXR_NS::GfMatrix4d> worldMatrices = stage.getAttributeArray<PXR_NS::GfMatrix4d>(primBuckets, i, mWorldMatrixToken);
+            gsl::span<PXR_NS::GfMatrix4d> localMatrices = stage.getAttributeArray<PXR_NS::GfMatrix4d>(primBuckets, i, mLocalMatrixToken);
+
+            gsl::span<const omni::fabric::Path> paths = stage.getPathArray(primBuckets, i);
+            size_t j = 0;
+            for (const omni::fabric::Path& path : paths)
+            {
+                PXR_NS::GfMatrix4d wMat(1.0);
+
+                const auto fit = rbInitTransforms.find(path);
+                if (fit != rbInitTransforms.end())
+                {
+                    const GfTransform& tr = fit->second;
+                    wMat = computeMatrix(tr.GetTranslation(), tr.GetRotation(), tr.GetScale());
+
+                    worldMatrices[j] = wMat;
+                    // hint: add local transform to rbInitTransforms using ComputeParentToWorldTransform
+                    // localMatrices[j] = GfMatrix4d(1.0);
+                    localMatrices[j] = computeLocalMatrix(usdHierarchy, stage, path, worldMatrices[j], mWorldMatrixToken);
+                }
+                j++;
+            }
+        }
+    }
+}
+
+void FabricManager::toggleKinematics(bool kinematics, const UsdPrim& usdPrim)
+{
+    if (!mKinematicBodyTransformationUpdateEnabled)
+    {
+        IStageReaderWriter* iStageReaderWriter = carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
+        StageReaderWriterId stageInProgress = iStageReaderWriter->get(mStageId);
+        StageReaderWriter stage(stageInProgress);
+
+        const omni::fabric::Path primPath =
+            omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), usdPrim.GetPrimPath());
+
+        if (!kinematics)
+        {
+            std::vector<usdrt::SdfPath> paths;
+            paths.push_back(usdrt::SdfPath(primPath));
+            initializeRigidBodyBatched(paths, iStageReaderWriter, stageInProgress);
+        }
+        else
+        {
+            stage.destroyTag(primPath, mDynamicBodyToken);
+        }
+    }
+}
+
+void FabricManager::initializeWheel(PXR_NS::UsdGeomXformCache& xfCache, const PXR_NS::UsdPrim& prim, omni::fabric::IStageReaderWriter* iStageReaderWriter, omni::fabric::StageReaderWriterId stageInProgress)
+{
+    const GfMatrix4d worldPose = xfCache.GetLocalToWorldTransform(prim);
+    const GfTransform tr(worldPose);
+
+    StageReaderWriter stage(stageInProgress);
+
+    omni::fabric::Path primPath =
+        omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), prim.GetPrimPath());
+
+    iStageReaderWriter->createAttribute(
+        stageInProgress, primPath, mWorldMatrixToken, (omni::fabric::TypeC)mMatrix4dType);
+    iStageReaderWriter->createAttribute(
+        stageInProgress, primPath, mLocalMatrixToken, (omni::fabric::TypeC)mMatrix4dType);
+
+    // find the vehicle the wheel belongs to
+    IPhysx* iPhysX = carb::getCachedInterface<IPhysx>();
+    const UsdPrim rootPrim = prim.GetStage()->GetPseudoRoot();
+    UsdPrim parent = prim;
+    while (parent != rootPrim)
+    {
+        if (parent.HasAPI<PhysxSchemaPhysxVehicleAPI>())
+        {
+            const usdparser::ObjectId objectId = iPhysX->getObjectId(parent.GetPrimPath(), ePTVehicle);
+            mWheelVehicleMap[primPath] = objectId;
+            break;
+        }
+        parent = parent.GetParent();
+    }
+
+    // store the initial transformations so that we move things back
+    const TransformationCache::const_iterator fit = mInitialTransformation.find(primPath);
+    if (fit == mInitialTransformation.end())
+    {
+        const GfVec3d wPos = tr.GetTranslation();
+        Float3 pos = { float(wPos[0]), float(wPos[1]), float(wPos[2]) };
+        const GfQuatd wRot = tr.GetRotation().GetQuat();
+        Float4 orient = { float(wRot.GetImaginary()[0]), float(wRot.GetImaginary()[1]), float(wRot.GetImaginary()[2]),
+                          float(wRot.GetReal()) };
+        const GfVec3d wScale = tr.GetScale();
+        Float3 scale = { float(wScale[0]), float(wScale[1]), float(wScale[2]) };
+
+        auto& initTrans = mInitialTransformation[primPath];
+        initTrans.translation = pos;
+        initTrans.orientation = orient;
+        initTrans.scale = scale;
+    }
+}
+
+void FabricManager::initializeJointState(const PXR_NS::UsdPrim& prim,
+                                            omni::fabric::IStageReaderWriter* iStageReaderWriter,
+                                            omni::fabric::StageReaderWriterId stageInProgress)
+{
+    StageReaderWriter stage(stageInProgress);
+    IPhysxJoint* iPhysxJoint = carb::getCachedInterface<IPhysxJoint>();
+    IPhysx* iPhysX = carb::getCachedInterface<IPhysx>();
+    const PXR_NS::SdfPath usdPath = prim.GetPrimPath();
+     omni::fabric::Path primPath = omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), usdPath);
+
+    JointStateCache::const_iterator fit = mInitialJointStates.find(primPath);
+    if (fit != mInitialJointStates.end())
+    {
+        // already initialized
+        return;
+    }
+
+    const usdparser::ObjectId objectId = iPhysX->getObjectId(prim.GetPrimPath(), ePTLinkJoint);    
+
+    omni::physx::JointStateData jointStateData;
+    iPhysxJoint->getJointStateData(objectId, &jointStateData);
+    mInitialJointStates[primPath] = jointStateData;
+    for (auto& ts : mTokenJointStates)
+    {
+        const Token tokenJointStateAPI = ts.token;
+        for (int jointAxis = 0; jointAxis < 6; ++jointAxis)
+        {
+            if (!jointStateData.enabled[jointAxis])
+                continue;
+            // This is needed because otherwise we would be creating both angular and rotX outputs for RevoluteJoint
+            // as they both map to physx eTWIST
+            if (jointStateData.tfTokenHandle[jointAxis] != omni::fabric::tfTokenToHandle(ts.usdToken))
+                continue;
+            if (jointStateData.physxAxis[jointAxis] != ts.physxAxis)
+                continue;
+
+            std::array<AttrNameAndType, 2> attrNameTypeVec = {
+                AttrNameAndType(mFloat1Type, ts.madPositionToken),
+                AttrNameAndType(mFloat1Type, ts.madVelocityToken),
+            };
+
+            stage.createAttributes(primPath, attrNameTypeVec);
+        }
+    }
+}
+
+void FabricManager::initializeDeformableBody(PXR_NS::UsdGeomXformCache& xfCache, const PXR_NS::UsdPrim& prim, omni::fabric::IStageReaderWriter* iStageReaderWriter, omni::fabric::StageReaderWriterId stageInProgress)
+{
+    mVolumeDeformableBodyManager.registerDeformableBody(xfCache, mStageId.id, iStageReaderWriter, stageInProgress, prim);
+    mSurfaceDeformableBodyManager.registerDeformableBody(xfCache, mStageId.id, iStageReaderWriter, stageInProgress, prim);
+}
+
+void FabricManager::resume()
+{
+    CARB_PROFILE_ZONE(0, "FabricManager::resume");
+    const bool enabled = gSettings->getAsBool(kSettingFabricEnabled);
+    if (!enabled)
+        return;
+
+    if (mPhysXSimulation && !mResumed)
+    {
+        PauseChangeTrackingScope changeTrackingPauseScope(mPhysXSimulation);
+        mWheelVehicleMap.clear();
+        mPointInstanceProtos.clear();
+        mUpdate = true;
+        mResumed = true;
+        // Disable write of physics transformation, get them through the simulation callback
+        physx::ISimulationCallback cb;
+        cb.transformationWriteFn = nullptr;
+        cb.velocityWriteFn = nullptr;
+        cb.transformationUpdateFn = updateFabric;
+        cb.userData = this;
+        mPhysXSimulation->setSimulationCallback(cb);
+        mPhysXSimulation->setSimulationOutputFlags(omni::physx::SimulationOutputType::eTRANSFORMATION,
+            omni::physx::SimulationOutputFlag::eSKIP_WRITE, nullptr, 0);
+        mPhysXSimulation->addSimulationOutputFlags(omni::physx::SimulationOutputType::eVELOCITY,
+            omni::physx::SimulationOutputFlag::eSKIP_WRITE, nullptr, 0);
+        mPhysXSimulation->addSimulationOutputFlags(omni::physx::SimulationOutputType::ePOINTS,
+            omni::physx::SimulationOutputFlag::eSKIP_WRITE, nullptr, 0);
+
+        IStageReaderWriter* iStageReaderWriter = carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
+        ISimStageWithHistory* iSimStageWithHistory = carb::getCachedInterface<omni::fabric::ISimStageWithHistory>();
+        StageReaderWriterId stageInProgress = iStageReaderWriter->get(mStageId);
+
+        usdrt::UsdStageRefPtr usdrtStage = usdrt::UsdStage::Attach(mStageId, stageInProgress);
+        UsdStageWeakPtr usdStage = UsdUtilsStageCache::Get().Find(UsdStageCache::Id::FromLongInt(long(mStageId.id)));
+        if (usdStage && usdrtStage)
+        {
+            gStage = usdStage;
+            mNoticeListener = new FabricUsdNoticeListener();
+            mNoticeListenerKey =
+                PXR_NS::TfNotice::Register(PXR_NS::TfCreateWeakPtr(mNoticeListener), &omni::physx::FabricUsdNoticeListener::handle);
+
+            UsdGeomXformCache xformCache;
+            parsePointInstancers(usdStage, usdrtStage, xformCache, iStageReaderWriter, stageInProgress);
+
+            {
+                CARB_PROFILE_ZONE(0, "FabricManager::resume:rigidBodyInitialization");
+                initializeRigidBodyBatched(usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken(gRigidBodyAPITokenString)), iStageReaderWriter, stageInProgress);
+            }
+            {
+                CARB_PROFILE_ZONE(0, "FabricManager::resume:wheelAttachmentInitialization");
+                for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("PhysxVehicleWheelAttachmentAPI")))
+                {
+                    const omni::fabric::Path pathC(usdrtPath);
+                    const PXR_NS::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+                    const UsdPrim prim = usdStage->GetPrimAtPath(usdPath);
+                    if (prim)
+                        initializeWheel(xformCache, prim, iStageReaderWriter, stageInProgress);
+                }
+            }
+
+            static const std::vector<std::string> jointStateApiSchemas = { 
+                                     "PhysicsJointStateAPI:rotX", "PhysicsJointStateAPI:rotY", "PhysicsJointStateAPI:rotZ", "PhysicsJointStateAPI:angular",
+                                     "PhysicsJointStateAPI:transX", "PhysicsJointStateAPI:transY", "PhysicsJointStateAPI:transZ", "PhysicsJointStateAPI:linear" };
+
+            {
+                CARB_PROFILE_ZONE(0, "FabricManager::resume:jointStateInitialization");
+                for (const std::string& schemaName : jointStateApiSchemas)
+                {
+                    for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken(schemaName)))
+                    {
+                        const omni::fabric::Path pathC(usdrtPath);
+                        const PXR_NS::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+                        const UsdPrim prim = usdStage->GetPrimAtPath(usdPath);
+                        if (prim)
+                            initializeJointState(prim, iStageReaderWriter, stageInProgress);
+                    }
+                }
+            }
+
+            {
+                CARB_PROFILE_ZONE(0, "FabricManager::resume:deformableBodyInitialization");
+                for (auto& usdrtPath : usdrtStage->GetPrimsWithAppliedAPIName(usdrt::TfToken("OmniPhysicsDeformableBodyAPI")))
+                {
+                    const omni::fabric::Path pathC(usdrtPath);
+                    const PXR_NS::SdfPath usdPath = omni::fabric::toSdfPath(pathC);
+                    const UsdPrim prim = usdStage->GetPrimAtPath(usdPath);
+                    if (prim)
+                        initializeDeformableBody(xformCache, prim, iStageReaderWriter, stageInProgress);
+                }
+            }
+        }
+    }
+
+    mUsdResetOnStop = gSettings->getAsBool(kSettingResetOnStop);
+    if (mPhysX)
+        mPhysX->disableResetOnStop(true);
+}
+
+void FabricManager::pause()
+{
+    if (mNoticeListener)
+    {
+        PXR_NS::TfNotice::Revoke(mNoticeListenerKey);
+        delete mNoticeListener;
+        mNoticeListener = nullptr;
+    }
+
+    mDirectGpuHelper.clear();
+
+    const bool enabled = gSettings->getAsBool(kSettingFabricEnabled);
+    if (!enabled)
+        return;
+
+    if (mPhysXSimulation && mResumed)
+    {
+        mWheelVehicleMap.clear();
+        mPointInstanceProtos.clear();
+        mUpdate = false;
+        mResumed = false;
+
+        physx::ISimulationCallback cb;
+        cb.transformationWriteFn = nullptr;
+        cb.velocityWriteFn = nullptr;
+        cb.transformationUpdateFn = nullptr;
+        cb.userData = nullptr;
+        while(!mPhysXSimulation->checkResults()){}; // wait for last async sim step to complete
+        mPhysXSimulation->setSimulationCallback(cb);
+        mPhysXSimulation->setSimulationOutputFlags(omni::physx::SimulationOutputType::eTRANSFORMATION,
+                                                   0, nullptr, 0);
+        mPhysXSimulation->setSimulationOutputFlags(
+            omni::physx::SimulationOutputType::eVELOCITY, 0, nullptr, 0);
+        mPhysXSimulation->setSimulationOutputFlags(
+            omni::physx::SimulationOutputType::ePOINTS, 0, nullptr, 0);
+    }
+}
+
+
+void FabricManager::stop()
+{
+    pause();  // will also await simulation end
+
+    if (mUsdResetOnStop)
+    {
+        setInitialTransformations();
+    }
+    else
+    {
+        saveToUsd();
+    }
+
+    mInitialTransformation.clear();
+    mInitialJointStates.clear();
+
+    if (mPhysX)
+        mPhysX->disableResetOnStop(false);
+
+    gStage = nullptr;
+    mPtrDirty = true;
+
+    mResyncPaths.clear();
+}
+
+void FabricManager::setInitialTransformations()
+{
+    const bool enabled = gSettings->getAsBool(kSettingFabricEnabled);
+
+    CARB_PROFILE_ZONE(0, "FabricManager::resetInitTransformation");
+    if (enabled)
+    {
+        using namespace omni::fabric;
+        using namespace omni::physx;
+        using namespace physx;
+        using ::physx::PxVec3;
+        using ::physx::PxQuat;
+        using ::physx::PxTransform;
+
+        IStageReaderWriter* iSip = carb::getCachedInterface<IStageReaderWriter>();
+        IStageReaderWriterUsd* iSipUsd = carb::getCachedInterface<IStageReaderWriterUsd>();
+        StageReaderWriter stage = iSip->get(mStageId);
+        StageReaderWriterUsd stageUsd = iSipUsd->get(mStageId);
+        IPhysx* iPhysX = carb::getCachedInterface<IPhysx>();
+        CARB_ASSERT(iPhysX);
+
+        const Type typePrimName(BaseDataType::eTag, 1, 0, AttributeRole::ePrimTypeName);
+        const Type typeAppliedSchema(BaseDataType::eTag, 1, 0, AttributeRole::eAppliedSchema);
+        const Type typeAppliedType(BaseDataType::eTag, 1, 0, AttributeRole::eNone);
+        const Type typeDouble3(BaseDataType::eDouble, 3, 0, AttributeRole::eNone);
+        const Type typeMatrix4d(BaseDataType::eDouble, 16, 0, AttributeRole::eMatrix);
+        const Type typeFloat3(BaseDataType::eFloat, 3, 0, AttributeRole::eVector);
+        const Type typeQuat(BaseDataType::eFloat, 4, 0, AttributeRole::eQuaternion);
+        const Type typeUint64(fabric::BaseDataType::eUInt64);
+        const Type typeFloat(fabric::BaseDataType::eFloat);
+
+        const Token tokenVehicleWheelAttachment("PhysxVehicleWheelAttachmentAPI");
+        const Token tokenVehicleWheel("PhysxVehicleWheel");
+        const Token tokenRigidBody("PhysicsRigidBodyAPI");
+
+        const Token tokenWorldMatrix(gWorldMatrixTokenString);
+        const Token tokenLocalMatrix(gLocalMatrixTokenString);
+
+        const Token tokenLinVelocity(UsdPhysicsTokens->physicsVelocity.GetText());
+        const Token tokenAngularVelocity(UsdPhysicsTokens->physicsAngularVelocity.GetText());
+
+        PauseChangeTrackingScope changeTrackingPauseScope(mPhysXSimulation);
+
+        omni::fabric::USDHierarchy usdHierarchy(stage.getFabricId());
+
+        // Update point instancers
+        {
+            for (const auto& instancer : mInitialPointInstancers)
+            {
+                const PXR_NS::SdfPath instPath = instancer.first;
+                if (!stageUsd.primExists(instPath))
+                {
+                    CARB_LOG_WARN("FabricManager::update invalid point instancer: %s.", instPath.GetText());
+                    continue;
+                }
+                // Use the typed write API instead of setArrayAttribute(PXR_NS::VtValue): Kit Fabric
+                // stores the VtValue by value in its ImportedDataSource, and the VtValue's _info
+                // pointer aims at this DLL's per-DLL _TypeInfoImpl<T> static. On
+                // omni.physx.fabric.plugin unload that pointer dangles, and the next USD->Fabric
+                // flush crashes on the planted VtValue's destructor.
+                const PXR_NS::VtArray<PXR_NS::GfVec3f>& positionsSrc = instancer.second.positions;
+                stageUsd.setArrayAttributeSize(instPath, PXR_NS::UsdGeomTokens->positions, positionsSrc.size());
+                auto positionsDst =
+                    stageUsd.getArrayAttributeWr<PXR_NS::GfVec3f>(instPath, PXR_NS::UsdGeomTokens->positions);
+                std::copy(positionsSrc.cbegin(), positionsSrc.cend(), positionsDst.begin());
+
+                const PXR_NS::VtArray<PXR_NS::GfQuath>& orientationsSrc = instancer.second.orientations;
+                stageUsd.setArrayAttributeSize(
+                    instPath, PXR_NS::UsdGeomTokens->orientations, orientationsSrc.size());
+                auto orientationsDst =
+                    stageUsd.getArrayAttributeWr<PXR_NS::GfQuath>(instPath, PXR_NS::UsdGeomTokens->orientations);
+                std::copy(orientationsSrc.cbegin(), orientationsSrc.cend(), orientationsDst.begin());
+            }
+        }
+
+        // Update vehicles (rigid bodies)
+        {
+           const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenRigidBody),
+                                                                     AttrNameAndType(typeAppliedType, mDynamicBodyToken) };
+           const omni::fabric::set<AttrNameAndType> requiredAny = { AttrNameAndType(typeMatrix4d, tokenWorldMatrix),
+                                                                     AttrNameAndType(typeFloat3, tokenLinVelocity),
+                                                                     AttrNameAndType(typeFloat3, tokenAngularVelocity) };
+
+            PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
+            size_t bucketCount = primBuckets.bucketCount();
+            for (size_t i = 0; i != bucketCount; i++)
+            {
+                gsl::span<PXR_NS::GfMatrix4d> worldMatrices =
+                    stage.getAttributeArray<PXR_NS::GfMatrix4d>(primBuckets, i, tokenWorldMatrix);
+
+                gsl::span<const omni::fabric::Path> paths = stage.getPathArray(primBuckets, i);
+                size_t j = 0;
+                for (const omni::fabric::Path& path : paths)
+                {
+                    TransformationCache::const_iterator fit = mInitialTransformation.find(path);
+                    if (fit != mInitialTransformation.end())
+                    {
+                        PXR_NS::GfVec3d t(double(fit->second.translation.x), double(fit->second.translation.y),
+                                       double(fit->second.translation.z));
+                        PXR_NS::GfQuatd q(fit->second.orientation.w, { fit->second.orientation.x, fit->second.orientation.y,
+                                                                    fit->second.orientation.z });
+
+                        PXR_NS::GfVec3d s(
+                            double(fit->second.scale.x), double(fit->second.scale.y), double(fit->second.scale.z));
+
+                        worldMatrices[j] = computeMatrix(t, PXR_NS::GfMatrix3d(q), s);
+                    }
+                    j++;
+                }
+            }
+        }
+
+        // Update vehicle wheels
+        {
+            CARB_PROFILE_ZONE(0, "FabricManager::update - Vehicle Wheels");
+           const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenVehicleWheelAttachment),
+                                                                       AttrNameAndType(typeDouble3, tokenLocalMatrix),
+                                                                       AttrNameAndType(typeDouble3, tokenWorldMatrix)};
+
+            PrimBucketList primBuckets = stage.findPrims(requiredAll);
+            size_t bucketCount = primBuckets.bucketCount();
+
+            for (size_t i = 0; i != bucketCount; i++)
+            {
+                gsl::span<PXR_NS::GfMatrix4d> outWorldMatrices  =
+                    stage.getAttributeArray<PXR_NS::GfMatrix4d>(primBuckets, i, tokenWorldMatrix);
+                gsl::span<PXR_NS::GfMatrix4d> outLocalMatrices =
+                    stage.getAttributeArray<PXR_NS::GfMatrix4d>(primBuckets, i, tokenLocalMatrix);
+
+                gsl::span<const omni::fabric::Path> paths = stage.getPathArray(primBuckets, i);
+
+                {
+                    size_t j = 0;
+                    for (const omni::fabric::Path& path : paths)
+                    {
+                        TransformationCache::const_iterator it = mInitialTransformation.find(path);
+                        if (it != mInitialTransformation.end())
+                        {
+                            PXR_NS::GfVec3d t(double(it->second.translation.x), double(it->second.translation.y),
+                                           double(it->second.translation.z));
+                            PXR_NS::GfQuatd q(it->second.orientation.w, { it->second.orientation.x, it->second.orientation.y,
+                                                                       it->second.orientation.z });
+
+                            PXR_NS::GfVec3d s(
+                                double(it->second.scale.x), double(it->second.scale.y),
+                                           double(it->second.scale.z));
+
+                            outWorldMatrices[j] = computeMatrix(t, PXR_NS::GfMatrix3d(q), s);
+                            outLocalMatrices[j] =
+                                computeLocalMatrix(usdHierarchy, stage, path, outWorldMatrices[j], mWorldMatrixToken);
+                        }
+                        //else
+                        //{
+                        //    CARB_LOG_ERROR("Wheel transformation was not found in a transformation cache.");
+                        //}
+                        j++;
+                    }
+                }
+            }
+
+        }
+
+        // Update joint states
+        {
+            CARB_PROFILE_ZONE(0, "FabricManager::setInitialTransformations - Joint State");
+            for(auto& ts : mTokenJointStates)
+            {
+                const Token tokenJointStateAPI = ts.token;
+               const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenJointStateAPI),
+                                                                        AttrNameAndType(typeFloat, ts.madPositionToken),
+                                                                        AttrNameAndType(typeFloat, ts.madVelocityToken) };
+
+                PrimBucketList primBuckets = stage.findPrims(requiredAll);
+                size_t bucketCount = primBuckets.bucketCount();
+
+                for (size_t i = 0; i != bucketCount; i++)
+                {
+                    gsl::span<float> outPositions =
+                        stage.getAttributeArray<float>(primBuckets, i, ts.madPositionToken);
+                    gsl::span<float> outVelocities =
+                        stage.getAttributeArray<float>(primBuckets, i, ts.madVelocityToken);
+
+                    gsl::span<const omni::fabric::Path> paths = stage.getPathArray(primBuckets, i);
+
+                    size_t fcItemIndex = 0;
+                    for (const omni::fabric::Path& path : paths)
+                    {
+                        JointStateCache::const_iterator it = mInitialJointStates.find(path);
+                        if (it != mInitialJointStates.end())
+                        {
+                            const omni::physx::JointStateData& jointStateData = it->second;
+                            for(int jointAxis = 0; jointAxis < 6; ++jointAxis)
+                            {
+                                if(!jointStateData.enabled[jointAxis])
+                                    continue;
+                                if (jointStateData.tfTokenHandle[jointAxis] != omni::fabric::tfTokenToHandle(ts.usdToken))
+                                    continue;
+                                if(jointStateData.physxAxis[jointAxis] != ts.physxAxis)
+                                    continue;
+                                outPositions[fcItemIndex] = jointStateData.initialPosition[jointAxis];
+                                outVelocities[fcItemIndex] = jointStateData.initialVelocity[jointAxis];
+                                break;
+                            }
+                        }
+                        fcItemIndex++;
+                    }
+                }
+            }
+        }
+
+        mInitialTransformation.clear();
+        mInitialJointStates.clear();
+        mInitialPointInstancers.clear();
+
+        mVolumeDeformableBodyManager.setInitialTransformation(stage);
+        mSurfaceDeformableBodyManager.setInitialTransformation(stage);
+    }
+}
+
+void FabricManager::saveToUsd()
+{
+    const bool enabled = gSettings->getAsBool(kSettingFabricEnabled);
+
+    CARB_PROFILE_ZONE(0, "FabricManager::saveToUsd");
+    if (enabled && gStage)
+    {
+        // We need to pause change tracking as omni::fabric will try to sync back
+        PauseChangeTrackingScope changeTrackingPauseScope(mPhysXSimulation);
+        std::unique_ptr<PXR_NS::SdfChangeBlock> changeBlock;
+
+        using namespace omni::fabric;
+        using namespace omni::physx;
+
+        IStageReaderWriter* iSip = carb::getCachedInterface<IStageReaderWriter>();
+        StageReaderWriter stage = iSip->get(mStageId);
+
+        const Type typePrimName(BaseDataType::eTag, 1, 0, AttributeRole::ePrimTypeName);
+        const Type typeAppliedSchema(BaseDataType::eTag, 1, 0, AttributeRole::eAppliedSchema);
+        const Type typeAppliedType(BaseDataType::eTag, 1, 0, AttributeRole::eNone);
+        const Type typeDouble3(BaseDataType::eDouble, 3, 0, AttributeRole::eNone);
+        const Type typeFloat3(BaseDataType::eFloat, 3, 0, AttributeRole::eVector);
+        const Type typeMatrix4d(BaseDataType::eDouble, 16, 0, omni::fabric::AttributeRole::eMatrix);
+        const Type typeQuat(BaseDataType::eFloat, 4, 0, AttributeRole::eQuaternion);
+        const Type typeUint64(fabric::BaseDataType::eUInt64);
+        const Type typeFloat(BaseDataType::eFloat, 1, 0, AttributeRole::eNone);
+        const Token tokenRigidBody("PhysicsRigidBodyAPI");
+
+        const Token tokenWorldMatrix("omni:fabric:worldMatrix");
+
+        const Token tokenLinVelocity(UsdPhysicsTokens->physicsVelocity.GetText());
+        const Token tokenAngularVelocity(UsdPhysicsTokens->physicsAngularVelocity.GetText());
+
+        UsdGeomXformCache xformCache;
+
+        // Update rigid bodies to USD
+        {
+           const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenRigidBody),
+                                                                     AttrNameAndType(typeAppliedType, mDynamicBodyToken) };
+           const omni::fabric::set<AttrNameAndType> requiredAny = { AttrNameAndType(typeMatrix4d, tokenWorldMatrix),
+                                                                     AttrNameAndType(typeFloat3, tokenLinVelocity),
+                                                                     AttrNameAndType(typeFloat3, tokenAngularVelocity) };
+
+            PrimBucketList primBuckets = stage.findPrims(requiredAll, requiredAny);
+            size_t bucketCount = primBuckets.bucketCount();
+            for (size_t i = 0; i != bucketCount; i++)
+            {
+                gsl::span<const PXR_NS::GfMatrix4d> worldMatrices  =
+                    stage.getAttributeArrayRd<PXR_NS::GfMatrix4d>(primBuckets, i, tokenWorldMatrix);
+
+                gsl::span<const carb::Float3> linVelocities = stage.getAttributeArrayRd<carb::Float3>(primBuckets, i, mLinVelToken);
+                gsl::span<const carb::Float3> angVelocities = stage.getAttributeArrayRd<carb::Float3>(primBuckets, i, mAngVelToken);
+
+                gsl::span<const omni::fabric::Path> paths = stage.getPathArray(primBuckets, i);
+                size_t j = 0;
+                for (const omni::fabric::Path& path : paths)
+                {
+                    const PXR_NS::SdfPath primPath = omni::fabric::toSdfPath(path);
+                    UsdPrim prim = gStage->GetPrimAtPath(primPath);
+
+                    const Float3& linVelocity = linVelocities[j];
+                    const Float3& angVelocity = angVelocities[j];
+
+                    const PXR_NS::GfMatrix4d mtxIn = xformCache.GetLocalToWorldTransform(prim);
+                    // scale comes from mtxIn, translation and rotation from the world matrix
+                    PXR_NS::GfTransform trIn(mtxIn);
+                    PXR_NS::GfTransform tr(worldMatrices[j]);
+                    trIn.SetRotation(tr.GetRotation());
+                    trIn.SetTranslation(tr.GetTranslation());
+                    const PXR_NS::GfMatrix4d mtx = trIn.GetMatrix();
+
+                    PXR_NS::UsdTimeCode timeCode = PXR_NS::UsdTimeCode::Default();
+                    const PXR_NS::GfMatrix4d parentToWorldMat = xformCache.GetParentToWorldTransform(prim);
+                    const PXR_NS::GfMatrix4d worldToParentMat = parentToWorldMat.GetInverse();
+
+                    omni::usd::UsdUtils::setLocalTransformMatrix(prim, mtx * worldToParentMat, timeCode, false, &changeBlock);
+
+                    TransformationCache::iterator it = mInitialTransformation.find(path);
+                    if (it != mInitialTransformation.end())
+                    {
+                        const PXR_NS::GfVec3d& pos = tr.GetTranslation();
+                        const PXR_NS::GfQuatd& ori = tr.GetRotation().GetQuat();
+                        const Float3 newInitPos = { float(pos[0]), float(pos[1]), float(pos[2]) };
+                        it->second.translation = newInitPos;
+                        const Float4 newInitOri = { float(ori.GetImaginary()[0]), float(ori.GetImaginary()[1]), float(ori.GetImaginary()[2]),
+                                                    float(ori.GetReal()) };
+                        it->second.orientation = newInitOri;
+                        const PXR_NS::GfVec3d scl = tr.GetScale();
+                        const Float3 scale = { float(scl[0]), float(scl[1]), float(scl[2]) };
+                        it->second.scale = scale;
+                    }
+
+                    {
+                        UsdAttribute velAttr = prim.GetAttribute(UsdPhysicsTokens->physicsVelocity);
+                        if (velAttr)
+                        {
+                            velAttr.Set((const GfVec3f&)linVelocity);
+                        }
+                    }
+                    {
+                        UsdAttribute velAttr = prim.GetAttribute(UsdPhysicsTokens->physicsAngularVelocity);
+                        if (velAttr)
+                        {
+                            velAttr.Set((const GfVec3f&)angVelocity);
+                        }
+                    }
+
+                    j++;
+                }
+            }
+        }
+
+        {
+            CARB_PROFILE_ZONE(0, "FabricManager::saveToUsd - Joint State");
+
+            for(auto& ts : mTokenJointStates)
+            {
+                const Token tokenJointStateAPI = ts.token;
+               const omni::fabric::set<AttrNameAndType> requiredAll = { AttrNameAndType(typeAppliedSchema, tokenJointStateAPI),
+                                                                        AttrNameAndType(typeFloat, ts.madPositionToken),
+                                                                        AttrNameAndType(typeFloat, ts.madVelocityToken) };
+
+                PrimBucketList primBuckets = stage.findPrims(requiredAll);
+                size_t bucketCount = primBuckets.bucketCount();
+
+                for (size_t i = 0; i != bucketCount; i++)
+                {
+                    gsl::span<const float> jointPositions =
+                        stage.getAttributeArrayRd<float>(primBuckets, i, ts.madPositionToken);
+                    gsl::span<const float> jointVelocities =
+                        stage.getAttributeArrayRd<float>(primBuckets, i, ts.madVelocityToken);
+
+                    gsl::span<const omni::fabric::Path> paths = stage.getPathArray(primBuckets, i);
+
+                    size_t fcItemIndex = 0;
+                    for (const omni::fabric::Path& path : paths)
+                    {
+                        const PXR_NS::SdfPath primPath = omni::fabric::toSdfPath(path);
+                        UsdPrim prim = gStage->GetPrimAtPath(primPath);
+                        JointStateCache::iterator it = mInitialJointStates.find(path);
+                        if (it != mInitialJointStates.end())
+                        {
+                            omni::physx::JointStateData& jointStateData = it->second;
+                            for(int jointAxis = 0; jointAxis < 6; ++jointAxis)
+                            {
+                                if(!jointStateData.enabled[jointAxis])
+                                    continue;
+                                if (jointStateData.tfTokenHandle[jointAxis] != omni::fabric::tfTokenToHandle(ts.usdToken))
+                                    continue;
+                                if(jointStateData.physxAxis[jointAxis] != ts.physxAxis)
+                                    continue;
+                                jointStateData.initialPosition[jointAxis] = jointPositions[fcItemIndex];
+                                jointStateData.initialVelocity[jointAxis] = jointVelocities[fcItemIndex];
+                                break;
+                            }
+                        }
+                        PhysxSchemaJointStateAPI jointStateAPI = PhysxSchemaJointStateAPI::Get(prim,  ts.usdToken);
+                        if(jointStateAPI)
+                        {
+                            UsdAttribute posAttr = jointStateAPI.GetPositionAttr();
+                            if (posAttr)
+                            {
+                                posAttr.Set(jointPositions[fcItemIndex]);
+                            }
+                            UsdAttribute velAttr = jointStateAPI.GetVelocityAttr();
+                            if (velAttr)
+                            {
+                                velAttr.Set(jointVelocities[fcItemIndex]);
+                            }
+                        }
+                        fcItemIndex++;
+                    }
+                }
+            }
+        }
+
+        mVolumeDeformableBodyManager.saveToUsd(stage, gStage);
+        mSurfaceDeformableBodyManager.saveToUsd(stage, gStage);
+    }
+}
+
+bool FabricManager::getInitialTransformation(const omni::fabric::Path& path,
+                                             carb::Float3& translation,
+                                             carb::Float4& orientation,
+                                             carb::Float3& scale)
+{
+    if (path != omni::fabric::Path())
+    {
+        TransformationCache::const_iterator fit = mInitialTransformation.find(path);
+        if (fit != mInitialTransformation.end())
+        {
+            translation = fit->second.translation;
+            orientation = fit->second.orientation;
+            scale = fit->second.scale;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+void FabricManager::initializePointInstancer(PXR_NS::UsdStageWeakPtr usdStage,
+                                             const PXR_NS::UsdGeomPointInstancer instancer,
+                                             PXR_NS::UsdGeomXformCache& xfCache,
+                                             omni::fabric::StageReaderWriter& srw)
+{
+    const PXR_NS::UsdPrim prim = instancer.GetPrim();
+    const auto& instancerPath = prim.GetPrimPath();
+
+    PXR_NS::SdfPathVector protos;
+    instancer.GetPrototypesRel().GetTargets(&protos);
+
+    const PXR_NS::SdfPath primPath = prim.GetPrimPath();
+    omni::fabric::Path fcPath = omni::fabric::convertToPathType<omni::fabric::Path>(srw.getFabricId(), primPath);
+    auto fcProtos =
+        srw.getArrayAttributeRd<omni::fabric::Path>(fcPath, omni::fabric::convertToTokenType<omni::fabric::Token>(srw.getFabricId(), PXR_NS::UsdGeomTokens->prototypes));
+
+    if (fcProtos.size() != protos.size())
+    {
+        CARB_LOG_WARN("FabricManager::initializePointInstancer mismatched prototypes on point instancer: %s.", primPath.GetText());
+        return;
+    }
+
+    const auto instancerMatrixInv = xfCache.GetLocalToWorldTransform(prim).RemoveScaleShear().GetInverse();
+    struct ProtoData
+    {
+        PXR_NS::GfMatrix4d transformInv;
+        bool isRigidBody;
+    };
+    const size_t protosCount = protos.size();
+    std::vector<ProtoData> protosData(protosCount);
+
+    size_t rbCount = 0;
+    for (size_t pi = 0; pi < protosCount; ++pi)
+    {
+        const PXR_NS::UsdPrim protoPrim = usdStage->GetPrimAtPath(protos[pi]);
+        auto& protoData = protosData[pi];
+        if (!protoPrim.HasAPI<UsdPhysicsRigidBodyAPI>())
+        {
+            protoData.isRigidBody = false;
+            continue;
+        }
+        ++rbCount;
+        protoData.isRigidBody = true;
+        auto protoTransform = xfCache.GetLocalToWorldTransform(protoPrim).RemoveScaleShear();
+        protoData.transformInv = (protoTransform * instancerMatrixInv).GetInverse();
+    }
+    if (rbCount == 0)
+    {
+        return;
+    }
+
+    PXR_NS::VtArray<int> protoIndices;
+    instancer.GetProtoIndicesAttr().Get(&protoIndices);
+    const size_t indicesCount = protoIndices.size();
+
+    PXR_NS::SdfInt64ListOp inactiveIds;
+    prim.GetMetadata(UsdGeomTokens->inactiveIds, &inactiveIds);
+    const std::vector<int64_t>& inactiveItems = inactiveIds.GetExplicitItems();
+    if (indicesCount == inactiveItems.size())
+    {
+        return;
+    }
+    std::unordered_set<int64_t> inactiveIdsSet{ inactiveItems.begin(), inactiveItems.end() };
+
+    // Cache initial attributes    
+    if (mInitialPointInstancers.count(instancerPath) == 0)
+    {
+        auto& initialData = mInitialPointInstancers[instancerPath];
+        instancer.GetPositionsAttr().Get(&initialData.positions);
+        instancer.GetOrientationsAttr().Get(&initialData.orientations);
+        if (indicesCount != initialData.positions.size() || indicesCount != initialData.orientations.size())
+        {
+            mInitialPointInstancers.erase(instancerPath);
+            return;
+        }
+    }
+
+    for (size_t i = 0; i < indicesCount; ++i)
+    {
+        if (inactiveIdsSet.count((int64_t)i))
+        {
+            continue;
+        }
+        const size_t protoIdx = protoIndices[i];
+        const auto& protoData = protosData[protoIdx];
+        if (!protoData.isRigidBody)
+        {
+            continue;
+        }
+        const auto fcProtoPath = fcProtos[protoIdx]; 
+        auto iter = mPointInstanceProtos.find(fcProtoPath);
+        if (iter == mPointInstanceProtos.end())
+        {
+            iter = mPointInstanceProtos.insert({ fcProtoPath, {} }).first;
+            iter->second.instancerPath = prim.GetPrimPath();
+            iter->second.usdProtoPath = protos[protoIdx];
+            iter->second.protoTransfromInverse = protoData.transformInv;
+            iter->second.indices.reserve(indicesCount);
+        }
+        iter->second.indices.push_back(i);
+    }
+}
+
+void FabricManager::parsePointInstancers(PXR_NS::UsdStageWeakPtr usdStage,
+                                         usdrt::UsdStageRefPtr usdrtStage,
+                                         PXR_NS::UsdGeomXformCache& xfCache,
+                                         omni::fabric::IStageReaderWriter* iStageReaderWriter,
+                                         omni::fabric::StageReaderWriterId stageInProgress)
+{
+    const auto instancerPaths = usdrtStage->GetPrimsWithTypeName(usdrt::TfToken("PointInstancer"));
+    StageReaderWriter srw{stageInProgress};
+    for (auto& rtPath : instancerPaths)
+    {
+        const omni::fabric::Path fcPath{rtPath};
+        const PXR_NS::UsdPrim prim = usdStage->GetPrimAtPath(omni::fabric::toSdfPath(fcPath));
+        if (prim.IsA<PXR_NS::UsdGeomPointInstancer>())
+        {
+            initializePointInstancer(usdStage, PXR_NS::UsdGeomPointInstancer{ prim }, xfCache, srw);
+        }
+    }
+}
+
+bool FabricManager::updatePointInstancer(const omni::fabric::Path primPath,
+                                         omni::fabric::StageReaderWriter& stage,
+                                         PXR_NS::UsdGeomXformCache& xformCache)
+{
+    auto iterProto = mPointInstanceProtos.find(primPath);
+    if (iterProto == mPointInstanceProtos.end())
+    {
+        return false;
+    }
+    const auto& protoData = iterProto->second;
+    const uint32_t indicesCount = (uint32_t)protoData.indices.size();
+    if (indicesCount == 0)
+    {
+        return false;
+    }
+    gsl::span<uint64_t> physxPtrs;
+    if (mPtrDirty)
+    {
+        stage.setArrayAttributeSize(primPath, mPhysXPtrInstancedToken, indicesCount);
+        physxPtrs = stage.getArrayAttribute<uint64_t>(primPath, mPhysXPtrInstancedToken);
+        if (indicesCount != physxPtrs.size())
+        {
+            return false;
+        }
+        const uint32_t instancedCount = gPhysXPrivate->getPhysXPtrInstanced(
+            iterProto->second.usdProtoPath, (void**)physxPtrs.data(), indicesCount, omni::physx::ePTActor);
+        if (indicesCount != instancedCount)
+        {
+            return false;
+        }
+    }
+    else
+    {
+        physxPtrs = stage.getArrayAttribute<uint64_t>(primPath, mPhysXPtrInstancedToken);
+        if (indicesCount != physxPtrs.size())
+        {
+            return false;
+        }
+    }
+    const omni::fabric::Token positionsToken =
+        omni::fabric::convertToTokenType<omni::fabric::Token>(stage.getFabricId(), PXR_NS::UsdGeomTokens->positions);
+    const omni::fabric::Token orientationsToken =
+        omni::fabric::convertToTokenType<omni::fabric::Token>(stage.getFabricId(), PXR_NS::UsdGeomTokens->orientations);
+    const size_t maxIdx = protoData.indices.back();
+    const omni::fabric::Path instPath = omni::fabric::convertToPathType<omni::fabric::Path>(stage.getFabricId(), protoData.instancerPath);
+    gsl::span<GfVec3f> positions = stage.getArrayAttribute<GfVec3f>(
+        instPath,
+        omni::fabric::convertToTokenType<omni::fabric::Token>(stage.getFabricId(), PXR_NS::UsdGeomTokens->positions));
+    gsl::span<GfQuath> orientations = stage.getArrayAttribute<GfQuath>(
+        instPath, omni::fabric::convertToTokenType<omni::fabric::Token>(stage.getFabricId(), PXR_NS::UsdGeomTokens->orientations));
+    if (maxIdx >= positions.size() || maxIdx >= orientations.size())
+    {
+        return false;
+    }
+    const PXR_NS::UsdPrim instancerPrim = gStage->GetPrimAtPath(protoData.instancerPath);
+    auto instancerMatrixInv = xformCache.GetLocalToWorldTransform(instancerPrim).GetInverse();
+    for (size_t i = 0; i < indicesCount; ++i)
+    {
+        const ::physx::PxBase* basePtr = reinterpret_cast<const ::physx::PxBase*>(physxPtrs[i]);
+        if (!basePtr)
+        {
+            continue;
+        }
+        const ::physx::PxRigidBody* rigidBody = basePtr->is<::physx::PxRigidBody>();
+        if (!rigidBody)
+        {
+            continue;
+        }
+        const ::physx::PxTransform rigidBodyWorldTransformation = rigidBody->getGlobalPose();
+        const PXR_NS::GfVec3d translation = omni::physx::toVec3d(rigidBodyWorldTransformation.p);
+        const PXR_NS::GfQuatd rotation = omni::physx::toQuatd(omni::physx::toDouble4(rigidBodyWorldTransformation.q));
+        const auto worldMatrix = computeMatrix(translation, PXR_NS::GfMatrix3d(rotation), PXR_NS::GfVec3d(1.0));
+        const auto instMatrix = protoData.protoTransfromInverse * worldMatrix * instancerMatrixInv;
+        const size_t instIdx = protoData.indices[i];
+        positions[instIdx] = PXR_NS::GfVec3f{ instMatrix.ExtractTranslation() };
+        orientations[instIdx] = PXR_NS::GfQuath{ instMatrix.ExtractRotation().GetQuat() };
+    }
+    return true;
+}
+
+}
+}

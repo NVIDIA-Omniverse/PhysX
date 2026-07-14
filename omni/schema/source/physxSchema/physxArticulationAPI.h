@@ -265,6 +265,7 @@ public:
     // --------------------------------------------------------------------- //
     // ENABLEDSELFCOLLISIONS 
     // --------------------------------------------------------------------- //
+    /// Deprecated: use newton:selfCollisionEnabled (NewtonArticulationRootAPI) instead.
     /// Boolean defining whether self collisions should be enabled or disabled.
     ///
     /// | ||

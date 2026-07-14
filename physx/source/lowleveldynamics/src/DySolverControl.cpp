@@ -719,7 +719,7 @@ void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* 
 	//Perform a single velocity iteration to make sure that we always run at least 1.
 	//Last iteration - do writeback as well!
 	cache.writeBackIteration = true;
-	{		
+	{
 		processSolverIterationParallel<tWriteBackInternalConstraints, tIsVelIter>
 			   (//solve artics:
 				solveArticulationContactLast, 

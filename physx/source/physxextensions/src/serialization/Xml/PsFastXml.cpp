@@ -329,7 +329,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 		return scan;
 	}
 
-	virtual bool processXml(physx::PxInputData& fileBuf, bool streamFromMemory)
+	virtual bool processXml(physx::PxInputData& fileBuf, bool streamFromMemory) PX_OVERRIDE
 	{
 		releaseMemory();
 		mFileBuf = &fileBuf;
@@ -668,7 +668,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 		return ret;
 	}
 
-	const char* getError(int32_t& lineno)
+	virtual const char* getError(int32_t& lineno)	PX_OVERRIDE
 	{
 		const char* ret = mError;
 		lineno = mLineNo;
@@ -676,7 +676,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 		return ret;
 	}
 
-	virtual void release()
+	virtual void release() PX_OVERRIDE
 	{
 		Callback* c = mCallback; // get the user allocator interface
 		MyFastXml* f = this;     // cast the this pointer

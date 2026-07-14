@@ -218,19 +218,19 @@ static PX_FORCE_INLINE PxVec3 getAcceleration(const NpRigidDynamic& dynamic)
 				"Use PxDirectGPUAPI::getRigidDynamicData() instead. This warning is issued once per scene.");
 		return PxVec3(0.0f);
 	}
-	// PdHC: Lazy GPU acceleration copy - on first getter access after fetchResults,
-	// bulk copy GPU accelerations from DMA buffer to BodyCore for cache-friendly access
-	// Inline check avoids function call overhead for CPU dynamics and after first copy
+	// Lazy GPU acceleration copy - on first getter access after fetchResults,
+	// bulk copy GPU accelerations from DMA buffer to the contiguous acceleration array
 	if(npScene->isGpuAccelerationsCopyPending())
 		npScene->ensureGpuAccelerationsCopied();
 #endif
 
-	// PdHC: Unified path for CPU and GPU dynamics.
-	// For CPU: accelerations computed in ScAfterIntegrationTask and ScKinematicUpdateTask
-	// For GPU: accelerations computed on GPU, lazy-copied to BodyCore on first getter access
-	// Both paths now read from BodyCore, which is contiguous and cache-friendly.
-	const Sc::BodyCore& core = dynamic.getCore();
-	return linear ? core.getComputedLinAccel() : core.getComputedAngAccel();
+	const PxU32 index = dynamic.getRigidActorArrayIndex();
+	const PxArray<NpRigidDynamicAcceleration>& accels = npScene->getRigidDynamicsAccelerations();
+	if(index >= accels.size())
+		return PxVec3(0.0f);
+
+	return linear ?	accels[index].mLinAccel
+				:	accels[index].mAngAccel;
 }
 
 PxVec3 NpRigidDynamic::getLinearAcceleration() const
@@ -261,9 +261,14 @@ void NpRigidDynamic::setLinearVelocity(const PxVec3& velocity, bool autowake)
 
 	scSetLinearVelocity(velocity);
 
-	// PdHC: Update prev velocity in BodyCore for correct acceleration computation next frame
+	// Update prev velocity in acceleration array for correct acceleration computation next frame
 	if(npScene && npScene->getFlagsFast() & PxSceneFlag::eENABLE_BODY_ACCELERATIONS)
-		mCore.setPrevLinVel(velocity);
+	{
+		PxArray<NpRigidDynamicAcceleration>& accels = npScene->getRigidDynamicsAccelerations();
+		const PxU32 index = getRigidActorArrayIndex();
+		if(index < accels.size())
+			accels[index].mPrevLinVel = velocity;
+	}
 
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, linearVelocity, *static_cast<PxRigidBody*>(this), velocity);
 
@@ -283,9 +288,14 @@ void NpRigidDynamic::setAngularVelocity(const PxVec3& velocity, bool autowake)
 
 	scSetAngularVelocity(velocity);
 
-	// PdHC: Update prev velocity in BodyCore for correct acceleration computation next frame
+	// Update prev velocity in acceleration array for correct acceleration computation next frame
 	if(npScene && npScene->getFlagsFast() & PxSceneFlag::eENABLE_BODY_ACCELERATIONS)
-		mCore.setPrevAngVel(velocity);
+	{
+		PxArray<NpRigidDynamicAcceleration>& accels = npScene->getRigidDynamicsAccelerations();
+		const PxU32 index = getRigidActorArrayIndex();
+		if(index < accels.size())
+			accels[index].mPrevAngVel = velocity;
+	}
 
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularVelocity, *static_cast<PxRigidBody*>(this), velocity);
 

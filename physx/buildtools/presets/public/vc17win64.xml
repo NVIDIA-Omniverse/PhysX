@@ -8,8 +8,8 @@
     <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="True" comment="Generate the GPU projects, if possible." />
     <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS_ONLY" value="False" comment="Generate ONLY the GPU projects, if possible." />
     <cmakeSwitch name="PX_SCALAR_MATH" value="False" comment="Disable SIMD math" />
-    <cmakeSwitch name="NV_USE_STATIC_WINCRT" value="True" comment="Use the statically linked windows CRT" />
-    <cmakeSwitch name="NV_USE_DEBUG_WINCRT" value="True" comment="Use the debug version of the CRT" />
+    <cmakeSwitch name="NV_USE_STATIC_WINCRT" value="False" comment="False=/MD (dynamic CRT, when building into own application), True=/MT (static CRT, when creating binary packages for redistribution)" />
+    <cmakeSwitch name="NV_USE_DEBUG_WINCRT" value="True" comment="True=/MDd or /MTd (debug runtime in debug builds), False=/MD or /MT (release runtime in debug builds)" />
     <cmakeSwitch name="PX_FLOAT_POINT_PRECISE_MATH" value="False" comment="Float point precise math" />
     <cmakeSwitch name="PX_GENERATE_GPU_STATIC_LIBRARIES" value="False" comment="Generate PhysXGPU static libraries" />
     <cmakeSwitch name="PX_GENERATE_GPU_REDUCED_ARCHITECTURES" value="False" comment="Generate only a reduced number of GPU architectures for faster compilation" />

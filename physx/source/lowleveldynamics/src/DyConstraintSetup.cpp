@@ -629,7 +629,7 @@ void preprocessRows(Px1DConstraint** sorted,
 		}
 
 		if(groupMajorId == 1 && diagonalizeDrive)
-		{			
+		{
 			PxU32 slerp = start;		// count of bilateral constraints 
 			for(; slerp<i && (sorted[slerp]->solveHint&255)!=2; slerp++)
 				;

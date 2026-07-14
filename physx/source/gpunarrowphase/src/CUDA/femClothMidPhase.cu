@@ -96,7 +96,7 @@ struct ClothTreeTraverser
 		}
 
 		pushOntoStackFullWarp(intersect, midphasePairsNum, stackPtr, stackSize, make_uint4(cmIdx, primitiveIndex, 0, 0));
-	}	
+	}
 
 	PX_FORCE_INLINE __device__ bool intersectBoxFullWarp(bool hasBox, const PxVec3& min, const PxVec3& max) const
 	{

@@ -134,7 +134,11 @@ PxgGpuNarrowphaseCore::PxgGpuNarrowphaseCore(PxgCudaKernelWranglerManager* gpuKe
 	mNphaseImplContext(nphaseImplContext),
 	mMaxConvexMeshTempMemoryMapped(allocDesc.hostMappedAlloc, PxsHeapStats::eNARROWPHASE, Cm::PinnableAllocatorFallback::eDISABLED),
 	mGpuMultiManifold(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
-	mGpuManifold(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE)
+	mGpuManifold(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mParticleEvent(NULL),
+	mSoftbodyEvent(NULL),
+	mFemClothEvent(NULL),
+	mDirectApiDmaEvent(NULL)
 #if PX_ENABLE_SIM_STATS
 	, mGpuDynamicsRigidContactCountStats(0),
 	mGpuDynamicsRigidPatchCountStats(0),
@@ -1636,7 +1640,7 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 			CUresult result = mCudaContext->streamSynchronize(mStream);
 			if (result != CUDA_SUCCESS)
 				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Synchronizing GPU Narrowphase failed! %u\n", result);
-		}	
+		}
 
 		PxU32 err = patchAndContactCountersReadback.getOverflowError();
 		if (err)
@@ -3379,9 +3383,6 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 	PxgParticleSystem* particleSystemsd = reinterpret_cast<PxgParticleSystem*>(particleCore->getParticleSystemBuffer().getDevicePtr());
 
 	CUresult result;
-		
-	CUdeviceptr pairs = simulationCore->getSoftBodyParticleFilters();
-	const PxU32 nbPairs = simulationCore->getNbSoftBodyParticleFilters();
 
 	//initialize gpu variables
 	mCudaContext->memsetD32Async(gpuMidphasePairsNumOnDevice, 0, 1, softbodyStream);
@@ -3458,8 +3459,6 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 			PX_CUDA_KERNEL_PARAM(gpuShapes),
 			PX_CUDA_KERNEL_PARAM(particleSystemsd),
 			PX_CUDA_KERNEL_PARAM(softBodiesd),
-			PX_CUDA_KERNEL_PARAM(pairs),
-			PX_CUDA_KERNEL_PARAM(nbPairs),
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 			PX_CUDA_KERNEL_PARAM(gpuIntermStack),
 			PX_CUDA_KERNEL_PARAM(gpuMidphasePairsNumOnDevice),
@@ -3794,9 +3793,6 @@ void PxgGpuNarrowphaseCore::testSDKConvexParticle(PxgGpuContactManagers& gpuMana
 		CUdeviceptr tempContactByRigidBitd = particleCore->getTempContactByRigid().getDevicePtr();
 		CUdeviceptr contactRemapSortedByRigidd = particleCore->getContactRemapSortedByRigid().getDevicePtr();
 		CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
-
-		//CUdeviceptr pairs = simulationCore->getRigidParticleFilters();
-		//const PxU32 nbPairs = simulationCore->getNbRigidParticleFilters();
 
 		CUfunction psCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PS_CONVEX_COLLISION);
 
@@ -4294,7 +4290,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 #endif //GPU_NP_VISUALIZATION
 
 #endif //GPU_NP_DEBUG
-	}	
+	}
 
 	{
 		CUdeviceptr totalNumCountsd = softBodyCore->getRigidContactCount().getDevicePtr();
@@ -7985,9 +7981,9 @@ void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* 
 			if(unit_.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_TOUCH)
 				processPartitionEdges(mIslandSim->mGpuData, unit_);
 		}
-	
-		cm->getWorkUnit().mNpIndex = 0xFFffFFff;
 	}
+
+	unit.mNpIndex = 0xFFffFFff;
 }
 
 
@@ -8313,9 +8309,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "PrepareInputTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "PrepareInputTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		for (PxU32 a = 0; a < mNbToProcess; ++a)
 		{

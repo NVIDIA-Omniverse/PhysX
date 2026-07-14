@@ -199,7 +199,7 @@ bool ConvexHullLib::cleanupVertices(PxU32 svcount, const PxVec3* svertices, PxU3
 		{
 			numVerticesToClean = vertsOutCount;
 			verticesToClean = vertsOut;
-		}		
+		}
 	}
 
 	const float distanceEpsilon = local::DISTANCE_EPSILON * mCookingParams.scale.length;
@@ -229,7 +229,7 @@ void ConvexHullLib::swapLargestFace(PxConvexMeshDesc& desc)
 
 	PxU32 largestFace = 0;
 	for (PxU32 i = 1; i < desc.polygons.count; i++)
-	{		
+	{
 		if(polygons[largestFace].mNbVerts < polygons[i].mNbVerts)
 			largestFace = i;
 	}

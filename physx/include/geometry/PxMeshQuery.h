@@ -29,7 +29,6 @@
 #ifndef PX_MESH_QUERY_H
 #define PX_MESH_QUERY_H
 
-
 #include "foundation/PxTransform.h"
 #include "common/PxPhysXCommonConfig.h"
 #include "geometry/PxGeometryHit.h"

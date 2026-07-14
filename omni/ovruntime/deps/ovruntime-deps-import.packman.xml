@@ -1,0 +1,60 @@
+<project toolsVersion="6.11">
+  <!-- Dependencies imported from ovruntime_deps package.
+       Versions here are pinned to match what ovruntime_deps was built against.
+       When updating ovruntime_deps, update these versions accordingly. -->
+
+  <!-- Carbonite SDK (framework + plugins) -->
+  <dependency name="carb_sdk_plugins" linkPath="../_build/target-deps/carb_sdk_plugins" tags="slim-package">
+    <package name="carb_sdk+plugins.${platform_target_abi}" version="210.1.5+release.12978.b22b555f.gl" />
+  </dependency>
+
+  <!-- OpenUSD -->
+  <dependency name="usd-${config}" linkPath="../_build/target-deps/usd/${config}">
+    <package name="usd.py312.${platform_target_abi}.stock.${config}" version="0.25.11.kit.2-gl.19811" />
+  </dependency>
+
+  <!-- Python 3.12 (from Carbonite's dependency chain) -->
+  <dependency name="python" linkPath="../_build/target-deps/python">
+    <package name="python" version="3.12.13+nv1-${platform_target_abi}" />
+  </dependency>
+
+  <!-- pybind11 (from Carbonite's dependency chain) -->
+  <dependency name="pybind11" linkPath="../_build/target-deps/pybind11">
+    <package name="pybind11" version="2.11.1-0" />
+  </dependency>
+
+  <!-- doctest (from Carbonite's dependency chain) -->
+  <dependency name="doctest" linkPath="../_build/target-deps/doctest">
+    <package name="doctest" version="2.4.5+nv7-0" />
+  </dependency>
+
+  <!-- cxxopts (from Carbonite's dependency chain) -->
+  <dependency name="cxxopts" linkPath="../_build/target-deps/cxxopts">
+    <package name="cxxopts" version="2.2.0-1" />
+  </dependency>
+
+  <!-- CUDA toolkit -->
+  <dependency name="cuda" linkPath="../_build/target-deps/cuda">
+    <package name="cuda" version="12.8.0-5-${platform_target_abi}-release" />
+  </dependency>
+
+  <!-- ImGui -->
+  <dependency name="imgui" linkPath="../_build/target-deps/imgui">
+    <package name="imgui" version="1.77_WIP-277297b1" />
+  </dependency>
+
+  <!-- GLM math library -->
+  <dependency name="glm" linkPath="../_build/target-deps/glm">
+    <package name="glm" version="0.9.9.1-4-560319f4" />
+  </dependency>
+
+  <!-- GSL (Guidelines Support Library) -->
+  <dependency name="gsl" linkPath="../_build/target-deps/gsl">
+    <package name="gsl" version="3.1.0.1" />
+  </dependency>
+
+  <!-- OmniClient library -->
+  <dependency name="omni_client_library" linkPath="../_build/target-deps/client-library">
+    <package name="omni_client_library.${platform_target_abi}" version="2.69.0" />
+  </dependency>
+</project>

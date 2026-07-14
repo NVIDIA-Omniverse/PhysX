@@ -329,7 +329,8 @@ struct SbMeshTreeTraverser
 	const PxReal filterDistanceSq;
 	const PxReal						selfCollisionStressTolerance;
 	const PxgNonRigidFilterPair*		pairs;
-	const PxU32							nbPairs;	
+	const PxU32							nbPairs;
+	const PxU32							numTets; // Tet count of the softbody whose BVH is being traversed; used to bound primitiveIndex.
 	PxReal bestDist = PX_MAX_F32;
 	PxVec3 bestClosestP;
 	PxVec3 bestNormal;
@@ -350,16 +351,22 @@ struct SbMeshTreeTraverser
 		const PxReal						selfCollisionFilterDistance,
 		const PxReal						selfCollisionStressTolerance,
 		const PxgNonRigidFilterPair*		pairs,
-		const PxU32							nbPairs
+		const PxU32							nbPairs,
+		const PxU32							numTets
 	) : s_warpScratch(s_warpScratch), softbodyId(softbodyId), point(point), restP(restP), vertIdx(vertIdx),
-		distance(distance), vertToSuraceTetRemap(vertToSuraceTetRemap), surfaceTetHint(surfaceTetHint), restTetVerts(restTetVerts), writer(writer),		
+		distance(distance), vertToSuraceTetRemap(vertToSuraceTetRemap), surfaceTetHint(surfaceTetHint), restTetVerts(restTetVerts), writer(writer),
 		tetraStresses(tetraStresses), filterDistanceSq(selfCollisionFilterDistance*selfCollisionFilterDistance), selfCollisionStressTolerance(selfCollisionStressTolerance),
-		pairs(pairs), nbPairs(nbPairs)
+		pairs(pairs), nbPairs(nbPairs), numTets(numTets)
 	{ }
 
 	PX_FORCE_INLINE __device__ void intersectPrimitiveFullWarp(PxU32 primitiveIndex, PxU32 idxInWarp)
 	{
-		if (primitiveIndex != 0xFFFFFFFF)
+		// Bound primitiveIndex against the softbody's actual tet count.
+		// Same defect class as Bug 6156209 / OMPE-92966 (cloth side):
+		// the previous != 0xFFFFFFFF guard let any value in
+		// [numTets, 0xFFFFFFFE] reach PxEncodeSoftBodyIndex (20-bit
+		// field) and OOB-read meshVertsIndices[].
+		if (primitiveIndex < numTets)
 		{
 			bool bHasCollision = false;
 			bool inside = false;
@@ -514,6 +521,7 @@ struct SbSbMeshTreeTraverser
 	PxgSoftBodyContactWriter&			writer;
 	const PxgNonRigidFilterPair*		pairs;
 	const PxU32							nbPairs;
+	const PxU32							numTets; // Tet count of softbody1 (whose BVH is being traversed); used to bound primitiveIndex.
 
 	PxReal bestDist = PX_MAX_F32;
 	PxVec3 bestClosestP;
@@ -531,15 +539,18 @@ struct SbSbMeshTreeTraverser
 		const PxU8*							surfaceTetHint1,
 		PxgSoftBodyContactWriter&			writer,
 		const PxgNonRigidFilterPair*		pairs,
-		const PxU32							nbPairs)
+		const PxU32							nbPairs,
+		const PxU32							numTets)
 		: s_warpScratch(s_warpScratch), softbodyId0(softbodyId0), softbodyId1(softbodyId1), point(point),
 		  vertIdx(vertIdx), distance(distance), vertToSurfaceTetRemap0(vertToSurfaceTetRemap0), surfaceTetHint1(surfaceTetHint1),
-		  writer(writer), pairs(pairs), nbPairs(nbPairs)
+		  writer(writer), pairs(pairs), nbPairs(nbPairs), numTets(numTets)
 	{ }
 
 	PX_FORCE_INLINE __device__ void intersectPrimitiveFullWarp(PxU32 primitiveIndex, PxU32 idxInWarp)
 	{
-		if (primitiveIndex != 0xFFFFFFFF)
+		// See SbMeshTreeTraverser for rationale. Same defect class as
+		// Bug 6156209 / OMPE-92966.
+		if (primitiveIndex < numTets)
 		{
 			bool bHasCollision = false;
 			bool inside = false;
@@ -797,7 +808,8 @@ __device__ static inline void sb_tetmeshMidphaseCore2(
 						surfaceTetHint1,
 						writer,
 						pairs,
-						nbFilterPairs);
+						nbFilterPairs,
+						softbody1.mNumTets);
 					bv32TreeTraversal<SbSbMeshTreeTraverser, WarpsPerBlock>(s_warpScratch->bv32PackedNodes, s_warpScratch->sBv32Nodes, traverser);
 					traverser.finalizeFullWarp();					
 				}
@@ -945,7 +957,8 @@ __device__ static inline void sb_selfCollisionMidphaseCore2(
 						selfCollisionDistance,
 						selfCollisionStressTolerance,
 						pairs,
-						nbFilterPairs);
+						nbFilterPairs,
+						softbody->mNumTets);
 					bv32TreeTraversal<SbMeshTreeTraverser, WarpsPerBlock>(s_warpScratch->bv32PackedNodes, s_warpScratch->sBv32Nodes, traverser);
 					traverser.finalizeFullWarp();					
 				}
@@ -1259,7 +1272,7 @@ void sb_sdfMeshMidphaseGeneratePairsLaunch(
 			writer.writeContactNoBarycentric(contactIndex, make_float4(contactPos.x, contactPos.y, contactPos.z, restDist),
 				make_float4(contactDir.x, contactDir.y, contactDir.z, sep), pairId0, pairId1, rigidId.getInd());
 		}
-	}	
+	}
 }
 
 

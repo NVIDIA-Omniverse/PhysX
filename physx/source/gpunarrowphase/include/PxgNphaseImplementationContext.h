@@ -102,12 +102,12 @@ namespace physx
 			mDt = dt;
 		}
 
-		virtual const char* getName() const
+		virtual const char* getName() const PX_OVERRIDE
 		{
 			return "PxgCMGpuDiscreteUpdateFallbackTask";
 		}
 
-		void runInternal();
+		virtual	void runInternal()	PX_OVERRIDE;
 
 	protected:
 		PxReal							mDt;
@@ -128,12 +128,12 @@ namespace physx
 		{
 		}
 
-		virtual void setPostBroadPhaseTask(PxBaseTask* postBroadPhaseTask) 
+		virtual void setPostBroadPhaseTask(PxBaseTask* postBroadPhaseTask)
 		{
 			mPostBroadPhaseTask = postBroadPhaseTask;
 		}
 
-		virtual void release()
+		virtual void release() PX_OVERRIDE
 		{
 			if(mFirstPassNpContinuation)
 				mFirstPassNpContinuation->removeReference();
@@ -142,9 +142,9 @@ namespace physx
 
 		void setFirstPassContinuation(PxBaseTask* firstPassContinuation) { mFirstPassNpContinuation = firstPassContinuation; }
 
-		void runInternal();
+		virtual	void runInternal()	PX_OVERRIDE;
 
-		virtual const char* getName() const
+		virtual const char* getName() const PX_OVERRIDE
 		{
 			return "PxgNphaseImplementationContext.firstContactManagerDiscreteUpdate";
 		}
@@ -160,9 +160,9 @@ namespace physx
 		virtual ~PxgCMGpuDiscreteSecondPassUpdateTask()
 		{}
 
-		void runInternal();
+		virtual	void runInternal()	PX_OVERRIDE;
 
-		virtual const char* getName() const
+		virtual const char* getName() const PX_OVERRIDE
 		{
 			return "PxgNphaseImplementationContext.secondContactManagerDiscreteUpdate";
 		}

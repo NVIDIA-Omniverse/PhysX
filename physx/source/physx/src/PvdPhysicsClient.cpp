@@ -44,7 +44,7 @@ using namespace physx::Vd;
 
 PvdPhysicsClient::PvdPhysicsClient(PsPvd* pvd)
 : mPvd(pvd), mPvdDataStream(NULL), mIsConnected(false)
-{	
+{
 }
 
 PvdPhysicsClient::~PvdPhysicsClient()

@@ -39,14 +39,12 @@ namespace Dy
 struct DeformableBodyCore
 {
 public:
-	//PxFEMParameters
 	PxReal					linearDamping;
 	PxReal					settlingThreshold;
 	PxReal					sleepThreshold;
 	PxReal					settlingDamping;
 	PxReal					selfCollisionFilterDistance;
 	PxReal					selfCollisionStressTolerance;
-	//~PxFEMParameters
 
 	PxReal					maxLinearVelocity;
 	PxReal					maxPenetrationBias;
@@ -60,14 +58,12 @@ public:
 	bool					dirty;
 
 	DeformableBodyCore()
-		//PxFEMParameters, same defaults as deprecated PxFEMParameters
 		: linearDamping(0.05f)
 		, settlingThreshold(0.1f)
 		, sleepThreshold(0.05f)
 		, settlingDamping(10.f)
 		, selfCollisionFilterDistance(0.1f)
 		, selfCollisionStressTolerance(0.9f)
-		//~PxFEMParameters
 		, maxLinearVelocity(PX_MAX_REAL) // see Sc::BodyCore::BodyCore
 		, maxPenetrationBias(-1e32f) // see PxsBodyCore::init
 		, solverIterationCounts(0)

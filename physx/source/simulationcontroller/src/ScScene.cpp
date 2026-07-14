@@ -137,11 +137,11 @@ namespace
 		{
 		}
 
-		virtual void runInternal()
-		{		
+		// PT: warning, this runs in parallel with updateArticulationAfterIntegration and updateKinematicCached, and all of these touching the getChangedAABBMgActorHandleMap() bitmap
+		virtual void runInternal() PX_OVERRIDE
+		{
 			const PxU32 rigidBodyOffset = Sc::BodySim::getRigidBodyOffset();
 
-			Sc::BodySim* bpUpdates[MaxTasks];
 			Sc::BodySim* ccdBodies[MaxTasks];
 			Sc::BodySim* activateBodies[MaxTasks];
 			Sc::BodySim* deactivateBodies[MaxTasks];
@@ -154,38 +154,31 @@ namespace
 			PxU32 nbFrozen = 0, nbUnfrozen = 0;
 			PxU32 nbActivated = 0, nbDeactivated = 0;
 
-			// PdHC: Check if body acceleration tracking is enabled for velocity-delta computation
-			const bool computeAccelerations = (mScene.getFlags() & PxSceneFlag::eENABLE_BODY_ACCELERATIONS) && !mScene.isUsingGpuDynamics();
-			const PxReal oneOverDt = mScene.getOneOverDt();
+			PinnableBitMap& changedAABBMgrHandles = mScene.getAABBManager()->getChangedAABBMgActorHandleMap();
 
 			for(PxU32 i = 0; i < mNumBodies; i++)
 			{
 				PxsRigidBody* rigid = getRigidBodyFromIG(islandSim, mIndices[i]);
 				Sc::BodySim* bodySim = reinterpret_cast<Sc::BodySim*>(reinterpret_cast<PxU8*>(rigid) - rigidBodyOffset);
 				
-				Sc::BodyCore& scBodyCore = bodySim->getBodyCore();
-				PxsBodyCore& bodyCore = scBodyCore.getCore();
+				PxsBodyCore& bodyCore = bodySim->getBodyCore().getCore();
 				//If we got in this code, then this is an active object this frame. The solver computed the new wakeCounter and we 
 				//commit it at this stage. We need to do it this way to avoid a race condition between the solver and the island gen, where
 				//the island gen may have deactivated a body while the solver decided to change its wake counter.
 				bodyCore.wakeCounter = bodyCore.solverWakeCounter;
 				PxsRigidBody& llBody = bodySim->getLowLevelBody();
 
-				// PdHC: Compute accelerations using velocity-delta method (for CPU dynamics only)
-				// This is multithreaded since each body's acceleration is independent
-				if(computeAccelerations)
-					scBodyCore.updateAccelerations(oneOverDt);
-
 				const PxIntBool isFrozen = bodySim->isFrozen();
 				if(!isFrozen)
 				{
-					bpUpdates[nbBpUpdates++] = bodySim;
+					nbBpUpdates++;
 
-					bodySim->updateCached_ThreadSafe(mParams);
+					// PT: TODO: this one does not reach the GPU code. This is only an issue when Direct GPU is enabled.
+					bodySim->updateCached(mParams, &changedAABBMgrHandles, true, true);
 				}
 
 				if(llBody.isFreezeThisFrame() && isFrozen)
-					frozen[nbFrozen++] = bodySim;
+					frozen[nbFrozen++] = bodySim;	// PT: we cannot call freezeTransforms directly from here, as the "destroySqBounds" call inside it is not thread-safe yet.
 				else if(llBody.isUnfreezeThisFrame())
 					unfrozen[nbUnfrozen++] = bodySim;
 
@@ -209,28 +202,10 @@ namespace
 				mParams.mBoundsArray.setChangedState();
 			}
 
-			if(nbBpUpdates>0 || nbFrozen > 0 || nbCcdBodies>0 || nbActivated>0 || nbDeactivated>0)
+			if(nbUnfrozen >0 || nbFrozen > 0 || nbCcdBodies>0 || nbActivated>0 || nbDeactivated>0)
 			{
-				//Write active bodies to changed actor map
-				// PT: TODO: do that directly inside updateCached with atomics
 				mContext->getLock().lock();
-				PinnableBitMap& changedAABBMgrHandles = mScene.getAABBManager()->getChangedAABBMgActorHandleMap();
 			
-				for(PxU32 i = 0; i < nbBpUpdates; i++)
-				{
-					// PT: ### changedMap pattern #1
-					PxU32 nbElems = bpUpdates[i]->getNbElements();
-					Sc::ElementSim** elems = bpUpdates[i]->getElements();
-					while (nbElems--)
-					{
-						Sc::ShapeSim* sim = static_cast<Sc::ShapeSim*>(*elems++);
-						// PT: TODO: what's the difference between this test and "isInBroadphase" as used in bodySim->updateCached ?
-						// PT: Also, shouldn't it be "isInAABBManager" rather than BP ?
-						if (sim->getFlags()&PxU32(PxShapeFlag::eSIMULATION_SHAPE | PxShapeFlag::eTRIGGER_SHAPE))	// TODO: need trigger shape here?
-							changedAABBMgrHandles.growAndSet(sim->getElementID());
-					}
-				}
-
 				PxArray<Sc::BodySim*>& sceneCcdBodies = mScene.getCcdBodies();
 				for (PxU32 i = 0; i < nbCcdBodies; i++)
 					sceneCcdBodies.pushBack(ccdBodies[i]);
@@ -238,7 +213,10 @@ namespace
 				for(PxU32 i=0;i<nbFrozen;i++)
 				{
 					PX_ASSERT(frozen[i]->isFrozen());
-					frozen[i]->freezeTransforms(mParams, &changedAABBMgrHandles);
+					//frozen[i]->freezeTransforms(mParams, &changedAABBMgrHandles);
+					// PT: this new version only updates the transform flags and does not touch changedAABBMgrHandles anymore.
+					// We still need to run it inside the context lock, as the function still calls "destroySqBounds", which is not thread-safe.
+					frozen[i]->freezeTransforms(mParams.mTransformCache);
 				}
 
 				for(PxU32 i=0;i<nbUnfrozen;i++)
@@ -257,7 +235,7 @@ namespace
 			}
 		}
 
-		virtual const char* getName() const
+		virtual const char* getName() const PX_OVERRIDE
 		{
 			return "ScScene.afterIntegrationTask";
 		}
@@ -390,8 +368,8 @@ namespace
 		{
 		}
 
-		virtual void runInternal()
-		{		
+		virtual void runInternal() PX_OVERRIDE
+		{
 			IG::SimpleIslandManager& islandManager = *mScene.getSimpleIslandManager();
 			const IG::IslandSim& islandSim = islandManager.getAccurateIslandSim();
 
@@ -447,7 +425,7 @@ namespace
 			}
 		}
 
-		virtual const char* getName() const
+		virtual const char* getName() const PX_OVERRIDE
 		{
 			return "ScScene.PxgUpdateBodyAndShapeStatusTask";
 		}
@@ -716,6 +694,7 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mTaskPool						(16384),
 	mTaskManager					(NULL),
 	mCudaContextManager				(desc.cudaContextManager),
+	mBodyAccelerationTask			(NULL),
 	mContactReportsNeedPostSolverVelocity(false),
 	mUseGpuDynamics					(false),
 	mUseGpuBp						(false),
@@ -944,8 +923,8 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 
 		mSimulationController = physxGpu->createGpuSimulationController(mGpuWranglerManagers, mLLContext->getCudaContextManager(),
 			mDynamicsContext, gpuNphaseImplementation, broadPhase, useGpuBroadphase, mSimulationControllerCallback, desc.gpuComputeVersion, *mHeapMemoryAllocationManager,
-			(desc.gpuDynamicsConfig.maxSoftBodyContacts > 0) ? desc.gpuDynamicsConfig.maxSoftBodyContacts : desc.gpuDynamicsConfig.maxDeformableVolumeContacts,
-			(desc.gpuDynamicsConfig.maxFemClothContacts > 0) ? desc.gpuDynamicsConfig.maxFemClothContacts : desc.gpuDynamicsConfig.maxDeformableSurfaceContacts,
+			desc.gpuDynamicsConfig.maxDeformableVolumeContacts,
+			desc.gpuDynamicsConfig.maxDeformableSurfaceContacts,
 			desc.gpuDynamicsConfig.maxParticleContacts,
 			desc.gpuDynamicsConfig.collisionStackSize, enableBodyAccelerations);
 
@@ -2219,11 +2198,9 @@ void Sc::Scene::getStats(PxSimulationStatistics& s) const
 		s.gpuMemHeapSimulationParticles = deviceHeapStats.stats[PxsHeapStats::eSIMULATION_PARTICLES];
 		s.gpuMemHeapSimulationDeformableSurface = deviceHeapStats.stats[PxsHeapStats::eSIMULATION_FEMCLOTH];
 		s.gpuMemHeapSimulationDeformableVolume = deviceHeapStats.stats[PxsHeapStats::eSIMULATION_SOFTBODY];
-		s.gpuMemHeapSimulationSoftBody = deviceHeapStats.stats[PxsHeapStats::eSIMULATION_SOFTBODY]; //deprecated
 		s.gpuMemHeapParticles = deviceHeapStats.stats[PxsHeapStats::eSHARED_PARTICLES];
 		s.gpuMemHeapDeformableSurfaces = deviceHeapStats.stats[PxsHeapStats::eSHARED_FEMCLOTH];
 		s.gpuMemHeapDeformableVolumes = deviceHeapStats.stats[PxsHeapStats::eSHARED_SOFTBODY];
-		s.gpuMemHeapSoftBodies = deviceHeapStats.stats[PxsHeapStats::eSHARED_SOFTBODY]; //deprecated
 		s.gpuMemHeapOther = deviceHeapStats.stats[PxsHeapStats::eOTHER];
 	}
 	else
@@ -2233,7 +2210,6 @@ void Sc::Scene::getStats(PxSimulationStatistics& s) const
 		s.gpuMemParticles = 0;
 		s.gpuMemDeformableSurfaces = 0;
 		s.gpuMemDeformableVolumes = 0;
-		s.gpuMemSoftBodies = 0; // deprecated
 		s.gpuMemHeapBroadPhase = 0;
 		s.gpuMemHeapNarrowPhase = 0;
 		s.gpuMemHeapSolver = 0;
@@ -2243,9 +2219,7 @@ void Sc::Scene::getStats(PxSimulationStatistics& s) const
 		s.gpuMemHeapSimulationParticles = 0;
 		s.gpuMemHeapSimulationDeformableSurface = 0;
 		s.gpuMemHeapSimulationDeformableVolume = 0;
-		s.gpuMemHeapSimulationSoftBody = 0; // deprecated
 		s.gpuMemHeapParticles = 0;
-		s.gpuMemHeapSoftBodies = 0; // deprecated
 		s.gpuMemHeapDeformableSurfaces = 0;
 		s.gpuMemHeapOther = 0;
 	}
@@ -2283,7 +2257,7 @@ void Sc::Scene::addShapes(NpShape *const* shapes, PxU32 nbShapes, size_t ptrOffs
 		//I register the shape if its either not an articulation link or if the nodeIndex has already been
 		//assigned. On insertion, the articulation will not have this nodeIndex correctly assigned at this stage
 		if (bodySim.getActorType() != PxActorType::eARTICULATION_LINK || !nodeIndex.isStaticBody())
-			context->registerShape(nodeIndex, sc.getCore(), shapeSim->getElementID(), bodySim.getPxActor());
+			context->registerShape(nodeIndex, sc, shapeSim->getElementID(), bodySim.getPxActor());
 	}
 }
 
@@ -2331,7 +2305,7 @@ void Sc::Scene::removeStatic(StaticCore& ro, PxInlineArray<const Sc::ShapeCore*,
 		{
 			PxInlineArray<Sc::ShapeSim*, 64>  shapesBuffer;
 			removeShapes(*sim, shapesBuffer ,removedShapes, wakeOnLostTouch);
-		}		
+		}
 		mStaticSimPool->destroy(static_cast<Sc::StaticSim*>(ro.getSim()));
 		mNbRigidStatics--;
 	}
@@ -2343,10 +2317,6 @@ void Sc::Scene::addBody(BodyCore& body, NpShape*const *shapes, PxU32 nbShapes, s
 	// activation, registering with the interaction system, etc
 
 	BodySim* sim = mBodySimPool->construct(*this, body, compound);
-
-	// Reset acceleration state to seed previous velocities from current velocities,
-	// avoiding spurious acceleration spike on first updateAccelerations call
-	body.resetAccelerationState();
 
 	const bool isArticulationLink = sim->isArticulationLink();
 
@@ -2385,7 +2355,7 @@ void Sc::Scene::removeBody(BodyCore& body, PxInlineArray<const Sc::ShapeCore*,64
 		else
 		{
 			PxInlineArray<Sc::ShapeSim*, 64>  shapesBuffer;
-			removeShapes(*sim,shapesBuffer, removedShapes, wakeOnLostTouch);
+			removeShapes(*sim, shapesBuffer, removedShapes, wakeOnLostTouch);
 		}
 
 		if(!sim->isArticulationLink())
@@ -2447,17 +2417,17 @@ void Sc::Scene::registerShapeInNphase(Sc::RigidCore* rigidCore, const ShapeCore&
 {
 	RigidSim* sim = rigidCore->getSim();
 	if(sim)
-		mLLContext->getNphaseImplementationContext()->registerShape(sim->getNodeIndex(), shape.getCore(), transformCacheID, sim->getPxActor());
+		mLLContext->getNphaseImplementationContext()->registerShape(sim->getNodeIndex(), shape, transformCacheID, sim->getPxActor());
 }
 
 void Sc::Scene::unregisterShapeFromNphase(const ShapeCore& shape, const PxU32 transformCacheID)
 {
-	mLLContext->getNphaseImplementationContext()->unregisterShape(shape.getCore(), transformCacheID);
+	mLLContext->getNphaseImplementationContext()->unregisterShape(shape, transformCacheID);
 }
 
 void Sc::Scene::notifyNphaseOnUpdateShapeMaterial(const ShapeCore& shapeCore)
 {
-	mLLContext->getNphaseImplementationContext()->updateShapeMaterial(shapeCore.getCore());
+	mLLContext->getNphaseImplementationContext()->updateShapeMaterial(shapeCore);
 }
 
 void Sc::Scene::startBatchInsertion(BatchInsertionState&state)
@@ -2486,11 +2456,11 @@ void Sc::Scene::addShapes(NpShape*const* shapes, PxU32 nbShapes, size_t ptrOffse
 
 		// PT: TODO: revisit getActorNodeIndex() vs rigidSim.getNodeIndex()
 		mSimulationController->addPxgShape(prefetchedShapeSim, prefetchedShapeSim->getPxsShapeCore(), prefetchedShapeSim->getActorNodeIndex(), elementID);
-		mLLContext->getNphaseImplementationContext()->registerShape(rigidSim.getNodeIndex(), sc.getCore(), elementID, rigidSim.getPxActor());
+		mLLContext->getNphaseImplementationContext()->registerShape(rigidSim.getNodeIndex(), sc, elementID, rigidSim.getPxActor());
 
 		prefetchedShapeSim = nextShapeSim;
 		mNbGeometries[sc.getGeometryType()]++;
-	}	
+	}
 }
 
 void Sc::Scene::addStatic(PxActor* actor, BatchInsertionState& s, PxBounds3* outBounds)
@@ -2518,9 +2488,6 @@ void Sc::Scene::addBody(PxActor* actor, BatchInsertionState& s, PxBounds3* outBo
 	Sc::BodyCore* bodyCore = PxPointerOffset<Sc::BodyCore*>(actor, s.dynamicActorOffset);
 	mBodySimPool->construct(sim, *this, *bodyCore, compound);	
 	s.bodySim = mBodySimPool->allocateAndPrefetch();
-
-	// Reset acceleration state to seed previous velocities from current velocities
-	bodyCore->resetAccelerationState();
 
 	if(sim->getLowLevelBody().mCore->mFlags & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD)
 	{
@@ -3340,7 +3307,7 @@ void Sc::Scene::removeDeformableSurface(DeformableSurfaceCore& deformableSurface
 {
 	DeformableSurfaceSim* a = deformableSurface.getSim();
 	if(a)
-		markReleasedBodyIDForLostTouch(a->getActorID());  // BUGFIX 5813869: avoid use-after-free in processLostTouchPairs
+		markReleasedBodyIDForLostTouch(a->getActorID());
 	PX_DELETE(a);
 	mDeformableSurfaces.erase(&deformableSurface);
 	mStats->gpuMemSizeDeformableSurfaces -= deformableSurface.getGpuMemStat();
@@ -3364,7 +3331,7 @@ void Sc::Scene::removeDeformableVolume(DeformableVolumeCore& deformableVolume)
 {
 	DeformableVolumeSim* a = deformableVolume.getSim();
 	if(a)
-		markReleasedBodyIDForLostTouch(a->getActorID());  // BUGFIX 5813869: avoid use-after-free in processLostTouchPairs
+		markReleasedBodyIDForLostTouch(a->getActorID());
 	PX_DELETE(a);
 	mDeformableVolumes.erase(&deformableVolume);
 	mStats->gpuMemSizeDeformableVolumes -= deformableVolume.getGpuMemStat();
@@ -3390,7 +3357,7 @@ void Sc::Scene::removeParticleSystem(ParticleSystemCore& particleSystem)
 {
 	ParticleSystemSim* a = particleSystem.getSim();
 	if(a)
-		markReleasedBodyIDForLostTouch(a->getActorID());  // BUGFIX 5813869: avoid use-after-free in processLostTouchPairs
+		markReleasedBodyIDForLostTouch(a->getActorID());
 	PX_DELETE(a);
 	mParticleSystems.erase(&particleSystem);
 	mStats->gpuMemSizeParticles -= particleSystem.getShapeCore().getGpuMemStat();
@@ -3491,7 +3458,7 @@ void Sc::Scene::addDeformableSurfaceSimControl(Sc::DeformableSurfaceCore& core)
 	{
 		mSimulationController->addFEMCloth(sim->getLowLevelDeformableSurface(), sim->getNodeIndex());
 
-		mLLContext->getNphaseImplementationContext()->registerShape(sim->getNodeIndex(), sim->getShapeSim().getCore().getCore(), sim->getShapeSim().getElementID(), sim->getPxActor(), true);
+		mLLContext->getNphaseImplementationContext()->registerShape(sim->getNodeIndex(), sim->getShapeSim().getCore(), sim->getShapeSim().getElementID(), sim->getPxActor(), true);
 	}
 }
 
@@ -3501,7 +3468,7 @@ void Sc::Scene::removeDeformableSurfaceSimControl(Sc::DeformableSurfaceCore& cor
 
 	if (sim)
 	{
-		mLLContext->getNphaseImplementationContext()->unregisterShape(sim->getShapeSim().getCore().getCore(), sim->getShapeSim().getElementID(), true);
+		mLLContext->getNphaseImplementationContext()->unregisterShape(sim->getShapeSim().getCore(), sim->getShapeSim().getElementID(), true);
 		mSimulationController->releaseFEMCloth(sim->getLowLevelDeformableSurface());
 	}
 }
@@ -3514,7 +3481,7 @@ void Sc::Scene::addDeformableVolumeSimControl(Sc::DeformableVolumeCore& core)
 	{
 		mSimulationController->addSoftBody(sim->getLowLevelDeformableVolume(), sim->getNodeIndex());
 
-		mLLContext->getNphaseImplementationContext()->registerShape(sim->getNodeIndex(), sim->getShapeSim().getCore().getCore(), sim->getShapeSim().getElementID(), sim->getPxActor());
+		mLLContext->getNphaseImplementationContext()->registerShape(sim->getNodeIndex(), sim->getShapeSim().getCore(), sim->getShapeSim().getElementID(), sim->getPxActor());
 	}
 }
 
@@ -3524,28 +3491,17 @@ void Sc::Scene::removeDeformableVolumeSimControl(Sc::DeformableVolumeCore& core)
 
 	if (sim)
 	{
-		mLLContext->getNphaseImplementationContext()->unregisterShape(sim->getShapeSim().getCore().getCore(), sim->getShapeSim().getElementID());
+		mLLContext->getNphaseImplementationContext()->unregisterShape(sim->getShapeSim().getCore(), sim->getShapeSim().getElementID());
 		mSimulationController->releaseSoftBody(sim->getLowLevelDeformableVolume());
 	}
 }
 
-void Sc::Scene::addParticleFilter(Sc::ParticleSystemCore* core, DeformableVolumeSim& sim, PxU32 particleId, PxU32 userBufferId, PxU32 tetId)
-{
-	mSimulationController->addParticleFilter(sim.getLowLevelDeformableVolume(), core->getSim()->getLowLevelParticleSystem(),
-		particleId, userBufferId, tetId);
-}
-
-void Sc::Scene::removeParticleFilter(Sc::ParticleSystemCore* core, DeformableVolumeSim& sim, PxU32 particleId, PxU32 userBufferId, PxU32 tetId)
-{
-	mSimulationController->removeParticleFilter(sim.getLowLevelDeformableVolume(), core->getSim()->getLowLevelParticleSystem(), particleId, userBufferId, tetId);
-}
-
 static PX_FORCE_INLINE void addToIslandManager(
-	PxHashMap<PxPair<PxU32, PxU32>, ParticleOrSoftBodyRigidInteraction>& particleOrSoftBodyRigidInteractionMap,
+	PxHashMap<PxPair<PxU32, PxU32>, DeformableRigidInteraction>& interactionMap,
 	IG::SimpleIslandManager* islandManager, const ActorSim& sim, PxNodeIndex nodeIndex, IG::Edge::EdgeType edgeType)
 {
 	PxPair<PxU32, PxU32> pair(sim.getNodeIndex().index(), nodeIndex.index());
-	ParticleOrSoftBodyRigidInteraction& interaction = particleOrSoftBodyRigidInteractionMap[pair];
+	DeformableRigidInteraction& interaction = interactionMap[pair];
 
 	if (interaction.mCount == 0)
 	{
@@ -3558,65 +3514,22 @@ static PX_FORCE_INLINE void addToIslandManager(
 }
 
 static PX_FORCE_INLINE void removeFromIslandManager(
-	PxHashMap<PxPair<PxU32, PxU32>, ParticleOrSoftBodyRigidInteraction>& particleOrSoftBodyRigidInteractionMap,
+	PxHashMap<PxPair<PxU32, PxU32>, DeformableRigidInteraction>& interactionMap,
 	IG::SimpleIslandManager* islandManager, const ActorSim& sim, PxNodeIndex nodeIndex)
 {
 	PxPair<PxU32, PxU32> pair(sim.getNodeIndex().index(), nodeIndex.index());
-	ParticleOrSoftBodyRigidInteraction& interaction = particleOrSoftBodyRigidInteractionMap[pair];
+	DeformableRigidInteraction& interaction = interactionMap[pair];
 	interaction.mCount--;
 	if (interaction.mCount == 0)
 	{
 		islandManager->removeConnection(interaction.mIndex);
-		particleOrSoftBodyRigidInteractionMap.erase(pair);
+		interactionMap.erase(pair);
 	}
 }
 
-PxU32 Sc::Scene::addParticleAttachment(Sc::ParticleSystemCore* core, DeformableVolumeSim& sim, PxU32 particleId, PxU32 userBufferId, PxU32 tetId, const PxVec4& barycentric)
-{
-	PxNodeIndex nodeIndex = core->getSim()->getNodeIndex();
-
-	PxU32 handle = mSimulationController->addParticleAttachment(sim.getLowLevelDeformableVolume(), core->getSim()->getLowLevelParticleSystem(),
-		particleId, userBufferId, tetId, barycentric, sim.isActive());
-
-	addToIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::eSOFT_BODY_CONTACT);
-	return handle;
-}
-
-void Sc::Scene::removeParticleAttachment(Sc::ParticleSystemCore* core, DeformableVolumeSim& sim, PxU32 handle)
-{
-	PxNodeIndex nodeIndex = core->getSim()->getNodeIndex();
-	
-	mSimulationController->removeParticleAttachment(sim.getLowLevelDeformableVolume(), handle);
-
-	removeFromIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex);
-}
-
-void Sc::Scene::addRigidFilter(Sc::BodyCore* core, Sc::DeformableVolumeSim& sim, PxU32 vertId)
-{
-	PxNodeIndex nodeIndex;
-
-	if (core)
-	{
-		nodeIndex = core->getSim()->getNodeIndex();
-	}
-
-	mSimulationController->addRigidFilter(sim.getLowLevelDeformableVolume(), nodeIndex, vertId);
-}
-
-void Sc::Scene::removeRigidFilter(Sc::BodyCore* core, Sc::DeformableVolumeSim& sim, PxU32 vertId)
-{
-	PxNodeIndex nodeIndex;
-
-	if (core)
-	{
-		nodeIndex = core->getSim()->getNodeIndex();
-	}
-
-	mSimulationController->removeRigidFilter(sim.getLowLevelDeformableVolume(), nodeIndex, vertId);
-}
 
 PxU32 Sc::Scene::addRigidAttachment(Sc::BodyCore* core, Sc::DeformableVolumeSim& sim, PxU32 vertId, const PxVec3& actorSpacePose,
-	PxConeLimitedConstraint* constraint, bool doConversion)
+	bool doConversion)
 {
 	PxNodeIndex nodeIndex;
 	PxsRigidBody* body = NULL;
@@ -3627,10 +3540,10 @@ PxU32 Sc::Scene::addRigidAttachment(Sc::BodyCore* core, Sc::DeformableVolumeSim&
 		body = &core->getSim()->getLowLevelBody();
 	}
 
-	PxU32 handle = mSimulationController->addRigidAttachment(sim.getLowLevelDeformableVolume(), sim.getNodeIndex(), body, 
-		nodeIndex, vertId, actorSpacePose, constraint, sim.isActive(), doConversion);
+	PxU32 handle = mSimulationController->addRigidAttachment(sim.getLowLevelDeformableVolume(), sim.getNodeIndex(), body,
+		nodeIndex, vertId, actorSpacePose, sim.isActive(), doConversion);
 
-	addToIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::eSOFT_BODY_CONTACT);
+	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::eSOFT_BODY_CONTACT);
 
 	return handle;
 }
@@ -3646,7 +3559,7 @@ void Sc::Scene::removeRigidAttachment(Sc::BodyCore* core, Sc::DeformableVolumeSi
 
 	mSimulationController->removeRigidAttachment(sim.getLowLevelDeformableVolume(), handle);
 
-	removeFromIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex);
+	removeFromIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex);
 }
 
 void Sc::Scene::addTetRigidFilter(Sc::BodyCore* core, Sc::DeformableVolumeSim& sim, PxU32 tetIdx)
@@ -3672,8 +3585,8 @@ void Sc::Scene::removeTetRigidFilter(Sc::BodyCore* core, Sc::DeformableVolumeSim
 	mSimulationController->removeTetRigidFilter(sim.getLowLevelDeformableVolume(), nodeIndex, tetIdx);
 }
 
-PxU32 Sc::Scene::addTetRigidAttachment(Sc::BodyCore* core, Sc::DeformableVolumeSim& sim, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, 
-	PxConeLimitedConstraint* constraint, bool doConversion)
+PxU32 Sc::Scene::addTetRigidAttachment(Sc::BodyCore* core, Sc::DeformableVolumeSim& sim, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose,
+	bool doConversion)
 {
 	PxNodeIndex nodeIndex;
 	PxsRigidBody* body = NULL;
@@ -3685,9 +3598,9 @@ PxU32 Sc::Scene::addTetRigidAttachment(Sc::BodyCore* core, Sc::DeformableVolumeS
 	}
 
 	PxU32 handle = mSimulationController->addTetRigidAttachment(sim.getLowLevelDeformableVolume(), body, nodeIndex,
-		tetIdx, barycentric, actorSpacePose, constraint, sim.isActive(), doConversion);
+		tetIdx, barycentric, actorSpacePose, sim.isActive(), doConversion);
 
-	addToIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::eSOFT_BODY_CONTACT);
+	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::eSOFT_BODY_CONTACT);
 
 	return handle;
 }
@@ -3719,14 +3632,14 @@ void Sc::Scene::removeSoftBodyFilters(DeformableVolumeCore& core, DeformableVolu
 }
 
 PxU32 Sc::Scene::addSoftBodyAttachment(DeformableVolumeCore& core, PxU32 tetIdx0, const PxVec4& tetBarycentric0, Sc::DeformableVolumeSim& sim, PxU32 tetIdx1, const PxVec4& tetBarycentric1,
-	PxConeLimitedConstraint* constraint, PxReal constraintOffset, bool doConversion)
+	bool doConversion)
 {
 	Sc::DeformableVolumeSim& bSim = *core.getSim();
 
-	PxU32 handle = mSimulationController->addSoftBodyAttachment(bSim.getLowLevelDeformableVolume(), sim.getLowLevelDeformableVolume(), tetIdx0, tetIdx1, 
-		tetBarycentric0, tetBarycentric1, constraint, constraintOffset, sim.isActive() || bSim.isActive(), doConversion);
+	PxU32 handle = mSimulationController->addSoftBodyAttachment(bSim.getLowLevelDeformableVolume(), sim.getLowLevelDeformableVolume(), tetIdx0, tetIdx1,
+		tetBarycentric0, tetBarycentric1, sim.isActive() || bSim.isActive(), doConversion);
 
-	addToIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, bSim.getNodeIndex(), IG::Edge::eSOFT_BODY_CONTACT);
+	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, bSim.getNodeIndex(), IG::Edge::eSOFT_BODY_CONTACT);
 
 	return handle;
 }
@@ -3736,7 +3649,7 @@ void Sc::Scene::removeSoftBodyAttachment(DeformableVolumeCore& core, Sc::Deforma
 	Sc::DeformableVolumeSim& bSim = *core.getSim();
 	mSimulationController->removeSoftBodyAttachment(bSim.getLowLevelDeformableVolume(), handle);
 
-	removeFromIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, bSim.getNodeIndex());
+	removeFromIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, bSim.getNodeIndex());
 }
 
 void Sc::Scene::addClothFilter(Sc::DeformableSurfaceCore& core, PxU32 triIdx, Sc::DeformableVolumeSim& sim, PxU32 tetIdx)
@@ -3752,15 +3665,15 @@ void Sc::Scene::removeClothFilter(Sc::DeformableSurfaceCore& core, PxU32 triIdx,
 	mSimulationController->removeClothFilter(sim.getLowLevelDeformableVolume(), bSim.getLowLevelDeformableSurface(), triIdx, tetIdx);
 }
 
-PxU32 Sc::Scene::addClothAttachment(Sc::DeformableSurfaceCore& core, PxU32 triIdx, const PxVec4& triBarycentric, Sc::DeformableVolumeSim& sim, PxU32 tetIdx, 
-	const PxVec4& tetBarycentric, PxConeLimitedConstraint* constraint, PxReal constraintOffset, bool doConversion)
+PxU32 Sc::Scene::addClothAttachment(Sc::DeformableSurfaceCore& core, PxU32 triIdx, const PxVec4& triBarycentric, Sc::DeformableVolumeSim& sim, PxU32 tetIdx,
+	const PxVec4& tetBarycentric, bool doConversion)
 {
 	Sc::DeformableSurfaceSim& bSim = *core.getSim();
 
 	PxU32 handle = mSimulationController->addClothAttachment(sim.getLowLevelDeformableVolume(), bSim.getLowLevelDeformableSurface(), triIdx, triBarycentric,
-		tetIdx, tetBarycentric, constraint, constraintOffset, sim.isActive(), doConversion);
+		tetIdx, tetBarycentric, sim.isActive(), doConversion);
 
-	addToIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, bSim.getNodeIndex(), IG::Edge::eFEM_CLOTH_CONTACT);
+	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, bSim.getNodeIndex(), IG::Edge::eFEM_CLOTH_CONTACT);
 
 	return handle;
 }
@@ -3771,10 +3684,10 @@ void Sc::Scene::removeClothAttachment(Sc::DeformableSurfaceCore& core, Sc::Defor
 	Sc::DeformableSurfaceSim& bSim = *core.getSim();
 	mSimulationController->removeClothAttachment(sim.getLowLevelDeformableVolume(), handle);
 
-	removeFromIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, bSim.getNodeIndex());
+	removeFromIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, bSim.getNodeIndex());
 }
 
-PxU32 Sc::Scene::addRigidAttachment(Sc::BodyCore* core, Sc::DeformableSurfaceSim& sim, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint)
+PxU32 Sc::Scene::addRigidAttachment(Sc::BodyCore* core, Sc::DeformableSurfaceSim& sim, PxU32 vertId, const PxVec3& actorSpacePose)
 {
 	PxNodeIndex nodeIndex;
 	PxsRigidBody* body = NULL;
@@ -3786,9 +3699,9 @@ PxU32 Sc::Scene::addRigidAttachment(Sc::BodyCore* core, Sc::DeformableSurfaceSim
 	}
 
 	PxU32 handle = mSimulationController->addRigidAttachment(sim.getLowLevelDeformableSurface(), sim.getNodeIndex(), body, nodeIndex,
-		vertId, actorSpacePose, constraint, sim.isActive());
+		vertId, actorSpacePose, sim.isActive());
 
-	addToIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::eFEM_CLOTH_CONTACT);
+	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::eFEM_CLOTH_CONTACT);
 
 	return handle;
 }
@@ -3804,7 +3717,7 @@ void Sc::Scene::removeRigidAttachment(Sc::BodyCore* core, Sc::DeformableSurfaceS
 
 	mSimulationController->removeRigidAttachment(sim.getLowLevelDeformableSurface(), handle);
 
-	removeFromIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex);
+	removeFromIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex);
 }
 
 void Sc::Scene::addTriRigidFilter(Sc::BodyCore* core, Sc::DeformableSurfaceSim& sim, PxU32 triIdx)
@@ -3831,7 +3744,7 @@ void Sc::Scene::removeTriRigidFilter(Sc::BodyCore* core, Sc::DeformableSurfaceSi
 	mSimulationController->removeTriRigidFilter(sim.getLowLevelDeformableSurface(), nodeIndex, triIdx);
 }
 
-PxU32 Sc::Scene::addTriRigidAttachment(Sc::BodyCore* core, Sc::DeformableSurfaceSim& sim, PxU32 triIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint)
+PxU32 Sc::Scene::addTriRigidAttachment(Sc::BodyCore* core, Sc::DeformableSurfaceSim& sim, PxU32 triIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose)
 {
 	PxNodeIndex nodeIndex;
 	PxsRigidBody* body = NULL;
@@ -3842,9 +3755,9 @@ PxU32 Sc::Scene::addTriRigidAttachment(Sc::BodyCore* core, Sc::DeformableSurface
 		body = &core->getSim()->getLowLevelBody();
 	}
 
-	PxU32 handle = mSimulationController->addTriRigidAttachment(sim.getLowLevelDeformableSurface(), body, nodeIndex, triIdx, barycentric, actorSpacePose, constraint, sim.isActive());
+	PxU32 handle = mSimulationController->addTriRigidAttachment(sim.getLowLevelDeformableSurface(), body, nodeIndex, triIdx, barycentric, actorSpacePose, sim.isActive());
 
-	addToIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::eFEM_CLOTH_CONTACT);
+	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::eFEM_CLOTH_CONTACT);
 
 	return handle;
 }
@@ -3860,7 +3773,7 @@ void Sc::Scene::removeTriRigidAttachment(Sc::BodyCore* core, Sc::DeformableSurfa
 
 	mSimulationController->removeTriRigidAttachment(sim.getLowLevelDeformableSurface(), handle);
 
-	removeFromIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex);
+	removeFromIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex);
 }
 
 void Sc::Scene::addClothFilter(DeformableSurfaceCore& core0, PxU32 triIdx0, Sc::DeformableSurfaceSim& sim1, PxU32 triIdx1)
@@ -3882,7 +3795,7 @@ PxU32 Sc::Scene::addTriClothAttachment(DeformableSurfaceCore& core, PxU32 triIdx
 
 	PxU32 handle = mSimulationController->addTriClothAttachment(sim0.getLowLevelDeformableSurface(), sim1.getLowLevelDeformableSurface(), triIdx0, triIdx1, barycentric0, barycentric1, sim1.isActive() || sim0.isActive());
 
-	addToIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim0, sim1.getNodeIndex(), IG::Edge::eFEM_CLOTH_CONTACT);
+	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim0, sim1.getNodeIndex(), IG::Edge::eFEM_CLOTH_CONTACT);
 
 	return handle;
 }
@@ -3892,7 +3805,7 @@ void Sc::Scene::removeTriClothAttachment(DeformableSurfaceCore& core, Deformable
 	Sc::DeformableSurfaceSim& sim0 = *core.getSim();
 	mSimulationController->removeTriClothAttachment(sim0.getLowLevelDeformableSurface(), handle);
 
-	removeFromIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim0, sim1.getNodeIndex());
+	removeFromIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim0, sim1.getNodeIndex());
 }
 
 void Sc::Scene::addParticleSystemSimControl(Sc::ParticleSystemCore& core)
@@ -3903,7 +3816,7 @@ void Sc::Scene::addParticleSystemSimControl(Sc::ParticleSystemCore& core)
 	{
 		mSimulationController->addParticleSystem(sim->getLowLevelParticleSystem(), sim->getNodeIndex());
 		
-		mLLContext->getNphaseImplementationContext()->registerShape(sim->getNodeIndex(), sim->getCore().getShapeCore().getCore(), sim->getLowLevelParticleSystem()->getElementId(), sim->getPxActor());
+		mLLContext->getNphaseImplementationContext()->registerShape(sim->getNodeIndex(), sim->getCore().getShapeCore(), sim->getLowLevelParticleSystem()->getElementId(), sim->getPxActor());
 	}
 }
 
@@ -3913,31 +3826,9 @@ void Sc::Scene::removeParticleSystemSimControl(Sc::ParticleSystemCore& core)
 
 	if (sim)
 	{
-		mLLContext->getNphaseImplementationContext()->unregisterShape(sim->getCore().getShapeCore().getCore(), sim->getShapeSim().getElementID());
+		mLLContext->getNphaseImplementationContext()->unregisterShape(sim->getCore().getShapeCore(), sim->getShapeSim().getElementID());
 		mSimulationController->releaseParticleSystem(sim->getLowLevelParticleSystem());
 	}
-}
-
-
-void Sc::Scene::addRigidAttachment(Sc::BodyCore* core, Sc::ParticleSystemSim& sim)
-{
-	PxNodeIndex nodeIndex;
-
-	if (core)
-	{
-		nodeIndex = core->getSim()->getNodeIndex();
-	}
-	
-	addToIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::ePARTICLE_SYSTEM_CONTACT);
-}
-
-void Sc::Scene::removeRigidAttachment(Sc::BodyCore* core, Sc::ParticleSystemSim& sim)
-{
-	PxNodeIndex nodeIndex;
-	if (core)
-		nodeIndex = core->getSim()->getNodeIndex();
-
-	removeFromIslandManager(mParticleOrSoftBodyRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex);
 }
 
 PxActor** Sc::Scene::getActiveDeformableVolumeActors(PxU32& nbActorsOut)

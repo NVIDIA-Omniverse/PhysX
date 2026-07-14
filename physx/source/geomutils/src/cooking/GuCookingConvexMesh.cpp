@@ -131,9 +131,9 @@ static bool cookConvexMeshInternal(const PxCookingParams& params, const PxConvex
 }
 
 static ConvexHullLib* createHullLib(PxConvexMeshDesc& desc, const PxCookingParams& params)
-{	
+{
 	if(desc.flags & PxConvexFlag::eCOMPUTE_CONVEX)
-	{			
+	{
 		const PxU16 gpuMaxVertsLimit = 64;
 		const PxU16 gpuMaxFacesLimit = 64;
 
@@ -150,7 +150,7 @@ static ConvexHullLib* createHullLib(PxConvexMeshDesc& desc, const PxCookingParam
 }
 
 bool immediateCooking::cookConvexMesh(const PxCookingParams& params, const PxConvexMeshDesc& desc_, PxOutputStream& stream, PxConvexMeshCookingResult::Enum* condition)
-{	
+{
 	PX_FPU_GUARD;
 
 	// choose cooking library if needed
@@ -166,7 +166,7 @@ bool immediateCooking::cookConvexMesh(const PxCookingParams& params, const PxCon
 
 	// save the cooked results into stream
 	if(!meshBuilder.save(stream, platformMismatch()))
-	{		
+	{
 		if(condition)
 			*condition = PxConvexMeshCookingResult::eFAILURE;
 

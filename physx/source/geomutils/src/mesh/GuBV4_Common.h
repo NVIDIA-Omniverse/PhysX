@@ -236,9 +236,9 @@ namespace Gu
 
 	PX_FORCE_INLINE PxU32 getNbPrimitives(PxU32& primIndex)
 	{
-		PxU32 NbToGo = (primIndex & 15)-1;
+		PxU32 nbToGo = (primIndex & 15)-1;
 		primIndex>>=4;
-		return NbToGo;
+		return nbToGo;
 	}
 
 	template<class ParamsT>

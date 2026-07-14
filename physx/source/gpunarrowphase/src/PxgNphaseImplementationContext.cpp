@@ -309,7 +309,7 @@ void PxgCMGpuDiscreteUpdateBase::processContactManagers(PxgContactManagers& mana
 			managers.mCpuContactManagerMapping.size(), &renderOutput);
 		break;
 	}
-	case GPU_BUCKET_ID::eFemClothes:
+	case GPU_BUCKET_ID::eFemCloths:
 	{
 		mContext->mGpuNarrowphaseCore->testSDKFemClothCloth(managersGPU,
 			managers.mCpuContactManagerMapping.size(), &renderOutput);
@@ -1139,7 +1139,7 @@ static PX_FORCE_INLINE GPU_BUCKET_ID::Enum cndCaseMeshMesh(const gNpParams& p)
 	const bool isCloth0 = !p.mIsRigid0;
 	const bool isCloth1 = !p.mIsRigid1;
 	if(isCloth0 &&  isCloth1)
-		return GPU_BUCKET_ID::eFemClothes;
+		return GPU_BUCKET_ID::eFemCloths;
 
 	/////
 

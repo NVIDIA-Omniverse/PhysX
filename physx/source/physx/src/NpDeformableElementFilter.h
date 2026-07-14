@@ -51,9 +51,9 @@ public:
 					NpDeformableElementFilter(const PxDeformableElementFilterData& data, const ElementFilterInfo& info);
 	virtual			~NpDeformableElementFilter();
 
-	virtual void	getActors(PxActor*& actor0, PxActor*& actor1) const;
+	virtual void	getActors(PxActor*& actor0, PxActor*& actor1) const PX_OVERRIDE;
 
-	virtual void	release();
+	virtual void	release() PX_OVERRIDE;
 
 	NpScene*		getSceneFromActors();
 	void			addElementFilter();

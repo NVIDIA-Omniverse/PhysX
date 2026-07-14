@@ -812,7 +812,7 @@ extern "C" __global__ void constraintContactBlockPrePrepLaunch(PxgPrePrepDesc* g
 
 		if(conType == PxgSolverConstraintDesc::eCONTACT ||
 			conType == PxgSolverConstraintDesc::eARTICULATION_CONTACT)
-		{			
+		{
 			//Copy across data from batchHeader!!!
 			batch.constraintType = batchHeader.constraintType;
 			batch.mConstraintBatchIndex = batchHeader.mConstraintBatchIndex;

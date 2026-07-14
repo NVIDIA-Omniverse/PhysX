@@ -40,7 +40,6 @@
 namespace physx
 {
 #define	EMPTY_CELL	0xffffffff
-#define NUM_SPRING_PER_BLOCK			4
 
 	template<typename MaterialType>
 	PX_CUDA_CALLABLE PX_FORCE_INLINE const MaterialType& getParticleMaterial(const PxsParticleMaterialData* PX_RESTRICT materials,
@@ -131,61 +130,16 @@ namespace physx
 	};
 
 	struct PxgParticleSimBuffer
-	{	
+	{
 		float4* 					mPositionInvMasses;
 		float4* 					mVelocities;
 		float4* 					mRestPositions;
 		PxU32*						mPhases;
-		PxParticleVolume* 			mVolumes;
-		PxParticleRigidFilterPair* 	mFilterPairs;
-		PxParticleRigidAttachment* 	mRigidAttachments;
-
 		PxU32						mNumActiveParticles;
-		PxU32						mNumVolumes;
-		PxU32						mNumFilterPairs;
-		PxU32						mNumRigidAttachments;
 
 		PxU32						mFlags;
 		PxU32						mDiffuseParticleBufferIndex;
 		PxU32						mUniqueId; //Remains unchanged over the whole lifetime of a buffer
-	};
-
-	struct PxgParticleClothSimBuffer
-	{	
-		//Cloth
-		PxU32* mAccumulatedSpringsPerPartitions; //numPartitions;
-		PxU32* mAccumulatedCopiesPerParticles;	//numSprings
-		PxU32* mRemapOutput;					//numSprings * 2
-		PxParticleSpring* mOrderedSprings;		//numSprings
-		PxU32* mTriangles;						//numTriangles  * 3
-
-		PxU32* mSortedClothStartIndices;		//numCloths
-
-		PxParticleCloth* mCloths;				//numCloths
-
-		float4* mRemapPositions;
-		float4* mRemapVelocities;
-		PxReal* mSpringLambda;
-		PxReal* mInflatableLambda;
-
-		PxU32 mParticleBufferIndex;				//which particle buffer this cloth buffer associated with
-		PxU32 mNumSprings;
-		PxU32 mNumPartitions;
-		PxU32 mNumCloths;
-		PxU32 mNumTriangles;
-	};
-
-	struct PxgParticleRigidSimBuffer
-	{
-		PxReal* mRigidCoefficients;		//mNumRigids;
-		float4* mRigidTranslations;		//mNumRigids
-		float4* mRigidRotations;		//mNumRigids
-		PxU32*	mRigidOffsets;			//mNumRigids + 1
-		float4* mRigidLocalPositions;	//mNumActiveParticles
-		float4* mRigidLocalNormals;		//mNumActiveParticles
-
-		PxU32   mNumRigids;
-		PxU32   mParticleBufferIndex;
 	};
 
 	struct PxgParticleDiffuseSimBuffer
@@ -255,17 +209,9 @@ namespace physx
 		PxU32*						mParticleBufferSortedUniqueIds;
 		PxU32*						mParticleBufferSortedUniqueIdsOriginalIndex;
 
-		PxgParticleClothSimBuffer*		mClothSimBuffers;
-		PxgParticleRigidSimBuffer*		mRigidSimBuffers;
 		PxgParticleDiffuseSimBuffer*	mDiffuseSimBuffers;
 
-		PxU32*						mAttachmentRunsum;
-		
-		PxU32						mNumClothBuffers;
-		PxU32						mNumRigidBuffers;
 		PxU32						mNumDiffuseBuffers;
-		PxU32						mNumRigidAttachments;
-		PxU32						mRigidAttachmentOffset;
 				
 		// Diffuse particles
 		int*						mNumDiffuseParticles;		

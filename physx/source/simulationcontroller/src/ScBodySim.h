@@ -86,7 +86,8 @@ namespace Sc
 						void					addSpatialVelocity(const PxVec3* linVelDelta, const PxVec3* angVelDelta);
 						void					clearSpatialVelocity(bool force, bool torque);
 
-						void					updateCached_NotThreadSafe(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap);
+						void					updateCached(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics);
+						void					updateCached_NotThreadSafe(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap, bool fromTask, bool useAtomics);
 						void					updateCached_ThreadSafe(const UpdateCachedParams& params);
 						void					updateContactDistance(PxReal* contactDistance, PxReal dt, const Bp::BoundsArray& boundsArray);
 
@@ -146,7 +147,8 @@ namespace Sc
 						bool					updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* updatedBodyNodeIndices, PxU32& index, Cm::SpatialVector* acceleration, 
 													PxsExternalAccelerationProvider* externalAccelerations = NULL, PxU32 maxNumExternalAccelerations = 0);
 
-		PX_FORCE_INLINE bool					readVelocityModFlag(VelocityModFlags f) { return (mVelModState & f) != 0; }
+		// PT: TODO: PxIntBool
+		PX_FORCE_INLINE bool					readVelocityModFlag(VelocityModFlags f) { return (mLLBody.mInternalFlags & f) != 0; }
 
 		// Miscellaneous
 		PX_FORCE_INLINE	bool					notInScene()									const	{ return mActiveListIndex == SC_NOT_IN_SCENE_INDEX; }
@@ -177,6 +179,7 @@ namespace Sc
 						void					createSqBounds();
 						void					destroySqBounds();
 						void					freezeTransforms(const UpdateCachedParams& params, Cm::PinnableBitMap* shapeChangedMap);
+						void					freezeTransforms(PxsTransformCache& transformCache);
 
 						void					addToSpeculativeCCDMap();
 						void					removeFromSpeculativeCCDMap();
@@ -191,7 +194,6 @@ namespace Sc
 		// the separate velmod data if no forces have been set.
 						//PxU16					mInternalFlags;
 						SimStateData*			mSimStateData;
-						PxU8					mVelModState;
 
 		// Articulation
 						ArticulationSim*		mArticulation;				// NULL if not in an articulation
@@ -211,8 +213,8 @@ namespace Sc
 						void					notifyPutToSleep();				// inform the sleep island generation system that the object was put to sleep
 						void					internalWakeUpBase(PxReal wakeCounterValue);
 
-		PX_FORCE_INLINE void					raiseVelocityModFlag(VelocityModFlags f)	{ mVelModState |= f;	}
-		PX_FORCE_INLINE void					clearVelocityModFlag(VelocityModFlags f)	{ mVelModState &= ~f;	}
+		PX_FORCE_INLINE void					raiseVelocityModFlag(VelocityModFlags f)	{ mLLBody.mInternalFlags |= f;	}
+		PX_FORCE_INLINE void					clearVelocityModFlag(VelocityModFlags f)	{ mLLBody.mInternalFlags &= ~f;	}
 		PX_FORCE_INLINE void					setForcesToDefaults(bool enableGravity);
 	};
 
@@ -234,10 +236,13 @@ PX_FORCE_INLINE void Sc::BodySim::setForcesToDefaults(bool enableGravity)
 		}
 
 		if (enableGravity)
-			mVelModState = VMF_GRAVITY_DIRTY;	// We want to keep the gravity flag to make sure the acceleration gets changed to gravity-only
-												// in the next step (unless the application adds new forces of course)
+			raiseVelocityModFlag(VMF_GRAVITY_DIRTY);	// We want to keep the gravity flag to make sure the acceleration gets changed to gravity-only
+														// in the next step (unless the application adds new forces of course)
 		else
-			mVelModState = 0;
+			clearVelocityModFlag(VMF_GRAVITY_DIRTY);
+
+		clearVelocityModFlag(VMF_ACC_DIRTY);
+		clearVelocityModFlag(VMF_VEL_DIRTY);
 	}
 	else
 	{
@@ -248,7 +253,7 @@ PX_FORCE_INLINE void Sc::BodySim::setForcesToDefaults(bool enableGravity)
 			velmod->clearPerStep();
 		}
 
-		mVelModState &= (~(VMF_VEL_DIRTY));
+		clearVelocityModFlag(VMF_VEL_DIRTY);
 	}
 }
 

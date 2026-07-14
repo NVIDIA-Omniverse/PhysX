@@ -62,22 +62,22 @@ namespace Sq
 
 		// CompoundPruner
 		// compound level
-		virtual		bool						addCompound(Gu::PrunerHandle* results, const Gu::BVH& bvh, PrunerCompoundId compoundId, const PxTransform& transform, bool isDynamic, const Gu::PrunerPayload* data, const PxTransform* transforms);
-		virtual		bool						removeCompound(PrunerCompoundId compoundId, Gu::PrunerPayloadRemovalCallback* removalCallback);
-		virtual		bool						updateCompound(PrunerCompoundId compoundId, const PxTransform& transform);
+		virtual		bool						addCompound(Gu::PrunerHandle* results, const Gu::BVH& bvh, PrunerCompoundId compoundId, const PxTransform& transform, bool isDynamic, const Gu::PrunerPayload* data, const PxTransform* transforms) PX_OVERRIDE;
+		virtual		bool						removeCompound(PrunerCompoundId compoundId, Gu::PrunerPayloadRemovalCallback* removalCallback) PX_OVERRIDE;
+		virtual		bool						updateCompound(PrunerCompoundId compoundId, const PxTransform& transform) PX_OVERRIDE;
 		// object level
-		virtual		void						updateObjectAfterManualBoundsUpdates(PrunerCompoundId compoundId, const Gu::PrunerHandle handle);
-		virtual		void						removeObject(PrunerCompoundId compoundId, const Gu::PrunerHandle handle, Gu::PrunerPayloadRemovalCallback* removalCallback);
-		virtual		bool						addObject(PrunerCompoundId compoundId, Gu::PrunerHandle& result, const PxBounds3& bounds, const Gu::PrunerPayload userData, const PxTransform& transform);
+		virtual		void						updateObjectAfterManualBoundsUpdates(PrunerCompoundId compoundId, const Gu::PrunerHandle handle) PX_OVERRIDE;
+		virtual		void						removeObject(PrunerCompoundId compoundId, const Gu::PrunerHandle handle, Gu::PrunerPayloadRemovalCallback* removalCallback) PX_OVERRIDE;
+		virtual		bool						addObject(PrunerCompoundId compoundId, Gu::PrunerHandle& result, const PxBounds3& bounds, const Gu::PrunerPayload userData, const PxTransform& transform) PX_OVERRIDE;
 		//queries
-		virtual		bool						raycast(const PxVec3& origin, const PxVec3& unitDir, PxReal& inOutDistance, CompoundPrunerRaycastCallback&, PxCompoundPrunerQueryFlags flags) const;
-		virtual		bool						overlap(const Gu::ShapeData& queryVolume, CompoundPrunerOverlapCallback&, PxCompoundPrunerQueryFlags flags) const;
-		virtual		bool						sweep(const Gu::ShapeData& queryVolume, const PxVec3& unitDir, PxReal& inOutDistance, CompoundPrunerRaycastCallback&, PxCompoundPrunerQueryFlags flags) const;
-		virtual		const Gu::PrunerPayload&	getPayloadData(Gu::PrunerHandle handle, PrunerCompoundId compoundId, Gu::PrunerPayloadData* data) const;
-		virtual		void						preallocate(PxU32 nbEntries);
-		virtual		bool						setTransform(Gu::PrunerHandle handle, PrunerCompoundId compoundId, const PxTransform& transform);
-		virtual		const PxTransform&			getTransform(PrunerCompoundId compoundId)	const;
-		virtual		void						visualizeEx(PxRenderOutput& out, PxU32 color, bool drawStatic, bool drawDynamic)	const;
+		virtual		bool						raycast(const PxVec3& origin, const PxVec3& unitDir, PxReal& inOutDistance, CompoundPrunerRaycastCallback&, PxCompoundPrunerQueryFlags flags) const PX_OVERRIDE;
+		virtual		bool						overlap(const Gu::ShapeData& queryVolume, CompoundPrunerOverlapCallback&, PxCompoundPrunerQueryFlags flags) const PX_OVERRIDE;
+		virtual		bool						sweep(const Gu::ShapeData& queryVolume, const PxVec3& unitDir, PxReal& inOutDistance, CompoundPrunerRaycastCallback&, PxCompoundPrunerQueryFlags flags) const PX_OVERRIDE;
+		virtual		const Gu::PrunerPayload&	getPayloadData(Gu::PrunerHandle handle, PrunerCompoundId compoundId, Gu::PrunerPayloadData* data) const PX_OVERRIDE;
+		virtual		void						preallocate(PxU32 nbEntries) PX_OVERRIDE;
+		virtual		bool						setTransform(Gu::PrunerHandle handle, PrunerCompoundId compoundId, const PxTransform& transform) PX_OVERRIDE;
+		virtual		const PxTransform&			getTransform(PrunerCompoundId compoundId)	const PX_OVERRIDE;
+		virtual		void						visualizeEx(PxRenderOutput& out, PxU32 color, bool drawStatic, bool drawDynamic)	const PX_OVERRIDE;
 		// ~CompoundPruner
 
 		private:

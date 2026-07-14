@@ -45,20 +45,20 @@ class MeshFactory;
 class BV4TriangleMesh : public TriangleMesh
 {
 	public:
-						virtual const char*				getConcreteTypeName()	const	{ return "PxBVH34TriangleMesh"; }
+						virtual const char*				getConcreteTypeName()	const PX_OVERRIDE { return "PxBVH34TriangleMesh"; }
 // PX_SERIALIZATION
 														BV4TriangleMesh(PxBaseFlags baseFlags) : TriangleMesh(baseFlags), mMeshInterface(PxEmpty), mBV4Tree(PxEmpty)	{}
-	PX_PHYSX_COMMON_API	virtual void					exportExtraData(PxSerializationContext& ctx);
+	PX_PHYSX_COMMON_API	virtual void					exportExtraData(PxSerializationContext& ctx)	PX_OVERRIDE;
 								void					importExtraData(PxDeserializationContext&);
 	PX_PHYSX_COMMON_API	static	TriangleMesh*			createObject(PxU8*& address, PxDeserializationContext& context);
 //~PX_SERIALIZATION
 														BV4TriangleMesh(MeshFactory* factory, TriangleMeshData& data);
 						virtual							~BV4TriangleMesh(){}
 
-						virtual	PxMeshMidPhase::Enum	getMidphaseID()			const	{ return PxMeshMidPhase::eBVH34;	}
+						virtual	PxMeshMidPhase::Enum	getMidphaseID()			const PX_OVERRIDE { return PxMeshMidPhase::eBVH34;	}
 
-						virtual PxVec3*					getVerticesForModification();
-						virtual PxBounds3				refitBVH();
+						virtual PxVec3*					getVerticesForModification() PX_OVERRIDE;
+						virtual PxBounds3				refitBVH() PX_OVERRIDE;
 
 	PX_FORCE_INLINE				const Gu::BV4Tree&		getBV4Tree()			const	{ return mBV4Tree;				}
 	private:

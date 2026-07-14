@@ -103,7 +103,7 @@ public:
 	static const PxU32 NO_INDEX = 0xffffffff;
 
 	struct Pair 
-	{	
+	{
 		PxU32		thresholdStreamIndex;
 		PxReal		accumulatedForce;
 		//PxU32		next;		// hash key & next ptr
@@ -238,7 +238,7 @@ inline void ThresholdTable::build(const ThresholdStreamElement* stream, const Px
 			PX_ASSERT(thresholdStreamIndex < streamSize);
 			const ThresholdStreamElement& otherElement = stream[thresholdStreamIndex];
 			if(nodeIndexA == otherElement.nodeIndexA && nodeIndexB==otherElement.nodeIndexB)
-			{	
+			{
 				pair.accumulatedForce += force;
 				prevPairIndex = NO_INDEX;
 				pairIndex = NO_INDEX;

@@ -50,10 +50,8 @@ public:
 	//PxPhysXGpu implementation
 	virtual	void									release()	PX_OVERRIDE;
 
-	virtual PxsParticleBuffer*						createParticleBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
-	virtual PxsParticleAndDiffuseBuffer*			createParticleAndDiffuseBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
-	virtual PxsParticleClothBuffer*					createParticleClothBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
-	virtual PxsParticleRigidBuffer*					createParticleRigidBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumRigids, PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
+	virtual PxsParticleBuffer*						createParticleBuffer(PxU32 maxNumParticles, PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
+	virtual PxsParticleAndDiffuseBuffer*			createParticleAndDiffuseBuffer(PxU32 maxNumParticles, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
 
 	virtual PxsMemoryManager*						createGpuMemoryManager(PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
 	
@@ -99,8 +97,8 @@ public:
 														Dy::Context* dynamicContext, PxvNphaseImplementationContext* npContext, Bp::BroadPhase* bp, 
 														bool useGpuBroadphase,
 														PxsSimulationControllerCallback* callback, PxU32 gpuComputeVersion,
-														PxsHeapMemoryAllocatorManager& heapMemoryManager, PxU32 maxSoftBodyContacts,
-														PxU32 maxFemClothContacts, PxU32 maxParticleContacts,
+														PxsHeapMemoryAllocatorManager& heapMemoryManager, PxU32 maxDeformableVolumeContacts,
+														PxU32 maxDeformableSurfaceContacts, PxU32 maxParticleContacts,
 														PxU32 collisionStackSizeBytes, bool enableBodyAccelerations)	PX_OVERRIDE;
 
 	virtual Dy::Context*							createGpuDynamicsContext(Cm::FlushPool& taskPool, PxsKernelWranglerManager* gpuKernelWragler, 

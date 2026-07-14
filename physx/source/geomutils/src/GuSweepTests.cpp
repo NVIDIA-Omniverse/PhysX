@@ -646,9 +646,9 @@ static bool sweepCapsule_ConvexCoreGeom(GU_CAPSULE_SWEEP_FUNC_PARAMS)
 		PxCapsuleGeometry capsule;
 		CapsuleSupport(const PxCapsuleGeometry& c)
 			: capsule(c) {}
-		virtual PxReal getMargin() const
+		virtual PxReal getMargin() const PX_OVERRIDE
 			{ return capsule.radius; }
-		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 			{ return PxVec3(PxSign(dir.x) * capsule.halfHeight, 0, 0); }
 	};
 
@@ -657,9 +657,9 @@ static bool sweepCapsule_ConvexCoreGeom(GU_CAPSULE_SWEEP_FUNC_PARAMS)
 		Gu::ConvexShape shape;
 		ConvexCoreSupport(const PxConvexCoreGeometry& g)
 			{ Gu::makeConvexShape(g, PxTransform(PxIdentity), shape); }
-		virtual PxReal getMargin() const
+		virtual PxReal getMargin() const PX_OVERRIDE
 			{ return shape.margin; }
-		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 			{ return shape.supportLocal(dir); }
 	};
 
@@ -704,9 +704,9 @@ static bool sweepBox_ConvexCoreGeom(GU_BOX_SWEEP_FUNC_PARAMS)
 		PxBoxGeometry box;
 		BoxSupport(const PxBoxGeometry& b)
 			: box(b) {}
-		virtual PxReal getMargin() const
+		virtual PxReal getMargin() const PX_OVERRIDE
 			{ return 0; }
-		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 			{ return PxVec3(PxSign(dir.x) * box.halfExtents.x,
 				PxSign(dir.y) * box.halfExtents.y, PxSign(dir.z) * box.halfExtents.z); }
 	};
@@ -716,9 +716,9 @@ static bool sweepBox_ConvexCoreGeom(GU_BOX_SWEEP_FUNC_PARAMS)
 		Gu::ConvexShape shape;
 		ConvexCoreSupport(const PxConvexCoreGeometry& g)
 			{ Gu::makeConvexShape(g, PxTransform(PxIdentity), shape); }
-		virtual PxReal getMargin() const
+		virtual PxReal getMargin() const PX_OVERRIDE
 			{ return shape.margin; }
-		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 			{ return shape.supportLocal(dir); }
 	};
 
@@ -872,9 +872,9 @@ static bool sweepConvexCore_ConvexCore(GU_CONVEXCORE_SWEEP_FUNC_PARAMS)
 		Gu::ConvexShape shape;
 		ConvexCoreSupport(const PxConvexCoreGeometry& g)
 			{ Gu::makeConvexShape(g, PxTransform(PxIdentity), shape); }
-		virtual PxReal getMargin() const
+		virtual PxReal getMargin() const PX_OVERRIDE
 			{ return shape.margin; }
-		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 			{ return shape.supportLocal(dir); }
 	};
 
@@ -920,10 +920,10 @@ static bool sweepConvexCore_MeshGeom(GU_CONVEXCORE_SWEEP_FUNC_PARAMS)
 		TriSupport(const PxVec3& _v0, const PxVec3& _v1, const PxVec3& _v2)
 			: v0(_v0), v1(_v1), v2(_v2) {}
 
-		virtual PxReal getMargin() const
+		virtual PxReal getMargin() const PX_OVERRIDE
 			{ return 0; }
 
-		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 			{ PxReal d0 = dir.dot(v0), d1 = dir.dot(v1), d2 = dir.dot(v2);
 			  return (d0 > d1 && d0 > d2) ? v0 : (d1 > d2) ? v1 : v2; }
 	};
@@ -937,10 +937,10 @@ static bool sweepConvexCore_MeshGeom(GU_CONVEXCORE_SWEEP_FUNC_PARAMS)
 			: inflation(inf)
 			{ Gu::makeConvexShape(g, PxTransform(PxIdentity), shape); }
 
-		virtual PxReal getMargin() const
+		virtual PxReal getMargin() const PX_OVERRIDE
 			{ return shape.margin + inflation; }
 
-		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 			{ return shape.supportLocal(dir); }
 	};
 
@@ -961,7 +961,7 @@ static bool sweepConvexCore_MeshGeom(GU_CONVEXCORE_SWEEP_FUNC_PARAMS)
 			closestHit.distance = FLT_MAX;
 		}
 
-		virtual PxAgain processHit(const PxGeomRaycastHit& hit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32*)
+		virtual PxAgain processHit(const PxGeomRaycastHit& hit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32*) PX_OVERRIDE
 		{
 			PxReal t; PxVec3 n, p;
 			TriSupport triSupport(v0, v1, v2);
@@ -1030,10 +1030,10 @@ bool sweepConvexCore_HeightFieldGeom(GU_CONVEXCORE_SWEEP_FUNC_PARAMS)
 		TriSupport(const PxVec3& _v0, const PxVec3& _v1, const PxVec3& _v2)
 			: v0(_v0), v1(_v1), v2(_v2) {}
 
-		virtual PxReal getMargin() const
+		virtual PxReal getMargin() const PX_OVERRIDE
 			{ return 0; }
 
-		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 			{ PxReal d0 = dir.dot(v0), d1 = dir.dot(v1), d2 = dir.dot(v2);
 			  return (d0 > d1 && d0 > d2) ? v0 : (d1 > d2) ? v1 : v2; }
 	};
@@ -1047,10 +1047,10 @@ bool sweepConvexCore_HeightFieldGeom(GU_CONVEXCORE_SWEEP_FUNC_PARAMS)
 			: inflation(inf)
 			{ Gu::makeConvexShape(g, PxTransform(PxIdentity), shape); }
 
-		virtual PxReal getMargin() const
+		virtual PxReal getMargin() const PX_OVERRIDE
 			{ return shape.margin + inflation; }
 
-		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 			{ return shape.supportLocal(dir); }
 	};
 
@@ -1071,7 +1071,7 @@ bool sweepConvexCore_HeightFieldGeom(GU_CONVEXCORE_SWEEP_FUNC_PARAMS)
 			closestHit.distance = FLT_MAX;
 		}
 
-		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
+		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices) PX_OVERRIDE
 		{
 			while(nb--)
 			{
@@ -1149,10 +1149,10 @@ bool sweepConvex_ConvexCoreGeom(GU_CONVEX_SWEEP_FUNC_PARAMS)
 		ConvexSupport(const PxConvexMeshGeometry& c, PxReal inf)
 			: convex(c), inflation(inf) {}
 
-		virtual PxReal getMargin() const
+		virtual PxReal getMargin() const PX_OVERRIDE
 			{ return inflation; }
 
-		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 		{
 			PxVec3 d = convex.scale.rotation.rotateInv(convex.scale.rotation.rotate(dir)
 				.multiply(convex.scale.scale));
@@ -1184,9 +1184,9 @@ bool sweepConvex_ConvexCoreGeom(GU_CONVEX_SWEEP_FUNC_PARAMS)
 		Gu::ConvexShape shape;
 		ConvexCoreSupport(const PxConvexCoreGeometry& g)
 			{ Gu::makeConvexShape(g, PxTransform(PxIdentity), shape); }
-		virtual PxReal getMargin() const
+		virtual PxReal getMargin() const PX_OVERRIDE
 			{ return shape.margin; }
-		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 			{ return shape.supportLocal(dir); }
 	};
 

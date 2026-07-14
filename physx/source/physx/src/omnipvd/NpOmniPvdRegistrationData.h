@@ -48,6 +48,8 @@
 #include "solver/PxSolverDefs.h"  // for PxArticulationMotion
 #include "geometry/PxCustomGeometry.h"  // for PxCustomGeometry::Callbacks
 
+#include "PxDeformableBodyFlag.h"
+
 #if PX_SUPPORT_GPU_PHYSX
 #include "PxPBDParticleSystem.h"
 #include "PxParticleBuffer.h"
@@ -66,7 +68,10 @@ class PxBVH;
 class PxCapsuleGeometry;
 class PxConvexMesh;
 class PxConvexMeshGeometry;
+class PxDeformableBody;
+class PxDeformableSurface;
 class PxDeformableSurfaceMaterial;
+class PxDeformableVolume;
 class PxDeformableVolumeMaterial;
 class PxGeometry;
 class PxHeightField;

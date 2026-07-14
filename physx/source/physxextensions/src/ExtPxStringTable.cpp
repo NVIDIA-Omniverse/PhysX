@@ -59,7 +59,7 @@ namespace
 			mHashMap.clear();
 		}
 
-		virtual const char* allocateStr( const char* inSrc )
+		virtual const char* allocateStr( const char* inSrc ) PX_OVERRIDE
 		{
 			if ( inSrc == NULL )
 				inSrc = "";
@@ -83,7 +83,7 @@ namespace
 		/**
 		 *	Release the string table and all the strings associated with it.
 		 */
-		virtual void release()
+		virtual void release() PX_OVERRIDE
 		{
 			PX_PROFILE_DELETE( mWrapper.getAllocator(), this );
 		}

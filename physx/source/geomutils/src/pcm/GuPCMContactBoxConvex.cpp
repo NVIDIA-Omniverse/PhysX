@@ -126,12 +126,12 @@ static bool generateOrProcessContactsBoxConvex(	const GjkConvex* relativeConvex,
 		manifold.drawManifold(*renderOutput, transf0, transf1);
 #endif
 		//ML: after we refresh the contacts(newContacts) and generate a GJK/EPA contacts(we will store that in the manifold), if the number of contacts is still less than the original contacts,
-		//which means we lose too mang contacts and we should regenerate all the contacts in the current configuration
+		//which means we lose too many contacts and we should regenerate all the contacts in the current configuration
 		//Also, we need to look at the existing contacts, if the existing contacts has very different normal than the GJK/EPA contacts,
 		//which means we should throw away the existing contacts and do full contact gen
 		const bool fullContactGen = FAllGrtr(FLoad(0.707106781f), V3Dot(localNor, output.normal)) || (manifold.mNumContacts < initialContacts);
 
-		if (fullContactGen || doOverlapTest)
+		if(fullContactGen || doOverlapTest || initialContacts > 1)
 		{
 			return fullContactsGenerationBoxConvex(relativeConvex, localConvex, transf0, transf1, manifoldContacts, contactBuffer,
 				manifold, output.normal, output.closestA, output.closestB, contactDist, idtScale, doOverlapTest, renderOutput, toleranceLength);

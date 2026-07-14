@@ -356,7 +356,7 @@ static __device__ void setupFinalizeSolverConstraintsBlock(PxgBlockContactData& 
 	uint32_t contactWritebackCount = 0;
 
 	//TODO - fix up!!!!
-	bool isCCD = (data0.flags | data1.flags) & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD;
+	const bool isCCD = (data0.flags | data1.flags) & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD;
 	const PxReal ccdMaxSeparation = isCCD ? ccdMaxSeparationThreshold : PX_MAX_F32;
 
 	const float maxPenBias = fmaxf(initialAngVel0_penBiasClamp.w, initialAngVel1_penBiasClamp.w);//FMax(FLoad(data0.penBiasClamp), FLoad(data1.penBiasClamp));
@@ -513,7 +513,7 @@ static __device__ void setupFinalizeSolverConstraintsBlock(PxgBlockContactData& 
 			solverContact->coeff1[threadIndex] = coeff1;
 
 			solverContact->appliedForce[threadIndex] = 0.f;
-		}			
+		}
 
 		contactWritebackCount += contactCount;
 

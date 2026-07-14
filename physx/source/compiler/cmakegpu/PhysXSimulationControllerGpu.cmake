@@ -58,6 +58,7 @@ SET(PHYXGPU_SIMCONTROLLER_HEADERS
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgShapeSim.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgShapeSimManager.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSimulationController.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgAttachmentManager.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSimulationCoreDesc.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSimulationCoreKernelIndices.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgParticleSystemCoreKernelIndices.h

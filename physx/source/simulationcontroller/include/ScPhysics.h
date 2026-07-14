@@ -83,7 +83,7 @@ namespace Sc
 		}
 
 		PX_FORCE_INLINE const PxArticulationJointReducedCoordinate* convertScArticulationJoint2Px(const ArticulationJointCore* sc)	const
-		{		
+		{
 			return PxPointerOffset<const PxArticulationJointReducedCoordinate*>(sc, scArticulationJointRC2Px);
 		}
 

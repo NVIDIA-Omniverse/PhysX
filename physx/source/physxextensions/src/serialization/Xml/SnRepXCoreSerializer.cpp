@@ -101,7 +101,7 @@ namespace physx {
 		case PxGeometryType::eGEOMETRY_COUNT:
 		case PxGeometryType::eINVALID:
 			PX_ASSERT(0);			
-		}		
+		}
 		inAllocator.getAllocator().deallocate(geometry);
 
 		bool ret = readAllProperties( inArgs, inReader, theShape, inAllocator, *inCollection );
@@ -204,7 +204,7 @@ namespace physx {
 		PxBVH33TriangleMesh* theMesh = NULL;			
 
 		if(dataSize != 0)
-		{				
+		{
 			theTempBuf.write(cookedData.data, dataSize*sizeof(PxU8));
 //			theMesh = inArgs.physics.createTriangleMesh( theTempBuf );
 			theMesh = static_cast<PxBVH33TriangleMesh*>(inArgs.physics.createTriangleMesh( theTempBuf ));
@@ -221,7 +221,7 @@ namespace physx {
 			PxCookTriangleMesh( params, theDesc, theTempBuf );
 //			theMesh = inArgs.physics.createTriangleMesh( theTempBuf );
 			theMesh = static_cast<PxBVH33TriangleMesh*>(inArgs.physics.createTriangleMesh( theTempBuf ));
-		}					
+		}
 
 		return PxCreateRepXObject( theMesh );
 	}
@@ -305,7 +305,7 @@ namespace physx {
 		PxBVH34TriangleMesh* theMesh = NULL;			
 
 		if(dataSize != 0)
-		{				
+		{
 			theTempBuf.write(cookedData.data, dataSize*sizeof(PxU8));
 //			theMesh = inArgs.physics.createTriangleMesh( theTempBuf );
 			theMesh = static_cast<PxBVH34TriangleMesh*>(inArgs.physics.createTriangleMesh( theTempBuf ));
@@ -322,7 +322,7 @@ namespace physx {
 			PxCookTriangleMesh( params, theDesc, theTempBuf );
 //			theMesh = inArgs.physics.createTriangleMesh( theTempBuf );
 			theMesh = static_cast<PxBVH34TriangleMesh*>(inArgs.physics.createTriangleMesh( theTempBuf ));
-		}					
+		}
 
 		return PxCreateRepXObject(theMesh);
 	}
@@ -421,7 +421,7 @@ namespace physx {
 
 			PxCookConvexMesh( *inArgs.cooker, theDesc, theTempBuf );
 			theMesh = inArgs.physics.createConvexMesh( theTempBuf );
-		}					
+		}
 
 		return PxCreateRepXObject(theMesh);
 	}
@@ -549,7 +549,7 @@ namespace physx {
 						}
 						theAggregate->addArticulation(*articulation);
 					}
-				}	
+				}
 			}
 			inReader.popCurrentContext();
 			inReader.leaveChild();

@@ -121,7 +121,6 @@ namespace physx
 	typedef PxU32 PxTriangleID;
 	typedef PxU16 PxMaterialTableIndex;
 	typedef PxU16 PxDeformableMaterialTableIndex;
-	typedef PX_DEPRECATED PxU16 PxFEMMaterialTableIndex;
 
 #if !PX_DOXYGEN
 } // namespace physx

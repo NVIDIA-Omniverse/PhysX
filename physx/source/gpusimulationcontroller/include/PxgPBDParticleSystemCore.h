@@ -33,8 +33,6 @@
 
 namespace physx
 {
-	struct PxGpuParticleBufferIndexPair;
-
 	class PxgPBDParticleSystemCore : public PxgParticleSystemCore, public PxgDiffuseParticleCore
 	{
 	public:
@@ -44,49 +42,36 @@ namespace physx
 		virtual ~PxgPBDParticleSystemCore();
 
 
-		// calculate AABB bound for each particle volumes
-		void updateVolumeBound(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemsd, const PxU32 numActiveParticleSystems,
-			CUstream bpStream);
-
-		virtual void preIntegrateSystems(const PxU32 nbActiveParticleSystems, const PxVec3 gravity, const PxReal dt);
+		virtual void preIntegrateSystems(const PxU32 nbActiveParticleSystems, const PxVec3 gravity, const PxReal dt) PX_OVERRIDE;
 		//virtual void updateBounds(PxgParticleSystem* particleSystems, PxU32* activeParticleSystems, const PxU32 nbActiveParticleSystems);
-		virtual void updateGrid();
-		virtual void selfCollision();
+		virtual void updateGrid() PX_OVERRIDE;
+		virtual void selfCollision() PX_OVERRIDE;
 		//this is for solving selfCollsion and contacts between particles and primitives based on sorted by particle id
 
 		virtual void constraintPrep(CUdeviceptr prePrepDescd, CUdeviceptr prepDescd, CUdeviceptr solverCoreDescd, CUdeviceptr sharedDescd,
-			const PxReal dt, CUstream solverStream, bool isTGS, PxU32 numSolverBodies);
-		virtual void updateParticles(const PxReal dt);
+			const PxReal dt, CUstream solverStream, bool isTGS, PxU32 numSolverBodies) PX_OVERRIDE;
+		virtual void updateParticles(const PxReal dt) PX_OVERRIDE;
 		virtual void solve(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
-			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, const PxReal dt, CUstream solverStream, PxReal biasCoefficient);
+			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, const PxReal dt, CUstream solverStream, PxReal biasCoefficient) PX_OVERRIDE;
 
 		virtual void solveTGS(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
 			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, const PxReal dt, const PxReal totalInvDt, CUstream solverStream,
-			const bool isVelocityIteration, PxI32 iterationIndex, PxI32 numTGSIterations, PxReal coefficient);
+			const bool isVelocityIteration, PxI32 iterationIndex, PxI32 numTGSIterations, PxReal coefficient) PX_OVERRIDE;
 
-		virtual void prepParticleConstraint(CUdeviceptr prePrepDescd, CUdeviceptr prepDescd, CUdeviceptr sharedDescd, bool isTGS, const PxReal dt);
+		virtual void prepParticleConstraint(CUdeviceptr prePrepDescd, CUdeviceptr prepDescd, CUdeviceptr sharedDescd, bool isTGS, const PxReal dt) PX_OVERRIDE;
 
 
-		virtual void integrateSystems(const PxReal dt, const PxReal epsilonSq);
-		virtual void onPostSolve();
-		virtual void gpuMemDmaUpParticleSystem(PxgBodySimManager& bodySimManager, CUstream stream);
-		virtual void getMaxIterationCount(PxgBodySimManager& bodySimManager, PxI32& maxPosIters, PxI32& maxVelIters);
-		virtual void releaseParticleSystemDataBuffer();
+		virtual void integrateSystems(const PxReal dt, const PxReal epsilonSq) PX_OVERRIDE;
+		virtual void onPostSolve() PX_OVERRIDE;
+		virtual void gpuMemDmaUpParticleSystem(PxgBodySimManager& bodySimManager, CUstream stream) PX_OVERRIDE;
+		virtual void getMaxIterationCount(PxgBodySimManager& bodySimManager, PxI32& maxPosIters, PxI32& maxVelIters) PX_OVERRIDE;
+		virtual void releaseParticleSystemDataBuffer() PX_OVERRIDE;
 
 		void solveVelocities(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemsd, const PxU32 nbActiveParticleSystems, const PxReal dt);
 
 		void solveParticleCollision(const PxReal dt, bool isTGS, PxReal coefficient);
 		
-		virtual void finalizeVelocities(const PxReal dt, const PxReal scale);
-
-		void solveSprings(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemsd,
-			const PxU32 nbActiveParticleSystems, const PxReal dt, bool isTGS);
-
-		void initializeSprings(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemsd,
-			const PxU32 nbActiveParticleSystems);
-
-		// Direct-GPU API
-		PX_DEPRECATED void applyParticleBufferDataDEPRECATED(const PxU32* indices, const PxGpuParticleBufferIndexPair* indexPairs, const PxParticleBufferFlags* flags, PxU32 nbUpdatedBuffers, CUevent waitEvent, CUevent signalEvent);
+		virtual void finalizeVelocities(const PxReal dt, const PxReal scale) PX_OVERRIDE;
 
 	private:
 
@@ -99,21 +84,10 @@ namespace physx
 		bool createUserParticleData(PxgParticleSystem& particleSystem, Dy::ParticleSystemCore& dyParticleSystemCore, PxgParticleSystemBuffer* buffer, PxgParticleSystemDiffuseBuffer* diffuseBuffer,
 			CUstream stream);
 
-		PX_FORCE_INLINE PxU32 getMaxSpringsPerBuffer() { return mMaxSpringsPerBuffer; }
-		PX_FORCE_INLINE PxU32 getMaxSpringPartitionsPerBuffer() { return mMaxSpringPartitionsPerBuffer; }
-		PX_FORCE_INLINE PxU32 getMaxSpringsPerPartitionPerBuffer() { return mMaxSpringsPerPartitionPerBuffer; }
-		PX_FORCE_INLINE PxU32 getMaxRigidsPerBuffer() { return mMaxRigidsPerBuffer; }
-
 		void calculateHashForDiffuseParticles(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemsd, const PxU32 numActiveParticleSystems);
 
 		void solveDensities(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemd, const PxU32 nbActiveParticleSystems, const PxReal dt,
 			PxReal coefficient);
-
-		void solveInflatables(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemd, const PxU32 nbActiveParticleSystems, const PxReal coefficient, const PxReal dt);
-
-		void solveShapes(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemd, const PxU32 nbActiveParticleSystems, const PxReal dt, const PxReal biasCoefficient);
-
-		void solveAerodynamics(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemd, const PxU32 nbActiveParticleSystems, const PxReal dt);
 
 		void solveDiffuseParticles(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemd, const PxU32 nbActiveParticleSystems, const PxReal dt);
 
@@ -121,15 +95,6 @@ namespace physx
 		// Materials
 		void updateMaterials(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemd, const PxU32 nbActiveParticleSystems, CUstream bpStream, const PxReal invTotalDt);
 
-		PxU32							mMaxClothBuffersPerSystem;
-		PxU32							mMaxClothsPerBuffer;
-		PxU32							mMaxSpringsPerBuffer;
-		PxU32							mMaxSpringPartitionsPerBuffer;
-		PxU32							mMaxSpringsPerPartitionPerBuffer;
-		PxU32							mMaxTrianglesPerBuffer;
-		PxU32							mMaxVolumesPerBuffer;
-		PxU32							mMaxRigidBuffersPerSystem;
-		PxU32							mMaxRigidsPerBuffer;//compute the max rigids(shape matching) for each particle system
 		PxU32							mMaxNumPhaseToMaterials; //compute the max number of phase to materials for each particle system
 		bool							mComputePotentials;
 		PxU32							mNumActiveParticleSystems;

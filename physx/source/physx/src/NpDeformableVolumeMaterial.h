@@ -79,12 +79,8 @@ public:
 	//~PxDeformableMaterial
 
 	// PxDeformableVolumeMaterial
-	virtual	void						setDamping(PxReal damping)	PX_OVERRIDE;
-	virtual	PxReal						getDamping() const	PX_OVERRIDE;
 	virtual	void						setElasticityDamping(PxReal damping)	PX_OVERRIDE;
 	virtual	PxReal						getElasticityDamping() const	PX_OVERRIDE;
-	virtual	void						setDampingScale(PxReal scale) PX_OVERRIDE;
-	virtual	PxReal						getDampingScale() const PX_OVERRIDE;
 	virtual	void						setMaterialModel(PxDeformableVolumeMaterialModel::Enum model) PX_OVERRIDE;
 	virtual	PxDeformableVolumeMaterialModel::Enum 
 										getMaterialModel() const PX_OVERRIDE;

@@ -65,7 +65,7 @@ void wrapUsdTools() {
 		&createMeshSquare, (arg("stage"), arg("path"), arg("halfHeight"), arg("halfWidth")));
 
 	def("createMeshBox",
-		(UsdGeomMesh(*)(const UsdStagePtr&, const SdfPath&, const pxr::GfVec3f&))
+		(UsdGeomMesh(*)(const UsdStagePtr&, const SdfPath&, const PXR_NS::GfVec3f&))
 		&createMeshBox, (arg("stage"), arg("path"), arg("halfExtent")));
 
 	def("createMeshSphere",
@@ -123,7 +123,7 @@ void wrapUsdTools() {
 			arg("size"), arg("position"), arg("orientation"), arg("color")));
 
 	def("addGroundPlane",
-		(void(*)(const UsdStagePtr&, const string&, const pxr::TfToken& , float, const GfVec3f&, const GfVec3f&))
+		(void(*)(const UsdStagePtr&, const string&, const PXR_NS::TfToken& , float, const GfVec3f&, const GfVec3f&))
 		&addGroundPlane, (arg("stage"), arg("path"), arg("axis"),
 			arg("size"), arg("position"), arg("color")));
 
@@ -151,19 +151,19 @@ void wrapUsdTools() {
 			arg("radius"), arg("halfHeight"), arg("position"), arg("orientation"), arg("color"), arg("density"), arg("linVelocity"), arg("angularVelocity")));
 
 	def("addRigidCapsule",
-		(void(*)(const UsdStagePtr&, const string&, float, float, const pxr::TfToken&, const GfVec3f&,
+		(void(*)(const UsdStagePtr&, const string&, float, float, const PXR_NS::TfToken&, const GfVec3f&,
 			const GfQuatf&, const GfVec3f&, float, const GfVec3f&, const GfVec3f&))
 		&addRigidCapsule, (arg("stage"), arg("path"),
 			arg("radius"), arg("halfHeight"), arg("axis"), arg("position"), arg("orientation"), arg("color"), arg("density"), arg("linVelocity"), arg("angularVelocity")));
 
 	def("addRigidCone",
-		(void(*)(const UsdStagePtr&, const string&, float, float, const pxr::TfToken&, const GfVec3f&,
+		(void(*)(const UsdStagePtr&, const string&, float, float, const PXR_NS::TfToken&, const GfVec3f&,
 			const GfQuatf&, const GfVec3f&, float, const GfVec3f&, const GfVec3f&))
 		&addRigidCone, (arg("stage"), arg("path"),
 			arg("radius"), arg("halfHeight"), arg("axis"), arg("position"), arg("orientation"), arg("color"), arg("density"), arg("linVelocity"), arg("angularVelocity")));
 
 	def("addRigidCylinder",
-		(void(*)(const UsdStagePtr&, const string&, float, float, const pxr::TfToken&, const GfVec3f&,
+		(void(*)(const UsdStagePtr&, const string&, float, float, const PXR_NS::TfToken&, const GfVec3f&,
 			const GfQuatf&, const GfVec3f&, float, const GfVec3f&, const GfVec3f&))
 		&addRigidCylinder, (arg("stage"), arg("path"),
 			arg("radius"), arg("halfHeight"), arg("axis"), arg("position"), arg("orientation"), arg("color"), arg("density"), arg("linVelocity"), arg("angularVelocity")));

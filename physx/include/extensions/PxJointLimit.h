@@ -104,7 +104,7 @@ public:
 		stiffness		(p.stiffness),
 		damping			(p.damping)
 	{
-	}	
+	}
 
 	/**
 	\brief Returns true if the current settings are valid.

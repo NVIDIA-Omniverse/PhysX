@@ -50,8 +50,8 @@ namespace Bp
 									mAggregates	(NULL)
 								{}
 
-		virtual const char*		getName() const { return "AggregateBoundsComputationTask"; }
-		virtual void			runInternal();
+		virtual const char*		getName() const PX_OVERRIDE { return "AggregateBoundsComputationTask"; }
+		virtual void			runInternal() PX_OVERRIDE;
 
 				void			Init(AABBManager* manager, PxU32 start, PxU32 nb, Aggregate** aggregates)
 								{
@@ -73,8 +73,8 @@ namespace Bp
 	public:
 								PreBpUpdateTask(PxU64 contextId) : Cm::Task(contextId), mManager(NULL), mNumCpuTasks(0)	{}
 
-		virtual const char*		getName() const { return "PreBpUpdateTask"; }
-		virtual void			runInternal();
+		virtual const char*		getName() const PX_OVERRIDE { return "PreBpUpdateTask"; }
+		virtual void			runInternal() PX_OVERRIDE;
 
 				void			Init(AABBManager* manager, PxU32 numCpuTasks)
 								{

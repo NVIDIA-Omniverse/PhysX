@@ -78,7 +78,7 @@ struct MemPvdInputStream : public PvdInputStream
 		mBegin += len;
 	}
 
-	virtual bool read(uint8_t* buffer, uint32_t& len)
+	virtual bool read(uint8_t* buffer, uint32_t& len) PX_OVERRIDE
 	{
 		if(len == 0)
 			return true;

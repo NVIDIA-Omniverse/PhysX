@@ -268,7 +268,6 @@ namespace physx
 			PxU32 forceBufferLowerPartSize, Dy::ThresholdStreamElement* changedElems, bool hasForceThresholds, Dy::ConstraintWriteback* constraintWriteBack,
 			const PxU32 writeBackSize, bool copyAllToHost) = 0;
 
-
 		virtual void syncDmaBack(PxU32& nbChangedThresholdElements) = 0;
 
 		virtual void createStreams() = 0;

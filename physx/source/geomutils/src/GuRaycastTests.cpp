@@ -609,11 +609,11 @@ static PxU32 raycast_convexCore(GU_RAY_FUNC_PARAMS)
 		{
 			Gu::makeConvexShape(g, PxTransform(PxIdentity), shape);
 		}
-		virtual PxReal getMargin() const
+		virtual PxReal getMargin() const PX_OVERRIDE
 		{
 			return shape.margin;
 		}
-		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 		{
 			return shape.supportLocal(dir);
 		}

@@ -212,7 +212,7 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE Constraint1dSolverConstantsPGS compute1dConstra
 		const PxReal b = simDt * (springDamping * velocityTarget - springStiffness * geometricError);
 
 		if(constraintFlags & Px1DConstraintFlag::eACCELERATION_SPRING)
-		{	
+		{
 			const PxReal x = 1.0f/(1.0f+a);
 			const PxReal constant = x * recipUnitResponse * b;
 			desc.constant = constant;

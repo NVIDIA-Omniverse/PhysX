@@ -205,5 +205,5 @@ bool Gu::pcmContactPlaneBox(GU_CONTACT_METHOD_ARGS)
 		
 		//manifold.drawManifold(*gRenderOutPut, transf0, transf1);
 		return manifold.getNumContacts() > 0;
-	}	
+	}
 }

@@ -283,7 +283,7 @@ PxConstraintAllocator& allocator, PxU32 maxRows)
 		PxU32 endIndex3 = index3 + constraintDescs[3].numRows - 1;
 
 		for(PxU32 a = 0; a < maxRows; ++a)
-		{	
+		{
 			SolverConstraint1DDynamic4* c = reinterpret_cast<SolverConstraint1DDynamic4*>(currPtr);
 			currPtr += stride;
 

@@ -1,0 +1,5 @@
+<project toolsVersion="5.6">
+  <dependency name="usd_ext_physics_${config}" linkPath="../_build/target-deps/usd_ext_physics/${config}">
+    <package name="usd_ext_physics" version="25.11+feature.78482.ea68db0a.gl.${platform_target_abi}.${config}" />
+  </dependency>
+</project>

@@ -49,23 +49,23 @@ class PxgArticulation;
 
 struct PxgSolverTxIData
 {
-	PxTransform			deltaBody2World;	// 64 body delta transform
-	PxMat33				sqrtInvInertia;		// 36 inverse inertia in world space
+	PxTransform	deltaBody2World;	// 64 body delta transform
+	PxMat33		sqrtInvInertia;		// 36 inverse inertia in world space
 };
 
 struct PxgSolverBodyPrepData
 {
 #if !PX_CUDA_COMPILER
-	PX_ALIGN(16, PxVec3			initialAngVel);					//	12 initial ang vel
-	PxReal						penBiasClamp;					//	16 the penetration bias clamp
-	PxVec3						initialLinVel;					//	28 initial lin vel
-	PxReal						invMass;						//	32 inverse mass
+	PX_ALIGN(16, PxVec3	initialAngVel);	//	12 initial ang vel
+	PxReal				penBiasClamp;	//	16 the penetration bias clamp
+	PxVec3				initialLinVel;	//	28 initial lin vel
+	PxReal				invMass;		//	32 inverse mass
 #else
-	float4						initialAngVelXYZ_penBiasClamp;
-	float4						initialLinVelXYZ_invMassW;
+	float4				initialAngVelXYZ_penBiasClamp;
+	float4				initialLinVelXYZ_invMassW;
 #endif	
 
-	PxAlignedTransform			body2World;
+	PxAlignedTransform	body2World;
 
 #if !PX_CUDA_COMPILER
 	PX_FORCE_INLINE PxReal projectVelocity(const PxVec3& lin, const PxVec3& ang)	const
@@ -93,6 +93,8 @@ struct PxgSolverBodyData : public PxgSolverBodyPrepData
 	PxNodeIndex		islandNodeIndex;		// 40
 	PxReal			reportThreshold;		// 44 contact force threshold	
 	PxReal			maxImpulse;				// 48
+	// PT: AFAICT we only use this for 3 PxRigidBodyFlags. We could just as well use explicit bools.
+	// Oh and the gyro flag doesn't seem to be actually used.
 	PxU32			flags;					// 52 hasSpeculativeCCD etc.
 	PxReal			offsetSlop;
 };
@@ -116,7 +118,6 @@ public:
 	PxU16 isKinematic;
 	PxU32 bodyIndex;
 	PxU32 islandNodeIndex;
-
 };
 
 struct PxgSolverExtBody2
@@ -138,8 +139,8 @@ struct PxgSolverExtBody2
 //big to dma back.
 struct PxgSolverBodySleepData
 {
-	PxReal						wakeCounter;
-	PxU32						internalFlags;
+	PxReal	wakeCounter;
+	PxU32	internalFlags;
 };
 
 #if PX_VC
@@ -164,7 +165,6 @@ struct PxgSolverBody
 
 PX_COMPILE_TIME_ASSERT(sizeof(PxgSolverBody) == 32);
 
-
 #if PX_VC
 #pragma warning(push)
 #pragma warning (disable : 4201)
@@ -187,7 +187,6 @@ struct PxgTGSSolverBody
 #endif
 
 PX_COMPILE_TIME_ASSERT(sizeof(PxgSolverBody) == 32);
-
 
 struct PxgSolverReferences
 {

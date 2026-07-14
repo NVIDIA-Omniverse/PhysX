@@ -224,7 +224,7 @@ static bool createSDFSparse(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArra
 	bool success = true; // catch GPU errors.
 
 	if (sdfDesc.sdfBuilder == NULL) 
-	{		
+	{
 		PxArray<PxReal> denseSdf;			
 		PxArray<PxReal> sparseSdf;
 		Gu::SDFUsingWindingNumbersSparse(
@@ -273,7 +273,7 @@ static bool createSDFSparse(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArra
 			meshLower, meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, narrowBandThickness, sdfDesc.subgridSize, sdfDesc.bitsPerSubgridPixel,
 			sdfCoarse, sdfSubgridsStartSlots, sdfDataSubgrids, subgridsMinSdfValue, subgridsMaxSdfValue, 
 			sdfDesc.sdfSubgrids3DTexBlockDim.x, sdfDesc.sdfSubgrids3DTexBlockDim.y, sdfDesc.sdfSubgrids3DTexBlockDim.z, 0);
-	}		
+	}
 
 	sdfDesc.sdf.count = sdfCoarse.size();
 	sdfDesc.sdf.stride = sizeof(PxReal);
@@ -371,7 +371,7 @@ static bool createSDF(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArray<PxRe
 	PxU32 numVertices = baseMeshSpecified ? sdfDesc.baseMesh.points.count : mesh.m_positions.size();
 
 	if (sdfDesc.sdfBuilder == NULL) 
-	{			
+	{
 		Gu::SDFUsingWindingNumbers(verts, indices, numTriangleIndices, dx, dy, dz, &sdf[0], meshLower,
 			meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, NULL, true,
 			sdfDesc.numThreadsForSdfConstruction, sdfDesc.sdfBuilder);

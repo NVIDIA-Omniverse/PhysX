@@ -89,7 +89,7 @@ struct PxVehicleSuspensionState
 \brief The effect of suspension compliance on toe and camber angle and on the tire and suspension force application points.
 */
 struct PxVehicleSuspensionComplianceState
-{	
+{
 	/**
 	\brief The toe angle in radians that arises from suspension compliance.
 	\note toe is expressed in the suspension frame.

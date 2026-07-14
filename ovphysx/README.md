@@ -9,7 +9,7 @@ a C API with Python bindings. It wraps NVIDIA PhysX and Omni PhysX,
 loads USD scenes, runs simulation, and exchanges data via DLPack tensors —
 no Omniverse installation required.
 
-> **Note:** Pre-release notice: ovphysx is pre-release software and not yet mature. Current limitations include a strict in-process USD requirement: ovphysx can only coexist with OpenUSD v25.11 that is non-monolithic, Python-enabled, and linked against oneTBB (in particular, ovphysx cannot be used together with usd-core in the same process today), and parts of the API are still being completed and may change before 1.0.
+> **Note:** Pre-release notice: ovphysx is pre-release software and not yet mature. ovphysx packages an OV namespaced OpenUSD runtime; when sharing a process with other OV USD-aware subsystems, register each subsystem's schema paths before the first USD stage or schema-registry access. Parts of the API are still being completed and may change before 1.0.
 
 ## Quick Start
 
@@ -39,13 +39,9 @@ physx = PhysX(device="cpu")
 usd_handle, _ = physx.add_usd("scene.usda")
 physx.wait_all()
 
-# Clone env0 to create 3 additional environments
-physx.clone("/World/envs/env0", ["/World/envs/env1", "/World/envs/env2", "/World/envs/env3"])
-physx.wait_all()
-
-# Read rigid body poses across all environments via DLPack-compatible tensors
+# Read rigid body poses via DLPack-compatible tensors
 pose_binding = physx.create_tensor_binding(
-    pattern="/World/envs/env*/table",
+    pattern="/World/envs/env0/table",
     tensor_type=TensorType.RIGID_BODY_POSE,
 )
 poses = np.zeros(pose_binding.shape, dtype=np.float32)
@@ -77,8 +73,8 @@ Each sample has its own `CMakeLists.txt` that uses `find_package(ovphysx)`.
 ## Documentation
 
 - [User Guide & Tutorials](https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/index.html)
-- [API Reference](https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/api/index.html)
-- [Samples](https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/samples.html)
+- [C API Reference](https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/api.html)
+- [Python API Reference](https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/python_api.html)
 
 ## Requirements
 
@@ -98,4 +94,3 @@ Pre-built binary distributions (SDK packages and Python wheels) are licensed und
 - [Documentation](https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/index.html)
 - [Issues](https://github.com/NVIDIA-Omniverse/PhysX/issues)
 - [Discord](https://discord.com/invite/XWQNJDNuaC)
-

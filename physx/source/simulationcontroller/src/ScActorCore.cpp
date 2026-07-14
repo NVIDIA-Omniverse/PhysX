@@ -59,7 +59,7 @@ void Sc::ActorCore::setActorFlags(PxActorFlags af)
 		if(mSim)
 			mSim->postActorFlagChange(old, af);
 	}
-}	
+}
 
 void Sc::ActorCore::setDominanceGroup(PxDominanceGroup g)
 {

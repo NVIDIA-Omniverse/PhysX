@@ -72,7 +72,7 @@ PxU32	kmeans_cluster(const Vec* input,
 		}
 	}
 	else
-	{		
+	{
 		PxVec3* centroids = PX_ALLOCATE(PxVec3, clumpCount, "PxVec3");
 
 		// Take a sampling of the input points as initial centroid estimates.
@@ -213,7 +213,7 @@ public:
 		PxU32 stride,
 		bool denormalizeResults,
 		PxU32 maxVertices,
-		PxU32& outVertsCount)
+		PxU32& outVertsCount) PX_OVERRIDE
 	{
 		const PxVec3* ret = NULL;
 		outVertsCount = 0;
@@ -254,17 +254,17 @@ public:
 		return ret;
 	}
 
-	virtual void release()
+	virtual void release() PX_OVERRIDE
 	{
 		PX_DELETE_THIS;
 	}
 
-	virtual const PxVec3& getDenormalizeScale() const 
+	virtual const PxVec3& getDenormalizeScale() const PX_OVERRIDE
 	{
 		return mScale;
 	}
 
-	virtual const PxVec3& getDenormalizeCenter() const
+	virtual const PxVec3& getDenormalizeCenter() const PX_OVERRIDE
 	{
 		return mCenter;
 	}

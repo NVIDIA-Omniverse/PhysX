@@ -38,7 +38,7 @@ namespace physx
 // PX_SERIALIZATION
 
 void NpArticulationMimicJoint::resolveReferences(PxDeserializationContext& context)
-{	
+{
 	context.translatePxBase(mLinkA);
 	context.translatePxBase(mLinkB);
 }

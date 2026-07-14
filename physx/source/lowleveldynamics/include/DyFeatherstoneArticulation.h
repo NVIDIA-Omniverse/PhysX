@@ -91,7 +91,7 @@ namespace Dy
 		PxReal	highLimit;
 
 		void setTendonImplicitSpringParams(const TendonImplicitSpringParams& springParams)
-		{		
+		{
 			biasCoefficient = springParams.biasCoefficient;
 			velMultiplier = springParams.velMultiplier;
 			impulseMultiplier= springParams.impulseMultiplier;
@@ -102,7 +102,7 @@ namespace Dy
 		{
 			const TendonImplicitSpringParams params(biasCoefficient, velMultiplier, impulseMultiplier, limitBiasCoefficient, limitImpulseMultiplier);
 			return params;
-		}			
+		}
 	};
 
 	struct ArticulationInternalConstraintBase
@@ -130,7 +130,7 @@ namespace Dy
 	};
 
 	struct ArticulationInternalConstraint : public ArticulationInternalConstraintBase
-	{	
+	{
 		ArticulationImplicitDriveDesc implicitDriveDesc;
 		PxPerformanceEnvelope envelope;
 		PxReal externalJointForce;
@@ -245,9 +245,9 @@ namespace Dy
 			mInvSumMass(0.0f),
 			mCOM(PxZero),
 			mDataDirty(true),
-			mJointDirty(false)
+			mJointDirty(false),
+			mIsExternalForcesEveryTgsIterationEnabled(false)
 		{
-			mRootPreMotionVelocity = Cm::SpatialVectorF::Zero();
 		}
 
 		~ArticulationData();
@@ -424,8 +424,6 @@ namespace Dy
 		PX_FORCE_INLINE PxReal* getDeferredQstZ() { return mDeferredQstZ; }
 		PX_FORCE_INLINE const PxReal* getDeferredQstZ()	const	{ return mDeferredQstZ; }
 
-		PX_FORCE_INLINE void setRootPreMotionVelocity(const Cm::UnAlignedSpatialVector& vel) { mRootPreMotionVelocity.top = vel.top; mRootPreMotionVelocity.bottom = vel.bottom; }
-
 		PX_FORCE_INLINE const PxU32*	getPathToRootElements() const { return mPathToRootElements; }
 		PX_FORCE_INLINE PxU32	getPathToRootElementCount() const { return mNumPathToRootElements; }
 
@@ -436,7 +434,6 @@ namespace Dy
 						PxU32	countDofs()	const;
 						void	configureDofs();
 
-		Cm::SpatialVectorF							mRootPreMotionVelocity;
 		Cm::SpatialVectorF							mRootDeferredZ;
 		PxReal*										mJointAcceleration;			// joint acceleration
 		PxReal*										mJointVelocity;				// joint velocity
@@ -519,7 +516,8 @@ namespace Dy
 		PxVec3									mCOM;
 
 		bool									mDataDirty; //this means we need to call commonInit()
-		bool									mJointDirty; //this means joint delta velocity has been changed by contacts so we need to update joint velocity/joint acceleration 
+		bool									mJointDirty; //this means joint delta velocity has been changed by contacts so we need to update joint velocity/joint acceleration
+		bool									mIsExternalForcesEveryTgsIterationEnabled;
 
 		friend class FeatherstoneArticulation;
 	};
@@ -693,14 +691,45 @@ namespace Dy
 				linkID1, impulse1, deltaV1);
 		}
 
-		Cm::SpatialVectorV getLinkVelocity(const PxU32 linkID) const;
+		//This will return world space SpatialVectorV
+		PX_INLINE	Cm::SpatialVectorV getLinkVelocity(PxU32 linkID) const
+		{
+			//This is in the world space
+			const Cm::SpatialVectorF& motionVelocity = mArticulationData.getMotionVelocity(linkID);
 
-		Cm::SpatialVector getLinkScalarVelocity(const PxU32 linkID) const;
+			Cm::SpatialVectorV velocity;
+			velocity.linear = aos::V3LoadA(motionVelocity.bottom);
+			velocity.angular = aos::V3LoadA(motionVelocity.top);
 
-		Cm::SpatialVectorV getLinkMotionVector(const PxU32 linkID) const;
+			return velocity;
+		}
+
+		PX_INLINE	Cm::SpatialVector getLinkScalarVelocity(PxU32 linkID) const
+		{
+			//This is in the world space
+			const Cm::SpatialVectorF& motionVelocity = mArticulationData.getMotionVelocity(linkID);
+
+			return Cm::SpatialVector(motionVelocity.bottom, motionVelocity.top);
+		}
+
+		PX_INLINE	Cm::SpatialVectorV getLinkMotionVector(PxU32 linkID) const
+		{
+			const Cm::SpatialVectorF& motionVector = mArticulationData.getDeltaMotionVector(linkID);
+
+			Cm::SpatialVectorV velocity;
+			velocity.linear = aos::V3LoadA(motionVector.bottom);
+			velocity.angular = aos::V3LoadA(motionVector.top);
+
+			return velocity;
+		}
 
 		//this is called by island gen to determine whether the articulation should be awake or sleep
-		Cm::SpatialVector getMotionVelocity(const PxU32 linkID) const;
+		PX_INLINE	Cm::SpatialVector getMotionVelocity(PxU32 linkID) const
+		{
+			//This is in the world space
+			const Cm::SpatialVectorF& motionVelocity = mArticulationData.getPosIterMotionVelocities()[linkID];
+			return Cm::SpatialVector(motionVelocity.bottom, motionVelocity.top);
+		}
 
 		Cm::SpatialVector getMotionAcceleration(const PxU32 linkID, const bool isGpuSimEnabled) const;
 
@@ -722,7 +751,7 @@ namespace Dy
 		static PX_FORCE_INLINE void updateBodies(FeatherstoneArticulation* articulation, Cm::SpatialVectorF* tempDeltaV, PxReal dt)		{ updateBodies(articulation, tempDeltaV, dt, true);		}
 		static PX_FORCE_INLINE void updateBodiesTGS(FeatherstoneArticulation* articulation, Cm::SpatialVectorF* tempDeltaV, PxReal dt)	{ updateBodies(articulation, tempDeltaV, dt, false);	}
 
-		static void recordDeltaMotion(FeatherstoneArticulation* articulation, const PxReal dt, Cm::SpatialVectorF* deltaV);
+		static void recordDeltaMotionTGS(FeatherstoneArticulation* articulation, const PxReal dt, Cm::SpatialVectorF* deltaV);
 
 		static void applyTgsSubstepForces(FeatherstoneArticulation* articulation, PxReal stepDt, Cm::SpatialVectorF* scratchExtForcesArticulatedYW);
 
@@ -937,7 +966,6 @@ namespace Dy
 		\param[out] linkMasses is the mass of each link. 
 		\param[out] linkSpatialArticulatedInertiasW is the spatial matrix containing the inertia tensor I and the mass matrix M for the trivial sub-chain of each link.  Specified in the world frame.
 		\param[in,out] jointDofVelocities is the velocity of each degree of freedom. Will be updated in case joint velocity limits are violated (see note below).
-		\param[out] rootPreMotionVelocityW is assigned the spatial velocity of the root link.		
 		\param[out] comW is the centre of mass of the assembly of links, specified in the world frame.
 		\param[out] invSumMass is the reciprocal of the total mass of all links.
 		\note invLengthScale should have value 1/100 for centimetres scale and 1/1 for metres scale.
@@ -962,7 +990,7 @@ namespace Dy
 			Cm::SpatialVectorF* linkZAForcesExtW, Cm::SpatialVectorF* linkZAForcesIntW, Cm::SpatialVectorF* linkCoriolisVectorsW, 
 			PxMat33* linkIsolatedArticulatedInertiasW, PxF32* linkMasses, Dy::SpatialMatrix* linkSpatialArticulatedInertiasW, 
 			PxReal* jointDofVelocities,
-			Cm::SpatialVectorF& rootPreMotionVelocityW, PxVec3& comW, PxF32& invSumMass);
+			PxVec3& comW, PxF32& invSumMass);
 
 		/**
 		\brief Propagate articulated z.a. spatial force and articulated spatial inertia from parent link to child link.
@@ -976,6 +1004,7 @@ namespace Dy
 		\note Mirtich works in the joint frame while every quantity here is in the world frame.
 		\note linkArticulatedInertia has equivalent I_i^A in Mirtich
 		\note jointMotionMatrix has equivalent s_i and its transpose is s_i^T.
+		\param[out] dst is a term to be translated to parent link and added to the articulated inertia of the parent.
 		\param[in] jointType is the type of joint
 		\param[in] nbJointDofs is the number of dofs supported by the joint.
 		\param[in] jointMotionMatricesW is an array of motion matrices with one entry per dof.
@@ -992,10 +1021,9 @@ namespace Dy
 		\param[out] jointDofQStZIntIcW will be computed as [jointForce - jointMotionMatrix^T *ZIntIc]
 		\param[out] deltaZAExtParent is a term that is to be translated to parent link and added to the ZExt value of the parent link.
 		\param[out] deltaZAIntIcParent is a term that is to be translated to parent link and added to the ZInt value of the parent link.
-		\return A term to be translated to parent link and added to the articulated inertia of the parent.
 		*/
-		static SpatialMatrix computePropagateSpatialInertia_ZA_ZIc
-			(const PxArticulationJointType::Enum jointType, const PxU8 nbJointDofs,
+		static void computePropagateSpatialInertia_ZA_ZIc
+			(SpatialMatrix& PX_RESTRICT dst, const PxArticulationJointType::Enum jointType, const PxU8 nbJointDofs,
 			 const Cm::UnAlignedSpatialVector* jointMotionMatricesW, const Cm::SpatialVectorF* jointISW, 	
 			 const PxReal* jointTargetArmatures, const PxU8* dofIds, const PxReal* jointExternalForces, 
 			 const SpatialMatrix& linkArticulatedInertiaW, 
@@ -1013,6 +1041,7 @@ namespace Dy
 		\note Mirtich works in the joint frame while every quantity here is in the world frame.
 		\note linkArticulatedInertia has equivalent I_i^A in Mirtich
 		\note jointMotionMatrix has equivalent s_i
+		\param[out] dst is a term to be translated to parent link and added to the articulated inertia of the parent.
 		\param[in] jointType is the type of joint
 		\param[in] nbJointDofs is the number of dofs supported by the joint.
 		\param[in] jointMotionMatrices is an array of motion matrices with one entry per dof.
@@ -1026,10 +1055,9 @@ namespace Dy
 		\param[out]	isInvD will be computed as linkArticulatedInertia*jointMotionMatrix^T/[jointMotionMatrix^T * linkArticulatedInertia * jointMotionMatrix]
 		\param[out] qstZIc will be computed as [jointForce - jointMotionMatrix^T *ZIc]/[jointMotionMatrix^T * linkArticulatedInertia * jointMotionMatrix]
 		\param[out] deltaZParent is a term that is to be translated to parent link and added to the articulated z.a force of the parent link.
-		\return A term to be translated to parent link and added to the articulated inertia of the parent.
 		*/
-		static SpatialMatrix computePropagateSpatialInertia_ZA_ZIc_NonSeparated
-			(const PxArticulationJointType::Enum jointType, const PxU8 nbJointDofs, 
+		static void computePropagateSpatialInertia_ZA_ZIc_NonSeparated
+			(SpatialMatrix& PX_RESTRICT dst, const PxArticulationJointType::Enum jointType, const PxU8 nbJointDofs, 
 			 const Cm::UnAlignedSpatialVector* jointMotionMatrices, const Cm::SpatialVectorF* jointIs, 
 			 const PxReal* jointTargetArmatures, const PxU8* dofIds,
 			 const PxReal* jointExternalForces, 
@@ -1045,6 +1073,7 @@ namespace Dy
 		to be propagated from tip to root. 
 		The computation proceeds by considering a link/joint pair composed of a child link and its
 		incoming joint.
+		\param[out] dst is a term to be translated to parent link and added to the articulated inertia of the parent.
 		\param[in] jointType is the type of joint
 		\param[in] nbJointDofs is the number of dofs supported by the joint.
 		\param[in] linkArticulatedInertia is the articulated inertia of the link.
@@ -1052,9 +1081,8 @@ namespace Dy
 		\param[in] jointIs is a cached term linkArticulatedInertia*jointDofMotionMatrix with one entry per dof.
 		\param[out] invStIs will be computed as 1/[jointMotionMatrix^T * linkArticulatedInertia * jointMotionMatrix]
 		\param[out]	isInvD will be computed as linkArticulatedInertia*jointMotionMatrix^T/[jointMotionMatrix^T * linkArticulatedInertia * jointMotionMatrix]
-		\return A term to be translated to parent link and added to the articulated inertia of the parent.
 		*/
-		static SpatialMatrix computePropagateSpatialInertia(
+		static void computePropagateSpatialInertia(SpatialMatrix& PX_RESTRICT dst,
 			const PxArticulationJointType::Enum jointType, const PxU8 nbDofs,
 			const SpatialMatrix& linkArticulatedInertia, const Cm::UnAlignedSpatialVector* jointMotionMatrices,
 			const Cm::SpatialVectorF* jointIs, 

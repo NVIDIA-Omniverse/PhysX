@@ -48,7 +48,7 @@ namespace Sc
 
 						void		notifyShapesOfTransformChange();
 
-		virtual			PxActor*	getPxActor() const { return getRigidCore().getPxActor(); }
+		virtual			PxActor*	getPxActor() const PX_OVERRIDE { return getRigidCore().getPxActor(); }
 	};
 
 } // namespace Sc

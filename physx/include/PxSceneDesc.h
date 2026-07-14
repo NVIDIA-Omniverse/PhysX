@@ -513,21 +513,9 @@ struct PxGpuDynamicsMemoryConfig
 	PxU32 maxDeformableSurfaceContacts;
 
 	/**
-	\brief Deprecated, replace with maxDeformableSurfaceContacts.
-	\deprecated
-	*/
-	PX_DEPRECATED PxU32 maxFemClothContacts;
-
-	/**
 	\brief Capacity of deformable volume contact buffer allocated in GPU global memory.
 	*/
 	PxU32 maxDeformableVolumeContacts;
-
-	/**
-	\brief Deprecated, replace with maxDeformableVolumeContacts.
-	\deprecated
-	*/
-	PX_DEPRECATED PxU32 maxSoftBodyContacts;
 
 	/**
 	\brief Capacity of particle contact buffer allocated in GPU global memory.
@@ -549,9 +537,7 @@ struct PxGpuDynamicsMemoryConfig
 		foundLostAggregatePairsCapacity(1024),
 		totalAggregatePairsCapacity(1024),
 		maxDeformableSurfaceContacts(1 * 1024 * 1024),
-		maxFemClothContacts(0), // deprecated, if > 0, used instead of maxDeformableSurfaceContacts
 		maxDeformableVolumeContacts(1 * 1024 * 1024),
-		maxSoftBodyContacts(0), // deprecated, if > 0, used instead of maxDeformableVolumeContacts
 		maxParticleContacts(1*1024*1024),
 		collisionStackSize(64*1024*1024)
 	{

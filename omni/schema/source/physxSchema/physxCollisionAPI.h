@@ -149,6 +149,7 @@ public:
     // --------------------------------------------------------------------- //
     // CONTACTOFFSET 
     // --------------------------------------------------------------------- //
+    /// Deprecated: use newton:contactGap (NewtonCollisionAPI) instead.
     /// Contact offset of a collision shape. Default value -inf means default is picked by the simulation based on the shape extent.
     /// Range: [maximum(0, restOffset), inf)
     /// Units: distance
@@ -173,6 +174,7 @@ public:
     // --------------------------------------------------------------------- //
     // RESTOFFSET 
     // --------------------------------------------------------------------- //
+    /// Deprecated: use newton:contactMargin (NewtonCollisionAPI) instead.
     /// Rest offset of a collision shape. Default value -inf means that the simulation sets a suitable value.
     /// For rigid bodies, this value is zero.
     /// Range: [0, contactOffset]

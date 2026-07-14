@@ -428,7 +428,7 @@ bool physx::PxcCacheLocalContacts(	PxcNpThreadContext& context, Cache& pairConta
 						sameNormal = false;
 						break;
 					}
-				}			
+				}
 			}
 			contactsData.mSameNormal = sameNormal;
 

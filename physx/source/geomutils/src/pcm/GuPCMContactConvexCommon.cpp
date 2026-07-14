@@ -159,7 +159,7 @@ void PCMConvexVsMeshContactGeneration::generateLastContacts()
 						{
 							mManifoldContacts[k] = mManifoldContacts[k+1];
 						}
-					}	
+					}
 				}
 
 				mNumContacts = currentContacts;

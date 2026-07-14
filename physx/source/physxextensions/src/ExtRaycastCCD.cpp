@@ -158,14 +158,14 @@ public:
 	PxRigidActor*	mActor;
 	PxShape*		mShape;
 
-	virtual PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape* shape, const PxRigidActor* actor, PxHitFlags&)
+	virtual PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape* shape, const PxRigidActor* actor, PxHitFlags&) PX_OVERRIDE
 	{
 		if(mActor==actor && mShape==shape)
 			return PxQueryHitType::eNONE;
 		return PxQueryHitType::eBLOCK;
 	}
 
-	virtual PxQueryHitType::Enum postFilter(const PxFilterData&, const PxQueryHit&, const PxShape*, const PxRigidActor*)
+	virtual PxQueryHitType::Enum postFilter(const PxFilterData&, const PxQueryHit&, const PxShape*, const PxRigidActor*) PX_OVERRIDE
 	{
 		return PxQueryHitType::eNONE;
 	}

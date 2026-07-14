@@ -1,0 +1,24 @@
+[package]
+title = "PhysX GPU"
+description = "PhysX 5 GPU runtime binaries."
+version = "110.1.11"
+authors = ["PhysX"]
+repository = ""
+keywords = ["physics", "physx", "gpu"]
+category = "simulation"
+icon = "data/icon.png"
+preview_image = "data/preview.png"
+changelog = "docs/CHANGELOG.md"
+readme = "docs/README.md"
+support_level = "Core"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[[native.plugin]]
+path = "bin/omni.physx.gpu.plugin"
+
+[[test]]
+waiver = "PhysX tests are running in a separate CI pipeline."

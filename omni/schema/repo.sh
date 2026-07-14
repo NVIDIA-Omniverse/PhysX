@@ -10,4 +10,4 @@ SCRIPT_DIR=$(dirname ${BASH_SOURCE})
 cd "$SCRIPT_DIR"
 
 # Use "exec" to ensure that envrionment variables don't accidentally affect other processes.
-exec "../tools/packman/python.sh" tools/repoman/repoman.py "$@"
+exec "tools/packman/python.sh" tools/repoman/repoman.py "$@"

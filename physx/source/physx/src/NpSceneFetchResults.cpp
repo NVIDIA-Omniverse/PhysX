@@ -40,8 +40,9 @@
 	#include "NpDeformableVolume.h"
 	#include "cudamanager/PxCudaContextManager.h"
 	#include "cudamanager/PxCudaContext.h"
+	#include "geometry/PxTetrahedronMesh.h"
+	#include "geometry/PxTriangleMeshGeometry.h"
 #endif
-
 #include "ScArticulationSim.h"
 #include "ScArticulationTendonSim.h"
 #include "CmCollection.h"
@@ -49,7 +50,10 @@
 #include "common/PxProfileZone.h"
 #include "BpBroadPhase.h"
 #include "BpAABBManagerBase.h"
-#include "omnipvd/NpOmniPvdSetData.h"
+#if PX_SUPPORT_OMNI_PVD
+	#include "omnipvd/NpOmniPvdSetData.h"
+	#include "omnipvd/OmniPvdPxSampler.h"
+#endif
 
 using namespace physx;
 
@@ -139,15 +143,11 @@ void NpScene::fetchResultsPreContactCallbacks()
 
 void NpScene::fetchResultsPostContactCallbacks()
 {
-	// PdHC: Acceleration strategy - NO work in fetchResults!
-	// - All acceleration computation happens in pipeline tasks:
-	//   * CPU dynamics: ScAfterIntegrationTask
-	//   * Kinematics (CPU & GPU): ScKinematicUpdateTask  
-	//   * GPU dynamics: GPU kernel computes, DMA to host buffer
-	// - GPU dynamics copy from DMA buffer to BodyCore is LAZY (on first getter access)
-	// - DirectGPU API: No CPU-side work (users access via DirectGPU API)
-
 	mScene.postCallbacksPreSync();
+
+	// Body accelerations are now computed as part of the simulation task graph
+	// (see computeBodyAccelerationsAsync). For GPU dynamics, non-kinematic
+	// GPU accelerations are lazy-copied from the GPU buffer on first getter access.
 
 	syncSQ();
 
@@ -206,7 +206,7 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 		return true;
 #endif
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	{
 		// take write check *after* simulation has finished, otherwise 
@@ -335,7 +335,7 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 			PxArticulationReducedCoordinate*const* articulations = mArticulations.getEntries();
 			const PxU32 nbArticulations = mArticulations.size();
 			for( PxU32 i = 0 ; i < nbArticulations ;i++)
-			{				
+			{
 				PxArticulationReducedCoordinate* articulation = (articulations[i]);
 				OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationReducedCoordinate, wakeCounter, *articulation, articulation->getWakeCounter());
 				const PxBounds3 worldBounds = articulation->getWorldBounds();
@@ -390,38 +390,153 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 							//TODO add diffuse particles
 						}
 					}
+				}
+
+			}
+
+			// Stream deformable volume mesh positions and velocities to mesh objects
+			if (mDeformableVolumes.size() > 0)
+			{
+				PxDeformableVolume* const* dvEntries = mDeformableVolumes.getEntries();
+				const PxU32 nbDeformableVolumes = mDeformableVolumes.size();
+				for (PxU32 i = 0; i < nbDeformableVolumes; i++)
+				{
+					PxDeformableVolume* dv = dvEntries[i];
+					if (!dv->getShape())
+						continue;
+
+					// Re-stream attributes (shape hierarchy) now that the shape is available.
+					streamDeformableVolumeAttributes(*dv);
+
+					// Stream collision mesh positions
+					PxTetrahedronMesh* collMesh = dv->getCollisionMesh();
+					if (collMesh)
 					{
-						const PxArray<PxsParticleBuffer*>& pxsBuffers = npPs->getCore().getShapeCore().getLLCore().mParticleClothBuffers;
-						const PxArray<NpParticleClothBuffer*>& npBuffers = npPs->mParticleClothBuffers;
-						for (PxU32 b = 0; b < pxsBuffers.size(); ++b)
+						const PxU32 nbVerts = collMesh->getNbVertices();
+						PxVec4* gpuPositions = dv->getPositionInvMassBufferD();
+						if (nbVerts > 0 && gpuPositions)
 						{
-							const PxsParticleBuffer& pxsBuffer = *pxsBuffers[b];
-							if (pxsBuffer.getPositionInvMassesH())
+							const PxU32 bufferSize = nbVerts * sizeof(PxVec4);
+							PxVec4* hostPositions = reinterpret_cast<PxVec4*>(PX_ALLOC(bufferSize, "OmniPvdDeformableVolumeCollPositions"));
+							if (hostPositions)
 							{
-								PxParticleBuffer* pxBuffer = npBuffers[b];
-								PxReal* values = reinterpret_cast<PxReal*>(pxsBuffer.getPositionInvMassesH());
-								PxU32 nbValues = pxsBuffer.getNbActiveParticles() * 4;
-								OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxParticleBuffer, positionInvMasses, *pxBuffer, values, nbValues);
+								PxScopedCudaLock lock(*mCudaContextManager);
+								auto copyResult = mCudaContextManager->getCudaContext()->memcpyDtoH(hostPositions, reinterpret_cast<CUdeviceptr>(gpuPositions), bufferSize);
+								if (copyResult.value == 0)
+								{
+									OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxTetrahedronMesh, positions, *collMesh, reinterpret_cast<PxReal*>(hostPositions), nbVerts * 4);
+								}
+								PX_FREE(hostPositions);
 							}
 						}
 					}
+
+					// Stream simulation mesh positions and velocities
+					PxTetrahedronMesh* simMesh = dv->getSimulationMesh();
+					if (simMesh)
 					{
-						const PxArray<PxsParticleBuffer*>& pxsBuffers = npPs->getCore().getShapeCore().getLLCore().mParticleRigidBuffers;
-						const PxArray<NpParticleRigidBuffer*>& npBuffers = npPs->mParticleRigidBuffers;
-						for (PxU32 b = 0; b < pxsBuffers.size(); ++b)
+						const PxU32 nbSimVerts = simMesh->getNbVertices();
+
+						// Simulation positions
+						PxVec4* gpuSimPositions = dv->getSimPositionInvMassBufferD();
+						if (nbSimVerts > 0 && gpuSimPositions)
 						{
-							const PxsParticleBuffer& pxsBuffer = *pxsBuffers[b];
-							if (pxsBuffer.getPositionInvMassesH())
+							const PxU32 bufferSize = nbSimVerts * sizeof(PxVec4);
+							PxVec4* hostPositions = reinterpret_cast<PxVec4*>(PX_ALLOC(bufferSize, "OmniPvdDeformableVolumeSimPositions"));
+							if (hostPositions)
 							{
-								PxParticleBuffer* pxBuffer = npBuffers[b];
-								PxReal* values = reinterpret_cast<PxReal*>(pxsBuffer.getPositionInvMassesH());
-								PxU32 nbValues = pxsBuffer.getNbActiveParticles() * 4;
-								OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxParticleBuffer, positionInvMasses, *pxBuffer, values, nbValues);
+								PxScopedCudaLock lock(*mCudaContextManager);
+								auto copyResult = mCudaContextManager->getCudaContext()->memcpyDtoH(hostPositions, reinterpret_cast<CUdeviceptr>(gpuSimPositions), bufferSize);
+								if (copyResult.value == 0)
+								{
+									OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxTetrahedronMesh, positions, *simMesh, reinterpret_cast<PxReal*>(hostPositions), nbSimVerts * 4);
+								}
+								PX_FREE(hostPositions);
+							}
+						}
+
+						// Simulation velocities
+						PxVec4* gpuSimVelocities = dv->getSimVelocityBufferD();
+						if (nbSimVerts > 0 && gpuSimVelocities)
+						{
+							const PxU32 bufferSize = nbSimVerts * sizeof(PxVec4);
+							PxVec4* hostVelocities = reinterpret_cast<PxVec4*>(PX_ALLOC(bufferSize, "OmniPvdDeformableVolumeSimVelocities"));
+							if (hostVelocities)
+							{
+								PxScopedCudaLock lock(*mCudaContextManager);
+								auto copyResult = mCudaContextManager->getCudaContext()->memcpyDtoH(hostVelocities, reinterpret_cast<CUdeviceptr>(gpuSimVelocities), bufferSize);
+								if (copyResult.value == 0)
+								{
+									OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxTetrahedronMesh, velocities, *simMesh, reinterpret_cast<PxReal*>(hostVelocities), nbSimVerts * 4);
+								}
+								PX_FREE(hostVelocities);
 							}
 						}
 					}
 				}
+			}
 
+			// Stream deformable surface mesh positions and velocities to mesh objects
+			if (mDeformableSurfaces.size() > 0)
+			{
+				PxDeformableSurface* const* dsEntries = mDeformableSurfaces.getEntries();
+				const PxU32 nbDeformableSurfaces = mDeformableSurfaces.size();
+				for (PxU32 i = 0; i < nbDeformableSurfaces; i++)
+				{
+					PxDeformableSurface* ds = dsEntries[i];
+					if (!ds->getShape())
+						continue;
+
+					// Re-stream attributes (shape hierarchy) now that the shape is available.
+					streamDeformableSurfaceAttributes(*ds);
+
+					const PxGeometry& geom = ds->getShape()->getGeometry();
+					if (geom.getType() != PxGeometryType::eTRIANGLEMESH)
+						continue;
+					const PxTriangleMeshGeometry& triGeom = static_cast<const PxTriangleMeshGeometry&>(geom);
+					if (!triGeom.triangleMesh)
+						continue;
+					PxTriangleMesh* triMesh = const_cast<PxTriangleMesh*>(triGeom.triangleMesh);
+					const PxU32 nbVerts = triMesh->getNbVertices();
+					if (nbVerts == 0)
+						continue;
+
+					// Surface positions
+					PxVec4* gpuPositions = ds->getPositionInvMassBufferD();
+					if (gpuPositions)
+					{
+						const PxU32 bufferSize = nbVerts * sizeof(PxVec4);
+						PxVec4* hostPositions = reinterpret_cast<PxVec4*>(PX_ALLOC(bufferSize, "OmniPvdDeformableSurfacePositions"));
+						if (hostPositions)
+						{
+							PxScopedCudaLock lock(*mCudaContextManager);
+							auto copyResult = mCudaContextManager->getCudaContext()->memcpyDtoH(hostPositions, reinterpret_cast<CUdeviceptr>(gpuPositions), bufferSize);
+							if (copyResult.value == 0)
+							{
+								OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxTriangleMesh, positions, *triMesh, reinterpret_cast<PxReal*>(hostPositions), nbVerts * 4);
+							}
+							PX_FREE(hostPositions);
+						}
+					}
+
+					// Surface velocities
+					PxVec4* gpuVelocities = ds->getVelocityBufferD();
+					if (gpuVelocities)
+					{
+						const PxU32 bufferSize = nbVerts * sizeof(PxVec4);
+						PxVec4* hostVelocities = reinterpret_cast<PxVec4*>(PX_ALLOC(bufferSize, "OmniPvdDeformableSurfaceVelocities"));
+						if (hostVelocities)
+						{
+							PxScopedCudaLock lock(*mCudaContextManager);
+							auto copyResult = mCudaContextManager->getCudaContext()->memcpyDtoH(hostVelocities, reinterpret_cast<CUdeviceptr>(gpuVelocities), bufferSize);
+							if (copyResult.value == 0)
+							{
+								OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxTriangleMesh, velocities, *triMesh, reinterpret_cast<PxReal*>(hostVelocities), nbVerts * 4);
+							}
+							PX_FREE(hostVelocities);
+						}
+					}
+				}
 			}
 #endif
 
@@ -454,7 +569,7 @@ bool NpScene::fetchResultsStart(const PxContactPairHeader*& contactPairs, PxU32&
 		return true;
 #endif
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 	NP_WRITE_CHECK(this);
 
 	// we use cross thread profile here, to show the event in cross thread view
@@ -542,7 +657,7 @@ void NpScene::fetchResultsFinish(PxU32* errorState)
 	// AD: we already checked the cuda error state in fetchResultsStart, there is no GPU work going on in-between.
 
 	{
-		PX_SIMD_GUARD;
+		PX_SIMD_GUARD
 		PX_PROFILE_STOP_CROSSTHREAD("Basic.processCallbacks", getContextId());
 		PX_PROFILE_ZONE("Basic.fetchResultsFinish", getContextId());
 

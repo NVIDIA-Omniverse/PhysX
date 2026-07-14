@@ -59,13 +59,13 @@ namespace physx
 		~QuickHullConvexHullLib();
 
 		// computes the convex hull from provided points
-		virtual PxConvexMeshCookingResult::Enum createConvexHull();
+		virtual PxConvexMeshCookingResult::Enum createConvexHull() PX_OVERRIDE;
 
 		// fills the convexmeshdesc with computed hull data
-		virtual void fillConvexMeshDesc(PxConvexMeshDesc& desc);
+		virtual void fillConvexMeshDesc(PxConvexMeshDesc& desc) PX_OVERRIDE;
 
 		// provide the edge list information
-		virtual bool createEdgeList(const PxU32, const PxU8* , PxU8** , PxU16** , PxU16** );
+		virtual bool createEdgeList(const PxU32, const PxU8* , PxU8** , PxU16** , PxU16**) PX_OVERRIDE;
 
 	protected:
 		// if vertex limit reached we need to expand the hull using the OBB slicing

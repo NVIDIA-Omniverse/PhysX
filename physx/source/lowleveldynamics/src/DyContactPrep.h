@@ -147,9 +147,9 @@ public:
 	{
 	}
 
-	virtual PxU8* reserveConstraintData(const PxU32 size);
+	virtual PxU8* reserveConstraintData(const PxU32 size) PX_OVERRIDE;
 
-	virtual PxU8* reserveFrictionData(const PxU32 size);
+	virtual PxU8* reserveFrictionData(const PxU32 size) PX_OVERRIDE;
 
 	virtual PxU8* findInputPatches(PxU8* frictionCookie)
 	{

@@ -8,7 +8,7 @@
 
 ## Required packages to generate projects:
 
-* CMake, minimum version 3.16
+* CMake, minimum version 3.21
 * Python, minimum version 3.5
 * curl
 * Clang for linux x86-64
@@ -19,11 +19,10 @@
 ### Compilers and C++ Standard:
   * We support the following Ubuntu LTS releases and compilers:
     * For linux x86-64 (tested with Clang and GCC):
-      * Ubuntu 20.04 LTS: Clang 10, GCC 9.4.0
       * Ubuntu 22.04 LTS: Clang 14, GCC 11.4.0
       * Ubuntu 24.04 LTS: Clang 18, GCC 13.2.0
     * For linux aarch64 (tested with GCC only):
-      * Ubuntu 20.04 LTS: GCC 9.4.0
+      * Ubuntu 22.04 LTS: GCC 11.4.0
   * Tested with C++14 standard
 
 ## Generating Makefiles:

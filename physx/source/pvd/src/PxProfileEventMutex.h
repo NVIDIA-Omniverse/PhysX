@@ -51,8 +51,8 @@ namespace physx { namespace profile {
 	{
 		TMutexType* mMutex;
 		PxProfileEventMutexImpl( TMutexType* inMtx ) : mMutex( inMtx ) {}
-		virtual void lock() { mMutex->lock(); }
-		virtual void unlock() { mMutex->unlock(); }
+		virtual void lock() PX_OVERRIDE { mMutex->lock(); }
+		virtual void unlock() PX_OVERRIDE { mMutex->unlock(); }
 	};
 
 } }

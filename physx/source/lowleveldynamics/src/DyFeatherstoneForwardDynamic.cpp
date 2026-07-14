@@ -74,8 +74,8 @@ namespace Dy
 	}
 #endif
 
-	SpatialMatrix FeatherstoneArticulation::computePropagateSpatialInertia_ZA_ZIc
-	(const PxArticulationJointType::Enum jointType, const PxU8 nbJointDofs,
+	void FeatherstoneArticulation::computePropagateSpatialInertia_ZA_ZIc
+	(SpatialMatrix& PX_RESTRICT dst, const PxArticulationJointType::Enum jointType, const PxU8 nbJointDofs,
 	 const Cm::UnAlignedSpatialVector* jointMotionMatricesW, const Cm::SpatialVectorF* jointISW, 	
 	 const PxReal* jointTargetArmatures,
 	 const PxU8* dofIds, const PxReal* jointExternalForces, 
@@ -159,7 +159,7 @@ namespace Dy
 
 			//Mirtich equivalent: I_i^A * s_i^T *Inv(s_i^T *I_i^A * s_i) * s_i^T * I_i^A
 			//Note we will compute I_i^A - [I_i^A * s_i^T *Inv(s_i^T *I_i^A * s_i) * s_i^T * I_i^A] later in the function.
-			spatialInertia = SpatialMatrix::constructSpatialMatrix(isID, stI);
+			SpatialMatrix::constructSpatialMatrix(spatialInertia, isID, stI);
 
 			//[I_i^A * s_i] * [-s_i^T * ZAExt]/[s_i^T * I_i^A * s_i]
 			{
@@ -287,7 +287,8 @@ namespace Dy
 			Temp6x6Matrix transpose6x6 = bigInertia.getTranspose();
 #endif
 
-			spatialInertia = SpatialMatrix::constructSpatialMatrix(columns);
+			SpatialMatrix::constructSpatialMatrix(spatialInertia, columns);
+
 #if FEATHERSTONE_DEBUG
 			Temp6x6Matrix result = bigIsInvD * stI;
 			PX_ASSERT(result.isEqual(columns));
@@ -295,17 +296,18 @@ namespace Dy
 			break;
 		}
 		default:
-			return linkArticulatedInertiaW;
+		{
+			dst = linkArticulatedInertiaW;
+			return;
+		}
 		}
 
 		//(I - Is*Inv(sIs)*sI)
-		spatialInertia = linkArticulatedInertiaW - spatialInertia;
-
-		return spatialInertia;
+		SpatialMatrix::sub(dst, linkArticulatedInertiaW, spatialInertia);
 	}
 
-	SpatialMatrix FeatherstoneArticulation::computePropagateSpatialInertia_ZA_ZIc_NonSeparated
-		(const PxArticulationJointType::Enum jointType, const PxU8 nbJointDofs, 
+	void FeatherstoneArticulation::computePropagateSpatialInertia_ZA_ZIc_NonSeparated
+		(SpatialMatrix& PX_RESTRICT dst, const PxArticulationJointType::Enum jointType, const PxU8 nbJointDofs, 
 		 const Cm::UnAlignedSpatialVector* jointMotionMatrices, const Cm::SpatialVectorF* jointIs, 
 		 const PxReal* jointTargetArmatures,
 		 const PxU8* dofIds, const PxReal* jointExternalForces, // also take care of NULL here? when is this function used?
@@ -378,7 +380,7 @@ namespace Dy
 
 			//Mirtich equivalent: I_i^A * s_i^T *[1/(s_i^T *I_i^A * s_i)] * s_i^T * I_i^A
 			//Note we will compute I_i^A - [I_i^A * s_i^T *[1/(s_i^T *I_i^A * s_i)] * s_i^T * I_i^A] later in the function.
-			spatialInertia = SpatialMatrix::constructSpatialMatrix(isID, stI);
+			SpatialMatrix::constructSpatialMatrix(spatialInertia, isID, stI);
 
 			//Mirtich equivalent: [I_i^A * s_i] * [-s_i^T * Z_i^A]/[s_i^T * I_i^A * s_i]
 			{
@@ -494,8 +496,8 @@ namespace Dy
 #if FEATHERSTONE_DEBUG
 			Temp6x6Matrix transpose6x6 = bigInertia.getTranspose();
 #endif
+			SpatialMatrix::constructSpatialMatrix(spatialInertia, columns);
 
-			spatialInertia = SpatialMatrix::constructSpatialMatrix(columns);
 #if FEATHERSTONE_DEBUG
 			Temp6x6Matrix result = bigIsInvD * stI;
 			PX_ASSERT(result.isEqual(columns));
@@ -508,17 +510,15 @@ namespace Dy
 		}
 
 		//(I - Is*Inv(sIs)*sI)
-		spatialInertia = articulatedInertia - spatialInertia;
-
-		return spatialInertia;
+		SpatialMatrix::sub(dst, articulatedInertia, spatialInertia);
 	}
 
 
-	SpatialMatrix FeatherstoneArticulation::computePropagateSpatialInertia(
-			const PxArticulationJointType::Enum jointType, const PxU8 nbDofs,
-			const SpatialMatrix& articulatedInertia, const Cm::UnAlignedSpatialVector* motionMatrices,
-			const Cm::SpatialVectorF* linkIs, 
-			InvStIs& invStIs, Cm::SpatialVectorF* isInvD)
+	void FeatherstoneArticulation::computePropagateSpatialInertia(SpatialMatrix& PX_RESTRICT dst, 
+		const PxArticulationJointType::Enum jointType, const PxU8 nbDofs,
+		const SpatialMatrix& articulatedInertia, const Cm::UnAlignedSpatialVector* motionMatrices,
+		const Cm::SpatialVectorF* linkIs, 
+		InvStIs& invStIs, Cm::SpatialVectorF* isInvD)
 	{
 		SpatialMatrix spatialInertia;
 
@@ -546,7 +546,7 @@ namespace Dy
 			//Cm::SpatialVector stI1(Is1.angular, Is1.linear);
 			Cm::SpatialVectorF stI(Is.bottom, Is.top);
 
-			spatialInertia = SpatialMatrix::constructSpatialMatrix(isID, stI);
+			SpatialMatrix::constructSpatialMatrix(spatialInertia, isID, stI);
 
 			break;
 		}
@@ -627,8 +627,8 @@ namespace Dy
 #if FEATHERSTONE_DEBUG
 			Temp6x6Matrix transpose6x6 = bigInertia.getTranspose();
 #endif
+			SpatialMatrix::constructSpatialMatrix(spatialInertia, columns);
 
-			spatialInertia = SpatialMatrix::constructSpatialMatrix(columns);
 #if FEATHERSTONE_DEBUG
 			Temp6x6Matrix result = bigIsInvD * stI;
 			PX_ASSERT(result.isEqual(columns));
@@ -641,9 +641,7 @@ namespace Dy
 		}
 
 		//(I - Is*Inv(sIs)*sI)
-		spatialInertia = articulatedInertia - spatialInertia;
-
-		return spatialInertia;
+		SpatialMatrix::sub(dst, articulatedInertia, spatialInertia);
 	}
 	
 	void FeatherstoneArticulation::computeArticulatedSpatialInertiaAndZ
@@ -679,26 +677,26 @@ namespace Dy
 				const ArticulationJointCore* joint = link.inboundJoint;
 
 				//calculate spatial zero acceleration force, this can move out of the loop
-				const Cm::SpatialVectorF linkZW = linkZAExtForcesW[linkID];
+				const Cm::SpatialVectorF& linkZW = linkZAExtForcesW[linkID];
 				const Cm::SpatialVectorF linkIcW = linkSpatialArticulatedInertiaW[linkID] * linkCoriolisVectors[linkID];
 				const Cm::SpatialVectorF linkZIntIcW = linkZAIntForcesW[linkID] + linkIcW;
 
 				//(I - Is*Inv(sIs)*sI)
 				//KS - we also bury Articulated ZA force and ZIc force computation in here because that saves
 				//us some round-trips to memory!
-				spatialInertiaW = 
-					computePropagateSpatialInertia_ZA_ZIc(
-						PxArticulationJointType::Enum(joint->jointType), jointDatum.nbDof, 
-						&jointDofMotionMatricesW[jointOffset], &jointDofISW[jointOffset], 
-						&joint->armature[0], &joint->dofIds[0], jointDofForces ? &jointDofForces[jointOffset] : NULL,
-						linkSpatialArticulatedInertiaW[linkID], 
-						linkZW, linkZIntIcW, 
-						linkInvStISW[linkID], &jointDofISInvStISW[jointOffset],
-						&jointDofMinusStZExtW[jointOffset], &jointDofQStZIntIcW[jointOffset],
-						deltaZAExtParent, deltaZAIntParent);
+				computePropagateSpatialInertia_ZA_ZIc(spatialInertiaW,
+					PxArticulationJointType::Enum(joint->jointType), jointDatum.nbDof,
+					&jointDofMotionMatricesW[jointOffset], &jointDofISW[jointOffset],
+					joint->armature, joint->dofIds, jointDofForces ? &jointDofForces[jointOffset] : NULL,
+					linkSpatialArticulatedInertiaW[linkID],
+					linkZW, linkZIntIcW,
+					linkInvStISW[linkID], &jointDofISInvStISW[jointOffset],
+					&jointDofMinusStZExtW[jointOffset], &jointDofQStZIntIcW[jointOffset],
+					deltaZAExtParent, deltaZAIntParent);
 			}
 
 			//Accumulate the spatial inertia on the parent link.
+			const PxU32 parent = link.parent;
 			{
 				//transform spatial inertia into parent space
 				FeatherstoneArticulation::translateInertia(constructSkewSymmetricMatrix(linkRsW[linkID]), spatialInertiaW);
@@ -710,15 +708,15 @@ namespace Dy
 				spatialInertiaW.bottomLeft.column1.y = PxMax(minPropagatedInertia, spatialInertiaW.bottomLeft.column1.y);
 				spatialInertiaW.bottomLeft.column2.z = PxMax(minPropagatedInertia, spatialInertiaW.bottomLeft.column2.z);
 
-				linkSpatialArticulatedInertiaW[link.parent] += spatialInertiaW;
+				linkSpatialArticulatedInertiaW[parent] += spatialInertiaW;
 			}
 
 			//Accumulate the articulated z.a force on the parent link.
 			{
 				const Cm::SpatialVectorF translatedZA = FeatherstoneArticulation::translateSpatialVector(linkRsW[linkID], deltaZAExtParent);
 				const Cm::SpatialVectorF translatedZAInt = FeatherstoneArticulation::translateSpatialVector(linkRsW[linkID], deltaZAIntParent);
-				linkZAExtForcesW[link.parent] += translatedZA;
-				linkZAIntForcesW[link.parent] += translatedZAInt;
+				linkZAExtForcesW[parent] += translatedZA;
+				linkZAIntForcesW[parent] += translatedZAInt;
 			}
 		}
 
@@ -772,16 +770,16 @@ namespace Dy
 				//(I - Is*Inv(sIs)*sI)
 				//KS - we also bury Articulated ZA force and ZIc force computation in here because that saves
 				//us some round-trips to memory!
-				spatialInertiaW = computePropagateSpatialInertia_ZA_ZIc_NonSeparated(
-					PxArticulationJointType::Enum(link.inboundJoint->jointType), jointDatum.nbDof, 
-					&motionMatrix[jointDatum.jointOffset], &Is[jointDatum.jointOffset], 
+				computePropagateSpatialInertia_ZA_ZIc_NonSeparated(spatialInertiaW,
+					PxArticulationJointType::Enum(joint->jointType), nbDofs, 
+					&motionMatrix[jointOffset], &Is[jointOffset], 
 					&joint->armature[0], &joint->dofIds[0],
-					&scratchData.jointForces[jointDatum.jointOffset], // AD what's the difference between the scratch and the articulation
+					&scratchData.jointForces[jointOffset], // AD what's the difference between the scratch and the articulation
 																	  // data?
 					spatialArticulatedInertia[linkID], 
 					Z,
-					invStIs[linkID], &IsInvDW[jointDatum.jointOffset],
-					&qstZIc[jointDatum.jointOffset],
+					invStIs[linkID], &IsInvDW[jointOffset],
+					&qstZIc[jointOffset],
 					deltaZParent);
 			}
 
@@ -827,7 +825,8 @@ namespace Dy
 			}
 
 			//(I - Is*Inv(sIs)*sI)
-			SpatialMatrix spatialInertiaW = computePropagateSpatialInertia(
+			SpatialMatrix spatialInertiaW;
+			computePropagateSpatialInertia(spatialInertiaW,
 				PxArticulationJointType::Enum(link.inboundJoint->jointType),
 				jointDatum.nbDof, spatialArticulatedInertia[linkID], &motionMatrix[jointOffset],
 				&Is[jointOffset], 
@@ -1211,7 +1210,7 @@ namespace Dy
 			if(computeCompoundInertia)	
 				*compoundInertiaW += computeContributionToEnsembleMomentOfInertia(Ii, mi, riMinusrComW);
 		}
-	}			
+	}
 
 	void FeatherstoneArticulation::computeLinkInternalAcceleration
 	(	const PxReal dt,
@@ -1233,7 +1232,7 @@ namespace Dy
 		PxVec3 linMomentum0(PxZero);
 		PxVec3 angMomentum0(PxZero);
 		if(!fixBase)
-		{		
+		{
 			computeMomentum<false>(
 				rcom, recipMass, 
 				linkCount, linkMasses, linkIsolatedSpatialArticulatedInertiasW, linkAccumulatedPosesW, linkMotionVelocitiesW, 
@@ -1380,7 +1379,7 @@ namespace Dy
 		// but that means we need to add a task dependency before because we'll get problems with multithreading
 		// if we don't process the same lists.
 		if (articulation->mJcalcDirty) 
-		{	
+		{
 			articulation->mJcalcDirty = false;
 			articulation->jcalc(data);
 		}
@@ -1394,6 +1393,8 @@ namespace Dy
 
 	void FeatherstoneArticulation::updateArticulation(const PxVec3& gravity, const PxReal invLengthScale, const bool externalForcesEveryTgsIterationEnabled)
 	{
+		mArticulationData.mIsExternalForcesEveryTgsIterationEnabled = externalForcesEveryTgsIterationEnabled;
+
 		//Copy the link poses into a handy array.
 		//Update the link separation vectors with the latest link poses.
 		//Compute the motion matrices in the world frame using the latest link poses.
@@ -1437,7 +1438,6 @@ namespace Dy
 			PxMat33* linkIsolatedSpatialArticulatedInertiasW = mArticulationData.getWorldIsolatedSpatialArticulatedInertia();
 			PxReal* linkMasses = mArticulationData.getMasses();
 			PxReal* jointDofVelocities = mArticulationData.getJointVelocities();
-			Cm::SpatialVectorF& rootPreMotionVelocityW = mArticulationData.mRootPreMotionVelocity;
 			PxVec3& comW = mArticulationData.mCOM;
 			PxReal& invMass = mArticulationData.mInvSumMass;
 
@@ -1447,8 +1447,7 @@ namespace Dy
 				linkAccumulatedPosesW, linkExternalAccelsW, linkRsW, jointDofMotionMatricesW, jointCoreData, externalForcesEveryTgsIterationEnabled,
 				links, linkMotionAccelerationsW, linkMotionVelocitiesW, linkZAExtForcesW, linkZAIntForcesW, linkCoriolisVectorsW,
 				linkIsolatedSpatialArticulatedInertiasW, linkMasses, linkSpatialArticulatedInertiasW,
-				jointDofVelocities,
-				rootPreMotionVelocityW, comW, invMass);
+				jointDofVelocities, comW, invMass);
 		}
 
 		{
@@ -1465,7 +1464,7 @@ namespace Dy
 			}
 		}
 		
-		{	
+		{
 			//Constant inputs.
 			const ArticulationLink* links = mArticulationData.getLinks();
 			const PxU32 linkCount = mArticulationData.getLinkCount();
@@ -2032,7 +2031,7 @@ namespace Dy
 	}
 
 	void FeatherstoneArticulation::updateBodies(FeatherstoneArticulation* articulation, Cm::SpatialVectorF* tempDeltaV, PxReal dt, bool integrateJointPositions)
-	{		
+	{
 		ArticulationData& data = articulation->mArticulationData;
 		ArticulationLink* PX_RESTRICT links = data.getLinks();
 		const PxU32 linkCount = data.getLinkCount();
@@ -2173,14 +2172,14 @@ namespace Dy
 				const PxReal mass = masses[linkID];
 
 				const PxVec3 offset = accumulatedPoses[linkID].p - COM;
-				PxMat33 inertia;
-				const PxMat33 R(accumulatedPoses[linkID].q);
 
-				const PxVec3 inertiaTensor = Cm::safeRecip<PxVec3>(data.getLink(linkID).bodyCore->inverseInertia);
+				const PxVec3p inertiaTensor = Cm::safeRecip<PxVec3p>(data.getLink(linkID).bodyCore->inverseInertia);
 
 				const PxVec3 offsetMass = offset * mass;
 
-				Cm::transformInertiaTensor(inertiaTensor, R, inertia);
+				PxMat33 inertia;
+				Cm::transformInertiaTensor(inertiaTensor, accumulatedPoses[linkID].q, inertia);
+
 				//Only needed for debug validation
 #if PX_DEBUG
 				worldIsolatedSpatialArticulatedInertia[linkID] = inertia;

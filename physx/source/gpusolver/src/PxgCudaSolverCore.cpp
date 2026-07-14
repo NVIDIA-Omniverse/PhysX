@@ -1105,7 +1105,7 @@ void PxgCudaSolverCore::writeBackBlock(PxU32 a, PxgIslandContext& context)
 		if (result != CUDA_SUCCESS)
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU writebackBlocks kernel fail!\n");
 #endif	
-	}		
+	}
 }
 
 void PxgCudaSolverCore::solvePartitions(PxgIslandContext* islandContexts, Cm::PinnableArray<PxU32>& constraintsPerPartition,
@@ -1290,7 +1290,7 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 		const PxReal rigidContactBiasCoefficient = context.mBiasCoefficients.rigidContact;
 		const PxReal particlesAndDeformablesBiasCoefficient = context.mBiasCoefficients.particlesAndDeformables;
 		const PxReal femClothParticleBiasCoefficient = context.mBiasCoefficients.femClothParticle;
-		const PxReal femClothRigidAttachmentBiasCoefficient = context.mBiasCoefficients.femClothRigidAttachment;
+		const PxReal deformableRigidAttachmentBiasCoefficient = context.mBiasCoefficients.deformableRigidAttachment;
 
 		for (PxI32 b = 0; b < context.mNumPositionIterations; ++b)
 		{
@@ -1349,7 +1349,7 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 			{
 				femClothCore->solve(mPrePrepDescd, mSolverCoreDescd, mSharedDescd, artiDescd, dt, mStream, b,
 									context.mNumPositionIterations, false, gravity,
-									femClothParticleBiasCoefficient, femClothRigidAttachmentBiasCoefficient);
+									femClothParticleBiasCoefficient, deformableRigidAttachmentBiasCoefficient);
 			}
 
 			if (softbodyCore)
@@ -1632,7 +1632,7 @@ void PxgCudaSolverCore::radixSort(const PxU32 nbPasses)
 }
 
 void PxgCudaSolverCore::accumulatedForceThresholdStream(PxU32 maxNodes)
-{	
+{
 	PX_PROFILE_ZONE("GpuDynamics.AccumulatedForceThresholdStream", 0);
 
 	PxU32 highestBit = PxHighestSetBit(maxNodes)+1;

@@ -105,7 +105,7 @@ namespace physx	// PT: only in physx namespace for the friend access to work
 		{
 		}
 
-		virtual void runInternal()
+		virtual void runInternal() PX_OVERRIDE
 		{
 			PxgNewShapeSim* dst = mShapeSimManager->mPxgShapeSimPool.begin();
 			const PxU32* newShapeSimsIndices = mShapeSimManager->mNewShapeSims.begin();
@@ -139,7 +139,7 @@ namespace physx	// PT: only in physx namespace for the friend access to work
 			}
 		}
 
-		virtual const char* getName() const
+		virtual const char* getName() const PX_OVERRIDE
 		{
 			return "PxgCopyToShapeSimTask";
 		}

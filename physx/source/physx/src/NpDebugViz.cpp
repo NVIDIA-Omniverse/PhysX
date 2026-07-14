@@ -44,7 +44,6 @@ using namespace physx;
 #include "NpRigidDynamic.h"
 #include "NpArticulationReducedCoordinate.h"
 #if PX_SUPPORT_GPU_PHYSX
-	#include "NpDeformableVolume.h"
 	#include "NpPBDParticleSystem.h"
 #endif
 #include "foundation/PxVecMath.h"
@@ -1019,7 +1018,7 @@ void NpArticulationLink::visualizeJoint(PxConstraintVisualizer& jointViz) const
 				jointViz.visualizeLine(p0, p1, active ? 0xff0000u : 0xffffffu);
 			}
 		}
-	}	
+	}
 }
 
 void NpArticulationReducedCoordinate::visualize(PxRenderOutput& out, NpScene& scene, float scale) const
@@ -1119,17 +1118,8 @@ void NpScene::visualize()
 		}
 	}
 
-	// TOTO Visualize deformable surfaces
+	// TODO Visualize deformable surfaces
 
-	// Visualize deformable volumes
-	{
-		PxDeformableVolume*const* deformableVolumes = mDeformableVolumes.getEntries();
-		const PxU32 deformableVolumeCount = mDeformableVolumes.size();
-
-		const bool visualize = mScene.getVisualizationParameter(PxVisualizationParameter::eSIMULATION_MESH) != 0.0f;
-		for(PxU32 i=0; i< deformableVolumeCount; i++)
-			deformableVolumes[i]->setDeformableVolumeFlag(PxDeformableVolumeFlag::eDISPLAY_SIM_MESH, visualize);
-	}
 #endif
 
 #if PX_SUPPORT_PVD

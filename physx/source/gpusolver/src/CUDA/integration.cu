@@ -46,7 +46,7 @@ extern "C" __global__ void integrateCoreParallelLaunch(
 	const PxU32* PX_RESTRICT islandIds, 
 	const PxU32* PX_RESTRICT islandStaticTouchCounts,
 	const PxU32* PX_RESTRICT numCountedInteractions)
-{	
+{
 	//integrateCoreParallel(motionVelocity, solverBody, solverBodyData, numBodies, dt);
 	uint32_t idx = threadIdx.x + blockIdx.x * blockDim.x;
 	const float4* PX_RESTRICT motionVelocityArray = solverCoreDesc->motionVelocityArray;

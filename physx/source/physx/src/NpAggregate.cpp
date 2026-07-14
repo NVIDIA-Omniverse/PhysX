@@ -146,7 +146,7 @@ void NpAggregate::release()
 
 	NP_CHECK_SCENE_CORRUPTION_AND_RETURN(s)
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	NpPhysics::getInstance().notifyDeletionListenersUserRelease(this, NULL);
 
@@ -231,7 +231,7 @@ bool NpAggregate::addActor(PxActor& actor, const PxBVH* bvh)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(npScene, "PxAggregate::addActor() not allowed while simulation is running. Call will be ignored.", false);
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	if(mNbActors==mMaxNbActors)
 		return outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "PxAggregate: cannot add actor to aggregate, max number of actors reached.");
@@ -277,7 +277,7 @@ bool NpAggregate::addActor(PxActor& actor, const PxBVH* bvh)
 		return outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "PxAggregate: cannot add non-static actor to static aggregate.");
 
 	if(PxGetAggregateType(mFilterHint)==PxAggregateType::eKINEMATIC)
-	{	
+	{
 		bool isKine = false;
 		if(ctype == PxConcreteType::eRIGID_DYNAMIC)
 		{
@@ -346,7 +346,7 @@ bool NpAggregate::removeActor(PxActor& actor)
 
 	NP_CHECK_SCENE_CORRUPTION_AND_RETURN_VAL(npScene, false)
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	if(actor.getType() == PxActorType::eARTICULATION_LINK)
 		return outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "PxAggregate: can't remove articulation link, only whole articulations can be removed");
@@ -384,7 +384,7 @@ bool NpAggregate::addArticulation(PxArticulationReducedCoordinate& art)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(npScene, "PxAggregate::addArticulation() not allowed while simulation is running. Call will be ignored.", false);
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	if((mNbActors+art.getNbLinks()) > mMaxNbActors)
 		return outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "PxAggregate: cannot add articulation links, max number of actors reached.");
@@ -474,7 +474,7 @@ bool NpAggregate::removeArticulation(PxArticulationReducedCoordinate& art)
 
 	NP_CHECK_SCENE_CORRUPTION_AND_RETURN_VAL(npScene, false)
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	// see comments in removeActor()
 	bool ret = removeArticulationAndReinsert(art, true);
@@ -583,7 +583,7 @@ void NpAggregate::resolveReferences(PxDeserializationContext& context)
 					static_cast<NpArticulationReducedCoordinate&>(articulation).setAggregate(this);
 			}
 		}
-	}	
+	}
 }
 
 NpAggregate* NpAggregate::createObject(PxU8*& address, PxDeserializationContext& context)

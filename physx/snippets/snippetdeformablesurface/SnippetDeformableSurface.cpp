@@ -227,7 +227,7 @@ static void createScene(PxCookingParams& cookingParams)
 		deformableSurface->setLinearDamping(0.f);
 		deformableSurface->setDeformableBodyFlag(PxDeformableBodyFlag::eDISABLE_SELF_COLLISION, false);
 
-		deformableSurface->setMaxVelocity(1000.0f);
+		deformableSurface->setMaxLinearVelocity(1000.0f);
 
 		PxU32 collisionPairUpdateFrequency = 1;
 		PxU32 nbCollisionSubsteps = 1;

@@ -79,7 +79,7 @@ void PxgLinearBVHBuilderGPU::releaseBVH(PxgBVH& bvh)
 	PX_DEVICE_MEMORY_FREE(*ccm, bvh.mNodeLowers);
 	PX_DEVICE_MEMORY_FREE(*ccm, bvh.mNodeUppers);
 	PX_DEVICE_MEMORY_FREE(*ccm, bvh.mRootNode);
-}	
+}
 
 PxgLinearBVHBuilderGPU::PxgLinearBVHBuilderGPU(PxgKernelLauncher& kernelLauncher)
 	: mMaxTreeDepth(NULL)
@@ -385,7 +385,7 @@ void PxgSDFBuilder::computeDenseSDF(const PxgBvhTriangleMesh& mesh, const PxgWin
 	{
 		result = mKernelLauncher.launchKernelXYZPtr(PxgKernelIds::sdf_CalculateDenseGridBlocks, gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, 0, stream,
 			&mesh, &windingNumberClustersD, &sampler, &sizeX, &sizeY, &sizeZ, &sdfDataD, &windingNumbersD);
-	}		
+	}
 
 	PX_ASSERT(result == CUDA_SUCCESS);
 }
@@ -620,7 +620,7 @@ bool PxgSDFBuilder::buildSDF(const PxVec3* vertices, PxU32 numVertices, const Px
 	{
 		mKernelLauncher.getCudaContextManager()->getCudaContext()->streamCreate(&stream, CU_STREAM_NON_BLOCKING);
 		destroyStream = true;
-	}		
+	}
 
 	PxReal* sdfDataD = buildDenseSDF(vertices, numVertices, indicesOrig, numTriangleIndices, width, height, depth, minExtents, maxExtents, cellCenteredSamples, stream);
 		

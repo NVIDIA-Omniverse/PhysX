@@ -68,7 +68,7 @@ namespace physx
 			eFemClothPlane = 24,				//no manifold
 			eFemClothBox = 25,					//no manifold
 			eFemClothConvexes = 26,				//no manifold
-			eFemClothes = 27,					//no manifold
+			eFemCloths = 27,					//no manifold
 			eFemClothTrimesh = 28,				//no manifold
 			eFemClothSdfTrimesh = 29,
 			eFemClothHeightfield = 30,			//no manifold

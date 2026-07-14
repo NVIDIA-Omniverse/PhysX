@@ -60,17 +60,17 @@ struct ProfileZoneClient : public profile::PxProfileZoneClient, public PxUserAll
 		}
 	}
 
-	virtual void handleEventAdded(const profile::PxProfileEventName& inName)
+	virtual void handleEventAdded(const profile::PxProfileEventName& inName) PX_OVERRIDE
 	{
 		mStream.addProfileZoneEvent(&mZone, inName.name, inName.eventId.eventId, inName.eventId.compileTimeEnabled);
 	}
 
-	virtual void handleBufferFlush(const uint8_t* inData, uint32_t inLength)
+	virtual void handleBufferFlush(const uint8_t* inData, uint32_t inLength) PX_OVERRIDE
 	{
 		mStream.setPropertyValue(&mZone, "events", inData, inLength);
 	}
 
-	virtual void handleClientRemoved()
+	virtual void handleClientRemoved() PX_OVERRIDE
 	{
 		mStream.destroyInstance(&mZone);
 	}

@@ -157,7 +157,7 @@ static bool testFaceNormal(const PolygonalData& polyData0, const PolygonalData& 
 
 //plane is in the shape space of polyData
 static void buildPartialHull(const PolygonalData& polyData, const SupportLocal* map, SeparatingAxes& validAxes, const Vec3VArg planeP, const Vec3VArg planeDir)
-{		
+{
 	const FloatV zero = FZero();
 	const Vec3V dir = V3Normalize(planeDir);
 	for(PxU32 i=0; i<polyData.mNbPolygons; ++i)

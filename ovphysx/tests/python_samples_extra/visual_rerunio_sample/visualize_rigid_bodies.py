@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
-# NOTE: This file is included verbatim in documentation.
-# When editing, keep tutorial line ranges in sync.
+# NOTE: This file is included verbatim in documentation via literalinclude (full file).
 
 """
 Visualize rigid body simulation with Rerun.
@@ -23,9 +22,9 @@ from urllib.parse import quote
 
 import numpy as np
 import rerun as rr
+from ovphysx.types import TensorType
 
 from ovphysx import PhysX
-from ovphysx.types import TensorType
 
 
 def main():
@@ -128,11 +127,12 @@ def main():
             if elapsed < sim_time:
                 time.sleep(sim_time - elapsed)
 
+    print(f"Visualization sample completed successfully ({num_steps} steps)")
+
     pose_binding.destroy()
     sdk.remove_usd(usd_handle)
     sdk.release()
-
-    print("[SUCCESS]", flush=True)
+    print("Cleanup complete")
 
 
 if __name__ == "__main__":

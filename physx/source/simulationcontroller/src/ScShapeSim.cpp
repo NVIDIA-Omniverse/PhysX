@@ -35,6 +35,7 @@ void resetElementID(Scene& scene, ShapeSimBase& shapeSim);
 
 ShapeSim::ShapeSim(ActorSim& owner, ShapeCore& core) : ShapeSimBase(owner, &core)
 {
+	PX_ASSERT(core.getGeometryType() != PxGeometryType::eINVALID);
 	const PxU32 index = getElementID();
 	initSubsystemsDependingOnElementID(index);
 	core.setExclusiveSim(this);
@@ -42,7 +43,7 @@ ShapeSim::ShapeSim(ActorSim& owner, ShapeCore& core) : ShapeSimBase(owner, &core
 
 ShapeSim::~ShapeSim()
 {
-	Sc::ShapeCore::getCore(*mShapeCore).setExclusiveSim(NULL);
+	mShapeCore->setExclusiveSim(NULL);
 	Scene& scScene = getScene();
 	resetElementID(scScene, *this);
 }

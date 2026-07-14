@@ -195,7 +195,7 @@ public:
     ///
     /// | ||
     /// | -- | -- |
-    /// | Declaration | `float physxJoint:maxJointVelocity = 1000000` |
+    /// | Declaration | `float physxJoint:maxJointVelocity = inf` |
     /// | C++ Type | float |
     /// | \ref Usd_Datatypes "Usd Type" | SdfValueTypeNames->Float |
     PHYSXSCHEMA_API

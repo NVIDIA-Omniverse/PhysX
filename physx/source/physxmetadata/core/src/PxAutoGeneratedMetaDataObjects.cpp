@@ -71,8 +71,6 @@ PxU32 getPxPhysics_DeformableSurfaceMaterials( const PxPhysics* inObj, PxDeforma
 PxU32 getNbPxPhysics_DeformableSurfaceMaterials( const PxPhysics* inObj ) { return inObj->getNbDeformableSurfaceMaterials(  ); }
 PxU32 getPxPhysics_DeformableVolumeMaterials( const PxPhysics* inObj, PxDeformableVolumeMaterial ** outBuffer, PxU32 inBufSize ) { return inObj->getDeformableVolumeMaterials( outBuffer, inBufSize ); }
 PxU32 getNbPxPhysics_DeformableVolumeMaterials( const PxPhysics* inObj ) { return inObj->getNbDeformableVolumeMaterials(  ); }
-PxU32 getPxPhysics_FEMSoftBodyMaterials( const PxPhysics* inObj, PxDeformableVolumeMaterial ** outBuffer, PxU32 inBufSize ) { return inObj->getFEMSoftBodyMaterials( outBuffer, inBufSize ); }
-PxU32 getNbPxPhysics_FEMSoftBodyMaterials( const PxPhysics* inObj ) { return inObj->getNbFEMSoftBodyMaterials(  ); }
 PxU32 getPxPhysics_PBDMaterials( const PxPhysics* inObj, PxPBDMaterial ** outBuffer, PxU32 inBufSize ) { return inObj->getPBDMaterials( outBuffer, inBufSize ); }
 PxU32 getNbPxPhysics_PBDMaterials( const PxPhysics* inObj ) { return inObj->getNbPBDMaterials(  ); }
 PX_PHYSX_CORE_API PxPhysicsGeneratedInfo::PxPhysicsGeneratedInfo()
@@ -87,7 +85,6 @@ PX_PHYSX_CORE_API PxPhysicsGeneratedInfo::PxPhysicsGeneratedInfo()
 	, Materials( "Materials", getPxPhysics_Materials, getNbPxPhysics_Materials )
 	, DeformableSurfaceMaterials( "DeformableSurfaceMaterials", getPxPhysics_DeformableSurfaceMaterials, getNbPxPhysics_DeformableSurfaceMaterials )
 	, DeformableVolumeMaterials( "DeformableVolumeMaterials", getPxPhysics_DeformableVolumeMaterials, getNbPxPhysics_DeformableVolumeMaterials )
-	, FEMSoftBodyMaterials( "FEMSoftBodyMaterials", getPxPhysics_FEMSoftBodyMaterials, getNbPxPhysics_FEMSoftBodyMaterials )
 	, PBDMaterials( "PBDMaterials", getPxPhysics_PBDMaterials, getNbPxPhysics_PBDMaterials )
 {}
 PX_PHYSX_CORE_API PxPhysicsGeneratedValues::PxPhysicsGeneratedValues( const PxPhysics* inSource )
@@ -202,23 +199,15 @@ PX_PHYSX_CORE_API PxDeformableSurfaceMaterialGeneratedValues::PxDeformableSurfac
 {
 	PX_UNUSED(inSource);
 }
-void setPxDeformableVolumeMaterial_Damping( PxDeformableVolumeMaterial* inObj, PxReal inArg){ inObj->setDamping( inArg ); }
-PxReal getPxDeformableVolumeMaterial_Damping( const PxDeformableVolumeMaterial* inObj ) { return inObj->getDamping(); }
-void setPxDeformableVolumeMaterial_DampingScale( PxDeformableVolumeMaterial* inObj, PxReal inArg){ inObj->setDampingScale( inArg ); }
-PxReal getPxDeformableVolumeMaterial_DampingScale( const PxDeformableVolumeMaterial* inObj ) { return inObj->getDampingScale(); }
 void setPxDeformableVolumeMaterial_MaterialModel( PxDeformableVolumeMaterial* inObj, PxDeformableVolumeMaterialModel::Enum inArg){ inObj->setMaterialModel( inArg ); }
 PxDeformableVolumeMaterialModel::Enum getPxDeformableVolumeMaterial_MaterialModel( const PxDeformableVolumeMaterial* inObj ) { return inObj->getMaterialModel(); }
 const char * getPxDeformableVolumeMaterial_ConcreteTypeName( const PxDeformableVolumeMaterial* inObj ) { return inObj->getConcreteTypeName(); }
 PX_PHYSX_CORE_API PxDeformableVolumeMaterialGeneratedInfo::PxDeformableVolumeMaterialGeneratedInfo()
-	: Damping( "Damping", setPxDeformableVolumeMaterial_Damping, getPxDeformableVolumeMaterial_Damping)
-	, DampingScale( "DampingScale", setPxDeformableVolumeMaterial_DampingScale, getPxDeformableVolumeMaterial_DampingScale)
-	, MaterialModel( "MaterialModel", setPxDeformableVolumeMaterial_MaterialModel, getPxDeformableVolumeMaterial_MaterialModel)
+	: MaterialModel( "MaterialModel", setPxDeformableVolumeMaterial_MaterialModel, getPxDeformableVolumeMaterial_MaterialModel)
 	, ConcreteTypeName( "ConcreteTypeName", getPxDeformableVolumeMaterial_ConcreteTypeName)
 {}
 PX_PHYSX_CORE_API PxDeformableVolumeMaterialGeneratedValues::PxDeformableVolumeMaterialGeneratedValues( const PxDeformableVolumeMaterial* inSource )
 		:PxDeformableMaterialGeneratedValues( inSource )
-		,Damping( getPxDeformableVolumeMaterial_Damping( inSource ) )
-		,DampingScale( getPxDeformableVolumeMaterial_DampingScale( inSource ) )
 		,MaterialModel( getPxDeformableVolumeMaterial_MaterialModel( inSource ) )
 		,ConcreteTypeName( getPxDeformableVolumeMaterial_ConcreteTypeName( inSource ) )
 {
@@ -967,8 +956,6 @@ PxU32 getPxScene_Actors( const PxScene* inObj, PxActorTypeFlags inFilter, PxActo
 PxU32 getNbPxScene_Actors( const PxScene* inObj, PxActorTypeFlags inFilter ) { return inObj->getNbActors( inFilter ); }
 PxU32 getPxScene_DeformableVolumes( const PxScene* inObj, PxDeformableVolume ** outBuffer, PxU32 inBufSize ) { return inObj->getDeformableVolumes( outBuffer, inBufSize ); }
 PxU32 getNbPxScene_DeformableVolumes( const PxScene* inObj ) { return inObj->getNbDeformableVolumes(  ); }
-PxU32 getPxScene_SoftBodies( const PxScene* inObj, PxDeformableVolume ** outBuffer, PxU32 inBufSize ) { return inObj->getSoftBodies( outBuffer, inBufSize ); }
-PxU32 getNbPxScene_SoftBodies( const PxScene* inObj ) { return inObj->getNbSoftBodies(  ); }
 PxU32 getPxScene_PBDParticleSystems( const PxScene* inObj, class PxPBDParticleSystem ** outBuffer, PxU32 inBufSize ) { return inObj->getPBDParticleSystems( outBuffer, inBufSize ); }
 PxU32 getNbPxScene_PBDParticleSystems( const PxScene* inObj ) { return inObj->getNbPBDParticleSystems(  ); }
 PxU32 getPxScene_Articulations( const PxScene* inObj, PxArticulationReducedCoordinate ** outBuffer, PxU32 inBufSize ) { return inObj->getArticulations( outBuffer, inBufSize ); }
@@ -1036,7 +1023,6 @@ PX_PHYSX_CORE_API PxSceneGeneratedInfo::PxSceneGeneratedInfo()
 	, Name( "Name", setPxScene_Name, getPxScene_Name)
 	, Actors( "Actors", getPxScene_Actors, getNbPxScene_Actors )
 	, DeformableVolumes( "DeformableVolumes", getPxScene_DeformableVolumes, getNbPxScene_DeformableVolumes )
-	, SoftBodies( "SoftBodies", getPxScene_SoftBodies, getNbPxScene_SoftBodies )
 	, PBDParticleSystems( "PBDParticleSystems", getPxScene_PBDParticleSystems, getNbPxScene_PBDParticleSystems )
 	, Articulations( "Articulations", getPxScene_Articulations, getNbPxScene_Articulations )
 	, Constraints( "Constraints", getPxScene_Constraints, getNbPxScene_Constraints )
@@ -1541,12 +1527,8 @@ inline PxU32 getPxGpuDynamicsMemoryConfigTotalAggregatePairsCapacity( const PxGp
 inline void setPxGpuDynamicsMemoryConfigTotalAggregatePairsCapacity( PxGpuDynamicsMemoryConfig* inOwner, PxU32 inData) { inOwner->totalAggregatePairsCapacity = inData; }
 inline PxU32 getPxGpuDynamicsMemoryConfigMaxDeformableSurfaceContacts( const PxGpuDynamicsMemoryConfig* inOwner ) { return inOwner->maxDeformableSurfaceContacts; }
 inline void setPxGpuDynamicsMemoryConfigMaxDeformableSurfaceContacts( PxGpuDynamicsMemoryConfig* inOwner, PxU32 inData) { inOwner->maxDeformableSurfaceContacts = inData; }
-inline PxU32 getPxGpuDynamicsMemoryConfigMaxFemClothContacts( const PxGpuDynamicsMemoryConfig* inOwner ) { return inOwner->maxFemClothContacts; }
-inline void setPxGpuDynamicsMemoryConfigMaxFemClothContacts( PxGpuDynamicsMemoryConfig* inOwner, PxU32 inData) { inOwner->maxFemClothContacts = inData; }
 inline PxU32 getPxGpuDynamicsMemoryConfigMaxDeformableVolumeContacts( const PxGpuDynamicsMemoryConfig* inOwner ) { return inOwner->maxDeformableVolumeContacts; }
 inline void setPxGpuDynamicsMemoryConfigMaxDeformableVolumeContacts( PxGpuDynamicsMemoryConfig* inOwner, PxU32 inData) { inOwner->maxDeformableVolumeContacts = inData; }
-inline PxU32 getPxGpuDynamicsMemoryConfigMaxSoftBodyContacts( const PxGpuDynamicsMemoryConfig* inOwner ) { return inOwner->maxSoftBodyContacts; }
-inline void setPxGpuDynamicsMemoryConfigMaxSoftBodyContacts( PxGpuDynamicsMemoryConfig* inOwner, PxU32 inData) { inOwner->maxSoftBodyContacts = inData; }
 inline PxU32 getPxGpuDynamicsMemoryConfigMaxParticleContacts( const PxGpuDynamicsMemoryConfig* inOwner ) { return inOwner->maxParticleContacts; }
 inline void setPxGpuDynamicsMemoryConfigMaxParticleContacts( PxGpuDynamicsMemoryConfig* inOwner, PxU32 inData) { inOwner->maxParticleContacts = inData; }
 inline PxU32 getPxGpuDynamicsMemoryConfigCollisionStackSize( const PxGpuDynamicsMemoryConfig* inOwner ) { return inOwner->collisionStackSize; }
@@ -1561,9 +1543,7 @@ PX_PHYSX_CORE_API PxGpuDynamicsMemoryConfigGeneratedInfo::PxGpuDynamicsMemoryCon
 	, FoundLostAggregatePairsCapacity( "FoundLostAggregatePairsCapacity", setPxGpuDynamicsMemoryConfigFoundLostAggregatePairsCapacity, getPxGpuDynamicsMemoryConfigFoundLostAggregatePairsCapacity )
 	, TotalAggregatePairsCapacity( "TotalAggregatePairsCapacity", setPxGpuDynamicsMemoryConfigTotalAggregatePairsCapacity, getPxGpuDynamicsMemoryConfigTotalAggregatePairsCapacity )
 	, MaxDeformableSurfaceContacts( "MaxDeformableSurfaceContacts", setPxGpuDynamicsMemoryConfigMaxDeformableSurfaceContacts, getPxGpuDynamicsMemoryConfigMaxDeformableSurfaceContacts )
-	, MaxFemClothContacts( "MaxFemClothContacts", setPxGpuDynamicsMemoryConfigMaxFemClothContacts, getPxGpuDynamicsMemoryConfigMaxFemClothContacts )
 	, MaxDeformableVolumeContacts( "MaxDeformableVolumeContacts", setPxGpuDynamicsMemoryConfigMaxDeformableVolumeContacts, getPxGpuDynamicsMemoryConfigMaxDeformableVolumeContacts )
-	, MaxSoftBodyContacts( "MaxSoftBodyContacts", setPxGpuDynamicsMemoryConfigMaxSoftBodyContacts, getPxGpuDynamicsMemoryConfigMaxSoftBodyContacts )
 	, MaxParticleContacts( "MaxParticleContacts", setPxGpuDynamicsMemoryConfigMaxParticleContacts, getPxGpuDynamicsMemoryConfigMaxParticleContacts )
 	, CollisionStackSize( "CollisionStackSize", setPxGpuDynamicsMemoryConfigCollisionStackSize, getPxGpuDynamicsMemoryConfigCollisionStackSize )
 {}
@@ -1577,9 +1557,7 @@ PX_PHYSX_CORE_API PxGpuDynamicsMemoryConfigGeneratedValues::PxGpuDynamicsMemoryC
 		,FoundLostAggregatePairsCapacity( inSource->foundLostAggregatePairsCapacity )
 		,TotalAggregatePairsCapacity( inSource->totalAggregatePairsCapacity )
 		,MaxDeformableSurfaceContacts( inSource->maxDeformableSurfaceContacts )
-		,MaxFemClothContacts( inSource->maxFemClothContacts )
 		,MaxDeformableVolumeContacts( inSource->maxDeformableVolumeContacts )
-		,MaxSoftBodyContacts( inSource->maxSoftBodyContacts )
 		,MaxParticleContacts( inSource->maxParticleContacts )
 		,CollisionStackSize( inSource->collisionStackSize )
 {
@@ -1681,8 +1659,6 @@ inline PxU64 getPxSimulationStatisticsGpuMemDeformableSurfaces( const PxSimulati
 inline void setPxSimulationStatisticsGpuMemDeformableSurfaces( PxSimulationStatistics* inOwner, PxU64 inData) { inOwner->gpuMemDeformableSurfaces = inData; }
 inline PxU64 getPxSimulationStatisticsGpuMemDeformableVolumes( const PxSimulationStatistics* inOwner ) { return inOwner->gpuMemDeformableVolumes; }
 inline void setPxSimulationStatisticsGpuMemDeformableVolumes( PxSimulationStatistics* inOwner, PxU64 inData) { inOwner->gpuMemDeformableVolumes = inData; }
-inline PxU64 getPxSimulationStatisticsGpuMemSoftBodies( const PxSimulationStatistics* inOwner ) { return inOwner->gpuMemSoftBodies; }
-inline void setPxSimulationStatisticsGpuMemSoftBodies( PxSimulationStatistics* inOwner, PxU64 inData) { inOwner->gpuMemSoftBodies = inData; }
 inline PxU64 getPxSimulationStatisticsGpuMemHeap( const PxSimulationStatistics* inOwner ) { return inOwner->gpuMemHeap; }
 inline void setPxSimulationStatisticsGpuMemHeap( PxSimulationStatistics* inOwner, PxU64 inData) { inOwner->gpuMemHeap = inData; }
 inline PxU64 getPxSimulationStatisticsGpuMemHeapBroadPhase( const PxSimulationStatistics* inOwner ) { return inOwner->gpuMemHeapBroadPhase; }
@@ -1703,16 +1679,12 @@ inline PxU64 getPxSimulationStatisticsGpuMemHeapSimulationDeformableSurface( con
 inline void setPxSimulationStatisticsGpuMemHeapSimulationDeformableSurface( PxSimulationStatistics* inOwner, PxU64 inData) { inOwner->gpuMemHeapSimulationDeformableSurface = inData; }
 inline PxU64 getPxSimulationStatisticsGpuMemHeapSimulationDeformableVolume( const PxSimulationStatistics* inOwner ) { return inOwner->gpuMemHeapSimulationDeformableVolume; }
 inline void setPxSimulationStatisticsGpuMemHeapSimulationDeformableVolume( PxSimulationStatistics* inOwner, PxU64 inData) { inOwner->gpuMemHeapSimulationDeformableVolume = inData; }
-inline PxU64 getPxSimulationStatisticsGpuMemHeapSimulationSoftBody( const PxSimulationStatistics* inOwner ) { return inOwner->gpuMemHeapSimulationSoftBody; }
-inline void setPxSimulationStatisticsGpuMemHeapSimulationSoftBody( PxSimulationStatistics* inOwner, PxU64 inData) { inOwner->gpuMemHeapSimulationSoftBody = inData; }
 inline PxU64 getPxSimulationStatisticsGpuMemHeapParticles( const PxSimulationStatistics* inOwner ) { return inOwner->gpuMemHeapParticles; }
 inline void setPxSimulationStatisticsGpuMemHeapParticles( PxSimulationStatistics* inOwner, PxU64 inData) { inOwner->gpuMemHeapParticles = inData; }
 inline PxU64 getPxSimulationStatisticsGpuMemHeapDeformableSurfaces( const PxSimulationStatistics* inOwner ) { return inOwner->gpuMemHeapDeformableSurfaces; }
 inline void setPxSimulationStatisticsGpuMemHeapDeformableSurfaces( PxSimulationStatistics* inOwner, PxU64 inData) { inOwner->gpuMemHeapDeformableSurfaces = inData; }
 inline PxU64 getPxSimulationStatisticsGpuMemHeapDeformableVolumes( const PxSimulationStatistics* inOwner ) { return inOwner->gpuMemHeapDeformableVolumes; }
 inline void setPxSimulationStatisticsGpuMemHeapDeformableVolumes( PxSimulationStatistics* inOwner, PxU64 inData) { inOwner->gpuMemHeapDeformableVolumes = inData; }
-inline PxU64 getPxSimulationStatisticsGpuMemHeapSoftBodies( const PxSimulationStatistics* inOwner ) { return inOwner->gpuMemHeapSoftBodies; }
-inline void setPxSimulationStatisticsGpuMemHeapSoftBodies( PxSimulationStatistics* inOwner, PxU64 inData) { inOwner->gpuMemHeapSoftBodies = inData; }
 inline PxU64 getPxSimulationStatisticsGpuMemHeapOther( const PxSimulationStatistics* inOwner ) { return inOwner->gpuMemHeapOther; }
 inline void setPxSimulationStatisticsGpuMemHeapOther( PxSimulationStatistics* inOwner, PxU64 inData) { inOwner->gpuMemHeapOther = inData; }
 inline PxGpuDynamicsMemoryConfigStatistics getPxSimulationStatisticsGpuDynamicsMemoryConfigStatistics( const PxSimulationStatistics* inOwner ) { return inOwner->gpuDynamicsMemoryConfigStatistics; }
@@ -1745,7 +1717,6 @@ PX_PHYSX_CORE_API PxSimulationStatisticsGeneratedInfo::PxSimulationStatisticsGen
 	, GpuMemParticles( "GpuMemParticles", setPxSimulationStatisticsGpuMemParticles, getPxSimulationStatisticsGpuMemParticles )
 	, GpuMemDeformableSurfaces( "GpuMemDeformableSurfaces", setPxSimulationStatisticsGpuMemDeformableSurfaces, getPxSimulationStatisticsGpuMemDeformableSurfaces )
 	, GpuMemDeformableVolumes( "GpuMemDeformableVolumes", setPxSimulationStatisticsGpuMemDeformableVolumes, getPxSimulationStatisticsGpuMemDeformableVolumes )
-	, GpuMemSoftBodies( "GpuMemSoftBodies", setPxSimulationStatisticsGpuMemSoftBodies, getPxSimulationStatisticsGpuMemSoftBodies )
 	, GpuMemHeap( "GpuMemHeap", setPxSimulationStatisticsGpuMemHeap, getPxSimulationStatisticsGpuMemHeap )
 	, GpuMemHeapBroadPhase( "GpuMemHeapBroadPhase", setPxSimulationStatisticsGpuMemHeapBroadPhase, getPxSimulationStatisticsGpuMemHeapBroadPhase )
 	, GpuMemHeapNarrowPhase( "GpuMemHeapNarrowPhase", setPxSimulationStatisticsGpuMemHeapNarrowPhase, getPxSimulationStatisticsGpuMemHeapNarrowPhase )
@@ -1756,11 +1727,9 @@ PX_PHYSX_CORE_API PxSimulationStatisticsGeneratedInfo::PxSimulationStatisticsGen
 	, GpuMemHeapSimulationParticles( "GpuMemHeapSimulationParticles", setPxSimulationStatisticsGpuMemHeapSimulationParticles, getPxSimulationStatisticsGpuMemHeapSimulationParticles )
 	, GpuMemHeapSimulationDeformableSurface( "GpuMemHeapSimulationDeformableSurface", setPxSimulationStatisticsGpuMemHeapSimulationDeformableSurface, getPxSimulationStatisticsGpuMemHeapSimulationDeformableSurface )
 	, GpuMemHeapSimulationDeformableVolume( "GpuMemHeapSimulationDeformableVolume", setPxSimulationStatisticsGpuMemHeapSimulationDeformableVolume, getPxSimulationStatisticsGpuMemHeapSimulationDeformableVolume )
-	, GpuMemHeapSimulationSoftBody( "GpuMemHeapSimulationSoftBody", setPxSimulationStatisticsGpuMemHeapSimulationSoftBody, getPxSimulationStatisticsGpuMemHeapSimulationSoftBody )
 	, GpuMemHeapParticles( "GpuMemHeapParticles", setPxSimulationStatisticsGpuMemHeapParticles, getPxSimulationStatisticsGpuMemHeapParticles )
 	, GpuMemHeapDeformableSurfaces( "GpuMemHeapDeformableSurfaces", setPxSimulationStatisticsGpuMemHeapDeformableSurfaces, getPxSimulationStatisticsGpuMemHeapDeformableSurfaces )
 	, GpuMemHeapDeformableVolumes( "GpuMemHeapDeformableVolumes", setPxSimulationStatisticsGpuMemHeapDeformableVolumes, getPxSimulationStatisticsGpuMemHeapDeformableVolumes )
-	, GpuMemHeapSoftBodies( "GpuMemHeapSoftBodies", setPxSimulationStatisticsGpuMemHeapSoftBodies, getPxSimulationStatisticsGpuMemHeapSoftBodies )
 	, GpuMemHeapOther( "GpuMemHeapOther", setPxSimulationStatisticsGpuMemHeapOther, getPxSimulationStatisticsGpuMemHeapOther )
 	, GpuDynamicsMemoryConfigStatistics( "GpuDynamicsMemoryConfigStatistics", setPxSimulationStatisticsGpuDynamicsMemoryConfigStatistics, getPxSimulationStatisticsGpuDynamicsMemoryConfigStatistics )
 	, NbBroadPhaseAdds( "NbBroadPhaseAdds", setPxSimulationStatisticsNbBroadPhaseAdds, getPxSimulationStatisticsNbBroadPhaseAdds )
@@ -1790,7 +1759,6 @@ PX_PHYSX_CORE_API PxSimulationStatisticsGeneratedValues::PxSimulationStatisticsG
 		,GpuMemParticles( inSource->gpuMemParticles )
 		,GpuMemDeformableSurfaces( inSource->gpuMemDeformableSurfaces )
 		,GpuMemDeformableVolumes( inSource->gpuMemDeformableVolumes )
-		,GpuMemSoftBodies( inSource->gpuMemSoftBodies )
 		,GpuMemHeap( inSource->gpuMemHeap )
 		,GpuMemHeapBroadPhase( inSource->gpuMemHeapBroadPhase )
 		,GpuMemHeapNarrowPhase( inSource->gpuMemHeapNarrowPhase )
@@ -1801,11 +1769,9 @@ PX_PHYSX_CORE_API PxSimulationStatisticsGeneratedValues::PxSimulationStatisticsG
 		,GpuMemHeapSimulationParticles( inSource->gpuMemHeapSimulationParticles )
 		,GpuMemHeapSimulationDeformableSurface( inSource->gpuMemHeapSimulationDeformableSurface )
 		,GpuMemHeapSimulationDeformableVolume( inSource->gpuMemHeapSimulationDeformableVolume )
-		,GpuMemHeapSimulationSoftBody( inSource->gpuMemHeapSimulationSoftBody )
 		,GpuMemHeapParticles( inSource->gpuMemHeapParticles )
 		,GpuMemHeapDeformableSurfaces( inSource->gpuMemHeapDeformableSurfaces )
 		,GpuMemHeapDeformableVolumes( inSource->gpuMemHeapDeformableVolumes )
-		,GpuMemHeapSoftBodies( inSource->gpuMemHeapSoftBodies )
 		,GpuMemHeapOther( inSource->gpuMemHeapOther )
 		,GpuDynamicsMemoryConfigStatistics( inSource->gpuDynamicsMemoryConfigStatistics )
 		,NbBroadPhaseAdds( inSource->nbBroadPhaseAdds )

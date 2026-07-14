@@ -180,7 +180,7 @@ static __device__ int contactReduce(const PxVec3& pointRaw, const PxReal separat
 template<bool TClustering, bool TKeepAnotherDeepestForPCM, int TMaxPoints, bool TDoDupeTest = true>
 static __device__ int contactReduce2(const PxVec3& pointRaw, const PxReal separation, const PxVec3& normal, int allMask,
 	PxReal clusterBias)
-{	
+{
 	const PxVec3 point = pointRaw - normal * pointRaw.dot(normal);
 	PxReal distToOrigin = point.magnitude();
 	return contactReduceShared<TClustering, TKeepAnotherDeepestForPCM, TMaxPoints, TDoDupeTest>(pointRaw, separation, normal, allMask,

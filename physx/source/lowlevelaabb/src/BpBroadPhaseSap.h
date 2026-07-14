@@ -64,9 +64,9 @@ public:
 	{
 	}
 
-	virtual void runInternal();
+	virtual void runInternal() PX_OVERRIDE;
 
-	virtual const char* getName() const { return "BpBroadphaseSap.batchUpdate"; }
+	virtual const char* getName() const PX_OVERRIDE { return "BpBroadphaseSap.batchUpdate"; }
 
 	void set(class BroadPhaseSap* sap, const PxU32 axis) {mSap = sap; mAxis = axis;}
 

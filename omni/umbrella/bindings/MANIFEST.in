@@ -1,0 +1,5 @@
+include *.pyd
+include *.so
+include *.dll
+include *.dylib
+include __init__.py

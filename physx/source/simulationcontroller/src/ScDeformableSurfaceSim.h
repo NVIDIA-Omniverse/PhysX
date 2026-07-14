@@ -50,7 +50,7 @@ public:
 
 	PX_INLINE	Dy::DeformableSurface*	getLowLevelDeformableSurface() const { return mLLDeformableSurface; }
 	PX_INLINE	DeformableSurfaceCore&	getCore() const { return static_cast<DeformableSurfaceCore&>(mCore); }
-	virtual		PxActor*				getPxActor() const { return getCore().getPxActor(); }
+	virtual		PxActor*				getPxActor() const PX_OVERRIDE { return getCore().getPxActor(); }
 
 	bool							isSleeping() const;
 	PX_FORCE_INLINE	bool			isActive() const { return !isSleeping(); }

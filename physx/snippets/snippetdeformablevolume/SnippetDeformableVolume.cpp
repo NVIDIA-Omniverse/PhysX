@@ -98,7 +98,7 @@ static PxDeformableVolume* createDeformableVolume(const PxCookingParams& params,
 	else 
 	{
 		deformableVolumeMesh = PxDeformableVolumeExt::createDeformableVolumeMesh(params, surfaceMesh, numVoxelsAlongLongestAABBAxis, gPhysics->getPhysicsInsertionCallback());
-	}	
+	}
 
 	//Alternatively one can cook a deformable volume mesh in a single step
 	//tetMesh = cooking.createDeformableVolumeMesh(simulationMeshDesc, collisionMeshDesc, deformableVolumeDesc, physics.getPhysicsInsertionCallback());

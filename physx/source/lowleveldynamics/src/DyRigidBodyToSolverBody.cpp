@@ -30,7 +30,6 @@
 #include "DySolverBody.h"
 #include "PxsRigidBody.h"
 #include "PxvDynamics.h"
-#include "foundation/PxSIMDHelpers.h"
 
 using namespace physx;
 
@@ -41,11 +40,9 @@ void Dy::copyToSolverBodyData(const PxVec3& linearVelocity, const PxVec3& angula
 {
 	data.nodeIndex = nodeIndex;
 
-	const PxVec3 safeSqrtInvInertia = computeSafeSqrtInertia(invInertia);
+	const PxVec3p safeSqrtInvInertia = computeSafeSqrtInertia(invInertia);
 
-	const PxMat33Padded rotation(globalPose.q);
-
-	Cm::transformInertiaTensor(safeSqrtInvInertia, rotation, data.sqrtInvInertia);
+	Cm::transformInertiaTensor(safeSqrtInvInertia, globalPose.q, data.sqrtInvInertia);
 
 	PxVec3 ang = angularVelocity;
 	PxVec3 lin = linearVelocity;
@@ -64,7 +61,7 @@ void Dy::copyToSolverBodyData(const PxVec3& linearVelocity, const PxVec3& angula
 		const PxVec3 newDeltaAngVel = globalPose.q.rotate(invInertia.multiply(newMom) - localAngVel);
 
 		ang += newDeltaAngVel;
-	}	
+	}
 	
 	if (lockFlags)
 	{

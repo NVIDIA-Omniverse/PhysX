@@ -28,10 +28,14 @@ from dataclasses import dataclass
 _DISABLE_CONTACT_PROCESSING = 0
 _COLLISION_CONE_CUSTOM_GEOMETRY = 1
 _COLLISION_CYLINDER_CUSTOM_GEOMETRY = 2
+_OMNIPVD_OUTPUT_ENABLED = 3
 
 # Int32 config key enum values (must match ovphysx_config_int32_t)
 _NUM_THREADS = 0
 _SCENE_MULTI_GPU_MODE = 1
+
+# String config key enum values (must match ovphysx_config_string_t)
+_OMNIPVD_OVD_RECORDING_DIRECTORY = 0
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +129,8 @@ class PhysXConfig:
     collision_cylinder_custom_geometry: bool | None = None
     num_threads: int | None = None
     scene_multi_gpu_mode: int | None = None  #: 0=disabled, 1=all GPUs, 2=skip first GPU
+    omnipvd_output_enabled: bool | None = None  #: Must be set before instance creation
+    omnipvd_ovd_recording_directory: str | None = None  #: Must be set before instance creation
     carbonite_overrides: dict[str, bool | int | float | str] | None = None
 
     def __post_init__(self):
@@ -132,8 +138,10 @@ class PhysXConfig:
             "disable_contact_processing",
             "collision_cone_custom_geometry",
             "collision_cylinder_custom_geometry",
+            "omnipvd_output_enabled",
         )
         _int_fields = ("num_threads", "scene_multi_gpu_mode")
+        _str_fields = ("omnipvd_ovd_recording_directory",)
         for name in _bool_fields:
             value = getattr(self, name)
             if value is not None and not isinstance(value, bool):
@@ -142,6 +150,10 @@ class PhysXConfig:
             value = getattr(self, name)
             if value is not None and (not isinstance(value, int) or isinstance(value, bool)):
                 raise TypeError(f"PhysXConfig.{name} must be int, got {type(value).__name__}")
+        for name in _str_fields:
+            value = getattr(self, name)
+            if value is not None and not isinstance(value, str):
+                raise TypeError(f"PhysXConfig.{name} must be str, got {type(value).__name__}")
         if self.carbonite_overrides is not None and not isinstance(self.carbonite_overrides, dict):
             raise TypeError(
                 f"PhysXConfig.carbonite_overrides must be dict, got {type(self.carbonite_overrides).__name__}"
@@ -159,6 +171,8 @@ _FIELD_TO_ENTRY: dict[str, tuple] = {
     "collision_cylinder_custom_geometry": (_make_bool_entry,  _COLLISION_CYLINDER_CUSTOM_GEOMETRY, "/physics/collisionCylinderCustomGeometry"),
     "num_threads":                       (_make_int32_entry, _NUM_THREADS,                        "/physics/numThreads"),
     "scene_multi_gpu_mode":              (_make_int32_entry, _SCENE_MULTI_GPU_MODE,               "/physics/sceneMultiGPUMode"),
+    "omnipvd_output_enabled":            (_make_bool_entry,  _OMNIPVD_OUTPUT_ENABLED,             "/physics/omniPvdOutputEnabled"),
+    "omnipvd_ovd_recording_directory":   (_make_string_entry, _OMNIPVD_OVD_RECORDING_DIRECTORY,   "/persistent/physics/omniPvdOvdRecordingDirectory"),
 }
 
 # Reverse lookup: carbonite_path -> field_name (for conflict detection)

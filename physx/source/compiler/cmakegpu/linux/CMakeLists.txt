@@ -25,11 +25,11 @@
 ## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 IF(NOT DEFINED PHYSX_LINUX_COMPILE_DEFS)
-	MESSAGE(FATAL ERROR "Snippets uses the PhysX compile defs, and they're not defined when they need to be.")
+	MESSAGE(FATAL_ERROR "PhysXGpu requires the PhysX compile defs, and they're not defined when they need to be.")
 ENDIF()
 
 IF (NOT DEFINED PHYSX_CXX_FLAGS)
-	MESSAGE(FATAL ERROR "Snippets uses the PhysX CXX flags, and they're not defined when they need to be.")
+	MESSAGE(FATAL_ERROR "PhysXGpu requires the PhysX CXX flags, and they're not defined when they need to be.")
 ENDIF()
 
 # Get the CXX Flags from the Cached variables set by the PhysX CMakeLists
@@ -94,9 +94,13 @@ SET_PROPERTY(TARGET PhysXCudaContextManager PROPERTY FOLDER "PhysX SDK/GPU")
 
 SET(PHYSXDISTRO_LIBS PhysXGpu)
 
-INSTALL(
-	TARGETS ${PHYSXDISTRO_LIBS}
-	EXPORT PhysXSDK
-	DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile>	
-)
+# Only install the legacy PhysXSDK export set in standalone mode (PX_ENABLE_INSTALL not defined).
+# The FetchContent entry point (physx/CMakeLists.txt) uses its own PhysXTargets export set.
+IF(NOT DEFINED PX_ENABLE_INSTALL)
+	INSTALL(
+		TARGETS ${PHYSXDISTRO_LIBS}
+		EXPORT PhysXSDK
+		DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile>
+	)
+ENDIF()
 	

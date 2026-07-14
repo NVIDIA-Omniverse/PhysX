@@ -45,19 +45,19 @@ class CompanionPrunerBucket : public CompanionPruner
 					CompanionPrunerBucket() : mPrunerCore(false)	{}
 	virtual			~CompanionPrunerBucket()						{}
 
-	virtual bool	addObject(const PrunerPayload& object, PrunerHandle handle, const PxBounds3& worldAABB, const PxTransform& transform, PxU32 timeStamp, PoolIndex poolIndex)
+	virtual bool	addObject(const PrunerPayload& object, PrunerHandle handle, const PxBounds3& worldAABB, const PxTransform& transform, PxU32 timeStamp, PoolIndex poolIndex) PX_OVERRIDE
 					{
 						PX_UNUSED(poolIndex);
 						PX_UNUSED(handle);
 						return mPrunerCore.addObject(object, worldAABB, transform, timeStamp);
 					}
-	virtual	bool	updateObject(const PrunerPayload& object, PrunerHandle handle, const PxBounds3& worldAABB, const PxTransform& transform, PoolIndex poolIndex)
+	virtual	bool	updateObject(const PrunerPayload& object, PrunerHandle handle, const PxBounds3& worldAABB, const PxTransform& transform, PoolIndex poolIndex) PX_OVERRIDE
 					{
 						PX_UNUSED(poolIndex);
 						PX_UNUSED(handle);
 						return mPrunerCore.updateObject(worldAABB, object, transform);
 					}
-	virtual	bool	removeObject(const PrunerPayload& object, PrunerHandle handle, PxU32 objectIndex, PxU32 swapObjectIndex)
+	virtual	bool	removeObject(const PrunerPayload& object, PrunerHandle handle, PxU32 objectIndex, PxU32 swapObjectIndex) PX_OVERRIDE
 					{
 						PX_UNUSED(objectIndex);
 						PX_UNUSED(swapObjectIndex);
@@ -65,37 +65,37 @@ class CompanionPrunerBucket : public CompanionPruner
 						PxU32 timeStamp;
 						return mPrunerCore.removeObject(object, timeStamp);
 					}
-	virtual	void	swapIndex(PxU32 objectIndex, PxU32 swapObjectIndex)
+	virtual	void	swapIndex(PxU32 objectIndex, PxU32 swapObjectIndex) PX_OVERRIDE
 					{
 						PX_UNUSED(objectIndex);
 						PX_UNUSED(swapObjectIndex);
 					}
-	virtual	PxU32	removeMarkedObjects(PxU32 timeStamp)				{ return mPrunerCore.removeMarkedObjects(timeStamp);	}
-	virtual	void	shiftOrigin(const PxVec3& shift)					{ mPrunerCore.shiftOrigin(shift);						}
-	virtual	void	timeStampChange()									{														}
-	virtual	void	build()												{ mPrunerCore.build();									}
-	virtual	PxU32	getNbObjects()								const	{ return mPrunerCore.getNbObjects();					}
-	virtual	void	release()											{ mPrunerCore.release();								}
-	virtual	void	visualize(PxRenderOutput& out, PxU32 color)	const	{ mPrunerCore.visualize(out, color);					}
-	virtual	bool	raycast(const PxVec3& origin, const PxVec3& unitDir, PxReal& inOutDistance, PrunerRaycastCallback& prunerCallback)	const
+	virtual	PxU32	removeMarkedObjects(PxU32 timeStamp)				PX_OVERRIDE { return mPrunerCore.removeMarkedObjects(timeStamp);	}
+	virtual	void	shiftOrigin(const PxVec3& shift)					PX_OVERRIDE { mPrunerCore.shiftOrigin(shift);						}
+	virtual	void	timeStampChange()									PX_OVERRIDE {														}
+	virtual	void	build()												PX_OVERRIDE { mPrunerCore.build();									}
+	virtual	PxU32	getNbObjects()								const	PX_OVERRIDE { return mPrunerCore.getNbObjects();					}
+	virtual	void	release()											PX_OVERRIDE { mPrunerCore.release();								}
+	virtual	void	visualize(PxRenderOutput& out, PxU32 color)	const	PX_OVERRIDE { mPrunerCore.visualize(out, color);					}
+	virtual	bool	raycast(const PxVec3& origin, const PxVec3& unitDir, PxReal& inOutDistance, PrunerRaycastCallback& prunerCallback)	const PX_OVERRIDE
 					{
 						if(mPrunerCore.getNbObjects())
 							return mPrunerCore.raycast(origin, unitDir, inOutDistance, prunerCallback);
 						return true;
 					}
-	virtual	bool	overlap(const ShapeData& queryVolume, PrunerOverlapCallback& prunerCallback)	const
+	virtual	bool	overlap(const ShapeData& queryVolume, PrunerOverlapCallback& prunerCallback)	const PX_OVERRIDE
 					{
 						if(mPrunerCore.getNbObjects())
 							return mPrunerCore.overlap(queryVolume, prunerCallback);
 						return true;
 					}
-	virtual	bool	sweep(const ShapeData& queryVolume, const PxVec3& unitDir, PxReal& inOutDistance, PrunerRaycastCallback& prunerCallback)	const
+	virtual	bool	sweep(const ShapeData& queryVolume, const PxVec3& unitDir, PxReal& inOutDistance, PrunerRaycastCallback& prunerCallback)	const PX_OVERRIDE
 					{
 						if(mPrunerCore.getNbObjects())
 							return mPrunerCore.sweep(queryVolume, unitDir, inOutDistance, prunerCallback);
 						return true;
 					}
-	virtual	void	getGlobalBounds(PxBounds3& bounds)	const
+	virtual	void	getGlobalBounds(PxBounds3& bounds)	const PX_OVERRIDE
 					{
 						mPrunerCore.getGlobalBounds(bounds);
 					}
@@ -109,7 +109,7 @@ class CompanionPrunerIncremental : public CompanionPruner
 					CompanionPrunerIncremental(const PruningPool* pool) : mPrunerCore(pool)	{}
 	virtual			~CompanionPrunerIncremental()											{}
 
-	virtual bool	addObject(const PrunerPayload& object, PrunerHandle handle, const PxBounds3& worldAABB, const PxTransform& transform, PxU32 timeStamp, PoolIndex poolIndex)
+	virtual bool	addObject(const PrunerPayload& object, PrunerHandle handle, const PxBounds3& worldAABB, const PxTransform& transform, PxU32 timeStamp, PoolIndex poolIndex) PX_OVERRIDE
 					{
 						PX_UNUSED(worldAABB);
 						PX_UNUSED(transform);
@@ -117,7 +117,7 @@ class CompanionPrunerIncremental : public CompanionPruner
 						PX_UNUSED(handle);
 						return mPrunerCore.addObject(poolIndex, timeStamp);
 					}
-	virtual	bool	updateObject(const PrunerPayload& object, PrunerHandle handle, const PxBounds3& worldAABB, const PxTransform& transform, PoolIndex poolIndex)
+	virtual	bool	updateObject(const PrunerPayload& object, PrunerHandle handle, const PxBounds3& worldAABB, const PxTransform& transform, PoolIndex poolIndex) PX_OVERRIDE
 					{
 						PX_UNUSED(worldAABB);
 						PX_UNUSED(transform);
@@ -125,43 +125,43 @@ class CompanionPrunerIncremental : public CompanionPruner
 						PX_UNUSED(handle);
 						return mPrunerCore.updateObject(poolIndex);
 					}
-	virtual	bool	removeObject(const PrunerPayload& object, PrunerHandle handle, PxU32 objectIndex, PxU32 swapObjectIndex)
+	virtual	bool	removeObject(const PrunerPayload& object, PrunerHandle handle, PxU32 objectIndex, PxU32 swapObjectIndex) PX_OVERRIDE
 					{
 						PX_UNUSED(object);
 						PX_UNUSED(handle);
 						PxU32 timeStamp;
 						return mPrunerCore.removeObject(objectIndex, swapObjectIndex, timeStamp);
 					}
-	virtual	void	swapIndex(PxU32 objectIndex, PxU32 swapObjectIndex)
+	virtual	void	swapIndex(PxU32 objectIndex, PxU32 swapObjectIndex) PX_OVERRIDE
 					{
 						mPrunerCore.swapIndex(objectIndex, swapObjectIndex);
 					}
-	virtual	PxU32	removeMarkedObjects(PxU32 timeStamp)				{ return mPrunerCore.removeMarkedObjects(timeStamp);	}
-	virtual	void	shiftOrigin(const PxVec3& shift)					{ mPrunerCore.shiftOrigin(shift);						}
-	virtual	void	timeStampChange()									{ mPrunerCore.timeStampChange();						}
-	virtual	void	build()												{ mPrunerCore.build();									}
-	virtual	PxU32	getNbObjects()								const	{ return mPrunerCore.getNbObjects();					}
-	virtual	void	release()											{ mPrunerCore.release();								}
-	virtual	void	visualize(PxRenderOutput& out, PxU32 color)	const	{ mPrunerCore.visualize(out, color);					}
-	virtual	bool	raycast(const PxVec3& origin, const PxVec3& unitDir, PxReal& inOutDistance, PrunerRaycastCallback& prunerCallback)	const
+	virtual	PxU32	removeMarkedObjects(PxU32 timeStamp)				PX_OVERRIDE { return mPrunerCore.removeMarkedObjects(timeStamp);	}
+	virtual	void	shiftOrigin(const PxVec3& shift)					PX_OVERRIDE { mPrunerCore.shiftOrigin(shift);						}
+	virtual	void	timeStampChange()									PX_OVERRIDE { mPrunerCore.timeStampChange();						}
+	virtual	void	build()												PX_OVERRIDE { mPrunerCore.build();									}
+	virtual	PxU32	getNbObjects()								const	PX_OVERRIDE { return mPrunerCore.getNbObjects();					}
+	virtual	void	release()											PX_OVERRIDE { mPrunerCore.release();								}
+	virtual	void	visualize(PxRenderOutput& out, PxU32 color)	const	PX_OVERRIDE { mPrunerCore.visualize(out, color);					}
+	virtual	bool	raycast(const PxVec3& origin, const PxVec3& unitDir, PxReal& inOutDistance, PrunerRaycastCallback& prunerCallback)	const PX_OVERRIDE
 					{
 						if(mPrunerCore.getNbObjects())
 							return mPrunerCore.raycast(origin, unitDir, inOutDistance, prunerCallback);
 						return true;
 					}
-	virtual	bool	overlap(const ShapeData& queryVolume, PrunerOverlapCallback& prunerCallback)	const
+	virtual	bool	overlap(const ShapeData& queryVolume, PrunerOverlapCallback& prunerCallback)	const PX_OVERRIDE
 					{
 						if(mPrunerCore.getNbObjects())
 							return mPrunerCore.overlap(queryVolume, prunerCallback);
 						return true;
 					}
-	virtual	bool	sweep(const ShapeData& queryVolume, const PxVec3& unitDir, PxReal& inOutDistance, PrunerRaycastCallback& prunerCallback)	const
+	virtual	bool	sweep(const ShapeData& queryVolume, const PxVec3& unitDir, PxReal& inOutDistance, PrunerRaycastCallback& prunerCallback)	const PX_OVERRIDE
 					{
 						if(mPrunerCore.getNbObjects())
 							return mPrunerCore.sweep(queryVolume, unitDir, inOutDistance, prunerCallback);
 						return true;
 					}
-	virtual	void	getGlobalBounds(PxBounds3& bounds)	const
+	virtual	void	getGlobalBounds(PxBounds3& bounds)	const PX_OVERRIDE
 					{
 						mPrunerCore.getGlobalBounds(bounds);
 					}
@@ -198,21 +198,21 @@ class CompanionPrunerAABBTree : public CompanionPruner
 											CompanionPrunerAABBTree(PxU64 contextID, const PruningPool* pool);
 	virtual									~CompanionPrunerAABBTree();
 
-	virtual			bool					addObject(const PrunerPayload& object, PrunerHandle handle, const PxBounds3& worldAABB, const PxTransform& transform, PxU32 timeStamp, PoolIndex poolIndex);
-	virtual			bool					updateObject(const PrunerPayload& object, PrunerHandle handle, const PxBounds3& worldAABB, const PxTransform& transform, PoolIndex poolIndex);
-	virtual			bool					removeObject(const PrunerPayload& object, PrunerHandle handle, PxU32 objectIndex, PxU32 swapObjectIndex);
-	virtual			void					swapIndex(PxU32 objectIndex, PxU32 swapObjectIndex);
-	virtual			PxU32					removeMarkedObjects(PxU32 timeStamp);
-	virtual			void					shiftOrigin(const PxVec3& shift);
-	virtual			void					timeStampChange();
-	virtual			void					build();
-	virtual			PxU32					getNbObjects()								const;
-	virtual			void					release();
-	virtual			void					visualize(PxRenderOutput& out, PxU32 color)	const;
-	virtual			bool					raycast(const PxVec3& origin, const PxVec3& unitDir, PxReal& inOutDistance, PrunerRaycastCallback& prunerCallback)	const;
-	virtual			bool					overlap(const ShapeData& queryVolume, PrunerOverlapCallback& prunerCallback)	const;
-	virtual			bool					sweep(const ShapeData& queryVolume, const PxVec3& unitDir, PxReal& inOutDistance, PrunerRaycastCallback& prunerCallback)	const;
-	virtual			void					getGlobalBounds(PxBounds3& bounds)	const;
+	virtual			bool					addObject(const PrunerPayload& object, PrunerHandle handle, const PxBounds3& worldAABB, const PxTransform& transform, PxU32 timeStamp, PoolIndex poolIndex) PX_OVERRIDE;
+	virtual			bool					updateObject(const PrunerPayload& object, PrunerHandle handle, const PxBounds3& worldAABB, const PxTransform& transform, PoolIndex poolIndex) PX_OVERRIDE;
+	virtual			bool					removeObject(const PrunerPayload& object, PrunerHandle handle, PxU32 objectIndex, PxU32 swapObjectIndex) PX_OVERRIDE;
+	virtual			void					swapIndex(PxU32 objectIndex, PxU32 swapObjectIndex) PX_OVERRIDE;
+	virtual			PxU32					removeMarkedObjects(PxU32 timeStamp) PX_OVERRIDE;
+	virtual			void					shiftOrigin(const PxVec3& shift) PX_OVERRIDE;
+	virtual			void					timeStampChange() PX_OVERRIDE;
+	virtual			void					build() PX_OVERRIDE;
+	virtual			PxU32					getNbObjects()	const PX_OVERRIDE;
+	virtual			void					release() PX_OVERRIDE;
+	virtual			void					visualize(PxRenderOutput& out, PxU32 color)	const PX_OVERRIDE;
+	virtual			bool					raycast(const PxVec3& origin, const PxVec3& unitDir, PxReal& inOutDistance, PrunerRaycastCallback& prunerCallback)	const PX_OVERRIDE;
+	virtual			bool					overlap(const ShapeData& queryVolume, PrunerOverlapCallback& prunerCallback)	const PX_OVERRIDE;
+	virtual			bool					sweep(const ShapeData& queryVolume, const PxVec3& unitDir, PxReal& inOutDistance, PrunerRaycastCallback& prunerCallback)	const PX_OVERRIDE;
+	virtual			void					getGlobalBounds(PxBounds3& bounds)	const PX_OVERRIDE;
 
 	// PT: we have multiple options here, not sure which one is best:
 	// - use a Gu:BVH
@@ -512,7 +512,7 @@ void CompanionPrunerAABBTree::swapIndex(PxU32 objectIndex, PxU32 swapObjectIndex
 }
 
 PxU32 CompanionPrunerAABBTree::removeMarkedObjects(PxU32 timeStamp)
-{	
+{
 #ifdef USE_DEBUG_PRINTF
 	printf("removeMarkedObjects %d\n", timeStamp);
 #endif
@@ -888,7 +888,7 @@ bool CompanionPrunerAABBTree::overlap(const ShapeData& queryVolume, PrunerOverla
 			case PxGeometryType::eBOX:
 			{
 				if(queryVolume.isOBB())
-				{	
+				{
 					const DefaultOBBAABBTest test(queryVolume);
 					if(!doOverlapLeafTest<true, OBBAABBTest, MaverickNode, MaverickOverlapAdapter>(test, &mMaverick, mMaverick.mFreeBounds, NULL, ra))
 						return false;
@@ -941,7 +941,7 @@ bool CompanionPrunerAABBTree::overlap(const ShapeData& queryVolume, PrunerOverla
 			case PxGeometryType::eBOX:
 			{
 				if(queryVolume.isOBB())
-				{	
+				{
 					const DefaultOBBAABBTest test(queryVolume);
 					return AABBTreeOverlap<true, OBBAABBTest, BVHTree, BVHNode, OverlapAdapter>()(mBVH->getData().mBounds, BVHTree(mBVH->getData()), test, ra);
 				}

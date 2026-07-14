@@ -42,7 +42,7 @@ class OmniPvdMemoryStream
 public:
 	virtual ~OmniPvdMemoryStream()
 	{
-	}		
+	}
 	/**
 	 * \brief Used to get the read stream
 	 *

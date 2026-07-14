@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project toolsVersion="5.6">
+  <import path="../../ovexts/deps/target-deps.packman.xml">
+    <filter include="physx" linkPath="../_build/target-deps/physx" />
+    <filter include="physxdevice" linkPath="../_build/target-deps/physxdevice" />
+  </import>
+</project>

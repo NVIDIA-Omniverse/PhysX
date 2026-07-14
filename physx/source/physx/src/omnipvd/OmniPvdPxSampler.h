@@ -54,8 +54,11 @@ namespace physx
 	class PxRigidDynamic;
 	class PxArticulationMimicJoint;
 
+	class PxDeformableBody;
 	class PxDeformableMaterial;
+	class PxDeformableSurface;
 	class PxDeformableSurfaceMaterial;
+	class PxDeformableVolume;
 	class PxDeformableVolumeMaterial;
 	class PxPBDMaterial;
 	class PxDiffuseParticleParams;
@@ -83,10 +86,16 @@ void streamDiffuseParticleParamsAttributes(const physx::PxDiffuseParticleParams&
 
 void streamArticulationMimicJoint(const physx::PxArticulationMimicJoint& mj);
 
+void streamShapeUpdateGeometry(const physx::PxShape& shape);
+
+void streamDeformableVolumeAttributes(const physx::PxDeformableVolume& dv);
+void streamDeformableSurfaceAttributes(const physx::PxDeformableSurface& ds);
+
 enum OmniPvdSharedMeshEnum {
 	eOmniPvdTriMesh     = 0,
 	eOmniPvdConvexMesh  = 1,
 	eOmniPvdHeightField = 2,
+	eOmniPvdTetraMesh   = 3,
 };
 
 class OmniPvdWriter;

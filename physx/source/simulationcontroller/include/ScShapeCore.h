@@ -42,7 +42,7 @@ namespace Sc
 {
 	class ShapeSim;
 
-	class ShapeCore
+	class ShapeCore : public PxsShapeCore
 	{
 	public:
 // PX_SERIALIZATION
@@ -58,48 +58,38 @@ namespace Sc
 
 													~ShapeCore();
 
-		PX_FORCE_INLINE	PxGeometryType::Enum		getGeometryType()							const	{ return mCore.mGeometry.getType();			}
+		PX_FORCE_INLINE	PxGeometryType::Enum		getGeometryType()							const	{ return mGeometry.getType();				}
 						PxShape*					getPxShape();
 						const PxShape*				getPxShape()								const;
 
-		PX_FORCE_INLINE	const GeometryUnion&		getGeometryUnion()							const	{ return mCore.mGeometry;					}
-		PX_FORCE_INLINE	const PxGeometry&			getGeometry()								const	{ return mCore.mGeometry.getGeometry();		}
+		PX_FORCE_INLINE	const GeometryUnion&		getGeometryUnion()							const	{ return mGeometry;							}
+		PX_FORCE_INLINE	const PxGeometry&			getGeometry()								const	{ return mGeometry.getGeometry();			}
 						void						setGeometry(const PxGeometry& geom);
 
 						PxU16						getNbMaterialIndices()						const;
 						const PxU16*				getMaterialIndices()						const;
 						void						setMaterialIndices(const PxU16* materialIndices, PxU16 materialIndexCount);
 
-		PX_FORCE_INLINE	const PxTransform&			getShape2Actor()							const	{ return mCore.getTransform();				}
-		PX_FORCE_INLINE	void						setShape2Actor(const PxTransform& s2b)				{ mCore.setTransform(s2b);					}
-		
+		PX_FORCE_INLINE	const PxTransform&			getShape2Actor()							const	{ return getTransform();					}
+		PX_FORCE_INLINE	void						setShape2Actor(const PxTransform& s2b)				{ setTransform(s2b);						}
+
 		PX_FORCE_INLINE	const PxFilterData&			getSimulationFilterData()					const	{ return mSimulationFilterData;				}
 		PX_FORCE_INLINE	void						setSimulationFilterData(const PxFilterData& data)	{ mSimulationFilterData = data;				}
 
-		PX_FORCE_INLINE	PxReal						getContactOffset()							const	{ return mCore.mContactOffset;				}
+		PX_FORCE_INLINE	PxReal						getContactOffset()							const	{ return mContactOffset;					}
 						void						setContactOffset(PxReal offset);
 
-		PX_FORCE_INLINE	PxReal						getRestOffset()								const	{ return mCore.mRestOffset;					}
-		PX_FORCE_INLINE	void						setRestOffset(PxReal offset)						{ mCore.mRestOffset = offset;				}
+		PX_FORCE_INLINE	PxReal						getRestOffset()								const	{ return mRestOffset;						}
+		PX_FORCE_INLINE	void						setRestOffset(PxReal offset)						{ mRestOffset = offset;						}
 
-		PX_FORCE_INLINE	PxReal						getDensityForFluid()						const	{ return mCore.getDensityForFluid();		}
-		PX_FORCE_INLINE	void						setDensityForFluid(PxReal densityForFluid)			{ mCore.setDensityForFluid(densityForFluid); }
+		PX_FORCE_INLINE	PxReal						getTorsionalPatchRadius()					const	{ return mTorsionalRadius;					}
+		PX_FORCE_INLINE	void						setTorsionalPatchRadius(PxReal tpr)					{ mTorsionalRadius = tpr;					}
 
-		PX_FORCE_INLINE	PxReal						getTorsionalPatchRadius()					const	{ return mCore.mTorsionalRadius;			}
-		PX_FORCE_INLINE	void						setTorsionalPatchRadius(PxReal tpr)					{ mCore.mTorsionalRadius = tpr;				}
+		PX_FORCE_INLINE PxReal						getMinTorsionalPatchRadius()				const	{return mMinTorsionalPatchRadius;			}
+		PX_FORCE_INLINE	void						setMinTorsionalPatchRadius(PxReal radius)			{ mMinTorsionalPatchRadius = radius;		}
 
-		PX_FORCE_INLINE PxReal						getMinTorsionalPatchRadius()				const	{return mCore.mMinTorsionalPatchRadius;		}
-		PX_FORCE_INLINE	void						setMinTorsionalPatchRadius(PxReal radius)			{ mCore.mMinTorsionalPatchRadius = radius;	}
-
-		PX_FORCE_INLINE	PxShapeFlags				getFlags()									const	{ return PxShapeFlags(mCore.mShapeFlags);	}
-		PX_FORCE_INLINE	void						setFlags(PxShapeFlags f)							{ mCore.mShapeFlags = f;					}
-
-		PX_FORCE_INLINE const PxsShapeCore&			getCore()									const	{ return mCore;								}
-		static PX_FORCE_INLINE size_t				getCoreOffset()										{ return PX_OFFSET_OF(ShapeCore, mCore);	}
-		static PX_FORCE_INLINE ShapeCore&			getCore(PxsShapeCore& core)
-													{
-														return *reinterpret_cast<ShapeCore*>(reinterpret_cast<PxU8*>(&core) - getCoreOffset());
-													}
+		PX_FORCE_INLINE	PxShapeFlags				getFlags()									const	{ return PxShapeFlags(mShapeFlags);			}
+		PX_FORCE_INLINE	void						setFlags(PxShapeFlags f)							{ mShapeFlags = f;							}
 
 		PX_FORCE_INLINE ShapeSim*					getExclusiveSim() const			
 													{
@@ -108,7 +98,7 @@ namespace Sc
 
 		PX_FORCE_INLINE void						setExclusiveSim(ShapeSim* sim)	
 													{
-														if(!sim || mCore.mShapeCoreFlags.isSet(PxShapeCoreFlag::eIS_EXCLUSIVE))
+														if(!sim || mShapeCoreFlags.isSet(PxShapeCoreFlag::eIS_EXCLUSIVE))
 															mExclusiveSim = sim;
 													}
 
@@ -116,7 +106,6 @@ namespace Sc
 	protected:
 #endif
 						PxFilterData				mSimulationFilterData;	// Simulation filter data
-						PxsShapeCore				PX_ALIGN(16, mCore);	
 						ShapeSim*					mExclusiveSim;   //only set if shape is exclusive
 #if PX_WINDOWS_FAMILY	// PT: to avoid "error: offset of on non-standard-layout type" on Linux
 	public:

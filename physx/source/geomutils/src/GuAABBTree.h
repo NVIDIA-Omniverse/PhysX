@@ -178,14 +178,17 @@ namespace Gu
 		// Data management
 		PX_FORCE_INLINE	void			setBit(PxU32 bit_number)
 										{
+											PX_ASSERT(bit_number>>5 < mSize);
 											mBits[bit_number>>5] |= 1<<(bit_number&31);
 										}
 		PX_FORCE_INLINE	void			clearBit(PxU32 bit_number)
 										{
+											PX_ASSERT(bit_number>>5 < mSize);
 											mBits[bit_number>>5] &= ~(1<<(bit_number&31));
 										}
 		PX_FORCE_INLINE	void			toggleBit(PxU32 bit_number)
 										{
+											PX_ASSERT(bit_number>>5 < mSize);
 											mBits[bit_number>>5] ^= 1<<(bit_number&31);
 										}
 
@@ -197,6 +200,7 @@ namespace Gu
 		// Data access
 		PX_FORCE_INLINE	PxIntBool		isSet(PxU32 bit_number)	const
 										{
+											PX_ASSERT(bit_number>>5 < mSize);
 											return PxIntBool(mBits[bit_number>>5] & (1<<(bit_number&31)));
 										}
 

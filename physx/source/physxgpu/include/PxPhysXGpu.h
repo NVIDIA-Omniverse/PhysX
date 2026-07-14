@@ -52,8 +52,6 @@ class PxsSimulationController;
 class PxsSimulationControllerCallback;
 class PxsParticleBuffer;
 class PxsParticleAndDiffuseBuffer;
-class PxsParticleClothBuffer;
-class PxsParticleRigidBuffer;
 class PxDelayLoadHook;
 class PxsTransformCache;
 
@@ -112,10 +110,8 @@ public:
 	*/
 	virtual		void					release() = 0;
 
-	virtual PxsParticleBuffer* createParticleBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxCudaContextManager& cudaContextManager) = 0;
-	virtual PxsParticleAndDiffuseBuffer* createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager) = 0;
-	virtual PxsParticleClothBuffer* createParticleClothBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager& cudaContextManager) = 0;
-	virtual PxsParticleRigidBuffer* createParticleRigidBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumRigids, PxCudaContextManager& cudaContextManager) = 0;
+	virtual PxsParticleBuffer* createParticleBuffer(PxU32 maxNumParticles, PxCudaContextManager& cudaContextManager) = 0;
+	virtual PxsParticleAndDiffuseBuffer* createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager) = 0;
 	
 	/**
 	Create GPU memory manager.
@@ -185,7 +181,7 @@ public:
 		Dy::Context* dynamicContext, PxvNphaseImplementationContext* npContext, Bp::BroadPhase* bp, 
 		bool useGpuBroadphase,
 		PxsSimulationControllerCallback* callback, PxU32 gpuComputeVersion, PxsHeapMemoryAllocatorManager& heapMemoryManager,
-		PxU32 maxSoftBodyContacts, PxU32 maxDeformableSurfaceContacts, PxU32 maxParticleContacts,
+		PxU32 maxDeformableVolumeContacts, PxU32 maxDeformableSurfaceContacts, PxU32 maxParticleContacts,
 		PxU32 collisionStackSizeBytes, bool enableBodyAccelerations) = 0;
 
 	/**

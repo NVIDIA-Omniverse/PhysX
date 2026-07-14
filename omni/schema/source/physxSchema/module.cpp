@@ -10,8 +10,6 @@ TF_WRAP_MODULE
 {
     TF_WRAP(PhysxSchemaJointStateAPI);
     TF_WRAP(PhysxSchemaPhysxArticulationAPI);
-    TF_WRAP(PhysxSchemaPhysxAutoAttachmentAPI);
-    TF_WRAP(PhysxSchemaPhysxAutoParticleClothAPI);
     TF_WRAP(PhysxSchemaPhysxCameraAPI);
     TF_WRAP(PhysxSchemaPhysxCameraDroneAPI);
     TF_WRAP(PhysxSchemaPhysxCameraFollowAPI);
@@ -23,11 +21,6 @@ TF_WRAP_MODULE
     TF_WRAP(PhysxSchemaPhysxConvexDecompositionCollisionAPI);
     TF_WRAP(PhysxSchemaPhysxConvexHullCollisionAPI);
     TF_WRAP(PhysxSchemaPhysxCookedDataAPI);
-    TF_WRAP(PhysxSchemaPhysxDeformableAPI);
-    TF_WRAP(PhysxSchemaPhysxDeformableBodyAPI);
-    TF_WRAP(PhysxSchemaPhysxDeformableBodyMaterialAPI);
-    TF_WRAP(PhysxSchemaPhysxDeformableSurfaceAPI);
-    TF_WRAP(PhysxSchemaPhysxDeformableSurfaceMaterialAPI);
     TF_WRAP(PhysxSchemaPhysxDiffuseParticlesAPI);
     TF_WRAP(PhysxSchemaPhysxForceAPI);
     TF_WRAP(PhysxSchemaPhysxJointAPI);
@@ -38,13 +31,11 @@ TF_WRAP_MODULE
     TF_WRAP(PhysxSchemaPhysxPBDMaterialAPI);
     TF_WRAP(PhysxSchemaPhysxParticleAPI);
     TF_WRAP(PhysxSchemaPhysxParticleAnisotropyAPI);
-    TF_WRAP(PhysxSchemaPhysxParticleClothAPI);
     TF_WRAP(PhysxSchemaPhysxParticleIsosurfaceAPI);
     TF_WRAP(PhysxSchemaPhysxParticleSamplingAPI);
     TF_WRAP(PhysxSchemaPhysxParticleSetAPI);
     TF_WRAP(PhysxSchemaPhysxParticleSmoothingAPI);
     TF_WRAP(PhysxSchemaPhysxParticleSystem);
-    TF_WRAP(PhysxSchemaPhysxPhysicsAttachment);
     TF_WRAP(PhysxSchemaPhysxPhysicsDistanceJointAPI);
     TF_WRAP(PhysxSchemaPhysxPhysicsGearJoint);
     TF_WRAP(PhysxSchemaPhysxPhysicsInstancer);
@@ -88,6 +79,5 @@ TF_WRAP_MODULE
     TF_WRAP(PhysxSchemaPhysxVehicleWheelAPI);
     TF_WRAP(PhysxSchemaPhysxVehicleWheelAttachmentAPI);
     TF_WRAP(PhysxSchemaPhysxVehicleWheelControllerAPI);
-    TF_WRAP(PhysxSchemaTetrahedralMesh);
     TF_WRAP(PhysxSchemaTokens);
 }

@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
-# NOTE: This file is included verbatim in documentation.
-# When editing, keep tutorial line ranges in sync.
+# NOTE: This file is included verbatim in documentation via literalinclude.
+# Tutorial marker comments below define the included range.
 
 
 #!/usr/bin/env python3
@@ -42,6 +42,7 @@ def main():
     usd_handle, _ = physx.add_usd(str(usd_path))
     physx.wait_all()
 
+    # [tutorial-start]
     # Create tensor bindings for DOF velocity targets (control inputs)
     # Pattern matches all articulation links - the API will automatically map to DOFs
     print("Creating tensor binding for DOF velocity targets...")
@@ -65,7 +66,7 @@ def main():
     for i in range(num_dofs):
         velocity_targets[0, i] = 25.0 if i % 2 == 0 else -25.0
 
-    print("Setting DOF velocity targets (alternating ±25 rad/s)...")
+    print("Setting DOF velocity targets (alternating +/-25 rad/s)...")
     velocity_target_binding.write(velocity_targets)
     print(f"  Velocity targets: {velocity_targets[0, :5]}... (first 5 DOFs)")
 
@@ -98,19 +99,17 @@ def main():
             print(
                 f"  Step {i:4d}: pos=({px:.6f}, {py:.6f}, {pz:.6f}), "
                 f"quat(xyzw)=({qx:.6f}, {qy:.6f}, {qz:.6f}, {qw:.6f}), "
-                f"rotation_x={deg_x:.2f}°"
+                f"rotation_x={deg_x:.2f} deg"
             )
 
     print("\nCompleted 1000 simulation steps successfully!")
 
-    # Clean up tensor bindings
     velocity_target_binding.destroy()
     link_pose_binding.destroy()
-
     physx.remove_usd(usd_handle)
     physx.release()
-
-    print("\n[SUCCESS]", flush=True)
+    print("Cleanup complete")
+    # [tutorial-end]
 
 
 if __name__ == "__main__":

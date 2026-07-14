@@ -55,9 +55,9 @@ namespace Gu
 #endif
 
 	class EPA
-	{	
+	{
 	public:
-		EPA(){}	
+		EPA(){}
 		GjkStatus PenetrationDepth(const GjkConvex& a, const GjkConvex& b, const aos::Vec3V* PX_RESTRICT A, const aos::Vec3V* PX_RESTRICT B, const PxU8 size, const bool takeCoreShape, 
 			const FloatV tolerenceLength, GjkOutput& output);
 		bool expandPoint(const GjkConvex& a, const GjkConvex& b, PxI32& numVerts, const FloatVArg upperBound);

@@ -230,20 +230,6 @@ PxActor* Sc::ParticleSystemCore::getPxActor() const
 	return PxPointerOffset<PxActor*>(const_cast<ParticleSystemCore*>(this), gOffsetTable.scCore2PxActor[getActorCoreType()]);
 }
 
-void Sc::ParticleSystemCore::addRigidAttachment(Sc::BodyCore* core)
-{
-	Sc::ParticleSystemSim* sim = getSim();
-	if(sim)
-		sim->getScene().addRigidAttachment(core, *sim);
-}
-
-void Sc::ParticleSystemCore::removeRigidAttachment(Sc::BodyCore* core)
-{
-	Sc::ParticleSystemSim* sim = getSim();
-	if (sim)
-		sim->getScene().removeRigidAttachment(core, *sim);
-}
-
 void Sc::ParticleSystemCore::setFlags(PxParticleFlags flags)
 {
 	Sc::ParticleSystemSim* sim = getSim();

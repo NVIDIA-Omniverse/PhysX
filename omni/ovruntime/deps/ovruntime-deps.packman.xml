@@ -1,0 +1,7 @@
+<project toolsVersion="6.11">
+  <!-- ovruntime_deps package: provides RTX/fabric plugin binaries, headers, and
+       pinned dependency versions for Carbonite, USD, Python, CUDA, etc. -->
+  <dependency name="ovruntime_deps_release" linkPath="../_build/target-deps/ovruntime_deps_release">
+    <package name="ovruntime_deps.release" version="110.1.1+production.305458.6312fa25.gl.${platform_target_abi}" />
+  </dependency>
+</project>

@@ -175,13 +175,14 @@ public:
 	{
 	}
 
-	virtual void runInternal() 
+	virtual void runInternal() PX_OVERRIDE
 	{
+		// PT: TODO: this one does not reach the GPU code. This is only an issue when Direct GPU is enabled.
 		for (PxU32 a = 0; a < mNbShapes; ++a)
 			mShapes[a]->updateCached_ThreadSafe(mParams);
 	}
 
-	virtual const char* getName() const { return "DirtyShapeUpdatesTask";  }
+	virtual const char* getName() const PX_OVERRIDE { return "DirtyShapeUpdatesTask";  }
 
 private:
 	PX_NOCOPY(DirtyShapeUpdatesTask)
@@ -460,14 +461,14 @@ namespace
 		{
 		}
 
-		virtual void runInternal()
+		virtual void runInternal() PX_OVERRIDE
 		{
 			// PT: after this call we have mNbToKeep + mNbToSuppress surviving pairs moved to the start of mPairs,
 			// with corresponding filtering data at the start of mFinfo.
 			mNPhaseCore->runOverlapFilters(mNbToProcess, mPairs, mFinfo, mNbToKeep, mNbToSuppress);
 		}
 
-		virtual const char* getName() const { return "OverlapFilterTask"; }
+		virtual const char* getName() const PX_OVERRIDE { return "OverlapFilterTask"; }
 	};
 }
 
@@ -581,7 +582,7 @@ void Sc::Scene::finishBroadPhase(PxBaseTask* continuation)
 #else
 	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
 #endif
-	}	
+	}
 }
 
 void Sc::Scene::postBroadPhaseContinuation(PxBaseTask* continuation)
@@ -638,7 +639,7 @@ namespace
 		{
 		}
 
-		virtual void runInternal()
+		virtual void runInternal() PX_OVERRIDE
 		{
 			PxsContactManager** currentCm = mContactManagers;
 			ShapeInteraction** currentSI = mShapeInteractions;
@@ -687,7 +688,7 @@ namespace
 			mNbShapeInteractions = PxU32(currentSI - mShapeInteractions);
 		}
 
-		virtual const char* getName() const { return "OnOverlapCreatedTask"; }
+		virtual const char* getName() const PX_OVERRIDE { return "OnOverlapCreatedTask"; }
 	};
 }
 
@@ -871,7 +872,6 @@ void Sc::Scene::processLostTouchPairs()
 		ActorSim* body1 = pairs[i].body1;
 		ActorSim* body2 = pairs[i].body2;
 
-		// BUGFIX 5813869: If one has been deleted, only wake the other if non-null; skip pair if either pointer is null.
 		const PxIntBool deletedBody1 = mLostTouchPairsDeletedBodyIDs.boundedTest(pairs[i].body1ID);
 		const PxIntBool deletedBody2 = mLostTouchPairsDeletedBodyIDs.boundedTest(pairs[i].body2ID);
 		if(deletedBody1 || deletedBody2)
@@ -937,7 +937,7 @@ namespace
 
 		PX_FORCE_INLINE	IG::EdgeIndex*	getDelayed()	{ return reinterpret_cast<IG::EdgeIndex*>(mPairs);	}
 
-		virtual void runInternal()
+		virtual void runInternal() PX_OVERRIDE
 		{
 			// PT: the pairs buffer we used to create the shape interactions in OnOverlapCreatedTask is now free to reuse.
 			// By construction we have at least one AABBOverlap per shape interaction so there's enough space for edge indices.
@@ -991,7 +991,7 @@ namespace
 			mNbDelayed = PxU32(delayed - getDelayed());
 		}
 
-		virtual const char* getName() const { return "IslandInsertionTask"; }
+		virtual const char* getName() const PX_OVERRIDE { return "IslandInsertionTask"; }
 	};
 }
 
@@ -1397,15 +1397,19 @@ void Sc::Scene::advanceStep(PxBaseTask* continuation)
 	{
 		mFinalizationPhase.setContinuation(continuation);
 
+		// Chain: afterIntegration -> [CCD ->] [bodyAcceleration ->] finalizationPhase -> continuation
+		if(mBodyAccelerationTask)
+			mBodyAccelerationTask->setContinuation(*mTaskManager, &mFinalizationPhase);
+
 		if(mPublicFlags & PxSceneFlag::eENABLE_CCD)
 		{
-			mUpdateCCDMultiPass.setContinuation(&mFinalizationPhase);
+			mUpdateCCDMultiPass.setContinuation(mBodyAccelerationTask ? mBodyAccelerationTask : &mFinalizationPhase);
 			mAfterIntegration.setContinuation(&mUpdateCCDMultiPass);
 			mUpdateCCDMultiPass.removeReference();
 		}
 		else
 		{
-			mAfterIntegration.setContinuation(&mFinalizationPhase);
+			mAfterIntegration.setContinuation(mBodyAccelerationTask ? mBodyAccelerationTask : &mFinalizationPhase);
 		}
 
 		const bool useGpu = isUsingGpuDynamicsOrBp();
@@ -1436,6 +1440,8 @@ void Sc::Scene::advanceStep(PxBaseTask* continuation)
 		mSecondPassNarrowPhase.setContinuation(&mPostNarrowPhase);
 
 		mFinalizationPhase.removeReference();
+		if(mBodyAccelerationTask)
+			mBodyAccelerationTask->removeReference();
 		mAfterIntegration.removeReference();
 		mPostSolver.removeReference();
 		if(useGpu)
@@ -1602,12 +1608,12 @@ namespace
 		{
 		}
 
-		virtual const char* getName() const
+		virtual const char* getName() const PX_OVERRIDE
 		{
 			return "InteractionNewTouchTask";
 		}
 	
-		virtual void runInternal()
+		virtual void runInternal() PX_OVERRIDE
 		{
 			mNphaseCore->lockReports();
 			for(PxU32 i = 0; i < mNbEvents; ++i)
@@ -1633,27 +1639,25 @@ void Sc::Scene::processNarrowPhaseTouchEvents(PxBaseTask* continuation)
 
 		// Update touch states from LL
 		PxU32 newTouchCount, lostTouchCount;
-		PxU32 ccdTouchCount = 0;
 		{
 			PX_PROFILE_ZONE("Sim.preIslandGen.managerTouchEvents", mContextId);
+
+			// Use cached counters from getManagerTouchEventCount() as a pre-allocation hint only.
+			// The counters can be stale in rare scenarios (e.g. large heightfields on GPU), so
+			// fillManagerTouchEvents() uses PxArray::pushBack which grows dynamically on overflow.
+			// The bitmap is only iterated once (inside fillManagerTouchEvents), not here.
 			context->getManagerTouchEventCount(&newTouchCount, &lostTouchCount, NULL);
-			//PX_ALLOCA(newTouches, PxvContactManagerTouchEvent, newTouchCount);
-			//PX_ALLOCA(lostTouches, PxvContactManagerTouchEvent, lostTouchCount);
 
-			mTouchFoundEvents.forceSize_Unsafe(0);
+			mTouchFoundEvents.clear();
 			mTouchFoundEvents.reserve(newTouchCount);
-			mTouchFoundEvents.forceSize_Unsafe(newTouchCount);
 
-			mTouchLostEvents.forceSize_Unsafe(0);
+			mTouchLostEvents.clear();
 			mTouchLostEvents.reserve(lostTouchCount);
-			mTouchLostEvents.forceSize_Unsafe(lostTouchCount);
 
-			context->fillManagerTouchEvents(mTouchFoundEvents.begin(), newTouchCount,
-											mTouchLostEvents.begin(), lostTouchCount,
-											NULL, ccdTouchCount);
+			context->fillManagerTouchEvents(mTouchFoundEvents, mTouchLostEvents, NULL);
 
-			mTouchFoundEvents.forceSize_Unsafe(newTouchCount);
-			mTouchLostEvents.forceSize_Unsafe(lostTouchCount);
+			newTouchCount = mTouchFoundEvents.size();
+			lostTouchCount = mTouchLostEvents.size();
 		}
 
 		context->getSimStats().mNbNewTouches = newTouchCount;
@@ -1827,7 +1831,7 @@ namespace
 		{
 		}
 
-		virtual void runInternal()
+		virtual void runInternal() PX_OVERRIDE
 		{
 			PX_PROFILE_ZONE("Sim.ScBeforeSolverTask", mContextID);
 
@@ -1853,7 +1857,7 @@ namespace
 				mSimulationController->updateBodies(updatedBodySims, updatedBodyNodeIndices, nbUpdatedBodySims, mAccelerationProvider);
 		}
 
-		virtual const char* getName() const
+		virtual const char* getName() const PX_OVERRIDE
 		{
 			return "ScScene.beforeSolver";
 		}
@@ -1879,7 +1883,7 @@ namespace
 		{
 		}
 
-		virtual void runInternal()
+		virtual void runInternal() PX_OVERRIDE
 		{
 			PX_PROFILE_ZONE("Sim.ScArticBeforeSolverTask", mContextID);
 
@@ -1892,7 +1896,7 @@ namespace
 			}
 		}
 
-		virtual const char* getName() const
+		virtual const char* getName() const PX_OVERRIDE
 		{
 			return "ScScene.ScArticBeforeSolverTask";
 		}
@@ -1920,7 +1924,7 @@ namespace
 		{
 		}
 
-		virtual void runInternal()
+		virtual void runInternal() PX_OVERRIDE
 		{
 			PX_PROFILE_ZONE("Sim.ScArticBeforeSolverCCDTask", mContextID);
 			const IG::IslandSim& islandSim = mIslandManager->getAccurateIslandSim();
@@ -1933,7 +1937,7 @@ namespace
 			}
 		}
 
-		virtual const char* getName() const
+		virtual const char* getName() const PX_OVERRIDE
 		{
 			return "ScScene.ScArticBeforeSolverCCDTask";
 		}
@@ -2199,12 +2203,12 @@ void Sc::Scene::processLostContacts(PxBaseTask* continuation)
 					{
 					}
 
-					virtual void runInternal()
+					virtual void runInternal() PX_OVERRIDE
 					{
 						::findInteractions(mNPhaseCore, mCount, mOverlaps);
 					}
 
-					virtual const char* getName() const { return "FindInteractionTask"; }
+					virtual const char* getName() const PX_OVERRIDE { return "FindInteractionTask"; }
 				};
 
 				Cm::FlushPool& flushPool = mLLContext->getTaskPool();
@@ -2668,12 +2672,13 @@ void Sc::Scene::afterIntegration(PxBaseTask* continuation)
 				//still reach the solver and are integrated. However, on the frame when they should be deactivated, we roll back to their state at the beginning of the frame to ensure that the
 				//user perceives the same behavior as before.
 
-				PxsBodyCore& bodyCore = bodySim->getBodyCore().getCore();
-
 				//if(!islandSim.getNode(bodySim->getNodeIndex()).isActive())
 				rigid->setPose(rigid->getLastCCDTransform());
 
-				bodySim->updateCached_NotThreadSafe(params, &changedAABBMgrActorHandles);
+				// PT: we are not inside a task here so we can run the non-thread-safe version, but we still need atomics for the bitmap update, as there are other parts running in parallel
+				// that also update the same bitmap.
+				bodySim->updateCached_NotThreadSafe(params, &changedAABBMgrActorHandles, false, true);
+
 				gpu_updateBodySim(*bodySim);
 
 				//solver is running in parallel with IG(so solver might solving the body which IG identify as deactivatedNodes). After we moved sleepCheck into the solver after integration, sleepChecks
@@ -2687,6 +2692,7 @@ void Sc::Scene::afterIntegration(PxBaseTask* continuation)
 				//sleep checks) could decide that the body is no longer a candidate for sleeping on the same frame that the island gen decides to deactivate the island
 				//that the body is contained in. This is a rare occurrence but the behavior we want to emulate is that of IG running before solver so we should therefore
 				//permit the IG to make the authoritative decision over whether the body should be active or inactive.
+				PxsBodyCore& bodyCore = bodySim->getBodyCore().getCore();
 				bodyCore.wakeCounter = 0.0f;
 				bodyCore.linearVelocity = PxVec3(0.0f);
 				bodyCore.angularVelocity = PxVec3(0.0f);
@@ -2799,7 +2805,7 @@ void Sc::Scene::finalizationPhase(PxBaseTask* /*continuation*/)
 			const PxU32 nbUpdatedBodies = mCCDContext->getNumUpdatedBodies();
 			PxsRigidBody*const* updatedBodies = mCCDContext->getUpdatedBodies();
 
-			const PxU32 rigidBodyOffset = BodySim::getRigidBodyOffset();			
+			const PxU32 rigidBodyOffset = BodySim::getRigidBodyOffset();
 
 			for(PxU32 a=0; a<nbUpdatedBodies; ++a)
 			{

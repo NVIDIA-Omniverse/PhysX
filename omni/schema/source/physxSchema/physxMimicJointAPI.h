@@ -35,6 +35,11 @@ class SdfAssetPath;
 
 /// \class PhysxSchemaPhysxMimicJointAPI
 ///
+/// DEPRECATED: use NewtonMimicAPI (single-apply) from the Newton schema instead. PhysxMimicJointAPI
+/// is kept for backward compatibility with existing assets; new content should author NewtonMimicAPI.
+/// The NewtonMimicMigrationChecker validator in omni.physx.asset_validator can auto-migrate eligible
+/// single-DOF usages. See the Newton schema documentation for the mapping and coefficient conventions.
+/// 
 /// Applied to a Physics Joint that must be part of an articulation. Supported joint types are:
 /// PhysicsRevoluteJoint (with a limit set), PhysicsPrismaticJoint as well as the more generic
 /// PhysicsJoint if all linear degrees of freedom are locked.

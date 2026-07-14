@@ -1,0 +1,5 @@
+<project toolsVersion="5.6">
+  <import path="../../ovexts/deps/schema-deps.packman.xml">
+    <filter include="usd_ext_physics_${config}" linkPath="../_build/target-deps/usd_ext_physics/${config}" />
+  </import>
+</project>

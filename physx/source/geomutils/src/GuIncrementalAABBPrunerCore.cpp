@@ -280,7 +280,7 @@ bool IncrementalAABBPrunerCore::overlap(const ShapeData& queryVolume, PrunerOver
 				case PxGeometryType::eBOX:
 				{
 					if(queryVolume.isOBB())
-					{	
+					{
 						const DefaultOBBAABBTest test(queryVolume);
 						again = AABBTreeOverlap<true, OBBAABBTest, IncrementalAABBTree, IncrementalAABBTreeNode, OverlapCallbackAdapter>()(mPool->getCurrentAABBTreeBounds(), *tree.tree, test, pcb);
 					}
@@ -396,7 +396,7 @@ void IncrementalAABBPrunerCore::test(bool hierarchyCheck)
 {
 	PxU32 maxDepth[NUM_TREES] = { 0, 0 };
 	for(PxU32 i=0; i<NUM_TREES; i++)
-	{		
+	{
 		if(mAABBTree[i].tree)
 		{
 			if(hierarchyCheck)

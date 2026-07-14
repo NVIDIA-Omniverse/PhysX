@@ -407,7 +407,7 @@ template <class T, class Alloc> class PxArray
 		T* it = mData + i;
 		it->~T();
 		while (++i < mSize)
-		{								
+		{
 			PX_PLACEMENT_NEW(it, T(mData[i]));
 			++it;
 			it->~T();

@@ -189,7 +189,7 @@ bool Gu::pcmContactCapsuleBox(GU_CONTACT_METHOD_ARGS)
 			
 				return true;
 			}
-		}	
+		}
 	}
 	else if(manifold.getNumContacts() > 0)
 	{

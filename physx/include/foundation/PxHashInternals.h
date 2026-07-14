@@ -799,7 +799,7 @@ class PxHashMapBase
 	}
 
 	PX_INLINE bool erase(const Key& k, Entry& e)
-	{		
+	{
 		return mBase.erase(k, e);
 	}
 

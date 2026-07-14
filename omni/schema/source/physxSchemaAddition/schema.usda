@@ -29,7 +29,7 @@ class "PhysxJointAxisAPI"
     }
 )
 {
-    float maxJointVelocity = 1000000.0 (
+    float maxJointVelocity = inf (
         customData = {
             string apiName = "maxJointVelocity"
         }
@@ -357,11 +357,11 @@ class "PhysxSurfaceDeformableBodyAPI"
 
         displayGroup = "Advanced"
         displayName = "Collision Pair Update Frequency"
-        doc = """Determines how often cloth-to-cloth collision pairs are updated during each time step. 
+        doc = """Determines how often deformable surface collision pairs are updated during each time step. 
               Increasing this value results in more frequent updates to the contact pairs, which provides better contact points. 
               For example, a value of 2 means collision pairs are updated twice per time step: 
               once at the beginning and once in the middle of the time step (i.e., during the middle solver iteration). 
-              If set to 0, the solver adaptively determines when to update the cloth-to-cloth contact pairs, instead of using a fixed frequency.
+              If set to 0, the solver adaptively determines when to update the deformable surface contact pairs, instead of using a fixed frequency.
               Range [1, solverPositionIterationCount]"""
     )
 

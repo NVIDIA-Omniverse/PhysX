@@ -113,12 +113,12 @@ D6Joint::~D6Joint()
 #endif
 
 PxD6Motion::Enum D6Joint::getMotion(PxD6Axis::Enum index) const
-{	
+{
 	return data().motion[index];	
 }
 
 void D6Joint::setMotion(PxD6Axis::Enum index, PxD6Motion::Enum t)
-{	
+{
 	data().motion[index] = t; 
 	mRecomputeMotion = true; 
 	markDirty(); 
@@ -275,7 +275,7 @@ void D6Joint::setDrive(PxD6Drive::Enum driveType, const PxD6JointDrive& d)
 }
 
 void D6Joint::setDistanceLimit(const PxJointLinearLimit& l)
-{	
+{
 	PX_CHECK_AND_RETURN(l.isValid(), "PxD6Joint::setDistanceLimit: limit invalid");
 	data().distanceLimit = l;
 	data().mUseDistanceLimit = true;
@@ -295,7 +295,7 @@ void D6Joint::setDistanceLimit(const PxJointLinearLimit& l)
 }
 
 PxJointLinearLimit D6Joint::getDistanceLimit() const
-{	
+{
 	return data().distanceLimit;
 }
 
@@ -357,12 +357,12 @@ PxJointLinearLimitPair D6Joint::getLinearLimit(PxD6Axis::Enum axis) const
 }
 
 PxJointAngularLimitPair D6Joint::getTwistLimit() const
-{	
+{
 	return data().twistLimit;	
 }
 
 void D6Joint::setTwistLimit(const PxJointAngularLimitPair& l)
-{	
+{
 	PX_CHECK_AND_RETURN(l.isValid(), "PxD6Joint::setTwistLimit: limit invalid");
 	// PT: the tangent version is not compatible with the double-cover feature, since the potential limit extent in that case is 4*PI.
 	// i.e. we'd potentially take the tangent of something equal to PI/2. So the tangent stuff makes the limits less accurate, and it
@@ -388,12 +388,12 @@ void D6Joint::setTwistLimit(const PxJointAngularLimitPair& l)
 }
 
 PxJointLimitPyramid D6Joint::getPyramidSwingLimit() const
-{	
+{
 	return data().pyramidSwingLimit;	
 }
 
 void D6Joint::setPyramidSwingLimit(const PxJointLimitPyramid& l)
-{	
+{
 	PX_CHECK_AND_RETURN(l.isValid(), "PxD6Joint::setPyramidSwingLimit: limit invalid");
 
 	data().pyramidSwingLimit = l; 
@@ -418,12 +418,12 @@ void D6Joint::setPyramidSwingLimit(const PxJointLimitPyramid& l)
 }
 
 PxJointLimitCone D6Joint::getSwingLimit() const
-{	
+{
 	return data().swingLimit;	
 }
 
 void D6Joint::setSwingLimit(const PxJointLimitCone& l)
-{	
+{
 	PX_CHECK_AND_RETURN(l.isValid(), "PxD6Joint::setSwingLimit: limit invalid");
 
 	data().swingLimit = l; 
@@ -446,12 +446,12 @@ void D6Joint::setSwingLimit(const PxJointLimitCone& l)
 }
 
 PxTransform D6Joint::getDrivePosition() const
-{	
+{
 	return data().drivePosition;	
 }
 
 void D6Joint::setDrivePosition(const PxTransform& pose, bool autowake)
-{	
+{
 	PX_CHECK_AND_RETURN(pose.isSane(), "PxD6Joint::setDrivePosition: pose invalid");
 	data().drivePosition = pose.getNormalized(); 
 	if(autowake)
@@ -462,13 +462,13 @@ void D6Joint::setDrivePosition(const PxTransform& pose, bool autowake)
 }
 
 void D6Joint::getDriveVelocity(PxVec3& linear, PxVec3& angular)	const
-{	
+{
 	linear = data().driveLinearVelocity;
 	angular = data().driveAngularVelocity; 
 }
 
 void D6Joint::setDriveVelocity(const PxVec3& linear, const PxVec3& angular, bool autowake)
-{	
+{
 	PX_CHECK_AND_RETURN(linear.isFinite() && angular.isFinite(), "PxD6Joint::setDriveVelocity: velocity invalid");
 	data().driveLinearVelocity = linear; 
 	data().driveAngularVelocity = angular; 

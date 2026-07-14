@@ -175,7 +175,11 @@ bool BV32Tree::load(PxInputStream& stream, bool mismatch_)
 		{
 			BV32DataPacked& node = mPackedNodes[i];
 			node.mNbNodes = readDword(mismatch, stream);
-			PX_ASSERT(node.mNbNodes > 0);
+			// mNbNodes drives writes into the fixed-size BV32DataPacked arrays
+			// (mData[32], mMin[32], mMax[32]). Reject malformed input that would
+			// overflow these buffers, or specify a degenerate empty packed node.
+			if (node.mNbNodes == 0 || node.mNbNodes > 32)
+				return false;
 			node.mDepth = readDword(mismatch, stream);
 			ReadDwordBuffer(node.mData, node.mNbNodes, mismatch, stream);
 			const PxU32 nbElements = 4 * node.mNbNodes;

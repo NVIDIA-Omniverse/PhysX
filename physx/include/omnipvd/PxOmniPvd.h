@@ -60,10 +60,10 @@ public:
 	{
 	  public:
 		PX_FORCE_INLINE ScopedExclusiveWriter(PxOmniPvd* omniPvd)
-		{			
+		{
 			mOmniPvd = omniPvd;
 			mWriter = NULL;
-			if (mOmniPvd) {			
+			if (mOmniPvd) {
 				mWriter = mOmniPvd->acquireExclusiveWriterAccess();
 			}
 		}

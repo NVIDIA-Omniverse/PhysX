@@ -262,8 +262,8 @@ PxArticulationLink* NpFactory::createArticulationLink(NpArticulationReducedCoord
 	PxArticulationJointReducedCoordinate* npArticulationJoint = 0;
 	if (parent)
 	{
-		PxTransform parentPose = parent->getCMassLocalPose().transformInv(pose);
-		PxTransform childPose = PxTransform(PxIdentity);
+		const PxTransform parentPose = parent->getCMassLocalPose().transformInv(pose);
+		const PxTransform childPose(PxIdentity);
 						
 		npArticulationJoint = root.createArticulationJoint(*parent, parentPose, *npArticulationLink, childPose);
 		if (!npArticulationJoint)
@@ -275,7 +275,7 @@ PxArticulationLink* NpFactory::createArticulationLink(NpArticulationReducedCoord
 		}
 
 		npArticulationLink->setInboundJoint(*npArticulationJoint);
-	}	
+	}
 	return npArticulationLink;
 }
 
@@ -463,34 +463,18 @@ void NpFactory::releasePBDParticleSystemToPool(PxPBDParticleSystem& particleSyst
 
 /////////////////////////////////////////////////////////////////////////////// Particle Buffers
 
-PxParticleBuffer* NpFactory::createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager& cudaContextManager)
+PxParticleBuffer* NpFactory::createParticleBuffer(PxU32 maxParticles, PxCudaContextManager& cudaContextManager)
 {
 	PxMutex::ScopedLock lock(mParticleBufferPoolLock);
-	PxParticleBuffer* buffer = mParticleBufferPool.construct(maxParticles, maxVolumes, cudaContextManager);
+	PxParticleBuffer* buffer = mParticleBufferPool.construct(maxParticles, cudaContextManager);
 	addParticleBuffer(buffer);
 	return buffer;
 }
 
-PxParticleAndDiffuseBuffer* NpFactory::createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager)
+PxParticleAndDiffuseBuffer* NpFactory::createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager)
 {
 	PxMutex::ScopedLock lock(mParticleAndDiffuseBufferPoolLock);
-	PxParticleAndDiffuseBuffer* buffer = mParticleAndDiffuseBufferPool.construct(maxParticles, maxVolumes, maxDiffuseParticles, cudaContextManager);
-	addParticleBuffer(buffer);
-	return buffer;
-}
-
-PxParticleClothBuffer* NpFactory::createParticleClothBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager& cudaContextManager)
-{
-	PxMutex::ScopedLock lock(mParticleClothBufferPoolLock);
-	PxParticleClothBuffer* buffer = mParticleClothBufferPool.construct(maxParticles, maxNumVolumes, maxNumCloths, maxNumTriangles, maxNumSprings, cudaContextManager);
-	addParticleBuffer(buffer);
-	return buffer;
-}
-
-PxParticleRigidBuffer* NpFactory::createParticleRigidBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumRigids, PxCudaContextManager& cudaContextManager)
-{
-	PxMutex::ScopedLock lock(mParticleRigidBufferPoolLock);
-	PxParticleRigidBuffer* buffer = mParticleRigidBufferPool.construct(maxParticles, maxNumVolumes, maxNumRigids, cudaContextManager);
+	PxParticleAndDiffuseBuffer* buffer = mParticleAndDiffuseBufferPool.construct(maxParticles, maxDiffuseParticles, cudaContextManager);
 	addParticleBuffer(buffer);
 	return buffer;
 }
@@ -513,20 +497,6 @@ void NpFactory::releaseParticleAndDiffuseBufferToPool(PxParticleAndDiffuseBuffer
 	PX_ASSERT(particleBuffer.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
 	PxMutex::ScopedLock lock(mParticleAndDiffuseBufferPoolLock);
 	mParticleAndDiffuseBufferPool.destroy(static_cast<NpParticleAndDiffuseBuffer*>(&particleBuffer));
-}
-
-void NpFactory::releaseParticleClothBufferToPool(PxParticleClothBuffer& particleBuffer)
-{
-	PX_ASSERT(particleBuffer.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
-	PxMutex::ScopedLock lock(mParticleClothBufferPoolLock);
-	mParticleClothBufferPool.destroy(static_cast<NpParticleClothBuffer*>(&particleBuffer));
-}
-
-void NpFactory::releaseParticleRigidBufferToPool(PxParticleRigidBuffer& particleBuffer)
-{
-	PX_ASSERT(particleBuffer.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
-	PxMutex::ScopedLock lock(mParticleRigidBufferPoolLock);
-	mParticleRigidBufferPool.destroy(static_cast<NpParticleRigidBuffer*>(&particleBuffer));
 }
 
 void NpFactory::onParticleBufferRelease(PxParticleBuffer* buffer)
@@ -703,7 +673,6 @@ PxDeformableVolumeMaterial* NpFactory::createDeformableVolumeMaterial(PxReal you
 	materialData.poissons = poissons;
 	materialData.dynamicFriction = dynamicFriction;
 	materialData.elasticityDamping = elasticityDamping;
-	materialData.dampingScale = toUniformU16(1.f);
 	materialData.materialModel = PxDeformableVolumeMaterialModel::eCO_ROTATIONAL;
 	materialData.deformThreshold = PX_MAX_F32;
 	materialData.deformLowLimitRatio = 1.f;
@@ -1191,15 +1160,6 @@ static PX_FORCE_INLINE void releaseToPool(NpParticleAndDiffuseBuffer* np)
 	NpFactory::getInstance().releaseParticleAndDiffuseBufferToPool(*np);
 }
 
-static PX_FORCE_INLINE void releaseToPool(NpParticleClothBuffer* np)
-{
-	NpFactory::getInstance().releaseParticleClothBufferToPool(*np);
-}
-
-static PX_FORCE_INLINE void releaseToPool(NpParticleRigidBuffer* np)
-{
-	NpFactory::getInstance().releaseParticleRigidBufferToPool(*np);
-}
 #endif
 
 template<class T>
@@ -1232,6 +1192,4 @@ void physx::NpDestroyElementFilter(NpDeformableElementFilter* np)					{ NpDestro
 void physx::NpDestroyParticleSystem(NpPBDParticleSystem* np)						{ NpDestroy(np);	}
 void physx::NpDestroyParticleBuffer(NpParticleBuffer* np)							{ NpDestroy(np);	}
 void physx::NpDestroyParticleBuffer(NpParticleAndDiffuseBuffer* np)					{ NpDestroy(np);	}
-void physx::NpDestroyParticleBuffer(NpParticleClothBuffer* np)						{ NpDestroy(np);	}
-void physx::NpDestroyParticleBuffer(NpParticleRigidBuffer* np)						{ NpDestroy(np);	}
 #endif

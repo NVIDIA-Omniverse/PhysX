@@ -41,7 +41,7 @@ namespace physx { namespace profile {
 
 	struct NullEventNameProvider : public PxProfileNameProvider
 	{
-		virtual PxProfileNames getProfileNames() const { return PxProfileNames( 0, 0 ); }
+		virtual PxProfileNames getProfileNames() const PX_OVERRIDE { return PxProfileNames( 0, 0 ); }
 	};
 
 	class ZoneManagerImpl : public PxProfileZoneManager
@@ -72,7 +72,7 @@ namespace physx { namespace profile {
 				removeProfileZone( *mZones.back() );
 		}
 
-		virtual void addProfileZone( PxProfileZone& inSDK )
+		virtual void addProfileZone( PxProfileZone& inSDK ) PX_OVERRIDE
 		{
 			TScopedLockType lock( &mMutex );
 			
@@ -92,7 +92,7 @@ namespace physx { namespace profile {
 				mHandlers[idx]->onZoneAdded( inSDK );
 		}
 
-		virtual void removeProfileZone( PxProfileZone& inSDK )
+		virtual void removeProfileZone( PxProfileZone& inSDK ) PX_OVERRIDE
 		{
 			TScopedLockType lock( &mMutex );
 			if ( inSDK.getProfileZoneManager() == NULL )
@@ -117,14 +117,14 @@ namespace physx { namespace profile {
 			}
 		}
 
-		virtual void flushProfileEvents()
+		virtual void flushProfileEvents() PX_OVERRIDE
 		{
 			uint32_t sdkCount = mZones.size();
 			for ( uint32_t idx = 0; idx < sdkCount; ++idx )
 				mZones[idx]->flushProfileEvents();
 		}
 
-		virtual void addProfileZoneHandler( PxProfileZoneHandler& inHandler )
+		virtual void addProfileZoneHandler( PxProfileZoneHandler& inHandler ) PX_OVERRIDE
 		{
 			TScopedLockType lock( &mMutex );
 			mHandlers.pushBack( &inHandler );
@@ -132,7 +132,7 @@ namespace physx { namespace profile {
 				inHandler.onZoneAdded( *mZones[idx] );
 		}
 
-		virtual void removeProfileZoneHandler( PxProfileZoneHandler& inHandler )
+		virtual void removeProfileZoneHandler( PxProfileZoneHandler& inHandler ) PX_OVERRIDE
 		{
 			TScopedLockType lock( &mMutex );
 			for( uint32_t idx = 0; idx < mZones.size(); ++idx )
@@ -153,14 +153,14 @@ namespace physx { namespace profile {
 		}
 		
 		
-		virtual PxProfileZone& createProfileZone( const char* inSDKName, PxProfileNames inNames, uint32_t inEventBufferByteSize )
+		virtual PxProfileZone& createProfileZone( const char* inSDKName, PxProfileNames inNames, uint32_t inEventBufferByteSize ) PX_OVERRIDE
 		{
 			PxProfileZone& retval( PxProfileZone::createProfileZone( &mWrapper.getAllocator(), inSDKName, inNames, inEventBufferByteSize ) );
 			addProfileZone( retval );
 			return retval;
 		}
 
-		virtual void release() 
+		virtual void release() PX_OVERRIDE
 		{  
 			PX_PROFILE_DELETE( mWrapper.getAllocator(), this );
 		}

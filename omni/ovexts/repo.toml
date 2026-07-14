@@ -1,0 +1,39 @@
+[repo]
+logging = "warn"
+extra_tool_paths = [ "${root}/_build/target-deps/kit_sdk_release/dev", "${root}/_build/target-deps/kit_sdk_debug/dev",]
+
+[repo_precache_exts]
+enabled = true
+kit_extra_args = [ "--portable-root", "${root}/_build/${platform}/${config}",]
+apps = [ "${root}/_build/${platform}/${config}/apps/precacheforbuild.kit",]
+ext_folders = [ "${root}/_build/${platform}/${config}/extsPhysics", "${root}/_build/${platform}/${config}/extsPhysicsRepo", "${root}/extensions/runtime/source", "${root}/extensions/ux/source",]
+kit_path = "${root}/_build/${platform}/${config}/kit/kit${exe_ext}"
+cache_path = "${root}/_build/${platform}/${config}/exts"
+kit_parallel_pull = true
+generate_version_lock = false
+generate_version_lock_overwrite = false
+kit_omit_ext_version = true
+generated_app_path = ""
+
+[repo_format]
+use_current_year_as_end_year = true
+license_preamble = "SPDX-FileCopyrightText: Copyright (c) {years} NVIDIA CORPORATION & AFFILIATES. All rights reserved.\nSPDX-License-Identifier: BSD-3-Clause\n"
+license_text = ""
+
+[repo_precache_exts.kit_env_vars]
+OMNI_TRUSTED_CERTIFICATE = "ALL"
+
+[repo_precache_exts.generated_app]
+add_test_deps = false
+
+[repo_format.python]
+maintain_legal_blurbs = true
+
+[repo_format.cpp.files]
+include = [ "extensions/**/*", "include/**/*",]
+exclude = [ "extensions/runtime/source/omni.convexdecomposition/plugins/Vector.h", "extensions/runtime/source/omni.convexdecomposition/plugins/Vector.inl", "extensions/runtime/source/omni.convexdecomposition/plugins/Volume.cpp", "extensions/runtime/source/omni.convexdecomposition/plugins/Volume.h", "extensions/common/include/common/utilities/pyboost11.h",]
+extensions = [ ".h", ".inl", ".cpp", ".c", ".cu", ".cuh",]
+
+[repo_format.python.files]
+include = [ "extensions/**/*", "tools/**/*", "schema/**/*",]
+exclude = [ "tools/packman/**", "tools/repoman/repoman_bootstrapper.py",]

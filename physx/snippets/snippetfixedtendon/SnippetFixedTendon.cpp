@@ -62,7 +62,7 @@ static void createArticulation()
 	const PxReal density = 1000.0f;
 
 	//Create links
-	PxTransform pose = PxTransform(PxIdentity);
+	PxTransform pose(PxIdentity);
 	pose.p.y = 3.0f;
 	pose.p.x -= 2.0f * halfLengths.x;
 	PxArticulationLink* parent = NULL;

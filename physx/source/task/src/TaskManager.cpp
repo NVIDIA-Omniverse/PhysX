@@ -415,7 +415,7 @@ void PxTaskMgr::dispatchTask( PxTaskID taskID )
 
 	// prevent re-submission
     if( tt.mType == PxTaskType::eCOMPLETED )
-    {		
+    {
 		mErrorCallback.reportError(PxErrorCode::eDEBUG_WARNING, "PxTask dispatched twice", PX_FL);
 		return;
     }

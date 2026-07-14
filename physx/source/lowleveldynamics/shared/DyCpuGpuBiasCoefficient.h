@@ -60,14 +60,14 @@ struct BiasCoefficientCollection
 			{
 				particlesAndDeformables = PxMin(0.9f, biasCoefficientBaseTimes2);
 				femClothParticle = 0.7f;
-				femClothRigidAttachment = 0.7f;
+				deformableRigidAttachment = PxMin(0.9f, biasCoefficientBaseTimes2);
 			}
 			else
 			{
 				// these are GPU only features
 				particlesAndDeformables = 0.0f;
 				femClothParticle = 0.0f;
-				femClothRigidAttachment = 0.0f;
+				deformableRigidAttachment = 0.0f;
 			}
 		}
 		else
@@ -80,14 +80,14 @@ struct BiasCoefficientCollection
 			{
 				particlesAndDeformables = 0.7f;
 				femClothParticle = 0.7f;
-				femClothRigidAttachment = 0.5f;
+				deformableRigidAttachment = 0.5f;
 			}
 			else
 			{
 				// these are GPU only features
 				particlesAndDeformables = 0.0f;
 				femClothParticle = 0.0f;
-				femClothRigidAttachment = 0.0f;
+				deformableRigidAttachment = 0.0f;
 			}
 		}
 	}
@@ -110,10 +110,13 @@ struct BiasCoefficientCollection
 	//
 	PxReal particlesAndDeformables;
 
-	// for FEM cloth collision with particles and attachments to rigid objects
+	// for FEM cloth collision with particles
 	//
 	PxReal femClothParticle;
-	PxReal femClothRigidAttachment;
+
+	// for FEM deformable (volume + cloth) attachment to rigid bodies (only on GPU)
+	//
+	PxReal deformableRigidAttachment;
 };
 
 

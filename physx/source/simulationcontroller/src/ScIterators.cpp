@@ -45,7 +45,7 @@ Sc::ContactIterator::Pair::Pair(const void*& contactPatches, const void*& contac
 , mForces(forces)
 , mActor0(actor0->getPxActor())
 , mActor1(actor1->getPxActor())
-{	
+{
 	mCurrentContact.shape0 = shape0.getPxShape();
 	mCurrentContact.shape1 = shape1.getPxShape();
 	mCurrentContact.normalForceAvailable = (forces != NULL);

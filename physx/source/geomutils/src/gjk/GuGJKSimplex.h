@@ -194,7 +194,7 @@ namespace Gu
 
 		//face region
 		if(BAllEqTTTT(isFacePoints))
-		{	
+		{
 			const FloatV t = FDiv(V3Dot(n, a), nn);
 			const Vec3V q = V3Scale(n, t);
 			closestPt = q;

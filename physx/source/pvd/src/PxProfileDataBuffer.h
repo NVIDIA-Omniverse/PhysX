@@ -118,7 +118,7 @@ namespace physx { namespace profile {
 		}
 
 		virtual void flushEvents()
-		{	
+		{
 			TScopedLockType lock(mBufferMutex);
 			const uint8_t* theData = mDataArray.begin();
 			uint32_t theDataSize = mDataArray.size();

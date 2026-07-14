@@ -40,8 +40,8 @@ if args.ci:
 
 ### Helpers
 script_ext = ".bat" if sys.platform.startswith("win") else ".sh"
-physx_repo_omni_path = os.path.join(physx_repo_path, "omni")
-physx_repo_schema_path = os.path.join(physx_repo_path, "schema")
+physx_repo_ovexts_path = os.path.join(physx_repo_path, "omni", "ovexts")
+physx_repo_schema_path = os.path.join(physx_repo_path, "omni", "schema")
 physx_repo_physxsdk_path = os.path.join(physx_repo_path, "physx")
 your_platform = "windows-x86_64" if sys.platform.startswith("win") else ("linux-aarch64" if platform.machine() in ("aarch64", "arm64") else "linux-x86_64")
 if sys.platform.startswith("win"):
@@ -112,7 +112,7 @@ if devphysx:
 # Build Omniverse PhysX extensions
 print(f"\n[STEP {current_step}] Building Omniverse PhysX extensions\n")
 build_script = [f"build{script_ext}", *build_args]
-run_command(build_script, cwd=physx_repo_omni_path)
+run_command(build_script, cwd=physx_repo_ovexts_path)
 current_step += 1
 
 # If devphysx, link PhysX SDK headers for IsaacSim build
@@ -124,12 +124,13 @@ if devphysx:
 if devschema:
     print(f"\n[STEP {current_step}] Linking local PhysX schema headers for IsaacSim build\n")
     for c in config:
-        schema_path = os.path.join(physx_repo_omni_path, "_build", your_platform, c, "schema")
+        schema_path = os.path.join(physx_repo_schema_path, "_build", your_platform, c, "schema")
         run_command([f"repo{script_ext}", "source", "link", "usd_ext_physics_${config}", schema_path], cwd=isaacsim_repo_path)
     current_step += 1
 # Always link omni_physics to local Omniverse PhysX headers
 print(f"\n[STEP {current_step}] Linking local Omniverse PhysX headers for IsaacSim build\n")
-run_command([f"repo{script_ext}", "source", "link", "omni_physics", physx_repo_omni_path], cwd=isaacsim_repo_path)
+physx_repo_ovexts_install_path = os.path.join(physx_repo_ovexts_path, "_install")
+run_command([f"repo{script_ext}", "source", "link", "omni_physics", physx_repo_ovexts_install_path], cwd=isaacsim_repo_path)
 current_step += 1
 
 # Build IsaacSim
@@ -143,10 +144,10 @@ print(f"\nDone!\n")
 print("To run IsaacSim with the locally built PhysX extensions, use:")
 for c in config:
     isaacsim_path = os.path.join(isaacsim_repo_path, "_build", your_platform, c, f"isaac-sim{script_ext}")
-    extsphysics_path = os.path.join(physx_repo_omni_path, "_build", your_platform, c, "extsPhysics")
+    extsphysics_path = os.path.join(physx_repo_ovexts_path, "_build", your_platform, c, "extsPhysics")
     print("{0} --/app/exts/devFolders=[{1}]".format(isaacsim_path, extsphysics_path))
 print("\nTo run IsaacLab with the locally built PhysX extensions, run the following command in the root of the IsaacLab directory:")
 for c in config:
     isaaclab_path = os.path.join(isaacsim_repo_path, "_build", your_platform, c, f"isaaclab{script_ext}")
-    extsphysics_path = os.path.join(physx_repo_omni_path, "_build", your_platform, c, "extsPhysics")
+    extsphysics_path = os.path.join(physx_repo_ovexts_path, "_build", your_platform, c, "extsPhysics")
     print("isaaclab.[bat|sh] -p script.py --kit_args=\"--/app/exts/devFolders=[{1}] \"".format(isaaclab_path, extsphysics_path))

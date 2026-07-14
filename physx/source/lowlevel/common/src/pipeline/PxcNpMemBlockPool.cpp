@@ -204,7 +204,7 @@ PxcNpMemBlock* PxcNpMemBlockPool::acquire(PxcNpMemBlockArray& trackingArray, PxU
 		mMaxUsedBlocks = PxMax<PxU32>(mUsedBlocks+1, mMaxUsedBlocks);
 		mUsedBlocks++;
 		return block;
-	}	
+	}
 
 	if(mAllocatedBlocks == mMaxBlocks)
 	{

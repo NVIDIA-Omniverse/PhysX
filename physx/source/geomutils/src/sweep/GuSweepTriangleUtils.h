@@ -296,7 +296,7 @@ namespace Gu
 												const PxHitFlags inFlags, bool isDoubleSided, bool meshBothSides, PxReal impactDist)
 	{
 		if(inFlags & (PxHitFlag::eNORMAL|PxHitFlag::ePOSITION))
-		{			
+		{
 			PxVec3 localPos, localNormal;
 			computeBoxTriImpactData(localPos, localNormal, box.extents, localDir, triInBoxSpace, impactDist);
 

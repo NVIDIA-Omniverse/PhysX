@@ -63,7 +63,7 @@ PX_FORCE_INLINE	void setMinSentinel(ValType& v, BpHandle& d)
 }
 
 PX_FORCE_INLINE	void setMaxSentinel(ValType& v, BpHandle& d)
-{										
+{
 	v = 0xffffffff;//0xff7fffff;  //0xff7fffff is +FLT_MAX but setting it to 0xffffffff means we don't crash when we get a value outside the float range.
 	d = BP_INVALID_BP_HANDLE;
 }
@@ -183,7 +183,7 @@ public:
 		mActivePairStates[pair-mActivePairs] |= PAIR_NEW;
 	}
 	PX_FORCE_INLINE void ClearInArray(const BroadPhasePair* PX_RESTRICT pair)
-	{		
+	{
 		mActivePairStates[pair-mActivePairs] &= ~PAIR_INARRAY;
 	}
 	PX_FORCE_INLINE void ClearRemoved(const BroadPhasePair* PX_RESTRICT pair)

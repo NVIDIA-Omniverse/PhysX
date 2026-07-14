@@ -29,7 +29,6 @@
 #ifndef PX_MEMORY_H
 #define PX_MEMORY_H
 
-
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxMathIntrinsics.h"
 #include "foundation/PxSimpleTypes.h"

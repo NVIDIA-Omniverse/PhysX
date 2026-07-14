@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+#
+
+import carb
+from usdPhysicsBase import UsdPhysicsBaseTest
+
+
+class UsdPhysicsPrismaticJointTest(UsdPhysicsBaseTest):
+
+    def test_prismatic_joint(self):
+        prismatic_joint_dict = {}
+        self.expected_prims = {}
+
+        # expected prismatic joint
+        prismatic_joint_dict["enabled"] = True
+        prismatic_joint_dict["body0"] = "/World/StaticBox"
+        prismatic_joint_dict["body1"] = "/World/DynamicBox"
+        prismatic_joint_dict["local_pose0_position"] = carb.Float3(0, 60, 0)
+        prismatic_joint_dict["local_pose0_rotation"] = carb.Float4(0, 0, 0, 1)
+        prismatic_joint_dict["local_pose1_position"] = carb.Float3(0, -60, 0)
+        prismatic_joint_dict["local_pose1_rotation"] = carb.Float4(0, 0, 0, 1)
+        prismatic_joint_dict["axis"] = "Y"
+        prismatic_joint_dict["limit_enabled"] = True
+        prismatic_joint_dict["lower"] = -40.0
+        prismatic_joint_dict["upper"] = 40.0
+        self.expected_prims["/World/PrismaticJoint" + "/prismaticJoint"] = prismatic_joint_dict
+
+        self.parse("PrismaticJoint")

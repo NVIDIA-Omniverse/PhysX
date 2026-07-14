@@ -57,16 +57,16 @@ namespace physx
 
 			virtual ~DeformableVolumeAuxData();
 
-			virtual const char*				getConcreteTypeName()	const { return "PxDeformableVolumeAuxData"; }
+			virtual const char*				getConcreteTypeName()	const PX_OVERRIDE { return "PxDeformableVolumeAuxData"; }
 
-			virtual	void					acquireReference()				{ Cm::RefCountable_incRefCount(*this);			}
-			virtual	PxU32					getReferenceCount()		const	{ return Cm::RefCountable_getRefCount(*this);	}
-			virtual	void					release()						{ Cm::RefCountable_decRefCount(*this);			}
-			virtual	void					onRefCountZero()				{ PX_DELETE_THIS; }
-			virtual PxReal*					getGridModelInvMass()			{ return mGridModelInvMass; }
+			virtual	void					acquireReference() PX_OVERRIDE { Cm::RefCountable_incRefCount(*this);			}
+			virtual	PxU32					getReferenceCount()		const PX_OVERRIDE { return Cm::RefCountable_getRefCount(*this);	}
+			virtual	void					release() PX_OVERRIDE { Cm::RefCountable_decRefCount(*this);			}
+			virtual	void					onRefCountZero() PX_OVERRIDE { PX_DELETE_THIS; }
+			virtual PxReal*					getGridModelInvMass() PX_OVERRIDE { return mGridModelInvMass; }
 
 			PX_FORCE_INLINE				PxU32					getNbTetRemapSizeFast()					const { return mTetsRemapSize; }
-			PX_FORCE_INLINE				PxReal*					getGridModelInvMassFast()				{ return mGridModelInvMass; }	
+			PX_FORCE_INLINE				PxReal*					getGridModelInvMassFast()				{ return mGridModelInvMass; }
 			PX_FORCE_INLINE				PxU32					getNbGMPartitionFast()					const { return mGMNbPartitions; }
 
 			PX_FORCE_INLINE				PxU32					getGMRemapOutputSizeFast()				const { return mGMRemapOutputSize; }
@@ -125,19 +125,19 @@ namespace physx
 											TetrahedronMesh(MeshFactory* meshFactory, TetrahedronMeshData& mesh);
 			virtual							~TetrahedronMesh();
 
-			virtual const char*				getConcreteTypeName()	const { return "PxTetrahedronMesh"; }
+			virtual const char*				getConcreteTypeName()	const PX_OVERRIDE { return "PxTetrahedronMesh"; }
 
-			virtual	void					acquireReference()				{ Cm::RefCountable_incRefCount(*this);			}
-			virtual	PxU32					getReferenceCount()		const	{ return Cm::RefCountable_getRefCount(*this);	}
-			virtual	void					release()						{ Cm::RefCountable_decRefCount(*this);			}
-			virtual	void					onRefCountZero();
+			virtual	void					acquireReference() PX_OVERRIDE { Cm::RefCountable_incRefCount(*this);			}
+			virtual	PxU32					getReferenceCount()		const PX_OVERRIDE { return Cm::RefCountable_getRefCount(*this);	}
+			virtual	void					release() PX_OVERRIDE { Cm::RefCountable_decRefCount(*this);			}
+			virtual	void					onRefCountZero() PX_OVERRIDE;
 
-			virtual	PxU32						getNbVertices()						const { return mNbVertices; }
-			virtual const PxVec3*				getVertices()						const { return mVertices; }
-			virtual	PxU32						getNbTetrahedrons()					const { return mNbTetrahedrons; }
-			virtual	const void*					getTetrahedrons()					const { return mTetrahedrons; }
-			virtual	PxTetrahedronMeshFlags		getTetrahedronMeshFlags()			const { return PxTetrahedronMeshFlags(mFlags); }
-			virtual	const PxU32*				getTetrahedraRemap()				const { return NULL; }
+			virtual	PxU32						getNbVertices()						const PX_OVERRIDE { return mNbVertices; }
+			virtual const PxVec3*				getVertices()						const PX_OVERRIDE { return mVertices; }
+			virtual	PxU32						getNbTetrahedrons()					const PX_OVERRIDE { return mNbTetrahedrons; }
+			virtual	const void*					getTetrahedrons()					const PX_OVERRIDE { return mTetrahedrons; }
+			virtual	PxTetrahedronMeshFlags		getTetrahedronMeshFlags()			const PX_OVERRIDE { return PxTetrahedronMeshFlags(mFlags); }
+			virtual	const PxU32*				getTetrahedraRemap()				const PX_OVERRIDE { return NULL; }
 
 			PX_FORCE_INLINE				PxU32					getNbVerticesFast()						const { return mNbVertices; }
 			PX_FORCE_INLINE				PxVec3*					getVerticesFast()						const { return mVertices; }
@@ -155,7 +155,7 @@ namespace physx
 				return static_cast<const CenterExtentsPadded&>(mAABB);
 			}
 
-			virtual	PxBounds3 getLocalBounds() const
+			virtual	PxBounds3 getLocalBounds() const PX_OVERRIDE
 			{
 				PX_ASSERT(mAABB.isValid());
 				return PxBounds3::centerExtents(mAABB.mCenter, mAABB.mExtents);
@@ -207,7 +207,7 @@ namespace physx
 
 			PX_FORCE_INLINE				void*					getGRBTetraFaceRemapInverse()		{ return mGRB_faceRemapInverse; }
 
-			virtual						const PxU32*			getTetrahedraRemap()				const { return mFaceRemap; }
+			virtual						const PxU32*			getTetrahedraRemap()				const PX_OVERRIDE { return mFaceRemap; }
 
 			PX_FORCE_INLINE bool isTetMeshGPUCompatible() const
 			{
@@ -234,20 +234,20 @@ namespace physx
 		{
 		public:
 
-			virtual const char*				getConcreteTypeName()	const { return "PxDeformableVolumeMesh"; }
+			virtual const char*				getConcreteTypeName()	const PX_OVERRIDE { return "PxDeformableVolumeMesh"; }
 
 			// PX_SERIALIZATION
 			virtual void								exportExtraData(PxSerializationContext& ctx);
 			void										importExtraData(PxDeserializationContext&);
-			virtual	void								release();
+			virtual	void								release() PX_OVERRIDE;
 
 			void										resolveReferences(PxDeserializationContext&) {}
 			virtual	void								requiresObjects(PxProcessPxBaseCallback&) {}
 			//~PX_SERIALIZATION
 
-			virtual	void								acquireReference()			{ Cm::RefCountable_incRefCount(*this);			}
-			virtual	PxU32								getReferenceCount()	const	{ return Cm::RefCountable_getRefCount(*this);	}
-			virtual	void								onRefCountZero();
+			virtual	void								acquireReference() PX_OVERRIDE { Cm::RefCountable_incRefCount(*this);			}
+			virtual	PxU32								getReferenceCount()	const PX_OVERRIDE { return Cm::RefCountable_getRefCount(*this);	}
+			virtual	void								onRefCountZero() PX_OVERRIDE;
 
 			//virtual	PxMeshMidPhase::Enum	getMidphaseID()			const { return PxMeshMidPhase::eBVH34; }
 
@@ -257,20 +257,20 @@ namespace physx
 
 			void										setMeshFactory(MeshFactory* factory) { mMeshFactory = factory; }
 			
-			virtual const PxTetrahedronMesh*			getCollisionMesh() const { return mCollisionMesh; }
-			virtual PxTetrahedronMesh*					getCollisionMesh() { return mCollisionMesh; }
+			virtual const PxTetrahedronMesh*			getCollisionMesh() const PX_OVERRIDE { return mCollisionMesh; }
+			virtual PxTetrahedronMesh*					getCollisionMesh() PX_OVERRIDE { return mCollisionMesh; }
 			
 			PX_FORCE_INLINE const BVTetrahedronMesh*	getCollisionMeshFast() const { return mCollisionMesh; }
 			PX_FORCE_INLINE BVTetrahedronMesh*			getCollisionMeshFast() { return mCollisionMesh; }
 
-			virtual const PxTetrahedronMesh*			getSimulationMesh() const { return mSimulationMesh; }
-			virtual PxTetrahedronMesh*					getSimulationMesh() { return mSimulationMesh; }
+			virtual const PxTetrahedronMesh*			getSimulationMesh() const PX_OVERRIDE { return mSimulationMesh; }
+			virtual PxTetrahedronMesh*					getSimulationMesh() PX_OVERRIDE { return mSimulationMesh; }
 
 			PX_FORCE_INLINE const TetrahedronMesh*		getSimulationMeshFast() const { return mSimulationMesh; }
 			PX_FORCE_INLINE TetrahedronMesh*			getSimulationMeshFast() { return mSimulationMesh; }
 
-			virtual const PxDeformableVolumeAuxData*	getDeformableVolumeAuxData() const { return mDeformableVolumeAuxData; }
-			virtual PxDeformableVolumeAuxData*			getDeformableVolumeAuxData() { return mDeformableVolumeAuxData; }
+			virtual const PxDeformableVolumeAuxData*	getDeformableVolumeAuxData() const PX_OVERRIDE { return mDeformableVolumeAuxData; }
+			virtual PxDeformableVolumeAuxData*			getDeformableVolumeAuxData() PX_OVERRIDE { return mDeformableVolumeAuxData; }
 
 			PX_FORCE_INLINE const DeformableVolumeAuxData*	getDeformableVolumeAuxDataFast() const { return mDeformableVolumeAuxData; }
 			PX_FORCE_INLINE DeformableVolumeAuxData*		getDeformableVolumeAuxDataFast() { return mDeformableVolumeAuxData; }

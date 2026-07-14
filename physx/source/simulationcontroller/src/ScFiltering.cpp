@@ -443,7 +443,7 @@ static bool filterRbCollisionPairShared(	FilterInfo& filterInfo, bool& isNonRigi
 				const bool isStaticOrKinematic = (filterType0 == PxFilterObjectType::eRIGID_STATIC) || kine0;
 				if(fixedBaseLink && isStaticOrKinematic)
 					return createFilterInfo(filterInfo, PxFilterFlag::eSUPPRESS);
-			}	
+			}
 		}
 	}
 

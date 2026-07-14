@@ -53,7 +53,7 @@ NpDirectGPUAPI::NpDirectGPUAPI(NpScene& scene) :
 	{
 		PxsSimulationController* controller = mNpScene.getScScene().getSimulationController();
 		if (controller->getEnableOVDReadback())
-		{		
+		{
 			controller->setOVDCallbacks(mOvdCallback);
 		}
 	}

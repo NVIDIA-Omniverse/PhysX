@@ -125,7 +125,6 @@ public:
 
 	PX_FORCE_INLINE PxU32								getGpuIndex() const { return mGpuRemapId;  }
 
-	PxArray<PxU32>										mParticleVolumeAttachments;
 	PxArray<PxU32>										mRigidVolumeAttachments;
 	PxArray<PxU32>										mSurfaceVolumeAttachments;
 	PxArray<PxU32>										mVolumeVolumeAttachments;

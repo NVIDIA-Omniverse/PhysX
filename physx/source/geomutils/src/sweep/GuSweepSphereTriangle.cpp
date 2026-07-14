@@ -525,7 +525,7 @@ bool Gu::sweepSphereTriangles(	PxU32 nbTris, const PxTriangle* PX_RESTRICT trian
 			curT = PxMin(curT, currentDistance); // exact lower bound
 		}
 		//
-	}	
+	}
 	return computeSphereTriangleImpactData(h, triNormalOut, index, curT, center, unitDir, bestTriNormal, triangles, isDoubleSided, meshBothSides);
 }
 

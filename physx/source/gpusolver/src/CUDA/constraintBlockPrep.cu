@@ -358,7 +358,7 @@ extern "C" __global__ void contactConstraintBlockPrepareParallelLaunch(
 		PxMat33 invInertia0;
 		const PxU32 index = (threadIdx.x / warpSize) * warpSize + threadIndexInWarp;
 		if (threadIndexInWarp < descStride)
-		{	
+		{
 			invInertia0.column0.x = inertias[index].column0.x;
 			invInertia0.column0.y = inertias[index].column0.y;
 			invInertia0.column0.z = inertias[index].column0.z;

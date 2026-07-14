@@ -38,10 +38,6 @@ PX_PHYSX_COMMON_API
 void convertDeformableVolumeCollisionToSimMeshTets(const PxTetrahedronMesh& simMesh, const DeformableVolumeAuxData& simState, const BVTetrahedronMesh& collisionMesh,
 												   PxU32 inTetId, const PxVec4& inTetBarycentric, PxU32& outTetId, PxVec4& outTetBarycentric, bool bClampToClosestPoint = true);
 
-PX_PHYSX_COMMON_API
-PxVec4 addAxisToSimMeshBarycentric(const PxTetrahedronMesh& simMesh, const PxU32 simTetId,
-                                   const PxVec4& simBarycentric, const PxVec3& axis);
-
 }
 }
 

@@ -339,8 +339,8 @@ void cloth_stepLaunch(
 extern "C" __global__ __launch_bounds__(1024, 1)
 void cloth_refitBoundLaunch(
 	PxgFEMCloth* gFemClothes,
-	const PxU32* activeFemClothes,
-	const PxU32 nbActiveFemClothes,
+	const PxU32* activeFemCloths,
+	const PxU32 nbActiveFemCloths,
 	PxReal* contactDists,
 	PxReal* speculativeCCDContactOffset,
 	PxBounds3* boundArray,
@@ -359,7 +359,7 @@ void cloth_refitBoundLaunch(
 
 	femClothRefitMidphaseScratch* s_warpScratch = reinterpret_cast<femClothRefitMidphaseScratch*>(scratchMem);
 
-	const PxU32 femClothId = activeFemClothes[blockIdx.x];
+	const PxU32 femClothId = activeFemCloths[blockIdx.x];
 
 	PxgFEMCloth& gFemCloth = gFemClothes[femClothId];
 

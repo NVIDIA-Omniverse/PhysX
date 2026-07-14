@@ -77,7 +77,7 @@ struct RefitCallback : Gu::RTree::CallbackRefit
 	RefitCallback(const PxVec3* aNewPositions, const IndexType* aIndices) : newPositions(aNewPositions), indices(aIndices) {}
 	PX_FORCE_INLINE ~RefitCallback() {}
 
-	virtual void recomputeBounds(PxU32 index, aos::Vec3V& aMn, aos::Vec3V& aMx)
+	virtual void recomputeBounds(PxU32 index, aos::Vec3V& aMn, aos::Vec3V& aMx) PX_OVERRIDE
 	{
 		using namespace aos;
 

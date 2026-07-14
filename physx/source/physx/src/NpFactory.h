@@ -84,9 +84,6 @@ class NpDeformableVolume;
 class NpPBDParticleSystem;
 class NpParticleBuffer;
 class NpParticleAndDiffuseBuffer;
-class NpParticleClothBuffer;
-class NpParticleRigidBuffer;
-
 class NpDeformableAttachment;
 class NpDeformableElementFilter;
 
@@ -221,15 +218,11 @@ public:
 				void									releasePBDParticleSystemToPool(PxPBDParticleSystem& particleSystem);
 
 				//Particle buffers
-				PxParticleBuffer*						createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager& cudaContextManager);
-				PxParticleAndDiffuseBuffer*				createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager);
-				PxParticleClothBuffer*					createParticleClothBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager& cudaContextManager);
-				PxParticleRigidBuffer*					createParticleRigidBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumRigids, PxCudaContextManager& cudaContextManager);
+				PxParticleBuffer*						createParticleBuffer(PxU32 maxParticles, PxCudaContextManager& cudaContextManager);
+				PxParticleAndDiffuseBuffer*				createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager);
 				void									addParticleBuffer(PxParticleBuffer* buffer, bool lock = true);
 				void									releaseParticleBufferToPool(PxParticleBuffer& particleBuffer);
 				void									releaseParticleAndDiffuseBufferToPool(PxParticleAndDiffuseBuffer& particleBuffer);
-				void									releaseParticleClothBufferToPool(PxParticleClothBuffer& particleBuffer);
-				void									releaseParticleRigidBufferToPool(PxParticleRigidBuffer& particleBuffer);
 #endif
 				// Aggregates
 				PxAggregate*							createAggregate(PxU32 maxActors, PxU32 maxShapes, PxAggregateFilterHint filterHint);
@@ -341,12 +334,6 @@ private:
 				PxPool2<NpParticleAndDiffuseBuffer, 1024> mParticleAndDiffuseBufferPool;
 				PxMutex									mParticleAndDiffuseBufferPoolLock;
 
-				PxPool2<NpParticleClothBuffer, 1024>	mParticleClothBufferPool;
-				PxMutex									mParticleClothBufferPoolLock;
-
-				PxPool2<NpParticleRigidBuffer, 1024>	mParticleRigidBufferPool;
-				PxMutex									mParticleRigidBufferPoolLock;
-
 				PxPool2<NpDeformableSurfaceMaterial, 1024>	mDeformableSurfaceMaterialPool;
 				PxMutex										mDeformableSurfaceMaterialPoolLock;
 
@@ -382,8 +369,6 @@ private:
 	void	NpDestroyParticleSystem(NpPBDParticleSystem* particleSystem);
 	void	NpDestroyParticleBuffer(NpParticleBuffer* particleBuffer);
 	void	NpDestroyParticleBuffer(NpParticleAndDiffuseBuffer* particleBuffer);
-	void	NpDestroyParticleBuffer(NpParticleClothBuffer* particleBuffer);
-	void	NpDestroyParticleBuffer(NpParticleRigidBuffer* particleBuffer);
 #endif
 }
 

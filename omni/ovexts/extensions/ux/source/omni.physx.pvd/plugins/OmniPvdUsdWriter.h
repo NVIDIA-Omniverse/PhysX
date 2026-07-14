@@ -1,0 +1,10 @@
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
+
+#pragma once
+
+#include "OmniPvdUsdAdapter.h"
+
+void writeUSDFile(char* usdStageDir, int upAxis, int isUSDA, OmniPvdDOMState& domState);
+long int createUSDFileInMemory(int upAxis, OmniPvdDOMState& domState);

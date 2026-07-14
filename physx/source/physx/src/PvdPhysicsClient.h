@@ -51,22 +51,22 @@ class PvdPhysicsClient : public PvdClient, public PxErrorCallback, public NpFact
 	PvdPhysicsClient(PsPvd* pvd);
 	virtual ~PvdPhysicsClient();
 
-	bool isConnected() const;
-	void onPvdConnected();
-	void onPvdDisconnected();
-	void flush();
+	virtual	bool isConnected() const	PX_OVERRIDE;
+	virtual	void onPvdConnected()	PX_OVERRIDE;
+	virtual	void onPvdDisconnected()	PX_OVERRIDE;
+	virtual	void flush()	PX_OVERRIDE;
 
-	physx::pvdsdk::PvdDataStream* getDataStream();
+	virtual	physx::pvdsdk::PvdDataStream* getDataStream()	PX_OVERRIDE;
 	
 	void sendEntireSDK();	
 	void destroyPvdInstance(const PxPhysics* physics);
 
 	// NpFactoryListener
-	virtual void onMeshFactoryBufferRelease(const PxBase* object, PxType typeID);
+	virtual void onMeshFactoryBufferRelease(const PxBase* object, PxType typeID) PX_OVERRIDE;
 	/// NpFactoryListener
 
 	// PxErrorCallback
-	void reportError(PxErrorCode::Enum code, const char* message, const char* file, int line);
+	virtual	void reportError(PxErrorCode::Enum code, const char* message, const char* file, int line)	PX_OVERRIDE;
 
   private:
 	void createPvdInstance(const PxTriangleMesh* triMesh);

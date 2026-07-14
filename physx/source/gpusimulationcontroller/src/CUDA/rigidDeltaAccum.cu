@@ -377,8 +377,15 @@ extern "C" __global__ void accumulateDeltaVRigidSecondLaunch(
 
 						impulse.top *= ratio;
 						impulse.bottom *= ratio;
-						
-						storeSpatialVector(artiLinks[linkID].mScratchImpulse, -impulse, artiIndexInBlock);
+
+						// OMPE-42519: accumulateRigidDeltas runs twice per iteration
+						// (attach pass + contact pass). Accumulate into both buffers
+						// so neither pass overwrites the other:
+						//   mScratchImpulse       -> link velocity propagation
+						//   mSolverSpatialImpulse -> incomingJointForce readback
+						// Both are reset at iter start in initialize() (forwardDynamic2.cu).
+						addSpatialVector(artiLinks[linkID].mScratchImpulse, -impulse, artiIndexInBlock);
+						addSpatialVector(artiLinks[linkID].mSolverSpatialImpulse, -impulse, artiIndexInBlock);
 					}
 					else
 					{
@@ -822,6 +829,8 @@ extern "C" __global__ void accumulateDeltaVRigidSecondLaunchMultiStage2(
 							impulse.top.x, impulse.top.y, impulse.top.z, impulse.bottom.x, impulse.bottom.y, impulse.bottom.z);*/
 
 						atomicAddSpatialVector(artiLinks[linkID].mScratchImpulse, -impulse, artiIndexInBlock);
+						// OMPE-42519: see accumulateDeltaVRigidSecondLaunch above.
+						atomicAddSpatialVector(artiLinks[linkID].mSolverSpatialImpulse, -impulse, artiIndexInBlock);
 					}
 					else
 					{

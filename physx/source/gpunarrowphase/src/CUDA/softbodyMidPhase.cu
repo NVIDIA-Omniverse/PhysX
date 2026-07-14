@@ -100,7 +100,7 @@ struct SoftbodyTreeTraverser
 				{
 					intersect = tetBoundingBox(worldV0, worldV1, worldV2, worldV3).intersects(mBox);
 				}
-			}			
+			}
 		}
 
 		pushOntoStackFullWarp(intersect, midphasePairsNum, stackPtr, stackSize, make_uint4(cmIdx, primitiveIndex, 0, 0));

@@ -115,7 +115,7 @@ namespace Ext
 		
 		template<typename TObjType>
 		static void createInstance( PvdDataStream& inStream, const PxConstraint& c, const TObjType& inSource )
-		{				
+		{
 			inStream.createInstance( &inSource );
 			inStream.pushBackObjectRef( c.getScene(), "Joints", &inSource );
 
@@ -136,17 +136,17 @@ namespace Ext
 							//Assigned is needed for copying
 				ConstraintUpdateCmd(const ConstraintUpdateCmd& cmd)
 					:PvdDataStream::PvdCommand(), mConstraint(cmd.mConstraint), mJoint(cmd.mJoint)
-				{					
+				{
 				}
 
-				virtual bool canRun(PvdInstanceDataStream &inStream_ )
+				virtual bool canRun(PvdInstanceDataStream &inStream_ ) PX_OVERRIDE
 				{
 					PX_ASSERT(inStream_.isInstanceValid(&mJoint));
 					//When run this command, the constraint maybe buffer removed
 					return ((actor0 == NULL) || inStream_.isInstanceValid(actor0))
 						&&  ((actor1 == NULL) || inStream_.isInstanceValid(actor1));
 				}
-				virtual void run( PvdInstanceDataStream &inStream_ )
+				virtual void run( PvdInstanceDataStream &inStream_ ) PX_OVERRIDE
 				{
 					//When run this command, the constraint maybe buffer removed
 					if(!inStream_.isInstanceValid(&mJoint))
@@ -181,7 +181,7 @@ namespace Ext
 		}
 		
 		template<typename jointtype>
-		static void simUpdate(PvdDataStream& /*pvdConnection*/, const jointtype& /*joint*/) {}		
+		static void simUpdate(PvdDataStream& /*pvdConnection*/, const jointtype& /*joint*/) {}
 		
 		template<typename jointtype>
 		static void createPvdInstance(PvdDataStream& pvdConnection, const PxConstraint& c, const jointtype& joint)

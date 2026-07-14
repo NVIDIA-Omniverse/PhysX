@@ -232,7 +232,7 @@ DeformableVolumeMesh::DeformableVolumeMesh(MeshFactory* factory, DeformableVolum
 }
 
 DeformableVolumeMesh::~DeformableVolumeMesh()
-{	
+{
 	if (getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
 	{
 		PX_DELETE(mDeformableVolumeAuxData);

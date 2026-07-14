@@ -283,8 +283,8 @@ class PersistentActorAggregatePair : public PersistentPairs
 								PersistentActorAggregatePair(Aggregate* aggregate, ShapeHandle actorHandle);
 	virtual						~PersistentActorAggregatePair()	{}
 
-	virtual			void		findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut);
-	virtual			bool		update(AABBManager& manager, BpCacheData* data);
+	virtual			void		findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut) PX_OVERRIDE;
+	virtual			bool		update(AABBManager& manager, BpCacheData* data) PX_OVERRIDE;
 
 					ShapeHandle	mAggregateHandle;
 					ShapeHandle	mActorHandle;
@@ -374,8 +374,8 @@ class PersistentAggregateAggregatePair : public PersistentPairs
 								PersistentAggregateAggregatePair(Aggregate* aggregate0, Aggregate* aggregate1);
 	virtual						~PersistentAggregateAggregatePair()	{}
 
-	virtual			void		findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut);
-	virtual			bool		update(AABBManager& manager, BpCacheData*);
+	virtual			void		findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut) PX_OVERRIDE;
+	virtual			bool		update(AABBManager& manager, BpCacheData*) PX_OVERRIDE;
 
 					ShapeHandle	mAggregateHandle0;
 					ShapeHandle	mAggregateHandle1;
@@ -420,7 +420,7 @@ class PersistentSelfCollisionPairs : public PersistentPairs
 						PersistentSelfCollisionPairs(Aggregate* aggregate);
 	virtual				~PersistentSelfCollisionPairs()	{}
 
-	virtual	void		findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut);
+	virtual	void		findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut) PX_OVERRIDE;
 
 			Aggregate*	mAggregate;
 };
@@ -1579,7 +1579,7 @@ public:
 	{
 	}
 
-	void runInternal()
+	virtual void runInternal()	PX_OVERRIDE
 	{
 		BpCacheData* data = mManager->getBpCacheData();
 
@@ -1611,7 +1611,7 @@ public:
 		}
 	}
 
-	virtual const char* getName() const { return mName; }
+	virtual const char* getName() const PX_OVERRIDE { return mName; }
 };
 
 class SortAggregateBoundsParallel : public Cm::Task
@@ -1625,7 +1625,7 @@ public:
 	{
 	}
 
-	void runInternal()
+	virtual void runInternal()	PX_OVERRIDE
 	{
 		PX_PROFILE_ZONE("SortBounds", mContextID);
 
@@ -1748,7 +1748,7 @@ public:
 			PX_FREE(minPosBounds);
 	}
 
-	virtual const char* getName() const { return "SortAggregateBoundsParallel"; }
+	virtual const char* getName() const PX_OVERRIDE { return "SortAggregateBoundsParallel"; }
 };
 
 class ProcessSelfCollisionPairsParallel : public ProcessAggPairsBase
@@ -1763,7 +1763,7 @@ public:
 	{
 	}
 
-	void runInternal()
+	virtual void runInternal()	PX_OVERRIDE
 	{
 		BpCacheData* data = mManager->getBpCacheData();
 		setCache(*data);
@@ -1780,7 +1780,7 @@ public:
 		mManager->putBpCacheData(data);
 	}
 
-	virtual const char* getName() const { return "ProcessSelfCollisionPairsParallel"; }
+	virtual const char* getName() const PX_OVERRIDE { return "ProcessSelfCollisionPairsParallel"; }
 };
 
 static void processAggregatePairsParallel(AggPairMap& map, AABBManager& manager, Cm::FlushPool& flushPool,
@@ -2127,7 +2127,7 @@ void AABBManager::clearOutOfBoundsObjects()
 //static const bool gVisualizeAggregateElems = false;
 void AABBManager::visualize(PxRenderOutput& out)
 {
-	const PxTransform idt = PxTransform(PxIdentity);
+	const PxTransform idt(PxIdentity);
 	out << idt;
 
 	PxBitMap bitmap;

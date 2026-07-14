@@ -140,14 +140,14 @@ namespace
 		virtual						~ExtSqAdapter()	{}
 
 		// Adapter
-		virtual	const PxGeometry&	getGeometry(const PrunerPayload& payload)	const;
+		virtual	const PxGeometry&	getGeometry(const PrunerPayload& payload)	const PX_OVERRIDE;
 		//~Adapter
 
 		// ExtQueryAdapter
-		virtual	PrunerHandle		findPrunerHandle(const PxQueryCache& cache, PrunerCompoundId& compoundId, PxU32& prunerIndex)	const;
-		virtual	void				getFilterData(const PrunerPayload& payload, PxFilterData& filterData)							const;
-		virtual	void				getActorShape(const PrunerPayload& payload, PxActorShape& actorShape)							const;
-		virtual	bool				processPruner(PxU32 prunerIndex, const PxQueryThreadContext* context, const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall)	const;
+		virtual	PrunerHandle		findPrunerHandle(const PxQueryCache& cache, PrunerCompoundId& compoundId, PxU32& prunerIndex)	const PX_OVERRIDE;
+		virtual	void				getFilterData(const PrunerPayload& payload, PxFilterData& filterData)							const PX_OVERRIDE;
+		virtual	void				getActorShape(const PrunerPayload& payload, PxActorShape& actorShape)							const PX_OVERRIDE;
+		virtual	bool				processPruner(PxU32 prunerIndex, const PxQueryThreadContext* context, const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall)	const PX_OVERRIDE;
 		//~ExtQueryAdapter
 
 				const PxCustomSceneQuerySystemAdapter&	mUserAdapter;
@@ -210,51 +210,51 @@ namespace
 													{}
 		virtual									~CustomPxSQ()	{}
 
-		virtual	void							release();
-		virtual	void							acquireReference();
-		virtual	void							preallocate(PxU32 prunerIndex, PxU32 nbShapes)										{ SQ().preallocate(prunerIndex, nbShapes);						}
+		virtual	void							release() PX_OVERRIDE;
+		virtual	void							acquireReference() PX_OVERRIDE;
+		virtual	void							preallocate(PxU32 prunerIndex, PxU32 nbShapes)				PX_OVERRIDE { SQ().preallocate(prunerIndex, nbShapes);						}
 		virtual	void							addSQShape(	const PxRigidActor& actor, const PxShape& shape, const PxBounds3& bounds,
-															const PxTransform& transform, const PxSQCompoundHandle* compoundHandle, bool hasPruningStructure);
-		virtual	void							removeSQShape(const PxRigidActor& actor, const PxShape& shape);
-		virtual	void							updateSQShape(const PxRigidActor& actor, const PxShape& shape, const PxTransform& transform);
-		virtual	PxSQCompoundHandle				addSQCompound(const PxRigidActor& actor, const PxShape** shapes, const PxBVH& pxbvh, const PxTransform* transforms);
-		virtual	void							removeSQCompound(PxSQCompoundHandle compoundHandle);
-		virtual	void							updateSQCompound(PxSQCompoundHandle compoundHandle, const PxTransform& compoundTransform);
-		virtual	void							flushUpdates()																		{ SQ().flushUpdates();											}
-		virtual	void							flushMemory()																		{ SQ().flushMemory();											}
-		virtual	void							visualize(PxU32 prunerIndex, PxRenderOutput& out)		const						{ SQ().visualize(prunerIndex, out);							}
-		virtual	void							shiftOrigin(const PxVec3& shift)													{ SQ().shiftOrigin(shift);										}
-		virtual	PxSQBuildStepHandle				prepareSceneQueryBuildStep(PxU32 prunerIndex);
-		virtual	void							sceneQueryBuildStep(PxSQBuildStepHandle handle);
-		virtual	void							finalizeUpdates();
-		virtual	void							setDynamicTreeRebuildRateHint(PxU32 dynTreeRebuildRateHint)							{ SQ().setDynamicTreeRebuildRateHint(dynTreeRebuildRateHint);	}
-		virtual	PxU32							getDynamicTreeRebuildRateHint()							const						{ return SQ().getDynamicTreeRebuildRateHint();					}
-		virtual	void							forceRebuildDynamicTree(PxU32 prunerIndex)											{ SQ().forceRebuildDynamicTree(prunerIndex);					}
-		virtual	PxSceneQueryUpdateMode::Enum	getUpdateMode()											const						{ return mUpdateMode;											}
-		virtual	void							setUpdateMode(PxSceneQueryUpdateMode::Enum mode)									{ mUpdateMode = mode;											}
-		virtual	PxU32							getStaticTimestamp()									const						{ return SQ().getStaticTimestamp();							}
-		virtual	void							merge(const PxPruningStructure& pxps);
+															const PxTransform& transform, const PxSQCompoundHandle* compoundHandle, bool hasPruningStructure) PX_OVERRIDE;
+		virtual	void							removeSQShape(const PxRigidActor& actor, const PxShape& shape) PX_OVERRIDE;
+		virtual	void							updateSQShape(const PxRigidActor& actor, const PxShape& shape, const PxTransform& transform) PX_OVERRIDE;
+		virtual	PxSQCompoundHandle				addSQCompound(const PxRigidActor& actor, const PxShape** shapes, const PxBVH& pxbvh, const PxTransform* transforms) PX_OVERRIDE;
+		virtual	void							removeSQCompound(PxSQCompoundHandle compoundHandle) PX_OVERRIDE;
+		virtual	void							updateSQCompound(PxSQCompoundHandle compoundHandle, const PxTransform& compoundTransform) PX_OVERRIDE;
+		virtual	void							flushUpdates()												PX_OVERRIDE { SQ().flushUpdates();											}
+		virtual	void							flushMemory()												PX_OVERRIDE { SQ().flushMemory();											}
+		virtual	void							visualize(PxU32 prunerIndex, PxRenderOutput& out)	const	PX_OVERRIDE { SQ().visualize(prunerIndex, out);								}
+		virtual	void							shiftOrigin(const PxVec3& shift)							PX_OVERRIDE { SQ().shiftOrigin(shift);										}
+		virtual	PxSQBuildStepHandle				prepareSceneQueryBuildStep(PxU32 prunerIndex) PX_OVERRIDE;
+		virtual	void							sceneQueryBuildStep(PxSQBuildStepHandle handle) PX_OVERRIDE;
+		virtual	void							finalizeUpdates() PX_OVERRIDE;
+		virtual	void							setDynamicTreeRebuildRateHint(PxU32 dynTreeRebuildRateHint) PX_OVERRIDE { SQ().setDynamicTreeRebuildRateHint(dynTreeRebuildRateHint);	}
+		virtual	PxU32							getDynamicTreeRebuildRateHint()						const	PX_OVERRIDE { return SQ().getDynamicTreeRebuildRateHint();					}
+		virtual	void							forceRebuildDynamicTree(PxU32 prunerIndex)					PX_OVERRIDE { SQ().forceRebuildDynamicTree(prunerIndex);					}
+		virtual	PxSceneQueryUpdateMode::Enum	getUpdateMode()										const	PX_OVERRIDE { return mUpdateMode;											}
+		virtual	void							setUpdateMode(PxSceneQueryUpdateMode::Enum mode)			PX_OVERRIDE { mUpdateMode = mode;											}
+		virtual	PxU32							getStaticTimestamp()								const	PX_OVERRIDE { return SQ().getStaticTimestamp();								}
+		virtual	void							merge(const PxPruningStructure& pxps) PX_OVERRIDE;
 		virtual	bool							raycast(const PxVec3& origin, const PxVec3& unitDir, const PxReal distance,
 														PxRaycastCallback& hitCall, PxHitFlags hitFlags,
 														const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall,
-														const PxQueryCache* cache, PxGeometryQueryFlags flags)	const;
+														const PxQueryCache* cache, PxGeometryQueryFlags flags)	const PX_OVERRIDE;
 		virtual	bool							sweep(	const PxGeometry& geometry, const PxTransform& pose,
 														const PxVec3& unitDir, const PxReal distance,
 														PxSweepCallback& hitCall, PxHitFlags hitFlags,
 														const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall,
-														const PxQueryCache* cache, const PxReal inflation, PxGeometryQueryFlags flags)	const;
+														const PxQueryCache* cache, const PxReal inflation, PxGeometryQueryFlags flags)	const PX_OVERRIDE;
 		virtual	bool							overlap(const PxGeometry& geometry, const PxTransform& transform,
 														PxOverlapCallback& hitCall, 
 														const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall,
-														const PxQueryCache* cache, PxGeometryQueryFlags flags)	const;
-		virtual	PxSQPrunerHandle				getHandle(const PxRigidActor& actor, const PxShape& shape, PxU32& prunerIndex)	const;
+														const PxQueryCache* cache, PxGeometryQueryFlags flags)	const PX_OVERRIDE;
+		virtual	PxSQPrunerHandle				getHandle(const PxRigidActor& actor, const PxShape& shape, PxU32& prunerIndex)	const PX_OVERRIDE;
 		virtual	void							sync(PxU32 prunerIndex, const PxSQPrunerHandle* handles, const PxU32* indices, const PxBounds3* bounds,
-													const PxTransform32* transforms, PxU32 count, const PxBitMap& ignoredIndices);
+													const PxTransform32* transforms, PxU32 count, const PxBitMap& ignoredIndices) PX_OVERRIDE;
 
-		virtual	PxU32							addPruner(PxPruningStructureType::Enum primaryType, PxDynamicTreeSecondaryPruner::Enum secondaryType, PxU32 preallocated);
-		virtual	PxU32							startCustomBuildstep();
-		virtual	void							customBuildstep(PxU32 index);
-		virtual	void							finishCustomBuildstep();
+		virtual	PxU32							addPruner(PxPruningStructureType::Enum primaryType, PxDynamicTreeSecondaryPruner::Enum secondaryType, PxU32 preallocated) PX_OVERRIDE;
+		virtual	PxU32							startCustomBuildstep() PX_OVERRIDE;
+		virtual	void							customBuildstep(PxU32 index) PX_OVERRIDE;
+		virtual	void							finishCustomBuildstep() PX_OVERRIDE;
 
 		PX_FORCE_INLINE	ExtPrunerManager&		SQ()			{ return mQueries.mSQManager;	}
 		PX_FORCE_INLINE	const ExtPrunerManager&	SQ()	const	{ return mQueries.mSQManager;	}

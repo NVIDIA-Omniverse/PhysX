@@ -36,7 +36,7 @@
 #include "SqTypedef.h"
 
 namespace physx
-{	
+{
 namespace Gu
 {
 	class BVH;

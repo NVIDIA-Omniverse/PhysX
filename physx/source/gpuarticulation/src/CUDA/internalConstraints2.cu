@@ -48,6 +48,8 @@
 using namespace physx;
 using namespace Dy;
 
+static const size_t DY_ARTICULATION_TENDON_MAX_SIZE = 64;
+
 extern "C" __host__ void initArticulationKernels2() {}
 
 static __device__ Cm::UnAlignedSpatialVector propagateImpulseDofAligned(const Cm::UnAlignedSpatialVector& isInvD, const PxVec3& childToParent,
@@ -75,7 +77,6 @@ static __device__ void getImpulseSelfResponseDofAligned(
 	const PxU32 dofIndex,
 	const PxU32 threadIndexInWarp)
 {
-
 	Cm::UnAlignedSpatialVector Z1W(-impulse1.top, -impulse1.bottom);
 
 	const Cm::UnAlignedSpatialVector isInvD = loadSpatialVector(thisDof.mIsInvDW, threadIndexInWarp);
@@ -103,7 +104,6 @@ static __device__ void getImpulseSelfResponse(
 	const PxU32 dofCount,
 	const PxU32 threadIndexInWarp)
 {
-
 	Cm::UnAlignedSpatialVector Z1W(-impulse1.top, -impulse1.bottom);
 
 	PxReal qstZ[3] = { 0.f, 0.f, 0.f };
@@ -135,7 +135,6 @@ static __device__ void setupInternalConstraints(PxgArticulationBlockData& artiBl
 	__shared__ char sDriveError[sizeof(PxVec3) * WARP_SIZE];
 	PxVec3* driveError = reinterpret_cast<PxVec3*>(sDriveError);
 
-
 	for (PxU32 linkID = 1; linkID < numLinks; ++linkID)
 	{
 		PxgArticulationBlockLinkData& link = artiLinks[linkID];
@@ -158,7 +157,7 @@ static __device__ void setupInternalConstraints(PxgArticulationBlockData& artiBl
 
 		//KS - maxFrictionForce stores the friction coefficient...
 		if (nbDofs)
-		{	
+		{
 			PxReal deprecatedFrictionCoefficient = dofs->mConstraintData.mDeprecatedFrictionCoefficient[threadIndexInWarp] * stepDt;
 
 			PxU32 jointType = link.mJointType[threadIndexInWarp];
@@ -417,7 +416,7 @@ static __device__ void loadSpatialVectorsForPropagationOutwards
 */
 static __device__ PxReal computeMimicJointSelfResponse
 (const PxU32 linkIndex, const PxU32 dof, const PxgArticulationBlockLinkData* PX_RESTRICT artiLinks, const PxgArticulationBlockDofData* PX_RESTRICT artiDofs, const PxU32 threadIndexInWarp)
-{			
+{
 	const PxU32 parentLinkIndex = artiLinks[linkIndex].mParents[threadIndexInWarp];
 
 	//childLinkPos - parentLinkPos
@@ -550,8 +549,8 @@ static __device__ PxReal computeMimicJointCrossResponse
 				//Copy QMinusSTZ to persistent array so we can use it again when we propagate deltaV downwards.
 				for(PxU32 i = 0; i < dofCount; i++)
 					artiDofs[jointOffset + i].mDeferredQstZ[threadIndexInWarp] = QMinusSTZ[i];		
-			}	
-		}			
+			}
+		}
 	}
 
 	//(2) Get deltaV response for root
@@ -661,7 +660,6 @@ static  __device__ void setupInternalMimicJointConstraints
 	}
 }
 
-
 static __device__ void getImpulseSelfResponseSlow(
 	const PxU32 linkID0_,
 	const PxU32 linkID1_,
@@ -674,7 +672,6 @@ static __device__ void getImpulseSelfResponseSlow(
 	PxgArticulationBlockDofData* dofData,
 	const PxU32 threadIndexInWarp)
 {
-
 	PxU32 stack[DY_ARTICULATION_TENDON_MAX_SIZE];
 
 	PxU32 linkID0 = linkID0_;
@@ -787,7 +784,6 @@ static __device__ void getImpulseSelfResponseSlow(
 
 	deltaV1.bottom = dv1.bottom;
 	deltaV1.top = dv1.top;
-
 }
 
 static __device__ void getImpulseSelfResponse(
@@ -839,7 +835,6 @@ static __device__ void setupInternalSpatialTendonConstraints(
 {
 	const PxU32 numTendons = artiBlock.mNumSpatialTendons[threadIndexInWarp];
 
-
 	PxReal accumLength[DY_ARTICULATION_TENDON_MAX_SIZE];
 
 	for (PxU32 i = 0; i < numTendons; ++i)
@@ -888,7 +883,6 @@ static __device__ void setupInternalSpatialTendonConstraints(
 			const PxVec3 rb = cBody2World.q.rotate(attachmentData.mRelativeOffset[threadIndexInWarp]);
 			const PxVec3 cAttachPoint = cBody2World.p + rb;
 
-
 			PxReal distance = 0.f;
 			PxVec3 dif(0.f);
 			//if the current attachment's parent is the root, we need to compute root axis and root raXn
@@ -900,7 +894,6 @@ static __device__ void setupInternalSpatialTendonConstraints(
 
 				rAxis = distance > 0.001f ? (dif / distance) : PxVec3(0.f);
 				rRaXn = rRa.cross(rAxis);
-
 			}
 			else
 			{
@@ -932,8 +925,6 @@ static __device__ void setupInternalSpatialTendonConstraints(
 			}
 			else
 			{
-		
-
 				const PxVec3 axis = distance > 0.001f ? (dif / distance) : PxVec3(0.f);
 
 				const PxVec3 rbXn = rb.cross(axis);
@@ -945,9 +936,7 @@ static __device__ void setupInternalSpatialTendonConstraints(
 
 				getImpulseSelfResponse(rAttachmentLinkIndex, linkInd, rAttachmentLink, cLink, axis0, axis1,
 					deltaV0, deltaV1, artiBlock, artiLinks, artiDofs, threadIndexInWarp);
-
-				
-				
+			
 				const PxReal r0 = deltaV0.bottom.dot(rAxis) + deltaV0.top.dot(rRaXn);
 				const PxReal r1 = deltaV1.bottom.dot(axis) + deltaV1.top.dot(rbXn);
 
@@ -1002,14 +991,11 @@ static __device__ void setupInternalSpatialTendonConstraints(
 				//assign the parent with next child's parent
 				parent = attachmentBlock[child].mParents[threadIndexInWarp];
 			}
-
 		}
 
 		tendonData.mNumConstraints[threadIndexInWarp] = numConstraints;
-
 	}
 }
-
 
 static __device__ void setupInternalFixedTendonConstraints(
 	PxgArticulationBlockData& artiBlock,
@@ -1050,7 +1036,6 @@ static __device__ void setupInternalFixedTendonConstraints(
 		PxVec3 sAxis;
 		PxVec3 sRaXn;
 
-
 		PxU32 child = 63 - __clzll(bitStack);
 
 		while (stackCount != 0)
@@ -1076,10 +1061,8 @@ static __device__ void setupInternalFixedTendonConstraints(
 			//if the current tendon joint's parent is the root, we need to compute root axis and root raXn
 			if (parent == 0)
 			{
-				
 				if (tjAxis < PxArticulationAxis::eX)
 				{
-
 					sAxis = PxVec3(0.f);
 					sRaXn = worldMotionVector.top;
 				}
@@ -1117,7 +1100,6 @@ static __device__ void setupInternalFixedTendonConstraints(
 				rbXn = (cB2w.p - cBody2World.p).cross(axis);
 			}
 			
-
 			//create constraint
 			Cm::UnAlignedSpatialVector axis0(sAxis, sRaXn);
 			Cm::UnAlignedSpatialVector axis1(-axis, -rbXn);
@@ -1156,7 +1138,6 @@ static __device__ void setupInternalFixedTendonConstraints(
 			constraint.mLink0[threadIndexInWarp] = sLinkIndex;
 			constraint.mLink1[threadIndexInWarp] = cLinkInd;
 		
-
 			//assign constraint index to tendon joint data
 			tjData.mConstraintId[threadIndexInWarp] = numConstraints;
 			numConstraints++;
@@ -1181,11 +1162,9 @@ static __device__ void setupInternalFixedTendonConstraints(
 				//assign the parent with next child's parent
 				parent = tendonJointBlock[child].mParents[threadIndexInWarp];
 			}
-
 		}
 
 		tendonData.mNumConstraints[threadIndexInWarp] = numConstraints;
-
 	}
 }
 
@@ -1201,12 +1180,10 @@ extern "C" __global__ void setupInternalConstraintLaunch1T(
 	const PxU32 globalWarpIndex = blockIdx.x * blockDim.y + warpIndex;
 	const PxU32 globalThreadIndex = globalWarpIndex * WARP_SIZE + threadIndexInWarp;
 
-
 	if (globalThreadIndex < nbArticulations)
 	{
 		const PxU32 maxLinks = scDesc->mMaxLinksPerArticulation;
-		const PxU32 maxDofs = scDesc->mMaxDofsPerArticulation;
-		
+		const PxU32 maxDofs = scDesc->mMaxDofsPerArticulation;	
 
 		PxgArticulationBlockData& artiBlock = scDesc->mArticulationBlocks[globalWarpIndex];
 		PxgArticulationBlockLinkData* artiLinks = &scDesc->mArticulationLinkBlocks[globalWarpIndex * maxLinks];
@@ -1262,8 +1239,6 @@ static __device__ PX_FORCE_INLINE void solveStaticConstraints(PxgArticulationCor
 	Cm::UnAlignedSpatialVector& PX_RESTRICT vel, Cm::UnAlignedSpatialVector& PX_RESTRICT impulse, Cm::UnAlignedSpatialVector& PX_RESTRICT deltaV, PxU32 threadIndexInWarp, bool doFriction,
 	PxReal /*minPen*/, PxReal /*elapsedTime*/, PxU32 linkID, PxU32 constraintCounts, const PxReal rigidContactBiasCoefficient)
 {
-
-	
 	const IterativeSolveData& iterativeData = sharedDesc->iterativeData;
 
 	const PxU32 constraintBatchOffset = data.mStaticJointStartIndex[threadIndexInWarp];
@@ -1276,8 +1251,6 @@ static __device__ PX_FORCE_INLINE void solveStaticConstraints(PxgArticulationCor
 	for (PxU32 i = 0; i < constraintCounts; ++i)
 	{
 		const PxgBlockConstraintBatch& batch = iterativeData.blockConstraintBatch[constraintBatchOffset + i];
-
-		
 
 		PxU32 mask = batch.mask;
 
@@ -1299,7 +1272,6 @@ static __device__ PX_FORCE_INLINE void solveStaticConstraints(PxgArticulationCor
 
 		PxgArticulationBlockResponse* responses = iterativeData.artiResponse;
 		const PxU32 responseIndex = batch.mArticulationResponseIndex;
-
 		
 		Cm::UnAlignedSpatialVector impulse0 = Cm::UnAlignedSpatialVector::Zero();
 		Cm::UnAlignedSpatialVector impulse1 = Cm::UnAlignedSpatialVector::Zero();
@@ -1324,12 +1296,10 @@ static __device__ PX_FORCE_INLINE void solveStaticConstraints(PxgArticulationCor
 			impulse += impulse1;
 			vel = vel1;
 		}
-
 	}
 
 	for (PxU32 i = 0; i < contactCounts; ++i)
 	{
-
 		const PxgBlockConstraintBatch& batch = iterativeData.blockConstraintBatch[contactBatchOffset + i];
 
 		PxU32 mask = batch.mask;
@@ -1349,7 +1319,6 @@ static __device__ PX_FORCE_INLINE void solveStaticConstraints(PxgArticulationCor
 			vel0 = Cm::UnAlignedSpatialVector::Zero();
 			vel1 = vel;
 		}
-
 
 		Cm::UnAlignedSpatialVector impulse0 = Cm::UnAlignedSpatialVector::Zero();
 		Cm::UnAlignedSpatialVector impulse1 = Cm::UnAlignedSpatialVector::Zero();
@@ -1389,7 +1358,6 @@ static __device__ PX_FORCE_INLINE void solveStaticConstraints(PxgArticulationCor
 	Cm::UnAlignedSpatialVector& PX_RESTRICT vel, Cm::UnAlignedSpatialVector& PX_RESTRICT impulse, Cm::UnAlignedSpatialVector& PX_RESTRICT deltaV, PxU32 threadIndexInWarp, bool doFriction, 
 	PxReal minPen, PxReal elapsedTime, PxU32 linkID, PxU32 constraintCounts, const PxReal /*rigidContactBiasCoefficient*/)
 {
-
 	const IterativeSolveDataTGS& iterativeData = sharedDesc->iterativeData;
 
 	const PxU32 constraintBatchOffset = data.mStaticJointStartIndex[threadIndexInWarp];
@@ -1427,7 +1395,6 @@ static __device__ PX_FORCE_INLINE void solveStaticConstraints(PxgArticulationCor
 			vel1 = Cm::UnAlignedSpatialVector::Zero();
 			delta1 = Cm::UnAlignedSpatialVector::Zero();
 			deltaQ1 = PxQuat(PxIdentity);
-
 		}
 		else
 		{
@@ -1441,7 +1408,6 @@ static __device__ PX_FORCE_INLINE void solveStaticConstraints(PxgArticulationCor
 			deltaQ1 = deltaQ;
 		}
 
-
 		Cm::UnAlignedSpatialVector impulse0 = Cm::UnAlignedSpatialVector::Zero();
 		Cm::UnAlignedSpatialVector impulse1 = Cm::UnAlignedSpatialVector::Zero();
 
@@ -1451,7 +1417,6 @@ static __device__ PX_FORCE_INLINE void solveStaticConstraints(PxgArticulationCor
 			// For interaction with static objects, mass-splitting is not used; thus, reference counts are 1 (default).
 			solveExt1DBlockTGS(batch, vel0, vel1, delta0, delta1, offset, iterativeData.blockJointConstraintHeaders,
 				iterativeData.blockJointConstraintRowsCon, iterativeData.artiResponse, deltaQ0, deltaQ1, elapsedTime, impulse0, impulse1);
-
 		}
 
 		if (igNodeIndexA.isArticulation())
@@ -1459,8 +1424,7 @@ static __device__ PX_FORCE_INLINE void solveStaticConstraints(PxgArticulationCor
 			impulse += impulse0;
 			vel = vel0;
 			delta = delta0;
-			deltaQ = deltaQ0;
-			
+			deltaQ = deltaQ0;		
 		}
 		else
 		{
@@ -1470,12 +1434,10 @@ static __device__ PX_FORCE_INLINE void solveStaticConstraints(PxgArticulationCor
 			delta = delta1;
 			deltaQ = deltaQ1;
 		}
-
 	}
 
 	for (PxU32 i = 0; i < contactCounts; ++i)
 	{
-
 		const PxgBlockConstraintBatch& batch = iterativeData.blockConstraintBatch[contactBatchOffset + i];
 
 		PxU32 mask = batch.mask;
@@ -1533,7 +1495,6 @@ static __device__ PX_FORCE_INLINE void solveStaticConstraints(PxgArticulationCor
 			delta = delta1;
 			deltaQ = deltaQ1;
 		}
-
 	}
 
 	if ((constraintCounts + contactCounts) > 0)
@@ -1564,7 +1525,6 @@ void __device__ accumulateLinkImpulsesAndLinkVelocities
 	parentImp += row0 * deltaF;
 	impulse -= row1 * deltaF;
 }
-
 
 template <typename IterativeData, const bool isTGS>
 static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* PX_RESTRICT scDesc, const PxReal dt,
@@ -1609,8 +1569,7 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 		const Cm::UnAlignedSpatialVector rootDeferredZ = loadSpatialVector(blockData.mRootDeferredZ, threadIdx.x);
 
 		Cm::UnAlignedSpatialVector parentDeltaV(PxVec3(0.f), PxVec3(0.f)), storeParentDeltaV(PxVec3(0.f), PxVec3(0.f));
-		Cm::UnAlignedSpatialVector parentImp(PxVec3(0.f), PxVec3(0.f));
-		
+		Cm::UnAlignedSpatialVector parentImp(PxVec3(0.f), PxVec3(0.f));	
 
 		if (!fixBase && doStaticContactsAnd1dConstraints)
 		{
@@ -1706,7 +1665,6 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 				const Cm::UnAlignedSpatialVector childDelta = loadSpatialVector(linkData.mDeltaMotion, threadIdx.x);
 				const Cm::UnAlignedSpatialVector parentDelta = loadSpatialVector(data[parent].mDeltaMotion, threadIdx.x);
 				
-
 				Cm::UnAlignedSpatialVector deltaV = propagateAccelerationW_child2ParentPreLoaded<ReadFromDeferredQstZ>(PxVec3(c2px, c2py, c2pz), dofData + jointOffset,
 					parentDeltaV, dofCount, threadIdx.x, NULL, NULL);
 
@@ -1758,7 +1716,7 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 						PxReal driveDeltaF = 0.0f;
 						PxReal posLimitDeltaF = 0.0f;
 						if(doFrictionDrivePosLimit)
-						{	
+						{
 							bool newFrictionModel = staticFrictionImpulse != 0.0f || viscousFrictionCoefficient !=  0.0f;
 
 							// deprecated friction model
@@ -1969,7 +1927,6 @@ static __device__ void artiSolveInternalConstraints1T(PxgArticulationCoreDesc* P
 	}
 }
 
-
 static __device__ void updateSolveInternalTendonConstraintsTGS(
 	PxgArticulationBlockData& artiBlock,
 	PxgArticulationBlockLinkData* PX_RESTRICT artiLinks,
@@ -2004,7 +1961,6 @@ static __device__ void updateSolveInternalTendonConstraintsTGS(
 		PxU32 numConstraints = 0;
 
 		accumLength[parent] = offset * coefficient;
-
 
 		PxU32 child = 63 - __clzll(bitStack);
 
@@ -2046,10 +2002,8 @@ static __device__ void updateSolveInternalTendonConstraintsTGS(
 			else
 			{
 				PxgArticulationInternalTendonConstraintData& constraint = constraintBlock[numConstraints++];
-				constraint.mAccumulatedLength[threadIndexInWarp] = u;
-				
+				constraint.mAccumulatedLength[threadIndexInWarp] = u;		
 			}
-
 
 			if (stackCount > 0)
 			{
@@ -2065,9 +2019,7 @@ static __device__ void updateSolveInternalTendonConstraintsTGS(
 				//assign the parent with next child's parent
 				parent = attachmentBlock[child].mParents[threadIndexInWarp];
 			}
-
 		}
-
 	}
 }
 
@@ -2167,7 +2119,6 @@ static __device__ void pxcFsApplyImpulses(PxgArticulationBlockData& blockData,
 		}
 	}
 	
-
 	Cm::UnAlignedSpatialVector Z0(-linear0, -angular0);
 	Cm::UnAlignedSpatialVector Z1(-linear1, -angular1);
 	
@@ -2235,7 +2186,7 @@ static __device__ void pxcFsApplyImpulses(PxgArticulationBlockData& blockData,
 			const PxU32 linkId = linkIndices[k];
 			const PxReal* jointImpulse = jointImpulses[k];
 			if((linkId == commonLink) && jointImpulse)
-			{		
+			{
 				for(PxU32 i = 0; i < dofCountAtCommonLink; i++)
 				{
 					jointImpulseToApplyAtCommonLink[i] += jointImpulse[i];
@@ -2271,7 +2222,6 @@ static __device__ void pxcFsApplyImpulses(PxgArticulationBlockData& blockData,
 	addSpatialVector(blockData.mRootDeferredZ, ZCommon, threadIndexInWarp);
 }
 
-
 static __device__ void solveInternalSpatialConstraints(
 	const PxgArticulationCoreDesc* PX_RESTRICT scDesc,
 	const bool isTGS, const PxU32 threadIndexInWarp)
@@ -2294,13 +2244,11 @@ static __device__ void solveInternalSpatialConstraints(
 
 	const bool fixBase = blockData.mFlags[threadIndexInWarp] & PxArticulationFlag::eFIX_BASE;
 
-
 	if (isTGS)
 	{
 		//compute the accumulated errors
 		updateSolveInternalTendonConstraintsTGS(blockData, data, tendonData, tendonConstraintData, attachmentData, maxAttachments, threadIndexInWarp);
 	}
-
 
 	const PxU32 numTendons = blockData.mNumSpatialTendons[threadIndexInWarp];
 
@@ -2317,7 +2265,6 @@ static __device__ void solveInternalSpatialConstraints(
 
 		if (numConstraints > 0)
 		{
-
 			PxgArticulationInternalTendonConstraintData& constraintData = tendonConstraintBlock[numConstraints - 1];
 			const PxU32 parentID = constraintData.mLink0[threadIndexInWarp];
 			Cm::UnAlignedSpatialVector parentVel = pxcFsGetVelocity(blockData, data, dofData, linkBitFieldsData, wordSize, parentID, fixBase, NULL, threadIndexInWarp);
@@ -2326,7 +2273,6 @@ static __device__ void solveInternalSpatialConstraints(
 
 			for (PxI32 j = numConstraints - 1; j >= 0; --j)
 			{
-
 				PxgArticulationInternalTendonConstraintData& constraintData = tendonConstraintBlock[j];
 
 				assert(parentID == constraintData.mLink0[threadIndexInWarp]);
@@ -2383,12 +2329,10 @@ static __device__ void solveInternalSpatialConstraints(
 	}
 }
 
-
 static __device__ void solveInternalFixedConstraints(
 	const PxgArticulationCoreDesc* PX_RESTRICT scDesc,
 	const bool isTGS, const PxU32 threadIndexInWarp)
 {
-
 	const PxU32 maxLinks = scDesc->mMaxLinksPerArticulation;
 	const PxU32 wordSize = (maxLinks + 63) / 64;
 
@@ -2403,7 +2347,6 @@ static __device__ void solveInternalFixedConstraints(
 	PxgArticulationInternalTendonConstraintData* artiTendonConstraints = scDesc->mArticulationFixedTendonConstraintBlocks + maxFixedTendons * maxTendonJoints * blockIdx.x;
 	PxgArticulationBlockTendonJointData* artiTendonJoints = scDesc->mArticulationTendonJointBlocks + maxFixedTendons * maxTendonJoints * blockIdx.x;
 	PxgArticulationBlockData& blockData = scDesc->mArticulationBlocks[blockIdx.x];
-
 
 	const bool fixBase = blockData.mFlags[threadIndexInWarp] & PxArticulationFlag::eFIX_BASE;
 	const PxU32 numTendons = blockData.mNumFixedTendons[threadIndexInWarp];
@@ -2436,11 +2379,9 @@ static __device__ void solveInternalFixedConstraints(
 		storeSpatialVector(sLink.mScratchImpulse, Cm::UnAlignedSpatialVector::Zero(), threadIndexInWarp);
 		storeSpatialVector(sLink.mScratchDeltaV, delta, threadIndexInWarp);
 
-
 		PxReal rootImp = 0.f;
 		PxU64 totalStack = 0;
 		
-
 		PxReal error = 0.f;
 		PxReal velocity = 0.f;
 
@@ -2448,10 +2389,8 @@ static __device__ void solveInternalFixedConstraints(
 
 		totalStack |= bitStack;
 
-
 		while (stackCount != 0)
 		{
-
 			PxU32 child = 63 - __clzll(bitStack);
 			bitStack &= (~(1ull << (child)));
 			stackCount--;
@@ -2473,7 +2412,6 @@ static __device__ void solveInternalFixedConstraints(
 
 			const PxU32 constraintId = tjData.mConstraintId[threadIndexInWarp];
 
-
 			PxgArticulationInternalTendonConstraintData& constraint = constraintBlock[constraintId];
 
 			const PxU32 tjAxis = tjData.mAxis[threadIndexInWarp];
@@ -2491,13 +2429,10 @@ static __device__ void solveInternalFixedConstraints(
 
 			storeSpatialVector(cLink.mScratchDeltaV, cDeltaV, threadIndexInWarp);
 
-
 			Cm::UnAlignedSpatialVector velB = loadSpatialVector(cLink.mMotionVelocity, threadIndexInWarp);
 			Cm::UnAlignedSpatialVector childVel = velB + cDeltaV;
 
 			storeSpatialVector(cLink.mScratchImpulse, Cm::UnAlignedSpatialVector(PxVec3(0.f), PxVec3(0.f)), threadIndexInWarp);
-
-
 
 			PxU64 children = tjData.mChildrens[threadIndexInWarp];
 
@@ -2505,7 +2440,6 @@ static __device__ void solveInternalFixedConstraints(
 			Cm::UnAlignedSpatialVector row0 = loadSpatialVector(constraint.mRow0, threadIndexInWarp);
 			Cm::UnAlignedSpatialVector row1 = loadSpatialVector(constraint.mRow1, threadIndexInWarp);
 			PxReal jointV = row1.innerProduct(childVel) - row0.innerProduct(parentV);
-
 
 			error += jointPose * coefficient;
 			velocity += jointV * coefficient;
@@ -2528,7 +2462,6 @@ static __device__ void solveInternalFixedConstraints(
 
 		const PxReal length = error + tendonData.mOffset[threadIndexInWarp];
 		
-
 		PxReal limitError = 0.f;
 		if (length < lowLimit)
 			limitError = length - lowLimit;
@@ -2592,10 +2525,7 @@ static __device__ void solveInternalFixedConstraints(
 			Cm::UnAlignedSpatialVector propagatedImpulse = propagateImpulseW<WriteToDeferredQstZ>(c2p, artiDofs + jointOffset, impulse, dofCount, threadIndexInWarp);
 
 			addSpatialVector(pLink.mScratchImpulse, propagatedImpulse, threadIndexInWarp);
-
-
 		}
-
 
 		const PxU32 firstConstraint = tendonJointBlock[firstChild].mConstraintId[threadIndexInWarp];
 		const PxgArticulationInternalTendonConstraintData& constraint = constraintBlock[firstConstraint];
@@ -2603,7 +2533,6 @@ static __device__ void solveInternalFixedConstraints(
 		const Cm::UnAlignedSpatialVector propagatedImpulse = loadSpatialVector(sLink.mScratchImpulse, threadIndexInWarp);
 
 		Cm::UnAlignedSpatialVector Z = propagatedImpulse + loadSpatialVector(constraint.mRow0, threadIndexInWarp) * rootImp;
-
 
 		for (PxU32 linkID = sLinkIndex; linkID; linkID = artiLinks[linkID].mParents[threadIndexInWarp])
 		{
@@ -2730,7 +2659,6 @@ const PxgArticulationCoreDesc* PX_RESTRICT scDesc, const PxReal biasCoefficient,
 
 	const PxU32 threadIndexInWarp = threadIdx.x;
 
-
 	if (globalThreadIndex < nbArticulations)
 	{
 		PxgArticulationBlockData& blockData = scDesc->mArticulationBlocks[blockIdx.x];
@@ -2756,7 +2684,6 @@ const PxgArticulationCoreDesc* PX_RESTRICT scDesc, const PxReal biasCoefficient,
 		}
 	}
 }
-
 
 //two warp each block
 extern "C" __global__
@@ -2792,8 +2719,6 @@ void artiSolveInternalConstraintsTGS1T(PxgArticulationCoreDesc* PX_RESTRICT scDe
 		sharedDesc, articulationBiasCoefficient, 0.0f, doFriction, isExternalForceEveryStep, doFrictionDrivePosLimit, doVelLimit, doStaticContactsAnd1dConstraints);
 }
 
-
-
 //each block has 16 warps, each warp has 32 threads, 32 blocks
 static __device__ void artiSumInternalContactAndJointBatches1(const PxU32* const PX_RESTRICT staticContactCount, const PxU32* const PX_RESTRICT staticJointCount,
 	const PxU32* const PX_RESTRICT selfContactCounts, const PxU32* const PX_RESTRICT selfJointCounts,
@@ -2802,7 +2727,6 @@ static __device__ void artiSumInternalContactAndJointBatches1(const PxU32* const
 	PxU32* tempSelfContactUniqueIndicesBlockSum, PxU32* tempSelfJointUniqueIndicesBlockSum,
 	PxU32* tempSelfContactHeaderBlockSum, PxU32* tempSelfJointHeaderBlockSum)
 {
-
 	const PxU32 numThreadsPerBlock = PxgArticulationCoreKernelBlockDim::COMPUTE_STATIC_CONTACT_CONSTRAINT_COUNT;
 
 	const PxU32 warpPerBlock = numThreadsPerBlock / WARP_SIZE;
@@ -2816,8 +2740,6 @@ static __device__ void artiSumInternalContactAndJointBatches1(const PxU32* const
 
 	const PxU32 numIterationPerBlock = (totalBlockRequired + (block_size - 1)) / block_size;
 
-
-
 	__shared__ PxU32 shContactUniqueIndicesWarpSum[warpPerBlock];
 	__shared__ PxU32 shJointUniqueIndicesWarpSum[warpPerBlock];
 	__shared__ PxU32 shContactHeaderWarpSum[warpPerBlock];
@@ -2828,7 +2750,6 @@ static __device__ void artiSumInternalContactAndJointBatches1(const PxU32* const
 	__shared__ PxU32 sContactHeaderAccum;
 	__shared__ PxU32 sJointHeaderAccum;
 
-
 	__shared__ PxU32 shSelfContactUniqueIndicesWarpSum[warpPerBlock];
 	__shared__ PxU32 shSelfJointUniqueIndicesWarpSum[warpPerBlock];
 	__shared__ PxU32 shSelfContactHeaderWarpSum[warpPerBlock];
@@ -2838,7 +2759,6 @@ static __device__ void artiSumInternalContactAndJointBatches1(const PxU32* const
 	__shared__ PxU32 sSelfJointUniqueIndicesAccum;
 	__shared__ PxU32 sSelfContactHeaderAccum;
 	__shared__ PxU32 sSelfJointHeaderAccum;
-
 
 	if (threadIdx.x == (WARP_SIZE - 1))
 	{
@@ -2872,7 +2792,6 @@ static __device__ void artiSumInternalContactAndJointBatches1(const PxU32* const
 			selfJointCount = selfJointCounts[workIndex];
 		}
 
-
 		PxU32 maxContact = contactCount;
 		PxU32 maxJoint = jointCount;
 		PxU32 maxSelfContact = selfContactCount;
@@ -2901,7 +2820,6 @@ static __device__ void artiSumInternalContactAndJointBatches1(const PxU32* const
 			shSelfJointHeaderWarpSum[warpIndex] = maxSelfJoint;
 		}
 
-
 		__syncthreads();
 
 		unsigned mask_idx = __ballot_sync(FULL_MASK, threadIndexInWarp < warpPerBlock);
@@ -2928,7 +2846,6 @@ static __device__ void artiSumInternalContactAndJointBatches1(const PxU32* const
 			selfContactHeaderWarpSum = warpReduction<AddOpPxU32, PxU32>(mask_idx, selfContactHeaderWarpSum);
 			selfJointHeaderWarpSum = warpReduction<AddOpPxU32, PxU32>(mask_idx, selfJointHeaderWarpSum);
 
-
 			if (threadIdx.x == (warpPerBlock - 1))
 			{
 				sContactUniqueIndicesAccum += contactUniqueIndicesWarpSum;
@@ -2944,7 +2861,6 @@ static __device__ void artiSumInternalContactAndJointBatches1(const PxU32* const
 		}
 
 		__syncthreads();
-
 	}
 
 	if (threadIdx.x == (warpPerBlock - 1))
@@ -2960,7 +2876,6 @@ static __device__ void artiSumInternalContactAndJointBatches1(const PxU32* const
 		tempSelfJointHeaderBlockSum[blockIdx.x] = sSelfJointHeaderAccum;
 	}
 }
-
 
 static __device__ void artiSumInternalContactAndJointBatches2(
 	const PxgArticulationCoreDesc* PX_RESTRICT scDesc,
@@ -2993,7 +2908,6 @@ static __device__ void artiSumInternalContactAndJointBatches2(
 	const PxU32 numRigidStaticContacts,
 	const PxU32 numRigidStaticJoints)
 {
-
 	const PxU32 numThreadsPerBlock = PxgArticulationCoreKernelBlockDim::COMPUTE_STATIC_CONTACT_CONSTRAINT_COUNT;
 
 	const PxU32 warpPerBlock = numThreadsPerBlock / WARP_SIZE;
@@ -3022,7 +2936,6 @@ static __device__ void artiSumInternalContactAndJointBatches2(
 	PxU32* artiJointConstraintBatchIndices = constraintPrepDesc->artiJointConstraintBatchIndices;
 	PxU32* artiContactConstraintBatchIndices = constraintPrepDesc->artiContactConstraintBatchIndices;
 
-
 	if (threadIdx.x == (WARP_SIZE - 1))
 	{
 		sContactUniqueIndicesAccum = 0;
@@ -3030,7 +2943,6 @@ static __device__ void artiSumInternalContactAndJointBatches2(
 		sContactHeaderAccum = 0;
 		sJointHeaderAccum = 0;
 	}
-
 
 	//accumulate num pairs per block and compute exclusive run sum
 	//unsigned mask_idx = __ballot_sync(FULL_MASK, threadIndexInWarp < block_size);
@@ -3063,7 +2975,6 @@ static __device__ void artiSumInternalContactAndJointBatches2(
 			PxgIslandContext& island = solverCoreDesc->islandContextPool[0];
 			island.mStaticArtiBatchCount = totalNumArtiStaticBatches;
 		}
-		
 	}
 
 	__syncthreads();
@@ -3101,7 +3012,6 @@ static __device__ void artiSumInternalContactAndJointBatches2(
 		maxContact = warpReduction<MaxOpPxU32, PxU32>(FULL_MASK, maxContact);
 		maxJoint = warpReduction<MaxOpPxU32, PxU32>(FULL_MASK, maxJoint);
 
-
 		if (threadIndexInWarp == 31)
 		{
 			shContactUniqueIndicesWarpSum[warpIndex] = sumContact;
@@ -3127,7 +3037,6 @@ static __device__ void artiSumInternalContactAndJointBatches2(
 		//warpPerBlock should be less than 32, each warp will do the runsum
 		if (threadIndexInWarp < warpPerBlock)
 		{
-
 			const PxU32 oriContactUniqueIndicesWarpSum = shContactUniqueIndicesWarpSum[threadIndexInWarp];
 			const PxU32 oriJointUniqueIndicesWarpSum = shJointUniqueIndicesWarpSum[threadIndexInWarp];
 			const PxU32 oriContactHeaderWarpSum = shContactHeaderWarpSum[threadIndexInWarp];
@@ -3138,14 +3047,11 @@ static __device__ void artiSumInternalContactAndJointBatches2(
 			contactHeaderWarpSum = warpScan<AddOpPxU32, PxU32>(mask_idx, oriContactHeaderWarpSum);
 			jointHeaderWarpSum = warpScan<AddOpPxU32, PxU32>(mask_idx, oriJointHeaderWarpSum);
 
-
 			//exclusive runsum
 			contactWarpOffset = contactUniqueIndicesWarpSum - oriContactUniqueIndicesWarpSum;
 			jointWarpOffset = jointUniqueIndicesWarpSum - oriJointUniqueIndicesWarpSum;
 			contactBlockWarpOffset = contactHeaderWarpSum - oriContactHeaderWarpSum;
 			jointBlockWarpOffset = jointHeaderWarpSum - oriJointHeaderWarpSum;
-
-
 		}
 
 		//make sure each thread in a warp has the correct warp offset
@@ -3170,7 +3076,6 @@ static __device__ void artiSumInternalContactAndJointBatches2(
 
 		PxU32 blockOffset = contactBlockOffset + jointBlockOffset + articulationBatchOffset;
 		
-
 		//we have to sync in here so all the threads in a warp has finished reading sContactUniqueIndicesAccum, sJointUniqueIndicesAccum,
 		//sContactHeaderAccum, sJointHeaderAccum before we overwrite those values for another iterations
 		__syncthreads();
@@ -3184,7 +3089,6 @@ static __device__ void artiSumInternalContactAndJointBatches2(
 		}
 
 		__syncthreads();
-
 
 		for (PxU32 i = 0; i < maxContact; ++i)
 		{
@@ -3216,8 +3120,7 @@ static __device__ void artiSumInternalContactAndJointBatches2(
 				if (igNodeIndexB.isArticulation())
 				{
 					const PxU32 artiLinkID = igNodeIndexB.articulationLinkId();
-
-					
+				
 					if (data[artiLinkID].mNbStaticContacts[threadIndexInWarp] == 0)
 					{
 						data[artiLinkID].mStaticContactStartIndex[threadIndexInWarp] = blockOffset;
@@ -3299,14 +3202,13 @@ static __device__ void artiSumInternalContactAndJointBatches2(
 	}
 }
 
-
 extern "C" __global__ 
 __launch_bounds__(PxgArticulationCoreKernelBlockDim::COMPUTE_STATIC_CONTACT_CONSTRAINT_COUNT, 1) 
 void artiSumInternalContactAndJointBatches1Launch(
 	const PxgArticulationCoreDesc* PX_RESTRICT scDesc,
 	PxgPrePrepDesc* prePrepDesc, 
 	const PxU32 nbArticulations)
-{	
+{
 	artiSumInternalContactAndJointBatches1(
 		prePrepDesc->mArtiStaticContactCounts,
 		prePrepDesc->mArtiStaticConstraintCounts,
@@ -3318,7 +3220,6 @@ void artiSumInternalContactAndJointBatches1Launch(
 		scDesc->mTempSelfContactHeaderBlock, scDesc->mTempSelfConstraintHeaderBlock);
 }
 
-
 extern "C" __global__ 
 __launch_bounds__(PxgArticulationCoreKernelBlockDim::COMPUTE_STATIC_CONTACT_CONSTRAINT_COUNT, 1)
 void artiSumInternalContactAndJointBatches2Launch(
@@ -3329,7 +3230,6 @@ void artiSumInternalContactAndJointBatches2Launch(
 	const PxU32 nbArticulations
 	)
 {
-	
 	const PxU32 numRigidContacts = prePrepDesc->numTotalContacts;
 	const PxU32 numRigidJoints = prePrepDesc->numTotalConstraints;
 	const PxU32 articulationBatchOffset = prePrepDesc->numBatches + prePrepDesc->numArtiBatches;
@@ -3402,7 +3302,6 @@ void artiSumSelfContactAndJointBatches(
 	const PxU32 contactUniqueIndexOffset = numRigidContacts + prePrepDesc->numTotalStaticContacts + prePrepDesc->numTotalArtiContacts + prePrepDesc->numTotalStaticArtiContacts;
 	const PxU32 jointUniqueIndexOffset = numRigidJoints + prePrepDesc->numTotalStaticConstraints + prePrepDesc->numTotalArtiConstraints + prePrepDesc->numTotalStaticArtiConstraints;
 
-
 	const PxU32 numThreadsPerBlock = PxgArticulationCoreKernelBlockDim::COMPUTE_STATIC_CONTACT_CONSTRAINT_COUNT;
 
 	const PxU32 warpPerBlock = numThreadsPerBlock / WARP_SIZE;
@@ -3431,7 +3330,6 @@ void artiSumSelfContactAndJointBatches(
 	PxU32* artiJointConstraintBatchIndices = constraintPrepDesc->artiJointConstraintBatchIndices;
 	PxU32* artiContactConstraintBatchIndices = constraintPrepDesc->artiContactConstraintBatchIndices;
 
-
 	if (threadIdx.x == (WARP_SIZE - 1))
 	{
 		sContactUniqueIndicesAccum = 0;
@@ -3439,7 +3337,6 @@ void artiSumSelfContactAndJointBatches(
 		sContactHeaderAccum = 0;
 		sJointHeaderAccum = 0;
 	}
-
 
 	//accumulate num pairs per block and compute exclusive run sum
 	//unsigned mask_idx = __ballot_sync(FULL_MASK, threadIndexInWarp < block_size);
@@ -3472,7 +3369,6 @@ void artiSumSelfContactAndJointBatches(
 			PxgIslandContext& island = solverCoreDesc->islandContextPool[0];
 			island.mSelfArtiBatchCount = totalNumArtiSelfBatches;
 		}
-
 	}
 
 	__syncthreads();
@@ -3515,7 +3411,6 @@ void artiSumSelfContactAndJointBatches(
 		maxContact = warpReduction<MaxOpPxU32, PxU32>(FULL_MASK, maxContact);
 		maxJoint = warpReduction<MaxOpPxU32, PxU32>(FULL_MASK, maxJoint);
 
-
 		if (threadIndexInWarp == 31)
 		{
 			shContactUniqueIndicesWarpSum[warpIndex] = sumContact;
@@ -3541,7 +3436,6 @@ void artiSumSelfContactAndJointBatches(
 		PxU32 mask_idx = __ballot_sync(FULL_MASK, threadIndexInWarp < warpPerBlock);
 		if (threadIndexInWarp < warpPerBlock)
 		{
-
 			const PxU32 oriContactUniqueIndicesWarpSum = shContactUniqueIndicesWarpSum[threadIndexInWarp];
 			const PxU32 oriJointUniqueIndicesWarpSum = shJointUniqueIndicesWarpSum[threadIndexInWarp];
 			const PxU32 oriContactHeaderWarpSum = shContactHeaderWarpSum[threadIndexInWarp];
@@ -3558,8 +3452,6 @@ void artiSumSelfContactAndJointBatches(
 			jointWarpOffset = jointUniqueIndicesWarpSum - oriJointUniqueIndicesWarpSum;
 			contactBlockWarpOffset = contactHeaderWarpSum - oriContactHeaderWarpSum;
 			jointBlockWarpOffset = jointHeaderWarpSum - oriJointHeaderWarpSum;
-
-
 		}
 
 		//make sure each thread in a warp has the correct warp offset
@@ -3567,7 +3459,6 @@ void artiSumSelfContactAndJointBatches(
 		jointWarpOffset = __shfl_sync(FULL_MASK, jointWarpOffset, warpIndex);
 		contactBlockWarpOffset = __shfl_sync(FULL_MASK, contactBlockWarpOffset, warpIndex);
 		jointBlockWarpOffset = __shfl_sync(FULL_MASK, jointBlockWarpOffset, warpIndex);
-
 
 		//Where the contact uniqueIds should go. This is the start of where this warp should write.
 		//The uids will be interleaved depending on the number of constraints in a contact block
@@ -3587,7 +3478,6 @@ void artiSumSelfContactAndJointBatches(
 		const PxU32 numRigidBatches = constraintPrepDesc->numBatches;
 		const PxU32 numArtiContactBatches = constraintPrepDesc->numArtiContactBatches;
 		const PxU32 numArtiJointBatches = constraintPrepDesc->numArti1dConstraintBatches;
-
 
 		//we have to sync in here so all the threads in a warp has finished reading sContactUniqueIndicesAccum, sJointUniqueIndicesAccum,
 		//sContactHeaderAccum, sJointHeaderAccum before we overwrite those values for another iterations
@@ -3616,7 +3506,6 @@ void artiSumSelfContactAndJointBatches(
 			data.mTotalSelfConstraintCount = maxContact + maxJoint;
 			data.mSelfConstraintOffset = blockOffset;
 		}
-
 
 		//Now we loop, outputting the self contacts/joints to the header buffer...
 		for (PxU32 i = 0; i < maxContact; ++i)
@@ -3679,7 +3568,6 @@ void artiSumSelfContactAndJointBatches(
 			blockOffset++;
 		}
 	}
-
 }
 
 static __device__ void solveConstraints(PxgArticulationCoreDesc* PX_RESTRICT scDesc, const IterativeSolveData& msIterativeData,
@@ -3730,7 +3618,6 @@ static __device__ void solveConstraints(PxgArticulationCoreDesc* PX_RESTRICT scD
 			msIterativeData.blockJointConstraintRowsCon, msIterativeData.artiResponse, deltaQ0, deltaQ1, elapsedTime, impulse0, impulse1);
 	}
 }
-
 
 template <typename IterativeData>
 static __device__ void artiPropagateRigidImpulsesAndSolveSelfConstraints1T(PxgArticulationCoreDesc* PX_RESTRICT scDesc, 
@@ -3818,7 +3705,6 @@ static __device__ void artiPropagateRigidImpulsesAndSolveSelfConstraints1T(PxgAr
 
 				if (mask & (1 << threadIdx.x))
 				{
-
 					const Cm::UnAlignedSpatialVector commonDelta = rootInvArticulatedInertia * -rootDeferredZ;
 
 					const PxU32 offset = warpScanExclusive(mask, threadIdx.x);
@@ -3867,7 +3753,6 @@ static __device__ void artiPropagateRigidImpulsesAndSolveSelfConstraints1T(PxgAr
 							word &= (word - 1);
 						}
 					}
-
 
 					//Now prop to linkA and linkB...
 					Cm::UnAlignedSpatialVector deltaVB = deltaVA;
@@ -3919,7 +3804,6 @@ static __device__ void artiPropagateRigidImpulsesAndSolveSelfConstraints1T(PxgAr
 					//Now we have updated velocities...
 					velA += deltaVA;
 					velB += deltaVB;
-
 
 					//Now do the solve
 
@@ -3987,7 +3871,6 @@ static __device__ void artiPropagateRigidImpulsesAndSolveSelfConstraints1T(PxgAr
 
 					impulse0 += impulse1;
 
-
 					for (PxI32 i = wordSize-1, wordOffset = (wordSize-1)*64; i >= 0; i--, wordOffset -= 64)
 					{
 						PxU64 word = commonBitField[i].bitField[threadIdx.x];
@@ -4026,7 +3909,6 @@ static __device__ void artiPropagateRigidImpulsesAndSolveSelfConstraints1T(PxgAr
 	}
 }
 
-
 //two warp each block
 extern "C" __global__
 void artiPropagateRigidImpulsesAndSolveSelfConstraints1T(PxgArticulationCoreDesc* PX_RESTRICT scDesc, const PxgSolverCoreDesc* const PX_RESTRICT solverDesc, 
@@ -4035,7 +3917,6 @@ void artiPropagateRigidImpulsesAndSolveSelfConstraints1T(PxgArticulationCoreDesc
 {
 	artiPropagateRigidImpulsesAndSolveSelfConstraints1T<IterativeSolveData>(scDesc, solverDesc, velocityIteration, 0.0f, sharedDesc, doFriction, rigidContactBiasCoefficient);
 }
-
 
 extern "C" __global__
 void artiPropagateRigidImpulsesAndSolveSelfConstraintsTGS1T(PxgArticulationCoreDesc* PX_RESTRICT scDesc, const PxgSolverCoreDesc* const PX_RESTRICT solverDesc, 

@@ -72,7 +72,7 @@ public:
 	{
 	}
 
-	virtual void release();
+	virtual void release() PX_OVERRIDE;
 
 public:	
 	PxsContactManager**				mCmArray;
@@ -134,7 +134,7 @@ public:
 				mCount = count;
 			}
 			PxModifiableContact*	getContacts()	{ return mContacts; }
-			PxU32					getCount()		{ return mCount; }	
+			PxU32					getCount()		{ return mCount; }
 		};
 
 		if(mCallback)
@@ -271,7 +271,7 @@ public:
 			}
 	
 			if(!numContacts)
-			{	
+			{
 				//KS - we still need to retain the patch count from the previous frame to detect found/lost events...
 				unit.clearCachedState();
 				continue;
@@ -491,7 +491,7 @@ public:
 		threadContext->mMaxPatches = maxPatches;
 	}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		PX_PROFILE_ZONE("Sim.narrowPhase", mContext->getContextId());
 
@@ -514,7 +514,7 @@ public:
 		mContext->putNpThreadContext(threadContext);
 	}
 
-	virtual const char* getName() const
+	virtual const char* getName() const PX_OVERRIDE
 	{
 		return "PxsContext.contactManagerDiscreteUpdate";
 	}
@@ -970,33 +970,48 @@ void PxsNphaseImplementationContext::unregisterContactManagerInternal(PxU32 npIn
 {
 //	PX_PROFILE_ZONE("unregisterContactManagerInternal", 0);
 
+	if(npIndex == 0xFFffFFff)
+		return;
+
 	//TODO - remove this element from the list.
 	const PxU32 index = PxsContactManagerBase::computeIndexFromId((npIndex & (~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK)));
+	const PxU32 mappingSize = managers.mContactManagerMapping.size();
+	PX_ASSERT(mappingSize > 0 && index < mappingSize);
+	if(mappingSize == 0 || index >= mappingSize)
+		return;
 
 	//Now we replace-with-last and remove the elements...
 
-	const PxU32 replaceIndex = managers.mContactManagerMapping.size()-1;
+	const PxU32 replaceIndex = mappingSize - 1;
 
+	PxsContactManager* removedManager = managers.mContactManagerMapping[index];
 	PxsContactManager* replaceManager = managers.mContactManagerMapping[replaceIndex];
 
 	mContext.destroyCache(managers.mCaches[index]);
 
-	managers.mContactManagerMapping[index] = replaceManager;
-	managers.mCaches[index] = managers.mCaches[replaceIndex];
-	cmOutputs[index] = cmOutputs[replaceIndex];
-	if(mGPU)
+	// When removing the last element, skip only the copy from last into the removed slot.
+	if(index != replaceIndex)
 	{
-		managers.mShapeInteractionsGPU[index] = managers.mShapeInteractionsGPU[replaceIndex];
-		managers.mRestDistancesGPU[index] = managers.mRestDistancesGPU[replaceIndex];
-		managers.mTorsionalPropertiesGPU[index] = managers.mTorsionalPropertiesGPU[replaceIndex];
+		managers.mContactManagerMapping[index] = replaceManager;
+		managers.mCaches[index] = managers.mCaches[replaceIndex];
+		cmOutputs[index] = cmOutputs[replaceIndex];
+		if(mGPU)
+		{
+			managers.mShapeInteractionsGPU[index] = managers.mShapeInteractionsGPU[replaceIndex];
+			managers.mRestDistancesGPU[index] = managers.mRestDistancesGPU[replaceIndex];
+			managers.mTorsionalPropertiesGPU[index] = managers.mTorsionalPropertiesGPU[replaceIndex];
+		}
 	}
 	managers.mCaches[replaceIndex].reset();
-	
+
 	PxcNpWorkUnit& replaceUnit = replaceManager->getWorkUnit();
 	replaceUnit.mNpIndex = npIndex;
 
 	if(replaceUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_TOUCH)
 		processPartitionEdges(mIslandSim->mGpuData, replaceUnit);
+
+	// Mark removed manager invalid so a later double-unregister won't use a stale index.
+	removedManager->getWorkUnit().mNpIndex = 0xFFffFFff;
 
 	managers.mContactManagerMapping.forceSize_Unsafe(replaceIndex);
 	managers.mCaches.forceSize_Unsafe(replaceIndex);

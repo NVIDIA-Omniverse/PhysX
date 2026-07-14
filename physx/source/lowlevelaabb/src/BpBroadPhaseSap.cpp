@@ -1279,7 +1279,7 @@ void BroadPhaseSap::batchUpdate
 						
 	#if PERFORM_COMPARISONS
 						if(IsMax)
-						{		
+						{
 							const BpHandle ownerId=getOwner(CurrentData);
 							SapBox1D* PX_RESTRICT id1 = asapBoxes + ownerId;
 							// Our min passed a max => start overlap
@@ -1316,7 +1316,7 @@ void BroadPhaseSap::batchUpdate
 						CurrentValue = BaseEPValues[CurrentIndex];
 					}
 					while(ThisValue < CurrentValue);
-				}			
+				}
 				else 
 				{
 					// Max is moving left:
@@ -1610,7 +1610,7 @@ void BroadPhaseSap::batchUpdateFewUpdates(const PxU32 Axis, BroadPhasePair*& pai
 						
 	#if PERFORM_COMPARISONS
 						if(IsMax)
-						{		
+						{
 							const BpHandle ownerId=getOwner(CurrentData);
 							SapBox1D* PX_RESTRICT id1 = asapBoxes + ownerId;
 							// Our min passed a max => start overlap
@@ -1646,7 +1646,7 @@ void BroadPhaseSap::batchUpdateFewUpdates(const PxU32 Axis, BroadPhasePair*& pai
 						CurrentValue = BaseEPValues[CurrentIndex];
 					}
 					while(ThisValue < CurrentValue);
-				}			
+				}
 				else 
 				{
 					// Max is moving left:

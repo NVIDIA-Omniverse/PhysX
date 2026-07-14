@@ -172,9 +172,9 @@ namespace
 		LegacySerialStream(OutputStreamWriter& writer,
 						   const PxCollection& collection,
 						   bool exportNames) : mWriter(writer), mCollection(collection), mExportNames(exportNames) {}
-		void		writeData(const void* buffer, PxU64 size)	{ mWriter.write(buffer, size);		}
-		PxU64		getTotalStoredSize()						{ return mWriter.getStoredSize();	}
-		void		alignData(PxU32 alignment)
+		virtual	void	writeData(const void* buffer, PxU64 size)	PX_OVERRIDE	{ mWriter.write(buffer, size);		}
+		PxU64			getTotalStoredSize()									{ return mWriter.getStoredSize();	}
+		virtual	void	alignData(PxU32 alignment)	PX_OVERRIDE
 		{
 			if(!alignment)
 				return;
@@ -191,17 +191,17 @@ namespace
 			PX_ASSERT(!getPadding(getTotalStoredSize(), alignment));
 		}
 
-		virtual void	registerReference(PxBase&, PxU32, size_t)
+		virtual void	registerReference(PxBase&, PxU32, size_t) PX_OVERRIDE
 		{
 			PxGetFoundation().error(physx::PxErrorCode::eINVALID_OPERATION, PX_FL,
 					"Cannot register references during exportData, exportExtraData.");
 		}
 
-		virtual const PxCollection& getCollection() const
+		virtual const PxCollection& getCollection() const PX_OVERRIDE
 		{
 			return mCollection;
 		}
-		virtual void writeName(const char* name)
+		virtual void writeName(const char* name) PX_OVERRIDE
 		{
 			PxU32 len = name && mExportNames ? PxU32(strnlen(name, UINT32_MAX - 1)) + 1 : 0;
 			writeData(&len, sizeof(len));

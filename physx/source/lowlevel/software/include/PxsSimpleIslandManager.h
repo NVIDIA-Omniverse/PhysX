@@ -107,9 +107,9 @@ public:
 
 	ThirdPassTask(PxU64 contextID, SimpleIslandManager& islandManager, IslandSim& islandSim);
 
-	virtual void runInternal();
+	virtual void runInternal() PX_OVERRIDE;
 
-	virtual const char* getName() const
+	virtual const char* getName() const PX_OVERRIDE
 	{
 		return "ThirdPassIslandGenTask";
 	}
@@ -126,9 +126,9 @@ public:
 
 	PostThirdPassTask(PxU64 contextID, SimpleIslandManager& islandManager);
 
-	virtual void runInternal();
+	virtual void runInternal() PX_OVERRIDE;
 
-	virtual const char* getName() const
+	virtual const char* getName() const PX_OVERRIDE
 	{
 		return "PostThirdPassTask";
 	}

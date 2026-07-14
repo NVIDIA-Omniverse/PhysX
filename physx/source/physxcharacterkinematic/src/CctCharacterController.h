@@ -48,7 +48,7 @@ class PxObstacle;
 class RenderBuffer;
 
 namespace Cct
-{	    
+{
 	struct CCTParams
 	{
 											CCTParams();

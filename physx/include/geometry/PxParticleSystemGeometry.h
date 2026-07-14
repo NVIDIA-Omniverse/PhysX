@@ -33,7 +33,6 @@
 #include "foundation/PxBounds3.h"
 #include "foundation/PxVec4.h"
 #include "PxParticleSystem.h"
-#include "PxParticleSolverType.h"
 
 #if !PX_DOXYGEN
 namespace physx
@@ -67,7 +66,6 @@ namespace physx
 		PX_INLINE void operator=(const PxParticleSystemGeometry& that)
 		{
 			mType = that.mType;
-			mSolverType = that.mSolverType;
 		}
 
 		/**
@@ -85,7 +83,6 @@ namespace physx
 			return true;
 		}
 
-		PX_DEPRECATED PxParticleSolverType::Enum mSolverType;
 	};
 
 #if !PX_DOXYGEN

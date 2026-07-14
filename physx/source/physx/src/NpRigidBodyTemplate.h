@@ -45,7 +45,7 @@
 		{																												\
 			NpScene* sceneForPVD = RigidActorTemplateClass::getNpScene();	/* shared shapes also return zero here */	\
 			if(sceneForPVD)																								\
-				sceneForPVD->getScenePvdClientInternal().updateBodyPvdProperties(static_cast<NpActor*>(this));				\
+				sceneForPVD->getScenePvdClientInternal().updateBodyPvdProperties(static_cast<NpActor*>(this));			\
 		}
 #else
 	#define UPDATE_PVD_PROPERTY_BODY
@@ -315,7 +315,8 @@ public:
 	PX_INLINE	PxMat33					scGetGlobalInertiaTensorInverse() const
 										{
 											PxMat33 inverseInertiaWorldSpace;
-											Cm::transformInertiaTensor(mCore.getInverseInertia(), PxMat33Padded(mCore.getBody2World().q), inverseInertiaWorldSpace);
+											const PxVec3p invInertia = mCore.getInverseInertia();
+											Cm::transformInertiaTensor(invInertia, mCore.getBody2World().q, inverseInertiaWorldSpace);
 											return inverseInertiaWorldSpace;
 										}
 
@@ -787,7 +788,6 @@ void NpRigidBodyTemplate<APIClass>::setMinCCDAdvanceCoefficient(PxReal minCCDAdv
 	mCore.setCCDAdvanceCoefficient(minCCDAdvanceCoefficient);
 	UPDATE_PVD_PROPERTY_BODY
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, minCCDAdvanceCoefficient, static_cast<PxRigidBody&>(*this), minCCDAdvanceCoefficient)
-
 }
 
 template<class APIClass>

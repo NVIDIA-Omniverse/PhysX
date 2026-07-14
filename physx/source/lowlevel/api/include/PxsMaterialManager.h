@@ -92,7 +92,7 @@ namespace physx
 		}
 
 		void resize(PxU32 minValueForMax)
-		{			
+		{
 			if(maxMaterials>=minValueForMax)
 				return;
 

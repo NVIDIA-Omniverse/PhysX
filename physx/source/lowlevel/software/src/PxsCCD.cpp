@@ -717,7 +717,7 @@ bool PxsCCDPair::sweepAdvanceToToi(PxReal dt, bool clipTrajectoryToToi)
 
 		//Work out velocity and invMass for body 1
 		if(atom1)
-		{		
+		{
 			//Put contact point in local space, then find how much point is moving using point velocity...
 #if CCD_ANGULAR_IMPULSE			
 			localPoint1 = mMinToiPoint - trB.p;
@@ -943,7 +943,7 @@ public:
 	{
 	}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		for (PxU32 j = 0; j < mNumPairs; j++)
 		{
@@ -953,7 +953,7 @@ public:
 		}
 	}
 
-	virtual const char *getName() const
+	virtual const char *getName() const PX_OVERRIDE
 	{
 		return "PxsContext.CCDSweep";
 	}
@@ -1005,7 +1005,7 @@ public:
 		PX_ASSERT(mFirstIslandPair < mNumPairs);
 	}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		PxI32 sweepTotalHits = 0;
 
@@ -1175,7 +1175,7 @@ public:
 					if(pair.mMinToi > 0.0f)
 					{
 						for(PxU32 a = islandStartIndex; a < islandEndIndex; ++a)
-						{	
+						{
 							if(!mIslandBodies[a]->mPassDone)
 							{
 								//If the body has not updated, we advance it to the current time-step that the island has reached.
@@ -1272,7 +1272,7 @@ public:
 		mContext->putNpThreadContext(threadContext);
 	}
 
-	virtual const char *getName() const
+	virtual const char *getName() const PX_OVERRIDE
 	{
 		return "PxsContext.CCDAdvance";
 	}
@@ -1880,7 +1880,7 @@ static PX_FORCE_INLINE bool shouldCreateContactReports(const PxsRigidCore* rigid
 }
 
 void PxsCCDContext::postCCDAdvance(PxBaseTask* /*continuation*/)
-{	
+{
 	// --------------------------------------------------------------------------------------
 	// contact notifications: update touch status (multi-threading this section would probably slow it down but might be worth a try)
 	PxU32 countLost = 0, countFound = 0, countRetouch = 0;

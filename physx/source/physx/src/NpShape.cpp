@@ -82,7 +82,7 @@ NpShape::~NpShape()
 	decMeshRefCount();
 
 	const PxU32 nbMaterials = scGetNbMaterials();
-	PxShapeCoreFlags flags = mCore.getCore().mShapeCoreFlags;
+	const PxShapeCoreFlags flags = mCore.mShapeCoreFlags;
 
 	if (flags & PxShapeCoreFlag::eDEFORMABLE_SURFACE_SHAPE)
 	{
@@ -138,7 +138,7 @@ void NpShape::preExportDataReset()
 }
 
 void NpShape::exportExtraData(PxSerializationContext& context)
-{	
+{
 	mCore.exportExtraData(context);
 	context.writeName(mCore.mName);
 }
@@ -175,7 +175,7 @@ void NpShape::requiresObjects(PxProcessPxBaseCallback& c)
 }
 
 void NpShape::resolveReferences(PxDeserializationContext& context)
-{	
+{
 	// getMaterials() only works after material indices have been patched. 
 	// in order to get to the new material indices, we need access to the new materials.
 	// this only leaves us with the option of acquiring the material through the context given an old material index (we do have the mapping)
@@ -300,7 +300,7 @@ void NpShape::setGeometry(const PxGeometry& g)
 
 	NP_CHECK_SCENE_CORRUPTION_AND_RETURN(ownerScene)
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	//Do not decrement ref count here, but instead cache the refcountable mesh pointer if we had one.
 	//We instead decrement the ref counter after incrementing the ref counter on the new geometry.
@@ -326,6 +326,10 @@ void NpShape::setGeometry(const PxGeometry& g)
 		NpScene* npScene = getNpScene();
 		if(npScene)
 			npScene->getScenePvdClientInternal().releaseAndRecreateGeometry(this);
+#endif
+
+#if PX_SUPPORT_OMNI_PVD
+		streamShapeUpdateGeometry(static_cast<PxShape&>(*this));
 #endif
 	}
 
@@ -487,10 +491,10 @@ void NpShape::setMaterialsInternal(PxMaterialType* const * materials, PxU16 mate
 
 void NpShape::setMaterials(PxMaterial*const* materials, PxU16 materialCount)
 {
-	PX_CHECK_AND_RETURN(!(mCore.getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_SURFACE_SHAPE),
+	PX_CHECK_AND_RETURN(!(mCore.mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_SURFACE_SHAPE),
 		"NpShape::setMaterials: cannot set rigid body materials to a deformable surface shape!");
 
-	PX_CHECK_AND_RETURN(!(mCore.getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_VOLUME_SHAPE),
+	PX_CHECK_AND_RETURN(!(mCore.mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_VOLUME_SHAPE),
 		"NpShape::setMaterials: cannot set rigid body materials to a deformable volume shape!");
 
 	setMaterialsInternal<PxMaterial, NpMaterial>(materials, materialCount);
@@ -499,7 +503,7 @@ void NpShape::setMaterials(PxMaterial*const* materials, PxU16 materialCount)
 void NpShape::setDeformableSurfaceMaterials(PxDeformableSurfaceMaterial*const* materials, PxU16 materialCount)
 {
 #if PX_SUPPORT_GPU_PHYSX
-	PX_CHECK_AND_RETURN((mCore.getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_SURFACE_SHAPE),
+	PX_CHECK_AND_RETURN((mCore.mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_SURFACE_SHAPE),
 		"NpShape::setMaterials: can only apply deformable surface materials to a deformable surface shape!");
 
 	setMaterialsInternal<PxDeformableSurfaceMaterial, NpDeformableSurfaceMaterial>(materials, materialCount);
@@ -517,7 +521,7 @@ void NpShape::setDeformableSurfaceMaterials(PxDeformableSurfaceMaterial*const* m
 void NpShape::setDeformableVolumeMaterials(PxDeformableVolumeMaterial* const* materials, PxU16 materialCount)
 {
 #if PX_SUPPORT_GPU_PHYSX
-	PX_CHECK_AND_RETURN((mCore.getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_VOLUME_SHAPE),
+	PX_CHECK_AND_RETURN((mCore.mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_VOLUME_SHAPE),
 		"NpShape::setMaterials: can only apply deformable volume materials to a deformable volume shape!");
 
 	setMaterialsInternal<PxDeformableVolumeMaterial, NpDeformableVolumeMaterial>(materials, materialCount);
@@ -747,7 +751,7 @@ PxShapeGPUIndex NpShape::getGPUIndex() const
 		PxsSimulationController* simulationController = getNpScene()->getSimulationController();
 		if(simulationController)
 		{
-			PxU32 shapeIndex = simulationController->getInternalShapeIndex(mCore.getCore());
+			const PxU32 shapeIndex = simulationController->getInternalShapeIndex(mCore);
 			// invalid shape index is PX_INVALID_U32, invalid GPU index is PX_INVALID_NODE
 			// but are the same value, TODO use PX_INVALID_NODE for both.
 			PX_COMPILE_TIME_ASSERT(PX_INVALID_U32 == PX_INVALID_NODE);
@@ -845,7 +849,7 @@ void NpShape::setFlag(PxShapeFlag::Enum flag, bool value)
 
 	NP_CHECK_SCENE_CORRUPTION_AND_RETURN(npScene)
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	PxShapeFlags shapeFlags = mCore.getFlags();
 	shapeFlags = value ? shapeFlags | flag : shapeFlags & ~flag;
@@ -865,7 +869,7 @@ void NpShape::setFlags(PxShapeFlags inFlags)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxShape::setFlags() not allowed while simulation is running. Call will be ignored.")
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	setFlagsInternal(inFlags);
 

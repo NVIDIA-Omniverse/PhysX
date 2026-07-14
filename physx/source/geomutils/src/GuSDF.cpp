@@ -216,7 +216,7 @@ namespace Gu
 				{
 					mIntersects = true;
 					return TraversalControl::eAbort;
-				}				
+				}
 
 				return TraversalControl::eDontGoDeeper;
 			}
@@ -298,7 +298,7 @@ namespace Gu
 				}
 			}
 		}
-	}	
+	}
 
 	struct Range
 	{
@@ -419,7 +419,7 @@ namespace Gu
 						}
 						else
 							stack.pushBack(Range(center, r.mEnd, inside, r.mInsideEnd));
-					}					
+					}
 				}
 			}
 		}
@@ -1079,7 +1079,7 @@ namespace Gu
 			sdfBuilder->buildSDF(vertices, PxU32(numVertices), indices, numTriangleIndices, width, height, depth, minExtents, maxExtents, cellCenteredSamples, sdf);
 		}
 		else
-		{	
+		{
 			PxArray<Gu::BVHNode> tree;
 			buildTree(indices, numTriangleIndices / 3, vertices, tree);
 
@@ -1128,8 +1128,8 @@ namespace Gu
 				
 				if(PxAbs(diff) > 1e-3f)
 					PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, PX_FL, "SDFs don't match %f %f", PxF64(sdf[i]), PxF64(sdf2[i]));
-			}		
-		}	
+			}
+		}
 #endif
 	}
 
@@ -1300,7 +1300,7 @@ namespace Gu
 								maxAbsError = PxMax(maxAbsError, PxAbs(sdfValue - coarseEval.sampleSDFDirect(PxVec3(xBlock + xLocal * s, yBlock + yLocal * s, zBlock + zLocal * s))));							
 							}
 						}
-					}			
+					}
 
 					subgridRequired = narrowBandInterval.overlaps(inverval);
 					if (maxAbsError < errorThreshold)

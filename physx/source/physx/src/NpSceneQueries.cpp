@@ -76,13 +76,13 @@ namespace
 		virtual			~NpSqAdapter()	{}
 
 		// Adapter
-		virtual	const PxGeometry&	getGeometry(const PrunerPayload& payload)	const;
+		virtual	const PxGeometry&	getGeometry(const PrunerPayload& payload)	const PX_OVERRIDE;
 		//~Adapter
 
 		// QueryAdapter
-		virtual	PrunerHandle		findPrunerHandle(const PxQueryCache& cache, PrunerCompoundId& compoundId, PxU32& prunerIndex)	const;
-		virtual	void				getFilterData(const PrunerPayload& payload, PxFilterData& filterData)							const;
-		virtual	void				getActorShape(const PrunerPayload& payload, PxActorShape& actorShape)							const;
+		virtual	PrunerHandle		findPrunerHandle(const PxQueryCache& cache, PrunerCompoundId& compoundId, PxU32& prunerIndex)	const PX_OVERRIDE;
+		virtual	void				getFilterData(const PrunerPayload& payload, PxFilterData& filterData)							const PX_OVERRIDE;
+		virtual	void				getActorShape(const PrunerPayload& payload, PxActorShape& actorShape)							const PX_OVERRIDE;
 		//~QueryAdapter
 
 				ActorShapeMap		mDatabase;
@@ -213,19 +213,19 @@ namespace
 		PX_FORCE_INLINE	Sq::PrunerManager&			SQ()				{ return mQueries.mSQManager;	}
 		PX_FORCE_INLINE	const Sq::PrunerManager&	SQ()	const		{ return mQueries.mSQManager;	}
 
-		virtual		void				release()
+		virtual		void				release() PX_OVERRIDE
 		{
 			mRefCount--;
 			if(!mRefCount)
 				PX_DELETE_THIS;
 		}
 
-		virtual		void				acquireReference()
+		virtual		void				acquireReference() PX_OVERRIDE
 		{
 			mRefCount++;
 		}
 
-		virtual		void				preallocate(PxU32 prunerIndex, PxU32 nbShapes)
+		virtual		void				preallocate(PxU32 prunerIndex, PxU32 nbShapes) PX_OVERRIDE
 		{
 			SQ().preallocate(prunerIndex, nbShapes);
 		}
@@ -253,7 +253,7 @@ namespace
 		// appealing to just move the Sq code to Gu: it solves the link errors, we could finally include it from Sc, we'd get rid of cross-DLL calls between
 		// Sq and Gu, etc
 		virtual		void	addSQShape(	const PxRigidActor& actor, const PxShape& shape, const PxBounds3& bounds,
-										const PxTransform& transform, const PxSQCompoundHandle* compoundHandle, bool hasPruningStructure)
+										const PxTransform& transform, const PxSQCompoundHandle* compoundHandle, bool hasPruningStructure) PX_OVERRIDE
 		{
 			const NpShape& npShape = static_cast<const NpShape&>(shape);
 			const NpActor& npActor = NpActor::getFromPxActor(actor);
@@ -271,7 +271,7 @@ namespace
 			mAdapter.mDatabase.add(actorIndex, &npActor, &npShape, createActorShapeData(prunerData, pcid));
 		}
 
-		virtual	void						removeSQShape(const PxRigidActor& actor, const PxShape& shape)
+		virtual	void						removeSQShape(const PxRigidActor& actor, const PxShape& shape) PX_OVERRIDE
 		{
 			const NpActor& npActor = NpActor::getFromPxActor(actor);
 			const NpShape& npShape = static_cast<const NpShape&>(shape);
@@ -288,7 +288,7 @@ namespace
 			SQ().removePrunerShape(compoundId, data, NULL);
 		}
 
-		virtual		void				updateSQShape(const PxRigidActor& actor, const PxShape& shape, const PxTransform& transform)
+		virtual		void				updateSQShape(const PxRigidActor& actor, const PxShape& shape, const PxTransform& transform) PX_OVERRIDE
 		{
 			const NpActor& npActor = NpActor::getFromPxActor(actor);
 			const NpShape& npShape = static_cast<const NpShape&>(shape);
@@ -304,7 +304,7 @@ namespace
 			SQ().markForUpdate(pcid, shapeHandle, transform);
 		}
 
-		virtual		PxSQCompoundHandle	addSQCompound(const PxRigidActor& actor, const PxShape** shapes, const PxBVH& pxbvh, const PxTransform* transforms)
+		virtual		PxSQCompoundHandle	addSQCompound(const PxRigidActor& actor, const PxShape** shapes, const PxBVH& pxbvh, const PxTransform* transforms) PX_OVERRIDE
 		{
 			const BVH& bvh = static_cast<const BVH&>(pxbvh);
 
@@ -331,31 +331,31 @@ namespace
 			return PxSQCompoundHandle(actorIndex);
 		}
 
-		virtual		void				removeSQCompound(PxSQCompoundHandle compoundHandle)
+		virtual		void				removeSQCompound(PxSQCompoundHandle compoundHandle) PX_OVERRIDE
 		{
 			DatabaseCleaner cleaner(mAdapter);
 			SQ().removeCompoundActor(PrunerCompoundId(compoundHandle), &cleaner);
 		}
 
-		virtual		void				updateSQCompound(PxSQCompoundHandle compoundHandle, const PxTransform& compoundTransform)
+		virtual		void				updateSQCompound(PxSQCompoundHandle compoundHandle, const PxTransform& compoundTransform) PX_OVERRIDE
 		{
 			SQ().updateCompoundActor(PrunerCompoundId(compoundHandle), compoundTransform);
 		}
 
-		virtual	void							flushUpdates()														{ SQ().flushUpdates();														}
-		virtual	void							flushMemory()														{ SQ().flushMemory();														}
-		virtual	void							visualize(PxU32 prunerIndex, PxRenderOutput& out)			const	{ SQ().visualize(prunerIndex, out);										}
-		virtual	void							shiftOrigin(const PxVec3& shift)									{ SQ().shiftOrigin(shift);													}
-		virtual	PxSQBuildStepHandle				prepareSceneQueryBuildStep(PxU32 prunerIndex)						{ return SQ().prepareSceneQueriesUpdate(PruningIndex::Enum(prunerIndex));	}
-		virtual	void							sceneQueryBuildStep(PxSQBuildStepHandle handle)						{ SQ().sceneQueryBuildStep(handle);										}
-		virtual	void							setDynamicTreeRebuildRateHint(PxU32 dynTreeRebuildRateHint)			{ SQ().setDynamicTreeRebuildRateHint(dynTreeRebuildRateHint);				}
-		virtual	PxU32							getDynamicTreeRebuildRateHint()								const	{ return SQ().getDynamicTreeRebuildRateHint();								}
-		virtual	void							forceRebuildDynamicTree(PxU32 prunerIndex)							{ SQ().forceRebuildDynamicTree(prunerIndex);								}
-		virtual	PxSceneQueryUpdateMode::Enum	getUpdateMode()												const	{ return mUpdateMode;														}
-		virtual	void							setUpdateMode(PxSceneQueryUpdateMode::Enum mode)					{ mUpdateMode = mode;														}
-		virtual	PxU32							getStaticTimestamp()										const	{ return SQ().getStaticTimestamp();										}
+		virtual	void							flushUpdates()												PX_OVERRIDE { SQ().flushUpdates();														}
+		virtual	void							flushMemory()												PX_OVERRIDE { SQ().flushMemory();														}
+		virtual	void							visualize(PxU32 prunerIndex, PxRenderOutput& out)	const	PX_OVERRIDE { SQ().visualize(prunerIndex, out);											}
+		virtual	void							shiftOrigin(const PxVec3& shift)							PX_OVERRIDE { SQ().shiftOrigin(shift);													}
+		virtual	PxSQBuildStepHandle				prepareSceneQueryBuildStep(PxU32 prunerIndex)				PX_OVERRIDE { return SQ().prepareSceneQueriesUpdate(PruningIndex::Enum(prunerIndex));	}
+		virtual	void							sceneQueryBuildStep(PxSQBuildStepHandle handle)				PX_OVERRIDE { SQ().sceneQueryBuildStep(handle);											}
+		virtual	void							setDynamicTreeRebuildRateHint(PxU32 dynTreeRebuildRateHint)	PX_OVERRIDE { SQ().setDynamicTreeRebuildRateHint(dynTreeRebuildRateHint);				}
+		virtual	PxU32							getDynamicTreeRebuildRateHint()						const	PX_OVERRIDE { return SQ().getDynamicTreeRebuildRateHint();								}
+		virtual	void							forceRebuildDynamicTree(PxU32 prunerIndex)					PX_OVERRIDE { SQ().forceRebuildDynamicTree(prunerIndex);								}
+		virtual	PxSceneQueryUpdateMode::Enum	getUpdateMode()										const	PX_OVERRIDE { return mUpdateMode;														}
+		virtual	void							setUpdateMode(PxSceneQueryUpdateMode::Enum mode)			PX_OVERRIDE { mUpdateMode = mode;														}
+		virtual	PxU32							getStaticTimestamp()								const	PX_OVERRIDE { return SQ().getStaticTimestamp();											}
 
-		virtual	void							finalizeUpdates()
+		virtual	void							finalizeUpdates() PX_OVERRIDE
 		{
 			switch(mUpdateMode)
 			{
@@ -365,7 +365,7 @@ namespace
 			}
 		}
 
-		virtual		void				merge(const PxPruningStructure& pxps)
+		virtual		void				merge(const PxPruningStructure& pxps) PX_OVERRIDE
 		{
 			Pruner* staticPruner = SQ().getPruner(PruningIndex::eSTATIC);
 			if(staticPruner)
@@ -379,7 +379,7 @@ namespace
 		virtual		bool				raycast(	const PxVec3& origin, const PxVec3& unitDir, const PxReal distance,
 													PxRaycastCallback& hitCall, PxHitFlags hitFlags,
 													const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall,
-													const PxQueryCache* cache, PxGeometryQueryFlags flags) const
+													const PxQueryCache* cache, PxGeometryQueryFlags flags) const PX_OVERRIDE
 		{
 			return mQueries._raycast(origin, unitDir, distance, hitCall, hitFlags, filterData, filterCall, cache, flags);
 		}
@@ -388,7 +388,7 @@ namespace
 												const PxVec3& unitDir, const PxReal distance,
 												PxSweepCallback& hitCall, PxHitFlags hitFlags,
 												const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall,
-												const PxQueryCache* cache, const PxReal inflation, PxGeometryQueryFlags flags) const
+												const PxQueryCache* cache, const PxReal inflation, PxGeometryQueryFlags flags) const	PX_OVERRIDE
 
 		{
 			return mQueries._sweep(geometry, pose, unitDir, distance, hitCall, hitFlags, filterData, filterCall, cache, inflation, flags);
@@ -397,12 +397,12 @@ namespace
 		virtual		bool				overlap(	const PxGeometry& geometry, const PxTransform& transform,
 													PxOverlapCallback& hitCall, 
 													const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall,
-													const PxQueryCache* cache, PxGeometryQueryFlags flags) const
+													const PxQueryCache* cache, PxGeometryQueryFlags flags) const PX_OVERRIDE
 		{
 			return mQueries._overlap( geometry, transform, hitCall, filterData, filterCall, cache, flags);
 		}
 
-		virtual	PxSQPrunerHandle		getHandle(const PxRigidActor& actor, const PxShape& shape, PxU32& prunerIndex)	const
+		virtual	PxSQPrunerHandle		getHandle(const PxRigidActor& actor, const PxShape& shape, PxU32& prunerIndex)	const PX_OVERRIDE
 		{
 			const NpActor& npActor = NpActor::getFromPxActor(actor);
 			const NpShape& npShape = static_cast<const NpShape&>(shape);
@@ -419,7 +419,7 @@ namespace
 			return PxSQPrunerHandle(getPrunerHandle(prunerData));
 		}
 
-		virtual		void				sync(PxU32 prunerIndex, const PxSQPrunerHandle* handles, const PxU32* boundsIndices, const PxBounds3* bounds, const PxTransform32* transforms, PxU32 count, const PxBitMap& ignoredIndices)
+		virtual		void				sync(PxU32 prunerIndex, const PxSQPrunerHandle* handles, const PxU32* boundsIndices, const PxBounds3* bounds, const PxTransform32* transforms, PxU32 count, const PxBitMap& ignoredIndices) PX_OVERRIDE
 		{
 			PX_ASSERT(prunerIndex==PruningIndex::eDYNAMIC);
 			if(prunerIndex==PruningIndex::eDYNAMIC)
@@ -596,7 +596,7 @@ void NpScene::forceRebuildDynamicTree(PxU32 prunerIndex)
 	PX_PROFILE_ZONE("API.forceDynamicTreeRebuild", getContextId());
 	NP_WRITE_CHECK(this);
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 	getSQAPI().forceRebuildDynamicTree(prunerIndex);
 }
 
@@ -620,7 +620,7 @@ void NpScene::flushUpdates()
 	PX_PROFILE_ZONE("API.flushQueryUpdates", getContextId());
 	NP_WRITE_CHECK(this);
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	getSQAPI().flushUpdates();
 }
@@ -634,7 +634,7 @@ namespace
 		SqRefFinder(const PxSceneQuerySystem& pxsq) : mPXSQ(pxsq)	{}
 		const PxSceneQuerySystem&	mPXSQ;
 
-		virtual	ScPrunerHandle find(const PxRigidBody* body, const PxShape* shape, PxU32& prunerIndex)
+		virtual	ScPrunerHandle find(const PxRigidBody* body, const PxShape* shape, PxU32& prunerIndex) PX_OVERRIDE
 		{
 			return mPXSQ.getHandle(*body, *shape, prunerIndex);
 		}
@@ -695,7 +695,7 @@ void NpScene::sceneQueriesDynamicPrunerUpdate(PxBaseTask*)
 
 void NpScene::sceneQueriesUpdate(PxBaseTask* completionTask, bool controlSimulation)
 {
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	PxSQBuildStepHandle runUpdateTasksStatic = NULL;
 	PxSQBuildStepHandle runUpdateTasksDynamic = NULL;
@@ -777,7 +777,7 @@ bool NpScene::fetchQueries(bool block)
 		return false;
 
 	{
-		PX_SIMD_GUARD;
+		PX_SIMD_GUARD
 
 		NP_WRITE_CHECK(this);
 

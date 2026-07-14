@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project toolsVersion="5.6">
+  <dependency name="physx" linkPath="../_build/target-deps/physx">
+    <package name="physxsdk" version="5.9.0.4eee9a14-release-omni-110.1-static-windows-x86_64" platforms="windows-x86_64" />
+    <package name="physxsdk" version="5.9.0.4eee9a14-release-omni-110.1-linux-x86_64" platforms="linux-x86_64 manylinux_2_35_x86_64" />
+    <package name="physxsdk" version="5.9.0.4eee9a14-release-omni-110.1-linux-aarch64" platforms="linux-aarch64 manylinux_2_35_aarch64" />
+  </dependency>
+  <dependency name="physxdevice" linkPath="../_build/target-deps/physxdevice">
+    <package name="PhysXDevice" version="18.12.7.6" platforms="windows-x86_64" />
+  </dependency>
+</project>

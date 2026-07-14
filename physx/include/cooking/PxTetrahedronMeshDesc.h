@@ -218,12 +218,11 @@ namespace physx
 		}
 
 		PX_INLINE bool isValid() const
-		{			
+		{
 			return true;
 		}
 	};
 
-	typedef PX_DEPRECATED PxDeformableVolumeSimulationDataDesc PxSoftBodySimulationDataDesc;
 	
 #if !PX_DOXYGEN
 } // namespace physx

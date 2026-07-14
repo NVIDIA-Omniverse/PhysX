@@ -63,8 +63,8 @@ namespace physx
 		{
 		}
 
-		virtual void runInternal();
-		virtual const char* getName() const { return "PxgProcessFoundPairTask"; }
+		virtual void runInternal() PX_OVERRIDE;
+		virtual const char* getName() const PX_OVERRIDE { return "PxgProcessFoundPairTask"; }
 	};
 
 	class PxgProcessLostPairTask : public Cm::Task
@@ -75,8 +75,8 @@ namespace physx
 		{
 		}
 
-		virtual void runInternal();
-		virtual const char* getName() const { return "PxgProcessLostPairTask"; }
+		virtual void runInternal() PX_OVERRIDE;
+		virtual const char* getName() const PX_OVERRIDE { return "PxgProcessLostPairTask"; }
 	};
 	
 	class PxgAABBManager : public Bp::AABBManagerBase
@@ -287,7 +287,7 @@ namespace physx
 		}
 
 		PX_FORCE_INLINE const PxgBoundTransformUpdate* getStagingBuffer()
-		{					
+		{
 			return mChangesMapped.begin();
 		}
 
@@ -306,7 +306,7 @@ namespace physx
 		* Returns whether change tracking has been successfully enabled 
 		* i.e. pinned change buffer successfully allocated.
 		*/
-		PX_FORCE_INLINE bool enableChangeTracking() 
+		PX_FORCE_INLINE bool enableChangeTracking()
 		{
 			if (!mEnableChangeTracking)
 			{

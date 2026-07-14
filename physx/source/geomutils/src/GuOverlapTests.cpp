@@ -682,7 +682,7 @@ bool GeomOverlapCallback_ConvexCoreHeightfield(GU_OVERLAP_FUNC_PARAMS)
 		ConvexCoreOverlapReport(const PxHeightFieldGeometry& hfGeom_, const PxTransform& hfPose, const Gu::ConvexShape& convex, const PxTransform& transform)
 			: mConvex(convex), mTransform(transform), mHfUtil(hfGeom_), mHFPose(hfPose), mOverlap(PxIntFalse) {}
 
-		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
+		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices) PX_OVERRIDE
 		{
 			while(nb--)
 			{
@@ -711,7 +711,7 @@ bool GeomOverlapCallback_ConvexCoreHeightfield(GU_OVERLAP_FUNC_PARAMS)
 				}
 			}
 			return true;
-		}	
+		}
 	};
 
 	Gu::ConvexShape convexShape;

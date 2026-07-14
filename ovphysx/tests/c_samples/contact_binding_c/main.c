@@ -2,10 +2,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 
-// NOTE: This file is included verbatim in documentation.
-// When editing, keep tutorial line ranges in sync.
-
-// [tutorial-start]
+// NOTE: This file is included verbatim in documentation via literalinclude.
+// Tutorial marker comments below define the included range.
 
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_types.h>
@@ -113,6 +111,7 @@ int main(void)
     ovphysx_result_t r;
     ovphysx_enqueue_result_t er;
 
+    // [tutorial-start]
     /* 1. Initialize SDK */
     ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
     args.device = OVPHYSX_DEVICE_CPU;
@@ -224,13 +223,14 @@ int main(void)
     }
     free(mat_data); free(mat_shp);
 
-    /* 8. Destroy contact binding and SDK */
-    ovphysx_destroy_contact_binding(handle, cb);
+    printf("Contact binding sample completed successfully\n");
 
+    /* 8. Destroy contact binding */
+    ovphysx_destroy_contact_binding(handle, cb);
     // [tutorial-end]
 
     ovphysx_destroy_instance(handle);
+    printf("Cleanup complete\n");
 
-    printf("[SUCCESS]\n");
     return 0;
 }

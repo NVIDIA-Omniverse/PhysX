@@ -29,7 +29,6 @@
 #ifndef PX_REPORT_CALLBACK_H
 #define PX_REPORT_CALLBACK_H
 
-
 #include "common/PxPhysXCommonConfig.h"
 #include "foundation/PxArray.h"
 

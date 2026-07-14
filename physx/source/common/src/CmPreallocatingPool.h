@@ -44,7 +44,7 @@ public:
 	PX_FORCE_INLINE		PreallocatingRegion() : mMemory(NULL), mFirstFree(NULL), mNbElements(0)	{}
 
 	void		init(PxU32 maxElements, PxU32 elementSize, const char* typeName)
-	{	
+	{
 		mFirstFree	= NULL;
 		mNbElements	= 0;
 		PX_ASSERT(typeName);

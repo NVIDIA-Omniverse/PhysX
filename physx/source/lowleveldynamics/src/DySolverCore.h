@@ -144,7 +144,6 @@ PX_INLINE void WaitForProgressCount(volatile PxI32* pGlobalIndex, const PxI32 ta
 
 struct SolverIslandParams
 {
-	//Default friction model params
 	PxU32 positionIterations;
 	PxU32 velocityIterations;
 	const PxSolverBody* bodyListStart;

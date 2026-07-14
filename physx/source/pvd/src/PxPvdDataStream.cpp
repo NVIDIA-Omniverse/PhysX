@@ -97,7 +97,7 @@ struct PropertyDefinitionHelper : public PvdPropertyDefinitionHelper
 		PxMemCopy(endPtr, str, static_cast<uint32_t>(strLen));
 	}
 
-	virtual void pushName(const char* nm, const char* appender = ".")
+	virtual void pushName(const char* nm, const char* appender = ".") PX_OVERRIDE
 	{
 		size_t nameBufLen = mNameBuffer.size();
 		mNameStack.pushBack(static_cast<uint32_t>(nameBufLen));
@@ -107,7 +107,7 @@ struct PropertyDefinitionHelper : public PvdPropertyDefinitionHelper
 		mNameBuffer.back() = 0;
 	}
 
-	virtual void pushBracketedName(const char* inName, const char* leftBracket = "[", const char* rightBracket = "]")
+	virtual void pushBracketedName(const char* inName, const char* leftBracket = "[", const char* rightBracket = "]") PX_OVERRIDE
 	{
 		size_t nameBufLen = mNameBuffer.size();
 		mNameStack.pushBack(static_cast<uint32_t>(nameBufLen));
@@ -117,7 +117,7 @@ struct PropertyDefinitionHelper : public PvdPropertyDefinitionHelper
 		mNameBuffer.back() = 0;
 	}
 
-	virtual void popName()
+	virtual void popName() PX_OVERRIDE
 	{
 		if(mNameStack.empty())
 			return;
@@ -127,34 +127,34 @@ struct PropertyDefinitionHelper : public PvdPropertyDefinitionHelper
 			mNameBuffer.back() = 0;
 	}
 
-	virtual const char* getTopName()
+	virtual const char* getTopName() PX_OVERRIDE
 	{
 		if(mNameBuffer.size())
 			return mNameBuffer.begin();
 		return "";
 	}
-	virtual void clearNameStack()
+	virtual void clearNameStack() PX_OVERRIDE
 	{
 		mNameBuffer.clear();
 		mNameStack.clear();
 	}
 
-	virtual void addNamedValue(const char* name, uint32_t value)
+	virtual void addNamedValue(const char* name, uint32_t value) PX_OVERRIDE
 	{
 		mNamedValues.pushBack(NamedValue(name, value));
 	}
-	virtual void clearNamedValues()
+	virtual void clearNamedValues() PX_OVERRIDE
 	{
 		mNamedValues.clear();
 	}
 
-	virtual DataRef<NamedValue> getNamedValues()
+	virtual DataRef<NamedValue> getNamedValues() PX_OVERRIDE
 	{
 		return DataRef<NamedValue>(mNamedValues.begin(), mNamedValues.size());
 	}
 
 	virtual void createProperty(const NamespacedName& clsName, const char* inSemantic, const NamespacedName& dtypeName,
-	                            PropertyType::Enum propType)
+	                            PropertyType::Enum propType) PX_OVERRIDE
 	{
 		mStream->createProperty(clsName, getTopName(), inSemantic, dtypeName, propType, getNamedValues());
 		clearNamedValues();
@@ -164,12 +164,12 @@ struct PropertyDefinitionHelper : public PvdPropertyDefinitionHelper
 		ScopedMetaData scopedProvider(mProvider);
 		return scopedProvider->getStringTable().registerStr(str);
 	}
-	virtual void addPropertyMessageArg(const NamespacedName& inDatatype, uint32_t inOffset, uint32_t inSize)
+	virtual void addPropertyMessageArg(const NamespacedName& inDatatype, uint32_t inOffset, uint32_t inSize) PX_OVERRIDE
 	{
 		mPropertyMessageArgs.pushBack(PropertyMessageArg(registerStr(getTopName()), inDatatype, inOffset, inSize));
 	}
 	virtual void addPropertyMessage(const NamespacedName& clsName, const NamespacedName& msgName,
-	                                uint32_t inStructSizeInBytes)
+	                                uint32_t inStructSizeInBytes) PX_OVERRIDE
 	{
 		if(mPropertyMessageArgs.empty())
 		{
@@ -180,7 +180,7 @@ struct PropertyDefinitionHelper : public PvdPropertyDefinitionHelper
 		    clsName, msgName, DataRef<PropertyMessageArg>(mPropertyMessageArgs.begin(), mPropertyMessageArgs.size()),
 		    inStructSizeInBytes);
 	}
-	virtual void clearPropertyMessageArgs()
+	virtual void clearPropertyMessageArgs() PX_OVERRIDE
 	{
 		mPropertyMessageArgs.clear();
 	}
@@ -290,7 +290,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 	{
 	}
 
-	virtual void release()
+	virtual void release() PX_OVERRIDE
 	{
 		PVD_DELETE(this);
 	}
@@ -315,7 +315,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 		return StreamNamespacedName(toStream(nm.mNamespace), toStream(nm.mName));
 	}
 
-	bool isClassExist(const NamespacedName& nm)
+	virtual	bool isClassExist(const NamespacedName& nm)	PX_OVERRIDE
 	{
 		ScopedMetaData meta(mMetaDataProvider);
 		return meta->findClass(nm).hasValue();
@@ -356,7 +356,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 	}
 
 	// PvdMetaDataStream
-	virtual PvdError createClass(const NamespacedName& nm)
+	virtual PvdError createClass(const NamespacedName& nm) PX_OVERRIDE
 	{
 		PX_ASSERT(mStreamState == DataStreamState::Open);
 #if PX_DEBUG
@@ -366,7 +366,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 		return boolToError(handlePvdEvent(CreateClass(toStream(nm))));
 	}
 
-	virtual PvdError deriveClass(const NamespacedName& parent, const NamespacedName& child)
+	virtual PvdError deriveClass(const NamespacedName& parent, const NamespacedName& child) PX_OVERRIDE
 	{
 		PX_ASSERT(mStreamState == DataStreamState::Open);
 #if PX_DEBUG
@@ -426,7 +426,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 
 	virtual PvdError createProperty(const NamespacedName& clsName, String name, String semantic,
 	                                const NamespacedName& incomingDtypeName, PropertyType::Enum propertyType,
-	                                DataRef<NamedValue> values)
+	                                DataRef<NamedValue> values) PX_OVERRIDE
 	{
 		PX_ASSERT(mStreamState == DataStreamState::Open);
 #if PX_DEBUG
@@ -474,7 +474,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 #endif
 
 	virtual PvdError createPropertyMessage(const NamespacedName& cls, const NamespacedName& msgName,
-	                                       DataRef<PropertyMessageArg> entries, uint32_t messageSizeInBytes)
+	                                       DataRef<PropertyMessageArg> entries, uint32_t messageSizeInBytes) PX_OVERRIDE
 	{
 		PX_ASSERT(mStreamState == DataStreamState::Open);
 #if PX_DEBUG
@@ -497,7 +497,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 	{
 		return PVD_POINTER_TO_U64(instance);
 	}
-	virtual PvdError createInstance(const NamespacedName& cls, const void* instance)
+	virtual PvdError createInstance(const NamespacedName& cls, const void* instance) PX_OVERRIDE
 	{
 		PX_ASSERT(isInstanceValid(instance) == false);
 		PX_ASSERT(mStreamState == DataStreamState::Open);
@@ -507,7 +507,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 		return boolToError(handlePvdEvent(CreateInstance(toStream(cls), toStream(instance))));
 	}
 
-	virtual bool isInstanceValid(const void* instance)
+	virtual bool isInstanceValid(const void* instance) PX_OVERRIDE
 	{
 		return mMetaDataProvider.isInstanceValid(instance);
 	}
@@ -569,7 +569,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 	}
 
 	virtual PvdError setPropertyValue(const void* instance, String name, DataRef<const uint8_t> data,
-	                                  const NamespacedName& incomingTypeName)
+	                                  const NamespacedName& incomingTypeName) PX_OVERRIDE
 	{
 
 		PX_ASSERT(isInstanceValid(instance));
@@ -590,7 +590,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 	}
 
 	// Else if the property is very large (contact reports) you can send it in chunks.
-	virtual PvdError beginSetPropertyValue(const void* instance, String name, const NamespacedName& incomingTypeName)
+	virtual PvdError beginSetPropertyValue(const void* instance, String name, const NamespacedName& incomingTypeName) PX_OVERRIDE
 	{
 		PX_ASSERT(isInstanceValid(instance));
 #if PX_DEBUG
@@ -607,7 +607,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 		return boolToError(handlePvdEvent(evt));
 	}
 
-	virtual PvdError appendPropertyValueData(DataRef<const uint8_t> data)
+	virtual PvdError appendPropertyValueData(DataRef<const uint8_t> data) PX_OVERRIDE
 	{
 		uint32_t realSize = mSPVClass.getNativeSize();
 		uint32_t numItems = data.size() / realSize;
@@ -615,7 +615,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 		PX_ASSERT(mStreamState == DataStreamState::SetPropertyValue);
 		return boolToError(handlePvdEvent(AppendPropertyValueData(data, numItems)));
 	}
-	virtual PvdError endSetPropertyValue()
+	virtual PvdError endSetPropertyValue() PX_OVERRIDE
 	{
 		PX_ASSERT(mStreamState == DataStreamState::SetPropertyValue);
 		mStreamState = DataStreamState::Open;
@@ -654,7 +654,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 		return data;
 	}
 
-	virtual PvdError setPropertyMessage(const void* instance, const NamespacedName& msgName, DataRef<const uint8_t> data)
+	virtual PvdError setPropertyMessage(const void* instance, const NamespacedName& msgName, DataRef<const uint8_t> data) PX_OVERRIDE
 	{
 		ScopedMetaData meta(mMetaDataProvider);
 		PX_ASSERT(isInstanceValid(instance));
@@ -684,7 +684,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 
 #endif
 	// If you need to send of lot of identical messages, this avoids a hashtable lookup per message.
-	virtual PvdError beginPropertyMessageGroup(const NamespacedName& msgName)
+	virtual PvdError beginPropertyMessageGroup(const NamespacedName& msgName) PX_OVERRIDE
 	{
 #if PX_DEBUG
 		PX_ASSERT(messageExists(msgName));
@@ -697,7 +697,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 		return boolToError(handlePvdEvent(BeginPropertyMessageGroup(toStream(msgName))));
 	}
 
-	virtual PvdError sendPropertyMessageFromGroup(const void* instance, DataRef<const uint8_t> data)
+	virtual PvdError sendPropertyMessageFromGroup(const void* instance, DataRef<const uint8_t> data) PX_OVERRIDE
 	{
 		PX_ASSERT(mStreamState == DataStreamState::PropertyMessageGroup);
 		PX_ASSERT(isInstanceValid(instance));
@@ -714,20 +714,20 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 		data = bufferPropertyMessage(mMessageDesc, data);
 		return boolToError(handlePvdEvent(SendPropertyMessageFromGroup(toStream(instance), data)));
 	}
-	virtual PvdError endPropertyMessageGroup()
+	virtual PvdError endPropertyMessageGroup() PX_OVERRIDE
 	{
 		PX_ASSERT(mStreamState == DataStreamState::PropertyMessageGroup);
 		mStreamState = DataStreamState::Open;
 		return boolToError(handlePvdEvent(EndPropertyMessageGroup()));
 	}
-	virtual PvdError pushBackObjectRef(const void* instance, String propName, const void* data)
+	virtual PvdError pushBackObjectRef(const void* instance, String propName, const void* data) PX_OVERRIDE
 	{
 		PX_ASSERT(isInstanceValid(instance));
 		PX_ASSERT(isInstanceValid(data));
 		PX_ASSERT(mStreamState == DataStreamState::Open);
 		return boolToError(handlePvdEvent(PushBackObjectRef(toStream(instance), toStream(propName), toStream(data))));
 	}
-	virtual PvdError removeObjectRef(const void* instance, String propName, const void* data)
+	virtual PvdError removeObjectRef(const void* instance, String propName, const void* data) PX_OVERRIDE
 	{
 		PX_ASSERT(isInstanceValid(instance));
 		PX_ASSERT(isInstanceValid(data));
@@ -735,7 +735,7 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 		return boolToError(handlePvdEvent(RemoveObjectRef(toStream(instance), toStream(propName), toStream(data))));
 	}
 	// Instance elimination.
-	virtual PvdError destroyInstance(const void* instance)
+	virtual PvdError destroyInstance(const void* instance) PX_OVERRIDE
 	{
 		PX_ASSERT(isInstanceValid(instance));
 		PX_ASSERT(mStreamState == DataStreamState::Open);
@@ -744,31 +744,31 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 	}
 
 	// Profiling hooks
-	virtual PvdError beginSection(const void* instance, String name)
+	virtual PvdError beginSection(const void* instance, String name) PX_OVERRIDE
 	{
 		PX_ASSERT(mStreamState == DataStreamState::Open);
 		return boolToError(handlePvdEvent(
             BeginSection(toStream(instance), toStream(name), PxTime::getCurrentCounterValue())));
 	}
 
-	virtual PvdError endSection(const void* instance, String name)
+	virtual PvdError endSection(const void* instance, String name) PX_OVERRIDE
 	{
 		PX_ASSERT(mStreamState == DataStreamState::Open);
 		return boolToError(handlePvdEvent(
             EndSection(toStream(instance), toStream(name), PxTime::getCurrentCounterValue())));
 	}
 
-	virtual PvdError originShift(const void* scene, PxVec3 shift)
+	virtual PvdError originShift(const void* scene, PxVec3 shift) PX_OVERRIDE
 	{
 		PX_ASSERT(mStreamState == DataStreamState::Open);
 		return boolToError(handlePvdEvent(OriginShift(toStream(scene), shift)));
 	}
 
-	virtual void addProfileZone(void* zone, const char* name)
+	virtual void addProfileZone(void* zone, const char* name) PX_OVERRIDE
 	{
 		handlePvdEvent(AddProfileZone(toStream(zone), name));
 	}
-	virtual void addProfileZoneEvent(void* zone, const char* name, uint16_t eventId, bool compileTimeEnabled)
+	virtual void addProfileZoneEvent(void* zone, const char* name, uint16_t eventId, bool compileTimeEnabled) PX_OVERRIDE
 	{
 		handlePvdEvent(AddProfileZoneEvent(toStream(zone), name, eventId, compileTimeEnabled));
 	}
@@ -785,18 +785,18 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 		mTransport.unlock();
 	}
 
-	void setIsTopLevelUIElement(const void* instance, bool topLevel)
+	virtual	void setIsTopLevelUIElement(const void* instance, bool topLevel)	PX_OVERRIDE
 	{
 		addEvent(SetIsTopLevel(static_cast<uint64_t>(reinterpret_cast<size_t>(instance)), topLevel),
 		         getCommStreamEventType<SetIsTopLevel>());
 	}
 
-	void sendErrorMessage(uint32_t code, const char* message, const char* file, uint32_t line)
+	virtual void sendErrorMessage(uint32_t code, const char* message, const char* file, uint32_t line)	PX_OVERRIDE
 	{
 		addEvent(ErrorMessage(code, message, file, line), getCommStreamEventType<ErrorMessage>());
 	}
 
-	void updateCamera(const char* name, const PxVec3& origin, const PxVec3& up, const PxVec3& target)
+	virtual void updateCamera(const char* name, const PxVec3& origin, const PxVec3& up, const PxVec3& target)	PX_OVERRIDE
 	{
 		addEvent(SetCamera(name, origin, up, target), getCommStreamEventType<SetCamera>());
 	}
@@ -808,28 +808,28 @@ struct PvdOutStream : public PvdDataStream, public PxUserAllocated
 		return mConnected;
 	}
 
-	virtual PvdPropertyDefinitionHelper& getPropertyDefinitionHelper()
+	virtual PvdPropertyDefinitionHelper& getPropertyDefinitionHelper() PX_OVERRIDE
 	{
 		mPropertyDefinitionHelper.clearBufferedData();
 		return mPropertyDefinitionHelper;
 	}
 
-	virtual bool isConnected()
+	virtual bool isConnected() PX_OVERRIDE
 	{
 		return mConnected;
 	}
 
-	virtual void* allocateMemForCmd(uint32_t length)
+	virtual void* allocateMemForCmd(uint32_t length) PX_OVERRIDE
 	{
 		return mPvdCommandPool.allocate(length);
 	}
 
-	virtual void pushPvdCommand(PvdCommand& cmd)
+	virtual void pushPvdCommand(PvdCommand& cmd) PX_OVERRIDE
 	{
 		mPvdCommandArray.pushBack(&cmd);
 	}
 
-	virtual void flushPvdCommand()
+	virtual void flushPvdCommand() PX_OVERRIDE
 	{
 		uint32_t cmdQueueSize = mPvdCommandArray.size();
 		for(uint32_t i = 0; i < cmdQueueSize; i++)

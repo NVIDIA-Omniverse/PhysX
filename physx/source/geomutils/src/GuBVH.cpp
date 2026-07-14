@@ -317,7 +317,7 @@ bool BVH::overlap(const ShapeData& queryVolume, OverlapCallback& cb, PxGeometryQ
 		case PxGeometryType::eBOX:
 		{
 			if(queryVolume.isOBB())
-			{	
+			{
 				const DefaultOBBAABBTest test(queryVolume);
 				if(mData.mIndices)
 					return AABBTreeOverlap<true, OBBAABBTest, BVHTree, BVHNode, OverlapAdapter>()(mData.mBounds, BVHTree(mData), test, oa);

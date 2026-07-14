@@ -52,7 +52,7 @@ namespace Gu
 	};
 
 	struct SweepCapsuleMeshHitCallback : SweepShapeMeshHitCallback
-	{		
+	{
 		PxGeomSweepHit&		mSweepHit;
 		const PxMat34&		mVertexToWorldSkew;		
 		const PxReal		mTrueSweepDistance;		// max sweep distance that can be used
@@ -66,7 +66,7 @@ namespace Gu
 		SweepCapsuleMeshHitCallback(PxGeomSweepHit& sweepHit, const PxMat34& worldMatrix, PxReal distance, bool meshDoubleSided,
 									const Capsule& capsule, const PxVec3& unitDir, const PxHitFlags& hitFlags, bool flipNormal, float distCoef);
 
-		virtual PxAgain processHit(const PxGeomRaycastHit& aHit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal& shrunkMaxT, const PxU32*);
+		virtual PxAgain processHit(const PxGeomRaycastHit& aHit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal& shrunkMaxT, const PxU32*) PX_OVERRIDE;
 
 		// PT: TODO: unify these operators
 		void operator=(const SweepCapsuleMeshHitCallback&) {}
@@ -81,7 +81,7 @@ namespace Gu
 #endif
 
 	struct SweepBoxMeshHitCallback : SweepShapeMeshHitCallback
-	{		
+	{
 		const PxMat34Padded&	mMeshToBox;
 		PxReal					mDist, mDist0;
 		physx::aos::FloatV		mDistV;
@@ -103,7 +103,7 @@ namespace Gu
 
 		virtual ~SweepBoxMeshHitCallback() {}
 
-		virtual PxAgain processHit(const PxGeomRaycastHit& meshHit, const PxVec3& lp0, const PxVec3& lp1, const PxVec3& lp2, PxReal& shrinkMaxT, const PxU32*);
+		virtual PxAgain processHit(const PxGeomRaycastHit& meshHit, const PxVec3& lp0, const PxVec3& lp1, const PxVec3& lp2, PxReal& shrinkMaxT, const PxU32*) PX_OVERRIDE;
 
 		bool	finalizeHit(	PxGeomSweepHit& sweepHit, const PxTriangleMeshGeometry& triMeshGeom, const PxTransform& pose,
 								const PxTransform& boxTransform, const PxVec3& localDir,
@@ -136,7 +136,7 @@ namespace Gu
 
 		virtual ~SweepConvexMeshHitCallback()	{}
 
-		virtual PxAgain processHit(const PxGeomRaycastHit& hit, const PxVec3& av0, const PxVec3& av1, const PxVec3& av2, PxReal& shrunkMaxT, const PxU32*);
+		virtual PxAgain processHit(const PxGeomRaycastHit& hit, const PxVec3& av0, const PxVec3& av1, const PxVec3& av2, PxReal& shrunkMaxT, const PxU32*) PX_OVERRIDE;
 
 		bool	finalizeHit(PxGeomSweepHit& sweepHit, const PxTriangleMeshGeometry& meshGeom, const PxTransform& pose,
 							const PxConvexMeshGeometry& convexGeom, const PxTransform& convexPose,

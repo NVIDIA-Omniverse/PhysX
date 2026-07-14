@@ -470,7 +470,7 @@ template<typename TDataType>
 struct PxClassInfoTraits
 {
 	PxUnknownClassInfo Info;
-	static bool getInfo()  { return false;}	
+	static bool getInfo()  { return false;}
 };
 
 //move the bool typedef to the global namespace.

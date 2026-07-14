@@ -209,18 +209,10 @@ PxgParticleSystemBuffer::PxgParticleSystemBuffer(PxgAllocatorDesc& allocDesc) :
 	user_particle_buffer_runsum(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
 	user_particle_buffer_sorted_unique_ids(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
 	user_particle_buffer_runsum_sorted_unique_ids_original_index(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
-	user_cloth_buffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
-	user_rigid_buffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
 	user_diffuse_buffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
-	attachmentRunSum(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
-	referencedRigidsRunsum(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
 	mHostParticleBuffers(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
-	mHostClothBuffers(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
-	mHostRigidBuffers(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
 	mHostDiffuseBuffers(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
-	mAttachmentRunSum(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
 	mParticleBufferRunSum(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
-	mReferencedRigidsRunsum(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
 	mParticleBufferSortedUniqueIds(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
 	mParticleBufferSortedUniqueIdsOriginalIndex(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
 	mRandomTable(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
@@ -440,10 +432,6 @@ PxgSimulationCore::PxgSimulationCore(PxgCudaKernelWranglerManager* gpuKernelWran
 	mSoftBodyClothConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mActiveSoftBodyClothConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mNumSoftBodyClothAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyParticleAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyParticleFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyParticleConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mActiveSoftBodyParticleConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mClothRigidAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	mActiveClothRigidAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	mClothRigidFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
@@ -482,7 +470,9 @@ PxgSimulationCore::PxgSimulationCore(PxgCudaKernelWranglerManager* gpuKernelWran
 	mMaxNbCollisionSubsteps(1),
 	mNbTotalRigidJoints(0), mNbTotalArtiJoints(0),
 	mUsePartitionAveraging(false),
-	mHasActiveBendingPairs(false)
+	mHasActiveBendingPairs(false),
+	mEvent(NULL),
+	mDmaEvent(NULL)
 #if PX_SUPPORT_OMNI_PVD
 	,mOvdDataBuffer(allocDesc.hostAlloc, PxsHeapStats::eOTHER)
 	,mOvdIndexBuffer(allocDesc.hostAlloc, PxsHeapStats::eOTHER)
@@ -498,9 +488,6 @@ PxgSimulationCore::PxgSimulationCore(PxgCudaKernelWranglerManager* gpuKernelWran
 
 	mNbClothSoftBodyAttachments = 0;
 	mNbClothSoftBodyFilters = 0;
-
-	mNbSoftBodyParticleAttachments = 0;
-	mNbSoftBodyParticleFilters = 0;
 
 	mNbRigidClothAttachments = 0;
 	mNbRigidClothFilters = 0;
@@ -902,8 +889,7 @@ void PxgSimulationCore::gpuMemDmaUpBodySim(Cm::PinnableArray<PxgBodySimVelocityU
 				reinterpret_cast<PxU8*>(buffer->linkAndJointAndRootStates.getDevicePtr()),
 				numLinks, numDofs,
 				newArticulation.linkBody2Worlds, newArticulation.motionVelocities, newArticulation.motionAccelerations, newArticulation.linkIncomingJointForces,
-				newArticulation.jointPositions, newArticulation.jointVelocities, newArticulation.jointAccelerations,
-				newArticulation.rootPreMotionVelocity);
+				newArticulation.jointPositions, newArticulation.jointVelocities, newArticulation.jointAccelerations);
 
 			newArticulation.linkBody2Actors = buffer->linkBody2Actors.getTypedPtr();
 			newArticulation.coriolisVectors = buffer->coriolisVectors.getTypedPtr();
@@ -1477,7 +1463,10 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(Cm::PinnableArray<PxgSoftBody>& ne
 
 			mGpuContext->getGpuSoftBodyCore()->reserveRigidDeltaVelBuf(numDirtyAttachments);
 		}
+	}
 
+	if (data.dirtyRigidFilterPairs)
+	{
 		Cm::PinnableArray<PxgRigidFilterPair>& rigidFilterPairs = *data.rigidFilterPairs;
 		const PxU32 numDirtyPairs = rigidFilterPairs.size();
 
@@ -1541,7 +1530,10 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(Cm::PinnableArray<PxgSoftBody>& ne
 
 			mSoftBodyClothConstraints.allocate(sizeof(PxgFEMFEMAttachmentConstraint)*(numDirtyAttachments + 31) / 32, PX_FL);
 		}
+	}
 
+	if (data.dirtyClothFilterPairs)
+	{
 		Cm::PinnableArray<PxgNonRigidFilterPair>& clothFilterPairs = *data.clothFilterPairs;
 		const PxU32 numDirtyPairs = clothFilterPairs.size();
 
@@ -1564,41 +1556,6 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(Cm::PinnableArray<PxgSoftBody>& ne
 
 		mCudaContext->memsetD32Async(mNumSoftBodyClothAttachments.getDevicePtr(), nbActiveAttachments, 1, bpStream);
 		mNbClothSoftBodyAttachments = nbActiveAttachments;
-	}
-
-	if (data.dirtyParticleAttachments)
-	{
-		Cm::PinnableArray<PxgFEMFEMAttachment>& particleAttachments = *data.particleAttachments;
-		const PxU32 numDirtyAttachments = particleAttachments.size();
-		if (numDirtyAttachments > 0)
-		{
-			mSoftBodyParticleAttachments.allocate(sizeof(PxgFEMFEMAttachment)* numDirtyAttachments, PX_FL);
-			mCudaContext->memcpyHtoDAsync(mSoftBodyParticleAttachments.getDevicePtr(), particleAttachments.begin(), numDirtyAttachments * sizeof(PxgFEMFEMAttachment), bpStream);
-
-			mSoftBodyParticleConstraints.allocate(sizeof(PxgFEMFEMAttachmentConstraint)*(numDirtyAttachments + 31) / 32, PX_FL);
-		}
-
-		Cm::PinnableArray<PxgNonRigidFilterPair>& particleFilterPairs = *data.particleFilterPairs;
-		const PxU32 numDirtyPairs = particleFilterPairs.size();
-
-		mSoftBodyParticleFilterPairs.allocate(sizeof(PxgNonRigidFilterPair)* numDirtyPairs, PX_FL);
-		mCudaContext->memcpyHtoDAsync(mSoftBodyParticleFilterPairs.getDevicePtr(), particleFilterPairs.begin(), numDirtyPairs * sizeof(PxgNonRigidFilterPair), bpStream);
-
-		mNbSoftBodyParticleFilters = numDirtyPairs;
-	}
-
-	if (data.dirtyActiveParticleAttachments)
-	{
-		Cm::PinnableArray<PxU32>& activeParticlesAttachments = *data.activeParticleAttachments;
-		const PxU32 nbActiveAttachments = activeParticlesAttachments.size();
-		if (nbActiveAttachments > 0)
-		{
-			mActiveSoftBodyParticleConstraints.allocate(sizeof(PxU32)*nbActiveAttachments, PX_FL);
-
-			mCudaContext->memcpyHtoDAsync(mActiveSoftBodyParticleConstraints.getDevicePtr(), activeParticlesAttachments.begin(), nbActiveAttachments * sizeof(PxU32), bpStream);
-		}
-
-		mNbSoftBodyParticleAttachments = nbActiveAttachments;
 	}
 
 	const PxU32 nbActiveSoftBodies = bodySimManager.mActiveSoftbodiesStaging.size();
@@ -1664,14 +1621,16 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& new
 	Cm::PinnableArray<PxgFEMRigidAttachment>& rigidAttachments,
 	Cm::PinnableArray<PxgRigidFilterPair>& rigidAttachmentIds,
 	bool dirtyRigidAttachments,
+	bool dirtyRigidFilterPairs,
 	Cm::PinnableArray<PxU32>& activeRigidAttachments,
 	bool dirtyActiveRigidAttachments,
 	Cm::PinnableArray<PxgFEMFEMAttachment>& clothAttachments,
 	Cm::PinnableArray<PxgNonRigidFilterPair>& clothVertTriFilterIds,
 	bool dirtyClothAttachments,
+	bool dirtyClothFilterPairs,
 	Cm::PinnableArray<PxU32>& activeClothAttachments,
 	bool dirtyActiveClothAttachments
-) 
+)
 {
 	PX_PROFILE_ZONE("GpuSimulationController.gpuMemDmaUpFEMCloths", 0);
 
@@ -2024,7 +1983,10 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& new
 
 			mGpuContext->getGpuFEMClothCore()->reserveRigidDeltaVelBuf(numDirtyAttachments);
 		}
+	}
 
+	if (dirtyRigidFilterPairs)
+	{
 		mClothRigidFilterPairs.allocate(sizeof(PxgRigidFilterPair)*rigidAttachmentIds.size(), PX_FL);
 		mCudaContext->memcpyHtoDAsync(mClothRigidFilterPairs.getDevicePtr(), rigidAttachmentIds.begin(), rigidAttachmentIds.size() * sizeof(PxgRigidFilterPair), bpStream);
 
@@ -2055,7 +2017,10 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& new
 
 			mClothClothConstraints.allocate(sizeof(PxgFEMFEMAttachmentConstraint)*(clothAttachments.size() + 31) / 32, PX_FL);
 		}
+	}
 
+	if (dirtyClothFilterPairs)
+	{
 		mClothClothVertTriFilterPairs.allocate(sizeof(PxgNonRigidFilterPair)*clothVertTriFilterIds.size(), PX_FL);
 		mCudaContext->memcpyHtoDAsync(mClothClothVertTriFilterPairs.getDevicePtr(), clothVertTriFilterIds.begin(), clothVertTriFilterIds.size() * sizeof(PxgNonRigidFilterPair), bpStream);
 
@@ -2253,7 +2218,7 @@ void PxgSimulationCore::gpuMemDmaBack(Cm::PinnableArray<PxU32>& frozenArray,
 
 
 	if(!mGpuContext->getEnableDirectGPUAPI())
-	{	
+	{
 		CUdeviceptr boundsd = mUseGpuBp ? mGpuContext->mGpuBp->getBoundsBuffer().getDevicePtr() : mBoundsBuffer.getDevicePtr();
 		mCudaContext->memcpyDtoHAsync(bounds, boundsd, sizeof(PxBounds3)*boundCapacity, mStream);
 		mCudaContext->memcpyDtoHAsync(cachedTransforms, mGpuContext->mGpuNpCore->getTransformCache().getDevicePtr(), sizeof(PxsCachedTransform)*cachedCapacity, mStream);
@@ -2916,7 +2881,7 @@ void PxgSimulationCore::ovdRigidBodyCallback(const void* PX_RESTRICT data, const
 {
 	PxgSimulationController* controller = mGpuContext->getSimulationController();
 	if (controller->getEnableOVDReadback() && controller->getOVDCallbacks())
-	{		
+	{
 		PxU32 dataBufferBytes = PxU32(getRigidBodyDataTypeElementSize(dataType)) * PxU32(nbElements);
 		mOvdDataBuffer.resizeUninitialized(dataBufferBytes);
 
@@ -2924,7 +2889,7 @@ void PxgSimulationCore::ovdRigidBodyCallback(const void* PX_RESTRICT data, const
 		mOvdIndexBuffer.resizeUninitialized(indexBufferBytes);
 
 		if (mOvdDataBuffer.begin() && mOvdIndexBuffer.begin())
-		{				
+		{
 			////////////////////////////////////////////////////////////////////////////////
 			// Copy the forces and gpuIndices from GPU -> CPU
 			////////////////////////////////////////////////////////////////////////////////

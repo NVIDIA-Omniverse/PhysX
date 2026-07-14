@@ -101,6 +101,8 @@ namespace physx
 	PxgArticulationCore::PxgArticulationCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
 											 PxgAllocatorDesc& allocDesc) :
 		mGpuKernelWranglerManager(gpuKernelWrangler), mCudaContextManager(cudaContextManager), mCudaContext(cudaContextManager->getCudaContext()),
+		mFinishEvent(NULL),
+		mFlushArticulationDataEvent(NULL),
 		mArticulationCoreDesc(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION),
 		mArticulationOutputDesc(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION),
 		mArticulationCoreDescd(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
@@ -120,6 +122,7 @@ namespace physx
 		mTempSelfConstraintUniqueIndicesBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
 		mTempSelfContactHeaderBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
 		mTempSelfConstraintHeaderBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mComputeUnconstrainedEvent(NULL),
 		mNeedsKinematicUpdate(false)
 #if PX_SUPPORT_OMNI_PVD		
 		,mOvdDataBuffer(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION)
@@ -1257,7 +1260,7 @@ namespace physx
 			mOvdIndexBuffer.resizeUninitialized(indexBufferBytes);
 
 			if (mOvdDataBuffer.begin() && mOvdIndexBuffer.begin())
-			{				
+			{
 				////////////////////////////////////////////////////////////////////////////////
 				// Copy the forces and gpuIndices from GPU -> CPU
 				////////////////////////////////////////////////////////////////////////////////

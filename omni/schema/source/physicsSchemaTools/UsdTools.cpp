@@ -32,13 +32,13 @@ UsdGeomMesh createMesh(const UsdStagePtr & stage,
     UsdGeomMesh mesh = UsdGeomMesh::Define(stage, path);
 
     // Fill in VtArrays
-	pxr::VtArray<int> vertexCountsVt;
+	PXR_NS::VtArray<int> vertexCountsVt;
     vertexCountsVt.assign(vertexCounts.begin(), vertexCounts.end());
-	pxr::VtArray<int> vertexIndicesVt;
+	PXR_NS::VtArray<int> vertexIndicesVt;
     vertexIndicesVt.assign(indices.begin(), indices.end());
-	pxr::VtArray<GfVec3f> pointArrayVt;
+	PXR_NS::VtArray<GfVec3f> pointArrayVt;
     pointArrayVt.assign(points.begin(), points.end());
-	pxr::VtArray<GfVec3f> normalsVt;
+	PXR_NS::VtArray<GfVec3f> normalsVt;
     normalsVt.assign(normals.begin(), normals.end());
 
     mesh.CreateFaceVertexCountsAttr().Set(vertexCountsVt);
@@ -106,7 +106,7 @@ UsdGeomMesh createMeshSquareAxis(const UsdStagePtr & stage, const SdfPath& path,
 	return createMesh(stage, path, points, normals, indices, vertexCounts);
 }
 
-UsdGeomPlane createPlane(const UsdStagePtr & stage, const SdfPath& path, const pxr::TfToken& axis, float halfHeight, float halfWidth)
+UsdGeomPlane createPlane(const UsdStagePtr & stage, const SdfPath& path, const PXR_NS::TfToken& axis, float halfHeight, float halfWidth)
 {
 	UsdGeomPlane mesh = UsdGeomPlane::Define(stage, path);
 
@@ -116,7 +116,7 @@ UsdGeomPlane createPlane(const UsdStagePtr & stage, const SdfPath& path, const p
 }
 
 
-UsdGeomMesh createMeshBox(const UsdStagePtr & stage, const SdfPath& path, const pxr::GfVec3f& halfExtent)
+UsdGeomMesh createMeshBox(const UsdStagePtr & stage, const SdfPath& path, const PXR_NS::GfVec3f& halfExtent)
 {
     std::vector<GfVec3f> points = { { -1.0, -1.0, 1.0 }, { 1.0, -1.0, 1.0 }, { -1.0, 1.0, 1.0 },   { 1.0, 1.0, 1.0 },
                                     { -1.0, 1.0, -1.0 }, { 1.0, 1.0, -1.0 }, { -1.0, -1.0, -1.0 }, { 1.0, -1.0, -1.0 },
@@ -407,7 +407,7 @@ void addPhysicsScene(const UsdStagePtr & stage, const std::string& path)
     UsdPhysicsScene::Define(stage, SdfPath(path));
 }
 
-void addPhysicsToPrim(const UsdPrim& prim, const float density, const pxr::GfVec3f& linVelocity, const pxr::GfVec3f& angularVelocity)
+void addPhysicsToPrim(const UsdPrim& prim, const float density, const PXR_NS::GfVec3f& linVelocity, const PXR_NS::GfVec3f& angularVelocity)
 {
 	auto physicsAPI = UsdPhysicsRigidBodyAPI::Apply(prim);	
 	physicsAPI.CreateVelocityAttr().Set(linVelocity);
@@ -433,13 +433,13 @@ void addRigidBody(const UsdStagePtr& stage, const std::string& path)
 }
 
 // physics schema (internal implementation subject to change)
-void addPosition(UsdGeomXformable& xformable, const pxr::GfVec3f& position)
+void addPosition(UsdGeomXformable& xformable, const PXR_NS::GfVec3f& position)
 {
     auto component = xformable.AddXformOp(UsdGeomXformOp::Type::TypeTranslate, UsdGeomXformOp::Precision::PrecisionFloat);
     component.Set(position);
 }
 
-void addOrientation(UsdGeomXformable& xformable, const pxr::GfQuatf& orientation)
+void addOrientation(UsdGeomXformable& xformable, const PXR_NS::GfQuatf& orientation)
 {
     auto component = xformable.AddXformOp(UsdGeomXformOp::Type::TypeOrient, UsdGeomXformOp::Precision::PrecisionFloat);
     component.Set(orientation);
@@ -461,15 +461,15 @@ void addDensity(const UsdStagePtr & stage, const std::string& path, float value)
 
 void addDisplayColor(UsdGeomGprim& gprim, const GfVec3f& color)
 {
-	gprim.CreateDisplayColorAttr().Set(pxr::VtArray<GfVec3f>({ color }));    
+	gprim.CreateDisplayColorAttr().Set(PXR_NS::VtArray<GfVec3f>({ color }));
 }
 
 void addBoxCollisionShape(const UsdStagePtr & stage,
     const std::string& path,
     float size,
-    const pxr::GfVec3f& position,
-    const pxr::GfQuatf& orientation,
-    const pxr::GfVec3f& color)
+    const PXR_NS::GfVec3f& position,
+    const PXR_NS::GfQuatf& orientation,
+    const PXR_NS::GfVec3f& color)
 {
     // (Graphics) Box mesh
     std::string primPath = path + "/graphicsBox";
@@ -494,13 +494,13 @@ void addBoxCollisionShape(const UsdStagePtr & stage,
 
 void addRigidBox(const UsdStagePtr & stage,
     const std::string& path,
-    const pxr::GfVec3f& size,
-    const pxr::GfVec3f& position,
-    const pxr::GfQuatf& orientation,
-    const pxr::GfVec3f& color,
+    const PXR_NS::GfVec3f& size,
+    const PXR_NS::GfVec3f& position,
+    const PXR_NS::GfQuatf& orientation,
+    const PXR_NS::GfVec3f& color,
     float density,
-    const pxr::GfVec3f& linVelocity,
-    const pxr::GfVec3f& angularVelocity)
+    const PXR_NS::GfVec3f& linVelocity,
+    const PXR_NS::GfVec3f& angularVelocity)
 {
     // Box
     {
@@ -524,12 +524,12 @@ void addRigidBox(const UsdStagePtr & stage,
 void addRigidSphere(const UsdStagePtr & stage,
     const std::string& path,
     float radius,
-    const pxr::GfVec3f& position,
-    const pxr::GfQuatf& orientation,
-    const pxr::GfVec3f& color,
+    const PXR_NS::GfVec3f& position,
+    const PXR_NS::GfQuatf& orientation,
+    const PXR_NS::GfVec3f& color,
     float density,
-    const pxr::GfVec3f& linVelocity,
-    const pxr::GfVec3f& angularVelocity)
+    const PXR_NS::GfVec3f& linVelocity,
+    const PXR_NS::GfVec3f& angularVelocity)
 {
     // Sphere
     {
@@ -553,13 +553,13 @@ void addRigidCapsule(const UsdStagePtr & stage,
     const std::string& path,
     float radius,
     float halfHeight,
-	const pxr::TfToken& axis,
-    const pxr::GfVec3f& position,
-    const pxr::GfQuatf& orientation,
-    const pxr::GfVec3f& color,
+	const PXR_NS::TfToken& axis,
+    const PXR_NS::GfVec3f& position,
+    const PXR_NS::GfQuatf& orientation,
+    const PXR_NS::GfVec3f& color,
     float density,
-    const pxr::GfVec3f& linVelocity,
-    const pxr::GfVec3f& angularVelocity)
+    const PXR_NS::GfVec3f& linVelocity,
+    const PXR_NS::GfVec3f& angularVelocity)
 {
     // Capsule
     {
@@ -585,13 +585,13 @@ void addRigidCone(const UsdStagePtr & stage,
 	const std::string& path,
 	float radius,
 	float halfHeight,
-	const pxr::TfToken& axis,
-	const pxr::GfVec3f& position,
-	const pxr::GfQuatf& orientation,
-	const pxr::GfVec3f& color,
+	const PXR_NS::TfToken& axis,
+	const PXR_NS::GfVec3f& position,
+	const PXR_NS::GfQuatf& orientation,
+	const PXR_NS::GfVec3f& color,
 	float density,
-	const pxr::GfVec3f& linVelocity,
-	const pxr::GfVec3f& angularVelocity)
+	const PXR_NS::GfVec3f& linVelocity,
+	const PXR_NS::GfVec3f& angularVelocity)
 {
 	// Capsule
 	{
@@ -617,13 +617,13 @@ void addRigidCylinder(const UsdStagePtr & stage,
     const std::string& path,
     float radius,
     float halfHeight,
-	const pxr::TfToken& axis,
-    const pxr::GfVec3f& position,
-    const pxr::GfQuatf& orientation,
-    const pxr::GfVec3f& color,
+	const PXR_NS::TfToken& axis,
+    const PXR_NS::GfVec3f& position,
+    const PXR_NS::GfQuatf& orientation,
+    const PXR_NS::GfVec3f& color,
     float density,
-    const pxr::GfVec3f& linVelocity,
-    const pxr::GfVec3f& angularVelocity)
+    const PXR_NS::GfVec3f& linVelocity,
+    const PXR_NS::GfVec3f& angularVelocity)
 {
     // Cylinder
     {
@@ -647,8 +647,8 @@ void addRigidCylinder(const UsdStagePtr & stage,
 
 void addRigidBoxForInstancing(const UsdStagePtr & stage,
     const std::string& path,
-    const pxr::GfVec3f& size,
-    const pxr::GfVec3f& color,
+    const PXR_NS::GfVec3f& size,
+    const PXR_NS::GfVec3f& color,
     float density)
 {
     // Box
@@ -680,10 +680,10 @@ void addRigidBoxForInstancing(const UsdStagePtr & stage,
 
 void addGroundPlane(const UsdStagePtr & stage,
     const std::string& planePath,
-	const pxr::TfToken& axis,
+	const PXR_NS::TfToken& axis,
     float size,
-    const pxr::GfVec3f& position,
-    const pxr::GfVec3f& color)
+    const PXR_NS::GfVec3f& position,
+    const PXR_NS::GfVec3f& color)
 {
 	UsdGeomXform planeXform = UsdGeomXform::Define(stage, SdfPath(planePath));
 
@@ -707,8 +707,8 @@ void addGroundPlane(const UsdStagePtr & stage,
 void addGroundTriMesh(const UsdStagePtr & stage,
     const std::string& physScenePath,
     float size,
-    const pxr::GfVec3f& position,
-    const pxr::GfVec3f& color)
+    const PXR_NS::GfVec3f& position,
+    const PXR_NS::GfVec3f& color)
 {
 
     // Top level actor, contains rigid body and its shapes
@@ -755,7 +755,7 @@ SdfPath decodeSdfPath(const uint32_t ePart0, const uint32_t ePart1)
     const uint64_t part0 = uint64_t(ePart0);
     const uint64_t part1 = uint64_t(ePart1);
     const uint64_t uintPath = part0 + (part1 << 32);
-    return *(pxr::SdfPath*)&uintPath;
+    return *(PXR_NS::SdfPath*)&uintPath;
 }
 
 uint64_t sdfPathToInt(const SdfPath& path)
@@ -768,14 +768,14 @@ uint64_t sdfPathToInt(const SdfPath& path)
 
 SdfPath intToSdfPath(const uint64_t intPath)
 {
-    return *(pxr::SdfPath*)&intPath;
+    return *(PXR_NS::SdfPath*)&intPath;
 }
 
-pxr::GfQuatf indexedRotation(uint32_t axis, float s, float c)
+PXR_NS::GfQuatf indexedRotation(uint32_t axis, float s, float c)
 {
     float v[3] = { 0, 0, 0 };
     v[axis] = s;
-    return pxr::GfQuatf(v[0], v[1], v[2], c);
+    return PXR_NS::GfQuatf(v[0], v[1], v[2], c);
 }
 
 uint32_t getNextIndex3(uint32_t i)
@@ -784,18 +784,18 @@ uint32_t getNextIndex3(uint32_t i)
 }
 
 
-pxr::GfVec3f diagonalize(const pxr::GfMatrix3f& m, pxr::GfQuatf& massFrame)
+PXR_NS::GfVec3f diagonalize(const PXR_NS::GfMatrix3f& m, PXR_NS::GfQuatf& massFrame)
 {
     // jacobi rotation using quaternions (from an idea of Stan Melax, with fix for precision issues)
 
     const uint32_t MAX_ITERS = 24;
 
-    pxr::GfQuatf q = pxr::GfQuatf(1.0);
+    PXR_NS::GfQuatf q = PXR_NS::GfQuatf(1.0);
 
-    pxr::GfMatrix3f d;
+    PXR_NS::GfMatrix3f d;
     for (uint32_t i = 0; i < MAX_ITERS; i++)
     {
-        pxr::GfMatrix3f axes(q);
+        PXR_NS::GfMatrix3f axes(q);
         d = axes.GetTranspose() * m * axes;
 
         float d0 = fabs(d[1][2]), d1 = fabs(d[0][2]), d2 = fabs(d[0][1]);
@@ -810,7 +810,7 @@ pxr::GfVec3f diagonalize(const pxr::GfMatrix3f& m, pxr::GfQuatf& massFrame)
         float w = (d[a1][a1] - d[a2][a2]) / (2.0f * d[a1][a2]); // cot(2 * phi), where phi is the rotation angle
         float absw = fabs(w);
 
-        pxr::GfQuatf r;
+        PXR_NS::GfQuatf r;
         if (absw > 1000)
             r = indexedRotation(a, 1 / (4 * w), 1.0f); // h will be very close to 1, so use small angle approx instead
         else
@@ -825,12 +825,12 @@ pxr::GfVec3f diagonalize(const pxr::GfMatrix3f& m, pxr::GfQuatf& massFrame)
     }
 
     massFrame = q;
-    return pxr::GfVec3f(d.GetColumn(0)[0], d.GetColumn(1)[1], d.GetColumn(2)[2]);
+    return PXR_NS::GfVec3f(d.GetColumn(0)[0], d.GetColumn(1)[1], d.GetColumn(2)[2]);
 }
 
-pxr::GfVec3f getMassSpaceInertia(const pxr::GfMatrix3f& inertia, pxr::GfQuatf& massFrame)
+PXR_NS::GfVec3f getMassSpaceInertia(const PXR_NS::GfMatrix3f& inertia, PXR_NS::GfQuatf& massFrame)
 {
-        pxr::GfVec3f diagT = diagonalize(inertia, massFrame);
+        PXR_NS::GfVec3f diagT = diagonalize(inertia, massFrame);
         return diagT;
 }
 

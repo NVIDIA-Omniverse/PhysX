@@ -83,7 +83,7 @@ public:
 		close();
 	}
 
-	virtual void close()
+	virtual void close() PX_OVERRIDE
 	{
 		if( mFph )
 		{
@@ -92,12 +92,12 @@ public:
 		}
 	}
 
-	virtual SeekType isSeekable() const
+	virtual SeekType isSeekable() const PX_OVERRIDE
 	{
 		return mSeekType;
 	}
 
-	virtual		uint32_t			read(void* buffer, uint32_t size)	
+	virtual		uint32_t			read(void* buffer, uint32_t size) PX_OVERRIDE
 	{
 		uint32_t ret = 0;
 		if ( mFph )
@@ -110,7 +110,7 @@ public:
 		return ret;
 	}
 
-	virtual		uint32_t			peek(void* buffer, uint32_t size)
+	virtual		uint32_t			peek(void* buffer, uint32_t size) PX_OVERRIDE
 	{
 		uint32_t ret = 0;
 		if ( mFph )
@@ -124,7 +124,7 @@ public:
 		return ret;
 	}
 
-	virtual		uint32_t		write(const void* buffer, uint32_t size)
+	virtual		uint32_t		write(const void* buffer, uint32_t size) PX_OVERRIDE
 	{
 		uint32_t ret = 0;
 		if ( mFph )
@@ -141,17 +141,17 @@ public:
 		return ret;
 	}
 
-	virtual uint32_t tellRead() const
+	virtual uint32_t tellRead() const PX_OVERRIDE
 	{
 		return mSeekRead;
 	}
 
-	virtual uint32_t tellWrite() const
+	virtual uint32_t tellWrite() const PX_OVERRIDE
 	{
 		return mSeekWrite;
 	}
 
-	virtual uint32_t seekRead(uint32_t loc) 
+	virtual uint32_t seekRead(uint32_t loc) PX_OVERRIDE
 	{
 		mSeekRead = loc;
 		if ( mSeekRead > mFileLength )
@@ -161,7 +161,7 @@ public:
 		return mSeekRead;
 	}
 
-	virtual uint32_t seekWrite(uint32_t loc)
+	virtual uint32_t seekWrite(uint32_t loc) PX_OVERRIDE
 	{
 		mSeekWrite = loc;
 		if ( mSeekWrite > mFileLength )
@@ -171,7 +171,7 @@ public:
 		return mSeekWrite;
 	}
 
-	virtual void flush()
+	virtual void flush() PX_OVERRIDE
 	{
 		if ( mFph )
 		{
@@ -179,12 +179,12 @@ public:
 		}
 	}
 
-	virtual OpenMode	getOpenMode() const
+	virtual OpenMode	getOpenMode() const PX_OVERRIDE
 	{
 		return mOpenMode;
 	}
 
-	virtual uint32_t getFileLength() const
+	virtual uint32_t getFileLength() const PX_OVERRIDE
 	{
 		return mFileLength;
 	}

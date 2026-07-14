@@ -45,9 +45,9 @@ namespace physx
 	struct PX_DEPRECATED PxJointRepXSerializer : public RepXSerializerImpl<TJointType>
 	{
 		PxJointRepXSerializer(PxAllocatorCallback& inAllocator) : RepXSerializerImpl<TJointType>(inAllocator) {}
-		virtual PxRepXObject fileToObject(XmlReader& inReader, XmlMemoryAllocator& inAllocator, PxRepXInstantiationArgs& inArgs, PxCollection* inCollection);
-		virtual void objectToFileImpl(const TJointType* inObj, PxCollection* inCollection, XmlWriter& inWriter, MemoryBuffer& inTempBuffer, PxRepXInstantiationArgs&);
-		virtual TJointType* allocateObject(PxRepXInstantiationArgs&) { return NULL; }
+		virtual PxRepXObject fileToObject(XmlReader& inReader, XmlMemoryAllocator& inAllocator, PxRepXInstantiationArgs& inArgs, PxCollection* inCollection) PX_OVERRIDE;
+		virtual void objectToFileImpl(const TJointType* inObj, PxCollection* inCollection, XmlWriter& inWriter, MemoryBuffer& inTempBuffer, PxRepXInstantiationArgs&) PX_OVERRIDE;
+		virtual TJointType* allocateObject(PxRepXInstantiationArgs&) PX_OVERRIDE { return NULL; }
 	};
 
 #if PX_SUPPORT_EXTERN_TEMPLATE

@@ -1,0 +1,1577 @@
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
+
+#include "UsdPCH.h"
+
+#include <chrono>
+#include <thread>
+
+#include "../common/TestHelpers.h"
+#include "../../common/Tools.h" // asInt
+
+#include <omni/physx/IPhysxCookingService.h>
+#include <omni/physx/IPhysxCooking.h>
+#include <private/omni/physx/IPhysxCookingServicePrivate.h>
+#include <private/omni/physx/IPhysxTests.h>
+
+#include <omni/fabric/SimStageWithHistory.h>
+#include <omni/fabric/FabricUSD.h>
+
+#include <carb/settings/ISettings.h>
+#include <carb/tasking/ITasking.h>
+#include <omni/physx/IPhysxSettings.h>
+
+#include "PhysicsTools.h"
+#include "TestDeformableCookingUtility.h"
+
+using namespace PXR_NS;
+using namespace omni::physx;
+using namespace ::physx;
+
+// TODO: Currently testCookingServiceParametric failed for volume deformable body
+#define FIX_VOLUME_DEFORMABLE_TEST_FAILURE 0
+
+static void resetLocalMeshCaches(IPhysxCookingServicePrivate* physxCookingPrivate)
+{
+    // Reset old cache and LocalDataStore using the cooking interface
+    physxCookingPrivate->resetMeshCacheContents();
+
+    // "Reset" the OmniHub cache using settings to regenerate dev key so that it won't use its previous cache contents
+    carb::settings::ISettings* settings = carb::getCachedInterface<carb::settings::ISettings>();
+    if (settings)
+    {
+        settings->setInt64(kSettingUjitsoCookingDevKey, -1ll);
+    }
+}
+
+// This test is checking all permutations of the following parameters
+struct CookingServiceTestParameters
+{
+    bool asynchronous = false;
+    enum InputType
+    {
+        eInputUSD,
+        eInputFabric,
+        eInputMeshView
+    };
+    InputType inputType = eInputUSD;
+    bool computeGPUCookingData = true;
+    bool enableLoadFromLocalCache = false;
+
+    bool forceTriangulation = false;
+
+    // These are SDF Specific, and not accounted as permutations for
+    bool enableGPUCooking = false;
+    omni::physx::PhysxCookingAsyncContext context = nullptr;
+
+    omni::physx::IPhysxCookingService* physxCooking = nullptr;
+    omni::physx::IPhysxCookingServicePrivate* physxCookingPrivate = nullptr;
+#if FIX_VOLUME_DEFORMABLE_TEST_FAILURE
+    omni::physx::IPhysxCooking* physxCookingInterface = nullptr;
+#endif
+    PxDefaultAllocator pxAllocator;
+    PxDefaultErrorCallback pxErrorCallback;
+    PxFoundation* pxFoundation = nullptr;
+    PxPhysics* pxPhysics = nullptr;
+    UsdStageRefPtr stage;
+    long int primStageId = 0;
+    UsdGeomMesh usdMesh;
+    SdfPath meshPath;
+    SdfPath defaultPrimPath;
+
+#if FIX_VOLUME_DEFORMABLE_TEST_FAILURE
+    SdfPath volumeXformPath;
+    SdfPath volumeSkinMeshPath;
+    SdfPath volumeSimMeshPath;
+    SdfPath volumeCollMeshPath;
+#endif
+
+    void createShared()
+    {
+        PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+
+        physxCooking = physicsTests.acquirePhysxCookingServiceInterface();
+        physxCookingPrivate = physicsTests.acquirePhysxCookingServicePrivateInterface();
+
+#if FIX_VOLUME_DEFORMABLE_TEST_FAILURE
+        physxCookingInterface = physicsTests.acquirePhysxCookingInterface();
+        REQUIRE(physxCookingInterface);
+#endif
+
+        REQUIRE(physxCooking);
+        REQUIRE(physxCookingPrivate);
+        
+        // Always start with empty cache
+        resetLocalMeshCaches(physxCookingPrivate);
+        pxFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, pxAllocator, pxErrorCallback);
+        stage = UsdStage::CreateInMemory();
+
+        if (inputType != CookingServiceTestParameters::eInputMeshView)
+        {
+            PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+            primStageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+        }
+
+        const float metersPerStageUnit = 0.01f; // work in default centimeters
+        const double metersPerUnit = PXR_NS::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit));
+        PXR_NS::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+        const PxTolerancesScale tolerancesScale(float(1.0 / metersPerUnit), float(10.0 / metersPerUnit));
+        pxPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *pxFoundation, tolerancesScale);
+    }
+
+    void createInstanceSpecific(const std::string& name, omni::physx::PhysxCookingAsyncContext cookingContext)
+    {
+        context = cookingContext;
+        defaultPrimPath = SdfPath("/World");
+        UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+        stage->SetDefaultPrim(defaultPrim);
+
+        meshPath = SdfPath(name);
+        usdMesh = createMeshCapsule(stage, meshPath, 1.0, 1.0);
+
+#if FIX_VOLUME_DEFORMABLE_TEST_FAILURE
+        volumeXformPath = defaultPrimPath.AppendChild(TfToken("Xform"));
+        volumeSkinMeshPath = volumeXformPath.AppendChild(TfToken("skinMesh"));
+        volumeSimMeshPath = volumeXformPath.AppendChild(TfToken("simMesh"));
+        volumeCollMeshPath = volumeXformPath.AppendChild(TfToken("collMesh"));
+        deformableutility::createVolumeDeformableHierarchicalHex(stage, *physxCookingInterface, volumeXformPath, volumeSkinMeshPath, volumeSimMeshPath, volumeCollMeshPath);
+#endif
+
+        if (inputType == CookingServiceTestParameters::eInputFabric)
+        {
+            auto iStageReaderWriter = carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
+            auto iSimStageWithHistory = carb::getCachedInterface<omni::fabric::ISimStageWithHistory>();
+            auto iFabricUsd = carb::getCachedInterface<omni::fabric::IFabricUsd>();
+            iSimStageWithHistory->getOrCreate(primStageId, 1, { 1, 30 }, omni::fabric::GpuComputeType::eNone);
+            iStageReaderWriter->create(primStageId, 0);
+            auto stageReaderWriterId = iStageReaderWriter->get(primStageId);
+            auto fabricId = iStageReaderWriter->getFabricId(stageReaderWriterId);
+            std::set<omni::fabric::Token> filter = {};
+            iFabricUsd->prefetchPrimToFabric(
+                fabricId, meshPath, usdMesh.GetPrim(), filter, false, true, PXR_NS::UsdTimeCode::Default());
+            stage->RemovePrim(meshPath);
+        }
+    }
+
+    void destroyInstanceSpecific()
+    {
+        if (context)
+        {
+            physxCooking->destroyAsyncContext(context);
+        }
+        context = nullptr;
+    }
+
+    void destroyShared()
+    {
+        if (inputType == CookingServiceTestParameters::eInputFabric)
+        {
+            auto iSimStageWithHistory = carb::getCachedInterface<omni::fabric::ISimStageWithHistory>();
+            iSimStageWithHistory->release(primStageId);
+        }
+        else if (inputType != CookingServiceTestParameters::eInputMeshView)
+        {
+            PXR_NS::UsdUtilsStageCache::Get().Erase(stage);
+        }
+
+        PX_RELEASE(pxPhysics);
+        PX_RELEASE(pxFoundation)
+    }
+};
+
+PxDefaultMemoryInputData& fromCookedData(PxDefaultMemoryInputData& inputData, const PhysxCookedDataSpan& cookedData)
+{
+    inputData = PxDefaultMemoryInputData(
+        const_cast<PxU8*>(reinterpret_cast<const PxU8*>(cookedData.data)), static_cast<PxU32>(cookedData.sizeInBytes));
+    return inputData;
+}
+
+void testCookingServiceParametricImplementation(const PhysxCookingDataType::Enum dataType,
+                                                const CookingServiceTestParameters& testParameters,
+                                                uint32_t threadIdx = 0, // For multitrheaded since we can't clear cache
+                                                bool runTwice = true // Test for cache hits
+)
+{
+    carb::tasking::ITasking* tasking = carb::getCachedInterface<carb::tasking::ITasking>();
+    omni::physx::IPhysxCookingService* physxCooking = testParameters.physxCooking;
+    omni::physx::IPhysxCookingServicePrivate* physxCookingPrivate = testParameters.physxCookingPrivate;
+
+#if FIX_VOLUME_DEFORMABLE_TEST_FAILURE
+    omni::physx::IPhysxCooking* physxCookingInterface = testParameters.physxCookingInterface;
+    REQUIRE(physxCookingInterface);
+#endif
+
+    REQUIRE(physxCooking);
+    REQUIRE(physxCookingPrivate);
+    // setup basic stage
+    UsdStageRefPtr stage = testParameters.stage;
+    const SdfPath meshPath = testParameters.meshPath;
+    const SdfPath defaultPrimPath = testParameters.defaultPrimPath;
+    UsdGeomMesh usdMesh = testParameters.usdMesh;
+
+    // Setup request
+    PhysxCookingComputeRequest request;
+    using Options = omni::physx::PhysxCookingComputeRequest::Options;
+    request.options.setFlag(Options::kComputeGPUCookingData, true);
+    request.options.setFlag(Options::kExecuteCookingOnGPU, testParameters.enableGPUCooking);
+    request.options.setFlag(Options::kComputeAsynchronously, testParameters.asynchronous);
+    request.mode = PhysxCookingComputeRequest::eMODE_REQUEST_COOKED_DATA;
+
+    if (dataType == PhysxCookingDataType::eTRIANGLE_MESH)
+    {
+        switch (testParameters.inputType)
+        {
+        case CookingServiceTestParameters::eInputFabric:
+            request.triangulation.needsMaxMaterialIndex = false; // OM-96865: Multi-materials with Fabric not supported
+            break;
+        case CookingServiceTestParameters::eInputMeshView:
+            request.triangulation.needsMaxMaterialIndex = true; // Retrieves result.triangulationMaxMaterialIndex
+            break;
+        case CookingServiceTestParameters::eInputUSD: {
+            request.triangulation.needsMaxMaterialIndex = true; // Retrieves result.triangulationMaxMaterialIndex
+            // Create physics materials
+            const SdfPath physicsMaterialPath0 = defaultPrimPath.AppendChild(TfToken("physicsMaterial0"));
+            UsdShadeMaterial physicsMaterial0 = UsdShadeMaterial::Define(stage, physicsMaterialPath0);
+
+            const SdfPath physicsMaterialPath1 = defaultPrimPath.AppendChild(TfToken("physicsMaterial1"));
+            UsdShadeMaterial physicsMaterial1 = UsdShadeMaterial::Define(stage, physicsMaterialPath1);
+            UsdPhysicsMaterialAPI::Apply(physicsMaterial0.GetPrim());
+            UsdPhysicsMaterialAPI::Apply(physicsMaterial1.GetPrim());
+            // Setup materials on mesh to trigger result.triangulationMaxMaterialIndex == 2.
+            // Default material is assigned to faces not here included and it has index == 2.
+            {
+                const SdfPath subsetPath = meshPath.AppendChild(TfToken("subset0"));
+                UsdGeomSubset subset = UsdGeomSubset::Define(stage, subsetPath);
+                subset.CreateElementTypeAttr().Set(TfToken("face"));
+                subset.CreateFamilyNameAttr().Set(UsdShadeTokens->materialBind);
+                VtArray<int> indices = { 0 };
+                subset.CreateIndicesAttr().Set(indices);
+                UsdShadeMaterialBindingAPI bindingAPI = UsdShadeMaterialBindingAPI::Apply(subset.GetPrim());
+                bindingAPI.Bind(physicsMaterial0, UsdShadeTokens->weakerThanDescendants);
+            }
+            {
+                const SdfPath subsetPath = meshPath.AppendChild(TfToken("subset1"));
+                UsdGeomSubset subset = UsdGeomSubset::Define(stage, subsetPath);
+                subset.CreateElementTypeAttr().Set(TfToken("face"));
+                subset.CreateFamilyNameAttr().Set(UsdShadeTokens->materialBind);
+                VtArray<int> indices = { 1 };
+                subset.CreateIndicesAttr().Set(indices);
+                UsdShadeMaterialBindingAPI bindingAPI = UsdShadeMaterialBindingAPI::Apply(subset.GetPrim());
+                bindingAPI.Bind(physicsMaterial1, UsdShadeTokens->weakerThanDescendants);
+            }
+        }
+        break;
+        }
+    }
+    PXR_NS::VtArray<PXR_NS::GfVec3f> usdPoints;
+    PXR_NS::VtArray<int> usdIndices;
+    PXR_NS::VtArray<int> usdFaces;
+    PXR_NS::VtArray<int> usdHoles;
+    PXR_NS::VtArray<int> viewMeshMaterials;
+
+    if (testParameters.inputType == CookingServiceTestParameters::eInputMeshView)
+    {
+        request.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW;
+        usdMesh.GetPointsAttr().Get(&usdPoints);
+        usdMesh.GetFaceVertexIndicesAttr().Get(&usdIndices);
+        usdMesh.GetFaceVertexCountsAttr().Get(&usdFaces);
+        usdMesh.GetHoleIndicesAttr().Get(&usdHoles);
+        request.primMeshView.points = { reinterpret_cast<const carb::Float3*>(&usdPoints[0]), usdPoints.size() };
+        request.primMeshView.indices = { usdIndices.data(), usdIndices.size() };
+        request.primMeshView.faces = { usdFaces.data(), usdFaces.size() };
+        request.primMeshView.holeIndices = { usdHoles.data(), usdHoles.size() };
+        if (request.triangulation.needsMaxMaterialIndex)
+        {
+            // Setup materials on mesh to trigger result.triangulationMaxMaterialIndex == 2.
+            // Here Default material must be assigned explicitly, as it computed by getMaxMaterialIndex that
+            // just loops the facematerials array, finding the max.
+            // This is replicating what's done in USD at TriangulateUSDPrim::TriangulateUSDPrim::fillFaceMaterials
+            // where faces that don't have a Subset assigned will get the default material index set.
+            for (size_t idx = 0; idx < usdFaces.size(); ++idx)
+            {
+                viewMeshMaterials.push_back(2); // 2 is the default material
+            }
+            viewMeshMaterials[1] = 1;
+            viewMeshMaterials[4] = 0;
+            request.primMeshView.faceMaterials = { reinterpret_cast<const uint16_t*>(&viewMeshMaterials[0]),
+                                                   viewMeshMaterials.size() };
+        }
+        request.primMeshMetersPerUnit = 1.0f;
+        request.primMeshText = { meshPath.GetText(), strlen(meshPath.GetText()) };
+    }
+    else
+    {
+        PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+        request.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID;
+        request.primId = asInt(meshPath);
+        request.primStageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+    }
+
+    // Setup caches usage
+    request.options.setFlag(Options::kLoadCookedDataFromCache, testParameters.enableLoadFromLocalCache);
+    request.options.setFlag(Options::kSaveCookedDataToCache, testParameters.enableLoadFromLocalCache);
+
+    // Determine if we're using ujitso
+    carb::settings::ISettings* settings = carb::getCachedInterface<carb::settings::ISettings>();
+    const bool usingUjitso = settings->getAsBool(omni::physx::kSettingUjitsoCollisionCooking);
+
+    // Force triangulation build if requested
+    if (testParameters.forceTriangulation)
+    {
+        request.triangulation.needsVertices = true;
+    }
+
+#if FIX_VOLUME_DEFORMABLE_TEST_FAILURE
+    if (dataType == PhysxCookingDataType::eVOLUME_DEFORMABLE_BODY)
+    {
+        SdfPath volumeSkinMeshPath = testParameters.volumeSkinMeshPath;
+        request.deformablePathInfo.bodyPrimId = asInt(testParameters.volumeXformPath);
+        request.deformablePathInfo.simMeshPrimId = asInt(testParameters.volumeSimMeshPath);
+        request.deformablePathInfo.collMeshPrimId = asInt(testParameters.volumeCollMeshPath);
+        request.primMeshText = { volumeSkinMeshPath.GetText(), strlen(volumeSkinMeshPath.GetText()) };
+        if (testParameters.inputType == CookingServiceTestParameters::eInputMeshView)
+        {
+            request.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW;
+            VolumeDeformableBodyCookingParams params;
+            VtArray<GfVec3f> srcPointsInSimData;
+            deformableutility::setupVolumeDeformableBodyCookingParams(params, srcPointsInSimData, stage, request, testParameters.volumeSkinMeshPath);
+            request.volumeDeformableBodyView.srcPointsInSim = params.srcPointsInSim;
+        }
+        else
+        {
+            PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+            request.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID;
+            request.primId = asInt(volumeSkinMeshPath);
+            request.primStageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+        }
+    }
+#endif
+
+    // Setup callback
+    bool callbackHasBeenCalled = false;
+    int numRun = 0;
+    request.onFinished = [&](const PhysxCookingComputeResult& result) {
+        callbackHasBeenCalled = true;
+        // If we're getting a cache it
+        if (request.options.hasFlag(PhysxCookingComputeRequest::Options::kComputeAsynchronously))
+        {
+            // When the request is asynchronous, we may get a synchronous result anyway if the
+            // data was found in the USD or local cache
+            if (usingUjitso)
+            {
+                const bool isNonUjitsoCacheHit =
+                    result.resultSource != PhysxCookingComputeResult::eRESULT_CACHE_MISS &&
+                    result.resultSource != PhysxCookingComputeResult::eRESULT_CACHE_HIT_UJITSO;
+                CHECK(result.isSynchronousResult == isNonUjitsoCacheHit);
+            }
+            else
+            {
+                const bool isCacheHit = result.resultSource != PhysxCookingComputeResult::eRESULT_CACHE_MISS;
+                CHECK(result.isSynchronousResult == isCacheHit);
+            }
+        }
+        else
+        {
+            // When request is synchronous, we're going to get  isSynchronousResult == true all the time
+            CHECK(result.isSynchronousResult);
+        }
+        CHECK(result.result == PhysxCookingResult::eVALID);
+
+        // Cache meshkey for next request
+        request.meshKey = result.meshKey;
+
+        PxDefaultMemoryInputData inputData(nullptr, 0);
+
+        PxPhysics* pxPhysics = testParameters.pxPhysics;
+        // Create the runtime object
+        CHECK(result.request->dataType == dataType);
+        switch (dataType)
+        {
+        case PhysxCookingDataType::eCONVEX_MESH: {
+            CHECK(result.cookedDataNumElements == 1);
+            if (result.cookedDataNumElements == 1)
+            {
+                PxConvexMesh* pxMesh = pxPhysics->createConvexMesh(fromCookedData(inputData, result.cookedData[0]));
+                CHECK(pxMesh != nullptr);
+                pxMesh->release();
+            }
+            break;
+        }
+        case PhysxCookingDataType::eSDF_TRIANGLE_MESH:
+        case PhysxCookingDataType::eTRIANGLE_MESH: {
+            CHECK(result.cookedDataNumElements == 1);
+            if (request.triangulation.needsMaxMaterialIndex)
+            {
+                CHECK(result.triangulationMaxMaterialIndex == 2);
+            }
+            if (result.cookedDataNumElements == 1)
+            {
+                PxTriangleMesh* pxMesh = pxPhysics->createTriangleMesh(fromCookedData(inputData, result.cookedData[0]));
+                CHECK(pxMesh != nullptr);
+                pxMesh->release();
+            }
+            break;
+        }
+        case PhysxCookingDataType::eCONVEX_DECOMPOSITION: {
+            CHECK(result.cookedDataNumElements >= 1);
+            if (result.cookedDataNumElements >= 1)
+            {
+                for (uint64_t idx = 0; idx < result.cookedDataNumElements; idx++)
+                {
+                    PxConvexMesh* pxMesh = pxPhysics->createConvexMesh(fromCookedData(inputData, result.cookedData[idx]));
+                    CHECK(pxMesh != nullptr);
+                    pxMesh->release();
+                }
+            }
+            break;
+        }
+        case PhysxCookingDataType::eSPHERE_FILL: {
+            CHECK(result.cookedDataNumElements == 1);
+            if (result.cookedDataNumElements == 1)
+            {
+                uint32_t sphereCount = 0;
+                // This is not really safe if you're not sure about the alignment of the raw bytes
+                // and it will crash on corrupted data
+                const uint32_t* data = reinterpret_cast<const uint32_t*>(result.cookedData[0].data);
+                sphereCount = *data++;
+                CHECK(sphereCount > 0);
+                // format is [sphereCount] and then a list of [positionx][positiony][positionz][radius]...
+                const size_t expectedSize = sizeof(uint32_t) + sphereCount * sizeof(carb::Float4);
+                CHECK(result.cookedData[0].sizeInBytes == expectedSize);
+            }
+            break;        
+        }
+#if FIX_VOLUME_DEFORMABLE_TEST_FAILURE
+        case PhysxCookingDataType::eVOLUME_DEFORMABLE_BODY: {
+            CHECK(result.cookedDataNumElements == 1);
+            if (result.cookedDataNumElements == 1)
+            {
+                // Shawn TODO: why pxDeformableVolume is nullptr here?
+                PxDeformableVolumeMesh* pxDeformableVolume = pxPhysics->createDeformableVolumeMesh(fromCookedData(inputData, result.cookedData[0]));
+                //CHECK(pxDeformableVolume != nullptr);
+                //pxDeformableVolume->release();
+            }
+            break;
+        }
+#endif
+        default:
+            CHECK(false);
+            break;
+        }
+
+        if (numRun == 0 || (!testParameters.enableLoadFromLocalCache))
+        {
+            // During first run or with disabled cache, cooking data will be recomputed from scratch
+            CHECK(result.resultSource == PhysxCookingComputeResult::eRESULT_CACHE_MISS);
+        }
+        else
+        {
+            // Here we are in second run with cache enabled
+            // Only UJITSO cache provides cache hits now (local cache has been removed)
+            if (usingUjitso)
+            {
+                CHECK(result.resultSource == PhysxCookingComputeResult::eRESULT_CACHE_HIT_UJITSO);
+            }
+            else
+            {
+                // Without UJITSO, there's no cache available, so it's always a miss
+                CHECK(result.resultSource == PhysxCookingComputeResult::eRESULT_CACHE_MISS);
+            }
+        }
+    };
+    auto ctx = testParameters.context;
+    // Issue cooking task
+    // We do two runs to test:
+    // - request.meshKey
+    // - reading from caches (if they're available)
+    for (numRun = 0; numRun < (runTwice ? 2 : 1); ++numRun)
+    {
+        callbackHasBeenCalled = false;
+        if (numRun > 0)
+        {
+            // After first run we will supply the optional mesh key
+            CHECK(request.meshKey != omni::physx::usdparser::MeshKey());
+        }
+        switch (dataType)
+        {
+        case PhysxCookingDataType::eCONVEX_MESH: {
+            ConvexMeshCookingParams params;
+            if (threadIdx)
+            {
+                params.minThickness *= 1.0f + 0.00001f * threadIdx;
+            }
+            physxCooking->requestConvexMeshCookedData(ctx, request, params);
+            break;
+        }
+        case PhysxCookingDataType::eSDF_TRIANGLE_MESH: {
+            TriangleMeshCookingParams params;
+            SdfMeshCookingParams sdfParams;
+            if (threadIdx)
+            {
+                params.simplificationMetric *= 1.0f + 0.00001f * threadIdx;
+            }
+            CHECK(sdfParams.sdfResolution > 0); // sanity check
+            physxCooking->requestSdfMeshCookedData(ctx, request, params, sdfParams);
+            break;
+        }
+        case PhysxCookingDataType::eTRIANGLE_MESH: {
+            TriangleMeshCookingParams params;
+            if (threadIdx)
+            {
+                params.simplificationMetric *= 1.0f + 0.00001f * threadIdx;
+            }
+            physxCooking->requestTriangleMeshCookedData(ctx, request, params);
+            break;
+        }
+        case PhysxCookingDataType::eCONVEX_DECOMPOSITION: {
+            ConvexDecompositionCookingParams params;
+            if (threadIdx)
+            {
+                params.minThickness *= 1.0f + 0.00001f * threadIdx;
+            }
+            physxCooking->requestConvexMeshDecompositionCookedData(ctx, request, params);
+            break;
+        }
+        case PhysxCookingDataType::eSPHERE_FILL: {
+            SphereFillCookingParams params;
+            physxCooking->requestSphereFillCookedData(ctx, request, params);
+            if (threadIdx)
+            {
+                params.voxelResolution += threadIdx;
+            }
+            break;
+        }
+#if FIX_VOLUME_DEFORMABLE_TEST_FAILURE
+        case PhysxCookingDataType::eVOLUME_DEFORMABLE_BODY: {        
+            VolumeDeformableBodyCookingParams params;
+            VtArray<GfVec3f> srcPointsInSimData;
+            deformableutility::setupVolumeDeformableBodyCookingParams(params, srcPointsInSimData, stage, request, testParameters.volumeSkinMeshPath);
+            physxCookingPrivate->requestVolumeDeformableBodyCookedData(ctx, request, params);
+            // Shawn TODO: do we need to deal with threadIdx case here? 
+            if (threadIdx)
+            {
+                params.autoHexahedralResolution += threadIdx;
+            }
+            break;
+        }
+#endif
+        default:
+            CHECK(false);
+            break;
+        }
+        // Check results
+        if (!testParameters.asynchronous)
+        {
+            // In synchronous mode the callback should be called immediately
+            // In Asynchronous mode it will be called immediately only during a USD/Local cache hit
+            CHECK(callbackHasBeenCalled);
+        }
+
+        // If task is asynchronous, let's call pump and wait for it to be done
+        if (testParameters.asynchronous)
+        {
+            const int maxNumSteps = 30000;
+            int numSteps = 0;
+            while (!callbackHasBeenCalled && numSteps++ < maxNumSteps)
+            {
+                physxCooking->pumpAsyncContext(ctx);
+                tasking->sleep_for(std::chrono::milliseconds(10));
+            }
+            CHECK(callbackHasBeenCalled);
+        }
+    }
+}
+
+void testCookingServiceParametric(const PhysxCookingDataType::Enum dataType, CookingServiceTestParameters& testParameters)
+{
+    testParameters.createShared();
+    testParameters.createInstanceSpecific("/World/mesh", testParameters.context);
+    testCookingServiceParametricImplementation(dataType, testParameters);
+    testParameters.destroyInstanceSpecific();
+    testParameters.destroyShared();
+}
+
+void testAllApproximationTypes(CookingServiceTestParameters& testParameters)
+{
+    SUBCASE("Convex Mesh")
+    {
+        testCookingServiceParametric(PhysxCookingDataType::eCONVEX_MESH, testParameters);
+    }
+    SUBCASE("Triangle Mesh")
+    {
+        testCookingServiceParametric(PhysxCookingDataType::eTRIANGLE_MESH, testParameters);
+    }
+    if (testParameters.computeGPUCookingData)
+    {
+        SUBCASE("SDF CPU Cooking")
+        {
+            testParameters.enableGPUCooking = false;
+            testCookingServiceParametric(PhysxCookingDataType::eSDF_TRIANGLE_MESH, testParameters);
+        }
+#if USE_PHYSX_GPU
+        SUBCASE("SDF GPU Cooking")
+        {
+            testParameters.enableGPUCooking = true;
+            testCookingServiceParametric(PhysxCookingDataType::eSDF_TRIANGLE_MESH, testParameters);
+        }
+#endif
+    }
+#if CARB_DEBUG
+    // S.C. Not running Sphere and decomposition tests in debug build
+#else
+    SUBCASE("Sphere Fill")
+    {
+        testCookingServiceParametric(PhysxCookingDataType::eSPHERE_FILL, testParameters);
+    }
+    SUBCASE("Convex Decomposition")
+    {
+        testCookingServiceParametric(PhysxCookingDataType::eCONVEX_DECOMPOSITION, testParameters);
+    }
+
+#if FIX_VOLUME_DEFORMABLE_TEST_FAILURE
+    SUBCASE("Volume Deformable Body")
+    {
+        // TODO: fix the test failure issue of testCookingServiceParametric for volume deformable body
+        //testCookingServiceParametric(PhysxCookingDataType::eVOLUME_DEFORMABLE_BODY, testParameters);
+    }
+#endif
+
+#endif
+}
+
+void testComputeGPUCookingData(CookingServiceTestParameters& testParameters)
+{
+#if USE_PHYSX_GPU
+    SUBCASE("gpuCookingData")
+    {
+        testParameters.computeGPUCookingData = true;
+        testAllApproximationTypes(testParameters);
+    }
+#endif
+    SUBCASE("cpuCookingData")
+    {
+        testParameters.computeGPUCookingData = false;
+        testAllApproximationTypes(testParameters);
+    }
+}
+
+void testLoadFromCaches(CookingServiceTestParameters& testParameters)
+{
+    SUBCASE("cacheDisabled")
+    {
+        testParameters.enableLoadFromLocalCache = false;
+        testComputeGPUCookingData(testParameters);
+    }
+    SUBCASE("cacheLocal")
+    {
+        testParameters.enableLoadFromLocalCache = true;
+        testComputeGPUCookingData(testParameters);
+    }
+}
+void testPrimIdOrMeshView(CookingServiceTestParameters& testParameters)
+{
+    SUBCASE("inputUSD")
+    {
+        testParameters.inputType = CookingServiceTestParameters::eInputUSD;
+        testLoadFromCaches(testParameters);
+    }
+    SUBCASE("inputFabric")
+    {
+        testParameters.inputType = CookingServiceTestParameters::eInputFabric;
+        testLoadFromCaches(testParameters);
+    }
+    SUBCASE("inputMeshView")
+    {
+        testParameters.inputType = CookingServiceTestParameters::eInputMeshView;
+        testLoadFromCaches(testParameters);
+    }
+}
+
+void testSynchronousAsynchronous(CookingServiceTestParameters& testParameters)
+{
+    SUBCASE("synchronous")
+    {
+        testParameters.asynchronous = false;
+        testPrimIdOrMeshView(testParameters);
+    }
+    SUBCASE("asynchronous")
+    {
+        testParameters.asynchronous = true;
+        testPrimIdOrMeshView(testParameters);
+    }
+}
+
+void testCookingServiceCooking()
+{
+    CookingServiceTestParameters testParameters;
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    omni::physx::IPhysxCookingService* physxCooking = physicsTests.acquirePhysxCookingServiceInterface();
+    REQUIRE(physxCooking);
+    PhysxCookingAsyncContextParameters asyncParams;
+    asyncParams.contextName = { "Test", strlen("Test") };
+    testParameters.context = physxCooking->createAsyncContext(asyncParams);
+    REQUIRE(testParameters.context);
+    testSynchronousAsynchronous(testParameters);
+
+    // the tests should release the context
+    REQUIRE(testParameters.context == nullptr);
+    // but just to be safe, release it here if it hasn't been already
+    if (testParameters.context != nullptr)
+    {
+        physxCooking->destroyAsyncContext(testParameters.context);
+    }
+}
+
+static void testMultiThreadedParametric(const bool asynchronous, const bool caching)
+{
+    // On this test we are creating a swarm of threads to test multithreaded sync cooking
+    // Setup and teardown operations that are not thread safe (like releasing mesh cache)
+    // are done in CookingServiceTestParameters::createShared / destroyShared
+    // This is for example how omni.physx.graph is using the cooking system (as of today, may change in future).
+
+    static const uint32_t numTasks = 8;
+    carb::tasking::Future<> futures[numTasks];
+    carb::tasking::ITasking* carbTasking = carb::getCachedInterface<carb::tasking::ITasking>();
+
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    auto physxCooking = physicsTests.acquirePhysxCookingServiceInterface();
+    auto physxCookingPrivate = physicsTests.acquirePhysxCookingServicePrivateInterface();
+    // Always start with empty cache (we can't do this on single thread)
+    resetLocalMeshCaches(physxCookingPrivate);
+
+    // Setup a shared stage, PxPhysics and PxFoundation
+    CookingServiceTestParameters sharedParameters;
+    sharedParameters.createShared();
+
+    // Create thread specific meshes. We copy the sharedParameters and as all threads
+    // will share the same stage, we should create the prims in main thread here
+    CookingServiceTestParameters threadParameters[numTasks];
+    for (uint32_t idx = 0; idx < numTasks; ++idx)
+    {
+        // CookingServiceTestParameters is not RAII (by design), so we can safely copy it
+        // and destruction of its content is done in CookingServiceTestParameters::destroyShared
+        threadParameters[idx] = sharedParameters;
+        omni::physx::PhysxCookingAsyncContext cookingAsyncContext = nullptr;
+        if (asynchronous)
+        {
+            std::stringstream contexSS;
+            contexSS << "Thread" << idx;
+            PhysxCookingAsyncContextParameters asyncParams;
+            auto name = contexSS.str();
+            asyncParams.contextName = { name.c_str(), name.size() };
+            // Context is destroyed in destroyInstanceSpecific
+            cookingAsyncContext = physxCooking->createAsyncContext(asyncParams);
+            REQUIRE(cookingAsyncContext);
+        }
+        threadParameters[idx].asynchronous = asynchronous; // Force SYNC or ASYNC cooking
+        threadParameters[idx].inputType = CookingServiceTestParameters::eInputMeshView; // Do not touch stage cache
+        threadParameters[idx].enableLoadFromLocalCache = caching; // Allow use of local cache
+        std::stringstream ss;
+        ss << "/World/mesh" << idx;
+        threadParameters[idx].createInstanceSpecific(ss.str(), cookingAsyncContext);
+    }
+
+    // Create the swarm of threads / tasks
+    for (uint32_t idx = 0; idx < numTasks; ++idx)
+    {
+        CookingServiceTestParameters& parameters = threadParameters[idx];
+        futures[idx] = carbTasking->addTask(carb::tasking::Priority::eDefault, {}, [parameters, idx]() mutable {
+            // Setup multithread safe parameters
+            parameters.computeGPUCookingData = false; // To speedup the test for all non SDF cases
+            parameters.enableGPUCooking = false; // To speedup the test
+            // We cannot call testCookingServiceParametric as we can't safely clear cache from random threads
+#if CARB_DEBUG
+            // BRG Not running Sphere and decomposition tests in debug build
+            const auto selectedTest = idx % 3;
+#else
+            const auto selectedTest = idx % 5;
+#endif
+            switch (selectedTest)
+            {
+            case 0:
+                testCookingServiceParametricImplementation(PhysxCookingDataType::eCONVEX_MESH, parameters, idx);
+                break;
+            case 1:
+                testCookingServiceParametricImplementation(PhysxCookingDataType::eTRIANGLE_MESH, parameters, idx);
+                break;
+            case 2:
+#if USE_PHYSX_GPU
+                parameters.enableGPUCooking = true;
+#else
+                parameters.enableGPUCooking = false;
+#endif
+                parameters.computeGPUCookingData = true;
+                testCookingServiceParametricImplementation(PhysxCookingDataType::eSDF_TRIANGLE_MESH, parameters, idx);
+                break;
+            case 3:
+                testCookingServiceParametricImplementation(PhysxCookingDataType::eSPHERE_FILL, parameters, idx);
+                break;
+            case 4:
+                testCookingServiceParametricImplementation(PhysxCookingDataType::eCONVEX_DECOMPOSITION, parameters, idx);
+                break;
+            }
+        });
+    }
+
+    // Wait for all tasks to be done
+    for (uint32_t idx = 0; idx < numTasks; idx++)
+    {
+        if (futures[idx].valid())
+            futures[idx].wait();
+    }
+
+    // Teardown
+    for (uint32_t idx = 0; idx < numTasks; idx++)
+    {
+        threadParameters[idx].destroyInstanceSpecific();
+    }
+    sharedParameters.destroyShared();
+}
+
+void testMultiThreadedSyncAsync(const bool caching)
+{
+    SUBCASE("synchronous")
+    {
+        testMultiThreadedParametric(false, caching); // asynchronous == false
+    }
+    SUBCASE("asynchronous")
+    {
+        testMultiThreadedParametric(true, caching); // asynchronous == true
+    }
+}
+
+void testMultiThreaded()
+{
+    SUBCASE("nonCaching")
+    {
+        testMultiThreadedSyncAsync(false); // caching == false
+    }
+    SUBCASE("caching")
+    {
+        testMultiThreadedSyncAsync(true); // caching == true
+    }
+}
+
+void testCookingServiceContextAndCancellations()
+{
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    PXR_NS::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    const double metersPerUnit = PXR_NS::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+    const SdfPath meshPath = SdfPath("/World/mesh");
+    UsdGeomMesh usdMesh = createMeshCapsule(stage, meshPath, 1.0, 1.0);
+    const SdfPath meshPath2 = SdfPath("/World/mesh2");
+    UsdGeomMesh usdMesh2 = createMeshCapsule(stage, meshPath2, 1.0, 1.0);
+
+    PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+
+    // We create five requests that will all end up having the same CRC.
+    // The first two requests are created in the same context and they will share the same handle.
+    // Both of their callbacks will be called when cancelling the first callback.
+    // The third request lives on another context and will just proceed to completion with success.
+    // The forth request will be cancelled but it will not call callback as we explicitly request it during cancelTask.
+    // The fifth request is being waited on before running its pumpAsync and will get its callback called.
+
+    PhysxCookingComputeRequest request1;
+    using Options = omni::physx::PhysxCookingComputeRequest::Options;
+    request1.options.setFlag(Options::kComputeGPUCookingData, false);
+    request1.options.setFlag(Options::kComputeAsynchronously, true);
+    // Disable all caching
+    request1.options.setFlag(Options::kLoadCookedDataFromCache, false);
+    request1.options.setFlag(Options::kSaveCookedDataToCache, false);
+    request1.mode = PhysxCookingComputeRequest::eMODE_REQUEST_COOKED_DATA;
+    request1.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID;
+    request1.primId = asInt(meshPath);
+    request1.primStageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    PhysxCookingComputeRequest request2 = request1;
+    request2.primId = asInt(meshPath2); // We point at another prim that will have the same CRC
+    PhysxCookingComputeRequest request3 = request1;
+    PhysxCookingComputeRequest request4 = request1;
+    PhysxCookingComputeRequest request5 = request1;
+
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    omni::physx::IPhysxCookingService* physxCooking = physicsTests.acquirePhysxCookingServiceInterface();
+    omni::physx::IPhysxCookingServicePrivate* physxCookingPrivate =
+        physicsTests.acquirePhysxCookingServicePrivateInterface();
+    REQUIRE(physxCooking);
+    REQUIRE(physxCookingPrivate);
+    // Always start with empty cache
+    resetLocalMeshCaches(physxCookingPrivate);
+
+    PhysxCookingAsyncContextParameters asyncParams1;
+    asyncParams1.contextName = { "Context1", strlen("Context1") };
+    PhysxCookingAsyncContext asyncContext1 = physxCooking->createAsyncContext(asyncParams1);
+    REQUIRE(asyncContext1);
+    PhysxCookingAsyncContextParameters asyncParams2;
+    asyncParams2.contextName = { "Context2", strlen("Context2") };
+    PhysxCookingAsyncContext asyncContext2 = physxCooking->createAsyncContext(asyncParams2);
+    REQUIRE(asyncContext2);
+    PhysxCookingAsyncContextParameters asyncParams3;
+    asyncParams3.contextName = { "Context3", strlen("Context3") };
+    PhysxCookingAsyncContext asyncContext3 = physxCooking->createAsyncContext(asyncParams3);
+    REQUIRE(asyncContext3);
+    PhysxCookingAsyncContextParameters asyncParams4;
+    asyncParams4.contextName = { "Context4", strlen("Context4") };
+    PhysxCookingAsyncContext asyncContext4 = physxCooking->createAsyncContext(asyncParams4);
+    REQUIRE(asyncContext4);
+
+    bool result1GotCancelled = false;
+    request1.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+        result1GotCancelled = result.result == omni::physx::PhysxCookingResult::eERROR_CANCELED;
+    };
+
+    bool result2GotCancelled = false;
+    request2.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+        result2GotCancelled = result.result == omni::physx::PhysxCookingResult::eERROR_CANCELED;
+    };
+    bool result3GotValid = false;
+    request3.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+        result3GotValid = result.result == omni::physx::PhysxCookingResult::eVALID;
+    };
+    bool result4GotCalled = false;
+    request4.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) { result4GotCalled = true; };
+    bool result5GotValid = false;
+    request5.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+        result5GotValid = result.result == omni::physx::PhysxCookingResult::eVALID;
+    };
+    ConvexMeshCookingParams params;
+    auto request1Handle = physxCooking->requestConvexMeshCookedData(asyncContext1, request1, params);
+    auto request2Handle = physxCooking->requestConvexMeshCookedData(asyncContext1, request2, params);
+    auto request3Handle = physxCooking->requestConvexMeshCookedData(asyncContext2, request3, params);
+    auto request4Handle = physxCooking->requestConvexMeshCookedData(asyncContext3, request4, params);
+    auto request5Handle = physxCooking->requestConvexMeshCookedData(asyncContext4, request5, params);
+
+    CHECK(request1Handle == request2Handle); // even if prim2 points to the same prim, it will return the same task
+    CHECK(request3Handle != request1Handle);
+    CHECK(request4Handle != request3Handle);
+    CHECK(request4Handle != request1Handle);
+    CHECK(request5Handle != request4Handle);
+    CHECK(request5Handle != request3Handle);
+    CHECK(request5Handle != request1Handle);
+
+    bool request5Cooked = physxCooking->waitForTaskToFinish(request5Handle, -1);
+    CHECK(request5Cooked);
+    physxCooking->cancelTask(request1Handle, true);
+    physxCooking->cancelTask(request4Handle, false); // with false it will not call callback
+
+    CHECK(physxCooking->pumpAsyncContext(nullptr) == 0);
+
+    while (physxCooking->pumpAsyncContext(asyncContext1) != 0)
+    {
+    }
+    while (physxCooking->pumpAsyncContext(asyncContext2) != 0)
+    {
+    }
+    while (physxCooking->pumpAsyncContext(asyncContext3) != 0)
+    {
+    }
+    while (physxCooking->pumpAsyncContext(asyncContext4) != 0)
+    {
+    }
+
+    CHECK(result1GotCancelled);
+    CHECK(result2GotCancelled);
+    CHECK(result3GotValid);
+    CHECK(!result4GotCalled);
+    CHECK(result5GotValid);
+
+    physxCooking->destroyAsyncContext(asyncContext1);
+    physxCooking->destroyAsyncContext(asyncContext2);
+    physxCooking->destroyAsyncContext(asyncContext3);
+    physxCooking->destroyAsyncContext(asyncContext4);
+    PXR_NS::UsdUtilsStageCache::Get().Erase(stage);
+}
+
+void testDeformableCookingServiceContextAndCancellations()
+{
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    PXR_NS::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    const double metersPerUnit = PXR_NS::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    omni::physx::IPhysxCookingServicePrivate* physxCookingPrivate =
+        physicsTests.acquirePhysxCookingServicePrivateInterface();
+    IPhysxCooking* physxCooking = physicsTests.acquirePhysxCookingInterface();
+    omni::physx::IPhysxCookingService* physxCookingService = physicsTests.acquirePhysxCookingServiceInterface();
+    REQUIRE(physxCookingPrivate);
+    REQUIRE(physxCooking);
+    REQUIRE(physxCookingService);
+
+    const SdfPath xformPath1 = defaultPrimPath.AppendChild(TfToken("Xform1"));
+    const SdfPath skinMeshPath1 = xformPath1.AppendChild(TfToken("skinMesh"));
+    const SdfPath simMeshPath1 = xformPath1.AppendChild(TfToken("simMesh"));
+    const SdfPath collMeshPath1 = xformPath1.AppendChild(TfToken("collMesh"));
+    deformableutility::createVolumeDeformableHierarchicalHex(stage, *physxCooking, xformPath1, skinMeshPath1, simMeshPath1, collMeshPath1);
+
+    const SdfPath xformPath2 = defaultPrimPath.AppendChild(TfToken("Xform2"));
+    const SdfPath skinMeshPath2 = xformPath2.AppendChild(TfToken("skinMesh"));
+    const SdfPath simMeshPath2 = xformPath2.AppendChild(TfToken("simMesh"));
+    const SdfPath collMeshPath2 = xformPath2.AppendChild(TfToken("collMesh"));
+    deformableutility::createVolumeDeformableHierarchicalHex(stage, *physxCooking, xformPath2, skinMeshPath2, simMeshPath2, collMeshPath2);
+
+    PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+
+    // We create five requests that will all end up having the same CRC.
+    // The first two requests are created in the same context and they will share the same handle.
+    // Both of their callbacks will be called when cancelling the first callback.
+    // The third request lives on another context and will just proceed to completion with success.
+    // The forth request will be cancelled but it will not call callback as we explicitly request it during cancelTask.
+    // The fifth request is being waited on before running its pumpAsync and will get its callback called.
+
+    PhysxCookingComputeRequest request1;
+    using Options = omni::physx::PhysxCookingComputeRequest::Options;
+    request1.options.setFlag(Options::kComputeGPUCookingData, false);
+    request1.options.setFlag(Options::kComputeAsynchronously, true);
+    // Disable all caching
+    request1.options.setFlag(Options::kLoadCookedDataFromCache, false);
+    request1.options.setFlag(Options::kSaveCookedDataToCache, false);
+    request1.mode = PhysxCookingComputeRequest::eMODE_REQUEST_COOKED_DATA;
+    request1.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID;
+    request1.primId = asInt(skinMeshPath1);
+    request1.primStageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+    request1.deformablePathInfo.bodyPrimId = asInt(xformPath1);
+    request1.deformablePathInfo.simMeshPrimId = asInt(simMeshPath1);
+    request1.deformablePathInfo.collMeshPrimId = asInt(collMeshPath1);
+
+    PhysxCookingComputeRequest request2 = request1;
+    request2.primId = asInt(skinMeshPath2); // We point at another prim that will have the same CRC
+    PhysxCookingComputeRequest request3 = request1;
+    PhysxCookingComputeRequest request4 = request1;
+    PhysxCookingComputeRequest request5 = request1;
+
+    // Always start with empty cache
+    resetLocalMeshCaches(physxCookingPrivate);
+
+    PhysxCookingAsyncContextParameters asyncParams1;
+    asyncParams1.contextName = { "Context1", strlen("Context1") };
+    PhysxCookingAsyncContext asyncContext1 = physxCookingService->createAsyncContext(asyncParams1);
+    REQUIRE(asyncContext1);
+    PhysxCookingAsyncContextParameters asyncParams2;
+    asyncParams2.contextName = { "Context2", strlen("Context2") };
+    PhysxCookingAsyncContext asyncContext2 = physxCookingService->createAsyncContext(asyncParams2);
+    REQUIRE(asyncContext2);
+    PhysxCookingAsyncContextParameters asyncParams3;
+    asyncParams3.contextName = { "Context3", strlen("Context3") };
+    PhysxCookingAsyncContext asyncContext3 = physxCookingService->createAsyncContext(asyncParams3);
+    REQUIRE(asyncContext3);
+    PhysxCookingAsyncContextParameters asyncParams4;
+    asyncParams4.contextName = { "Context4", strlen("Context4") };
+    PhysxCookingAsyncContext asyncContext4 = physxCookingService->createAsyncContext(asyncParams4);
+    REQUIRE(asyncContext4);
+
+    bool result1GotCancelled = false;
+    request1.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+        result1GotCancelled = result.result == omni::physx::PhysxCookingResult::eERROR_CANCELED;
+    };
+    bool result2GotCancelled = false;
+    request2.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+        result2GotCancelled = result.result == omni::physx::PhysxCookingResult::eERROR_CANCELED;
+    };
+    bool result3GotValid = false;
+    request3.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+        result3GotValid = result.result == omni::physx::PhysxCookingResult::eVALID;
+    };
+    bool result4GotCalled = false;
+    request4.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) { result4GotCalled = true; };
+    bool result5GotValid = false;
+    request5.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+        result5GotValid = result.result == omni::physx::PhysxCookingResult::eVALID;
+    };
+
+    VolumeDeformableBodyCookingParams params;
+    VtArray<GfVec3f> srcPointsInSimData;
+    deformableutility::setupVolumeDeformableBodyCookingParams(params, srcPointsInSimData, stage, request1, skinMeshPath1);
+    auto request1Handle = physxCookingPrivate->requestVolumeDeformableBodyCookedData(asyncContext1, request1, params);
+    auto request2Handle = physxCookingPrivate->requestVolumeDeformableBodyCookedData(asyncContext1, request2, params);
+    auto request3Handle = physxCookingPrivate->requestVolumeDeformableBodyCookedData(asyncContext2, request3, params);
+    auto request4Handle = physxCookingPrivate->requestVolumeDeformableBodyCookedData(asyncContext3, request4, params);
+    auto request5Handle = physxCookingPrivate->requestVolumeDeformableBodyCookedData(asyncContext4, request5, params);
+
+    CHECK(request1Handle == request2Handle); // even if prim2 points to the same prim, it will return the same task
+    CHECK(request3Handle != request1Handle);
+    CHECK(request4Handle != request3Handle);
+    CHECK(request4Handle != request1Handle);
+    CHECK(request5Handle != request4Handle);
+    CHECK(request5Handle != request3Handle);
+    CHECK(request5Handle != request1Handle);
+
+    bool request5Cooked = physxCookingService->waitForTaskToFinish(request5Handle, -1);
+    CHECK(request5Cooked);
+    physxCookingService->cancelTask(request1Handle, true);
+    physxCookingService->cancelTask(request4Handle, false); // with false it will not call callback
+
+    CHECK(physxCookingService->pumpAsyncContext(nullptr) == 0);
+
+    while (physxCookingService->pumpAsyncContext(asyncContext1) != 0)
+    {
+    }
+    while (physxCookingService->pumpAsyncContext(asyncContext2) != 0)
+    {
+    }
+    while (physxCookingService->pumpAsyncContext(asyncContext3) != 0)
+    {
+    }
+    while (physxCookingService->pumpAsyncContext(asyncContext4) != 0)
+    {
+    }
+
+    CHECK(result1GotCancelled);
+    CHECK(result2GotCancelled);
+    CHECK(result3GotValid);
+    CHECK(!result4GotCalled);
+    CHECK(result5GotValid);
+
+    physxCookingService->destroyAsyncContext(asyncContext1);
+    physxCookingService->destroyAsyncContext(asyncContext2);
+    physxCookingService->destroyAsyncContext(asyncContext3);
+    physxCookingService->destroyAsyncContext(asyncContext4);
+    PXR_NS::UsdUtilsStageCache::Get().Erase(stage);
+}
+
+void testCookingEmptyRigidMesh()
+{
+    // We create an empty rigid mesh and expect cooking to return eERROR_INVALID_PRIM error
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    PXR_NS::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    const double metersPerUnit = PXR_NS::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+    const SdfPath meshPath = SdfPath("/World/mesh");
+    UsdGeomMesh usdMesh = createMeshCapsule(stage, meshPath, 1.0, 1.0);
+    usdMesh.GetPointsAttr().Clear(); // Clear all points, creating an empty mesh
+    // We could also clear FaceVertexCounts
+    // usdMesh.GetFaceVertexCountsAttr().Clear(); // Clear all faces, creating an empty mesh
+    PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+
+    PhysxCookingComputeRequest request;
+    using Options = omni::physx::PhysxCookingComputeRequest::Options;
+    request.options.setFlag(Options::kComputeGPUCookingData, false);
+    request.options.setFlag(Options::kComputeAsynchronously, false);
+    request.mode = PhysxCookingComputeRequest::eMODE_REQUEST_COOKED_DATA;
+    request.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID;
+    request.primId = asInt(meshPath);
+    request.primStageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    omni::physx::IPhysxCookingService* physxCooking = physicsTests.acquirePhysxCookingServiceInterface();
+    omni::physx::IPhysxCookingServicePrivate* physxCookingPrivate =
+        physicsTests.acquirePhysxCookingServicePrivateInterface();
+    REQUIRE(physxCooking);
+    REQUIRE(physxCookingPrivate);
+    // Always start with empty cache
+    resetLocalMeshCaches(physxCookingPrivate);
+
+    bool gotCorrectResult = false;
+    request.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+        gotCorrectResult = result.result == omni::physx::PhysxCookingResult::eERROR_INVALID_PRIM;
+        gotCorrectResult &= result.requestSource == omni::physx::PhysxCookingComputeResult::eREQUEST_SOURCE_USD;
+    };
+
+    ConvexMeshCookingParams params;
+    auto requestHandle = physxCooking->requestConvexMeshCookedData(nullptr, request, params);
+    CHECK(gotCorrectResult);
+
+    // Test Mesh View
+    PXR_NS::VtArray<PXR_NS::GfVec3f> usdPoints;
+    PXR_NS::VtArray<int> usdIndices;
+    PXR_NS::VtArray<int> usdFaces;
+    PXR_NS::VtArray<int> usdHoles;
+    PXR_NS::VtArray<int> viewMeshMaterials;
+
+
+    request.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW;
+    usdMesh.GetPointsAttr().Get(&usdPoints);
+    usdMesh.GetFaceVertexIndicesAttr().Get(&usdIndices);
+    usdMesh.GetFaceVertexCountsAttr().Get(&usdFaces);
+    usdMesh.GetHoleIndicesAttr().Get(&usdHoles);
+    request.primMeshView.points = { reinterpret_cast<const carb::Float3*>(&usdPoints[0]), usdPoints.size() };
+    request.primMeshView.indices = { usdIndices.data(), usdIndices.size() };
+    request.primMeshView.faces = { usdFaces.data(), usdFaces.size() };
+    request.primMeshView.holeIndices = { usdHoles.data(), usdHoles.size() };
+
+    gotCorrectResult = false;
+    resetLocalMeshCaches(physxCookingPrivate);
+    request.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+        gotCorrectResult = result.result == omni::physx::PhysxCookingResult::eERROR_INVALID_PRIM;
+        gotCorrectResult &= result.requestSource == omni::physx::PhysxCookingComputeResult::eREQUEST_SOURCE_MESHVIEW;
+    };
+
+    requestHandle = physxCooking->requestConvexMeshCookedData(nullptr, request, params);
+    CHECK(gotCorrectResult);
+
+#if 0 
+    // OM-117937: Disabling since on f158b1cc (107.0) Fabric has changed behaviour on prefetch.
+    // Now if an attribute has not authored value and no default it's not prefetched.
+    // For this reason the test below is failing, as it will not be able to discern a missing prim from a 
+    // prim that exists in fabric with all of the required attributes (points, vertices, faces) but with them not
+    // being a proper mesh as all these arrays are zero sized.
+
+    // Test Fabric
+    request.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID;
+    auto iStageReaderWriter = carb::getCachedInterface<omni::fabric::IStageReaderWriter>();
+    auto iSimStageWithHistory = carb::getCachedInterface<omni::fabric::ISimStageWithHistory>();
+    auto iFabricUsd = carb::getCachedInterface<omni::fabric::IFabricUsd>();
+    iSimStageWithHistory->getOrCreate(request.primStageId, 1, { 1, 30 }, omni::fabric::GpuComputeType::eNone);
+    iStageReaderWriter->create(request.primStageId, 0);
+    auto stageReaderWriterId = iStageReaderWriter->get(request.primStageId);
+    auto fabricId = iStageReaderWriter->getFabricId(stageReaderWriterId);
+    std::set<omni::fabric::TokenC> filter = {};
+    iFabricUsd->prefetchPrimToFabric(
+        fabricId, meshPath, usdMesh.GetPrim(), filter, false, true, PXR_NS::UsdTimeCode::Default());
+    stage->RemovePrim(meshPath);
+
+    gotCorrectResult = false;
+    resetLocalMeshCaches(physxCookingPrivate);
+    request.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+        gotCorrectResult = result.result == omni::physx::PhysxCookingResult::eERROR_INVALID_PRIM;
+        gotCorrectResult &= result.requestSource == omni::physx::PhysxCookingComputeResult::eREQUEST_SOURCE_FABRIC;
+    };
+    requestHandle = physxCooking->requestConvexMeshCookedData(nullptr, request, params);
+    CHECK(gotCorrectResult);
+#endif
+    PXR_NS::UsdUtilsStageCache::Get().Erase(stage);
+}
+
+void testCookingEmptyVolumeDeformableBodyMesh()
+{
+    // We create an empty volume deformable body mesh and expect cooking to return eERROR_INVALID_PRIM error
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    PXR_NS::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    const double metersPerUnit = PXR_NS::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    omni::physx::IPhysxCookingServicePrivate* physxCookingPrivate =
+        physicsTests.acquirePhysxCookingServicePrivateInterface();
+    IPhysxCooking* physxCooking = physicsTests.acquirePhysxCookingInterface();
+    REQUIRE(physxCookingPrivate);
+    REQUIRE(physxCooking);
+
+    const SdfPath xformPath = defaultPrimPath.AppendChild(TfToken("Xform"));
+    const SdfPath skinMeshPath = xformPath.AppendChild(TfToken("skinMesh"));
+    const SdfPath simMeshPath = xformPath.AppendChild(TfToken("simMesh"));
+    const SdfPath collMeshPath = xformPath.AppendChild(TfToken("collMesh"));
+    deformableutility::createVolumeDeformableHierarchicalHex(stage, *physxCooking, xformPath, skinMeshPath, simMeshPath, collMeshPath);
+
+    UsdGeomMesh skinMesh = UsdGeomMesh::Get(stage, skinMeshPath);
+    VtArray<GfVec3f> skinMeshPoints;
+    skinMesh.GetPointsAttr().Get(&skinMeshPoints);
+    skinMesh.GetPointsAttr().Clear(); // Clear all points, creating an empty mesh
+    PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+
+    PhysxCookingComputeRequest request;
+    using Options = omni::physx::PhysxCookingComputeRequest::Options;
+    request.options.setFlag(Options::kComputeGPUCookingData, false);
+    request.options.setFlag(Options::kComputeAsynchronously, false);
+    request.mode = PhysxCookingComputeRequest::eMODE_REQUEST_COOKED_DATA;
+    request.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID;
+    request.primId = asInt(skinMeshPath);
+    request.primStageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+    request.deformablePathInfo.bodyPrimId = asInt(xformPath);
+    request.deformablePathInfo.simMeshPrimId = asInt(simMeshPath);
+    request.deformablePathInfo.collMeshPrimId = asInt(collMeshPath);
+
+    // Always start with empty cache
+    resetLocalMeshCaches(physxCookingPrivate);
+
+    bool gotCorrectResult = false;
+    request.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+        gotCorrectResult = result.result == omni::physx::PhysxCookingResult::eERROR_INVALID_PRIM;
+        gotCorrectResult &= result.requestSource == omni::physx::PhysxCookingComputeResult::eREQUEST_SOURCE_USD;
+    };
+
+    VolumeDeformableBodyCookingParams params;
+    VtArray<GfVec3f> srcPointsInSimData;
+    deformableutility::setupVolumeDeformableBodyCookingParams(params, srcPointsInSimData, stage, request, skinMeshPath);
+    auto requestHandle = physxCookingPrivate->requestVolumeDeformableBodyCookedData(nullptr, request, params);
+    CHECK(gotCorrectResult);
+
+    // Test volume deformable body view
+    {
+        PXR_NS::VtArray<int> skinMeshIndices;
+        PXR_NS::VtArray<int> skinMeshFaces;
+        PXR_NS::VtArray<int> skinMeshHoles;
+        PXR_NS::VtArray<int> viewMeshMaterials;
+
+        request.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW;
+        skinMesh.GetFaceVertexIndicesAttr().Get(&skinMeshIndices);
+        skinMesh.GetFaceVertexCountsAttr().Get(&skinMeshFaces);
+        skinMesh.GetHoleIndicesAttr().Get(&skinMeshHoles);
+        request.primMeshView.points = { reinterpret_cast<const carb::Float3*>(&skinMeshPoints[0]), skinMeshPoints.size() };
+        request.primMeshView.indices = { skinMeshIndices.data(), skinMeshIndices.size() };
+        request.primMeshView.faces = { skinMeshFaces.data(), skinMeshFaces.size() };
+        request.primMeshView.holeIndices = { skinMeshHoles.data(), skinMeshHoles.size() };
+
+        PXR_NS::VtArray<PXR_NS::GfVec3f> srcPointsInSim;
+        request.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW;
+        request.volumeDeformableBodyView.srcPointsInSim = { reinterpret_cast<const carb::Float3*>(&srcPointsInSim[0]), srcPointsInSim.size() };
+
+        gotCorrectResult = false;
+        resetLocalMeshCaches(physxCookingPrivate);
+        request.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+            gotCorrectResult = result.result == omni::physx::PhysxCookingResult::eERROR_INVALID_PRIM;
+            gotCorrectResult &= result.requestSource == omni::physx::PhysxCookingComputeResult::eREQUEST_SOURCE_MESHVIEW;
+        };
+
+        requestHandle = physxCookingPrivate->requestVolumeDeformableBodyCookedData(nullptr, request, params);
+        CHECK(gotCorrectResult);
+    }
+
+    PXR_NS::UsdUtilsStageCache::Get().Erase(stage);
+}
+
+void testCookingEmptySurfaceDeformableBodyMesh()
+{
+    // We create an empty surface deformable body mesh and expect cooking to return eERROR_INVALID_PRIM error
+    UsdStageRefPtr stage = UsdStage::CreateInMemory();
+    PXR_NS::UsdGeomSetStageUpAxis(stage, TfToken("Z"));
+    const float metersPerStageUnit = 0.01f; // work in default centimeters
+    const double metersPerUnit = PXR_NS::UsdGeomSetStageMetersPerUnit(stage, static_cast<double>(metersPerStageUnit));
+    const SdfPath defaultPrimPath = SdfPath("/World");
+    UsdPrim defaultPrim = stage->DefinePrim(defaultPrimPath);
+    stage->SetDefaultPrim(defaultPrim);
+
+    PhysicsTest& physicsTests = *PhysicsTest::getPhysicsTests();
+    omni::physx::IPhysxCookingServicePrivate* physxCookingPrivate =
+        physicsTests.acquirePhysxCookingServicePrivateInterface();
+    IPhysxCooking* physxCooking = physicsTests.acquirePhysxCookingInterface();
+    REQUIRE(physxCookingPrivate);
+    REQUIRE(physxCooking);
+
+    const SdfPath xformPath = defaultPrimPath.AppendChild(TfToken("Xform"));
+    const SdfPath skinMeshPath = xformPath.AppendChild(TfToken("skinMesh"));
+    const SdfPath simMeshPath = xformPath.AppendChild(TfToken("simMesh"));
+    deformableutility::createSurfaceDeformableHierarchical(stage, xformPath, skinMeshPath, simMeshPath);
+
+    UsdGeomMesh skinMesh = UsdGeomMesh::Get(stage, skinMeshPath);
+    VtArray<GfVec3f> skinMeshPoints;
+    skinMesh.GetPointsAttr().Get(&skinMeshPoints);
+    skinMesh.GetPointsAttr().Clear(); // Clear all points, creating an empty mesh
+    PXR_NS::UsdUtilsStageCache::Get().Insert(stage);
+
+    PhysxCookingComputeRequest request;
+    using Options = omni::physx::PhysxCookingComputeRequest::Options;
+    request.options.setFlag(Options::kComputeGPUCookingData, false);
+    request.options.setFlag(Options::kComputeAsynchronously, false);
+    request.mode = PhysxCookingComputeRequest::eMODE_REQUEST_COOKED_DATA;
+    request.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID;
+    request.primId = asInt(skinMeshPath);
+    request.primStageId = PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt();
+    request.deformablePathInfo.bodyPrimId = asInt(xformPath);
+    request.deformablePathInfo.simMeshPrimId = asInt(simMeshPath);
+
+    // Always start with empty cache
+    resetLocalMeshCaches(physxCookingPrivate);
+
+    bool gotCorrectResult = false;
+    request.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+        gotCorrectResult = result.result == omni::physx::PhysxCookingResult::eERROR_INVALID_PRIM;
+        gotCorrectResult &= result.requestSource == omni::physx::PhysxCookingComputeResult::eREQUEST_SOURCE_USD;
+    };
+
+    SurfaceDeformableBodyCookingParams params;
+    VtArray<GfVec3f> srcPointsInSimData;
+    deformableutility::setupSurfaceDeformableBodyCookingParams(params, srcPointsInSimData, stage, request, skinMeshPath);
+    auto requestHandle = physxCookingPrivate->requestSurfaceDeformableBodyCookedData(nullptr, request, params);
+    CHECK(gotCorrectResult);
+
+    // Test surface deformable body view
+    {
+        PXR_NS::VtArray<int> skinMeshIndices;
+        PXR_NS::VtArray<int> skinMeshFaces;
+        PXR_NS::VtArray<int> skinMeshHoles;
+        PXR_NS::VtArray<int> viewMeshMaterials;
+
+        request.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW;
+        skinMesh.GetFaceVertexIndicesAttr().Get(&skinMeshIndices);
+        skinMesh.GetFaceVertexCountsAttr().Get(&skinMeshFaces);
+        skinMesh.GetHoleIndicesAttr().Get(&skinMeshHoles);
+        request.primMeshView.points = { reinterpret_cast<const carb::Float3*>(&skinMeshPoints[0]), skinMeshPoints.size() };
+        request.primMeshView.indices = { skinMeshIndices.data(), skinMeshIndices.size() };
+        request.primMeshView.faces = { skinMeshFaces.data(), skinMeshFaces.size() };
+        request.primMeshView.holeIndices = { skinMeshHoles.data(), skinMeshHoles.size() };
+
+        PXR_NS::VtArray<PXR_NS::GfVec3f> srcPointsInSim;
+        request.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW;
+        request.surfaceDeformableBodyView.srcPointsInSim = { reinterpret_cast<const carb::Float3*>(&srcPointsInSim[0]), srcPointsInSim.size() };
+
+        gotCorrectResult = false;
+        resetLocalMeshCaches(physxCookingPrivate);
+        request.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
+            gotCorrectResult = result.result == omni::physx::PhysxCookingResult::eERROR_INVALID_PRIM;
+            gotCorrectResult &= result.requestSource == omni::physx::PhysxCookingComputeResult::eREQUEST_SOURCE_MESHVIEW;
+        };
+
+        requestHandle = physxCookingPrivate->requestSurfaceDeformableBodyCookedData(nullptr, request, params);
+        CHECK(gotCorrectResult);
+    }
+
+    PXR_NS::UsdUtilsStageCache::Get().Erase(stage);
+}
+
+struct ThreadingHelper
+{
+    ThreadingHelper(carb::tasking::ITasking* tasking,
+                    PhysicsTest& physicsTests,
+                    size_t initialParamCount = 8,
+                    size_t resizeGrowth = 4)
+        : m_tasking(tasking), m_resizeGrowth(resizeGrowth), m_nextParamsNum(0)
+    {
+        m_physxCooking = physicsTests.acquirePhysxCookingServiceInterface();
+
+        // Setup a shared stage, PxPhysics and PxFoundation
+        m_sharedParameters.createShared();
+        resizeParams(initialParamCount);
+    }
+
+    ~ThreadingHelper()
+    {
+        // Teardown
+        for (CookingServiceTestParameters& params : m_threadParameters)
+        {
+            params.destroyInstanceSpecific();
+        }
+        m_sharedParameters.destroyShared();
+    }
+
+    carb::tasking::Future<> createTask(PhysxCookingDataType::Enum type, bool asynchronous)
+    {
+        if (m_nextParamsNum >= m_threadParameters.size())
+        {
+            resizeParams(m_nextParamsNum + m_resizeGrowth);
+        }
+
+        CookingServiceTestParameters& params = m_threadParameters[m_nextParamsNum];
+        params.asynchronous = asynchronous;
+        params.forceTriangulation = true;
+
+        const uint32_t idx = (uint32_t)m_nextParamsNum++;
+
+        return m_tasking->addTask(carb::tasking::Priority::eDefault, {}, [type, params, idx]() mutable {
+            testCookingServiceParametricImplementation(type, params, idx, false);
+        });
+    }
+
+private:
+    void resizeParams(size_t newSize)
+    {
+        const size_t oldSize = m_threadParameters.size();
+        if (newSize > oldSize)
+        {
+            m_threadParameters.resize(newSize);
+            for (size_t i = oldSize; i < newSize; ++i)
+            {
+                createThreadParams(m_threadParameters[i], i);
+            }
+        }
+    }
+
+    void createThreadParams(CookingServiceTestParameters& threadParameters, size_t idx)
+    {
+        // CookingServiceTestParameters is not RAII (by design), so we can safely copy it
+        // and destruction of its content is done in CookingServiceTestParameters::destroyShared
+        threadParameters = m_sharedParameters;
+        PhysxCookingAsyncContext cookingAsyncContext = nullptr;
+
+        std::stringstream contexSS;
+        contexSS << "Thread" << idx;
+        PhysxCookingAsyncContextParameters asyncParams;
+        auto name = contexSS.str();
+        asyncParams.contextName = { name.c_str(), name.size() };
+        // Context is destroyed in destroyInstanceSpecific
+        cookingAsyncContext = m_physxCooking->createAsyncContext(asyncParams);
+        REQUIRE(cookingAsyncContext);
+
+        threadParameters.asynchronous = true; // Force async cooking
+        threadParameters.inputType = CookingServiceTestParameters::eInputMeshView; // Do not touch stage cache
+        threadParameters.enableLoadFromLocalCache = true; // Allow use of local cache
+        std::stringstream ss;
+        ss << "/World/mesh" << idx;
+        threadParameters.createInstanceSpecific(ss.str(), cookingAsyncContext);
+
+        // Setup multithread safe parameters
+        threadParameters.computeGPUCookingData = false; // To speedup the test for all non SDF cases
+        threadParameters.enableGPUCooking = false; // To speedup the test
+
+#if USE_PHYSX_GPU
+        threadParameters.enableGPUCooking = true;
+#else
+        threadParameters.enableGPUCooking = false;
+#endif
+    }
+
+    carb::tasking::ITasking* m_tasking;
+    IPhysxCookingService* m_physxCooking;
+    CookingServiceTestParameters m_sharedParameters;
+    std::vector<CookingServiceTestParameters> m_threadParameters;
+    size_t m_resizeGrowth;
+    size_t m_nextParamsNum;
+};
+
+void testAll()
+{
+    SUBCASE("Empty Mesh")
+    {
+        testCookingEmptyRigidMesh();
+        testCookingEmptyVolumeDeformableBodyMesh();
+
+        // TODO: This test fails only on Linux for both standard & Ujitso cooking, disable it for now
+        //testCookingEmptySurfaceDeformableBodyMesh();
+    }
+    SUBCASE("context/cancellations")
+    {
+        testCookingServiceContextAndCancellations();
+        testDeformableCookingServiceContextAndCancellations();
+    }
+    SUBCASE("cooking")
+    {
+        testCookingServiceCooking();
+    }
+    SUBCASE("multithreaded")
+    {
+        testMultiThreaded();
+    }
+}
+
+TEST_CASE("Cooking Service",
+          "[omniphysics]"
+          "[component=OmniPhysics][owner=scristiano][priority=mandatory]")
+{
+    carb::settings::ISettings* settings = carb::getCachedInterface<carb::settings::ISettings>();
+
+    // Save off current ujitso settings
+    const bool currentUjitsoSetting = settings->getAsBool(kSettingUjitsoCollisionCooking);
+    const int64_t currentDevKeySetting = settings->getAsInt64(kSettingUjitsoCookingDevKey);
+    const int32_t currentMaxProcessSetting = settings->getAsInt(kSettingUjitsoCookingMaxProcessCount);
+
+    SUBCASE("noUjitso")
+    {
+        settings->setBool(kSettingUjitsoCollisionCooking, false);
+        testAll();
+    }
+    SUBCASE("withUjitso")
+    {
+        settings->setBool(kSettingUjitsoCollisionCooking, true);
+        settings->setInt(kSettingUjitsoCookingMaxProcessCount, 16);
+        testAll();
+    }
+
+    // Restore ujitso settings
+    settings->setBool(kSettingUjitsoCollisionCooking, currentUjitsoSetting);
+    settings->setInt64(kSettingUjitsoCookingDevKey, currentDevKeySetting);
+    settings->setInt(kSettingUjitsoCookingMaxProcessCount, currentMaxProcessSetting);
+}

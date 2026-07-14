@@ -36,6 +36,23 @@
 #include "CmBlockArray.h"
 #include "PxNodeIndex.h"
 
+// PT: the original code stores island edges in a linked-list. Use this define to store them in arrays instead.
+// The array version has better performance, both because it has less cache misses when enumerating the edges,
+// but also because it opens the door to multithreaded loops (iterating a linked list is more tedious to multi-thread).
+// However the linked list version uses less memory and has no extra runtime allocations, so it could be better
+// for consoles, especially in simple scenes.
+#define IG_STORE_ISLAND_EDGES_IN_ARRAYS	1
+
+// PT: with the array version we can also cache contact-manager data to avoid more cache misses.
+#if IG_STORE_ISLAND_EDGES_IN_ARRAYS
+	#define IG_CACHE_CONTACT_MANAGER_DATA	1
+#else
+	#define IG_CACHE_CONTACT_MANAGER_DATA	0
+#endif
+#if IG_CACHE_CONTACT_MANAGER_DATA
+	#include "PxsIslandManagerTypes.h"
+#endif
+
 namespace physx
 {
 struct PartitionEdge;
@@ -47,17 +64,45 @@ namespace IG
 #define IG_LIMIT_DIRTY_NODES 0
 #define IG_SANITY_CHECKS 0
 
+// PT: use these macros to enumerate the island edges regardless of how we store them internally.
+// Despite their bad rep, in this case the macros offer a true zero-overhead abstraction and they
+// make the code clearer - the parsing of edges was previously hidden / merged with the actual work
+// done on these edges, and it was unclear what each line was actually for.
+#if IG_STORE_ISLAND_EDGES_IN_ARRAYS
+	#define	START_ENUMERATING_ISLAND_EDGES(x)														\
+		const PxArray<IG::IslandEdgesData_Island::EdgeData>& edgeIndices = island.mEdges.mEdges[x];	\
+		const PxU32 nbToGo = edgeIndices.size();													\
+		for(PxU32 j=0; j<nbToGo; j++)
+	#define	GET_CURRENT_ISLAND_EDGE	const IG::EdgeIndex edgeId = edgeIndices[j].mIndex;
+	#define	GET_NEXT_ISLAND_EDGE
+#else
+	#define	START_ENUMERATING_ISLAND_EDGES(x)				\
+		IG::EdgeIndex edgeId = island.mEdges.mFirstEdge[x];	\
+		while(edgeId != IG_INVALID_EDGE)
+	#define	GET_CURRENT_ISLAND_EDGE	const IG::Edge& edge = islandSim.getEdge(edgeId);
+	#define	GET_NEXT_ISLAND_EDGE	edgeId = edge.mLinks.mNextIslandEdge;
+#endif
+
 typedef PxU32 IslandId;
 typedef PxU32 EdgeIndex;
 typedef PxU32 EdgeInstanceIndex;
 
 struct IslandEdgesData_Edge
 {
-	IslandEdgesData_Edge() : mNextIslandEdge(IG_INVALID_EDGE), mPrevIslandEdge(IG_INVALID_EDGE)
+	IslandEdgesData_Edge()
+#if IG_STORE_ISLAND_EDGES_IN_ARRAYS
+		: mIndex(IG_INVALID_EDGE)
+#else
+		: mNextIslandEdge(IG_INVALID_EDGE), mPrevIslandEdge(IG_INVALID_EDGE)
+#endif
 	{
 	}
 
+#if IG_STORE_ISLAND_EDGES_IN_ARRAYS
+	PxU32	mIndex;	// PT: index in island's edges array
+#else
 	EdgeIndex mNextIslandEdge, mPrevIslandEdge;
+#endif
 };
 
 struct Edge
@@ -106,6 +151,7 @@ public:
 	Edge() : mEdgeType(Edge::eCONTACT_MANAGER), mEdgeState(eDESTROYED)
 	{
 	}
+
 	PX_FORCE_INLINE PxIntBool	isInserted()			const	{ return PxIntBool(mEdgeState & eINSERTED);				}
 	PX_FORCE_INLINE PxIntBool	isDestroyed()			const	{ return PxIntBool(mEdgeState & eDESTROYED);			}
 	PX_FORCE_INLINE PxIntBool	isPendingDestroyed()	const	{ return PxIntBool(mEdgeState & ePENDING_DESTROYED);	}
@@ -260,16 +306,63 @@ struct IslandEdgesData_Island
 {
 	IslandEdgesData_Island()
 	{
+#if !IG_STORE_ISLAND_EDGES_IN_ARRAYS
 		for(PxU32 a = 0; a < Edge::eEDGE_TYPE_COUNT; ++a)
 		{
 			mFirstEdge[a] = IG_INVALID_EDGE;
 			mLastEdge[a] = IG_INVALID_EDGE;
 			mEdgeCount[a] = 0;
 		}
+#endif
 	}
 
+#if IG_STORE_ISLAND_EDGES_IN_ARRAYS
+	struct EdgeData
+	{
+		EdgeIndex	mIndex;
+	#if IG_CACHE_CONTACT_MANAGER_DATA
+		// PT: individual components of a PxNodeIndex, stored as PxU32s to avoid bloating the struct size due to padding.
+		// Additionally the PxU8 indexType of each node is encoded in the top bits of the link IDs.
+		PxU32 mID0;
+		PxU32 mLinkID0;
+		PxU32 mID1;
+		PxU32 mLinkID1;
+
+		PX_FORCE_INLINE	void	setData0(PxNodeIndex nodeIndex, PxU8 indexType)
+		{
+			mID0 = nodeIndex.index();
+			PX_ASSERT(!(nodeIndex.linkData() & 0xc0000000));
+			mLinkID0 = nodeIndex.linkData() | (PxU32(indexType) << 30);
+		}
+
+		PX_FORCE_INLINE	void	setData1(PxNodeIndex nodeIndex, PxU8 indexType)
+		{
+			mID1 = nodeIndex.index();
+			PX_ASSERT(!(nodeIndex.linkData() & 0xc0000000));
+			mLinkID1 = nodeIndex.linkData() | (PxU32(indexType) << 30);
+		}
+
+		PX_FORCE_INLINE	PxNodeIndex	getNodeIndex0()	const
+		{
+			return PxNodeIndex(mID0, mLinkID0 & 0x3fffffff, true);
+		}
+
+		PX_FORCE_INLINE	PxNodeIndex	getNodeIndex1()	const
+		{
+			return PxNodeIndex(mID1, mLinkID1 & 0x3fffffff, true);
+		}
+
+		PX_FORCE_INLINE	PxU8	getType0()	const	{ return PxU8(mLinkID0 >> 30);	}
+		PX_FORCE_INLINE	PxU8	getType1()	const	{ return PxU8(mLinkID1 >> 30);	}
+	#endif
+	};
+	PxArray<EdgeData>	mEdges[Edge::eEDGE_TYPE_COUNT];
+	PX_FORCE_INLINE	PxU32	getCount(EdgeType type)	const	{ return mEdges[type].size();	}
+#else
 	EdgeIndex mFirstEdge[Edge::eEDGE_TYPE_COUNT], mLastEdge[Edge::eEDGE_TYPE_COUNT];
 	PxU32 mEdgeCount[Edge::eEDGE_TYPE_COUNT];
+	PX_FORCE_INLINE	PxU32	getCount(EdgeType type)	const	{ return mEdgeCount[type];		}
+#endif
 };
 
 struct Island

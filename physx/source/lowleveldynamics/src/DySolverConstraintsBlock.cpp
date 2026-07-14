@@ -527,7 +527,7 @@ static void solveContact4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT 
 #endif
 			
 			accumulatedNormalImpulse = V4Add(accumulatedNormalImpulse, newAppliedForce);
-		}	
+		}
 
 		const Vec4V deltaFInvMass0 = V4Mul(accumDeltaF, invMass0);
 
@@ -688,7 +688,7 @@ static void concludeContact4_Block(const PxSolverConstraintDesc* PX_RESTRICT des
 			SolverContactBatchPointBase4& c = *contacts;
 			contacts = reinterpret_cast<SolverContactBatchPointBase4*>((reinterpret_cast<PxU8*>(contacts)) + contactSize);
 			c.biasedErr = V4Sub(c.biasedErr, c.scaledBias);
-		}	
+		}
 
 		for(PxU32 i=0;i<numFrictionConstr;i++)
 		{
@@ -809,7 +809,7 @@ static void writeBackContact4_Block(const PxSolverConstraintDesc* PX_RESTRICT de
 				FStore(appliedForce2, vForceWriteback2++);
 			if(vForceWriteback3 && i < hdr->numNormalConstr3)
 				FStore(appliedForce3, vForceWriteback3++);
-		}	
+		}
 
 		// Writeback friction impulses
 		if (numFrictionConstr)

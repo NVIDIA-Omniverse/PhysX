@@ -55,12 +55,12 @@ namespace Cm
 			mContextID = contextId;
 		}
 
-		virtual void run()
+		virtual void run() PX_OVERRIDE
 		{
 #if PX_SWITCH  // special case because default rounding mode is not nearest
 			PX_FPU_GUARD;
 #else
-			PX_SIMD_GUARD;
+			PX_SIMD_GUARD
 #endif
 			runInternal();
 		}
@@ -74,12 +74,12 @@ namespace Cm
 	{
 	public:
 
-		virtual void run()
+		virtual void run() PX_OVERRIDE
 		{
 #if PX_SWITCH  // special case because default rounding mode is not nearest
 			PX_FPU_GUARD;
 #else
-			PX_SIMD_GUARD;
+			PX_SIMD_GUARD
 #endif
 			runInternal();
 		}
@@ -94,22 +94,22 @@ namespace Cm
 
 		DelegateTask(PxU64 contextID, T* obj, const char* name) : Cm::Task(contextID), mObj(obj), mName(name) {}
 
-		virtual void run()
+		virtual void run() PX_OVERRIDE
 		{
 #if PX_SWITCH  // special case because default rounding mode is not nearest
 			PX_FPU_GUARD;
 #else
-			PX_SIMD_GUARD;
+			PX_SIMD_GUARD
 #endif
 			(mObj->*Fn)(mCont);
 		}
 
-		virtual void runInternal()
+		virtual void runInternal() PX_OVERRIDE
 		{
 			(mObj->*Fn)(mCont);
 		}
 
-		virtual const char* getName() const
+		virtual const char* getName() const PX_OVERRIDE
 		{
 			return mName;
 		}
@@ -136,14 +136,14 @@ namespace Cm
 	public:
 		FanoutTask(PxU64 contextID, const char* name) : Cm::BaseTask(), mRefCount(0), mName(name), mNotifySubmission(false) { mContextID = contextID; }
 
-		virtual void runInternal() {}
+		virtual void runInternal() PX_OVERRIDE {}
 
-		virtual const char* getName() const { return mName; }
+		virtual const char* getName() const PX_OVERRIDE { return mName; }
 
 		/**
 		Swap mDependents with mReferencesToRemove when refcount goes to 0.
 		*/
-		virtual void removeReference()
+		virtual void removeReference() PX_OVERRIDE
 		{
 			PxMutex::ScopedLock lock(mMutex);
 			if (!physx::PxAtomicDecrement(&mRefCount))
@@ -162,7 +162,7 @@ namespace Cm
 		/** 
 		\brief Increases reference count
 		*/
-		virtual void addReference()
+		virtual void addReference() PX_OVERRIDE
 		{
 			PxMutex::ScopedLock lock(mMutex);
 			physx::PxAtomicIncrement(&mRefCount);
@@ -172,7 +172,7 @@ namespace Cm
 		/** 
 		\brief Return the ref-count for this task 
 		*/
-		PX_INLINE PxI32 getReference() const
+		virtual PX_INLINE PxI32 getReference() const	PX_OVERRIDE
 		{
 			return mRefCount;
 		}
@@ -203,7 +203,7 @@ namespace Cm
 		Reduces reference counts of the continuation task and the dependent tasks, also 
 		clearing the copy of continuation and dependents task list.
 		*/
-		virtual void release()
+		virtual void release() PX_OVERRIDE
 		{
 			PxInlineArray<physx::PxBaseTask*, 10> referencesToRemove;
 
@@ -257,7 +257,7 @@ namespace Cm
 		DelegateFanoutTask(PxU64 contextID, T* obj, const char* name) : 
 		  FanoutTask(contextID, name), mObj(obj) { }
 
-		  virtual void runInternal()
+		  virtual void runInternal() PX_OVERRIDE
 		  {
 			  physx::PxBaseTask* continuation = mReferencesToRemove.empty() ? NULL : mReferencesToRemove[0];
 			  (mObj->*Fn)(continuation);

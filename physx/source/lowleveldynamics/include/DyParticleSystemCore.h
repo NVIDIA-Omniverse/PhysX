@@ -34,7 +34,6 @@
 #include "PxParticleSystem.h"
 #include "PxParticleBuffer.h"
 #include "CmIDPool.h"
-#include "PxParticleSolverType.h"
 #include "PxSparseGridParams.h"
 
 namespace physx
@@ -42,7 +41,7 @@ namespace physx
 	class PxsParticleBuffer;
 
 namespace Dy
-{	
+{
 
 class ParticleSystemCore
 {
@@ -85,22 +84,15 @@ public:
 
 	PxU32 getNumUserBuffers() const
 	{ 
-		return mParticleBuffers.size() + 
-			   mParticleDiffuseBuffers.size() +
-			   mParticleClothBuffers.size() + 
-			   mParticleRigidBuffers.size();
+		return mParticleBuffers.size() + mParticleDiffuseBuffers.size();
 	}
 
 	//device
 	PxArray<PxsParticleBuffer*>		mParticleBuffers;
 	PxArray<PxsParticleBuffer*>		mParticleDiffuseBuffers;
-	PxArray<PxsParticleBuffer*>		mParticleClothBuffers;
-	PxArray<PxsParticleBuffer*>		mParticleRigidBuffers;
 
 	bool							mParticleBufferUpdate;
 	bool							mParticleDiffuseBufferUpdate;
-	bool							mParticleClothBufferUpdate;
-	bool							mParticleRigidBufferUpdate;
 
 	PxParticleSystemCallback* mCallback;
 
@@ -109,8 +101,6 @@ public:
 		PxMemSet(this, 0, sizeof(*this));
 		mParticleBufferUpdate = false;
 		mParticleDiffuseBufferUpdate = false;
-		mParticleClothBufferUpdate = false;
-		mParticleRigidBufferUpdate = false;
 	}
 
 };

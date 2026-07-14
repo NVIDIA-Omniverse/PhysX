@@ -31,6 +31,7 @@
 
 #include "foundation/PxMemory.h"
 #include "ScBodyCore.h"
+#include "PxsRigidBody.h"
 
 namespace physx
 {
@@ -57,11 +58,13 @@ namespace Sc
 	};
 	PX_COMPILE_TIME_ASSERT(0 == (sizeof(Kinematic) & 0x0f));
 
+	// PT: we store these new flags in the free slots of PxsRigidBodyFlag to save memory
 	enum VelocityModFlags
 	{
-		VMF_GRAVITY_DIRTY	= (1 << 0),
-		VMF_ACC_DIRTY		= (1 << 1),
-		VMF_VEL_DIRTY		= (1 << 2)
+		VMF_GRAVITY_DIRTY	= PxsRigidBody::eFREE_FLAG_1,
+		VMF_ACC_DIRTY		= PxsRigidBody::eFREE_FLAG_2,
+		VMF_VEL_DIRTY		= PxsRigidBody::eFREE_FLAG_3,
+		VMF_ALL_FLAGS		= VMF_GRAVITY_DIRTY | VMF_ACC_DIRTY | VMF_VEL_DIRTY
 	};
 
 	// Important: Struct is reset in setForcesToDefaults.

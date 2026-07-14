@@ -49,12 +49,9 @@ Sc::ParticleSystemSim::ParticleSystemSim(ParticleSystemCore& core, Scene& scene)
 	mLLParticleSystem->setElementId(mShapeSim.getElementID());
 
 	PxParticleSystemGeometry geometry;
-	geometry.mSolverType = PxParticleSolverType::ePBD;
-
 	core.getShapeCore().setGeometry(geometry);
 	
-	PxsShapeCore* shapeCore = const_cast<PxsShapeCore*>(&core.getShapeCore().getCore());
-	mLLParticleSystem->setShapeCore(shapeCore);
+	mLLParticleSystem->setShapeCore(&core.getShapeCore());
 }
 
 Sc::ParticleSystemSim::~ParticleSystemSim()

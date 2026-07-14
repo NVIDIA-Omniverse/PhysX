@@ -494,15 +494,15 @@ PhysxSchemaPhysxSceneAPI::CreateGpuTotalAggregatePairsCapacityAttr(VtValue const
 }
 
 UsdAttribute
-PhysxSchemaPhysxSceneAPI::GetGpuMaxSoftBodyContactsAttr() const
+PhysxSchemaPhysxSceneAPI::GetGpuMaxDeformableVolumeContactsAttr() const
 {
-    return GetPrim().GetAttribute(PhysxSchemaTokens->physxSceneGpuMaxSoftBodyContacts);
+    return GetPrim().GetAttribute(PhysxSchemaTokens->physxSceneGpuMaxDeformableVolumeContacts);
 }
 
 UsdAttribute
-PhysxSchemaPhysxSceneAPI::CreateGpuMaxSoftBodyContactsAttr(VtValue const &defaultValue, bool writeSparsely) const
+PhysxSchemaPhysxSceneAPI::CreateGpuMaxDeformableVolumeContactsAttr(VtValue const &defaultValue, bool writeSparsely) const
 {
-    return UsdSchemaBase::_CreateAttr(PhysxSchemaTokens->physxSceneGpuMaxSoftBodyContacts,
+    return UsdSchemaBase::_CreateAttr(PhysxSchemaTokens->physxSceneGpuMaxDeformableVolumeContacts,
                        SdfValueTypeNames->UInt,
                        /* custom = */ false,
                        SdfVariabilityVarying,
@@ -755,7 +755,7 @@ PhysxSchemaPhysxSceneAPI::GetSchemaAttributeNames(bool includeInherited)
         PhysxSchemaTokens->physxSceneGpuFoundLostPairsCapacity,
         PhysxSchemaTokens->physxSceneGpuFoundLostAggregatePairsCapacity,
         PhysxSchemaTokens->physxSceneGpuTotalAggregatePairsCapacity,
-        PhysxSchemaTokens->physxSceneGpuMaxSoftBodyContacts,
+        PhysxSchemaTokens->physxSceneGpuMaxDeformableVolumeContacts,
         PhysxSchemaTokens->physxSceneGpuMaxDeformableSurfaceContacts,
         PhysxSchemaTokens->physxSceneGpuMaxParticleContacts,
         PhysxSchemaTokens->physxSceneGpuMaxNumPartitions,

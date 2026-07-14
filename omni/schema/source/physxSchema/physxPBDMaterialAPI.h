@@ -36,7 +36,7 @@ class SdfAssetPath;
 /// \class PhysxSchemaPhysxPBDMaterialAPI
 ///
 /// WARNING: This is a draft API; the design is not fixed and may change in the future.
-/// Applied to a USD Material. PhysX position-based-dynamics (PBD) material for particles used to simulate fluids, cloth and inflatables.
+/// Applied to a USD Material. PhysX position-based-dynamics (PBD) material for particles used to simulate fluids and granular materials.
 /// Currently, only a single material per particle system is supported which applies to all objects that are associated with the system.
 ///
 class PhysxSchemaPhysxPBDMaterialAPI : public UsdAPISchemaBase
@@ -415,56 +415,6 @@ public:
     /// the default for \p writeSparsely is \c false.
     PHYSXSCHEMA_API
     UsdAttribute CreateGravityScaleAttr(VtValue const &defaultValue = VtValue(), bool writeSparsely=false) const;
-
-public:
-    // --------------------------------------------------------------------- //
-    // LIFT 
-    // --------------------------------------------------------------------- //
-    /// Deprecated. PhysxParticleClothAPI is deprecated and will be replaced by a new deformable schema in a future release.
-    /// Particle cloth Lift coefficient for cloth and inflatable particle objects. Basic aerodynamic lift model coefficient.
-    /// Range: [0, inf)
-    /// Units: dimensionless 
-    ///
-    /// | ||
-    /// | -- | -- |
-    /// | Declaration | `float physxPBDMaterial:lift = 0` |
-    /// | C++ Type | float |
-    /// | \ref Usd_Datatypes "Usd Type" | SdfValueTypeNames->Float |
-    PHYSXSCHEMA_API
-    UsdAttribute GetLiftAttr() const;
-
-    /// See GetLiftAttr(), and also 
-    /// \ref Usd_Create_Or_Get_Property for when to use Get vs Create.
-    /// If specified, author \p defaultValue as the attribute's default,
-    /// sparsely (when it makes sense to do so) if \p writeSparsely is \c true -
-    /// the default for \p writeSparsely is \c false.
-    PHYSXSCHEMA_API
-    UsdAttribute CreateLiftAttr(VtValue const &defaultValue = VtValue(), bool writeSparsely=false) const;
-
-public:
-    // --------------------------------------------------------------------- //
-    // DRAG 
-    // --------------------------------------------------------------------- //
-    /// Deprecated. PhysxParticleClothAPI is deprecated and will be replaced by a new deformable schema in a future release.
-    /// Drag coefficient for cloth and inflatable particle objects. Basic aerodynamic drag model coefficient.
-    /// Range: [0, inf)
-    /// Units: dimensionless 
-    ///
-    /// | ||
-    /// | -- | -- |
-    /// | Declaration | `float physxPBDMaterial:drag = 0` |
-    /// | C++ Type | float |
-    /// | \ref Usd_Datatypes "Usd Type" | SdfValueTypeNames->Float |
-    PHYSXSCHEMA_API
-    UsdAttribute GetDragAttr() const;
-
-    /// See GetDragAttr(), and also 
-    /// \ref Usd_Create_Or_Get_Property for when to use Get vs Create.
-    /// If specified, author \p defaultValue as the attribute's default,
-    /// sparsely (when it makes sense to do so) if \p writeSparsely is \c true -
-    /// the default for \p writeSparsely is \c false.
-    PHYSXSCHEMA_API
-    UsdAttribute CreateDragAttr(VtValue const &defaultValue = VtValue(), bool writeSparsely=false) const;
 
 public:
     // --------------------------------------------------------------------- //

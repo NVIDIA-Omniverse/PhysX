@@ -46,7 +46,7 @@ namespace Gu
 using namespace aos;
 
 template<typename Geom> PX_FORCE_INLINE  PxReal getRadius(const PxGeometry&) 
-{	
+{
 	return 0;	
 }
 

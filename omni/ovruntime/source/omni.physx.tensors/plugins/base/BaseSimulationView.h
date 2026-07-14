@@ -1,0 +1,210 @@
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
+#pragma once
+
+#include <private/omni/physx/PhysxUsd.h>
+#include <omni/physx/IPhysx.h>
+#include "../CommonTypes.h"
+#include "BaseSimulationData.h"
+
+#include <omni/physics/tensors/ISimulationView.h>
+#include <omni/physics/tensors/ObjectTypes.h>
+
+#include <omni/fabric/IToken.h>
+
+#include <vector>
+#include <carb/events/EventsUtils.h>
+
+namespace omni
+{
+namespace physx
+{
+namespace tensors
+{
+class BaseArticulationView;
+class BaseRigidBodyView;
+class BaseSdfShapeView;
+class BaseVolumeDeformableBodyView;
+class BaseSurfaceDeformableBodyView;
+class BaseDeformableMaterialView;
+class BaseRigidContactView;
+
+using omni::physics::tensors::ObjectType;
+
+class BaseSimulationView : public omni::physics::tensors::ISimulationView
+{
+public:
+    explicit BaseSimulationView(PXR_NS::UsdStageRefPtr stage);
+
+    virtual ~BaseSimulationView() override;
+
+    //
+    // public API
+    //
+
+    bool setSubspaceRoots(const char* pattern) override;
+    void InitializeKinematicBodies() override;
+
+    void step(float dt) override;
+
+    //
+    // utilities
+    //
+
+    ObjectType getObjectType(const char* path) override;
+
+    void findMatchingPaths(const std::string& pattern, std::vector<PXR_NS::SdfPath>& pathsRet);
+
+    // process the user-defined path and form the entries
+    void processArticulationEntries(const std::vector<std::string>& patterns, std::vector<ArticulationEntry>& entries);
+    void findMatchingArticulations(const std::string& pattern,
+                                   std::vector<ArticulationEntry>& entriesRet,
+                                   std::unordered_set<const ::physx::PxArticulationReducedCoordinate*>& seenArtis);
+
+    // process the user-defined path and form the entries
+    void processRigidBodyEntries(const std::vector<std::string>& patterns, std::vector<RigidBodyEntry>& entries);
+    void findMatchingRigidBodies(const std::string& pattern,
+                                 std::vector<RigidBodyEntry>& entriesRet,
+                                 std::unordered_set<const ::physx::PxRigidBody*>& seenBodies);
+
+    void processVolumeDeformableBodyEntries(const std::vector<std::string>& patterns, std::vector<DeformableBodyEntry>& entries);
+    void findMatchingVolumeDeformableBodies(const std::string& pattern,
+                                            std::vector<DeformableBodyEntry>& entriesRet,
+                                            std::unordered_set<const ::physx::PxDeformableBody*>& seenBodies);
+
+    void processSurfaceDeformableBodyEntries(const std::vector<std::string>& patterns, std::vector<DeformableBodyEntry>& entries);
+    void findMatchingSurfaceDeformableBodies(const std::string& pattern,
+                                             std::vector<DeformableBodyEntry>& entriesRet,
+                                             std::unordered_set<const ::physx::PxDeformableBody*>& seenBodies);
+
+    void processDeformableMaterialEntries(const std::vector<std::string>& patterns, std::vector<DeformableMaterialEntry>& entries);
+    void findMatchingDeformableMaterials(const std::string& pattern,
+                                         std::vector<DeformableMaterialEntry>& entriesRet,
+                                         std::unordered_set<const ::physx::PxDeformableMaterial*>& seenMaterials);
+
+    // process the user-defined path and form the entries
+    void processRigidContactViewEntries(const std::vector<std::string>& patterns,
+                                        const std::vector<std::vector<std::string>>& filterPatterns,
+                                        std::vector<RigidContactSensorEntry>& entries,
+                                        uint32_t& filterPatternSize);
+
+    void findMatchingRigidContactSensors(const std::string& pattern,
+                                         const std::vector<std::string>& filterPatterns,
+                                         std::vector<RigidContactSensorEntry>& entriesRet,
+                                         std::unordered_set<PXR_NS::SdfPath, PXR_NS::SdfPath::Hash>& seenSensorPaths);
+
+    void findMatchingSDFShapes(const std::string& pattern,
+                               std::vector<SdfShapeEntry>& entriesRet,
+                               uint32_t numSamplePoints);
+
+    bool getArticulationAtPath(const PXR_NS::SdfPath& path, ArticulationEntry& entryRet);
+
+    bool getRigidBodyAtPath(const PXR_NS::SdfPath& path, RigidBodyEntry& entryRet);
+
+    bool getVolumeDeformableBodyAtPath(const PXR_NS::SdfPath& path, DeformableBodyEntry& entryRet);
+
+    bool getSurfaceDeformableBodyAtPath(const PXR_NS::SdfPath& path, DeformableBodyEntry& entryRet);
+
+    bool getDeformableMaterialAtPath(const PXR_NS::SdfPath& path, DeformableMaterialEntry& entryRet);
+
+    bool getRigidContactSensorAtPath(const PXR_NS::SdfPath& path, RigidContactSensorEntry& entryRet);
+
+    bool getSDFShapeAtPath(const PXR_NS::SdfPath& path, SdfShapeEntry& entryRet);
+
+    const ArticulationMetatype* getUniqueArticulationMetatype(const ArticulationMetatype& metatype);
+
+    Subspace* findSubspaceForPath(const PXR_NS::SdfPath& path) const;
+
+    BaseSimulationDataPtr getBaseSimulationData() const
+    {
+        return mSimData;
+    }
+
+    bool check() const override;
+
+    void release(bool recursive) override;
+    static void onPhysXObjectDeletedCallback(const PXR_NS::SdfPath& sdfPath,
+                                             usdparser::ObjectId objectId,
+                                             PhysXType type,
+                                             void* userData);
+    static void onAllPhysXObjectDeletedCallback(void* userData);                                             
+
+    // physics scene properties
+    bool setGravity(const carb::Float3& gravity) override;
+    bool getGravity(carb::Float3& gravity) override;
+
+    void _onChildRelease(const BaseSdfShapeView* sdfView);
+    void _onChildRelease(const BaseArticulationView* artiView);
+    void _onChildRelease(const BaseRigidBodyView* rbView);
+    void _onChildRelease(const BaseVolumeDeformableBodyView* deformableView);
+    void _onChildRelease(const BaseSurfaceDeformableBodyView* deformableView);
+    void _onChildRelease(const BaseDeformableMaterialView* deformableView);
+    void _onChildRelease(const BaseRigidContactView* rcView);
+
+    ::physx::PxMaterial* createSharedMaterial(float staticFriction,
+                                              float dynamicFriction,
+                                              float restitution,
+                                              float damping,
+                                              ::physx::PxCombineMode::Enum frictionCombineMode,
+                                              ::physx::PxCombineMode::Enum restitutionCombineMode,
+                                              ::physx::PxCombineMode::Enum dampingCombineMode);
+
+    bool getValid() const override
+    {
+        return isValid;
+    }
+    void invalidate() override;
+    bool hasRigidBody(::physx::PxRigidBody* body) const;
+    bool hasArticulation(::physx::PxArticulationReducedCoordinate* arti) const;
+    bool hasLink(::physx::PxArticulationLink* link) const;
+    bool hasShape(::physx::PxShape* shape) const;
+    bool hasDeformableBody(::physx::PxDeformableBody* body) const;
+    bool hasfixedTendon(::physx::PxArticulationFixedTendon* ft) const;
+    bool hasSpatialTendon(::physx::PxArticulationSpatialTendon* st) const;
+    void initializeKinematics();
+    std::unordered_map<std::string, ::physx::PxMaterial*> mMaterials;
+    std::unordered_set<::physx::PxMaterial*> mUnusedMaterials;
+    std::unordered_map<::physx::PxMaterial*, int> mMaterialsRefCount;
+
+    // for fast lookup of all the physics elements of all the views
+    std::unordered_set<::physx::PxRigidBody*> rigidBodies;
+    std::unordered_set<::physx::PxArticulationReducedCoordinate*> articulations;
+    std::unordered_set<::physx::PxArticulationLink*> links;
+    std::unordered_set<::physx::PxShape*> shapes;
+    std::unordered_set<::physx::PxDeformableBody*> deformableBodies;
+    std::unordered_set<::physx::PxArticulationFixedTendon*> fixedTendons;
+    std::unordered_set<::physx::PxArticulationSpatialTendon*> spatialTendons;
+
+    // fabric for kinematics
+    omni::fabric::Token mRigidBodySchemaToken;
+    omni::fabric::Token mWorldMatrixToken;
+    omni::fabric::Token mLocalMatrixToken;
+    omni::fabric::Token mDynamicBodyToken;
+    omni::fabric::Token mRigidBodyWorldPositionToken;
+    omni::fabric::Token mRigidBodyWorldOrientationToken;
+    omni::fabric::Token mRigidBodyWorldScaleToken;
+
+protected:
+    bool isValid = true;
+    PXR_NS::UsdStageWeakPtr mStage;
+    BaseSimulationDataPtr mSimData;
+
+    std::vector<BaseSdfShapeView*> mSDFViews;
+    std::vector<BaseArticulationView*> mArtiViews;
+    std::vector<BaseRigidBodyView*> mRbViews;
+    std::vector<BaseVolumeDeformableBodyView*> mVolumeDeformableBodyViews;
+    std::vector<BaseSurfaceDeformableBodyView*> mSurfaceDeformableBodyViews;
+    std::vector<BaseDeformableMaterialView*> mDeformableMaterialViews;
+    std::vector<BaseRigidContactView*> mRcViews;
+
+private:
+    omni::physx::SubscriptionId subscriptionObjId;
+    std::mutex mMutex;
+    bool fabricKinematicsInitialized = false;
+
+    void _hackFixMaterialConnectivity();
+};
+} // namespace tensors
+} // namespace physx
+} // namespace omni

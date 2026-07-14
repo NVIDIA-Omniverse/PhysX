@@ -72,14 +72,22 @@ namespace physx
 			setIndices(id);
 		}
 
-		explicit PX_CUDA_CALLABLE PX_FORCE_INLINE PxNodeIndex(PxU64 ind)
+		explicit PX_CUDA_CALLABLE PX_FORCE_INLINE PxNodeIndex(PxU64 ind) : mInd(ind)
 		{
-			mInd = ind;
 		}
 
-		PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 index()				const { return mIDs.mID;			}
-		PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 articulationLinkId()	const { return mIDs.mLinkID >> 1;	}
-		PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 isArticulation()		const { return mIDs.mLinkID & 1;	}
+		// PT: build node index from explicit raw data.
+		explicit PX_CUDA_CALLABLE PX_FORCE_INLINE PxNodeIndex(PxU32 id, PxU32 linkData, bool /*rawData*/)
+		{
+			mIDs.mID = id;
+			mIDs.mLinkID = linkData;
+		}
+
+		PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 getInd()				const	{ return mInd;				}
+		PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 index()				const	{ return mIDs.mID;			}
+		PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 linkData()			const	{ return mIDs.mLinkID;		}
+		PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 articulationLinkId()	const	{ return mIDs.mLinkID >> 1;	}
+		PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 isArticulation()		const	{ return mIDs.mLinkID & 1;	}
 
 		PX_CUDA_CALLABLE PX_FORCE_INLINE bool isStaticBody() const { return mIDs.mID == PX_INVALID_NODE; }
 
@@ -89,7 +97,6 @@ namespace physx
 
 		PX_CUDA_CALLABLE PX_FORCE_INLINE void setIndices(PxU32 index) { mIDs.mID = index;	mIDs.mLinkID = 0; }
 
-		PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 getInd()	const	{ return mInd; }
 		PX_CUDA_CALLABLE PX_FORCE_INLINE bool operator < (const PxNodeIndex& other) const { return getInd() < other.getInd(); }
 		PX_CUDA_CALLABLE PX_FORCE_INLINE bool operator <= (const PxNodeIndex& other) const { return getInd() <= other.getInd(); }
 		PX_CUDA_CALLABLE PX_FORCE_INLINE bool operator == (const PxNodeIndex& other) const { return getInd() == other.getInd(); }

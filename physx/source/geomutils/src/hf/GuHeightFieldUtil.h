@@ -227,7 +227,7 @@ namespace Gu
 
 			// prepare for iterations, set the expand u|v
 			PX_INLINE void prepare(const PxVec3& aP0, const PxVec3& aP1, const PxVec3& overlapObjectExtent, PxF32& expandu, PxF32& expandv)
-			{								
+			{
 				// height test bounds
 				mMinY = (PxMin(aP1.y,aP0.y) - overlapObjectExtent.y) * mHfUtil.getOneOverHeightScale();
 				mMaxY = (PxMax(aP1.y,aP0.y) + overlapObjectExtent.y) * mHfUtil.getOneOverHeightScale();
@@ -299,7 +299,7 @@ namespace Gu
 			{
 				// check if u changes - add the row for visit
 				if(currentRectangle.mMinu != previousRectangle.mMinu)
-				{										
+				{
 					line.mColumn = false;
 					line.mLine = currentRectangle.mMinu < previousRectangle.mMinu ? currentRectangle.mMinu : currentRectangle.mMaxu;
 					line.mMin = currentRectangle.mMinv;
@@ -309,7 +309,7 @@ namespace Gu
 
 				// check if v changes - add the column for visit
 				if(currentRectangle.mMinv != previousRectangle.mMinv)
-				{										
+				{
 					line.mColumn = true;
 					line.mLine = currentRectangle.mMinv < previousRectangle.mMinv ? currentRectangle.mMinv : currentRectangle.mMaxv;
 					line.mMin = currentRectangle.mMinu;
@@ -480,7 +480,7 @@ namespace Gu
 		template<class T, bool useUnderFaceCallback, bool overlap>
 		PX_INLINE void traceSegment(const PxVec3& aP0, const PxVec3& rayDir, const float rayLength , T* aCallback, const PxBounds3& hfLocalBounds, bool backfaceCull,
 			const PxVec3* overlapObjectExtent = NULL) const
-		{			
+		{
 			PxF32 tnear, tfar;
 			if(!Gu::intersectRayAABB2(hfLocalBounds.minimum, hfLocalBounds.maximum, aP0, rayDir, rayLength, tnear, tfar)) 
 				return;

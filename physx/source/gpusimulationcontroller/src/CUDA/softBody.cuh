@@ -105,51 +105,6 @@ static __device__ void updateTetraPosDelta(const float4& invMasses, const float4
 	}
 }
 
-static __device__ void updateTetPositionDelta(float4* outputDeltaPositions, const uint4& tetVertIndices,
-	const PxVec3& deltaPosition, const float4& invMassBary, const PxReal constraintWeight)
-{
-	//testing inverse mass and barycentric product for > 0, assuming that barycentric coordinates where clamped on construction.
-	if (invMassBary.x > 0.0f)
-	{
-		AtomicAdd(outputDeltaPositions[tetVertIndices.x], deltaPosition*invMassBary.x, constraintWeight);
-	}
-
-	if (invMassBary.y > 0.0f)
-	{
-		AtomicAdd(outputDeltaPositions[tetVertIndices.y], deltaPosition*invMassBary.y, constraintWeight);
-	}
-
-	if (invMassBary.z > 0.0f)
-	{
-		AtomicAdd(outputDeltaPositions[tetVertIndices.z], deltaPosition*invMassBary.z, constraintWeight);
-	}
-
-	if (invMassBary.w > 0.0f)
-	{
-		AtomicAdd(outputDeltaPositions[tetVertIndices.w], deltaPosition*invMassBary.w, constraintWeight);
-	}
-}
-
-static __device__ void updateTriPositionDelta(float4* outputDeltaPositions, const uint4& triVertIndices,
-	const PxVec3& deltaPosition, const float4& invMassBary, const PxReal constraintWeight)
-{
-	//testing inverse mass and barycentric product for > 0, assuming that barycentric coordinates where clamped on construction.
-	if (invMassBary.x > 0.0f)
-	{
-		AtomicAdd(outputDeltaPositions[triVertIndices.x], deltaPosition*invMassBary.x, constraintWeight);
-	}
-
-	if (invMassBary.y > 0.0f)
-	{
-		AtomicAdd(outputDeltaPositions[triVertIndices.y], deltaPosition*invMassBary.y, constraintWeight);
-	}
-
-	if (invMassBary.z > 0.0f)
-	{
-		AtomicAdd(outputDeltaPositions[triVertIndices.z], deltaPosition*invMassBary.z, constraintWeight);
-	}
-}
-
 } // namespace physx
 
 #endif

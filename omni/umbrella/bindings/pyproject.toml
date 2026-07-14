@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "physics-umbrella"
+version = "110.0.0"
+description = "Python bindings for Physics Umbrella framework"
+requires-python = "==3.12.*"
+dependencies = []
+license = {text = "LicenseRef-NvidiaProprietary"}
+authors = [{ name = "Omniverse Physics Team" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+
+[tool.setuptools]
+zip-safe = false
+
+# Editable install: just add this directory to sys.path
+[tool.setuptools.packages]
+find = {}

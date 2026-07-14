@@ -303,7 +303,7 @@ static __device__ void preIntegration(const uint32_t offset, const uint32_t nbSo
 
 		PxVec3 angVel(angularVelocityXYZ_maxPenBiasW.x, angularVelocityXYZ_maxPenBiasW.y, angularVelocityXYZ_maxPenBiasW.z);
 
-		if (internalFlags & PxsRigidBody::eENABLE_GYROSCOPIC)
+		if (internalFlags & PxsRigidBody::eENABLE_GYROSCOPIC_GPU)
 		{
 			const PxVec3 localInertia(
 				inverseInertia.x == 0.f ? 0.f : 1.f / inverseInertia.x,
@@ -355,11 +355,16 @@ static __device__ void preIntegration(const uint32_t offset, const uint32_t nbSo
 			//data.inverseInertia  = make_float4(bodySim.inverseInertiaXYZ_contactReportThresholdW.x,bodySim.inverseInertiaXYZ_contactReportThresholdW.y, bodySim.inverseInertiaXYZ_contactReportThresholdW.z, 0.f);
 
 			data.maxImpulse = maxImpulse; //KS - can this be read in in a more efficient/better way?
+
+			// PT: looks like we initially created the PxsRigidBody enums from PxRigidBodyFlags, and here we do the
+			// opposite for some reason. And the gyro flag doesn't seem to be used anywhere. (It's used above though).
+			// We probably cannot just keep using internalFlags like above because the same location also contains a PxRigidBodyFlag kinematic flag?
+			// But then again we initialize flags to 0 here so that kinematic flag would get overwritten here.
 			PxU32 flags = 0;
-			if (internalFlags & PxsRigidBody::eSPECULATIVE_CCD)
+			if (internalFlags & PxsRigidBody::eSPECULATIVE_CCD_GPU)
 				flags |= PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD;
-			if (internalFlags & PxsRigidBody::eENABLE_GYROSCOPIC)
-				flags |= PxRigidBodyFlag::eENABLE_GYROSCOPIC_FORCES;
+			if (internalFlags & PxsRigidBody::eENABLE_GYROSCOPIC_GPU)
+				flags |= PxRigidBodyFlag::eENABLE_GYROSCOPIC_FORCES;	// PT: this doesn't seem to be used anywhere afterwards
 			data.flags = flags;
 		}
 

@@ -467,8 +467,6 @@ struct PxFilterObjectType
 		*/
 		eDEFORMABLE_VOLUME,
 
-		eSOFTBODY PX_DEPRECATED = eDEFORMABLE_VOLUME, //!< \deprecated
-
 		/**
 		\brief A particle system
 		\see PxParticleSystem
@@ -731,43 +729,6 @@ struct PxPairFilteringMode
 		*/
 		eDEFAULT = eSUPPRESS
 	};
-};
-
-/**
-\brief Struct for storing a particle/vertex - rigid filter pair with comparison operators
-\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
-*/
-struct PX_DEPRECATED PxParticleRigidFilterPair
-{
-	PX_CUDA_CALLABLE PxParticleRigidFilterPair() {}
-
-	PX_CUDA_CALLABLE PxParticleRigidFilterPair(const PxU64 id0, const PxU64 id1): mID0(id0), mID1(id1) {}
-
-	PxU64 mID0; //!< Rigid node index
-	PxU64 mID1; //!< Particle/vertex id
-
-	PX_CUDA_CALLABLE bool operator<(const PxParticleRigidFilterPair& other) const
-	{
-		if(mID0 < other.mID0)
-			return true;
-		if(mID0 == other.mID0 && mID1 < other.mID1)
-			return true;
-		return false;
-	}
-
-	PX_CUDA_CALLABLE bool operator>(const PxParticleRigidFilterPair& other) const
-	{
-		if(mID0 > other.mID0)
-			return true;
-		if(mID0 == other.mID0 && mID1 > other.mID1)
-			return true;
-		return false;
-	}
-
-	PX_CUDA_CALLABLE bool operator==(const PxParticleRigidFilterPair& other) const
-	{
-		return (mID0 == other.mID0 && mID1 == other.mID1);
-	}
 };
 
 

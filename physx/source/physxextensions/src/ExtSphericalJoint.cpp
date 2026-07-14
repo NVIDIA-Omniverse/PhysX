@@ -44,7 +44,7 @@ SphericalJoint::SphericalJoint(const PxTolerancesScale& /*scale*/, PxRigidActor*
 }
 
 void SphericalJoint::setLimitCone(const PxJointLimitCone &limit)
-{	
+{
 	PX_CHECK_AND_RETURN(limit.isValid(), "PxSphericalJoint::setLimit: invalid parameter");
 	data().limit = limit; 
 	markDirty();
@@ -64,7 +64,7 @@ void SphericalJoint::setLimitCone(const PxJointLimitCone &limit)
 }
 
 PxJointLimitCone SphericalJoint::getLimitCone() const
-{	
+{
 	return data().limit; 
 }
 

@@ -1250,7 +1250,7 @@ void PvdMetaDataBinding::destroyInstance(PvdDataStream& inStream, const PxShape&
 		}
 
 		if(bDestroy)
-		{			
+		{
 		    if(!inObj.isExclusive())
 	            inStream.removeObjectRef(&PxGetPhysics(), "SharedShapes", &inObj);
 
@@ -1265,7 +1265,7 @@ void PvdMetaDataBinding::destroyInstance(PvdDataStream& inStream, const PxShape&
 				OwnerActorsValueType* ptr = entry->second;
 				PX_FREE(ptr);
 				mBindingData->mOwnerActorsMap.erase(&inObj);
-			}			
+			}
 		}
 	}
 }
@@ -1633,7 +1633,7 @@ void PvdMetaDataBinding::updateDynamicActorsAndArticulations(PvdDataStream& inSt
 
 						inStream.sendPropertyMessageFromGroup(joint, jointBlock);
 					}
-				}				
+				}
 			}
 			inStream.endPropertyMessageGroup();
 		}
@@ -1738,12 +1738,12 @@ class ChangeOjectRefCmd : public PvdDataStream::PvdCommand
 	{
 	}
 
-	virtual bool canRun(PvdInstanceDataStream& inStream)
+	virtual bool canRun(PvdInstanceDataStream& inStream) PX_OVERRIDE
 	{
 		PX_ASSERT(inStream.isInstanceValid(mInstance));
 		return inStream.isInstanceValid(mPropObj);
 	}
-	virtual void run(PvdInstanceDataStream& inStream)
+	virtual void run(PvdInstanceDataStream& inStream) PX_OVERRIDE
 	{
 		if(!inStream.isInstanceValid(mInstance))
 			return;

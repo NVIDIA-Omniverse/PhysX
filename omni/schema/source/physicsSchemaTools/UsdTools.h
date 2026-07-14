@@ -37,21 +37,21 @@ UsdGeomMesh createMesh(const UsdStagePtr& stage,
     const std::vector<int>& vertexCounts);
 
 PHYSICSSCHEMATOOLS_API
-UsdGeomMesh createMeshSquare(const UsdStagePtr& stage, const pxr::SdfPath& path, float halfHeight, float halfWidth);
+UsdGeomMesh createMeshSquare(const UsdStagePtr& stage, const PXR_NS::SdfPath& path, float halfHeight, float halfWidth);
 
 PHYSICSSCHEMATOOLS_API
-UsdGeomMesh createMeshBox(const UsdStagePtr& stage, const pxr::SdfPath& path, const pxr::GfVec3f& halfExtent = { 1, 1, 1 });
+UsdGeomMesh createMeshBox(const UsdStagePtr& stage, const PXR_NS::SdfPath& path, const PXR_NS::GfVec3f& halfExtent = { 1, 1, 1 });
 
 PHYSICSSCHEMATOOLS_API
 UsdGeomMesh createMeshSphere(const UsdStagePtr& stage,
-    const pxr::SdfPath& path,
+    const PXR_NS::SdfPath& path,
     float radius,
     int latitudeSegments = 16,
     int longitudeSegments = 32);
 
 PHYSICSSCHEMATOOLS_API
 UsdGeomMesh createMeshCapsule(const UsdStagePtr& stage,
-    const pxr::SdfPath& path,
+    const PXR_NS::SdfPath& path,
     float radius,
     float halfHeight,
     int latitudeSegments = 16,
@@ -59,7 +59,7 @@ UsdGeomMesh createMeshCapsule(const UsdStagePtr& stage,
 
 PHYSICSSCHEMATOOLS_API
 UsdGeomMesh createMeshCylinder(
-    const UsdStagePtr& stage, const pxr::SdfPath& path, float radius, float halfLength, uint32_t tesselation);
+    const UsdStagePtr& stage, const PXR_NS::SdfPath& path, float radius, float halfLength, uint32_t tesselation);
 
 // Add USD schema for basic stuffs
 PHYSICSSCHEMATOOLS_API
@@ -75,19 +75,19 @@ PHYSICSSCHEMATOOLS_API
 void addRigidBody(const UsdStagePtr& stage, const std::string& path);
 
 PHYSICSSCHEMATOOLS_API
-void addPosition(UsdGeomXformable& xformable, const pxr::GfVec3f& position);
+void addPosition(UsdGeomXformable& xformable, const PXR_NS::GfVec3f& position);
 
 PHYSICSSCHEMATOOLS_API
-void addOrientation(UsdGeomXformable& xformable, const pxr::GfQuatf& orientation);
+void addOrientation(UsdGeomXformable& xformable, const PXR_NS::GfQuatf& orientation);
 
 PHYSICSSCHEMATOOLS_API
-void addDisplayColor(pxr::UsdGeomGprim& gprim, const pxr::GfVec3f& color);
+void addDisplayColor(PXR_NS::UsdGeomGprim& gprim, const PXR_NS::GfVec3f& color);
 
 PHYSICSSCHEMATOOLS_API
 void addVelocity(const UsdStagePtr& stage,
     const std::string& path,
-    const pxr::GfVec3f& linearVelocity,
-    const pxr::GfVec3f& angularVelocity);
+    const PXR_NS::GfVec3f& linearVelocity,
+    const PXR_NS::GfVec3f& angularVelocity);
 
 PHYSICSSCHEMATOOLS_API
 void addDensity(const UsdStagePtr& stage, const std::string& path, float value);
@@ -96,91 +96,91 @@ PHYSICSSCHEMATOOLS_API
 void addBoxCollisionShape(const UsdStagePtr& stage,
     const std::string& path,
     float size,
-    const pxr::GfVec3f& position,
-    const pxr::GfQuatf& orientation,
-    const pxr::GfVec3f& color);
+    const PXR_NS::GfVec3f& position,
+    const PXR_NS::GfQuatf& orientation,
+    const PXR_NS::GfVec3f& color);
 
 PHYSICSSCHEMATOOLS_API
 void addGroundPlane(const UsdStagePtr& stage,
     const std::string& path,
-	const pxr::TfToken& axis = TfToken("Z"),
+	const PXR_NS::TfToken& axis = TfToken("Z"),
     float size = 100.0f,
-    const pxr::GfVec3f& position = pxr::GfVec3f(0.0f),
-    const pxr::GfVec3f& color = pxr::GfVec3f(0.5f));
+    const PXR_NS::GfVec3f& position = PXR_NS::GfVec3f(0.0f),
+    const PXR_NS::GfVec3f& color = PXR_NS::GfVec3f(0.5f));
 
 PHYSICSSCHEMATOOLS_API
 void addGroundTriMesh(const UsdStagePtr& stage,
     const std::string& path,
     float size = 100.0f,
-    const pxr::GfVec3f& position = pxr::GfVec3f(0.0f),
-    const pxr::GfVec3f& color = pxr::GfVec3f(0.5f));
+    const PXR_NS::GfVec3f& position = PXR_NS::GfVec3f(0.0f),
+    const PXR_NS::GfVec3f& color = PXR_NS::GfVec3f(0.5f));
 
 PHYSICSSCHEMATOOLS_API
 void addRigidBox(const UsdStagePtr& stage,
     const std::string& path,
-    const pxr::GfVec3f& size,
-    const pxr::GfVec3f& position,
-    const pxr::GfQuatf& orientation,
-    const pxr::GfVec3f& color,
+    const PXR_NS::GfVec3f& size,
+    const PXR_NS::GfVec3f& position,
+    const PXR_NS::GfQuatf& orientation,
+    const PXR_NS::GfVec3f& color,
     float density,
-    const pxr::GfVec3f& linVelocity = pxr::GfVec3f(0.0f),
-    const pxr::GfVec3f& angularVelocity = pxr::GfVec3f(0.0f));
+    const PXR_NS::GfVec3f& linVelocity = PXR_NS::GfVec3f(0.0f),
+    const PXR_NS::GfVec3f& angularVelocity = PXR_NS::GfVec3f(0.0f));
 
 PHYSICSSCHEMATOOLS_API
 void addRigidSphere(const UsdStagePtr& stage,
     const std::string& path,
     float radius,
-    const pxr::GfVec3f& position,
-    const pxr::GfQuatf& orientation,
-    const pxr::GfVec3f& color,
+    const PXR_NS::GfVec3f& position,
+    const PXR_NS::GfQuatf& orientation,
+    const PXR_NS::GfVec3f& color,
     float density,
-    const pxr::GfVec3f& linVelocity = pxr::GfVec3f(0.0f),
-    const pxr::GfVec3f& angularVelocity = pxr::GfVec3f(0.0f));
+    const PXR_NS::GfVec3f& linVelocity = PXR_NS::GfVec3f(0.0f),
+    const PXR_NS::GfVec3f& angularVelocity = PXR_NS::GfVec3f(0.0f));
 
 PHYSICSSCHEMATOOLS_API
 void addRigidCapsule(const UsdStagePtr& stage,
     const std::string& path,
     float radius,
     float halfHeight,
-	const pxr::TfToken& axis,
-    const pxr::GfVec3f& position,
-    const pxr::GfQuatf& orientation,
-    const pxr::GfVec3f& color,
+	const PXR_NS::TfToken& axis,
+    const PXR_NS::GfVec3f& position,
+    const PXR_NS::GfQuatf& orientation,
+    const PXR_NS::GfVec3f& color,
     float density,
-    const pxr::GfVec3f& linVelocity = pxr::GfVec3f(0.0f),
-    const pxr::GfVec3f& angularVelocity = pxr::GfVec3f(0.0f));
+    const PXR_NS::GfVec3f& linVelocity = PXR_NS::GfVec3f(0.0f),
+    const PXR_NS::GfVec3f& angularVelocity = PXR_NS::GfVec3f(0.0f));
 
 PHYSICSSCHEMATOOLS_API
 void addRigidCylinder(const UsdStagePtr& stage,
     const std::string& path,
     float radius,
     float halfHeight,
-	const pxr::TfToken& axis,
-    const pxr::GfVec3f& position,
-    const pxr::GfQuatf& orientation,
-    const pxr::GfVec3f& color,
+	const PXR_NS::TfToken& axis,
+    const PXR_NS::GfVec3f& position,
+    const PXR_NS::GfQuatf& orientation,
+    const PXR_NS::GfVec3f& color,
     float density,
-    const pxr::GfVec3f& linVelocity = pxr::GfVec3f(0.0f),
-    const pxr::GfVec3f& angularVelocity = pxr::GfVec3f(0.0f));
+    const PXR_NS::GfVec3f& linVelocity = PXR_NS::GfVec3f(0.0f),
+    const PXR_NS::GfVec3f& angularVelocity = PXR_NS::GfVec3f(0.0f));
 
 PHYSICSSCHEMATOOLS_API
 void addRigidCone(const UsdStagePtr& stage,
 	const std::string& path,
 	float radius,
 	float halfHeight,
-	const pxr::TfToken& axis,
-	const pxr::GfVec3f& position,
-	const pxr::GfQuatf& orientation,
-	const pxr::GfVec3f& color,
+	const PXR_NS::TfToken& axis,
+	const PXR_NS::GfVec3f& position,
+	const PXR_NS::GfQuatf& orientation,
+	const PXR_NS::GfVec3f& color,
 	float density,
-	const pxr::GfVec3f& linVelocity = pxr::GfVec3f(0.0f),
-	const pxr::GfVec3f& angularVelocity = pxr::GfVec3f(0.0f));
+	const PXR_NS::GfVec3f& linVelocity = PXR_NS::GfVec3f(0.0f),
+	const PXR_NS::GfVec3f& angularVelocity = PXR_NS::GfVec3f(0.0f));
 
 PHYSICSSCHEMATOOLS_API
 void addRigidBoxForInstancing(const UsdStagePtr& stage,
     const std::string& path,
-    const pxr::GfVec3f& size,
-    const pxr::GfVec3f& color,
+    const PXR_NS::GfVec3f& size,
+    const PXR_NS::GfVec3f& color,
     float density);
 
 PHYSICSSCHEMATOOLS_API
@@ -203,6 +203,6 @@ SdfPath intToSdfPath(const uint64_t intPath);
 \return The entries of the diagonalized inertia tensor.
 */
 PHYSICSSCHEMATOOLS_API
-pxr::GfVec3f getMassSpaceInertia(const pxr::GfMatrix3f& inertia, pxr::GfQuatf& massFrame);
+PXR_NS::GfVec3f getMassSpaceInertia(const PXR_NS::GfMatrix3f& inertia, PXR_NS::GfQuatf& massFrame);
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -40,7 +40,7 @@
 namespace physx
 {
 #if ENABLE_KERNEL_LAUNCH_ERROR_CHECK
-#define checkCudaError() { cudaError_t err = cudaDeviceSynchronize(); if (err != 0) printf("Cuda error file: %s, line: %i, error: %i\n", PX_FL, err); }	
+#define checkCudaError() { cudaError_t err = cudaDeviceSynchronize(); if (err != 0) printf("Cuda error file: %s, line: %i, error: %i\n", PX_FL, err); }
 #else
 #define checkCudaError() { }
 #endif
@@ -718,7 +718,7 @@ namespace physx
 		{
 			smoothNormalsLaunch(mKernelLauncher, mData, stream);
 			smoothNormalsNormalizeLaunch(mKernelLauncher, mData, stream);
-		}			
+		}
 
 		if (mVertices)
 			cudaContext->memcpyDtoHAsync(mVertices, CUdeviceptr(mData.verts), mData.maxVerts * sizeof(PxVec4), stream);
@@ -762,15 +762,15 @@ namespace physx
 			mIsosurfaceExtractor = isosurfaceExtractor;
 		}
 
-		virtual void onPostSolve(const PxGpuMirroredPointer<PxGpuParticleSystem>& gpuParticleSystem, CUstream stream)
+		virtual void onPostSolve(const PxGpuMirroredPointer<PxGpuParticleSystem>& gpuParticleSystem, CUstream stream) PX_OVERRIDE
 		{
 			mIsosurfaceExtractor->extractIsosurface(reinterpret_cast<PxVec4*>(gpuParticleSystem.mHostPtr->mUnsortedPositions_InvMass), 
 				gpuParticleSystem.mHostPtr->mCommonData.mNumParticles, stream, gpuParticleSystem.mHostPtr->mUnsortedPhaseArray, 
 				PxParticlePhaseFlag::eParticlePhaseFluid, /*gpuParticleSystem.mHostPtr->mActiveArray*/NULL);
 		}
 
-		virtual void onBegin(const PxGpuMirroredPointer<PxGpuParticleSystem>& /*gpuParticleSystem*/, CUstream /*stream*/) { }
+		virtual void onBegin(const PxGpuMirroredPointer<PxGpuParticleSystem>& /*gpuParticleSystem*/, CUstream /*stream*/) PX_OVERRIDE { }
 
-		virtual void onAdvance(const PxGpuMirroredPointer<PxGpuParticleSystem>& /*gpuParticleSystem*/, CUstream /*stream*/) { }
+		virtual void onAdvance(const PxGpuMirroredPointer<PxGpuParticleSystem>& /*gpuParticleSystem*/, CUstream /*stream*/) PX_OVERRIDE { }
 	};		
 }

@@ -134,6 +134,8 @@ void copyToSolverBodyDataStep(const PxVec3& linearVelocity, const PxVec3& angula
 
 	const PxVec3 sqrtBodySpaceInertia = Cm::safeRecip<PxVec3>(sqrtInvInertia);
 
+	// PT: we reuse rotation below so here we call the initial transformInertiaTensor code.
+	// We could probably do better, perhaps merging the two transformInertiaTensor calls.
 	Cm::transformInertiaTensor(sqrtInvInertia, rotation, solverBodyTxInertia.sqrtInvInertia);	
 
 	solverBodyTxInertia.body2WorldP = globalPose.p;
@@ -393,13 +395,13 @@ public:
 
 	void setSecondContinuation(PxBaseTask* task) { task->addReference();  mSecondContinuation = task; }
 
-	virtual const char* getName() const { return "MergeTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "MergeTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 	}
 
-	virtual void release()
+	virtual void release() PX_OVERRIDE
 	{
 		mSecondContinuation->removeReference();
 		Cm::Task::release();
@@ -429,9 +431,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "KinematicCopyTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "KinematicCopyTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		for (PxU32 i = 0; i<mNbKinematics; i++)
 		{
@@ -462,9 +464,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "UpdateContinuationTask";}
+	virtual const char* getName() const PX_OVERRIDE { return "UpdateContinuationTask";}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		mContext.updatePostKinematic(mCont, mLostTouchTask, mMaxArticulationLinks);
 		//Allow lost touch task to run once all tasks have be scheduled
@@ -629,8 +631,8 @@ void DynamicsTGSContext::updatePostKinematic(PxBaseTask* continuation, PxBaseTas
 
 			nbBodies += island.mNodeCount[IG::Node::eRIGID_BODY_TYPE];
 			nbArticulations += island.mNodeCount[IG::Node::eARTICULATION_TYPE];
-			nbConstraints += island.mEdges.mEdgeCount[IG::Edge::eCONSTRAINT];
-			nbContactManagers += island.mEdges.mEdgeCount[IG::Edge::eCONTACT_MANAGER];
+			nbConstraints += island.mEdges.getCount(IG::Edge::eCONSTRAINT);
+			nbContactManagers += island.mEdges.getCount(IG::Edge::eCONTACT_MANAGER);
 			constraintCount = nbConstraints + nbContactManagers;
 			currentIsland++;
 
@@ -665,21 +667,21 @@ void DynamicsTGSContext::prepareBodiesAndConstraints(const SolverIslandObjectsSt
 {
 	Dy::ThreadContext& threadContext = *islandContext.mThreadContext;
 
-	threadContext.mMaxSolverPositionIterations = 0;
-	threadContext.mMaxSolverVelocityIterations = 0;
-	threadContext.mAxisConstraintCount = 0;
+	threadContext.mMaxSolverPositionIterations	= 0;
+	threadContext.mMaxSolverVelocityIterations	= 0;
+	threadContext.mAxisConstraintCount			= 0;
 	threadContext.mContactDescPtr = threadContext.contactConstraintDescArray;
-	threadContext.mNumDifferentBodyConstraints = 0;
-	threadContext.mNumStaticConstraints = 0;
-	threadContext.numContactConstraintBatches = 0;
-	threadContext.contactDescArraySize = 0;
+	threadContext.mNumDifferentBodyConstraints	= 0;
+	threadContext.mNumStaticConstraints			= 0;
+	threadContext.numContactConstraintBatches	= 0;
+	threadContext.contactDescArraySize			= 0;
 
-	threadContext.motionVelocityArray = objects.motionVelocities;
-	threadContext.mBodyCoreArray = objects.bodyCoreArray;
-	threadContext.mRigidBodyArray = objects.bodies;
-	threadContext.mArticulationArray = objects.articulations;
-	threadContext.bodyRemapTable = objects.bodyRemapTable;
-	threadContext.mNodeIndexArray = objects.nodeIndexArray;
+	threadContext.motionVelocityArray	= objects.motionVelocities;
+	threadContext.mBodyCoreArray		= objects.bodyCoreArray;
+	threadContext.mRigidBodyArray		= objects.bodies;
+	threadContext.mArticulationArray	= objects.articulations;
+	threadContext.bodyRemapTable		= objects.bodyRemapTable;
+	threadContext.mNodeIndexArray		= objects.nodeIndexArray;
 
 	threadContext.resizeArrays(islandContext.mCounts.articulations);
 
@@ -715,19 +717,19 @@ void DynamicsTGSContext::setupDescs(IslandContextStep& mIslandContext, const Sol
 		{
 			const IG::Island& island = islandSim.getIsland(islandIds[i]);
 
-			IG::EdgeIndex edgeId = island.mEdges.mFirstEdge[IG::Edge::eCONSTRAINT];
-
-			while (edgeId != IG_INVALID_EDGE)
+			START_ENUMERATING_ISLAND_EDGES(IG::Edge::eCONSTRAINT)
 			{
+				GET_CURRENT_ISLAND_EDGE
+
 				PxSolverConstraintDesc& desc = *contactDescPtr;
 
-				const IG::Edge& edge = islandSim.getEdge(edgeId);
 				Dy::Constraint* constraint = mIslandManager.getConstraint(edgeId);
 				setDescFromIndices_Constraints(desc, islandSim, edgeId, mBodyRemapTable, mSolverBodyOffset, mSolverBodyVelPool.begin());
 				desc.constraint = reinterpret_cast<PxU8*>(constraint);
 				desc.constraintType = DY_SC_TYPE_RB_1D;
 				contactDescPtr++;
-				edgeId = edge.mLinks.mNextIslandEdge;
+
+				GET_NEXT_ISLAND_EDGE
 			}
 		}
 	}
@@ -783,7 +785,6 @@ void DynamicsTGSContext::preIntegrateBodies(PxsBodyCore** bodyArray, PxsRigidBod
 		localMaxPosIter = PxMax<PxU32>(PxU32(iterWord & 0xff), localMaxPosIter);
 		localMaxVelIter = PxMax<PxU32>(PxU32(iterWord >> 8), localMaxVelIter);
 
-		//const Cm::SpatialVector& accel = originalBodyArray[i]->getAccelerationV();
 		bodyCoreComputeUnconstrainedVelocity(gravity, dt, core.linearDamping, core.angularDamping, rBody.mAccelScale, core.maxLinearVelocitySq, core.maxAngularVelocitySq,
 			core.linearVelocity, core.angularVelocity, core.disableGravity!=0 || skipGravity);
 
@@ -1364,7 +1365,7 @@ void DynamicsTGSContext::stepArticulations(Dy::ThreadContext& threadContext, con
 	{
 		//if(d.articulation->numTotalConstraints > 0)
 		//d.articulation->solveInternalConstraints(dt, 1.f / dt, threadContext.mZVector.begin(), threadContext.mDeltaV.begin(), false);
-		FeatherstoneArticulation::recordDeltaMotion(threadContext.mArticulationArray[a], dt, threadContext.mDeltaV.begin());		
+		FeatherstoneArticulation::recordDeltaMotionTGS(threadContext.mArticulationArray[a], dt, threadContext.mDeltaV.begin());		
 	}
 }
 
@@ -1415,9 +1416,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "ArticulationTask";  }
+	virtual const char* getName() const PX_OVERRIDE { return "ArticulationTask";  }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		PxU32 maxLinks = 0;
 		for (PxU32 i = 0; i < mNbDescs; i++)
@@ -1432,7 +1433,7 @@ public:
 		const PxReal invLengthScale = 1.f / mContext.getLengthScale();
 
 		for (PxU32 a = 0; a < mNbDescs; ++a)
-		{			
+		{
 			FeatherstoneArticulation::computeUnconstrainedVelocities(mDescs[a], mDt, 
 				mGravity, invLengthScale, mExternalForcesEveryTgsIterationEnabled, true);
 		}
@@ -1508,9 +1509,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "SetupDescsTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "SetupDescsTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		mContext.setupDescs(mIslandContext, mObjects, mBodyRemapTable, mSolverBodyOffset, mOutputs);
 		mIslandContext.mArticulationOffset = mIslandContext.mThreadContext->contactDescArraySize;
@@ -1546,9 +1547,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "PreIntegrateParallelTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "PreIntegrateParallelTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		PxU32 posIters = 0;
 		PxU32 velIters = 0;
@@ -1588,9 +1589,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "PreIntegrateTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "PreIntegrateTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		const PxU32 BodiesPerTask = 512;
 
@@ -1637,7 +1638,7 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "SetStepperTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "SetStepperTask"; }
 
 	void setAdditionalContinuation(PxBaseTask* cont)
 	{
@@ -1645,7 +1646,7 @@ public:
 		cont->addReference();
 	}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		PxReal dt = mContext.getDt();
 
@@ -1654,7 +1655,7 @@ public:
 		mIslandContext.mBiasCoefficients.set(false, true, mIslandContext.mPosIters);
 	}
 
-	virtual void release()
+	virtual void release() PX_OVERRIDE
 	{
 		Cm::Task::release();
 		mAdditionalContinuation->removeReference();
@@ -1681,9 +1682,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "SetupArticulationTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "SetupArticulationTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		PxU32 posIters = 0, velIters = 0;
 		mContext.setupArticulations(mIslandContext, mGravity, mDt, posIters, velIters, mCont);
@@ -1710,9 +1711,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "SetupArticulationInternalConstraintsTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "SetupArticulationInternalConstraintsTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		mContext.setupArticulationInternalConstraints(mIslandContext, mDt, mIslandContext.mInvStepDt);
 	}
@@ -1748,9 +1749,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "SetupSolverConstraintsSubTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "SetupSolverConstraintsSubTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		ThreadContext* tempContext = mContext.getThreadContext();
 		tempContext->mConstraintBlockStream.reset();
@@ -1783,7 +1784,7 @@ public:
 		mIslandContext(islandContext)
 	{}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		const PxReal correlationDist = mDynamicsContext.getCorrelationDistance();
 		const PxReal bounceThreshold = mDynamicsContext.getBounceThreshold();
@@ -1810,7 +1811,7 @@ public:
 		mDynamicsContext.putThreadContext(threadContext);
 	}
 
-	virtual const char* getName() const
+	virtual const char* getName() const PX_OVERRIDE
 	{
 		return "PxsDynamics.PxsCreateArticConstraintsSubTask";
 	}
@@ -1846,9 +1847,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "SetupSolverConstraintsTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "SetupSolverConstraintsTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		Dy::ThreadContext& threadContext = *mIslandContext.mThreadContext;
 		const PxU32 nbBatches = threadContext.numContactConstraintBatches;
@@ -1899,9 +1900,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "PartitionTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "PartitionTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		Dy::ThreadContext& threadContext = *mIslandContext.mThreadContext;
 
@@ -2019,9 +2020,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "ParallelSolveTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "ParallelSolveTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		mContext.iterativeSolveIslandParallel(mObjects, mCounts, *mIslandContext.mThreadContext, mIslandContext.mStepDt, mTotalDt, mIslandContext.mPosIters, mIslandContext.mVelIters,
 			mIslandContext.mBiasCoefficients.articulation,
@@ -2049,9 +2050,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "SolveIslandTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "SolveIslandTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		PxU32 totalCount = 0;
 		PxU32 totalPartitions = 0;
@@ -2227,9 +2228,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "EndIslandTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "EndIslandTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		mContext.endIsland(mThreadContext);
 	}
@@ -2254,9 +2255,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "FinishSolveIslandTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "FinishSolveIslandTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		mContext.finishSolveIsland(mThreadContext, mObjects, mCounts, mIslandManager, mCont);
 	}
@@ -2280,8 +2281,7 @@ static void processIterationIsland
 		const ArticulationConstraintProcessingConfigCPU secondPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSecondPassConfig();
 
 		for (PxU32 i = 0; i < nbArticulations; ++i)
-		{	
-			//Note: this is the last pos iter so reset the pos error here.
+		{
 			FeatherstoneArticulation* articulation = articulations[i];
 
 			articulation->solveInternalConstraints(
@@ -2305,8 +2305,7 @@ static void processIterationIsland
 		}
 
 		for (PxU32 i = 0; i < nbArticulations; ++i)
-		{	
-			//Note: this is the last pos iter so reset the pos error here.
+		{
 			FeatherstoneArticulation* articulation = articulations[i];
 			articulation->solveInternalConstraints(
 				totalDt, stepDt, recipStepDt, 
@@ -2332,8 +2331,7 @@ static void processIterationIsland
 				solverTxInertia, elapsedTime, minPenetration, cache);
 
 		for (PxU32 i = 0; i < nbArticulations; ++i)
-		{	
-			//Note: this is the last pos iter so reset the pos error here.
+		{
 			FeatherstoneArticulation* articulation = articulations[i];
 
 			articulation->solveInternalConstraints(
@@ -2385,7 +2383,7 @@ void DynamicsTGSContext::iterativeSolveIsland(const SolverIslandObjectsStep& obj
 					elapsedTime, 
 					articulationBiasCoefficient,
 					mIsExternalForcesEveryTgsIterationEnabled);
-				FeatherstoneArticulation::recordDeltaMotion(articulation, stepDt, threadContext.mDeltaV.begin());
+				FeatherstoneArticulation::recordDeltaMotionTGS(articulation, stepDt, threadContext.mDeltaV.begin());
 				elapsedTime += stepDt;
 			}
 
@@ -2703,7 +2701,7 @@ static void parallelSolveInternalConstraintsAndWaitForCompletion
 			isExternalForcesEveryTgsIterationEnabled);
 
 		if(updateDeltaMotion)
-			FeatherstoneArticulation::recordDeltaMotion(articulation, solverDt.stepDt, cache.deltaV);
+			FeatherstoneArticulation::recordDeltaMotionTGS(articulation, solverDt.stepDt, cache.deltaV);
 		
 		if(saveVelocity)
 			FeatherstoneArticulation::saveVelocityTGS(articulation, solverDt.invTotalDt);
@@ -3030,7 +3028,7 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 	}
 
 	//Write back constraints...
-	{		
+	{
 		// Rigids
 		{
 			//Find the startIdx in the partition to process
@@ -3104,9 +3102,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "CopyBackTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "CopyBackTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		mContext.copyBackBodies(mObjects, mVels, mTxInertias, mSolverBodyDatas, mInvDt, mIslandSim, mStartIdx, mEndIdx);
 	}
@@ -3130,9 +3128,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "UpdateArticTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "UpdateArticTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		mContext.updateArticulations(mThreadContext, mStartIdx, mEndIdx, mDt);
 	}
@@ -3216,6 +3214,15 @@ void DynamicsTGSContext::solveIsland(const SolverIslandObjectsStep& objects,
 	FinishSolveIslandTask* finishTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(FinishSolveIslandTask)), FinishSolveIslandTask)(threadContext, islandContext.mObjects, islandContext.mCounts, mIslandManager, *this);
 
 	EndIslandTask* endTask = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(EndIslandTask)), EndIslandTask)(threadContext, *this);
+
+	// PT:
+	// "X -> Y" means X has Y as continuation
+	// "X => Y" means X spawns Y task(s)
+	//
+	// Chain is:
+	// articTask -> stepperTask -> articConTask -> partitionTask -> constraintTask -> solveTask -> finishTask -> endTask -> continuation
+	// intTask   /              \--------------------------------->
+	// descTask  /
 
 	endTask->setContinuation(continuation);
 	finishTask->setContinuation(endTask);

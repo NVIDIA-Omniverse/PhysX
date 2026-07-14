@@ -82,7 +82,7 @@ bool GeomOverlapCallback_SphereHeightfield(GU_OVERLAP_FUNC_PARAMS)
 			mLocalSphere.radius = sphereRadius * sphereRadius;
 		}
 
-		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
+		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices) PX_OVERRIDE
 		{
 			while(nb--)
 			{
@@ -106,7 +106,7 @@ bool GeomOverlapCallback_SphereHeightfield(GU_OVERLAP_FUNC_PARAMS)
 				}
 			}
 			return true;
-		}	
+		}
 	};
 
 	PxBounds3 localBounds;
@@ -137,7 +137,7 @@ bool GeomOverlapCallback_CapsuleHeightfield(GU_OVERLAP_FUNC_PARAMS)
 
 		CapsuleOverlapReport(const PxHeightFieldGeometry& hfGeom_, const PxTransform& hfPose) : HeightfieldOverlapReport(hfGeom_, hfPose)	{}
 
-		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
+		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices) PX_OVERRIDE
 		{
 			while(nb--)
 			{
@@ -173,7 +173,7 @@ bool GeomOverlapCallback_CapsuleHeightfield(GU_OVERLAP_FUNC_PARAMS)
 				}
 			}
 			return true;
-		}	
+		}
 	};
 
 	CapsuleOverlapReport report(hfGeom, pose1);
@@ -221,7 +221,7 @@ bool GeomOverlapCallback_BoxHeightfield(GU_OVERLAP_FUNC_PARAMS)
 
 		BoxOverlapReport(const PxHeightFieldGeometry& hfGeom_, const PxTransform& hfPose) : HeightfieldOverlapReport(hfGeom_, hfPose)	{}
 
-		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
+		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices) PX_OVERRIDE
 		{
 			while(nb--)
 			{
@@ -237,7 +237,7 @@ bool GeomOverlapCallback_BoxHeightfield(GU_OVERLAP_FUNC_PARAMS)
 				}
 			}
 			return true;
-		}	
+		}
 	};
 
 	BoxOverlapReport report(hfGeom, pose1);
@@ -296,7 +296,7 @@ bool GeomOverlapCallback_ConvexHeightfield(GU_OVERLAP_FUNC_PARAMS)
 
 		ConvexOverlapReport(const PxHeightFieldGeometry& hfGeom_, const PxTransform& hfPose) : HeightfieldOverlapReport(hfGeom_, hfPose)	{}
 
-		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
+		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices) PX_OVERRIDE
 		{
 			while(nb--)
 			{
@@ -330,7 +330,7 @@ bool GeomOverlapCallback_ConvexHeightfield(GU_OVERLAP_FUNC_PARAMS)
 				}
 			}
 			return true;
-		}	
+		}
 	};
 
 	ConvexOverlapReport report(hfGeom, pose1);

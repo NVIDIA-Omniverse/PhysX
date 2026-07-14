@@ -100,7 +100,7 @@ void NpOmniPvdSimulationControllerCallbacks::processRigidDynamicSet(const PxsRig
 		break;
 	}
 	case PxRigidDynamicGPUAPIWriteType::eLINEAR_VELOCITY:
-	{	
+	{
 		SET_RIGID_DYNAMIC_ATTRIBUTES(rigids, dataVec, gpuIndices, nbElements, PxRigidBody, PxVec3, linearVelocity)
 		break;
 	}
@@ -302,5 +302,5 @@ void NpOmniPvdSimulationControllerCallbacks::processArticulationSet(const Dy::Fe
 		default:
 			PX_ALWAYS_ASSERT();
 	}
-}	
+}
 #endif

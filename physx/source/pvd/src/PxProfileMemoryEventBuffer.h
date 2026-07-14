@@ -133,22 +133,22 @@ namespace physx { namespace profile {
 		{
 		}
 
-		virtual void onAllocation( size_t size, const char* typeName, const char* filename, int line, void* allocatedMemory )
+		virtual void onAllocation( size_t size, const char* typeName, const char* filename, int line, void* allocatedMemory ) PX_OVERRIDE
 		{
 			mBuffer.onAllocation( size, typeName, filename, uint32_t(line), static_cast<uint64_t>(reinterpret_cast<size_t>(allocatedMemory)) );
 		}
-		virtual void onDeallocation( void* allocatedMemory )
+		virtual void onDeallocation( void* allocatedMemory ) PX_OVERRIDE
 		{
 			mBuffer.onDeallocation(static_cast<uint64_t>(reinterpret_cast<size_t>(allocatedMemory)) );
 		}
 		
-		virtual void addClient( PxProfileEventBufferClient& inClient ) { mBuffer.addClient( inClient ); }
-		virtual void removeClient( PxProfileEventBufferClient& inClient ) { mBuffer.removeClient( inClient ); }
-		virtual bool hasClients() const { return mBuffer.hasClients(); }
+		virtual void addClient( PxProfileEventBufferClient& inClient ) PX_OVERRIDE { mBuffer.addClient( inClient ); }
+		virtual void removeClient( PxProfileEventBufferClient& inClient ) PX_OVERRIDE { mBuffer.removeClient( inClient ); }
+		virtual bool hasClients() const PX_OVERRIDE { return mBuffer.hasClients(); }
 
-		virtual void flushProfileEvents() { mBuffer.flushProfileEvents(); }
+		virtual void flushProfileEvents() PX_OVERRIDE { mBuffer.flushProfileEvents(); }
 
-		virtual void release(){ PX_PROFILE_DELETE( mBuffer.getWrapper().getAllocator(), this ); }
+		virtual void release() PX_OVERRIDE { PX_PROFILE_DELETE( mBuffer.getWrapper().getAllocator(), this ); }
 	};
 }}
 

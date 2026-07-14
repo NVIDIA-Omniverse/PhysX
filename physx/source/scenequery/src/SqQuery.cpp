@@ -686,7 +686,7 @@ struct CapturePvdOnReturn : public PxHitCallback<HitType>
 		mParentCallback			(parentCallback)
 	{}
 
-	virtual PxAgain processTouches(const HitType* hits, PxU32 nbHits)
+	virtual PxAgain processTouches(const HitType* hits, PxU32 nbHits) PX_OVERRIDE
 	{
 		const PxAgain again = mParentCallback.processTouches(hits, nbHits);
 		for(PxU32 i=0; i<nbHits; i++)

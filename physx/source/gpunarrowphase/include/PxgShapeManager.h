@@ -137,7 +137,7 @@ namespace physx
 		: PxgMaterialManager(allocDesc, elemSize)
 		{}
 
-		virtual void scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaContext* cudaContext, CUstream stream, const PxU32 elemSize);
+		virtual void scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaContext* cudaContext, CUstream stream, const PxU32 elemSize) PX_OVERRIDE;
 	};
 
 	class PxgFEMSoftBodyMaterialManager : public PxgFEMMaterialManager

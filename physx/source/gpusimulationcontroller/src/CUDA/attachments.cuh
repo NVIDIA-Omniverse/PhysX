@@ -34,58 +34,13 @@
 namespace physx
 {
 
-__device__ inline bool isConeLimitedEnabled(float maxAngle, float minDist, float maxDist)
-{
-	return maxAngle >= 0.f || minDist >= 0.f || maxDist >= 0.f;
-}
-
-/**
- * \param maxAngle The cone opening angle measured from the axis.
- * \param minDist Minimum distance measure from the cone tip.
- * \param maxDist Maximum distance measured from the cone tip.
- * \param relPos Position relative to the cone tip for which the error is computed (the minimum translation
- *				 vector to get from relPos to the allowed cone volume)
- */
-__device__ inline PxVec3 computeConeLimitedError(float maxAngle, float minDist, float maxDist, const PxVec3& coneAxis, const PxVec3& relPos)
-{
-	PxReal len = relPos.magnitude();
-
-	// angle constraint
-	PxVec3 dir;
-	if(maxAngle == 0.f)
-	{
-		dir = coneAxis;
-	}
-	else if(maxAngle > 0.f)
-	{
-		dir = (len > 1.0e-6f) ? (relPos / len) : coneAxis;
-		const PxReal cosAngle = dir.dot(coneAxis);
-		PxReal cosMaxAngle;
-		PxReal sinMaxAngle;
-		PxSinCos(maxAngle, sinMaxAngle, cosMaxAngle); // could be precomputed
-		if(cosAngle < cosMaxAngle)					  // if theta > maxAngle
-		{
-			PxVec3 t1 = dir.cross(coneAxis);
-			PxVec3 b1 = coneAxis.cross(t1).getNormalized();
-			dir = cosMaxAngle * coneAxis + sinMaxAngle * b1; // new direction that is "maxAngle" deviated from the world axis.
-		}
-	}
-	else
-	{
-		dir = (len > 1.0e-6f) ? (relPos / len) : coneAxis;
-	}
-
-	// length constraint
-	len = PxClamp(len, minDist, maxDist >= 0.f ? maxDist : FLT_MAX);
-
-	return relPos - len * dir; // ideal relPos = len * dir
-}
-
 PX_FORCE_INLINE __device__ PxVec3 calculateAttachmentDeltaImpulsePGS(const float4& raXn0_biasW, const float4& raXn1_biasW,
 																	 const float4& raXn2_biasW, const float4& velMultiplierXYZ_invMassW,
-																	 const float4& low_high_limits, const float4& worldAxis_angle,
-																	 const PxgVelocityPackPGS& vel0, const PxVec3& linVel1, PxReal invDt,
-																	 PxReal biasFactor, PxVec3& deltaLinVel, PxVec3& deltaAngVel)
+																	 const PxgVelocityPackPGS& vel0, const PxVec3& linVel1,
+																	 PxReal attachPointInvMass, PxReal attachPointInvMassSplit,
+																	 PxU32 rigidBodyReferenceCount,
+																	 PxReal invDt, PxReal biasFactor,
+																	 PxVec3& deltaLinVel, PxVec3& deltaAngVel)
 {
 	const PxVec3 raXn0 = PxVec3(raXn0_biasW.x, raXn0_biasW.y, raXn0_biasW.z);
 	const PxVec3 raXn1 = PxVec3(raXn1_biasW.x, raXn1_biasW.y, raXn1_biasW.z);
@@ -105,25 +60,38 @@ PX_FORCE_INLINE __device__ PxVec3 calculateAttachmentDeltaImpulsePGS(const float
 	const PxReal& positionErrorY = raXn1_biasW.w;
 	const PxReal& positionErrorZ = raXn2_biasW.w;
 
+	// Mass-splitting adjustment of the constraint denominator.
+	//
+	// Prep baked velMult = 1/(R + D) where R is the rigid-side response
+	// (raXn^2 * invI + invMass0) and D = attachPointInvMass is the deformable-
+	// side sum-of-squared-bary invMass at prep time (D = sum b_i^2 * invM_i).
+	//
+	// At solve time we want the per-vertex-refCount-split deformable
+	// denominator D' = attachPointInvMassSplit (= sum b_i^2 * invM_i *
+	// refCount_i, refCount read from mSimDelta[v].w / cloth.mDeltaPos[v].w
+	// at solve, matching FEMCollision). refCount is dynamic across iters
+	// so prep can't bake it in.
+	//
+	// For Jacobi-parallel stability across N constraints sharing this rigid,
+	// we want velMult' = 1/(N*R + D'). Algebra:
+	//   N*R + D' = N*(1/velMult - D) + D'
+	//            = N/velMult - N*D + D'.
+	// Reduces to the legacy formula when D == D'.
+	const PxReal refN = static_cast<PxReal>(rigidBodyReferenceCount);
+	const PxReal denomBias = refN * attachPointInvMass - attachPointInvMassSplit;
+	const PxReal adjVelMult0 = 1.0f / (refN / velMultiplierXYZ_invMassW.x - denomBias);
+	const PxReal adjVelMult1 = 1.0f / (refN / velMultiplierXYZ_invMassW.y - denomBias);
+	const PxReal adjVelMult2 = 1.0f / (refN / velMultiplierXYZ_invMassW.z - denomBias);
+
 	// For bias see here https://box2d.org/files/ErinCatto_SequentialImpulses_GDC2006.pdf
 	// Slide 22, Bias Impulse
 	PxVec3 velError(linVel1.x - positionErrorX * biasFactor * invDt, linVel1.y - positionErrorY * biasFactor * invDt,
 					linVel1.z - positionErrorZ * biasFactor * invDt);
 
-	if(isConeLimitedEnabled(worldAxis_angle.w, low_high_limits.x, low_high_limits.y))
-	{
-		// we don't understand why we need to scale by biasFactor in order to get the right error offset for the cone.
-		PxReal weirdScale = invDt * biasFactor;
-		PxVec3 posError = velError * (1.0f / weirdScale);
-		const PxVec3 worldAxis(worldAxis_angle.x, worldAxis_angle.y, worldAxis_angle.z);
-		posError = computeConeLimitedError(worldAxis_angle.w, low_high_limits.x, low_high_limits.y, worldAxis, posError);
-		velError = posError * weirdScale;
-	}
-
 	// deltaF for PGS: impulse
-	const PxReal deltaF0 = (velError.x - velOfRigidAtAttachmentPointX) * velMultiplierXYZ_invMassW.x;
-	const PxReal deltaF1 = (velError.y - velOfRigidAtAttachmentPointY) * velMultiplierXYZ_invMassW.y;
-	const PxReal deltaF2 = (velError.z - velOfRigidAtAttachmentPointZ) * velMultiplierXYZ_invMassW.z;
+	const PxReal deltaF0 = (velError.x - velOfRigidAtAttachmentPointX) * adjVelMult0;
+	const PxReal deltaF1 = (velError.y - velOfRigidAtAttachmentPointY) * adjVelMult1;
+	const PxReal deltaF2 = (velError.z - velOfRigidAtAttachmentPointZ) * adjVelMult2;
 
 	const PxVec3 deltaImpulse = PxVec3(deltaF0, deltaF1, deltaF2);
 
@@ -137,20 +105,25 @@ PX_FORCE_INLINE __device__ PxVec3 calculateAttachmentDeltaImpulsePGS(const float
 
 template <typename ConstraintType>
 PX_FORCE_INLINE __device__ PxVec3 calculateAttachmentDeltaImpulsePGS(PxU32 offset, const ConstraintType& constraint,
-																	 const PxgVelocityPackPGS& vel0, const PxVec3& linVel1, PxReal invDt,
-																	 PxReal biasFactor, PxVec3& deltaLinVel, PxVec3& deltaAngVel)
+																	 const PxgVelocityPackPGS& vel0, const PxVec3& linVel1,
+																	 PxReal attachPointInvMass, PxReal attachPointInvMassSplit,
+																	 PxReal invDt, PxReal biasFactor,
+																	 PxVec3& deltaLinVel, PxVec3& deltaAngVel)
 {
 	return calculateAttachmentDeltaImpulsePGS(constraint.raXn0_biasW[offset], constraint.raXn1_biasW[offset], constraint.raXn2_biasW[offset],
-											  constraint.velMultiplierXYZ_invMassW[offset], constraint.low_high_limits[offset],
-											  constraint.axis_angle[offset], vel0, linVel1, invDt, biasFactor, deltaLinVel, deltaAngVel);
+											  constraint.velMultiplierXYZ_invMassW[offset], vel0, linVel1,
+											  attachPointInvMass, attachPointInvMassSplit,
+											  constraint.rigidBodyReferenceCount[offset],
+											  invDt, biasFactor, deltaLinVel, deltaAngVel);
 }
 
 PX_FORCE_INLINE __device__ PxVec3 calculateAttachmentDeltaImpulseTGS(const float4& raXn0_biasW, const float4& raXn1_biasW,
 																	 const float4& raXn2_biasW, const float4& velMultiplierXYZ_invMassW,
-																	 const float4& low_high_limits, const float4& worldAxis_angle,
-																	 const PxgVelocityPackTGS& vel0, const PxVec3& linDelta1, PxReal dt,
-																	 PxReal biasCoefficient, bool isVelocityIteration, PxVec3& deltaLinVel,
-																	 PxVec3& deltaAngVel)
+																	 const PxgVelocityPackTGS& vel0, const PxVec3& linDelta1,
+																	 PxReal attachPointInvMass, PxReal attachPointInvMassSplit,
+																	 PxU32 rigidBodyReferenceCount,
+																	 PxReal dt, PxReal biasCoefficient, bool isVelocityIteration,
+																	 PxVec3& deltaLinVel, PxVec3& deltaAngVel)
 {
 	const PxVec3 raXn0 = PxVec3(raXn0_biasW.x, raXn0_biasW.y, raXn0_biasW.z);
 	const PxVec3 raXn1 = PxVec3(raXn1_biasW.x, raXn1_biasW.y, raXn1_biasW.z);
@@ -170,27 +143,32 @@ PX_FORCE_INLINE __device__ PxVec3 calculateAttachmentDeltaImpulseTGS(const float
 	const PxReal& positionErrorY = raXn1_biasW.w;
 	const PxReal& positionErrorZ = raXn2_biasW.w;
 
-	// This is a position error as well (as opposed to a velocity error for PGS)
-	PxVec3 tgsError(linDelta.x - positionErrorX - vel0.angDelta.dot(raXn0), linDelta.y - positionErrorY - vel0.angDelta.dot(raXn1),
-					linDelta.z - positionErrorZ - vel0.angDelta.dot(raXn2));
+	// Velocity-space TGS code path matching FEMCollision: lift position-space terms (linDelta,
+	// angDelta.raXn, baumgarte biasedErr*biasCoefficient) to velocity via *invDt; velAtPt is
+	// already velocity, no scale. Output deltaF is in impulse units, matching PGS.
+	// biasCoefficient is the bare per-iteration coefficient (no *invStepDt premultiply at the
+	// callsite); it scales only the Baumgarte position-error term, not linDelta or angDelta.
+	const PxReal invDt = 1.0f / dt;
+	const PxVec3 tgsErrVel(
+		(linDelta.x - vel0.angDelta.dot(raXn0) - positionErrorX * biasCoefficient) * invDt,
+		(linDelta.y - vel0.angDelta.dot(raXn1) - positionErrorY * biasCoefficient) * invDt,
+		(linDelta.z - vel0.angDelta.dot(raXn2) - positionErrorZ * biasCoefficient) * invDt);
 
-	if(isConeLimitedEnabled(worldAxis_angle.w, low_high_limits.x, low_high_limits.y))
-	{
-		const PxVec3 worldAxis(worldAxis_angle.x, worldAxis_angle.y, worldAxis_angle.z);
-		tgsError = computeConeLimitedError(worldAxis_angle.w, low_high_limits.x, low_high_limits.y, worldAxis, tgsError);
-	}
+	// Velocity iteration zeros the rigid-body velocity contribution (vel-iter constraint
+	// enforcement ignores rigid-body motion at the substep).
+	const PxReal velIterScale = isVelocityIteration ? 0.0f : 1.0f;
 
-	const PxReal velDt = isVelocityIteration ? 0.f : dt;
+	// Mass-splitting adjustment of the constraint denominator (as in PGS path; see there).
+	const PxReal refN = static_cast<PxReal>(rigidBodyReferenceCount);
+	const PxReal denomBias = refN * attachPointInvMass - attachPointInvMassSplit;
+	const PxReal adjVelMult0 = 1.0f / (refN / velMultiplierXYZ_invMassW.x - denomBias);
+	const PxReal adjVelMult1 = 1.0f / (refN / velMultiplierXYZ_invMassW.y - denomBias);
+	const PxReal adjVelMult2 = 1.0f / (refN / velMultiplierXYZ_invMassW.z - denomBias);
 
-	// deltaF for TGS: position delta multiplied by effective inertia
+	const PxReal deltaF0 = (tgsErrVel.x - velOfRigidAtAttachmentPoint0 * velIterScale) * adjVelMult0;
+	const PxReal deltaF1 = (tgsErrVel.y - velOfRigidAtAttachmentPoint1 * velIterScale) * adjVelMult1;
+	const PxReal deltaF2 = (tgsErrVel.z - velOfRigidAtAttachmentPoint2 * velIterScale) * adjVelMult2;
 
-	// Bias coefficient is already multiplied by dt
-	// Bias seems to kind of act like damping
-	const PxReal deltaF0 = (tgsError.x - velOfRigidAtAttachmentPoint0 * velDt) * velMultiplierXYZ_invMassW.x * biasCoefficient;
-	const PxReal deltaF1 = (tgsError.y - velOfRigidAtAttachmentPoint1 * velDt) * velMultiplierXYZ_invMassW.y * biasCoefficient;
-	const PxReal deltaF2 = (tgsError.z - velOfRigidAtAttachmentPoint2 * velDt) * velMultiplierXYZ_invMassW.z * biasCoefficient;
-
-	// const PxVec3 deltaImpulse = (normal0 * deltaF0 + normal1 * deltaF1 + normal2 * deltaF2);
 	const PxVec3 deltaImpulse = PxVec3(deltaF0, deltaF1, deltaF2);
 
 	deltaLinVel = deltaImpulse * velMultiplierXYZ_invMassW.w;
@@ -201,14 +179,16 @@ PX_FORCE_INLINE __device__ PxVec3 calculateAttachmentDeltaImpulseTGS(const float
 
 template <typename ConstraintType>
 PX_FORCE_INLINE __device__ PxVec3 calculateAttachmentDeltaImpulseTGS(PxU32 offset, const ConstraintType& constraint,
-																	 const PxgVelocityPackTGS& vel0, const PxVec3& linDelta1, PxReal dt,
-																	 PxReal biasCoefficient, bool isVelocityIteration, PxVec3& deltaLinVel,
-																	 PxVec3& deltaAngVel)
+																	 const PxgVelocityPackTGS& vel0, const PxVec3& linDelta1,
+																	 PxReal attachPointInvMass, PxReal attachPointInvMassSplit,
+																	 PxReal dt, PxReal biasCoefficient, bool isVelocityIteration,
+																	 PxVec3& deltaLinVel, PxVec3& deltaAngVel)
 {
 	return calculateAttachmentDeltaImpulseTGS(constraint.raXn0_biasW[offset], constraint.raXn1_biasW[offset],
-											  constraint.raXn2_biasW[offset], constraint.velMultiplierXYZ_invMassW[offset],
-											  constraint.low_high_limits[offset], constraint.axis_angle[offset], vel0, linDelta1, dt,
-											  biasCoefficient, isVelocityIteration, deltaLinVel, deltaAngVel);
+											  constraint.raXn2_biasW[offset], constraint.velMultiplierXYZ_invMassW[offset], vel0, linDelta1,
+											  attachPointInvMass, attachPointInvMassSplit,
+											  constraint.rigidBodyReferenceCount[offset],
+											  dt, biasCoefficient, isVelocityIteration, deltaLinVel, deltaAngVel);
 }
 
 } // namespace physx

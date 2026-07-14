@@ -46,7 +46,7 @@ sometimes they are stored in a byte.
 */
 
 #define PX_PHYSICS_VERSION_MAJOR 5
-#define PX_PHYSICS_VERSION_MINOR 8
+#define PX_PHYSICS_VERSION_MINOR 9
 #define PX_PHYSICS_VERSION_BUGFIX 0
 
 /**

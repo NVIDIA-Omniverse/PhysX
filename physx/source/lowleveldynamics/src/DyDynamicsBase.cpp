@@ -198,7 +198,7 @@ struct EnhancedSortPredicate
 }
 }
 
-PxU32 DynamicsContextBase::iterateIslandsContactEdges(	PxsIslandIndices& counts, PxU32 nbIslands, const IG::IslandId* PX_RESTRICT const islandIds,
+PxU32 DynamicsContextBase::iterateIslandsContactEdges(	const PxsIslandIndices& counts, PxU32 nbIslands, const IG::IslandId* PX_RESTRICT const islandIds,
 														PxsIndexedContactManager* PX_RESTRICT indexedManagers, const PxU32* PX_RESTRICT bodyRemapTable)
 {
 	PX_PROFILE_ZONE("IterateIslandsContactEdges", mContextID);
@@ -211,23 +211,44 @@ PxU32 DynamicsContextBase::iterateIslandsContactEdges(	PxsIslandIndices& counts,
 	{
 		const IG::Island& island = islandSim.getIsland(islandIds[i]);
 
-		IG::EdgeIndex contactEdgeIndex = island.mEdges.mFirstEdge[IG::Edge::eCONTACT_MANAGER];
-
-		while(contactEdgeIndex != IG_INVALID_EDGE)
+		START_ENUMERATING_ISLAND_EDGES(IG::Edge::eCONTACT_MANAGER)
 		{
-			const IG::Edge& edge = islandSim.getEdge(contactEdgeIndex);
+			GET_CURRENT_ISLAND_EDGE
 
-			PxsContactManager* contactManager = mIslandManager.getContactManager(contactEdgeIndex);
-
+			PxsContactManager* contactManager = mIslandManager.getContactManager(edgeId);
 			if(contactManager)
 			{
-				const PxNodeIndex nodeIndex1 = islandSim.mCpuData.getNodeIndex1(contactEdgeIndex);
-				const PxNodeIndex nodeIndex2 = islandSim.mCpuData.getNodeIndex2(contactEdgeIndex);
-
+#if IG_CACHE_CONTACT_MANAGER_DATA
+				const PxNodeIndex nodeIndex1 = edgeIndices[j].getNodeIndex0();
+				const PxNodeIndex nodeIndex2 = edgeIndices[j].getNodeIndex1();
+#else
+				const PxNodeIndex nodeIndex1 = islandSim.mCpuData.getNodeIndex1(edgeId);
+				const PxNodeIndex nodeIndex2 = islandSim.mCpuData.getNodeIndex2(edgeId);
+#endif
 				PxsIndexedContactManager& indexedManager = indexedManagers[currentContactIndex++];
 				indexedManager.contactManager = contactManager;
 
 				PX_ASSERT(!nodeIndex1.isStaticBody());
+#if IG_CACHE_CONTACT_MANAGER_DATA
+				{
+					const PxU8 type0 = edgeIndices[j].getType0();
+
+					indexedManager.indexType0 = type0;
+					if(type0 == PxsIndexedInteraction::eARTICULATION)
+					{
+						indexedManager.articulation0 = nodeIndex1.getInd();
+					}
+					else
+					{
+						const PxU32 activeNodeIndex1 = islandSim.getActiveNodeIndex(nodeIndex1);
+						if(type0 == PxsIndexedInteraction::eKINEMATIC)
+							indexedManager.solverBody0 = activeNodeIndex1;
+						else
+							indexedManager.solverBody0 = bodyRemapTable[activeNodeIndex1];
+						PX_ASSERT(indexedManager.solverBody0 < (counts.bodies + mKinematicCount + 1));
+					}
+				}
+#else
 				{
 					const IG::Node& node1 = islandSim.getNode(nodeIndex1);
 
@@ -252,7 +273,29 @@ PxU32 DynamicsContextBase::iterateIslandsContactEdges(	PxsIslandIndices& counts,
 						PX_ASSERT(indexedManager.solverBody0 < (counts.bodies + mKinematicCount + 1));
 					}
 				}
+#endif
 
+#if IG_CACHE_CONTACT_MANAGER_DATA
+				const PxU8 type1 = edgeIndices[j].getType1();
+
+				indexedManager.indexType1 = type1;
+				if(type1 != PxsIndexedInteraction::eWORLD)
+				{
+					if(type1 == PxsIndexedInteraction::eARTICULATION)
+					{
+						indexedManager.articulation1 = nodeIndex2.getInd();
+					}
+					else
+					{
+						const PxU32 activeNodeIndex2 = islandSim.getActiveNodeIndex(nodeIndex2);
+						if(type1 == PxsIndexedInteraction::eKINEMATIC)
+							indexedManager.solverBody1 = activeNodeIndex2;
+						else
+							indexedManager.solverBody1 = bodyRemapTable[activeNodeIndex2];
+						PX_ASSERT(indexedManager.solverBody1 < (counts.bodies + mKinematicCount + 1));
+					}
+				}
+#else
 				if(nodeIndex2.isStaticBody())
 				{
 					indexedManager.indexType1 = PxsIndexedInteraction::eWORLD;
@@ -282,8 +325,10 @@ PxU32 DynamicsContextBase::iterateIslandsContactEdges(	PxsIslandIndices& counts,
 						PX_ASSERT(indexedManager.solverBody1 < (counts.bodies + mKinematicCount + 1));
 					}
 				}
+#endif
 			}
-			contactEdgeIndex = edge.mLinks.mNextIslandEdge;
+
+			GET_NEXT_ISLAND_EDGE
 		}
 	}
 
@@ -293,7 +338,7 @@ PxU32 DynamicsContextBase::iterateIslandsContactEdges(	PxsIslandIndices& counts,
 	return currentContactIndex;
 }
 
-void DynamicsContextBase::iterateIslandsNodes(	PxsIslandIndices& counts, PxU32 nbIslands, const IG::IslandId* PX_RESTRICT const islandIds,
+void DynamicsContextBase::iterateIslandsNodes(	const PxsIslandIndices& counts, PxU32 nbIslands, const IG::IslandId* PX_RESTRICT const islandIds,
 												PxsBodyCore** PX_RESTRICT bodyArrayPtr, PxsRigidBody** PX_RESTRICT rigidBodyPtr,
 												FeatherstoneArticulation** PX_RESTRICT articulationPtr,
 												PxU32* PX_RESTRICT bodyRemapTable, PxU32* PX_RESTRICT nodeIndexArray)
@@ -353,3 +398,4 @@ void DynamicsContextBase::iterateIslandsNodes(	PxsIslandIndices& counts, PxU32 n
 		}
 	}
 }
+

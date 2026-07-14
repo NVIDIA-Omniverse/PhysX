@@ -27,7 +27,6 @@
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "DyFeatherstoneArticulation.h"
-#include "CmPinnableArray.h"
 #include "DyDynamics.h"
 #include "DyConstraintPrep.h"
 
@@ -148,10 +147,8 @@ namespace Dy
 			spatialInertia.topRight = PxMat33::createDiagonal(PxVec3(m));
 
 			//construct inertia matrix
-			const PxMat33 rot(core.body2World.q);
-			PxMat33& I = spatialInertia.bottomLeft;
-			const PxVec3 inertiaTensor = Cm::safeRecip<PxVec3>(core.inverseInertia);
-			Cm::transformInertiaTensor(inertiaTensor, rot, I);
+			const PxVec3p inertiaTensor = Cm::safeRecip<PxVec3p>(core.inverseInertia);
+			Cm::transformInertiaTensor(inertiaTensor, core.body2World.q, spatialInertia.bottomLeft);
 		}
 	}
 
@@ -415,7 +412,7 @@ namespace Dy
 		const PxU32 linkCount = mArticulationData.getLinkCount();
 
 		for (PxU32 linkID = 1; linkID < linkCount; linkID++)
-		{	
+		{
 			const ArticulationLink& linkDatum = mArticulationData.getLink(linkID);
 			const ArticulationJointCore* joint = linkDatum.inboundJoint;
 			const ArticulationJointCoreData& jointDatum = mArticulationData.getJointData(linkID);
@@ -671,7 +668,8 @@ namespace Dy
 			accel.linear = force.force * core.inverseMass;
 
 			PxMat33 inverseInertiaWorldSpace;
-			Cm::transformInertiaTensor(core.inverseInertia, PxMat33(core.body2World.q), inverseInertiaWorldSpace);
+			// PT: cast is safe because inverseMass follows inverseInertia in PxsBodyCore.
+			Cm::transformInertiaTensor(static_cast<PxVec3p&>(core.inverseInertia), core.body2World.q, inverseInertiaWorldSpace);
 
 			accel.angular = inverseInertiaWorldSpace * force.torque;
 		}
@@ -1333,12 +1331,12 @@ namespace Dy
 
 		virtual ~ArticulationBlockAllocator() {}
 
-		virtual PxU8* reserveConstraintData(const PxU32 size)
+		virtual PxU8* reserveConstraintData(const PxU32 size) PX_OVERRIDE
 		{
 			return reinterpret_cast<PxU8*>(mConstraintAllocator.allocate(size));
 		}
 
-		virtual PxU8* reserveFrictionData(const PxU32 byteSize)
+		virtual PxU8* reserveFrictionData(const PxU32 byteSize) PX_OVERRIDE
 		{
 			return reinterpret_cast<PxU8*>(mFrictionAllocator[currIdx].allocate(byteSize));
 		}
@@ -1552,7 +1550,6 @@ namespace Dy
 		applyCache(initialState, PxArticulationCacheFlag::eALL, shouldWake);
 
 		return found;
-
 	}
 
 	//i is the current link ID, we need to compute the row/column related to the joint i with all the other joints

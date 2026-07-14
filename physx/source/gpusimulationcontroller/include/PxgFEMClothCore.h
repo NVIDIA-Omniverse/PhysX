@@ -83,7 +83,7 @@ namespace physx
 
 		void clampContactCounts();
 
-		void sortContacts(PxU32 nbActiveFemClothes);
+		void sortContacts(PxU32 nbActiveFemCloths);
 
 		void solve(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
 				   PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
@@ -121,16 +121,18 @@ namespace physx
 
 		PX_FORCE_INLINE PxU32 getMaxContacts() { return mMaxContacts; }
 
-		void applyDamping(PxU32 nbActiveFemClothes, PxReal dt, CUstream stream);
+		void applyDamping(PxU32 nbActiveFemCloths, PxReal dt, CUstream stream);
 
 		// Apply position delta change original triangle mesh
-		void applyExternalDelta(PxU32 nbActiveFemClothes, PxReal dt, CUstream stream);
+		void applyExternalDelta(PxU32 nbActiveFemCloths, PxReal dt, CUstream stream);
 
 		void drawContacts(PxRenderOutput& out);
 
 		void syncCloths();
 
 		void createActivatedDeactivatedLists();
+
+		void onClothRemoved();
 
 	  private:
 		void preIntegrateSystem(PxgFEMCloth* femClothsd, PxU32* activeFemCloths, PxU32 nbActiveFemCloths, PxU32 maxVertices,
@@ -160,6 +162,13 @@ namespace physx
 											 PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
 											 PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd,
 											 PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt);
+
+		// Pre-count per-vertex refCount for rigid-cloth attachments. Bumps
+		// cloth.mDeltaPos[v].w; the attach + contact solves both read .w as the
+		// per-vertex Jacobi mass-splitting factor, for both PGS and TGS. Must
+		// run after the FEM finalize (so .w starts from 0) and before both
+		// attach + contact solves.
+		void queryRigidAttachmentReferenceCount(CUstream solverStream);
 
 		// Solve cloth vs rigid body contact
 		void solveClothRigidContacts(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
@@ -191,9 +200,6 @@ namespace physx
 
 		PxgTypedCudaBuffer<PxU8> mUpdateClothContactPairs; // When set to 1, updates the cloth-cloth contact pairs.
 
-		CUevent mBoundUpdateEvent;			  // This event is used to synchronize the broad phase stream(updateBound is running on
-											  // broad phase stream) and mStream
-											  
 		CUevent mSolveRigidEvent;			  // This event is recorded at the solver stream and the cloth stream need to wait for
 											  // that event finish before it processes
 		CUevent mConstraintPrepParticleEvent; // This event is used to synchronize constraint prep(cloth stream) and

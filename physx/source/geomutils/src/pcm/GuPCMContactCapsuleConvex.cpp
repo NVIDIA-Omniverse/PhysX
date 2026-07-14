@@ -224,7 +224,7 @@ bool Gu::pcmContactCapsuleConvex(GU_CONTACT_METHOD_ARGS)
 #endif
 				return true;
 			}
-		}	
+		}
 	}
 	else if (manifold.getNumContacts() > 0)
 	{

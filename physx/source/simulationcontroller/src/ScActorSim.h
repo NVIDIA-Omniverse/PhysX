@@ -124,6 +124,7 @@ namespace Sc
 			BF_KINEMATIC_MOVE_FLAGS			= BF_KINEMATIC_MOVED | BF_KINEMATIC_SETTLING | BF_KINEMATIC_SETTLING_2, //Used to clear kinematic masks in 1 call
 			BF_KINEMATIC_SURFACE_VELOCITY	= 1 << 11,	//Set when the application calls setKinematicVelocity. Actor remains awake until application calls clearKinematicVelocity. 
 			BF_IS_COMPOUND_RIGID			= 1 << 12,	// Set when the body is a compound actor, we dont want to set the sq bounds
+			BF_RESET_ACCELERATION			= 1 << 13,	// Set when acceleration state should be reset (teleport, wake-up, etc.)
 
 											// PT: WARNING: flags stored on 16-bits now.
 		};

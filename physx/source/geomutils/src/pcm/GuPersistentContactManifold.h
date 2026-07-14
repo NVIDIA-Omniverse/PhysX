@@ -412,7 +412,7 @@ public:
 		}
 
 		const Vec3V n = Vec3V_From_Vec4V(nPen);
-		return V3Normalize(trB.rotate(n));
+		return trB.rotateAndNormalize(n);
 	}
 
 	PX_FORCE_INLINE aos::Vec3V getLocalNormal()	const

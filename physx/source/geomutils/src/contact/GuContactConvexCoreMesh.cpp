@@ -278,7 +278,7 @@ bool Gu::contactConvexCoreTrimesh(GU_CONTACT_METHOD_ARGS)
 		{}
 
 		virtual PxAgain processHit(const PxGeomRaycastHit& hit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2,
-			PxReal&, const PxU32*)
+			PxReal&, const PxU32*) PX_OVERRIDE
 		{
 			const PxVec3 verts[] = { v0, v1, v2 };
 
@@ -365,7 +365,7 @@ bool Gu::contactConvexCoreHeightfield(GU_CONTACT_METHOD_ARGS)
 			mConvex(convex), mHfUtil(hfUtil), mContactDist(contactDist), mTransform(transform), mContact(contact)
 		{}
 
-		virtual	bool reportTouchedTris(PxU32 numTris, const PxU32* triInds)
+		virtual	bool reportTouchedTris(PxU32 numTris, const PxU32* triInds) PX_OVERRIDE
 		{
 			HeightFieldTriangles triSource(mHfUtil);
 

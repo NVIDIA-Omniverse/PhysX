@@ -50,8 +50,8 @@ class DefaultCpuDispatcher;
 												CpuWorkerThread();
 												~CpuWorkerThread();
 		
-		PX_FORCE_INLINE	void					initialize(DefaultCpuDispatcher* ownerDispatcher)		{ mOwner = ownerDispatcher;				}
-		PX_FORCE_INLINE	PxThread::Id			getWorkerThreadId()								const	{ return mThreadId;						}
+		PX_FORCE_INLINE	void					initialize(DefaultCpuDispatcher* ownerDispatcher)		{ mOwner = ownerDispatcher;	}
+		PX_FORCE_INLINE	PxThread::Id			getWorkerThreadId()								const	{ return mThreadId;			}
 
 		template<const bool highPriorityT>
 		PX_FORCE_INLINE	PxBaseTask*				getJob()	{ return mHelper.fetchTask<highPriorityT>();	}

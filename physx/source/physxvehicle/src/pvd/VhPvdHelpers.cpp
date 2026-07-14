@@ -336,7 +336,7 @@ void PxVehiclePvdObjectRelease
 		destroyObject(ow, ch, oh.tireCamberStateOHs[i]);
 		destroyObject(ow, ch, oh.tireForceOHs[i]);
 		destroyObject(ow, ch, oh.wheelAttachmentOHs[i]);
-	}	
+	}
 
 	//Antiroll
 	for(PxU32 i = 0; i < oh.nbAntirolls; i++)
@@ -383,7 +383,7 @@ void PxVehiclePvdObjectRelease
 			destroyObject(ow, ch, oh.physxMaterialFrictionOHs[id]);
 		}
 		destroyObject(ow, ch, oh.physxWheelAttachmentOHs[i]);
-	}	
+	}
 
 	//Physx rigid actor
 	destroyObject(ow, ch, oh.physxRoadGeomQueryParamOH);

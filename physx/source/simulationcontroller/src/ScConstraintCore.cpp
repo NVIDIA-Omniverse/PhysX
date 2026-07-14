@@ -53,7 +53,7 @@ void Sc::ConstraintCore::setFlags(PxConstraintFlags flags)
 	PxConstraintFlags old = mFlags;
 	flags = flags | (old & PxConstraintFlag::eGPU_COMPATIBLE);  // eGPU_COMPATIBLE is for internal use only and should keep its initial state
 	if(flags != old)
-	{		
+	{
 		mFlags = flags;
 		if(mSim)
 			mSim->postFlagChange(old, flags);

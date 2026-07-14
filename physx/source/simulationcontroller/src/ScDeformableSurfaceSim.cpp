@@ -87,8 +87,7 @@ void Sc::DeformableSurfaceSim::attachShapeCore(ShapeCore* core)
 		addToAABBMgr(Bp::FilterType::DEFORMABLE_SURFACE);
 	}
 
-	PxsShapeCore* shapeCore = const_cast<PxsShapeCore*>(&core->getCore());
-	mLLDeformableSurface->setShapeCore(shapeCore);
+	mLLDeformableSurface->setShapeCore(core);
 }
 
 PxBounds3 Sc::DeformableSurfaceSim::getWorldBounds() const

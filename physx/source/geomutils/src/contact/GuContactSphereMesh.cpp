@@ -149,7 +149,7 @@ struct SortKey
 	PX_FORCE_INLINE bool operator < (const SortKey& data) const
 	{
 		return mSquareDist < data.mSquareDist;
-	}		
+	}
 };
 
 struct TriangleData
@@ -433,7 +433,7 @@ struct SphereMeshContactGenerationCallback_NoScale : MeshHitCallback<PxGeomRayca
 	}
 
 	virtual PxAgain processHit(
-		const PxGeomRaycastHit& hit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32* vinds)
+		const PxGeomRaycastHit& hit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32* vinds) PX_OVERRIDE
 	{
 		if(gDrawTouchedTriangles)
 		{
@@ -470,7 +470,7 @@ struct SphereMeshContactGenerationCallback_Scale : SphereMeshContactGenerationCa
 
 	virtual ~SphereMeshContactGenerationCallback_Scale() {}
 
-	virtual PxAgain processHit(const PxGeomRaycastHit& hit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32* vinds)
+	virtual PxAgain processHit(const PxGeomRaycastHit& hit, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, PxReal&, const PxU32* vinds) PX_OVERRIDE
 	{
 		PxVec3 verts[3];
 		getScaledVertices(verts, v0, v1, v2, false, mMeshScaling);
@@ -576,7 +576,7 @@ struct SphereHeightfieldContactGenerationCallback : OverlapReport
 	}
 
 	// PT: TODO: refactor/unify with similar code in other places
-	virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
+	virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices) PX_OVERRIDE
 	{
 		while(nb--)
 		{

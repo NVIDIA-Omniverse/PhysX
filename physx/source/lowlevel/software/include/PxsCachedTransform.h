@@ -46,7 +46,7 @@ namespace physx
 		PxTransform transform;
 		PxU32 flags;
 
-		PX_FORCE_INLINE PxU32 isFrozen() const { return flags & PxsTransformFlag::eFROZEN; }
+		PX_FORCE_INLINE PxU32 isFrozenTransform() const { return flags & PxsTransformFlag::eFROZEN; }
 	}
 	PX_ALIGN_SUFFIX(16);
 }

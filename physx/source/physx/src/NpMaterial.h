@@ -46,7 +46,7 @@ class NpMaterial : public PxMaterial, public PxUserAllocated
 {
 public:
 // PX_SERIALIZATION            
-									NpMaterial(PxBaseFlags baseFlags) : PxMaterial(baseFlags), mMaterial(PxEmpty) {}								
+									NpMaterial(PxBaseFlags baseFlags) : PxMaterial(baseFlags), mMaterial(PxEmpty) {}
 	virtual		void				resolveReferences(PxDeserializationContext& context);
 	static		NpMaterial*			createObject(PxU8*& address, PxDeserializationContext& context);
 

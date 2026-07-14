@@ -46,20 +46,20 @@ class PvdDefaultSocketTransport : public PxPvdTransport, public PxUserAllocated
 	PvdDefaultSocketTransport(const char* host, int port, unsigned int timeoutInMilliseconds);
 	virtual ~PvdDefaultSocketTransport();
 
-	virtual bool connect();
-	virtual void disconnect();
-	virtual bool isConnected();
+	virtual bool connect() PX_OVERRIDE;
+	virtual void disconnect() PX_OVERRIDE;
+	virtual bool isConnected() PX_OVERRIDE;
 
-	virtual bool write(const uint8_t* inBytes, uint32_t inLength);
+	virtual bool write(const uint8_t* inBytes, uint32_t inLength) PX_OVERRIDE;
 
-	virtual void flush();
+	virtual void flush() PX_OVERRIDE;
 
-	virtual PxPvdTransport& lock();
-	virtual void unlock();
+	virtual PxPvdTransport& lock() PX_OVERRIDE;
+	virtual void unlock() PX_OVERRIDE;
 
-	virtual uint64_t getWrittenDataSize();
+	virtual uint64_t getWrittenDataSize() PX_OVERRIDE;
 
-	virtual void release();
+	virtual void release() PX_OVERRIDE;
 
   private:
 	PxSocket mSocket;

@@ -295,12 +295,12 @@ void NpDeformableAttachment::addAttachment()
 						mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_GLOBAL_POSE)
 					{
 						const PxVec4& barycentric = mCoords[mActorIndex[0]][i];
-						mHandles[i] = getDeformableSurfaceCore(actor0)->addTriRigidAttachment(core1, id, barycentric, actor1Pose, NULL);
+						mHandles[i] = getDeformableSurfaceCore(actor0)->addTriRigidAttachment(core1, id, barycentric, actor1Pose);
 					}
 					else if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_VTX_RIGID_BODY ||
 							 mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_VTX_GLOBAL_POSE)
 					{
-						mHandles[i] = getDeformableSurfaceCore(actor0)->addRigidAttachment(core1, id, actor1Pose, NULL);
+						mHandles[i] = getDeformableSurfaceCore(actor0)->addRigidAttachment(core1, id, actor1Pose);
 					}
 				}
 				else if (mInternalAttachmentType & NpInternalAttachmentType::eVOLUME_TYPE)
@@ -309,12 +309,12 @@ void NpDeformableAttachment::addAttachment()
 						mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_GLOBAL_POSE)
 					{
 						const PxVec4& barycentric = mCoords[mActorIndex[0]][i];
-						mHandles[i] = getDeformableVolumeCore(actor0)->addTetRigidAttachment(core1, id, barycentric, actor1Pose, NULL, false);
+						mHandles[i] = getDeformableVolumeCore(actor0)->addTetRigidAttachment(core1, id, barycentric, actor1Pose, false);
 					}
 					else if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_VTX_RIGID_BODY ||
 							 mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_VTX_GLOBAL_POSE)
 					{
-						mHandles[i] = getDeformableVolumeCore(actor0)->addRigidAttachment(core1, id, actor1Pose, NULL, false);
+						mHandles[i] = getDeformableVolumeCore(actor0)->addRigidAttachment(core1, id, actor1Pose, false);
 					}
 				}
 			}
@@ -344,11 +344,11 @@ void NpDeformableAttachment::addAttachment()
 				}
 				else if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_VOLUME_TET)
 				{
-					mHandles[i] = getDeformableVolumeCore(actor0)->addSoftBodyAttachment(*getDeformableVolumeCore(actor1), id1, barycentric1, id0, barycentric0, NULL, 0.0f, false);
+					mHandles[i] = getDeformableVolumeCore(actor0)->addSoftBodyAttachment(*getDeformableVolumeCore(actor1), id1, barycentric1, id0, barycentric0, false);
 				}
 				else if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_SURFACE_TRI)
 				{
-					mHandles[i] = getDeformableVolumeCore(actor0)->addClothAttachment(*getDeformableSurfaceCore(actor1), id1, barycentric1, id0, barycentric0, NULL, 0.0f, false);
+					mHandles[i] = getDeformableVolumeCore(actor0)->addClothAttachment(*getDeformableSurfaceCore(actor1), id1, barycentric1, id0, barycentric0, false);
 				}
 			}
 
@@ -604,11 +604,11 @@ void NpDeformableAttachment::updatePose(const PxTransform& pose)
 					{
 						const PxVec4& barycentric = mCoords[mActorIndex[0]][i];
 
-						mHandles[i] = getDeformableSurfaceCore(actor0)->addTriRigidAttachment(core1, id, barycentric, actor1Pose, NULL);
+						mHandles[i] = getDeformableSurfaceCore(actor0)->addTriRigidAttachment(core1, id, barycentric, actor1Pose);
 					}
 					else
 					{
-						mHandles[i] = getDeformableSurfaceCore(actor0)->addRigidAttachment(core1, id, actor1Pose, NULL);
+						mHandles[i] = getDeformableSurfaceCore(actor0)->addRigidAttachment(core1, id, actor1Pose);
 					}
 				}
 				else if (mInternalAttachmentType & NpInternalAttachmentType::eVOLUME_TYPE)
@@ -617,11 +617,11 @@ void NpDeformableAttachment::updatePose(const PxTransform& pose)
 					{
 						const PxVec4& barycentric = mCoords[mActorIndex[0]][i];
 
-						mHandles[i] = getDeformableVolumeCore(actor0)->addTetRigidAttachment(core1, id, barycentric, actor1Pose, NULL, false);
+						mHandles[i] = getDeformableVolumeCore(actor0)->addTetRigidAttachment(core1, id, barycentric, actor1Pose, false);
 					}
 					else
 					{
-						mHandles[i] = getDeformableVolumeCore(actor0)->addRigidAttachment(core1, id, actor1Pose, NULL, false);
+						mHandles[i] = getDeformableVolumeCore(actor0)->addRigidAttachment(core1, id, actor1Pose, false);
 					}
 				}
 			}

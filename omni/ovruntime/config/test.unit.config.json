@@ -1,0 +1,24 @@
+{
+    "app": {
+        "extensions": {
+            "foldersBuiltin": [],
+            "folders": [],
+            "enabledBuiltin": [
+                "omni.assets.plugins"
+            ]
+        },
+        "exts" : {
+            "foldersCore" : [
+                "${kit}/exts",
+                "${kit}/extscore"
+            ]
+        }
+    },
+    "plugins": {
+        "carb.scripting-python.plugin": {
+            "pythonHome": "../../target-deps/python",
+            "pythonPath": "../../target-deps/python/python36.zip",
+            "logScriptErrors": true
+        }
+    }
+}

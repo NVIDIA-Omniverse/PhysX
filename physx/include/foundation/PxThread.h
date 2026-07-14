@@ -327,7 +327,7 @@ class PxThreadT : protected Alloc, public PxUserAllocated, public PxRunnable
 
 	/** Inform the processor that we're in a busy wait to give it a chance to do something clever 
 		yield() yields the thread, while yieldProcessor() aims to yield the processor */
-	static void yieldProcesor()
+	static void yieldProcessor()
 	{
 		PxThreadImpl::yieldProcessor();
 	}

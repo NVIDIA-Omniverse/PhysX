@@ -45,8 +45,6 @@ class PxCudaContextManager;
 struct PxgAllocatorDesc;
 struct PxgParticleContactInfo;
 struct PxgParticleSimBuffer;
-struct PxgParticleClothSimBuffer;
-struct PxgParticleRigidSimBuffer;
 struct PxgParticleDiffuseSimBuffer;
 struct PxgPBDParticleMaterialDerived;
 struct PxgParticleCollisionHeader;
@@ -57,26 +55,19 @@ template<class BufferClass>
 class PxgParticleBufferBase : public BufferClass, public PxUserAllocated
 {
 public:
-	PxgParticleBufferBase(PxU32 maxNumParticles, PxU32 maxNumVolumes, PxCudaContextManager& contextManager);
+	PxgParticleBufferBase(PxU32 maxNumParticles, PxCudaContextManager& contextManager);
 	virtual ~PxgParticleBufferBase();
 
 	//PxsParticleBuffer
 	virtual PxVec4* getPositionInvMassesD() const PX_OVERRIDE PX_FINAL { return mPositionInvMassesD; }
 	virtual PxVec4* getVelocitiesD() const PX_OVERRIDE PX_FINAL { return mVelocitiesD; }
 	virtual PxU32* getPhasesD() const PX_OVERRIDE PX_FINAL { return mPhasesD; }
-	virtual PxParticleVolume* getParticleVolumesD() const PX_OVERRIDE PX_FINAL { return mVolumesD; }
 	virtual PxVec4* getPositionInvMassesH() const PX_OVERRIDE PX_FINAL { return mPositionInvMassesH; }
 	virtual PxVec4* getVelocitiesH() const PX_OVERRIDE PX_FINAL { return mVelocitiesH; }
 	virtual PxU32* getPhasesH() const PX_OVERRIDE PX_FINAL { return mPhasesH; }
-	virtual PxParticleVolume* getParticleVolumesH() const PX_OVERRIDE PX_FINAL { return mVolumesH; }
 	virtual void setNbActiveParticles(PxU32 nbActiveParticles) PX_OVERRIDE;
 	virtual PxU32 getNbActiveParticles() const PX_OVERRIDE PX_FINAL { return mNumActiveParticles; }
 	virtual PxU32 getMaxParticles() const PX_OVERRIDE PX_FINAL { return mMaxNumParticles; }
-	virtual PxU32 getNbParticleVolumes() const PX_OVERRIDE PX_FINAL { return mNumParticleVolumes; }
-	virtual void setNbParticleVolumes(PxU32 nbParticleVolumes) PX_OVERRIDE PX_FINAL { mNumParticleVolumes = nbParticleVolumes; }
-	virtual PxU32 getMaxParticleVolumes() const PX_OVERRIDE PX_FINAL { return mMaxNumVolumes; }
-	virtual void setRigidFilters(PxParticleRigidFilterPair* filters, PxU32 nbFilters) PX_OVERRIDE PX_FINAL;
-	virtual void setRigidAttachments(PxParticleRigidAttachment* attachments, PxU32 nbAttachments) PX_OVERRIDE PX_FINAL;
 	virtual PxU32 getFlatListStartIndex() const PX_OVERRIDE PX_FINAL { return mFlatListStartIndex; }
 	virtual void raiseFlags(PxParticleBufferFlag::Enum flags) PX_OVERRIDE PX_FINAL { mBufferFlags |= flags; }
 	virtual PxU32 getUniqueId() const PX_OVERRIDE PX_FINAL { return mUniqueId; }
@@ -84,10 +75,6 @@ public:
 	//~PxsParticleBuffer
 
 	void setFlatListStartIndex(PxU32 flatListStartIndex) { mFlatListStartIndex = flatListStartIndex; }
-	PxParticleRigidAttachment* getRigidAttachments() const { return mRigidAttachments; }
-	PxU32 getNbRigidAttachments() const { return mNumRigidAttachments; }
-	PxParticleRigidFilterPair* getRigidFilters() const { return mFilterPairs; }
-	PxU32 getNbRigidFilters() const { return mNumFilterPairs; }
 	void copyToHost(CUstream stream);
 
 	PxU32 mBufferFlags;
@@ -98,19 +85,11 @@ public:
 	PxVec4* mPositionInvMassesD;
 	PxVec4* mVelocitiesD;
 	PxU32* mPhasesD;
-	PxParticleVolume* mVolumesD;
 	PxVec4* mPositionInvMassesH;
 	PxVec4* mVelocitiesH;
 	PxU32* mPhasesH;
-	PxParticleVolume* mVolumesH;
-	PxParticleRigidFilterPair* mFilterPairs;
-	PxParticleRigidAttachment* mRigidAttachments;
 	PxU32 mNumActiveParticles;
 	PxU32 mMaxNumParticles;
-	PxU32 mNumParticleVolumes;
-	PxU32 mMaxNumVolumes;
-	PxU32 mNumFilterPairs;
-	PxU32 mNumRigidAttachments;
 	PxU32 mFlatListStartIndex;
 	PxU32 mUniqueId;
 };
@@ -118,7 +97,7 @@ public:
 class PxgParticleBuffer : public PxgParticleBufferBase<PxsParticleBuffer>
 {
 public:
-	PxgParticleBuffer(PxU32 maxNumParticles, PxU32 maxNumVolumes, PxCudaContextManager& contextManager);
+	PxgParticleBuffer(PxU32 maxNumParticles, PxCudaContextManager& contextManager);
 	virtual ~PxgParticleBuffer() {}
 
 	//PxsParticleBuffer
@@ -131,7 +110,7 @@ public:
 class PxgParticleAndDiffuseBuffer : public PxgParticleBufferBase<PxsParticleAndDiffuseBuffer>
 {
 public:
-	PxgParticleAndDiffuseBuffer(PxU32 maxNumParticles, PxU32 maxNumVolumes, PxU32 maxNumDiffuseParticles, PxCudaContextManager& contextManager);
+	PxgParticleAndDiffuseBuffer(PxU32 maxNumParticles, PxU32 maxNumDiffuseParticles, PxCudaContextManager& contextManager);
 	virtual ~PxgParticleAndDiffuseBuffer();
 	
 	//PxsParticleAndDiffuseBuffer
@@ -158,88 +137,6 @@ public:
 	PxU32 mMaxNumDiffuseParticles;
 	PxU32 mMaxActiveDiffuseParticles;
 	PxI32* mNumActiveDiffuseParticlesH; //mapped pinned memory
-};
-
-class PxgParticleClothBuffer : public PxgParticleBufferBase<PxsParticleClothBuffer>
-{
-public:
-	PxgParticleClothBuffer(PxU32 maxNumParticles, PxU32 maxNumVolumes, PxU32 maxNumCloths, 
-		PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager& contextManager);
-	virtual ~PxgParticleClothBuffer();
-
-	//PxsParticleClothBuffer
-	virtual void release() PX_OVERRIDE PX_FINAL { PX_DELETE_THIS; }
-	virtual PxVec4* getRestPositionsD() PX_OVERRIDE PX_FINAL { return mRestPositionsD; }
-	virtual PxU32* getTrianglesD() const PX_OVERRIDE PX_FINAL { return mTriangleIndicesD; }
-	virtual void setNbTriangles(PxU32 nbTriangles) PX_OVERRIDE PX_FINAL { mNumTriangles = nbTriangles; }
-	virtual PxU32 getNbTriangles() const PX_OVERRIDE PX_FINAL { return mNumTriangles; }
-	virtual PxU32 getNbSprings() const PX_OVERRIDE PX_FINAL { return mNumSprings; }
-	virtual PxParticleSpring* getSpringsD() PX_OVERRIDE PX_FINAL { return mOrderedSpringsD; }
-	virtual void setCloths(PxPartitionedParticleCloth& cloths) PX_OVERRIDE PX_FINAL;
-	virtual void setNbActiveParticles(PxU32 nbActiveParticles) PX_OVERRIDE PX_FINAL;
-	//~PxsParticleClothBuffer
-
-	void copyToHost(CUstream stream);
-
-public:
-	PxVec4* mRestPositionsD;
-	PxU32* mTriangleIndicesD;
-
-	PxU32* mAccumulatedSpringsPerPartitionsD;	//numPartitions;
-	PxU32* mAccumulatedCopiesPerParticlesD;		//numSprings
-	PxU32* mRemapOutputD;						//numSprings * 2
-	PxParticleSpring* mOrderedSpringsD;			//numSprings
-
-	PxU32* mSortedClothStartIndicesD;			//numCloths
-
-	PxParticleCloth* mClothsD;					//numClothes
-
-	PxVec4* mRemapPositionsD;
-	PxVec4* mRemapVelocitiesD;
-	PxReal* mSpringLambdaD;
-	PxReal* mInflatableLambdaD;
-
-	PxU32 mMaxNumCloths;
-	PxU32 mMaxNumTriangles;
-	PxU32 mMaxNumSprings;
-	PxU32 mNumPartitions;
-	PxU32 mMaxSpringsPerPartition;
-
-	PxU32 mNumSprings;
-	PxU32 mNumCloths;
-	PxU32 mNumTriangles;
-	PxU32 mRemapOutputSize;
-};
-
-class PxgParticleRigidBuffer : public PxgParticleBufferBase<PxsParticleRigidBuffer>
-{
-public:
-	PxgParticleRigidBuffer(PxU32 maxNumParticles, PxU32 maxNumVolumes, PxU32 maxNumRigids, PxCudaContextManager& contextManager);
-	virtual ~PxgParticleRigidBuffer();
-
-	//PxsParticleRigidBuffer
-	virtual void release() PX_OVERRIDE PX_FINAL { PX_DELETE_THIS; }
-	PxU32* getRigidOffsetsD() const PX_OVERRIDE PX_FINAL { return mRigidOffsetsD; }
-	PxReal* getRigidCoefficientsD() const PX_OVERRIDE PX_FINAL { return mRigidCoefficientsD; }
-	PxVec4* getRigidLocalPositionsD() const PX_OVERRIDE PX_FINAL { return mRigidLocalPositionsD; }
-	PxVec4* getRigidLocalNormalsD() const PX_OVERRIDE PX_FINAL { return mRigidLocalNormalsD; }
-	PxVec4* getRigidTranslationsD() const PX_OVERRIDE PX_FINAL { return mRigidTranslationsD; }
-	PxVec4* getRigidRotationsD() const PX_OVERRIDE PX_FINAL { return mRigidRotationsD; }
-	void setNbRigids(const PxU32 nbRigids) PX_OVERRIDE PX_FINAL { mNumActiveRigids = nbRigids; }
-	PxU32 getNbRigids() const PX_OVERRIDE PX_FINAL { return mNumActiveRigids; }
-	//~PxsParticleRigidBuffer
-
-	void copyToHost(CUstream stream);
-
-public:
-	PxU32* mRigidOffsetsD;
-	PxReal* mRigidCoefficientsD;
-	PxVec4* mRigidLocalPositionsD;
-	PxVec4* mRigidLocalNormalsD;
-	PxVec4* mRigidTranslationsD;
-	PxVec4* mRigidRotationsD;
-	PxU32	mNumActiveRigids;
-	PxU32	mMaxNumRigids;
 };
 
 class PxgParticleSystemBuffer
@@ -293,21 +190,12 @@ public:
 	PxgTypedCudaBuffer<PxU32>			user_particle_buffer_runsum; //PxU32*
 	PxgTypedCudaBuffer<PxU32>			user_particle_buffer_sorted_unique_ids; //PxU32*
 	PxgTypedCudaBuffer<PxU32>			user_particle_buffer_runsum_sorted_unique_ids_original_index; //PxU32*
-	PxgTypedCudaBuffer<PxgParticleClothSimBuffer> user_cloth_buffer;
-	PxgTypedCudaBuffer<PxgParticleRigidSimBuffer> user_rigid_buffer;
 	PxgTypedCudaBuffer<PxgParticleDiffuseSimBuffer> user_diffuse_buffer;
 
-	PxgTypedCudaBuffer<PxU32>			attachmentRunSum;
-	PxgTypedCudaBuffer<PxU32>			referencedRigidsRunsum;
-
 	Cm::PinnableArray<PxgParticleSimBuffer>			mHostParticleBuffers;
-	Cm::PinnableArray<PxgParticleClothSimBuffer>	mHostClothBuffers;
-	Cm::PinnableArray<PxgParticleRigidSimBuffer>	mHostRigidBuffers;
 	Cm::PinnableArray<PxgParticleDiffuseSimBuffer>	mHostDiffuseBuffers;
 
-	Cm::PinnableArray<PxU32>						mAttachmentRunSum;
 	Cm::PinnableArray<PxU32>						mParticleBufferRunSum;
-	Cm::PinnableArray<PxU32>						mReferencedRigidsRunsum;
 
 	Cm::PinnableArray<PxU32>						mParticleBufferSortedUniqueIds;
 	Cm::PinnableArray<PxU32>						mParticleBufferSortedUniqueIdsOriginalIndex;

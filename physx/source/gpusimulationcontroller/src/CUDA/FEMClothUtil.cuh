@@ -65,6 +65,10 @@ namespace physx
 #define FEMCLOTH_SQRT3		1.7320508075688772935274463415059f
 
 #define FEMCLOTH_THRESHOLD	1.0e-14f
+
+// Closest-pt direction is precision-unreliable below this dist^2; fall back to triangle/edge normal.
+#define FEMCLOTH_NORMAL_FALLBACK_DISTSQ	1.0e-10f
+
 #define FEMCLOTH_PI			3.14159265358979323846f
 #define FEMCLOTH_HALF_PI	1.57079632679489661923f
 #define FEMCLOTH_2PI		6.28318530717958647692f

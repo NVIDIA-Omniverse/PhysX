@@ -273,40 +273,6 @@ PhysxSchemaPhysxPBDMaterialAPI::CreateGravityScaleAttr(VtValue const &defaultVal
 }
 
 UsdAttribute
-PhysxSchemaPhysxPBDMaterialAPI::GetLiftAttr() const
-{
-    return GetPrim().GetAttribute(PhysxSchemaTokens->physxPBDMaterialLift);
-}
-
-UsdAttribute
-PhysxSchemaPhysxPBDMaterialAPI::CreateLiftAttr(VtValue const &defaultValue, bool writeSparsely) const
-{
-    return UsdSchemaBase::_CreateAttr(PhysxSchemaTokens->physxPBDMaterialLift,
-                       SdfValueTypeNames->Float,
-                       /* custom = */ false,
-                       SdfVariabilityVarying,
-                       defaultValue,
-                       writeSparsely);
-}
-
-UsdAttribute
-PhysxSchemaPhysxPBDMaterialAPI::GetDragAttr() const
-{
-    return GetPrim().GetAttribute(PhysxSchemaTokens->physxPBDMaterialDrag);
-}
-
-UsdAttribute
-PhysxSchemaPhysxPBDMaterialAPI::CreateDragAttr(VtValue const &defaultValue, bool writeSparsely) const
-{
-    return UsdSchemaBase::_CreateAttr(PhysxSchemaTokens->physxPBDMaterialDrag,
-                       SdfValueTypeNames->Float,
-                       /* custom = */ false,
-                       SdfVariabilityVarying,
-                       defaultValue,
-                       writeSparsely);
-}
-
-UsdAttribute
 PhysxSchemaPhysxPBDMaterialAPI::GetDensityAttr() const
 {
     return GetPrim().GetAttribute(PhysxSchemaTokens->physxPBDMaterialDensity);
@@ -368,8 +334,6 @@ PhysxSchemaPhysxPBDMaterialAPI::GetSchemaAttributeNames(bool includeInherited)
         PhysxSchemaTokens->physxPBDMaterialParticleAdhesionScale,
         PhysxSchemaTokens->physxPBDMaterialAdhesionOffsetScale,
         PhysxSchemaTokens->physxPBDMaterialGravityScale,
-        PhysxSchemaTokens->physxPBDMaterialLift,
-        PhysxSchemaTokens->physxPBDMaterialDrag,
         PhysxSchemaTokens->physxPBDMaterialDensity,
         PhysxSchemaTokens->physxPBDMaterialCflCoefficient,
     };

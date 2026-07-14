@@ -966,7 +966,6 @@ static __device__ void computeUnconstrainedVelocitiesInternal1T(const PxgBodySim
 		// so that we do not reload parent, body2World and linkBlock.mRw_xyz multiple times.
 		// A longer loop also offers more opportunities for preloading & hiding latencies.
 
-		const Cm::UnAlignedSpatialVector rootVel = loadSpatialVector(articulationLinkBlocks[0].mMotionVelocity, threadIndexInWarp);
 		articulationLinkBlocks[0].mPreTransform.p[threadIndexInWarp] = articulationLinkBlocks[0].mAccumulatedPose.p[threadIndexInWarp];
 		articulationLinkBlocks[0].mPreTransform.q[threadIndexInWarp] = articulationLinkBlocks[0].mAccumulatedPose.q[threadIndexInWarp];
 
@@ -990,9 +989,6 @@ static __device__ void computeUnconstrainedVelocitiesInternal1T(const PxgBodySim
 				}
 			}
 		}
-
-		msArticulation.rootPreMotionVelocity->top = rootVel.top;
-		msArticulation.rootPreMotionVelocity->bottom = rootVel.bottom;
 
 		//velocities contributed by joint velocities
 		dofs = articulationDofBlocks;
@@ -1344,7 +1340,7 @@ static __device__ PX_FORCE_INLINE void computeIs(
 	PxgArticulationBlockDofData* dofData,
 	PxgArticulationBlockLinkData& linkData,
 	const PxU32 threadIndexInWarp)
-{	
+{
 	assert(dofs<=3);
 	for (PxU32 ind = 0; ind < 3; ++ind)
 	{
@@ -2029,7 +2025,7 @@ static __device__ void computeLinkAcceleration(PxgArticulationBlockData& PX_REST
 			PxReal jAccel = 0.f;
 			if (ind < dofs)
 			{
-				jAccel = qstZ[ind] - isWs[ind].innerProduct(pMotionAcceleration);;
+				jAccel = qstZ[ind] - isWs[ind].innerProduct(pMotionAcceleration);
 			}
 			tJAccel[ind] = jAccel;
 		}
@@ -3017,6 +3013,51 @@ static __device__ void updateBodiesInternal(
 	}
 }
 
+// Under eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS, articulation.zAForces[link] holds
+// only the per-link isolated external Z (gravity + user accelerations). The substep kernel
+// artiApplyTgsSubstepForces propagates these per-substep through joint dofs, so per-link
+// storage is what the substep needs. The end-of-step joint force readback in
+// updateBodiesLaunch_Part2, however, needs the cumulative external Z chain at each link
+// (own + propagated descendants) because mZAVector excludes external Z under TGS-ext.
+// zAForces[] is overwritten at the start of the next sim step in computeSpatialInertiaW,
+// so cumulative state does not leak across frames.
+//
+// The leaves->root sweep uses propagateImpulseW (no joint impulse) so each joint's free
+// DOFs are projected out of the propagated wrench - same pattern as artiApplyTgsSubstepForces
+// and the prep-time backward sweep. Without this projection, free axes (e.g. prismatic slide
+// axis aligned with gravity) would over-report a transmitted force where the descendants are
+// actually free-falling along that DOF. WriteToProvidedQstZ + providedQstZ=NULL is the no-op
+// variant: the propagation arithmetic still runs, but the per-DOF QstZ accumulation is skipped.
+static __device__ void accumulateExternalZAcrossChainW(
+	const PxgArticulation& articulation,
+	const PxgArticulationBlockLinkData* PX_RESTRICT linkData,
+	PxgArticulationBlockDofData* PX_RESTRICT dofData,
+	const PxU32 numLinks,
+	const PxU32 threadIndexInWarp)
+{
+	Cm::UnAlignedSpatialVector* PX_RESTRICT zAForces = articulation.zAForces;
+	for (PxU32 linkID = numLinks - 1; linkID > 0; --linkID)
+	{
+		const PxgArticulationBlockLinkData& blockData = linkData[linkID];
+		const PxU32 parent = blockData.mParents[threadIndexInWarp];
+		const float rwx = blockData.mRw_x[threadIndexInWarp];
+		const float rwy = blockData.mRw_y[threadIndexInWarp];
+		const float rwz = blockData.mRw_z[threadIndexInWarp];
+		const PxU32 dofCount = blockData.mDofs[threadIndexInWarp];
+		const PxU32 jointOffset = blockData.mJointOffset[threadIndexInWarp];
+
+		const Cm::UnAlignedSpatialVector childZ = zAForces[linkID];
+		const Cm::UnAlignedSpatialVector translated =
+			propagateImpulseW<WriteToProvidedQstZ>(
+				PxVec3(rwx, rwy, rwz),
+				&dofData[jointOffset],
+				childZ,
+				dofCount, threadIndexInWarp,
+				NULL, 1.0f, NULL);
+		zAForces[parent] += translated;
+	}
+}
+
 extern "C" __global__ void updateBodiesLaunch1T(
 	const PxgArticulationCoreDesc* const PX_RESTRICT scDesc,
 	PxReal dt, bool integrate)
@@ -3044,6 +3085,14 @@ extern "C" __global__ void updateBodiesLaunch1T(
 		else
 			updateBodiesInternal<false>(articulation, linkData, dofData, dt, threadIndexInWarp, scDesc,
 				maxLinks, maxDofs, globalThreadIndex, nbArticulations);
+
+		if (scDesc->isExternalForcesEveryTgsIterationEnabled)
+		{
+			const PxU32 articulationIndex = articulation.mArticulationIndex[threadIndexInWarp];
+			const PxgArticulation& arti = scDesc->articulations[articulationIndex];
+			const PxU32 linkCount = articulation.mNumLinks[threadIndexInWarp];
+			accumulateExternalZAcrossChainW(arti, linkData, dofData, linkCount, threadIndexInWarp);
+		}
 	}
 }
 
@@ -3094,7 +3143,7 @@ extern "C" __global__ void updateBodiesLaunch_Part2(
 			Cm::UnAlignedSpatialVector* linkIncomingJointForces = articulation.linkIncomingJointForces;
 
 			if(linkIndex==0)
-			{	
+			{
 				const Cm::SpatialVectorF linkMotionAccelerationW = loadSpatialVectorF(linkData[0].mMotionAcceleration, threadIndexInWarp);
 				const Cm::SpatialVectorF linkSpatialDeltaVelW = loadSpatialVectorF(linkData[0].mSolverSpatialDeltaVel, threadIndexInWarp);
 
@@ -3109,8 +3158,21 @@ extern "C" __global__ void updateBodiesLaunch_Part2(
 				linkIncomingJointForces[0].bottom = PxVec3(PxZero);
 			}
 			else
-			{	
-				const Cm::SpatialVectorF linkZAForceExtW = loadSpatialVectorF(linkData[linkIndex].mZAVector, threadIndexInWarp);
+			{
+				Cm::SpatialVectorF linkZAForceExtW = loadSpatialVectorF(linkData[linkIndex].mZAVector, threadIndexInWarp);
+				if (scDesc->isExternalForcesEveryTgsIterationEnabled)
+				{
+					// Under eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS, computeSpatialInertiaW
+					// splits the external Z (gravity + user accelerations) out of mZAVector
+					// into articulation.zAForces[] so it can be re-applied each substep
+					// (mZAVector keeps only zDamp). The leaves->root sweep in updateBodiesLaunch1T
+					// accumulates descendants' contributions into articulation.zAForces[link] just
+					// before this kernel runs, so adding it back here recovers the full external-Z
+					// chain (own + propagated descendants) for the readback.
+					const Cm::UnAlignedSpatialVector zExtChain = articulation.zAForces[linkIndex];
+					linkZAForceExtW.top += zExtChain.top;
+					linkZAForceExtW.bottom += zExtChain.bottom;
+				}
 				const Cm::SpatialVectorF linkZAForceIntW = loadSpatialVectorF(linkData[linkIndex].mZAIntVector, threadIndexInWarp);
 				const Cm::SpatialVectorF linkMotionAccelerationExtW = loadSpatialVectorF(linkData[linkIndex].mMotionAcceleration, threadIndexInWarp);
 				const Cm::SpatialVectorF linkMotionAccelerationIntW = loadSpatialVectorF(linkData[linkIndex].mMotionAccelerationInternal, threadIndexInWarp);
@@ -3128,7 +3190,7 @@ extern "C" __global__ void updateBodiesLaunch_Part2(
 
 				//Compute the force measured at the link.
 				Cm::SpatialVectorF incomingJointForceW =
-					linkSpatialInertiaW*accelerationW + 
+					linkSpatialInertiaW*accelerationW +
 					(linkZAForceExtW + linkZAForceIntW + linkSpatialImpulseW*invDt);	// PT: at link
 
 				//Compute the equivalent force measured at the joint.
@@ -3935,27 +3997,38 @@ static void __device__ PxcFsFlushVelocity(PxgArticulationBlockData& articulation
 {
 	Cm::UnAlignedSpatialVector deltaV = Cm::UnAlignedSpatialVector::Zero();
 	Cm::UnAlignedSpatialVector deferredZ = -loadSpatialVector(articulation.mRootDeferredZ, threadIndexInWarp);
+
+	// For fixed-base, mMotionVelocity[0] is zero by invariant; skip the load and
+	// publish zero to outVelocity below. Non-fixed-base loads + integrates.
+	Cm::UnAlignedSpatialVector vel = Cm::UnAlignedSpatialVector::Zero();
+
 	if (!fixBase)
 	{
+		vel = loadSpatialVector(artiLinks[0].mMotionVelocity, threadIndexInWarp);
+
+		// Accumulate root mSolverSpatialDeltaVel: parity with PxcFsFlushVelocity in
+		// articulationDynamic.cuh. Without this, mSolverSpatialDeltaVel stays at zero on every
+		// articulation whose dirty state is consumed here (OMPE-42519, joint force readback bug).
+		const Cm::UnAlignedSpatialVector solverSpatialDeltaVel0 = loadSpatialVector(artiLinks[0].mSolverSpatialDeltaVel, threadIndexInWarp);
+
 		Dy::SpatialMatrix invInertia;
 		loadSpatialMatrix(articulation.mInvSpatialArticulatedInertia, threadIndexInWarp, invInertia);
 		//deltaV = invInertia * (-loadSpatialVector(artiLinks[0].mDeferredZ, threadIndexInWarp));
 
 		deltaV = invInertia * deferredZ;
 
-		Cm::UnAlignedSpatialVector vel = loadSpatialVector(artiLinks[0].mMotionVelocity, threadIndexInWarp);
-
 		vel += deltaV;
-
-		//output velocity to the solver outArtiVelocity buffer
-		outVelocity[0] = make_float4(vel.bottom.x, vel.bottom.y, vel.bottom.z, 0.f);
-		outVelocity[offset] = make_float4(vel.top.x, vel.top.y, vel.top.z, 0.f);
 
 		//store back vel to block velocity data
 		storeSpatialVector(artiLinks[0].mMotionVelocity, vel, threadIndexInWarp);
 
 		storeSpatialVector(articulation.mRootDeferredZ, Cm::UnAlignedSpatialVector::Zero(), threadIndexInWarp);
+
+		storeSpatialVector(artiLinks[0].mSolverSpatialDeltaVel, solverSpatialDeltaVel0 + deltaV, threadIndexInWarp);
 	}
+
+	outVelocity[0] = make_float4(vel.bottom.x, vel.bottom.y, vel.bottom.z, 0.f);
+	outVelocity[offset] = make_float4(vel.top.x, vel.top.y, vel.top.z, 0.f);
 
 	storeSpatialVector(artiLinks[0].mScratchDeltaV, deltaV, threadIndexInWarp);
 	addSpatialVector(artiLinks[0].mConstraintForces, deferredZ, threadIndexInWarp);
@@ -3976,6 +4049,9 @@ static void __device__ PxcFsFlushVelocity(PxgArticulationBlockData& articulation
 			const PxU32 nbDofs = nextNbDofs;
 			const PxU32 parent = nextParent;
 
+			// Parity with PxcFsFlushVelocity in articulationDynamic.cuh (OMPE-42519).
+			const Cm::UnAlignedSpatialVector preloadedSolverSpatialDeltaVel = loadSpatialVector(tLink.mSolverSpatialDeltaVel, threadIndexInWarp);
+
 			Cm::UnAlignedSpatialVector motionV = nextMotionV;
 
 			if ((i + 1) < linkCount)
@@ -3989,6 +4065,8 @@ static void __device__ PxcFsFlushVelocity(PxgArticulationBlockData& articulation
 				deltaV = loadSpatialVector(artiLinks[parent].mScratchDeltaV, threadIndexInWarp);
 
 			deltaV = propagateAccelerationW_nothingpreloaded_updateJointDofVels(tLink, dofs, nbDofs, deltaV, threadIndexInWarp);
+
+			storeSpatialVector(tLink.mSolverSpatialDeltaVel, preloadedSolverSpatialDeltaVel + deltaV, threadIndexInWarp);
 
 			//zeroing mDeferredQstZ
 			for (PxU32 ind = 0; ind < nbDofs; ++ind)
@@ -4130,22 +4208,46 @@ extern "C" __global__ void artiPushImpulse(
 				storeSpatialVector(linkData.mScratchImpulse, Cm::UnAlignedSpatialVector::Zero(), threadIndexInWarp);
 			}
 
-#if 0	// OMPE-66339
-			const bool fixedBase = articulation.mFlags[threadIndexInWarp] & PxArticulationFlag::eFIX_BASE;
-
-			if (!fixedBase)
+			// OMPE-42519: flush mScratchImpulse[0] into mRootDeferredZ.
+			//
+			// History: an earlier !fixedBase-only block here propagated
+			//   mat * (-mScratchImpulse[0])  (a deltaV, in velocity space)
+			// into mRootDeferredZ. But mRootDeferredZ accumulates *impulse*, not
+			// deltaV -- wrong units. That broke deformable -> articulation-link
+			// interactions, and OMPE-66339 wholesale disabled the block as the
+			// minimal fix. Disabling left mScratchImpulse[0] un-flushed though,
+			// so on free-root single-link articulations the leftover impulse
+			// contaminated the next iter's articulation-contact solve when a
+			// bystander rigid-vs-articulation contact was in the scene.
+			//
+			// Put the propagation back with correct impulse-space semantics
+			// (matching averageLinkImpulsesAndPropagate at end-of-iter):
+			//   mRootDeferredZ += mScratchImpulse[0];
+			//   mScratchImpulse[0] = 0;
+			//
+			// Unlike the OMPE-66339-era code, the flush runs for both
+			// free-root and fixed-base, matching the shape of
+			// averageLinkImpulsesAndPropagate at end-of-iter. The
+			// OMPE-42519 readback itself does not depend on the
+			// fixed-base side of this flush -- it consumes
+			// mSolverSpatialImpulse (written by
+			// accumulateDeltaVRigidSecond* in rigidDeltaAccum.cu),
+			// not mRootDeferredZ.
+			//
+			// Fixed-base is latently asymmetric: PxcFsFlushVelocity
+			// clears mRootDeferredZ only inside its !fixBase branch,
+			// so for a fixed root the value flushed here resides in
+			// mRootDeferredZ and is re-accumulated into
+			// mConstraintForces on every subsequent flush. Harmless
+			// today because mConstraintForces has no consumer -- it is
+			// written but never read, never DMA'd back to the host,
+			// and never sampled by the readback path. Tracked as
+			// OMPE-93501.
 			{
-				//(1) Compute updated link velocity...
-				PxSpatialMatrix mat;
-				loadSpatialMatrix(artiLinks[0].mSpatialResponseMatrix, threadIndexInWarp, mat);
-
-				Cm::UnAlignedSpatialVector deltaV = mat * (-loadSpatialVector(artiLinks[0].mScratchImpulse, threadIndexInWarp));
-
-				storeSpatialVector(articulation.mRootDeferredZ, deltaV, threadIndexInWarp);
-
+				const Cm::UnAlignedSpatialVector rootZ = loadSpatialVector(artiLinks[0].mScratchImpulse, threadIndexInWarp);
+				addSpatialVector(articulation.mRootDeferredZ, rootZ, threadIndexInWarp);
 				storeSpatialVector(artiLinks[0].mScratchImpulse, Cm::UnAlignedSpatialVector::Zero(), threadIndexInWarp);
 			}
-#endif
 		}
 	}
 }

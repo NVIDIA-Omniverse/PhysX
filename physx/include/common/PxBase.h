@@ -58,7 +58,7 @@ typedef PxU16 PxType;
 \brief Flags for PxBase.
 */
 struct PxBaseFlag
-{	
+{
 	enum Enum
 	{
 		eOWNS_MEMORY	= (1<<0),

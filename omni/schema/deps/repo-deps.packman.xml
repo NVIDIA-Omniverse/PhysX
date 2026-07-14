@@ -1,5 +1,6 @@
-<project toolsVersion="5.6">  
-  <import path="../../deps/repo-deps.packman.xml">
+<?xml version='1.0' encoding='utf-8'?>
+<project toolsVersion="5.6">
+  <import path="../../ovexts/deps/repo-deps.packman.xml">
     <filter include="repo_man" />
     <filter include="repo_usd" />
     <filter include="repo_build" />

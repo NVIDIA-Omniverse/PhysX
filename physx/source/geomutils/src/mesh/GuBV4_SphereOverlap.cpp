@@ -154,7 +154,7 @@ static PX_FORCE_INLINE void setupSphereParams(ParamsT* PX_RESTRICT params, const
 #else
 	#ifdef GU_BV4_QUANTIZED_TREE
 	static PX_FORCE_INLINE PxIntBool BV4_SphereAABBOverlap(const BVDataPacked* PX_RESTRICT node, const SphereParams* PX_RESTRICT params)
-	{		
+	{
 		const VecI32V testV = I4LoadA((const PxI32*)&node->mAABB.mData[0]);		
 		const VecI32V qextentsV = VecI32V_And(testV, I4LoadXYZW(0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff));
 		const VecI32V qcenterV = VecI32V_RightShift(testV, 16);

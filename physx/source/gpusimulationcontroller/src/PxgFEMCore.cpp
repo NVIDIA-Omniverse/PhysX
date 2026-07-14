@@ -98,6 +98,7 @@ PxgFEMCore::PxgFEMCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaCo
 #else
 	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
 #endif
+	, mFinalizeEvent(NULL)
 {
 	mCudaContextManager->acquireContext();
 

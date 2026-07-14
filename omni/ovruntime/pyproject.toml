@@ -1,0 +1,13 @@
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+testpaths = [
+    "source/omni.physx/tests/python",
+    "source/omni.usdphysics/tests/python",
+    "source/omni.physx.tensors/tests/python",
+]
+pythonpath = [
+    "source/omni.physx/tests/python",
+    "source/omni.usdphysics/tests/python",
+    "source/omni.physx.tensors/tests/python",
+]
+python_files = ["test*.py"]

@@ -609,7 +609,7 @@ bool sweepConvex_PlaneGeom(GU_CONVEX_SWEEP_FUNC_PARAMS)
 		float t;
 		PxVec3 pointOnPlane;
 		if(intersectRayPlane(worldPt, unitDir, plane, t, &pointOnPlane))
-		{	
+		{
 			if(plane.distance(worldPt) <= 0.0f)
 			{
 				initialOverlap = true;

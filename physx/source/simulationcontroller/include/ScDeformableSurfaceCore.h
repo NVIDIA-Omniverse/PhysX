@@ -39,7 +39,6 @@
 #include "ScShapeCore.h"
 #include "PxFiltering.h"
 #include "ScRigidCore.h" //KS - required for ShapeChangeNotifyFlags. Ideally, we should move that to a separate shared file
-#include "PxConeLimitedConstraint.h"
 
 namespace physx
 {
@@ -120,14 +119,14 @@ public:
 	// Internal API
 	//---------------------------------------------------------------------------------
 
-	PxU32						addRigidAttachment(Sc::BodyCore* core, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint);
+	PxU32						addRigidAttachment(Sc::BodyCore* core, PxU32 vertId, const PxVec3& actorSpacePose);
 	void						removeRigidAttachment(Sc::BodyCore* core, PxU32 handle);
 
 	void						addTriRigidFilter(Sc::BodyCore* core, PxU32 triIdx);
 	void						removeTriRigidFilter(Sc::BodyCore* core, PxU32 triIdx);
 
-	PxU32						addTriRigidAttachment(Sc::BodyCore* core, PxU32 triIdx, const PxVec4& barycentric, 
-									const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint);
+	PxU32						addTriRigidAttachment(Sc::BodyCore* core, PxU32 triIdx, const PxVec4& barycentric,
+									const PxVec3& actorSpacePose);
 	void						removeTriRigidAttachment(Sc::BodyCore* core, PxU32 handle);
 
 	void						addClothFilter(Sc::DeformableSurfaceCore* otherCore, PxU32 otherTriIdx, PxU32 triIdx);

@@ -1079,7 +1079,7 @@ namespace
 			}
 		}
 		else
-		{			
+		{
 			for (PxU32 i = 0; i < indices.count; ++i)
 				result[i] = indices.at<Triangle>(i);
 		}
@@ -1455,7 +1455,7 @@ namespace
 			PxU32 start = 0;
 			PxArray<PxI32> stack;
 			while (true)
-			{		
+			{
 				stack.clear();
 				while (start < done.size())
 				{
@@ -1564,7 +1564,7 @@ namespace
 					}
 				}
 				return false;
-			}			
+			}
 			
 			embed(embeddingError, id, p, mBaseTetIndex, mBaseTetIndex + numTetsPerVoxel, voxelTets, voxelPoints, embeddings);
 			return true;
@@ -1659,7 +1659,7 @@ namespace
 					}
 				}
 				else
-				{					
+				{
 					for (PxI32 j = 0; j < 24; j += 4)
 					{
 						PxI32 a = n.c[tets6PerVoxel[j + 0]];

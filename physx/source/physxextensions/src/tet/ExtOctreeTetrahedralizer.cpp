@@ -266,7 +266,7 @@ void OctreeTetrahedralizer::createTetVerts(bool includeOctreeNodes)
 				i++;
 			}
 		}
-	}			
+	}
 }
 
 // -----------------------------------------------------------------------------------
@@ -337,7 +337,7 @@ PxI32 OctreeTetrahedralizer::getNewTetNr()
 		firstFreeTet = tetIds[4 * firstFreeTet];
 	}
 	else 
-	{		
+	{
 		// append
 		newTetNr = PxI32(tetIds.size()) / 4;
 		resizeFast(tetIds, tetIds.size() + 4);

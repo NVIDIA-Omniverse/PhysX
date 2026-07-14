@@ -217,7 +217,7 @@ namespace Gu
 		}
 
 		PX_FORCE_INLINE aos::Vec3V supportLocal(const aos::Vec3VArg dir, PxI32& index) const
-		{		
+		{
 			using namespace aos;
 			const VecI32V vZero = VecI32V_Zero();
 			const VecI32V vOne = VecI32V_One();

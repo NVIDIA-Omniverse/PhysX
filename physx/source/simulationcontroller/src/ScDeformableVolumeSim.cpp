@@ -86,8 +86,7 @@ void Sc::DeformableVolumeSim::attachShapeCore(ShapeCore* core)
 		addToAABBMgr(Bp::FilterType::DEFORMABLE_VOLUME);
 	}
 
-	PxsShapeCore* shapeCore = const_cast<PxsShapeCore*>(&core->getCore());
-	mLLDeformableVolume->setShapeCore(shapeCore);
+	mLLDeformableVolume->setShapeCore(core);
 }
 
 PxBounds3 Sc::DeformableVolumeSim::getWorldBounds() const

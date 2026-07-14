@@ -1012,7 +1012,7 @@ struct MeshMeshParams : OBBTestParams
 		setupBoxBoxRotationData(this, &mAbsRot, &localBox_rot);
 	}
 
-	void	setupBoxBoxCenterAndExtentData(const PxVec3p& center, const PxVec3p& extents, float tolerance)
+	void setupBoxBoxCenterAndExtentData(const PxVec3p& center, const PxVec3p& extents, float tolerance)
 	{
 		if(mMat0to1)
 		{
@@ -1158,6 +1158,11 @@ static PX_NOINLINE bool doSmallMeshVsTree(	PxReportCallbackBase& callback, MeshM
 
 		Vec4V centerV, extentsV;
 		computeBoundsAroundVertices(centerV, extentsV, mesh0->getNbVertices(), mesh0->getVerts());
+
+		// PT: add the same box epsilon as when building the BVH
+		const float gBoxEpsilon = 2e-4f;
+		extentsV = V4Add(extentsV, V4Load(gBoxEpsilon));
+
 		V4StoreA(centerV, &boxCenter.x);
 		V4StoreA(extentsV, &boxExtents.x);
 

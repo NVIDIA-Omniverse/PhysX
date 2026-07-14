@@ -96,28 +96,16 @@ PxgPhysXGpu& PxgPhysXGpu::getInstance()
 
 //----------------------------------------------------------------------------//
 
-PxsParticleBuffer* PxgPhysXGpu::createParticleBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxCudaContextManager& cudaContextManager)
+PxsParticleBuffer* PxgPhysXGpu::createParticleBuffer(PxU32 maxNumParticles, PxCudaContextManager& cudaContextManager)
 {
-	PxgParticleBuffer* particleBuffer =  PX_NEW(PxgParticleBuffer)(maxNumParticles, maxVolumes, cudaContextManager);
+	PxgParticleBuffer* particleBuffer =  PX_NEW(PxgParticleBuffer)(maxNumParticles, cudaContextManager);
 	return static_cast<PxsParticleBuffer*>(particleBuffer);
 }
 
-PxsParticleAndDiffuseBuffer* PxgPhysXGpu::createParticleAndDiffuseBuffer(const PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager)
+PxsParticleAndDiffuseBuffer* PxgPhysXGpu::createParticleAndDiffuseBuffer(const PxU32 maxParticles, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager)
 {
-	PxgParticleAndDiffuseBuffer* diffuseBuffer = PX_NEW(PxgParticleAndDiffuseBuffer)(maxParticles, maxVolumes, maxDiffuseParticles, cudaContextManager);
+	PxgParticleAndDiffuseBuffer* diffuseBuffer = PX_NEW(PxgParticleAndDiffuseBuffer)(maxParticles, maxDiffuseParticles, cudaContextManager);
 	return static_cast<PxsParticleAndDiffuseBuffer*>(diffuseBuffer);
-}
-
-PxsParticleClothBuffer* PxgPhysXGpu::createParticleClothBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager& cudaContextManager)
-{
-	PxgParticleClothBuffer* clothBuffer = PX_NEW(PxgParticleClothBuffer)(maxNumParticles, maxVolumes, maxNumCloths, maxNumTriangles, maxNumSprings, cudaContextManager);
-	return static_cast<PxsParticleClothBuffer*>(clothBuffer);
-}
-
-PxsParticleRigidBuffer* PxgPhysXGpu::createParticleRigidBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumRigids, PxCudaContextManager& cudaContextManager)
-{
-	PxgParticleRigidBuffer* rigidBuffer = PX_NEW(PxgParticleRigidBuffer)(maxNumParticles, maxVolumes, maxNumRigids, cudaContextManager);
-	return static_cast<PxsParticleRigidBuffer*>(rigidBuffer);
 }
 
 PxsMemoryManager* PxgPhysXGpu::createGpuMemoryManager(PxCudaContextManager* cudaContextManager)
@@ -224,7 +212,7 @@ PxvNphaseImplementationContext* PxgPhysXGpu::createGpuNphaseImplementationContex
 PxsSimulationController* PxgPhysXGpu::createGpuSimulationController(PxsKernelWranglerManager* gpuWranglerManagers, PxCudaContextManager* cudaContextManager, 
 	Dy::Context* dynamicContext, PxvNphaseImplementationContext* npContext,
 	Bp::BroadPhase* bp, const bool useGpuBroadphase, PxsSimulationControllerCallback* callback, 
-	const PxU32 /*gpuComputeVersion*/, PxsHeapMemoryAllocatorManager& heapMemoryManager, const PxU32 maxSoftBodyContacts, const PxU32 maxFemClothContacts,
+	const PxU32 /*gpuComputeVersion*/, PxsHeapMemoryAllocatorManager& heapMemoryManager, const PxU32 maxDeformableVolumeContacts, const PxU32 maxDeformableSurfaceContacts,
 	const PxU32 maxParticleContacts, const PxU32 collisionStackSizeBytes, bool enableBodyAccelerations)
 {
 	if(!gpuWranglerManagers || !cudaContextManager || !dynamicContext || !npContext || !bp)
@@ -234,8 +222,8 @@ PxsSimulationController* PxgPhysXGpu::createGpuSimulationController(PxsKernelWra
 
 	return PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgSimulationController), "PxgSimulationController"),
 		PxgSimulationController)(gpuWranglerManagers, cudaContextManager, static_cast<PxgDynamicsContext*>(dynamicContext), static_cast<PxgNphaseImplementationContext*>(npContext),
-		bp, useGpuBroadphase, callback, allocDesc, maxSoftBodyContacts, 
-			maxFemClothContacts, maxParticleContacts, collisionStackSizeBytes, enableBodyAccelerations);
+		bp, useGpuBroadphase, callback, allocDesc, maxDeformableVolumeContacts, 
+			maxDeformableSurfaceContacts, maxParticleContacts, collisionStackSizeBytes, enableBodyAccelerations);
 }
 
 //----------------------------------------------------------------------------//
@@ -400,26 +388,26 @@ public:
 	PxgPhysicsGpu() {}
 
 	virtual PxIsosurfaceExtractor* createDenseGridIsosurfaceExtractor(PxCudaContextManager* cudaContextManager, const PxBounds3& worldBounds,
-		PxReal cellSize, const PxIsosurfaceParams& isosurfaceParams, PxU32 maxNumParticles, PxU32 maxNumVertices, PxU32 maxNumTriangles);
+		PxReal cellSize, const PxIsosurfaceParams& isosurfaceParams, PxU32 maxNumParticles, PxU32 maxNumVertices, PxU32 maxNumTriangles) PX_OVERRIDE;
 
 	virtual PxSparseGridIsosurfaceExtractor* createSparseGridIsosurfaceExtractor(PxCudaContextManager* cudaContextManager, const PxSparseGridParams& sparseGridParams,
-		const PxIsosurfaceParams& isosurfaceParams, PxU32 maxNumParticles, PxU32 maxNumVertices, PxU32 maxNumTriangles);
+		const PxIsosurfaceParams& isosurfaceParams, PxU32 maxNumParticles, PxU32 maxNumVertices, PxU32 maxNumTriangles) PX_OVERRIDE;
 
 	virtual PxAnisotropyGenerator* createAnisotropyGenerator(PxCudaContextManager* cudaContextManager, PxU32 maxNumParticles,
-		PxReal anisotropyScale, PxReal minAnisotropy, PxReal maxAnisotropy);
+		PxReal anisotropyScale, PxReal minAnisotropy, PxReal maxAnisotropy) PX_OVERRIDE;
 
-	virtual PxSmoothedPositionGenerator* createSmoothedPositionGenerator(PxCudaContextManager* cudaContextManager, PxU32 maxNumParticles, PxReal smoothingStrength);
+	virtual PxSmoothedPositionGenerator* createSmoothedPositionGenerator(PxCudaContextManager* cudaContextManager, PxU32 maxNumParticles, PxReal smoothingStrength) PX_OVERRIDE;
 
 	virtual PxParticleNeighborhoodProvider* createParticleNeighborhoodProvider(PxCudaContextManager* cudaContextManager, const PxU32 maxNumParticles,
-		const PxReal cellSize, const PxU32 maxNumSparseGridCells);
+		const PxReal cellSize, const PxU32 maxNumSparseGridCells) PX_OVERRIDE;
 
-	virtual PxArrayConverter* createArrayConverter(PxCudaContextManager* cudaContextManager);
+	virtual PxArrayConverter* createArrayConverter(PxCudaContextManager* cudaContextManager) PX_OVERRIDE;
 
-	virtual PxSDFBuilder* createSDFBuilder(PxCudaContextManager* cudaContextManager);
+	virtual PxSDFBuilder* createSDFBuilder(PxCudaContextManager* cudaContextManager) PX_OVERRIDE;
 
-	virtual PxgDeformableSkinning* createDeformableSkinning(PxCudaContextManager* cudaContextManager);
+	virtual PxgDeformableSkinning* createDeformableSkinning(PxCudaContextManager* cudaContextManager) PX_OVERRIDE;
 
-	virtual void release();
+	virtual void release() PX_OVERRIDE;
 
 	virtual ~PxgPhysicsGpu() {}
 

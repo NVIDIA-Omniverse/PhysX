@@ -1,0 +1,63 @@
+[package]
+title = "Physics Umbrella PhysX UI Extension"
+description="Adds support for multiphysics workflows for PhysX."
+authors = ["PhysX"]
+changelog="docs/CHANGELOG.md"
+readme = "docs/README.md"
+repository = ""
+keywords = ["physics", "ui"]
+category = "simulation"
+version = "110.1.11"
+icon = "data/images/icon.png"
+preview_image = "data/images/preview.png"
+
+[package.writeTarget]
+kit = true
+python = true
+usd = true
+
+[dependencies]
+"omni.usd" = {}
+"omni.physics.isaacsimready" = { version = "110.1.11", exact = true }
+"omni.physics.physx" = { version = "110.1.11", exact = true }
+"omni.usd.schema.physx" = { version = "110.1.11", exact = true }
+"omni.usd.schema.newton" = {}
+"omni.physx" = { version = "110.1.11", exact = true }
+"omni.physx.ui" = { version = "110.1.11", exact = true }
+"omni.kit.property.physics" = { version = "110.1.11", exact = true }
+
+[[python.module]]
+name = "omni.physics.physxui"
+
+[[test]]
+dependencies = [
+    "omni.physx.tests.visual",
+    "omni.hydra.rtx",
+    "omni.kit.mainwindow",
+    "omni.kit.window.stage",
+    "omni.hydra.usdrt_delegate",
+]
+
+args = [
+    "--/physics/developmentMode=true",
+    "--/rtx-transient/post/aa/limitedOps=false",
+    "--/renderer/enabled=rtx",
+    "--/renderer/active=rtx",
+    "--/rtx/materialDb/syncLoads=true",
+    "--/rtx/hydra/materialSyncLoads=true",
+    "--/renderer/multiGpu/autoEnable=false",
+    "--/renderer/multiGpu/enabled=false",
+    "--/renderer/debug/validation/enabled=false",
+    "--/omni.kit.plugin/syncUsdLoads=true",
+    "--/app/asyncRendering=false",
+    "--/app/window/width=1280",
+    "--/app/window/height=1024",
+    "--no-window",
+    "--/app/font/file='${fonts}/OpenSans-SemiBold.ttf'",
+    "--/app/font/size=16",
+    "--/app/omni.usd/useFabricWorldBounds=0",
+    "--/exts/omni.ui/Image/syncTextureLoad=true",
+    "--/app/file/ignoreUnsavedOnExit=true",
+]
+timeout = 2700
+pyCoverageThreshold = 0

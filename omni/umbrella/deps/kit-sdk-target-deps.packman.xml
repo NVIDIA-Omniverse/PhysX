@@ -1,0 +1,5 @@
+<project toolsVersion="5.0">
+  <dependency name="kit_sdk_${config}" linkPath="../_build/target-deps/kit_sdk_${config}">
+    <package name="kit-kernel" version="110.1.0+master.274819.43319019.gl.${platform_target_abi}.${config}" />
+  </dependency>
+</project>

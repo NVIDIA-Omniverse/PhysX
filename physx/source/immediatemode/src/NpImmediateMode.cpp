@@ -102,11 +102,20 @@ namespace
 														immArticulation(const PxArticulationDataRC& data);
 														~immArticulation();
 
-		PX_FORCE_INLINE	void							immSolveInternalConstraints(PxReal dt, PxReal invDt, PxReal elapsedTime, bool velocityIteration, bool isTGS, PxReal biasCoefficient)
+		PX_FORCE_INLINE	void							immSolveInternalConstraintsTGS(PxReal dt, PxReal stepDt, PxReal invStepDt, PxReal elapsedTime, bool velocityIteration, PxReal biasCoefficient)
+														{
+															FeatherstoneArticulation::solveInternalConstraints(
+																dt, stepDt, invStepDt, 
+																velocityIteration, true,
+																ArticulationConstraintProcessingConfigCPU::getSinglePassConfig(false),
+																elapsedTime, biasCoefficient, false); //  pass correct flag value - PX-4744
+														}
+
+		PX_FORCE_INLINE	void							immSolveInternalConstraintsPGS(PxReal dt, PxReal invDt, PxReal elapsedTime, bool velocityIteration, PxReal biasCoefficient)
 														{
 															FeatherstoneArticulation::solveInternalConstraints(
 																dt, dt, invDt, 
-																velocityIteration, isTGS,
+																velocityIteration, false,
 																ArticulationConstraintProcessingConfigCPU::getSinglePassConfig(false),
 																elapsedTime, biasCoefficient, false); //  pass correct flag value - PX-4744
 														}
@@ -120,7 +129,7 @@ namespace
 															setupInternalConstraints(mArticulationData, dt, totalDt, invDt, true);
 														}
 
-		PX_FORCE_INLINE	void							immComputeUnconstrainedVelocities(PxReal dt, const PxVec3& gravity, PxReal invLengthScale)
+		PX_FORCE_INLINE	void							immComputeUnconstrainedVelocitiesPGS(PxReal dt, const PxVec3& gravity, PxReal invLengthScale)
 														{
 															mArticulationData.setDt(dt);
 
@@ -661,7 +670,7 @@ void immediate::PxSolveConstraints(const PxConstraintBatchHeader* batchHeaders, 
 			while(nbSolverArticulations_--)
 			{
 				immArticulation* immArt = static_cast<immArticulation*>(*solverArticulations_++);
-				immArt->immSolveInternalConstraints(dt_, invDt_, 0.0f, velIter_, false, biasCoefficient);
+				immArt->immSolveInternalConstraintsPGS(dt_, invDt_, 0.0f, velIter_, biasCoefficient);
 			}
 		}
 
@@ -704,7 +713,7 @@ void immediate::PxSolveConstraints(const PxConstraintBatchHeader* batchHeaders, 
 }
 
 static void createCache(Gu::Cache& cache, PxGeometryType::Enum geomType0, PxGeometryType::Enum geomType1, PxCacheAllocator& allocator)
-{	
+{
 	if(gEnablePCMCaching[geomType0][geomType1])
 	{
 		if(geomType0 <= PxGeometryType::eCONVEXMESH && geomType1 <= PxGeometryType::eCONVEXMESH)
@@ -1120,7 +1129,7 @@ void immediate::PxComputeUnconstrainedVelocities(PxArticulationHandle articulati
 		immArt->mJCalcDirty = false;
 		immArt->jcalc<true>(immArt->mArticulationData);
 	}
-	immArt->immComputeUnconstrainedVelocities(dt, gravity, invLengthScale);
+	immArt->immComputeUnconstrainedVelocitiesPGS(dt, gravity, invLengthScale);
 }
 
 void immediate::PxUpdateArticulationBodies(PxArticulationHandle articulation, PxReal dt)
@@ -1653,18 +1662,22 @@ void immediate::PxSolveConstraintsTGS(const PxConstraintBatchHeader* batchHeader
 
 	struct TGS
 	{
-		static PX_FORCE_INLINE void solveArticulationInternalConstraints(float dt_, float invDt_, PxU32 nbSolverArticulations_, Dy::FeatherstoneArticulation** solverArticulations_,
+		static PX_FORCE_INLINE void solveArticulationInternalConstraints(float dt_, float stepDt_, float invStepDt_, PxU32 nbSolverArticulations_, Dy::FeatherstoneArticulation** solverArticulations_,
 			PxReal elapsedTime, bool velIter_, PxReal biasCoefficient)
 		{
 			while(nbSolverArticulations_--)
 			{
 				immArticulation* immArt = static_cast<immArticulation*>(*solverArticulations_++);
-				immArt->immSolveInternalConstraints(dt_, invDt_, elapsedTime, velIter_, true, biasCoefficient);
+				immArt->immSolveInternalConstraintsTGS(dt_, stepDt_, invStepDt_, elapsedTime, velIter_, biasCoefficient);
 			}
 		}
 	};
 
-	const PxReal invTotalDt = 1.0f/(dt*nbPositionIterations);
+	// PT: passed dt is actually stepDt, passed invDt is actually invStepDt
+	const PxReal stepDt = dt;
+	const PxReal invStepDt = invDt;
+	const PxReal fullDt = dt * nbPositionIterations;
+	const PxReal invTotalDt = 1.0f / fullDt;
 
 	PxReal elapsedTime = 0.0f;
 
@@ -1673,7 +1686,7 @@ void immediate::PxSolveConstraintsTGS(const PxConstraintBatchHeader* batchHeader
 
 	while(nbPositionIterations--)
 	{
-		TGS::solveArticulationInternalConstraints(dt, invDt, nbSolverArticulations, articulations, elapsedTime, false, biasCoefficients.articulation);
+		TGS::solveArticulationInternalConstraints(fullDt, stepDt, invStepDt, nbSolverArticulations, articulations, elapsedTime, false, biasCoefficients.articulation);
 
 		for(PxU32 a=0; a<nbBatchHeaders; ++a)
 		{
@@ -1691,7 +1704,7 @@ void immediate::PxSolveConstraintsTGS(const PxConstraintBatchHeader* batchHeader
 			for(PxU32 j=0; j<nbSolverArticulations; ++j)
 			{
 				immArticulation* immArt = static_cast<immArticulation*>(solverArticulations[j]);
-				immArt->recordDeltaMotion(immArt, dt, deltaV);
+				immArt->recordDeltaMotionTGS(immArt, dt, deltaV);
 			}
 		}
 
@@ -1706,7 +1719,7 @@ void immediate::PxSolveConstraintsTGS(const PxConstraintBatchHeader* batchHeader
 
 	while(nbVelocityIterations--)
 	{
-		TGS::solveArticulationInternalConstraints(dt, invDt, nbSolverArticulations, articulations, elapsedTime, true, biasCoefficients.articulation);
+		TGS::solveArticulationInternalConstraints(fullDt, stepDt, invStepDt, nbSolverArticulations, articulations, elapsedTime, true, biasCoefficients.articulation);
 
 		for(PxU32 a=0; a<nbBatchHeaders; ++a)
 		{

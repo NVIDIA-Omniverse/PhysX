@@ -82,7 +82,6 @@ namespace physx
 	class PxsContext;
 
 	class PxsRigidBody;
-	struct PxConeLimitedConstraint;
 
 	struct PxsShapeCore;
 
@@ -139,30 +138,18 @@ namespace physx
 		virtual void deactivateSoftbodySelfCollision(Dy::DeformableVolume* /*deformableVolume*/) 	{}
 		virtual void setSoftBodyWakeCounter(Dy::DeformableVolume* /*deformableVolume*/) 	{}
 
-		virtual void addParticleFilter(Dy::DeformableVolume* /*deformableVolume*/, Dy::ParticleSystem* /*particleSystem*/,
-			PxU32 /*particleId*/, PxU32 /*userBufferId*/, PxU32 /*tetId*/) 	{}
-		virtual void removeParticleFilter(Dy::DeformableVolume* /*deformableVolume*/,
-			const Dy::ParticleSystem* /*particleSystem*/, PxU32 /*particleId*/, PxU32 /*userBufferId*/, PxU32 /*tetId*/) 	{}
-
-		virtual PxU32 addParticleAttachment(Dy::DeformableVolume* /*deformableVolume*/, const Dy::ParticleSystem* /*particleSystem*/,
-			PxU32 /*particleId*/, PxU32 /*userBufferId*/, PxU32 /*tetId*/, const PxVec4& /*barycentrics*/, const bool /*isActive*/) 	{ return 0; }
-		virtual void removeParticleAttachment(Dy::DeformableVolume* /*deformableVolume*/, PxU32 /*handle*/) 	{}
-
-		virtual void addRigidFilter(Dy::DeformableVolume* /*deformableVolume*/, const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*vertIndex*/) 	{}
-		virtual void removeRigidFilter(Dy::DeformableVolume* /*deformableVolume*/,
-			const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*vertIndex*/) 	{}
 
 		virtual PxU32 addRigidAttachment(Dy::DeformableVolume* /*deformableVolume*/, const PxNodeIndex& /*softBodyNodeIndex*/,
 			PxsRigidBody* /*rigidBody*/, const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*vertIndex*/, const PxVec3& /*actorSpacePose*/,
-			PxConeLimitedConstraint* /*constraint*/, const bool /*isActive*/, bool /*doConversion*/) 	{ return 0; }
+			const bool /*isActive*/, bool /*doConversion*/) 	{ return 0; }
 		virtual void removeRigidAttachment(Dy::DeformableVolume* /*deformableVolume*/, PxU32 /*handle*/) 	{}
 
 		virtual void addTetRigidFilter(Dy::DeformableVolume* /*deformableVolume*/,
 			const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*tetId*/) 	{}
 
 		virtual PxU32 addTetRigidAttachment(Dy::DeformableVolume* /*deformableVolume*/,
-			PxsRigidBody* /*rigidBody*/, const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*tetIdx*/, 
-			const PxVec4& /*barycentrics*/, const PxVec3& /*actorSpacePose*/, PxConeLimitedConstraint* /*constraint*/,
+			PxsRigidBody* /*rigidBody*/, const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*tetIdx*/,
+			const PxVec4& /*barycentrics*/, const PxVec3& /*actorSpacePose*/,
 			const bool /*isActive*/, bool /*doConversion*/) { return 0; }
 
 		virtual void removeTetRigidFilter(Dy::DeformableVolume* /*deformableVolume*/, 
@@ -179,7 +166,7 @@ namespace physx
 
 		virtual PxU32 addSoftBodyAttachment(Dy::DeformableVolume* /*deformableVolume0*/, Dy::DeformableVolume* /*deformableVolume1*/, PxU32 /*tetIdx0*/, PxU32 /*tetIdx1*/,
 			const PxVec4& /*tetBarycentric0*/, const PxVec4& /*tetBarycentric1*/,
-			PxConeLimitedConstraint* /*constraint*/, PxReal /*constraintOffset*/, const bool /*isActive*/, bool /*doConversion*/) { return 0; }
+			const bool /*isActive*/, bool /*doConversion*/) { return 0; }
 
 		virtual void removeSoftBodyAttachment(Dy::DeformableVolume* /*deformableVolume0*/, PxU32 /*handle*/) 	{}
 
@@ -190,8 +177,7 @@ namespace physx
 		virtual void removeVertClothFilter(Dy::DeformableVolume* /*deformableVolume*/, Dy::DeformableSurface* /*deformableSurface*/, PxU32 /*vertIdx*/, PxU32 /*tetIdx*/) 	{}
 
 		virtual PxU32 addClothAttachment(Dy::DeformableVolume* /*deformableVolume*/, Dy::DeformableSurface* /*deformableSurface*/, PxU32 /*triIdx*/,
-			const PxVec4& /*triBarycentric*/, PxU32 /*tetIdx*/, const PxVec4& /*tetBarycentric*/, 
-			PxConeLimitedConstraint* /*constraint*/, PxReal /*constraintOffset*/,
+			const PxVec4& /*triBarycentric*/, PxU32 /*tetIdx*/, const PxVec4& /*tetBarycentric*/,
 			const bool /*isActive*/, bool /*doConversion*/) { return 0; }
 
 		virtual void removeClothAttachment(Dy::DeformableVolume* /*deformableVolume*/,PxU32 /*handle*/) 	{}
@@ -205,7 +191,7 @@ namespace physx
 
 		virtual PxU32 addRigidAttachment(Dy::DeformableSurface* /*cloth*/, const PxNodeIndex& /*clothNodeIndex*/,
 			PxsRigidBody* /*rigidBody*/, const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*vertIndex*/, const PxVec3& /*actorSpacePose*/,
-			PxConeLimitedConstraint* /*constraint*/, const bool /*isActive*/) 	{ return 0; }
+			const bool /*isActive*/) 	{ return 0; }
 		virtual void removeRigidAttachment(Dy::DeformableSurface* /*cloth*/, PxU32 /*handle*/) 	{}
 
 		virtual void addTriRigidFilter(Dy::DeformableSurface* /*deformableSurface*/,
@@ -215,8 +201,8 @@ namespace physx
 			const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*triIdx*/) 	{}
 
 		virtual PxU32 addTriRigidAttachment(Dy::DeformableSurface* /*deformableSurface*/,
-			PxsRigidBody* /*rigidBody*/, const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*triIdx*/, const PxVec4& /*barycentrics*/, 
-			const PxVec3& /*actorSpacePose*/, PxConeLimitedConstraint* /*constraint*/,
+			PxsRigidBody* /*rigidBody*/, const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*triIdx*/, const PxVec4& /*barycentrics*/,
+			const PxVec3& /*actorSpacePose*/,
 			const bool /*isActive*/) { return 0; }
 
 		virtual void removeTriRigidAttachment(Dy::DeformableSurface* /*deformableSurface*/, PxU32 /*handle*/) 	{}
@@ -266,11 +252,11 @@ namespace physx
 		virtual void gpuDmabackData(PxsTransformCache& /*cache*/, Bp::BoundsArray& /*boundArray*/, Cm::PinnableBitMap& /*changedAABBMgrHandles*/, bool /*enableDirectGPUAPI*/){}
 		virtual void	updateScBodyAndShapeSim(PxsTransformCache& cache, Bp::BoundsArray& boundArray, PxBaseTask* continuation) = 0;
 		
-	// PdHC: Returns pointer to GPU-computed rigid body accelerations, or NULL if not available.
-	// Accelerations are computed on GPU using velocity-delta in gpuMemDmaBack for both
-	// DirectGPU and non-DirectGPU (CPU Frontend + GPU Backend) modes.
-	// GPU implementations (PxgSimulationController) provide actual data; CPU implementations return NULL.
-	virtual const void* getRigidBodyAccelerations() const { return NULL; }
+		// PdHC: Returns pointer to GPU-computed rigid body accelerations, or NULL if not available.
+		// Accelerations are computed on GPU using velocity-delta in gpuMemDmaBack for both
+		// DirectGPU and non-DirectGPU (CPU Frontend + GPU Backend) modes.
+		// GPU implementations (PxgSimulationController) provide actual data; CPU implementations return NULL.
+		virtual const void* getRigidBodyAccelerations() const { return NULL; }
 
 		virtual PxU32* getActiveBodies()		{ return NULL;	}
 		virtual PxU32* getDeactiveBodies()		{ return NULL;	}
@@ -315,13 +301,6 @@ namespace physx
 
 		// END NEW DIRECT-GPU API
 
-		// DEPRECATED DIRECT-GPU API
-
-		PX_DEPRECATED virtual	void	copySoftBodyDataDEPRECATED(void** /*data*/, void* /*dataSizes*/, void* /*softBodyIndices*/, PxSoftBodyGpuDataFlag::Enum /*flag*/, const PxU32 /*nbCopySoftBodies*/, const PxU32 /*maxSize*/, CUevent /*copyEvent*/) {}
-		PX_DEPRECATED virtual	void	applySoftBodyDataDEPRECATED(void** /*data*/, void* /*dataSizes*/, void* /*softBodyIndices*/, PxSoftBodyGpuDataFlag::Enum /*flag*/, const PxU32 /*nbUpdatedSoftBodies*/, const PxU32 /*maxSize*/, CUevent /*applyEvent*/, CUevent /*signalEvent*/) {}
-		PX_DEPRECATED virtual 	void	applyParticleBufferDataDEPRECATED(const PxU32* /*indices*/, const PxGpuParticleBufferIndexPair* /*indexPairs*/, const PxParticleBufferFlags* /*flags*/, PxU32 /*nbUpdatedBuffers*/, CUevent /*waitEvent*/, CUevent /*signalEvent*/) {}
-
-		// END DEPRECATED DIRECT-GPU API
 
 		virtual	PxU32	getInternalShapeIndex(const PxsShapeCore& /*shapeCore*/)	{ return PX_INVALID_U32;	}
 

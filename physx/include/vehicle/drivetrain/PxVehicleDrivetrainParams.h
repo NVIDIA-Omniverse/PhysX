@@ -592,7 +592,7 @@ public:
 and the division of torque between the wheels that are connected to the differential. 
 */
 struct PxVehicleMultiWheelDriveDifferentialParams
-{	 
+{	
 	/**
 	\brief torqueRatios describes the fraction of torque delivered to each wheel through the differential.
 	\note Wheels not connected to the differential must receive zero torque.

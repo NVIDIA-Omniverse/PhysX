@@ -108,6 +108,14 @@ class NpDeformableVolumeMaterial;
 class NpPBDMaterial;
 #endif
 
+struct NpRigidDynamicAcceleration
+{
+	PxVec3	mLinAccel;
+	PxVec3	mAngAccel;
+	PxVec3	mPrevLinVel;
+	PxVec3	mPrevAngVel;
+};
+
 struct NpInternalAttachmentType
 {
 	enum Enum
@@ -218,9 +226,6 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 
 	virtual			PxU32							getNbPBDParticleSystems() const	PX_OVERRIDE PX_FINAL;
 	virtual			PxU32							getPBDParticleSystems(PxPBDParticleSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
-
-	virtual			PxU32							getNbParticleSystems(PxParticleSolverType::Enum type) const	PX_OVERRIDE PX_FINAL;
-	virtual			PxU32							getParticleSystems(PxParticleSolverType::Enum type, PxPBDParticleSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
 
 	// Aggregates
     virtual			bool							addAggregate(PxAggregate&)	PX_OVERRIDE PX_FINAL;
@@ -342,11 +347,6 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 
 	virtual         PxPvdSceneClient*				getScenePvdClient()	PX_OVERRIDE PX_FINAL;
 	
-	PX_DEPRECATED	virtual	void					copySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbCopySoftBodies, const PxU32 maxSize, CUevent copyEvent)	PX_OVERRIDE	PX_FINAL;
-	PX_DEPRECATED	virtual	void					applySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbUpdatedSoftBodies, const PxU32 maxSize, CUevent applyEvent, CUevent signalEvent)	PX_OVERRIDE	PX_FINAL;
-
-	PX_DEPRECATED	virtual	void					applyParticleBufferData(const PxU32* indices, const PxGpuParticleBufferIndexPair* bufferIndexPairs, const PxParticleBufferFlags* flags, PxU32 nbUpdatedBuffers, CUevent waitEvent, CUevent signalEvent)	PX_OVERRIDE	PX_FINAL;
-
 	virtual	void									setDeformableSurfaceGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback)	PX_OVERRIDE	PX_FINAL;
 	virtual	void									setDeformableVolumeGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback)	PX_OVERRIDE	PX_FINAL;
 
@@ -535,8 +535,12 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 
 	PX_FORCE_INLINE PxReal							getElapsedTime()					const	{ return mElapsedTime;				}
 
+	PX_FORCE_INLINE PxArray<NpRigidDynamicAcceleration>&		getRigidDynamicsAccelerations()			{ return mRigidDynamicsAccelerations;	}
+	PX_FORCE_INLINE const PxArray<NpRigidDynamicAcceleration>&	getRigidDynamicsAccelerations()	const	{ return mRigidDynamicsAccelerations;	}
+					void							computeBodyAccelerations(PxBaseTask* continuation);
+
 #if PX_SUPPORT_GPU_PHYSX
-					// PdHC: Lazy GPU acceleration copy - ensures GPU accelerations are copied to BodyCore on demand
+					// PdHC: Lazy GPU acceleration copy - copies GPU accelerations to the external array on demand
 					// Call isGpuAccelerationsCopyPending() first to avoid function call overhead when not needed
 	PX_FORCE_INLINE bool							isGpuAccelerationsCopyPending()		const	{ return mGpuAccelerationsCopyPending;	}
 					void							ensureGpuAccelerationsCopied();
@@ -659,6 +663,7 @@ private:
 					Cm::IDPool						mRigidActorIndexPool;
 	private:
 					PxArray<NpRigidDynamic*>								mRigidDynamics;	// no hash set used because it would be quite a bit slower when adding a large number of actors
+					PxArray<NpRigidDynamicAcceleration>						mRigidDynamicsAccelerations;	// contiguous acceleration array, only allocated when eENABLE_BODY_ACCELERATIONS is set
 					PxArray<NpRigidStatic*>									mRigidStatics;	// no hash set used because it would be quite a bit slower when adding a large number of actors
 					PxCoalescedHashSet<PxArticulationReducedCoordinate*>	mArticulations;
 					PxCoalescedHashSet<PxDeformableSurface*>				mDeformableSurfaces;
@@ -718,6 +723,7 @@ private:
 					typedef Cm::DelegateTask<NpScene, &NpScene::executeScene> SceneExecution;
 					typedef Cm::DelegateTask<NpScene, &NpScene::executeCollide> SceneCollide;
 					typedef Cm::DelegateTask<NpScene, &NpScene::executeAdvance> SceneAdvance;
+					typedef Cm::DelegateTask<NpScene, &NpScene::computeBodyAccelerations> BodyAccelerationPhase;
 					
 					PxTaskManager*					mTaskManager;
 					PxCudaContextManager*			mCudaContextManager;
@@ -727,6 +733,7 @@ private:
 					SceneExecution					mSceneExecution;
 					SceneCollide					mSceneCollide;
 					SceneAdvance					mSceneAdvance;
+					BodyAccelerationPhase			mBodyAccelerationPhase;
 					PxSQBuildStepHandle				mStaticBuildStepHandle;
 					PxSQBuildStepHandle				mDynamicBuildStepHandle;
 					bool                            mControllingSimulation;
@@ -783,6 +790,12 @@ private:
 					volatile bool				mGpuAccelerationsCopyPending;
 					// PdHC: One-time warning flag for legacy acceleration getters in DirectGPU mode
 					bool						mDirectGpuAccelGetterWarningIssued;
+					// Persistent completion sync + task counter for the parallel GPU-acceleration copy
+					// (NpScene::ensureGpuAccelerationsCopied). Kept as members (reset() before each batch)
+					// so their lifetime outlives the worker fibers: a stack-local PxSync could be destroyed
+					// (CloseHandle) while a worker is still inside set(). See NvBugs 6224727.
+					PxSync						mGpuAccelerationCopySync;
+					volatile PxI32				mGpuAccelerationCopyTaskCounter;
 #endif
 #if PX_SUPPORT_PVD
 					Vd::PvdSceneClient			mScenePvdClient;

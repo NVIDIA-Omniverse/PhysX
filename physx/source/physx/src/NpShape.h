@@ -120,8 +120,8 @@ public:
 	PX_FORCE_INLINE	PxGeometryType::Enum		getGeometryTypeFast()	const	{ return mCore.getGeometryType();	}
 	PX_FORCE_INLINE	const PxFilterData&			getQueryFilterDataFast() const	{ return mQueryFilterData;			}
 
-	PX_FORCE_INLINE PxU32						getActorCount()			const	{ return mFreeSlot;																	}
-	PX_FORCE_INLINE bool						isExclusiveFast()		const	{ return mCore.getCore().mShapeCoreFlags.isSet(PxShapeCoreFlag::eIS_EXCLUSIVE);		}
+	PX_FORCE_INLINE PxU32						getActorCount()			const	{ return mFreeSlot;														}
+	PX_FORCE_INLINE bool						isExclusiveFast()		const	{ return mCore.mShapeCoreFlags.isSet(PxShapeCoreFlag::eIS_EXCLUSIVE);	}
 
 	PX_FORCE_INLINE	const Sc::ShapeCore&		getCore()				const	{ return mCore;	}
 	PX_FORCE_INLINE	Sc::ShapeCore&				getCore()						{ return mCore;	}

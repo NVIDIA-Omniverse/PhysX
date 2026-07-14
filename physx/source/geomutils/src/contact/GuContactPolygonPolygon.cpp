@@ -50,7 +50,7 @@ void gVisualizeLocalLine(const PxVec3& a, const PxVec3& b, const PxMat34& m, Pxs
 
 #ifdef CONTACT_REDUCTION
 static PX_FORCE_INLINE PxReal dot2D(const PxVec3& v0, const PxVec3& v1)
-{	
+{
 	return v0.x * v1.x + v0.y * v1.y;
 }
 

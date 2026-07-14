@@ -78,7 +78,7 @@ namespace physx
 			numMeshNormalSmoothingPasses = 4;
 			gridFilteringFlags = 0;
 			gridSmoothingRadius = 0.2f;
-		}		
+		}
 
 		/**
 		\brief Clears the filtering operations
@@ -310,7 +310,7 @@ namespace physx
 	PxScene will synchronize the work such that the caller knows that the post solve task completed.
 	*/
 	class PxIsosurfaceCallback : public PxParticleSystemCallback
-	{		
+	{
 	public:
 		/**
 		\brief Initializes the isosurface callback

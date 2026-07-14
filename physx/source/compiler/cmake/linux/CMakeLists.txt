@@ -241,11 +241,14 @@ ELSE()
 
 	SET(PHYSXDISTRO_LIBS PhysXFoundation PhysX PhysXCharacterKinematic PhysXPvdSDK PhysXCommon PhysXCooking PhysXExtensions PhysXVehicle)
 
-
-	INSTALL(
-		TARGETS ${PHYSXDISTRO_LIBS}
-		EXPORT PhysXSDK
-		DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile>
-		)
+	# Only install the legacy PhysXSDK export set in standalone mode (PX_ENABLE_INSTALL not defined).
+	# The FetchContent entry point (physx/CMakeLists.txt) uses its own PhysXTargets export set.
+	IF(NOT DEFINED PX_ENABLE_INSTALL)
+		INSTALL(
+			TARGETS ${PHYSXDISTRO_LIBS}
+			EXPORT PhysXSDK
+			DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile>
+			)
+	ENDIF()
 
 ENDIF()

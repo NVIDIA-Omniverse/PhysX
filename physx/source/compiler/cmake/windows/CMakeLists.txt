@@ -152,10 +152,15 @@ IF(PX_COPY_EXTERNAL_DLL OR PUBLIC_RELEASE)
 			FILE(COPY ${PHYSX_SLN_PHYSXDEVICE_PATH}/PhysXDevice64.dll DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_CHECKED})
 		ENDIF()
 
+			# Only copy FreeGLUT DLLs if they exist (packman installation)
+	IF(EXISTS "${PHYSX_SLN_FREEGLUT_PATH}/win64/freeglutd.dll")
 		FILE(COPY ${PHYSX_SLN_FREEGLUT_PATH}/win64/freeglutd.dll DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_DEBUG})
+	ENDIF()
+	IF(EXISTS "${PHYSX_SLN_FREEGLUT_PATH}/win64/freeglut.dll")
 		FILE(COPY ${PHYSX_SLN_FREEGLUT_PATH}/win64/freeglut.dll DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_PROFILE})
 		FILE(COPY ${PHYSX_SLN_FREEGLUT_PATH}/win64/freeglut.dll DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_RELEASE})
 		FILE(COPY ${PHYSX_SLN_FREEGLUT_PATH}/win64/freeglut.dll DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_CHECKED})
+	ENDIF()
 	# ELSE()
 	# 	FILE(COPY ${PHYSX_SLN_PHYSXDEVICE_PATH}/PhysXDevice.dll DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_DEBUG})
 	# 	FILE(COPY ${PHYSX_SLN_PHYSXDEVICE_PATH}/PhysXDevice.dll DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_PROFILE})
@@ -226,11 +231,16 @@ ELSE()
 		SET(PHYSXDISTRO_LIBS PhysXFoundation PhysX PhysXCharacterKinematic PhysXPvdSDK PhysXCommon PhysXCooking PhysXExtensions PhysXVehicle PhysXTask)
 	ENDIF()
 
-	INSTALL(
-		TARGETS ${PHYSXDISTRO_LIBS}
-		EXPORT PhysXSDK
-		DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile>
-		)
+	# Only install the legacy PhysXSDK export set in standalone mode (PX_ENABLE_INSTALL not defined).
+	# The FetchContent entry point (physx/CMakeLists.txt) uses its own PhysXTargets export set.
+	# Installing both would put the same targets in two export sets, which is a CMake error.
+	IF(NOT DEFINED PX_ENABLE_INSTALL)
+		INSTALL(
+			TARGETS ${PHYSXDISTRO_LIBS}
+			EXPORT PhysXSDK
+			DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile>
+			)
+	ENDIF()
 
 ENDIF()
 

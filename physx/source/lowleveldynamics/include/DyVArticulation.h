@@ -37,8 +37,6 @@ namespace physx
 
 	namespace Dy
 	{
-		static const size_t DY_ARTICULATION_TENDON_MAX_SIZE = 64;
-	
 		struct Constraint;
 
 		typedef PxU64 ArticulationBitField;

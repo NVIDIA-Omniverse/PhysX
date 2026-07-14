@@ -67,31 +67,17 @@ struct PxgFEMRigidAttachmentConstraint
 	float4	raXn1_biasW[32];
 	float4	raXn2_biasW[32];
 	float4	velMultiplierXYZ_invMassW[32];
-	float4  low_high_limits[32];
-	float4  axis_angle[32];
 	PxU32	elemId[32];
-	PxU64	rigidId[32];		//node index
+	PxU64	rigidId[32];					//node index
+	PxU32	rigidBodyReferenceCount[32];	//number of active attachments sharing this rigid; for mass-splitting
 };
 
 struct PxgFEMFEMAttachmentConstraint
 {
-	union
-	{
-		float4  low_high_limits[32];
-		float4  low_high_angles[32];
-	};
-
-	union
-	{
-		float4  axis_angle[32];
-		float4  attachmentBarycentric[32];
-	};
-	
 	float4	barycentric0[32];
 	float4	barycentric1[32];
 	PxU64	elemId0[32]; //can be triangleId(cloth) or tetrahedron index
 	PxU64	elemId1[32];//can be triangleId(cloth) or tetrahedron index
-	float	constraintOffset[32];
 };
 
 // Soft body vs soft body constraint block

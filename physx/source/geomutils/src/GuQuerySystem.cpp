@@ -653,7 +653,7 @@ namespace
 		LocalRaycastCB(const PxArray<QuerySystem::PrunerExt*>& pruners, const PrunerFilter* prunerFilter, const PxVec3& origin, const PxVec3& unitDir, PrunerRaycastCallback& cb) :
 			mPrunerExt(pruners), mPrunerFilter(prunerFilter), mOrigin(origin), mUnitDir(unitDir), mCB(cb)	{}
 
-		virtual bool	reportHit(PxU32 boundsIndex, PxReal& distance)
+		virtual bool	reportHit(PxU32 boundsIndex, PxReal& distance) PX_OVERRIDE
 		{
 			QuerySystem::PrunerExt* pe = mPrunerExt[boundsIndex];	// Can be NULL if the pruner has been removed
 			if(pe && (!mPrunerFilter || mPrunerFilter->processPruner(boundsIndex)))
@@ -679,7 +679,7 @@ namespace
 		LocalOverlapCB(const PxArray<QuerySystem::PrunerExt*>& pruners, const PrunerFilter* prunerFilter, const ShapeData& queryVolume, PrunerOverlapCallback& cb) :
 			mPrunerExt(pruners), mPrunerFilter(prunerFilter), mQueryVolume(queryVolume), mCB(cb)	{}
 
-		virtual bool	reportHit(PxU32 boundsIndex)
+		virtual bool	reportHit(PxU32 boundsIndex) PX_OVERRIDE
 		{
 			QuerySystem::PrunerExt* pe = mPrunerExt[boundsIndex];	// Can be NULL if the pruner has been removed
 			if(pe && (!mPrunerFilter || mPrunerFilter->processPruner(boundsIndex)))
@@ -704,7 +704,7 @@ namespace
 		LocalSweepCB(const PxArray<QuerySystem::PrunerExt*>& pruners, const PrunerFilter* prunerFilter, const ShapeData& queryVolume, const PxVec3& unitDir, PrunerRaycastCallback& cb) :
 			mPrunerExt(pruners), mPrunerFilter(prunerFilter), mQueryVolume(queryVolume), mUnitDir(unitDir), mCB(cb)	{}
 
-		virtual bool	reportHit(PxU32 boundsIndex, PxReal& distance)
+		virtual bool	reportHit(PxU32 boundsIndex, PxReal& distance) PX_OVERRIDE
 		{
 			QuerySystem::PrunerExt* pe = mPrunerExt[boundsIndex];	// Can be NULL if the pruner has been removed
 			if(pe && (!mPrunerFilter || mPrunerFilter->processPruner(boundsIndex)))

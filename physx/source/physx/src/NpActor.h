@@ -50,7 +50,7 @@ class NpActor : public NpBase
 {
 public:
 // PX_SERIALIZATION
-											NpActor(const PxEMPTY) : NpBase(PxEmpty)	{}				
+											NpActor(const PxEMPTY) : NpBase(PxEmpty)	{}
 					void					exportExtraData(PxSerializationContext& stream);	
 					void					importExtraData(PxDeserializationContext& context);
 					void					resolveReferences(PxDeserializationContext& context);

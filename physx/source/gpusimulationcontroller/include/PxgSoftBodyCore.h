@@ -31,7 +31,6 @@
 
 #include "PxgFEMCore.h"
 #include "PxgSoftBody.h"
-#include "PxSoftBodyFlag.h"
 #include "foundation/PxPreprocessor.h"
 
 namespace physx
@@ -81,7 +80,7 @@ namespace physx
 
 		void solveTGS(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgConstraintPrepareDesc> prepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
 			PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, const PxReal dt, CUstream solverStream,
-			const bool isVelocityIteration, const PxReal biasCoefficient, const bool isFirstIteration, const PxVec3& gravity);
+			const bool isVelocityIteration, const PxReal contactBiasCoefficient, const PxReal attachBiasCoefficient, const bool isFirstIteration, const PxVec3& gravity);
 
 		void calculateStress();
 
@@ -92,9 +91,6 @@ namespace physx
 
 		bool updateUserData(Cm::PinnableArray<PxgSoftBody>& softBodyPool, PxArray<PxU32>& softBodyNodeIndexPool,
 			const PxU32* activeSoftBodies, const PxU32 nbActiveSoftBodies, void** bodySimsLL);
-
-		void copySoftBodyDataDEPRECATED(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbCopySoftBodies, const PxU32 maxSize, CUevent copyEvent);
-		void applySoftBodyDataDEPRECATED(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbUpdatedSoftBodies, const PxU32 maxSize, CUevent applyEvent, CUevent signalEvent);
 
 		CUstream getStream() { return mStream; }
 
@@ -132,8 +128,6 @@ namespace physx
 		void applyExternalTetraDeltaGM(const PxU32 nbActiveSoftbodies, const PxReal dt, CUstream stream);
 
 	private:
-		PX_DEPRECATED void copyOrApplySoftBodyDataDEPRECATED(PxU32 dataIndex, PxU32* softBodyIndices, PxU8** data, PxU32* dataSizes, PxU32 maxSizeInBytes, const PxU32 nbSoftbodies, const PxU32 applyDataToSoftBodies);
-
 		//integrate verts position based on gravity
 		void preIntegrateSystem(PxgDevicePointer<PxgSoftBody> softbodiesd, PxgDevicePointer<PxU32> activeSoftBodiesd,
 			const PxU32 nbActiveSoftBodies, const PxU32 maxVerts, const PxVec3 gravity, const PxReal dt, CUstream bpStream);
@@ -148,8 +142,6 @@ namespace physx
 		void prepSoftBodyAttachmentConstraints(CUstream stream);
 
 		void prepClothAttachmentConstraints(CUstream stream);
-
-		void prepParticleAttachmentConstraints(CUstream stream);
 
 		void solveRSContactsOutputRigidDelta(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
 			PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, const PxReal dt);
@@ -182,8 +174,6 @@ namespace physx
 
 		void solveSoftBodyAttachmentDelta();
 
-		void solveParticleAttachmentDelta();
-
 		void solveClothAttachmentDelta();
 
 		void solveRigidAttachmentTGS(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, 
@@ -204,6 +194,13 @@ namespace physx
 		void queryRigidContactReferenceCount(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
 			PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd,
 			PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt);
+
+		// Pre-count per-vertex refCount for rigid-soft attachments. Bumps
+		// softbody.mSimDelta[v].w; the attach + contact solves both read .w as
+		// the per-vertex Jacobi mass-splitting factor, for both PGS and TGS.
+		// Must run after the FEM finalize (so .w starts from 0) and before
+		// both attach + contact solves.
+		void queryRigidAttachmentReferenceCount(CUstream solverStream);
 
 		//--------------------------------------------------------------------------------------
 

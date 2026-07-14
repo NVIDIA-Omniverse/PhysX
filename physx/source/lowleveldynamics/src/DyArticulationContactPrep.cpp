@@ -131,9 +131,9 @@ Cm::SpatialVectorV createImpulseResponseVector(const aos::Vec3V& linear, const a
 	return Cm::SpatialVectorV(linear, angular);
 }
 
-PxReal getImpulseResponse(const SolverExtBody& b0, const Cm::SpatialVector& impulse0, Cm::SpatialVector& deltaV0, PxReal dom0, PxReal angDom0, 
-	const SolverExtBody& b1, const Cm::SpatialVector& impulse1, Cm::SpatialVector& deltaV1, PxReal dom1, PxReal angDom1, 
-	bool allowSelfCollision)
+PxReal getImpulseResponse(	const SolverExtBody& b0, const Cm::SpatialVector& impulse0, Cm::SpatialVector& deltaV0, PxReal dom0, PxReal angDom0, 
+							const SolverExtBody& b1, const Cm::SpatialVector& impulse1, Cm::SpatialVector& deltaV1, PxReal dom1, PxReal angDom1, 
+							bool allowSelfCollision)
 {
 	PxReal response;
 	allowSelfCollision = false;
@@ -178,9 +178,9 @@ PxReal getImpulseResponse(const SolverExtBody& b0, const Cm::SpatialVector& impu
 	return response;
 }
 
-FloatV getImpulseResponse(const SolverExtBody& b0, const Cm::SpatialVectorV& impulse0, Cm::SpatialVectorV& deltaV0, const FloatV& dom0, const FloatV& angDom0,
-	const SolverExtBody& b1, const Cm::SpatialVectorV& impulse1, Cm::SpatialVectorV& deltaV1, const FloatV& dom1, const FloatV& angDom1,
-	bool /*allowSelfCollision*/)
+FloatV getImpulseResponse(	const SolverExtBody& b0, const Cm::SpatialVectorV& impulse0, Cm::SpatialVectorV& deltaV0, const FloatV& dom0, const FloatV& angDom0,
+							const SolverExtBody& b1, const Cm::SpatialVectorV& impulse1, Cm::SpatialVectorV& deltaV1, const FloatV& dom1, const FloatV& angDom1,
+							bool /*allowSelfCollision*/)
 {
 	Vec3V response;
 	{

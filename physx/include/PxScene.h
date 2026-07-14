@@ -38,9 +38,7 @@
 #include "PxClient.h"
 #include "task/PxTask.h"
 #include "PxArticulationFlag.h"
-#include "PxSoftBodyFlag.h" // deprecated
 #include "PxParticleSystemFlag.h"
-#include "PxParticleSolverType.h"
 
 #include "cudamanager/PxCudaTypes.h"
 
@@ -556,15 +554,6 @@ class PxScene : public PxSceneSQSystem
 	virtual	PxU32				getNbDeformableVolumes() const = 0;
 
 	/**
-	\brief Deprecated
-	\see getNbDeformableVolumes
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE PxU32 getNbSoftBodies() const
-	{
-		return getNbDeformableVolumes();
-	}
-
-	/**
 	\brief Retrieve an array of all the deformable volumes in the scene.
 
 	\param[out] userBuffer The buffer to receive actor pointers.
@@ -575,40 +564,6 @@ class PxScene : public PxSceneSQSystem
 	\see getNbActors()
 	*/
 	virtual	PxU32				getDeformableVolumes(PxDeformableVolume** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
-
-	/**
-	\brief Deprecated
-	\see getDeformableVolumes
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE PxU32 getSoftBodies(PxDeformableVolume** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const
-	{
-		return getDeformableVolumes(userBuffer, bufferSize, startIndex);
-	}
-
-	/**
-	\deprecated Use getNbPBDParticleSystems() instead.
-	\brief Retrieve the number of particle systems of the requested type in the scene.
-
-	\param[in] type The particle system type. See PxParticleSolverType. Only one type can be requested per function call.
-	\return the number particle systems.
-
-	See getPBDParticleSystems(), PxParticleSolverType
-	*/
-	PX_DEPRECATED virtual PxU32	getNbParticleSystems(PxParticleSolverType::Enum type) const = 0;
-
-	/**
-	\deprecated Use getPBDParticleSystems() instead.
-	\brief Retrieve an array of all the particle systems of the requested type in the scene.
-
-	\param[in] type The particle system type. See PxParticleSolverType. Only one type can be requested per function call.
-	\param[out] userBuffer The buffer to receive particle system pointers.
-	\param[in] bufferSize Size of provided user buffer.
-	\param[in] startIndex Index of first particle system pointer to be retrieved
-	\return Number of particle systems written to the buffer.
-
-	See getNbPBDParticleSystems(), PxParticleSolverType
-	*/
-	PX_DEPRECATED virtual PxU32	getParticleSystems(PxParticleSolverType::Enum type, class PxPBDParticleSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
 	/**
 	\brief Retrieve the number of particle systems of the requested type in the scene.
@@ -1735,54 +1690,6 @@ class PxScene : public PxSceneSQSystem
 	virtual void setDeformableVolumeGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback) = 0;
 
 	void*	userData;	//!< user can assign this to whatever, usually to create a 1:1 relationship with a user object.
-
-	/**
-	\brief Copy GPU deformable volume data from the internal GPU buffer to a user-provided device buffer.
-	\param[in] data User-provided gpu buffer containing a pointer to another gpu buffer for every deformable volume to process
-	\param[in] dataSizes The size of every buffer in bytes
-	\param[in] deformableVolumeIndices User provided gpu index buffer. This buffer stores the deformable volume index which the user want to copy.
-	\param[in] maxSize The largest size stored in dataSizes. Used internally to decide how many threads to launch for the copy process.
-	\param[in] flag Flag defining which data the user wants to read back from the deformable volume system
-	\param[in] nbCopyDeformableVolumes The number of deformable volumes to be copied.
-	\param[in] copyEvent User-provided event for the user to sync data. Defaults to NULL which means the function will wait for the copy to finish before returning.
-	
-	\deprecated There is no direct replacement. Most of the data is exposed in the PxDeformableVolume interface.
-	*/
-	PX_DEPRECATED	virtual	void	copySoftBodyData(void** data, void* dataSizes, void* deformableVolumeIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbCopyDeformableVolumes, const PxU32 maxSize, CUevent copyEvent = NULL) = 0;
-
-	/**
-	\brief Apply user-provided data to the internal deformable volume system.
-	\param[in] data User-provided gpu buffer containing a pointer to another gpu buffer for every deformable volume to process
-	\param[in] dataSizes The size of every buffer in bytes	
-	\param[in] deformableVolumeIndices User provided gpu index buffer. This buffer stores the updated deformable volume index.
-	\param[in] flag Flag defining which data the user wants to write to the deformable volume system
-	\param[in] maxSize The largest size stored in dataSizes. Used internally to decide how many threads to launch for the copy process. 
-	\param[in] nbUpdatedDeformableVolumes The number of updated deformable volumes
-	\param[in] applyEvent User-provided event for the deformable volume stream to wait for data.
-	\param[in] signalEvent User-provided event for the deformable volume stream to signal when the read from the user buffer has completed. Defaults to NULL which means the function will wait for the copy to finish before returning.
-	
-	\deprecated There is no direct replacement. Most of the data is exposed in the PxDeformableVolume interface.
-	*/
-	PX_DEPRECATED	virtual	void	applySoftBodyData(void** data, void* dataSizes, void* deformableVolumeIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbUpdatedDeformableVolumes, const PxU32 maxSize, CUevent applyEvent = NULL, CUevent signalEvent = NULL) = 0;
-
-    /**
-	\brief Apply user-provided data to particle buffers.
-
-	This function should be used if the particle buffer flags are already on the device. Otherwise, use PxParticleBuffer::raiseFlags()
-	from the CPU.
-
-	This assumes the data has been changed directly in the PxParticleBuffer.
-
-	\param[in] indices User-provided index buffer that indexes into the BufferIndexPair and flags list.
-	\param[in] bufferIndexPair User-provided index pair buffer specifying the unique id and GPU particle system for each PxParticleBuffer. See PxGpuParticleBufferIndexPair.
-	\param[in] flags Flags to mark what data needs to be updated. See PxParticleBufferFlags. 
-	\param[in] nbUpdatedBuffers The number of particle buffers to update.
-	\param[in] waitEvent User-provided event for the particle stream to wait for data. Defaults to NULL which means the operation will start immediately.
-	\param[in] signalEvent User-provided event for the particle stream to signal when the data read from the user buffer has completed. Defaults to NULL which means the function will wait for copy to finish before returning.
-	
-	\deprecated There is no direct replacement. The data is exposed in the PxParticleBuffer/PxParticleSystem interface.
-	*/
-	PX_DEPRECATED	virtual		void				applyParticleBufferData(const PxU32* indices, const PxGpuParticleBufferIndexPair* bufferIndexPair, const PxParticleBufferFlags* flags, PxU32 nbUpdatedBuffers, CUevent waitEvent = NULL, CUevent signalEvent = NULL) = 0;
 };
 
 #if !PX_DOXYGEN

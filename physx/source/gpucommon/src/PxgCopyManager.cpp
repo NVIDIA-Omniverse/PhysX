@@ -128,7 +128,7 @@ void PxgCopyManager::dispatchCopy(CUstream stream, PxCudaContextManager* cudaCon
 
 	CUfunction kernelFunction = kernelWrangler->getCuFunction(PxgKernelIds::MEM_COPY_BALANCED_KERNEL);
 
-	{						
+	{
 		PxgCopyDesc* descsGPU = reinterpret_cast<PxgCopyDesc*>(getMappedDevicePtr(cudaContext, mDescriptorsQueueMapped.begin()));
 				
 		PxCudaKernelParam kernelParams[] =

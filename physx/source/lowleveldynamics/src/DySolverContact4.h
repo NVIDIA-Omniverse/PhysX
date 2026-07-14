@@ -115,7 +115,7 @@ PX_COMPILE_TIME_ASSERT(sizeof(SolverContactBatchPointBase4) == 112);
 \see SolverContactBatchPointBase4
 */
 struct SolverContactBatchPointDynamic4 : public SolverContactBatchPointBase4
-{	
+{
 	Vec4V rbXnX;
 	Vec4V rbXnY;
 	Vec4V rbXnZ;

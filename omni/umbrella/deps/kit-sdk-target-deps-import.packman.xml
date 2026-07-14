@@ -1,0 +1,13 @@
+<project toolsVersion="5.0">
+  <import path="../_build/target-deps/kit_sdk_${config}/dev/all-deps.packman.xml">
+    <filter include="carb_sdk_plugins" />
+    <filter include="pybind11" />
+    <filter include="python" />
+    <filter include="doctest" />
+  </import>
+
+  <dependency name="carb_sdk_plugins" linkPath="../_build/target-deps/carb_sdk_plugins" tags="slim-package" />
+  <dependency name="pybind11" linkPath="../_build/target-deps/pybind11" />
+  <dependency name="python" linkPath="../_build/target-deps/python" />
+  <dependency name="doctest" linkPath="../_build/target-deps/doctest" />
+</project>

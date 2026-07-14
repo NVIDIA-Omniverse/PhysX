@@ -83,7 +83,7 @@ public:
 	}
 
 	PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialVector operator *(PxReal s) const
-	{	
+	{
 		return SpatialVector(linear*s,angular*s);	
 	}
 		

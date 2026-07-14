@@ -202,7 +202,7 @@ void NpConstraint::release()
 
 // PX_SERIALIZATION
 void NpConstraint::resolveReferences(PxDeserializationContext& context)
-{	
+{
 	context.translatePxBase(mActor0);
 	context.translatePxBase(mActor1);
 }

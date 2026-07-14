@@ -31,7 +31,6 @@
 #include "PxPvdProfileZoneClient.h"
 #include "PxPvdProfileZone.h"
 
-
 #if PX_SUPPORT_GPU_PHYSX
 #include "gpu/PxGpu.h"
 #endif
@@ -151,7 +150,7 @@ bool PvdImpl::connect(PxPvdTransport& transport, PxPvdInstrumentationFlags flags
 		}
 
 		if((mFlags & PxPvdInstrumentationFlag::ePROFILE) && mProfileZoneManager)
-		{			
+		{
 			mPvdClients.pushBack(mProfileClient);
 			mProfileZone = &physx::profile::PxProfileZone::createProfileZone(PxGetBroadcastAllocator(),gSdkName,gProfileNameProvider.getProfileNames());
 		}

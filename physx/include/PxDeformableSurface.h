@@ -33,7 +33,7 @@
 #include "PxDeformableBody.h"
 #include "PxDeformableSurfaceFlag.h"
 #include "foundation/PxArray.h"
-#include "PxConeLimitedConstraint.h"
+#include "foundation/PxVec4.h"
 
 #if !PX_DOXYGEN
 namespace physx

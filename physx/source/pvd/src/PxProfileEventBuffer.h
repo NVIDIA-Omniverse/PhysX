@@ -140,7 +140,7 @@ namespace physx { namespace profile {
 		TContextProvider& getContextProvider() { return mContextProvider; }
 
 		PX_FORCE_INLINE void startEvent(uint16_t inId, uint32_t threadId, uint64_t contextId, uint8_t cpuId, uint8_t threadPriority, uint64_t inTimestamp)
-		{			
+		{
 			TScopedLockType lock(TBaseType::mBufferMutex);
 			if ( mEventFilter.isEventEnabled( inId ) )
 			{
@@ -162,7 +162,7 @@ namespace physx { namespace profile {
 		}
 
 		PX_FORCE_INLINE void stopEvent(uint16_t inId, uint32_t threadId, uint64_t contextId, uint8_t cpuId, uint8_t threadPriority, uint64_t inTimestamp)
-		{			
+		{
 			TScopedLockType lock(TBaseType::mBufferMutex);
 			if ( mEventFilter.isEventEnabled( inId ) )
 			{
@@ -201,7 +201,7 @@ namespace physx { namespace profile {
 		}
 
 		void flushProfileEvents()
-		{				
+		{
 			TBaseType::flushEvents();
 		}
 
@@ -246,7 +246,7 @@ namespace physx { namespace profile {
 
 		template<typename TDataType>
 		PX_FORCE_INLINE void sendEvent( EventHeader& inHeader, TDataType& inType )
-		{			
+		{
 			uint32_t sizeToWrite = sizeof(inHeader) + inType.getEventSize(inHeader);
 			PX_UNUSED(sizeToWrite);
 

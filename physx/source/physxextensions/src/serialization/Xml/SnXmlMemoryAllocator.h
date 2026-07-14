@@ -107,19 +107,19 @@ namespace physx {
 		{
 		}
 		XmlMemoryAllocatorImpl &operator=(const XmlMemoryAllocatorImpl &);
-		virtual PxAllocatorCallback& getAllocator()
+		virtual PxAllocatorCallback& getAllocator() PX_OVERRIDE
 		{
 			return mManager.getWrapper().getAllocator();
 		}
 		
-		virtual PxU8* allocate(PxU64 inSize )
+		virtual PxU8* allocate(PxU64 inSize ) PX_OVERRIDE
 		{
 			if ( !inSize )
 				return NULL;
 
 			return mManager.allocate( inSize );
 		}
-		virtual void deallocate( PxU8* inMem )
+		virtual void deallocate( PxU8* inMem ) PX_OVERRIDE
 		{
 			if ( inMem )
 				mManager.deallocate( inMem );

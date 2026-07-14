@@ -175,6 +175,8 @@ PxgSolverCore::PxgSolverCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, Px
 	mFrictionAnchorPatchStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
 	mCurrentIndex(0),
 	mEventMapped(NULL),
+	mEventDmaBack(NULL),
+	mIntegrateEvent(NULL),
 	mCpuIslandNodeIndices(NULL),
 	mSolverBodyOutputVelocityOffset(0),
 	mRadixSort(allocDesc.deviceAlloc)

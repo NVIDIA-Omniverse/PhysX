@@ -264,7 +264,7 @@ bool TetrahedronMeshBuilder::importMesh(const PxTetrahedronMeshDesc& collisionMe
 	{
 		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Invalid tetrahedron indices.");
 		return false;
-	}	
+	}
 #endif
 
 	//copy the material index list if any:
@@ -1597,7 +1597,7 @@ static bool gDistanceCheckCallback(const AABBTreeNode* current, PxU32 /*depth*/,
 					Data->mDistanceSq = distanceSq;
 					Data->mTetInd = tetId;
 				}
-			}				
+			}
 		}
 	}
 	else
@@ -1875,7 +1875,7 @@ bool TetrahedronMeshBuilder::createCollisionModelMapping(const TetrahedronMeshDa
 			}
 
 			if (hint & 8)//1110
-			{			
+			{
 				if (surfaceVertsHint[originalTet.mRef[1]] == 0)
 				{
 					surfaceVertsHint[originalTet.mRef[1]] = 1;
@@ -2470,7 +2470,7 @@ bool TetrahedronMeshBuilder::computeCollisionData(const PxTetrahedronMeshDesc& c
 bool TetrahedronMeshBuilder::loadFromDesc(const PxTetrahedronMeshDesc& simulationMeshDesc, const PxTetrahedronMeshDesc& collisionMeshDesc,
 	PxDeformableVolumeSimulationDataDesc deformableVolumeDataDesc, TetrahedronMeshData& simulationMesh, DeformableVolumeSimulationData& simulationData,
 	TetrahedronMeshData& collisionMesh, DeformableVolumeCollisionData& collisionData, CollisionMeshMappingData& mappingData, const PxCookingParams&	params, bool validateMesh)
-{		
+{
 	if (!simulationMeshDesc.isValid() || !collisionMeshDesc.isValid() || !deformableVolumeDataDesc.isValid())
 		return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "TetrahedronMesh::loadFromDesc: desc.isValid() failed!");
 
@@ -2758,7 +2758,7 @@ bool TetrahedronMeshBuilder::createMidPhaseStructure(TetrahedronMeshData& collis
 
 	const PxU32 nbTetsPerLeaf = 15;
 
-	if (!BuildBV4Ex(collisionData.mBV4Tree, meshInterface, gBoxEpsilon, nbTetsPerLeaf, false))
+	if (!buildBV4Ex(collisionData.mBV4Tree, meshInterface, gBoxEpsilon, nbTetsPerLeaf, false))
 		return PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "BV4 tree failed to build.");
 			
 	const PxU32* order = meshInterface.getRemap();

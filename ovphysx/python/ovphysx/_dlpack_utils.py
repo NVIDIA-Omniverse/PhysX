@@ -28,12 +28,20 @@ def _validate_c_contiguous_layout(dl_tensor: DLTensor) -> None:
     if not dl_tensor.strides:
         return
 
+    # Any zero-sized dim makes the tensor empty; contiguity is trivially
+    # satisfied (no data to lay out). NumPy reports stride 0 for the dims
+    # outside a zero-sized one, which would otherwise fail the per-dim
+    # stride check below.
+    if any(dl_tensor.shape[i] == 0 for i in range(dl_tensor.ndim)):
+        return
+
     expected_stride = 1
     for dim_idx in range(dl_tensor.ndim - 1, -1, -1):
         dim = dl_tensor.shape[dim_idx]
 
-        # For dimensions of size 0 or 1, stride is irrelevant.
-        if dim <= 1:
+        # Dim of size 1 has irrelevant stride and contributes a factor of 1
+        # to expected_stride, so skip.
+        if dim == 1:
             continue
 
         if dl_tensor.strides[dim_idx] != expected_stride:

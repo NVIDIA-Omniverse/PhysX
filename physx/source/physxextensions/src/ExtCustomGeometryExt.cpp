@@ -137,11 +137,11 @@ struct TriangleSupport : PxGjkQuery::Support
 		v0(_v0), v1(_v1), v2(_v2), margin(_margin)
 	{}
 
-	virtual PxReal getMargin() const
+	virtual PxReal getMargin() const PX_OVERRIDE
 	{
 		return margin;
 	}
-	virtual PxVec3 supportLocal(const PxVec3& dir) const
+	virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 	{
 		float d0 = dir.dot(v0), d1 = dir.dot(v1), d2 = dir.dot(v2);
 		return (d0 > d1 && d0 > d2) ? v0 : (d1 > d2) ? v1 : v2;
@@ -190,7 +190,7 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 	{
 		PxContactBuffer* contactBuffer;
 		ContactRecorder(PxContactBuffer& _contactBuffer) : contactBuffer(&_contactBuffer) {}
-		virtual bool recordContacts(const PxContactPoint* contactPoints, PxU32 nbContacts, PxU32 /*index*/)
+		virtual bool recordContacts(const PxContactPoint* contactPoints, PxU32 nbContacts, PxU32 /*index*/) PX_OVERRIDE
 		{
 			for (PxU32 i = 0; i < nbContacts; ++i)
 				contactBuffer->contact(contactPoints[i]);
@@ -205,7 +205,7 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 	{
 		PxU8 buffer[1024];
 		ContactCacheAllocator() { PxMemSet(buffer, 0, sizeof(buffer)); }
-		virtual PxU8* allocateCacheData(const PxU32 /*byteSize*/) { return reinterpret_cast<PxU8*>(size_t(buffer + 0xf) & ~0xf); }
+		virtual PxU8* allocateCacheData(const PxU32 /*byteSize*/) PX_OVERRIDE { return reinterpret_cast<PxU8*>(size_t(buffer + 0xf) & ~0xf); }
 	}
 	contactCacheAllocator;
 

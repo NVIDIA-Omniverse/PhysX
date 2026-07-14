@@ -126,7 +126,7 @@ namespace Gu
 
 			//this is uniform scale
 			if(V3AllEq(V3Splat(scaleX), scale))
-			{	
+			{
 				vertex2Shape = M33Diagonal(scale);
 				shape2Vertex = M33Diagonal(invScale);
 			}

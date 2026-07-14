@@ -312,7 +312,7 @@ PxReal SweepAnyShapeHeightfield(GU_SWEEP_METHOD_ARGS)
 					//back side, penetration 
 					res = -(2.f * inSphereRadius - distance);
 				}
-			}			
+			}
 		}
 
 		if (res < minTOI)
@@ -578,7 +578,7 @@ PxReal SweepAnyShapeMesh(GU_SWEEP_METHOD_ARGS)
 						//back side, penetration 
 						res = -(2.f * inRad - distance);
 					}
-				}	
+				}
 				PX_ASSERT(PxIsFinite(res));
 				resultNormal = transform1.rotate(convexPartOfMesh1.getPolygonNormal());			
 			}
