@@ -7,6 +7,7 @@
 
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_types.h>
+#include "ovstage_sample.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +19,8 @@
 
 #define NUM_LINKS 15
 #define NUM_JOINTS 14
+
+static ovphysx_sample_stage_attachment_t g_stage_attachment;
 
 typedef struct TensorBuffer {
     DLTensor tensor;
@@ -109,44 +112,39 @@ static int wait_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index, const c
     return 1;
 }
 
-int main(void) {
+static int destroy_instance_and_shutdown(ovphysx_handle_t handle) {
+    ovphysx_sample_destroy_stage(handle, &g_stage_attachment);
+    ovphysx_destroy_instance(handle);
+    ovphysx_shutdown();
+    return 1;
+}
+
+static int run(void) {
     printf("=== ovphysx Articulation Control (C API - Tensor Binding) ===\n");
+
+    ovphysx_result_t result = ovphysx_initialize();
+    if (!check_result(result, "initialize")) {
+        return 1;
+    }
 
     // 1. Create instance
     ovphysx_handle_t handle = 0;
     ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    args.device = OVPHYSX_DEVICE_CPU;
 
-    ovphysx_result_t result = ovphysx_create_instance(&args, &handle);
+    result = ovphysx_create_instance(&args, &handle);
     if (!check_result(result, "create_instance")) {
+        ovphysx_shutdown();
         return 1;
     }
 
     printf("Instance created.\n");
 
-    // 2. Load USD scene
-    ovphysx_usd_handle_t usd_handle = 0;
-    ovphysx_enqueue_result_t add_result = ovphysx_add_usd(
-        handle,
-        OVPHYSX_LITERAL(OVPHYSX_TEST_DATA "/links_chain_sample.usda"),
-        OVPHYSX_LITERAL(""),
-        &usd_handle);
-
-    if (add_result.status != OVPHYSX_API_SUCCESS) {
-        fprintf(stderr, "Failed to load USD scene\n");
-        {
-            ovphysx_string_t err = ovphysx_get_last_error();
-            if (err.ptr && err.length > 0)
-                fprintf(stderr, "ERROR in add_usd enqueue: %.*s\n", (int)err.length, err.ptr);
-        }
-        ovphysx_destroy_instance(handle);
-        return 1;
-    }
-
-    if (!wait_op(handle, add_result.op_index, "add_usd")) {
-        fprintf(stderr, "Failed to load USD scene\n");
-        ovphysx_destroy_instance(handle);
-        return 1;
+    // 2. Populate ovstage from USD and attach it
+    memset(&g_stage_attachment, 0, sizeof(g_stage_attachment));
+    if (!ovphysx_sample_attach_usd_with_ovstage(
+            handle, OVPHYSX_TEST_DATA "/links_chain_sample.usda", &g_stage_attachment)) {
+        fprintf(stderr, "Failed to attach ovstage scene\n");
+        return destroy_instance_and_shutdown(handle);
     }
 
     printf("USD scene loaded.\n");
@@ -162,8 +160,7 @@ int main(void) {
 
     result = ovphysx_create_tensor_binding(handle, &dof_target_desc, &dof_target_binding);
     if (!check_result(result, "create DOF target binding")) {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     // 3b. Articulation link pose binding
@@ -175,8 +172,7 @@ int main(void) {
 
     result = ovphysx_create_tensor_binding(handle, &link_pose_desc, &link_pose_binding);
     if (!check_result(result, "create articulation link pose binding")) {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     printf("Tensor bindings created.\n");
@@ -186,14 +182,12 @@ int main(void) {
 
     result = ovphysx_get_tensor_binding_spec(handle, dof_target_binding, &dof_spec);
     if (!check_result(result, "get_tensor_binding_spec (dof target)")) {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     result = ovphysx_get_tensor_binding_spec(handle, link_pose_binding, &link_pose_spec);
     if (!check_result(result, "get_tensor_binding_spec (link pose)")) {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     printf("\nBinding specs:\n");
@@ -229,13 +223,11 @@ int main(void) {
     if (!check_result(result, "write initial DOF targets")) {
         destroy_tensor(&dof_target_tensor);
         destroy_tensor(&link_pose_tensor);
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     // 6. Simulation loop
     const float dt = 1.0f / 60.0f;
-    float sim_time = 0.0f;
     const size_t link_index_to_print = (link_count > 0) ? (link_count - 1) : 0;
 
     printf("Running 120 simulation steps...\n");
@@ -253,13 +245,12 @@ int main(void) {
             if (!check_result(result, "write DOF targets")) {
                 destroy_tensor(&dof_target_tensor);
                 destroy_tensor(&link_pose_tensor);
-                ovphysx_destroy_instance(handle);
-                return 1;
+                return destroy_instance_and_shutdown(handle);
             }
         }
 
         // Step simulation
-        ovphysx_enqueue_result_t step_result = ovphysx_step(handle, dt, sim_time);
+        ovphysx_enqueue_result_t step_result = ovphysx_step(handle, dt);
         if (step_result.status != OVPHYSX_API_SUCCESS) {
             fprintf(stderr, "ERROR in step enqueue (status=%d)\n", (int)step_result.status);
             {
@@ -269,16 +260,13 @@ int main(void) {
             }
             destroy_tensor(&dof_target_tensor);
             destroy_tensor(&link_pose_tensor);
-            ovphysx_destroy_instance(handle);
-            return 1;
+            return destroy_instance_and_shutdown(handle);
         }
         if (!wait_op(handle, step_result.op_index, "step")) {
             destroy_tensor(&dof_target_tensor);
             destroy_tensor(&link_pose_tensor);
-            ovphysx_destroy_instance(handle);
-            return 1;
+            return destroy_instance_and_shutdown(handle);
         }
-        sim_time += dt;
 
         // Read and print state every 30 steps
         if (step % 30 == 0) {
@@ -287,8 +275,7 @@ int main(void) {
             if (!check_result(result, "read articulation link poses")) {
                 destroy_tensor(&dof_target_tensor);
                 destroy_tensor(&link_pose_tensor);
-                ovphysx_destroy_instance(handle);
-                return 1;
+                return destroy_instance_and_shutdown(handle);
             }
 
             const float* link_pose_data = (const float*)link_pose_tensor.data;
@@ -321,8 +308,15 @@ int main(void) {
     printf("=== Articulation control sample completed successfully ===\n");
     // [tutorial-end]
 
+    ovphysx_sample_destroy_stage(handle, &g_stage_attachment);
     ovphysx_destroy_instance(handle);
+    ovphysx_shutdown();
     printf("Cleanup complete\n");
 
     return 0;
+}
+
+int main(void) {
+    int rc = run();
+    return rc;
 }

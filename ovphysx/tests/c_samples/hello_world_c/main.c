@@ -12,9 +12,11 @@
 
 // [tutorial-start]
 #include "ovphysx/ovphysx.h"
+#include "ovstage_sample.h"
 #include <stdio.h>
 
-int main() {
+static int run(void)
+{
   // Create PhysX instance with default args
   ovphysx_create_args create_args = OVPHYSX_CREATE_ARGS_DEFAULT;
   ovphysx_handle_t handle = 0;
@@ -22,26 +24,27 @@ int main() {
   ovphysx_result_t result = ovphysx_create_instance(&create_args, &handle);
   if (result.status != OVPHYSX_API_SUCCESS) {
     fprintf(stderr, "Failed to create PhysX instance\n");
+  ovphysx_shutdown();
     return 1;
   }
 
-  // Load USD scene
-  ovphysx_string_t path_str = ovphysx_cstr(OVPHYSX_TEST_DATA "/simple_physics_scene.usda");
-  ovphysx_string_t prefix_str = {NULL, 0};
-  ovphysx_usd_handle_t usd_handle = 0;
-  
-  ovphysx_enqueue_result_t add_result = ovphysx_add_usd(handle, path_str, prefix_str, &usd_handle);
-  if (add_result.status != OVPHYSX_API_SUCCESS) {
-    fprintf(stderr, "Failed to load USD\n");
+  // Populate ovstage from USD and attach it to ovphysx
+  ovphysx_sample_stage_attachment_t stage_attachment = {0};
+  if (!ovphysx_sample_attach_usd_with_ovstage(
+          handle, OVPHYSX_TEST_DATA "/simple_physics_scene.usda", &stage_attachment)) {
+    fprintf(stderr, "Failed to attach ovstage scene\n");
     ovphysx_destroy_instance(handle);
+  ovphysx_shutdown();
     return 1;
   }
 
   // Step the simulation
-  ovphysx_enqueue_result_t step_result = ovphysx_step(handle, 0.016f, 0.0f);
+  ovphysx_enqueue_result_t step_result = ovphysx_step(handle, 0.016f);
   if (step_result.status != OVPHYSX_API_SUCCESS) {
     fprintf(stderr, "Failed to step simulation\n");
+    ovphysx_sample_destroy_stage(handle, &stage_attachment);
     ovphysx_destroy_instance(handle);
+  ovphysx_shutdown();
     return 1;
   }
 
@@ -52,15 +55,29 @@ int main() {
   ovphysx_destroy_wait_result(&step_wait_result);
   if (!step_ok) {
     fprintf(stderr, "Simulation step failed\n");
+    ovphysx_sample_destroy_stage(handle, &stage_attachment);
     ovphysx_destroy_instance(handle);
+  ovphysx_shutdown();
     return 1;
   }
 
   printf("Simulation step completed successfully\n");
 
+  ovphysx_sample_destroy_stage(handle, &stage_attachment);
   ovphysx_destroy_instance(handle);
+  ovphysx_shutdown();
   printf("Cleanup complete\n");
 
   return 0;
+}
+
+int main(void) {
+    ovphysx_result_t init_r = ovphysx_initialize();
+    if (init_r.status != OVPHYSX_API_SUCCESS) {
+        fprintf(stderr, "ovphysx_initialize() failed\n");
+        return 1;
+    }
+  int rc = run();
+  return rc;
 }
 // [tutorial-end]

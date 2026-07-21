@@ -1,0 +1,70 @@
+#usda 1.0
+(
+    defaultPrim = "cartpole"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def PhysicsScene "physicsScene"
+{
+    float3 physics:gravityDirection = (0, 0, -1)
+    float physics:gravityMagnitude = 0.0
+}
+
+# Single cartpole with a linear (prismatic) drive on the cart joint --
+# replicates the umbrella's _set_drive call programmatically applied in
+# LinearDofPositionTargetsCommon.__init__. Stiffness/damping/maxForce match
+# the umbrella scenario.
+def Xform "cartpole" (
+    prepend apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]
+)
+{
+    bool physxArticulation:enabledSelfCollisions = 0
+    int physxArticulation:solverPositionIterationCount = 4
+    int physxArticulation:solverVelocityIterationCount = 0
+
+    def Cube "rail" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysxRigidBodyAPI"]
+    )
+    {
+        double size = 1
+        float3 xformOp:scale = (0.02, 6, 0.02)
+        uniform token[] xformOpOrder = ["xformOp:scale"]
+        float physxRigidBody:angularDamping = 0.0
+        float physxRigidBody:linearDamping = 0.0
+    }
+
+    def Cube "cart" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+    )
+    {
+        double size = 1
+        float3 xformOp:translate = (0, 0, 0)
+        float3 xformOp:scale = (0.2, 0.25, 0.2)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        float physxRigidBody:angularDamping = 0.0
+        float physxRigidBody:linearDamping = 0.0
+    }
+
+    def PhysicsFixedJoint "rootJoint"
+    {
+        rel physics:body1 = </cartpole/rail>
+    }
+
+    def PhysicsPrismaticJoint "cartJoint" (
+        prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+    )
+    {
+        rel physics:body0 = </cartpole/rail>
+        rel physics:body1 = </cartpole/cart>
+        uniform token physics:axis = "Y"
+        float physics:lowerLimit = -3
+        float physics:upperLimit = 3
+
+        # Linear drive PD parameters from umbrella's LinearDofPositionTargetsCommon
+        float drive:linear:physics:damping = 250
+        float drive:linear:physics:maxForce = 4000
+        float drive:linear:physics:stiffness = 2000
+        float drive:linear:physics:targetPosition = 0
+    }
+}

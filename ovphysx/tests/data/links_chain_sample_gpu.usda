@@ -42,7 +42,7 @@ def Xform "World"
     {
         vector3f physics:gravityDirection = (0, 0, -1)
         float physics:gravityMagnitude = 9.81
-        bool physxScene:enableGpuDynamics = 1
+        bool physxScene:enableGPUDynamics = true
         token physxScene:broadPhaseType = "GPU"
     }
 

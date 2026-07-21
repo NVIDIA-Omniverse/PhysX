@@ -1,0 +1,57 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Surface deformable scene for testing elasticity-damping, bending-stiffness, thickness, and bending-damping material tensors"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+        bool physxScene:enableGpuDynamics = 1
+        token physxScene:broadPhaseType = "GPU"
+    }
+
+    def Material "SurfaceDeformableMaterial" (
+        prepend apiSchemas = ["PhysicsMaterialAPI", "OmniPhysicsDeformableMaterialAPI", "PhysxDeformableMaterialAPI", "OmniPhysicsSurfaceDeformableMaterialAPI", "PhysxSurfaceDeformableMaterialAPI"]
+    )
+    {
+        float omniphysics:dynamicFriction = 0.5
+        float omniphysics:poissonsRatio = 0.49
+        float omniphysics:youngsModulus = 500000
+        float physxDeformableMaterial:elasticityDamping = 0.02
+        float omniphysics:surfaceBendStiffness = 100.0
+        float omniphysics:surfaceThickness = 0.01
+        float physxDeformableMaterial:bendDamping = 0.05
+    }
+
+    def Mesh "DeformableBody" (
+        prepend apiSchemas = ["OmniPhysicsDeformableBodyAPI", "OmniPhysicsSurfaceDeformableSimAPI", "OmniPhysicsDeformablePoseAPI:default", "PhysicsCollisionAPI", "MaterialBindingAPI"]
+    )
+    {
+        point3f[] points = [(0, 0, 0), (1, 0, 0), (0, 1, 0), (1, 1, 0)]
+        int[] faceVertexIndices = [0, 1, 2, 1, 3, 2]
+        int[] faceVertexCounts = [3, 3]
+        token subdivisionScheme = "none"
+        vector3f[] velocities = [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)]
+
+        point3f[] omniphysics:restShapePoints = [(0, 0, 0), (1, 0, 0), (0, 1, 0), (1, 1, 0)]
+        int3[] omniphysics:restTriVtxIndices = [(0, 1, 2), (1, 3, 2)]
+
+        point3f[] deformablePose:default:omniphysics:points = [(0, 0, 0), (1, 0, 0), (0, 1, 0), (1, 1, 0)]
+        uniform token[] deformablePose:default:omniphysics:purposes = ["bindPose"]
+
+        rel material:binding:physics = </World/SurfaceDeformableMaterial> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1, 1, 1)
+        float3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+}

@@ -12,5 +12,6 @@ Third-Party Software
 
 Binary distributions of this software may include third-party libraries that are
 subject to their own license terms. These licenses are included in the
-ovphysx-LICENSES.zip file distributed alongside this software.
+ovphysx-LICENSES.zip file and, where applicable, in dependency-specific
+third-party notice files distributed alongside this software.
 --------------------------------------------------------------------------------

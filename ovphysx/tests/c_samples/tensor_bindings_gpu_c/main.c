@@ -3,6 +3,7 @@
 //
 
 #include "ovphysx/ovphysx.h"
+#include "ovstage_sample.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +13,8 @@
 #ifdef OVPHYSX_HAS_CUDA
 #include <cuda_runtime.h>
 #endif
+
+static ovphysx_sample_stage_attachment_t g_stage_attachment;
 
 // Helper to check and report errors
 static int check_result(ovphysx_result_t result, const char* context)
@@ -54,13 +57,26 @@ static int wait_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index, const c
     return 1;
 }
 
-int main(void)
+static int destroy_instance_and_shutdown(ovphysx_handle_t handle)
+{
+    ovphysx_sample_destroy_stage(handle, &g_stage_attachment);
+    ovphysx_sample_destroy_stage(handle, &g_stage_attachment);
+    ovphysx_destroy_instance(handle);
+    ovphysx_shutdown();
+    return 1;
+}
+
+static int run(void)
 {
 #ifndef OVPHYSX_HAS_CUDA
     printf("CUDA toolkit not found at build time. Skipping GPU sample.\n");
     return 0;
 #else
     printf("=== Tensor Binding API Sample ===\n\n");
+
+    ovphysx_result_t result = ovphysx_initialize();
+    if (!check_result(result, "initialize"))
+        return 1;
 
     // 1. Create instance with GPU mode (default)
     // GPU mode runs PhysX with eENABLE_GPU_DYNAMICS + eGPU broadphase and lets
@@ -70,47 +86,25 @@ int main(void)
     // incompatible with contact-modify callbacks (e.g. PhysxSurfaceVelocityAPI).
     ovphysx_handle_t handle = 0;
     ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    // args.device = OVPHYSX_DEVICE_GPU;  // default, enables TensorBinding support
-    //
-    // Optional: explicitly select which GPU PhysX should use.
-    //
-    // Example (uncomment to use):
-    //   args.device = OVPHYSX_DEVICE_GPU;
+    // GPU vs CPU is determined at create_instance time from cpu_only + CUDA availability.
+    // To select a specific GPU ordinal, set active_cuda_gpus:
     //   args.active_cuda_gpus = ovphysx_cstr("1"); // run PhysX on CUDA device 1
-    //
-    // Note: active_cuda_gpus on create_args is the recommended way to select the CUDA device.
 
-    ovphysx_result_t result = ovphysx_create_instance(&args, &handle);
-    if (!check_result(result, "create_instance"))
-        return 1;
-
-    printf("Instance created (GPU mode).\n");
-
-    // 2. Load USD scene
-    ovphysx_usd_handle_t usd_handle = 0;
-    ovphysx_enqueue_result_t add_result = ovphysx_add_usd(
-        handle,
-        OVPHYSX_LITERAL(OVPHYSX_TEST_DATA "/links_chain_sample_gpu.usda"),
-        OVPHYSX_LITERAL(""),  // empty prefix
-        &usd_handle);
-
-    if (add_result.status != OVPHYSX_API_SUCCESS)
-    {
-        fprintf(stderr, "Failed to load USD scene\n");
-        {
-            ovphysx_string_t err = ovphysx_get_last_error();
-            if (err.ptr && err.length > 0)
-                fprintf(stderr, "ERROR in add_usd enqueue: %.*s\n", (int)err.length, err.ptr);
-        }
-        ovphysx_destroy_instance(handle);
+    result = ovphysx_create_instance(&args, &handle);
+    if (!check_result(result, "create_instance")) {
+        ovphysx_shutdown();
         return 1;
     }
 
-    if (!wait_op(handle, add_result.op_index, "add_usd"))
+    printf("Instance created (GPU mode).\n");
+
+    // 2. Populate ovstage from USD and attach it
+    memset(&g_stage_attachment, 0, sizeof(g_stage_attachment));
+    if (!ovphysx_sample_attach_usd_with_ovstage(
+            handle, OVPHYSX_TEST_DATA "/links_chain_sample_gpu.usda", &g_stage_attachment))
     {
-        fprintf(stderr, "Failed to load USD scene\n");
-        ovphysx_destroy_instance(handle);
-        return 1;
+        fprintf(stderr, "Failed to attach ovstage scene\n");
+        return destroy_instance_and_shutdown(handle);
     }
 
     printf("USD scene loaded.\n");
@@ -131,8 +125,7 @@ int main(void)
     result = ovphysx_create_tensor_binding(handle, &rb_desc, &rb_binding);
     if (!check_result(result, "create rigid body binding"))
     {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     // 3b. DOF position binding (read joint positions)
@@ -145,8 +138,7 @@ int main(void)
     result = ovphysx_create_tensor_binding(handle, &dof_pos_desc, &dof_pos_binding);
     if (!check_result(result, "create DOF position binding"))
     {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     // 3c. DOF position target binding (write control targets)
@@ -159,8 +151,7 @@ int main(void)
     result = ovphysx_create_tensor_binding(handle, &dof_target_desc, &dof_target_binding);
     if (!check_result(result, "create DOF target binding"))
     {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     // 3d. DOF velocity binding (read joint velocities)
@@ -173,8 +164,7 @@ int main(void)
     result = ovphysx_create_tensor_binding(handle, &dof_vel_desc, &dof_vel_binding);
     if (!check_result(result, "create DOF velocity binding"))
     {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     printf("Tensor bindings created.\n");
@@ -185,15 +175,13 @@ int main(void)
     result = ovphysx_get_tensor_binding_spec(handle, rb_binding, &rb_spec);
     if (!check_result(result, "get_tensor_binding_spec (rb)"))
     {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     result = ovphysx_get_tensor_binding_spec(handle, dof_pos_binding, &dof_spec);
     if (!check_result(result, "get_tensor_binding_spec (dof)"))
     {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     printf("\nBinding specs:\n");
@@ -220,8 +208,7 @@ int main(void)
 
     if (!rb_device || !dof_pos_device || !dof_target_device || !dof_vel_device) {
         printf("CUDA allocation failed\n");
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     // Use the first CUDA ordinal from active_cuda_gpus as the DLTensor device so
@@ -284,8 +271,7 @@ int main(void)
     result = ovphysx_warmup_gpu(handle);
     if (!check_result(result, "GPU warmup"))
     {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     // 6. Read initial state
@@ -294,15 +280,13 @@ int main(void)
     result = ovphysx_read_tensor_binding(handle, rb_binding, &rb_tensor);
     if (!check_result(result, "read rigid body poses"))
     {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     result = ovphysx_read_tensor_binding(handle, dof_pos_binding, &dof_pos_tensor);
     if (!check_result(result, "read DOF positions"))
     {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     // Copy to host and print
@@ -341,15 +325,14 @@ int main(void)
     result = ovphysx_write_tensor_binding(handle, dof_target_binding, &dof_target_tensor, NULL);
     if (!check_result(result, "write DOF targets"))
     {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     // 8. Simulation loop
     printf("Running 120 simulation steps...\n");
     for (int i = 0; i < 120; i++)
     {
-        ovphysx_enqueue_result_t step_result = ovphysx_step(handle, 1.0f / 60.0f, (float)i / 60.0f);
+        ovphysx_enqueue_result_t step_result = ovphysx_step(handle, 1.0f / 60.0f);
         if (step_result.status != OVPHYSX_API_SUCCESS)
         {
             fprintf(stderr, "ERROR in step enqueue (status=%d)\n", (int)step_result.status);
@@ -358,13 +341,11 @@ int main(void)
                 if (err.ptr && err.length > 0)
                     fprintf(stderr, "  %.*s\n", (int)err.length, err.ptr);
             }
-            ovphysx_destroy_instance(handle);
-            return 1;
+            return destroy_instance_and_shutdown(handle);
         }
         if (!wait_op(handle, step_result.op_index, "step"))
         {
-            ovphysx_destroy_instance(handle);
-            return 1;
+            return destroy_instance_and_shutdown(handle);
         }
     }
 
@@ -374,22 +355,19 @@ int main(void)
     result = ovphysx_read_tensor_binding(handle, rb_binding, &rb_tensor);
     if (!check_result(result, "read final rigid body poses"))
     {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     result = ovphysx_read_tensor_binding(handle, dof_pos_binding, &dof_pos_tensor);
     if (!check_result(result, "read final DOF positions"))
     {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     result = ovphysx_read_tensor_binding(handle, dof_vel_binding, &dof_vel_tensor);
     if (!check_result(result, "read final DOF velocities"))
     {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     float* host_dof_vel = malloc(dof_count * dof_components * sizeof(float));
@@ -445,8 +423,14 @@ int main(void)
     printf("\nTensor Binding sample completed successfully!\n");
 
     ovphysx_destroy_instance(handle);
+    ovphysx_shutdown();
     printf("Cleanup complete\n");
 
     return 0;
 #endif
+}
+
+int main(void) {
+    int rc = run();
+    return rc;
 }

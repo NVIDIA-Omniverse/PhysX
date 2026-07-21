@@ -10,7 +10,11 @@
 // Provides automatic cleanup and thin C++ wrappers for all C API functions
 //
 
+#include <functional>
+#include <memory>
 #include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 #include "ovphysx/ovphysx.h"
@@ -40,11 +44,11 @@ namespace ovphysx {
 /**
  * @brief Safe wrapper for ovphysx_create_args.
  *
- * Default-constructs to OVPHYSX_CREATE_ARGS_DEFAULT (AUTO device, empty active_cuda_gpus,
+ * Default-constructs to OVPHYSX_CREATE_ARGS_DEFAULT (empty active_cuda_gpus,
  * no config entries, empty bundled deps path). Use setters to override individual
  * fields before passing to PhysX::create().
  *
- * Callers do not need to touch ovphysx_create_args directly -- this class
+ * Callers do not need to touch ovphysx_create_args directly — this class
  * guarantees all fields are initialized.
  */
 // C4251: STL members in DLL-exported class. These are private implementation
@@ -62,7 +66,6 @@ public:
     CreateArgs(CreateArgs&&) noexcept;
     CreateArgs& operator=(CreateArgs&&) noexcept;
 
-    void setDevice(ovphysx_device_t device);
     /// @param gpus  Comma-separated CUDA device ordinals, e.g. "0", "0,1,2", "1,2".
     ///              See active_cuda_gpus on ovphysx_create_args for supported patterns.
     ///              CreateArgs copies the string internally; the caller does not need
@@ -74,7 +77,7 @@ public:
     void setBundledDepsPath(const std::string& path);
 
     /// @param entries  Pointer to an array of config entries. The caller must keep this array
-    ///                 valid until PhysX::create() returns -- CreateArgs does not copy the data.
+    ///                 valid until PhysX::create() returns — CreateArgs does not copy the data.
     /// @param count    Number of entries in the array.
     void setConfigEntries(const ovphysx_config_entry_t* entries, uint32_t count);
 
@@ -106,20 +109,23 @@ template <> struct PhysXTypeFor<::physx::PxArticulationJointReducedCoordinate> {
 
 /**
  * @brief RAII wrapper for ovphysx_handle_t
- *
+ * 
  * Automatically calls ovphysx_destroy_instance on destruction.
  * Move-only (non-copyable) to ensure unique ownership.
- *
+ * 
  * Provides implicit conversion to ovphysx_handle_t for seamless use with C API.
- *
+ * 
  * Example:
- *   CreateArgs args;
- *   args.setDevice(OVPHYSX_DEVICE_GPU);  // optional: default is AUTO
- *   PhysX physx;
- *   PhysX::create(physx, args);
- *   physx.step(0.01f, 0.0f);
- *   physx.waitAll();
- *
+ *   ovphysx_initialize();
+ *   {
+ *       CreateArgs args;
+ *       PhysX physx;
+ *       PhysX::create(physx, args);
+ *       physx.step(0.01f);
+ *       physx.waitAll();
+ *   }
+ *   ovphysx_shutdown();
+ * 
  * Notes:
  *   - Use PhysX::create to obtain a valid instance; methods log and return errors if the handle is null.
  *   - Use waitOp/waitAll when you need results outside stream order.
@@ -128,107 +134,118 @@ class OVPHYSX_API PhysX {
 public:
     /// Construct from existing handle (takes ownership)
     explicit PhysX(ovphysx_handle_t h);
-
+    
     /// Default constructor - creates null handle
     PhysX();
-
+    
     /// Destructor - destroys instance if valid
     ~PhysX();
-
+    
     /// Move constructor
     PhysX(PhysX&& other) noexcept;
-
+    
     /// Move assignment
     PhysX& operator=(PhysX&& other) noexcept;
-
+    
     // Non-copyable
     PhysX(const PhysX&) = delete;
     PhysX& operator=(const PhysX&) = delete;
-
+    
     /// Get raw handle
     ovphysx_handle_t handle() const { return m_handle; }
-
+    
     /// Implicit conversion to handle for use with C API
     operator ovphysx_handle_t() const { return m_handle; }
-
+    
     /// Check if handle is valid
     explicit operator bool() const { return m_handle != 0; }
-
+    
     /// Release ownership of handle (caller must destroy)
     ovphysx_handle_t release();
-
+    
     /// Reset to new handle (destroys current if valid)
     void reset(ovphysx_handle_t h = 0);
-
+    
     //------------------------------------------------------------------------------------------------------------
     // Stage Management
     //------------------------------------------------------------------------------------------------------------
 
-    /// Add a USD file to the stage
-    ovphysx_api_status_t addUsd(const std::string& path, const std::string& prefix,
-                                 ovphysx_usd_handle_t& out_handle);
+    /// Reset the stage to empty (does not change the simulation-time counter)
+    ovphysx_api_status_t reset_stage();
 
-    /// Remove a previously added USD file
-    ovphysx_api_status_t removeUsd(ovphysx_usd_handle_t usd_handle);
+    /// Attach an ovstage Stage through the top-level ovphysx API. `read_ordinal`
+    /// is the caller-owned sealed ordinal the initial scene parse reads at.
+    ovphysx_api_status_t attachOvstage(ovstage_instance_t* stage, ovstage_ordinal_t read_ordinal);
 
-    /// Reset the stage to empty
-    ovphysx_api_status_t reset();
+    /// Pull and apply ovstage changes over the committed ordinal range.
+    ovphysx_api_status_t updateFromOvstage(ovstage_ordinal_range_t range);
 
-    /// Get the USD stage ID
-    ovphysx_api_status_t getStageId(int64_t& out_stage_id);
-
-    /// Clone a USD prim hierarchy to create multiple runtime copies (asynchronous).
+    /// Clone a USD prim hierarchy to create multiple runtime physics copies.
     ///
     /// Creates physics-optimized clones in the internal representation for
     /// high-performance simulation. The source prim must exist in the loaded
-    /// USD stage and have physics properties. Use waitOp(op_index) or
-    /// waitAll() to wait for completion before using cloned objects outside
-    /// stream order.
+    /// USD stage and have physics properties. Replication executes inline; any
+    /// returned operation index is already complete. Backed by the PhysX SDK
+    /// replicator (binary serialization), so cloned articulations are real
+    /// articulations.
     ///
-    /// When an ovstage Stage is attached (via the C API `ovphysx_attach_stage`),
-    /// an alternative clone path is available: call `ovstage_clone_subtree()`
-    /// on the attached Stage and the OvstageBridge consumes the resulting
-    /// clone events during step ingest, driving PhysX-side replication via
-    /// the same plugin this method uses. This direct method remains
-    /// supported for standalone callers (no ovstage attached) and for
-    /// callers that want the async multi-target convenience.
+    /// This is the clone entrypoint for both standalone callers and callers
+    /// that populate the scene through an ovstage Stage attached via the C API
+    /// `ovphysx_attach_ovstage`. Replication runs in the internal representation
+    /// only (USD untouched).
     ///
     /// @param sourcePath USD path of the source prim hierarchy (e.g., "/World/env0")
     /// @param targetPaths Vector of USD paths for cloned hierarchies (e.g., ["/World/env1", "/World/env2"])
-    /// @param parentTransforms World-space placement for each cloned
-    ///        environment's parent Xform prim. Flat array of
-    ///        [targetPaths.size() * 7] floats: (px, py, pz, qx, qy, qz, qw)
-    ///        per target. Pass nullptr for identity.
-    /// @return OVPHYSX_API_SUCCESS if cloning was queued successfully, OVPHYSX_API_ERROR on error
+    /// @param parentTransforms World pose of each copy's parent. Flat array of
+    ///        [targetPaths.size() * 7] floats: (px, py, pz, qx, qy, qz, qw) per
+    ///        target. Each cloned body keeps its pose relative to the source's
+    ///        parent (copy = transform * inverse(source_parent) * body), so an
+    ///        at-origin source lands each body exactly at the transform. Pass
+    ///        nullptr to co-locate every copy on the source.
+    /// @param envIds Optional logical environment id per target
+    ///        ([targetPaths.size()] uint32, each < 0x00FFFFFF -- PhysX supports at
+    ///        most 1<<24 environments, runtime id = envIds[i]+1). Stable across
+    ///        calls: the same id always maps to the same runtime environment, so
+    ///        clones from different calls that share an id collide with each other
+    ///        and stay isolated from every other environment (needed when one
+    ///        logical environment is assembled from several clone calls). Pass
+    ///        nullptr for automatic per-call numbering.
+    /// @param outOpIndex Optional; if non-null, receives the clone operation index
+    ///        on success (usable with waitOp(), mirroring the C/Python forms). The
+    ///        clone has already completed synchronously when this returns, so waiting
+    ///        on the index is only for API uniformity.
+    /// @return OVPHYSX_API_SUCCESS if cloning succeeded, OVPHYSX_API_ERROR on error
     ovphysx_api_status_t clone(const std::string& sourcePath, const std::vector<std::string>& targetPaths,
-                               const float* parentTransforms = nullptr);
+                               const float* parentTransforms = nullptr,
+                               const uint32_t* envIds = nullptr,
+                               ovphysx_op_index_t* outOpIndex = nullptr);
 
 
     //------------------------------------------------------------------------------------------------------------
     // Simulation
     //------------------------------------------------------------------------------------------------------------
-
-    /// Enqueue a physics simulation step
-    ovphysx_api_status_t step(float step_dt, float current_time);
+    
+    /// Enqueue a physics simulation step (simulation time tracked internally).
+    ovphysx_api_status_t step(float step_dt);
 
     /// Recompute articulation link poses from current joint positions without stepping simulation.
     ovphysx_api_status_t updateArticulationsKinematic();
-
+    
     //------------------------------------------------------------------------------------------------------------
     // User Tasks
     //------------------------------------------------------------------------------------------------------------
-
+    
     /// Add a user task to the execution queue
     ovphysx_api_status_t addUserTask(const ovphysx_user_task_desc_t& desc,
                                       ovphysx_op_index_t& out_op_index);
-
+    
     //------------------------------------------------------------------------------------------------------------
     // Synchronization
     //------------------------------------------------------------------------------------------------------------
-
+    
     /// Wait for a specific operation to complete
     physx::WaitResult waitOp(ovphysx_op_index_t op_index, uint64_t timeout_ns = UINT64_MAX);
-
+    
     /// Wait for all pending operations to complete
     physx::WaitResult waitAll(uint64_t timeout_ns = UINT64_MAX);
 
@@ -253,48 +270,6 @@ public:
         ovphysx_tensor_type_t tensor_type);
 
     //------------------------------------------------------------------------------------------------------------
-    // Remote storage credentials (process-wide)
-    //------------------------------------------------------------------------------------------------------------
-
-    /**
-     * @brief Configure S3 credentials for remote USD loading via HTTPS S3 URLs.
-     *
-     * Process-global -- affects all instances. Call before addUsd() with an S3 HTTPS URL.
-     * An ovphysx instance must exist so the runtime is loaded.
-     *
-     * @param host              S3 endpoint (e.g., "my-bucket.s3.us-east-1.amazonaws.com")
-     * @param bucket            Bucket name
-     * @param region            AWS region (e.g., "us-east-1")
-     * @param access_key_id     AWS access key ID
-     * @param secret_access_key AWS secret access key
-     * @param session_token     STS session token (empty string if unused)
-     * @return OVPHYSX_API_SUCCESS on success
-     */
-    static ovphysx_api_status_t configureS3(
-        const std::string& host,
-        const std::string& bucket,
-        const std::string& region,
-        const std::string& access_key_id,
-        const std::string& secret_access_key,
-        const std::string& session_token = "");
-
-    /**
-     * @brief Configure an Azure SAS token for remote USD loading via Azure Blob Storage.
-     *
-     * Process-global -- affects all instances. Call before addUsd() with an Azure Blob URL.
-     * An ovphysx instance must exist so the runtime is loaded.
-     *
-     * @param host      Azure Blob host (e.g., "myaccount.blob.core.windows.net")
-     * @param container Container name
-     * @param sas_token SAS token string (without leading '?')
-     * @return OVPHYSX_API_SUCCESS on success
-     */
-    static ovphysx_api_status_t configureAzureSas(
-        const std::string& host,
-        const std::string& container,
-        const std::string& sas_token);
-
-    //------------------------------------------------------------------------------------------------------------
     // PhysX object interop
     //------------------------------------------------------------------------------------------------------------
 
@@ -308,7 +283,7 @@ public:
     ovphysx_api_status_t getPhysXPtr(const std::string& primPath,
                                      T*& out) const {
         void* raw = nullptr;
-        auto r = ovphysx_get_physx_ptr(m_handle, primPath.c_str(),
+        auto r = ovphysx_get_physx_ptr(m_handle, {primPath.c_str(), primPath.size()},
                                        PhysXTypeFor<T>::value, &raw);
         out = static_cast<T*>(raw);
         return r.status;
@@ -322,7 +297,7 @@ public:
     ovphysx_api_status_t getPhysXPtr(const std::string& primPath,
                                      ovphysx_physx_type_t type,
                                      void*& out) const {
-        auto r = ovphysx_get_physx_ptr(m_handle, primPath.c_str(), type, &out);
+        auto r = ovphysx_get_physx_ptr(m_handle, {primPath.c_str(), primPath.size()}, type, &out);
         return r.status;
     }
 
@@ -430,7 +405,7 @@ public:
     //------------------------------------------------------------------------------------------------------------
     // Factory
     //------------------------------------------------------------------------------------------------------------
-
+    
     /**
      * @brief Factory method to create a PhysX instance from CreateArgs.
      *
@@ -439,12 +414,15 @@ public:
      *
      * Example:
      * @code
-     *   CreateArgs args;
-     *   args.setDevice(OVPHYSX_DEVICE_GPU);
-     *   args.setConfigEntries(entries, 2);
-     *   PhysX physx;
-     *   auto status = PhysX::create(physx, args);
-     *   if (status != OVPHYSX_API_SUCCESS) { ... handle error ... }
+     *   ovphysx_initialize();
+     *   {
+     *       CreateArgs args;
+     *       args.setConfigEntries(entries, 2);
+     *       PhysX physx;
+     *       auto status = PhysX::create(physx, args);
+     *       if (status != OVPHYSX_API_SUCCESS) { ... handle error ... }
+     *   }
+     *   ovphysx_shutdown();
      * @endcode
      *
      * @param out_instance Receives the created PhysX instance on success.
@@ -456,9 +434,199 @@ public:
         PhysX& out_instance,
         const CreateArgs& args);
 
+    /// @brief Force process-wide CPU-only mode. Must be called before any instances are active.
+    ///        See ovphysx_set_cpu_mode() for full semantics.
+    static ovphysx_api_status_t setCpuMode(bool cpuOnly);
+
 private:
     ovphysx_handle_t m_handle;
 };
+
+/**
+ * @brief Clear the ovphysx process-lifecycle token.
+ *
+ * Thin wrapper for @ref ovphysx_shutdown(). See the C header for full
+ * semantics. This does not destroy live handles; Carbonite and the static
+ * PhysX runtime remain resident until process exit.
+ *
+ * @return OVPHYSX_API_SUCCESS on success, OVPHYSX_API_ERROR if called without
+ *         a matching ovphysx_initialize().
+ */
+inline ovphysx_api_status_t shutdown()
+{
+    return ovphysx_shutdown().status;
+}
+
+// ============================================================================
+// Object change notifications (process-global)
+// ============================================================================
+
+/**
+ * @brief Callback set for ObjectChangeSubscription.
+ *
+ * Each callback is optional; an unset std::function is skipped rather than
+ * called. At least one of the three must be set, otherwise
+ * subscribeObjectChanges() returns an inactive ObjectChangeSubscription
+ * (check ObjectChangeSubscription::isActive() to detect this).
+ *
+ * Threading: callbacks may fire from internal worker threads during
+ * PhysX::step() or PhysX::reset_stage(). Do not call other ovphysx APIs from
+ * inside a callback -- defer that work to after the next waitOp() /
+ * waitAll() returns.
+ *
+ * PhysX::clone() does NOT emit onCreated for clone-replicated objects.
+ * Refresh cached PhysX pointers after PhysX::clone() returns and
+ * PhysX::waitAll() completes, not by waiting for a callback.
+ */
+struct ObjectChangeCallbacks {
+    /// Fires AFTER the object is created. Safe to call PhysX::getPhysXPtr()
+    /// from a deferred handler.
+    std::function<void(std::string_view primPath, ovphysx_physx_type_t type)> onCreated;
+
+    /// Fires BEFORE the object is destroyed. Drop any cached pointer for
+    /// primPath / type at this point.
+    std::function<void(std::string_view primPath, ovphysx_physx_type_t type)> onDestroyed;
+
+    /// Fires BEFORE a bulk teardown (e.g. PhysX::reset_stage()). Flush the entire
+    /// pointer cache; no per-object onDestroyed events follow.
+    std::function<void()> onAllDestroyed;
+};
+
+/**
+ * @brief RAII subscription handle returned by subscribeObjectChanges().
+ *
+ * On destruction, unsubscribes via ovphysx_unsubscribe_object_changes() so the
+ * callbacks stop firing. Movable, non-copyable.
+ */
+class ObjectChangeSubscription {
+public:
+    ObjectChangeSubscription() noexcept : m_id(OVPHYSX_INVALID_SUBSCRIPTION_ID) {}
+
+    ObjectChangeSubscription(const ObjectChangeSubscription&) = delete;
+    ObjectChangeSubscription& operator=(const ObjectChangeSubscription&) = delete;
+
+    ObjectChangeSubscription(ObjectChangeSubscription&& other) noexcept
+        : m_id(other.m_id), m_state(std::move(other.m_state))
+    {
+        other.m_id = OVPHYSX_INVALID_SUBSCRIPTION_ID;
+    }
+
+    ObjectChangeSubscription& operator=(ObjectChangeSubscription&& other) noexcept
+    {
+        if (this != &other) {
+            unsubscribe();
+            m_id = other.m_id;
+            m_state = std::move(other.m_state);
+            other.m_id = OVPHYSX_INVALID_SUBSCRIPTION_ID;
+        }
+        return *this;
+    }
+
+    ~ObjectChangeSubscription() { unsubscribe(); }
+
+    /// Returns true if this handle owns a live subscription.
+    bool isActive() const noexcept { return m_id != OVPHYSX_INVALID_SUBSCRIPTION_ID; }
+
+    /// Underlying C subscription ID (or OVPHYSX_INVALID_SUBSCRIPTION_ID if inactive).
+    ovphysx_subscription_id_t id() const noexcept { return m_id; }
+
+    /// Unsubscribe explicitly. Idempotent.
+    ///
+    /// On success, both m_id and m_state are cleared. If the underlying C
+    /// unsubscribe FAILS (e.g. internal sidecar unloaded), m_state is intentionally
+    /// leaked rather than freed -- the C-side subscription may still hold a
+    /// pointer to it, and freeing would leave a dangling user_data for any
+    /// in-flight or queued callback. m_id is still cleared so the handle is
+    /// considered consumed by the caller.
+    void unsubscribe()
+    {
+        if (m_id == OVPHYSX_INVALID_SUBSCRIPTION_ID) {
+            // Already inactive; nothing to free (no C-side subscription).
+            return;
+        }
+        ovphysx_result_t r = ovphysx_unsubscribe_object_changes(m_id);
+        m_id = OVPHYSX_INVALID_SUBSCRIPTION_ID;
+        if (r.status == OVPHYSX_API_SUCCESS) {
+            m_state.reset();
+        } else {
+            // Leak: keep m_state alive so any pending C-side callback finds
+            // a valid pointer. The leak is permanent for this subscription.
+            (void)m_state.release();
+        }
+    }
+
+    // State is the heap-allocated owner of the std::function callbacks. The
+    // C trampolines below receive a State* via the C user_data pointer and
+    // dispatch through it. Public so namespace-scope trampolines can reach the
+    // member; users should not touch this struct directly.
+    struct State {
+        ObjectChangeCallbacks callbacks;
+    };
+
+private:
+    friend ObjectChangeSubscription subscribeObjectChanges(ObjectChangeCallbacks);
+
+    ovphysx_subscription_id_t m_id;
+    std::unique_ptr<State> m_state;
+};
+
+namespace detail {
+inline void objectChangeCreatedTrampoline(ovphysx_string_t primPath, ovphysx_physx_type_t type, void* userData)
+{
+    auto* state = static_cast<ObjectChangeSubscription::State*>(userData);
+    if (state && state->callbacks.onCreated) {
+        state->callbacks.onCreated(std::string_view(primPath.ptr, primPath.length), type);
+    }
+}
+
+inline void objectChangeDestroyedTrampoline(ovphysx_string_t primPath, ovphysx_physx_type_t type, void* userData)
+{
+    auto* state = static_cast<ObjectChangeSubscription::State*>(userData);
+    if (state && state->callbacks.onDestroyed) {
+        state->callbacks.onDestroyed(std::string_view(primPath.ptr, primPath.length), type);
+    }
+}
+
+inline void objectChangeAllDestroyedTrampoline(void* userData)
+{
+    auto* state = static_cast<ObjectChangeSubscription::State*>(userData);
+    if (state && state->callbacks.onAllDestroyed) {
+        state->callbacks.onAllDestroyed();
+    }
+}
+} // namespace detail
+
+/**
+ * @brief Subscribe to PhysX object create/destroy notifications.
+ *
+ * Returns an RAII handle whose destructor calls
+ * ovphysx_unsubscribe_object_changes(). On failure (no callbacks set, internal
+ * sidecar not loaded, etc.) the returned handle satisfies
+ * `!handle.isActive()`; the underlying C call's error is not exposed through
+ * this overload. Subscriptions are process-global -- callbacks fire for
+ * events on every ovphysx instance in the process. See the docstring on
+ * ovphysx_subscribe_object_changes in ovphysx.h for the full contract.
+ */
+inline ObjectChangeSubscription subscribeObjectChanges(ObjectChangeCallbacks callbacks)
+{
+    ObjectChangeSubscription sub;
+    sub.m_state = std::make_unique<ObjectChangeSubscription::State>();
+    sub.m_state->callbacks = std::move(callbacks);
+
+    ovphysx_object_change_callbacks_t c{};
+    c.on_object_created        = sub.m_state->callbacks.onCreated       ? detail::objectChangeCreatedTrampoline       : nullptr;
+    c.on_object_destroyed      = sub.m_state->callbacks.onDestroyed     ? detail::objectChangeDestroyedTrampoline     : nullptr;
+    c.on_all_objects_destroyed = sub.m_state->callbacks.onAllDestroyed  ? detail::objectChangeAllDestroyedTrampoline  : nullptr;
+    c.user_data                = sub.m_state.get();
+
+    ovphysx_subscription_id_t id = OVPHYSX_INVALID_SUBSCRIPTION_ID;
+    if (ovphysx_subscribe_object_changes(&c, &id).status != OVPHYSX_API_SUCCESS) {
+        sub.m_state.reset();
+        return sub;  // m_id stays OVPHYSX_INVALID_SUBSCRIPTION_ID
+    }
+    sub.m_id = id;
+    return sub;
+}
 
 } // namespace ovphysx
 

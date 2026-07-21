@@ -13,9 +13,10 @@ Keeping this module dependency-free is intentional: downstream consumers
 like IsaacLab can import TensorType without triggering ovphysx's native
 bootstrap or USD version checks.
 
-Naming convention: strip the ``OVPHYSX_TENSOR_`` prefix and ``_F32`` suffix
-from the C enum name. This keeps names unambiguous (``ARTICULATION_`` vs
-``RIGID_BODY_``) and makes the ``_bindings.py`` aliases mechanically verifiable.
+Naming convention: strip the ``OVPHYSX_TENSOR_`` prefix and scalar dtype suffix
+(``_F32`` or ``_S32``) from the C enum name. This keeps names unambiguous
+(``ARTICULATION_`` vs ``RIGID_BODY_``) and makes the ``_bindings.py`` aliases
+mechanically verifiable.
 """
 
 from enum import IntEnum
@@ -42,10 +43,14 @@ class TensorType(IntEnum):
     RIGID_BODY_COM_POSE = 5       # [N, 7]  center-of-mass pose in local frame
     RIGID_BODY_INV_MASS = 7       # [N]     read-only; inverse mass
     RIGID_BODY_INV_INERTIA = 8    # [N, 9]  read-only; inverse inertia
+    RIGID_BODY_DISABLE_SIMULATION = 9  # [N]  read/write uint8/bool; nonzero=disabled, zero=enabled (runtime)
 
     # -- Articulation root (2D, read/write) --
     ARTICULATION_ROOT_POSE = 10                # [N, 7]  root link world-frame pose
     ARTICULATION_ROOT_VELOCITY = 11            # [N, 6]  root link linear + angular velocity
+    ARTICULATION_MASS_CENTER_WORLD = 12        # [N, 3]    read-only; articulation COM in world frame
+    ARTICULATION_MASS_CENTER_LOCAL = 13        # [N, 3]    read-only; articulation COM in root-local frame
+    ARTICULATION_CENTROIDAL_MOMENTUM = 14      # [N, 6, D+7] read-only; centroidal momentum matrix + bias col; floating-base only
 
     # -- Articulation links (3D, read/write unless noted) --
     ARTICULATION_LINK_POSE = 20                # [N, L, 7]  per-link world-frame pose
@@ -67,6 +72,7 @@ class TensorType(IntEnum):
     ARTICULATION_DOF_MAX_FORCE = 39            # [N, D]     maximum joint force/torque
     ARTICULATION_DOF_ARMATURE = 40             # [N, D]     reflected rotor inertia
     ARTICULATION_DOF_FRICTION_PROPERTIES = 41  # [N, D, 3]  (static, dynamic, viscous) friction
+    ARTICULATION_DOF_DRIVE_MODEL = 42          # [N, D, 3]  (speedEffortGradient, maxActuatorVelocity, velocityDependentResistance)
 
     # -- External wrenches (2D/3D, write-only) --
     RIGID_BODY_FORCE = 50                      # [N, 3]     force in world frame
@@ -113,6 +119,29 @@ class TensorType(IntEnum):
     ARTICULATION_CONTACT_OFFSET = 111                 # [N, S]    contact offset per shape
     ARTICULATION_REST_OFFSET = 112                    # [N, S]    rest offset per shape
 
+    # -- Volume deformable body state (3D, read/write unless noted) --
+    DEFORMABLE_SIM_NODAL_POSITION = 120       # [N, V, 3] simulation node positions
+    DEFORMABLE_SIM_NODAL_VELOCITY = 121       # [N, V, 3] simulation node velocities
+    DEFORMABLE_SIM_KINEMATIC_TARGET = 122     # [N, V, 4] simulation node kinematic targets (xyz, flag)
+    DEFORMABLE_REST_NODAL_POSITION = 123      # [N, R, 3] read-only rest node positions
+    DEFORMABLE_SIM_ELEMENT_INDICES = 124      # [N, E, K] int32, read-only sim element indices (K=4 tetmesh)
+    DEFORMABLE_COLLISION_ELEMENT_INDICES = 125  # [N, F, K] int32, read-only collision element indices (K=getNumNodesPerElement())
+
+    # -- Surface deformable body state (3D, read/write unless noted) --
+    SURFACE_DEFORMABLE_SIM_POSITION = 140         # [N, V, 3] simulation node positions
+    SURFACE_DEFORMABLE_SIM_VELOCITY = 141         # [N, V, 3] simulation node velocities
+    SURFACE_DEFORMABLE_REST_POSITION = 143        # [N, R, 3] read-only rest node positions
+    SURFACE_DEFORMABLE_SIM_ELEMENT_INDICES = 144  # [N, E, 3] int32, read-only sim element indices (K=3 trimesh)
+
+    # -- Deformable material properties (1D, read/write) --
+    DEFORMABLE_MATERIAL_DYNAMIC_FRICTION = 130       # [M] dynamic friction
+    DEFORMABLE_MATERIAL_YOUNGS_MODULUS = 131         # [M] Young's modulus
+    DEFORMABLE_MATERIAL_POISSONS_RATIO = 132         # [M] Poisson's ratio
+    DEFORMABLE_MATERIAL_ELASTICITY_DAMPING = 133     # [M] elasticity damping (volume + surface)
+    DEFORMABLE_MATERIAL_BENDING_STIFFNESS = 134      # [M] bending stiffness (surface only; 0 for volume)
+    DEFORMABLE_MATERIAL_THICKNESS = 135              # [M] thickness (surface only; 0 for volume)
+    DEFORMABLE_MATERIAL_BENDING_DAMPING = 136        # [M] bending damping (surface only; 0 for volume)
+
 
 class SceneQueryMode(IntEnum):
     """Scene query hit mode. Mirrors ovphysx_scene_query_mode_t."""
@@ -128,30 +157,6 @@ class SceneQueryGeometryType(IntEnum):
     SPHERE = 0  # Sphere defined by radius + center
     BOX    = 1  # Oriented box defined by half-extents + pose
     SHAPE  = 2  # Arbitrary UsdGeomGPrim identified by prim path
-
-
-class PhysXType(IntEnum):
-    """PhysX object type identifiers for ``ovphysx_get_physx_ptr()``.
-
-    Values match ``ovphysx_physx_type_t`` in ``ovphysx_types.h`` (which in
-    turn matches ``omni::physx::PhysXType``).  Alignment is enforced by
-    static_asserts in ovphysxClone.cpp (C <-> internal) and by
-    test_types_sync.py (C <-> Python).
-    """
-
-    SCENE          = 1   # PxScene
-    MATERIAL       = 2   # PxMaterial
-    SHAPE          = 3   # PxShape
-    COMPOUND_SHAPE = 4   # omni::physx::PhysXCompoundShape (convex decomposition)
-    ACTOR          = 5   # PxRigidDynamic / PxRigidStatic
-    JOINT          = 6   # PxJoint (standalone joints only)
-    CUSTOM_JOINT   = 7   # PxJoint (custom joints)
-    ARTICULATION   = 8   # PxArticulationReducedCoordinate
-    LINK            = 9   # PxArticulationLink
-    LINK_JOINT      = 10  # PxArticulationJointReducedCoordinate
-    PARTICLE_SYSTEM = 11  # PxPBDParticleSystem
-    PARTICLE_SET    = 12  # PxParticleBuffer
-    PHYSICS         = 31  # PxPhysics
 
 
 class LogLevel(IntEnum):
@@ -174,16 +179,43 @@ class ApiStatus(IntEnum):
     INVALID_ARGUMENT = 4
     NOT_FOUND = 5
     BUFFER_TOO_SMALL = 6    # caller-supplied buffer is too small; check out_required_size
-    DEVICE_MISMATCH = 7     # tensor device doesn't match the binding's expected device
+    DEVICE_MISMATCH = 7     # tensor device cannot be used or staged for this binding/policy
     GPU_NOT_AVAILABLE = 8   # GPU requested but not available or CUDA init failed
+    END_OF_ITERATION = 9    # iterator exhausted (e.g. fetch_read_next past the last group) — not an error
 
 
-class DeviceType(IntEnum):
-    """Device selection for PhysX instance creation. Mirrors ovphysx_device_t."""
+class ObjectType(IntEnum):
+    """TensorAPI object classification. Mirrors ovphysx_object_type_t."""
 
-    AUTO = 0   # GPU preferred, CPU fallback.  AUTO=0 so zero-initialised create_args picks AUTO.
-    GPU = 1    # GPU required
-    CPU = 2    # CPU only
+    INVALID = 0
+    RIGID_BODY = 1
+    ARTICULATION = 2
+    ARTICULATION_LINK = 3
+    ARTICULATION_ROOT_LINK = 4
+    ARTICULATION_JOINT = 5
+
+
+class SimObjectType(IntEnum):
+    """Simulated object type for the physics output read. Mirrors ovphysx_sim_object_type_t."""
+
+    RIGID_BODY = 0
+    ARTICULATION_LINK = 1
+    ARTICULATION_JOINT = 2
+    VEHICLE_WHEEL = 3
+    DEFORMABLE_VOLUME = 4
+    DEFORMABLE_SURFACE = 5
+    PARTICLE_SET = 6
+
+
+class ObjectScope(IntEnum):
+    """Output query scope. Mirrors ovphysx_object_scope_t.
+
+    ACTIVE is single-frame (the active set is recomputed each step); ALL is
+    stable until a structural change.
+    """
+
+    ALL = 0
+    ACTIVE = 1
 
 
 class ConfigBool(IntEnum):
@@ -213,17 +245,6 @@ class ConfigString(IntEnum):
     OMNIPVD_OVD_RECORDING_DIRECTORY = 0
 
 
-class PhysXDeviceError(RuntimeError):
-    """Raised when a PhysX instance requests a device mode that conflicts
-    with the process-global mode locked by a prior ``PhysX()`` call.
-
-    Device mode (CPU or GPU) is set once per process on the first
-    ``PhysX()`` instantiation and cannot be changed.  To use a different
-    device mode, run the code in a **separate subprocess**::
-
-        import subprocess, sys
-        subprocess.run([sys.executable, "my_cpu_script.py"], check=True)
-    """
 
 
 class BindingPrimMode(IntEnum):

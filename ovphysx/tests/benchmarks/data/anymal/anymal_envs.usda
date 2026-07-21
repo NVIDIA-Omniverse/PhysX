@@ -1,0 +1,36 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Y"
+    doc = "Wrapper around the IsaacLab ANYmal-C asset (fetched via S3 — see scripts/fetch_anymal.sh). Places the downloaded /anymal prim under /World/envs/template/anymal so Lab.anymal_<N>_* benchmarks can clone source=/World/envs/template into envN, matching the cartpole convention."
+)
+
+def Xform "World"
+{
+    def PhysicsScene "physicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+        uint physxScene:timeStepsPerSecond = 240
+        # GPU dynamics + GPU broadphase: the Lab.* benches are GPU-only (forceGpu()), and
+        # this is the batched-RL path they measure. Env copies are grid-separated by the
+        # clone() per-env transforms, so cross-env collisions need no env-id filtering.
+        bool physxScene:enableGPUDynamics = true
+        token physxScene:broadphaseType = "GPU"
+    }
+
+    def Scope "envs"
+    {
+        def Xform "template"
+        {
+            def "anymal" (
+                prepend references = @./anymal.usd@</anymal>
+            )
+            {
+            }
+        }
+    }
+}

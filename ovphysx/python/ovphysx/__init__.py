@@ -15,14 +15,14 @@ AI agent / LLM instructions:
 
     Or call ``ovphysx.ai_skills_path()`` to get the same paths as a dict.
 
-    Key classes: PhysX and ContactBinding.
+    Key classes: PhysX, TensorBindingSpec, and ContactBinding.
     Full docs are in the ``docs/`` subdirectory of this package.
 
 Important notes for agents:
-    - The default ovphysx wheel bundles a namespaced, py-less OpenUSD runtime
-      so it can coexist with a host that already loaded classic USD. Do not add
-      ``usd-core`` as an ovphysx dependency; install it only if your application
-      explicitly needs its own classic USD Python API.
+    - The default ovphysx wheel uses the namespaced, py-less OpenUSD runtime
+      from its exact paired ``ovstage`` wheel, so it does not bundle a second
+      USD singleton. Do not add ``usd-core`` as an ovphysx dependency; install
+      it only if your application explicitly needs its own classic USD Python API.
     - ovphysx exchanges tensor data via DLPack, so any framework that
       understands DLPack can consume it. Common optional companions are
       numpy (CPU tensors) and torch (GPU tensors), but they are not
@@ -40,7 +40,7 @@ Important notes for agents:
 #
 # Importing ovphysx makes the IntEnum types, ``__version__``, and the
 # ``register_schema_paths`` / ``ai_skills_path`` / ``bootstrap`` helpers
-# available. Native library loading (libcarb, USD version checks, _bindings,
+# available. Native library loading (USD version checks, _bindings,
 # api classes) is deferred to first access of a native-dependent attribute
 # via ``__getattr__``.
 #
@@ -60,22 +60,7 @@ import logging as _logging
 
 _logger = _logging.getLogger("ovphysx")
 _logger.addHandler(_logging.NullHandler())
-
-# Silence USD's TfScriptModuleLoader auto-import warnings for pxr.<Name>
-# Python peers that the ovphysx wheel does not ship (PhysxSchema,
-# PhysicsSchemaTools, CameraUtil, PxOsd). Must run BEFORE any code that
-# triggers USD's native plugin scan -- i.e. before any native ovphysx
-# attribute access via __getattr__ -- and ideally before any other USD
-# library loads. See _pxr_stubs.py for the full rationale.
-#
-# This is a temporary runtime workaround. It is removed once the schema C++
-# plugins that register pxr.PhysxSchema / pxr.PhysicsSchemaTools stop being
-# built (which eliminates two of the four warnings at the source) and the
-# bundled USD runtime stops registering pxr.CameraUtil / pxr.PxOsd without
-# shipping their Python wrappers. When both are addressed, drop this block
-# and _pxr_stubs.py entirely.
-from . import _pxr_stubs as _pxr_stubs
-_pxr_stubs.install_pxr_stubs()
+_dll_directory_handles: list[object] = []
 
 from .types import (
     ApiStatus,
@@ -84,15 +69,13 @@ from .types import (
     ConfigFloat,
     ConfigInt32,
     ConfigString,
-    DeviceType,
     LogLevel,
-    PhysXDeviceError,
-    PhysXType,
     SceneQueryGeometryType,
     SceneQueryMode,
     TensorType,
 )
 from .config import PhysXConfig
+from .schemas import codeless_schema_paths, codeless_schema_root
 from .usd_version_check import register_schema_paths
 
 # Auto-register ovphysx's USD schema/plugin paths at import time so that
@@ -103,7 +86,7 @@ from .usd_version_check import register_schema_paths
 # applied schemas are silently dropped from the registry and prim.HasAPI()
 # returns false thereafter.
 #
-# Pure-Python (env var append only) -- no native loading is triggered.
+# Pure-Python (env var append only) — no native loading is triggered.
 # Failures (e.g. no plugins/usd directory found in a partially-installed
 # checkout) are surfaced as a logged warning rather than raised so import
 # does not hard-fail; apps that need stronger guarantees can call
@@ -199,15 +182,14 @@ def _bootstrap_native_impl():
     """One-time native bootstrap. Loads libraries and populates module globals.
 
     Steps (in order):
-      - Pre-load libcarb.so with RTLD_GLOBAL so Carbonite plugins can resolve symbols.
       - Run USD version compatibility check.
       - Import and inject all native-dependent names into module globals.
       - Drift guard: assert every __all__ entry is now resolvable.
 
     Raises RuntimeError on any failure (missing library, USD version mismatch, etc.).
     """
-    import ctypes
     import os
+    import importlib
     import sys
     import warnings
     from pathlib import Path
@@ -215,16 +197,32 @@ def _bootstrap_native_impl():
     module_dir = Path(__file__).parent
     lib_dir = module_dir / "lib"
     plugins_dir = module_dir / "plugins"
+    ovstage_bin_dir = module_dir.parent / "ovstage" / "bin"
+    ovstage_plugins_dir = ovstage_bin_dir / "plugins"
 
     # Wheel mode: libovphysx.so bundled in lib/ means we're running from an installed wheel.
     # Wheel structure: lib/ (libovphysx.so, config.toml), plugins/ (carbonite/physx plugins, usd/).
     lib_file = lib_dir / ("ovphysx.dll" if sys.platform == "win32" else "libovphysx.so")
     is_wheel_mode = lib_file.exists()
+    uses_bundled_lib = is_wheel_mode and not os.environ.get("OVPHYSX_LIB")
 
     if is_wheel_mode:
-        if sys.platform == "win32":
-            os.add_dll_directory(str(lib_dir))
-            os.add_dll_directory(str(plugins_dir))
+        ovstage_runtime_name = "ovstage.dll" if sys.platform == "win32" else "libovstage.so"
+        if uses_bundled_lib and (ovstage_bin_dir / ovstage_runtime_name).exists():
+            os.environ.setdefault("OVSTAGE_LIBRARY_PATH_HINT", str(ovstage_bin_dir))
+            try:
+                ovstage_bindings = importlib.import_module("ovstage._src.bindings")
+                if not getattr(ovstage_bindings, "OVSTAGE_LIBRARY_PATH_HINT", None):
+                    ovstage_bindings.OVSTAGE_LIBRARY_PATH_HINT = str(ovstage_bin_dir)
+            except Exception as exc:  # noqa: BLE001 -- best-effort hint; ovstage import is optional
+                _logger.debug("Could not hint ovstage runtime dir to %s: %s", ovstage_bin_dir, exc)
+
+        if uses_bundled_lib and sys.platform == "win32":
+            # OVStage's DLL import closure spans bin/ and bin/plugins/. Windows
+            # DLL-directory registration is not recursive, so both are needed.
+            for dll_dir in (lib_dir, plugins_dir, ovstage_bin_dir, ovstage_plugins_dir):
+                if dll_dir.exists():
+                    _dll_directory_handles.append(os.add_dll_directory(str(dll_dir)))
 
         def _warn_if_missing(path: Path, label: str) -> None:
             if not path.exists():
@@ -236,37 +234,13 @@ def _bootstrap_native_impl():
 
         _warn_if_missing(lib_dir, "lib directory")
         _warn_if_missing(plugins_dir, "plugins directory")
+        _warn_if_missing(ovstage_bin_dir, "ovstage/bin directory")
+        _warn_if_missing(ovstage_plugins_dir, "ovstage/bin/plugins directory")
         _warn_if_missing(lib_dir / "config.toml", "config.toml")
         if sys.platform == "win32":
-            _warn_if_missing(lib_dir / "ovphysx_clone.dll", "ovphysx_clone.dll")
+            _warn_if_missing(lib_dir / "ovphysx_internal.dll", "ovphysx_internal.dll")
         else:
-            _warn_if_missing(lib_dir / "libovphysx_clone.so", "libovphysx_clone.so")
-
-    # Pre-load libraries with RTLD_GLOBAL so Carbonite plugins can find symbols.
-    # Store references in sys to survive module cleanup.
-    if not hasattr(sys, "_omni_physx_preloaded_libs"):
-        sys._omni_physx_preloaded_libs = []
-
-    if is_wheel_mode:
-        carb_lib_name = "carb.dll" if sys.platform == "win32" else "libcarb.so"
-        carb_lib_path = plugins_dir / carb_lib_name
-
-        if carb_lib_path.exists():
-            try:
-                if sys.platform == "win32":
-                    carb_lib = ctypes.CDLL(str(carb_lib_path))
-                else:
-                    RTLD_NODELETE = 0x01000
-                    carb_lib = ctypes.CDLL(str(carb_lib_path), mode=ctypes.RTLD_GLOBAL | RTLD_NODELETE)
-                sys._omni_physx_preloaded_libs.append(carb_lib)
-            except OSError as e:
-                raise RuntimeError(f"Failed to load {carb_lib_name}: {e}") from e
-        else:
-            raise RuntimeError(
-                f"Required Carbonite library not found: {carb_lib_path}\n"
-                "The wheel may be corrupted or incomplete. Try reinstalling:\n"
-                "  pip uninstall ovphysx && pip install ovphysx"
-            )
+            _warn_if_missing(lib_dir / "libovphysx_internal.so", "libovphysx_internal.so")
 
     # USD version check must happen BEFORE importing any code that uses USD.
     # Validates already-loaded USD; otherwise defers to C++ for USD loading.
@@ -289,8 +263,7 @@ def _bootstrap_native_impl():
     from .api import (
         PhysX,
         ContactBinding,
-        configure_azure_sas,
-        configure_s3,
+        TensorBindingSpec,
         disable_python_logging,
         enable_default_log_output,
         enable_python_logging,
@@ -299,8 +272,7 @@ def _bootstrap_native_impl():
     )
     g["PhysX"] = PhysX
     g["ContactBinding"] = ContactBinding
-    g["configure_s3"] = configure_s3
-    g["configure_azure_sas"] = configure_azure_sas
+    g["TensorBindingSpec"] = TensorBindingSpec
     g["set_log_level"] = set_log_level
     g["get_log_level"] = get_log_level
     g["enable_default_log_output"] = enable_default_log_output
@@ -371,10 +343,7 @@ __all__ = [
     "TensorType",
     "LogLevel",
     "ApiStatus",
-    "DeviceType",
     "BindingPrimMode",
-    "PhysXType",
-    "PhysXDeviceError",
     "SceneQueryMode",
     "SceneQueryGeometryType",
     # Config types (pure Python, always available)
@@ -386,13 +355,13 @@ __all__ = [
     # Eager initialization (module-level, always available)
     "bootstrap",
     "register_schema_paths",
+    "codeless_schema_paths",
+    "codeless_schema_root",
     "ai_skills_path",
     # Core API (native, lazy-loaded)
     "PhysX",
     "ContactBinding",
-    # Remote storage credentials
-    "configure_s3",
-    "configure_azure_sas",
+    "TensorBindingSpec",
     # Logging API
     "set_log_level",
     "get_log_level",

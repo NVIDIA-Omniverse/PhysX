@@ -8,6 +8,7 @@
 // [tutorial-start]
 #include "ovphysx/ovphysx.h"
 #include "ovphysx/ovphysx_config.h"
+#include "ovstage_sample.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -28,7 +29,8 @@ static int count_ovd_files(const fs::path& dir) {
     return count;
 }
 
-int main() {
+static int run(void)
+{
 #if defined(__aarch64__) || defined(_M_ARM64)
     printf("OmniPVD is not supported on aarch64, skipping.\n");
     return 0;
@@ -47,7 +49,7 @@ int main() {
     printf("OmniPVD recording directory: %s\n", dir_str.c_str());
 
     // Configure OmniPVD recording via typed config entries.
-    // Both must be set before instance creation -- the recording pipeline
+    // Both must be set before instance creation — the recording pipeline
     // initializes during physics engine startup.
     ovphysx_config_entry_t config[] = {
         ovphysx_config_entry_omnipvd_ovd_recording_directory(ovphysx_cstr(dir_str.c_str())),
@@ -59,41 +61,45 @@ int main() {
     create_args.config_entry_count = 2;
     ovphysx_handle_t handle = 0;
 
-    ovphysx_result_t r = ovphysx_create_instance(&create_args, &handle);
+    ovphysx_result_t r = ovphysx_initialize();
+    if (r.status != OVPHYSX_API_SUCCESS) {
+        ovphysx_string_t err = ovphysx_get_last_error();
+        fprintf(stderr, "Failed to initialize ovphysx: %.*s\n",
+                (int)(err.ptr ? err.length : 0), err.ptr ? err.ptr : "");
+        return 1;
+    }
+
+    r = ovphysx_create_instance(&create_args, &handle);
     if (r.status != OVPHYSX_API_SUCCESS) {
         ovphysx_string_t err = ovphysx_get_last_error();
         fprintf(stderr, "Failed to create PhysX instance: %.*s\n",
                 (int)(err.ptr ? err.length : 0), err.ptr ? err.ptr : "");
+        ovphysx_shutdown();
         return 1;
     }
 
-    // Load USD scene
-    ovphysx_string_t path_str = ovphysx_cstr(OVPHYSX_TEST_DATA "/simple_physics_scene.usda");
-    ovphysx_string_t prefix_str = {nullptr, 0};
-    ovphysx_usd_handle_t usd_handle = 0;
-
-    ovphysx_enqueue_result_t add_result = ovphysx_add_usd(handle, path_str, prefix_str, &usd_handle);
-    if (add_result.status != OVPHYSX_API_SUCCESS) {
-        ovphysx_string_t err = ovphysx_get_last_error();
-        fprintf(stderr, "Failed to load USD: %.*s\n",
-                (int)(err.ptr ? err.length : 0), err.ptr ? err.ptr : "");
+    ovphysx_sample_stage_attachment_t stage_attachment = {};
+    if (!ovphysx_sample_attach_usd_with_ovstage(
+            handle, OVPHYSX_TEST_DATA "/simple_physics_scene.usda", &stage_attachment)) {
         ovphysx_destroy_instance(handle);
+        ovphysx_shutdown();
         return 1;
     }
 
-    // Run simulation steps -- OmniPVD records each frame
+    // Run simulation steps — OmniPVD records each frame
     const float dt = 1.0f / 60.0f;
     const int n_steps = 10;
     printf("Running %d simulation steps...\n", n_steps);
 
     for (int i = 0; i < n_steps; i++) {
-        float current_time = static_cast<float>(i) * dt;
-        ovphysx_result_t step_r = ovphysx_step_sync(handle, dt, current_time);
+        ovphysx_result_t step_r = ovphysx_step_sync(handle, dt);
         if (step_r.status != OVPHYSX_API_SUCCESS) {
             ovphysx_string_t err = ovphysx_get_last_error();
             fprintf(stderr, "Step %d failed: %.*s\n", i,
                     (int)(err.ptr ? err.length : 0), err.ptr ? err.ptr : "");
+            ovphysx_sample_destroy_stage(handle, &stage_attachment);
             ovphysx_destroy_instance(handle);
+            ovphysx_shutdown();
             return 1;
         }
     }
@@ -102,7 +108,9 @@ int main() {
 
     // Destroying the instance finalizes the recording:
     // tmp.ovd is renamed to a timestamped *_rec.ovd file.
+    ovphysx_sample_destroy_stage(handle, &stage_attachment);
     ovphysx_destroy_instance(handle);
+    ovphysx_shutdown();
 
     // Verify that at least one OVD file was produced.
     // Return non-zero if not, so CI can catch regressions.
@@ -115,5 +123,10 @@ int main() {
 
     fprintf(stderr, "FAIL: No OVD files found in %s\n", dir_str.c_str());
     return 1;
+}
+
+int main(void) {
+    int rc = run();
+    return rc;
 }
 // [tutorial-end]

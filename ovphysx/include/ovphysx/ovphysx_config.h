@@ -70,9 +70,9 @@ static inline ovphysx_config_entry_t ovphysx_config_entry_string(ovphysx_config_
 /**
  * Build a config entry for an arbitrary Carbonite setting (direct override).
  *
- * The key is a Carbonite settings path (e.g., "/physics/fabricUpdateVelocities")
+ * The key is a Carbonite settings path (e.g., "/physics/updateToUsd")
  * and the value is a string whose type is auto-detected at runtime:
- * "true"/"false" -> bool, integer string -> int, float string -> float, else string.
+ * "true"/"false" → bool, integer string → int, float string → float, else string.
  *
  * Both key.ptr and value.ptr must remain valid until the API call returns.
  */

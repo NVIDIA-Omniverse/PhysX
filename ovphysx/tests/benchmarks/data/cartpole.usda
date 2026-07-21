@@ -1,0 +1,84 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "physicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+        uint physxScene:timeStepsPerSecond = 240
+        # GPU dynamics + GPU broadphase: the Lab.* benches are GPU-only (forceGpu()), and
+        # this is the batched-RL path they measure. Env copies are grid-separated by the
+        # clone() per-env transforms, so cross-env collisions need no env-id filtering.
+        bool physxScene:enableGPUDynamics = true
+        token physxScene:broadphaseType = "GPU"
+    }
+
+    def Scope "envs"
+    {
+        def Xform "template"
+        {
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Xform "cartpole" (
+                prepend apiSchemas = ["PhysicsArticulationRootAPI"]
+            )
+            {
+                def Cube "base" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI"]
+                )
+                {
+                    double size = 0.2
+                    double3 xformOp:translate = (0, 0.1, 0)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+
+                def Cube "cart" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+                )
+                {
+                    double size = 0.4
+                    float physics:mass = 1.0
+                    double3 xformOp:translate = (0, 0.5, 0)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+
+                def Cylinder "pole" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+                )
+                {
+                    uniform token axis = "Y"
+                    double height = 1.0
+                    double radius = 0.04
+                    float physics:mass = 0.1
+                    double3 xformOp:translate = (0, 1.0, 0)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+
+                def PhysicsPrismaticJoint "cartJoint"
+                {
+                    rel physics:body0 = </World/envs/template/cartpole/base>
+                    rel physics:body1 = </World/envs/template/cartpole/cart>
+                    uniform token physics:axis = "X"
+                    float physics:lowerLimit = -2.5
+                    float physics:upperLimit = 2.5
+                }
+
+                def PhysicsRevoluteJoint "poleJoint"
+                {
+                    rel physics:body0 = </World/envs/template/cartpole/cart>
+                    rel physics:body1 = </World/envs/template/cartpole/pole>
+                    uniform token physics:axis = "Z"
+                }
+            }
+        }
+    }
+}

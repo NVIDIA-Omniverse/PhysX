@@ -1,0 +1,10 @@
+# Test config - minimal valid configuration
+
+[library]
+name = "minimal.library"
+version = "0.1.0"
+
+[usd]
+required = false
+version_spec = ""
+

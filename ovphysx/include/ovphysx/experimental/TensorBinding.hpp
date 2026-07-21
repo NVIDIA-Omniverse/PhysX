@@ -42,7 +42,9 @@ public:
     /// Get the raw binding handle (for use with C API)
     ovphysx_tensor_binding_handle_t handle() const { return m_bindingHandle; }
 
-    /// Check if this binding is valid
+    /// Check whether this wrapper currently owns a non-null binding handle.
+    /// This does not query whether the underlying TensorAPI view survived a
+    /// stage reset or bound-object removal; read/write will report that error.
     explicit operator bool() const { return m_bindingHandle != 0; }
 
     /// Query the tensor spec (dtype, ndim, shape)

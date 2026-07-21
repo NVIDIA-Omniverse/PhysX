@@ -7,6 +7,7 @@
 
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_types.h>
+#include "ovstage_sample.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -106,27 +107,28 @@ static DLTensor make_tensor_f32_3d(size_t d0, size_t d1, size_t d2,
     return t;
 }
 
-int main(void)
+static int run(void)
 {
     ovphysx_result_t r;
     ovphysx_enqueue_result_t er;
 
     // [tutorial-start]
     /* 1. Initialize SDK */
+    r = ovphysx_initialize();
+    if (!check_result(r, "ovphysx_initialize")) return 1;
+
     ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    args.device = OVPHYSX_DEVICE_CPU;
 
     ovphysx_handle_t handle = 0;
     r = ovphysx_create_instance(&args, &handle);
-    if (!check_result(r, "ovphysx_create_instance")) return 1;
+    if (!check_result(r, "ovphysx_create_instance")) { ovphysx_shutdown(); return 1; }
 
-    /* 2. Load scene */
-    ovphysx_usd_handle_t usd_handle = 0;
-    er = ovphysx_add_usd(handle,
-                         ovphysx_cstr(OVPHYSX_TEST_DATA "/boxes_falling_on_groundplane.usda"),
-                         (ovphysx_string_t){NULL, 0}, &usd_handle);
-    if (!check_enqueue(er, "ovphysx_add_usd")) { ovphysx_destroy_instance(handle); return 1; }
-    if (!wait_op(handle, er.op_index, "add_usd")) { ovphysx_destroy_instance(handle); return 1; }
+    /* 2. Populate ovstage from USD and attach it */
+    ovphysx_sample_stage_attachment_t stage_attachment = {0};
+    if (!ovphysx_sample_attach_usd_with_ovstage(
+            handle, OVPHYSX_TEST_DATA "/boxes_falling_on_groundplane.usda", &stage_attachment)) {
+        ovphysx_destroy_instance(handle); ovphysx_shutdown(); return 1;
+    }
 
     /* 3. Create contact binding BEFORE the first step.
      *    sensor: the falling box.  filter: the ground plane. */
@@ -144,7 +146,8 @@ int main(void)
         256,            /* max raw contact pairs */
         &cb);
     if (!check_result(r, "ovphysx_create_contact_binding")) {
-        ovphysx_destroy_instance(handle); return 1;
+        ovphysx_sample_destroy_stage(handle, &stage_attachment);
+        ovphysx_destroy_instance(handle); ovphysx_shutdown(); return 1;
     }
 
     /* 4. Query matched sensor / filter counts */
@@ -152,23 +155,29 @@ int main(void)
     r = ovphysx_get_contact_binding_spec(handle, cb, &sensor_count, &filter_count);
     if (!check_result(r, "ovphysx_get_contact_binding_spec")) {
         ovphysx_destroy_contact_binding(handle, cb);
+        ovphysx_sample_destroy_stage(handle, &stage_attachment);
         ovphysx_destroy_instance(handle);
+        ovphysx_shutdown();
         return 1;
     }
     printf("Sensors: %d  Filters per sensor: %d\n", sensor_count, filter_count);
 
     /* 5. Simulate until the box lands */
     for (int i = 0; i < 120; i++) {
-        er = ovphysx_step(handle, 1.0f / 60.0f, 0.0f);
+        er = ovphysx_step(handle, 1.0f / 60.0f);
         if (!check_enqueue(er, "ovphysx_step")) {
             ovphysx_destroy_contact_binding(handle, cb);
+            ovphysx_sample_destroy_stage(handle, &stage_attachment);
             ovphysx_destroy_instance(handle);
+            ovphysx_shutdown();
             return 1;
         }
     }
     if (!wait_op(handle, er.op_index, "step")) {
         ovphysx_destroy_contact_binding(handle, cb);
+        ovphysx_sample_destroy_stage(handle, &stage_attachment);
         ovphysx_destroy_instance(handle);
+        ovphysx_shutdown();
         return 1;
     }
 
@@ -183,7 +192,9 @@ int main(void)
     if (!check_result(r, "ovphysx_read_contact_net_forces")) {
         free(net_data); free(net_shp);
         ovphysx_destroy_contact_binding(handle, cb);
+        ovphysx_sample_destroy_stage(handle, &stage_attachment);
         ovphysx_destroy_instance(handle);
+        ovphysx_shutdown();
         return 1;
     }
     printf("Net contact forces [%d, 3]:\n", sensor_count);
@@ -207,7 +218,9 @@ int main(void)
     if (!check_result(r, "ovphysx_read_contact_force_matrix")) {
         free(mat_data); free(mat_shp);
         ovphysx_destroy_contact_binding(handle, cb);
+        ovphysx_sample_destroy_stage(handle, &stage_attachment);
         ovphysx_destroy_instance(handle);
+        ovphysx_shutdown();
         return 1;
     }
     printf("Contact force matrix [%d, %d, 3]:\n", sensor_count, filter_count);
@@ -229,8 +242,15 @@ int main(void)
     ovphysx_destroy_contact_binding(handle, cb);
     // [tutorial-end]
 
+    ovphysx_sample_destroy_stage(handle, &stage_attachment);
     ovphysx_destroy_instance(handle);
+    ovphysx_shutdown();
     printf("Cleanup complete\n");
 
     return 0;
+}
+
+int main(void) {
+    int rc = run();
+    return rc;
 }

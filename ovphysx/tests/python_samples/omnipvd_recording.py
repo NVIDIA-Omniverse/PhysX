@@ -6,7 +6,7 @@
 # Tutorial marker comments below define the included range.
 
 """
-OmniPVD recording sample -- capture physics internals to .ovd files.
+OmniPVD recording sample — capture physics internals to .ovd files.
 
 This sample demonstrates how to:
 1. Configure OmniPVD recording via settings
@@ -25,6 +25,23 @@ import tempfile
 from pathlib import Path
 
 from ovphysx import PhysX, PhysXConfig
+
+
+def attach_scene(physx, usd_path, stage_name):
+    import ovstage
+
+    if not ovstage.population.available():
+        raise RuntimeError("ovstage population bridge is unavailable")
+
+    stage = ovstage.Stage(stage_name)
+    ordinal = 1
+    try:
+        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
+        physx.attach_ovstage(stage, read_ordinal=ordinal)
+        return stage
+    except Exception:
+        stage.destroy()
+        raise
 
 # Use a temporary directory for recording output.
 # Replace with your own path for persistent recordings.
@@ -47,21 +64,23 @@ script_dir = Path(__file__).resolve().parent
 usd_path = script_dir / ".." / "data" / "links_chain_sample.usda"
 print(f"Loading USD scene: {usd_path}")
 
-physx.add_usd(str(usd_path))
+stage = attach_scene(physx, usd_path, "ovphysx-omnipvd-sample")
 physx.wait_all()
 
-# Run simulation -- OmniPVD captures each frame automatically
+# Run simulation — OmniPVD captures each frame automatically
 dt = 1.0 / 60.0
 n_steps = 120  # 2 seconds at 60 Hz
 print(f"Simulating {n_steps} steps...")
 
 for i in range(n_steps):
-    physx.step_sync(dt, i * dt)
+    physx.step_sync(dt)
 
 print("Simulation complete.")
 
 # Destroying the instance finalizes the recording:
-# the runtime renames tmp.ovd -> <timestamp>_rec.ovd.
+# the runtime renames tmp.ovd → <timestamp>_rec.ovd.
+physx.detach_ovstage()
+stage.destroy()
 physx.release()
 print("Cleanup complete")
 

@@ -29,7 +29,8 @@ if(MSVC)
     target_compile_options(clone_c PRIVATE /TC)
 endif()
 
-target_link_libraries(clone_c PRIVATE ovphysx::ovphysx)
+target_link_libraries(clone_c PRIVATE ovphysx::ovphysx ovphysx::ovstage)
+target_include_directories(clone_c PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../common")
 get_filename_component(OVPHYSX_TEST_DATA_DIR "${CMAKE_CURRENT_LIST_DIR}/../../data" ABSOLUTE)
 target_compile_definitions(clone_c PRIVATE
     OVPHYSX_TEST_DATA="${OVPHYSX_TEST_DATA_DIR}"

@@ -22,9 +22,17 @@ from .dlpack import (
     PyCapsule_IsValid,
 )
 
+# Match omni::physics::tensors::kMaxDimensions in TensorDesc.h.
+_MAX_TENSOR_RANK = 8
+
 
 def _validate_c_contiguous_layout(dl_tensor: DLTensor) -> None:
     """Validate that DLTensor strides describe C-contiguous layout."""
+    ndim = dl_tensor.ndim
+    if ndim <= 0 or ndim > _MAX_TENSOR_RANK:
+        raise ValueError(f"Tensor rank must be between 1 and {_MAX_TENSOR_RANK}, got {ndim}")
+    if not dl_tensor.shape:
+        raise ValueError("Tensor shape must not be null")
     if not dl_tensor.strides:
         return
 
@@ -32,11 +40,11 @@ def _validate_c_contiguous_layout(dl_tensor: DLTensor) -> None:
     # satisfied (no data to lay out). NumPy reports stride 0 for the dims
     # outside a zero-sized one, which would otherwise fail the per-dim
     # stride check below.
-    if any(dl_tensor.shape[i] == 0 for i in range(dl_tensor.ndim)):
+    if any(dl_tensor.shape[i] == 0 for i in range(ndim)):
         return
 
     expected_stride = 1
-    for dim_idx in range(dl_tensor.ndim - 1, -1, -1):
+    for dim_idx in range(ndim - 1, -1, -1):
         dim = dl_tensor.shape[dim_idx]
 
         # Dim of size 1 has irrelevant stride and contributes a factor of 1
@@ -46,8 +54,7 @@ def _validate_c_contiguous_layout(dl_tensor: DLTensor) -> None:
 
         if dl_tensor.strides[dim_idx] != expected_stride:
             raise ValueError(
-                "Tensor must be C-contiguous (row-major). "
-                "Call .contiguous() on a PyTorch tensor before passing it."
+                "Tensor must be C-contiguous (row-major). Call .contiguous() on a PyTorch tensor before passing it."
             )
 
         expected_stride *= dim

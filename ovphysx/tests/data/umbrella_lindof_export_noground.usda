@@ -1,0 +1,376 @@
+#usda 1.0
+(
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def PhysicsScene "physicsScene" (
+    prepend apiSchemas = ["PhysxSceneAPI"]
+)
+{
+    vector3f physics:gravityDirection = (0, 0, 0)
+    float physics:gravityMagnitude = 0
+    uniform token physxScene:broadphaseType = "MBP"
+    bool physxScene:enableGPUDynamics = false
+    bool physxScene:enableSceneQuerySupport = 0
+    uint physxScene:timeStepsPerSecond = 60
+}
+
+def DistantLight "distantLight"
+{
+    float inputs:angle = 0.53
+    color3f inputs:color = (1, 1, 1)
+    float inputs:intensity = 5000
+}
+
+def Xform "envs"
+{
+    def Xform "env0" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env1" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env2" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 2, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env3" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 2, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env4" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 4, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env5" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 4, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env6" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 6, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env7" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 6, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env8" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 8, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env9" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 8, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env10" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 10, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env11" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 10, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env12" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 12, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env13" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 12, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env14" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 14, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env15" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 14, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env16" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 16, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env17" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 16, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env18" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 18, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env19" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 18, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env20" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 20, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env21" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 20, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env22" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 22, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env23" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 22, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env24" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 24, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env25" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 24, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env26" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 26, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env27" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 26, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env28" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 28, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env29" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 28, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env30" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 30, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env31" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 30, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env32" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 32, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env33" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 32, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env34" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 34, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env35" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 34, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env36" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 36, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env37" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 36, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env38" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 38, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env39" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 38, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env40" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (0, 40, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "env41" (
+        prepend inherits = </envTemplate>
+    )
+    {
+        double3 xformOp:translate = (6.5, 40, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}
+
+class Xform "envTemplate"
+{
+    def Xform "railcart" (
+        prepend references = @./CartRailNoPole.usda@
+    )
+    {
+        quatf xformOp:orient = (1, 0, 0, 0)
+        double3 xformOp:translate = (0, 0, 1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+}
+

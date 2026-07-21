@@ -12,21 +12,39 @@ from pathlib import Path
 
 print("Using ovphysx version: ", ovphysx.__version__)
 
-# Initialize PhysX
-physx = PhysX()
+def attach_scene(physx, usd_path):
+    import ovstage
 
-# Load USD scene with physics setup
+    if not ovstage.population.available():
+        raise RuntimeError("ovstage population bridge is unavailable")
+
+    stage = ovstage.Stage("ovphysx-hello-world")
+    ordinal = 1
+    try:
+        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
+        physx.attach_ovstage(stage, read_ordinal=ordinal)
+        print("Loaded scene through ovstage")
+        return stage
+    except Exception:
+        stage.destroy()
+        raise
+
 script_dir = Path(__file__).resolve().parent
 usd_path = script_dir / ".." / "data" / "links_chain_sample.usda"
-physx.add_usd(str(usd_path))
 
-# Run a simulation step
-dt = 1.0 / 60.0
-elapsed_time = 0.0
-physx.step(dt, elapsed_time)
+# Initialize PhysX
+physx = PhysX()
+stage = attach_scene(physx, usd_path)
 
-print("Simulation step completed successfully")
-
-physx.release()
-print("Cleanup complete")
+try:
+    # Run a simulation step
+    dt = 1.0 / 60.0
+    physx.step(dt)
+    print("Simulation step completed successfully")
+finally:
+    if stage is not None:
+        physx.detach_ovstage()
+        stage.destroy()
+    physx.release()
+    print("Cleanup complete")
 # [tutorial-end]

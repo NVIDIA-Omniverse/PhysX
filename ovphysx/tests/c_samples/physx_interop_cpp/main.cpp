@@ -8,6 +8,7 @@
 // [tutorial-start]
 #include "ovphysx/ovphysx.h"
 #include "ovphysx/ovphysx_types.h"
+#include "ovstage_sample.h"
 
 // PhysX SDK headers (shipped with the ovphysx SDK under include/physx/)
 #include "PxRigidDynamic.h"
@@ -44,54 +45,51 @@ static bool wait_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index, const 
     return ok;
 }
 
-int main() {
+static ovphysx_sample_stage_attachment_t g_stage_attachment{};
+
+static int destroy_instance_and_shutdown(ovphysx_handle_t handle) {
+    ovphysx_sample_destroy_stage(handle, &g_stage_attachment);
+    ovphysx_destroy_instance(handle);
+    ovphysx_shutdown();
+    return 1;
+}
+
+static int run(void)
+{
     printf("=== ovphysx PhysX Interop (C++ API) ===\n");
 
-    // 1. Create instance (CPU mode for simplicity)
+    ovphysx_result_t result = ovphysx_initialize();
+    if (!check_result(result, "initialize"))
+        return 1;
+
+    // 1. Create instance
     ovphysx_handle_t handle = 0;
     ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    args.device = OVPHYSX_DEVICE_CPU;
 
-    ovphysx_result_t result = ovphysx_create_instance(&args, &handle);
-    if (!check_result(result, "create_instance"))
+    result = ovphysx_create_instance(&args, &handle);
+    if (!check_result(result, "create_instance")) {
+        ovphysx_shutdown();
         return 1;
+    }
 
     printf("Instance created.\n");
 
-    // 2. Load USD scene (simple_physics_scene.usda includes a kinematic body)
-    ovphysx_usd_handle_t usd_handle = 0;
-    ovphysx_enqueue_result_t add_result = ovphysx_add_usd(
-        handle,
-        OVPHYSX_LITERAL(OVPHYSX_TEST_DATA "/simple_physics_scene.usda"),
-        OVPHYSX_LITERAL(""),
-        &usd_handle);
-
-    if (add_result.status != OVPHYSX_API_SUCCESS) {
-        ovphysx_string_t err = ovphysx_get_last_error();
-        fprintf(stderr, "Failed to load USD scene\n");
-        if (err.ptr) {
-            fprintf(stderr, "%.*s\n", (int)err.length, err.ptr);
-        }
-        ovphysx_destroy_instance(handle);
-        return 1;
-    }
-    if (!wait_op(handle, add_result.op_index, "add_usd")) {
-        ovphysx_destroy_instance(handle);
-        return 1;
+    // 2. Populate ovstage from USD and attach it
+    if (!ovphysx_sample_attach_usd_with_ovstage(
+            handle, OVPHYSX_TEST_DATA "/simple_physics_scene.usda", &g_stage_attachment)) {
+        return destroy_instance_and_shutdown(handle);
     }
 
     printf("USD scene loaded.\n");
 
     // 3. Step once to initialize physics
-    ovphysx_enqueue_result_t step_result = ovphysx_step(handle, 1.0f / 60.0f, 0.0f);
+    ovphysx_enqueue_result_t step_result = ovphysx_step(handle, 1.0f / 60.0f);
     if (step_result.status != OVPHYSX_API_SUCCESS) {
         fprintf(stderr, "Failed to enqueue step\n");
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
     if (!wait_op(handle, step_result.op_index, "initial step")) {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     printf("Initial simulation step completed.\n");
@@ -101,18 +99,16 @@ int main() {
     //    so cast to PxRigidActor* first, then validate the concrete type.
     void* actor_ptr = nullptr;
     result = ovphysx_get_physx_ptr(
-        handle, "/World/KinematicCube", OVPHYSX_PHYSX_TYPE_ACTOR, &actor_ptr);
+        handle, OVPHYSX_LITERAL("/World/KinematicCube"), OVPHYSX_PHYSX_TYPE_ACTOR, &actor_ptr);
     if (!check_result(result, "get_physx_ptr")) {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     physx::PxRigidActor* rigid_actor = static_cast<physx::PxRigidActor*>(actor_ptr);
     physx::PxRigidDynamic* actor = rigid_actor->is<physx::PxRigidDynamic>();
     if (!actor) {
         fprintf(stderr, "ERROR: /World/KinematicCube is not a PxRigidDynamic\n");
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
     printf("Got PxRigidDynamic* for /World/KinematicCube\n");
 
@@ -122,15 +118,13 @@ int main() {
     printf("Set kinematic target to (3, 2, 0)\n");
 
     // 6. Step again so PhysX moves the kinematic body to the target
-    step_result = ovphysx_step(handle, 1.0f / 60.0f, 1.0f / 60.0f);
+    step_result = ovphysx_step(handle, 1.0f / 60.0f);
     if (step_result.status != OVPHYSX_API_SUCCESS) {
         fprintf(stderr, "Failed to enqueue step\n");
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
     if (!wait_op(handle, step_result.op_index, "target step")) {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     // 7. Read back pose via tensor binding to verify the body moved
@@ -141,8 +135,7 @@ int main() {
 
     result = ovphysx_create_tensor_binding(handle, &pose_desc, &pose_binding);
     if (!check_result(result, "create_tensor_binding")) {
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     // Allocate a [1, 7] tensor: [x, y, z, qx, qy, qz, qw]
@@ -160,8 +153,7 @@ int main() {
     result = ovphysx_read_tensor_binding(handle, pose_binding, &pose_tensor);
     if (!check_result(result, "read_tensor_binding")) {
         ovphysx_destroy_tensor_binding(handle, pose_binding);
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     printf("Pose after setKinematicTarget: pos=(%.3f, %.3f, %.3f) quat=(%.3f, %.3f, %.3f, %.3f)\n",
@@ -179,15 +171,21 @@ int main() {
         fprintf(stderr, "FAILED: Expected position near (3, 2, 0), got (%.3f, %.3f, %.3f)\n",
                 pose_data[0], pose_data[1], pose_data[2]);
         ovphysx_destroy_tensor_binding(handle, pose_binding);
-        ovphysx_destroy_instance(handle);
-        return 1;
+        return destroy_instance_and_shutdown(handle);
     }
 
     // 8. Cleanup
     ovphysx_destroy_tensor_binding(handle, pose_binding);
+    ovphysx_sample_destroy_stage(handle, &g_stage_attachment);
     ovphysx_destroy_instance(handle);
+    ovphysx_shutdown();
     printf("Cleanup complete\n");
 
     return 0;
+}
+
+int main(void) {
+    int rc = run();
+    return rc;
 }
 // [tutorial-end]

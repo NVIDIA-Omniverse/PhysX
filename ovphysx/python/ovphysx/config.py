@@ -15,7 +15,7 @@ Usage::
     physx = PhysX(config=PhysXConfig(
         disable_contact_processing=True,
         num_threads=4,
-        carbonite_overrides={"/physics/fabricUpdateVelocities": True},
+        carbonite_overrides={"/physics/updateToUsd": False},
     ))
 """
 
@@ -36,6 +36,7 @@ _SCENE_MULTI_GPU_MODE = 1
 
 # String config key enum values (must match ovphysx_config_string_t)
 _OMNIPVD_OVD_RECORDING_DIRECTORY = 0
+_COOKED_COLLIDER_CACHE_DIRECTORY = 1
 
 
 # ---------------------------------------------------------------------------
@@ -120,7 +121,7 @@ class PhysXConfig:
         physx = PhysX(config=PhysXConfig(
             disable_contact_processing=True,
             num_threads=4,
-            carbonite_overrides={"/physics/fabricUpdateVelocities": True},
+            carbonite_overrides={"/physics/updateToUsd": False},
         ))
     """
 
@@ -131,6 +132,10 @@ class PhysXConfig:
     scene_multi_gpu_mode: int | None = None  #: 0=disabled, 1=all GPUs, 2=skip first GPU
     omnipvd_output_enabled: bool | None = None  #: Must be set before instance creation
     omnipvd_ovd_recording_directory: str | None = None  #: Must be set before instance creation
+    #: Directory for the local cooked-collider (UJITSO) cache. Provide this to persist
+    #: cooked colliders across runs and reuse them on the next launch; if left None,
+    #: ovphysx does not choose a location and cooking runs without cross-run persistence.
+    cooked_collider_cache_dir: str | None = None
     carbonite_overrides: dict[str, bool | int | float | str] | None = None
 
     def __post_init__(self):
@@ -141,7 +146,7 @@ class PhysXConfig:
             "omnipvd_output_enabled",
         )
         _int_fields = ("num_threads", "scene_multi_gpu_mode")
-        _str_fields = ("omnipvd_ovd_recording_directory",)
+        _str_fields = ("omnipvd_ovd_recording_directory", "cooked_collider_cache_dir")
         for name in _bool_fields:
             value = getattr(self, name)
             if value is not None and not isinstance(value, bool):
@@ -173,6 +178,7 @@ _FIELD_TO_ENTRY: dict[str, tuple] = {
     "scene_multi_gpu_mode":              (_make_int32_entry, _SCENE_MULTI_GPU_MODE,               "/physics/sceneMultiGPUMode"),
     "omnipvd_output_enabled":            (_make_bool_entry,  _OMNIPVD_OUTPUT_ENABLED,             "/physics/omniPvdOutputEnabled"),
     "omnipvd_ovd_recording_directory":   (_make_string_entry, _OMNIPVD_OVD_RECORDING_DIRECTORY,   "/persistent/physics/omniPvdOvdRecordingDirectory"),
+    "cooked_collider_cache_dir":         (_make_string_entry, _COOKED_COLLIDER_CACHE_DIRECTORY,   "/UJITSO/datastore/localCachePath"),
 }
 
 # Reverse lookup: carbonite_path -> field_name (for conflict detection)

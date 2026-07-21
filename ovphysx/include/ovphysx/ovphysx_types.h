@@ -11,6 +11,16 @@
 
 #include "dlpack/dlpack.h"
 
+// ovstage / ovx native types. The physics output-read surface speaks ovstage's
+// own types directly (no ovphysx mirror): a read group is an `ovstage_read_group_t`,
+// discovery is an `ovstage_query_result_t`, attribute names/tokens are
+// `ovx_string_or_token_t`, ordinals are `ovstage_ordinal_t` / `ovstage_ordinal_range_t`,
+// and an attached Stage is an `ovstage_instance_t*`. Consumers of this header need
+// the ovstage include dirs on their include path; ovphysx ships these headers in its
+// SDK/wheel alongside ovphysx.h.
+#include <ovstage/ovstage_api/ovstage_api_types.h>
+#include <ovx/string_types.h>
+
 /**
  * String with pointer and length.
  * 
@@ -68,6 +78,9 @@ extern "C"
     typedef uint64_t ovphysx_op_index_t;
     typedef uint64_t ovphysx_tensor_binding_handle_t;
     typedef uint64_t ovphysx_contact_binding_handle_t;
+    typedef uint64_t ovphysx_query_handle_t; /**< Physics-output query (ovphysx_query). */
+    typedef uint64_t ovphysx_read_handle_t;         /**< Physics-output read session (ovphysx_read). */
+    typedef uint64_t ovphysx_sdf_view_handle_t;
 
     /**
      * Sentinel value representing an invalid/null ovphysx instance handle.
@@ -81,6 +94,76 @@ extern "C"
      * Use this when you want to ensure all outstanding operations have completed.
      */
     #define OVPHYSX_OP_INDEX_ALL UINT64_MAX
+
+    /*--------------------------------------------------*/
+    /* Physics output read (ovstage) */
+    /*--------------------------------------------------*/
+
+    /**
+     * Simulated object type selected by ovphysx_query(). This is the
+     * engine's simulated type, not a USD schema predicate.
+     */
+    typedef enum
+    {
+        OVPHYSX_OBJECT_RIGID_BODY = 0,         /**< dynamic rigid bodies (standalone + point-instancer instances) */
+        OVPHYSX_OBJECT_ARTICULATION_LINK = 1,  /**< articulation link body transforms */
+        OVPHYSX_OBJECT_ARTICULATION_JOINT = 2, /**< articulation joint state (per-axis; array group per joint) */
+        OVPHYSX_OBJECT_VEHICLE_WHEEL = 3,      /**< vehicle wheel transforms */
+        OVPHYSX_OBJECT_DEFORMABLE_VOLUME = 4,  /**< volume deformable meshes (points / velocities) */
+        OVPHYSX_OBJECT_DEFORMABLE_SURFACE = 5, /**< surface deformable meshes */
+        OVPHYSX_OBJECT_PARTICLE_SET = 6,       /**< particle sets */
+    } ovphysx_sim_object_type_t;
+
+    /**
+     * Output query scope.
+     *
+     * @note OVPHYSX_SCOPE_ACTIVE is SINGLE-FRAME: the active set is recomputed
+     *       every step, so a query opened with it (and the groups read from it)
+     *       is valid only for the step it was opened against; re-query each frame.
+     *       OVPHYSX_SCOPE_ALL is stable across steps until a structural change
+     *       (object add/remove, instancer instance-count change).
+     */
+    typedef enum
+    {
+        OVPHYSX_SCOPE_ALL = 0,    /**< every object of the type */
+        OVPHYSX_SCOPE_ACTIVE = 1, /**< only objects the solver moved last step */
+    } ovphysx_object_scope_t;
+
+    /**
+     * Canonical physics-output attribute names (semantic, not USD attribute
+     * names). Pass any of these to ovphysx_read(); which names a type
+     * produces is documented in the ovstage usage guide.
+     */
+    #define OVPHYSX_ATTR_POSITION          "position"          /* vec3 f32 (world) */
+    #define OVPHYSX_ATTR_ORIENTATION       "orientation"       /* quat f32 xyzw (world) */
+    #define OVPHYSX_ATTR_LINEAR_VELOCITY   "linearVelocity"    /* vec3 f32 */
+    #define OVPHYSX_ATTR_ANGULAR_VELOCITY  "angularVelocity"   /* vec3 f32 */
+    #define OVPHYSX_ATTR_POINTS            "points"            /* vec3 f32 [array] */
+    #define OVPHYSX_ATTR_VELOCITIES        "velocities"        /* vec3 f32 [array] */
+    #define OVPHYSX_ATTR_JOINT_POSITION    "jointPosition"     /* f32 [array, per-axis] */
+    #define OVPHYSX_ATTR_JOINT_VELOCITY    "jointVelocity"     /* f32 [array, per-axis] */
+
+    /**
+     * The physics output-read surface uses ovstage's own types directly rather than
+     * an ovphysx mirror (so a read group feeds straight back into the ovstage write
+     * path with no repack and no translation layer):
+     *
+     *   - a read group is an `ovstage_read_group_t` (from ovstage_api_types.h):
+     *     `data.tensors[0..tensor_count)` are borrowed DLTensors (tuple width in
+     *     `dtype.lanes`), `prims.list` is the interned prim set, `attribute` is the
+     *     interned EMITTED attribute token, `semantic` is the authored USD role
+     *     (`ovstage_attribute_semantic_t`). For this physics-output path
+     *     `is_delete == false`, `prims.offset == 0`, and a point-instancer always
+     *     emits the FULL instance array by-index (`data.index_map == NULL`).
+     *   - discovery is an `ovstage_query_result_t` (`attributes` = interned token
+     *     array; `total_prim_count == 0` is the valid empty-match case).
+     *   - attribute names are `ovx_string_or_token_t` — pass a string (e.g.
+     *     OVPHYSX_ATTR_POSITION) or an interned token from discovery, no round-trip.
+     *
+     * The queried `ovphysx_sim_object_type_t` is NOT carried on the group: a read is
+     * opened over one type, so every group belongs to the type the caller passed to
+     * ovphysx_query. Group lifetime is producer-owned (see ovphysx_fetch_read_next).
+     */
 
     /*--------------------------------------------------*/
     /* Log level enum */
@@ -118,16 +201,15 @@ extern "C"
      * Identifies the type of PhysX object at a USD prim path.
      *
      * Used with ovphysx_get_physx_ptr() to retrieve raw PhysX SDK pointers.
-     * Values match the internal omni::physx::PhysXType enum; the named constants
-     * below cover common types. Any valid omni::physx::PhysXType integer may be
-     * passed; PhysX returns NULL for unrecognized path/type combinations.
+     * The named constants below cover common runtime object types. Unknown
+     * values return NULL for unrecognized path/type combinations.
      *
      * | Enum value                         | PhysX SDK C++ type                            |
      * |------------------------------------|-----------------------------------------------|
      * | OVPHYSX_PHYSX_TYPE_SCENE           | physx::PxScene                                |
      * | OVPHYSX_PHYSX_TYPE_MATERIAL        | physx::PxMaterial                             |
      * | OVPHYSX_PHYSX_TYPE_SHAPE           | physx::PxShape                                |
-     * | OVPHYSX_PHYSX_TYPE_COMPOUND_SHAPE  | omni::physx::PhysXCompoundShape (see note)    |
+     * | OVPHYSX_PHYSX_TYPE_COMPOUND_SHAPE  | Opaque compound-shape wrapper (see note)      |
      * | OVPHYSX_PHYSX_TYPE_ACTOR           | physx::PxRigidDynamic/PxRigidStatic           |
      * | OVPHYSX_PHYSX_TYPE_JOINT           | physx::PxJoint (standalone joints)            |
      * | OVPHYSX_PHYSX_TYPE_CUSTOM_JOINT    | physx::PxJoint (custom joints)                |
@@ -138,9 +220,9 @@ extern "C"
      * | OVPHYSX_PHYSX_TYPE_PARTICLE_SET    | physx::PxParticleBuffer                       |
      * | OVPHYSX_PHYSX_TYPE_PHYSICS         | physx::PxPhysics                              |
      *
-     * Note: COMPOUND_SHAPE returns an omni::physx::PhysXCompoundShape*, defined in the
-     * PhysX repo at omni/include/private/omni/physx/PhysXCompoundShape.h.
-     * Call getShapes() on the result to access the underlying physx::PxShape pointers.
+     * Note: COMPOUND_SHAPE returns an internal compound-shape wrapper. Use the
+     * C++ helper matching your SDK build to access the underlying physx::PxShape
+     * pointers.
      */
     typedef enum
     {
@@ -158,6 +240,138 @@ extern "C"
         OVPHYSX_PHYSX_TYPE_PARTICLE_SET    = 12,
         OVPHYSX_PHYSX_TYPE_PHYSICS         = 31,
     } ovphysx_physx_type_t;
+
+    /**
+     * @brief High-level object classification for prim paths (TensorAPI-level).
+     *
+     * Mirrors omni::physics::tensors::ObjectType. Returned by
+     * @ref ovphysx_get_object_type to let callers tell rigid bodies,
+     * articulations, articulation links/joints, and articulation root links
+     * apart at a path without inspecting the PhysX SDK pointer directly.
+     */
+    typedef enum
+    {
+        OVPHYSX_OBJECT_TYPE_INVALID                = 0,
+        OVPHYSX_OBJECT_TYPE_RIGID_BODY             = 1,
+        OVPHYSX_OBJECT_TYPE_ARTICULATION           = 2,
+        OVPHYSX_OBJECT_TYPE_ARTICULATION_LINK      = 3,
+        OVPHYSX_OBJECT_TYPE_ARTICULATION_ROOT_LINK = 4,
+        OVPHYSX_OBJECT_TYPE_ARTICULATION_JOINT     = 5,
+    } ovphysx_object_type_t;
+
+    /**
+     * @brief Bit flags for @ref ovphysx_articulation_update_kinematic.
+     *
+     * Mirrors PxArticulationKinematicFlag::Enum. Flags may be OR'd.
+     */
+    typedef enum
+    {
+        OVPHYSX_ARTICULATION_KINEMATIC_POSITION = 1u << 0, /**< Recompute link transforms from joint positions + root pose */
+        OVPHYSX_ARTICULATION_KINEMATIC_VELOCITY = 1u << 1, /**< Recompute link velocities from joint velocities + root velocity */
+    } ovphysx_articulation_kinematic_flag_t;
+
+    /*--------------------------------------------------*/
+    /* PhysX object change notifications                */
+    /*--------------------------------------------------*/
+
+    /**
+     * Subscription ID returned by ovphysx_subscribe_object_changes().
+     *
+     * Used to identify a subscription for later unsubscribe. Treat as opaque.
+     */
+    typedef uint64_t ovphysx_subscription_id_t;
+
+    /**
+     * Sentinel value for an invalid / unset subscription ID.
+     *
+     * Valid subscription IDs are never equal to this value. After calling
+     * ovphysx_subscribe_object_changes(), check the returned status code first;
+     * only use the out_subscription value when status == OVPHYSX_API_SUCCESS.
+     */
+    #define OVPHYSX_INVALID_SUBSCRIPTION_ID UINT64_MAX
+
+    /**
+     * Notification when a PhysX object is created during simulation.
+     *
+     * Fires AFTER the object exists, so it is safe to call ovphysx_get_physx_ptr()
+     * for prim_path / type from a deferred handler.
+     *
+     * Only fires for creations triggered by stage edits during simulation. The
+     * initial object population from ovstage attach/update is NOT notified --
+     * the caller already has that state from their setup code. See
+     * ovphysx_subscribe_object_changes() for the full lifecycle contract.
+     *
+     * @param prim_path Absolute USD prim path of the created object. The
+     *                  underlying storage is owned by ovphysx and only valid for
+     *                  the duration of the callback; copy if you need to retain.
+     * @param type      The PhysX object type of the created object.
+     * @param user_data Opaque pointer passed during subscription.
+     */
+    typedef void (*ovphysx_object_created_fn)(
+        ovphysx_string_t prim_path,
+        ovphysx_physx_type_t type,
+        void* user_data);
+
+    /**
+     * Notification when a PhysX object is about to be destroyed during simulation.
+     *
+     * Fires BEFORE the object is destroyed. Drop any cached pointer for
+     * prim_path / type at this point; do NOT call release() on it (ovphysx
+     * owns the lifetime).
+     *
+     * Only fires for destructions that occur during simulation. Bulk teardown
+     * (e.g. ovphysx_reset_stage()) is delivered via ovphysx_all_objects_destroyed_fn
+     * instead, not as N individual destruction notifications.
+     *
+     * @param prim_path Absolute USD prim path of the soon-to-be-destroyed object.
+     *                  Same lifetime rules as ovphysx_object_created_fn.
+     * @param type      The PhysX object type that is going away.
+     * @param user_data Opaque pointer passed during subscription.
+     */
+    typedef void (*ovphysx_object_destroyed_fn)(
+        ovphysx_string_t prim_path,
+        ovphysx_physx_type_t type,
+        void* user_data);
+
+    /**
+     * Notification when ALL PhysX objects are about to be destroyed in bulk.
+     *
+     * Fires BEFORE the bulk teardown (e.g. on ovphysx_reset_stage()). Subscribers
+     * should flush their entire pointer cache; no per-object destruction events
+     * will be delivered for this teardown.
+     *
+     * @param user_data Opaque pointer passed during subscription.
+     */
+    typedef void (*ovphysx_all_objects_destroyed_fn)(void* user_data);
+
+    /**
+     * Callback set passed to ovphysx_subscribe_object_changes().
+     *
+     * Any of the function-pointer fields may be NULL; ovphysx skips a NULL
+     * field rather than invoking it. The caller does NOT need to keep this
+     * struct alive after the subscribe call returns -- ovphysx copies the
+     * relevant state internally.
+     *
+     * Threading: callbacks may fire from internal worker threads during
+     * ovphysx_step(), ovphysx_step_sync(), or ovphysx_reset_stage().
+     * Do NOT call other ovphysx APIs from inside a callback (re-entrancy /
+     * deadlock risk). Defer follow-up work until the triggering synchronous
+     * call returns, or until the next ovphysx_wait_op() returns for async work.
+     */
+    typedef struct ovphysx_object_change_callbacks_t
+    {
+        /** Fired AFTER an object is created (NULL = skip). */
+        ovphysx_object_created_fn        on_object_created;
+
+        /** Fired BEFORE an object is destroyed (NULL = skip). */
+        ovphysx_object_destroyed_fn      on_object_destroyed;
+
+        /** Fired BEFORE a bulk teardown (NULL = skip). */
+        ovphysx_all_objects_destroyed_fn on_all_objects_destroyed;
+
+        /** Opaque pointer passed unchanged to every callback. */
+        void* user_data;
+    } ovphysx_object_change_callbacks_t;
 
     /*--------------------------------------------------*/
     /* Scene query types                                */
@@ -210,7 +424,7 @@ extern "C"
             } box;
             struct
             {
-                const char* prim_path; /**< Null-terminated USD prim path for any UsdGeomGPrim. */
+                ovphysx_string_t prim_path; /**< USD prim path for any UsdGeomGPrim (embedded NUL bytes are rejected). */
             } shape;
         };
     } ovphysx_scene_query_geometry_desc_t;
@@ -223,7 +437,7 @@ extern "C"
      * zeroed -- only the object identity fields are populated.
      *
      * Path fields (collision, rigid_body, material) are uint64-encoded SdfPaths
-     * matching the internal Omni PhysX representation.
+     * matching ovphysx's internal path encoding.
      */
     typedef struct
     {
@@ -250,8 +464,9 @@ extern "C"
         OVPHYSX_API_INVALID_ARGUMENT = 4,    /**< Invalid argument provided */
         OVPHYSX_API_NOT_FOUND = 5,           /**< Requested resource not found (handle unknown, binding invalidated) */
         OVPHYSX_API_BUFFER_TOO_SMALL = 6,    /**< Caller-supplied buffer is too small; check out_required_size */
-        OVPHYSX_API_DEVICE_MISMATCH = 7,     /**< Tensor device doesn't match binding's expected device */
+        OVPHYSX_API_DEVICE_MISMATCH = 7,     /**< Tensor device cannot be used or staged for this binding/policy */
         OVPHYSX_API_GPU_NOT_AVAILABLE = 8,   /**< GPU requested but not available or CUDA init failed */
+        OVPHYSX_API_END_OF_ITERATION = 9,    /**< Iterator exhausted (e.g. ovphysx_fetch_read_next past the last group) — not an error */
     } ovphysx_api_status_t;
 
     /**
@@ -333,7 +548,7 @@ extern "C"
      *     Access: read-only
      *
      * ============================================================================
-     * ARTICULATION ROOT TENSORS
+     * ARTICULATION TENSORS
      * ============================================================================
      * 
      *   OVPHYSX_TENSOR_ARTICULATION_ROOT_POSE_F32
@@ -347,7 +562,32 @@ extern "C"
      *     Layout: [vx, vy, vz, wx, wy, wz]
      *     Frame: World
      *     DType: float32
-     * 
+     *
+     *   OVPHYSX_TENSOR_ARTICULATION_MASS_CENTER_WORLD_F32 (READ-ONLY)
+     *     Shape: [N, 3] where N = number of articulations
+     *     Layout: [x, y, z] center of mass per articulation
+     *     Frame: World
+     *     DType: float32
+     *     Note: Computed from PxArticulationReducedCoordinate::computeArticulationCOM(false)
+     *
+     *   OVPHYSX_TENSOR_ARTICULATION_MASS_CENTER_LOCAL_F32 (READ-ONLY)
+     *     Shape: [N, 3] where N = number of articulations
+     *     Layout: [x, y, z] center of mass per articulation
+     *     Frame: Local (root link frame)
+     *     DType: float32
+     *     Note: Computed from PxArticulationReducedCoordinate::computeArticulationCOM(true)
+     *
+     *   OVPHYSX_TENSOR_ARTICULATION_CENTROIDAL_MOMENTUM_F32 (READ-ONLY)
+     *     Shape: [N, 6, D + 7] where N = articulations, D = getMaxDofs()
+     *     Layout: 6 spatial-momentum rows (3 linear + 3 angular) of (D + 6) matrix
+     *             columns followed by 1 bias column (D + 7 total).
+     *             cols [0..5] = root spatial DOFs, cols [6..D+5] = joint DOFs,
+     *             col [D+6] = centroidalMomentumBias[row].
+     *     Frame: World, evaluated at the articulation COM.
+     *     DType: float32
+     *     Requires: Floating-base articulations only (PhysX errors out on fixed-base).
+     *     Note: Computed from PxArticulationReducedCoordinate::computeCentroidalMomentumMatrix.
+     *
      * ============================================================================
      * ARTICULATION LINK TENSORS (3D - per-link data)
      * ============================================================================
@@ -432,6 +672,14 @@ extern "C"
      *     DType: float32
      *     Access: read-only
      *
+     *   OVPHYSX_TENSOR_RIGID_BODY_DISABLE_SIMULATION_BOOL
+     *     Shape: [N] where N = number of rigid bodies
+     *     Layout: per-body byte; nonzero disables simulation, zero enables.
+     *     DType: bool / uint8
+     *     Access: read/write. Writes apply at runtime (engine toggles
+     *             PxActorFlag::eDISABLE_SIMULATION on the underlying PxRigidActor
+     *             so the body stops participating in the next solver step).
+     *
      *   OVPHYSX_TENSOR_RIGID_BODY_COM_POSE_F32
      *     Shape: [N, 7] where N = number of rigid bodies
      *     Layout: [px, py, pz, qx, qy, qz, qw] (position xyz, quaternion xyzw)
@@ -488,6 +736,13 @@ extern "C"
      *     Shape: [N, D, 3]
      *     Layout: (static, dynamic, viscous) friction coefficients per DOF
      *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_ARTICULATION_DOF_DRIVE_MODEL_F32
+     *     Shape: [N, D, 3]
+     *     Layout: (speedEffortGradient, maxActuatorVelocity, velocityDependentResistance) per DOF
+     *     DType: float32
+     *     Note: only DOFs with PhysxDrivePerformanceEnvelopeAPI applied in USD accept writes;
+     *           writes to other DOFs are silently dropped.
      *
      * ============================================================================
      * ARTICULATION BODY PROPERTY TENSORS (read/write, except where noted)
@@ -614,6 +869,108 @@ extern "C"
      *     Shape: [N, T]
      *     Layout: Spatial tendon offset
      *     DType: float32
+     *
+     * ============================================================================
+     * VOLUME DEFORMABLE BODY TENSORS
+     * ============================================================================
+     *
+     *   OVPHYSX_TENSOR_DEFORMABLE_SIM_NODAL_POSITION_F32
+     *     Shape: [N, V, 3] where N = deformable bodies, V = max simulation nodes
+     *     Layout: simulation mesh node positions
+     *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_DEFORMABLE_SIM_NODAL_VELOCITY_F32
+     *     Shape: [N, V, 3]
+     *     Layout: simulation mesh node velocities
+     *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_DEFORMABLE_SIM_KINEMATIC_TARGET_F32
+     *     Shape: [N, V, 4]
+     *     Layout: simulation mesh kinematic targets (xyz position, flag)
+     *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_DEFORMABLE_REST_NODAL_POSITION_F32
+     *     Shape: [N, R, 3] where R = max rest nodes
+     *     Layout: rest mesh node positions
+     *     DType: float32
+     *     Access: read-only
+     *
+     *   OVPHYSX_TENSOR_DEFORMABLE_SIM_ELEMENT_INDICES_S32
+     *     Shape: [N, E, K] where E = max simulation elements, K = nodes per element (4 for tetmesh)
+     *     Layout: simulation element node indices
+     *     DType: int32
+     *     Access: read-only
+     *
+     *   OVPHYSX_TENSOR_DEFORMABLE_COLLISION_ELEMENT_INDICES_S32
+     *     Shape: [N, F, 4] where F = max collision elements; K is always 4 (matches backend fetchData)
+     *     Layout: collision element node indices (tetrahedral, 4 nodes per element)
+     *     DType: int32
+     *     Access: read-only
+     *
+     * ============================================================================
+     * SURFACE DEFORMABLE BODY TENSORS
+     * ============================================================================
+     *
+     *   OVPHYSX_TENSOR_SURFACE_DEFORMABLE_SIM_POSITION_F32
+     *     Shape: [N, V, 3] where N = surface deformable bodies, V = max simulation nodes
+     *     Layout: simulation mesh node positions
+     *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_SURFACE_DEFORMABLE_SIM_VELOCITY_F32
+     *     Shape: [N, V, 3]
+     *     Layout: simulation mesh node velocities
+     *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_SURFACE_DEFORMABLE_REST_POSITION_F32
+     *     Shape: [N, R, 3] where R = max rest nodes
+     *     Layout: rest mesh node positions
+     *     DType: float32
+     *     Access: read-only
+     *
+     *   OVPHYSX_TENSOR_SURFACE_DEFORMABLE_SIM_ELEMENT_INDICES_S32
+     *     Shape: [N, E, 3] where E = max simulation elements (triangles)
+     *     Layout: simulation element node indices
+     *     DType: int32
+     *     Access: read-only
+     *
+     * ============================================================================
+     * DEFORMABLE MATERIAL TENSORS
+     * ============================================================================
+     *
+     *   OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_DYNAMIC_FRICTION_F32
+     *     Shape: [M] where M = deformable materials
+     *     Layout: scalar dynamic friction
+     *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_YOUNGS_MODULUS_F32
+     *     Shape: [M]
+     *     Layout: scalar Young's modulus
+     *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_POISSONS_RATIO_F32
+     *     Shape: [M]
+     *     Layout: scalar Poisson's ratio
+     *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_ELASTICITY_DAMPING_F32
+     *     Shape: [M]
+     *     Layout: scalar elasticity damping (volume + surface materials)
+     *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_BENDING_STIFFNESS_F32
+     *     Shape: [M]
+     *     Layout: scalar bending stiffness (surface materials only; 0.0 for volume material entries)
+     *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_THICKNESS_F32
+     *     Shape: [M]
+     *     Layout: scalar thickness (surface materials only; 0.0 for volume material entries)
+     *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_BENDING_DAMPING_F32
+     *     Shape: [M]
+     *     Layout: scalar bending damping (surface materials only; 0.0 for volume material entries)
+     *     DType: float32
      */
     typedef enum
     {
@@ -630,10 +987,14 @@ extern "C"
         OVPHYSX_TENSOR_RIGID_BODY_COM_POSE_F32 = 5,      /**< [N, 7] COM local pose (px,py,pz,qx,qy,qz,qw) */
         OVPHYSX_TENSOR_RIGID_BODY_INV_MASS_F32 = 7,      /**< [N] inverse mass per body (READ-ONLY) */
         OVPHYSX_TENSOR_RIGID_BODY_INV_INERTIA_F32 = 8,   /**< [N, 9] inverse inertia tensor (READ-ONLY) */
+        OVPHYSX_TENSOR_RIGID_BODY_DISABLE_SIMULATION_BOOL = 9, /**< [N] uint8/bool; nonzero disables, zero enables PxActorFlag::eDISABLE_SIMULATION at runtime */
 
-        /* Articulation root tensors */
+        /* Articulation tensors */
         OVPHYSX_TENSOR_ARTICULATION_ROOT_POSE_F32 = 10,      /**< [N, 7] root poses */
         OVPHYSX_TENSOR_ARTICULATION_ROOT_VELOCITY_F32 = 11,  /**< [N, 6] root velocities */
+        OVPHYSX_TENSOR_ARTICULATION_MASS_CENTER_WORLD_F32 = 12, /**< [N, 3] articulation COM in world frame (READ-ONLY) */
+        OVPHYSX_TENSOR_ARTICULATION_MASS_CENTER_LOCAL_F32 = 13, /**< [N, 3] articulation COM in root-local frame (READ-ONLY) */
+        OVPHYSX_TENSOR_ARTICULATION_CENTROIDAL_MOMENTUM_F32 = 14, /**< [N, 6, D+7] centroidal momentum matrix + bias column; floating-base only (READ-ONLY) */
 
         /* Articulation link tensors (3D) */
         OVPHYSX_TENSOR_ARTICULATION_LINK_POSE_F32 = 20,         /**< [N, L, 7] link poses */
@@ -655,6 +1016,7 @@ extern "C"
         OVPHYSX_TENSOR_ARTICULATION_DOF_MAX_FORCE_F32 = 39,        /**< [N, D] max force per DOF */
         OVPHYSX_TENSOR_ARTICULATION_DOF_ARMATURE_F32 = 40,         /**< [N, D] armature per DOF */
         OVPHYSX_TENSOR_ARTICULATION_DOF_FRICTION_PROPERTIES_F32 = 41, /**< [N, D, 3] (static, dynamic, viscous) */
+        OVPHYSX_TENSOR_ARTICULATION_DOF_DRIVE_MODEL_F32 = 42, /**< [N, D, 3] (speedEffortGradient, maxActuatorVelocity, velocityDependentResistance) */
 
         /**
          * External forces/wrenches - WRITE-ONLY (control inputs applied each step).
@@ -712,6 +1074,29 @@ extern "C"
         OVPHYSX_TENSOR_ARTICULATION_SHAPE_FRICTION_AND_RESTITUTION_F32 = 110, /**< [N, S, 3] (static friction, dynamic friction, restitution) per link shape */
         OVPHYSX_TENSOR_ARTICULATION_CONTACT_OFFSET_F32 = 111,          /**< [N, S] contact offset per link shape */
         OVPHYSX_TENSOR_ARTICULATION_REST_OFFSET_F32 = 112,             /**< [N, S] rest offset per link shape */
+
+        /* Volume deformable body tensors */
+        OVPHYSX_TENSOR_DEFORMABLE_SIM_NODAL_POSITION_F32 = 120,    /**< [N, V, 3] simulation node positions */
+        OVPHYSX_TENSOR_DEFORMABLE_SIM_NODAL_VELOCITY_F32 = 121,    /**< [N, V, 3] simulation node velocities */
+        OVPHYSX_TENSOR_DEFORMABLE_SIM_KINEMATIC_TARGET_F32 = 122,  /**< [N, V, 4] simulation node kinematic targets (xyz, flag) */
+        OVPHYSX_TENSOR_DEFORMABLE_REST_NODAL_POSITION_F32 = 123,   /**< [N, R, 3] rest node positions (READ-ONLY) */
+        OVPHYSX_TENSOR_DEFORMABLE_SIM_ELEMENT_INDICES_S32 = 124,   /**< [N, E, K] simulation element indices, K=4 tetmesh (int32, READ-ONLY) */
+        OVPHYSX_TENSOR_DEFORMABLE_COLLISION_ELEMENT_INDICES_S32 = 125, /**< [N, F, 4] collision element indices, K=4 tetmesh (int32, READ-ONLY) */
+
+        /* Surface deformable body tensors */
+        OVPHYSX_TENSOR_SURFACE_DEFORMABLE_SIM_POSITION_F32 = 140,         /**< [N, V, 3] simulation node positions */
+        OVPHYSX_TENSOR_SURFACE_DEFORMABLE_SIM_VELOCITY_F32 = 141,         /**< [N, V, 3] simulation node velocities */
+        OVPHYSX_TENSOR_SURFACE_DEFORMABLE_REST_POSITION_F32 = 143,        /**< [N, R, 3] rest node positions (READ-ONLY) */
+        OVPHYSX_TENSOR_SURFACE_DEFORMABLE_SIM_ELEMENT_INDICES_S32 = 144,  /**< [N, E, 3] simulation element indices, K=3 trimesh (int32, READ-ONLY) */
+
+        /* Deformable material tensors */
+        OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_DYNAMIC_FRICTION_F32 = 130,     /**< [M] dynamic friction */
+        OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_YOUNGS_MODULUS_F32 = 131,       /**< [M] Young's modulus */
+        OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_POISSONS_RATIO_F32 = 132,       /**< [M] Poisson's ratio */
+        OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_ELASTICITY_DAMPING_F32 = 133,   /**< [M] elasticity damping (volume + surface) */
+        OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_BENDING_STIFFNESS_F32 = 134,    /**< [M] bending stiffness (surface only; 0 for volume) */
+        OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_THICKNESS_F32 = 135,            /**< [M] thickness (surface only; 0 for volume) */
+        OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_BENDING_DAMPING_F32 = 136,      /**< [M] bending damping (surface only; 0 for volume) */
     } ovphysx_tensor_type_t;
 
     /**
@@ -771,14 +1156,21 @@ extern "C"
      *   - Articulation links:  ndim=3, shape=[N, L, 7] or [N, L, 6]
      *   - Articulation DOF:    ndim=2, shape=[N, D]
      * 
-     * All tensor types use:
-     *   - dtype: float32 (kDLFloat, 32 bits, 1 lane)
+     * Tensor dtype is tensor-type specific:
+     *   - Most tensor types use float32 (kDLFloat, 32 bits, 1 lane)
+     *   - Deformable element index tensors (DEFORMABLE_SIM_ELEMENT_INDICES_S32,
+     *     DEFORMABLE_COLLISION_ELEMENT_INDICES_S32, SURFACE_DEFORMABLE_SIM_ELEMENT_INDICES_S32)
+     *     use int32 (kDLInt, 32 bits, 1 lane)
+     *   - OVPHYSX_TENSOR_RIGID_BODY_DISABLE_SIMULATION_BOOL uses
+     *     bool/uint8 (kDLUInt, 8 bits, 1 lane) -- per-body byte flag.
+     *   Always call ovphysx_get_tensor_binding_spec() and respect
+     *   the returned dtype; do not assume float32.
      *   - Layout: row-major contiguous (C-order)
      */
     typedef struct
     {
-        DLDataType dtype;                    /**< DLPack data type (always float32 currently) */
-        int32_t ndim;                        /**< Number of dimensions (2 or 3) */
+        DLDataType dtype;                    /**< DLPack data type for this tensor type. Most bindings use float32; element-index tensors use int32; DISABLE_SIMULATION_BOOL uses uint8. Always honor this field rather than assuming float32. */
+        int32_t ndim;                        /**< Number of dimensions */
         int64_t shape[4];                    /**< Shape dimensions [dim0, dim1, dim2, 0] */
     } ovphysx_tensor_spec_t;
 
@@ -867,7 +1259,7 @@ extern "C"
     /**
      * Contact event header - describes one contact pair.
      *
-     * ABI-compatible with omni::physx::ContactEventHeader.
+     * ABI-stable contact header returned by ovphysx.
      * Each header references a slice of the contact data array
      * (contactDataOffset .. contactDataOffset + numContactData).
      */
@@ -888,7 +1280,7 @@ extern "C"
     } ovphysx_contact_event_header_t;
 
     /**
-     * Per-contact-point data - ABI-compatible with omni::physx::ContactData.
+     * Per-contact-point data returned by ovphysx.
      *
      * position, normal, and impulse are float[3] in world space.
      */
@@ -905,7 +1297,7 @@ extern "C"
     } ovphysx_contact_point_t;
 
     /**
-     * Friction anchor data - ABI-compatible with omni::physx::FrictionAnchor.
+     * Friction anchor data returned by ovphysx.
      */
     typedef struct ovphysx_friction_anchor_t
     {
@@ -929,76 +1321,6 @@ extern "C"
     /*--------------------------------------------------*/
     /* PhysX configuration types */
     /*--------------------------------------------------*/
-
-    /**
-     * Simulation device/backend selection.
-     * 
-     * Controls whether physics simulation runs on CPU or GPU.
-     * 
-     * AUTO mode (default, OVPHYSX_DEVICE_AUTO):
-     *   - GPU preferred: uses GPU if a usable CUDA driver is detected, otherwise CPU
-     *   - Recommended for portable applications that should work on any machine
-     *
-     * GPU mode (OVPHYSX_DEVICE_GPU):
-     *   - Enables PhysX GPU acceleration (does NOT auto-enable DirectGPU;
-     *     DirectGPU is opt-in via the Carbonite setting
-     *     `/physics/suppressReadback=true` before ovphysx_create_instance --
-     *     see "GPU mode notes" on ovphysx_create_args for details)
-     *   - With DirectGPU enabled, state TensorBinding/ContactBinding views can
-     *     use CUDA tensors without GPU-to-CPU readback copies
-     *   - Without DirectGPU, GPU dynamics can still run but tensor views may be
-     *     CPU-backed; use CPU tensors or opt into DirectGPU for tensor-heavy
-     *     workloads
-     *   - DirectGPU tensor reads require a warmup step()
-     * 
-     * CPU mode (OVPHYSX_DEVICE_CPU):
-     *   - Uses standard PhysX CPU simulation
-     *   - TensorBinding works with CPU tensors (kDLCPU)
-     *   - No warmup step required
-     *
-     * @warning All instances within the same process must use the same device mode.
-     *   The device setting is applied to process-global Carbonite/PhysX state during
-     *   the first ovphysx_create_instance() call and cannot be changed afterwards.
-     *   Creating a CPU instance after a GPU instance (or vice versa) in the same
-     *   process will fail with OVPHYSX_API_INVALID_ARGUMENT.
-     */
-    typedef enum
-    {
-        /**
-         * AUTO (GPU PREFERRED) -- zero-init safe default.
-         *
-         * ovphysx prefers GPU simulation when a usable CUDA driver + CUDA device
-         * are available. If CUDA is unavailable, ovphysx falls back to CPU-only
-         * simulation and still creates the instance successfully.
-         *
-         * This is the recommended default for best developer UX: a single wheel/
-         * SDK works on both GPU and CPU-only machines without special casing.
-         *
-         * GPU selection is controlled by active_cuda_gpus on ovphysx_create_args.
-         */
-        OVPHYSX_DEVICE_AUTO = 0,
-
-        /**
-         * GPU simulation (GPU REQUIRED).
-         *
-         * This mode requires a usable CUDA driver + at least one CUDA device.
-         * If CUDA is unavailable, ovphysx_create_instance() fails with
-         * OVPHYSX_API_GPU_NOT_AVAILABLE. There is no silent fallback to CPU.
-         *
-         * Use this when your application depends on GPU simulation and you want
-         * an explicit error on CPU-only machines. (DirectGPU is a separate
-         * opt-in -- see "GPU mode notes" on ovphysx_create_args.)
-         */
-        OVPHYSX_DEVICE_GPU = 1,
-
-        /**
-         * CPU-only simulation (GPU DISABLED).
-         *
-         * This mode never attempts to use CUDA and is expected to work on
-         * machines without a CUDA driver/GPU.
-         */
-        OVPHYSX_DEVICE_CPU = 2,
-    } ovphysx_device_t;
 
     /*--------------------------------------------------*/
     /* Typed config system                              */
@@ -1043,6 +1365,7 @@ extern "C"
     typedef enum ovphysx_config_string_t
     {
         OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY, /**< /persistent/physics/omniPvdOvdRecordingDirectory */
+        OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY, /**< /UJITSO/datastore/localCachePath: app-provided dir for the local cooked-collider cache */
         OVPHYSX_CONFIG_STRING_COUNT
     } ovphysx_config_string_t;
 
@@ -1082,70 +1405,33 @@ extern "C"
     /*--------------------------------------------------*/
 
     /**
-     * Configuration for creating a ovphysx instance.
-     * Initialize with OVPHYSX_CREATE_ARGS_DEFAULT macro for defaults.
-     * Keep OVPHYSX_CREATE_ARGS_DEFAULT in sync with this struct; add new fields
-     * only to the end to avoid uninitialized members when using the macro.
+     * Configuration for creating an ovphysx instance.
+     * Initialize with OVPHYSX_CREATE_ARGS_DEFAULT for safe defaults.
      *
-     * Example:
-     *   ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-     *   ovphysx_create_instance(&args, &handle);
+     * active_cuda_gpus restricts which GPU ordinals this instance may use.
+     * Per-scene CPU/GPU dynamics are controlled by physxScene:enableGPUDynamics in the USD
+     * stage; ovphysx never reads or writes those settings.
      *
-     * Log level is configured globally via ovphysx_set_log_level(), not per-instance.
+     * To force process-wide CPU-only mode (no CUDA driver touch ever), call
+     * ovphysx_set_cpu_mode(true) before creating any instances.
      *
-     * GPU mode notes
-     * ==============
-     * When @ref device selects GPU (default), ovphysx runs PhysX with
-     * eENABLE_GPU_DYNAMICS + eGPU broadphase. This is the standard GPU mode
-     * suitable for general scenes (rigid bodies, kinematic actors with
-     * contact modification, surface velocity, custom contact callbacks).
-     *
-     * **DirectGPU mode is opt-in** and disabled by default. To enable it
-     * (gives faster steps by skipping GPU-to-CPU readback; required for
-     * Isaac Lab tensor-pipeline workloads that read state via the direct
-     * GPU API), set the Carbonite setting `/physics/suppressReadback=true`
-     * BEFORE calling ovphysx_create_instance:
-     *
-     *   carb::settings::ISettings* settings = ...;
-     *   settings->setBool("/physics/suppressReadback", true);
-     *   // optional, often paired:
-     *   settings->setBool("/physics/suppressFabricUpdate", true);
-     *   ovphysx_create_instance(&args, &handle);
-     *
-     * **Restrictions when DirectGPU is enabled** (eENABLE_DIRECT_GPU_API):
-     *  - Contact modification is disabled. The CPU-side onContactModify
-     *    callback is not invoked. This means **surface velocity does NOT
-     *    work** under DirectGPU (PhysxSurfaceVelocityAPI uses contact
-     *    modification internally), and any custom PxContactModifyCallback
-     *    will not fire. If your scene needs conveyor-belt-like behaviors,
-     *    either keep DirectGPU off or compute the per-frame velocity
-     *    contributions yourself and apply them as forces from outside the
-     *    contact-modify path.
-     *  - Host-side actor accessors (PxRigidActor::getGlobalPose,
-     *    setGlobalPose, etc.) return stale data / are illegal once the
-     *    direct-GPU API is initialized. Read state via
-     *    PxDirectGPUAPI::getRigidDynamicData() instead.
-     *  - Per the PhysX SDK, eENABLE_DIRECT_GPU_API requires
-     *    eDISABLE_SLEEPING and is mutually exclusive with eENABLE_CCD.
-     *    ovruntime sets these for you when suppressReadback is on.
-     *
-     * Prior to 0.4.x ovphysx auto-enabled DirectGPU for every GPU instance
-     * (forced /physics/suppressReadback=true). That broke surface velocity
-     * silently in any scene with a kinematic conveyor or similar feature.
-     * The behavior was changed to opt-in to align with PhysX SDK guidance:
-     * DirectGPU is a workflow-specific optimization, not a default for
-     * general scenes.
+     * DirectGPU notes
+     * ===============
+     * DirectGPU (eENABLE_DIRECT_GPU_API) skips GPU-to-CPU readback for faster
+     * steps. It is opt-in: set /physics/suppressReadback=true via Carbonite
+     * settings BEFORE ovphysx_create_instance. Restrictions: disables contact
+     * modification (no surface velocity, no custom contact callbacks); host-side
+     * actor accessors return stale data after DirectGPU initializes.
      */
     typedef struct ovphysx_create_args
     {
-        ovphysx_string_t bundled_deps_path;          /**< Bundled deps path: empty=use runtime discovery (default: empty) */
+        ovphysx_string_t bundled_deps_path;           /**< Bundled deps path: empty = runtime discovery (default: empty) */
 
-        const ovphysx_config_entry_t* config_entries; /**< Array of typed config entries (replaces settings_keys/values) */
+        const ovphysx_config_entry_t* config_entries; /**< Array of typed config entries */
         uint32_t config_entry_count;                  /**< Number of config entries */
 
-        ovphysx_device_t device;            /**< Simulation device (default: OVPHYSX_DEVICE_AUTO) */
         ovphysx_string_t active_cuda_gpus;  /**< Comma-separated CUDA device ordinals (default: empty = GPU 0).
-                                                 Used when device selects GPU. Supported patterns:
+                                                 Restricts which GPU ordinal(s) are used. Supported patterns:
                                                  - Empty or "0": single GPU 0 (default)
                                                  - "N": single GPU N
                                                  - "-1": PhysX default CUDA selection
@@ -1156,16 +1442,85 @@ extern "C"
 
     /**
      * Default initializer for ovphysx_create_args.
-     * Sets device=AUTO (GPU preferred), active_cuda_gpus=empty (GPU 0).
      */
     #define OVPHYSX_CREATE_ARGS_DEFAULT { \
-        {NULL, 0},           /* bundled_deps_path */ \
-        NULL,                /* config_entries */ \
-        0,                   /* config_entry_count */ \
-        OVPHYSX_DEVICE_AUTO, /* device */ \
-        {NULL, 0}            /* active_cuda_gpus */ \
+        {NULL, 0},  /* bundled_deps_path */ \
+        NULL,       /* config_entries */ \
+        0,          /* config_entry_count */ \
+        {NULL, 0}   /* active_cuda_gpus */ \
     }
 
+    /**
+     * PhysX debug-visualization parameters for ovphysx_debug_render_set_parameter() /
+     * _get_parameter(). Mirrors omni::physx::PhysXVisualizationParameter -- a
+     * static_assert in the sidecar TU keeps the two enums aligned, so these named
+     * constants are the stable, reorder-proof public spelling of the otherwise-opaque
+     * integer index. NONE (0) and COUNT (one-past-the-end) are NOT valid parameters:
+     * ovphysx_debug_render_set_parameter() rejects them with OVPHYSX_API_INVALID_ARGUMENT.
+     */
+    typedef enum
+    {
+        OVPHYSX_DEBUG_RENDER_PARAM_NONE                     = 0,
+        OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES               = 1,
+        OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES                = 2,
+        OVPHYSX_DEBUG_RENDER_PARAM_BODY_MASS_AXES           = 3,
+        OVPHYSX_DEBUG_RENDER_PARAM_BODY_LINEAR_VELOCITY     = 4,
+        OVPHYSX_DEBUG_RENDER_PARAM_BODY_ANGULAR_VELOCITY    = 5,
+        OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT            = 6,
+        OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_NORMAL           = 7,
+        OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_ERROR            = 8,
+        OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_IMPULSE          = 9,
+        OVPHYSX_DEBUG_RENDER_PARAM_FRICTION_POINT           = 10,
+        OVPHYSX_DEBUG_RENDER_PARAM_FRICTION_NORMAL          = 11,
+        OVPHYSX_DEBUG_RENDER_PARAM_FRICTION_IMPULSE         = 12,
+        OVPHYSX_DEBUG_RENDER_PARAM_ACTOR_AXES               = 13,
+        OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_AABBS          = 14,
+        OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_SHAPES         = 15,
+        OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_AXES           = 16,
+        OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_COMPOUNDS      = 17,
+        OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_FACE_NORMALS   = 18,
+        OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_EDGES          = 19,
+        OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_STATIC_PRUNER  = 20,
+        OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_DYNAMIC_PRUNER = 21,
+        OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LOCAL_FRAMES       = 22,
+        OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LIMITS             = 23,
+        OVPHYSX_DEBUG_RENDER_PARAM_CULL_BOX                 = 24,
+        OVPHYSX_DEBUG_RENDER_PARAM_MBP_REGIONS              = 25,
+        OVPHYSX_DEBUG_RENDER_PARAM_SIMULATION_MESH          = 26,
+        OVPHYSX_DEBUG_RENDER_PARAM_SDF                      = 27,
+        OVPHYSX_DEBUG_RENDER_PARAM_COUNT                    = 28
+    } ovphysx_debug_render_parameter_t;
+
+    /**
+     * Debug-visualization primitives, read from
+     * ovphysx_debug_render_get_points / _lines / _triangles. The layout matches
+     * omni::physx DebugPoint / DebugLine / DebugTriangle (a carb::Float3 position
+     * plus a uint32 colour) so the OvPhysX debug buffer is read directly with no
+     * copy or per-element translation. Colours are 0xAARRGGBB (PhysX debug colour).
+     */
+    typedef struct ovphysx_debug_point_t
+    {
+        float    pos[3];
+        uint32_t color;
+    } ovphysx_debug_point_t;
+
+    typedef struct ovphysx_debug_line_t
+    {
+        float    pos0[3];
+        uint32_t color0;
+        float    pos1[3];
+        uint32_t color1;
+    } ovphysx_debug_line_t;
+
+    typedef struct ovphysx_debug_triangle_t
+    {
+        float    pos0[3];
+        uint32_t color0;
+        float    pos1[3];
+        uint32_t color1;
+        float    pos2[3];
+        uint32_t color2;
+    } ovphysx_debug_triangle_t;
 
 #ifdef __cplusplus
 }

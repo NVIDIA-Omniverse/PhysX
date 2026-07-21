@@ -19,9 +19,13 @@ Example (no explicit waits needed between dependent operations):
 .. code-block:: python
    :caption: Stream-ordered operation sequence
 
-    usd_handle, _ = physx.add_usd("scene.usda")  # Returns immediately
-    physx.step(dt, time)                         # Sees the USD load (stream-ordered)
-    binding = physx.create_tensor_binding(...)   # Sees step results
+    physx.attach_ovstage(stage, read_ordinal=initial_ordinal)
+    # After the application authors later ovstage edits:
+    physx.update_from_ovstage(from_ordinal, to_ordinal)
+    physx.step(dt)                               # Sees the drained stage edits
+    binding = physx.create_tensor_binding(
+        "/World/Cube", tensor_type=TensorType.RIGID_BODY_POSE
+    )  # Sees step results
     binding.read(output)                         # Reads current state
 
 Use wait_op() when:
@@ -32,14 +36,21 @@ Use wait_op() when:
 
 Thread Safety
 -------------
-- Multiple PhysX instances: fully thread-safe
-- Single instance: NOT thread-safe. Use external synchronization if calling
-  from multiple threads
+- PhysX instances share the underlying omni.physx runtime. Serialize simulation,
+  stage mutation, and binding creation across instances.
+- A single instance is NOT thread-safe. Use external synchronization if calling
+  from multiple threads.
+- ctypes releases the GIL during native calls, so concurrent ``step()`` and
+  ``TensorBinding.read()`` / ``write()`` from different threads is a data race.
+  See the developer guide threading section for the recommended pattern.
 
 """
 
 import ctypes
+import math
+import operator
 import os
+import sys
 import threading
 import warnings
 from ctypes import (
@@ -56,7 +67,7 @@ from ctypes import (
     cast,
 )
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 from packaging.version import Version
 
@@ -80,17 +91,156 @@ from ._bindings import (
     ovphysx_tensor_binding_desc_t,
     ovphysx_tensor_spec_t,
     ovphysx_config_entry_t,
+    ovstage_read_group_t,
+    ovstage_query_result_t,
+    ovstage_ordinal_range_t,
+    ovx_string_or_token_t,
+    ovx_string_t,
     ovphysx_scene_query_geometry_desc_t,
     ovphysx_scene_query_hit_t,
 )
 from . import __version__ as _python_version
-from .types import ApiStatus, DeviceType, LogLevel, SceneQueryGeometryType, SceneQueryMode, TensorType
+from .types import (
+    ApiStatus,
+    LogLevel,
+    SimObjectType,
+    ObjectScope,
+    SceneQueryGeometryType,
+    SceneQueryMode,
+    TensorType,
+)
 
 # Set of tensor types for which articulation metadata (dof_count, body_names, etc.) is valid.
 # Derived from the enum so it stays in sync automatically when new ARTICULATION_ types are added.
 _ARTICULATION_TENSOR_TYPES: frozenset[int] = frozenset(t for t in TensorType if t.name.startswith("ARTICULATION_"))
+
+
+class ReadGroup(NamedTuple):
+    """One physics-output column group returned by :meth:`PhysX.read`.
+
+    A flattened view of the native ``ovstage_read_group_t`` the read returns (its
+    ``prims`` / ``data`` / ``meta`` sub-structs unpacked into these fields). The
+    interned identifiers (``attribute`` token and ``prim_list`` handle) resolve
+    through the *same* process-shared ovstage path dictionary the attached Stage uses
+    — so an ``ovstage.PathDictionary(stage)`` resolves them, and ``prim_list`` feeds
+    straight into ``stage.query_from_path_list`` for a no-repack write-back.
+    ``object_type`` is NOT part of the native group (the read is opened over one
+    type); it is stamped here from the ``object_type`` passed to :meth:`PhysX.read`.
+
+    Constant on the physics-output path (so callers can rely on them): ``is_delete``
+    is always ``False`` (this read never emits tombstones); ``prim_offset`` is ``0``
+    and ``prim_index_map`` is ``None`` (each group carries its own full ``prim_list``);
+    ``ordinal`` is ``0`` (groups are not ordinal-stamped here).
+
+    Attributes:
+        attribute: Interned EMITTED attribute token (resolve via the path
+            dictionary). May differ from the requested name — a "position" request on
+            a point-instancer is emitted as "positions" (instancer-local); write back
+            using this token, not the requested string.
+        object_type: The queried :class:`SimObjectType` (stamped from the read call,
+            not carried by the native ovstage group).
+        ordinal: The data ordinal of this group (``0`` on this path).
+        is_array: Follows the SOURCE attribute kind — ``True`` for a ragged / USD-array
+            / byte-string column (e.g. a point-instancer's positions, a deformable
+            mesh's points), ``False`` for a fixed scalar column. It is NOT decided by
+            whether the per-element dims happen to be uniform: a fixed-width array
+            attribute is still ``is_array=True``. It is the only signal that tells e.g.
+            a 1-byte string from a scalar uint8 apart.
+        is_delete: Always ``False`` for physics output (tombstone flag).
+        semantic: Authored USD interpretation (``ovstage_attribute_semantic_t`` value).
+        prim_list: Interned prim-path-list handle covering this group's prims.
+        prim_offset: Start index within ``prim_list`` (``0`` on this path).
+        prim_count: Number of prims in this group.
+        prim_index_map: ``uint32`` NumPy array of sparse indices into ``prim_list``,
+            or ``None`` for a contiguous range (always ``None`` on this path).
+        index_map: ``uint32`` NumPy array — gather/scatter over the OUTER element axis
+            — or ``None``. ``None`` for point-instancer rigid-body output, which always
+            emits the instancer's full instance array (by-index) so it forwards into
+            the ovstage write path verbatim.
+        layout_generation: Reserved metadata field; the current output producer
+            always returns ``0``. Do not use it for structural invalidation.
+        write_floor_ordinal: Reserved metadata field; the current output producer
+            always returns ``0``. The application owns ovstage write-floor advancement.
+        tensors: ``list`` of NumPy copies, one per native tensor (1 for a fixed
+            column; per-prim for an array group). Tuple width is the trailing dim
+            (e.g. a vec3 column is shape ``[N, 3]``). Copied within the borrow
+            window so the value is safe to keep.
+    """
+
+    attribute: int
+    object_type: SimObjectType
+    ordinal: int
+    is_array: bool
+    is_delete: bool
+    semantic: int
+    prim_list: int
+    prim_offset: int
+    prim_count: int
+    prim_index_map: "object"  # numpy.ndarray | None
+    index_map: "object"  # numpy.ndarray | None
+    layout_generation: int
+    write_floor_ordinal: int
+    tensors: "list"  # list[numpy.ndarray]
+
+
+class ReadResult:
+    """Context-managed result of :meth:`PhysX.read` (ADR-0007).
+
+    Holds the query + read session open so each group's interned ``prim_list`` /
+    ``attribute`` handles stay valid for the lifetime of the ``with`` block — feed
+    them straight back into the ovstage write path (``stage.query_from_path_list(
+    group.prim_list)``) for a no-repack write-back. Each group's ``tensors`` are
+    NumPy copies, safe to keep past the block. Exiting releases every group, the
+    read session, and the query.
+
+    Usage::
+
+        with physx.read(SimObjectType.RIGID_BODY, ["position"]) as result:
+            for g in result.groups:
+                print(g.prim_list, g.attribute)
+    """
+
+    def __init__(self, sdk, query: int, read: int, groups: "list[ReadGroup]", group_ids: "list[int]"):
+        self._sdk = sdk
+        self._query = int(query)
+        self._read = int(read)
+        self._group_ids = list(group_ids)
+        self.groups = groups
+        self._closed = False
+
+    @property
+    def dictionary(self) -> int:
+        """Opaque process-shared path-dictionary pointer (resolves tokens / prim lists)."""
+        return self._sdk.query_shared_dictionary(self._query) if self._query else 0
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
+        lib = getattr(getattr(self._sdk, "_omni_physx_sdk_handle", None), "value", None)
+        if lib is None:
+            return  # parent released; native session already gone
+        if self._read:
+            for gid in self._group_ids:
+                self._sdk._lib.ovphysx_release_group(lib, c_uint64(self._read), c_uint64(gid))
+            self._sdk._lib.ovphysx_release_read(lib, c_uint64(self._read))
+        if self._query:
+            self._sdk._lib.ovphysx_release_query(lib, c_uint64(self._query))
+
+    def __enter__(self) -> "ReadResult":
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self.close()
+
+    def __del__(self):
+        try:
+            self.close()
+        except Exception:
+            pass
 from .dlpack import (
     DLDataType,
+    DLDataTypeCode,
     DLDevice,
     DLTensor,
 )
@@ -146,6 +296,21 @@ _CacheEntry = namedtuple("_CacheEntry", [
 ])
 
 
+def _copy_dl_data_type(dtype: DLDataType | None = None) -> DLDataType:
+    """Return a Python-owned copy of a DLPack data type descriptor."""
+    if dtype is None:
+        return DLDataType(DLDataTypeCode.kDLFloat, 32, 1)
+    return DLDataType.from_buffer_copy(dtype)
+
+
+class TensorBindingSpec(NamedTuple):
+    """Python-owned tensor binding metadata returned by :attr:`TensorBinding.spec`."""
+
+    dtype: DLDataType
+    ndim: int
+    shape: tuple
+
+
 def _warn_unclosed_resource(resource_name: str, source: object) -> None:
     warnings.warn(
         f"{resource_name} was garbage-collected without explicit destroy(); "
@@ -173,40 +338,94 @@ def _detect_data_ptr(tensor):
     return None, None
 
 
+def _contact_header_to_dict(h: "ContactEventHeader") -> dict:
+    """Materialize a ContactEventHeader ctypes struct into a Python-owned dict.
+
+    Used by ``get_contact_report(copy=True)`` so callers can retain contact
+    data across simulation steps without zero-copy lifetime hazards.
+    """
+    return {
+        "type": int(h.type),
+        "stageId": int(h.stageId),
+        "actor0": int(h.actor0),
+        "actor1": int(h.actor1),
+        "collider0": int(h.collider0),
+        "collider1": int(h.collider1),
+        "contactDataOffset": int(h.contactDataOffset),
+        "numContactData": int(h.numContactData),
+        "frictionAnchorsDataOffset": int(h.frictionAnchorsDataOffset),
+        "numfrictionAnchorsData": int(h.numfrictionAnchorsData),
+        "protoIndex0": int(h.protoIndex0),
+        "protoIndex1": int(h.protoIndex1),
+    }
+
+
+def _contact_point_to_dict(p: "ContactPoint") -> dict:
+    """Materialize a ContactPoint ctypes struct into a Python-owned dict."""
+    return {
+        "position": (float(p.position[0]), float(p.position[1]), float(p.position[2])),
+        "normal": (float(p.normal[0]), float(p.normal[1]), float(p.normal[2])),
+        "impulse": (float(p.impulse[0]), float(p.impulse[1]), float(p.impulse[2])),
+        "separation": float(p.separation),
+        "faceIndex0": int(p.faceIndex0),
+        "faceIndex1": int(p.faceIndex1),
+        "material0": int(p.material0),
+        "material1": int(p.material1),
+    }
+
+
+def _friction_anchor_to_dict(a: "FrictionAnchor") -> dict:
+    """Materialize a FrictionAnchor ctypes struct into a Python-owned dict."""
+    return {
+        "position": (float(a.position[0]), float(a.position[1]), float(a.position[2])),
+        "impulse": (float(a.impulse[0]), float(a.impulse[1]), float(a.impulse[2])),
+    }
+
+
 class TensorBinding:
     """Tensor binding for bulk physics data access via DLPack.
 
     A tensor binding connects a USD prim pattern to a tensor type, enabling efficient
     bulk read/write of physics data (poses, velocities, joint positions, etc.).
+    The :attr:`shape`, :attr:`ndim`, and :attr:`dtype` metadata come from
+    ``ovphysx_get_tensor_binding_spec()``. Use them to allocate compatible
+    buffers instead of assuming every tensor type is ``float32``.
 
     This is a synchronous API - operations complete before returning.
+    Bindings are tied to the currently realized physics objects. Reuse them
+    across simulation steps, but do not keep them across reset_stage(), removing USD
+    data that contains bound objects, or replacing/reparsing the stage so bound
+    objects are destroyed and recreated. Destroy cached bindings before those
+    lifecycle operations when practical; if a stale binding survives, only
+    destroy it. Create replacement bindings after the operation completes.
 
     Usage patterns:
 
     - Context manager (auto-cleanup)::
 
-        with sdk.create_tensor_binding("/World/robot*", TensorType.RIGID_BODY_POSE) as binding:
-            poses = np.zeros(binding.shape, dtype=np.float32)
+        with sdk.create_tensor_binding("/World/robot*", tensor_type=TensorType.RIGID_BODY_POSE) as binding:
+            poses = np.zeros(binding.shape, dtype=np.dtype(str(binding.dtype)))
             binding.read(poses)
-            # ... modify poses ...
+            poses[:, 2] += 0.1  # raise z position
             binding.write(poses)
         # Auto-destroyed here
 
     - Manual (explicit cleanup)::
 
-        binding = sdk.create_tensor_binding("/World/robot*", TensorType.RIGID_BODY_POSE)
-        poses = np.zeros(binding.shape, dtype=np.float32)
+        binding = sdk.create_tensor_binding("/World/robot*", tensor_type=TensorType.RIGID_BODY_POSE)
+        poses = np.zeros(binding.shape, dtype=np.dtype(str(binding.dtype)))
         binding.read(poses)
         binding.destroy()
     """
 
-    def __init__(self, sdk, handle: int, tensor_type: int, ndim: int, shape: tuple):
+    def __init__(self, sdk, handle: int, tensor_type: int, ndim: int, shape: tuple, dtype: DLDataType | None = None):
         """Initialize tensor binding (created by PhysX.create_tensor_binding)."""
         self._sdk = sdk
         self._handle = handle
         self._tensor_type = tensor_type
         self._ndim = ndim
         self._shape = shape
+        self._dtype = _copy_dl_data_type(dtype)
         self._destroyed = False
         self._lock = threading.Lock()
         self._artic_metadata = None
@@ -217,7 +436,7 @@ class TensorBinding:
         state = "destroyed" if self._destroyed else "alive"
         return (
             f"TensorBinding(handle={self._handle}, tensor_type={self._tensor_type}, "
-            f"shape={self._shape}, state={state})"
+            f"shape={self._shape}, dtype={self.dtype_name}, state={state})"
         )
 
     @property
@@ -232,18 +451,39 @@ class TensorBinding:
 
     @property
     def ndim(self) -> int:
-        """Get the number of dimensions (2 or 3)."""
+        """Get the number of dimensions reported by ``ovphysx_get_tensor_binding_spec()``."""
         return self._ndim
 
     @property
     def shape(self) -> tuple:
-        """Get tensor shape as tuple.
+        """Get tensor shape as tuple reported by ``ovphysx_get_tensor_binding_spec()``.
 
         Returns:
-            - 2D tensors: (N, C) where N=count, C=components (e.g., 7 for pose, 6 for velocity)
-            - 3D tensors: (N, L, C) where L=links for articulation link data
+            Tensor dimensions for this binding. Scalar-property bindings use
+            ``(N,)``. Flat state tensors use ``(N, C)``. Articulation and
+            deformable mesh tensors use ``(N, L, C)``.
         """
         return self._shape
+
+    @property
+    def dtype(self) -> DLDataType:
+        """Get the required DLPack dtype for tensors passed to this binding.
+
+        Most bindings use ``float32``. Index bindings (deformable element indices)
+        use ``int32``; bool bindings (DISABLE_SIMULATION) use ``uint8``.
+        See :attr:`dtype_name` for a compact string form.
+        """
+        return _copy_dl_data_type(self._dtype)
+
+    @property
+    def dtype_name(self) -> str:
+        """Get the required tensor dtype as a short string such as ``float32``, ``int32``, or ``uint8``."""
+        return str(self._dtype)
+
+    @property
+    def spec(self) -> TensorBindingSpec:
+        """Get a Python-owned tensor spec snapshot for this binding."""
+        return TensorBindingSpec(dtype=self.dtype, ndim=self._ndim, shape=self._shape)
 
     @property
     def count(self) -> int:
@@ -388,8 +628,9 @@ class TensorBinding:
     def read(self, tensor) -> None:
         """Read simulation data into a user-provided tensor (synchronous).
 
-        The tensor must have matching shape and dtype (float32). Can be a NumPy array,
-        PyTorch tensor, or any object with __dlpack__ protocol.
+        The tensor must have matching shape and dtype (:attr:`shape` and
+        :attr:`dtype`). Can be a NumPy array, PyTorch tensor, or any object
+        with __dlpack__ protocol.
 
         When called repeatedly with the same buffer object, an internal cache
         skips DLPack acquisition and attribute chain lookups, giving
@@ -402,11 +643,13 @@ class TensorBinding:
 
         Args:
             tensor: DLPack-compatible tensor with pre-allocated storage matching self.shape.
-                   Must be float32 on matching device (CPU or GPU).
+                   Must use ``self.dtype``. CPU/CUDA device mismatches are staged when
+                   CUDA is available; cross-GPU mismatches and CUDA tensors in
+                   process-wide CPU-only mode are rejected.
 
         Preconditions:
             - This binding is not destroyed.
-            - tensor has matching shape, dtype (float32), and device.
+            - tensor has matching shape and dtype and uses a supported device.
         Side effects:
             - Blocks until data is available and writes into the provided tensor.
         Ownership/Lifetime:
@@ -479,8 +722,9 @@ class TensorBinding:
     def write(self, tensor, indices=None, mask=None) -> None:
         """Write data from a user-provided tensor into the simulation (synchronous).
 
-        The tensor must have matching shape and dtype (float32). Can be a NumPy array,
-        PyTorch tensor, or any object with __dlpack__ protocol.
+        The tensor must have matching shape and dtype (:attr:`shape` and
+        :attr:`dtype`). Can be a NumPy array, PyTorch tensor, or any object
+        with __dlpack__ protocol.
 
         When called repeatedly with the same buffer object and no indices/mask,
         an internal cache skips DLPack acquisition and attribute chain lookups,
@@ -490,7 +734,9 @@ class TensorBinding:
 
         Args:
             tensor: DLPack-compatible tensor with data to write, shape matching self.shape.
-                   Must be float32 on matching device (CPU or GPU).
+                   Must use ``self.dtype``. CPU/CUDA device mismatches are staged when
+                   CUDA is available; cross-GPU mismatches and CUDA tensors in
+                   process-wide CPU-only mode are rejected.
             indices: Optional int32 tensor of indices for partial update. If provided,
                     only the rows at the given indices are written. The tensor argument
                     must still be full shape [N, ...] matching the binding spec; only the
@@ -509,9 +755,9 @@ class TensorBinding:
 
         Preconditions:
             - This binding is not destroyed.
-            - tensor matches shape, dtype (float32), and device.
+            - tensor matches shape and dtype and uses a supported device.
             - indices (if provided) is int32 and within bounds.
-            - mask (if provided) is bool/uint8 with shape [N] on matching device.
+            - mask (if provided) is bool/uint8 with shape [N] on a supported device.
         Side effects:
             - Updates simulation state for the bound entities.
         Ownership/Lifetime:
@@ -604,6 +850,90 @@ class TensorBinding:
 
         return acquire_dltensor(obj)
 
+    def wake_up(self, indices=None) -> None:
+        """Wake rigid bodies in this binding.
+
+        Mirrors PhysX SDK ``PxRigidDynamic::wakeUp``. Bodies that still have
+        ``RIGID_BODY_DISABLE_SIMULATION`` set are silently skipped (the
+        engine refuses to wake disabled actors).
+
+        Typical pair: clear the disable flag on an actor (re-add it to
+        simulation in a sleep state) and then call this so the actor is
+        active for the next ``step()``.
+
+        Only valid on a rigid-body binding. Articulation bindings raise.
+
+        Args:
+            indices: Optional int32 DLPack-compatible tensor of indices into
+                this binding. If None, every body in the binding is woken.
+
+        Errors:
+            RuntimeError if the binding is destroyed, is not a rigid-body
+            binding, has been invalidated by a stage change, or the engine
+            wake call fails.
+        """
+        with self._lock:
+            if self._destroyed:
+                raise RuntimeError("TensorBinding has been destroyed")
+            self._check_sdk_valid()
+
+            idx_ptr = None
+            idx_keepalive = None
+            if indices is not None:
+                idx_dl, idx_keepalive = self._acquire_dltensor(indices)
+                idx_ptr = ctypes.byref(idx_dl)
+
+            result = self._sdk._lib.ovphysx_rigid_body_view_wake_up(
+                self._sdk._omni_physx_sdk_handle.value,
+                self._handle,
+                idx_ptr,
+            )
+            # Keep the indices buffer alive across the native call.
+            _ = idx_keepalive
+            if result.status != ApiStatus.SUCCESS:
+                error_msg = self._sdk._get_last_error()
+                raise RuntimeError(f"wake_up failed: {error_msg}")
+
+    def sleep(self, indices=None) -> None:
+        """Force rigid bodies in this binding to sleep.
+
+        Mirrors PhysX SDK ``PxRigidDynamic::putToSleep``. Symmetric
+        counterpart to :meth:`wake_up`. Bodies that have
+        ``RIGID_BODY_DISABLE_SIMULATION`` set are silently skipped.
+
+        Only valid on a rigid-body binding. Articulation bindings raise.
+
+        Args:
+            indices: Optional int32 DLPack-compatible tensor of indices into
+                this binding. If None, every body in the binding is put to
+                sleep.
+
+        Errors:
+            RuntimeError if the binding is destroyed, is not a rigid-body
+            binding, has been invalidated by a stage change, or the engine
+            call fails.
+        """
+        with self._lock:
+            if self._destroyed:
+                raise RuntimeError("TensorBinding has been destroyed")
+            self._check_sdk_valid()
+
+            idx_ptr = None
+            idx_keepalive = None
+            if indices is not None:
+                idx_dl, idx_keepalive = self._acquire_dltensor(indices)
+                idx_ptr = ctypes.byref(idx_dl)
+
+            result = self._sdk._lib.ovphysx_rigid_body_view_sleep(
+                self._sdk._omni_physx_sdk_handle.value,
+                self._handle,
+                idx_ptr,
+            )
+            _ = idx_keepalive
+            if result.status != ApiStatus.SUCCESS:
+                error_msg = self._sdk._get_last_error()
+                raise RuntimeError(f"sleep failed: {error_msg}")
+
     def destroy(self) -> None:
         """Release binding resources.
 
@@ -679,6 +1009,120 @@ class TensorBinding:
                 pass
 
 
+class SdfView:
+    """SDF shape view for evaluating signed distance fields at query points.
+
+    Created by PhysX.create_sdf_view(). Use as a context manager or call
+    destroy() explicitly when done.
+
+    Evaluation is GPU-only: the query and output tensors must live on the
+    same CUDA device as the instance (e.g. torch/cupy tensors).
+
+    Example::
+
+        with physx.create_sdf_view(pattern="/World/Mesh*", max_query_points=100) as sdf:
+            pts = torch.zeros((sdf.count, 100, 3), dtype=torch.float32, device="cuda")
+            out = torch.zeros((sdf.count, 100, 4), dtype=torch.float32, device="cuda")
+            sdf.evaluate(pts.__dlpack__(), out.__dlpack__())
+    """
+
+    def __init__(self, sdk, handle: int, count: int, max_query_points: int):
+        """Initialize SDF view (created by PhysX.create_sdf_view)."""
+        self._sdk = sdk
+        self._handle = handle
+        self._count = count
+        self._max_query_points = max_query_points
+        self._destroyed = False
+        self._lock = threading.Lock()
+
+    def __repr__(self) -> str:
+        state = "destroyed" if self._destroyed else "alive"
+        return f"SdfView(handle={self._handle}, count={self._count}, max_query_points={self._max_query_points}, state={state})"
+
+    @property
+    def count(self) -> int:
+        """Number of SDF shapes in this view (first dimension of query tensors)."""
+        return self._count
+
+    @property
+    def max_query_points(self) -> int:
+        """Maximum number of query points per shape this view was created with."""
+        return self._max_query_points
+
+    def evaluate(self, query_points, out_distances_and_gradients) -> None:
+        """Evaluate SDF at query points and write distances + gradients.
+
+        Args:
+            query_points: DLPack-compatible tensor with shape [N, Q, 3], float32.
+                N must equal count; Q must equal max_query_points.
+            out_distances_and_gradients: Pre-allocated DLPack-compatible tensor
+                with shape [N, Q, 4], float32. Component layout per point:
+                (grad.x, grad.y, grad.z, distance).
+
+        Preconditions:
+            - This view is not destroyed.
+            - Tensors are float32 on the GPU (kDLCUDA); requires a GPU instance.
+        """
+        from ._dlpack_utils import acquire_dltensor
+
+        with self._lock:
+            if self._destroyed:
+                raise RuntimeError("SdfView has been destroyed")
+
+            qp_dl, qp_keepalive = acquire_dltensor(query_points)
+            out_dl, out_keepalive = acquire_dltensor(out_distances_and_gradients)
+            result = _lib.ovphysx_evaluate_sdf(
+                self._sdk._omni_physx_sdk_handle.value,
+                self._handle,
+                ctypes.byref(qp_dl),
+                ctypes.byref(out_dl),
+            )
+            del qp_keepalive, out_keepalive
+            if result.status != 0:
+                raise RuntimeError(f"ovphysx_evaluate_sdf failed: {self._sdk._get_last_error()}")
+
+    def destroy(self) -> None:
+        """Release the SDF view and its resources."""
+        with self._lock:
+            if self._destroyed:
+                return
+            # Guard against the SDK being torn down before an explicit destroy()
+            # (GC may collect self._sdk's handle first); mirrors ContactBinding.destroy.
+            sdk_handle = self._sdk._omni_physx_sdk_handle
+            if sdk_handle is None:
+                self._destroyed = True
+                return
+            result = _lib.ovphysx_destroy_sdf_view(sdk_handle.value, self._handle)
+            self._destroyed = True
+            if result.status != 0:
+                raise RuntimeError(f"ovphysx_destroy_sdf_view failed: {self._sdk._get_last_error()}")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.destroy()
+
+    def __del__(self):
+        try:
+            import sys
+
+            if sys.is_finalizing():
+                return
+        except Exception:
+            return
+        if not self._destroyed:
+            if getattr(getattr(self, "_sdk", None), "_omni_physx_sdk_handle", None) is not None:
+                try:
+                    _warn_unclosed_resource("SdfView", self)
+                except Exception:
+                    pass
+            try:
+                self.destroy()
+            except Exception:
+                pass
+
+
 class ContactBinding:
     """Contact tensor binding backed by IRigidContactView.
 
@@ -717,7 +1161,12 @@ class ContactBinding:
 
     @property
     def sensor_paths(self) -> list[str]:
-        """Resolved sensor USD prim paths in contact tensor row order."""
+        """Resolved sensor USD prim paths in contact tensor row order.
+
+        Returns:
+            list[str]: One path per sensor row, in the same order as the
+            contact data tensors.
+        """
         with self._lock:
             if self._destroyed:
                 raise RuntimeError("ContactBinding has been destroyed")
@@ -752,6 +1201,9 @@ class ContactBinding:
         The outer list is indexed by sensor row and the inner list by filter
         column. Each inner list is empty for unfiltered contact bindings
         (i.e. when ``filter_count == 0``).
+
+        Returns:
+            list[list[str]]: Nested list of shape [sensor_count][filter_count].
         """
         with self._lock:
             if self._destroyed:
@@ -865,6 +1317,120 @@ class ContactBinding:
             if result.status != ApiStatus.SUCCESS:
                 raise RuntimeError(f"Failed to read detailed contact data: {self._sdk._get_last_error()}")
 
+    def read_raw_contact_data(
+        self,
+        contact_forces,
+        positions,
+        normals,
+        separations,
+        counts,
+        start_indices,
+        other_actor_ids,
+    ) -> None:
+        """Read raw (unfiltered) contact data into flat buffers.
+
+        Filter-less variant of :meth:`read_contact_data` — returns every
+        contact involving each sensor regardless of which other actor it
+        collided with, plus a per-contact ``other_actor_ids`` lookup for
+        identifying the contacting body via
+        :meth:`get_other_actor_paths_from_ids`.
+
+        Expected shapes are ``[C, 1]`` for ``contact_forces`` and
+        ``separations``, ``[C, 3]`` for ``positions`` and ``normals``,
+        ``[sensor_count]`` for ``counts`` and ``start_indices``, and
+        ``[C]`` for ``other_actor_ids``. ``C`` is
+        :attr:`max_contact_data_count` and must be positive; no filter
+        dimension is required. Count and start-index tensors may be
+        int32 or uint32; ``other_actor_ids`` must be int64 or uint64.
+        """
+        with self._lock:
+            if self._destroyed:
+                raise RuntimeError("ContactBinding has been destroyed")
+            self._check_sdk_valid()
+            if self._max_contact_data_count <= 0:
+                raise RuntimeError(
+                    "Raw contact reads require max_contact_data_count > 0 "
+                    "when creating the contact binding."
+                )
+            from ._dlpack_utils import acquire_dltensor
+
+            force_dl, force_keepalive = acquire_dltensor(contact_forces)
+            pos_dl, pos_keepalive = acquire_dltensor(positions)
+            normal_dl, normal_keepalive = acquire_dltensor(normals)
+            sep_dl, sep_keepalive = acquire_dltensor(separations)
+            count_dl, count_keepalive = acquire_dltensor(counts)
+            start_dl, start_keepalive = acquire_dltensor(start_indices)
+            ids_dl, ids_keepalive = acquire_dltensor(other_actor_ids)
+
+            result = _lib.ovphysx_read_raw_contact_data(
+                self._sdk._omni_physx_sdk_handle.value,
+                self._handle,
+                ctypes.byref(force_dl),
+                ctypes.byref(pos_dl),
+                ctypes.byref(normal_dl),
+                ctypes.byref(sep_dl),
+                ctypes.byref(count_dl),
+                ctypes.byref(start_dl),
+                ctypes.byref(ids_dl),
+            )
+            _ = (force_keepalive, pos_keepalive, normal_keepalive, sep_keepalive,
+                 count_keepalive, start_keepalive, ids_keepalive)
+            if result.status != ApiStatus.SUCCESS:
+                raise RuntimeError(f"Failed to read raw contact data: {self._sdk._get_last_error()}")
+
+    def get_other_actor_paths_from_ids(self, ids_array) -> list[str]:
+        """Resolve actor IDs from :meth:`read_raw_contact_data` to USD prim paths.
+
+        ``ids_array`` is a 1D int64/uint64 array (numpy / warp / torch with
+        DLPack support) holding actor IDs. IDs that cannot be resolved
+        yield empty strings. Path strings are copied into Python -- the
+        caller can keep them across subsequent ovphysx calls.
+
+        Returns:
+            list[str]: USD prim paths in the same order as the input IDs.
+        """
+        with self._lock:
+            if self._destroyed:
+                raise RuntimeError("ContactBinding has been destroyed")
+            self._check_sdk_valid()
+            from ._dlpack_utils import acquire_dltensor
+
+            ids_dl, ids_keepalive = acquire_dltensor(ids_array)
+            # The native call writes exactly N paths (N = ids_dl.shape[0]).
+            if ids_dl.ndim != 1:
+                del ids_keepalive
+                raise ValueError(
+                    f"ids_array must be a 1D int64/uint64 tensor; got ndim={ids_dl.ndim}"
+                )
+            n = int(ids_dl.shape[0])
+            if n == 0:
+                _ = ids_keepalive
+                return []
+
+            buf = (ovphysx_string_t * n)()
+            count = ctypes.c_uint32(0)
+            result = _lib.ovphysx_contact_binding_get_other_actor_paths_from_ids(
+                self._sdk._omni_physx_sdk_handle.value,
+                self._handle,
+                ctypes.byref(ids_dl),
+                buf,
+                ctypes.c_uint32(n),
+                ctypes.byref(count),
+            )
+            _ = ids_keepalive
+            if result.status != ApiStatus.SUCCESS:
+                raise RuntimeError(
+                    f"Failed to resolve actor IDs to paths: {self._sdk._get_last_error()}"
+                )
+            # Clamp to the buffer we provided; the engine should never write
+            # more than `n`, but never index past `buf` if it does.
+            written = min(int(count.value), n)
+            # ovphysx_string_t is not guaranteed NUL-terminated (see header
+            # docstring); rely on the struct's __str__, which uses
+            # ctypes.string_at(ptr, length) to read exactly `length` bytes.
+            # Direct c_char_p slicing would auto-truncate at the first NUL.
+            return [str(buf[i]) for i in range(written)]
+
     def read_friction_data(self, friction_forces, friction_points, counts, start_indices) -> None:
         """Read detailed friction data into flat buffers.
 
@@ -952,94 +1518,6 @@ class ContactBinding:
 
     def __exit__(self, *args):
         self.destroy()
-
-
-# =============================================================================
-# Remote storage credential configuration (process-wide)
-# =============================================================================
-
-
-def configure_s3(
-    host: str,
-    bucket: str,
-    region: str,
-    access_key_id: str,
-    secret_access_key: str,
-    session_token: str | None = None,
-) -> None:
-    """Configure S3 credentials for remote USD loading via HTTPS S3 URLs.
-
-    Credentials are process-global and take effect immediately for all
-    :class:`PhysX` instances. Call before :meth:`PhysX.add_usd` with an
-    S3 HTTPS URL.
-
-    Args:
-        host: S3 endpoint (e.g., ``"my-bucket.s3.us-east-1.amazonaws.com"``).
-        bucket: S3 bucket name.
-        region: AWS region (e.g., ``"us-east-1"``).
-        access_key_id: AWS access key ID.
-        secret_access_key: AWS secret access key.
-        session_token: STS session token (``None`` if not using temporary
-            credentials).
-
-    Raises:
-        ValueError: If a required parameter is empty.
-        RuntimeError: If the OmniClient library is unavailable.
-    """
-    result = _lib.ovphysx_configure_s3(
-        host.encode("utf-8"),
-        bucket.encode("utf-8"),
-        region.encode("utf-8"),
-        access_key_id.encode("utf-8"),
-        secret_access_key.encode("utf-8"),
-        session_token.encode("utf-8") if session_token else None,
-    )
-    if result.status != ApiStatus.SUCCESS:
-        err = _lib.ovphysx_get_last_error()
-        err_msg = ""
-        if err and err.ptr:
-            err_msg = ctypes.string_at(err.ptr, err.length).decode(
-                "utf-8", errors="replace"
-            )
-        exc_cls = ValueError if result.status == ApiStatus.INVALID_ARGUMENT else RuntimeError
-        raise exc_cls(err_msg or "Failed to configure S3 credentials")
-
-
-def configure_azure_sas(
-    host: str,
-    container: str,
-    sas_token: str,
-) -> None:
-    """Configure an Azure SAS token for remote USD loading via Azure Blob Storage.
-
-    Credentials are process-global and take effect immediately for all
-    :class:`PhysX` instances. Call before :meth:`PhysX.add_usd` with an
-    Azure Blob URL.
-
-    Args:
-        host: Azure Blob host (e.g.,
-            ``"myaccount.blob.core.windows.net"``).
-        container: Azure container name.
-        sas_token: SAS token string (without leading ``'?'``).
-
-    Raises:
-        ValueError: If a required parameter is empty.
-        RuntimeError: If the OmniClient library is unavailable.
-    """
-    result = _lib.ovphysx_configure_azure_sas(
-        host.encode("utf-8"),
-        container.encode("utf-8"),
-        sas_token.encode("utf-8"),
-    )
-    if result.status != ApiStatus.SUCCESS:
-        err = _lib.ovphysx_get_last_error()
-        err_msg = ""
-        if err and err.ptr:
-            err_msg = ctypes.string_at(err.ptr, err.length).decode(
-                "utf-8", errors="replace"
-            )
-        exc_cls = ValueError if result.status == ApiStatus.INVALID_ARGUMENT else RuntimeError
-        raise exc_cls(err_msg or "Failed to configure Azure SAS token")
 
 
 # =============================================================================
@@ -1176,6 +1654,42 @@ def disable_python_logging() -> None:
     _python_log_logger_name = None
 
 
+_PROCESS_LIFECYCLE_LOCK = threading.Lock()
+_PROCESS_LIFECYCLE_REFCOUNT = 0
+
+
+def _get_last_error_from_lib() -> str:
+    err = _lib.ovphysx_get_last_error()
+    if err and err.ptr:
+        try:
+            return ctypes.string_at(err.ptr, err.length).decode("utf-8", errors="replace") or "Unknown error"
+        except Exception:
+            return "Unknown error"
+    return "Unknown error"
+
+
+def _acquire_process_lifecycle() -> None:
+    global _PROCESS_LIFECYCLE_REFCOUNT
+    with _PROCESS_LIFECYCLE_LOCK:
+        if _PROCESS_LIFECYCLE_REFCOUNT == 0:
+            result = _lib.ovphysx_initialize()
+            if result.status != ApiStatus.SUCCESS:
+                raise RuntimeError(f"ovphysx_initialize() failed: {_get_last_error_from_lib()}")
+        _PROCESS_LIFECYCLE_REFCOUNT += 1
+
+
+def _release_process_lifecycle() -> None:
+    global _PROCESS_LIFECYCLE_REFCOUNT
+    with _PROCESS_LIFECYCLE_LOCK:
+        if _PROCESS_LIFECYCLE_REFCOUNT == 0:
+            return
+        _PROCESS_LIFECYCLE_REFCOUNT -= 1
+        if _PROCESS_LIFECYCLE_REFCOUNT == 0:
+            result = _lib.ovphysx_shutdown()
+            if result.status != ApiStatus.SUCCESS:
+                raise RuntimeError(f"ovphysx_shutdown() failed: {_get_last_error_from_lib()}")
+
+
 class PhysX:
     """High-level wrapper around the C API using ctypes."""
 
@@ -1183,93 +1697,35 @@ class PhysX:
         self,
         config: "PhysXConfig | None" = None,
         ignore_version_mismatch: bool = False,
-        device: str | int | None = None,
         active_cuda_gpus: str | None = None,
     ) -> None:
         """Initialize PhysX SDK.
 
         Args:
             config: Typed config dataclass. Only non-None fields are applied.
-
-                Example::
-
-                    from ovphysx import PhysX, PhysXConfig
-                    physx = PhysX(config=PhysXConfig(
-                        disable_contact_processing=True,
-                        num_threads=4,
-                    ))
-            ignore_version_mismatch: Skip Python/native version match check
-            device: Select simulation device for this instance.
-                - "auto" or 0: AUTO (GPU preferred). If CUDA is available, use GPU.
-                  Otherwise, fall back to CPU. This is the recommended default.
-                - "gpu" or 1: GPU REQUIRED. If CUDA is unavailable, initialization fails.
-                - "cpu" or 2: CPU ONLY (useful for CPU-only environments and deterministic tests)
-
-                .. warning::
-
-                    All instances within the same process must use the same device mode.
-                    The device setting is applied to process-global Carbonite/PhysX state
-                    during the first ``PhysX()`` call and cannot be changed afterwards.
-                    Creating a CPU instance after a GPU instance (or vice versa) in the
-                    same process will raise an error.
-
+            ignore_version_mismatch: Skip Python/native version match check.
             active_cuda_gpus: Comma-separated CUDA device ordinals (default: None = GPU 0).
-                Supported patterns:
+                Restricts which GPU ordinal(s) are used.
+                Supported: None/"0" (GPU 0), "N" (GPU N), "-1" (PhysX default),
+                "0,1,...,N-1" (all GPUs round-robin), "1,2,...,N-1" (skip first).
 
-                - ``None`` or ``"0"``: single GPU 0 (default)
-                - ``"N"``: single GPU N
-                - ``"-1"``: PhysX default CUDA selection
-                - ``"0,1,...,N-1"``: all N GPUs, scenes distributed round-robin
-                - ``"1,2,...,N-1"``: all GPUs except first, round-robin
-
-                Other patterns raise ``RuntimeError``.
-
-        Preconditions:
-            - The ovphysx native library is available in the environment or bundled deps.
-        Side effects:
-            - Loads runtime components and initializes process-level resources.
-        Ownership/Lifetime:
-            - The instance owns native resources until release() or context exit.
-        Threading:
-            - The instance is not thread-safe for concurrent calls.
-        Errors:
-            - Raises RuntimeError for initialization failures or version mismatch.
-
-        Note:
-            Log level is configured globally via ovphysx.set_log_level() before
-            creating an instance. Default: LogLevel.WARNING.
+        To force process-wide CPU-only mode, call PhysX.set_cpu_mode(True) before
+        creating any PhysX instances.
         """
         self._lib = _lib
+        self._lifecycle_acquired = False
+        # Keepalive for an attached ovstage Stage. ovphysx captures the raw
+        # ovstage_instance_t* and dereferences it until detach, so the Python
+        # wrapper must hold a reference to keep the Stage (and its native
+        # instance) alive for the duration of the attachment. Set in
+        # attach_ovstage(), cleared in detach_ovstage()/release().
+        self._attached_ovstage = None
 
         if not ignore_version_mismatch:
             _check_version_match()
 
         # Create args structure
         args = ovphysx_create_args()
-
-        # Device selection
-        # Note: This is NOT a Carbonite setting; it is an ovphysx create-arg.
-        if device is None:
-            args.device = DeviceType.AUTO
-        elif isinstance(device, str):
-            d = device.strip().lower()
-            if d == "cpu":
-                args.device = DeviceType.CPU
-            elif d == "gpu":
-                args.device = DeviceType.GPU
-            elif d == "auto":
-                args.device = DeviceType.AUTO
-            else:
-                raise ValueError(f"Invalid device '{device}'. Expected 'auto', 'cpu', or 'gpu'.")
-        else:
-            d = int(device)
-            if d not in (DeviceType.AUTO, DeviceType.GPU, DeviceType.CPU):
-                raise ValueError(
-                    f"Invalid device value {d}. Expected {DeviceType.AUTO} (AUTO), "
-                    f"{DeviceType.GPU} (GPU), or {DeviceType.CPU} (CPU), "
-                    f"or use string: 'gpu', 'cpu', 'auto'."
-                )
-            args.device = d
 
         args.active_cuda_gpus = ovphysx_string_t(active_cuda_gpus or "")
 
@@ -1292,25 +1748,25 @@ class PhysX:
             args.config_entry_count = 0
 
         self._omni_physx_sdk_handle = c_uint64(_INVALID_HANDLE)
-        result = self._lib.ovphysx_create_instance(byref(args), byref(self._omni_physx_sdk_handle))
-        if result.status != ApiStatus.SUCCESS:
-            error_msg = self._get_last_error()
-            if result.status == ApiStatus.GPU_NOT_AVAILABLE:
-                raise RuntimeError(
-                    f"GPU requested but not available: {error_msg}. "
-                    f"Use device='cpu' or device='auto' to run without a GPU."
-                )
-            if "device mode" in error_msg.lower() and "locked" in error_msg.lower():
-                from .types import PhysXDeviceError
-                raise PhysXDeviceError(
-                    f"{error_msg} To use a different device mode, "
-                    f"run in a separate subprocess "
-                    f"(e.g. subprocess.run([sys.executable, 'script.py']))."
-                )
-            raise RuntimeError(f"ovphysx_create_instance() failed: {error_msg}")
-        if self._omni_physx_sdk_handle.value == _INVALID_HANDLE:
-            self._omni_physx_sdk_handle = None
-            raise RuntimeError("ovphysx_create_instance() returned invalid handle")
+        try:
+            _acquire_process_lifecycle()
+            self._lifecycle_acquired = True
+
+            result = self._lib.ovphysx_create_instance(byref(args), byref(self._omni_physx_sdk_handle))
+            if result.status != ApiStatus.SUCCESS:
+                error_msg = self._get_last_error()
+                raise RuntimeError(f"ovphysx_create_instance() failed: {error_msg}")
+            if self._omni_physx_sdk_handle.value == _INVALID_HANDLE:
+                self._omni_physx_sdk_handle = None
+                raise RuntimeError("ovphysx_create_instance() returned invalid handle")
+        except Exception:
+            if self._lifecycle_acquired:
+                self._lifecycle_acquired = False
+                _release_process_lifecycle()
+            raise
+
+        # Track explicit-release state for the ResourceWarning finalizer.
+        self._released = False
 
     def _check_valid(self) -> None:
         if self._omni_physx_sdk_handle is None:
@@ -1323,13 +1779,36 @@ class PhysX:
         """The raw ``ovphysx_handle_t`` for this instance (read-only).
 
         Use this when passing the handle to C/C++ code that calls the
-        ovphysx C API directly (e.g. ``ovphysx_get_physx_ptr``).
+        ovphysx C API directly.
 
         Raises:
             RuntimeError: If the instance has been released.
         """
         self._check_valid()
         return self._omni_physx_sdk_handle.value
+
+    @staticmethod
+    def set_cpu_mode(cpu_only: bool) -> None:
+        """Force process-wide CPU-only mode.
+
+        Call before the first PhysX instance is ever created to guarantee that
+        CUDA is never touched. The call requires no active instances. Once set
+        to True successfully, the mode cannot be reversed for this process.
+
+        When True: no CUDA driver is touched; all PhysX scenes use CPU dynamics
+        regardless of their USD physxScene:enableGPUDynamics settings.
+
+        Raises:
+            RuntimeError: If any PhysX instances are currently active, or if
+                attempting to set False after True has been applied (CPU-only
+                mode is sticky as soon as enabling it succeeds).
+        """
+        result = _lib.ovphysx_set_cpu_mode(cpu_only)
+        if result.status != 0:
+            raise RuntimeError(
+                f"set_cpu_mode failed ({ApiStatus(result.status).name}): "
+                f"{_get_last_error_from_lib()}"
+            )
 
     @staticmethod
     def _ovx_to_str(s: ovphysx_string_t) -> str:
@@ -1350,166 +1829,138 @@ class PhysX:
                 return "Unknown error"
         return "Unknown error"
 
-    def add_usd(self, usd_path: str, path_prefix: str = "") -> tuple[int, int]:
-        """Add USD file to stage (async, returns immediately).
 
-        Args:
-            usd_path: Path to USD file
-            path_prefix: Optional prefix for all paths in USD
-
-        Returns:
-            Tuple of (usd_handle, op_index). The usd_handle is used for remove_usd().
-            op_index can be used with wait_op() if you need explicit synchronization.
-
-        Examples:
-            # Simple usage (stream-ordered)
-            usd_handle, _ = physx.add_usd("scene.usda")
-            physx.step(dt, time)  # Automatically waits for USD to load
-
-            # Explicit synchronization (if needed before non-stream operations)
-            usd_handle, op = physx.add_usd("scene.usda")
-            physx.wait_op(op)  # Ensure load completes before external access
-
-        Preconditions:
-            - usd_path must exist and be readable.
-        Side effects:
-            - Enqueues stage load and allocates runtime resources.
-        Ownership/Lifetime:
-            - The returned usd_handle is owned by this instance until remove_usd/reset.
-        Threading:
-            - Do not call concurrently on the same instance without external sync.
-        Errors:
-            - Raises RuntimeError on load or enqueue failure.
-        """
-        self._check_valid()
-        usd_handle = c_uint64(0)
-        result = self._lib.ovphysx_add_usd(
-            self._omni_physx_sdk_handle.value,
-            ovphysx_string_t(usd_path),
-            ovphysx_string_t(path_prefix),
-            byref(usd_handle),
-        )
-
-        if result.status != ApiStatus.SUCCESS:
-            error_msg = self._get_last_error()
-            raise RuntimeError(f"Failed to add USD: {error_msg}")
-
-        return (usd_handle.value, result.op_index)
-
-    def remove_usd(self, usd_handle: int) -> int:
-        """Remove USD file from stage (async, returns immediately).
-
-        Args:
-            usd_handle: Handle from add_usd()
+    def reset_stage(self) -> int:
+        """Reset stage to empty (async).
 
         Returns:
             op_index (can be used with wait_op() for explicit synchronization)
 
         Example:
             # Simple usage (stream-ordered)
-            physx.remove_usd(usd_handle)
-            physx.step(dt, time)  # Automatically waits for removal
-
-        Preconditions:
-            - usd_handle must be valid for this instance.
-        Side effects:
-            - Removes USD data from the runtime stage when complete.
-        Ownership/Lifetime:
-            - usd_handle becomes invalid after completion.
-        Threading:
-            - Do not call concurrently on the same instance without external sync.
-        Errors:
-            - Raises RuntimeError on failure.
-        """
-        self._check_valid()
-        result = self._lib.ovphysx_remove_usd(self._omni_physx_sdk_handle.value, usd_handle)
-
-        if result.status == ApiStatus.NOT_FOUND:
-            error_msg = self._get_last_error()
-            raise ValueError(f"Failed to remove USD: {error_msg}")
-
-        if result.status != ApiStatus.SUCCESS:
-            error_msg = self._get_last_error()
-            raise RuntimeError(f"Failed to remove USD: {error_msg}")
-
-        return result.op_index
-
-    def reset(self) -> int:
-        """Reset stage to empty (async, invalidates all usd_handles).
-
-        Returns:
-            op_index (can be used with wait_op() for explicit synchronization)
-
-        Example:
-            # Simple usage (stream-ordered)
-            physx.reset()
-            usd_handle, _ = physx.add_usd("new_scene.usda")  # Automatically waits for reset
+            physx.reset_stage()
+            physx.wait_all()
 
         Preconditions:
             - Instance must be valid.
         Side effects:
-            - Clears the runtime stage and invalidates all USD handles.
+            - Clears the runtime stage.
+            - Detaches any attached ovstage Stage (the C runtime calls
+              detach_ovstage internally). Callers must re-attach with
+              attach_ovstage() before any further update_from_ovstage().
         Ownership/Lifetime:
-            - All previously returned usd_handles become invalid after completion.
+            - All TensorBinding and ContactBinding objects for the previous
+              stage become invalid. Destroy cached bindings before reset when
+              practical; if a stale binding survives, only destroy it. Create
+              replacement bindings after the reset completes.
         Threading:
             - Do not call concurrently on the same instance without external sync.
         Errors:
             - Raises RuntimeError on failure.
         """
         self._check_valid()
-        result = self._lib.ovphysx_reset(self._omni_physx_sdk_handle.value)
+        result = self._lib.ovphysx_reset_stage(self._omni_physx_sdk_handle.value)
 
         if result.status != ApiStatus.SUCCESS:
             error_msg = self._get_last_error()
-            raise RuntimeError(f"Failed to reset: {error_msg}")
+            raise RuntimeError(f"Failed to reset_stage: {error_msg}")
 
+        # reset_stage detaches any attached ovstage in the C runtime; drop the
+        # Python keepalive to match (see attach_ovstage / detach_ovstage).
+        self._attached_ovstage = None
         return result.op_index
 
     def clone(self, source_path: str, target_paths: list[str],
-              parent_transforms: list[tuple[float, float, float, float, float, float, float]] | None = None) -> int:
-        """Clone a USD prim hierarchy to create multiple Fabric-based copies (asynchronous, returns immediately).
+              parent_transforms: list[tuple[float, float, float, float, float, float, float]] | None = None,
+              env_ids: list[int] | None = None) -> int:
+        """Clone a prim hierarchy to create multiple runtime physics copies.
 
-        Creates physics-optimized clones in Fabric for high-performance simulation.
-        The source prim must exist in the loaded USD stage and have physics properties.
-        Due to stream-ordered execution, subsequent operations automatically see the result of clone.
+        Creates physics-optimized clones in the runtime representation for high-performance
+        simulation, backed by the PhysX SDK replicator so cloned articulations are real articulations.
+        The source prim must exist in the loaded stage and have physics properties.
+        Replication executes inline. The returned operation index is already complete, so
+        subsequent operations see the clone immediately and ``wait_op()`` returns immediately.
 
-        When an ovstage Stage is attached via :meth:`attach_stage`, the canonical
-        user-facing clone path is ``stage.clone_subtree(source, [targets])`` on
-        the attached Stage; the OvstageBridge consumes the resulting clone events
-        during step ingest and drives PhysX-side replication via the same plugin
-        this method uses. This direct method remains supported for standalone
-        callers (no ovstage attached) and for callers that want the async
-        multi-target convenience.
+        This is the clone entrypoint for both standalone callers and callers that
+        populate the scene through an ovstage Stage attached via
+        :meth:`attach_ovstage`. Replication runs in the internal representation
+        only (USD untouched).
+
+        Cross-environment collision filtering can optionally use PhysX environment ids, controlled
+        by the ``/ovphysx/clone/useEnvIds`` setting (default: on). When enabled and the scene runs
+        GPU dynamics + GPU broadphase, each cloned environment gets a distinct environment id so
+        copies in different environments do not collide. The source environment is included: its
+        bodies are created holding environment id 0 (assigned as the attach parses them; clones
+        get 1..N), so co-located clones (``parent_transforms=None``) are collision-isolated from
+        the source as well. Like all carbonite settings it is **per-process** (shared by every
+        ovphysx instance in the process), so set it consistently before attaching.
+
+        When one logical environment is assembled from SEVERAL clone calls (e.g. an IsaacLab
+        ClonePlan cloning one source row at a time: first ``/env0/Robot`` to every environment,
+        then ``/env0/Object``), pass ``env_ids`` so objects that share an environment share an
+        environment id -- with ``env_ids=None`` each call numbers its copies afresh, so
+        ``/env1/Robot`` and ``/env1/Object`` cloned by different calls would land on different
+        ids and never collide with each other::
+
+            env_ids = [0, 1]  # same ids in every call -> same logical environments
+            physx.clone("/env0/Robot",  ["/env1/Robot",  "/env2/Robot"],  transforms_r, env_ids)
+            physx.clone("/env0/Object", ["/env1/Object", "/env2/Object"], transforms_o, env_ids)
 
         Args:
             source_path: USD path of the source prim hierarchy to clone (e.g., "/World/env0")
             target_paths: List of USD paths for the cloned hierarchies (e.g., ["/World/env1", "/World/env2"])
             parent_transforms: Optional list of (px, py, pz, qx, qy, qz, qw) transforms
-                for each target's parent Xform prim.  Position followed by quaternion
-                rotation (imaginary-first, matching tensor API convention).
+                giving the world pose of each copy's parent.  Position followed by
+                quaternion rotation (imaginary-first, matching tensor API convention).
                 Identity rotation = (0, 0, 0, 1).  Must have the same length as
-                target_paths.  When provided, newly-created parent prims are placed at
-                the given transform.  Pass None to use identity for all parents.
+                target_paths.  Each cloned body keeps its pose relative to the source's
+                parent, so a copy's world pose is transform * inverse(source_parent) *
+                source_body -- for a source authored at the origin this places each body
+                exactly at the transform.  Pass None to co-locate every copy on the source.
+            env_ids: Optional logical environment id per target (list of int, same length
+                as target_paths, each 0 <= id < 0x00FFFFFF -- PhysX supports at most
+                1<<24 environments and the runtime id is env_ids[i] + 1).  Stable across calls: the
+                same id always maps to the same runtime environment, so clones from
+                different calls that share an id collide with each other and stay
+                isolated from every other environment (engages under GPU dynamics + GPU
+                broadphase, like all env-id filtering).  Pass None for automatic
+                per-call numbering (each call's copies get fresh ids past every
+                previous call's).
 
         Returns:
             op_index (can be used with wait_op() for explicit synchronization)
 
         Raises:
             ValueError: If source_path is empty, target_paths is empty, or any target path matches source path
-            RuntimeError: If clone fails to queue or if no USD scene is loaded
+            RuntimeError: If cloning fails, if no ovstage is attached,
+                if target_paths contains duplicate or overlapping entries, or if
+                clone() is called after the first :meth:`step`, :meth:`step_sync`,
+                or :meth:`step_n_sync`. The after-step rejection applies in CPU
+                and GPU mode. GPU warmup is also rejected; hard CPU mode treats
+                :meth:`warmup_gpu` as a no-op.
 
         Preconditions:
-            - A USD stage is loaded and source_path exists.
-            - target_paths are unique and do not already exist.
+            - An ovstage source is attached and source_path exists.
+            - target_paths are unique, disjoint, and do not already contain physics.
+            - No :meth:`step` / :meth:`step_sync` / :meth:`step_n_sync` has run
+              since the last :meth:`reset_stage` or :meth:`attach_ovstage` call,
+              in either CPU or GPU mode -- violating this raises
+              ``RuntimeError``. (Note: :meth:`update_from_ovstage` does *not*
+              reset this -- only a fresh :meth:`attach_ovstage` or
+              :meth:`reset_stage` does.)
+            - :meth:`warmup_gpu` has not been called since the same reset
+              points, but this precondition is currently GPU-only -- see above.
         Side effects:
-            - Creates cloned runtime prims that immediately participate in simulation.
+            - Creates live PhysX objects keyed by the target paths. No USD or runtime-stage
+              prims are authored.
         Ownership/Lifetime:
-            - Clones remain valid until reset/remove_usd.
+            - Clones remain valid until reset_stage().
         Threading:
             - Do not call concurrently on the same instance without external sync.
         Errors:
             - Raises ValueError for invalid inputs.
-            - Raises RuntimeError on enqueue or internal failure.
+            - Raises RuntimeError on internal failure, including
+              duplicate-target and after-step/after-warmup ordering violations.
         """
         self._check_valid()
         if not source_path:
@@ -1531,39 +1982,101 @@ class PhysX:
                     f"parent_transforms length ({len(parent_transforms)}) "
                     f"must match target_paths length ({num_targets})"
                 )
-            xform_flat = [v for t7 in parent_transforms for v in t7]
+            # Each entry must be exactly 7 finite numeric values (px,py,pz,qx,qy,qz,qw): the native
+            # path reads 7 per target, so a short entry would read past this buffer and a long one
+            # would shift every later target's pose. Validate before allocating the ctypes array.
+            xform_flat = []
+            for i, entry in enumerate(parent_transforms):
+                vals = list(entry)
+                if len(vals) != 7:
+                    raise ValueError(
+                        f"parent_transforms[{i}] must have exactly 7 values "
+                        f"(px,py,pz,qx,qy,qz,qw), got {len(vals)}"
+                    )
+                try:
+                    fvals = [float(v) for v in vals]
+                except (TypeError, ValueError) as exc:
+                    raise ValueError(f"parent_transforms[{i}] must contain numeric values") from exc
+                if not all(math.isfinite(fv) for fv in fvals):
+                    raise ValueError(f"parent_transforms[{i}] values must be finite")
+                xform_flat.extend(fvals)
             xform_array = (c_float * len(xform_flat))(*xform_flat)
             xform_ptr = ctypes.cast(xform_array, POINTER(c_float))
         else:
             xform_ptr = None
 
+        # Pack optional logical env ids into a uint32 array [N]. The native path reads N entries
+        # and maps each to a runtime environment id (env_ids[i] + 1), so validate length and range
+        # before allocating the ctypes array.
+        if env_ids is not None:
+            if len(env_ids) != num_targets:
+                raise ValueError(
+                    f"env_ids length ({len(env_ids)}) must match target_paths length ({num_targets})"
+                )
+            ids = []
+            for i, entry in enumerate(env_ids):
+                try:
+                    iv = operator.index(entry)
+                except TypeError as exc:
+                    raise ValueError(f"env_ids[{i}] must be an integer") from exc
+                if iv < 0 or iv >= 0x00FFFFFF:
+                    raise ValueError(f"env_ids[{i}] must be in [0, 0x00FFFFFF), got {iv}")
+                ids.append(iv)
+            env_id_array = (c_uint32 * num_targets)(*ids)
+            env_id_ptr = ctypes.cast(env_id_array, POINTER(c_uint32))
+        else:
+            env_id_ptr = None
+
         result = self._lib.ovphysx_clone(
             self._omni_physx_sdk_handle.value, ovphysx_string_t(source_path),
-            target_array, c_uint32(num_targets), xform_ptr
+            target_array, c_uint32(num_targets), xform_ptr, env_id_ptr
         )
         if result.status != ApiStatus.SUCCESS:
             error_msg = self._get_last_error()
-            raise RuntimeError(f"Failed to queue clone: {error_msg}")
+            raise RuntimeError(f"Failed to clone: {error_msg}")
 
         return result.op_index
 
-    def step(self, dt: float, sim_time: float) -> int:
+    def get_object_type(self, prim_path: str) -> int:
+        """Classify a USD prim by TensorAPI object type.
+
+        Unresolved paths return INVALID. Raises RuntimeError for invalid input
+        (empty path, embedded NUL byte) or if no stage is attached.
+
+        Returns:
+            ObjectType: One of RIGID_BODY, ARTICULATION, ARTICULATION_LINK,
+            ARTICULATION_ROOT_LINK, ARTICULATION_JOINT, or INVALID.
+        """
+        self._check_valid()
+        from .types import ObjectType
+        out = c_uint32(0)
+        result = _lib.ovphysx_get_object_type(
+            self._omni_physx_sdk_handle.value,
+            ovphysx_string_t(prim_path),
+            ctypes.byref(out),
+        )
+        if result.status != ApiStatus.SUCCESS:
+            raise RuntimeError(f"get_object_type failed: {self._get_last_error()}")
+        return ObjectType(out.value)
+
+    def step(self, dt: float) -> int:
         """Initiate physics step (async, returns op_index).
 
+        Simulation time is tracked internally; each step advances it by ``dt``.
+
         Args:
-            dt: Delta time for this step
-            sim_time: Current simulation time
+            dt: Delta time for this step [s].
 
         Returns:
             op_index (can be used with wait_op() for explicit synchronization)
 
         Examples:
             # Simple usage (stream-ordered)
-            physx.step(0.016, 0.0)
+            physx.step(0.016)
             binding.read(output)  # Automatically waits for step
 
             # Explicit wait (if accessing results outside stream)
-            op = physx.step(0.016, 0.0)
+            op = physx.step(0.016)
             physx.wait_op(op)  # Ensure step completes before external GPU work
 
         Preconditions:
@@ -1578,7 +2091,7 @@ class PhysX:
             - Raises RuntimeError on failure to enqueue.
         """
         self._check_valid()
-        result = self._lib.ovphysx_step(self._omni_physx_sdk_handle.value, c_float(dt), c_float(sim_time))
+        result = self._lib.ovphysx_step(self._omni_physx_sdk_handle.value, c_float(dt))
 
         if result.status != ApiStatus.SUCCESS:
             error_msg = self._get_last_error()
@@ -1586,42 +2099,42 @@ class PhysX:
 
         return result.op_index
 
-    def step_sync(self, dt: float, sim_time: float) -> None:
+    def step_sync(self, dt: float) -> None:
         """Step simulation and wait for completion in a single call.
 
         Faster than ``step()`` + ``wait_op()`` for performance-critical
         applications like RL training that always wait immediately.
+        Simulation time is tracked internally and advanced by ``dt``.
 
         Args:
             dt: Delta time [s] for this step.
-            sim_time: Current simulation time [s].
 
         Raises:
             RuntimeError: If the step or wait fails.
         """
         self._check_valid()
-        result = self._lib.ovphysx_step_sync(self._omni_physx_sdk_handle.value, c_float(dt), c_float(sim_time))
+        result = self._lib.ovphysx_step_sync(self._omni_physx_sdk_handle.value, c_float(dt))
         if result.status != ApiStatus.SUCCESS:
             error_msg = self._get_last_error()
             raise RuntimeError(f"step_sync failed: {error_msg}")
 
-    def step_n_sync(self, n: int, dt: float, current_time: float) -> None:
+    def step_n_sync(self, n: int, dt: float) -> None:
         """Run N steps in a single C call, saving (N-1) ctypes round-trips.
 
-        Equivalent to calling ``step_sync(dt, current_time + i*dt)`` for
-        i in ``[0, n)``, but with only one Python-to-C transition.
+        Equivalent to calling ``step_sync(dt)`` n times, but with only one
+        Python-to-C transition. Simulation time is tracked internally and
+        advanced by ``n * dt``.
 
         Args:
             n: Number of steps to run (must be >= 1).
             dt: Duration of each step [s].
-            current_time: Simulation time at the start of the first step [s].
 
         Raises:
             RuntimeError: If any step fails.
         """
         self._check_valid()
         result = self._lib.ovphysx_step_n_sync(
-            self._omni_physx_sdk_handle.value, c_int32(n), c_float(dt), c_float(current_time)
+            self._omni_physx_sdk_handle.value, c_int32(n), c_float(dt)
         )
         if result.status != ApiStatus.SUCCESS:
             error_msg = self._get_last_error()
@@ -1650,7 +2163,7 @@ class PhysX:
             error_msg = self._get_last_error()
             raise RuntimeError(f"update_articulations_kinematic failed: {error_msg}")
 
-    def wait_op(self, op_index: int, timeout_ns: int = None) -> None:
+    def wait_op(self, op_index: int, timeout_ns: int | None = None) -> None:
         """Wait for operation(s) to complete.
 
         Args:
@@ -1658,16 +2171,22 @@ class PhysX:
             timeout_ns: Timeout in nanoseconds (None = infinite, 0 = poll)
 
         Raises:
-            RuntimeError: If operation failed
+            RuntimeError: If an operation failed or op_index is invalid or already consumed.
             TimeoutError: If timeout expired (e.g., when polling with timeout_ns=0 and the operation is not ready)
 
         Preconditions:
             - op_index must be valid and not previously consumed.
         Side effects:
-            - Consumes op_index on successful wait.
+            - Consumes each completed or failed operation reached up to op_index.
+            - An operation still pending when the wait times out is not consumed.
+            - An index completed by internal stream synchronization may be
+              acknowledged once; that acknowledgement consumes it.
         Ownership/Lifetime:
-            - Error strings returned by the API are destroyed internally.
+            - Wait-result storage is released internally.
+            - Error strings are borrowed and remain valid until the next API
+              call on the same thread.
         Threading:
+            - Serialize calls on one PhysX instance externally.
             - Do not wait on the same op_index from multiple threads.
 
         Examples::
@@ -1719,9 +2238,10 @@ class PhysX:
         Preconditions:
             - Instance must be valid.
         Side effects:
-            - Blocks until all pending ops complete or timeout.
+            - Consumes each completed or failed operation reached before
+              success or timeout.
         Threading:
-            - Safe to call if no other thread is waiting on specific op_indices.
+            - Serialize all calls on the same instance externally.
         Errors:
             - Raises RuntimeError on failure.
             - Raises TimeoutError if timeout expired (e.g., when polling with timeout_ns=0 and operations are not ready).
@@ -1729,95 +2249,357 @@ class PhysX:
         # _check_valid() is called inside wait_op()
         self.wait_op(OP_INDEX_ALL, timeout_ns=timeout_ns)
 
-    def get_stage_id(self) -> int:
-        """Return the attached USD stage id.
-
-        Preconditions:
-            - Instance must be valid.
-        Side effects:
-            - None.
-        Ownership/Lifetime:
-            - Returned ID is owned by the runtime and may change after stage reload.
-        Threading:
-            - Do not call concurrently with stage mutation without external sync.
-        Errors:
-            - Returns -1 if the query fails.
-        """
-        self._check_valid()
-        sid = c_int64(0)
-        result = self._lib.ovphysx_get_stage_id(self._omni_physx_sdk_handle.value, byref(sid))
-
-        if result.status != ApiStatus.SUCCESS:
-            self._get_last_error()  # discard; caller sees -1
-            return -1
-
-        return int(sid.value)
-
-    def attach_stage(self, stage) -> None:
+    def attach_ovstage(self, stage, read_ordinal: int = 1) -> None:
         """Attach an ovstage Stage as the orchestration data surface.
 
-        Once attached, :meth:`step` pulls dirty control attributes from the
-        Stage (``drive:force``, ``drive:velocity``, ``drive:position_target``,
-        ``physics:mass``, ``physics:gravityMagnitude``, ``physics:gravityDirection``)
-        before integrating, and publishes ``xformOp:transform`` per rigid
-        body / articulation link to the Stage after integrating. The
-        application then writes data only to ovstage; tensor bindings remain
-        available as a perf escape hatch.
-
-        Interest registration (the dispatch table's input attributes) runs
-        eagerly during this call, but output-buffer registration for the
-        ``xformOp:transform`` pose channel is deferred to the first
-        :meth:`step` that observes a non-empty rigid-body set, since the
-        prim list is not known at attach time. Steps issued before any
-        rigid bodies exist on the Stage are no-ops on the publish side and
-        re-attempt initialisation on the next step.
+        Attach performs the initial scene parse at ``read_ordinal``. After the
+        producer authors later ovstage edits, call :meth:`update_from_ovstage`
+        with only those subsequent ordinals. Tensor bindings remain available
+        as a perf escape hatch.
 
         Args:
-            stage: An ``ovstage.Stage`` (with ``handle()`` returning the int
-                cast of ``ovstage_instance_t*``), or a raw int handle.
+            stage: An ``ovstage.Stage`` or a raw ``ovstage_instance_t*`` handle.
+            read_ordinal: Caller-owned sealed ovstage ordinal the initial scene
+                parse reads at. The application owns ordinal advancement; defaults
+                to 1 (read from the first sealed ordinal).
 
         Preconditions:
             - Instance must be valid.
             - Not already attached to a Stage.
-            - ``stage`` must outlive this attachment -- call
-              :meth:`detach_stage` (or destroy this instance) before
-              destroying the Stage.
+
+        Lifetime:
+            - ``stage`` must outlive the attachment because ovphysx captures and
+              dereferences its native pointer until detach. This wrapper holds a
+              reference to ``stage`` for the duration of the attachment, so a
+              Stage created inline (``attach_ovstage(ovstage.Stage(...))``) stays
+              alive; the reference is dropped by :meth:`detach_ovstage` and
+              :meth:`release`.
 
         Errors:
             - Raises ``RuntimeError`` if already attached, ``stage`` is null,
-              or interest registration fails. Instance remains unattached on
+              or the runtime attach fails. Instance remains unattached on
               failure.
         """
         self._check_valid()
         if stage is None:
-            raise RuntimeError("attach_stage: stage is None")
+            raise RuntimeError("attach_ovstage: stage is None")
         if hasattr(stage, "handle"):
             ptr = stage.handle()
+        elif hasattr(stage, "_inst"):
+            ptr = ctypes.cast(stage._inst, ctypes.c_void_p).value
         else:
             ptr = int(stage)
         if not ptr:
-            raise RuntimeError("attach_stage: stage handle is null")
-        result = self._lib.ovphysx_attach_stage(
-            self._omni_physx_sdk_handle.value, ctypes.c_void_p(ptr))
+            raise RuntimeError("attach_ovstage: stage handle is null")
+        result = self._lib.ovphysx_attach_ovstage(
+            self._omni_physx_sdk_handle.value, ctypes.c_void_p(ptr), c_uint64(read_ordinal))
         if result.status != ApiStatus.SUCCESS:
-            raise RuntimeError(f"Failed to attach stage: {self._get_last_error()}")
+            raise RuntimeError(f"Failed to attach ovstage: {self._get_last_error()}")
+        # Keep the Stage alive for the duration of the attachment: ovphysx retains
+        # its raw native pointer until detach. Without this, a caller that does not
+        # retain their own reference would have the Stage GC'd (its __del__ destroys
+        # the native instance) → use-after-free on later stage-dependent calls.
+        self._attached_ovstage = stage
 
-    def detach_stage(self) -> None:
+    def update_from_ovstage(self, from_ordinal: int, to_ordinal: int) -> None:
+        """Apply committed ovstage edits over the closed range ``[from_ordinal, to_ordinal]``.
+
+        The application that writes to ovstage owns the ordinal range and calls
+        this after sealing the writes. ``population.apply_usd_changes()`` waits
+        for population work but does not seal its ordinal; complete
+        ``stage.advance_write_floor(ordinal).wait()`` before this call. ovphysx
+        forwards the range (as ovstage's own ``ovstage_ordinal_range_t``) to the
+        runtime ovstage change feed and applies the resulting deltas to the
+        simulation.
+
+        The initial ``read_ordinal`` was already parsed by :meth:`attach_ovstage`.
+        Normal incremental updates pass only later ordinals; including the initial
+        ordinal replays the initial scene changes rather than only the new delta.
+        """
+        self._check_valid()
+        # The closed range must be ordered. Validate Python-side and raise ValueError
+        # (the conventional "bad argument" error for this wrapper surface) before the
+        # native call, which would otherwise surface the same precondition as a less
+        # specific RuntimeError.
+        if int(from_ordinal) > int(to_ordinal):
+            raise ValueError(
+                f"update_from_ovstage requires from_ordinal <= to_ordinal, got "
+                f"from_ordinal={from_ordinal}, to_ordinal={to_ordinal}"
+            )
+        # Build ovstage's range type. has_start_ordinal=True ⇒ closed [from, to].
+        rng = ovstage_ordinal_range_t(
+            start_ordinal=int(from_ordinal),
+            end_ordinal=int(to_ordinal),
+            has_start_ordinal=True,
+        )
+        result = self._lib.ovphysx_update_from_ovstage(
+            self._omni_physx_sdk_handle.value, rng)
+        if result.status != ApiStatus.SUCCESS:
+            raise RuntimeError(f"update_from_ovstage failed: {self._get_last_error()}")
+
+    def detach_ovstage(self) -> None:
         """Detach the currently-attached ovstage Stage.
 
-        Idempotent -- calling on an unattached instance is a no-op success.
+        Idempotent — calling on an unattached instance is a no-op success.
         Clears registered interests and output-buffer registrations, so a
-        subsequent :meth:`attach_stage` to a different Stage starts clean.
-        After detach, :meth:`step` reverts to unattached behaviour (tensor
-        bindings still work; no auto-pull from ovstage).
+        subsequent :meth:`attach_ovstage` to a different Stage starts clean.
+        After detach, stage-dependent calls such as :meth:`update_from_ovstage`
+        and :meth:`step` fail until a Stage is attached again. Detach invalidates
+        the stage's tensor and contact views. Do not read or write existing
+        bindings; destroy them and create replacements after calling
+        :meth:`attach_ovstage` and realizing a stage again.
 
         Errors:
             - Raises ``RuntimeError`` on internal failures.
         """
         self._check_valid()
-        result = self._lib.ovphysx_detach_stage(self._omni_physx_sdk_handle.value)
+        result = self._lib.ovphysx_detach_ovstage(self._omni_physx_sdk_handle.value)
         if result.status != ApiStatus.SUCCESS:
-            raise RuntimeError(f"Failed to detach stage: {self._get_last_error()}")
+            raise RuntimeError(f"Failed to detach ovstage: {self._get_last_error()}")
+        # Native no longer references the Stage — drop the keepalive.
+        self._attached_ovstage = None
+
+    def read(
+        self,
+        object_type: SimObjectType,
+        attribute_names: "list[str]",
+        scope: ObjectScope = ObjectScope.ALL,
+    ) -> "ReadResult":
+        """Read physics output (ADR-0007) for one simulated type as column groups.
+
+        Mirrors the ovstage read idiom: open a query over ``object_type`` in
+        ``scope``, read the named ``attribute_names`` (e.g. ``["position",
+        "orientation"]``), and return a context-managed :class:`ReadResult` whose
+        ``groups`` is one :class:`ReadGroup` per typed column. The read is
+        ovstage-native — attach an ovstage Stage first.
+
+        Use it as a context manager: the query + read session stay open for the
+        ``with`` block so each group's interned ``prim_list`` / ``attribute``
+        handles are valid — feed them straight into the ovstage write path
+        (``stage.query_from_path_list(group.prim_list)``) for a no-repack
+        write-back. Group ``tensors`` are NumPy copies, safe to keep past the block.
+
+        This is the *physics → app* direction. To avoid physics consuming its own
+        output, write the data back into ovstage at ordinals that are never passed
+        to :meth:`update_from_ovstage`. See the ovstage Integration guide for the
+        ordinal-coupling principle.
+
+        Args:
+            object_type: Simulated type to read (:class:`SimObjectType`).
+            attribute_names: Semantic attribute names to read.
+            scope: ``ALL`` or ``ACTIVE`` (active is single-frame).
+
+        Returns:
+            A :class:`ReadResult` context manager. ``result.groups`` is empty if no
+            objects matched.
+
+        Raises:
+            RuntimeError: on a native error (e.g. no ovstage attached).
+        """
+        import numpy as np
+
+        self._check_valid()
+        handle = self._omni_physx_sdk_handle.value
+
+        query = c_uint64(0)
+        result = self._lib.ovphysx_query(
+            handle, int(object_type), int(scope), ctypes.byref(query))
+        if result.status != ApiStatus.SUCCESS:
+            raise RuntimeError(f"read query failed: {self._get_last_error()}")
+        if query.value == 0:
+            # Defensive: ovphysx_query reports a nonzero handle on success (an empty
+            # match included) and surfaces 0 as an error above; treat a stray 0 as
+            # an empty result rather than dereferencing it.
+            return ReadResult(self, 0, 0, [], [])
+
+        # Build the ovx_string_or_token_t array from string names (token = 0).
+        names = list(attribute_names)
+        name_bytes = [n.encode("utf-8") for n in names]  # keepalive across the call
+        arr = (ovx_string_or_token_t * len(names))()
+        for i, b in enumerate(name_bytes):
+            arr[i].token = 0
+            arr[i].string = ovx_string_t(b, len(b))
+        read = self._open_read_session(handle, query, arr, len(names))
+        return self._iterate_read_groups(handle, query, read, object_type)
+
+    def read_tokens(
+        self,
+        object_type: SimObjectType,
+        attribute_tokens: "list[int]",
+        scope: ObjectScope = ObjectScope.ALL,
+    ) -> "ReadResult":
+        """Token form of :meth:`read`.
+
+        Identical to :meth:`read` but the attributes are given as interned attribute
+        tokens (e.g. those from :meth:`fetch_query_result`) instead of strings, so a
+        token can be fed straight back in with no token→string→name round-trip.
+        Both forms build the same ``ovx_string_or_token_t`` array under the hood.
+
+        Args:
+            object_type: Simulated type to read (:class:`SimObjectType`).
+            attribute_tokens: Interned attribute tokens to read.
+            scope: ``ALL`` or ``ACTIVE`` (active is single-frame).
+
+        Returns:
+            A :class:`ReadResult` context manager (see :meth:`read`).
+
+        Raises:
+            RuntimeError: on a native error (e.g. no ovstage attached).
+        """
+        self._check_valid()
+        handle = self._omni_physx_sdk_handle.value
+
+        query = c_uint64(0)
+        result = self._lib.ovphysx_query(
+            handle, int(object_type), int(scope), ctypes.byref(query))
+        if result.status != ApiStatus.SUCCESS:
+            raise RuntimeError(f"read query failed: {self._get_last_error()}")
+        if query.value == 0:
+            return ReadResult(self, 0, 0, [], [])
+
+        toks = [int(t) for t in attribute_tokens]
+        arr = (ovx_string_or_token_t * len(toks))()
+        for i, t in enumerate(toks):
+            arr[i].token = t
+            arr[i].string = ovx_string_t(None, 0)
+        read = self._open_read_session(handle, query, arr, len(toks))
+        return self._iterate_read_groups(handle, query, read, object_type)
+
+    def _open_read_session(self, handle, query, attrs_array, count) -> "object":
+        """Open a read session over an ovx_string_or_token_t array (shared by read / read_tokens)."""
+        read = c_uint64(0)
+        result = self._lib.ovphysx_read(handle, query, attrs_array, count, ctypes.byref(read))
+        if result.status != ApiStatus.SUCCESS:
+            self._lib.ovphysx_release_query(handle, query)
+            raise RuntimeError(f"read session open failed: {self._get_last_error()}")
+        return read
+
+    def _iterate_read_groups(self, handle, query, read, object_type) -> "ReadResult":
+        """Drain an open read session into a :class:`ReadResult` (shared by read / read_tokens).
+
+        The native group is ovstage's ``ovstage_read_group_t`` (no ovphysx mirror); the
+        queried ``object_type`` is stamped on each :class:`ReadGroup` from the caller's
+        request, since the native group does not carry it.
+        """
+        import numpy as np
+
+        groups: list[ReadGroup] = []
+        group_ids: list[int] = []
+        try:
+            while True:
+                # Producer-owned group: fetch hands back a borrowed ovstage_read_group_t*
+                # (valid until the group/read is released), not a caller-filled struct.
+                gp = ctypes.POINTER(ovstage_read_group_t)()
+                result = self._lib.ovphysx_fetch_read_next(handle, read, ctypes.byref(gp))
+                if result.status == ApiStatus.END_OF_ITERATION:
+                    break
+                if result.status != ApiStatus.SUCCESS:
+                    raise RuntimeError(f"read fetch failed: {self._get_last_error()}")
+                if not gp:
+                    break
+                g = gp.contents
+
+                tensors = [
+                    self._dltensor_to_numpy(g.data.tensors[i], np)
+                    for i in range(int(g.data.tensor_count))
+                ] if g.data.tensors else []
+                index_map = self._u32_array(g.data.index_map, int(g.data.count), np)
+                prim_index_map = self._u32_array(g.prims.index_map, int(g.prims.count), np)
+                groups.append(
+                    ReadGroup(
+                        attribute=int(g.attribute),
+                        object_type=SimObjectType(int(object_type)),
+                        ordinal=int(g.ordinal),
+                        is_array=bool(g.is_array),
+                        is_delete=bool(g.is_delete),
+                        semantic=int(g.semantic),
+                        prim_list=int(g.prims.list),
+                        prim_offset=int(g.prims.offset),
+                        prim_count=int(g.prims.count),
+                        prim_index_map=prim_index_map,
+                        index_map=index_map,
+                        layout_generation=int(g.meta.layout_generation),
+                        write_floor_ordinal=int(g.meta.attribute_write_floor_ordinal),
+                        tensors=tensors,
+                    )
+                )
+                # Keep each group alive (its prim_list / attribute handles stay
+                # valid) until the ReadResult is closed.
+                group_ids.append(int(g.read_group_id))
+        except Exception:
+            for gid in group_ids:
+                self._lib.ovphysx_release_group(handle, read, c_uint64(gid))
+            self._lib.ovphysx_release_read(handle, read)
+            self._lib.ovphysx_release_query(handle, query)
+            raise
+
+        return ReadResult(self, int(query.value), int(read.value), groups, group_ids)
+
+    def query_shared_dictionary(self, query: int) -> int:
+        """Return the opaque pointer to the shared ovstage path dictionary backing a query.
+
+        This is NOT an ovphysx-private dictionary: it is the process-shared ovstage
+        dictionary the attached Stage uses, the same one that interned the query's
+        tokens / prim lists, so a group's ``attribute`` token / ``prim_list`` handle
+        resolve through an ``ovstage.PathDictionary(stage)`` as well. Returns 0 if
+        unavailable.
+        """
+        self._check_valid()
+        out = c_void_p(0)
+        result = self._lib.ovphysx_query_shared_dictionary(
+            self._omni_physx_sdk_handle.value, c_uint64(query), ctypes.byref(out))
+        if result.status != ApiStatus.SUCCESS:
+            raise RuntimeError(f"query_shared_dictionary failed: {self._get_last_error()}")
+        return int(out.value or 0)
+
+    # DLPack dtype.code/bits -> (ctypes element type, numpy dtype). The output read
+    # produces float32 columns today; ints/uints are mapped for forward safety.
+    _DL_READ_CTYPE = {
+        (2, 32): (ctypes.c_float, "float32"),
+        (2, 64): (ctypes.c_double, "float64"),
+        (0, 32): (ctypes.c_int32, "int32"),
+        (1, 32): (ctypes.c_uint32, "uint32"),
+        (1, 8): (ctypes.c_uint8, "uint8"),
+    }
+
+    @staticmethod
+    def _u32_array(ptr, n, np) -> "object":
+        """Copy a borrowed uint32 array (index_map / prim_index_map) into NumPy, or None."""
+        if not ptr or n <= 0:
+            return None
+        buf = (ctypes.c_uint32 * n).from_address(ctypes.cast(ptr, ctypes.c_void_p).value)
+        return np.ctypeslib.as_array(buf).copy()
+
+    @classmethod
+    def _dltensor_to_numpy(cls, t, np) -> "object":
+        """Copy a borrowed read-column DLTensor into a NumPy array (lanes preserved).
+
+        ovstage columns carry tuple width in ``dtype.lanes`` of a flat
+        ``shape=[N]`` column; a lanes>1 column becomes a trailing NumPy dim
+        (e.g. a vec3 column -> ``[N, 3]``). The copy is safe past the borrow window.
+        """
+        # dtype.code is typed as DLDataTypeCode (a ctypes.c_uint8 *subclass*), so
+        # reading the field yields a ctypes instance rather than a plain int; int()
+        # on it would parse its raw byte through the buffer protocol (ValueError on
+        # b'\x02'). Read .value to get the integer. bits/lanes are plain c_uint8/
+        # c_uint16 and already come back as ints, but normalize them the same way.
+        def _ival(v):
+            return int(getattr(v, "value", v))
+
+        code, bits, lanes = _ival(t.dtype.code), _ival(t.dtype.bits), _ival(t.dtype.lanes) or 1
+        ctype, npdt = cls._DL_READ_CTYPE.get((code, bits), (ctypes.c_float, "float32"))
+        ndim = int(t.ndim)
+        shape = [int(t.shape[i]) for i in range(ndim)]
+        elems = 1
+        for d in shape:
+            elems *= d
+        total = elems * lanes
+        out_shape = shape + ([lanes] if lanes > 1 else [])
+        if total == 0 or not t.data:
+            return np.empty(out_shape, dtype=npdt)
+        addr = ctypes.cast(t.data, ctypes.c_void_p).value + int(t.byte_offset)
+        buf = (ctype * total).from_address(addr)
+        return np.ctypeslib.as_array(buf).reshape(out_shape).copy()
 
     def set_config(self, entry: ovphysx_config_entry_t) -> None:
         """Set a typed global config entry at runtime (process-global).
@@ -1971,6 +2753,16 @@ class PhysX:
             except Exception:
                 pass
             self._omni_physx_sdk_handle = None
+        # The native instance (which detaches any attached ovstage on destroy) is
+        # gone, so drop the Stage keepalive.
+        self._attached_ovstage = None
+        if getattr(self, "_lifecycle_acquired", False):
+            try:
+                _release_process_lifecycle()
+            except Exception:
+                pass
+            self._lifecycle_acquired = False
+        self._released = True
 
     # -------------------------------------------------------------------------
     # Tensor Binding API - efficient bulk access to physics simulation data
@@ -1994,7 +2786,8 @@ class PhysX:
         :param prim_paths: Explicit list of prim paths. Mutually exclusive with ``pattern``.
         :param tensor_type: Tensor type enum value (``TensorType.*``).
         :param raise_if_empty: If ``True``, raise ``ValueError`` when the
-            binding matches zero prims. The default keeps empty bindings valid.
+            binding matches zero prims. The default keeps empty bindings valid;
+            prefer it for optional or broad queries and check ``binding.count``.
         :returns: TensorBinding object for reading/writing tensor data.
         :raises ValueError: If neither ``pattern`` nor ``prim_paths`` is provided, both are,
             or ``raise_if_empty`` is true and no prims match.
@@ -2002,19 +2795,20 @@ class PhysX:
 
         Examples::
 
-            # Read all robot poses by pattern
+            # Read all robot poses by pattern. Optional broad queries can be empty.
             with sdk.create_tensor_binding(
                 "/World/robot*", tensor_type=TensorType.RIGID_BODY_POSE
             ) as binding:
-                poses = np.zeros(binding.shape, dtype=np.float32)
-                binding.read(poses)
+                if binding.count:
+                    poses = np.zeros(binding.shape, dtype=np.dtype(str(binding.dtype)))
+                    binding.read(poses)
 
             # Set joint position targets for specific articulations
             binding = physx.create_tensor_binding(
                 prim_paths=["/World/env1/robot", "/World/env2/robot"],
                 tensor_type=TensorType.ARTICULATION_DOF_POSITION_TARGET,
             )
-            targets = np.zeros(binding.shape, dtype=np.float32)
+            targets = np.zeros(binding.shape, dtype=np.dtype(str(binding.dtype)))
             binding.write(targets)
             binding.destroy()
 
@@ -2025,8 +2819,26 @@ class PhysX:
             - Allocates native binding resources.
         Ownership/Lifetime:
             - Returned TensorBinding owns native resources until ``destroy()``.
+            - Use ``binding.shape`` and ``binding.dtype`` (or ``binding.spec``)
+              to allocate compatible buffers; most tensor types are float32,
+              but some types such as ``RIGID_BODY_DISABLE_SIMULATION`` are not.
+            - The binding is tied to the current stage topology. Reuse it across
+              steps, but do not keep it across ``reset_stage()``, removing USD data
+              that contains bound objects, or replacing/reparsing the stage so
+              bound objects are destroyed and recreated. Destroy cached bindings
+              before those lifecycle operations when practical; if a stale
+              binding survives, only destroy it. Create replacements after the
+              operation completes.
+        Diagnostics:
+            - Pattern bindings can intentionally match zero prims, so expected
+              TensorAPI no-match diagnostics are quieted on the simulation view
+              used to create that binding.
+            - Explicit ``prim_paths`` keep the default error-level no-match
+              diagnostics for typo detection. To detect partial misses
+              programmatically, compare the requested ``prim_paths`` with the
+              resolved ``binding.prim_paths`` returned after creation.
         Threading:
-            - Do not call concurrently on the same instance without external sync.
+            - Do not create bindings concurrently with stage mutation.
         Errors:
             - Raises ``ValueError`` for invalid arguments.
             - Raises ``RuntimeError`` on creation failure.
@@ -2103,10 +2915,12 @@ class PhysX:
                 )
             raise ValueError(
                 f"create_tensor_binding matched 0 prims for {source}. "
-                "Check the path input and ensure USDs are loaded before creating the binding."
+                "Check the path input and ensure USDs are loaded before creating the binding. "
+                "For optional readback or broad scene queries, leave raise_if_empty=False "
+                "and check binding.count before reading."
             )
 
-        return TensorBinding(self, handle.value, tensor_type, ndim, shape)
+        return TensorBinding(self, handle.value, tensor_type, ndim, shape, spec.dtype)
 
     def warmup_gpu(self) -> None:
         """Explicitly initialize GPU buffers (synchronous).
@@ -2142,51 +2956,10 @@ class PhysX:
             raise RuntimeError(f"Failed to warmup GPU: {error_msg}")
 
     # ------------------------------------------------------------------
-    # PhysX object interop
-    # ------------------------------------------------------------------
-
-    def get_physx_ptr(self, prim_path: str, physx_type: int) -> int:
-        """Return a raw PhysX SDK pointer by USD prim path and type.
-
-        Args:
-            prim_path: Absolute USD prim path (e.g. ``"/World/physicsScene"``).
-            physx_type: One of the ``PhysXType`` enum members (or matching int)
-                indicating which PhysX object type to look up.
-
-        Returns:
-            Integer address of the PhysX pointer, or ``0`` if no object of
-            the requested type exists at the given path.
-
-        Raises:
-            RuntimeError: On infrastructure failures (no stage loaded,
-                invalid handle, etc.).  A missing object does **not** raise;
-                check for a ``0`` return value instead.
-
-        The returned address can be passed to C/C++ code that casts it to
-        the appropriate PhysX type (see ``ovphysx_physx_type_t``).
-
-        Pointer lifetime: valid until ``remove_usd()``, ``reset()``, or
-        instance destruction. ``step()`` and ``clone()`` do NOT invalidate
-        pointers. Do not call ``release()`` on returned pointers.
-
-        Thread safety: PhysX APIs on returned pointers must only be called
-        between simulation steps.
-        """
-        out = ctypes.c_void_p(0)
-        result = _lib.ovphysx_get_physx_ptr(
-            self._omni_physx_sdk_handle.value, prim_path.encode("utf-8"), ctypes.c_int(physx_type), ctypes.byref(out)
-        )
-        if result.status != ApiStatus.SUCCESS:
-            if result.status == ApiStatus.NOT_FOUND:
-                return 0
-            raise RuntimeError(f"Failed to get PhysX ptr: {self._get_last_error()}")
-        return out.value or 0
-
-    # ------------------------------------------------------------------
     # Contact report
     # ------------------------------------------------------------------
 
-    def get_contact_report(self, include_friction_anchors: bool = False) -> dict:
+    def get_contact_report(self, include_friction_anchors: bool = False, copy: bool = False) -> dict:
         """Get per-contact-point event data for the current simulation step.
 
         Use this for custom contact sensors, collision debugging, or per-point
@@ -2194,34 +2967,63 @@ class PhysX:
         matrices between sensor/filter body sets), use
         :meth:`create_contact_binding` instead.
 
+        .. warning::
+            With the default ``copy=False``, the returned ``headers``,
+            ``points``, and ``anchors`` are zero-copy ctypes views into
+            internal C buffers that are valid **only until the next**
+            :meth:`step` or :meth:`step_sync` call. After the next step the
+            buffers may be reallocated or reused; accessing the views is
+            undefined behavior (silent data corruption or segfault). Python
+            cannot detect this dangling state.
+
+            Pass ``copy=True`` to get Python-owned lists of dicts that are
+            safe to retain across simulation steps. This is the recommended
+            mode for RL training loops or any code that holds contact data
+            beyond a single step.
+
         Args:
             include_friction_anchors: If True, also return friction anchor data
                 (position and impulse at each friction anchor point).
+            copy: If True, return Python-owned ``list[dict]`` for each section
+                (safe to hold across steps). If False (default), return
+                zero-copy ctypes array views (faster but valid only until the
+                next ``step()``/``step_sync()``).
 
         Returns a dict with:
-            - ``headers``: ctypes array of :class:`ContactEventHeader` structs
-              describing each contact pair (actors, colliders, event type).
-              Length is ``num_headers``.
+            - ``headers``: contact event headers describing each contact pair
+              (actors, colliders, event type). When ``copy=False``, a ctypes
+              array of :class:`ContactEventHeader`; when ``copy=True``, a
+              ``list[dict]`` with the same field names. Length is
+              ``num_headers``.
             - ``num_headers`` (int): Number of contact event headers.
-            - ``points``: ctypes array of :class:`ContactPoint` structs with
-              per-contact-point data (position, normal, impulse, separation).
+            - ``points``: per-contact-point data (position, normal, impulse,
+              separation). When ``copy=False``, a ctypes array of
+              :class:`ContactPoint`; when ``copy=True``, a ``list[dict]``.
               Length is ``num_points``.
             - ``num_points`` (int): Number of contact point entries.
-            - ``anchors`` (only if ``include_friction_anchors=True``): ctypes
-              array of :class:`FrictionAnchor` structs. Length is ``num_anchors``.
+            - ``anchors`` (only if ``include_friction_anchors=True``): friction
+              anchor data. When ``copy=False``, a ctypes array of
+              :class:`FrictionAnchor`; when ``copy=True``, a ``list[dict]``.
+              Length is ``num_anchors``.
             - ``num_anchors`` (int, only if ``include_friction_anchors=True``):
               Number of friction anchors.
 
-        The arrays are zero-copy views into internal buffers, valid until the
-        next simulation step. Individual fields are accessible by index::
+        Example (safe across steps, ``copy=True``)::
+
+            report = physx.get_contact_report(copy=True)
+            physx.step_sync(dt)  # next step — report still valid
+            for h in report["headers"]:
+                print(h["actor0"], h["numContactData"])
+            for p in report["points"]:
+                print(p["position"], p["normal"], p["impulse"])
+
+        Example (zero-copy, ``copy=False``)::
 
             report = physx.get_contact_report()
             for i in range(report["num_headers"]):
                 h = report["headers"][i]
                 print(h.actor0, h.numContactData)
-            for j in range(report["num_points"]):
-                p = report["points"][j]
-                print(p.position[0], p.normal[1], p.impulse[2])
+            # Do NOT call step() before finishing access to report.
 
         Prims must have ``PhysxContactReportAPI`` applied in the USD stage
         for contacts to be reported.
@@ -2249,12 +3051,20 @@ class PhysX:
 
         nh = num_headers.value
         np_ = num_data.value
-        headers = (
-            ctypes.cast(headers_ptr, ctypes.POINTER(ContactEventHeader * nh)).contents
-            if nh
-            else (ContactEventHeader * 0)()
-        )
-        points = ctypes.cast(data_ptr, ctypes.POINTER(ContactPoint * np_)).contents if np_ else (ContactPoint * 0)()
+        if copy:
+            headers = [_contact_header_to_dict(headers_ptr[i]) for i in range(nh)]
+            points = [_contact_point_to_dict(data_ptr[i]) for i in range(np_)]
+        else:
+            headers = (
+                ctypes.cast(headers_ptr, ctypes.POINTER(ContactEventHeader * nh)).contents
+                if nh
+                else (ContactEventHeader * 0)()
+            )
+            points = (
+                ctypes.cast(data_ptr, ctypes.POINTER(ContactPoint * np_)).contents
+                if np_
+                else (ContactPoint * 0)()
+            )
         out = {
             "headers": headers,
             "num_headers": nh,
@@ -2263,11 +3073,14 @@ class PhysX:
         }
         if include_friction_anchors:
             na = num_anchors.value
-            anchors = (
-                ctypes.cast(anchors_ptr, ctypes.POINTER(FrictionAnchor * na)).contents
-                if na
-                else (FrictionAnchor * 0)()
-            )
+            if copy:
+                anchors = [_friction_anchor_to_dict(anchors_ptr[i]) for i in range(na)]
+            else:
+                anchors = (
+                    ctypes.cast(anchors_ptr, ctypes.POINTER(FrictionAnchor * na)).contents
+                    if na
+                    else (FrictionAnchor * 0)()
+                )
             out["anchors"] = anchors
             out["num_anchors"] = na
         return out
@@ -2377,9 +3190,13 @@ class PhysX:
             desc._geom.box.rotation[3] = float(rot[3])
         elif geometry_type == SceneQueryGeometryType.SHAPE:
             prim_path = kwargs["prim_path"]
-            encoded = prim_path.encode("utf-8") if isinstance(prim_path, str) else prim_path
-            desc._geom.shape.prim_path = encoded
-            desc._keepalive = encoded  # prevent GC before the C call uses the pointer
+            if isinstance(prim_path, (bytes, bytearray)):
+                prim_path = bytes(prim_path).decode("utf-8")
+            # ovphysx_string_t is length-prefixed so embedded NULs reach the C
+            # API, which rejects them instead of silently truncating the path.
+            path_str = ovphysx_string_t(prim_path)
+            desc._geom.shape.prim_path = path_str
+            desc._keepalive = path_str  # keeps path_str._bytes buffer alive
         else:
             raise ValueError(f"Unknown geometry type: {geometry_type}")
         return desc
@@ -2441,12 +3258,20 @@ class PhysX:
 
         Args:
             geometry_type: :class:`~ovphysx.SceneQueryGeometryType`.
-            mode: :class:`~ovphysx.SceneQueryMode` (ANY or ALL; CLOSEST treated as ALL).
+            mode: :class:`~ovphysx.SceneQueryMode` (ANY or ALL).
             **kwargs: Geometry parameters (same as :meth:`sweep`).
 
         Returns:
             List of hit dicts (same format as :meth:`raycast`).
+
+        Raises:
+            ValueError: If ``mode`` is :attr:`~ovphysx.SceneQueryMode.CLOSEST`.
         """
+        if mode == SceneQueryMode.CLOSEST:
+            raise ValueError(
+                "overlap() does not support SceneQueryMode.CLOSEST -- "
+                "CLOSEST has no meaning for overlap queries (no direction/ray). "
+                "Use SceneQueryMode.ALL or SceneQueryMode.ANY.")
         desc = self._make_geometry_desc(geometry_type, **kwargs)
         hits_ptr = ctypes.POINTER(ovphysx_scene_query_hit_t)()
         count = ctypes.c_uint32(0)
@@ -2584,6 +3409,41 @@ class PhysX:
 
         return ContactBinding(self, out_handle.value, sensor_count.value, filter_count.value, capacity.value)
 
+    def create_sdf_view(self, pattern: str, max_query_points: int) -> SdfView:
+        """Create an SDF shape view for evaluating signed distance fields.
+
+        Requires a GPU instance; CPU SDF evaluation is not yet implemented.
+
+        Args:
+            pattern: USD glob pattern matching SDF collision shapes.
+            max_query_points: Number of query points per shape per call. Query
+                tensors passed to ``SdfView.evaluate`` must have Q equal to this.
+
+        Returns:
+            SdfView with count == number of matched shapes.
+
+        Example::
+
+            sdf = physx.create_sdf_view("/World/Mesh*", max_query_points=64)
+            # Query/output tensors must be on the CUDA device (SDF eval is GPU-only).
+            pts = torch.zeros((sdf.count, 64, 3), dtype=torch.float32, device="cuda")
+            out = torch.zeros((sdf.count, 64, 4), dtype=torch.float32, device="cuda")
+            sdf.evaluate(pts, out)
+            sdf.destroy()
+        """
+        handle = self._omni_physx_sdk_handle.value
+        pat = ovphysx_string_t(pattern)
+        out_handle = c_uint64(0)
+        result = _lib.ovphysx_create_sdf_view(handle, pat, c_uint32(max_query_points), byref(out_handle))
+        if result.status != 0:
+            raise RuntimeError(f"create_sdf_view failed: {self._get_last_error()}")
+        count_out = c_uint32(0)
+        count_result = _lib.ovphysx_sdf_view_get_count(handle, out_handle.value, byref(count_out))
+        if count_result.status != 0:
+            _lib.ovphysx_destroy_sdf_view(handle, out_handle.value)
+            raise RuntimeError(f"create_sdf_view failed querying shape count: {self._get_last_error()}")
+        return SdfView(self, out_handle.value, count_out.value, max_query_points)
+
     def __enter__(self) -> "PhysX":
         """Enter context manager.
 
@@ -2599,13 +3459,20 @@ class PhysX:
     def __del__(self) -> None:
         """Destructor - ensures cleanup on garbage collection.
 
+        Emits a :class:`ResourceWarning` when the instance is garbage-collected
+        without an explicit :meth:`release` or context-manager exit. Mirrors
+        Python file-object semantics. The warning is silent by default
+        (filtered out unless ``python -W default::ResourceWarning`` or a test
+        suite captures it), so existing code is not surprised — but a missing
+        release is surfaced to anyone looking for resource hygiene issues.
+
         Note: During interpreter shutdown, calling C functions may fail.
         We check sys.is_finalizing() to avoid spurious errors.
         """
         try:
-            import sys
+            import sys as _sys  # local re-bind: module-level sys may be None at shutdown
 
-            if sys.is_finalizing():
+            if _sys.is_finalizing():
                 # Don't attempt cleanup during interpreter shutdown - the native
                 # library may already be unloaded or in an inconsistent state.
                 return
@@ -2614,6 +3481,22 @@ class PhysX:
             # "import of sys halted; None in sys.modules". In that case, do not
             # attempt cleanup.
             return
+        if not getattr(self, "_released", True):
+            try:
+                import warnings as _warnings  # local re-bind for shutdown safety
+
+                _warnings.warn(
+                    "PhysX instance garbage-collected without explicit "
+                    "release(). Use `with PhysX() as physx:` or call "
+                    "physx.release() to ensure deterministic cleanup. "
+                    "Implicit cleanup at interpreter shutdown is "
+                    "non-deterministic and may crash or hang if the "
+                    "Carbonite plugin runtime is torn down first.",
+                    ResourceWarning,
+                    stacklevel=2,
+                )
+            except Exception:
+                pass
         try:
             self.release()
         except Exception:

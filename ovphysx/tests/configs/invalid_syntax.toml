@@ -1,0 +1,9 @@
+# Test config - intentionally invalid TOML syntax
+
+[library
+name = "broken.library"  # Missing closing bracket above
+version = "1.0.0"
+
+[usd]
+required = true
+
