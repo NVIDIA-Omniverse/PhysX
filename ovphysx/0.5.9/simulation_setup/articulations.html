@@ -1,0 +1,970 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Articulations &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=93e13339"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=65e89d2a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'simulation_setup/articulations';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.5.9';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Deformable Bodies" href="deformables.html" />
+    <link rel="prev" title="Joints" href="joints.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Jul 21, 2026"/>
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovstage_integration.html">Ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="collision.html">Colliders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="joints.html">Joints</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/hello_world.html">Hello World: Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/cloning.html">Cloning: Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording: Capture Physics Internals to .ovd</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Articulations</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="articulations">
+<h1>Articulations<a class="headerlink" href="#articulations" title="Link to this heading">#</a></h1>
+<p>Articulations are the preferred way to simulate mechanisms made of jointed rigid
+bodies (robots, grippers, ragdolls). PhysX simulates them in <strong>reduced
+coordinates</strong> — the configuration is the root pose plus the joint angles rather
+than the world pose of each body — which gives zero joint error by design and
+handles large mass ratios between links well.</p>
+<p>You turn jointed rigid bodies into an articulation by applying
+<code class="docutils literal notranslate"><span class="pre">UsdPhysics.ArticulationRootAPI</span></code> (provided the joints are supported and loops are
+resolved). A rigid body that is part of an articulation is called a <strong>link</strong>.</p>
+<p>This page builds on <a class="reference internal" href="rigid_bodies.html"><span class="std std-doc">Rigid Bodies</span></a> and <a class="reference internal" href="joints.html"><span class="std std-doc">Joints</span></a>. For
+stability tuning, refer to the <a class="reference internal" href="../guides/articulation_stability.html"><span class="std std-doc">Articulation Stability</span></a>
+guide.</p>
+<section id="tree-structure">
+<h2>Tree Structure<a class="headerlink" href="#tree-structure" title="Link to this heading">#</a></h2>
+<p>An articulation must form a tree of links and joints. The tree is defined solely
+by the joints’ <code class="docutils literal notranslate"><span class="pre">body0</span></code>/<code class="docutils literal notranslate"><span class="pre">body1</span></code> relationships — the USD hierarchy has no effect on
+the articulation structure (only on parsing, see below), so you may organize
+prims however you like.</p>
+<p><img alt="Articulation examples: a ragdoll and a robotic arm" src="../_images/articulation_examples.png" /></p>
+<blockquote>
+<div><p>Because the algorithm works in reduced coordinates, <strong>setting poses and
+velocities on non-root links is not supported</strong> and triggers a warning. Read
+link poses/velocities through the <code class="docutils literal notranslate"><span class="pre">ARTICULATION_LINK_*</span></code> tensor types instead.</p>
+</div></blockquote>
+</section>
+<section id="floating-vs-fixed-base">
+<h2>Floating vs Fixed Base<a class="headerlink" href="#floating-vs-fixed-base" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Floating-base</strong>: the root link (and the whole mechanism) can move freely in
+space — for example a ragdoll.</p></li>
+<li><p><strong>Fixed-base</strong>: the root link is fixed to the world frame — for example a robot
+arm bolted to the ground.</p></li>
+</ul>
+</section>
+<section id="articulation-root">
+<h2>Articulation Root<a class="headerlink" href="#articulation-root" title="Link to this heading">#</a></h2>
+<p>Where you apply <code class="docutils literal notranslate"><span class="pre">ArticulationRootAPI</span></code> determines the articulation:</p>
+<ul class="simple">
+<li><p><strong>Fixed-base</strong>: apply it to the fixed joint that connects the base to the
+world, or to an ancestor of that joint. The fixed joint’s frames are ignored;
+its purpose is to mark the root link.</p></li>
+<li><p><strong>Floating-base</strong>: apply it to the root rigid-body link, or to an ancestor of
+it.</p></li>
+</ul>
+<p>When the root is applied to an ancestor rather than a joint/link directly, the
+simulator determines the topology automatically: if any joint to the world is
+found the articulation is fixed-base (rooted at the world-connected body),
+otherwise it is floating-base (rooted at the link with minimal eccentricity).
+With automatic determination you cannot know the root beforehand, so applying
+poses/velocities to the root is only feasible after parsing.</p>
+<section id="fixed-base-example">
+<h3>Fixed-base example<a class="headerlink" href="#fixed-base-example" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">UsdGeom</span><span class="p">,</span> <span class="n">UsdPhysics</span><span class="p">,</span> <span class="n">Gf</span>
+
+<span class="c1"># Two links joined by a revolute joint.</span>
+<span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;/World/link0&quot;</span><span class="p">,</span> <span class="s2">&quot;/World/link1&quot;</span><span class="p">):</span>
+    <span class="n">prim</span> <span class="o">=</span> <span class="n">UsdGeom</span><span class="o">.</span><span class="n">Xform</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">()</span>
+    <span class="n">UsdPhysics</span><span class="o">.</span><span class="n">RigidBodyAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">prim</span><span class="p">)</span>
+    <span class="n">UsdPhysics</span><span class="o">.</span><span class="n">MassAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">prim</span><span class="p">)</span><span class="o">.</span><span class="n">CreateMassAttr</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+
+<span class="n">revolute</span> <span class="o">=</span> <span class="n">UsdPhysics</span><span class="o">.</span><span class="n">RevoluteJoint</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/revoluteJoint&quot;</span><span class="p">)</span>
+<span class="n">revolute</span><span class="o">.</span><span class="n">CreateAxisAttr</span><span class="p">(</span><span class="n">UsdPhysics</span><span class="o">.</span><span class="n">Tokens</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+<span class="n">revolute</span><span class="o">.</span><span class="n">CreateBody0Rel</span><span class="p">()</span><span class="o">.</span><span class="n">AddTarget</span><span class="p">(</span><span class="s2">&quot;/World/link0&quot;</span><span class="p">)</span>
+<span class="n">revolute</span><span class="o">.</span><span class="n">CreateBody1Rel</span><span class="p">()</span><span class="o">.</span><span class="n">AddTarget</span><span class="p">(</span><span class="s2">&quot;/World/link1&quot;</span><span class="p">)</span>
+
+<span class="c1"># Fixed joint to the world, marked as the articulation root -&gt; fixed-base.</span>
+<span class="n">fixed</span> <span class="o">=</span> <span class="n">UsdPhysics</span><span class="o">.</span><span class="n">FixedJoint</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/fixedJoint&quot;</span><span class="p">)</span>
+<span class="n">fixed</span><span class="o">.</span><span class="n">CreateBody0Rel</span><span class="p">()</span><span class="o">.</span><span class="n">AddTarget</span><span class="p">(</span><span class="s2">&quot;/World/link0&quot;</span><span class="p">)</span>
+<span class="n">UsdPhysics</span><span class="o">.</span><span class="n">ArticulationRootAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">fixed</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>For a floating-base articulation, apply <code class="docutils literal notranslate"><span class="pre">ArticulationRootAPI</span></code> directly to the
+root link instead; initial pose and velocity may be set on the root link only.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">links_chain_sample.usda</span></code> scene used by <a class="reference internal" href="../tutorials/hello_world.html"><span class="std std-doc">Hello World</span></a>
+and <a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings</span></a> is a ready articulation to
+experiment with.</p>
+</section>
+</section>
+<section id="joint-state-initial-position-and-velocity">
+<h2>Joint State (Initial Position and Velocity)<a class="headerlink" href="#joint-state-initial-position-and-velocity" title="Link to this heading">#</a></h2>
+<p>Each degree of freedom of an articulation joint has position and velocity. Author
+initial values with the codeless <code class="docutils literal notranslate"><span class="pre">PhysicsJointStateAPI</span></code> (multiple-apply, instance
+name = axis token). Without it, joints start at zero.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sdf</span>
+
+<span class="n">joint_prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysicsJointStateAPI&quot;</span><span class="p">,</span> <span class="s2">&quot;angular&quot;</span><span class="p">)</span>
+<span class="n">joint_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;state:angular:physics:position&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">45.0</span><span class="p">)</span>
+<span class="n">joint_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;state:angular:physics:velocity&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">180.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>At runtime, read and write joint state in bulk through the
+<code class="docutils literal notranslate"><span class="pre">ARTICULATION_DOF_POSITION</span></code> / <code class="docutils literal notranslate"><span class="pre">ARTICULATION_DOF_VELOCITY</span></code> tensor types (and root
+state through <code class="docutils literal notranslate"><span class="pre">ARTICULATION_ROOT_POSE</span></code> / <code class="docutils literal notranslate"><span class="pre">ARTICULATION_ROOT_VELOCITY</span></code>) — the
+preferred path for RL and control workloads. See
+<a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings</span></a>.</p>
+</section>
+<section id="articulation-joint-drive-and-performance-envelope">
+<h2>Articulation Joint Drive and Performance Envelope<a class="headerlink" href="#articulation-joint-drive-and-performance-envelope" title="Link to this heading">#</a></h2>
+<p>A drive (a PD controller, per axis) is added with <code class="docutils literal notranslate"><span class="pre">UsdPhysics.DriveAPI</span></code> exactly
+as for regular joints (refer to <a class="reference internal" href="joints.html#joint-drive"><span class="std std-ref">Joints</span></a>). Articulation joints
+additionally support a <strong>performance envelope</strong> that models actuator limits,
+applied per axis with the codeless <code class="docutils literal notranslate"><span class="pre">PhysxDrivePerformanceEnvelopeAPI</span></code>. It
+requires <code class="docutils literal notranslate"><span class="pre">DriveAPI</span></code> on the same axis because it uses the drive’s <code class="docutils literal notranslate"><span class="pre">maxForce</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sdf</span><span class="p">,</span> <span class="n">UsdPhysics</span>
+
+<span class="n">drive</span> <span class="o">=</span> <span class="n">UsdPhysics</span><span class="o">.</span><span class="n">DriveAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">joint_prim</span><span class="p">,</span> <span class="n">UsdPhysics</span><span class="o">.</span><span class="n">Tokens</span><span class="o">.</span><span class="n">angular</span><span class="p">)</span>
+<span class="n">drive</span><span class="o">.</span><span class="n">CreateMaxForceAttr</span><span class="p">()</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">100.0</span><span class="p">)</span>
+
+<span class="n">joint_prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxDrivePerformanceEnvelopeAPI&quot;</span><span class="p">,</span> <span class="s2">&quot;angular&quot;</span><span class="p">)</span>
+<span class="n">joint_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxDrivePerformanceEnvelope:angular:maxActuatorVelocity&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">180.0</span><span class="p">)</span>
+<span class="n">joint_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxDrivePerformanceEnvelope:angular:speedEffortGradient&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+<span class="n">joint_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxDrivePerformanceEnvelope:angular:velocityDependentResistance&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>PhysX enforces two constraints that define a feasible operating region in the
+(joint velocity, drive effort) plane:</p>
+<p>[ |driveEffort| \le maxEffort - velocityDependentResistance \cdot |jointVelocity| ]
+[ |jointVelocity| \le maxActuatorVelocity - speedEffortGradient \cdot |driveEffort| ]</p>
+<p>where <code class="docutils literal notranslate"><span class="pre">maxEffort</span></code> is the drive’s <code class="docutils literal notranslate"><span class="pre">maxForce</span></code>. <code class="docutils literal notranslate"><span class="pre">driveEffort</span></code> is the sum of the PD
+controller output and any user-defined joint effort. These drive-model parameters
+are also exposed at runtime through the <code class="docutils literal notranslate"><span class="pre">ARTICULATION_DOF_DRIVE_MODEL</span></code> tensor type.</p>
+<blockquote>
+<div><p>Distinguish <code class="docutils literal notranslate"><span class="pre">maxActuatorVelocity</span></code> (envelope; clamps drive effort) from
+<code class="docutils literal notranslate"><span class="pre">maxJointVelocity</span></code> on <code class="docutils literal notranslate"><span class="pre">PhysxJointAxisAPI</span></code> (below; clamps the joint velocity
+itself).</p>
+</div></blockquote>
+</section>
+<section id="articulation-joint-friction-and-armature">
+<h2>Articulation Joint Friction and Armature<a class="headerlink" href="#articulation-joint-friction-and-armature" title="Link to this heading">#</a></h2>
+<p>Per-axis friction, armature, and max joint velocity are set with the codeless
+<code class="docutils literal notranslate"><span class="pre">PhysxJointAxisAPI</span></code> (multiple-apply, instance name = axis token). The friction
+model combines Coulomb friction (<code class="docutils literal notranslate"><span class="pre">staticFrictionEffort</span></code>, <code class="docutils literal notranslate"><span class="pre">dynamicFrictionEffort</span></code>)
+with viscous friction (<code class="docutils literal notranslate"><span class="pre">viscousFrictionCoefficient</span></code>):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sdf</span>
+
+<span class="n">joint_prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxJointAxisAPI&quot;</span><span class="p">,</span> <span class="s2">&quot;angular&quot;</span><span class="p">)</span>
+<span class="n">joint_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxJointAxis:angular:staticFrictionEffort&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">5.0</span><span class="p">)</span>
+<span class="n">joint_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxJointAxis:angular:dynamicFrictionEffort&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)</span>
+<span class="n">joint_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxJointAxis:angular:viscousFrictionCoefficient&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">joint_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxJointAxis:angular:armature&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="n">joint_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxJointAxis:angular:maxJointVelocity&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">10.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Armature</strong> is an artificial inertia added to the joint-space inertia (as if
+from an actuator) and helps stabilize an articulation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">staticFrictionEffort</span></code> must be <code class="docutils literal notranslate"><span class="pre">&gt;=</span> <span class="pre">dynamicFrictionEffort</span></code>.</p></li>
+<li><p>These parameters apply only to joints that are part of an articulation.</p></li>
+</ul>
+<p>Armature, joint friction, stiffness/damping, and limits are all also available in
+bulk at runtime through the <code class="docutils literal notranslate"><span class="pre">ARTICULATION_DOF_ARMATURE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ARTICULATION_DOF_FRICTION_PROPERTIES</span></code>, <code class="docutils literal notranslate"><span class="pre">ARTICULATION_DOF_STIFFNESS</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ARTICULATION_DOF_DAMPING</span></code>, and <code class="docutils literal notranslate"><span class="pre">ARTICULATION_DOF_LIMIT</span></code> tensor types.</p>
+</section>
+<section id="closed-loops">
+<h2>Closed Loops<a class="headerlink" href="#closed-loops" title="Link to this heading">#</a></h2>
+<p>Articulation joints alone cannot form a closed loop (e.g. A-B, B-C, and C-A). To
+close a loop, mark the loop-closing joint as <strong>excluded</strong> from the articulation
+so it is simulated as a regular joint:</p>
+<p><img alt="Articulation closed loop" src="../_images/closed_loops_sketch.png" /></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fixed_joint</span><span class="o">.</span><span class="n">CreateExcludeFromArticulationAttr</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Excluding a joint is also how you connect two articulations to each other (for
+example a swappable manipulator on an arm). Loops are harder for the solver — if
+you hit instability, lower the timestep and refer to the
+<a class="reference internal" href="../guides/articulation_stability.html"><span class="std std-doc">Articulation Stability</span></a> guide.</p>
+</section>
+<section id="mimic-joints">
+<h2>Mimic Joints<a class="headerlink" href="#mimic-joints" title="Link to this heading">#</a></h2>
+<p>Mimic joints couple the positions of two degrees of freedom of the same
+articulation with a linear relationship, <code class="docutils literal notranslate"><span class="pre">q_A</span> <span class="pre">+</span> <span class="pre">G</span> <span class="pre">*</span> <span class="pre">q_B</span> <span class="pre">+</span> <span class="pre">gamma</span> <span class="pre">=</span> <span class="pre">0</span></code> (gear ratio
+<code class="docutils literal notranslate"><span class="pre">G</span></code>, offset <code class="docutils literal notranslate"><span class="pre">gamma</span></code>). They implement gear and rack-and-pinion behavior specialized
+for articulations, with native GPU acceleration (prefer them over the CPU-only
+<a class="reference internal" href="joints.html#meta-joints"><span class="std std-ref">meta joints</span></a>). Mimic joints support only revolute joints
+with limits applied.</p>
+<p>Apply the codeless <code class="docutils literal notranslate"><span class="pre">PhysxMimicJointAPI</span></code> (multiple-apply, instance name = axis) to
+the driven joint and target the reference joint. Mimic joints support
+<strong>compliance</strong> (a spring-damper through natural frequency and damping ratio) to avoid
+instability when a mimic constraint competes with a stiff drive or hard contact —
+for example a gripper finger passively actuated through a mimic joint. A useful
+tuning metric is the product of timestep and natural frequency: start near 1 and
+increase the natural frequency until motion is no longer sluggish, keeping the
+damping ratio at or slightly above 1.</p>
+</section>
+<section id="tendons">
+<h2>Tendons<a class="headerlink" href="#tendons" title="Link to this heading">#</a></h2>
+<p>Tendons create constraints within an articulation. There are two kinds:</p>
+<ul class="simple">
+<li><p><strong>Fixed tendons</strong> couple joint positions: the tendon length is a weighted sum
+(per-joint gear ratios) of coupled joint positions, driven toward a rest length
+with stiffness/damping, and optionally kept within a range by a limit
+stiffness. The referenced joints must follow the articulation topology. Author
+with the codeless <code class="docutils literal notranslate"><span class="pre">PhysxTendonAxisRootAPI</span></code> / <code class="docutils literal notranslate"><span class="pre">PhysxTendonAxisAPI</span></code> on the joints.</p></li>
+<li><p><strong>Spatial tendons</strong> create line-of-sight distance constraints between links
+(modeling cables, hydraulic actuators, or artificial muscles). A tendon is a
+chain of attachments — a <strong>root</strong> (carries the spring-damper parameters), any
+number of <strong>regular</strong> attachments (route the tendon, exert no force), and
+<strong>leaf</strong> attachments (enforce the distance constraint). Author with the codeless
+<code class="docutils literal notranslate"><span class="pre">PhysxTendonAttachmentRootAPI</span></code> / <code class="docutils literal notranslate"><span class="pre">PhysxTendonAttachmentAPI</span></code> /
+<code class="docutils literal notranslate"><span class="pre">PhysxTendonAttachmentLeafAPI</span></code>.</p></li>
+</ul>
+<p>Tendon properties (stiffness, damping, limit stiffness, limits, rest
+length/offset) are exposed at runtime through the fixed- and spatial-tendon
+tensor types — refer to <a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings</span></a>.</p>
+</section>
+<section id="dynamics-queries">
+<h2>Dynamics Queries<a class="headerlink" href="#dynamics-queries" title="Link to this heading">#</a></h2>
+<p>For control algorithms, ovphysx exposes read-only articulation dynamics through
+tensor bindings: the <code class="docutils literal notranslate"><span class="pre">ARTICULATION_JACOBIAN</span></code>, <code class="docutils literal notranslate"><span class="pre">ARTICULATION_MASS_MATRIX</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE</span></code>, <code class="docutils literal notranslate"><span class="pre">ARTICULATION_GRAVITY_FORCE</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">ARTICULATION_LINK_INCOMING_JOINT_FORCE</span></code> tensor types (plus
+<code class="docutils literal notranslate"><span class="pre">ARTICULATION_CENTROIDAL_MOMENTUM</span></code> for floating-base articulations). See
+<a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings</span></a>.</p>
+</section>
+<section id="limitations-and-differences">
+<h2>Limitations and Differences<a class="headerlink" href="#limitations-and-differences" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Each link has a single inbound joint; loops must be broken as above.</p></li>
+<li><p>Not all USD joint types are supported (refer to the table in <a class="reference internal" href="joints.html"><span class="std std-doc">Joints</span></a>).</p></li>
+<li><p>Spherical articulation joints have <strong>pyramidal</strong> swing limits, not elliptical
+cones; distance limits (<code class="docutils literal notranslate"><span class="pre">distance</span></code> token) are unsupported.</p></li>
+<li><p>An articulation joint supports a single linear DOF or up to three angular DOFs
+— consider this when using a D6 joint in an articulation.</p></li>
+<li><p>Articulation joint limits are hard constraints (no <code class="docutils literal notranslate"><span class="pre">PhysxLimitAPI</span></code> stiffness/
+damping/restitution unless the joint is excluded from the articulation).</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">breakForce</span></code>/<code class="docutils literal notranslate"><span class="pre">breakTorque</span></code> attributes are ignored; articulation joints
+cannot be removed at runtime, and cannot gain limits after the stage is
+attached (initialize with unreachable limits if you may need them later).</p></li>
+<li><p>Articulation joints cannot be instanced.</p></li>
+<li><p>For a one-to-one relationship between USD and PhysX joint parameters (limits,
+drive targets) when using the tensor API, set up articulations so their USD and
+PhysX topologies are identical.</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="joints.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Joints</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="deformables.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Deformable Bodies</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tree-structure">Tree Structure</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#floating-vs-fixed-base">Floating vs Fixed Base</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulation-root">Articulation Root</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed-base-example">Fixed-base example</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#joint-state-initial-position-and-velocity">Joint State (Initial Position and Velocity)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulation-joint-drive-and-performance-envelope">Articulation Joint Drive and Performance Envelope</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulation-joint-friction-and-armature">Articulation Joint Friction and Armature</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#closed-loops">Closed Loops</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mimic-joints">Mimic Joints</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tendons">Tendons</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dynamics-queries">Dynamics Queries</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limitations-and-differences">Limitations and Differences</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 21, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

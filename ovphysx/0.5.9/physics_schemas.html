@@ -1,0 +1,893 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Physics Schemas &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="_static/modal-table.js"></script>
+    <script src="_static/documentation_options.js?v=93e13339"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=65e89d2a"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'physics_schemas';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.5.9';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quickstart" href="tutorials/quickstart.html" />
+    <link rel="prev" title="Particles" href="simulation_setup/particles.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Jul 21, 2026"/>
+  
+    
+    <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="ovstage_integration.html">Ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/collision.html">Colliders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Physics Schemas</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/hello_world.html">Hello World: Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/cloning.html">Cloning: Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording: Capture Physics Internals to .ovd</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Physics Schemas</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="physics-schemas">
+<h1>Physics Schemas<a class="headerlink" href="#physics-schemas" title="Link to this heading">#</a></h1>
+<p>Physics behavior in a USD scene is described by <strong>schemas</strong>: typed sets of
+attributes and relationships applied to prims. ovphysx loads and simulates scenes
+authored with these schemas. This page explains the schema layers ovphysx
+understands and how to make the PhysX-specific ones available when you author
+with a stock <code class="docutils literal notranslate"><span class="pre">usd-core</span></code>.</p>
+<section id="schema-layers">
+<h2>Schema Layers<a class="headerlink" href="#schema-layers" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>USD Physics Schema (<code class="docutils literal notranslate"><span class="pre">UsdPhysics</span></code>)</strong> — the standard OpenUSD schema for
+annotating assets with physics: <code class="docutils literal notranslate"><span class="pre">PhysicsScene</span></code>, <code class="docutils literal notranslate"><span class="pre">PhysicsRigidBodyAPI</span></code>,
+<code class="docutils literal notranslate"><span class="pre">PhysicsCollisionAPI</span></code>, <code class="docutils literal notranslate"><span class="pre">PhysicsMassAPI</span></code>, <code class="docutils literal notranslate"><span class="pre">PhysicsMaterialAPI</span></code>, the joint types,
+and articulation APIs. It ships with stock <code class="docutils literal notranslate"><span class="pre">usd-core</span></code> and has typed Python
+bindings, for example <code class="docutils literal notranslate"><span class="pre">UsdPhysics.RigidBodyAPI.Apply(prim)</span></code>. Refer to the
+<a class="reference external" href="https://openusd.org/release/api/usd_physics_page_front.html">OpenUSD UsdPhysics reference</a>.</p></li>
+<li><p><strong>PhysX Schema (<code class="docutils literal notranslate"><span class="pre">Physx*</span></code>, codeless)</strong> — extends <code class="docutils literal notranslate"><span class="pre">UsdPhysics</span></code> with PhysX-specific
+functionality and tuning: <code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code> (solver, GPU settings),
+<code class="docutils literal notranslate"><span class="pre">PhysxRigidBodyAPI</span></code> (CCD, sleep, stabilization), <code class="docutils literal notranslate"><span class="pre">PhysxCollisionAPI</span></code> (contact
+and rest offsets), <code class="docutils literal notranslate"><span class="pre">PhysxForceAPI</span></code>, joint extensions such as
+<code class="docutils literal notranslate"><span class="pre">PhysxJointAxisAPI</span></code> (refer to
+<a class="reference internal" href="simulation_setup/joints.html#physx-joint-schema"><span class="std std-ref">Joints</span></a>), deformable extensions
+(refer to <a class="reference internal" href="simulation_setup/deformables.html"><span class="std std-doc">Deformables</span></a>), and more. ovphysx ships
+this schema as codeless artifacts (<code class="docutils literal notranslate"><span class="pre">plugInfo.json</span></code> plus <code class="docutils literal notranslate"><span class="pre">generatedSchema.usda</span></code>,
+no compiled library).</p></li>
+<li><p><strong>Omni Physics Deformable Schema (codeless)</strong> — extends <code class="docutils literal notranslate"><span class="pre">UsdPhysics</span></code> with
+deformable bodies (<code class="docutils literal notranslate"><span class="pre">OmniPhysicsDeformableBodyAPI</span></code> and friends). Refer to
+<a class="reference internal" href="simulation_setup/deformables.html"><span class="std std-doc">Deformables</span></a>.</p></li>
+</ul>
+<p>The complete attribute set for each schema — types, defaults, and allowed values
+— is authoritative in the schema definitions themselves and is rendered in the
+<a class="reference external" href="https://docs.omniverse.nvidia.com/kit/docs/omni_physics/latest/index.html">Omni Physics documentation</a>
+and the <a class="reference external" href="https://openusd.org/release/api/usd_physics_page_front.html">OpenUSD UsdPhysics reference</a>.
+This guide describes intent, not full attribute definitions, so the two do not
+drift.</p>
+</section>
+<section id="how-ovphysx-ships-the-physx-schemas">
+<h2>How ovphysx Ships the PhysX Schemas<a class="headerlink" href="#how-ovphysx-ships-the-physx-schemas" title="Link to this heading">#</a></h2>
+<p>ovphysx exposes the PhysX USD schemas as <strong>codeless</strong> artifacts: a
+<code class="docutils literal notranslate"><span class="pre">plugInfo.json</span></code> (<code class="docutils literal notranslate"><span class="pre">Type:</span> <span class="pre">resource</span></code>) plus a <code class="docutils literal notranslate"><span class="pre">generatedSchema.usda</span></code> per module, with
+no compiled library. Codeless schemas carry no typed helper class — there is no
+<code class="docutils literal notranslate"><span class="pre">PhysxSchema.PhysxRigidBodyAPI</span></code> binding. You apply them by identifier and author
+their attributes generically.</p>
+<p>Because they are codeless, the core <code class="docutils literal notranslate"><span class="pre">UsdPhysics</span></code> typed APIs (rigid body,
+collider, mass, scene) work out of the box with stock <code class="docutils literal notranslate"><span class="pre">usd-core</span></code>, while
+<code class="docutils literal notranslate"><span class="pre">Physx*</span></code> attributes require registering the codeless schemas first.</p>
+</section>
+<section id="making-schemas-available">
+<h2>Making Schemas Available<a class="headerlink" href="#making-schemas-available" title="Link to this heading">#</a></h2>
+<p>There are two registration paths, depending on which USD runtime is in play.</p>
+<section id="ovphysx-s-bundled-usd-runtime">
+<h3>ovphysx’s bundled USD runtime<a class="headerlink" href="#ovphysx-s-bundled-usd-runtime" title="Link to this heading">#</a></h3>
+<p>When you run the simulator, ovphysx uses its bundled OV namespaced USD runtime.
+Importing <code class="docutils literal notranslate"><span class="pre">ovphysx</span></code> automatically calls <code class="docutils literal notranslate"><span class="pre">register_schema_paths()</span></code>, which appends
+ovphysx’s schema plugin path to <code class="docutils literal notranslate"><span class="pre">OV_PXR_PLUGINPATH_2511</span></code> before the first USD
+stage open. In a process that mixes ovphysx with another USD-aware subsystem
+(for example ovrtx), call <code class="docutils literal notranslate"><span class="pre">register_schema_paths()</span></code> (and the peer subsystem’s
+equivalent) explicitly before the first stage open so USD’s schema registry sees
+every plugin root. See the USD coexistence notes in the
+<a class="reference internal" href="ovphysx_overview.html"><span class="std std-doc">Overview</span></a>.</p>
+</section>
+<section id="authoring-with-a-stock-usd-core">
+<h3>Authoring with a stock <code class="docutils literal notranslate"><span class="pre">usd-core</span></code><a class="headerlink" href="#authoring-with-a-stock-usd-core" title="Link to this heading">#</a></h3>
+<p>The codeless PhysX USD schemas shipped in ovphysx can be registered with any USD
+runtime — including stock <code class="docutils literal notranslate"><span class="pre">usd-core</span></code> from PyPI — without starting the simulator.
+This is useful for offline authoring, validation, and non-interactive tooling:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Plug</span><span class="p">,</span> <span class="n">Tf</span><span class="p">,</span> <span class="n">Usd</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="c1"># Stock usd-core has no wheel for some platforms (e.g. linux-aarch64). The</span>
+    <span class="c1"># codeless schemas still ship in the wheel; there is simply no stock USD</span>
+    <span class="c1"># runtime to register them into here, so skip rather than fail.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;usd-core is not available on this platform; skipping codeless schema demo.&quot;</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ovphysx version:&quot;</span><span class="p">,</span> <span class="n">ovphysx</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+
+    <span class="c1"># Discover the codeless PhysX USD schema packages bundled with ovphysx.</span>
+    <span class="c1"># Each path is a resources/ directory holding a codeless plugInfo.json</span>
+    <span class="c1"># (Type=resource) and generatedSchema.usda -- no compiled library.</span>
+    <span class="n">schema_paths</span> <span class="o">=</span> <span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_paths</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Codeless schema packages:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">schema_paths</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  &quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+
+    <span class="c1"># Register them with the stock usd-core runtime.</span>
+    <span class="n">registry</span> <span class="o">=</span> <span class="n">Plug</span><span class="o">.</span><span class="n">Registry</span><span class="p">()</span>
+    <span class="n">registered</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">schema_paths</span><span class="p">:</span>
+        <span class="n">registered</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">registry</span><span class="o">.</span><span class="n">RegisterPlugins</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)))</span>
+    <span class="n">registered_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">registered</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Registered USD plugins:&quot;</span><span class="p">,</span> <span class="n">registered_names</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="s2">&quot;physxSchema&quot;</span> <span class="ow">in</span> <span class="n">registered_names</span><span class="p">,</span> <span class="n">registered_names</span>
+    <span class="k">assert</span> <span class="s2">&quot;omniUsdPhysicsDeformableSchema&quot;</span> <span class="ow">in</span> <span class="n">registered_names</span><span class="p">,</span> <span class="n">registered_names</span>
+
+    <span class="c1"># Codeless schemas carry no compiled C++/Python bindings, so apply API</span>
+    <span class="c1"># schemas by their schema identifier and query with the generic USD API.</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">Usd</span><span class="o">.</span><span class="n">Stage</span><span class="o">.</span><span class="n">CreateInMemory</span><span class="p">()</span>
+    <span class="n">prim</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">DefinePrim</span><span class="p">(</span><span class="s2">&quot;/World/Box&quot;</span><span class="p">,</span> <span class="s2">&quot;Cube&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxRigidBodyAPI&quot;</span><span class="p">),</span> <span class="s2">&quot;failed to apply PhysxRigidBodyAPI&quot;</span>
+    <span class="k">assert</span> <span class="n">prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxCollisionAPI&quot;</span><span class="p">),</span> <span class="s2">&quot;failed to apply PhysxCollisionAPI&quot;</span>
+
+    <span class="n">rigid_body_type</span> <span class="o">=</span> <span class="n">Tf</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">FindByName</span><span class="p">(</span><span class="s2">&quot;PhysxSchemaPhysxRigidBodyAPI&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">rigid_body_type</span> <span class="o">!=</span> <span class="n">Tf</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">Unknown</span><span class="p">,</span> <span class="s2">&quot;PhysxRigidBodyAPI not in schema registry&quot;</span>
+    <span class="k">assert</span> <span class="n">prim</span><span class="o">.</span><span class="n">HasAPI</span><span class="p">(</span><span class="n">rigid_body_type</span><span class="p">),</span> <span class="s2">&quot;prim is missing PhysxRigidBodyAPI after apply&quot;</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Applied API schemas:&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">prim</span><span class="o">.</span><span class="n">GetAppliedSchemas</span><span class="p">()))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Codeless PhysX schema registration succeeded.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>After registration, apply the PhysX APIs by identifier and set attributes with
+USD’s generic attribute API:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sdf</span>
+
+<span class="n">prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxRigidBodyAPI&quot;</span><span class="p">)</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxRigidBody:disableGravity&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Bool</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">codeless_schema_paths()</span></code> returns the per-module <code class="docutils literal notranslate"><span class="pre">resources</span></code> directories, and
+<code class="docutils literal notranslate"><span class="pre">codeless_schema_root()</span></code> returns the directory that holds them. Both are
+pure-Python and never trigger native loading, so they are safe to use in an
+authoring-only process.</p>
+</section>
+</section>
+<section id="authoring-routes">
+<h2>Authoring Routes<a class="headerlink" href="#authoring-routes" title="Link to this heading">#</a></h2>
+<p>The same physics content can be authored two ways; both produce a <code class="docutils literal notranslate"><span class="pre">.usda</span></code>/<code class="docutils literal notranslate"><span class="pre">.usd</span></code>
+file that ovphysx loads identically.</p>
+<ul>
+<li><p><strong>Hand-authored <code class="docutils literal notranslate"><span class="pre">.usda</span></code> text.</strong> Apply schemas through the <code class="docutils literal notranslate"><span class="pre">apiSchemas</span></code>
+metadata list and set attributes directly. No Python or schema registration
+needed to write the file:</p>
+<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="k k-Tokens">def</span><span class="w"> </span>Cube<span class="w"> </span><span class="s">&quot;box&quot;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;PhysicsRigidBodyAPI&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;PhysxRigidBodyAPI&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;PhysicsCollisionAPI&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="na">physxRigidBody:disableGravity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Python with a USD runtime.</strong> Use typed <code class="docutils literal notranslate"><span class="pre">UsdPhysics</span></code> bindings for core
+schemas and the codeless <code class="docutils literal notranslate"><span class="pre">ApplyAPI</span></code> pattern above for <code class="docutils literal notranslate"><span class="pre">Physx*</span></code> schemas.</p></li>
+</ul>
+<blockquote>
+<div><p><strong>Common pitfall.</strong> Using a typed <code class="docutils literal notranslate"><span class="pre">PhysxSchema.*</span></code> class instead of the codeless
+<code class="docutils literal notranslate"><span class="pre">prim.ApplyAPI(&quot;Physx...&quot;)</span></code> pattern silently no-ops with stock <code class="docutils literal notranslate"><span class="pre">usd-core</span></code> —
+there is no compiled <code class="docutils literal notranslate"><span class="pre">PhysxSchema</span></code> module. Register the codeless schemas and
+apply by identifier.</p>
+</div></blockquote>
+<p>For a hands-on authoring walkthrough (scene, ground, rigid body, colliders), see
+the bundled <code class="docutils literal notranslate"><span class="pre">ovphysx-usd-authoring</span></code> skill and the per-topic pages under
+Simulation Setup.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="simulation_setup/particles.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Particles</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="tutorials/quickstart.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Quickstart</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#schema-layers">Schema Layers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-ovphysx-ships-the-physx-schemas">How ovphysx Ships the PhysX Schemas</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#making-schemas-available">Making Schemas Available</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ovphysx-s-bundled-usd-runtime">ovphysx’s bundled USD runtime</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#authoring-with-a-stock-usd-core">Authoring with a stock <code class="docutils literal notranslate"><span class="pre">usd-core</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#authoring-routes">Authoring Routes</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 21, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

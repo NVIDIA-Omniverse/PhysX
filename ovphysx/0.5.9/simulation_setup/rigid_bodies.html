@@ -1,0 +1,1013 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Rigid Bodies &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=93e13339"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=65e89d2a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'simulation_setup/rigid_bodies';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.5.9';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Joints" href="joints.html" />
+    <link rel="prev" title="Colliders" href="collision.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Jul 21, 2026"/>
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovstage_integration.html">Ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="collision.html">Colliders</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/hello_world.html">Hello World: Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/cloning.html">Cloning: Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording: Capture Physics Internals to .ovd</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Rigid Bodies</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="rigid-bodies">
+<h1>Rigid Bodies<a class="headerlink" href="#rigid-bodies" title="Link to this heading">#</a></h1>
+<p>Rigid bodies represent objects that move without deforming. Their motion comes
+from gravity, collisions, and constraints such as <a class="reference internal" href="joints.html"><span class="std std-doc">joints</span></a>; a
+kinematic body is instead driven directly by the application. A rigid body is a
+<code class="docutils literal notranslate"><span class="pre">UsdGeom.Xformable</span></code> prim with <code class="docutils literal notranslate"><span class="pre">PhysicsRigidBodyAPI</span></code> applied — that prim and all
+of its descendants move as one rigid object.</p>
+<p>This page covers authoring rigid bodies for scenes that ovphysx loads and how
+their state is read and written at runtime. It builds on
+<a class="reference internal" href="physics_scene.html"><span class="std std-doc">Physics Scene</span></a> and <a class="reference internal" href="collision.html"><span class="std std-doc">Colliders</span></a>.</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">resetXformStack</span></code> on a rigid body prim decouples its transform from its parent.
+This is what makes it valid to nest a rigid body inside another prim’s
+hierarchy (otherwise disallowed).</p>
+</div></blockquote>
+<section id="create-a-rigid-body">
+<h2>Create a Rigid Body<a class="headerlink" href="#create-a-rigid-body" title="Link to this heading">#</a></h2>
+<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="k k-Tokens">def</span><span class="w"> </span>Xform<span class="w"> </span><span class="s">&quot;rigidBody&quot;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;PhysicsRigidBodyAPI&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="p">{</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">UsdGeom</span><span class="p">,</span> <span class="n">UsdPhysics</span>
+
+<span class="n">xform</span> <span class="o">=</span> <span class="n">UsdGeom</span><span class="o">.</span><span class="n">Xform</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/rigidBody&quot;</span><span class="p">)</span>
+<span class="n">UsdPhysics</span><span class="o">.</span><span class="n">RigidBodyAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">xform</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>On its own, a rigid body has no collider and will fall through everything. Add a
+collider (below) so it interacts.</p>
+</section>
+<section id="dynamic-vs-kinematic">
+<h2>Dynamic vs Kinematic<a class="headerlink" href="#dynamic-vs-kinematic" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Dynamic</strong> (default): the simulator moves the body under gravity,
+collisions, and constraints. The simulation <strong>writes</strong> its transform.</p></li>
+<li><p><strong>Kinematic</strong>: the application controls the motion; the body pushes dynamic
+bodies but ignores forces. The simulation <strong>reads</strong> its transform.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">rb</span> <span class="o">=</span> <span class="n">UsdPhysics</span><span class="o">.</span><span class="n">RigidBodyAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">prim</span><span class="p">)</span>
+<span class="n">rb</span><span class="o">.</span><span class="n">CreateKinematicEnabledAttr</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># kinematic; omit or False for dynamic</span>
+</pre></div>
+</div>
+<p>At runtime you drive a kinematic body’s target pose through
+<a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">tensor bindings</span></a> or, in C/C++, through the raw
+PhysX pointer (<code class="docutils literal notranslate"><span class="pre">PxRigidDynamic::setKinematicTarget()</span></code>) — refer to the
+<a class="reference internal" href="../tutorials/physx_interop.html"><span class="std std-doc">PhysX Interop</span></a> tutorial.</p>
+</section>
+<section id="disabling-a-rigid-body">
+<h2>Disabling a Rigid Body<a class="headerlink" href="#disabling-a-rigid-body" title="Link to this heading">#</a></h2>
+<p>Setting <code class="docutils literal notranslate"><span class="pre">physics:rigidBodyEnabled</span> <span class="pre">=</span> <span class="pre">False</span></code> cancels the <code class="docutils literal notranslate"><span class="pre">PhysicsRigidBodyAPI</span></code>:
+colliders in the sub-tree then behave as static geometry. For purely static
+geometry, prefer simply not applying <code class="docutils literal notranslate"><span class="pre">PhysicsRigidBodyAPI</span></code> at all.</p>
+</section>
+<section id="rigid-body-frames">
+<h2>Rigid Body Frames<a class="headerlink" href="#rigid-body-frames" title="Link to this heading">#</a></h2>
+<p>A rigid body has several associated coordinate frames: the rigid-body-prim frame,
+the center-of-mass frame (relative to the prim frame), and the collider and joint
+local frames (also relative to the prim frame). Internally the simulation
+proceeds with reference to the center of mass; the prim frame gives joints and
+colliders a common reference, so the center of mass can be moved without
+disturbing joint or collider frames.</p>
+</section>
+<section id="colliders-on-a-rigid-body">
+<h2>Colliders on a Rigid Body<a class="headerlink" href="#colliders-on-a-rigid-body" title="Link to this heading">#</a></h2>
+<p>A collider is associated with a rigid body by hierarchy: put the collider on the
+body prim, or on a child prim that is posed relative to the body. The tested
+idiom is a body <code class="docutils literal notranslate"><span class="pre">Xform</span></code> with a child geometry prim carrying
+<code class="docutils literal notranslate"><span class="pre">PhysicsCollisionAPI</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">UsdGeom</span><span class="p">,</span> <span class="n">UsdPhysics</span>
+
+<span class="n">body</span> <span class="o">=</span> <span class="n">UsdGeom</span><span class="o">.</span><span class="n">Xform</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/rigidBody&quot;</span><span class="p">)</span>
+<span class="n">UsdPhysics</span><span class="o">.</span><span class="n">RigidBodyAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">())</span>
+
+<span class="n">cube</span> <span class="o">=</span> <span class="n">UsdGeom</span><span class="o">.</span><span class="n">Cube</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/rigidBody/cube&quot;</span><span class="p">)</span>
+<span class="n">UsdPhysics</span><span class="o">.</span><span class="n">CollisionAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">cube</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Add several child geometry prims for a compound (multi-collider) body; all move
+rigidly with the body. Collider types and mesh approximations are covered in
+<a class="reference internal" href="collision.html"><span class="std std-doc">Colliders</span></a>.</p>
+</section>
+<section id="materials">
+<h2>Materials<a class="headerlink" href="#materials" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">UsdPhysics.MaterialAPI</span></code> on a material prim defines static friction, dynamic
+friction, restitution, and density. Bind it to a body (or collider) with
+<code class="docutils literal notranslate"><span class="pre">UsdShade.MaterialBindingAPI</span></code> using the <code class="docutils literal notranslate"><span class="pre">&quot;physics&quot;</span></code> purpose; physics materials
+follow the same binding-strength resolution as render materials.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">UsdShade</span><span class="p">,</span> <span class="n">UsdPhysics</span>
+
+<span class="n">material</span> <span class="o">=</span> <span class="n">UsdShade</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/material&quot;</span><span class="p">)</span>
+<span class="n">mat_api</span> <span class="o">=</span> <span class="n">UsdPhysics</span><span class="o">.</span><span class="n">MaterialAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">material</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">())</span>
+<span class="n">mat_api</span><span class="o">.</span><span class="n">CreateStaticFrictionAttr</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">mat_api</span><span class="o">.</span><span class="n">CreateDynamicFrictionAttr</span><span class="p">(</span><span class="mf">0.9</span><span class="p">)</span>
+<span class="n">mat_api</span><span class="o">.</span><span class="n">CreateRestitutionAttr</span><span class="p">(</span><span class="mf">0.8</span><span class="p">)</span>
+
+<span class="n">binding</span> <span class="o">=</span> <span class="n">UsdShade</span><span class="o">.</span><span class="n">MaterialBindingAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">())</span>
+<span class="n">binding</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">material</span><span class="p">,</span> <span class="n">UsdShade</span><span class="o">.</span><span class="n">Tokens</span><span class="o">.</span><span class="n">weakerThanDescendants</span><span class="p">,</span> <span class="s2">&quot;physics&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="combine-modes">
+<h3>Combine Modes<a class="headerlink" href="#combine-modes" title="Link to this heading">#</a></h3>
+<p>A contact involves two materials. The effective friction and restitution are
+computed from both using each material’s <strong>combine mode</strong>, set on the codeless
+<code class="docutils literal notranslate"><span class="pre">PhysxMaterialAPI</span></code> (<code class="docutils literal notranslate"><span class="pre">physxMaterial:frictionCombineMode</span></code>,
+<code class="docutils literal notranslate"><span class="pre">physxMaterial:restitutionCombineMode</span></code>). Supported modes: <code class="docutils literal notranslate"><span class="pre">average</span></code> (default),
+<code class="docutils literal notranslate"><span class="pre">min</span></code>, <code class="docutils literal notranslate"><span class="pre">multiply</span></code>, <code class="docutils literal notranslate"><span class="pre">max</span></code>. When the two materials disagree, the “largest” mode
+wins in the order <code class="docutils literal notranslate"><span class="pre">average</span> <span class="pre">&lt;</span> <span class="pre">min</span> <span class="pre">&lt;</span> <span class="pre">multiply</span> <span class="pre">&lt;</span> <span class="pre">max</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sdf</span>
+
+<span class="n">material_prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxMaterialAPI&quot;</span><span class="p">)</span>
+<span class="n">material_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxMaterial:frictionCombineMode&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Token</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="s2">&quot;min&quot;</span><span class="p">)</span>
+<span class="n">material_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxMaterial:restitutionCombineMode&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Token</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="s2">&quot;multiply&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="compliant-contacts">
+<h3>Compliant Contacts<a class="headerlink" href="#compliant-contacts" title="Link to this heading">#</a></h3>
+<p>As an alternative to restitution-based rigid contact, a material can be prepared
+for <strong>compliant contact</strong> whose normal force is an implicit spring governed by
+stiffness and damping. Set a non-zero <code class="docutils literal notranslate"><span class="pre">physxMaterial:compliantContactStiffness</span></code>
+(and optionally <code class="docutils literal notranslate"><span class="pre">physxMaterial:compliantContactDamping</span></code>). If both materials in a
+pair are compliant, the stiffness combine mode follows the restitution combine
+mode and the damping follows the damping combine mode. A material can also be
+prepared as an <em>acceleration</em> spring rather than a force spring.</p>
+<p>Shape friction and restitution can also be read/written in bulk at runtime through
+the <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_SHAPE_FRICTION_AND_RESTITUTION</span></code> tensor type — refer to the
+<a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings</span></a> reference.</p>
+</section>
+</section>
+<section id="mass-properties">
+<h2>Mass Properties<a class="headerlink" href="#mass-properties" title="Link to this heading">#</a></h2>
+<p>A rigid body’s mass distribution is defined by mass, center of mass, moment of
+inertia, and principal axes.</p>
+<section id="explicit">
+<h3>Explicit<a class="headerlink" href="#explicit" title="Link to this heading">#</a></h3>
+<p>Apply <code class="docutils literal notranslate"><span class="pre">UsdPhysics.MassAPI</span></code> and set the properties directly. No collider is
+required.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">UsdPhysics</span><span class="p">,</span> <span class="n">Gf</span>
+
+<span class="n">mass_api</span> <span class="o">=</span> <span class="n">UsdPhysics</span><span class="o">.</span><span class="n">MassAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">())</span>
+<span class="n">mass_api</span><span class="o">.</span><span class="n">CreateMassAttr</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)</span>
+<span class="n">mass_api</span><span class="o">.</span><span class="n">CreateDiagonalInertiaAttr</span><span class="p">(</span><span class="n">Gf</span><span class="o">.</span><span class="n">Vec3f</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">))</span>
+<span class="n">mass_api</span><span class="o">.</span><span class="n">CreateCenterOfMassAttr</span><span class="p">(</span><span class="n">Gf</span><span class="o">.</span><span class="n">Vec3f</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+<span class="n">mass_api</span><span class="o">.</span><span class="n">CreatePrincipalAxesAttr</span><span class="p">(</span><span class="n">Gf</span><span class="o">.</span><span class="n">Quatf</span><span class="p">(</span><span class="n">Gf</span><span class="o">.</span><span class="n">Rotation</span><span class="p">(</span><span class="n">Gf</span><span class="o">.</span><span class="n">Vec3d</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mf">90.0</span><span class="p">)</span><span class="o">.</span><span class="n">GetQuat</span><span class="p">()))</span>
+</pre></div>
+</div>
+</section>
+<section id="implicit-density-x-volume">
+<h3>Implicit (density x volume)<a class="headerlink" href="#implicit-density-x-volume" title="Link to this heading">#</a></h3>
+<p>With no mass set, the simulator infers mass from collider volume and density.
+Density can come from <code class="docutils literal notranslate"><span class="pre">MassAPI</span></code> or from a bound <code class="docutils literal notranslate"><span class="pre">MaterialAPI</span></code>. Combination
+follows <strong>inheritance</strong> (a child inherits an unset attribute from its parent) and
+<strong>precedence</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">MassAPI</span><span class="p">:</span><span class="n">mass</span> <span class="o">&gt;</span> <span class="n">MassAPI</span><span class="p">:</span><span class="n">density</span> <span class="o">&gt;</span> <span class="n">MaterialAPI</span><span class="p">:</span><span class="n">density</span> <span class="o">&gt;</span> <span class="n">default</span> <span class="n">density</span>
+</pre></div>
+</div>
+<p>The same precedence applies to center of mass and moment of inertia. The default
+density is 1000 kg/m^3 (water). If there is no collider and no mass, mass
+defaults to 1.0.</p>
+<blockquote>
+<div><p>When mass is not authored, it is not exposed as a plain USD attribute. To read
+the computed mass/inertia (and center of mass), use the <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_MASS</span></code>,
+<code class="docutils literal notranslate"><span class="pre">RIGID_BODY_INERTIA</span></code>, and <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_COM_POSE</span></code> tensor types — see
+<a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings</span></a>. Those types are also
+writable to override mass at runtime; the <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_INV_MASS</span></code> /
+<code class="docutils literal notranslate"><span class="pre">RIGID_BODY_INV_INERTIA</span></code> variants are read-only.</p>
+</div></blockquote>
+</section>
+</section>
+<section id="continuous-collision-detection">
+<h2>Continuous Collision Detection<a class="headerlink" href="#continuous-collision-detection" title="Link to this heading">#</a></h2>
+<p>Enable CCD when fast-moving or thin objects tunnel (miss contacts because
+simulation time advances in discrete steps). Two forms exist:</p>
+<ul class="simple">
+<li><p><strong>Sweep-based (linear) CCD</strong> — sweeps linear motion over the timestep to catch
+missed collisions. Ignores angular motion.</p></li>
+<li><p><strong>Speculative (angular) CCD</strong> — a cheaper, discrete approach that computes
+dynamic contact offsets from motion; catches fast angular motion and most
+linear tunneling, but can introduce ghost collisions under large linear
+motion.</p></li>
+</ul>
+<p>Both can be enabled together (<strong>hybrid CCD</strong>) for a best-of-both result.</p>
+<ul class="simple">
+<li><p>Sweep-based CCD requires the scene attribute plus the per-body attribute:</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sdf</span>
+
+<span class="n">scene_prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxSceneAPI&quot;</span><span class="p">)</span>
+<span class="n">scene_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxScene:enableCCD&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Bool</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">body_prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxRigidBodyAPI&quot;</span><span class="p">)</span>
+<span class="n">body_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxRigidBody:enableCCD&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Bool</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Speculative CCD needs only the per-body attribute
+<code class="docutils literal notranslate"><span class="pre">physxRigidBody:enableSpeculativeCCD</span></code>. Kinematic objects support speculative
+CCD only.</p></li>
+</ul>
+<blockquote>
+<div><p>Neither CCD mode works in Direct GPU API mode. Both go through the CPU
+pipeline and noticeably affect GPU-simulation performance.</p>
+</div></blockquote>
+</section>
+<section id="velocities">
+<h2>Velocities<a class="headerlink" href="#velocities" title="Link to this heading">#</a></h2>
+<p>Initial linear and angular velocity are authored on <code class="docutils literal notranslate"><span class="pre">PhysicsRigidBodyAPI</span></code>
+(<code class="docutils literal notranslate"><span class="pre">physics:velocity</span></code>, <code class="docutils literal notranslate"><span class="pre">physics:angularVelocity</span></code>), reported at the center of mass in
+the world frame. At runtime, read and write velocity in bulk through the
+<code class="docutils literal notranslate"><span class="pre">RIGID_BODY_VELOCITY</span></code> tensor type; <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_ACCELERATION</span></code> is read-only.</p>
+<blockquote>
+<div><p>A body that is part of an articulation only accepts authored velocities if it
+is the root link of a floating-base articulation; velocities on other
+articulation links are ignored (refer to <a class="reference internal" href="articulations.html"><span class="std std-doc">Articulations</span></a>).</p>
+</div></blockquote>
+</section>
+<section id="forces-and-torques">
+<h2>Forces and Torques<a class="headerlink" href="#forces-and-torques" title="Link to this heading">#</a></h2>
+<p>Apply forces and torques to a dynamic body with the codeless <code class="docutils literal notranslate"><span class="pre">PhysxForceAPI</span></code>.
+They act at the center of mass, in either the world frame or the prim’s local
+frame (<code class="docutils literal notranslate"><span class="pre">physxForce:worldFrameEnabled</span></code>), and can be applied as forces/torques or
+as accelerations (<code class="docutils literal notranslate"><span class="pre">physxForce:mode</span></code>).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sdf</span><span class="p">,</span> <span class="n">Gf</span>
+
+<span class="n">body_prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxForceAPI&quot;</span><span class="p">)</span>
+<span class="n">body_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxForce:mode&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Token</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="s2">&quot;force&quot;</span><span class="p">)</span>
+<span class="n">body_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxForce:worldFrameEnabled&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Bool</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">body_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxForce:force&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Vector3f</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">Gf</span><span class="o">.</span><span class="n">Vec3f</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="n">body_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxForce:torque&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Vector3f</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">Gf</span><span class="o">.</span><span class="n">Vec3f</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2000</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>By default an applied force lasts one step and is reset to zero; the
+<code class="docutils literal notranslate"><span class="pre">retainAccelerations</span></code> attribute of <code class="docutils literal notranslate"><span class="pre">PhysxRigidBodyAPI</span></code> keeps it applied until
+reset. For RL-style loops, prefer writing forces in bulk through the
+<strong>write-only</strong> <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_FORCE</span></code> (<code class="docutils literal notranslate"><span class="pre">[N,3]</span></code>, at COM) or <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_WRENCH</span></code>
+(<code class="docutils literal notranslate"><span class="pre">[N,9]</span></code>, force + torque + position) tensor types — see
+<a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings</span></a>.</p>
+</section>
+<section id="surface-velocity-conveyors">
+<h2>Surface Velocity (Conveyors)<a class="headerlink" href="#surface-velocity-conveyors" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">PhysxSurfaceVelocityAPI</span></code> (codeless) simulates conveyor-like behavior by
+injecting a surface linear/angular velocity, and applies to both kinematic and
+dynamic bodies. Changing a surface velocity does not wake bodies resting on it,
+so if you will change it from zero, disable sleeping on those bodies. A spline
+variant (<code class="docutils literal notranslate"><span class="pre">PhysxSplinesSurfaceVelocityAPI</span></code>) drives motion along a <code class="docutils literal notranslate"><span class="pre">BasisCurves</span></code>
+path.</p>
+</section>
+<section id="instancing">
+<h2>Instancing<a class="headerlink" href="#instancing" title="Link to this heading">#</a></h2>
+<p>USD supports two instancing mechanisms, both usable with rigid bodies (but not
+with articulation links):</p>
+<ul class="simple">
+<li><p><strong>Scenegraph instancing</strong> references shared <strong>collision geometry</strong> so many
+bodies reuse one collision archetype. Rigid-body parameters (mass, etc.) are
+not shared — set them per body. Shared collider attributes cannot be modified;
+create individual instances if you need per-body colliders.</p></li>
+<li><p><strong>Point instancing</strong> (<code class="docutils literal notranslate"><span class="pre">UsdGeom.PointInstancer</span></code>) instances the <strong>entire rigid
+body</strong> from a prototype. The prototype itself is not simulated; only the
+instances are. Poses and velocities are driven through the point instancer’s
+arrays (<code class="docutils literal notranslate"><span class="pre">positions</span></code>, <code class="docutils literal notranslate"><span class="pre">orientations</span></code>, <code class="docutils literal notranslate"><span class="pre">velocities</span></code>, <code class="docutils literal notranslate"><span class="pre">angularVelocities</span></code>), not
+through per-prim attributes. Point-instanced bodies cannot have joints unless
+you use <code class="docutils literal notranslate"><span class="pre">PhysxPhysicsJointInstancer</span></code>.</p></li>
+</ul>
+<p>Point-instancer instances are not exposed as rows in rigid-body tensor bindings;
+with the default empty-binding behavior, a binding that targets only the point
+instancer has count zero. Read simulated instance state through the <code class="docutils literal notranslate"><span class="pre">RIGID_BODY</span></code>
+object type in the ovstage <a class="reference internal" href="../ovstage_integration.html"><span class="std std-doc">output read</span></a> API. To
+control instances, author the point instancer arrays through ovstage and pass
+those control ordinals to <code class="docutils literal notranslate"><span class="pre">update_from_ovstage()</span></code>.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="collision.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Colliders</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="joints.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Joints</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#create-a-rigid-body">Create a Rigid Body</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dynamic-vs-kinematic">Dynamic vs Kinematic</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#disabling-a-rigid-body">Disabling a Rigid Body</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rigid-body-frames">Rigid Body Frames</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#colliders-on-a-rigid-body">Colliders on a Rigid Body</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#materials">Materials</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#combine-modes">Combine Modes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compliant-contacts">Compliant Contacts</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mass-properties">Mass Properties</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#explicit">Explicit</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#implicit-density-x-volume">Implicit (density x volume)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#continuous-collision-detection">Continuous Collision Detection</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#velocities">Velocities</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#forces-and-torques">Forces and Torques</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#surface-velocity-conveyors">Surface Velocity (Conveyors)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#instancing">Instancing</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 21, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1037 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Physics Scene and Simulation Configuration &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=93e13339"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=65e89d2a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'simulation_setup/physics_scene';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.5.9';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Colliders" href="collision.html" />
+    <link rel="prev" title="Ovstage Integration and Physics Output Read" href="../ovstage_integration.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Jul 21, 2026"/>
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovstage_integration.html">Ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="collision.html">Colliders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/hello_world.html">Hello World: Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/cloning.html">Cloning: Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording: Capture Physics Internals to .ovd</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Physics Scene and Simulation Configuration</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="physics-scene-and-simulation-configuration">
+<h1>Physics Scene and Simulation Configuration<a class="headerlink" href="#physics-scene-and-simulation-configuration" title="Link to this heading">#</a></h1>
+<p>Every stage that ovphysx simulates needs a <strong>physics scene</strong>: a <code class="docutils literal notranslate"><span class="pre">PhysicsScene</span></code>
+prim that defines gravity and the PhysX solver configuration. This page explains
+how to author the scene and configure global simulation behavior (solver,
+iteration counts, GPU buffers, sleeping, stabilization) for scenes that ovphysx
+loads and steps.</p>
+<p>This is the foundation the other Simulation Setup pages build on
+(<a class="reference internal" href="collision.html"><span class="std std-doc">Collision</span></a>, <a class="reference internal" href="rigid_bodies.html"><span class="std std-doc">Rigid Bodies</span></a>,
+<a class="reference internal" href="joints.html"><span class="std std-doc">Joints</span></a>, <a class="reference internal" href="articulations.html"><span class="std std-doc">Articulations</span></a>,
+<a class="reference internal" href="deformables.html"><span class="std std-doc">Deformables</span></a>, <a class="reference internal" href="particles.html"><span class="std std-doc">Particles</span></a>).</p>
+<section id="how-ovphysx-simulates-a-scene">
+<h2>How ovphysx Simulates a Scene<a class="headerlink" href="#how-ovphysx-simulates-a-scene" title="Link to this heading">#</a></h2>
+<p>ovphysx consumes <strong>pre-authored USD</strong> owned by the application through ovstage.
+Once a stage is attached, a step proceeds roughly as follows:</p>
+<ol class="arabic simple">
+<li><p>On <a class="reference internal" href="../ovphysx_overview.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">attach_ovstage()</span></code></span></a>, the USD stage is parsed and
+PhysX objects are created for the prims that carry physics schemas.</p></li>
+<li><p>Colliders that need cooking (convex hull, convex decomposition, SDF, triangle
+mesh) are cooked. Results are cached on disk so recomputation is usually
+avoided — refer to the cooked-collider cache (UJITSO) in the
+<a class="reference internal" href="../developer_guide.html"><span class="std std-doc">Developer Guide</span></a>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">step(dt)</span></code> advances the simulation by <code class="docutils literal notranslate"><span class="pre">dt</span></code>. <strong><code class="docutils literal notranslate"><span class="pre">step()</span></code> is asynchronous</strong>: it
+enqueues the step and returns an <code class="docutils literal notranslate"><span class="pre">op_index</span></code> immediately. Subsequent in-stream
+ovphysx calls (such as tensor <code class="docutils literal notranslate"><span class="pre">read()</span></code> / <code class="docutils literal notranslate"><span class="pre">write()</span></code>) automatically wait for it,
+but to consume results <strong>outside</strong> the ovphysx stream you must synchronize —
+<code class="docutils literal notranslate"><span class="pre">wait_op()</span></code> on the returned index (or <code class="docutils literal notranslate"><span class="pre">wait_all()</span></code>). <code class="docutils literal notranslate"><span class="pre">step_sync(dt)</span></code> is a
+convenience that steps and waits in one call (the typical choice for RL and
+control loops). See the <a class="reference internal" href="../developer_guide.html#execution-model"><span class="std std-ref">Execution Model</span></a>.</p></li>
+<li><p>Results are read back explicitly by the application — either with
+<a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">tensor bindings</span></a> or with the ovstage
+<a class="reference internal" href="../ovstage_integration.html"><span class="std std-doc">output read</span></a> API. Unlike Omni PhysX in Kit,
+<strong>ovphysx does not write simulation output back to the attached USD stage</strong>;
+the application owns writing state back to ovstage.</p></li>
+</ol>
+<p>The rest of this page is about authoring the <code class="docutils literal notranslate"><span class="pre">PhysicsScene</span></code> prim and the
+attributes that configure this pipeline.</p>
+</section>
+<section id="setting-up-a-usd-stage-and-a-physics-scene">
+<h2>Setting Up a USD Stage and a Physics Scene<a class="headerlink" href="#setting-up-a-usd-stage-and-a-physics-scene" title="Link to this heading">#</a></h2>
+<p>To simulate physics, a stage must have at least one <code class="docutils literal notranslate"><span class="pre">PhysicsScene</span></code> prim. The
+scene is authored with the core <code class="docutils literal notranslate"><span class="pre">UsdPhysics</span></code> schema (part of stock <code class="docutils literal notranslate"><span class="pre">usd-core</span></code>).
+PhysX-specific solver settings live on the codeless <code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code> schema (see
+<a class="reference internal" href="../physics_schemas.html"><span class="std std-doc">Physics Schemas</span></a>).</p>
+<section id="usda">
+<h3><code class="docutils literal notranslate"><span class="pre">.usda</span></code><a class="headerlink" href="#usda" title="Link to this heading">#</a></h3>
+<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="c1">#usda 1.0</span>
+<span class="p">(</span>
+<span class="w">    </span><span class="n n-Builtins">defaultPrim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;World&quot;</span>
+<span class="w">    </span>metersPerUnit<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span>
+<span class="w">    </span><span class="n n-Builtins">upAxis</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Z&quot;</span>
+<span class="w">    </span>kilogramsPerMass<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span>
+<span class="p">)</span>
+
+<span class="k k-Tokens">def</span><span class="w"> </span>Xform<span class="w"> </span><span class="s">&quot;World&quot;</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k k-Tokens">def</span><span class="w"> </span>PhysicsScene<span class="w"> </span><span class="s">&quot;physicsScene&quot;</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">vector3f</span><span class="w"> </span><span class="na">physics:gravityDirection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="m">-1</span><span class="p">)</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="na">physics:gravityMagnitude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">9.81</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="python">
+<h3>Python<a class="headerlink" href="#python" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Usd</span><span class="p">,</span> <span class="n">UsdGeom</span><span class="p">,</span> <span class="n">UsdPhysics</span><span class="p">,</span> <span class="n">Gf</span>
+
+<span class="n">stage</span> <span class="o">=</span> <span class="n">Usd</span><span class="o">.</span><span class="n">Stage</span><span class="o">.</span><span class="n">CreateNew</span><span class="p">(</span><span class="s2">&quot;scene.usda&quot;</span><span class="p">)</span>
+
+<span class="c1"># Units and up axis (see below).</span>
+<span class="n">UsdGeom</span><span class="o">.</span><span class="n">SetStageUpAxis</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">UsdGeom</span><span class="o">.</span><span class="n">Tokens</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+<span class="n">UsdGeom</span><span class="o">.</span><span class="n">SetStageMetersPerUnit</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="n">UsdPhysics</span><span class="o">.</span><span class="n">SetStageKilogramsPerUnit</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+<span class="n">world</span> <span class="o">=</span> <span class="n">UsdGeom</span><span class="o">.</span><span class="n">Xform</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World&quot;</span><span class="p">)</span>
+
+<span class="n">scene</span> <span class="o">=</span> <span class="n">UsdPhysics</span><span class="o">.</span><span class="n">Scene</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/physicsScene&quot;</span><span class="p">)</span>
+<span class="n">scene</span><span class="o">.</span><span class="n">CreateGravityDirectionAttr</span><span class="p">()</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">Gf</span><span class="o">.</span><span class="n">Vec3f</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">))</span>
+<span class="n">scene</span><span class="o">.</span><span class="n">CreateGravityMagnitudeAttr</span><span class="p">()</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">9.81</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For a complete, CI-tested minimal scene (physics scene + static ground + dynamic
+bodies), refer to the <code class="docutils literal notranslate"><span class="pre">simple_physics_scene.usda</span></code> reference used by
+<a class="reference internal" href="../tutorials/hello_world.html"><span class="std std-doc">Hello World</span></a>.</p>
+</section>
+</section>
+<section id="units-and-up-axis">
+<h2>Units and Up Axis<a class="headerlink" href="#units-and-up-axis" title="Link to this heading">#</a></h2>
+<p>USD supports scaling of units through layer metadata. For correct simulation
+results, the units and up axis of your stage must match your content.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">metersPerUnit</span></code> sets the length unit (<code class="docutils literal notranslate"><span class="pre">1</span></code> = meters). Keep all sizes,
+positions, and velocities in that unit.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upAxis</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;Y&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;Z&quot;</span></code>. Point <code class="docutils literal notranslate"><span class="pre">physics:gravityDirection</span></code> down the same
+axis (up axis <code class="docutils literal notranslate"><span class="pre">Z</span></code> -&gt; gravity <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0,</span> <span class="pre">-1)</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">kilogramsPerUnit</span></code> (set through <code class="docutils literal notranslate"><span class="pre">UsdPhysics.SetStageKilogramsPerUnit</span></code>) sets the
+mass unit.</p></li>
+<li><p>If no gravity is authored, ovphysx scales default and auto-computed values by
+the layer unit metadata. For example, at <code class="docutils literal notranslate"><span class="pre">metersPerUnit</span> <span class="pre">=</span> <span class="pre">0.01</span></code> (centimeter
+scale) the default gravity magnitude is <code class="docutils literal notranslate"><span class="pre">981.0</span> <span class="pre">cm/s^2</span></code>.</p></li>
+</ul>
+<blockquote>
+<div><p><strong>Angles are always in degrees.</strong> Every rotation-related physics parameter is
+in degrees, including drive stiffness (units of torque/degree for an angular
+drive).</p>
+</div></blockquote>
+<blockquote>
+<div><p><strong>Keep units consistent across all layers.</strong> Automatic reconciliation of unit
+scales between layers is not supported; author every layer and asset at the
+same scale.</p>
+</div></blockquote>
+</section>
+<section id="multiple-physics-scenes">
+<h2>Multiple Physics Scenes<a class="headerlink" href="#multiple-physics-scenes" title="Link to this heading">#</a></h2>
+<p>A stage may contain multiple <code class="docutils literal notranslate"><span class="pre">PhysicsScene</span></code> prims. <code class="docutils literal notranslate"><span class="pre">PhysicsRigidBodyAPI</span></code> and
+<code class="docutils literal notranslate"><span class="pre">PhysicsCollisionAPI</span></code> have a <code class="docutils literal notranslate"><span class="pre">physics:simulationOwner</span></code> relationship that assigns
+a body or collider to a specific scene. If it is not set, the first
+<code class="docutils literal notranslate"><span class="pre">PhysicsScene</span></code> found during traversal is used. Objects in separate physics
+scenes do not collide with each other.</p>
+<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="k k-Tokens">def</span><span class="w"> </span>PhysicsScene<span class="w"> </span><span class="s">&quot;physicsScene0&quot;</span>
+<span class="p">{</span>
+<span class="p">}</span>
+
+<span class="k k-Tokens">def</span><span class="w"> </span>PhysicsScene<span class="w"> </span><span class="s">&quot;physicsScene1&quot;</span>
+<span class="p">{</span>
+<span class="p">}</span>
+
+<span class="k k-Tokens">def</span><span class="w"> </span>Cube<span class="w"> </span><span class="s">&quot;cube0&quot;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;PhysicsRigidBodyAPI&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;PhysicsCollisionAPI&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">rel</span><span class="w"> </span><span class="na">physics:simulationOwner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nn">&lt;/physicsScene0&gt;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p><strong>ovphysx steps all scenes together.</strong> Multiple <code class="docutils literal notranslate"><span class="pre">PhysicsScene</span></code> prims in one
+stage become separate PhysX scenes, but they all advance together on each
+<code class="docutils literal notranslate"><span class="pre">step()</span></code>; per-scene stepping is not surfaced. For isolated stages or truly
+independent parallel sims, use separate subprocesses (refer to the threading and
+single-attached-stage notes in the <a class="reference internal" href="../developer_guide.html"><span class="std std-doc">Developer Guide</span></a>).</p>
+</div></blockquote>
+</section>
+<section id="physics-solver">
+<h2>Physics Solver<a class="headerlink" href="#physics-solver" title="Link to this heading">#</a></h2>
+<p>The solver iteratively resolves constraints (joints, contacts) to reach a
+physically plausible state without overlaps or disconnected joints. Two
+strategies are available, selected on <code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code>:</p>
+<ul class="simple">
+<li><p><strong>TGS</strong> (Temporal Gauss-Seidel, the default): converges faster; can overshoot
+(objects gaining excess velocity) in complex collision scenarios. TGS benefits
+from <code class="docutils literal notranslate"><span class="pre">physxScene:enableExternalForcesEveryIteration</span></code> and needs only very few
+(around 1) velocity iterations.</p></li>
+<li><p><strong>PGS</strong> (Projected Gauss-Seidel): converges more slowly but is less prone to
+overshooting.</p></li>
+</ul>
+<p>Iteration counts control accuracy vs. cost. Position iterations keep bodies from
+overlapping; velocity iterations prevent bodies from picking up artificial
+velocity on interaction. Both are clamped per-scene with min/max attributes.</p>
+<section id="id1">
+<h3><code class="docutils literal notranslate"><span class="pre">.usda</span></code><a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="k k-Tokens">def</span><span class="w"> </span>PhysicsScene<span class="w"> </span><span class="s">&quot;physicsScene&quot;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;PhysxSceneAPI&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">vector3f</span><span class="w"> </span><span class="na">physics:gravityDirection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="m">-1</span><span class="p">)</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="na">physics:gravityMagnitude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">9.81</span>
+<span class="w">    </span><span class="k k-Token">uniform</span><span class="w"> </span><span class="kt">token</span><span class="w"> </span><span class="na">physxScene:solverType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;TGS&quot;</span>
+<span class="w">    </span><span class="k k-Token">uniform</span><span class="w"> </span><span class="kt">uint</span><span class="w"> </span><span class="na">physxScene:minPositionIterationCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">4</span>
+<span class="w">    </span><span class="k k-Token">uniform</span><span class="w"> </span><span class="kt">uint</span><span class="w"> </span><span class="na">physxScene:maxPositionIterationCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">16</span>
+<span class="w">    </span><span class="k k-Token">uniform</span><span class="w"> </span><span class="kt">uint</span><span class="w"> </span><span class="na">physxScene:minVelocityIterationCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span>
+<span class="w">    </span><span class="k k-Token">uniform</span><span class="w"> </span><span class="kt">uint</span><span class="w"> </span><span class="na">physxScene:maxVelocityIterationCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="python-codeless-physx-schema">
+<h3>Python (codeless PhysX schema)<a class="headerlink" href="#python-codeless-physx-schema" title="Link to this heading">#</a></h3>
+<p>PhysX-specific attributes live on codeless schemas that have no typed Python
+class. Register the schemas once, apply by identifier, then author the
+attributes generically:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Plug</span><span class="p">,</span> <span class="n">Sdf</span>
+
+<span class="c1"># Register the bundled codeless PhysX schemas so Physx* APIs resolve.</span>
+<span class="n">Plug</span><span class="o">.</span><span class="n">Registry</span><span class="p">()</span><span class="o">.</span><span class="n">RegisterPlugins</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_paths</span><span class="p">()])</span>
+
+<span class="n">scene_prim</span> <span class="o">=</span> <span class="n">scene</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">()</span>
+<span class="n">scene_prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxSceneAPI&quot;</span><span class="p">)</span>
+<span class="n">scene_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxScene:solverType&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Token</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="s2">&quot;TGS&quot;</span><span class="p">)</span>
+<span class="n">scene_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxScene:maxPositionIterationCount&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">UInt</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="../physics_schemas.html"><span class="std std-doc">Physics Schemas</span></a> for the full codeless-schema
+registration story, and <a class="reference internal" href="../guides/performance.html"><span class="std std-doc">Performance</span></a> for guidance on
+clamping iteration counts in bulk/RL scenes.</p>
+</section>
+</section>
+<section id="physx-gpu-memory-buffers">
+<h2>PhysX GPU Memory Buffers<a class="headerlink" href="#physx-gpu-memory-buffers" title="Link to this heading">#</a></h2>
+<p>When simulating on the GPU, PhysX allocates internal buffers at initialization.
+If a buffer overflows, the runtime reports an error and you must increase its
+capacity on <code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code>. The most common one to tune is the found/lost pairs
+capacity:</p>
+<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="k k-Tokens">def</span><span class="w"> </span>PhysicsScene<span class="w"> </span><span class="s">&quot;physicsScene&quot;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;PhysxSceneAPI&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">uint</span><span class="w"> </span><span class="na">physxScene:gpuFoundLostPairsCapacity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">10240</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="cpu-vs-gpu-simulation">
+<h2>CPU vs GPU Simulation<a class="headerlink" href="#cpu-vs-gpu-simulation" title="Link to this heading">#</a></h2>
+<p>GPU dynamics are enabled per scene in USD with <code class="docutils literal notranslate"><span class="pre">physxScene:enableGPUDynamics</span></code>
+(and a GPU broadphase through <code class="docutils literal notranslate"><span class="pre">physxScene:broadphaseType</span> <span class="pre">=</span> <span class="pre">&quot;GPU&quot;</span></code>):</p>
+<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="k k-Tokens">def</span><span class="w"> </span>PhysicsScene<span class="w"> </span><span class="s">&quot;physicsScene&quot;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;PhysxSceneAPI&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="na">physxScene:enableGPUDynamics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>true
+<span class="w">    </span><span class="k k-Token">uniform</span><span class="w"> </span><span class="kt">token</span><span class="w"> </span><span class="na">physxScene:broadphaseType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;GPU&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>ovphysx also exposes process- and instance-level controls that complement the
+per-scene USD settings:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ovphysx.PhysX.set_cpu_mode(True)</span></code> forces a process-wide CPU-only mode (must be
+called before any instance is created; it cannot be reverted in that process).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PhysX(active_cuda_gpus=&quot;0,1&quot;)</span></code> selects which CUDA GPUs an instance uses.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PhysXConfig(scene_multi_gpu_mode=...)</span></code> distributes multiple <code class="docutils literal notranslate"><span class="pre">PhysicsScene</span></code>
+prims across GPUs.</p></li>
+</ul>
+<p>GPU features (deformables, particles, SDF meshes, DirectGPU tensor workloads)
+require GPU dynamics. See the GPU/CPU and determinism sections of the
+<a class="reference internal" href="../developer_guide.html"><span class="std std-doc">Developer Guide</span></a>.</p>
+</section>
+<section id="sleeping">
+<h2>Sleeping<a class="headerlink" href="#sleeping" title="Link to this heading">#</a></h2>
+<p>Sleeping lets PhysX save computation when dynamic objects are at rest. An object
+that stops moving for a short time goes to sleep until it is woken — by the
+application (for example, applying a force or changing a joint drive target) or
+by another object colliding with it.</p>
+<p>Each dynamic object type exposes sleep-related properties: for rigid bodies,
+<code class="docutils literal notranslate"><span class="pre">physxRigidBody:sleepThreshold</span></code> sets the mass-normalized kinetic-energy threshold
+below which the body may sleep (set it to <code class="docutils literal notranslate"><span class="pre">0</span></code> to keep a body always awake).</p>
+<p>From the runtime, rigid-body tensor bindings expose explicit
+<a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">wake_up()</span></code> / <code class="docutils literal notranslate"><span class="pre">sleep()</span></code></span></a> controls.</p>
+<blockquote>
+<div><p><strong>Sleeping and effective iteration counts (GPU).</strong> In a GPU simulation it is
+efficient to apply the same iteration count to every awake object — the maximum
+over all awake objects in the scene. If a high-iteration object goes to sleep,
+the effective iteration count for the remaining awake objects can drop, which
+can change their behavior (notably for deformables). Keep this in mind when
+mixing objects with very different iteration settings.</p>
+</div></blockquote>
+</section>
+<section id="stabilization">
+<h2>Stabilization<a class="headerlink" href="#stabilization" title="Link to this heading">#</a></h2>
+<p>Stabilization improves the settling behavior of rigid bodies in large-pile or
+high-interaction scenes by applying extra damping to slow-moving objects. When a
+body’s mass-normalized kinetic energy falls below its stabilization threshold,
+damping is applied so it settles faster.</p>
+<p>Stabilization reduces momentum and can cause unphysical effects, so it is <strong>not</strong>
+recommended for robotics, industrial applications, or any simulation that needs
+precise interactions.</p>
+<p>Enable it at the scene level, then set the threshold per rigid body:</p>
+<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="k k-Tokens">def</span><span class="w"> </span>PhysicsScene<span class="w"> </span><span class="s">&quot;physicsScene&quot;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;PhysxSceneAPI&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="na">physxScene:enableStabilization</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>true
+<span class="p">}</span>
+
+<span class="k k-Tokens">def</span><span class="w"> </span>Cube<span class="w"> </span><span class="s">&quot;box&quot;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;PhysicsRigidBodyAPI&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;PhysxRigidBodyAPI&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;PhysicsCollisionAPI&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="na">physxRigidBody:stabilizationThreshold</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.0001</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="reading-simulation-output">
+<h2>Reading Simulation Output<a class="headerlink" href="#reading-simulation-output" title="Link to this heading">#</a></h2>
+<p>ovphysx does not write results back to the attached stage. To observe simulated
+state, read it explicitly:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">Tensor bindings</span></a> — bulk, DLPack-friendly
+read/write of poses, velocities, joint state, and more.</p></li>
+<li><p><a class="reference internal" href="../ovstage_integration.html"><span class="std std-doc">ovstage output read</span></a> — ovstage-native read of
+positions, orientations, velocities, and joint state.</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../ovstage_integration.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Ovstage Integration and Physics Output Read</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="collision.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Colliders</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-ovphysx-simulates-a-scene">How ovphysx Simulates a Scene</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-up-a-usd-stage-and-a-physics-scene">Setting Up a USD Stage and a Physics Scene</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#usda"><code class="docutils literal notranslate"><span class="pre">.usda</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python">Python</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#units-and-up-axis">Units and Up Axis</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#multiple-physics-scenes">Multiple Physics Scenes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#physics-solver">Physics Solver</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1"><code class="docutils literal notranslate"><span class="pre">.usda</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python-codeless-physx-schema">Python (codeless PhysX schema)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#physx-gpu-memory-buffers">PhysX GPU Memory Buffers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cpu-vs-gpu-simulation">CPU vs GPU Simulation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sleeping">Sleeping</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stabilization">Stabilization</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reading-simulation-output">Reading Simulation Output</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 21, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

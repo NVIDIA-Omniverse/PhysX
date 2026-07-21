@@ -1,0 +1,988 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Colliders &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=93e13339"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=65e89d2a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'simulation_setup/collision';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.5.9';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Rigid Bodies" href="rigid_bodies.html" />
+    <link rel="prev" title="Physics Scene and Simulation Configuration" href="physics_scene.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Jul 21, 2026"/>
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovstage_integration.html">Ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Colliders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/hello_world.html">Hello World: Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/cloning.html">Cloning: Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording: Capture Physics Internals to .ovd</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Colliders</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="colliders">
+<h1>Colliders<a class="headerlink" href="#colliders" title="Link to this heading">#</a></h1>
+<p>A collider lets geometry participate in collision. It is the base that rigid
+bodies and articulation links build on. Apply <code class="docutils literal notranslate"><span class="pre">PhysicsCollisionAPI</span></code> to a
+geometry prim and the collision representation is created implicitly from the USD
+geometry. If the collider prim (or an ancestor) has <code class="docutils literal notranslate"><span class="pre">PhysicsRigidBodyAPI</span></code>, the
+collider moves with that dynamic body; otherwise it is static.</p>
+<p>This page covers authoring colliders for scenes that ovphysx loads. For the base
+authoring pattern (core <code class="docutils literal notranslate"><span class="pre">UsdPhysics</span></code> typed APIs plus codeless PhysX schemas), see
+<a class="reference internal" href="../physics_schemas.html"><span class="std std-doc">Physics Schemas</span></a>; for the physics scene and ground, see
+<a class="reference internal" href="physics_scene.html"><span class="std std-doc">Physics Scene</span></a>.</p>
+<section id="static-colliders">
+<h2>Static Colliders<a class="headerlink" href="#static-colliders" title="Link to this heading">#</a></h2>
+<p>A collider with no rigid body on it or above it is static: it does not move, but
+dynamic bodies rest on and bounce off it (this is how a ground is authored).</p>
+<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="k k-Tokens">def</span><span class="w"> </span>Cube<span class="w"> </span><span class="s">&quot;ground&quot;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;PhysicsCollisionAPI&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="na">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">UsdGeom</span><span class="p">,</span> <span class="n">UsdPhysics</span>
+
+<span class="n">cube</span> <span class="o">=</span> <span class="n">UsdGeom</span><span class="o">.</span><span class="n">Cube</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/ground&quot;</span><span class="p">)</span>
+<span class="n">cube</span><span class="o">.</span><span class="n">CreateSizeAttr</span><span class="p">(</span><span class="mf">100.0</span><span class="p">)</span>
+<span class="n">UsdPhysics</span><span class="o">.</span><span class="n">CollisionAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">cube</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">())</span>
+</pre></div>
+</div>
+</section>
+<section id="primitive-colliders">
+<h2>Primitive Colliders<a class="headerlink" href="#primitive-colliders" title="Link to this heading">#</a></h2>
+<p>The following <code class="docutils literal notranslate"><span class="pre">UsdGeom</span></code> primitives are supported with <code class="docutils literal notranslate"><span class="pre">PhysicsCollisionAPI</span></code>, and
+the resulting collision shape maps to the geometry exactly: <code class="docutils literal notranslate"><span class="pre">Sphere</span></code>, <code class="docutils literal notranslate"><span class="pre">Cube</span></code>,
+<code class="docutils literal notranslate"><span class="pre">Capsule</span></code>, <code class="docutils literal notranslate"><span class="pre">Cylinder</span></code>, <code class="docutils literal notranslate"><span class="pre">Cone</span></code>. Primitives are the cheapest and most stable
+choice — prefer them whenever they approximate the object well.</p>
+<p><img alt="Primitive colliders: cylinder, sphere, box, capsule, cone" src="../_images/collision_primitives.png" /></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">UsdGeom</span><span class="p">,</span> <span class="n">UsdPhysics</span>
+
+<span class="n">sphere</span> <span class="o">=</span> <span class="n">UsdGeom</span><span class="o">.</span><span class="n">Sphere</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/sphere&quot;</span><span class="p">)</span>
+<span class="n">sphere</span><span class="o">.</span><span class="n">CreateRadiusAttr</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+<span class="n">UsdPhysics</span><span class="o">.</span><span class="n">CollisionAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">sphere</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Boxes are authored as a <code class="docutils literal notranslate"><span class="pre">Cube</span></code> with non-uniform scale; capsules, cylinders, and
+cones take <code class="docutils literal notranslate"><span class="pre">radius</span></code>, <code class="docutils literal notranslate"><span class="pre">height</span></code>, and <code class="docutils literal notranslate"><span class="pre">axis</span></code> attributes.</p>
+<section id="rounded-cones-and-cylinders">
+<h3>Rounded Cones and Cylinders<a class="headerlink" href="#rounded-cones-and-cylinders" title="Link to this heading">#</a></h3>
+<p>A cone or cylinder can be given a rounded edge with a positive convex margin
+(a PhysX-specific, codeless attribute):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sdf</span>
+
+<span class="n">cylinder_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxConvexGeometry:margin&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Cones and cylinders can also be approximated with convex meshes, which ignores
+the margin but is often faster (prefer it unless you need smooth rolling
+behavior). In ovphysx this is controlled per instance through <code class="docutils literal notranslate"><span class="pre">PhysXConfig</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span><span class="p">,</span> <span class="n">PhysXConfig</span>
+
+<span class="c1"># Approximate cylinders/cones with convex meshes instead of exact custom geometry.</span>
+<span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">PhysXConfig</span><span class="p">(</span>
+    <span class="n">collision_cylinder_custom_geometry</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">collision_cone_custom_geometry</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">))</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="mesh-colliders">
+<h2>Mesh Colliders<a class="headerlink" href="#mesh-colliders" title="Link to this heading">#</a></h2>
+<p>Mesh colliders (<code class="docutils literal notranslate"><span class="pre">UsdGeom.Mesh</span></code> with <code class="docutils literal notranslate"><span class="pre">PhysicsCollisionAPI</span></code>) require an
+<strong>approximation</strong>, chosen with <code class="docutils literal notranslate"><span class="pre">PhysicsMeshCollisionAPI</span></code>’s
+<code class="docutils literal notranslate"><span class="pre">physics:approximation</span></code> attribute:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">none</span></code>, <code class="docutils literal notranslate"><span class="pre">meshSimplification</span></code> — full / simplified <strong>triangle mesh</strong>. Valid only
+for <strong>static or kinematic</strong> bodies, not dynamic ones.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">convexHull</span></code> — a single convex hull. For dynamic bodies with a roughly convex
+shape.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">convexDecomposition</span></code> — several convex hulls. For dynamic bodies with a
+non-convex shape.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">boundingSphere</span></code>, <code class="docutils literal notranslate"><span class="pre">boundingCube</span></code> — a coarse, cheap primitive bound.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sdf</span></code> — a signed distance field, for dynamic bodies needing high-detail
+non-convex contact (refer to <a class="reference internal" href="#sdf-colliders">SDF Colliders</a>).</p></li>
+</ul>
+<p><img alt="Convex approximation options: convex hull, convex decomposition, bounding sphere, bounding cube" src="../_images/collision_approximation.png" /></p>
+<blockquote>
+<div><p><strong>A dynamic rigid body cannot use a plain triangle mesh</strong> (<code class="docutils literal notranslate"><span class="pre">none</span></code> /
+<code class="docutils literal notranslate"><span class="pre">meshSimplification</span></code>). Use a convex approximation, convex decomposition, or
+SDF. Triangle meshes are for static or kinematic geometry.</p>
+</div></blockquote>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">UsdGeom</span><span class="p">,</span> <span class="n">UsdPhysics</span>
+
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">UsdGeom</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/mesh&quot;</span><span class="p">)</span>
+<span class="n">mesh</span><span class="o">.</span><span class="n">CreateFaceVertexCountsAttr</span><span class="p">(</span><span class="n">vertex_counts</span><span class="p">)</span>
+<span class="n">mesh</span><span class="o">.</span><span class="n">CreateFaceVertexIndicesAttr</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+<span class="n">mesh</span><span class="o">.</span><span class="n">CreatePointsAttr</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+
+<span class="n">UsdPhysics</span><span class="o">.</span><span class="n">CollisionAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">())</span>
+<span class="n">mesh_collision</span> <span class="o">=</span> <span class="n">UsdPhysics</span><span class="o">.</span><span class="n">MeshCollisionAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">())</span>
+<span class="n">mesh_collision</span><span class="o">.</span><span class="n">CreateApproximationAttr</span><span class="p">(</span><span class="n">UsdPhysics</span><span class="o">.</span><span class="n">Tokens</span><span class="o">.</span><span class="n">convexHull</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="merging-multiple-meshes">
+<h3>Merging Multiple Meshes<a class="headerlink" href="#merging-multiple-meshes" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">PhysxMeshMergeCollisionAPI</span></code> (codeless) applied to an <code class="docutils literal notranslate"><span class="pre">Xformable</span></code> prim defines a
+collection of meshes that are merged into a single collider before the
+approximation is computed. The source meshes can be sourced from anywhere in the
+stage. If some of the collection’s meshes are descendants of a rigid body, only
+those descendants move with the body — a natural consequence of the UsdPhysics
+rule that only rigid-body transforms are updated.</p>
+</section>
+<section id="sdf-colliders">
+<h3>SDF Colliders<a class="headerlink" href="#sdf-colliders" title="Link to this heading">#</a></h3>
+<p>Signed-Distance-Field (SDF) collision enables dynamic and kinematic rigid bodies
+with high-detail mesh colliders — the standard choice for contact-rich
+interaction between highly non-convex shapes (for example robotic assembly).
+Enable it by setting the mesh approximation to <code class="docutils literal notranslate"><span class="pre">sdf</span></code> and applying the codeless
+<code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sdf</span><span class="p">,</span> <span class="n">UsdPhysics</span>
+
+<span class="n">UsdPhysics</span><span class="o">.</span><span class="n">CollisionAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">sdf_mesh_prim</span><span class="p">)</span>
+<span class="n">mesh_collision</span> <span class="o">=</span> <span class="n">UsdPhysics</span><span class="o">.</span><span class="n">MeshCollisionAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">sdf_mesh_prim</span><span class="p">)</span>
+<span class="n">mesh_collision</span><span class="o">.</span><span class="n">CreateApproximationAttr</span><span class="p">(</span><span class="s2">&quot;sdf&quot;</span><span class="p">)</span>
+
+<span class="n">sdf_mesh_prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxSDFMeshCollisionAPI&quot;</span><span class="p">)</span>
+<span class="n">sdf_mesh_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxSDFMeshCollision:sdfResolution&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Int</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mi">300</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Notes:</p>
+<ul class="simple">
+<li><p>Multi-material triangle-mesh colliders are not supported with SDF.</p></li>
+<li><p><strong>Sparse SDFs</strong> add a hierarchical structure with fewer samples far from the
+surface, saving memory at similar fidelity. Enable them with a nonzero
+<code class="docutils literal notranslate"><span class="pre">physxSDFMeshCollision:sdfSubgridResolution</span></code>.</p></li>
+</ul>
+<p><img alt="A sparse SDF: a background SDF plus high-resolution subgrids near surfaces" src="../_images/sdf_subgrids.png" /></p>
+<p>For high-throughput, on-GPU access to SDF samples and gradients at runtime, use
+ovphysx’s SDF view: <code class="docutils literal notranslate"><span class="pre">PhysX.create_sdf_view()</span></code> in Python or
+<code class="docutils literal notranslate"><span class="pre">ovphysx_create_sdf_view()</span></code> in C (GPU instances only). SDF views are tied to the
+attached USD stage; after <code class="docutils literal notranslate"><span class="pre">reset_stage()</span></code> or <code class="docutils literal notranslate"><span class="pre">detach_ovstage()</span></code>, destroy existing
+views and create replacements after re-attaching a stage.</p>
+</section>
+</section>
+<section id="cooking-mesh-colliders">
+<h2>Cooking Mesh Colliders<a class="headerlink" href="#cooking-mesh-colliders" title="Link to this heading">#</a></h2>
+<p>Generating a collision approximation from mesh data is called <strong>cooking</strong>, and
+its output is <strong>cooking data</strong>. ovphysx cooks colliders that need it when a stage
+is attached, blocking until the required data is available (from cache or freshly
+computed). To persist cooked results across runs, configure a cooked-collider
+cache directory through <code class="docutils literal notranslate"><span class="pre">PhysXConfig(cooked_collider_cache_dir=...)</span></code> — refer to the
+cooked-collider cache (UJITSO) section of the
+<a class="reference internal" href="../developer_guide.html"><span class="std std-doc">Developer Guide</span></a> for details.</p>
+</section>
+<section id="rest-and-contact-offsets">
+<h2>Rest and Contact Offsets<a class="headerlink" href="#rest-and-contact-offsets" title="Link to this heading">#</a></h2>
+<p>The <strong>contact offset</strong> and <strong>rest offset</strong> tune when and where contacts are
+generated and resolved. Both are attributes of the codeless <code class="docutils literal notranslate"><span class="pre">PhysxCollisionAPI</span></code>
+applied to a collider prim.</p>
+<ul class="simple">
+<li><p><strong>Contact offset</strong> — the distance from the surface at which contacts start
+being generated. The default auto-computes a value from gravity, timestep, and
+geometry extent. Increase it for fast-moving or thin objects that tunnel
+through each other in one step (an alternative is CCD, see
+<a class="reference internal" href="rigid_bodies.html#continuous-collision-detection"><span class="std std-ref">Rigid Bodies</span></a>). Larger offsets
+can cost performance because more contacts are generated.</p></li>
+<li><p><strong>Rest offset</strong> — a small distance from the surface at which the effective
+contact takes place. It may be positive, zero, or negative. A negative rest
+offset is useful when the collision geometry is slightly larger than the render
+mesh, so contact occurs at the visually correct distance.</p></li>
+</ul>
+<p><img alt="The effects of rest and collision offsets" src="../_images/collision_rest_offset.png" /></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sdf</span>
+
+<span class="n">prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxCollisionAPI&quot;</span><span class="p">)</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxCollision:contactOffset&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">0.02</span><span class="p">)</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxCollision:restOffset&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Contact and rest offsets can also be read/written at runtime in bulk through the
+<code class="docutils literal notranslate"><span class="pre">RIGID_BODY_CONTACT_OFFSET</span></code> / <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_REST_OFFSET</span></code> tensor types — refer to the
+<a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings</span></a> reference.</p>
+</section>
+<section id="collision-filtering">
+<h2>Collision Filtering<a class="headerlink" href="#collision-filtering" title="Link to this heading">#</a></h2>
+<p>Two mechanisms disable collision between specific colliders.</p>
+<section id="collision-group-filtering">
+<h3>Collision Group Filtering<a class="headerlink" href="#collision-group-filtering" title="Link to this heading">#</a></h3>
+<p>Collision groups (<code class="docutils literal notranslate"><span class="pre">UsdPhysicsCollisionGroup</span></code>) enable or disable collision between
+sets of colliders. Every collider in a group collides with every other collider,
+and each group carries a list of other groups it should (or should not) collide
+with. By default the lists are opt-out: every group collides with every other,
+and the lists name pairs that do not collide. Setting
+<code class="docutils literal notranslate"><span class="pre">physxScene:invertCollisionGroupFilter</span></code> on the scene inverts this to opt-in: no
+pairs collide except those named.</p>
+<p>Assign colliders to a group with a <code class="docutils literal notranslate"><span class="pre">Usd.CollectionAPI</span></code> (<code class="docutils literal notranslate"><span class="pre">colliders</span></code> collection)
+on the group prim, and relate groups to filter with the group’s
+<code class="docutils literal notranslate"><span class="pre">filteredGroups</span></code> relationship.</p>
+</section>
+<section id="pairwise-collision-filtering">
+<h3>Pairwise Collision Filtering<a class="headerlink" href="#pairwise-collision-filtering" title="Link to this heading">#</a></h3>
+<p>When groups are too coarse, <code class="docutils literal notranslate"><span class="pre">UsdPhysicsFilteredPairsAPI</span></code> disables collision
+between specific stage hierarchies. Pairwise filtering takes precedence over
+group filtering. The <code class="docutils literal notranslate"><span class="pre">filteredPairs</span></code> relationship names the hierarchies to
+filter; all child objects (colliders, rigid bodies, articulations) are filtered
+with the pair.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">UsdPhysics</span>
+
+<span class="n">filtered</span> <span class="o">=</span> <span class="n">UsdPhysics</span><span class="o">.</span><span class="n">FilteredPairsAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">box_a_prim</span><span class="p">)</span>
+<span class="n">filtered</span><span class="o">.</span><span class="n">CreateFilteredPairsRel</span><span class="p">()</span><span class="o">.</span><span class="n">AddTarget</span><span class="p">(</span><span class="s2">&quot;/World/boxC&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="performance-and-stability-tips">
+<h2>Performance and Stability Tips<a class="headerlink" href="#performance-and-stability-tips" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Keep sizes and dimension ratios within roughly 1/100.</strong> Both the sizes of
+interacting colliders and the ratio of a collider’s own dimensions should stay
+within about two orders of magnitude to avoid floating-point instability.</p></li>
+<li><p><strong>Prefer primitives</strong> (sphere, capsule, box, plane) — cheapest and most
+stable.</p></li>
+<li><p><strong>Convex meshes</strong> (convex hull / decomposition) are next. For GPU
+compatibility, a convex mesh’s largest dimension should not exceed ~100x its
+insphere radius; otherwise cooking may produce a CPU-only convex that will not
+interact with GPU-only features (deformables, particles) and may be slower.</p></li>
+<li><p><strong>Cylinders and cones</strong> model wheels and similar shapes with smooth surfaces;
+approximate them with convex meshes if precise rolling is not required.</p></li>
+<li><p><strong>Triangle meshes</strong> suit large static or kinematic geometry; keep triangles
+evenly sized and apply the 1/100 ratio to individual triangles.</p></li>
+<li><p><strong>SDF meshes</strong> are best for dynamic bodies needing high-detail non-convex
+collision.</p></li>
+</ul>
+<p>For deeper contact-quality tuning (GPU contact limits, mass ratios,
+depenetration, friction, timestep), refer to the
+<a class="reference internal" href="../guides/collision_tuning.html"><span class="std std-doc">Collision Tuning</span></a> guide.</p>
+</section>
+<section id="cpu-gpu-collider-compatibility">
+<h2>CPU / GPU Collider Compatibility<a class="headerlink" href="#cpu-gpu-collider-compatibility" title="Link to this heading">#</a></h2>
+<p>Not every collider pair is supported in both CPU and GPU simulation. In general,
+CPU collision geometry generates contacts on the CPU and GPU geometry on the GPU;
+most geometry supports both and picks the device automatically. GPU-only features
+(deformables, particles) require GPU simulation. Some CPU-only geometry (for
+example an oblong convex hull, or a multi-material triangle mesh) still works with
+GPU simulation by generating contacts on the CPU, which can carry a performance
+penalty in large GPU scenes such as RL environments.</p>
+<p><img alt="Rigid body collider compatibility table" src="../_images/collider_compatibility.png" /></p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="physics_scene.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Physics Scene and Simulation Configuration</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="rigid_bodies.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Rigid Bodies</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#static-colliders">Static Colliders</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#primitive-colliders">Primitive Colliders</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#rounded-cones-and-cylinders">Rounded Cones and Cylinders</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mesh-colliders">Mesh Colliders</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#merging-multiple-meshes">Merging Multiple Meshes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sdf-colliders">SDF Colliders</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cooking-mesh-colliders">Cooking Mesh Colliders</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rest-and-contact-offsets">Rest and Contact Offsets</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#collision-filtering">Collision Filtering</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#collision-group-filtering">Collision Group Filtering</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pairwise-collision-filtering">Pairwise Collision Filtering</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performance-and-stability-tips">Performance and Stability Tips</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cpu-gpu-collider-compatibility">CPU / GPU Collider Compatibility</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 21, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

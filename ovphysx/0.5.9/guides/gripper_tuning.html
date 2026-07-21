@@ -1,0 +1,867 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Joint Parameter Tuning Example: Robotiq 2F-85 &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=93e13339"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=65e89d2a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'guides/gripper_tuning';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.5.9';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Known Physics Limitations" href="limitations.html" />
+    <link rel="prev" title="Articulation and Robot Simulation Stability Guide" href="articulation_stability.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Jul 21, 2026"/>
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovstage_integration.html">Ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/collision.html">Colliders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/hello_world.html">Hello World: Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/cloning.html">Cloning: Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording: Capture Physics Internals to .ovd</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Joint Parameter Tuning Example: Robotiq 2F-85</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="joint-parameter-tuning-example-robotiq-2f-85">
+<h1>Joint Parameter Tuning Example: Robotiq 2F-85<a class="headerlink" href="#joint-parameter-tuning-example-robotiq-2f-85" title="Link to this heading">#</a></h1>
+<p>A worked example of tuning articulation joint drives (spring/damper model) for a
+robotic gripper, the Robotiq 2F-85. It applies the concepts from the
+<a class="reference internal" href="articulation_stability.html"><span class="std std-doc">Articulation Stability</span></a> guide to a concrete asset.
+The estimates here are deliberately crude — they establish a value <em>range</em>, not
+precise numbers. Gravity is taken as 10 m/s^2 throughout.</p>
+<blockquote>
+<div><p><strong>Units.</strong> PhysX uses radians for angular quantities; USD uses degrees. For
+angular stiffness/damping, one USD unit equals <code class="docutils literal notranslate"><span class="pre">180/pi</span></code> PhysX units. This
+example uses PhysX units unless stated otherwise; map accordingly when
+authoring USD.</p>
+</div></blockquote>
+<section id="test-scenes">
+<h2>Test Scenes<a class="headerlink" href="#test-scenes" title="Link to this heading">#</a></h2>
+<p>Tune with simple scenes: the gripper plus one object to grasp. Start with the
+object’s gravity disabled, close the gripper, and watch for instability or
+penetration; then enable gravity and check the grip holds; then apply a lifting
+force. Cover several cases:</p>
+<ul class="simple">
+<li><p>Primitive objects (box/cylinder) at different thicknesses so the gripper grips
+at different opening angles.</p></li>
+<li><p>A collision-challenging thin-walled shape (cup, bowl).</p></li>
+<li><p>The geometrically hardest object your application requires.</p></li>
+</ul>
+<p><img alt="Example gripper test scenarios" src="../_images/gripper_test_scenarios.jpg" /></p>
+</section>
+<section id="the-gripper">
+<h2>The Gripper<a class="headerlink" href="#the-gripper" title="Link to this heading">#</a></h2>
+<p>Six revolute joints model the gripper’s degrees of freedom. Only joint J0 has a
+drive; the other five are mimic joints of J0 (gearing 1 or -1, offset 0), driven
+indirectly. J0 ranges 0 deg (fully open) to 47 deg (fully closed).</p>
+<p><img alt="Robotiq 2F-85 joint setup" src="../_images/gripper_joints_numbered.jpg" /></p>
+</section>
+<section id="maximum-drive-force-and-joint-velocity">
+<h2>Maximum Drive Force and Joint Velocity<a class="headerlink" href="#maximum-drive-force-and-joint-velocity" title="Link to this heading">#</a></h2>
+<p>Set limits first so the simulation stays in the range expected of the real
+gripper (from the mechanical specification, or from experiments).</p>
+<section id="maximum-drive-force">
+<h3>Maximum drive force<a class="headerlink" href="#maximum-drive-force" title="Link to this heading">#</a></h3>
+<p>The gripper holds a 5 kg box at friction coefficient 0.3, requiring about</p>
+<p>[ \frac{mass \cdot gravity}{0.3} = \frac{5 \cdot 10}{0.3} \approx 166\ \text{N} ]</p>
+<p>so 83 N per finger. Torque at the joint from the ~0.04 m lever arm:</p>
+<p>[ \tau = F \cdot r = 83 \cdot 0.04 \approx 3.3\ \text{Nm} ]</p>
+<p>Round up to 4 Nm per joint. Since J0 drives all six joints (itself plus five
+mimic joints, gearing 1), set J0’s max drive force to</p>
+<p>[ J_0\ maxDriveForce = 6 \cdot 4 = 24\ \text{Nm} ]</p>
+</section>
+<section id="maximum-joint-velocity">
+<h3>Maximum joint velocity<a class="headerlink" href="#maximum-joint-velocity" title="Link to this heading">#</a></h3>
+<p>Max finger speed is 0.15 m/s; each finger travels 0.0425 m to close, so</p>
+<p>[ t = \frac{0.0425}{0.15} \approx 0.28\ \text{s} ]</p>
+<p>Over J0’s 47 deg range:</p>
+<p>[ J_0\ maxJointVelocity = \frac{47}{0.28} \approx 168\ \text{deg/s} ]</p>
+<blockquote>
+<div><p>Generally do <strong>not</strong> set max joint velocity on the mimic joints (leave them at
+default). With non-compliant mimic joints, a too-low limit can cause
+instability; the mimic joints already follow J0’s velocity by design.</p>
+</div></blockquote>
+</section>
+</section>
+<section id="drive-stiffness-and-damping">
+<h2>Drive Stiffness and Damping<a class="headerlink" href="#drive-stiffness-and-damping" title="Link to this heading">#</a></h2>
+<p>A spring/damper drive produces <code class="docutils literal notranslate"><span class="pre">F</span> <span class="pre">=</span> <span class="pre">s*dx</span> <span class="pre">-</span> <span class="pre">d*dv</span></code> (stiffness <code class="docutils literal notranslate"><span class="pre">s</span></code>, damping <code class="docutils literal notranslate"><span class="pre">d</span></code>,
+position error <code class="docutils literal notranslate"><span class="pre">dx</span></code>, velocity error <code class="docutils literal notranslate"><span class="pre">dv</span></code>). Check the choice against natural
+frequency and damping ratio (angular joint, inertia <code class="docutils literal notranslate"><span class="pre">i</span></code>):</p>
+<p>[ nf = \sqrt{s / i} \qquad dr = \frac{d}{2\sqrt{s \cdot i}} ]</p>
+<p>Use the most conservative joint — the one on the lightest link. For J0, the
+lighter link’s inertia about the rotation axis (through the parallel-axis theorem
+with mass 0.0127 kg, offset 0.01 m) is about</p>
+<p>[ 2.1\text{e-}6 + 0.0127 \cdot (0.01)^2 \approx 3.4\text{e-}6\ \text{kg m}^2 ]</p>
+<p>The asset’s original stiffness of ~5700 gives <code class="docutils literal notranslate"><span class="pre">nf</span> <span class="pre">~</span> <span class="pre">4.0e4</span> <span class="pre">rad/s</span></code>, far above the
+250 Hz simulation frequency (even counting 64 TGS position iterations as full
+steps, ~1.6e4). Such a mismatch is unstable.</p>
+<p>Instead of matching <code class="docutils literal notranslate"><span class="pre">nf</span></code> to the sim frequency, derive stiffness from the required
+force at the smallest target delta. If max drive force should be reached by a 5
+deg (~0.087 rad) delta at J0:</p>
+<p>[ s = \frac{maxDriveForce}{0.087} = \frac{24}{0.087} \approx 275\ \text{kg m}^2/\text{s}^2 ]</p>
+<p>which gives <code class="docutils literal notranslate"><span class="pre">nf</span> <span class="pre">~</span> <span class="pre">9.0e3</span> <span class="pre">rad/s</span></code> — still large, but far better than 5700’s value,
+and worth testing. Then derive damping from a damping ratio (1.0 = critical, a
+good starting point):</p>
+<p>[ d = dr \cdot 2\sqrt{s \cdot i} = 1.0 \cdot 2\sqrt{275 \cdot 3.4\text{e-}6} \approx 0.06\ \text{kg m}^2/\text{s} ]</p>
+<section id="implicit-spring-caveat">
+<h3>Implicit spring caveat<a class="headerlink" href="#implicit-spring-caveat" title="Link to this heading">#</a></h3>
+<p>PhysX uses an implicit spring formulation, which prevents explosive forces from a
+too-large timestep but behaves unintuitively far from the natural frequency:
+past a point, increasing stiffness <em>reduces</em> the applied force, and increasing
+damping applies almost no damping. Ignoring damping, the force is roughly</p>
+<p>[ F = \frac{s \cdot dx}{dt^2 \cdot nf^2 + 1} ]</p>
+<p>so the force matches the explicit spring only when <code class="docutils literal notranslate"><span class="pre">dt^2</span> <span class="pre">*</span> <span class="pre">nf^2</span></code> is small — again,
+keep the natural frequency near the simulation frequency.</p>
+</section>
+</section>
+<section id="armature">
+<h2>Armature<a class="headerlink" href="#armature" title="Link to this heading">#</a></h2>
+<p>Armature assigns inertia (or mass, for linear DOFs) to a joint — modeling a motor
+rotor and gearbox — and lowers the drive’s natural frequency (raising effective
+inertia). For example, an armature of 5.0e-3 kg m^2 on J0 drops <code class="docutils literal notranslate"><span class="pre">nf</span></code> from ~9.0e3
+to about</p>
+<p>[ \sqrt{275 / 5.0\text{e-}3} \approx 234\ \text{rad/s} ]</p>
+<p>which could work even at 60 Hz (with 64 TGS position iterations). Derive it from
+a motor datasheet as reflected inertia <code class="docutils literal notranslate"><span class="pre">armature</span> <span class="pre">=</span> <span class="pre">i_m</span> <span class="pre">*</span> <span class="pre">G^2</span></code> (rotor inertia
+<code class="docutils literal notranslate"><span class="pre">i_m</span></code>, gear ratio <code class="docutils literal notranslate"><span class="pre">G</span></code>). Large relative armature changes the physical model, so
+verify the motor spec and gear ratio justify it.</p>
+</section>
+<section id="mimic-joint-compliance">
+<h2>Mimic Joint Compliance<a class="headerlink" href="#mimic-joint-compliance" title="Link to this heading">#</a></h2>
+<p>Mimic joints can be hard constraints (large corrective forces) or compliant
+(spring/damper that allows some divergence). Start with non-compliant mimic
+joints and add compliance only when competing hard constraints cannot be resolved
+without yielding; sometimes increasing armature avoids the need. Compliance is
+set via <strong>natural frequency and damping ratio</strong>, not stiffness and damping — do
+not copy drive stiffness/damping into the compliance parameters.</p>
+</section>
+<section id="verification-and-fine-tuning">
+<h2>Verification and Fine-Tuning<a class="headerlink" href="#verification-and-fine-tuning" title="Link to this heading">#</a></h2>
+<p>On the simple scenes, verify that: the simulated open-to-close time roughly
+matches the spec; the gripper holds the maximum rated load under gravity across
+finger states; there is no significant penetration (check collision meshes, not
+just visuals — use <a class="reference internal" href="../tutorials/omnipvd_recording.html"><span class="std std-doc">OmniPVD</span></a>); and there is no
+significant jitter. Then fine-tune: can stiffness or max drive force be lowered
+while still holding the load? Recompute related parameters when you change one
+(re-derive damping when you change stiffness). If instability persists despite
+spec-based values, increase position iterations, reduce the timestep, or
+add/increase armature. Get the gripper right on simple scenes before simulating a
+full robot.</p>
+<p>Further reading:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="articulation_stability.html"><span class="std std-doc">Articulation Stability</span></a></p></li>
+<li><p><a class="reference external" href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/joint_tuning.html">Isaac Sim advanced joint tuning</a></p></li>
+<li><p><a class="reference external" href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/ext_isaacsim_robot_setup_gain_tuner.html">Isaac Sim gain tuner</a></p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="articulation_stability.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Articulation and Robot Simulation Stability Guide</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="limitations.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Known Physics Limitations</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#test-scenes">Test Scenes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-gripper">The Gripper</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#maximum-drive-force-and-joint-velocity">Maximum Drive Force and Joint Velocity</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#maximum-drive-force">Maximum drive force</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#maximum-joint-velocity">Maximum joint velocity</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#drive-stiffness-and-damping">Drive Stiffness and Damping</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#implicit-spring-caveat">Implicit spring caveat</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#armature">Armature</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mimic-joint-compliance">Mimic Joint Compliance</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#verification-and-fine-tuning">Verification and Fine-Tuning</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 21, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

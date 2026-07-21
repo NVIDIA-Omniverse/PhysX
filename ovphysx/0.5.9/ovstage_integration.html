@@ -1,0 +1,1078 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Ovstage Integration and Physics Output Read &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="_static/modal-table.js"></script>
+    <script src="_static/documentation_options.js?v=93e13339"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=65e89d2a"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'ovstage_integration';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.5.9';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Physics Scene and Simulation Configuration" href="simulation_setup/physics_scene.html" />
+    <link rel="prev" title="Changelog" href="changelog.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Jul 21, 2026"/>
+  
+    
+    <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/collision.html">Colliders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_setup/particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="physics_schemas.html">Physics Schemas</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/hello_world.html">Hello World: Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/cloning.html">Cloning: Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording: Capture Physics Internals to .ovd</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Ovstage Integration and Physics Output Read</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="ovstage-integration-and-physics-output-read">
+<h1>Ovstage Integration and Physics Output Read<a class="headerlink" href="#ovstage-integration-and-physics-output-read" title="Link to this heading">#</a></h1>
+<p>ovphysx consumes a <strong>caller-owned ovstage Stage</strong> as its orchestration surface:
+the application authors scene edits into ovstage, ovphysx drains committed edits
+into the running simulation, steps, and the application reads the simulation
+output back. This page explains how ordinals couple the two directions and — the
+key principle — <strong>how physics avoids consuming the changes it produced.</strong></p>
+<p>For how to author the physics content in the stage (scenes, rigid bodies, joints,
+articulations, deformables, particles), refer to the
+<a class="reference internal" href="simulation_setup/physics_scene.html"><span class="std std-doc">Simulation Setup</span></a> pages.</p>
+<section id="the-data-surface-ovstage-ordinals">
+<h2>The data surface: ovstage + ordinals<a class="headerlink" href="#the-data-surface-ovstage-ordinals" title="Link to this heading">#</a></h2>
+<p>An ovstage Stage is a versioned, columnar data store. Every committed write lands
+at an <strong>ordinal</strong> — a monotonically increasing version number that the
+<strong>application owns and advances</strong>. A <em>write floor</em> seals ordinals at or below a
+value: sealed data never changes and is what reads observe.</p>
+<p>ovphysx never advances ordinals or writes to the Stage on its own. It exposes
+exactly three ordinal-aware operations:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>ovphysx call</p></th>
+<th class="head"><p>Direction</p></th>
+<th class="head"><p>Ordinal role</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_attach_ovstage(handle,</span> <span class="pre">stage,</span> <span class="pre">read_ordinal)</span></code></p></td>
+<td><p>attach</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">stage</span></code> is an <code class="docutils literal notranslate"><span class="pre">ovstage_instance_t*</span></code>; initial scene parse reads at the sealed <code class="docutils literal notranslate"><span class="pre">read_ordinal</span></code> (<code class="docutils literal notranslate"><span class="pre">ovstage_ordinal_t</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_update_from_ovstage(handle,</span> <span class="pre">range)</span></code></p></td>
+<td><p><strong>app → physics</strong></p></td>
+<td><p>drains committed edits in the <code class="docutils literal notranslate"><span class="pre">ovstage_ordinal_range_t</span></code> <code class="docutils literal notranslate"><span class="pre">range</span></code> into the sim</p></td>
+</tr>
+<tr class="row-even"><td><p>read API (<code class="docutils literal notranslate"><span class="pre">ovphysx_query</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx_read</span></code>)</p></td>
+<td><p><strong>physics → app</strong></p></td>
+<td><p>reads the latest step’s output; the app writes it back at an ordinal <em>it</em> chooses</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="seal-population-changes-before-attaching-or-draining">
+<h3>Seal population changes before attaching or draining<a class="headerlink" href="#seal-population-changes-before-attaching-or-draining" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">ovstage.population.apply_usd_changes()</span></code> blocks until population work finishes,
+but it does <strong>not</strong> advance the Stage write floor. Seal and wait for the same
+ordinal before passing it to ovphysx:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">drain_population_change</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">physx</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">):</span>
+    <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">apply_usd_changes</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span>
+    <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+    <span class="n">physx</span><span class="o">.</span><span class="n">update_from_ovstage</span><span class="p">(</span><span class="n">ordinal</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The same rule applies to initial population: seal and wait for <code class="docutils literal notranslate"><span class="pre">read_ordinal</span></code>
+before <code class="docutils literal notranslate"><span class="pre">attach_ovstage()</span></code>. That initial ordinal was then already parsed by the
+attach. For a later edit at ordinal 2, drain <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">2)</span></code>, not <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">2)</span></code>: including
+ordinal 1 replays the initial scene changes instead of applying only the new
+delta.</p>
+<p>Scene-graph instancing currently has one snapshot caveat: ovstage’s public
+prototype/instance topology queries and resolved instance-material data expose
+the latest committed state rather than an ordinal range. Finish population
+before attach and keep instance topology stable for that attachment; historical
+instance topology cannot be reconstructed from <code class="docutils literal notranslate"><span class="pre">read_ordinal</span></code>.</p>
+</section>
+</section>
+<section id="the-key-principle-physics-must-not-get-its-own-changes">
+<h2>The key principle: physics must not get its own changes<a class="headerlink" href="#the-key-principle-physics-must-not-get-its-own-changes" title="Link to this heading">#</a></h2>
+<p>Both the application’s <em>control</em> edits (poses, joint targets, gravity, …) and the
+physics <em>output</em> (simulated poses, velocities, mesh points, …) live in the <strong>same
+ovstage Stage</strong>. If physics drained the ordinals where its own output was written,
+it would re-ingest its last result as if it were a new authored change — corrupting
+the simulation.</p>
+<p>The rule that prevents this is simple and the application enforces it through the
+ordinals it passes to <code class="docutils literal notranslate"><span class="pre">ovphysx_update_from_ovstage</span></code>:</p>
+<blockquote>
+<div><p><strong>App→physics edits flow through <code class="docutils literal notranslate"><span class="pre">ovphysx_update_from_ovstage</span></code>. Physics→app
+output is written at ordinals that <code class="docutils literal notranslate"><span class="pre">ovphysx_update_from_ovstage</span></code> never covers.</strong></p>
+</div></blockquote>
+<p>Concretely, partition the ordinal line into two interleaved lanes:</p>
+<ul class="simple">
+<li><p><strong>Control ordinals</strong> — where the <em>application</em> authors edits physics should
+process. These are the only ordinals ever passed to <code class="docutils literal notranslate"><span class="pre">ovphysx_update_from_ovstage</span></code>.</p></li>
+<li><p><strong>Output ordinals</strong> — where the <em>application</em> writes the physics output it read
+back. These are <strong>never</strong> included in any <code class="docutils literal notranslate"><span class="pre">ovphysx_update_from_ovstage</span></code> range.</p></li>
+</ul>
+<p>Because the two lanes never overlap and output ordinals are excluded from every
+drain range, physics only ever ingests application-authored control edits — never
+its own output.</p>
+<section id="ordinal-timeline">
+<h3>Ordinal timeline<a class="headerlink" href="#ordinal-timeline" title="Link to this heading">#</a></h3>
+<p>A typical per-frame schedule, with the scene parsed at ordinal 1:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ordinal</span><span class="p">:</span>   <span class="mi">1</span>        <span class="mi">2</span>        <span class="mi">3</span>        <span class="mi">4</span>        <span class="mi">5</span>        <span class="mi">6</span>      <span class="n">later</span>
+           <span class="o">|</span>        <span class="o">|</span>        <span class="o">|</span>        <span class="o">|</span>        <span class="o">|</span>        <span class="o">|</span>
+         <span class="n">parse</span>    <span class="n">CTRL</span>     <span class="n">OUT</span>      <span class="n">CTRL</span>     <span class="n">OUT</span>      <span class="n">CTRL</span>
+        <span class="p">(</span><span class="n">attach</span><span class="p">)</span> <span class="p">(</span><span class="n">app</span><span class="p">)</span>   <span class="p">(</span><span class="n">physics</span><span class="p">)</span> <span class="p">(</span><span class="n">app</span><span class="p">)</span>   <span class="p">(</span><span class="n">physics</span><span class="p">)</span> <span class="p">(</span><span class="n">app</span><span class="p">)</span>
+                   <span class="o">|</span>        <span class="o">^</span>        <span class="o">|</span>        <span class="o">^</span>        <span class="o">|</span>
+                   <span class="o">|</span>        <span class="o">|</span>        <span class="o">|</span>        <span class="o">|</span>        <span class="o">|</span>
+ <span class="n">update_from_ovstage</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>   <span class="o">|</span>  <span class="n">update_from_ovstage</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>   <span class="n">then</span> <span class="n">repeat</span>
+                            <span class="o">|</span>                 <span class="o">|</span>
+                  <span class="n">app</span> <span class="n">writes</span> <span class="n">physics</span>    <span class="n">app</span> <span class="n">writes</span> <span class="n">physics</span>
+                  <span class="n">output</span> <span class="n">here</span><span class="p">,</span> <span class="n">NOT</span>      <span class="n">output</span> <span class="n">here</span><span class="p">,</span> <span class="n">NOT</span>
+                  <span class="n">drained</span> <span class="n">by</span> <span class="n">physics</span>    <span class="n">drained</span> <span class="n">by</span> <span class="n">physics</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Frame N: app authors control edits at an <strong>even</strong> (“CTRL”) ordinal and seals it,
+passes the single-ordinal range <code class="docutils literal notranslate"><span class="pre">[ctrl,</span> <span class="pre">ctrl]</span></code> to
+<code class="docutils literal notranslate"><span class="pre">ovphysx_update_from_ovstage</span></code>, then calls <code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code>.</p></li>
+<li><p>App reads the output and writes it back at the next <strong>odd</strong> (“OUT”) ordinal.</p></li>
+<li><p>Frame N+1: <code class="docutils literal notranslate"><span class="pre">ovphysx_update_from_ovstage</span></code> advances to the <em>next control ordinal</em>
+only — the intervening output ordinal is skipped, so physics never sees it.</p></li>
+</ul>
+<blockquote>
+<div><p>You choose the partitioning scheme (even/odd, fixed stride, two counters — any
+scheme works) as long as <strong>output ordinals are never inside a drain range.</strong></p>
+</div></blockquote>
+</section>
+</section>
+<section id="reading-simulation-output">
+<h2>Reading simulation output<a class="headerlink" href="#reading-simulation-output" title="Link to this heading">#</a></h2>
+<p>The read API mirrors the ovstage read idiom — open a query over a simulated type,
+read named attributes, iterate typed column groups, release — so the columns feed
+straight back into ovstage with no repack. It is ovstage-native: only meaningful
+while an ovstage Stage is attached.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">query</span><span class="p">)</span>
+  <span class="o">-&gt;</span> <span class="n">ovphysx_fetch_query_result</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">result</span><span class="p">)</span>   <span class="o">//</span> <span class="n">attribute</span> <span class="o">/</span> <span class="n">total</span><span class="o">-</span><span class="n">prim</span> <span class="n">discovery</span>
+  <span class="o">-&gt;</span> <span class="n">ovphysx_query_shared_dictionary</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="o">&amp;</span><span class="nb">dict</span><span class="p">)</span> <span class="o">//</span> <span class="n">ovstage</span><span class="s1">&#39;s shared dict: resolve interned tokens / prim lists</span>
+  <span class="o">-&gt;</span> <span class="n">ovphysx_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">attrs</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">read</span><span class="p">)</span>         <span class="o">//</span> <span class="n">attrs</span> <span class="o">=</span> <span class="n">ovx_string_or_token_t</span><span class="p">[]</span> <span class="p">(</span><span class="n">name</span> <span class="ow">or</span> <span class="n">token</span><span class="p">)</span>
+       <span class="o">-&gt;</span> <span class="n">loop</span> <span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">read</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">group_ptr</span><span class="p">)</span>  <span class="o">//</span> <span class="n">group_ptr</span> <span class="ow">is</span> <span class="n">producer</span><span class="o">-</span><span class="n">owned</span> <span class="p">(</span><span class="n">borrowed</span><span class="p">)</span>
+              <span class="n">until</span> <span class="n">it</span> <span class="n">returns</span> <span class="n">OVPHYSX_API_END_OF_ITERATION</span>
+              <span class="o">-&gt;</span> <span class="n">ovphysx_release_group</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">read</span><span class="p">,</span> <span class="n">group_ptr</span><span class="o">-&gt;</span><span class="n">read_group_id</span><span class="p">)</span>
+  <span class="o">-&gt;</span> <span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">read</span><span class="p">)</span>
+<span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The read uses ovstage’s own types directly (no ovphysx mirror): a group is an
+<code class="docutils literal notranslate"><span class="pre">ovstage_read_group_t</span></code>, discovery is an <code class="docutils literal notranslate"><span class="pre">ovstage_query_result_t</span></code>, and attribute
+names are <code class="docutils literal notranslate"><span class="pre">ovx_string_or_token_t</span></code> (a string name OR an interned token from
+discovery). The ovstage-native shape passes through unflattened:</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">data.tensors</span></code> / <code class="docutils literal notranslate"><span class="pre">data.tensor_count</span></code></strong> — a borrowed <code class="docutils literal notranslate"><span class="pre">DLTensor</span></code> array. A <strong>fixed</strong>
+group has one tensor stacked over its prims (e.g. per-body world transforms); an
+<strong>array</strong> group (<code class="docutils literal notranslate"><span class="pre">is_array</span></code>) has one tensor per prim (e.g. a point-instancer’s
+<code class="docutils literal notranslate"><span class="pre">positions</span></code> or a deformable mesh’s <code class="docutils literal notranslate"><span class="pre">points</span></code>). Tuple width is carried in
+<code class="docutils literal notranslate"><span class="pre">tensors[i].dtype.lanes</span></code> (a vec3 column is lanes=3, shape=[N] — not a trailing
+shape dim).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">prims.list</span></code> / <code class="docutils literal notranslate"><span class="pre">prims.offset</span></code> / <code class="docutils literal notranslate"><span class="pre">prims.count</span></code> / <code class="docutils literal notranslate"><span class="pre">prims.index_map</span></code></strong> — the interned
+prim set (resolve through the query dictionary, or feed <code class="docutils literal notranslate"><span class="pre">prims.list</span></code> straight into
+<code class="docutils literal notranslate"><span class="pre">ovstage_query_from_path_list</span></code> for the write-back). <code class="docutils literal notranslate"><span class="pre">attribute</span></code> is likewise an
+interned token.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">data.index_map</span></code> / <code class="docutils literal notranslate"><span class="pre">data.mask</span></code></strong> — sparsity over the <strong>outer</strong> logical element
+axis (ovstage’s per-prim/per-tensor axis), never rows inside a single tensor.
+Point-instancer rigid-body output therefore always emits the instancer’s FULL
+instance array (by-index, <code class="docutils literal notranslate"><span class="pre">index_map</span> <span class="pre">==</span> <span class="pre">NULL</span></code>) for both ALL and ACTIVE scope, so
+the group forwards into <code class="docutils literal notranslate"><span class="pre">ovstage_query_from_path_list</span></code> verbatim; ACTIVE scope only
+selects WHICH instancers are emitted, not a sparse subset of instances.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">data.cuda_sync</span></code></strong> — producer stream/event synchronization. Output groups
+are CPU-backed and emit <code class="docutils literal notranslate"><span class="pre">{0,</span> <span class="pre">0}</span></code>. With DirectGPU enabled, rigid-body and
+articulation-link pose and velocity columns are gathered synchronously from
+live GPU state, and volume and surface deformable points and velocities are
+copied from live GPU sim-mesh buffers and synchronized before emission; where
+sleeping is enabled, ALL refreshes sleepers while ACTIVE excludes them.
+Preserve the field when forwarding a group.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">is_array</span></code></strong> follows the source attribute kind (a ragged / USD-array /
+byte-string column), not whether the per-element dims happen to be uniform — a
+fixed-width array attribute is still <code class="docutils literal notranslate"><span class="pre">is_array</span></code>. When forwarding a group to
+<code class="docutils literal notranslate"><span class="pre">ovstage_write_attribute</span></code>, set <code class="docutils literal notranslate"><span class="pre">ovstage_write_data_t.is_array</span></code> to this value;
+tensor count and shape do not infer the attribute kind.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">semantic</span></code></strong>, <strong><code class="docutils literal notranslate"><span class="pre">ordinal</span></code></strong> (0 on this path), <strong><code class="docutils literal notranslate"><span class="pre">meta.attribute_write_floor_ordinal</span></code></strong>,
+and <strong><code class="docutils literal notranslate"><span class="pre">meta.layout_generation</span></code></strong>. The current output producer zero-initializes
+both metadata fields; rebuild cached queries and layouts explicitly after a
+known structural edit rather than using them as invalidation or sealing signals.
+<code class="docutils literal notranslate"><span class="pre">is_delete</span></code> is always false (physics output never emits tombstones). The queried
+object type is NOT on the group — the read is opened over one type, so the caller
+already knows it.</p></li>
+</ul>
+<p>Ownership &amp; lifetime: the group is <strong>producer-owned</strong> — <code class="docutils literal notranslate"><span class="pre">ovphysx_fetch_read_next</span></code>
+hands back a borrowed <code class="docutils literal notranslate"><span class="pre">const</span> <span class="pre">ovstage_read_group_t*</span></code>, you do not allocate it. The
+struct and every field it points at are valid until the group’s <code class="docutils literal notranslate"><span class="pre">read_group_id</span></code> is
+released through <code class="docutils literal notranslate"><span class="pre">ovphysx_release_group</span></code> (or <code class="docutils literal notranslate"><span class="pre">ovphysx_release_read</span></code>); fetching further
+groups does NOT invalidate earlier ones, and an intervening <code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code> does NOT
+either (columns are gathered into session-owned storage at read time).</p>
+<section id="output-attributes-by-type">
+<h3>Output attributes by type<a class="headerlink" href="#output-attributes-by-type" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">ovphysx_sim_object_type_t</span></code></p></th>
+<th class="head"><p>Attributes</p></th>
+<th class="head"><p>Group shape</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_OBJECT_RIGID_BODY</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">position</span></code>, <code class="docutils literal notranslate"><span class="pre">orientation</span></code>, <code class="docutils literal notranslate"><span class="pre">linearVelocity</span></code>, <code class="docutils literal notranslate"><span class="pre">angularVelocity</span></code></p></td>
+<td><p>fixed (standalone) + one array group per point-instancer prim (instancer-local)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_OBJECT_ARTICULATION_LINK</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">position</span></code>, <code class="docutils literal notranslate"><span class="pre">orientation</span></code>, velocities</p></td>
+<td><p>fixed</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_OBJECT_ARTICULATION_JOINT</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">jointPosition</span></code>, <code class="docutils literal notranslate"><span class="pre">jointVelocity</span></code></p></td>
+<td><p>array per joint (one row per unlocked DOF axis)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_OBJECT_VEHICLE_WHEEL</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">position</span></code>, <code class="docutils literal notranslate"><span class="pre">orientation</span></code></p></td>
+<td><p>fixed (per wheel-root prim)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_OBJECT_DEFORMABLE_VOLUME</span></code> / <code class="docutils literal notranslate"><span class="pre">_SURFACE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">points</span></code>, <code class="docutils literal notranslate"><span class="pre">velocities</span></code></p></td>
+<td><p>array per sim-mesh prim (mesh-local)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_OBJECT_PARTICLE_SET</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">points</span></code>, <code class="docutils literal notranslate"><span class="pre">velocities</span></code></p></td>
+<td><p>array per particle-set prim</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_SCOPE_ACTIVE</span></code> restricts the query to objects the solver moved last step
+(single-frame — re-query each step); <code class="docutils literal notranslate"><span class="pre">OVPHYSX_SCOPE_ALL</span></code> returns every object of
+the type.</p>
+<p>For <code class="docutils literal notranslate"><span class="pre">OVPHYSX_OBJECT_ARTICULATION_JOINT</span></code>, the array carries one row per unlocked
+reduced-coordinate DOF axis of the joint, in <code class="docutils literal notranslate"><span class="pre">PxArticulationAxis</span></code> enum order —
+independent of whether a <code class="docutils literal notranslate"><span class="pre">JointStateAPI</span></code> is authored. Angular axes are reported in
+degrees and linear (prismatic) axes in the stage’s base length unit; an authored
+<code class="docutils literal notranslate"><span class="pre">JointStateAPI</span></code> overrides the per-axis degree/radian convention where present.</p>
+</section>
+</section>
+<section id="worked-example-one-closed-loop-frame">
+<h2>Worked example: one closed-loop frame<a class="headerlink" href="#worked-example-one-closed-loop-frame" title="Link to this heading">#</a></h2>
+<p>The example drives one frame of the loop above with explicit ordinals, showing
+the control lane (drained by physics) and the output lane (never drained).</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovstage/ovstage.h&gt;</span><span class="c1">            // application owns the ovstage Stage</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdint.h&gt;</span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">author_control_fn</span><span class="p">)(</span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_ordinal_t</span><span class="p">);</span>
+<span class="k">typedef</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">write_output_fn</span><span class="p">)(</span>
+<span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_ordinal_t</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_read_group_t</span><span class="o">*</span><span class="p">);</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">run_closed_loop</span><span class="p">(</span>
+<span class="w">    </span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">h</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">num_frames</span><span class="p">,</span>
+<span class="w">    </span><span class="n">author_control_fn</span><span class="w"> </span><span class="n">author_control_edits</span><span class="p">,</span>
+<span class="w">    </span><span class="n">write_output_fn</span><span class="w"> </span><span class="n">write_output_to_ovstage</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="c1">// Attach: the scene was authored and sealed at ordinal 1.</span>
+<span class="w">    </span><span class="n">ovphysx_attach_ovstage</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="cm">/*read_ordinal=*/</span><span class="mi">1</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">ovstage_ordinal_t</span><span class="w"> </span><span class="n">control_ord</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w">  </span><span class="c1">// even lane: app edits physics processes</span>
+<span class="w">    </span><span class="n">ovstage_ordinal_t</span><span class="w"> </span><span class="n">output_ord</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span><span class="w">  </span><span class="c1">// odd lane: physics output (NEVER drained)</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">frame</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">frame</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num_frames</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">frame</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// App authors control edits (e.g. a new kinematic target) at</span>
+<span class="w">        </span><span class="c1">// `control_ord` and seals them through the ovstage write API.</span>
+<span class="w">        </span><span class="n">author_control_edits</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">control_ord</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// App-&gt;physics: drain ONLY the control ordinal (closed range). The</span>
+<span class="w">        </span><span class="c1">// previous output ordinal is below it but is never named here.</span>
+<span class="w">        </span><span class="n">ovstage_ordinal_range_t</span><span class="w"> </span><span class="n">ctrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">control_ord</span><span class="p">,</span><span class="w"> </span><span class="n">control_ord</span><span class="p">,</span><span class="w"> </span><span class="cm">/*has_start_ordinal=*/</span><span class="nb">true</span>
+<span class="w">        </span><span class="p">};</span>
+<span class="w">        </span><span class="n">ovphysx_update_from_ovstage</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ctrl</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// Step the simulation.</span>
+<span class="w">        </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">step_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_step</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_op_wait_result_t</span><span class="w"> </span><span class="n">step_wait</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
+<span class="w">        </span><span class="n">ovphysx_wait_op</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">step_result</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="n">UINT64_MAX</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">step_wait</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_wait_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">step_wait</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// Physics-&gt;app: read the step output.</span>
+<span class="w">        </span><span class="n">ovphysx_query_handle_t</span><span class="w"> </span><span class="n">q</span><span class="p">;</span>
+<span class="w">        </span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_OBJECT_RIGID_BODY</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_SCOPE_ACTIVE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">q</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// Attribute selectors are names or interned tokens.</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovx_string_or_token_t</span><span class="w"> </span><span class="n">names</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">              </span><span class="p">.</span><span class="n">string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_ATTR_POSITION</span><span class="p">,</span>
+<span class="w">                          </span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">OVPHYSX_ATTR_POSITION</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span>
+<span class="w">            </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">              </span><span class="p">.</span><span class="n">string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_ATTR_ORIENTATION</span><span class="p">,</span>
+<span class="w">                          </span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">OVPHYSX_ATTR_ORIENTATION</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">};</span>
+<span class="w">        </span><span class="n">ovphysx_read_handle_t</span><span class="w"> </span><span class="n">r</span><span class="p">;</span>
+<span class="w">        </span><span class="n">ovphysx_read</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="n">names</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">r</span><span class="p">);</span>
+
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(;;)</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_read_group_t</span><span class="o">*</span><span class="w"> </span><span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"> </span><span class="c1">// producer-owned borrowed pointer</span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">fetch_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">g</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">fetch_result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_END_OF_ITERATION</span><span class="p">)</span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">fetch_result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">g</span><span class="p">)</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">                </span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">);</span>
+<span class="w">                </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">);</span>
+<span class="w">                </span><span class="k">return</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="c1">// App writes the output at `output_ord` and seals it, reusing</span>
+<span class="w">            </span><span class="c1">// g-&gt;prims.list, g-&gt;data.tensors, and g-&gt;is_array with no repack.</span>
+<span class="w">            </span><span class="n">write_output_to_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">output_ord</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="p">);</span>
+<span class="w">            </span><span class="n">ovphysx_release_group</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="o">-&gt;</span><span class="n">read_group_id</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// Advance the lanes. The output ordinal is skipped forever.</span>
+<span class="w">        </span><span class="n">control_ord</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="w">        </span><span class="n">output_ord</span><span class="w">  </span><span class="o">+=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The invariant to hold onto: <strong>every ordinal passed to
+<code class="docutils literal notranslate"><span class="pre">ovphysx_update_from_ovstage</span></code> is a control ordinal the application authored;
+output ordinals are never named in a drain range.</strong> That single rule is
+what keeps physics from consuming its own output.</p>
+</section>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>The read is ovstage-only: it requires an attached ovstage Stage, else
+<code class="docutils literal notranslate"><span class="pre">ovphysx_query</span></code> fails. A zero <code class="docutils literal notranslate"><span class="pre">out_query</span></code> means FAILURE only — an empty match is
+still a valid, nonzero query whose read reaches end-of-iteration immediately
+(<code class="docutils literal notranslate"><span class="pre">ovphysx_fetch_query_result</span></code> then reports <code class="docutils literal notranslate"><span class="pre">total_prim_count</span> <span class="pre">==</span> <span class="pre">0</span></code>).</p></li>
+<li><p>A query is a reusable selector (type + scope), not a captured membership snapshot:
+matched prims and values are evaluated lazily (count at <code class="docutils literal notranslate"><span class="pre">ovphysx_fetch_query_result</span></code>,
+columns at <code class="docutils literal notranslate"><span class="pre">ovphysx_read</span></code>), each observing the most recently completed step. A step
+between query and read is fine — the read reflects the newer step.</p></li>
+<li><p>Borrowed lifetime: the producer-owned group and its <code class="docutils literal notranslate"><span class="pre">tensors</span></code> / <code class="docutils literal notranslate"><span class="pre">index_map</span></code> /
+<code class="docutils literal notranslate"><span class="pre">prim_list</span></code> are valid until that group’s <code class="docutils literal notranslate"><span class="pre">read_group_id</span></code> is released through
+<code class="docutils literal notranslate"><span class="pre">ovphysx_release_group</span></code> — fetching further groups (or stepping) does not invalidate
+earlier ones. Copy out anything you must retain past release (writing it back into
+ovstage within the window is the default path).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_SCOPE_ACTIVE</span></code> is single-frame; re-open the query each step.</p></li>
+</ul>
+<p>See also: <a class="reference internal" href="developer_guide.html"><span class="std std-doc">Developer Guide</span></a> for the async/ordinal execution
+model, and <a class="reference internal" href="api.html"><span class="std std-doc">API Reference</span></a> for the full C surface.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="changelog.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Changelog</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="simulation_setup/physics_scene.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Physics Scene and Simulation Configuration</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-data-surface-ovstage-ordinals">The data surface: ovstage + ordinals</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#seal-population-changes-before-attaching-or-draining">Seal population changes before attaching or draining</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-key-principle-physics-must-not-get-its-own-changes">The key principle: physics must not get its own changes</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ordinal-timeline">Ordinal timeline</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reading-simulation-output">Reading simulation output</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#output-attributes-by-type">Output attributes by type</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#worked-example-one-closed-loop-frame">Worked example: one closed-loop frame</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#notes">Notes</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 21, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,923 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Deformable Bodies &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=93e13339"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=65e89d2a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'simulation_setup/deformables';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.5.9';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Particles" href="particles.html" />
+    <link rel="prev" title="Articulations" href="articulations.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Jul 21, 2026"/>
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovstage_integration.html">Ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="collision.html">Colliders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="articulations.html">Articulations</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/hello_world.html">Hello World: Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensor_bindings.html">Tensor Bindings: Read and Write Simulation Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/contact_binding.html">Contact Binding: Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/cloning.html">Cloning: Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop: Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording: Capture Physics Internals to .ovd</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Deformable Bodies</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="deformable-bodies">
+<h1>Deformable Bodies<a class="headerlink" href="#deformable-bodies" title="Link to this heading">#</a></h1>
+<p>Deformable bodies simulate objects that bend, stretch, and squash. ovphysx
+supports two kinds:</p>
+<ul class="simple">
+<li><p><strong>Volume deformables</strong> — solid objects simulated on a tetrahedral mesh.</p></li>
+<li><p><strong>Surface deformables</strong> — thin, cloth-like objects simulated on a triangle
+mesh. (The old particle-cloth feature was removed; cloth is now a surface
+deformable.)</p></li>
+</ul>
+<p>Deformables are defined across two schemas: the <strong>Omni Physics Deformable
+Schema</strong> (<code class="docutils literal notranslate"><span class="pre">OmniPhysics*</span></code>, staged for inclusion in <code class="docutils literal notranslate"><span class="pre">UsdPhysics</span></code>) and the
+<strong>PhysX Schema</strong> (<code class="docutils literal notranslate"><span class="pre">Physx*</span></code> extensions). Both ship as codeless schemas —
+refer to <a class="reference internal" href="../physics_schemas.html"><span class="std std-doc">Physics Schemas</span></a>. This page shows the raw-USD
+(<code class="docutils literal notranslate"><span class="pre">ApplyAPI</span></code>) authoring route.</p>
+<blockquote>
+<div><p><strong>Deformables require GPU simulation.</strong> Enable GPU dynamics on the physics
+scene (<code class="docutils literal notranslate"><span class="pre">physxScene:enableGPUDynamics</span> <span class="pre">=</span> <span class="pre">true</span></code>, <code class="docutils literal notranslate"><span class="pre">physxScene:broadphaseType</span> <span class="pre">=</span> <span class="pre">&quot;GPU&quot;</span></code>); refer to <a class="reference internal" href="physics_scene.html"><span class="std std-doc">Physics Scene</span></a>. CPU simulation of deformables is
+not supported.</p>
+</div></blockquote>
+<section id="single-mesh-volume-deformable">
+<h2>Single-Mesh Volume Deformable<a class="headerlink" href="#single-mesh-volume-deformable" title="Link to this heading">#</a></h2>
+<p>A volume deformable needs a <code class="docutils literal notranslate"><span class="pre">UsdGeom.TetMesh</span></code> simulation mesh. Apply
+<code class="docutils literal notranslate"><span class="pre">OmniPhysicsDeformableBodyAPI</span></code>, <code class="docutils literal notranslate"><span class="pre">OmniPhysicsVolumeDeformableSimAPI</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">UsdPhysics.CollisionAPI</span></code>; PhysX-specific attributes go on
+<code class="docutils literal notranslate"><span class="pre">PhysxBaseDeformableBodyAPI</span></code> and <code class="docutils literal notranslate"><span class="pre">PhysxCollisionAPI</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Usd</span><span class="p">,</span> <span class="n">UsdGeom</span><span class="p">,</span> <span class="n">UsdPhysics</span><span class="p">,</span> <span class="n">Vt</span><span class="p">,</span> <span class="n">Sdf</span>
+
+<span class="c1"># A minimal tetrahedral cube used as the simulation mesh.</span>
+<span class="n">tet</span> <span class="o">=</span> <span class="n">UsdGeom</span><span class="o">.</span><span class="n">TetMesh</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/TetMesh&quot;</span><span class="p">)</span>
+<span class="n">tet</span><span class="o">.</span><span class="n">GetPointsAttr</span><span class="p">()</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">Vt</span><span class="o">.</span><span class="n">Vec3fArray</span><span class="p">([</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+<span class="p">]))</span>
+<span class="n">tet</span><span class="o">.</span><span class="n">GetTetVertexIndicesAttr</span><span class="p">()</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">Vt</span><span class="o">.</span><span class="n">Vec4iArray</span><span class="p">([</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+<span class="p">]))</span>
+<span class="n">tet</span><span class="o">.</span><span class="n">GetSurfaceFaceVertexIndicesAttr</span><span class="p">()</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">UsdGeom</span><span class="o">.</span><span class="n">TetMesh</span><span class="o">.</span><span class="n">ComputeSurfaceFaces</span><span class="p">(</span><span class="n">tet</span><span class="p">))</span>
+<span class="n">prim</span> <span class="o">=</span> <span class="n">tet</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">()</span>
+
+<span class="c1"># Deformable body + mass.</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;OmniPhysicsDeformableBodyAPI&quot;</span><span class="p">)</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;omniphysics:mass&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">30.0</span><span class="p">)</span>
+
+<span class="c1"># Volume simulation API + rest shape (topology must match the sim mesh).</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;OmniPhysicsVolumeDeformableSimAPI&quot;</span><span class="p">)</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;omniphysics:restShapePoints&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">tet</span><span class="o">.</span><span class="n">GetPointsAttr</span><span class="p">()</span><span class="o">.</span><span class="n">Get</span><span class="p">())</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;omniphysics:restTetVtxIndices&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">tet</span><span class="o">.</span><span class="n">GetTetVertexIndicesAttr</span><span class="p">()</span><span class="o">.</span><span class="n">Get</span><span class="p">())</span>
+
+<span class="c1"># The single collider is mandatory for a single-mesh deformable.</span>
+<span class="n">UsdPhysics</span><span class="o">.</span><span class="n">CollisionAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">prim</span><span class="p">)</span>
+
+<span class="c1"># Optional PhysX-specific attributes.</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxBaseDeformableBodyAPI&quot;</span><span class="p">)</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;physxDeformableBody:disableGravity&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxCollisionAPI&quot;</span><span class="p">)</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxCollision:contactOffset&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">0.02</span><span class="p">)</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxCollision:restOffset&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="single-mesh-surface-deformable">
+<h2>Single-Mesh Surface Deformable<a class="headerlink" href="#single-mesh-surface-deformable" title="Link to this heading">#</a></h2>
+<p>A surface deformable needs a triangle <code class="docutils literal notranslate"><span class="pre">UsdGeom.Mesh</span></code>. Apply
+<code class="docutils literal notranslate"><span class="pre">OmniPhysicsDeformableBodyAPI</span></code>, <code class="docutils literal notranslate"><span class="pre">OmniPhysicsSurfaceDeformableSimAPI</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">UsdPhysics.CollisionAPI</span></code> (the simulation mesh is used for collision — a separate
+collision mesh is not supported for surface deformables). PhysX-specific
+attributes go on <code class="docutils literal notranslate"><span class="pre">PhysxSurfaceDeformableBodyAPI</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;OmniPhysicsDeformableBodyAPI&quot;</span><span class="p">)</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;omniphysics:mass&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="n">prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;OmniPhysicsSurfaceDeformableSimAPI&quot;</span><span class="p">)</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;omniphysics:restShapePoints&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">tri_mesh</span><span class="o">.</span><span class="n">GetPointsAttr</span><span class="p">()</span><span class="o">.</span><span class="n">Get</span><span class="p">())</span>
+<span class="c1"># omniphysics:restTriVtxIndices takes Vec3i triangle indices matching the sim mesh.</span>
+
+<span class="n">UsdPhysics</span><span class="o">.</span><span class="n">CollisionAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">prim</span><span class="p">)</span>
+
+<span class="n">prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxSurfaceDeformableBodyAPI&quot;</span><span class="p">)</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;physxDeformableBody:disableGravity&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">prim</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;physxDeformableBody:selfCollision&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><img alt="A deformable tetrahedral rest shape" src="../_images/deformable_tet_restshape.png" /></p>
+</section>
+<section id="hierarchies">
+<h2>Hierarchies<a class="headerlink" href="#hierarchies" title="Link to this heading">#</a></h2>
+<p>For more control, author a hierarchy: a root <code class="docutils literal notranslate"><span class="pre">Xform</span></code> carrying
+<code class="docutils literal notranslate"><span class="pre">OmniPhysicsDeformableBodyAPI</span></code>, a simulation mesh with the sim API, optionally a
+separate collision <code class="docutils literal notranslate"><span class="pre">TetMesh</span></code> (volume only), and any number of render
+<code class="docutils literal notranslate"><span class="pre">PointBased</span></code> meshes. Register non-simulation meshes to the sim mesh with a bind
+pose (<code class="docutils literal notranslate"><span class="pre">OmniPhysicsDeformablePoseAPI</span></code>, instance name e.g. <code class="docutils literal notranslate"><span class="pre">custom</span></code>, purpose
+<code class="docutils literal notranslate"><span class="pre">bindPose</span></code>). Mark the simulation mesh purpose <code class="docutils literal notranslate"><span class="pre">guide</span></code> so it is not rendered.</p>
+<p><img alt="A deformable render mesh embedded in a simulation mesh" src="../_images/deformable_embedding.png" /></p>
+</section>
+<section id="auto-mesh-generation">
+<h2>Auto Mesh Generation<a class="headerlink" href="#auto-mesh-generation" title="Link to this heading">#</a></h2>
+<p>Tetrahedral (and simplified triangle) meshes are often not available and must be
+generated from a graphics mesh. The <code class="docutils literal notranslate"><span class="pre">PhysxAutoDeformableBodyAPI</span></code> schema (with
+<code class="docutils literal notranslate"><span class="pre">PhysxAutoDeformableHexahedralMeshAPI</span></code> for hex-structured volume meshes) drives
+this generation from a source mesh; ovphysx produces the required simulation and
+collision mesh data during cooking when the stage is attached. Author the
+auto-deformable schema attributes on the root prim and point them at the source
+mesh.</p>
+</section>
+<section id="materials">
+<h2>Materials<a class="headerlink" href="#materials" title="Link to this heading">#</a></h2>
+<p>Deformable materials stack API schemas on a <code class="docutils literal notranslate"><span class="pre">UsdShade.Material</span></code> prim:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">OmniPhysicsBaseMaterialAPI</span></code> — friction and density (shared with rigid bodies).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OmniPhysicsDeformableMaterialAPI</span></code> — Young’s modulus and Poisson’s ratio (volume
+and surface).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OmniPhysicsSurfaceDeformableMaterialAPI</span></code> — surface-only parameters (thickness,
+bend stiffness).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PhysxDeformableMaterialAPI</span></code> / <code class="docutils literal notranslate"><span class="pre">PhysxSurfaceDeformableMaterialAPI</span></code> — PhysX extras
+(elasticity damping, bend damping).</p></li>
+</ul>
+<p>Bind the material with <code class="docutils literal notranslate"><span class="pre">UsdShade.MaterialBindingAPI</span></code> using the <code class="docutils literal notranslate"><span class="pre">&quot;physics&quot;</span></code>
+purpose, exactly as for <a class="reference internal" href="rigid_bodies.html#materials"><span class="std std-ref">rigid-body materials</span></a>. Bind
+to the root deformable prim (binding recurses to the simulation mesh).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">UsdShade</span>
+
+<span class="n">mat</span> <span class="o">=</span> <span class="n">UsdShade</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">Define</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/DeformableMaterial&quot;</span><span class="p">)</span>
+<span class="n">mp</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">GetPrim</span><span class="p">()</span>
+<span class="n">mp</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;OmniPhysicsBaseMaterialAPI&quot;</span><span class="p">)</span>
+<span class="n">mp</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;omniphysics:dynamicFriction&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">10.0</span><span class="p">)</span>
+<span class="n">mp</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;omniphysics:density&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">1000.0</span><span class="p">)</span>
+<span class="n">mp</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;OmniPhysicsDeformableMaterialAPI&quot;</span><span class="p">)</span>
+<span class="n">mp</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;omniphysics:youngsModulus&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">1e5</span><span class="p">)</span>
+<span class="n">mp</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;omniphysics:poissonsRatio&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="mf">0.45</span><span class="p">)</span>
+
+<span class="n">binding</span> <span class="o">=</span> <span class="n">UsdShade</span><span class="o">.</span><span class="n">MaterialBindingAPI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">deformable_root_prim</span><span class="p">)</span>
+<span class="n">binding</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">UsdShade</span><span class="o">.</span><span class="n">Tokens</span><span class="o">.</span><span class="n">weakerThanDescendants</span><span class="p">,</span> <span class="s2">&quot;physics&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Deformable material properties (dynamic friction, Young’s modulus, Poisson’s
+ratio, elasticity damping, and — for surface — bending stiffness/thickness/
+damping) can also be read and written in bulk at runtime through the deformable
+material tensor types — refer to <a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings</span></a>.</p>
+</section>
+<section id="attachments-and-collision-filters">
+<h2>Attachments and Collision Filters<a class="headerlink" href="#attachments-and-collision-filters" title="Link to this heading">#</a></h2>
+<p>Attach a deformable to another deformable, a rigid body, a collider, or any
+<code class="docutils literal notranslate"><span class="pre">Xformable</span></code> by defining low-level attachment prims. For example, a vertex-vertex
+attachment couples specific simulation-mesh vertices of two deformables:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">attachment</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">DefinePrim</span><span class="p">(</span><span class="s2">&quot;/World/VtxVtxAttachment&quot;</span><span class="p">,</span> <span class="s2">&quot;OmniPhysicsVtxVtxAttachment&quot;</span><span class="p">)</span>
+<span class="n">attachment</span><span class="o">.</span><span class="n">GetRelationship</span><span class="p">(</span><span class="s2">&quot;omniphysics:src0&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">SetTargets</span><span class="p">([</span><span class="s2">&quot;/World/DeformableBody0&quot;</span><span class="p">])</span>
+<span class="n">attachment</span><span class="o">.</span><span class="n">GetRelationship</span><span class="p">(</span><span class="s2">&quot;omniphysics:src1&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">SetTargets</span><span class="p">([</span><span class="s2">&quot;/World/DeformableBody1&quot;</span><span class="p">])</span>
+<span class="n">attachment</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;omniphysics:vtxIndicesSrc0&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">([</span><span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dim</span> <span class="o">*</span> <span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">attachment</span><span class="o">.</span><span class="n">GetAttribute</span><span class="p">(</span><span class="s2">&quot;omniphysics:vtxIndicesSrc1&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim</span> <span class="o">*</span> <span class="n">dim</span> <span class="o">-</span> <span class="n">dim</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>A vertex-Xform attachment (<code class="docutils literal notranslate"><span class="pre">OmniPhysicsVtxXformAttachment</span></code>) pins vertices to a
+coordinate frame. <code class="docutils literal notranslate"><span class="pre">PhysxAutoDeformableAttachmentAPI</span></code> generates attachments
+automatically from geometric overlap between a deformable and a collider/xform.
+Use <code class="docutils literal notranslate"><span class="pre">ElementCollisionFilter</span></code> prims to suppress unwanted collisions at attachment
+sites; where element-level filtering is unsupported (for example between two
+surface deformables), fall back to standard prim-level
+<a class="reference internal" href="collision.html#collision-filtering"><span class="std std-ref">group or pair filtering</span></a>.</p>
+</section>
+<section id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading">#</a></h2>
+<p>The current Omni PhysX implementation is more restricted than the schema allows:</p>
+<ul class="simple">
+<li><p>Exactly <strong>one collider</strong> per deformable body. For surface deformables the
+simulation mesh must be the collider (no separate collision mesh).</p></li>
+<li><p>The rest-shape topology must be <strong>identical</strong> to the simulation-mesh topology
+(matching indices and point counts); the rest shape cannot be manipulated at
+simulation time.</p></li>
+<li><p>Kinematic animation of simulation-mesh points is supported for <strong>volume</strong>
+deformables only.</p></li>
+<li><p><strong>Static friction is not supported</strong> — use a sufficiently high dynamic
+friction. Friction combine modes apply only to rigid-deformable contacts, not
+deformable-deformable.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">surfaceStretchStiffness</span></code> / <code class="docutils literal notranslate"><span class="pre">surfaceShearStiffness</span></code> are unsupported;
+<code class="docutils literal notranslate"><span class="pre">surfaceBendStiffness</span></code> is the only bend-resistance control.</p></li>
+<li><p>Multi-material binding (through <code class="docutils literal notranslate"><span class="pre">UsdSubset</span></code>) is unsupported; attachment stiffness/
+damping and tri-tri attachments are unsupported.</p></li>
+</ul>
+</section>
+<section id="reading-deformable-state">
+<h2>Reading Deformable State<a class="headerlink" href="#reading-deformable-state" title="Link to this heading">#</a></h2>
+<p>At runtime, volume and surface deformables expose their nodal (per-vertex) state
+through tensor bindings:</p>
+<ul class="simple">
+<li><p>Volume: <code class="docutils literal notranslate"><span class="pre">DEFORMABLE_SIM_NODAL_POSITION</span></code> / <code class="docutils literal notranslate"><span class="pre">..._VELOCITY</span></code>,
+<code class="docutils literal notranslate"><span class="pre">DEFORMABLE_SIM_KINEMATIC_TARGET</span></code>, read-only rest positions and element
+indices.</p></li>
+<li><p>Surface: <code class="docutils literal notranslate"><span class="pre">SURFACE_DEFORMABLE_SIM_POSITION</span></code> / <code class="docutils literal notranslate"><span class="pre">..._VELOCITY</span></code>, read-only rest
+positions and triangle connectivity.</p></li>
+</ul>
+<p>See the <a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings</span></a> reference. Simulated
+mesh points and velocities are also available through the ovstage
+<a class="reference internal" href="../ovstage_integration.html"><span class="std std-doc">output read</span></a> API (object types
+<code class="docutils literal notranslate"><span class="pre">DEFORMABLE_VOLUME</span></code> and <code class="docutils literal notranslate"><span class="pre">DEFORMABLE_SURFACE</span></code>, attributes <code class="docutils literal notranslate"><span class="pre">points</span></code> / <code class="docutils literal notranslate"><span class="pre">velocities</span></code>).</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="articulations.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Articulations</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="particles.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Particles</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#single-mesh-volume-deformable">Single-Mesh Volume Deformable</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#single-mesh-surface-deformable">Single-Mesh Surface Deformable</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hierarchies">Hierarchies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#auto-mesh-generation">Auto Mesh Generation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#materials">Materials</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#attachments-and-collision-filters">Attachments and Collision Filters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limitations">Limitations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reading-deformable-state">Reading Deformable State</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Jul 21, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
