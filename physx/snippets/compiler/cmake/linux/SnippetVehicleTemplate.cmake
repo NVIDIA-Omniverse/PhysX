@@ -46,12 +46,8 @@ SET(SNIPPET_PLATFORM_SOURCES
 	${PHYSX_ROOT_DIR}/snippets/snippetcommon/ClassicMain.cpp
 )
 
-# gwoolery: aarch64 requires glut library to be lower case, for whatever reason
-IF(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-	SET(GLUT_LIB "glut")
-ELSE()
-	SET(GLUT_LIB "GLUT")
-ENDIF()
+# Modern Linux uses lowercase glut library name
+SET(GLUT_LIB "glut")
 
 SET(SNIPPET_PLATFORM_LINKED_LIBS SnippetRender GL GLU ${GLUT_LIB} X11 rt pthread dl)
 
