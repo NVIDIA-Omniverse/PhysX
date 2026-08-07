@@ -18,12 +18,8 @@
 using namespace test_utils;
 
 TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
-    // Load additional USD for this test
     const char* usd_path = OVPHYSX_SOURCE_DIR "/tests/data/links_chain_sample.usda";
     ASSERT_TRUE(attach_usd_with_ovstage(m_handle, usd_path));
-
-    // Create tensor bindings for articulation chain
-    // Use tensor binding API for DOF positions, velocities, and position targets
 
     // DOF position binding (read joint positions)
     ovphysx_tensor_binding_handle_t dof_pos_binding = 0;
@@ -135,7 +131,6 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
         {
             float target_pos = ((step / STEPS_PER_TARGET_SWITCH) % 2 == 0) ? 0.3f : -0.3f;
 
-            // Set all DOF position targets
             for (size_t i = 0; i < dof_count * dof_components; ++i) {
                 dof_targets[i] = target_pos;
             }
@@ -144,7 +139,6 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
             ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
         }
 
-        // Step simulation
         ovphysx_enqueue_result_t step_result = ovphysx_step(m_handle, dt);
         ASSERT_EQ(step_result.status, OVPHYSX_API_SUCCESS);
 

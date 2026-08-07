@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -56,15 +56,15 @@ namespace physx {
 		{
 		}
 				
-		virtual const char* getTypeName() { return PxTypeInfo<TLiveType>::name(); }
+		virtual const char* getTypeName() PX_OVERRIDE { return PxTypeInfo<TLiveType>::name(); }
 		
-		virtual void objectToFile( const PxRepXObject& inLiveObject, PxCollection* inCollection, XmlWriter& inWriter, MemoryBuffer& inTempBuffer, PxRepXInstantiationArgs& inArgs )
+		virtual void objectToFile( const PxRepXObject& inLiveObject, PxCollection* inCollection, XmlWriter& inWriter, MemoryBuffer& inTempBuffer, PxRepXInstantiationArgs& inArgs ) PX_OVERRIDE
 		{
 			const TLiveType* theObj = reinterpret_cast<const TLiveType*>( inLiveObject.serializable );
 			objectToFileImpl( theObj, inCollection, inWriter, inTempBuffer, inArgs );
 		}
 
-		virtual PxRepXObject fileToObject( XmlReader& inReader, XmlMemoryAllocator& inAllocator, PxRepXInstantiationArgs& inArgs, PxCollection* inCollection )
+		virtual PxRepXObject fileToObject( XmlReader& inReader, XmlMemoryAllocator& inAllocator, PxRepXInstantiationArgs& inArgs, PxCollection* inCollection ) PX_OVERRIDE
 		{
 			TLiveType* theObj( allocateObject( inArgs ) );
 			if ( theObj )

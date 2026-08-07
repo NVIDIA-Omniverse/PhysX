@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,43 +35,43 @@ namespace Dy
 {
 
 ThreadContext::ThreadContext(PxcNpMemBlockPool* memBlockPool) :
-	mFrictionPatchStreamPair				(*memBlockPool),
-	mConstraintBlockManager					(*memBlockPool),
-	mConstraintBlockStream					(*memBlockPool),
-	mNumDifferentBodyConstraints			(0),
-	mNumStaticConstraints					(0),
-	mHasOverflowPartitions					(false),
-	mConstraintsPerPartition				("ThreadContext::mConstraintsPerPartition"),
-	//mPartitionNormalizationBitmap			("ThreadContext::mPartitionNormalizationBitmap"),
-	mBodyCoreArray							(NULL),
-	mRigidBodyArray							(NULL),
-	mArticulationArray						(NULL),
-	motionVelocityArray						(NULL),
-	bodyRemapTable							(NULL),
-	mNodeIndexArray							(NULL),
-	contactConstraintDescArray				(NULL),
-	contactDescArraySize					(0),
-	orderedContactConstraints				(NULL),
-	contactConstraintBatchHeaders			(NULL),
-	numContactConstraintBatches				(0),
-	tempConstraintDescArray					(NULL),
+	mFrictionPatchStreamPair		(*memBlockPool),
+	mConstraintBlockManager			(*memBlockPool),
+	mConstraintBlockStream			(*memBlockPool),
+	mNumDifferentBodyConstraints	(0),
+	mNumStaticConstraints			(0),
+	mHasOverflowPartitions			(false),
+	mNbArticulations				(0),
+	mConstraintsPerPartition		("ThreadContext::mConstraintsPerPartition"),
+	//mPartitionNormalizationBitmap	("ThreadContext::mPartitionNormalizationBitmap"),
+	mBodyCoreArray					(NULL),
+	mRigidBodyArray					(NULL),
+	mArticulationArray				(NULL),
+	motionVelocityArray				(NULL),
+	bodyRemapTable					(NULL),
+	mNodeIndexArray					(NULL),
+	contactConstraintDescArray		(NULL),
+	contactDescArraySize			(0),
+	orderedContactConstraints		(NULL),
+	contactConstraintBatchHeaders	(NULL),
+	numContactConstraintBatches		(0),
+	tempConstraintDescArray			(NULL),
 #if PGS_SUPPORT_COMPOUND_CONSTRAINTS
-	compoundConstraints						("ThreadContext::compoundConstraints"),
-	orderedContactList						("ThreadContext::orderedContactList"),
-	tempContactList							("ThreadContext::tempContactList"),
-	sortIndexArray							("ThreadContext::sortIndexArray"),
+	compoundConstraints				("ThreadContext::compoundConstraints"),
+	orderedContactList				("ThreadContext::orderedContactList"),
+	tempContactList					("ThreadContext::tempContactList"),
+	sortIndexArray					("ThreadContext::sortIndexArray"),
 #endif
-	mOrderedContactDescCount				(0),
-	mOrderedFrictionDescCount				(0),
-	mConstraintSize							(0),
-	mAxisConstraintCount					(0),
-	mMaxPartitions							(0),
-	mMaxFrictionPartitions					(0),
-	mMaxSolverPositionIterations			(0),
-	mMaxSolverVelocityIterations			(0),
-	mMaxArticulationLinks					(0),
-	mContactDescPtr							(NULL),
-	mArticulations							("ThreadContext::articulations")
+	mOrderedContactDescCount		(0),
+	mOrderedFrictionDescCount		(0),
+	mConstraintSize					(0),
+	mAxisConstraintCount			(0),
+	mMaxPartitions					(0),
+	mMaxFrictionPartitions			(0),
+	mMaxSolverPositionIterations	(0),
+	mMaxSolverVelocityIterations	(0),
+	mMaxArticulationLinks			(0),
+	mContactDescPtr					(NULL)
 {
 #if PX_ENABLE_SIM_STATS
 	mThreadSimStats.clear();
@@ -86,9 +86,7 @@ ThreadContext::ThreadContext(PxcNpMemBlockPool* memBlockPool) :
 
 void ThreadContext::resizeArrays(PxU32 articulationCount)
 {
-	mArticulations.forceSize_Unsafe(0);
-	mArticulations.reserve(PxMax<PxU32>(PxNextPowerOfTwo(articulationCount), 16));
-	mArticulations.forceSize_Unsafe(articulationCount);
+	mNbArticulations = articulationCount;
 
 	mContactDescPtr = contactConstraintDescArray;
 }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -72,7 +72,7 @@ public:
 	}
 
 	virtual PxAgain processHit(
-		const PxGeomRaycastHit& hit, const PxVec3&, const PxVec3&, const PxVec3&, PxReal&, const PxU32*)
+		const PxGeomRaycastHit& hit, const PxVec3&, const PxVec3&, const PxVec3&, PxReal&, const PxU32*) PX_OVERRIDE
 	{
 		container.pushBack(hit.faceIndex);
 
@@ -128,7 +128,7 @@ struct MidPhaseQueryLocalReport : OverlapReport
 	{
 
 	}
-	virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
+	virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices) PX_OVERRIDE
 	{
 		for(PxU32 i=0; i<nb; i++)
 			container.pushBack(indices[i]);
@@ -505,7 +505,7 @@ bool physx::Gu::computeBox_TriangleMeshMTD(const PxTriangleMeshGeometry& triMesh
 	/////
 
 	for(PxU32 i=0; i<iterations; ++i)
-	{		
+	{
 		tempContainer.forceSize_Unsafe(0);
 		{
 			midPhaseQuery(triMeshGeom, pose, box, tempContainer);

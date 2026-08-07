@@ -118,7 +118,7 @@ def test_verify_rejects_forbidden_elf_dynamic_entries_with_one_readelf_call(tmp_
             0,
             stdout=(
                 " 0x000000000000001d (RUNPATH) Library runpath: "
-                "[/tmp/omni/schema/_build/target-deps/python/lib]\n"
+                "[/tmp/schemas/physx/_build/target-deps/python/lib]\n"
                 " 0x0000000000000001 (NEEDED) Shared library: [libusd_tf.so]\n"
             ),
             stderr="",
@@ -155,7 +155,7 @@ def test_verify_rejects_core_carbonite_library_files(tmp_path, monkeypatch):
 
 def test_verify_allows_no_libcarb_static_carb_plugin_shims(tmp_path, monkeypatch):
     # The per-plugin no-libcarb shims ovphysx legitimately ships must NOT be
-    # flagged by the new core-carb patterns (false-positive guard).
+    # flagged by the core-carb patterns (false-positive guard).
     plugins_dir = tmp_path / "plugins"
     plugins_dir.mkdir()
     for name in (

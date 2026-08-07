@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysX (PROJECT not SOLUTION) common
@@ -53,7 +53,6 @@ SET(PHYSX_HEADERS
 	${PHYSX_ROOT_DIR}/include/PxArticulationMimicJoint.h
 	${PHYSX_ROOT_DIR}/include/PxBroadPhase.h
 	${PHYSX_ROOT_DIR}/include/PxClient.h
-	${PHYSX_ROOT_DIR}/include/PxConeLimitedConstraint.h
 	${PHYSX_ROOT_DIR}/include/PxConstraint.h
 	${PHYSX_ROOT_DIR}/include/PxConstraintDesc.h
 	${PHYSX_ROOT_DIR}/include/PxContact.h
@@ -67,15 +66,11 @@ SET(PHYSX_HEADERS
 	${PHYSX_ROOT_DIR}/include/PxDeformableVolume.h
 	${PHYSX_ROOT_DIR}/include/PxDeformableVolumeFlag.h
 	${PHYSX_ROOT_DIR}/include/PxDeletionListener.h
-	${PHYSX_ROOT_DIR}/include/PxFEMParameter.h #deprecated
 	${PHYSX_ROOT_DIR}/include/PxFiltering.h
-	${PHYSX_ROOT_DIR}/include/PxForceMode.h
 	${PHYSX_ROOT_DIR}/include/PxImmediateMode.h
-	${PHYSX_ROOT_DIR}/include/PxLockedData.h
 	${PHYSX_ROOT_DIR}/include/PxNodeIndex.h
 	${PHYSX_ROOT_DIR}/include/PxParticleBuffer.h
 	${PHYSX_ROOT_DIR}/include/PxParticleGpu.h
-	${PHYSX_ROOT_DIR}/include/PxParticleSolverType.h
 	${PHYSX_ROOT_DIR}/include/PxParticleSystem.h
 	${PHYSX_ROOT_DIR}/include/PxParticleSystemFlag.h
 	${PHYSX_ROOT_DIR}/include/PxPBDParticleSystem.h
@@ -98,8 +93,6 @@ SET(PHYSX_HEADERS
 	${PHYSX_ROOT_DIR}/include/PxShape.h
 	${PHYSX_ROOT_DIR}/include/PxSimulationEventCallback.h
 	${PHYSX_ROOT_DIR}/include/PxSimulationStatistics.h
-	${PHYSX_ROOT_DIR}/include/PxSoftBody.h #deprecated
-	${PHYSX_ROOT_DIR}/include/PxSoftBodyFlag.h #deprecated
 	${PHYSX_ROOT_DIR}/include/PxSparseGridParams.h
 	${PHYSX_ROOT_DIR}/include/PxVisualizationParameter.h
 	${PHYSX_ROOT_DIR}/include/PxIsosurfaceExtraction.h
@@ -108,7 +101,6 @@ SET(PHYSX_HEADERS
 	${PHYSX_ROOT_DIR}/include/PxParticleNeighborhoodProvider.h
 	${PHYSX_ROOT_DIR}/include/PxArrayConverter.h
 	${PHYSX_ROOT_DIR}/include/PxSDFBuilder.h
-	${PHYSX_ROOT_DIR}/include/PxResidual.h
 	${PHYSX_ROOT_DIR}/include/PxDirectGPUAPI.h
     ${PHYSX_ROOT_DIR}/include/PxDeformableSkinning.h
 )
@@ -120,8 +112,6 @@ SET(PHYSX_MATERIAL_HEADERS
 	${PHYSX_ROOT_DIR}/include/PxDeformableMaterial.h
 	${PHYSX_ROOT_DIR}/include/PxDeformableSurfaceMaterial.h
 	${PHYSX_ROOT_DIR}/include/PxDeformableVolumeMaterial.h
-	${PHYSX_ROOT_DIR}/include/PxFEMMaterial.h #deprecated
-	${PHYSX_ROOT_DIR}/include/PxFEMSoftBodyMaterial.h #deprecated
 	${PHYSX_ROOT_DIR}/include/PxParticleMaterial.h
 	${PHYSX_ROOT_DIR}/include/PxPBDMaterial.h
 	${PHYSX_ROOT_DIR}/include/PxMaterial.h
@@ -333,15 +323,17 @@ ADD_LIBRARY(PhysX ${PHYSX_LIBTYPE}
 )
 
 # Add the headers to the install
-INSTALL(FILES ${PHYSX_HEADERS} DESTINATION include)
-INSTALL(FILES ${PHYSX_MATERIAL_HEADERS} DESTINATION include)
-INSTALL(FILES ${PHYSX_COMMON_HEADERS} DESTINATION include/common)
-INSTALL(FILES ${PHYSX_PVD_HEADERS} DESTINATION include/pvd)
-INSTALL(FILES ${PHYSX_OMNIPVD_HEADERS} DESTINATION include/omnipvd)
-INSTALL(FILES ${PHYSX_COLLISION_HEADERS} DESTINATION include/collision)
-INSTALL(FILES ${PHYSX_SOLVER_HEADERS} DESTINATION include/solver)
-# install the custom config file
-INSTALL(FILES ${PHYSX_ROOT_DIR}/include/PxConfig.h DESTINATION include)
+IF(NOT DEFINED PX_ENABLE_INSTALL OR PX_ENABLE_INSTALL)
+	INSTALL(FILES ${PHYSX_HEADERS} DESTINATION include)
+	INSTALL(FILES ${PHYSX_MATERIAL_HEADERS} DESTINATION include)
+	INSTALL(FILES ${PHYSX_COMMON_HEADERS} DESTINATION include/common)
+	INSTALL(FILES ${PHYSX_PVD_HEADERS} DESTINATION include/pvd)
+	INSTALL(FILES ${PHYSX_OMNIPVD_HEADERS} DESTINATION include/omnipvd)
+	INSTALL(FILES ${PHYSX_COLLISION_HEADERS} DESTINATION include/collision)
+	INSTALL(FILES ${PHYSX_SOLVER_HEADERS} DESTINATION include/solver)
+	# install the custom config file
+	INSTALL(FILES ${PHYSX_ROOT_DIR}/include/PxConfig.h DESTINATION include)
+ENDIF()
 
 TARGET_INCLUDE_DIRECTORIES(PhysX
 	PRIVATE ${PHYSX_PLATFORM_INCLUDES}
@@ -395,11 +387,6 @@ TARGET_INCLUDE_DIRECTORIES(PhysX
 	PRIVATE ${PHYSX_SOURCE_DIR}/omnipvd
 	PRIVATE ${PHYSX_ROOT_DIR}/pvdruntime/include
 )
-
-# Conditionally add the internal device directory when not in public release mode
-IF(NOT PUBLIC_RELEASE)
-    TARGET_INCLUDE_DIRECTORIES(PhysX PRIVATE ${PHYSX_SOURCE_DIR}/physx/src/internal/device)
-ENDIF()
 
 TARGET_COMPILE_DEFINITIONS(PhysX
 

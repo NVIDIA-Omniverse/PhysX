@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -190,64 +190,12 @@ PxU32 Sc::DeformableVolumeCore::getGpuIndex() const
 	return sim ? sim->getGpuIndex() : 0xffffffff;
 }
 
-void Sc::DeformableVolumeCore::addParticleFilter(Sc::ParticleSystemCore* core, PxU32 particleId, PxU32 userBufferId, PxU32 tetId)
-{
-	Sc::DeformableVolumeSim* sim = getSim();
-
-	if (sim)
-		sim->getScene().addParticleFilter(core, *sim, particleId, userBufferId, tetId);
-}
-
-void Sc::DeformableVolumeCore::removeParticleFilter(Sc::ParticleSystemCore* core, PxU32 particleId, PxU32 userBufferId, PxU32 tetId)
-{
-	Sc::DeformableVolumeSim* sim = getSim();
-
-	if (sim)
-		sim->getScene().removeParticleFilter(core, *sim, particleId, userBufferId, tetId);
-}
-
-PxU32 Sc::DeformableVolumeCore::addParticleAttachment(Sc::ParticleSystemCore* core, PxU32 particleId, PxU32 userBufferId, PxU32 tetId, const PxVec4& barycentric)
-{
-	Sc::DeformableVolumeSim* sim = getSim();
-	PxU32 handle = 0xFFFFFFFF;
-	if (sim)
-		handle = sim->getScene().addParticleAttachment(core, *sim, particleId, userBufferId, tetId, barycentric);
-
-	return handle;
-}
-
-void Sc::DeformableVolumeCore::removeParticleAttachment(Sc::ParticleSystemCore* core, PxU32 handle)
-{
-	Sc::DeformableVolumeSim* sim = getSim();
-	if (sim)
-	{
-		sim->getScene().removeParticleAttachment(core, *sim, handle);
-		setWakeCounterInternal(ScInternalWakeCounterResetValue);
-	}
-}
-
-void Sc::DeformableVolumeCore::addRigidFilter(Sc::BodyCore* core, PxU32 vertId)
-{
-	Sc::DeformableVolumeSim* sim = getSim();
-
-	if (sim)
-		sim->getScene().addRigidFilter(core, *sim, vertId);
-
-}
-
-void Sc::DeformableVolumeCore::removeRigidFilter(Sc::BodyCore* core, PxU32 vertId)
-{
-	Sc::DeformableVolumeSim* sim = getSim();
-	if (sim)
-		sim->getScene().removeRigidFilter(core, *sim, vertId);
-}
-
-PxU32 Sc::DeformableVolumeCore::addRigidAttachment(Sc::BodyCore* core, PxU32 particleId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint, bool doConversion)
+PxU32 Sc::DeformableVolumeCore::addRigidAttachment(Sc::BodyCore* core, PxU32 particleId, const PxVec3& actorSpacePose, bool doConversion)
 {
 	Sc::DeformableVolumeSim* sim = getSim();
 	PxU32 handle = 0xFFFFFFFF;
 	if(sim)
-		handle = sim->getScene().addRigidAttachment(core, *sim, particleId, actorSpacePose, constraint, doConversion);
+		handle = sim->getScene().addRigidAttachment(core, *sim, particleId, actorSpacePose, doConversion);
 
 	return handle;
 }
@@ -280,12 +228,12 @@ void Sc::DeformableVolumeCore::removeTetRigidFilter(Sc::BodyCore* core, PxU32 te
 }
 
 PxU32 Sc::DeformableVolumeCore::addTetRigidAttachment(Sc::BodyCore* core, PxU32 tetIdx, const PxVec4& barycentric,
-	const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint, bool doConversion)
+	const PxVec3& actorSpacePose, bool doConversion)
 {
 	Sc::DeformableVolumeSim* sim = getSim();
 	PxU32 handle = 0xFFFFFFFF;
 	if (sim)
-		handle = sim->getScene().addTetRigidAttachment(core, *sim, tetIdx, barycentric, actorSpacePose, constraint, doConversion);
+		handle = sim->getScene().addTetRigidAttachment(core, *sim, tetIdx, barycentric, actorSpacePose, doConversion);
 
 	return handle;
 }
@@ -320,12 +268,12 @@ void Sc::DeformableVolumeCore::removeSoftBodyFilters(Sc::DeformableVolumeCore& c
 
 
 PxU32 Sc::DeformableVolumeCore::addSoftBodyAttachment(Sc::DeformableVolumeCore& core, PxU32 tetIdx0, const PxVec4& triBarycentric0, PxU32 tetIdx1, const PxVec4& tetBarycentric1,
-	PxConeLimitedConstraint* constraint, PxReal constraintOffset, bool doConversion)
+	bool doConversion)
 {
 	Sc::DeformableVolumeSim* sim = getSim();
 	PxU32 handle = 0xFFFFFFFF;
 	if (sim)
-		handle = sim->getScene().addSoftBodyAttachment(core, tetIdx0, triBarycentric0, *sim, tetIdx1, tetBarycentric1, constraint, constraintOffset, doConversion);
+		handle = sim->getScene().addSoftBodyAttachment(core, tetIdx0, triBarycentric0, *sim, tetIdx1, tetBarycentric1, doConversion);
 
 	return handle;
 }
@@ -356,12 +304,12 @@ void Sc::DeformableVolumeCore::removeClothFilter(Sc::DeformableSurfaceCore& core
 }
 
 PxU32 Sc::DeformableVolumeCore::addClothAttachment(Sc::DeformableSurfaceCore& core, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric,
-	PxConeLimitedConstraint* constraint, PxReal constraintOffset, bool doConversion)
+	bool doConversion)
 {
 	Sc::DeformableVolumeSim* sim = getSim();
 	PxU32 handle = 0xFFFFFFFF;
 	if (sim)
-		handle = sim->getScene().addClothAttachment(core, triIdx, triBarycentric, *sim, tetIdx, tetBarycentric, constraint, constraintOffset, doConversion);
+		handle = sim->getScene().addClothAttachment(core, triIdx, triBarycentric, *sim, tetIdx, tetBarycentric, doConversion);
 
 	return handle;
 }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -44,7 +44,6 @@ using namespace physx;
 #include "NpRigidDynamic.h"
 #include "NpArticulationReducedCoordinate.h"
 #if PX_SUPPORT_GPU_PHYSX
-	#include "NpDeformableVolume.h"
 	#include "NpPBDParticleSystem.h"
 #endif
 #include "foundation/PxVecMath.h"
@@ -976,14 +975,14 @@ void NpArticulationLink::visualizeJoint(PxConstraintVisualizer& jointViz) const
 
 		Sc::ArticulationJointCore& joint = impl->getCore();
 
-		if(joint.getMotion(PxArticulationAxis::eTWIST))
+		if(joint.getMotion(PxArticulationAxis::eTWIST) == PxArticulationMotion::eLIMITED)
 		{
 			const PxArticulationLimit pair = joint.getLimit(PxArticulationAxis::Enum(PxArticulationAxis::eTWIST));
 
 			jointViz.visualizeAngularLimit(parentFrame, pair.low, pair.high);
 		}
 
-		if (joint.getMotion(PxArticulationAxis::eSWING1))
+		if (joint.getMotion(PxArticulationAxis::eSWING1) == PxArticulationMotion::eLIMITED)
 		{
 			const PxArticulationLimit pair = joint.getLimit(PxArticulationAxis::Enum(PxArticulationAxis::eSWING1));
 
@@ -993,7 +992,7 @@ void NpArticulationLink::visualizeJoint(PxConstraintVisualizer& jointViz) const
 			jointViz.visualizeAngularLimit(tmp, -pair.high, -pair.low);
 		}
 
-		if (joint.getMotion(PxArticulationAxis::eSWING2))
+		if (joint.getMotion(PxArticulationAxis::eSWING2) == PxArticulationMotion::eLIMITED)
 		{
 			const PxArticulationLimit pair = joint.getLimit(PxArticulationAxis::Enum(PxArticulationAxis::eSWING2));
 
@@ -1019,7 +1018,7 @@ void NpArticulationLink::visualizeJoint(PxConstraintVisualizer& jointViz) const
 				jointViz.visualizeLine(p0, p1, active ? 0xff0000u : 0xffffffu);
 			}
 		}
-	}	
+	}
 }
 
 void NpArticulationReducedCoordinate::visualize(PxRenderOutput& out, NpScene& scene, float scale) const
@@ -1119,17 +1118,8 @@ void NpScene::visualize()
 		}
 	}
 
-	// TOTO Visualize deformable surfaces
+	// TODO Visualize deformable surfaces
 
-	// Visualize deformable volumes
-	{
-		PxDeformableVolume*const* deformableVolumes = mDeformableVolumes.getEntries();
-		const PxU32 deformableVolumeCount = mDeformableVolumes.size();
-
-		const bool visualize = mScene.getVisualizationParameter(PxVisualizationParameter::eSIMULATION_MESH) != 0.0f;
-		for(PxU32 i=0; i< deformableVolumeCount; i++)
-			deformableVolumes[i]->setDeformableVolumeFlag(PxDeformableVolumeFlag::eDISPLAY_SIM_MESH, visualize);
-	}
 #endif
 
 #if PX_SUPPORT_PVD

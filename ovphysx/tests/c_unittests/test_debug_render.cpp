@@ -4,8 +4,8 @@
 
 // C-boundary tests for the PhysX debug-render API (ovphysx_debug_render_*).
 //
-// These cover the input-validation hardening + the cached getters added in review
-// (MR !7493): the argument checks all run BEFORE the stage/forward, and the getters
+// These cover the input-validation hardening + the cached getters added in review:
+// the argument checks all run BEFORE the stage/forward, and the getters
 // read an ovphysx-side cache, so a bare instance (no attached USD stage) is enough to
 // exercise every check here. (The actual draw-buffer population is covered end-to-end
 // by the BlokyNext consumer suite, which needs a stepped scene.)
@@ -13,12 +13,79 @@
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
 #include "ovphysx/ovphysx_types.h"
+#include "ovphysxTestHelpers.h"
+#include "global_test_environment.h"
 
+#include <atomic>
 #include <cmath>
 #include <limits>
 
 namespace
 {
+std::atomic<int> g_scopeCalls{0};
+std::atomic<uint32_t> g_lastScopeCount{0};
+std::atomic<bool> g_lastScopeWasNull{false};
+
+void recordScopeCall(const ovx_primpath_t* tokens, uint32_t count)
+{
+    g_scopeCalls.fetch_add(1, std::memory_order_relaxed);
+    g_lastScopeCount.store(count, std::memory_order_relaxed);
+    g_lastScopeWasNull.store(tokens == nullptr, std::memory_order_relaxed);
+}
+
+bool scopeSuccess(const ovx_primpath_t* tokens, uint32_t count)
+{
+    recordScopeCall(tokens, count);
+    return true;
+}
+
+bool scopeFalse(const ovx_primpath_t* tokens, uint32_t count)
+{
+    recordScopeCall(tokens, count);
+    return false;
+}
+
+ovphysx_result_t failingUserTask(ovphysx_handle_t, ovphysx_op_index_t, void*)
+{
+    return {OVPHYSX_API_ERROR};
+}
+
+struct SidecarSlotsGuard
+{
+    ovphysx_test_set_viz_scope_tokens_fn previousScope;
+
+    explicit SidecarSlotsGuard(ovphysx_test_set_viz_scope_tokens_fn scope)
+        : previousScope(ovphysx_exchange_set_viz_scope_tokens_internal(scope))
+    {
+        g_scopeCalls.store(0, std::memory_order_relaxed);
+        g_lastScopeCount.store(0, std::memory_order_relaxed);
+        g_lastScopeWasNull.store(false, std::memory_order_relaxed);
+    }
+
+    ~SidecarSlotsGuard()
+    {
+        ovphysx_exchange_set_viz_scope_tokens_internal(previousScope);
+    }
+};
+
+struct OvstageAttachmentStateGuard
+{
+    ovphysx_handle_t handle;
+    bool configured;
+
+    explicit OvstageAttachmentStateGuard(ovphysx_handle_t h, int64_t stageId)
+        : handle(h)
+        , configured(ovphysx_set_ovstage_attachment_state_internal(h, true, stageId))
+    {
+    }
+
+    ~OvstageAttachmentStateGuard()
+    {
+        if (configured)
+            ovphysx_set_ovstage_attachment_state_internal(handle, false, 0);
+    }
+};
+
 // Bare instance (no stage). The debug-render arg validation + cached getters do not
 // require an attached stage.
 struct DebugRenderTest : public ::testing::Test
@@ -34,7 +101,10 @@ struct DebugRenderTest : public ::testing::Test
     void TearDown() override
     {
         if (h)
+        {
+            test_utils::destroy_ovstage_test_attachments(h);
             ovphysx_destroy_instance(h);
+        }
     }
 };
 
@@ -47,20 +117,27 @@ constexpr float kInf = std::numeric_limits<float>::infinity();
 // with the eSCALE slot in the enable loop.
 TEST_F(DebugRenderTest, SetParameterRejectsNoneAndOutOfRange)
 {
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_NONE, true).status,
+    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_NONE, 1.0f).status,
               OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_COUNT, true).status,
+    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_COUNT, 1.0f).status,
               OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, 64u, true).status, OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, 1000000u, true).status, OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, 64u, 1.0f).status, OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, 1000000u, 1.0f).status, OVPHYSX_API_INVALID_ARGUMENT);
+    // The value must be finite and non-negative.
+    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, -1.0f).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, kNaN).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, kInf).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
 }
 
 TEST_F(DebugRenderTest, GetParameterRejectsBadArgs)
 {
-    bool on = true;
-    EXPECT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_NONE, &on).status,
+    float value = 1.0f;
+    EXPECT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_NONE, &value).status,
               OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_COUNT, &on).status,
+    EXPECT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_COUNT, &value).status,
               OVPHYSX_API_INVALID_ARGUMENT);
     EXPECT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, nullptr).status,
               OVPHYSX_API_INVALID_ARGUMENT);
@@ -115,28 +192,29 @@ TEST_F(DebugRenderTest, GettersRejectNullOutPointers)
 // process-global cache's prior contents / test ordering.
 TEST_F(DebugRenderTest, ParameterAndScaleGettersRoundTrip)
 {
-    bool on = false;
+    float value = -1.0f;
 
-    ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, true);
-    ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, &on).status,
+    // A distinct non-default value proves the float path (not a bool round-trip).
+    ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, 2.5f);
+    ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, &value).status,
               OVPHYSX_API_SUCCESS);
-    EXPECT_TRUE(on);
+    EXPECT_FLOAT_EQ(value, 2.5f);
 
-    // A parameter that was never set this run reads back off (bit-independent).
-    ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_SDF, false);
-    ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_SDF, &on).status,
+    // A parameter that was never set this run reads back off (entry-independent).
+    ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_SDF, 0.0f);
+    ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_SDF, &value).status,
               OVPHYSX_API_SUCCESS);
-    EXPECT_FALSE(on);
-    // ... while BODY_AXES is still on (independent bits).
-    ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, &on).status,
+    EXPECT_FLOAT_EQ(value, 0.0f);
+    // ... while BODY_AXES keeps its value (independent entries).
+    ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, &value).status,
               OVPHYSX_API_SUCCESS);
-    EXPECT_TRUE(on);
+    EXPECT_FLOAT_EQ(value, 2.5f);
 
-    // Toggle BODY_AXES back off.
-    ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, false);
-    ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, &on).status,
+    // Back off.
+    ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, 0.0f);
+    ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, &value).status,
               OVPHYSX_API_SUCCESS);
-    EXPECT_FALSE(on);
+    EXPECT_FLOAT_EQ(value, 0.0f);
 
     // Scale round-trips, including the valid boundary value 0.0.
     float scale = -1.0f;
@@ -158,7 +236,7 @@ TEST_F(DebugRenderTest, ParameterAndScaleGettersRoundTrip)
 TEST_F(DebugRenderTest, ValidCallsReturnErrorWithoutStage)
 {
     EXPECT_EQ(ovphysx_debug_render_enable(h, true).status, OVPHYSX_API_ERROR);
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES, true).status,
+    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES, 1.0f).status,
               OVPHYSX_API_ERROR);
     EXPECT_EQ(ovphysx_debug_render_set_scale(h, 1.0f).status, OVPHYSX_API_ERROR);
     const float mn[3] = { 0.f, 0.f, 0.f };
@@ -166,48 +244,153 @@ TEST_F(DebugRenderTest, ValidCallsReturnErrorWithoutStage)
     EXPECT_EQ(ovphysx_debug_render_set_culling_box(h, mn, mx).status, OVPHYSX_API_ERROR);
 }
 
-// Every visualization parameter must round-trip independently through the cached mask
-// (bit 1<<param). ParameterAndScaleGettersRoundTrip only covers two bits, so exercise the
-// whole range PARAM_WORLD_AXES (1) .. PARAM_SDF (27 == COUNT-1): enable each and confirm it
-// reads back without disturbing the others, then clear each and confirm the not-yet-cleared
-// parameters stay set. Catches a bad shift, a bit collision, or an off-by-one at the top of
-// the uint32 mask. (set_parameter returns ERROR on this stageless instance but writes the
-// cache before the stage check, so the cached getter still round-trips.)
-TEST_F(DebugRenderTest, AllVisualizationParameterBitsRoundTripIndependently)
+TEST_F(DebugRenderTest, InvalidHandleAndWaitFailureDoNotForwardTokenScope)
+{
+    SidecarSlotsGuard slots(&scopeSuccess);
+    ovx_primpath_t token = 0x1234u;
+    const ovphysx_handle_t invalidHandle = static_cast<ovphysx_handle_t>(~0ull);
+    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(invalidHandle, &token, 1u).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 0);
+
+    ovphysx_user_task_desc_t task{};
+    task.run = &failingUserTask;
+    const ovphysx_enqueue_result_t queued = ovphysx_add_user_task(h, &task);
+    ASSERT_EQ(queued.status, OVPHYSX_API_ERROR);
+    ASSERT_NE(queued.op_index, 0u);
+    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &token, 1u).status, OVPHYSX_API_ERROR);
+    EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 0);
+}
+
+TEST_F(DebugRenderTest, TokenScopeValidatesBeforeForwardAndRequiresOvstage)
+{
+    SidecarSlotsGuard slots(&scopeSuccess);
+    const ovx_primpath_t valid = 0x1234u;
+    const ovx_primpath_t invalid = OVX_INVALID_PRIMPATH;
+    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, nullptr, 0u).status, OVPHYSX_API_ERROR);
+    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &valid, 1u).status, OVPHYSX_API_ERROR);
+    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &invalid, 1u).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 0);
+}
+
+TEST_F(DebugRenderTest, TokenScopeFailsClosedOnMissingOrFalseSidecar)
+{
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(h, "tests/data/minimal_scene.usda"));
+    ovx_primpath_t token = 0x1234u;
+
+    {
+        SidecarSlotsGuard slots(nullptr);
+        EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, nullptr, 0u).status, OVPHYSX_API_ERROR);
+        EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &token, 1u).status, OVPHYSX_API_ERROR);
+    }
+    {
+        SidecarSlotsGuard slots(&scopeFalse);
+        EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, nullptr, 0u).status, OVPHYSX_API_ERROR);
+        EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &token, 1u).status, OVPHYSX_API_ERROR);
+        EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 2);
+    }
+}
+
+TEST_F(DebugRenderTest, TokenScopePropagatesSuccessfulSidecarStatus)
+{
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(h, "tests/data/minimal_scene.usda"));
+    SidecarSlotsGuard slots(&scopeSuccess);
+    ovx_primpath_t token = 0x1234u;
+    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &token, 1u).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, nullptr, 0u).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 2);
+}
+
+TEST_F(DebugRenderTest, TokenScopeAcceptsOvstageAttachmentWithZeroUsdStageId)
+{
+    SidecarSlotsGuard slots(&scopeSuccess);
+    OvstageAttachmentStateGuard attachment(h, 0);
+    ASSERT_TRUE(attachment.configured);
+
+    const ovx_primpath_t token = 0x1234u;
+    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &token, 1u).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, nullptr, 0u).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 2);
+    EXPECT_EQ(g_lastScopeCount.load(std::memory_order_relaxed), 0u);
+    EXPECT_TRUE(g_lastScopeWasNull.load(std::memory_order_relaxed));
+}
+
+TEST_F(DebugRenderTest, DebugRenderAcceptsOvstageAttachmentWithZeroUsdStageId)
+{
+    OvstageAttachmentStateGuard attachment(h, 0);
+    ASSERT_TRUE(attachment.configured);
+
+    EXPECT_EQ(ovphysx_debug_render_enable(h, true).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_debug_render_enable(h, false).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST_F(DebugRenderTest, DestroyClearsTokenScopeAfterPendingOperationFails)
+{
+    SidecarSlotsGuard slots(&scopeSuccess);
+    ASSERT_TRUE(ovphysx_set_ovstage_attachment_state_internal(h, true, 0));
+
+    const ovx_primpath_t token = 0x1234u;
+    ASSERT_EQ(ovphysx_debug_render_set_scope_tokens(h, &token, 1u).status,
+              OVPHYSX_API_SUCCESS);
+
+    ovphysx_user_task_desc_t task{};
+    task.run = &failingUserTask;
+    const ovphysx_enqueue_result_t queued = ovphysx_add_user_task(h, &task);
+    ASSERT_EQ(queued.status, OVPHYSX_API_ERROR);
+    ASSERT_NE(queued.op_index, 0u);
+
+    EXPECT_EQ(ovphysx_destroy_instance(h).status, OVPHYSX_API_SUCCESS);
+    h = 0;
+    EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 2);
+    EXPECT_EQ(g_lastScopeCount.load(std::memory_order_relaxed), 0u);
+    EXPECT_TRUE(g_lastScopeWasNull.load(std::memory_order_relaxed));
+}
+
+// Every visualization parameter must round-trip independently through the cached
+// values. ParameterAndScaleGettersRoundTrip only covers two entries, so exercise
+// the whole range PARAM_WORLD_AXES (1) .. COUNT-1 with a per-parameter distinct
+// value: set each and confirm it reads back without disturbing the others, then
+// clear each and confirm the not-yet-cleared parameters keep their values.
+// (set_parameter returns ERROR on this stageless instance but writes the cache
+// before the stage check, so the cached getter still round-trips.)
+TEST_F(DebugRenderTest, AllVisualizationParameterValuesRoundTripIndependently)
 {
     const uint32_t first = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES;
-    const uint32_t last = OVPHYSX_DEBUG_RENDER_PARAM_COUNT - 1; // PARAM_SDF (27)
+    const uint32_t last = OVPHYSX_DEBUG_RENDER_PARAM_COUNT - 1;
 
-    // Enable every parameter; each must read back set.
+    // Set every parameter to a distinct value; each must read back exactly.
     for (uint32_t p = first; p <= last; ++p)
     {
-        ovphysx_debug_render_set_parameter(h, (ovphysx_debug_render_parameter_t)p, true);
-        bool on = false;
-        ASSERT_EQ(ovphysx_debug_render_get_parameter(h, (ovphysx_debug_render_parameter_t)p, &on).status,
+        ovphysx_debug_render_set_parameter(h, (ovphysx_debug_render_parameter_t)p, float(p));
+        float value = -1.0f;
+        ASSERT_EQ(ovphysx_debug_render_get_parameter(h, (ovphysx_debug_render_parameter_t)p, &value).status,
                   OVPHYSX_API_SUCCESS);
-        EXPECT_TRUE(on) << "parameter " << p << " did not read back as set";
+        EXPECT_FLOAT_EQ(value, float(p)) << "parameter " << p << " did not read back";
     }
 
-    // Independence: with all bits set, every parameter still reads on (no bit clobbered another).
+    // Independence: with all entries set, every parameter still reads its own value.
     for (uint32_t p = first; p <= last; ++p)
     {
-        bool on = false;
-        ovphysx_debug_render_get_parameter(h, (ovphysx_debug_render_parameter_t)p, &on);
-        EXPECT_TRUE(on) << "parameter " << p << " was clobbered while setting another bit";
+        float value = -1.0f;
+        ovphysx_debug_render_get_parameter(h, (ovphysx_debug_render_parameter_t)p, &value);
+        EXPECT_FLOAT_EQ(value, float(p)) << "parameter " << p << " was clobbered while setting another";
     }
 
-    // Clear each in ascending order; every not-yet-cleared (higher) parameter must stay set.
+    // Clear each in ascending order; every not-yet-cleared (higher) parameter keeps its value.
     for (uint32_t p = first; p <= last; ++p)
     {
-        ovphysx_debug_render_set_parameter(h, (ovphysx_debug_render_parameter_t)p, false);
-        bool on = true;
-        ovphysx_debug_render_get_parameter(h, (ovphysx_debug_render_parameter_t)p, &on);
-        EXPECT_FALSE(on) << "parameter " << p << " did not clear";
+        ovphysx_debug_render_set_parameter(h, (ovphysx_debug_render_parameter_t)p, 0.0f);
+        float value = -1.0f;
+        ovphysx_debug_render_get_parameter(h, (ovphysx_debug_render_parameter_t)p, &value);
+        EXPECT_FLOAT_EQ(value, 0.0f) << "parameter " << p << " did not clear";
         for (uint32_t q = p + 1; q <= last; ++q)
         {
-            bool other = false;
+            float other = -1.0f;
             ovphysx_debug_render_get_parameter(h, (ovphysx_debug_render_parameter_t)q, &other);
-            EXPECT_TRUE(other) << "clearing parameter " << p << " disturbed parameter " << q;
+            EXPECT_FLOAT_EQ(other, float(q)) << "clearing parameter " << p << " disturbed parameter " << q;
         }
     }
 }

@@ -9,6 +9,9 @@
 //   ovphysx_contact_binding_get_sensor_paths - invalid-handle rejection
 //   ovphysx_contact_binding_get_filter_paths - invalid-handle rejection
 //   ovphysx_get_contact_binding_capacity - invalid-handle rejection
+//   ovphysx_read_contact_data     - capacity-overflow reporting
+//   ovphysx_read_raw_contact_data - capacity-overflow reporting
+//   ovphysx_read_friction_data    - capacity-overflow reporting
 //   ovphysx_get_contact_report       - zero-count contract before any step;
 //                                      C-struct offset consistency after steps
 //
@@ -16,7 +19,8 @@
 // shapes/values, and force-matrix shapes are already tested by the stricter
 // Python suite (TestContactBinding + TestContactReport in
 // tests/python_tests/cpu_tests/test_tensor_bindings_api.py).
-// The tests below cover only C-ABI boundary conditions that Python cannot reach.
+// Except for the opaque-handle isolation regression, the tests below cover
+// C-ABI boundary conditions and exact status codes that Python wraps.
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
@@ -52,11 +56,69 @@ static bool step_cb(ovphysx_handle_t handle, float elapsed)
     return r.status == OVPHYSX_API_SUCCESS && wait_cb_op(handle, r.op_index);
 }
 
+static DLTensor make_cpu_dl_tensor(void* data, int ndim, int64_t* shape, uint8_t code, uint8_t bits)
+{
+    DLTensor tensor{};
+    tensor.data = data;
+    tensor.device = { kDLCPU, 0 };
+    tensor.ndim = ndim;
+    tensor.dtype = { code, bits, 1 };
+    tensor.shape = shape;
+    return tensor;
+}
+
 class ContactBindingTest : public PhysXTestFixture {};
 
 // ---------------------------------------------------------------------------
 // C-ABI error conditions
 // ---------------------------------------------------------------------------
+
+// NVBug 6504951. Every ovphysx-owned object kind used to count from 1 inside
+// its own owner, so an instance handle, that instance's first tensor binding
+// and its first contact binding were all the number 1 and resolved each other.
+// With one process-wide never-reused sequence they are distinct values. For the
+// valid instance below, the tensor- and contact-binding spec getter results have
+// status OVPHYSX_API_NOT_FOUND when their resource-handle argument is absent
+// from the corresponding binding map. This is the fix's published reproducer
+// plus its resource-to-resource variant.
+TEST_F(ContactBindingTest, OpaqueHandleDomainsDoNotAlias)
+{
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_cb(m_handle, "tests/data/boxes_falling_on_groundplane.usda", usd_handle));
+
+    ovphysx_tensor_binding_desc_t tensor_desc{};
+    tensor_desc.pattern = make_ovx_string("/World/Cube1");
+    tensor_desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
+    ovphysx_tensor_binding_handle_t tensor_binding = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &tensor_desc, &tensor_binding).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_string_t sensor = make_ovx_string("/World/Cube1");
+    ovphysx_contact_binding_handle_t contact_binding = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_contact_binding(m_handle, &sensor, 1, nullptr, 0, 256, &contact_binding).status,
+              OVPHYSX_API_SUCCESS);
+
+    EXPECT_NE(tensor_binding, contact_binding);
+    EXPECT_NE(tensor_binding, m_handle);
+    EXPECT_NE(contact_binding, m_handle);
+
+    ovphysx_tensor_spec_t tensor_spec{};
+    EXPECT_EQ(ovphysx_get_tensor_binding_spec(m_handle, tensor_binding, &tensor_spec).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_get_tensor_binding_spec(m_handle, contact_binding, &tensor_spec).status, OVPHYSX_API_NOT_FOUND);
+    // The exact lookup published on the bug: passing the valid instance handle
+    // where a tensor-binding handle is expected used to return success and
+    // populate tensor_spec from the wrongly resolved first tensor binding.
+    EXPECT_EQ(ovphysx_get_tensor_binding_spec(m_handle, m_handle, &tensor_spec).status, OVPHYSX_API_NOT_FOUND);
+
+    int32_t sensor_count = 0;
+    int32_t filter_count = 0;
+    EXPECT_EQ(ovphysx_get_contact_binding_spec(m_handle, contact_binding, &sensor_count, &filter_count).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_get_contact_binding_spec(m_handle, tensor_binding, &sensor_count, &filter_count).status,
+              OVPHYSX_API_NOT_FOUND);
+
+    EXPECT_EQ(ovphysx_destroy_contact_binding(m_handle, contact_binding).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, tensor_binding).status, OVPHYSX_API_SUCCESS);
+}
 
 // get_spec verifies the sensor/filter counts returned by the API:
 //   sensor_count - number of rigid-body prims matched by the sensor pattern
@@ -313,6 +375,68 @@ TEST_F(ContactBindingTest, DetailedReadsRejectUnfilteredBinding)
     ovphysx_destroy_contact_binding(m_handle, cb);
 }
 
+TEST_F(ContactBindingTest, ContactDataReadsReportCapacityOverflow)
+{
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_cb(m_handle, "tests/data/boxes_falling_on_groundplane.usda", usd_handle));
+
+    ovphysx_string_t sensor = make_ovx_string("/World/Cube1");
+    ovphysx_string_t filter = make_ovx_string("/World/BigBase");
+    constexpr uint32_t kCapacity = 1;
+
+    ovphysx_contact_binding_handle_t filtered = 0;
+    ASSERT_EQ(ovphysx_create_contact_binding(m_handle, &sensor, 1, &filter, 1, kCapacity, &filtered).status,
+              OVPHYSX_API_SUCCESS);
+    ovphysx_contact_binding_handle_t raw = 0;
+    ASSERT_EQ(
+        ovphysx_create_contact_binding(m_handle, &sensor, 1, nullptr, 0, kCapacity, &raw).status, OVPHYSX_API_SUCCESS);
+
+    for (int i = 0; i < 120; ++i)
+        ASSERT_TRUE(step_cb(m_handle, 1.0f / 60.0f));
+
+    float force[1]{};
+    float point[3]{};
+    float normal[3]{};
+    float separation[1]{};
+    int32_t count[1]{};
+    int32_t start[1]{};
+    int64_t other_actor_id[1]{};
+    int64_t scalar_shape[2] = { kCapacity, 1 };
+    int64_t vector_shape[2] = { kCapacity, 3 };
+    int64_t raw_count_shape[1] = { 1 };
+    int64_t filtered_count_shape[2] = { 1, 1 };
+    int64_t id_shape[1] = { kCapacity };
+
+    DLTensor force_tensor = make_cpu_dl_tensor(force, 2, scalar_shape, kDLFloat, 32);
+    DLTensor point_tensor = make_cpu_dl_tensor(point, 2, vector_shape, kDLFloat, 32);
+    DLTensor normal_tensor = make_cpu_dl_tensor(normal, 2, vector_shape, kDLFloat, 32);
+    DLTensor separation_tensor = make_cpu_dl_tensor(separation, 2, scalar_shape, kDLFloat, 32);
+    DLTensor count_tensor = make_cpu_dl_tensor(count, 1, raw_count_shape, kDLInt, 32);
+    DLTensor start_tensor = make_cpu_dl_tensor(start, 1, raw_count_shape, kDLInt, 32);
+    DLTensor id_tensor = make_cpu_dl_tensor(other_actor_id, 1, id_shape, kDLInt, 64);
+
+    ovphysx_result_t result = ovphysx_read_raw_contact_data(m_handle, raw, &force_tensor, &point_tensor, &normal_tensor,
+                                                            &separation_tensor, &count_tensor, &start_tensor, &id_tensor);
+    EXPECT_EQ(result.status, OVPHYSX_API_BUFFER_TOO_SMALL);
+    EXPECT_GT(start[0] + count[0], static_cast<int32_t>(kCapacity));
+
+    count_tensor.ndim = 2;
+    count_tensor.shape = filtered_count_shape;
+    start_tensor.ndim = 2;
+    start_tensor.shape = filtered_count_shape;
+    result = ovphysx_read_contact_data(m_handle, filtered, &force_tensor, &point_tensor, &normal_tensor,
+                                       &separation_tensor, &count_tensor, &start_tensor);
+    EXPECT_EQ(result.status, OVPHYSX_API_BUFFER_TOO_SMALL);
+    EXPECT_GT(start[0] + count[0], static_cast<int32_t>(kCapacity));
+
+    result = ovphysx_read_friction_data(m_handle, filtered, &point_tensor, &normal_tensor, &count_tensor, &start_tensor);
+    EXPECT_EQ(result.status, OVPHYSX_API_BUFFER_TOO_SMALL);
+    EXPECT_GT(start[0] + count[0], static_cast<int32_t>(kCapacity));
+
+    ovphysx_destroy_contact_binding(m_handle, raw);
+    ovphysx_destroy_contact_binding(m_handle, filtered);
+}
+
 // ---------------------------------------------------------------------------
 // get_contact_report - contract tests not reachable from Python
 // ---------------------------------------------------------------------------
@@ -446,27 +570,17 @@ TEST_F(ContactBindingTest, RawContactDataAndOtherActorPaths)
     std::vector<int32_t> start_buf(sensor_count, 0);
     std::vector<int64_t> ids_buf(kMaxContacts, 0);
 
-    auto make_tensor = [](void* data, int ndim, int64_t* shape, uint8_t code, uint8_t bits) {
-        DLTensor t{};
-        t.data = data;
-        t.device = {kDLCPU, 0};
-        t.ndim = ndim;
-        t.dtype = {code, bits, 1};
-        t.shape = shape;
-        return t;
-    };
-
     int64_t cshape[2] = {kMaxContacts, 1};
     int64_t pshape[2] = {kMaxContacts, 3};
     int64_t sshape[1] = {sensor_count};
     int64_t ishape[1] = {kMaxContacts};
-    DLTensor force_t      = make_tensor(force_buf.data(),      2, cshape, kDLFloat, 32);
-    DLTensor point_t      = make_tensor(point_buf.data(),      2, pshape, kDLFloat, 32);
-    DLTensor normal_t     = make_tensor(normal_buf.data(),     2, pshape, kDLFloat, 32);
-    DLTensor separation_t = make_tensor(separation_buf.data(), 2, cshape, kDLFloat, 32);
-    DLTensor count_t      = make_tensor(count_buf.data(),      1, sshape, kDLInt,   32);
-    DLTensor start_t      = make_tensor(start_buf.data(),      1, sshape, kDLInt,   32);
-    DLTensor ids_t        = make_tensor(ids_buf.data(),        1, ishape, kDLInt,   64);
+    DLTensor force_t = make_cpu_dl_tensor(force_buf.data(), 2, cshape, kDLFloat, 32);
+    DLTensor point_t = make_cpu_dl_tensor(point_buf.data(), 2, pshape, kDLFloat, 32);
+    DLTensor normal_t = make_cpu_dl_tensor(normal_buf.data(), 2, pshape, kDLFloat, 32);
+    DLTensor separation_t = make_cpu_dl_tensor(separation_buf.data(), 2, cshape, kDLFloat, 32);
+    DLTensor count_t = make_cpu_dl_tensor(count_buf.data(), 1, sshape, kDLInt, 32);
+    DLTensor start_t = make_cpu_dl_tensor(start_buf.data(), 1, sshape, kDLInt, 32);
+    DLTensor ids_t = make_cpu_dl_tensor(ids_buf.data(), 1, ishape, kDLInt, 64);
 
     r = ovphysx_read_raw_contact_data(
         m_handle, cb, &force_t, &point_t, &normal_t, &separation_t, &count_t, &start_t, &ids_t);

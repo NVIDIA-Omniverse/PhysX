@@ -165,6 +165,42 @@ inline bool attach_usd_with_ovstage(
         return false;
     }
 
+    // The population API never opens or commits an ordinal of its own: the caller
+    // owns ordinal lifecycle and hands population the current ordinal. Waiting on
+    // the population op only completes population, so seal what it authored before
+    // reading it back -- ovphysx_attach_ovstage() reads at a *sealed* ordinal.
+    // Canonical sequence (ovstage_population.h): open_usd_* -> wait_op ->
+    // advance_write_floor -> consumer attach/update.
+    ovstage_write_floor_desc_t write_floor{};
+    write_floor.ordinal = ordinal;
+    write_floor.scope = OVSTAGE_SCOPE_ALL;
+
+    ovstage_enqueue_result_t floor_enqueue = ovstage_advance_write_floor(stage, &write_floor);
+    if (floor_enqueue.status != OVSTAGE_OK)
+    {
+        ovx_string_t err = ovstage_get_last_error();
+        std::cerr << "ovstage_advance_write_floor failed: "
+                  << static_cast<int>(floor_enqueue.status) << " " << ovx_to_string(err) << std::endl;
+        ovstage_destroy_instance(stage);
+        return false;
+    }
+
+    ovstage_op_wait_result_t floor_wait{};
+    ovstage_api_status_t floor_status = ovstage_wait_op(
+        stage,
+        floor_enqueue.op_index,
+        OVSTAGE_TIMEOUT_INFINITE,
+        &floor_wait);
+    (void)ovstage_release_op(stage, floor_enqueue.op_index);
+    if (floor_status != OVSTAGE_OK)
+    {
+        ovx_string_t err = ovstage_get_last_error();
+        std::cerr << "ovstage_wait_op(advance_write_floor) failed: "
+                  << static_cast<int>(floor_status) << " " << ovx_to_string(err) << std::endl;
+        ovstage_destroy_instance(stage);
+        return false;
+    }
+
     ovphysx_result_t attach_status = ovphysx_attach_ovstage(handle, stage, ordinal);
     if (attach_status.status != OVPHYSX_API_SUCCESS)
     {
@@ -227,7 +263,6 @@ inline DLTensor* make_dl_float32_1(const float value)
     return t;
 }
 
-// Helper function to create test data
 inline std::vector<float> createTestData(size_t count) {
     std::vector<float> data(count);
     for (size_t i = 0; i < count; ++i) {
@@ -236,7 +271,6 @@ inline std::vector<float> createTestData(size_t count) {
     return data;
 }
 
-// Create float32 tensor with custom shape
 inline DLTensor* make_float32_tensor(const std::vector<float>& values, const std::vector<int64_t>& shape)
 {
     DLTensor* t = new DLTensor();
@@ -257,7 +291,6 @@ inline DLTensor* make_float32_tensor(const std::vector<float>& values, const std
     return t;
 }
 
-// Create float64 tensor with custom shape
 inline DLTensor* make_float64_tensor(const std::vector<double>& values, const std::vector<int64_t>& shape)
 {
     DLTensor* t = new DLTensor();
@@ -278,7 +311,6 @@ inline DLTensor* make_float64_tensor(const std::vector<double>& values, const st
     return t;
 }
 
-// Create int32 tensor with custom shape
 inline DLTensor* make_int32_tensor(const std::vector<int32_t>& values, const std::vector<int64_t>& shape)
 {
     DLTensor* t = new DLTensor();

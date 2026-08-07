@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_PVD_COMM_STREAM_TYPES_H
 #define PX_PVD_COMM_STREAM_TYPES_H
@@ -137,23 +137,23 @@ struct EventStreamifier : public PvdEventSerializer
 		}
 	}
 
-	virtual void streamify(uint16_t& val)
+	virtual void streamify(uint16_t& val) PX_OVERRIDE
 	{
 		write(val);
 	}
-	virtual void streamify(uint8_t& val)
+	virtual void streamify(uint8_t& val) PX_OVERRIDE
 	{
 		write(val);
 	}
-	virtual void streamify(uint32_t& val)
+	virtual void streamify(uint32_t& val) PX_OVERRIDE
 	{
 		write(val);
 	}
-	virtual void streamify(float& val)
+	virtual void streamify(float& val) PX_OVERRIDE
 	{
 		write(val);
 	}
-	virtual void streamify(uint64_t& val)
+	virtual void streamify(uint64_t& val) PX_OVERRIDE
 	{
 		write(val);
 	}
@@ -165,28 +165,28 @@ struct EventStreamifier : public PvdEventSerializer
 		streamify(val.string);
 	}
 
-	virtual void streamify(String& val)
+	virtual void streamify(String& val) PX_OVERRIDE
 	{
 		uint32_t len = 0;
 		String temp = nonNull(val);
 		if(*temp)
-			len = static_cast<uint32_t>(strlen(temp) + 1);
+			len = static_cast<uint32_t>(strnlen(temp, UINT32_MAX - 1) + 1);
 		write(len);
 		write(val, len);
 	}
-	virtual void streamify(DataRef<const uint8_t>& val)
+	virtual void streamify(DataRef<const uint8_t>& val) PX_OVERRIDE
 	{
 		writeRef(val);
 	}
-	virtual void streamify(DataRef<NameHandleValue>& val)
+	virtual void streamify(DataRef<NameHandleValue>& val) PX_OVERRIDE
 	{
 		writeRef(val);
 	}
-	virtual void streamify(DataRef<StreamPropMessageArg>& val)
+	virtual void streamify(DataRef<StreamPropMessageArg>& val) PX_OVERRIDE
 	{
 		writeRef(val);
 	}
-	virtual void streamify(DataRef<StringHandle>& val)
+	virtual void streamify(DataRef<StringHandle>& val) PX_OVERRIDE
 	{
 		writeRef(val);
 	}

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -32,7 +32,7 @@
 
 #include "PxgSolverBody.h"
 #include "PxSpatialMatrix.h"
-#include "PxgArticulation.h"
+#include "PxgArticulationBlockData.h"
 #include "PxgArticulationLink.h"
 #include "DyFeatherstoneArticulationJointData.h"
 #include "foundation/PxPreprocessor.h"
@@ -42,7 +42,8 @@
 #include "DyFeatherstoneArticulation.h"
 #include "solverBlock.cuh"
 
-using namespace physx;
+namespace physx
+{
 
 static __device__ PX_FORCE_INLINE PxU32 articulationLowestSetBit(ArticulationBitField val)
 {
@@ -383,5 +384,7 @@ static __device__ void averageLinkImpulsesAndPropagate2(uint2* PX_RESTRICT isSla
 	storeSpatialVector(articulationBlock.mCommonLinkDeltaVelocity, deltaV, threadIndexInWarp);
 	articulationBlock.mLinkWithDeferredImpulse[threadIndexInWarp] = commonNode;
 }
+
+} // namespace physx
 
 #endif

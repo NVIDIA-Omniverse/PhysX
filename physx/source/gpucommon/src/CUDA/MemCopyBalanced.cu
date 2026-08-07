@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef PXG_MEM_COPY_BALANCED_CU
 #define PXG_MEM_COPY_BALANCED_CU
@@ -30,7 +30,7 @@
 #include "foundation/PxMath.h"
 #include <assert.h>
 #include <stdio.h>
-#include "PxgCopyManager.h"
+#include "PxgCopyDesc.h"
 #include "PxgCommonDefines.h"
 
 using namespace physx;
@@ -39,11 +39,11 @@ extern "C" __host__ void initCommonKernels0() {}
 
 template<PxU32 warpsPerBlock>
 __device__ void copyBalanced(
-	PxgCopyManager::CopyDesc* PX_RESTRICT	desc,						/* Input */
-	PxU32									count						/* Input */
+	PxgCopyDesc* PX_RESTRICT	desc,						/* Input */
+	PxU32						count						/* Input */
 )
 {
-	__shared__ PxgCopyManager::CopyDesc copyDesc[warpsPerBlock];
+	__shared__ PxgCopyDesc copyDesc[warpsPerBlock];
 
 	if (blockIdx.x < count)
 	{
@@ -52,8 +52,7 @@ __device__ void copyBalanced(
 
 		if (idxInWarp == 0)
 		{
-			PxgCopyManager::CopyDesc d = desc[blockIdx.x];
-			copyDesc[warpIdxInBlock] = d;
+			copyDesc[warpIdxInBlock] = desc[blockIdx.x];
 		}
 
 		__syncwarp();
@@ -75,8 +74,8 @@ __device__ void copyBalanced(
 extern "C"
 __global__
 void MemCopyBalanced(
-	PxgCopyManager::CopyDesc* PX_RESTRICT	desc,
-	PxU32								count
+	PxgCopyDesc* PX_RESTRICT	desc,
+	PxU32						count
 )
 {
 	copyBalanced<COPY_KERNEL_WARPS_PER_BLOCK>(

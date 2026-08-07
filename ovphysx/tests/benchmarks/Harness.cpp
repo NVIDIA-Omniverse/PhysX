@@ -367,7 +367,7 @@ void harnessImpl(int argc, char** argv, PrintfCbFunc printCb)
                 mean += GETTIME(r, s);
             }
             mean *= 1.0f / (maxRun - minRun + 1);
-            record.time[s] = uint64_t(mean); // store in record array
+            record.time[s] = uint64_t(mean);
 
             // compute standard deviation
             uint64_t variance = 0;

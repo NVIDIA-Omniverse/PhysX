@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 #ifndef SN_JOINT_REPX_SERIALIZER_H
@@ -45,9 +45,9 @@ namespace physx
 	struct PX_DEPRECATED PxJointRepXSerializer : public RepXSerializerImpl<TJointType>
 	{
 		PxJointRepXSerializer(PxAllocatorCallback& inAllocator) : RepXSerializerImpl<TJointType>(inAllocator) {}
-		virtual PxRepXObject fileToObject(XmlReader& inReader, XmlMemoryAllocator& inAllocator, PxRepXInstantiationArgs& inArgs, PxCollection* inCollection);
-		virtual void objectToFileImpl(const TJointType* inObj, PxCollection* inCollection, XmlWriter& inWriter, MemoryBuffer& inTempBuffer, PxRepXInstantiationArgs&);
-		virtual TJointType* allocateObject(PxRepXInstantiationArgs&) { return NULL; }
+		virtual PxRepXObject fileToObject(XmlReader& inReader, XmlMemoryAllocator& inAllocator, PxRepXInstantiationArgs& inArgs, PxCollection* inCollection) PX_OVERRIDE;
+		virtual void objectToFileImpl(const TJointType* inObj, PxCollection* inCollection, XmlWriter& inWriter, MemoryBuffer& inTempBuffer, PxRepXInstantiationArgs&) PX_OVERRIDE;
+		virtual TJointType* allocateObject(PxRepXInstantiationArgs&) PX_OVERRIDE { return NULL; }
 	};
 
 #if PX_SUPPORT_EXTERN_TEMPLATE

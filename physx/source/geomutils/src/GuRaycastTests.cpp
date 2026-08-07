@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -609,11 +609,11 @@ static PxU32 raycast_convexCore(GU_RAY_FUNC_PARAMS)
 		{
 			Gu::makeConvexShape(g, PxTransform(PxIdentity), shape);
 		}
-		virtual PxReal getMargin() const
+		virtual PxReal getMargin() const PX_OVERRIDE
 		{
 			return shape.margin;
 		}
-		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 		{
 			return shape.supportLocal(dir);
 		}

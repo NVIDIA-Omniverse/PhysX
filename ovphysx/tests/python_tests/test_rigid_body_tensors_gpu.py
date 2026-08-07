@@ -23,10 +23,7 @@ import pytest
 from ovphysx.dlpack import DLDataType, DLDataTypeCode, DLDevice, DLDeviceType, DLTensor
 from ovphysx.types import TensorType
 
-# ---------------------------------------------------------------------------
-# Import CudaArray helper from companion GPU test file.
-# It lives in the same directory and is the canonical GPU buffer helper.
-# ---------------------------------------------------------------------------
+# CudaArray is the canonical GPU buffer helper, imported from the companion GPU test file.
 from test_tensor_bindings_api_gpu import CudaArray, _gpu_read, _gpu_tensor, _gpu_write
 from test_utils import data_path
 from test_utils import load_usd_with_ovstage
@@ -70,7 +67,6 @@ def test_rigid_body_mass_gpu_roundtrip(physx_sdk):
         binding.read(baseline)
         assert np.all(baseline > 0), "Mass should be positive"
 
-        # Write doubled masses
         new_mass = baseline * 2.0
         binding.write(new_mass)
 
@@ -146,7 +142,6 @@ def test_articulation_root_pose_gpu_roundtrip(physx_sdk):
             pytest.skip("No articulations found")
         N = binding.count
 
-        # Write known positions using CUDA tensor
         src = CudaArray((N, 7))
         host = np.zeros((N, 7), dtype=np.float32)
         host[:, 2] = 1.0  # pz = 1
@@ -272,7 +267,6 @@ def test_wrong_dtype_cuda_tensor_raises_gpu(physx_sdk):
         if binding.count == 0:
             pytest.skip("No rigid body prims")
 
-        # Build a float16 CUDA tensor (invalid dtype)
         N, C = binding.shape
         try:
             bad_ga = CudaArray((N, C), dtype=np.float16)

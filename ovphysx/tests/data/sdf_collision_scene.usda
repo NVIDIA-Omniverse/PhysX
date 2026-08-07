@@ -1,0 +1,71 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = """SDF (Signed Distance Field) collider test scene for ovphysx debug-render.
+    
+    A minimal scene proving PhysX SDF triangle-mesh collider cooks and emits eSDF 
+    (OVPHYSX_DEBUG_RENDER_PARAM_SDF) debug geometry:
+    
+    - SdfBody: ONE dynamic rigid body with a cube Mesh collider configured with:
+      [PhysicsCollisionAPI, PhysicsMeshCollisionAPI, PhysxSDFMeshCollisionAPI],
+      physics:approximation = "sdf", and full physxSDFMeshCollision:* parameters.
+      PhysX cooks an SDF and eSDF emits a dense point cloud sampling the field.
+    
+    - Ground: Static collision plane. 
+    """
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    def Xform "Ground"
+    {
+        def Plane "GroundCollider" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            uniform token axis = "Z"
+        }
+    }
+
+    # Dynamic SDF-collider body: cube Mesh with all required schemas and SDF params.
+    # PhysX cooks an SDF; eSDF (param 27) emits dense sample points.
+    def Xform "SdfBody" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        float physics:mass = 1.0
+        quatd xformOp:orient = (1, 0, 0, 0)
+        double3 xformOp:scale = (1, 1, 1)
+        double3 xformOp:translate = (0, 0, 5)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+        def Mesh "SdfGeom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI", "PhysxSDFMeshCollisionAPI"]
+        )
+        {
+            uniform bool doubleSided = 0
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 1, 2, 3, 1, 5, 6, 2, 3, 2, 6, 7, 0, 3, 7, 4, 1, 0, 4, 5, 5, 4, 7, 6]
+            point3f[] points = [(1, 1, 1), (1, -1, 1), (1, -1, -1), (1, 1, -1), (-1, 1, 1), (-1, -1, 1), (-1, -1, -1), (-1, 1, -1)]
+            color3f[] primvars:displayColor = [(0.3, 0.85, 0.4)]
+
+            uniform token physics:approximation = "sdf"
+
+            uniform int physxSDFMeshCollision:sdfResolution = 256
+            uniform int physxSDFMeshCollision:sdfSubgridResolution = 6
+            uniform token physxSDFMeshCollision:sdfBitsPerSubgridPixel = "BitsPerPixel16"
+            uniform float physxSDFMeshCollision:sdfNarrowBandThickness = 0.01
+            uniform float physxSDFMeshCollision:sdfMargin = 0.01
+            uniform bool physxSDFMeshCollision:sdfEnableRemeshing = false
+            uniform float physxSDFMeshCollision:sdfTriangleCountReductionFactor = 1.0
+        }
+    }
+}

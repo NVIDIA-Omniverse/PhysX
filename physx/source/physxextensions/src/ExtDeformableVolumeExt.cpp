@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -214,7 +214,7 @@ void PxDeformableVolumeExt::transform(PxDeformableVolume& deformableVolume, cons
 		m.column0 = PxVec3(row0.x, row1.x, row2.x);
 		m.column1 = PxVec3(row0.y, row1.y, row2.y);
 		m.column2 = PxVec3(row0.z, row1.z, row2.z);
-	}	
+	}
 
 
 	PxMat33* tetraRestPoses = static_cast<Gu::DeformableVolumeAuxData*>(deformableVolume.getDeformableVolumeAuxData())->getRestPosesFast(); // reinterpret_cast<PxMat33*>(simMeshData->deformableVolumeAuxData.getGridModelRestPosesFast());
@@ -522,7 +522,7 @@ struct InternalDeformableVolumeState
 				mInvMasses[i] = 1.0f / mInvMasses[i];
 			else
 				mInvMasses[i] = 0.0f;
-		}		
+		}
 
 		mPrevPos.resize(nbVertices);
 		for (PxU32 i = 0; i < mPrevPos.size(); ++i)

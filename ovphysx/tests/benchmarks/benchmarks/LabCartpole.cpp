@@ -104,8 +104,7 @@ public:
     {
         // Cache PhysX* + tensor view once so step() doesn't pay for a
         // global lookup / view-rebuild / status-print branch per measured
-        // iteration. Defensive coding has no place in the hot path
-        // (review on MR !7247).
+        // iteration. Defensive coding has no place in the hot path.
         mPhysX = BmGlobals::getInstance().getPhysX();
         if (!mPhysX) return;
 
@@ -262,7 +261,7 @@ private:
     Register<LabCartpole_##opName##_##N> sLabCartpole_##opName##_##N(                \
         "Lab.cartpole_" #N "_" #opName);
 
-// Sizes per review on MR !7247: 4k/8k/16k. Smaller sizes (64/256/1024)
+// Sizes 4k/8k/16k. Smaller sizes (64/256/1024)
 // were below the regime where Lab-style cloning + per-step ops show
 // meaningful scaling.
 DEFINE_LAB_CARTPOLE(step,         Op::Step,        4096)

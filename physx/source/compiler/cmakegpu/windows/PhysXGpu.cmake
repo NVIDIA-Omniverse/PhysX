@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXGpu
@@ -73,10 +73,10 @@ ELSE()
 	)
 ENDIF()
 
-SET(PHYSXGPU_RESOURCE
-	${PHYSX_SOURCE_DIR}/compiler/windows/resource/PhysXGpu.rc
-	${PHYSX_SOURCE_DIR}/compiler/windows/resource/resource.h
-)
+# Single source of truth for PHYSXGPU_RESOURCE. Also included by
+# cmake/windows/CMakeLists.txt in source-distro mode when GPU is off so the
+# Linux-host public flow enumerates these files via windows-crosscompile.
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/PhysXGpuPlatformFiles.cmake)
 SOURCE_GROUP(resource FILES ${PHYSXGPU_RESOURCE})
 
 SET(PHYSXGPU_PLATFORM_SOURCES

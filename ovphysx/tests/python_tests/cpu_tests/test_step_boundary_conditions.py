@@ -88,14 +88,11 @@ def test_step_and_step_sync_interleaved(physx_sdk):
     _load_basic(physx_sdk)
     dt = 1.0 / 60.0
 
-    # Async step
     op = physx_sdk.step(dt)
     physx_sdk.wait_op(op)
 
-    # Sync step immediately after
     physx_sdk.step_sync(dt)
 
-    # Async step again
     op2 = physx_sdk.step(dt)
     physx_sdk.wait_op(op2)
 

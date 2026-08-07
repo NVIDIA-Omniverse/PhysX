@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -56,7 +56,7 @@ namespace physx
 		PxgParticleNeighborhoodProvider(PxgKernelLauncher& cudaContextManager, const PxU32 maxNumParticles, const PxReal particleContactOffset, const PxU32 maxNumSparseGridCells);
 
 		virtual void buildNeighborhood(PxVec4* deviceParticlePos, const PxU32 numParticles, CUstream stream, PxU32* devicePhases = NULL,
-			PxU32 validPhase = PxParticlePhaseFlag::eParticlePhaseFluid, const PxU32* deviceActiveIndices = NULL)
+			PxU32 validPhase = PxParticlePhaseFlag::eParticlePhaseFluid, const PxU32* deviceActiveIndices = NULL) PX_OVERRIDE
 		{
 			mSparseGridBuilder.updateSparseGrid(deviceParticlePos, numParticles, devicePhases, stream, validPhase, deviceActiveIndices);
 			mSparseGridBuilder.updateSubgridEndIndices(numParticles, stream);
@@ -67,38 +67,38 @@ namespace physx
 			return mSparseGridBuilder.getSubgridEndIndicesBuffer();
 		}
 
-		virtual PxU32 getMaxParticles() const
+		virtual PxU32 getMaxParticles() const PX_OVERRIDE
 		{
 			return mSparseGridBuilder.getMaxParticles();
 		}
 
-		virtual void setMaxParticles(PxU32 maxParticles)
+		virtual void setMaxParticles(PxU32 maxParticles) PX_OVERRIDE
 		{
 			mSparseGridBuilder.setMaxParticles(maxParticles);
 		}
 
-		virtual void release()
+		virtual void release() PX_OVERRIDE
 		{
 			mSparseGridBuilder.release();
 			PX_DELETE_THIS;
 		}
 
-		virtual PxU32 getNumGridCellsInUse() const
+		virtual PxU32 getNumGridCellsInUse() const PX_OVERRIDE
 		{
 			return mSparseGridBuilder.getNumSubgridsInUse();
 		}
 
-		virtual PxU32 getMaxGridCells() const
+		virtual PxU32 getMaxGridCells() const PX_OVERRIDE
 		{
 			return mSparseGridBuilder.getGridParameters().maxNumSubgrids;
 		}
 
-		virtual PxReal getCellSize() const
+		virtual PxReal getCellSize() const PX_OVERRIDE
 		{
 			return mSparseGridBuilder.getGridParameters().gridSpacing;
 		}
 
-		virtual void setCellProperties(PxU32 maxGridCells, PxReal cellSize);
+		virtual void setCellProperties(PxU32 maxGridCells, PxReal cellSize) PX_OVERRIDE;
 
 		virtual ~PxgParticleNeighborhoodProvider() {}
 	};

@@ -50,6 +50,9 @@ def attach_scene(physx: PhysX, usd_path: str, stage_name: str):
     ordinal = 1
     try:
         ovstage.population.open_usd(stage, usd_path, ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
+        # Population does not seal: the caller owns ordinal lifecycle, and
+        # attach_ovstage() reads at a sealed ordinal.
+        stage.advance_write_floor(ordinal=ordinal).wait()
         physx.attach_ovstage(stage, read_ordinal=ordinal)
         return stage
     except Exception:

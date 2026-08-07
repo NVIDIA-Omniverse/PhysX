@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
      
@@ -53,6 +53,7 @@ static void setupFinalizeSolverConstraints(
 							const PxSolverBodyData& data0,
 							const PxSolverBodyData& data1,
 							PxReal invDtF32, PxReal dtF32, PxReal bounceThresholdF32,
+							PxReal biasCoefficient,
 							bool hasForceThreshold, bool staticOrKinematicBody,
 							PxU8* frictionDataPtr
 							)
@@ -92,9 +93,7 @@ static void setupFinalizeSolverConstraints(
 
 	const FloatV maxPenBias = FMax(FLoad(data0.penBiasClamp), FLoad(data1.penBiasClamp));
 
-	const QuatV bodyFrame0q = QuatVLoadU(&contactDesc.bodyFrame0.q.x);
 	const Vec3V bodyFrame0p = V3LoadU_SafeReadW(contactDesc.bodyFrame0.p);	// PT: see compile-time-assert in PxSolverConstraintPrepDescBase
-	const QuatV bodyFrame1q = QuatVLoadU(&contactDesc.bodyFrame1.q.x);
 	const Vec3V bodyFrame1p = V3LoadU_SafeReadW(contactDesc.bodyFrame1.p);	// PT: see compile-time-assert in PxSolverConstraintPrepDescBase
 
 	PxU32 frictionPatchWritebackAddrIndex = 0;
@@ -122,10 +121,10 @@ static void setupFinalizeSolverConstraints(
 	);
 
 	const FloatV invDt = FLoad(invDtF32);
-	const FloatV p8 = FLoad(0.8f);
+	const FloatV biasCoefficientV = FLoad(biasCoefficient);
 	const FloatV bounceThreshold = FLoad(bounceThresholdF32);
 
-	const FloatV invDtp8 = FMul(invDt, p8);
+	const FloatV invDtWithBiasCoefficient = FMul(invDt, biasCoefficientV);
 	const FloatV dt = FLoad(dtF32);
 
 	const PxContactPoint* PX_RESTRICT buffer = contactDesc.contacts;
@@ -189,7 +188,7 @@ static void setupFinalizeSolverConstraints(
 				constructContactConstraint(invSqrtInertia0, invSqrtInertia1, invMassNorLenSq0, 
 					invMassNorLenSq1, angD0, angD1, bodyFrame0p, bodyFrame1p,
 					normal, norVel, norCross, angVel0, angVel1,
-					invDt, invDtp8, dt, restDistance, maxPenBias, restitution,
+					invDt, invDtWithBiasCoefficient, dt, restDistance, maxPenBias, restitution,
 					bounceThreshold, contact, *solverContact,
 					ccdMaxSeparation, solverOffsetSlop, damping, accelerationSpring);
 			}
@@ -207,8 +206,8 @@ static void setupFinalizeSolverConstraints(
 		const PxReal dynamicFriction = contactBase0->dynamicFriction* frictionCoefficient;
 
 		const bool disableStrongFriction = !!(contactBase0->materialFlags & PxMaterialFlag::eDISABLE_FRICTION);
-		staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W=V4SetX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, FLoad(staticFriction));
-		staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W=V4SetY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, FLoad(dynamicFriction));
+		staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, FLoad(staticFriction));
+		staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, FLoad(dynamicFriction));
 
 		const bool haveFriction = (disableStrongFriction == 0 && frictionPatch.anchorCount != 0);//PX_IR(n.staticFriction) > 0 || PX_IR(n.dynamicFriction) > 0;
 		header->numNormalConstr		= PxTo8(contactCount);
@@ -264,6 +263,10 @@ static void setupFinalizeSolverConstraints(
 			header->frictionBrokenWritebackByte = writeback;
 
 			const Vec3V v3Zero = V3Zero();
+
+			const QuatV bodyFrame0q = QuatVLoadU(&contactDesc.bodyFrame0.q.x);
+			const QuatV bodyFrame1q = QuatVLoadU(&contactDesc.bodyFrame1.q.x);
+
 			for(PxU32 j = 0; j < frictionPatch.anchorCount; j++)
 			{
 				PxPrefetchLine(ptr, 256);
@@ -282,10 +285,10 @@ static void setupFinalizeSolverConstraints(
 				/*ra = V3Sel(V3IsGrtr(solverOffsetSlop, V3Abs(ra)), v3Zero, ra);
 				rb = V3Sel(V3IsGrtr(solverOffsetSlop, V3Abs(rb)), v3Zero, rb);*/
 
-				PxU32 index = c.contactID[i][j];
 				Vec3V error = V3Sub(V3Add(ra, bodyFrame0p), V3Add(rb, bodyFrame1p));
 				error = V3Sel(V3IsGrtr(solverOffsetSlop, V3Abs(error)), v3Zero, error);
 
+				PxU32 index = c.contactID[i][j];
 				index = index == 0xFFFF ? c.contactPatches[c.correlationListHeads[i]].start : index;
 
 				const Vec3V tvel = V3LoadA(buffer[index].targetVel);
@@ -304,7 +307,7 @@ static void setupFinalizeSolverConstraints(
 					const FloatV resp1 = FSub(FMul(angD1, V3Dot(rbXnSqrtInertia, rbXnSqrtInertia)), invMass1_dom1fV);
 					const FloatV resp = FAdd(resp0, resp1);
 
-					const FloatV velMultiplier = FSel(FIsGrtr(resp, zero), FDiv(p8, resp), zero);
+					const FloatV velMultiplier = FSel(FIsGrtr(resp, zero), FDiv(biasCoefficientV, resp), zero);
 
 					FloatV targetVel = V3Dot(tvel, t0);
 
@@ -334,7 +337,7 @@ static void setupFinalizeSolverConstraints(
 					const FloatV resp1 = FSub(FMul(angD1, V3Dot(rbXnSqrtInertia, rbXnSqrtInertia)), invMass1_dom1fV);
 					const FloatV resp = FAdd(resp0, resp1);
 
-					const FloatV velMultiplier = FSel(FIsGrtr(resp, zero), FDiv(p8, resp), zero);
+					const FloatV velMultiplier = FSel(FIsGrtr(resp, zero), FDiv(biasCoefficientV, resp), zero);
 
 					FloatV targetVel = V3Dot(tvel, t1);
 
@@ -472,11 +475,12 @@ static bool reserveBlockStreams(const bool useExtContacts, Dy::CorrelationBuffer
 bool createFinalizeSolverContacts(
 	PxSolverContactDesc& contactDesc,
 	CorrelationBuffer& c,
-	const PxReal invDtF32,
-	const PxReal dtF32,
+	PxReal invDtF32,
+	PxReal dtF32,
 	PxReal bounceThresholdF32,
 	PxReal frictionOffsetThreshold,
 	PxReal correlationDistance,
+	PxReal biasCoefficient,
 	PxConstraintAllocator& constraintAllocator,
 	Cm::SpatialVectorF* Z)
 {
@@ -582,7 +586,7 @@ bool createFinalizeSolverContacts(
 				const SolverExtBody b1(reinterpret_cast<const void*>(contactDesc.body1), reinterpret_cast<const void*>(&data1), desc.linkIndexB);
 
 				setupFinalizeExtSolverContacts(contactDesc.contacts, c, contactDesc.bodyFrame0, contactDesc.bodyFrame1, solverConstraint,
-					b0, b1, invDtF32, dtF32, bounceThresholdF32,
+					b0, b1, invDtF32, dtF32, bounceThresholdF32, biasCoefficient,
 					contactDesc.invMassScales.linear0, contactDesc.invMassScales.angular0, contactDesc.invMassScales.linear1, contactDesc.invMassScales.angular1, 
 					contactDesc.restDistance, frictionDataPtr, contactDesc.maxCCDSeparation, Z, contactDesc.offsetSlop);
 			}
@@ -592,7 +596,7 @@ bool createFinalizeSolverContacts(
 					contactDesc,
 					c,
 					solverConstraint,
-					data0, data1, invDtF32, dtF32, bounceThresholdF32,
+					data0, data1, invDtF32, dtF32, bounceThresholdF32, biasCoefficient,
 					hasForceThreshold, staticOrKinematicBody,
 					frictionDataPtr
 					);
@@ -608,7 +612,7 @@ bool createFinalizeSolverContacts(
 
 FloatV setupExtSolverContact(const SolverExtBody& b0, const SolverExtBody& b1,
 	const FloatV& d0, const FloatV& d1, const FloatV& angD0, const FloatV& angD1, const Vec3V& bodyFrame0p, const Vec3V& bodyFrame1p,
-	const Vec3VArg normal, const FloatVArg invDt, const FloatVArg invDtp8, const FloatVArg dt, const FloatVArg restDistance, 
+	const Vec3VArg normal, const FloatVArg invDt, const FloatVArg invDtWithBiasCoefficient, const FloatVArg dt, const FloatVArg restDistance, 
 	const FloatVArg maxPenBias, const FloatVArg restitution,const FloatVArg bounceThreshold, const PxContactPoint& contact, SolverContactPointExt& solverContact, const FloatVArg ccdMaxSeparation, Cm::SpatialVectorF* zVector,
 	const Cm::SpatialVectorV& v0, const Cm::SpatialVectorV& v1, const FloatV& cfm, const Vec3VArg solverOffsetSlop,
 	const FloatVArg norVel0, const FloatVArg norVel1, const FloatVArg damping, const BoolVArg accelerationSpring)
@@ -684,7 +688,7 @@ FloatV setupExtSolverContact(const SolverExtBody& b0, const SolverExtBody& b1,
 	{
 		const BoolV ccdSeparationCondition = FIsGrtrOrEq(ccdMaxSeparation, penetration);
 		velMultiplier = recipResponse;
-		const FloatV penetrationInvDtScaled = FSel(isSeparated, penetrationInvDt, FMul(penetration, invDtp8));
+		const FloatV penetrationInvDtScaled = FSel(isSeparated, penetrationInvDt, FMul(penetration, invDtWithBiasCoefficient));
 		FloatV scaledBias = FMul(velMultiplier, FMax(maxPenBias, penetrationInvDtScaled));
 		scaledBias = FSel(BAnd(ccdSeparationCondition, isGreater2), zero, scaledBias);
 
@@ -712,11 +716,12 @@ FloatV setupExtSolverContact(const SolverExtBody& b0, const SolverExtBody& b1,
 bool createFinalizeSolverContacts(PxSolverContactDesc& contactDesc,
 								  PxsContactManagerOutput& output,
 								 ThreadContext& threadContext,
-								 const PxReal invDtF32,
-								 const PxReal dtF32,
+								 PxReal invDtF32,
+								 PxReal dtF32,
 								 PxReal bounceThresholdF32,
 								 PxReal frictionOffsetThreshold,
 								 PxReal correlationDistance,
+								 PxReal biasCoefficient,
 								 PxConstraintAllocator& constraintAllocator,
 								 Cm::SpatialVectorF* Z)
 {
@@ -753,7 +758,7 @@ bool createFinalizeSolverContacts(PxSolverContactDesc& contactDesc,
 	CorrelationBuffer& c = threadContext.mCorrelationBuffer;
 
 	return createFinalizeSolverContacts(contactDesc, c, invDtF32, dtF32, bounceThresholdF32, frictionOffsetThreshold,
-		correlationDistance, constraintAllocator, Z);
+		correlationDistance, biasCoefficient, constraintAllocator, Z);
 }
   
 PxU32 getContactManagerConstraintDesc(const PxsContactManagerOutput& cmOutput, const PxsContactManager& /*cm*/, PxSolverConstraintDesc& desc)
@@ -773,7 +778,7 @@ void updateFrictionAnchorCountAndPosition(PxSolverConstraintDesc& desc, PxsConta
 	desc.writeBackFriction = NULL;
 	if (output.frictionPatches == NULL) return;
 	const PxReal NORMAL_THRESHOLD = 0.999f;
-	PxTransform& bodyFrame0 = blockDesc.bodyFrame0;
+	const PxTransform& bodyFrame0 = blockDesc.bodyFrame0;
 	for (PxU32 frictionIndex = 0; frictionIndex < blockDesc.frictionCount; ++frictionIndex)
 	{
 		FrictionPatch& frictionPatch = reinterpret_cast<FrictionPatch*>(blockDesc.frictionPtr)[frictionIndex];

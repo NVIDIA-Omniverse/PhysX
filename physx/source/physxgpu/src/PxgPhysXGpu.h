@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,8 +33,6 @@
 #include "foundation/PxUserAllocated.h"
 #include "foundation/PxHashSet.h"
 #include "foundation/PxHashMap.h"
-#include "PxgHeapMemAllocator.h"
-#include "PxsTransformCache.h"
 #include "PxPhysXGpu.h"
 
 #include "CmIDPool.h"
@@ -52,10 +50,8 @@ public:
 	//PxPhysXGpu implementation
 	virtual	void									release()	PX_OVERRIDE;
 
-	virtual PxsParticleBuffer*						createParticleBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
-	virtual PxsParticleAndDiffuseBuffer*			createParticleAndDiffuseBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
-	virtual PxsParticleClothBuffer*					createParticleClothBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
-	virtual PxsParticleRigidBuffer*					createParticleRigidBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumRigids, PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
+	virtual PxsParticleBuffer*						createParticleBuffer(PxU32 maxNumParticles, PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
+	virtual PxsParticleAndDiffuseBuffer*			createParticleAndDiffuseBuffer(PxU32 maxNumParticles, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
 
 	virtual PxsMemoryManager*						createGpuMemoryManager(PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
 	
@@ -70,47 +66,46 @@ public:
 														PxCudaContextManager* cudaContextManager,
 														PxU32 gpuComputeVersion,
 														const PxGpuDynamicsMemoryConfig& config,
-														PxsHeapMemoryAllocatorManager* heapMemoryManager, PxU64 contextID)	PX_OVERRIDE;
+														PxsHeapMemoryAllocatorManager& heapMemoryManager, PxU64 contextID)	PX_OVERRIDE;
 
 	virtual Bp::AABBManagerBase*					createGpuAABBManager(PxsKernelWranglerManager* gpuKernelWrangler,
 														PxCudaContextManager* cudaContextManager,
 														const PxU32 gpuComputeVersion,
 														const PxGpuDynamicsMemoryConfig& config,
-														PxsHeapMemoryAllocatorManager* heapMemoryManager,
+														PxsHeapMemoryAllocatorManager& heapMemoryManager,
 														Bp::BroadPhase& bp,
 														Bp::BoundsArray& boundsArray,
-														PxFloatArrayPinnedSafe& contactDistance,
+														Cm::PinnableArray<PxReal>& contactDistance,
 														PxU32 maxNbAggregates, PxU32 maxNbShapes,
-														PxVirtualAllocator& allocator,
 														PxU64 contextID,
 														PxPairFilteringMode::Enum kineKineFilteringMode,
 														PxPairFilteringMode::Enum staticKineFilteringMode)	PX_OVERRIDE;
 
-	virtual Bp::BoundsArray* 						createGpuBounds(PxVirtualAllocator& allocator)  PX_OVERRIDE;
+	virtual Bp::BoundsArray* 						createGpuBounds(Cm::VirtualAllocatorCallback& allocator)  PX_OVERRIDE;
 
 	virtual PxvNphaseImplementationContext*			createGpuNphaseImplementationContext(PxsContext& context,
 														PxsKernelWranglerManager* gpuKernelWrangler,
 														PxvNphaseImplementationFallback* fallbackForUnsupportedCMs,
 														const PxGpuDynamicsMemoryConfig& gpuDynamicsConfig, void* contactStreamBase,
 														void* patchStreamBase, void* forceAndIndiceStreamBase,
-														PxBoundsArrayPinned& bounds, IG::IslandSim* islandSim,
+														Bp::BoundsArray& bounds, IG::IslandSim* islandSim,
 														physx::Dy::Context* dynamicsContext, const PxU32 gpuComputeVersion,
-														PxsHeapMemoryAllocatorManager* heapMemoryManager, bool useGPUBP)	PX_OVERRIDE;
+														PxsHeapMemoryAllocatorManager& heapMemoryManager, bool useGPUBP)	PX_OVERRIDE;
+
 	virtual PxsSimulationController*				createGpuSimulationController(PxsKernelWranglerManager* gpuWranglerManagers, 
 														PxCudaContextManager* cudaContextManager,
 														Dy::Context* dynamicContext, PxvNphaseImplementationContext* npContext, Bp::BroadPhase* bp, 
 														bool useGpuBroadphase,
 														PxsSimulationControllerCallback* callback, PxU32 gpuComputeVersion,
-														PxsHeapMemoryAllocatorManager* heapMemoryManager, PxU32 maxSoftBodyContacts,
-														PxU32 maxFemClothContacts, PxU32 maxParticleContacts,
+														PxsHeapMemoryAllocatorManager& heapMemoryManager, PxU32 maxDeformableVolumeContacts,
+														PxU32 maxDeformableSurfaceContacts, PxU32 maxParticleContacts,
 														PxU32 collisionStackSizeBytes, bool enableBodyAccelerations)	PX_OVERRIDE;
+
 	virtual Dy::Context*							createGpuDynamicsContext(Cm::FlushPool& taskPool, PxsKernelWranglerManager* gpuKernelWragler, 
 														PxCudaContextManager* cudaContextManager,
-														const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, const PxU32 maxNumPartitions, const PxU32 maxNumStaticPartitions,
-														const bool enableStabilization, const bool useEnhancedDeterminism, bool solveArticulationContactLast, const PxReal maxBiasCoefficient,
-														const PxU32 gpuComputeVersion, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager,
-														const bool frictionEveryIteration, const bool externalForcesEveryTgsIterationEnabled, PxSolverType::Enum solverType,
-														const PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled) PX_OVERRIDE;
+														const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions, PxReal maxBiasCoefficient,
+														PxU32 gpuComputeVersion, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager& heapMemoryManager, PxSolverType::Enum solverType,
+														PxReal lengthScale, PxU64 contextID, PxSceneFlags sceneFlags) PX_OVERRIDE;
 	
 	//internals
 		

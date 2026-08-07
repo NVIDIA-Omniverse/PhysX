@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -50,7 +50,7 @@ class NpActor : public NpBase
 {
 public:
 // PX_SERIALIZATION
-											NpActor(const PxEMPTY) : NpBase(PxEmpty)	{}				
+											NpActor(const PxEMPTY) : NpBase(PxEmpty)	{}
 					void					exportExtraData(PxSerializationContext& stream);	
 					void					importExtraData(PxDeserializationContext& context);
 					void					resolveReferences(PxDeserializationContext& context);

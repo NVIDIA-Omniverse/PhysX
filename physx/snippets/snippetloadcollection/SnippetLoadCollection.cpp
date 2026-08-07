@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -221,7 +221,7 @@ static PxCollection* deserializeCollection(PxInputData& inputData, bool isBinary
 	PxCollection* collection = NULL;
 	if(isBinary)
 	{
-		PxU32 length = inputData.getLength();
+		PxU32 length = (PxU32)inputData.getLength();
 		PxU8* memBlock = static_cast<PxU8*>(malloc(length+PX_SERIAL_FILE_ALIGN-1));
 		gMemBlocks[gNbMemBlocks++] = memBlock;
 		void* alignedBlock = reinterpret_cast<void*>((size_t(memBlock)+PX_SERIAL_FILE_ALIGN-1)&~(PX_SERIAL_FILE_ALIGN-1));

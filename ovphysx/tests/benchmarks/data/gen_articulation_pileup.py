@@ -32,14 +32,14 @@ CAPSULE_RADIUS = 0.10
 CAPSULE_HEIGHT = 0.30
 LINK_SPACING = CAPSULE_HEIGHT + 2.0 * CAPSULE_RADIUS  # = 0.50
 
-ARTICULATION_Y_SPACING = 2.75  # 5x the prior tight spacing
+ARTICULATION_Y_SPACING = 2.75
 ARTICULATION_Z = 4.0  # initial height
 
 # ---------------- Rigid-body scatter configuration ----------------
 SEED = 12345
 NUM_CUBES = 50
 NUM_SPHERES = 50
-SCATTER_MIN_DIST = 1.0  # bumped along with the 3x size increase below
+SCATTER_MIN_DIST = 1.0
 
 # Ground plane sized with a wide buffer beyond the scatter area so obstacles
 # pushed sideways by falling articulations are unlikely to roll off the edge.
@@ -234,8 +234,8 @@ def emit_articulation(idx, num_links, y_pos, z_pos):
                 name=f"joint_{j:02d}",
                 body0=f"{art_path}/link_{j-1:02d}",
                 body1=f"{art_path}/link_{j:02d}",
-                lp0=LINK_SPACING / 2.0,  # +0.25
-                lp1=-LINK_SPACING / 2.0,  # -0.25
+                lp0=LINK_SPACING / 2.0,
+                lp1=-LINK_SPACING / 2.0,
             )
         )
 

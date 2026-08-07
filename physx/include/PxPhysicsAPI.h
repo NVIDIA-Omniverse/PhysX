@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -152,7 +152,6 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "PxArticulationJointReducedCoordinate.h"
 #include "PxArticulationLink.h"
 #include "PxClient.h"
-#include "PxConeLimitedConstraint.h"
 #include "PxConstraint.h"
 #include "PxConstraintDesc.h"
 #include "PxContact.h"
@@ -162,10 +161,7 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "PxDeformableVolume.h"
 #include "PxDeformableVolumeMaterial.h"
 #include "PxDeletionListener.h"
-#include "PxFEMSoftBodyMaterial.h" // deprecated, include PxDeformableVolumeMaterial.h
 #include "PxFiltering.h"
-#include "PxForceMode.h"
-#include "PxLockedData.h"
 #include "PxMaterial.h"
 #include "PxParticleBuffer.h"
 #include "PxParticleSystem.h"
@@ -185,7 +181,6 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "PxShape.h"
 #include "PxSimulationEventCallback.h"
 #include "PxSimulationStatistics.h"
-#include "PxSoftBody.h" //deprecated, include PxDeformableVolume.h
 #include "PxVisualizationParameter.h"
 #include "PxPruningStructure.h"
 
@@ -216,7 +211,7 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "extensions/PxRepXSerializer.h"
 
 //Vehicle Simulation
-#include "vehicle2/PxVehicleAPI.h"
+#include "vehicle/PxVehicleAPI.h"
 
 //Connecting the SDK to Visual Debugger
 #include "pvd/PxPvdSceneClient.h"

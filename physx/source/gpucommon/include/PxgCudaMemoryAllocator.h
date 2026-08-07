@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -44,7 +44,7 @@ namespace physx
 	// Whenever possible, use the macros provided below instead of these functions.
 	void*	PxgCudaDeviceMemoryAllocate(PxCudaContext& cudaContext, size_t size, const char* filename, PxI32 line);
 	void	PxgCudaDeviceMemoryDeallocate(PxCudaContext& cudaContext, void* ptr);
-	void*	PxgPinnedMemoryAllocate(PxCudaContext& cudaContext, size_t size, const char* filename, PxI32 line);
+	void*	PxgPinnedMemoryAllocate(PxCudaContext& cudaContext, size_t size, PxU32 flags, const char* filename, PxI32 line);
 	void	PxgPinnedMemoryDeallocate(PxCudaContext& cudaContext, void* ptr);
 
 	// AD: templated easy-access to the allocation functions:
@@ -67,10 +67,10 @@ namespace physx
 	}
 
 	template<typename T>
-	T*		PxgPinnedMemoryAllocate(PxCudaContextManager& cudaContextManager, PxU64 numElements, const char* filename, PxI32 line)
+	T*		PxgPinnedMemoryAllocate(PxCudaContextManager& cudaContextManager, PxU64 numElements, PxU32 flags, const char* filename, PxI32 line)
 	{
 		PxScopedCudaLock _lock(cudaContextManager);
-		return reinterpret_cast<T*>(PxgPinnedMemoryAllocate(*cudaContextManager.getCudaContext(), numElements * sizeof(T), filename, line));
+		return reinterpret_cast<T*>(PxgPinnedMemoryAllocate(*cudaContextManager.getCudaContext(), numElements * sizeof(T), flags, filename, line));
 	}
 
 	template<typename T>
@@ -121,7 +121,12 @@ namespace physx
 #define PX_DEVICE_MEMORY_ALLOC(T, cudaContextManager, numElements) PxgCudaDeviceMemoryAllocate<T>(cudaContextManager, numElements, PX_FL)
 #define PX_DEVICE_MEMORY_FREE(cudaContextManager, deviceBuffer) PxgCudaDeviceMemoryDeallocate(cudaContextManager, deviceBuffer)
 
-#define PX_PINNED_MEMORY_ALLOC(T, cudaContextManager, numElements) PxgPinnedMemoryAllocate<T>(cudaContextManager, numElements, PX_FL)
-#define PX_PINNED_MEMORY_FREE(cudaContextManager, ptr) PxgPinnedMemoryDeallocate(cudaContextManager, ptr)	
+#define PX_PINNED_MEMORY_ALLOC(T, cudaContextManager, numElements) \
+	PxgPinnedMemoryAllocate<T>(cudaContextManager, numElements, CU_MEMHOSTALLOC_PORTABLE | CU_MEMHOSTALLOC_DEVICEMAP, PX_FL)
+
+#define PX_PINNED_MEMORY_ALLOC_FLAGS(T, cudaContextManager, numElements, flags) \
+	PxgPinnedMemoryAllocate<T>(cudaContextManager, numElements, flags, PX_FL)
+
+#define PX_PINNED_MEMORY_FREE(cudaContextManager, ptr) PxgPinnedMemoryDeallocate(cudaContextManager, ptr)
 
 #endif

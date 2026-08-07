@@ -1,0 +1,10 @@
+# ovruntime keeps its USD scene assets in LFS.  The parent ovphysx/.gitattributes
+# stores *.usda as text; re-assert the LFS rule here so ovruntime's assets are
+# not pulled out of LFS.
+*.usda filter=lfs diff=lfs merge=lfs -text
+# Make sure shell scripts have LF line endings, even when checked out on a Windows client with autocrlf=true
+tools/packman/packman text eol=lf
+# Physics tensor test data assets are small enough to store as text for diff visibility,
+# except ShadowHand.usda which is ~10 MB and must stay in LFS.
+source/omni.physx/tests/test.unit/physics/data/*.usda !filter diff=text merge=text text eol=lf
+source/omni.physx/tests/test.unit/physics/data/ShadowHand.usda filter=lfs diff=lfs merge=lfs -text

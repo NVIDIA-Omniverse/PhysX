@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -224,7 +224,7 @@ static bool createSDFSparse(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArra
 	bool success = true; // catch GPU errors.
 
 	if (sdfDesc.sdfBuilder == NULL) 
-	{		
+	{
 		PxArray<PxReal> denseSdf;			
 		PxArray<PxReal> sparseSdf;
 		Gu::SDFUsingWindingNumbersSparse(
@@ -233,7 +233,7 @@ static bool createSDFSparse(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArra
 			baseMeshSpecified ? indices32.size() : mesh.m_indices.size(),
 			dx, dy, dz,
 			meshLower, meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, narrowBandThickness, sdfDesc.subgridSize,
-			sdfCoarse, sdfSubgridsStartSlots, sparseSdf, denseSdf, subgridsMinSdfValue, subgridsMaxSdfValue, 16, sdfDesc.sdfBuilder);
+			sdfCoarse, sdfSubgridsStartSlots, sparseSdf, denseSdf, subgridsMinSdfValue, subgridsMaxSdfValue, sdfDesc.numThreadsForSdfConstruction, sdfDesc.sdfBuilder);
 
 		PxArray<PxReal> uncompressedSdfDataSubgrids;
 		Gu::convertSparseSDFTo3DTextureLayout(dx, dy, dz, sdfDesc.subgridSize, sdfSubgridsStartSlots.begin(), sparseSdf.begin(), sparseSdf.size(), uncompressedSdfDataSubgrids,
@@ -273,7 +273,7 @@ static bool createSDFSparse(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArra
 			meshLower, meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, narrowBandThickness, sdfDesc.subgridSize, sdfDesc.bitsPerSubgridPixel,
 			sdfCoarse, sdfSubgridsStartSlots, sdfDataSubgrids, subgridsMinSdfValue, subgridsMaxSdfValue, 
 			sdfDesc.sdfSubgrids3DTexBlockDim.x, sdfDesc.sdfSubgrids3DTexBlockDim.y, sdfDesc.sdfSubgrids3DTexBlockDim.z, 0);
-	}		
+	}
 
 	sdfDesc.sdf.count = sdfCoarse.size();
 	sdfDesc.sdf.stride = sizeof(PxReal);
@@ -371,7 +371,7 @@ static bool createSDF(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArray<PxRe
 	PxU32 numVertices = baseMeshSpecified ? sdfDesc.baseMesh.points.count : mesh.m_positions.size();
 
 	if (sdfDesc.sdfBuilder == NULL) 
-	{			
+	{
 		Gu::SDFUsingWindingNumbers(verts, indices, numTriangleIndices, dx, dy, dz, &sdf[0], meshLower,
 			meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, NULL, true,
 			sdfDesc.numThreadsForSdfConstruction, sdfDesc.sdfBuilder);

@@ -22,13 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #include "PxgTGSCudaSolverCore.h"
+#include "PxgCommonDefines.h"
 #include "PxgSolverConstraintDesc.h"
-#include "PxgSolverContext.h"
 #include "PxgSolverBody.h"
 #include "PxgConstraint.h"
 #include "PxgFrictionPatch.h"
@@ -44,14 +44,12 @@
 #include "PxSceneDesc.h"
 #include "PxgSolverConstraintBlock1D.h"
 #include "PxgConstraintBlock.h"
-#include "PxgCudaMemoryAllocator.h"
 #include "PxgCudaUtils.h"
 #include "PxgSimulationController.h"
 #include "PxgArticulationCore.h"
 #include "PxgSimulationCore.h"
 #include "PxgKernelWrangler.h"
 #include "PxgKernelIndices.h"
-#include "PxgHeapMemAllocator.h"
 #include "PxgConstraintWriteBack.h"
 #include "PxgSolverConstraint1D.h"
 #include "PxgArticulationCoreKernelIndices.h"
@@ -72,32 +70,32 @@
 using namespace physx;
 
 PxgTGSCudaSolverCore::PxgTGSCudaSolverCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, 
-	PxgGpuContext* dynamicContext, PxgHeapMemoryAllocatorManager* heapMemoryManager, const PxGpuDynamicsMemoryConfig& init) :
-	PxgSolverCore(gpuKernelWrangler, cudaContextManager, dynamicContext, heapMemoryManager),
-	mConstraintContactPrepPool(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mContactHeaderStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mContactStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mFrictionStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mSolverEncodedReferenceCount(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiConstraintBlockResponse(heapMemoryManager, PxsHeapStats::eSOLVER),
+	PxgGpuContext* dynamicContext, PxgAllocatorDesc& allocDesc, const PxGpuDynamicsMemoryConfig& init) :
+	PxgSolverCore(gpuKernelWrangler, cudaContextManager, dynamicContext, allocDesc),
+	mConstraintContactPrepPool(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mContactHeaderStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mContactStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mFrictionStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mSolverEncodedReferenceCount(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiConstraintBlockResponse(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
 		
-	mForceThresholdStream(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mTmpForceThresholdStream(heapMemoryManager, PxsHeapStats::eSOLVER),
+	mForceThresholdStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mTmpForceThresholdStream(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
 
-	mConstraint1DBatchIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mContactBatchIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiContactBatchIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mArtiConstraint1dBatchIndices(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mAccumulatedForceObjectPairs(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mExceededForceElements(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mForceChangeThresholdElements(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mThresholdStreamAccumulatedForce(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mBlocksThresholdStreamAccumulatedForce(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mThresholdStreamWriteIndex(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mBlocksThresholdStreamWriteIndex(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mThresholdStreamWriteable(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mIslandIds(heapMemoryManager, PxsHeapStats::eSOLVER),
-	mIslandStaticTouchCount(heapMemoryManager, PxsHeapStats::eSOLVER)
+	mConstraint1DBatchIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mContactBatchIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiContactBatchIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mArtiConstraint1dBatchIndices(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mAccumulatedForceObjectPairs(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mExceededForceElements(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mForceChangeThresholdElements(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mThresholdStreamAccumulatedForce(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mBlocksThresholdStreamAccumulatedForce(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mThresholdStreamWriteIndex(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mBlocksThresholdStreamWriteIndex(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mThresholdStreamWriteable(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mIslandIds(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER),
+	mIslandStaticTouchCount(allocDesc.deviceAlloc, PxsHeapStats::eSOLVER)
 {
 	mCudaContextManager->acquireContext();
 
@@ -129,11 +127,16 @@ void PxgTGSCudaSolverCore::createStreams()
 
 	mCudaContext->eventCreate(&mIntegrateEvent, CU_EVENT_DISABLE_TIMING);
 
-	mPinnedEvent = PX_PINNED_MEMORY_ALLOC(PxU32, *mCudaContextManager, 1);
-
 	//pass mStream to PxgArticulationCore to synchronize data
 	//mArticulationCore->setSolverStream(mStream);
 	mGpuContext->getArticulationCore()->setSolverStream(mStream);
+
+	mEventMapped = PX_PINNED_MEMORY_ALLOC_FLAGS(PxU32, *mCudaContextManager, 1, CU_MEMHOSTALLOC_PORTABLE | CU_MEMHOSTALLOC_DEVICEMAP);
+	if(!mEventMapped)
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgTGSCudaSolverCore: failed to allocate pinned event");
+		mCudaContext->setAbortMode(true);
+	}
 }
 
 void PxgTGSCudaSolverCore::releaseStreams()
@@ -144,7 +147,7 @@ void PxgTGSCudaSolverCore::releaseStreams()
 	mCudaContext->eventDestroy(mEventDmaBack);
 	mCudaContext->eventDestroy(mIntegrateEvent);
 
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mPinnedEvent);
+	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mEventMapped);
 }
 
 void PxgTGSCudaSolverCore::syncSimulationController()
@@ -253,7 +256,7 @@ void PxgTGSCudaSolverCore::constructConstraitPrepareDesc(PxgConstraintPrepareDes
 	prepareDesc.frictionOffsetThreshold = cData.frictionOffsetThreshold;
 	prepareDesc.correlationDistance = cData.correlationDistance;
 	prepareDesc.ccdMaxSeparation = cData.ccdMaxSeparation;
-	prepareDesc.biasCoefficient = cData.biasCoefficient;
+	prepareDesc.biasCoefficients = cData.biasCoefficients;
 	prepareDesc.totalPreviousEdges = totalPreviousEdges;
 	prepareDesc.totalCurrentEdges = totalCurrentEdges;
 
@@ -375,7 +378,7 @@ void PxgTGSCudaSolverCore::gpuMemDMAUpContactData(PxgPinnedHostLinearMemoryAlloc
 	if (nbBlocksRequired > 0)
 	{
 		//Launch zero friction patch kernel
-		const CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLEAR_FRICTION_PATCH_COUNTS);
+		const CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLEAR_FRICTION_PATCH_COUNTS);
 
 		CUdeviceptr frictionPatchPtr = mFrictionPatchCounts[1 - mCurrentIndex].getDevicePtr();
 		CUdeviceptr destroyedIndicesPtr = mDestroyedEdgeIndices.getDevicePtr();
@@ -395,8 +398,8 @@ void PxgTGSCudaSolverCore::gpuMemDMAUpContactData(PxgPinnedHostLinearMemoryAlloc
 }
 
 //solverBodyIndices and islandNodeIndices will include rigid bodies and articulations
-void PxgTGSCudaSolverCore::gpuMemDmaUpBodyData(PxPinnedArray<PxgSolverBodyData>& solverBodyDataPool,
-	PxPinnedArray<PxgSolverTxIData>& solverTxIDataPool,
+void PxgTGSCudaSolverCore::gpuMemDmaUpBodyData(Cm::PinnableArray<PxgSolverBodyData>& solverBodyDataPool,
+	Cm::PinnableArray<PxgSolverTxIData>& solverTxIDataPool,
 	const PxU32 numSolverBodies,
 	const PxU32 totalNumRigidBatches, const PxU32 totalNumArticBatches,
 	const PxU32 nbSlabs, const PxU32 nbStaticSlabs, const PxU32 maxNumStaticPartitions)
@@ -446,7 +449,7 @@ void PxgTGSCudaSolverCore::gpuMemDmaUpBodyData(PxPinnedArray<PxgSolverBodyData>&
 }
 
 void PxgTGSCudaSolverCore::allocateSolverBodyBuffers(const PxU32 numSolverBodies,
-	PxPinnedArray<PxNodeIndex>& islandNodeIndices,
+	Cm::PinnableArray<PxNodeIndex>& islandNodeIndices,
 	const PxU32 numActiveActiculations, const PxU32 maxArticulationLinks)
 {
 	allocateSolverBodyBuffersCommon(numSolverBodies, islandNodeIndices);
@@ -691,7 +694,7 @@ void PxgTGSCudaSolverCore::gpuMemDMAUp(PxgPinnedHostLinearMemoryAllocator& hostA
 
 void PxgTGSCudaSolverCore::gpuMemDMAbackSolverData(PxU8* forceBufferPool, PxU32 forceBufferOffset, PxU32 forceBufferUpperPartSize,
 	PxU32 forceBufferLowerPartSize, Dy::ThresholdStreamElement* changedElems, bool hasForceThresholds, Dy::ConstraintWriteback* constraintWriteBack,
-	const PxU32 writeBackSize, bool copyAllToHost, Dy::ErrorAccumulator*& contactError)
+	const PxU32 writeBackSize, bool copyAllToHost)
 {
 	PX_PROFILE_ZONE("GpuDynamics.DMABackSolverData", 0);
 
@@ -699,8 +702,6 @@ void PxgTGSCudaSolverCore::gpuMemDMAbackSolverData(PxU8* forceBufferPool, PxU32 
 	synchronizeStreams(mCudaContext, mStream, mStream2, mEventDmaBack);
 
 	mCudaContext->memcpyDtoHAsync(mSolverCoreDesc, mSolverCoreDescd, sizeof(PxgSolverCoreDesc), mStream2);
-		
-	contactError = &mSolverCoreDesc->contactErrorAccumulator;
 
 	if (copyAllToHost)
 	{
@@ -737,7 +738,7 @@ void PxgTGSCudaSolverCore::gpuMemDMAbackSolverData(PxU8* forceBufferPool, PxU32 
 		PX_ASSERT(result == CUDA_SUCCESS);
 		//Dispatch kernel to copy from force changed event buffer to changed elems buffer!
 
-		CUfunction function = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::DMA_CHANGED_ELEMS);
+		CUfunction function = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::DMA_CHANGED_ELEMS);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -778,7 +779,7 @@ void PxgTGSCudaSolverCore::syncDmaBack(PxU32& nbChangedThresholdElements)
 	//Wait for mStream to have completed
 	/*CUresult result = mCudaContext->streamSynchronize(mStream);
 	PX_UNUSED(result);*/
-	volatile PxU32* pEvent = mPinnedEvent;
+	volatile PxU32* pEvent = mEventMapped;
 	if (!spinWait(*pEvent, 0.1f))
 		mCudaContext->streamSynchronize(mStream);
 
@@ -817,7 +818,7 @@ void PxgTGSCudaSolverCore::preIntegration(const PxU32 offset, const PxU32 nbSolv
 	CUdeviceptr solverBodyIndices = mSolverBodyIndices.getDevicePtr();
 
 	// PT: TODO: merge PRE_INTEGRATION and TGS_PRE_INTEGRATION kernels, they call the same code, then refactor the CPU-side launch code between PGS / TGS.
-	const CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::TGS_PRE_INTEGRATION);
+	const CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::TGS_PRE_INTEGRATION);
 		
 	const PxU32 nbBlocks = (nbSolverBodies - offset + PxgKernelBlockDim::PRE_INTEGRATION - 1) / PxgKernelBlockDim::PRE_INTEGRATION;
 
@@ -862,7 +863,7 @@ void PxgTGSCudaSolverCore::preIntegration(const PxU32 offset, const PxU32 nbSolv
 	}
 
 	// PT: TODO: refactor with similar code in PGS
-	const CUfunction staticInitFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::INIT_STATIC_KINEMATICS);
+	const CUfunction staticInitFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::INIT_STATIC_KINEMATICS);
 	const PxU32 nbStaticBlocks = (offset + PxgKernelBlockDim::PRE_INTEGRATION - 1) / PxgKernelBlockDim::PRE_INTEGRATION;
 
 	if (nbStaticBlocks)
@@ -908,7 +909,7 @@ void PxgTGSCudaSolverCore::jointConstraintBlockPrePrepParallel(PxU32 nbConstrain
 	};
 
 	//create block version of joint constraint
-	const CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::JOINT_CONSTRAINT_PREPREP_BLOCK);
+	const CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::JOINT_CONSTRAINT_PREPREP_BLOCK);
 
 	const PxU32 nbBlocksRequired = (nbConstraintBatches*PXG_BATCH_SIZE + PxgKernelBlockDim::CONSTRAINT_PREPREP_BLOCK - 1) / PxgKernelBlockDim::CONSTRAINT_PREPREP_BLOCK;
 
@@ -930,7 +931,7 @@ void PxgTGSCudaSolverCore::jointConstraintPrepareParallel(PxU32 nbJointBatches)
 {
 	PX_PROFILE_ZONE("GpuDynamics.Constraint1DPrepParallel", 0);
 
-	const CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::TGS_JOINT_CONSTRAINT_PREPARE_BLOCK_PARALLEL);
+	const CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::TGS_JOINT_CONSTRAINT_PREPARE_BLOCK_PARALLEL);
 
 	PxCudaKernelParam kernelParams[] =
 	{
@@ -961,7 +962,7 @@ void PxgTGSCudaSolverCore::contactConstraintPrepareParallel(PxU32 nbContactBatch
 
 	PX_PROFILE_ZONE("GpuDynamics.ConstraintPrepParallel", 0);
 
-	const CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::TGS_CONTACT_CONSTRAINT_PREPARE_BLOCK_PARALLEL);
+	const CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::TGS_CONTACT_CONSTRAINT_PREPARE_BLOCK_PARALLEL);
 
 	PxCudaKernelParam kernelParams[] =
 	{
@@ -991,7 +992,7 @@ void PxgTGSCudaSolverCore::artiJointConstraintPrepare(PxU32 nbArtiJointBatches)
 {
 	PX_PROFILE_ZONE("GpuDynamics.artiJointConstraintPrepareParallel", 0);
 
-	const CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_JOINT_PREP_TGS);
+	const CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_JOINT_PREP_TGS);
 
 	PxCudaKernelParam kernelParams[] =
 	{
@@ -1025,7 +1026,7 @@ void PxgTGSCudaSolverCore::artiContactConstraintPrepare(PxU32 nbArtiContactBatch
 
 	PX_PROFILE_ZONE("GpuDynamics.artiContactConstraintPrepParallel", 0);
 		
-	const CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_CONTACT_PREP_TGS);
+	const CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_CONTACT_PREP_TGS);
 			
 	PxCudaKernelParam kernelParams[] =
 	{
@@ -1078,7 +1079,7 @@ void PxgTGSCudaSolverCore::nonRigidConstraintPrepare(PxU32 numArticulations)
 
 void PxgTGSCudaSolverCore::writeBackBlock(PxU32 a, PxgIslandContext& context)
 {
-	const CUfunction writebackBlockFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::WRITEBACK_BLOCKS_TGS);
+	const CUfunction writebackBlockFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::WRITEBACK_BLOCKS_TGS);
 
 	PxCudaKernelParam kernelParams[] =
 	{
@@ -1103,8 +1104,8 @@ void PxgTGSCudaSolverCore::writeBackBlock(PxU32 a, PxgIslandContext& context)
 	}
 }
 
-void PxgTGSCudaSolverCore::solvePartitions(PxgIslandContext* islandContexts, PxInt32ArrayPinned& constraintsPerPartition,
-	PxInt32ArrayPinned& artiConstraintsPerPartition, PxU32 islandIndex, bool doFriction, PxReal accumulatedDt, 
+void PxgTGSCudaSolverCore::solvePartitions(PxgIslandContext* islandContexts, Cm::PinnableArray<PxU32>& constraintsPerPartition,
+	Cm::PinnableArray<PxU32>& artiConstraintsPerPartition, PxU32 islandIndex, bool doFriction, PxReal accumulatedDt, 
 	PxReal minPen, bool anyArticulationConstraints, bool isVelocityIteration)
 {
 	PxgIslandContext& context = islandContexts[islandIndex];
@@ -1114,11 +1115,11 @@ void PxgTGSCudaSolverCore::solvePartitions(PxgIslandContext* islandContexts, PxI
 	CUdeviceptr artiDescd = mGpuContext->getArticulationCore()->getArticulationCoreDescd();
 
 	const CUfunction solveWholeIslandFunction =
-	    mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RIGID_SOLVE_WHOLE_ISLAND_TGS);
+	    mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::RIGID_SOLVE_WHOLE_ISLAND_TGS);
 	const CUfunction solveUnifiedBlock =
-	    mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SOLVE_UNIFIED);
+	    mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SOLVE_UNIFIED);
 	const CUfunction computeBodiesAverageVelocitiesFunction =
-	    mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPUTE_AVERAGE_VELOCITY_TGS);
+	    mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPUTE_AVERAGE_VELOCITY_TGS);
 
 	PxU32 bodyCount = (context.mBodyCount + context.mBodyStartIndex) * mSolverCoreDesc->numSlabs;
 
@@ -1244,9 +1245,7 @@ void PxgTGSCudaSolverCore::solvePartitions(PxgIslandContext* islandContexts, PxI
 }
 
 void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandContexts, const PxU32 numIslands, const PxU32 /*maxPartitions*/,
-	PxInt32ArrayPinned& constraintsPerPartition, PxInt32ArrayPinned& artiConstraintsPerPartition, const PxVec3& gravity, const bool solveArticulationContactLast,
-	PxReal* posIterResidualSharedMem, PxU32 posIterResidualSharedMemSize, Dy::ErrorAccumulator* posIterError, PxPinnedArray<Dy::ErrorAccumulator>& artiContactPosIterError,
-	PxPinnedArray<Dy::ErrorAccumulator>& perArticulationInternalError)
+	Cm::PinnableArray<PxU32>& constraintsPerPartition, Cm::PinnableArray<PxU32>& artiConstraintsPerPartition, const PxVec3& gravity, const bool solveArticulationContactLast)
 {
 	PX_PROFILE_ZONE("GpuDynamics.Solve", 0);
 
@@ -1258,13 +1257,13 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 
 	PxgFEMClothCore* femClothCore = mGpuContext->getGpuFEMClothCore(); 
 
-	const CUfunction initBodiesFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::TGS_INIT_SOLVER_VELS);		
-	const CUfunction concludeBlockFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONCLUDE_BLOCKS_TGS);
-	const CUfunction writebackBodiesFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::WRITE_BACK_BODIES_TGS);		
-	const CUfunction propagateBodiesVelocityFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PROPAGATE_AVERAGE_VELOCITY_TGS);
+	const CUfunction initBodiesFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::TGS_INIT_SOLVER_VELS);		
+	const CUfunction concludeBlockFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONCLUDE_BLOCKS_TGS);
+	const CUfunction writebackBodiesFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::WRITE_BACK_BODIES_TGS);		
+	const CUfunction propagateBodiesVelocityFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PROPAGATE_AVERAGE_VELOCITY_TGS);
 
-	const CUfunction solveRigidStaticconstraintsFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RIGID_SOLVE_STATIC_CONSTRAINTS_TGS);
-	const CUfunction propagateRigidStaticconstraintsFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PROPAGATE_STATIC_SOLVER_VELOCITIES_TGS);
+	const CUfunction solveRigidStaticconstraintsFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::RIGID_SOLVE_STATIC_CONSTRAINTS_TGS);
+	const CUfunction propagateRigidStaticconstraintsFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PROPAGATE_STATIC_SOLVER_VELOCITIES_TGS);
 
 	const PxReal stepDt = mSharedDesc->dt/PxReal(islandContexts->mNumPositionIterations);
 
@@ -1272,8 +1271,6 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 	const PxReal invTotalDt = 1.f/ mSharedDesc->dt;
 
 	CUdeviceptr artiDescd = mGpuContext->getArticulationCore()->getArticulationCoreDescd();
-
-	const PxReal biasCoefficient = islandContexts->mBiasCoefficient;
 
 	// resetVelocities (ZeroBodies) is called in "doConstraintPrepGPU"
 
@@ -1314,30 +1311,18 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 		bool isFinalIteration = false;
 		const bool externalForcesEveryTgsIterationEnabled = mGpuContext->isExternalForcesEveryTgsIterationEnabled();
 
-		//Zero contact error accumulators
-		PxReal* zeroA = ((PxReal*)mSolverCoreDescd) + offsetof(PxgSolverCoreDesc, contactErrorAccumulator) / sizeof(PxReal);
-		PxReal* zeroB = ((PxReal*)artiDescd) + offsetof(PxgArticulationCoreDesc, mContactErrorAccumulator) / sizeof(PxReal);
-		const bool residualReportingEnabled = mGpuContext->isResidualReportingEnabled();
-		const PxU32 clearValue = residualReportingEnabled ? 0u : 0xFFFFFFFFu;
-		//Clear the residual accumulation values at least once even if residual accumulation is not enabled because depending on the value used
-		//for clearing, residuals will get computed or not.
-		mCudaContext->memsetD32Async(CUdeviceptr(zeroA), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
-		mCudaContext->memsetD32Async(CUdeviceptr(zeroB), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
-
 		const Dy::ArticulationConstraintProcessingConfigGPU singlePassArticulationConstraintProcessConfig = Dy::ArticulationConstraintProcessingConfigGPU::getSinglePassConfig();
 		const Dy::ArticulationConstraintProcessingConfigGPU firstPassArticulationConstraintProcessConfig = Dy::ArticulationConstraintProcessingConfigGPU::getFirstPassConfig();
 		const Dy::ArticulationConstraintProcessingConfigGPU secondPassArticulationConstraintProcessConfig = Dy::ArticulationConstraintProcessingConfigGPU::getSecondPassConfig();
 
+		const PxReal articulationBiasCoefficient = context.mBiasCoefficients.articulation;
+		const PxReal rigidContactBiasCoefficient = 0.0f;  // not needed here for TGS
+		const PxReal particleBiasCoefficient = context.mBiasCoefficients.particle;
+		const PxReal deformableRigidAttachmentBiasCoefficient = context.mBiasCoefficients.deformableRigidAttachment;
+
 		for (PxI32 b = 0; b < context.mNumPositionIterations; ++b)
 		{
 			PX_PROFILE_ZONE("GpuDynamics.Solve.PosIteration", 0);
-
-			if (residualReportingEnabled) 
-			{
-				//Zero contact error accumulators
-				mCudaContext->memsetD32Async(CUdeviceptr(zeroA), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
-				mCudaContext->memsetD32Async(CUdeviceptr(zeroB), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
-			}
 
 			//KS - this works because PX_CUDA_KERNEL_PARAM is a pointer to the data
 			if (b == (context.mNumPositionIterations - 1))
@@ -1358,7 +1343,7 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 						PX_CUDA_KERNEL_PARAM(gravity)
 					};
 
-					CUfunction applyTGSSubstepGravity = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::APPLY_TGS_SUBSTEP_GRAVITY);
+					CUfunction applyTGSSubstepGravity = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::APPLY_TGS_SUBSTEP_GRAVITY);
 					CUresult result = mCudaContext->launchKernel(applyTGSSubstepGravity, nbBlocksRequired, 1, 1, 32, PxgKernelBlockDim::COMPUTE_BODIES_AVERAGE_VELOCITY / 32, 1, 0,
 						mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
 					if (result != CUDA_SUCCESS)
@@ -1373,10 +1358,12 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 			{
 				//tendons + mimic joints + friction + drive + pos limit
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, firstPassArticulationConstraintProcessConfig, 
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, 
+					articulationBiasCoefficient, rigidContactBiasCoefficient,
+					firstPassArticulationConstraintProcessConfig, 
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+					doFriction, isTGS, externalForcesEveryTgsIterationEnabled);
 
 				//dynamic contact
 				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction, accumulatedDt, minPen, externalForcesEveryTgsIterationEnabled, isVelocityIteration);
@@ -1388,10 +1375,12 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 				// solvePartitions).
 				//arti dynamic contact + arti 1d dynamic constraint  + arti static contact + arti static 1d constraint + arti vel limit
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, secondPassArticulationConstraintProcessConfig,
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, 
+					articulationBiasCoefficient, rigidContactBiasCoefficient,
+					secondPassArticulationConstraintProcessConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+					doFriction, isTGS, externalForcesEveryTgsIterationEnabled);
 			}
 			else
 			{
@@ -1403,11 +1392,12 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 				// and that there are no lingering impulses from the rigid body or articulation solver (i.e.,
 				// solvePartitions).
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient,
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, 
+					articulationBiasCoefficient, rigidContactBiasCoefficient,
 					singlePassArticulationConstraintProcessConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+					doFriction, isTGS, externalForcesEveryTgsIterationEnabled);
 			}
 
 			if (softbodyCore || numParticleCores > 0 || femClothCore)
@@ -1417,19 +1407,21 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 
 			for (PxU32 i = 0; i < numParticleCores; ++i)
 			{
-				particleCores[i]->solveTGS(mPrePrepDescd, mSolverCoreDescd, mSharedDescd, artiDescd, stepDt, invTotalDt, mStream, false, b, context.mNumPositionIterations, islandContexts->mBiasCoefficient);
+				particleCores[i]->solveTGS(mPrePrepDescd, mSolverCoreDescd, artiDescd, stepDt, invTotalDt, mStream, false, b, context.mNumPositionIterations,
+					particleBiasCoefficient);
 			}
 
 			if (femClothCore)
 			{
-				femClothCore->solve(mPrePrepDescd, mSolverCoreDescd, mSharedDescd, artiDescd, stepDt, mStream, b,
-									context.mNumPositionIterations, false, gravity);
+				femClothCore->solve(mPrePrepDescd, mSolverCoreDescd, artiDescd, stepDt, mStream, b,
+									context.mNumPositionIterations, false, gravity,
+									deformableRigidAttachmentBiasCoefficient);
 			}
 
 			if (softbodyCore)
 			{
-				softbodyCore->solveTGS(mPrePrepDescd, mPrepareDescd, mSolverCoreDescd, mSharedDescd, artiDescd, stepDt, mStream,
-					false, islandContexts->mBiasCoefficient*invStepDt, b == 0, gravity);
+				softbodyCore->solveTGS(mPrePrepDescd, mPrepareDescd, mSolverCoreDescd, artiDescd, stepDt, mStream,
+					false, deformableRigidAttachmentBiasCoefficient, b == 0, gravity);
 			}
 
 			for (PxU32 i = 0; i < numParticleCores; ++i)
@@ -1480,8 +1472,7 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 						PX_CUDA_KERNEL_PARAM(mSolverCoreDescd),
 						PX_CUDA_KERNEL_PARAM(mSharedDescd),
 						PX_CUDA_KERNEL_PARAM(isVelocityIteration),
-						PX_CUDA_KERNEL_PARAM(isFinalIteration),
-						PX_CUDA_KERNEL_PARAM(biasCoefficient)
+						PX_CUDA_KERNEL_PARAM(isFinalIteration)
 					};
 
 					CUresult result = mCudaContext->launchKernel(propagateBodiesVelocityFunction, nbBlocksRequired, 1, 1, 32, PxgKernelBlockDim::COMPUTE_BODIES_AVERAGE_VELOCITY / 32, 1, 0, mStream, propagateBodiesVelocityParams, sizeof(propagateBodiesVelocityParams), 0, PX_FL);
@@ -1561,83 +1552,20 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 		isVelocityIteration = true;
 		isFinalIteration = false;
 			
-		if (residualReportingEnabled)
-		{
-			writeBackBlock(a, context);
-
-			if (posIterResidualSharedMemSize > 0)
-			{
-				CUfunction function = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::DMA_CONSTRAINT_RESIDUAL);
-
-				CUdeviceptr ptr = mConstraintWriteBackBuffer.getDevicePtr();
-				PxCudaKernelParam kernelParams[] =
-				{
-					PX_CUDA_KERNEL_PARAM(ptr),
-					PX_CUDA_KERNEL_PARAM(posIterResidualSharedMem),
-					PX_CUDA_KERNEL_PARAM(posIterResidualSharedMemSize)
-				};
-
-				PxU32 threadBlockSize = 256;
-				PxU32 gridSize = (posIterResidualSharedMemSize + threadBlockSize - 1) / threadBlockSize;
-
-				PxCUresult result = mCudaContext->launchKernel(function, gridSize, 1, 1, threadBlockSize, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-				if (result != CUDA_SUCCESS)
-					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU dmaConstraintResidual fail to launch kernel!!\n");
-			}
-
-			if (mGpuContext->getArticulationCore()->getArticulationCoreDesc()->nbArticulations > 0)
-			{
-				//perArticulationInternalError.resize(mGpuContext->getArticulationCore()->getArticulationCoreDesc()->nbArticulations);
-
-				CUfunction function = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::DMA_ARTICULATION_RESIDUAL);
-
-				CUdeviceptr ptr = (CUdeviceptr)perArticulationInternalError.begin();
-				PxCudaKernelParam kernelParams[] =
-				{
-					PX_CUDA_KERNEL_PARAM(artiDescd),
-					PX_CUDA_KERNEL_PARAM(ptr)
-				};
-
-				PxU32 threadBlockSize = 256;
-				PxU32 gridSize = (mGpuContext->getArticulationCore()->getArticulationCoreDesc()->nbArticulations + threadBlockSize - 1) / threadBlockSize;
-
-				PxCUresult result = mCudaContext->launchKernel(function, gridSize, 1, 1, threadBlockSize, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
-				if (result != CUDA_SUCCESS)
-					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU dmaArticulationResidual fail to launch kernel!!\n");
-			}
-
-			PX_UNUSED(perArticulationInternalError);
-
-			{
-				PxgSolverCoreDesc* gpuPtr = (PxgSolverCoreDesc*)mSolverCoreDescd;
-				mCudaContext->memcpyDtoHAsync(posIterError, (CUdeviceptr)&gpuPtr->contactErrorAccumulator, sizeof(Dy::ErrorAccumulator), mStream); //Should posIterError be shared memory?	
-			}
-			{
-				artiContactPosIterError.resize(1);
-				PxgArticulationCoreDesc* gpuPtr = (PxgArticulationCoreDesc*)mGpuContext->getArticulationCore()->getArticulationCoreDescd();
-				mCudaContext->memcpyDtoHAsync(artiContactPosIterError.begin(), (CUdeviceptr)&gpuPtr->mContactErrorAccumulator, sizeof(Dy::ErrorAccumulator), mStream);
-			}
-		}
-
 		const bool anyArticulationConstraints = (context.mArtiBatchCount + context.mStaticArtiBatchCount + context.mSelfArtiBatchCount) > 0;
 		for (PxI32 b = 0; b < context.mNumVelocityIterations; ++b)
 		{
 			PX_PROFILE_ZONE("GpuDynamics.Solve.VelIteration", 0);
 
-			if (residualReportingEnabled)
-			{
-				//Zero contact error accumulators
-				mCudaContext->memsetD32Async(CUdeviceptr(zeroA), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
-				mCudaContext->memsetD32Async(CUdeviceptr(zeroB), clearValue, sizeof(Dy::ErrorAccumulator) / sizeof(PxU32), mStream);
-			}
-
 			if(solveArticulationContactLast)
 			{
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, firstPassArticulationConstraintProcessConfig,
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, 
+					articulationBiasCoefficient, rigidContactBiasCoefficient,
+					firstPassArticulationConstraintProcessConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+					doFriction, isTGS, externalForcesEveryTgsIterationEnabled);
 
 				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction, accumulatedDt, minPen, anyArticulationConstraints, isVelocityIteration);
 
@@ -1647,13 +1575,15 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 				// and that there are no lingering impulses from the rigid body or articulation solver (i.e.,
 				// solvePartitions).
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, secondPassArticulationConstraintProcessConfig,
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, 
+					articulationBiasCoefficient, rigidContactBiasCoefficient,
+					secondPassArticulationConstraintProcessConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+					doFriction, isTGS, externalForcesEveryTgsIterationEnabled);
 			}
 			else
-			{		
+			{
 				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction, accumulatedDt, minPen, anyArticulationConstraints, isVelocityIteration);
 
 				// Before solving internal constraints, ensure to propagate remaining impulses from solvePartitions to the
@@ -1662,10 +1592,12 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 				// and that there are no lingering impulses from the rigid body or articulation solver (i.e.,
 				// solvePartitions).
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					stepDt, invStepDt, isVelocityIteration, accumulatedDt, biasCoefficient, singlePassArticulationConstraintProcessConfig,
+					stepDt, invStepDt, isVelocityIteration, accumulatedDt, 
+					articulationBiasCoefficient, rigidContactBiasCoefficient,
+					singlePassArticulationConstraintProcessConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticConstraints.getDevicePtr()), mSharedDescd,
-					doFriction, isTGS, residualReportingEnabled, externalForcesEveryTgsIterationEnabled);
+					doFriction, isTGS, externalForcesEveryTgsIterationEnabled);
 			}
 
 			if (softbodyCore || numParticleCores > 0 || femClothCore)
@@ -1675,15 +1607,16 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 
 			for (PxU32 i = 0; i < numParticleCores; ++i)
 			{
-				particleCores[i]->solveTGS(mPrePrepDescd, mSolverCoreDescd, mSharedDescd, artiDescd, stepDt, invTotalDt, mStream, true, -1, -1, islandContexts->mBiasCoefficient);
+				particleCores[i]->solveTGS(mPrePrepDescd, mSolverCoreDescd, artiDescd, stepDt, invTotalDt, mStream, true, -1, -1,
+					particleBiasCoefficient);
 			}
 
 			//! no velocity iteration support for FEM cloth
-				
+
 			if (softbodyCore)
 			{
-				softbodyCore->solveTGS(mPrePrepDescd, mPrepareDescd, mSolverCoreDescd, mSharedDescd, artiDescd, stepDt, mStream,
-					true, islandContexts->mBiasCoefficient*invStepDt, false, gravity);
+				softbodyCore->solveTGS(mPrePrepDescd, mPrepareDescd, mSolverCoreDescd, artiDescd, stepDt, mStream,
+					true, deformableRigidAttachmentBiasCoefficient, false, gravity);
 			}
 
 			for (PxU32 i = 0; i < numParticleCores; ++i)
@@ -1733,8 +1666,7 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 						PX_CUDA_KERNEL_PARAM(mSolverCoreDescd),
 						PX_CUDA_KERNEL_PARAM(mSharedDescd),
 						PX_CUDA_KERNEL_PARAM(isVelocityIteration),
-						PX_CUDA_KERNEL_PARAM(isFinalIteration),
-						PX_CUDA_KERNEL_PARAM(biasCoefficient)
+						PX_CUDA_KERNEL_PARAM(isFinalIteration)
 					};
 
 					CUresult result = mCudaContext->launchKernel(propagateBodiesVelocityFunction, nbBlocksRequired, 1, 1, 32, PxgKernelBlockDim::COMPUTE_BODIES_AVERAGE_VELOCITY / 32, 1, 0, mStream, propagateBodiesVelocityParams, sizeof(propagateBodiesVelocityParams), 0, PX_FL);
@@ -1756,12 +1688,12 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 		if (softbodyCore)
 		{
 			softbodyCore->copyContactCountsToHost();
-			softbodyCore->finalizeVelocities(mSharedDesc->dt, biasCoefficient, true);
+			softbodyCore->finalizeVelocities(mSharedDesc->dt);
 		}
 
 		for (PxU32 i = 0; i < numParticleCores; ++i)
 		{
-			particleCores[i]->finalizeVelocities(mSharedDesc->dt, biasCoefficient);
+			particleCores[i]->finalizeVelocities(mSharedDesc->dt, particleBiasCoefficient);
 		}
 
 		if (femClothCore)
@@ -1783,8 +1715,8 @@ void PxgTGSCudaSolverCore::radixSort(const PxU32 nbPasses)
 {
 	CUdeviceptr solverDescd = mSolverCoreDescd;
 
-	CUfunction radixFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RADIXSORT_SINGLEBLOCK);
-	CUfunction calculateRanksFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RADIXSORT_CALCULATERANKS);
+	CUfunction radixFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::RADIXSORT_SINGLEBLOCK);
+	CUfunction calculateRanksFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::RADIXSORT_CALCULATERANKS);
 
 	PxU32 startBit = 0;
 
@@ -1843,7 +1775,7 @@ void PxgTGSCudaSolverCore::accumulatedForceThresholdStream(PxU32 maxNodes)
 		PX_CUDA_KERNEL_PARAM(rsDescd)
 	};
 
-	CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::INITIALIZE_INPUT_AND_RANKS_B);
+	CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::INITIALIZE_INPUT_AND_RANKS_B);
 
 	result = mCudaContext->launchKernel(kernelFunction, PxgKernelGridDim::INITIALIZE_INPUT_AND_RANKS, 1, 1, PxgKernelBlockDim::INITIALIZE_INPUT_AND_RANKS, 1, 1, 0, mStream, kernelParams0, sizeof(kernelParams0), 0, PX_FL);
 
@@ -1854,7 +1786,7 @@ void PxgTGSCudaSolverCore::accumulatedForceThresholdStream(PxU32 maxNodes)
 		radixSort(nbPasses);
 	}
 
-	kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::INITIALIZE_INPUT_AND_RANKS_A);
+	kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::INITIALIZE_INPUT_AND_RANKS_A);
 	result = mCudaContext->launchKernel(kernelFunction, PxgKernelGridDim::INITIALIZE_INPUT_AND_RANKS, 1, 1, PxgKernelBlockDim::INITIALIZE_INPUT_AND_RANKS, 1, 1, 0, mStream, kernelParams0, sizeof(kernelParams0), 0, PX_FL);
 
 	PX_ASSERT(result == CUDA_SUCCESS);
@@ -1865,7 +1797,7 @@ void PxgTGSCudaSolverCore::accumulatedForceThresholdStream(PxU32 maxNodes)
 	}
 
 	//we need to reorganize the threshold stream and put the result in tmpThresholdStream
-	kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::REORGANIZE_THRESHOLDSTREAM);
+	kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::REORGANIZE_THRESHOLDSTREAM);
 	result = mCudaContext->launchKernel(kernelFunction, PxgKernelGridDim::REORGANIZE_THRESHOLDSTREAM, 1, 1, PxgKernelBlockDim::REORGANIZE_THRESHOLDSTREAM, 1, 1, 0, mStream, kernelParams0, sizeof(kernelParams0), 0, PX_FL);
 
 	PX_ASSERT(result == CUDA_SUCCESS);
@@ -1875,17 +1807,17 @@ void PxgTGSCudaSolverCore::accumulatedForceThresholdStream(PxU32 maxNodes)
 		PX_CUDA_KERNEL_PARAM(mSolverCoreDescd),
 	};
 
-	kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPUTE_ACCUMULATED_THRESHOLDSTREAM);
+	kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPUTE_ACCUMULATED_THRESHOLDSTREAM);
 
 	result = mCudaContext->launchKernel(kernelFunction, PxgKernelGridDim::COMPUTE_ACCUMULATED_THRESHOLDSTREAM, 1, 1, PxgKernelBlockDim::COMPUTE_ACCUMULATED_THRESHOLDSTREAM, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
 	PX_ASSERT(result == CUDA_SUCCESS);
 
-	kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::OUTPUT_ACCUMULATED_THRESHOLDSTREAM);
+	kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::OUTPUT_ACCUMULATED_THRESHOLDSTREAM);
 
 	result = mCudaContext->launchKernel(kernelFunction, PxgKernelGridDim::OUTPUT_ACCUMULATED_THRESHOLDSTREAM, 1, 1, PxgKernelBlockDim::OUTPUT_ACCUMULATED_THRESHOLDSTREAM, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
 	PX_ASSERT(result == CUDA_SUCCESS);
 
-	kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::WRITEOUT_ACCUMULATEDFORCEPEROBJECT);
+	kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::WRITEOUT_ACCUMULATEDFORCEPEROBJECT);
 
 	result = mCudaContext->launchKernel(kernelFunction, PxgKernelGridDim::WRITEOUT_ACCUMULATEDFORCEPEROBJECT, 1, 1, PxgKernelBlockDim::WRITEOUT_ACCUMULATEDFORCEPEROBJECT, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
 
@@ -1915,14 +1847,14 @@ void PxgTGSCudaSolverCore::accumulatedForceThresholdStream(PxU32 maxNodes)
 			PX_CUDA_KERNEL_PARAM(mSharedDescd),
 		};
 
-		kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPUTE_EXCEEDEDFORCE_THRESHOLDELEMENT_INDICE);
+		kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPUTE_EXCEEDEDFORCE_THRESHOLDELEMENT_INDICE);
 
 		result = mCudaContext->launchKernel(kernelFunction, PxgKernelGridDim::COMPUTE_EXCEEDEDFORCE_THRESHOLDELEMENT_INDICE, 1, 1, PxgKernelBlockDim::COMPUTE_EXCEEDEDFORCE_THRESHOLDELEMENT_INDICE, 1, 1, 0, mStream, exceededForceKernelParams, sizeof(exceededForceKernelParams), 0, PX_FL);
 
 		PX_ASSERT(result == CUDA_SUCCESS);
 	}
 
-	kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::OUTPUT_EXCEEDEDFORCE_THRESHOLDELEMENT_INDICE);
+	kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::OUTPUT_EXCEEDEDFORCE_THRESHOLDELEMENT_INDICE);
 
 	result = mCudaContext->launchKernel(kernelFunction, PxgKernelGridDim::OUTPUT_EXCEEDEDFORCE_THRESHOLDELEMENT_INDICE, 1, 1, PxgKernelBlockDim::OUTPUT_EXCEEDEDFORCE_THRESHOLDELEMENT_INDICE, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
 
@@ -1943,22 +1875,22 @@ void PxgTGSCudaSolverCore::accumulatedForceThresholdStream(PxU32 maxNodes)
 	if (mNbPrevExceededForceElements > 0)
 	{
 		//setThresholdPairsMask
-		kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SET_THRESHOLDELEMENT_MASK);
+		kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SET_THRESHOLDELEMENT_MASK);
 		result = mCudaContext->launchKernel(kernelFunction, PxgKernelGridDim::SET_THRESHOLDELEMENT_MASK, 1, 1, PxgKernelBlockDim::SET_THRESHOLDELEMENT_MASK, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
 		PX_ASSERT(result == CUDA_SUCCESS);
 	}
 
 	//computeThresholdPairsMaskIndices
-	kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPUTE_THRESHOLDELEMENT_MASK_INDICES);
+	kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPUTE_THRESHOLDELEMENT_MASK_INDICES);
 	result = mCudaContext->launchKernel(kernelFunction, PxgKernelGridDim::COMPUTE_THRESHOLDELEMENT_MASK_INDICES, 1, 1, PxgKernelBlockDim::COMPUTE_THRESHOLDELEMENT_MASK_INDICES, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
 	PX_ASSERT(result == CUDA_SUCCESS);
 
 	//outputThresholdPairsMaskIndices
-	kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::OUTPUT_THRESHOLDELEMENT_MASK_INDICES);
+	kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::OUTPUT_THRESHOLDELEMENT_MASK_INDICES);
 	result = mCudaContext->launchKernel(kernelFunction, PxgKernelGridDim::OUTPUT_THRESHOLDELEMENT_MASK_INDICES, 1, 1, PxgKernelBlockDim::OUTPUT_THRESHOLDELEMENT_MASK_INDICES, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
 	PX_ASSERT(result == CUDA_SUCCESS);
 	//createForceChangeThresholdPairs
-	kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CREATE_FORCECHANGE_THRESHOLDELEMENTS);
+	kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CREATE_FORCECHANGE_THRESHOLDELEMENTS);
 	result = mCudaContext->launchKernel(kernelFunction, PxgKernelGridDim::CREATE_FORCECHANGE_THRESHOLDELEMENTS, 1, 1, PxgKernelBlockDim::CREATE_FORCECHANGE_THRESHOLDELEMENTS, 1, 1, 0, mStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
 	PX_ASSERT(result == CUDA_SUCCESS);
 #if GPU_DEBUG
@@ -1974,7 +1906,7 @@ void PxgTGSCudaSolverCore::integrateCoreParallel(const PxU32 offset, const PxU32
 
 	PX_PROFILE_ZONE("GpuDynamics.Integrate", 0);
 
-	const CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::INTEGRATE_CORE_PARALLEL_TGS);
+	const CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::INTEGRATE_CORE_PARALLEL_TGS);
 	CUdeviceptr islandIds = mIslandIds.getDevicePtr();
 	CUdeviceptr islandStaticTouchCounts = mIslandStaticTouchCount.getDevicePtr();
 	CUdeviceptr nodeIteractionCounts = mNodeInteractionCounts.getDevicePtr();

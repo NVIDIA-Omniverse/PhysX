@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -99,7 +99,7 @@ namespace Gu
 
 	//Scales and translates triangle and query points to fit into the unit box to make calculations less prone to numerical cancellation. 
 	//The returned point will still be in the same space as the input points.
-	PX_FORCE_INLINE PX_CUDA_CALLABLE PxVec3 closestPtPointTriangle2UnitBox(const PxVec3& queryPoint, const PxVec3& triA, const PxVec3& triB, const PxVec3& triC)	
+	PX_FORCE_INLINE PX_CUDA_CALLABLE PxVec3 closestPtPointTriangle2UnitBox(const PxVec3& queryPoint, const PxVec3& triA, const PxVec3& triB, const PxVec3& triC)
 	{
 		const PxVec3 min = queryPoint.minimum(triA.minimum(triB.minimum(triC)));
 		const PxVec3 max = queryPoint.maximum(triA.maximum(triB.maximum(triC)));

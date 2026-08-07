@@ -22,17 +22,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PX_DEFORMABLE_ATTACHMENT_H
 #define PX_DEFORMABLE_ATTACHMENT_H
 
-#include "PxConeLimitedConstraint.h"
-#include "PxFiltering.h"
-#include "PxNodeIndex.h"
 #include "foundation/PxTransform.h"
+#include "foundation/PxVec4.h"
 #include "common/PxCoreUtilityTypes.h"
 #include "common/PxBase.h"
 
@@ -41,25 +39,6 @@
 namespace physx
 {
 #endif
-
-/**
-\brief Struct to specify attachment between a particle/vertex and a rigid
-\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
-*/
-struct PX_DEPRECATED PxParticleRigidAttachment : public PxParticleRigidFilterPair
-{
-	PxParticleRigidAttachment() {}
-
-	PxParticleRigidAttachment(const PxConeLimitedConstraint& coneLimitedConstraint, const PxVec4& localPose0):
-		PxParticleRigidFilterPair(PxNodeIndex().getInd(), PxNodeIndex().getInd()),
-		mLocalPose0(localPose0), 
-		mConeLimitParams(coneLimitedConstraint) 
-	{
-	}
-
-	PX_ALIGN(16, PxVec4 mLocalPose0); //!< local pose in body frame - except for statics, these are using world positions.
-	PxConeLimitParams mConeLimitParams; //!< Parameters to specify cone constraints
-};
 
 /**
 \brief Identifies the attachment target type for an actor involved in an attachment.

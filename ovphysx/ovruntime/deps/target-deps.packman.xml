@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project toolsVersion="5.6">
+  <dependency name="physx" linkPath="../_build/target-deps/physx">
+    <package name="physxsdk" version="5.10.0.fbd88ea5-release-ovphysx-0.5-static-windows-x86_64" platforms="windows-x86_64" />
+    <package name="physxsdk" version="5.10.0.fbd88ea5-release-ovphysx-0.5-linux-x86_64" platforms="linux-x86_64 manylinux_2_35_x86_64" />
+    <package name="physxsdk" version="5.10.0.fbd88ea5-release-ovphysx-0.5-linux-aarch64" platforms="linux-aarch64 manylinux_2_35_aarch64" />
+  </dependency>
+  <dependency name="physxdevice" linkPath="../_build/target-deps/physxdevice">
+    <package name="PhysXDevice" version="18.12.7.6" platforms="windows-x86_64" />
+  </dependency>
+  <dependency name="leveldb" linkPath="../_build/target-deps/leveldb">
+    <package name="leveldb" version="1.3" />
+  </dependency>
+  <dependency name="snappy" linkPath="../_build/target-deps/snappy">
+    <package name="snappy" version="1.4" />
+  </dependency>
+  <dependency name="cmake" linkPath="../_build/target-deps/cmake">
+    <package name="cmake-linux-x86_64" version="3.25.1" platforms="linux-x86_64 manylinux_2_35_x86_64" />
+    <package name="cmake-linux-aarch64" version="3.25.1" platforms="linux-aarch64 manylinux_2_35_aarch64" />
+    <package name="cmake-windows-x86_64" version="3.25.1" platforms="windows-x86_64" />
+  </dependency>
+  <dependency name="python311" linkPath="../_build/target-deps/python311">
+    <package name="python" version="3.11.14+nv2-linux-x86_64" platforms="linux-x86_64 manylinux_2_35_x86_64" />
+    <package name="python" version="3.11.14+nv2-linux-aarch64" platforms="linux-aarch64 manylinux_2_35_aarch64" />
+    <package name="python" version="3.11.14+nv2-windows-x86_64" platforms="windows-x86_64" />
+  </dependency>
+</project>

@@ -133,7 +133,7 @@ public:
     void startRun() override
     {
         // Cache PhysX* + tensor view once so step() doesn't pay for a
-        // global lookup or rebuild per measured iteration (review on MR !7247).
+        // global lookup or rebuild per measured iteration.
         mPhysX = BmGlobals::getInstance().getPhysX();
         if (!mPhysX) return;
 
@@ -338,8 +338,8 @@ private:
     Register<LabAnymal_##opName##_##N> sLabAnymal_##opName##_##N(                 \
         "Lab.anymal_" #N "_" #opName);
 
-// Sizes per review on MR !7247: 1024/8192. Smaller sizes were below the
-// regime where the harness signal-to-noise is meaningful.
+// Sizes: 1024/8192. Smaller sizes were below the regime where the harness
+// signal-to-noise is meaningful.
 DEFINE_LAB_ANYMAL(step,         Op::Step,        1024)
 DEFINE_LAB_ANYMAL(step,         Op::Step,        8192)
 DEFINE_LAB_ANYMAL(reset,        Op::Reset,       1024)
@@ -348,9 +348,8 @@ DEFINE_LAB_ANYMAL(tensor_read,  Op::TensorRead,  1024)
 DEFINE_LAB_ANYMAL(tensor_read,  Op::TensorRead,  8192)
 DEFINE_LAB_ANYMAL(tensor_write, Op::TensorWrite, 1024)
 DEFINE_LAB_ANYMAL(tensor_write, Op::TensorWrite, 8192)
-// Clone benchmark — measures cost of clone() itself. Added per review on
-// MR !7247: cloning is on the hot path for IsaacLab-style RL setup, worth
-// measuring directly.
+// Clone benchmark -- measures cost of clone() itself. Cloning is on the hot
+// path for IsaacLab-style RL setup, worth measuring directly.
 DEFINE_LAB_ANYMAL(clone,        Op::Clone,       1024)
 DEFINE_LAB_ANYMAL(clone,        Op::Clone,       8192)
 

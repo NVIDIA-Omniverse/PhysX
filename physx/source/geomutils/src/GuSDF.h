@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -428,9 +428,9 @@ namespace physx
 		*/
 		PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 encodeTriple(PxU32 x, PxU32 y, PxU32 z)
 		{
-			PX_ASSERT(x >= 0 && x < 1024);
-			PX_ASSERT(y >= 0 && y < 1024);
-			PX_ASSERT(z >= 0 && z < 1024);
+			PX_ASSERT(x < 1024);
+			PX_ASSERT(y < 1024);
+			PX_ASSERT(z < 1024);
 			return (z << 20) | (y << 10) | x;
 		}
 

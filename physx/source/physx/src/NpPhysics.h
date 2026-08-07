@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,19 +35,17 @@
 #include "foundation/PxHashMap.h"
 #include "GuMeshFactory.h"
 #include "NpMaterial.h"
-#include "NpDeformableSurfaceMaterial.h"
-#include "NpDeformableVolumeMaterial.h"
-#include "NpPBDMaterial.h"
 #include "NpPhysicsInsertionCallback.h"
 #include "NpMaterialManager.h"
 #include "ScPhysics.h"
+#if PX_SUPPORT_GPU_PHYSX
+	#include "NpPBDMaterial.h"
+	#include "NpDeformableVolumeMaterial.h"
+	#include "NpDeformableSurfaceMaterial.h"
+#endif
 
 #ifdef LINUX
 #include <string.h>
-#endif
-
-#if PX_SUPPORT_GPU_PHYSX && !PX_PUBLIC_RELEASE
-#include "internal/device/PhysXIndicator.h"
 #endif
 
 #include "PsPvd.h"
@@ -184,6 +182,7 @@ public:
 	// Constraints and Articulations
 	virtual		PxConstraint*						createConstraint(PxRigidActor* actor0, PxRigidActor* actor1, PxConstraintConnector& connector, const PxConstraintShaderTable& shaders, PxU32 dataSize)	PX_OVERRIDE;
 	virtual		PxU32								getNbConstraints() const	PX_OVERRIDE;
+	virtual		PxU32								getConstraints(PxConstraint** userBuffer, PxU32 bufferSize, PxU32 startIndex) const	PX_OVERRIDE;
 	virtual		PxArticulationReducedCoordinate*	createArticulationReducedCoordinate()	PX_OVERRIDE;
 	virtual		PxU32								getNbArticulations() const	PX_OVERRIDE;
 
@@ -193,11 +192,8 @@ public:
 	virtual		PxDeformableSurface*		createDeformableSurface(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
 	virtual		PxDeformableVolume*			createDeformableVolume(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
 	virtual		PxPBDParticleSystem*		createPBDParticleSystem(PxCudaContextManager& cudaContextManager, PxU32 maxNeighborhood, PxReal neighborhoodScale)	PX_OVERRIDE;
-	virtual		PxParticleBuffer*			createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
-	virtual		PxParticleAndDiffuseBuffer*	createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
-	virtual		PxParticleClothBuffer*		createParticleClothBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
-	virtual		PxParticleRigidBuffer*		createParticleRigidBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
-
+	virtual		PxParticleBuffer*			createParticleBuffer(PxU32 maxParticles, PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
+	virtual		PxParticleAndDiffuseBuffer*	createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager)	PX_OVERRIDE;
 	// Materials
 	virtual		PxMaterial*	createMaterial(PxReal staticFriction, PxReal dynamicFriction, PxReal restitution)	PX_OVERRIDE;
 	virtual		PxU32		getNbMaterials() const	PX_OVERRIDE;
@@ -224,14 +220,6 @@ public:
 	//~PxPhysics
 
 				void		releaseSceneInternal(PxScene&);
-
-#if PX_SUPPORT_GPU_PHYSX
-				void		registerPhysXIndicatorGpuClient();
-				void		unregisterPhysXIndicatorGpuClient();
-#else
-	PX_FORCE_INLINE void	registerPhysXIndicatorGpuClient() {}
-	PX_FORCE_INLINE void	unregisterPhysXIndicatorGpuClient() {}
-#endif
 
 
 	PX_INLINE	NpScene*	getScene(PxU32 i) const { return mSceneArray[i]; }
@@ -324,11 +312,6 @@ private:
 
 				PxFoundation&							mFoundation;
 
-#if PX_SUPPORT_GPU_PHYSX && !PX_PUBLIC_RELEASE
-				PhysXIndicator							mPhysXIndicator;
-				PxU32									mNbRegisteredGpuClients;
-				PxMutex									mPhysXIndicatorMutex;
-#endif
 #if PX_SUPPORT_PVD	
 				physx::pvdsdk::PsPvd*  mPvd;
                 Vd::PvdPhysicsClient*   mPvdPhysicsClient;
@@ -344,9 +327,9 @@ private:
 	class OmniPvdListener : public physx::NpFactoryListener
 	{
 	public:
-		virtual void onMeshFactoryBufferRelease(const PxBase*, PxType) {}
-		virtual void onObjectAdd(const PxBase*);
-		virtual void onObjectRemove(const PxBase*);
+		virtual void onMeshFactoryBufferRelease(const PxBase*, PxType) PX_OVERRIDE {}
+		virtual void onObjectAdd(const PxBase*) PX_OVERRIDE;
+		virtual void onObjectRemove(const PxBase*) PX_OVERRIDE;
 	}
 	mOmniPvdListener;
 	private:

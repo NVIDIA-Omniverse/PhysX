@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -98,7 +98,7 @@ static PxDeformableVolume* createDeformableVolume(const PxCookingParams& params,
 	else 
 	{
 		deformableVolumeMesh = PxDeformableVolumeExt::createDeformableVolumeMesh(params, surfaceMesh, numVoxelsAlongLongestAABBAxis, gPhysics->getPhysicsInsertionCallback());
-	}	
+	}
 
 	//Alternatively one can cook a deformable volume mesh in a single step
 	//tetMesh = cooking.createDeformableVolumeMesh(simulationMeshDesc, collisionMeshDesc, deformableVolumeDesc, physics.getPhysicsInsertionCallback());
@@ -111,7 +111,7 @@ static PxDeformableVolume* createDeformableVolume(const PxCookingParams& params,
 	{
 		PxShapeFlags shapeFlags = PxShapeFlag::eVISUALIZATION | PxShapeFlag::eSCENE_QUERY_SHAPE | PxShapeFlag::eSIMULATION_SHAPE;
 
-		PxDeformableVolumeMaterial* materialPtr = PxGetPhysics().createDeformableVolumeMaterial(2.e+5f, 0.3f, 0.1f);
+		PxDeformableVolumeMaterial* materialPtr = PxGetPhysics().createDeformableVolumeMaterial(2.e+5f, 0.3f, 0.1f, 0.02f);
 		PxTetrahedronMeshGeometry geometry(deformableVolumeMesh->getCollisionMesh());
 		PxShape* shape = gPhysics->createShape(geometry, &materialPtr, 1, true, shapeFlags);
 		if (shape)
@@ -199,6 +199,7 @@ void initPhysics(bool /*interactive*/)
 	sceneDesc.gpuMaxNumPartitions = 8;
 
 	sceneDesc.solverType = PxSolverType::eTGS;
+	sceneDesc.flags |= PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS;
 
 	gScene = gPhysics->createScene(sceneDesc);
 	PxPvdSceneClient* pvdClient = gScene->getScenePvdClient();

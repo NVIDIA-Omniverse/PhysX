@@ -283,7 +283,6 @@ def test_volume_deformable_collision_element_indices_read(physx_sdk):
         # All indices must be non-negative (valid node references)
         assert np.all(indices >= 0), f"Negative index in collision mesh: {indices}"
 
-        # Write must be rejected (read-only)
         with pytest.raises(RuntimeError, match="read-only"):
             _write_gpu(collision, indices, dtype=np.int32, indices=np.array([0], dtype=np.int32))
 
@@ -326,30 +325,24 @@ def test_surface_deformable_body_gpu_read_write_and_metadata(physx_sdk):
         assert elems.dtype_name == "int32"
         assert pos.prim_paths == [_BODY_PATTERN]
 
-        # Initial positions should match authored points
         positions = _read_gpu(pos)
         np.testing.assert_allclose(positions[0, 0], [0.0, 0.0, 0.0], atol=1.0e-4)
 
-        # Velocities should be zero
         velocities = _read_gpu(vel)
         np.testing.assert_allclose(velocities, 0.0, atol=1.0e-4)
 
-        # Rest positions should match authored rest shape points
         rest_positions = _read_gpu(rest)
         np.testing.assert_allclose(rest_positions, positions, atol=1.0e-4)
 
-        # Element indices: non-negative, correct dtype
         element_indices = _read_gpu(elems, dtype=np.int32)
         assert np.all(element_indices >= 0)
 
-        # Indexed write on positions
         index = np.array([0], dtype=np.int32)
         new_positions = positions.copy()
         new_positions[0, :, 1] += 0.05
         _write_gpu(pos, new_positions, indices=index)
         np.testing.assert_allclose(_read_gpu(pos), new_positions, atol=1.0e-4)
 
-        # Masked write on velocities
         new_velocities = np.zeros_like(velocities)
         new_velocities[0, :, 0] = 0.1
         masked_src = CudaArray(vel.shape, dtype=np.float32)
@@ -359,7 +352,6 @@ def test_surface_deformable_body_gpu_read_write_and_metadata(physx_sdk):
         vel.write(masked_src.dltensor, mask=mask.dltensor)
         np.testing.assert_allclose(_read_gpu(vel), new_velocities, atol=1.0e-4)
 
-        # Read-only enforcement
         with pytest.raises(RuntimeError, match="read-only"):
             _write_gpu(rest, rest_positions, indices=index)
         with pytest.raises(RuntimeError, match="read-only"):
@@ -433,12 +425,10 @@ def test_surface_deformable_material_bending_properties_read_write(physx_sdk):
         bdamp.read(bdamp_val)
         np.testing.assert_allclose(bdamp_val, [0.05], atol=1.0e-4)
 
-        # Write and verify round-trip
         bstiff.write(np.array([200.0], dtype=np.float32))
         bstiff.read(bstiff_val)
         np.testing.assert_allclose(bstiff_val, [200.0], atol=0.1)
 
-        # Masked write
         thick.write(np.array([0.02], dtype=np.float32), mask=np.array([1], dtype=np.uint8))
         thick.read(thick_val)
         np.testing.assert_allclose(thick_val, [0.02], atol=1.0e-4)

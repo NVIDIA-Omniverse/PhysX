@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXCudaContextManager common
@@ -45,33 +45,17 @@ SET(CUDACONTEXTMANAGER_KERNELS
 )
 SOURCE_GROUP("src kernels" FILES ${CUDACONTEXTMANAGER_KERNELS})
 
-IF(PUBLIC_RELEASE)
-    SET(CUDACONTEXTMANAGER_SOURCE
-        ${LL_SOURCE_DIR}/src/CudaContextManager.cpp
-        ${LL_SOURCE_DIR}/src/CudaKernelWrangler.cpp
-    )
+SET(CUDACONTEXTMANAGER_SOURCE
+    ${LL_SOURCE_DIR}/src/CudaContextManager.cpp
+    ${LL_SOURCE_DIR}/src/CudaKernelWrangler.cpp
+)
 
-    SET(CUDACONTEXTMANAGER_SOURCE_HEADERS
-        ${LL_SOURCE_DIR}/include/CudaContextManager.h
-        ${LL_SOURCE_DIR}/include/CudaKernelWrangler.h
-        ${LL_SOURCE_DIR}/include/PxgMemoryTracker.h
-        ${PHYSX_SOURCE_DIR}/physx/src/opensource/cudamanager/include/PhysXDeviceSettings.h
-    )
-ELSE()
-    SET(CUDACONTEXTMANAGER_SOURCE
-        ${LL_SOURCE_DIR}/src/CudaContextManager.cpp
-        ${LL_SOURCE_DIR}/src/CudaKernelWrangler.cpp
-        ${PHYSX_SOURCE_DIR}/physx/src/internal/cudamanager/src/PhysXDeviceSettings.cpp
-    )
-
-    SET(CUDACONTEXTMANAGER_SOURCE_HEADERS
-        ${LL_SOURCE_DIR}/include/CudaContextManager.h
-        ${LL_SOURCE_DIR}/include/CudaKernelWrangler.h
-        ${LL_SOURCE_DIR}/include/PxgMemoryTracker.h
-        ${PHYSX_SOURCE_DIR}/physx/src/internal/cudamanager/include/PhysXDevice.h
-        ${PHYSX_SOURCE_DIR}/physx/src/internal/cudamanager/include/PhysXDeviceSettings.h
-    )
-ENDIF()
+SET(CUDACONTEXTMANAGER_SOURCE_HEADERS
+    ${LL_SOURCE_DIR}/include/CudaContextManager.h
+    ${LL_SOURCE_DIR}/include/CudaKernelWrangler.h
+    ${LL_SOURCE_DIR}/include/PxgMemoryTracker.h
+    ${PHYSX_SOURCE_DIR}/physx/src/opensource/cudamanager/include/PhysXDeviceSettings.h
+)
 
 SOURCE_GROUP("src\\src" FILES ${CUDACONTEXTMANAGER_SOURCE} ${CUDACONTEXTMANAGER_SOURCE_HEADERS})
 
@@ -83,7 +67,9 @@ ADD_LIBRARY(PhysXCudaContextManager ${CUDACONTEXTMANAGER_LIBTYPE}
 	${CUDACONTEXTMANAGER_PLATFORM_SOURCES}
 )
 
-INSTALL(FILES ${CUDACONTEXTMANAGER_HEADERS} DESTINATION include/cudamanager)
+IF(NOT DEFINED PX_ENABLE_INSTALL OR PX_ENABLE_INSTALL)
+	INSTALL(FILES ${CUDACONTEXTMANAGER_HEADERS} DESTINATION include/cudamanager)
+ENDIF()
 
 # Target specific compile options
 
@@ -98,11 +84,7 @@ TARGET_INCLUDE_DIRECTORIES(PhysXCudaContextManager
 )
 
 # Add CUDA manager include directory
-IF(PUBLIC_RELEASE)
-    TARGET_INCLUDE_DIRECTORIES(PhysXCudaContextManager PRIVATE ${PHYSX_SOURCE_DIR}/physx/src/opensource/cudamanager/include)
-ELSE()
-    TARGET_INCLUDE_DIRECTORIES(PhysXCudaContextManager PRIVATE ${PHYSX_SOURCE_DIR}/physx/src/internal/cudamanager/include)
-ENDIF()
+TARGET_INCLUDE_DIRECTORIES(PhysXCudaContextManager PRIVATE ${PHYSX_SOURCE_DIR}/physx/src/opensource/cudamanager/include)
 
 TARGET_COMPILE_DEFINITIONS(PhysXCudaContextManager
 	PRIVATE ${CUDACONTEXTMANAGER_COMPILE_DEFS}

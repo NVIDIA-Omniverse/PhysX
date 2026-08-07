@@ -2,20 +2,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
-"""Python tests for TensorBinding API (MR 6300).
+"""Python tests for the TensorBinding API.
 
-The TensorBinding API replaces the old AttributeBinding API with a batch/tensor-oriented
-approach for physics data access. This test file validates the new API.
-
-Old API (REMOVED in MR 6300):
-    - create_attribute_binding(prim_paths, attribute_name, dtype_code, dtype_bits, is_array, prim_mode)
-    - write_attribute(binding, tensor)
-    - read_attribute(binding, tensor)
-    - AttributeBinding class with wait(), handle, op_index
-
-New API (CURRENT):
-    - create_tensor_binding(pattern=None, prim_paths=None, tensor_type=..., raise_if_empty=False)
-    - TensorBinding class with read(tensor), write(tensor, indices=None)
+TensorBinding provides batch/tensor-oriented access to physics data:
+    - create_tensor_binding(pattern=None, prim_paths=None, tensor_type=TensorType.RIGID_BODY_POSE, *, raise_if_empty=False)
+    - TensorBinding class with read(tensor), write(tensor, indices=None, mask=None)
     - Synchronous operations (no wait() needed)
     - Predefined tensor types for physics data
 """
@@ -47,11 +38,10 @@ def test_tensor_binding_properties(physx_sdk):
     physx_sdk.wait_all()
 
     binding = physx_sdk.create_tensor_binding(
-        pattern="/World/Cube[1-5]",  # Match Cube1 through Cube5
+        pattern="/World/Cube[1-5]",
         tensor_type=TensorType.RIGID_BODY_POSE,
     )
 
-    # Verify properties
     assert isinstance(binding.shape, tuple)
     assert len(binding.shape) == 2  # [N, 7]
     assert binding.shape[1] == 7  # Pose components
@@ -197,7 +187,6 @@ def test_tensor_binding_nonexistent_prims(physx_sdk):
         tensor_type=TensorType.RIGID_BODY_POSE,
     )
 
-    # Verify it's an empty binding
     assert binding.count == 0, "Binding to nonexistent prim should result in count=0"
     binding.destroy()
 
@@ -273,7 +262,6 @@ def test_tensor_binding_empty_prim_paths(physx_sdk):
     load_usd_with_ovstage(physx_sdk, data_path("basic_simulation.usda"))
     physx_sdk.wait_all()
 
-    # Empty prim_paths should raise ValueError
     with pytest.raises(ValueError, match="must not be empty"):
         physx_sdk.create_tensor_binding(
             prim_paths=[],
@@ -324,11 +312,9 @@ def test_tensor_binding_read_readonly_array(physx_sdk):
         tensor_type=TensorType.RIGID_BODY_POSE,
     )
 
-    # Create a read-only numpy array
     buf = np.zeros(binding.shape, dtype=np.float32)
     buf.flags.writeable = False
 
-    # Attempting to read into it should raise ValueError
     with pytest.raises(ValueError, match="Array passed to binding.read\\(\\) must be writeable"):
         binding.read(buf)
 
@@ -472,7 +458,6 @@ def test_multiple_bindings_same_prims(physx_sdk):
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
     physx_sdk.wait_all()
 
-    # Create multiple bindings to same prims
     pose_binding = physx_sdk.create_tensor_binding(
         pattern="/World/Cube*",
         tensor_type=TensorType.RIGID_BODY_POSE,
@@ -483,10 +468,8 @@ def test_multiple_bindings_same_prims(physx_sdk):
         tensor_type=TensorType.RIGID_BODY_VELOCITY,
     )
 
-    # Both should match same number of prims
     assert pose_binding.count == velocity_binding.count
 
-    # But different shapes
     assert pose_binding.shape[1] == 7  # Pose
     assert velocity_binding.shape[1] == 6  # Velocity
 

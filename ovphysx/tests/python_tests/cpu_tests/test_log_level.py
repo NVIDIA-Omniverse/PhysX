@@ -10,6 +10,9 @@ routes native messages into Python's logging system.
 """
 
 import logging
+import subprocess
+import sys
+import textwrap
 
 import pytest
 
@@ -157,6 +160,66 @@ def test_set_get_log_level_roundtrip():
         assert get_log_level() == LogLevel.ERROR
     finally:
         set_log_level(original)
+
+
+def test_error_level_does_not_emit_expected_missing_plugin_warnings():
+    """Fresh startup must not report expected-absent static plugins as warnings.
+
+    Carbonite is process-global, so this must run in a fresh subprocess. The
+    behavior belongs at the ovphysx API level because ovphysx coordinates the
+    static-plugin bootstrap.
+    """
+    script = textwrap.dedent(
+        """
+        import logging
+        import ovphysx
+
+        probe_warnings = []
+
+        class ProbeWarningHandler(logging.Handler):
+            def emit(self, record):
+                message = record.getMessage()
+                if "getPluginDesc: Failed to find a plugin with a name" in message:
+                    probe_warnings.append(message)
+
+        logger = logging.getLogger("ovphysx.startup_probe_test")
+        logger.handlers.clear()
+        logger.addHandler(ProbeWarningHandler())
+        logger.setLevel(logging.DEBUG)
+        logger.propagate = False
+
+        ovphysx.PhysX.set_cpu_mode(True)
+        # ERROR is intentional: these static-Carbonite warnings bypassed the
+        # documented OVPhysX threshold in ovphysx 0.5.9.
+        ovphysx.set_log_level(ovphysx.LogLevel.ERROR)
+        ovphysx.enable_python_logging(logger.name)
+
+        physx = None
+        try:
+            physx = ovphysx.PhysX(ignore_version_mismatch=True)
+        finally:
+            if physx is not None:
+                physx.release()
+            ovphysx.disable_python_logging()
+
+        if probe_warnings:
+            raise RuntimeError(f"startup emitted {len(probe_warnings)} missing-plugin warnings")
+        """
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    combined_output = result.stdout + result.stderr
+    assert result.returncode == 0, (
+        f"Fresh ovphysx startup failed with exit code {result.returncode}.\n"
+        f"stdout:\n{result.stdout}\n"
+        f"stderr:\n{result.stderr}"
+    )
+    assert "getPluginDesc: Failed to find a plugin with a name" not in combined_output
 
 
 def test_default_log_level_is_warning():

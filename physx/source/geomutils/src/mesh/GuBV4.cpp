@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -62,16 +62,17 @@ void TetrahedronSourceMesh::reset()
 {
 	mNbVerts = 0;
 	mVerts = NULL;
+	mRemap = NULL;
 	mNbTetrahedrons = 0;
 	mTetrahedrons32 = NULL;
 	mTetrahedrons16 = NULL;
-	mRemap = NULL;
 }
 
 void TetrahedronSourceMesh::operator=(TetrahedronSourceMesh& v)
 {
 	mNbVerts = v.mNbVerts;
 	mVerts = v.mVerts;
+	mRemap = v.mRemap;
 	mNbTetrahedrons = v.mNbTetrahedrons;
 	mTetrahedrons32 = v.mTetrahedrons32;
 	mTetrahedrons16 = v.mTetrahedrons16;
@@ -113,7 +114,7 @@ void TetrahedronSourceMesh::remapTopology(const PxU32* order)
 	}
 }
 
-void TetrahedronSourceMesh::getPrimitiveBox(const PxU32 primitiveInd, Vec4V& minV, Vec4V& maxV)
+void TetrahedronSourceMesh::getPrimitiveBox(PxU32 primitiveInd, Vec4V& minV, Vec4V& maxV) const
 {
 	TetrahedronPointers VP;
 	getTetrahedron(VP, primitiveInd);
@@ -131,7 +132,7 @@ void TetrahedronSourceMesh::getPrimitiveBox(const PxU32 primitiveInd, Vec4V& min
 	maxV = V4Max(maxV, v3V);
 }
 
-void TetrahedronSourceMesh::refit(const PxU32 primitiveInd, PxBounds3& refitBox)
+void TetrahedronSourceMesh::refit(PxU32 primitiveInd, PxBounds3& refitBox)
 {
 	TetrahedronPointers VP;
 	getTetrahedron(VP, primitiveInd);
@@ -157,20 +158,20 @@ void SourceMesh::reset()
 {
 	mNbVerts		= 0;
 	mVerts			= NULL;
+	mRemap			= NULL;
 	mNbTris			= 0;
 	mTriangles32	= NULL;
 	mTriangles16	= NULL;
-	mRemap			= NULL;
 }
 
 void SourceMesh::operator=(SourceMesh& v)
 {
 	mNbVerts		= v.mNbVerts;
 	mVerts			= v.mVerts;
+	mRemap			= v.mRemap;
 	mNbTris			= v.mNbTris;
 	mTriangles32	= v.mTriangles32;
 	mTriangles16	= v.mTriangles16;
-	mRemap			= v.mRemap;
 	v.reset();
 }
 
@@ -209,7 +210,7 @@ void SourceMesh::remapTopology(const PxU32* order)
 	}
 }
 
-void SourceMesh::getPrimitiveBox(const PxU32 primitiveInd, Vec4V& minV, Vec4V& maxV)
+void SourceMesh::getPrimitiveBox(PxU32 primitiveInd, Vec4V& minV, Vec4V& maxV) const
 {
 	VertexPointers VP;
 	getTriangle(VP, primitiveInd);
@@ -224,7 +225,7 @@ void SourceMesh::getPrimitiveBox(const PxU32 primitiveInd, Vec4V& minV, Vec4V& m
 	maxV = V4Max(maxV, v2V);
 }
 
-void SourceMesh::refit(const PxU32 primitiveInd, PxBounds3& refitBox)
+void SourceMesh::refit(PxU32 primitiveInd, PxBounds3& refitBox)
 {
 	VertexPointers VP;
 	getTriangle(VP, primitiveInd);
@@ -242,9 +243,9 @@ bool SourceMesh::isValid() const
 	return true;
 }
 
-/////
+///////////////////////////////////////////////////////////////////////////////
 
-BV4Tree::BV4Tree(SourceMesh* meshInterface, const PxBounds3& localBounds)
+BV4Tree::BV4Tree(SourceMeshBase* meshInterface, const PxBounds3& localBounds)
 {
 	reset();
 	init(meshInterface, localBounds);
@@ -279,31 +280,29 @@ BV4Tree::~BV4Tree()
 
 void BV4Tree::reset()
 {
-	mMeshInterface				= NULL;
-	//mTetrahedronMeshInterface	= NULL;
-	mNbNodes					= 0;
-	mNodes						= NULL;
-	mInitData					= 0;
-	mCenterOrMinCoeff			= PxVec3(0.0f);
-	mExtentsOrMaxCoeff			= PxVec3(0.0f);
-	mUserAllocated				= false;
-	mQuantized					= false;
-	mIsEdgeSet					= false;
+	mMeshInterface		= NULL;
+	mNbNodes			= 0;
+	mNodes				= NULL;
+	mInitData			= 0;
+	mCenterOrMinCoeff	= PxVec3(0.0f);
+	mExtentsOrMaxCoeff	= PxVec3(0.0f);
+	mUserAllocated		= false;
+	mQuantized			= false;
+	mIsEdgeSet			= false;
 }
 
 void BV4Tree::operator=(BV4Tree& v)
 {
-	mMeshInterface				= v.mMeshInterface;
-	//mTetrahedronMeshInterface	= v.mTetrahedronMeshInterface;
-	mLocalBounds				= v.mLocalBounds;
-	mNbNodes					= v.mNbNodes;
-	mNodes						= v.mNodes;
-	mInitData					= v.mInitData;
-	mCenterOrMinCoeff			= v.mCenterOrMinCoeff;
-	mExtentsOrMaxCoeff			= v.mExtentsOrMaxCoeff;
-	mUserAllocated				= v.mUserAllocated;
-	mQuantized					= v.mQuantized;
-	mIsEdgeSet					= false;
+	mMeshInterface		= v.mMeshInterface;
+	mLocalBounds		= v.mLocalBounds;
+	mNbNodes			= v.mNbNodes;
+	mNodes				= v.mNodes;
+	mInitData			= v.mInitData;
+	mCenterOrMinCoeff	= v.mCenterOrMinCoeff;
+	mExtentsOrMaxCoeff	= v.mExtentsOrMaxCoeff;
+	mUserAllocated		= v.mUserAllocated;
+	mQuantized			= v.mQuantized;
+	mIsEdgeSet			= false;
 	v.reset();
 }
 
@@ -313,13 +312,6 @@ bool BV4Tree::init(SourceMeshBase* meshInterface, const PxBounds3& localBounds)
 	mLocalBounds.init(localBounds);
 	return true;
 }
-
-//bool BV4Tree::init(TetrahedronSourceMesh* meshInterface, const PxBounds3& localBounds)
-//{
-//	mTetrahedronMeshInterface = meshInterface;
-//	mLocalBounds.init(localBounds);
-//	return true;
-//}
 
 // PX_SERIALIZATION
 BV4Tree::BV4Tree(const PxEMPTY) : mLocalBounds(PxEmpty)
@@ -429,10 +421,6 @@ bool BV4Tree::refit(PxBounds3& globalBounds, float epsilon)
 			while(nbVerts--)
 				bounds.include(*verts++);
 			mLocalBounds.init(bounds);
-		}
-		if(mTetrahedronMeshInterface)
-		{
-			PX_ASSERT(0);
 		}
 		return true;
 	}

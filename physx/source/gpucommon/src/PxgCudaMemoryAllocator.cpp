@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -59,17 +59,38 @@ static MemTracker hostMemTracker;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void* physx::PxgPinnedMemoryAllocate(PxCudaContext& cudaContext, size_t size, const char* filename, PxI32 line)
+void* physx::PxgPinnedMemoryAllocate(PxCudaContext& cudaContext, size_t size, PxU32 flags, const char* filename, PxI32 line)
 {
-	PxU8* ptr = NULL;
-	CUresult result = cudaContext.memHostAlloc((void**)&ptr, size, CU_MEMHOSTALLOC_DEVICEMAP | CU_MEMHOSTALLOC_PORTABLE);
-	if (result != CUDA_SUCCESS || !ptr)
-	{
-		PxGetFoundation().error(PX_WARN, PX_FL, "Failed to allocate pinned memory.");
-		return NULL;
-	}
+	// We don't early out - as would be consistent with PxgCudaDeviceMemoryAllocate - because that generates warnings
+	// for failed allocations for mapped pinned buffers, which would need to be tested for in device OOM tests.
+	// Workaround would be to avoid allocations after device OOM occured, but that adds quite a bit of complexity to the
+	// host OOM checks, which doesn't seem worth it.
 
-	PX_ASSERT((size_t)(ptr) % 256 == 0); //alignment check. I believe it should be guaranteed
+	//if(cudaContext.isInAbortMode())
+	//	return NULL;
+
+	PxU8* ptr = NULL;
+	PxPinnedHostAllocatorCallback* pinnedHostAllocatorCallback = cudaContext.getPinnedHostAllocatorCallback();
+	if (pinnedHostAllocatorCallback)
+	{
+		// Use the user-provided host allocator with specified flags
+		if (!pinnedHostAllocatorCallback->memAlloc((void**)&ptr, size, flags))
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxPinnedHostAllocatorCallback failed to allocate memory %zu bytes!", size);
+			return NULL;
+		}
+	}
+	else
+	{
+		// Use the default CUDA host memory allocation with specified flags
+		CUresult result = cudaContext.memHostAlloc((void**)&ptr, size, flags);
+		if (result != CUDA_SUCCESS || !ptr)
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgPinnedMemoryAllocate failed to allocate memory %zu bytes! Result = %i", size, result);
+			return NULL;
+		}
+	}
+	PX_ASSERT((size_t(ptr) & 255) == 0); // alignment check.
 
 #if PX_STOMP_ALLOCATED_MEMORY
 	// fill pinned memory with markers to catch uninitialized memory earlier. 
@@ -85,7 +106,6 @@ void* physx::PxgPinnedMemoryAllocate(PxCudaContext& cudaContext, size_t size, co
 	PX_UNUSED(filename);
 	PX_UNUSED(line);
 #endif
-
 	return ptr;
 }
 
@@ -94,9 +114,21 @@ void physx::PxgPinnedMemoryDeallocate(PxCudaContext& cudaContext, void* ptr)
 	if (ptr == NULL)
 		return;
 
-	CUresult result = cudaContext.memFreeHost(ptr);
-	PX_UNUSED(result);
-	PX_ASSERT(result == CUDA_SUCCESS);
+	PxPinnedHostAllocatorCallback* pinnedHostAllocatorCallback = cudaContext.getPinnedHostAllocatorCallback();
+	if (pinnedHostAllocatorCallback)
+	{
+		// Use the user-provided host allocator
+		bool result = pinnedHostAllocatorCallback->memFree(ptr);
+		PX_UNUSED(result);
+		PX_ASSERT(result);
+	}
+	else
+	{
+		// Use the default CUDA host memory deallocation
+		CUresult result = cudaContext.memFreeHost(ptr);
+		PX_UNUSED(result);
+		PX_ASSERT(result == CUDA_SUCCESS);
+	}
 #if PX_DEBUG
 	hostMemTracker.unregisterMemory(ptr, false);
 #endif
@@ -109,10 +141,10 @@ void* physx::PxgCudaDeviceMemoryAllocate(PxCudaContext& cudaContext, size_t size
 	if (cudaContext.isInAbortMode())
 		return NULL;
 
-	PxDeviceAllocatorCallback* callback = cudaContext.getAllocatorCallback();
+	void* ptr = NULL;
+	PxDeviceAllocatorCallback* callback = cudaContext.getDeviceAllocatorCallback();
 	if (callback)
 	{
-		void* ptr = NULL;
 		bool result = callback->memAlloc(&ptr, size);
 		if (!result)
 		{
@@ -120,51 +152,43 @@ void* physx::PxgCudaDeviceMemoryAllocate(PxCudaContext& cudaContext, size_t size
 			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxDeviceAllocatorCallback failed to allocate memory %zu bytes!", size);
 			return NULL;
 		}
-#if PX_DEBUG
-		if (result)
-			deviceMemTracker.registerMemory(ptr, true, size, filename, line);
-#else
-	PX_UNUSED(filename);
-	PX_UNUSED(line);
-#endif
-		return ptr;
 	}
 	else
 	{
-		CUdeviceptr ptr = 0;
-		CUresult result = cudaContext.memAlloc(&ptr, size);
-		PX_ASSERT((ptr & 127) == 0);
+		CUdeviceptr devPtr = 0;
+		CUresult result = cudaContext.memAlloc(&devPtr, size);
+		ptr = reinterpret_cast<void*>(devPtr);
 		if (result != CUDA_SUCCESS)
 		{
 			cudaContext.setAbortMode(true);
 			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgCudaDeviceMemoryAllocator failed to allocate memory %zu bytes! Result = %i", size, result);
 			return NULL;
 		}
+	}
+	PX_ASSERT((size_t(ptr) & 255) == 0); // alignment check.
 #if PX_DEBUG
-		if (result == CUDA_SUCCESS)
-			deviceMemTracker.registerMemory(reinterpret_cast<void*>(ptr), true, size, filename, line);
+	deviceMemTracker.registerMemory(ptr, true, size, filename, line);
 #else
 	PX_UNUSED(filename);
 	PX_UNUSED(line);
 #endif
-		return reinterpret_cast<void*>(ptr);
-	}
+	return ptr;
 }
 
 void physx::PxgCudaDeviceMemoryDeallocate(PxCudaContext& cudaContext, void* ptr)
 {
-	PxDeviceAllocatorCallback* callback = cudaContext.getAllocatorCallback();
+	PxDeviceAllocatorCallback* callback = cudaContext.getDeviceAllocatorCallback();
 	if (callback)
 	{
 		bool result = callback->memFree(ptr);
 		if (!result)
-			PxGetFoundation().error(PX_WARN, PX_FL, "PxDeviceAllocatorCallback fail to deallocate memory!!\n");
+			PxGetFoundation().error(PX_WARN, "PxDeviceAllocatorCallback fail to deallocate memory!!\n");
 	}
 	else
 	{
 		CUresult result = cudaContext.memFree(reinterpret_cast<CUdeviceptr>(ptr));
 		if (result != CUDA_SUCCESS)
-			PxGetFoundation().error(PX_WARN, PX_FL, "PxgCudaDeviceMemoryDeallocate fail to deallocate memory!! Result = %i\n", result);
+			PxGetFoundation().error(PX_WARN, "PxgCudaDeviceMemoryDeallocate fail to deallocate memory!! Result = %i\n", result);
 	}
 #if PX_DEBUG
 	if (ptr) 
@@ -194,8 +218,7 @@ void PxgPinnedHostLinearMemoryAllocator::reserveAndGrow(const PxU64 size)
 
 		const PxU64 newSize = PxMax(size, PxU64(PxCeil(mTotalSize * 1.5f))); 
 
-		mStart = reinterpret_cast<PxU8*>(PxgPinnedMemoryAllocate(*mCudaContext, newSize, PX_FL));
-
+		mStart = reinterpret_cast<PxU8*>(PxgPinnedMemoryAllocate(*mCudaContext, newSize, CU_MEMHOSTALLOC_PORTABLE, PX_FL));
 		mTotalSize = newSize;
 		mCurrentSize = 0;
 	}
@@ -205,8 +228,7 @@ void PxgPinnedHostLinearMemoryAllocator::reserve(const PxU64 size)
 {
 	PX_COMPILE_TIME_ASSERT(sizeof(size_t) == sizeof(PxU64));
 
-	mStart = reinterpret_cast<PxU8*>(PxgPinnedMemoryAllocate(*mCudaContext, size, PX_FL));
-
+	mStart = reinterpret_cast<PxU8*>(PxgPinnedMemoryAllocate(*mCudaContext, size, CU_MEMHOSTALLOC_PORTABLE, PX_FL));
 	mTotalSize = size;
 	mCurrentSize = 0;
 }

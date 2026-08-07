@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -52,12 +52,12 @@ class PvdMemClient : public PvdClient,
 	PvdMemClient(PvdImpl& pvd);
 	virtual ~PvdMemClient();
 
-	bool isConnected() const;
-	void onPvdConnected();
-	void onPvdDisconnected();
-	void flush();
+	virtual bool isConnected() const	PX_OVERRIDE;
+	virtual void onPvdConnected()	PX_OVERRIDE;
+	virtual void onPvdDisconnected()	PX_OVERRIDE;
+	virtual void flush()	PX_OVERRIDE;
 
-	PvdDataStream* getDataStream();
+	virtual	PvdDataStream* getDataStream()	PX_OVERRIDE;
 	void sendMemEvents();
 
 	// memory event
@@ -72,8 +72,8 @@ class PvdMemClient : public PvdClient,
 	// mem profile
 	PxMutex mMutex; // mem onallocation can called from different threads
 	profile::PxProfileMemoryEventBuffer& mMemEventBuffer;
-	void handleBufferFlush(const uint8_t* inData, uint32_t inLength);
-	void handleClientRemoved();
+	virtual	void handleBufferFlush(const uint8_t* inData, uint32_t inLength)	PX_OVERRIDE;
+	virtual	void handleClientRemoved()	PX_OVERRIDE;
 };
 
 } // namespace pvdsdk

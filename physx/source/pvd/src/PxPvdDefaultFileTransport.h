@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -47,20 +47,20 @@ class PvdDefaultFileTransport : public physx::PxPvdTransport, public physx::PxUs
 	PvdDefaultFileTransport(const char* name);
 	virtual ~PvdDefaultFileTransport();
 
-	virtual bool connect();
-	virtual void disconnect();
-	virtual bool isConnected();
+	virtual bool connect() PX_OVERRIDE;
+	virtual void disconnect() PX_OVERRIDE;
+	virtual bool isConnected() PX_OVERRIDE;
 
-	virtual bool write(const uint8_t* inBytes, uint32_t inLength);
+	virtual bool write(const uint8_t* inBytes, uint32_t inLength) PX_OVERRIDE;
 
-	virtual PxPvdTransport& lock();
-	virtual void unlock();
+	virtual PxPvdTransport& lock() PX_OVERRIDE;
+	virtual void unlock() PX_OVERRIDE;
 
-	virtual void flush();
+	virtual void flush() PX_OVERRIDE;
 
-	virtual uint64_t getWrittenDataSize();
+	virtual uint64_t getWrittenDataSize() PX_OVERRIDE;
 
-	virtual void release();
+	virtual void release() PX_OVERRIDE;
 
   private:
 	physx::PsFileBuffer* mFileBuffer;

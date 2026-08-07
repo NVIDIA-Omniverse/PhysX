@@ -16,7 +16,6 @@
 
 static ovphysx_sample_stage_attachment_t g_stage_attachment;
 
-// Helper to check and report errors
 static int check_result(ovphysx_result_t result, const char* context)
 {
     if (result.status != OVPHYSX_API_SUCCESS)
@@ -36,7 +35,6 @@ static int check_result(ovphysx_result_t result, const char* context)
     return 1;
 }
 
-// Helper to wait for async ops
 static int wait_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index, const char* context)
 {
     ovphysx_op_wait_result_t wait_result = { 0 };
@@ -190,7 +188,6 @@ static int run(void)
     printf("  Articulation DOFs: shape=[%lld, %lld], ndim=%d\n",
            (long long)dof_spec.shape[0], (long long)dof_spec.shape[1], dof_spec.ndim);
 
-    // Allocate GPU buffers
     const size_t rb_count = (size_t)rb_spec.shape[0];
     const size_t rb_components = (size_t)rb_spec.shape[1];
     const size_t dof_count = (size_t)dof_spec.shape[0];
@@ -289,7 +286,6 @@ static int run(void)
         return destroy_instance_and_shutdown(handle);
     }
 
-    // Copy to host and print
     float* host_transforms = malloc(rb_count * rb_components * sizeof(float));
     float* host_dof_pos = malloc(dof_count * dof_components * sizeof(float));
     
@@ -402,7 +398,6 @@ static int run(void)
     if (dof_components > 8) printf("...");
     printf("\n");
 
-    // Cleanup
     printf("\n=== Cleanup ===\n");
 
     free(host_transforms);

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -55,6 +55,14 @@ static void visualize(const ConstraintSim& sim, Cm::ConstraintImmediateVisualize
 	core.getVisualize()(viz, llc.constantBlock, t0, t1, flags);
 }
 
+static PX_FORCE_INLINE bool isShapeVisualizationEnabled(const Sc::ShapeSimBase& shape)
+{
+	const Sc::ShapeCore& core = shape.getCore();
+	return (shape.getActor().getActorCore().getActorFlags() & PxActorFlag::eVISUALIZATION) &&
+		(!core.mShapeCoreFlags.isSet(PxShapeCoreFlag::eIS_EXCLUSIVE) ||
+		 (core.getFlags() & PxShapeFlag::eVISUALIZATION));
+}
+
 void Sc::ShapeInteraction::visualize(PxRenderOutput& out, PxsContactManagerOutputIterator& outputs,
 									float scale, float contactImpulse, float contactNormal, float contactError, float contactPoint,
 									float frictionImpulse, float frictionNormal, float frictionPoint)
@@ -63,6 +71,9 @@ void Sc::ShapeInteraction::visualize(PxRenderOutput& out, PxsContactManagerOutpu
 	{
 		Sc::ActorSim* actorSim0 = &getActor0();
 		Sc::ActorSim* actorSim1 = &getActor1();
+		if(!isShapeVisualizationEnabled(getShape0()) && !isShapeVisualizationEnabled(getShape1()))
+			return;
+
 		if(!actorSim0->isNonRigid() && !actorSim1->isNonRigid())
 		{
 			PxU32 offset;
@@ -235,6 +246,20 @@ void Sc::Scene::visualizeContacts()
 		PX_ASSERT(getRenderBuffer().empty());
 		return; // early out if visualization scale is 0
 	}
+
+	// Under the direct-GPU API the contact stream is normally not read back to the
+	// CPU, so the PxsContactManagerOutput buffers read below would hold no valid
+	// contact data -- visualizing them would draw uninitialized memory. In that
+	// case the GPU narrowphase emits the contact point/normal visualization
+	// directly (see PxgGpuNarrowphaseCore::drawNewStreamContacts), so skip the
+	// CPU-side contact viz here. The one exception is OmniPVD collision sampling:
+	// it forces the contact readback on (getEnableOVDCollisionReadback() is true,
+	// see PxgNarrowphaseCore.cpp where the device-to-host copy is gated on it), so
+	// the host buffers ARE populated and the full CPU contact viz (point / normal /
+	// error / impulse / friction) must run -- the GPU draw is gated OFF in that
+	// config so the two paths never double-draw.
+	if((getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && !getSimulationController()->getEnableOVDCollisionReadback())
+		return;
 
 	PxRenderOutput out(getRenderBuffer());
 

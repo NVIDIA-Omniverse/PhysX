@@ -16,21 +16,21 @@ class BmBenchmark
 public:
     virtual bool isValid() const { return true; };
 
-    virtual uint32_t getNbSteps() const = 0; // the number of steps the benchmark will take
+    virtual uint32_t getNbSteps() const = 0;
     virtual uint32_t getNbRuns() const
     {
         return 10;
-    } // the number of times the benchmark will run
+    }
 
-    virtual void startRun() = 0; // per-run initialization
-    virtual void preStep() = 0; // pre-step setup  (happens before cache clearing and allocator reset)
+    virtual void startRun() = 0;
+    virtual void preStep() = 0; // happens before cache clearing and allocator reset
     virtual Time::Second timedStep() // override this to manage your own time-measurement
     {
         Time timer;
         step();
         return timer.getElapsedSeconds();
     }
-    virtual void endRun() = 0; // per run tear-down
+    virtual void endRun() = 0;
 
     virtual ~BmBenchmark()
     {

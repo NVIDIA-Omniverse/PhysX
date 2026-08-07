@@ -1,6 +1,3 @@
-# IsaacLab ANYmal-C asset is fetched from NVIDIA's public S3 bucket
-# (see scripts/fetch_anymal_asset.py) — don't commit the binary blobs.
-# The wrapper anymal_envs.usda IS committed (small text, references
-# anymal.usd by relative path).
-anymal.usd
-Props/
+version https://git-lfs.github.com/spec/v1
+oid sha256:4f9833972f36c56680015e0aa72b049ae3f1691cd6060e243ffcfbaebfffcce4
+size 259

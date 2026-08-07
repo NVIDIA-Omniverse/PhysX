@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef DY_SOLVER_BODY_H
 #define DY_SOLVER_BODY_H
@@ -43,13 +43,9 @@ namespace Dy
 {
 
 // PT: TODO: make sure this is still needed / replace with V4sqrt
-//This method returns values of 0 when the inertia is 0. This is a bit of a hack but allows us to 
-//represent kinematic objects' velocities in our new format
 PX_FORCE_INLINE PxVec3 computeSafeSqrtInertia(const PxVec3& v)
 {
-	return PxVec3(	v.x == 0.0f ? 0.0f : PxSqrt(v.x),
-					v.y == 0.0f ? 0.0f : PxSqrt(v.y),
-					v.z == 0.0f ? 0.0f : PxSqrt(v.z));
+	return PxVec3(PxSqrt(v.x), PxSqrt(v.y), PxSqrt(v.z));
 }
 
 void copyToSolverBodyData(const PxVec3& linearVelocity, const PxVec3& angularVelocity, PxReal invMass, const PxVec3& invInertia, const PxTransform& globalPose,

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -441,7 +441,7 @@ void Gu::computeBounds(PxBounds3& bounds, const PxGeometry& geometry, const PxTr
 		break;
 
 		case PxGeometryType::eTETRAHEDRONMESH:
-		{		
+		{
 			const PxTetrahedronMeshGeometry& shape = static_cast<const PxTetrahedronMeshGeometry&>(geometry);
 			computeMeshBounds(bounds, contactOffset, inflation, pose, &static_cast<const Gu::TetrahedronMesh*>(shape.tetrahedronMesh)->getPaddedBounds(), PxMeshScale());
 		}
@@ -513,7 +513,7 @@ static PX_FORCE_INLINE void computeMinMaxBounds(PxBounds3* PX_RESTRICT bounds, c
 	V4StoreU(maxV, &bounds->maximum.x);
 }
 
-ShapeData::ShapeData(const PxGeometry& g, const PxTransform& t, PxReal inflation)
+ShapeData::ShapeData(const PxGeometry& g, const PxTransform& t, PxReal offset)
 {
 	// PT: this cast to matrix is already done in GeometryUnion::computeBounds (e.g. for boxes). So we do it first,
 	// then we'll pass the matrix directly to computeBoundsShapeData, to avoid the double conversion.
@@ -538,7 +538,7 @@ ShapeData::ShapeData(const PxGeometry& g, const PxTransform& t, PxReal inflation
 		case PxGeometryType::eSPHERE:
 		{
 			const PxSphereGeometry& shape = static_cast<const PxSphereGeometry&>(g);
-			computeMinMaxBounds(&mPrunerInflatedAABB, mGuBox.center, PxVec3(0.0f), SQ_PRUNER_INFLATION, shape.radius+inflation);
+			computeMinMaxBounds(&mPrunerInflatedAABB, mGuBox.center, PxVec3(0.0f), SQ_PRUNER_INFLATION, shape.radius + offset);
 
 			//
 
@@ -550,7 +550,7 @@ ShapeData::ShapeData(const PxGeometry& g, const PxTransform& t, PxReal inflation
 		{
 			const PxCapsuleGeometry& shape = static_cast<const PxCapsuleGeometry&>(g);
 			const PxVec3p extents = mGuBox.rot.column0.abs() * shape.halfHeight;
-			computeMinMaxBounds(&mPrunerInflatedAABB, mGuBox.center, extents, SQ_PRUNER_INFLATION, shape.radius+inflation);
+			computeMinMaxBounds(&mPrunerInflatedAABB, mGuBox.center, extents, SQ_PRUNER_INFLATION, shape.radius + offset);
 
 			//
 
@@ -569,7 +569,7 @@ ShapeData::ShapeData(const PxGeometry& g, const PxTransform& t, PxReal inflation
 		{
 			const PxBoxGeometry& shape = static_cast<const PxBoxGeometry&>(g);
 			// PT: cast is safe because 'rot' followed by other members
-			Vec4V extentsV = basisExtentV(static_cast<const PxMat33Padded&>(mGuBox.rot), shape.halfExtents, inflation, SQ_PRUNER_INFLATION);
+			Vec4V extentsV = basisExtentV(static_cast<const PxMat33Padded&>(mGuBox.rot), shape.halfExtents, offset, SQ_PRUNER_INFLATION);
 
 			// PT: c/e-to-m/M conversion
 			const Vec4V centerV = V4LoadU(&mGuBox.center.x);
@@ -581,13 +581,13 @@ ShapeData::ShapeData(const PxGeometry& g, const PxTransform& t, PxReal inflation
 			//
 
 			mGuBox.extents	= shape.halfExtents;	// PT: TODO: use SIMD
-			mPrunerBoxGeomExtents = shape.halfExtents*SQ_PRUNER_INFLATION;
+			mPrunerBoxGeomExtents = shape.halfExtents * SQ_PRUNER_INFLATION;
 		}
 		break;
 
 		case PxGeometryType::eCONVEXCORE:
 		{
-			PxBounds3 bounds; Gu::computeBounds(bounds, g, t, inflation, SQ_PRUNER_INFLATION);
+			PxBounds3 bounds; Gu::computeBounds(bounds, g, t, offset, SQ_PRUNER_INFLATION);
 			mPrunerInflatedAABB.minimum = bounds.minimum;
 			mPrunerInflatedAABB.maximum = bounds.maximum;
 			mGuBox.extents = mPrunerBoxGeomExtents = bounds.getExtents();
@@ -605,7 +605,7 @@ ShapeData::ShapeData(const PxGeometry& g, const PxTransform& t, PxReal inflation
 			PxVec3p center, extents;
 			computeMeshBounds(mGuBox.center, static_cast<const PxMat33Padded&>(mGuBox.rot), &hullData->getPaddedBounds(), shape.scale, center, extents);
 
-			computeMinMaxBounds(&mPrunerInflatedAABB, center, extents, SQ_PRUNER_INFLATION, inflation);
+			computeMinMaxBounds(&mPrunerInflatedAABB, center, extents, SQ_PRUNER_INFLATION, offset);
 
 			//
 
@@ -614,7 +614,7 @@ ShapeData::ShapeData(const PxGeometry& g, const PxTransform& t, PxReal inflation
 			mGuBox.rot = prunerBox.rot;	// PT: TODO: optimize this copy
 
 			// AP: pruners are now responsible for growing the OBB by 1% for overlap/sweep/GJK accuracy
-			mPrunerBoxGeomExtents = prunerBox.extents*SQ_PRUNER_INFLATION;
+			mPrunerBoxGeomExtents = prunerBox.extents * SQ_PRUNER_INFLATION;
 			mGuBox.center = prunerBox.center;
 		}
 		break;

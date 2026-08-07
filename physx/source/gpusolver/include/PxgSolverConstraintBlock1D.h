@@ -22,17 +22,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PXG_SOLVER_CONSTRAINT_BLOCK_1D_H
 #define PXG_SOLVER_CONSTRAINT_BLOCK_1D_H
 
+#include "foundation/PxSimpleTypes.h"
 #include "foundation/PxVec3.h"
-#include "PxConstraintDesc.h"
-#include "DySolverConstraintTypes.h"
-#include "PxgSolverConstraintDesc.h"
 #include "vector_types.h"
 #include "vector_functions.h"
 
@@ -81,7 +79,6 @@ public:
 	PX_ALIGN(128, PxVec3	ang0Writeback[32]);					//!< unscaled angular velocity projection (body 0)
 	PX_ALIGN(128, PxReal	appliedForce[32]);					//!< applied force to correct velocity+bias
 	PX_ALIGN(128, PxU32		flags[32]);							
-	PX_ALIGN(128, PxReal	residual[32]);
 
 	// coeff0, coeff1: coefficients used to compute constant, unbiasedConstant, velMultiplier, and impulseMultiplier.
 	// See also "queryReduced1dConstraintSolverConstantsPGS" 
@@ -144,7 +141,6 @@ public:
 	PX_ALIGN(128, PxReal	angularErrorScale[32]);
 	PX_ALIGN(128, PxU32		flags[32]);
 	PX_ALIGN(128, PxReal	appliedForce[32]);
-	PX_ALIGN(128, PxReal	residual[32]);
 };
 
 
@@ -173,7 +169,6 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE void init(PxgBlockSolverConstraint1DCon& ccon, 
 
 	cmod.flags[index]					= 0;
 	cmod.appliedForce[index]			= 0.f;
-	cmod.residual[index]				= 0.f;
 }
 
 struct PxgJointBlockParams
@@ -183,6 +178,7 @@ struct PxgJointBlockParams
 	PxgBlockSolverConstraint1DMod* jointMod;
 	PxReal dt;
 	PxReal invDt;
+	PxReal biasCoefficient;
 };
 
 struct PxgTGSJointBlockParams

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -30,6 +30,9 @@
 #define __CU_GRID_CAL_CUH__
 
 #include "foundation/PxSimpleTypes.h"
+
+namespace physx
+{
 
 PX_FORCE_INLINE static __device__ int3 calcGridPos(const float4& particlePos, const PxReal cellWidth)
 {
@@ -43,7 +46,7 @@ PX_FORCE_INLINE static __device__ int3 calcGridPos(const float4& particlePos, co
 }
 
 // calculate address in grid from position (wrap-around)
-PX_FORCE_INLINE static __device__ physx::PxU32 calcGridHash(int3 gridPos, uint3 gridSize)
+PX_FORCE_INLINE static __device__ PxU32 calcGridHash(int3 gridPos, uint3 gridSize)
 {
 	gridPos.x = gridPos.x & (gridSize.x - 1);
 	gridPos.y = gridPos.y & (gridSize.y - 1);
@@ -138,5 +141,7 @@ PX_FORCE_INLINE static __device__ void calcGridRange(int3& gridPosMin, int3& gri
 	cVolumePos = currentPos + cVolumeOffset;
 	return cVolumeOffset.magnitude() + contactDist;
 }
+
+} // namespace physx
 
 #endif

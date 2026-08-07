@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -46,12 +46,12 @@ static PxPhysics*				gPhysics	= NULL;
 
 float rand(float loVal, float hiVal)
 {
-	return loVal + float(rand()/float(RAND_MAX))*(hiVal - loVal);
+	return loVal + float(rand()/float(RAND_MAX))*(hiVal - loVal);  // NOSONAR - rand() is fine for physics demo data
 }
 
 PxU32 rand(PxU32 loVal, PxU32 hiVal)
 {
-	return loVal + PxU32(rand()%(hiVal - loVal));
+	return loVal + PxU32(rand()%(hiVal - loVal));  // NOSONAR - rand() is fine for physics demo data
 }
 
 void indexToCoord(PxU32& x, PxU32& z, PxU32 index, PxU32 w)
@@ -201,7 +201,7 @@ void createBV33TriangleMesh(PxU32 numVertices, const PxVec3* vertices, PxU32 num
 		PxDefaultMemoryInputData stream(outBuffer.getData(), outBuffer.getSize());
 		triMesh = gPhysics->createTriangleMesh(stream);
 
-		meshSize = outBuffer.getSize();
+		meshSize = (PxU32)outBuffer.getSize();
 	}
 
 	// Print the elapsed time for comparison
@@ -276,7 +276,7 @@ void createBV34TriangleMesh(PxU32 numVertices, const PxVec3* vertices, PxU32 num
 		PxDefaultMemoryInputData stream(outBuffer.getData(), outBuffer.getSize());
 		triMesh = gPhysics->createTriangleMesh(stream);
 
-		meshSize = outBuffer.getSize();
+		meshSize = (PxU32)outBuffer.getSize();
 	}
 
 	// Print the elapsed time for comparison

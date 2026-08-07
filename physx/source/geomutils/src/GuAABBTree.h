@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -178,14 +178,17 @@ namespace Gu
 		// Data management
 		PX_FORCE_INLINE	void			setBit(PxU32 bit_number)
 										{
+											PX_ASSERT(bit_number>>5 < mSize);
 											mBits[bit_number>>5] |= 1<<(bit_number&31);
 										}
 		PX_FORCE_INLINE	void			clearBit(PxU32 bit_number)
 										{
+											PX_ASSERT(bit_number>>5 < mSize);
 											mBits[bit_number>>5] &= ~(1<<(bit_number&31));
 										}
 		PX_FORCE_INLINE	void			toggleBit(PxU32 bit_number)
 										{
+											PX_ASSERT(bit_number>>5 < mSize);
 											mBits[bit_number>>5] ^= 1<<(bit_number&31);
 										}
 
@@ -197,6 +200,7 @@ namespace Gu
 		// Data access
 		PX_FORCE_INLINE	PxIntBool		isSet(PxU32 bit_number)	const
 										{
+											PX_ASSERT(bit_number>>5 < mSize);
 											return PxIntBool(mBits[bit_number>>5] & (1<<(bit_number&31)));
 										}
 

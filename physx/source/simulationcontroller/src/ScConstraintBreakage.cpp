@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -65,7 +65,7 @@ void Sc::Scene::checkConstraintBreakage()
 	if(!count)
 		return;
 
-	PxPinnedArray<Dy::ConstraintWriteback>& pool = mDynamicsContext->getConstraintWriteBackPool();
+	Cm::PinnableArray<Dy::ConstraintWriteback>& pool = mDynamicsContext->getConstraintWriteBackPool();
 
 	ConstraintSim* const* constraints = mActiveBreakableConstraints.getEntries(); 
 	while(count--)
@@ -75,7 +75,7 @@ void Sc::Scene::checkConstraintBreakage()
 		PX_ASSERT(sim->readFlag(ConstraintSim::eCHECK_MAX_FORCE_EXCEEDED));
 
 		const Dy::ConstraintWriteback& solverOutput = pool[sim->getLowLevelConstraint().index];
-		if(solverOutput.isBroken())
+		if(solverOutput.broken)
 		{
 			sim->setFlag(ConstraintSim::eBROKEN);
 

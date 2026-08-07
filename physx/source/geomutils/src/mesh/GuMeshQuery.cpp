@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -61,7 +61,7 @@ namespace {
 			buildFrom(mBox2Hf, boxCenter, boxExtents, boxRot);
 		}
 
-		virtual bool reportTouchedTris(PxU32 nbEntities, const PxU32* entities)
+		virtual bool reportTouchedTris(PxU32 nbEntities, const PxU32* entities) PX_OVERRIDE
 		{
 			if(mAABBOverlap)
 			{
@@ -320,7 +320,7 @@ bool physx::PxMeshQuery::sweep(	const PxVec3& unitDir, const PxReal maxDistance,
 				return sweepBoxTriangles(	triangleCount, triangles, doubleSided, boxGeom, pose, unitDir, distance, sweepHit, cachedIndex,
 											inflation, hitFlags);
 			}
-		}	
+		}
 		default:
 			PX_CHECK_MSG(false, "PxMeshQuery::sweep(): geometry object parameter must be sphere, capsule or box geometry.");
 	}

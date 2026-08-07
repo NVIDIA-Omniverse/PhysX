@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -45,7 +45,7 @@ Sc::ContactIterator::Pair::Pair(const void*& contactPatches, const void*& contac
 , mForces(forces)
 , mActor0(actor0->getPxActor())
 , mActor1(actor1->getPxActor())
-{	
+{
 	mCurrentContact.shape0 = shape0.getPxShape();
 	mCurrentContact.shape1 = shape1.getPxShape();
 	mCurrentContact.normalForceAvailable = (forces != NULL);

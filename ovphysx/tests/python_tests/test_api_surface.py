@@ -84,7 +84,6 @@ def test_multiple_bindings_stress(physx_sdk):
     Returns:
         None: Stress test for multiple tensor bindings.
     """
-    # Load USD file with multiple rigid bodies
     usd_path = data_path("boxes_falling_on_groundplane.usda")
     load_usd_with_ovstage(physx_sdk, usd_path)
     physx_sdk.wait_all()
@@ -100,7 +99,6 @@ def test_multiple_bindings_stress(physx_sdk):
         )
         bindings.append(binding)
 
-    # Cleanup
     for binding in bindings:
         binding.destroy()
 
@@ -132,7 +130,6 @@ def test_integration_reset_with_bindings(physx_sdk):
         tensor_type=TensorType.RIGID_BODY_VELOCITY,
     )
 
-    # Verify binding is valid before reset
     assert binding.count == 1, "Binding should have 1 prim before reset"
     assert binding.shape == (1, 6), "Binding shape should be (1, 6) before reset"
 
@@ -143,11 +140,9 @@ def test_integration_reset_with_bindings(physx_sdk):
     # Validate that binding operations fail after reset
     velocities = np.zeros((1, 6), dtype=np.float32)
 
-    # Attempt write operation - should fail with RuntimeError
     with pytest.raises(RuntimeError, match=r".*"):
         binding.write(velocities)
 
-    # Attempt read operation - should also fail with RuntimeError
     with pytest.raises(RuntimeError, match=r".*"):
         binding.read(velocities)
 
@@ -177,11 +172,9 @@ def test_return_values_validity(physx_sdk):
 
     physx_sdk.wait_all()
 
-    # step should return valid op_index
     step_op = physx_sdk.step(0.016)
     assert step_op >= 0, "Step op should be non-negative"
 
-    # reset should return valid op_index
     reset_op = physx_sdk.reset_stage()
     assert reset_op >= 0, "Reset op should be non-negative"
 
@@ -209,7 +202,6 @@ def test_error_messages_are_informative(physx_sdk):
         error_msg = str(e).lower()
         # Should mention the issue (file not found, path error, etc.)
         assert len(error_msg) > 0, "Error message should not be empty"
-        # Check if it contains useful keywords
         has_useful_info = any(
             keyword in error_msg for keyword in ["file", "path", "not found", "nonexistent", "failed", "error"]
         )

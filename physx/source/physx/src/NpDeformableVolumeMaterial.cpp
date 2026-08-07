@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -151,19 +151,6 @@ PxReal NpDeformableVolumeMaterial::getDynamicFriction() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void NpDeformableVolumeMaterial::setDamping(PxReal x)
-{
-	PX_CHECK_AND_RETURN(x >= 0.f, "PxMaterial::setDamping: invalid float");
-	mMaterial.elasticityDamping = x;
-
-	updateMaterial();
-}
-
-PxReal NpDeformableVolumeMaterial::getDamping() const
-{
-	return mMaterial.elasticityDamping;
-}
-
 void NpDeformableVolumeMaterial::setElasticityDamping(PxReal x)
 {
 	PX_CHECK_AND_RETURN(x >= 0.f, "PxMaterial::setElasticityDamping: invalid float");
@@ -175,21 +162,6 @@ void NpDeformableVolumeMaterial::setElasticityDamping(PxReal x)
 PxReal NpDeformableVolumeMaterial::getElasticityDamping() const
 {
 	return mMaterial.elasticityDamping;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-void NpDeformableVolumeMaterial::setDampingScale(PxReal x)
-{
-	PX_CHECK_AND_RETURN(x >= 0.f && x<= 1.f, "PxMaterial::setDampingScale: invalid float, must be in [0.0, 1.0] range.");
-	mMaterial.dampingScale = toUniformU16(x);
-
-	updateMaterial();
-}
-
-PxReal NpDeformableVolumeMaterial::getDampingScale() const
-{
-	return toUniformReal(mMaterial.dampingScale);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

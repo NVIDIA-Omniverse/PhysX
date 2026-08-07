@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -44,12 +44,12 @@
 #include "PxgContactManager.h"
 #include "PxgConvexConvexShape.h"
 #include "PxgFEMCloth.h"
-#include "PxgFEMCore.h"
+#include "PxgDeformableContactInfo.h"
 #include "PxgNpKernelIndices.h"
 #include "PxgParticleSystem.h"
 #include "PxgSimulationCoreDesc.h"
 
-#include "PxsTransformCache.h"
+#include "PxsCachedTransform.h"
 
 #include "cudaNpCommon.h"
 #include "GuDistancePointTriangle.h"
@@ -363,7 +363,7 @@ __device__ static inline PxU32 fcCapsuleCollision(
 		PxReal dist2 = nor2.normalize();
 		
 		if (dist0 < inflatedRadius)
-		{			
+		{
 			outPoint[numContacts] = make_float4(closest0.x, closest0.y, closest0.z, 0.f);
 			outNormalPen[numContacts] = make_float4(nor0.x, nor0.y, nor0.z, dist0 - capsuleRadius);
 			outBarycentric[numContacts] = make_float4(1.f, 0.f, 0.f, 0.f);
@@ -2230,7 +2230,7 @@ static __device__ void clothVertexConvexCollision(
 		const PxReal rest = restDistances[cmIdx];
 		float4 contact = make_float4(worldP.x, worldP.y, worldP.z, rest);
 
-		{			
+		{
 			PxU32 ind = atomicAdd(writer.totalContactCount, 1);
 			writer.writeRigidVsDeformableContact(ind, contact, normalPen, make_float4(0.f, 0.f, 0.f, 1.f /*1 in w indicates this is a vertex, not a triangle*/),
 				pairInd0, pairInd1, rigidShape.materialIndex, rigidId);
@@ -2859,7 +2859,7 @@ __device__ static inline void clothParticleCollision(
 
 		writer.writeContact(index, make_float4(contact.x, contact.y, contact.z, 0.f), make_float4(-n.x, -n.y, -n.z, pen), tBarycentric,
 			pairInd0, pairInd1, pairInd0);
-	}	
+	}
 }
 
 extern "C" __global__
@@ -3896,5 +3896,5 @@ void cloth_meshContactGenLaunch(
 	if (globalThreadIdx == 0)
 	{
 		atomicMax(stackSizeNeededOnDevice, numMidphasePairsFound * sizeof(uint4));
-	}	
+	}
 }

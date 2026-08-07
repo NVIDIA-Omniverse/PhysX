@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -45,11 +45,7 @@ struct PxDeformableVolumeFlag
 	enum Enum
 	{
 		eCOMPUTE_STRESS_TENSOR = 1 << 0,				//!< Enables computation of a Cauchy stress tensor for every tetrahedron in the simulation mesh. The tensors can be accessed through the deformable volume direct API
-		ePARTIALLY_KINEMATIC = 1 << 1,					//!< Enables partially kinematic motion of the collision and simulation mesh.
-		eDISPLAY_SIM_MESH PX_DEPRECATED = 1 << 2,		//!< Deprecated
-		eDISABLE_SELF_COLLISION PX_DEPRECATED = 1 << 3,	//!< Deprecated, use PxDeformableBodyFlag::eDISABLE_SELF_COLLISION instead
-		eENABLE_CCD PX_DEPRECATED = 1 << 4,				//!< Deprecated, use PxDeformableBodyFlag::eENABLE_SPECULATIVE_CCD
-		eKINEMATIC PX_DEPRECATED = 1 << 5				//!< Deprecated, use PxDeformableBodyFlag::eKINEMATIC instead
+		ePARTIALLY_KINEMATIC = 1 << 1					//!< Enables partially kinematic motion of the collision and simulation mesh.
 	};
 };
 

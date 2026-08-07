@@ -22,44 +22,31 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PXG_NONRIGID_CORE_COMMON_H
 #define PXG_NONRIGID_CORE_COMMON_H
 
-#include "PxgCudaBuffer.h"
 #include "common/PxPhysXCommonConfig.h"
-#include "foundation/PxSimpleTypes.h"
-#include "foundation/PxVec3.h"
-#include "foundation/PxVec4.h"
-#include "PxgCudaPagedLinearAllocator.h"
-#include "PxgRadixSortDesc.h"
-#include "foundation/PxPinnedArray.h"
-#include "PxgEssentialCore.h"
 #include "PxNodeIndex.h"
+#include "CmPinnableArray.h"
+#include "CmPinnableObject.h"
+#include "PxgEssentialCore.h"
+#include "PxgCudaBuffer.h"
+#include "PxgCudaPagedLinearAllocator.h"
 
 namespace physx
 {
-
-	class PxgCudaKernelWranglerManager;
-	class PxCudaContextManager;
-	class PxgHeapMemoryAllocatorManager;
-
-	struct PxGpuDynamicsMemoryConfig;
-
-	class PxgSimulationController;
-	class PxgCudaBroadPhaseSap;
-	class PxgGpuNarrowphaseCore;
-	class PxgGpuContext;
+	struct PxgRadixSortBlockDesc;
 
 	class PxgNonRigidCore : public PxgEssentialCore
 	{
 	public:
 		PxgNonRigidCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
-			PxgHeapMemoryAllocatorManager* heapMemoryManager, PxgSimulationController* simController,
-			PxgGpuContext* context, const PxU32 maxContacts, const PxU32 collisionStackSize, PxsHeapStats::Enum statType);
+			PxgAllocatorDesc& allocDesc, PxgSimulationController* simController,
+			PxgGpuContext* context, const PxU32 maxContacts, const PxU32 collisionStackSize, PxU32 statType);
 
 		virtual ~PxgNonRigidCore();
 
@@ -77,18 +64,19 @@ namespace physx
 		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getTempContactByParticle() { return mTempContactByParticleBitBuf; }
 		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getContactRemapSortedByParticle() { return mContactRemapSortedByParticleBuf; }
 		
-		PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator> mIntermStackAlloc;
+		PxgCudaPagedLinearAllocator		mIntermStackAlloc;
 		PxgTypedCudaBuffer<PxU32>		mStackSizeNeededOnDevice;
-		PxU32*							mStackSizeNeededPinned;
+
+		Cm::PinnableObject<PxU32>		mStackSizeNeededPinned;
 
 		PxU32							mMaxContacts;
 		PxU32							mCollisionStackSizeBytes;
 		
 		//for sorting contacts
-		PxPinnedArray<PxgRadixSortBlockDesc>		mRSDesc;
-		PxgCudaBufferN<2>				mRadixSortDescBuf; //radix sort with rank
-		PxgCudaBuffer					mRadixCountTotalBuf;
-		PxU32							mRadixCountSize;
+		Cm::PinnableArray<PxgRadixSortBlockDesc>	mRSDesc;
+		PxgCudaBufferN<2>							mRadixSortDescBuf; //radix sort with rank
+		PxgCudaBuffer								mRadixCountTotalBuf;
+		PxU32										mRadixCountSize;
 
 		//for radix sort
 		PxgTypedCudaBuffer<PxNodeIndex>	mContactByRigidBuf;			//rigidId is nodeIndex, which is 64 bit

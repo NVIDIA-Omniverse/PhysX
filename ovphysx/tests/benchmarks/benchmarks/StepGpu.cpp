@@ -39,7 +39,7 @@ public:
 
     void startRun() override
     {
-        // Cache PhysX* once — see StepCpuBase for rationale (MR !7247).
+        // Cache PhysX* once; see StepCpuBase for rationale.
         mPhysX = BmGlobals::getInstance().getPhysX();
         if (!mPhysX) return;
 

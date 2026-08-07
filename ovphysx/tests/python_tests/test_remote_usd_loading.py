@@ -3,51 +3,18 @@
 #
 
 
-# Tests for remote USD loading via S3.
-#
-# All S3 tests are skipped unless the following environment variables are set:
-#   OVPHYSX_S3_TEST_URI          — full HTTPS URL to a .usd/.usda asset
-#                                  (virtual-hosted style, e.g.
-#                                  https://bucket.s3.region.amazonaws.com/path/scene.usda)
-#   OVPHYSX_AWS_ACCESS_KEY_ID    — AWS access key
-#   OVPHYSX_AWS_SECRET_ACCESS_KEY — AWS secret key
-#   OVPHYSX_AWS_SESSION_TOKEN    — (optional) STS session token
-#
-# Host, bucket, and region are parsed from the URI automatically.
-# CI sets these via pipeline variables; contributors can point at their own bucket.
+# Tests for remote USD loading. No test needs credentials or a live bucket.
+# Live-S3 tests were removed — they depended on a bucket and credentials this
+# repo does not own, so any drift there failed the blocking test jobs.
 
 import ctypes
 import logging
 import os
-import re
 
 import pytest
-from test_utils import destroy_ovstage_test_attachments, load_usd_with_ovstage
+from test_utils import load_usd_with_ovstage
 
 log = logging.getLogger(__name__)
-
-S3_TEST_ASSET = os.environ.get("OVPHYSX_S3_TEST_URI", "")
-
-_has_s3_config = bool(
-    S3_TEST_ASSET and os.environ.get("OVPHYSX_AWS_ACCESS_KEY_ID") and os.environ.get("OVPHYSX_AWS_SECRET_ACCESS_KEY")
-)
-requires_aws = pytest.mark.skipif(
-    not _has_s3_config,
-    reason="OVPHYSX_S3_TEST_URI and OVPHYSX_AWS_ACCESS_KEY_ID / OVPHYSX_AWS_SECRET_ACCESS_KEY not set",
-)
-
-_VH_PATTERN = re.compile(r"^https://(?P<bucket>[^.]+)\.s3\.(?P<region>[^.]+)\.amazonaws\.com/")
-
-
-def _parse_s3_uri(uri: str) -> tuple[str, str, str]:
-    """Extract (host, bucket, region) from an HTTPS virtual-hosted S3 URL."""
-    m = _VH_PATTERN.match(uri)
-    if not m:
-        pytest.skip(f"OVPHYSX_S3_TEST_URI is not a virtual-hosted S3 URL: {uri}")
-    bucket = m.group("bucket")
-    region = m.group("region")
-    host = f"{bucket}.s3.{region}.amazonaws.com"
-    return host, bucket, region
 
 
 def _configure_omniclient_s3(host, bucket, region, access_key_id, secret_access_key, session_token):
@@ -133,100 +100,6 @@ def test_windows_omniclient_s3_symbol_available(physx_sdk):
     assert getattr(library, "omniClientSetS3Configuration2", None) is not None
 
 
-@requires_aws
-def test_remote_usd_resolver_is_active(_gpu_session_instance):
-    """The S3 tests require OmniUsdResolver to win the one-time Ar selection."""
-    del _gpu_session_instance  # The fixture initializes Carbonite, then activates the resolver.
-    from pxr import Ar, Plug, Tf
-
-    resolver_type = Tf.Type.FindByName("OmniUsdResolver")
-    assert not resolver_type.isUnknown
-    plugin = Plug.Registry().GetPluginForType(resolver_type)
-    assert plugin is not None
-    resolver = Ar.GetUnderlyingResolver()
-    assert plugin.isLoaded
-    assert not isinstance(resolver, Ar.DefaultResolver)
-    print(
-        "[test] remote USD resolver: "
-        f"plugin={plugin.path} loaded={plugin.isLoaded} default=False",
-        flush=True,
-    )
-
-
-@pytest.fixture(scope="session")
-def s3_physx(_gpu_session_instance):
-    """Session-scoped PhysX instance with S3 credentials configured.
-
-    Uses session scope to avoid the Carbonite re-init limitation.
-    """
-    del _gpu_session_instance  # Ensure resolver activation precedes this instance's first stage load.
-    import ovphysx
-
-    log.info("Creating PhysX instance for S3 tests")
-    physx = ovphysx.PhysX()
-
-    host, bucket, region = _parse_s3_uri(S3_TEST_ASSET)
-
-    access_key_id = os.environ["OVPHYSX_AWS_ACCESS_KEY_ID"]
-    secret_access_key = os.environ["OVPHYSX_AWS_SECRET_ACCESS_KEY"]
-    session_token = os.environ.get("OVPHYSX_AWS_SESSION_TOKEN")
-
-    log.info(
-        "Configuring S3: host=%s bucket=%s region=%s session_token=%s",
-        host,
-        bucket,
-        region,
-        "set" if session_token else "not set",
-    )
-    # The application configures the asset layer (OmniClient) itself — ovphysx
-    # does not wrap credential setup in the ovstage model.
-    _configure_omniclient_s3(host, bucket, region, access_key_id, secret_access_key, session_token)
-    log.info("S3 credentials configured successfully")
-
-    yield physx
-    destroy_ovstage_test_attachments(physx)
-    physx.release()
-    log.info("S3 PhysX instance released")
-
-
-@requires_aws
-def test_load_s3_usd(s3_physx):
-    """Load a USD scene from S3 and verify a valid stage is returned."""
-    log.info("Loading S3 asset: %s", S3_TEST_ASSET)
-    op = load_usd_with_ovstage(s3_physx, S3_TEST_ASSET)
-    s3_physx.wait_op(op)
-    s3_physx.wait_all()
-    log.info("S3 asset loaded successfully")
-
-    # A successful attach must allow stepping the simulation without crashing.
-    s3_physx.step_sync(1.0 / 60.0)
-
-    destroy_ovstage_test_attachments(s3_physx)
-    s3_physx.reset_stage()
-    s3_physx.wait_all()
-    log.info("S3 asset removed and cleanup complete")
-
-
-@requires_aws
-def test_simulate_s3_usd(s3_physx):
-    """Load a USD scene from S3, step simulation, and verify it completes."""
-    log.info("Loading S3 asset for simulation: %s", S3_TEST_ASSET)
-    op = load_usd_with_ovstage(s3_physx, S3_TEST_ASSET)
-    s3_physx.wait_op(op)
-    log.info("S3 asset loaded, running 5 simulation steps")
-
-    dt = 1.0 / 60.0
-    for i in range(5):
-        step_op = s3_physx.step(dt)
-        s3_physx.wait_op(step_op)
-
-    log.info("Simulation steps completed successfully")
-    destroy_ovstage_test_attachments(s3_physx)
-    s3_physx.reset_stage()
-    s3_physx.wait_all()
-    log.info("S3 simulation test cleanup complete")
-
-
 def test_ovstage_invalid_remote_uri(physx_sdk, monkeypatch):
     """Verify ovstage population fails gracefully for a nonexistent remote URI.
 
@@ -238,8 +111,7 @@ def test_ovstage_invalid_remote_uri(physx_sdk, monkeypatch):
     requests with quadratic backoff (default cap 120s) — for a guaranteed-dead
     host that turned a ~0.5s failure into a ~30s one. ``OMNICLIENT_HTTP_RETRIES``
     is read per request, so disabling retries here (auto-restored by monkeypatch)
-    keeps this negative test fast without weakening retry behaviour for the real
-    S3 integration tests above.
+    keeps this negative test fast.
     """
     monkeypatch.setenv("OMNICLIENT_HTTP_RETRIES", "0")
     bad_uri = "https://nonexistent-bucket.s3.us-east-1.invalid/no_such_file.usd"

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -43,7 +43,7 @@
 #include "PxgContactManager.h"
 #include "PxgConvexConvexShape.h"
 #include "PxsContactManagerState.h"
-#include "PxsTransformCache.h"
+#include "PxsCachedTransform.h"
 
 #include "utils.cuh"
 
@@ -1108,7 +1108,7 @@ __device__ void doTriangleTriangleCollision(const PxsCachedTransform& transform0
 					contact.pos = vertex2Shape(contact.pos, shape1.scale.scale, shape1.scale.rotation);
 
 					//if (bounds.contains(pos))
-					{	
+					{
 						if (sep < cullScale)
 						{
 							//dir.normalize(); //dir already normalized
@@ -1151,7 +1151,7 @@ __device__ void doTriangleTriangleCollision(const PxsCachedTransform& transform0
 								contact.normal = -dir; //PxVec3(0.0f, -1.0f, 0.0f); //
 							}
 						}
-					}					
+					}
 				}
 				else 
 				{
@@ -1191,7 +1191,7 @@ __device__ void doTriangleTriangleCollision(const PxsCachedTransform& transform0
 							contact.separation = sep;
 							contact.normal = aToB.rotate(dir);
 						}
-					}										
+					}
 				}
 			}
 			//needsRefinement = false;

@@ -32,16 +32,11 @@ def test_constructor_valid_and_properties():
     Note: only ONE PhysX instance is created because Carbonite cannot be
     re-initialized after release.
     """
-    # Test active_cuda_gpus values at the Python level (before native init)
-    # by verifying they don't fail the pre-init Python checks.
-    # We then create a single instance to test post-init properties.
-
     physx = PhysX(
         active_cuda_gpus=None,
         ignore_version_mismatch=True,
     )
     try:
-        # handle property
         h = physx.handle
         assert isinstance(h, int), f"handle must be int, got {type(h)}"
         assert h > 0, f"handle must be > 0, got {h}"

@@ -1,0 +1,14 @@
+<project toolsVersion="6.11">
+  <!-- Python-enabled namespaced monolithic USD, synced EXTRA and used ONLY by the
+       ovphysx python tests (scripts/test_python_runtime.cmake). The ovruntime and
+       ovphysx builds link the py-less monolith (usd.nopy ... gl.21081); this is the
+       py312 build at the SAME gl.21081, so it is ABI-IDENTICAL to what the runtime
+       was compiled against. (An earlier gl.20457 py312 build was close but its USD
+       type / read-group layout had drifted enough to break the ovstage-native read
+       and the deformable/contact population paths.) It additionally ships the `pxr`
+       python bindings the resolver and schema-registration tests use directly.
+       Linked to a SEPARATE path so it never shadows the build's _build/target-deps/usd. -->
+  <dependency name="usd-pytests-${config}" linkPath="../_build/target-deps/usd-py-tests/${config}">
+    <package name="usd.py312.${platform_target_abi}.ov-full-monolithic.${config}" version="0.25.11.kit.4-gl.21081" />
+  </dependency>
+</project>

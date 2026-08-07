@@ -4,9 +4,7 @@
 
 // Low-load benchmarks measuring per-call overhead (dispatch, init, reset)
 // rather than steady-state simulation cost. Useful for catching regressions
-// in cold paths that the Step.* benchmarks amortize away. Previously named
-// "Latency.*"; renamed to "LowLoad.*" per review on MR !7247 since none of
-// these are network-style latency.
+// in cold paths that the Step.* benchmarks amortize away.
 
 #include "framework/UsdPCH.h"
 
@@ -28,8 +26,8 @@ namespace
 {
 
 // Shared base: caches the PhysX* once in startRun() so step() doesn't pay
-// for a global lookup + null check on every measured iteration. Per review
-// on MR !7247 — defensive coding has no place in the hot path.
+// for a global lookup + null check on every measured iteration -- defensive
+// coding has no place in the hot path.
 class LowLoadBase : public BmBenchmark
 {
 public:
@@ -64,12 +62,11 @@ protected:
 
 
 // first_step_after_reload: time to step() once after re-loading the scene.
-// Previously "cold_start" — renamed per review on MR !7247: this is NOT a
-// true process-restart cold start (the harness pays the PhysX::create()
-// cost once in bmCreateGlobals, then re-uses it across runs). What we
-// actually measure is: re-load the scene, reset it, then time the first
-// step. True process-restart cold-start lives on the Python side via
-// subprocess (see bench_process_cold_start.py).
+// This is NOT a true process-restart cold start (the harness pays the
+// PhysX::create() cost once in bmCreateGlobals, then re-uses it across
+// runs). What we actually measure is: re-load the scene, reset it, then
+// time the first step. True process-restart cold-start lives on the Python
+// side via subprocess (see bench_process_cold_start.py).
 class LowLoad_FirstStepAfterReload : public LowLoadBase
 {
 public:

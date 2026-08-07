@@ -1,0 +1,7 @@
+<project toolsVersion="5.0">
+  <!-- Reuse ovruntime's Carbonite selection and override only the local
+       staging path expected by the ovphysx build. -->
+  <import path="../ovruntime/deps/carb-sdk-deps.packman.xml">
+    <filter include="carb_sdk_plugins" as="carb_sdk_static" linkPath="../_build/target-deps/carb_sdk_static" />
+  </import>
+</project>

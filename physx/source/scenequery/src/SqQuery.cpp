@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -686,7 +686,7 @@ struct CapturePvdOnReturn : public PxHitCallback<HitType>
 		mParentCallback			(parentCallback)
 	{}
 
-	virtual PxAgain processTouches(const HitType* hits, PxU32 nbHits)
+	virtual PxAgain processTouches(const HitType* hits, PxU32 nbHits) PX_OVERRIDE
 	{
 		const PxAgain again = mParentCallback.processTouches(hits, nbHits);
 		for(PxU32 i=0; i<nbHits; i++)

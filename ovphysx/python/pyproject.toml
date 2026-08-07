@@ -15,7 +15,7 @@ dependencies = [
   # against the population/runtime ABI of the pinned ovstage release. This pin is
   # generated from the OVSTAGE_VERSION constant in scripts/fetch_ovstage_release.py
   # (the version source of truth); do not edit this line by hand.
-  "ovstage==0.1.0.346039",
+  "ovstage==0.1.1.355824",
 ]
 license = "LicenseRef-NVIDIA-Omniverse"
 license-files = ["LICENSE.txt", "ovphysx-LICENSES.zip"]

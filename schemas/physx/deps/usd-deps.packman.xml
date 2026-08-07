@@ -1,0 +1,17 @@
+<project toolsVersion="5.6">
+  <!-- Reuse kit-kernel's stock py312 USD (with pxr bindings) instead of pulling a
+       separate ov-full-monolithic USD package: the schema is codeless, so it only
+       needs pxr Python + usdGenSchema, and this keeps USD matched to kit's Python. -->
+  <import path="../_build/target-deps/kit_sdk_${config}/dev/all-deps.packman.xml">
+    <filter include="python" />
+    <filter include="usd-${config}" linkPath="../_build/target-deps/usd/${config}" />
+  </import>
+  <dependency name="python" linkPath="../_build/target-deps/python" />
+  <dependency name="doxygen" linkPath="../_build/host-deps/doxygen">
+    <package name="doxygen" version="1.8.5-windows-x86_64" platforms="windows-x86_64" />
+    <package name="doxygen" version="1.8.18-linux-x86_64-f7584a5b" platforms="linux-x86_64 manylinux_x86_64 manylinux_2_35_x86_64" />
+  </dependency>
+  <dependency name="graphviz" linkPath="../_build/host-deps/graphviz">
+    <package name="graphviz" version="2.44-win64" platforms="windows-x86_64" />
+  </dependency>
+</project>

@@ -22,17 +22,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "vehicle2/PxVehicleParams.h"
-#include "vehicle2/PxVehicleMaths.h"
-#include "vehicle2/suspension/PxVehicleSuspensionHelpers.h"
+#include "vehicle/PxVehicleParams.h"
+#include "vehicle/PxVehicleMaths.h"
+#include "vehicle/suspension/PxVehicleSuspensionHelpers.h"
 
 namespace physx
-{
-namespace vehicle2
 {
 #define DETERMINANT_THRESHOLD (1e-6f)
 
@@ -210,5 +208,4 @@ namespace vehicle2
 
 		return true;
 	}
-} //namespace vehicle2
 } //namespace physx

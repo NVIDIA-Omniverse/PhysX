@@ -29,22 +29,18 @@ class TensorBindingIntegrationTest : public PhysXTestFixture {
 };
 
 TEST_F(TensorBindingIntegrationTest, BindingCreationAndDestruction) {
-    // Test creating tensor binding with pattern matching
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = make_ovx_string("/World/Body*");
     desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
     desc.prim_paths = nullptr;
     desc.prim_paths_count = 0;
 
-    // Create binding (synchronous)
     ovphysx_tensor_binding_handle_t binding_handle = 0;
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding_handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Verify binding created
     EXPECT_NE(binding_handle, 0);
 
-    // Destroy binding (synchronous)
     ovphysx_destroy_tensor_binding(m_handle, binding_handle);
 }
 
@@ -52,7 +48,6 @@ TEST_F(TensorBindingIntegrationTest, MultipleTensorTypes) {
     const char* paths[] = {"/World/Prim1"};
     ovphysx_string_t path_strs[] = {make_ovx_string(paths[0])};
 
-    // Create binding for rigid body pose
     ovphysx_tensor_binding_desc_t desc1{};
     desc1.pattern = make_ovx_string("");
     desc1.prim_paths = path_strs;
@@ -64,7 +59,6 @@ TEST_F(TensorBindingIntegrationTest, MultipleTensorTypes) {
     ASSERT_EQ(result1.status, OVPHYSX_API_SUCCESS);
     EXPECT_NE(binding_handle1, 0);
 
-    // Create binding for rigid body velocity
     ovphysx_tensor_binding_desc_t desc2{};
     desc2.pattern = make_ovx_string("");
     desc2.prim_paths = path_strs;
@@ -81,7 +75,6 @@ TEST_F(TensorBindingIntegrationTest, MultipleTensorTypes) {
 }
 
 TEST_F(TensorBindingIntegrationTest, ReadRigidBodyPose) {
-    // Create tensor binding for rigid body poses
     const char* paths[] = {"/World/TestPrim1", "/World/TestPrim2"};
     ovphysx_string_t path_strs[] = {
         make_ovx_string(paths[0]),
@@ -98,14 +91,12 @@ TEST_F(TensorBindingIntegrationTest, ReadRigidBodyPose) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding_handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Get tensor spec
     ovphysx_tensor_spec_t spec{};
     result = ovphysx_get_tensor_binding_spec(m_handle, binding_handle, &spec);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(spec.ndim, 2);
     EXPECT_EQ(spec.shape[1], 7); // pose is [pos(3) + quat(4)]
 
-    // Allocate buffer and read (synchronous)
     std::vector<float> read_data(spec.shape[0] * spec.shape[1]);
     DLTensor read_tensor{};
     read_tensor.data = read_data.data();
@@ -122,7 +113,6 @@ TEST_F(TensorBindingIntegrationTest, ReadRigidBodyPose) {
 }
 
 TEST_F(TensorBindingIntegrationTest, WriteReadRigidBodyVelocity) {
-    // Create tensor binding for rigid body velocities
     const char* paths[] = {"/World/Cube1", "/World/Cube2"};
     ovphysx_string_t path_strs[] = {
         make_ovx_string(paths[0]),
@@ -139,14 +129,12 @@ TEST_F(TensorBindingIntegrationTest, WriteReadRigidBodyVelocity) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding_handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Get tensor spec
     ovphysx_tensor_spec_t spec{};
     result = ovphysx_get_tensor_binding_spec(m_handle, binding_handle, &spec);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(spec.ndim, 2);
     EXPECT_EQ(spec.shape[1], 6); // velocity is [linear(3) + angular(3)]
 
-    // Write velocities (synchronous)
     std::vector<float> write_data(spec.shape[0] * spec.shape[1]);
     // Set linear velocity to (1, 2, 3) and angular to (0.1, 0.2, 0.3) for each body
     for (int i = 0; i < spec.shape[0]; ++i) {
@@ -169,7 +157,6 @@ TEST_F(TensorBindingIntegrationTest, WriteReadRigidBodyVelocity) {
     result = ovphysx_write_tensor_binding(m_handle, binding_handle, &write_tensor, nullptr);
     EXPECT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Read velocities back (synchronous)
     std::vector<float> read_data(spec.shape[0] * spec.shape[1]);
     DLTensor read_tensor{};
     read_tensor.data = read_data.data();
@@ -182,7 +169,6 @@ TEST_F(TensorBindingIntegrationTest, WriteReadRigidBodyVelocity) {
     result = ovphysx_read_tensor_binding(m_handle, binding_handle, &read_tensor);
     EXPECT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Verify data matches what we wrote
     for (int i = 0; i < spec.shape[0] * spec.shape[1]; ++i) {
         EXPECT_FLOAT_EQ(read_data[i], write_data[i]);
     }
@@ -202,7 +188,6 @@ TEST_F(TensorBindingIntegrationTest, ErrorHandling) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &invalid_desc, &binding_handle);
     EXPECT_EQ(result.status, OVPHYSX_API_INVALID_ARGUMENT) << "Should reject empty pattern with no prim paths";
 
-    // Test invalid write (null tensor)
     const char* paths[] = {"/World/Test"};
     ovphysx_string_t path_strs[] = {make_ovx_string(paths[0])};
 
@@ -222,7 +207,6 @@ TEST_F(TensorBindingIntegrationTest, ErrorHandling) {
 }
 
 TEST_F(TensorBindingIntegrationTest, MultipleBindings) {
-    // Create multiple bindings for different prims
     const char* paths1[] = {"/World/Prim1"};
     const char* paths2[] = {"/World/Prim2"};
     ovphysx_string_t path_strs1[] = {make_ovx_string(paths1[0])};
@@ -244,7 +228,6 @@ TEST_F(TensorBindingIntegrationTest, MultipleBindings) {
     ovphysx_result_t res1 = ovphysx_create_tensor_binding(m_handle, &desc1, &handle1);
     ovphysx_result_t res2 = ovphysx_create_tensor_binding(m_handle, &desc2, &handle2);
 
-    // Both should complete successfully (synchronous API)
     EXPECT_EQ(res1.status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(res2.status, OVPHYSX_API_SUCCESS);
 
@@ -253,9 +236,8 @@ TEST_F(TensorBindingIntegrationTest, MultipleBindings) {
 }
 
 TEST_F(TensorBindingIntegrationTest, PatternMatching) {
-    // Test pattern matching with glob syntax
     ovphysx_tensor_binding_desc_t desc{};
-    desc.pattern = make_ovx_string("/World/Prim*");  // Match all prims starting with "Prim"
+    desc.pattern = make_ovx_string("/World/Prim*");
     desc.prim_paths = nullptr;
     desc.prim_paths_count = 0;
     desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
@@ -264,17 +246,15 @@ TEST_F(TensorBindingIntegrationTest, PatternMatching) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding_handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Get tensor spec to see how many prims matched
     ovphysx_tensor_spec_t spec{};
     result = ovphysx_get_tensor_binding_spec(m_handle, binding_handle, &spec);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-    // spec.shape[0] will contain the number of matched prims (could be 0 if none exist)
+    // spec.shape[0] contains the number of matched prims (could be 0 if none exist)
 
     ovphysx_destroy_tensor_binding(m_handle, binding_handle);
 }
 
 TEST_F(TensorBindingIntegrationTest, ArticulationDOFBinding) {
-    // Test articulation DOF position binding with pattern
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = make_ovx_string("/World/articulation*");
     desc.prim_paths = nullptr;
@@ -285,7 +265,6 @@ TEST_F(TensorBindingIntegrationTest, ArticulationDOFBinding) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding_handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Get tensor spec
     ovphysx_tensor_spec_t spec{};
     result = ovphysx_get_tensor_binding_spec(m_handle, binding_handle, &spec);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);

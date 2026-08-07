@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_PROFILE_EVENTS_H
 #define PX_PROFILE_EVENTS_H
@@ -269,7 +269,7 @@ namespace physx { namespace profile {
 		}
 
 		uint32_t getEventSize(const EventHeader& inHeader)
-		{	
+		{
 			uint32_t size = 0;
 			switch (inHeader.getTimestampCompressionFlags())
 			{

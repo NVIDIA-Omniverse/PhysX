@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -295,7 +295,7 @@ bool HeightField::loadFromDesc(const PxHeightFieldDesc& desc)
 		PxI16 minHeight = PX_MAX_I16;
 		PxI16 maxHeight = PX_MIN_I16;
 		for(PxU32 i=0;i<nbVerts;i++)
-		{			
+		{
 			const PxHeightFieldSample& sample = *reinterpret_cast<const PxHeightFieldSample*>(src);
 			*dst++ = sample;
 			const PxI16 height = sample.height;

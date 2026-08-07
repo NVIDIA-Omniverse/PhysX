@@ -1,0 +1,185 @@
+# Dependency Manifest for ovphysx SDK
+# This file controls native dependencies staged into _install/plugins/ by
+# scripts/package_deps.py. The Python wheel copies that _install payload into
+# its staging tree; there is no separate deps/v2 extension overlay path.
+#
+# Pattern syntax:
+#   - Patterns use fnmatch-style matching (*, ?, [seq])
+
+[carbonite_plugins]
+# Carbonite bootstrap plugin shims. Sourced from
+# carb_sdk_static/_build/<plat>/<config>/ so ovphysx ships no separate
+# Carbonite core library.
+# package_deps.py filters the core plugins that are statically linked into
+# libovphysx itself.
+include = [
+    # Core infrastructure
+    "carb.assets.plugin",
+    "carb.datasource-file.plugin",
+    "carb.dictionary.plugin",
+    "carb.dictionary.serializer-json.plugin",
+    "carb.dictionary.serializer-toml.plugin",
+    "carb.eventdispatcher.plugin",
+    "carb.events.plugin",
+    "carb.settings.plugin",
+    "carb.tasking.plugin",
+    "carb.tokens.plugin",
+    "carb.variant.plugin",
+
+    # Observability/logging.
+    # omni.observability-otel.plugin is intentionally omitted: ovphysx code
+    # does not consume any observability/otel interfaces, and its 211 build
+    # transitively requires gRPC/protobuf/upb runtime libs (libgpr.so.42,
+    # libupb_*.so.42, libaddress_sorting.so.42, etc.) that aren't shipped
+    # in the current static shim payload. Adding it back later means also
+    # pulling those libs from a separate dep (e.g. ovruntime_deps's
+    # carb.grpcdatastore subdir, or kit-kernel 111.x).
+    "omni.platforminfo.plugin",
+    "omni.structuredlog.plugin",
+
+    # Profiling
+    "carb.profiler-mux.plugin",
+    "carb.profiler-cpu.plugin",
+]
+
+[packaging]
+# Shared libraries to skip when flattening selected dependency trees into plugins/.
+# Use fnmatch-style patterns; match any platform-specific suffixes.
+skip_shared_libs = [
+    "libtbbbind*",
+    "tbbbind*",
+    "hdStorm*",
+    # MSVC runtime redistributables must come from the system install, not be
+    # bundled.  A version mismatch between the bundled CRT and the one ovphysx.dll
+    # was compiled against corrupts internals and crashes on Windows.
+    "msvcp140*",
+    "vcruntime140*",
+    "concrt140*",
+    "vcomp140*",
+    "ucrtbase*",
+    # Python binding modules from ovruntime and schema that ovphysx does not
+    # ship. ovphysx uses ctypes against libovphysx.so instead of Python USD or
+    # ovruntime pybind modules, so these modules must stay out of the package.
+    "_physx.so",
+    "_physx.pyd",
+    "libomni.physx.plugin.so",
+    "omni.physx.plugin.dll",
+    # Negative guard: the Fabric plugin is deleted, but keep its names denylisted. Packaging copies
+    # shared libs from incremental ovruntime output, so a stale build artifact could otherwise
+    # re-enter the package -- deleting the producer does not scrub prior build outputs.
+    "libomni.physx.fabric.plugin.so",
+    "omni.physx.fabric.plugin.dll",
+    "libomni.physics.tensors.plugin.so",
+    "omni.physics.tensors.plugin.dll",
+    "libomni.physx.tensors.plugin.so",
+    "omni.physx.tensors.plugin.dll",
+    "libomni.physx.cooking.plugin.so",
+    "omni.physx.cooking.plugin.dll",
+    "libomni.physx.foundation.plugin.so",
+    "omni.physx.foundation.plugin.dll",
+    "_physxCooking.*",
+    "_physxFabric.*",
+    "_physxFoundation.*",
+    "_physxSchema.*",
+    "_convexdecomposition.so",
+    "_convexdecomposition.pyd",
+    "*omni.gpucompute-d3dvk.plugin*",
+    # Graphics pipeline carb plugins (ovphysx uses CUDA, not graphics)
+    "*carb.graphics-vulkan*",
+    "*carb.shadercompiler-slang*",
+    "*carb.glinterop*",
+    "*carb.cudainterop*",
+    "*carb.blockcompression*",
+    "*omni.streamingstatus*",
+    # gpu.foundation support libs not needed by ovphysx
+    # (gpu.foundation.plugin is the RTX graphics host — distinct from
+    #  omni.gpucompute-cuda.plugin which ovphysx uses for CUDA compute)
+    # Patterns are listed in pairs: lib* for Linux, bare name for Windows.
+    "*gpu.foundation.plugin*",
+    #
+    # GStreamer plugins and runtime
+    "libgst*",
+    "gst*",
+    "libgstreamer*",
+    "gstreamer*",
+    # GLib and friends (GStreamer dependency)
+    "libglib*",
+    "glib*",
+    "libgio*",
+    "gio*",
+    "libgobject*",
+    "gobject*",
+    "libgthread*",
+    "gthread*",
+    "libgirepository*",
+    "girepository*",
+    "libgmodule*",
+    "gmodule*",
+    "libffi*",           # FFI (GLib dependency)
+    "libpcre*",          # PCRE (GLib dependency)
+    # CUDA runtime and libs (ovphysx loads CUDA via driver API)
+    "libcudart*",
+    "cudart*",
+    "cupti*",
+    # NVIDIA Performance Primitives
+    "libnpp*",
+    "nppc*",
+    "nppidei*",
+    "nppig*",
+    # NVIDIA video / DeepStream / encoding
+    "libv4l*",           # Video4Linux
+    "libcuvidv4l2*",     # CUDA V4L2 codec
+    "libnvbuf*",         # NVIDIA buffer utils
+    "libnvds*",
+    "nvds*",             # NVIDIA DeepStream
+    "libnvjpeg*",        # NVIDIA JPEG
+    "libnvvid*",         # NVIDIA video
+    "libnvideoencode*",  # NVIDIA video encode
+    "nvdsgst*",          # NVIDIA DeepStream GStreamer plugins
+    # Vulkan / graphics (ovphysx is headless, uses CUDA not graphics)
+    "libvulkan*",
+    "libGLEW*",
+    "glew*",
+    "libslang*",
+    "slang*",
+    "slang-glslang*",
+    "libnvperf*",
+    "nvperf*",
+    "libGFSDK*",
+    "GFSDK*",
+    "libVkLayer*",
+    "VkLayer*",
+    "libdriver_shader*",
+    "driver_shader*",
+    "*carb.graphics-direct3d*",
+    "dxcompiler*",
+    "dxil*",
+    "WinPixEventRuntime*",
+    # Monitoring/debug plugins loaded best-effort by CarboniteLoader (safe to omit)
+    "*omni.perfmonitor.plugin*",
+    "*carb.imaging.plugin*",
+    "*carb.progress.plugin*",
+    "*carb.failureinjector.plugin*",
+    "*carb.graphics_optional.plugin*",
+    "*carb.imguiregistry.plugin*",
+    "*carb.memorytracking.plugin*",
+    "*carb.profiler-gpu.plugin*",
+    "*carb.vg-nanovg.plugin*",
+    # Extra USDRT plugins (ovphysx is headless, no Hydra rendering)
+    "*usdrt.geopriority.plugin*",
+    "*usdrt.xformcache.plugin*",
+    "*usdrt.hydra.engine.plugin*",
+    "*usdrt.hydra.fabric_scene_delegate.plugin*",
+    # Extra plugins from omni.client/ and omni.usd/ RTX subdirs
+    "*carb.datasource-omniclient.plugin*",
+    "*carb.omniclient.plugin*",
+    "*carb.usdresolver.plugin*",
+    "*omni.usd-abi.plugin*",
+    # Benchmark harnesses from Fabric/USDRT (not needed at runtime)
+    "*benchmarks.plugin*",
+    # nvtt (texture tools, not needed for simulation)
+    "nvtt*",
+    "libnvtt*",
+    # pthread (Windows builds; not needed, ovphysx uses std::thread)
+    "pthreadV*",
+]

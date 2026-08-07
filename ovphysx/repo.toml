@@ -1,0 +1,48 @@
+########################################################################################################################
+# Repo tool base settings
+########################################################################################################################
+
+[repo]
+logging = "warn"
+import_optional_configs = ["${root}/repo_tools.toml"]
+
+[repo.folders]
+packages = "${root}/_builtpackages"
+version_file = "${root}/VERSION"
+
+########################################################################################################################
+# Code Formatter (used mainly for legal text check in headers)
+########################################################################################################################
+[repo_format]
+use_current_year_as_end_year = true
+license_preamble = '''
+SPDX-FileCopyrightText: Copyright (c) {years} NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause
+'''
+license_text = "" # we use two-line SPDX licenses
+
+[repo_format.cpp]
+# oss settings
+files.include = [
+    "include/**",
+    "src/**",
+    "tests/**"
+]
+files.extensions = [".h", ".h.in", ".hpp", ".inl", ".cpp", ".c"]
+
+files.exclude = [
+   "include/ovphysx/dlpack/**"  # vendored third-party header (upstream copyright)
+]
+
+[repo_format.python]
+maintain_legal_blurbs = true
+# oss settings
+files.include = [
+    "python/**",
+    "tensorapi/**",
+    "tests/**",
+    "build.sh",
+    "repo.sh",
+    "scripts/*.sh",
+]
+

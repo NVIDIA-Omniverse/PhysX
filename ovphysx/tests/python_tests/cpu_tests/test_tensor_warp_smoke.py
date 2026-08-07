@@ -153,6 +153,39 @@ class TestWarpUint8:
         assert np.array_equal(result.numpy(), ones)
         b.destroy()
 
+    def test_disable_gravity_roundtrip(self, physx_sdk_cpu):
+        _load_boxes(physx_sdk_cpu)
+        b = physx_sdk_cpu.create_tensor_binding(
+            raise_if_empty=True, pattern=_RB_PATTERN,
+            tensor_type=TensorType.RIGID_BODY_DISABLE_GRAVITY,
+        )
+        buf = wp.zeros(b.shape, dtype=wp.uint8, device=_DEVICE)
+        b.read(buf)
+        assert buf.numpy().shape == tuple(b.shape)
+        ones = np.ones(b.shape, dtype=np.uint8)
+        b.write(wp.array(ones, dtype=wp.uint8, device=_DEVICE))
+        result = wp.zeros(b.shape, dtype=wp.uint8, device=_DEVICE)
+        b.read(result)
+        assert np.array_equal(result.numpy(), ones)
+        b.destroy()
+
+    def test_drive_type_read(self, physx_sdk_cpu):
+        # Read-only binding: no write half to this round trip.
+        _load_articulations(physx_sdk_cpu)
+        b = physx_sdk_cpu.create_tensor_binding(
+            raise_if_empty=True, pattern=_ARTI_PATTERN,
+            tensor_type=TensorType.ARTICULATION_DOF_DRIVE_TYPE,
+        )
+        # Sentinel-fill so an unwritten byte is distinguishable from a real eNone(0).
+        buf = wp.array(np.full(b.shape, 0xFF, dtype=np.uint8), dtype=wp.uint8, device=_DEVICE)
+        b.read(buf)
+        values = buf.numpy()
+        assert values.shape == tuple(b.shape)
+        # DofDriveType: 0 = none, 1 = force, 2 = acceleration.
+        assert values.max() <= 2
+        assert (values != 0).any(), "fixture authors drives, so some DOF should report a driven type"
+        b.destroy()
+
 
 # ---------------------------------------------------------------------------
 # Rank-3 ([N, S, 3]) WRITE round-trip via a writable 3D binding

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
    
@@ -44,13 +44,13 @@ namespace Dy
 \note dof is in range (0,3) because articulation joints only support 3 degrees of freedom.
 */
 PX_INLINE PxReal computeMimicJointSelfResponse(const PxU32 linkIndex, const PxU32 dof, const ArticulationData& artData)
-{			
+{
 	const ArticulationLink* links = artData.getLinks();
 
 	const PxU32 parentLinkIndex = links[linkIndex].parent;
 
 	//childLinkPos - parentLinkPos
-	const PxVec3& parentLinkToChildLink = artData.getRw(linkIndex);	
+	const PxVec3& parentLinkToChildLink = artData.getRw()[linkIndex];
 
 	const PxU32 jointOffset = artData.getJointData(linkIndex).jointOffset;
 	const PxU8 dofCount = artData.getJointData(linkIndex).nbDof;
@@ -127,12 +127,12 @@ PX_INLINE PxReal computeMimicJointCrossResponse
 	// Propagate test joint impulse from inbound joint of start link to its parent link.
 	// This generates a link impulse that we can propagate to root.
 	Cm::SpatialVectorF Zp;
-	{					
+	{
 		const PxU32 linkIndex = pathFromRootToLink[numFromRootToLink - 1];
 		PX_ASSERT(linkA == linkIndex);
 
 		//childLinkPos - parentLinkPos
-		const PxVec3& parentLinkToChildLink = artData.getRw(linkIndex);	
+		const PxVec3& parentLinkToChildLink = artData.getRw()[linkIndex];
 
 		const PxU32 jointOffset = artData.getJointData(linkIndex).jointOffset;
 		const PxU8 dofCount = artData.getJointData(linkIndex).nbDof;
@@ -152,7 +152,7 @@ PX_INLINE PxReal computeMimicJointCrossResponse
 		const PxU32 linkIndex = pathFromRootToLink[numFromRootToLink - 1 - k];
 
 		//childLinkPos - parentLinkPos
-		const PxVec3& parentLinkToChildLink = artData.getRw(linkIndex);
+		const PxVec3& parentLinkToChildLink = artData.getRw()[linkIndex];
 
 		const PxU32 jointOffset = artData.getJointData(linkIndex).jointOffset;
 		const PxU8 dofCount = artData.getJointData(linkIndex).nbDof;
@@ -178,7 +178,7 @@ PX_INLINE PxReal computeMimicJointCrossResponse
 		PX_ASSERT((0 != k) ||( 0 == links[linkIndex].parent));
 
 		//childLinkPos - parentLinkPos
-		const PxVec3& parentToChild = artData.getRw(linkIndex);
+		const PxVec3& parentToChild = artData.getRw()[linkIndex];
 
 		const PxU32 jointOffset = artData.getJointData(linkIndex).jointOffset;
 		const PxU8 dofCount = artData.getJointData(linkIndex).nbDof;
@@ -200,7 +200,7 @@ PX_INLINE PxReal computeMimicJointCrossResponse
 	return r;
 }
 
-void setupMimicJointInternal
+static void setupMimicJointInternal
 (const ArticulationMimicJointCore& mimicJointCore, const ArticulationData& artData, 
  PxReal* scratchBufferQMinusStZ, const PxU32 scratchBufferQMinusStZLength, 
  ArticulationInternalMimicJoint& mimicJointInternal)
@@ -235,23 +235,23 @@ void setupMimicJointInternal
 	mimicJointInternal.recipEffectiveInertia = recipEffectiveInertia;
 }
 
-void FeatherstoneArticulation::setupInternalMimicJointConstraints()
+void FeatherstoneArticulation::setupInternalMimicJointConstraints(ArticulationData& data)
 {
 	//Prepare the mimic joints for the solver.
 	//We need an array {Q - S^T*Z} when computing the mimic joint response terms.
 	//We should be safe to use mDeferredQstZ here because we are pre-solver.
 	//Just make sure that we zero it again before exiting so that it is zero
 	//when we get to the solver.
-	mArticulationData.mInternalMimicJoints.reserve(mArticulationData.mNbMimicJoints);
-	mArticulationData.mInternalMimicJoints.forceSize_Unsafe(mArticulationData.mNbMimicJoints);
-	for(PxU32 i = 0; i < mArticulationData.mNbMimicJoints; i++)
+	data.mInternalMimicJoints.reserve(data.mNbMimicJoints);
+	data.mInternalMimicJoints.forceSize_Unsafe(data.mNbMimicJoints);
+	for(PxU32 i = 0; i < data.mNbMimicJoints; i++)
 	{
-		const ArticulationMimicJointCore& mimicJointCore = *mArticulationData.mMimicJoints[i];
-		ArticulationInternalMimicJoint& mimicJointInternal = mArticulationData.mInternalMimicJoints[i];
+		const ArticulationMimicJointCore& mimicJointCore = *data.mMimicJoints[i];
+		ArticulationInternalMimicJoint& mimicJointInternal = data.mInternalMimicJoints[i];
 		setupMimicJointInternal(
 			mimicJointCore, 
-			mArticulationData,
-			mArticulationData.mDeferredQstZ.begin(), mArticulationData.mDeferredQstZ.size(),
+			data,
+			data.getDeferredQstZ(), data.mDofCapacity,
 			mimicJointInternal);
 	}//nbMimicJoints							
 }
@@ -284,10 +284,11 @@ void FeatherstoneArticulation::solveInternalMimicJointConstraints(const PxReal d
 		const PxU32 dofB = internalMimicJoint.dofB;
 
 		//Get the positions of the joint dofs coupled by the mimic joint.
-		const PxU32 jointOffsetA = mArticulationData.mLinks[linkA].inboundJoint->jointOffset;
-		const PxU32 jointOffsetB = mArticulationData.mLinks[linkB].inboundJoint->jointOffset;
-		const PxReal qA = mArticulationData.mJointPosition[jointOffsetA + dofA];
-		const PxReal qB = mArticulationData.mJointPosition[jointOffsetB + dofB];
+		const PxU32 jointOffsetA = mArticulationData.getJointData(linkA).jointOffset;
+		const PxU32 jointOffsetB = mArticulationData.getJointData(linkB).jointOffset;
+		const PxReal* jointPositions = mArticulationData.getJointPositions();
+		const PxReal qA = jointPositions[jointOffsetA + dofA];
+		const PxReal qB = jointPositions[jointOffsetB + dofB];
 
 		//Get the speeds of the joint dofs coupled by the mimic joint.
 		PxReal qADot = 0;
@@ -304,7 +305,7 @@ void FeatherstoneArticulation::solveInternalMimicJointConstraints(const PxReal d
 		//We can now compute the joint impulses to apply to the inbound joints of links A and B.
 		PxReal jointImpulseA[3] = {0, 0, 0};
 		PxReal jointImpulseB[3] = {0, 0, 0};
-		{			
+		{
 			PxReal jointDofImpA = 0;
 			PxReal jointdofImpB = 0;
 			computeMimicJointImpulses(

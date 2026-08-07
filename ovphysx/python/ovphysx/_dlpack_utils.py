@@ -60,6 +60,21 @@ def _validate_c_contiguous_layout(dl_tensor: DLTensor) -> None:
         expected_stride *= dim
 
 
+def copy_dltensor(dl_tensor: DLTensor) -> DLTensor:
+    """Copy DLTensor metadata without taking ownership of its data buffer."""
+    copied = DLTensor.from_buffer_copy(dl_tensor)
+    shape = (c_int64 * dl_tensor.ndim)(*(dl_tensor.shape[i] for i in range(dl_tensor.ndim)))
+    copied.shape = ctypes.cast(shape, POINTER(c_int64))
+
+    strides = None
+    if dl_tensor.strides:
+        strides = (c_int64 * dl_tensor.ndim)(*(dl_tensor.strides[i] for i in range(dl_tensor.ndim)))
+        copied.strides = ctypes.cast(strides, POINTER(c_int64))
+
+    copied._keepalive = (shape, strides)
+    return copied
+
+
 def acquire_dltensor(obj) -> tuple[DLTensor, object | None]:
     """Extract DLTensor and a keepalive reference (if needed).
 
@@ -80,14 +95,17 @@ def acquire_dltensor(obj) -> tuple[DLTensor, object | None]:
     # __dlpack__ protocol (NumPy >= 1.22, PyTorch, etc.)
     if hasattr(obj, "__dlpack__"):
         capsule = obj.__dlpack__()
-        if PyCapsule_IsValid(capsule, b"dltensor") != 1:
-            raise TypeError("__dlpack__() did not return a valid 'dltensor' capsule")
-        managed_ptr = PyCapsule_GetPointer(capsule, b"dltensor")
-        if not managed_ptr:
-            raise TypeError("Failed to extract DLManagedTensor from capsule")
-        managed = ctypes.cast(managed_ptr, POINTER(DLManagedTensor)).contents
-        _validate_c_contiguous_layout(managed.dl_tensor)
-        return managed.dl_tensor, capsule
+        try:
+            if PyCapsule_IsValid(capsule, b"dltensor") != 1:
+                raise TypeError("__dlpack__() did not return a valid 'dltensor' capsule")
+            managed_ptr = PyCapsule_GetPointer(capsule, b"dltensor")
+            if not managed_ptr:
+                raise TypeError("Failed to extract DLManagedTensor from capsule")
+            managed = ctypes.cast(managed_ptr, POINTER(DLManagedTensor)).contents
+            _validate_c_contiguous_layout(managed.dl_tensor)
+            return managed.dl_tensor, capsule
+        finally:
+            del capsule
 
     # NumPy-like
     if hasattr(obj, "__array_interface__"):

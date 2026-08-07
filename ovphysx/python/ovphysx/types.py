@@ -73,6 +73,7 @@ class TensorType(IntEnum):
     ARTICULATION_DOF_ARMATURE = 40             # [N, D]     reflected rotor inertia
     ARTICULATION_DOF_FRICTION_PROPERTIES = 41  # [N, D, 3]  (static, dynamic, viscous) friction
     ARTICULATION_DOF_DRIVE_MODEL = 42          # [N, D, 3]  (speedEffortGradient, maxActuatorVelocity, velocityDependentResistance)
+    ARTICULATION_DOF_DRIVE_TYPE = 43           # [N, D]     read-only uint8; 0=none, 1=force, 2=acceleration
 
     # -- External wrenches (2D/3D, write-only) --
     RIGID_BODY_FORCE = 50                      # [N, 3]     force in world frame
@@ -85,6 +86,7 @@ class TensorType(IntEnum):
     ARTICULATION_BODY_INERTIA = 62             # [N, L, 9]  row-major 3x3 inertia in COM frame
     ARTICULATION_BODY_INV_MASS = 63            # [N, L]     read-only; inverse mass
     ARTICULATION_BODY_INV_INERTIA = 64         # [N, L, 9]  read-only; inverse inertia
+    ARTICULATION_BODY_DISABLE_GRAVITY = 65     # [N, L]     read/write uint8/bool; per-link gravity disable (runtime)
 
     # -- Articulation dynamics queries (2D/3D, read-only) --
     ARTICULATION_JACOBIAN = 70                 # [N, R, C]  geometric Jacobian
@@ -114,6 +116,9 @@ class TensorType(IntEnum):
     RIGID_BODY_SHAPE_FRICTION_AND_RESTITUTION = 100    # [N, S, 3] (static_friction, dynamic_friction, restitution)
     RIGID_BODY_CONTACT_OFFSET = 101                   # [N, S]    contact offset per shape
     RIGID_BODY_REST_OFFSET = 102                      # [N, S]    rest offset per shape
+    # Rigid-body property; occupies the end of the rigid-body numeric range
+    # (no free slot next to RIGID_BODY_DISABLE_SIMULATION=9). Matches the C enum.
+    RIGID_BODY_DISABLE_GRAVITY = 103                  # [N]       read/write uint8/bool; nonzero=gravity disabled (runtime)
 
     ARTICULATION_SHAPE_FRICTION_AND_RESTITUTION = 110  # [N, S, 3] (static_friction, dynamic_friction, restitution)
     ARTICULATION_CONTACT_OFFSET = 111                 # [N, S]    contact offset per shape
@@ -178,7 +183,7 @@ class ApiStatus(IntEnum):
     NOT_IMPLEMENTED = 3
     INVALID_ARGUMENT = 4
     NOT_FOUND = 5
-    BUFFER_TOO_SMALL = 6    # caller-supplied buffer is too small; check out_required_size
+    BUFFER_TOO_SMALL = 6    # caller-supplied buffer is too small; check API-specific size metadata
     DEVICE_MISMATCH = 7     # tensor device cannot be used or staged for this binding/policy
     GPU_NOT_AVAILABLE = 8   # GPU requested but not available or CUDA init failed
     END_OF_ITERATION = 9    # iterator exhausted (e.g. fetch_read_next past the last group) — not an error

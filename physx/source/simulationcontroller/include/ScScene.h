@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -74,8 +74,6 @@ class PxsSimulationController;
 class PxsSimulationControllerCallback;
 class PxsMemoryManager;
 
-struct PxConeLimitedConstraint;
-
 #if PX_SUPPORT_GPU_PHYSX
 class PxsKernelWranglerManager;
 class PxsHeapMemoryAllocatorManager;
@@ -114,7 +112,6 @@ namespace Bp
 
 namespace Dy
 {
-	class FeatherstoneArticulation;
 	class Context;
 #if PX_SUPPORT_GPU_PHYSX
 	class DeformableSurface;
@@ -136,8 +133,6 @@ namespace Sc
 	class ArticulationSpatialTendonCore;
 	class ArticulationFixedTendonCore;
 	class ArticulationMimicJointCore;
-	class LLArticulationPool;
-	class LLArticulationRCPool;
 	class LLDeformableSurfacePool;
 	class LLDeformableVolumePool;
 	class LLParticleSystemPool;
@@ -211,12 +206,12 @@ namespace Sc
 	struct SqBoundsSync;
 	struct SqRefFinder;
 
-	struct ParticleOrSoftBodyRigidInteraction
+	struct DeformableRigidInteraction
 	{
 		IG::EdgeIndex mIndex;
 		PxU32 mCount;
 
-		ParticleOrSoftBodyRigidInteraction() : mCount(0) {}
+		DeformableRigidInteraction() : mCount(0) {}
 	};
 
 	class Scene : public PxUserAllocated
@@ -308,6 +303,8 @@ namespace Sc
 
 	PX_FORCE_INLINE Cm::FlushPool*				getFlushPool()									{ return &mLLContext->getTaskPool();	}
 
+					void						setBodyAccelerationTask(PxLightCpuTask* task)	{ mBodyAccelerationTask = task;		}
+
 	PX_FORCE_INLINE	void						setPCM(bool enabled)							{ mLLContext->setPCM(enabled);			}
 	PX_FORCE_INLINE	void						setContactCache(bool enabled)					{ mLLContext->setContactCache(enabled);	}
 
@@ -383,7 +380,11 @@ namespace Sc
 					void						addArticulationSimControl(ArticulationCore& core);
 					void						removeArticulationSimControl(ArticulationCore& core);
 
-					void						updateBodySim(BodySim& sim);
+#if PX_SUPPORT_GPU_PHYSX
+					void						gpu_updateBodySim(BodySim& sim);
+#else
+	PX_FORCE_INLINE	void						gpu_updateBodySim(BodySim&)	{}
+#endif
 
 	PX_FORCE_INLINE	PxU32						getNbArticulations() const	{ return mArticulations.size();			}
 	PX_FORCE_INLINE	ArticulationCore* const*	getArticulations()			{ return mArticulations.getEntries();	}
@@ -530,8 +531,8 @@ namespace Sc
 					void						removeBody(BodySim&);
 
 					//lists of actors woken up or put to sleep last simulate
-					void                        onBodyWakeUp(BodySim* body);
-					void                        onBodySleep(BodySim* body);
+					void						onBodyWakeUp(BodySim* body);
+					void						onBodySleep(BodySim* body);
 
 	PX_FORCE_INLINE	bool						isValid() const	{ return (mLLContext != NULL);	}
 
@@ -540,9 +541,6 @@ namespace Sc
 					PxU32						createAggregate(void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint, PxU32 envID);
 
 					void						deleteAggregate(PxU32 id);
-
-					Dy::FeatherstoneArticulation*	createLLArticulation(ArticulationSim* sim);
-					void							destroyLLArticulation(Dy::FeatherstoneArticulation&);
 
 		PX_FORCE_INLINE	PxPool2<ConstraintInteraction, 4096>&	getConstraintInteractionPool()			{ return mConstraintInteractionPool;	}
 	public:
@@ -570,8 +568,6 @@ namespace Sc
 		PX_FORCE_INLINE	NPhaseCore*					getNPhaseCore()							const	{ return mNPhaseCore;					}
 
 						void						checkConstraintBreakage();
-						void						collectSolverResidual();
-						PxSceneResidual				getSolverResidual()						const;
 
 		PX_FORCE_INLINE	PxArray<TriggerPairExtraData>&		
 													getTriggerBufferExtraData()						{ return *mTriggerBufferExtraData;		}
@@ -610,10 +606,10 @@ namespace Sc
 #endif
 
 		PX_FORCE_INLINE	void						setSpeculativeCCDRigidBody(PxU32 index)				{ mSpeculativeCCDRigidBodyBitMap.growAndSet(index); }
-		PX_FORCE_INLINE void						resetSpeculativeCCDRigidBody(PxU32 index)			{ if(index < mSpeculativeCCDRigidBodyBitMap.size()) mSpeculativeCCDRigidBodyBitMap.reset(index); }
+		PX_FORCE_INLINE void						resetSpeculativeCCDRigidBody(PxU32 index)			{ mSpeculativeCCDRigidBodyBitMap.boundedReset(index); }
 
 		PX_FORCE_INLINE	void						setSpeculativeCCDArticulationLink(PxU32 index)		{ mSpeculativeCDDArticulationBitMap.growAndSet(index); }
-		PX_FORCE_INLINE void						resetSpeculativeCCDArticulationLink(PxU32 index)	{ if(index < mSpeculativeCDDArticulationBitMap.size()) mSpeculativeCDDArticulationBitMap.reset(index); }
+		PX_FORCE_INLINE void						resetSpeculativeCCDArticulationLink(PxU32 index)	{ mSpeculativeCDDArticulationBitMap.boundedReset(index); }
 
 		PX_FORCE_INLINE	PxU64						getContextId() const { return mContextId; }
 		PX_FORCE_INLINE bool						isUsingGpuDynamicsOrBp() const { return mUseGpuBp || mUseGpuDynamics; }
@@ -720,8 +716,8 @@ namespace Sc
 					PxsMemoryManager*			mMemoryManager;
 
 #if PX_SUPPORT_GPU_PHYSX
-					PxsKernelWranglerManager*				mGpuWranglerManagers;
-					PxsHeapMemoryAllocatorManager*			mHeapMemoryAllocationManager;
+					PxsKernelWranglerManager*		mGpuWranglerManagers;
+					PxsHeapMemoryAllocatorManager*	mHeapMemoryAllocationManager;
 #endif
 
 					PxsSimulationController*	mSimulationController;
@@ -744,22 +740,22 @@ namespace Sc
 		//containers:
 		// Those ones contain shape ptrs from Actor, i.e. compound level, not subparts
 
-					PxCoalescedHashSet<ConstraintCore*>		mConstraints;
+					PxCoalescedHashSet<ConstraintCore*>	mConstraints;
 												
-					Bp::BoundsArray*						mBoundsArray;
-					PxFloatArrayPinnedSafe*					mContactDistance;
-					bool									mHasContactDistanceChanged;
-					SqBoundsManager*						mSqBoundsManager;
+					Bp::BoundsArray*					mBoundsArray;
+					Cm::PinnableArray<PxReal>*			mContactDistance;
+					bool								mHasContactDistanceChanged;
+					SqBoundsManager*					mSqBoundsManager;
 
-					PxArray<BodySim*>				mCcdBodies;
-					PxArray<PxTriggerPair>			mTriggerBufferAPI;
-					PxArray<TriggerPairExtraData>*	mTriggerBufferExtraData;
+					PxArray<BodySim*>					mCcdBodies;
+					PxArray<PxTriggerPair>				mTriggerBufferAPI;
+					PxArray<TriggerPairExtraData>*		mTriggerBufferExtraData;
 
-					PxCoalescedHashSet<ArticulationCore*> mArticulations;
-					PxCoalescedHashSet<ArticulationSim*> mDirtyArticulationSims;
+					PxCoalescedHashSet<ArticulationCore*>	mArticulations;
+					PxCoalescedHashSet<ArticulationSim*>	mDirtyArticulationSims;
 
-					PxArray<ConstraintCore*>	mBrokenConstraints;
-					PxCoalescedHashSet<ConstraintSim*> mActiveBreakableConstraints;
+					PxArray<ConstraintCore*>			mBrokenConstraints;
+					PxCoalescedHashSet<ConstraintSim*>	mActiveBreakableConstraints;
 
 					// pools for joint buffers
 					// The pools below currently cover all the internal cases
@@ -821,7 +817,6 @@ namespace Sc
 					Cm::PreallocatingPool<BodySim>*		mBodySimPool;
 					PxPool2<ConstraintSim, 4096>		mConstraintSimPool;
 					PxPool2<ArticulationJointSim, 4096>	mArticulationJointSimPool;
-					LLArticulationRCPool*				mLLArticulationRCPool;
 
 					PxHashMap<PxPair<const ActorSim*, const ActorSim*>, ConstraintCore*> mConstraintMap;
 														
@@ -969,6 +964,7 @@ namespace Sc
 					Cm::FlushPool														mTaskPool;
 					PxTaskManager*														mTaskManager;
 					PxCudaContextManager*												mCudaContextManager;
+					PxLightCpuTask*														mBodyAccelerationTask;
 
 					bool																mContactReportsNeedPostSolverVelocity;
 					bool																mUseGpuDynamics;
@@ -1004,7 +1000,6 @@ namespace Sc
 				public:
 					// For OmniPVD. To notify NpScene that actor's sleeping state has changed.
 					typedef void(*SleepingStateChangedCallback)(PxRigidDynamic&, bool);
-					PxSceneResidual				 mResidual;
 					SleepingStateChangedCallback mOnSleepingStateChanged;
 
 // PT: moved all the GPU-related code & data here in an attempt to clearly separate the CPU/GPU bits
@@ -1078,38 +1073,29 @@ namespace Sc
 					void								addParticleSystemSimControl(ParticleSystemCore& core);
 					void								removeParticleSystemSimControl(ParticleSystemCore& core);
 
-					void								addParticleFilter(Sc::ParticleSystemCore* core, DeformableVolumeSim& sim, PxU32 particleId, PxU32 userBufferId, PxU32 tetId);
-					void								removeParticleFilter(Sc::ParticleSystemCore* core, DeformableVolumeSim& sim, PxU32 particleId, PxU32 userBufferId, PxU32 tetId);
-
-					PxU32								addParticleAttachment(Sc::ParticleSystemCore* core, DeformableVolumeSim& sim, PxU32 particleId, PxU32 userBufferId, PxU32 tetId, const PxVec4& barycentric);
-					void								removeParticleAttachment(Sc::ParticleSystemCore* core, DeformableVolumeSim& sim, PxU32 handle);
-
-					void								addRigidFilter(BodyCore* core, DeformableVolumeSim& sim, PxU32 vertId);
-					void								removeRigidFilter(BodyCore* core, DeformableVolumeSim& sim, PxU32 vertId);
-
-					PxU32								addRigidAttachment(BodyCore* core, DeformableVolumeSim& sim, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint, bool doConversion);
+					PxU32								addRigidAttachment(BodyCore* core, DeformableVolumeSim& sim, PxU32 vertId, const PxVec3& actorSpacePose, bool doConversion);
 					void								removeRigidAttachment(BodyCore* core, DeformableVolumeSim& sim, PxU32 handle);
 						
 					void								addTetRigidFilter(BodyCore* core, DeformableVolumeSim& sim, PxU32 tetIdx);
 					void								removeTetRigidFilter(BodyCore* core, DeformableVolumeSim& sim, PxU32 tetIdx);
 
-					PxU32								addTetRigidAttachment(BodyCore* core, DeformableVolumeSim& sim, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint, bool doConversion);
+					PxU32								addTetRigidAttachment(BodyCore* core, DeformableVolumeSim& sim, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, bool doConversion);
 						
 					void								addSoftBodyFilter(DeformableVolumeCore& core, PxU32 tetIdx0, DeformableVolumeSim& sim, PxU32 tetIdx1);
 					void								removeSoftBodyFilter(DeformableVolumeCore& core, PxU32 tetIdx0, DeformableVolumeSim& sim, PxU32 tetIdx1);
 					void								addSoftBodyFilters(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
 					void								removeSoftBodyFilters(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
 
-					PxU32								addSoftBodyAttachment(DeformableVolumeCore& core, PxU32 tetIdx0, const PxVec4& triBarycentric0, DeformableVolumeSim& sim, PxU32 tetIdx1, const PxVec4& tetBarycentric1, PxConeLimitedConstraint* constraint, PxReal constraintOffset, bool doConversion);
+					PxU32								addSoftBodyAttachment(DeformableVolumeCore& core, PxU32 tetIdx0, const PxVec4& triBarycentric0, DeformableVolumeSim& sim, PxU32 tetIdx1, const PxVec4& tetBarycentric1, bool doConversion);
 					void								removeSoftBodyAttachment(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32 handle);
 
 					void								addClothFilter(DeformableSurfaceCore& core, PxU32 triIdx, Sc::DeformableVolumeSim& sim, PxU32 tetIdx);
 					void								removeClothFilter(DeformableSurfaceCore& core, PxU32 triIdx, Sc::DeformableVolumeSim& sim, PxU32 tetIdx);
 
-					PxU32								addClothAttachment(DeformableSurfaceCore& core, PxU32 triIdx, const PxVec4& triBarycentric, DeformableVolumeSim& sim, PxU32 tetIdx, const PxVec4& tetBarycentric, PxConeLimitedConstraint* constraint, PxReal constraintOffset, bool doConversion);
+					PxU32								addClothAttachment(DeformableSurfaceCore& core, PxU32 triIdx, const PxVec4& triBarycentric, DeformableVolumeSim& sim, PxU32 tetIdx, const PxVec4& tetBarycentric, bool doConversion);
 					void								removeClothAttachment(DeformableSurfaceCore& core, DeformableVolumeSim& sim, PxU32 handle);
 
-					PxU32								addRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint);
+					PxU32								addRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 vertId, const PxVec3& actorSpacePose);
 					void								removeRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 handle);
 
 					void								addClothFilter(DeformableSurfaceCore& core0, PxU32 triIdx0, Sc::DeformableSurfaceSim& sim1, PxU32 triIdx1);
@@ -1121,11 +1107,8 @@ namespace Sc
 					void								addTriRigidFilter(BodyCore* core, DeformableSurfaceSim& sim, PxU32 triIdx);
 					void								removeTriRigidFilter(BodyCore* core, DeformableSurfaceSim& sim, PxU32 triIdx);
 
-					PxU32								addTriRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 triIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint);
+					PxU32								addTriRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 triIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose);
 					void								removeTriRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 handle);
-
-					void								addRigidAttachment(BodyCore* core, ParticleSystemSim& sim);
-					void								removeRigidAttachment(BodyCore* core, ParticleSystemSim& sim);
 
 					PxActor**							getActiveDeformableVolumeActors(PxU32& nbActorsOut);
 					void								setActiveDeformableVolumeActors(PxActor** actors, PxU32 nbActors);
@@ -1133,10 +1116,9 @@ namespace Sc
 					//PxActor**							getActiveDeformableSurfaceActors(PxU32& nbActorsOut);
 					//void								setActiveDeformableSurfaceActors(PxActor** actors, PxU32 nbActors);
 
-#if !USE_SPLIT_SECOND_PASS_ISLAND_GEN
+#if USE_SPLIT_SECOND_PASS_ISLAND_GEN
 					PxU64								mPadding;
 #endif
-					PxU64								mPadding2;
 					PX_ALIGN(16, PxsDeformableSurfaceMaterialManager	mDeformableSurfaceMaterialManager);
 					PX_ALIGN(16, PxsDeformableVolumeMaterialManager		mDeformableVolumeMaterialManager);
 					PX_ALIGN(16, PxsPBDMaterialManager		mPBDMaterialManager);
@@ -1159,7 +1141,7 @@ namespace Sc
 					LLDeformableVolumePool*				mLLDeformableVolumePool;
 					LLParticleSystemPool*				mLLParticleSystemPool;
 
-					PxHashMap<PxPair<PxU32, PxU32>, ParticleOrSoftBodyRigidInteraction> mParticleOrSoftBodyRigidInteractionMap;
+					PxHashMap<PxPair<PxU32, PxU32>, DeformableRigidInteraction> mDeformableRigidInteractionMap;
 
 					bool								mWokeDeformableVolumeListValid;
 					bool								mSleepDeformableVolumeListValid;

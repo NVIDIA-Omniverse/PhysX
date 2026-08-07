@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -90,23 +90,23 @@ class PvdSceneClient : public PxPvdSceneClient, public PvdClient, public PvdVisu
 	virtual					~PvdSceneClient();
 
 	// PxPvdSceneClient
-	virtual	void			setScenePvdFlag(PxPvdSceneFlag::Enum flag, bool value);
-	virtual	void			setScenePvdFlags(PxPvdSceneFlags flags)				{ mFlags = flags;	}
-	virtual	PxPvdSceneFlags	getScenePvdFlags()							const	{ return mFlags;	}
-	virtual	void			updateCamera(const char* name, const PxVec3& origin, const PxVec3& up, const PxVec3& target);
-	virtual	void			drawPoints(const PxDebugPoint* points, PxU32 count);
-	virtual	void			drawLines(const PxDebugLine* lines, PxU32 count);
-	virtual	void			drawTriangles(const PxDebugTriangle* triangles, PxU32 count);
-	virtual	void			drawText(const PxDebugText& text);
-	virtual	PvdClient*		getClientInternal()									{ return this;		}
+	virtual	void			setScenePvdFlag(PxPvdSceneFlag::Enum flag, bool value) PX_OVERRIDE;
+	virtual	void			setScenePvdFlags(PxPvdSceneFlags flags) PX_OVERRIDE { mFlags = flags;	}
+	virtual	PxPvdSceneFlags	getScenePvdFlags()							const PX_OVERRIDE { return mFlags;	}
+	virtual	void			updateCamera(const char* name, const PxVec3& origin, const PxVec3& up, const PxVec3& target) PX_OVERRIDE;
+	virtual	void			drawPoints(const PxDebugPoint* points, PxU32 count) PX_OVERRIDE;
+	virtual	void			drawLines(const PxDebugLine* lines, PxU32 count) PX_OVERRIDE;
+	virtual	void			drawTriangles(const PxDebugTriangle* triangles, PxU32 count) PX_OVERRIDE;
+	virtual	void			drawText(const PxDebugText& text) PX_OVERRIDE;
+	virtual	PvdClient*		getClientInternal() PX_OVERRIDE { return this;		}
 	//~PxPvdSceneClient
 	
 	// pvdClient	
-	virtual	PvdDataStream*		getDataStream()			{ return mPvdDataStream;	}
-	virtual bool                isConnected()	const	{ return mIsConnected;		}
-	virtual void                onPvdConnected();
-	virtual void                onPvdDisconnected();
-	virtual void                flush()					{}
+	virtual	PvdDataStream*		getDataStream() PX_OVERRIDE { return mPvdDataStream;	}
+	virtual bool                isConnected()	const PX_OVERRIDE { return mIsConnected;		}
+	virtual void                onPvdConnected() PX_OVERRIDE;
+	virtual void                onPvdDisconnected() PX_OVERRIDE;
+	virtual void                flush() PX_OVERRIDE {}
 	//~pvdClient
 
 	PX_FORCE_INLINE bool checkPvdDebugFlag()	const
@@ -240,7 +240,7 @@ class PvdSceneClient : public PxPvdSceneClient, public PvdClient, public PvdVisu
 	void updateSceneQueries();
 
 	// PvdVisualizer
-	void visualize(PxArticulationLink& link);
+	virtual	void visualize(PxArticulationLink& link)	PX_OVERRIDE;
 	void visualize(const PxRenderBuffer& debugRenderable);
 
   private:

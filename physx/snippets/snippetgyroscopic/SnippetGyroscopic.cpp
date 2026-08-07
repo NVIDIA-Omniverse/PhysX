@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -50,18 +50,33 @@ static PxDefaultCpuDispatcher*	gDispatcher = NULL;
 static PxScene*					gScene		= NULL;
 static PxMaterial*				gMaterial	= NULL;
 static PxPvd*					gPvd        = NULL;
+#if PX_SUPPORT_GPU_PHYSX
+static PxCudaContextManager*	gCudaContextManager	= NULL;
+#endif
 
-static bool			gPause			= false;
-static bool			gOneFrame		= false;
-static const PxU32	gScenarioCount	= 2;
-static PxU32		gScenario		= 0;
+static bool			gPause		= false;
+static bool			gOneFrame	= false;
+static bool			gGyro		= true;
+#if PX_SUPPORT_GPU_PHYSX
+static bool			gGpu		= false;
+#endif
 
 static void initScene()
 {
 	PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
-	sceneDesc.gravity = PxVec3(0.0f);
+	sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
 	sceneDesc.cpuDispatcher = gDispatcher;
 	sceneDesc.filterShader = PxDefaultSimulationFilterShader;
+
+#if PX_SUPPORT_GPU_PHYSX
+	if(gGpu)
+	{
+		sceneDesc.cudaContextManager = gCudaContextManager;
+		sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
+		sceneDesc.broadPhaseType = PxBroadPhaseType::eGPU;
+	}
+#endif
+
 	gScene = gPhysics->createScene(sceneDesc);
 
 	const PxTransform pose(PxVec3(0.0f, 1.0f, 0.0f));
@@ -80,7 +95,9 @@ static void initScene()
 	actor->setAngularVelocity(PxVec3(30.f*0.25f, 20.1f*0.25f, 0.0f));
 	actor->setAngularDamping(0.0f);
 
-	if(gScenario==0)
+	actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+
+	if(gGyro)
 		actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_GYROSCOPIC_FORCES, true);
 
 	gScene->addActor(*actor);
@@ -97,17 +114,33 @@ static void initScene()
 void renderText()
 {
 #ifdef RENDER_SNIPPET
-	Snippets::print("Press F1 or F2 to run with or without gyroscopic forces enabled.");
+	Snippets::print("Press F1 to toggle gyroscopic forces.");
+	#if PX_SUPPORT_GPU_PHYSX
+	Snippets::print("Press F2 to toggle GPU simulation.");
+	#endif
+	if(gGyro)
+		Snippets::print("Gyroscopic forces: ON");
+	else
+		Snippets::print("Gyroscopic forces: OFF");
+	#if PX_SUPPORT_GPU_PHYSX
+	if(gGpu)
+		Snippets::print("GPU: ON");
+	else
+		Snippets::print("GPU: OFF");
+	#endif
 #endif
 }
 
 void initPhysics(bool /*interactive*/)
 {
 	printf("Gyroscopic snippet. Use these keys:\n");
-	printf(" P        - enable/disable pause\n");
-	printf(" O        - step simulation for one frame\n");
-	printf(" R        - reset scene\n");
-	printf(" F1 to F2 - run with or without gyroscopic forces enabled\n");
+	printf(" P  - enable/disable pause\n");
+	printf(" O  - step simulation for one frame\n");
+	printf(" R  - reset scene\n");
+	printf(" F1 - enable/disable gyroscopic forces\n");
+#if PX_SUPPORT_GPU_PHYSX
+	printf(" F2 - enable/disable GPU simulation\n");
+#endif
 	printf("\n");
 
 	gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
@@ -117,6 +150,16 @@ void initPhysics(bool /*interactive*/)
 	gPvd->connect(*transport,PxPvdInstrumentationFlag::eALL);
 
 	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
+
+#if PX_SUPPORT_GPU_PHYSX
+	PxCudaContextManagerDesc cudaContextManagerDesc;
+	gCudaContextManager = PxCreateCudaContextManager(*gFoundation, cudaContextManagerDesc, PxGetProfilerCallback());
+	if( gCudaContextManager )
+	{
+		if( !gCudaContextManager->contextIsValid() )
+			PX_RELEASE(gCudaContextManager);
+	}	
+#endif
 
 	const PxU32 numCores = SnippetUtils::getNbPhysicalCores();
 	gDispatcher = PxDefaultCpuDispatcherCreate(numCores == 0 ? 0 : numCores - 1);
@@ -153,6 +196,9 @@ void cleanupPhysics(bool /*interactive*/)
 		PX_RELEASE(gPvd);
 		PX_RELEASE(transport);
 	}
+#if PX_SUPPORT_GPU_PHYSX
+	PX_RELEASE(gCudaContextManager);
+#endif
 	PX_RELEASE(gFoundation);
 	
 	printf("SnippetGyroscopic done.\n");
@@ -171,12 +217,21 @@ void keyPress(unsigned char key, const PxTransform& /*camera*/)
 
 	if(gScene)
 	{
-		if(key >= 1 && key <= gScenarioCount)
+		if(key == 1)
 		{
-			gScenario = key - 1;
+			gGyro = !gGyro;
 			releaseScene();
 			initScene();
 		}
+
+#if PX_SUPPORT_GPU_PHYSX
+		if(key == 2)
+		{
+			gGpu = !gGpu;
+			releaseScene();
+			initScene();
+		}
+#endif
 
 		if(key == 'r' || key == 'R')
 		{

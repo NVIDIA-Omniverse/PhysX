@@ -13,7 +13,6 @@
 
 using namespace test_utils;
 
-// Test: PhysX async step after ovstage attach
 TEST_F(PhysXTestFixture, PhysXAsync_StepAfterOvstageAttach) {
     const char* usd_path = OVPHYSX_SOURCE_DIR "/tests/data/minimal_scene.usda";
     ASSERT_TRUE(attach_usd_with_ovstage(m_handle, usd_path));
@@ -40,7 +39,6 @@ TEST_F(PhysXTestFixture, PhysXAsync_StepAfterOvstageAttach) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             poll_count++;
         } else {
-            // Error
             break;
         }
     }
@@ -182,16 +180,13 @@ TEST_F(PhysXTestFixture, PhysXAsync_TimeoutConsumesInternallySynchronizedPrefix)
     ovphysx_destroy_wait_result(&wait_result);
 }
 
-// Test: PhysX async invalid handles
 TEST(PhysXAsync, InvalidHandles) {
-    // Test with invalid instance handle
     ovphysx_op_wait_result_t wait_result;
     ovphysx_result_t result = ovphysx_wait_op(0, 1, 0, &wait_result); // invalid handle
     EXPECT_EQ(result.status, OVPHYSX_API_NOT_FOUND);
     // Error details available via ovphysx_get_last_error() if needed
 }
 
-// Test: PhysX async multiple events
 TEST_F(PhysXTestFixture, PhysXAsync_MultipleEvents) {
     // Use per-test PhysX instance from fixture
     
@@ -206,7 +201,6 @@ TEST_F(PhysXTestFixture, PhysXAsync_MultipleEvents) {
         ovphysx_enqueue_result_t step_result = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step_result.status, OVPHYSX_API_SUCCESS);
         
-        // Wait for completion
         ovphysx_op_wait_result_t wait_result;
         ovphysx_result_t result = ovphysx_wait_op(m_handle, step_result.op_index, 2000000000ULL, &wait_result); // 2 sec
         
@@ -220,7 +214,6 @@ TEST_F(PhysXTestFixture, PhysXAsync_MultipleEvents) {
             break;
         }
         
-        // Reset for next iteration
         ovphysx_enqueue_result_t reset_result = ovphysx_reset_stage(m_handle);
         ASSERT_EQ(reset_result.status, OVPHYSX_API_SUCCESS)
             << "Failed to enqueue reset_stage in iteration " << (i + 1);

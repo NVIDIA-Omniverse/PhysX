@@ -1,0 +1,72 @@
+{
+  "skill": "ovphysx-usd-authoring",
+  "description": "Trigger and behavior evals for the ovphysx USD authoring skill. Positive cases author physics into USD; negative cases are runtime/tensor/rendering tasks the skill must not claim.",
+  "cases": [
+    {
+      "id": "author-falling-box-usda",
+      "prompt": "Write a .usda scene for ovphysx with a box that falls onto a ground plane.",
+      "expected_skill": "ovphysx-usd-authoring",
+      "expected_behavior": [
+        "Reads references/rigid_body.md (and scene_setup.md) before authoring",
+        "Authors a PhysicsScene prim with gravity direction and magnitude",
+        "Adds a static ground collider (PhysicsCollisionAPI, no PhysicsRigidBodyAPI)",
+        "Adds a dynamic body: PhysicsRigidBodyAPI on an Xform with a child geometry carrying PhysicsCollisionAPI",
+        "Places the body above the ground so it can fall"
+      ]
+    },
+    {
+      "id": "author-rigid-body-python",
+      "prompt": "Using Python and usd-core, create a USD file with a dynamic rigid body and mass that ovphysx can load.",
+      "expected_skill": "ovphysx-usd-authoring",
+      "expected_behavior": [
+        "Uses UsdPhysics typed schemas (Scene, RigidBodyAPI, CollisionAPI, MassAPI)",
+        "Creates the stage, sets up axis and metersPerUnit, and a default prim",
+        "Applies RigidBodyAPI + MassAPI to the body and CollisionAPI to its geometry",
+        "Saves the stage to a file"
+      ]
+    },
+    {
+      "id": "add-collider",
+      "prompt": "My box in a USD scene passes through the floor in ovphysx. How do I make it collide?",
+      "expected_skill": "ovphysx-usd-authoring",
+      "expected_behavior": [
+        "Identifies that the body and/or ground geometry is missing PhysicsCollisionAPI",
+        "Shows applying PhysicsCollisionAPI to the geometry"
+      ]
+    },
+    {
+      "id": "physx-specific-attribute",
+      "prompt": "How do I enable CCD on a rigid body when authoring a USD scene for ovphysx in Python?",
+      "expected_skill": "ovphysx-usd-authoring",
+      "expected_behavior": [
+        "Explains PhysX schemas are codeless in ovphysx (no typed Python class)",
+        "Registers them via Plug.Registry().RegisterPlugins([str(p) for p in ovphysx.codeless_schema_paths()])",
+        "Applies the schema generically with prim.ApplyAPI(\"PhysxRigidBodyAPI\")"
+      ]
+    },
+    {
+      "id": "negative-runtime-step",
+      "prompt": "Write a loop that steps an ovphysx simulation and reads rigid-body poses with the tensor API.",
+      "expected_skill": null,
+      "expected_behavior": [
+        "Does not activate ovphysx-usd-authoring (this is runtime stepping / tensor I/O, not USD authoring)"
+      ]
+    },
+    {
+      "id": "negative-clone-envs",
+      "prompt": "Clone one ovphysx environment into 1000 parallel copies for reinforcement learning.",
+      "expected_skill": null,
+      "expected_behavior": [
+        "Does not activate ovphysx-usd-authoring (this is the runtime clone API)"
+      ]
+    },
+    {
+      "id": "negative-rendering-performance",
+      "prompt": "Improve the render materials and viewport frame rate for my Omniverse scene.",
+      "expected_skill": null,
+      "expected_behavior": [
+        "Does not activate ovphysx-usd-authoring (rendering/performance is out of scope)"
+      ]
+    }
+  ]
+}

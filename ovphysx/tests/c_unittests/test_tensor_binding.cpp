@@ -34,7 +34,6 @@ static uintptr_t getPhysxCudaContextFromBinding(ovphysx_handle_t handle, ovphysx
     return ctx;
 }
 
-// Helper to wait for async operations
 static bool wait_op_success(ovphysx_handle_t handle, ovphysx_op_index_t op_index, uint64_t timeout_ns = 10'000'000'000ULL) {
     ovphysx_op_wait_result_t wait_result{};
     ovphysx_result_t res = ovphysx_wait_op(handle, op_index, timeout_ns, &wait_result);
@@ -85,7 +84,6 @@ TEST(TensorBinding, WrenchAosToSoaConversionCpu)
     EXPECT_FLOAT_EQ(soa[17], 18.f);
 }
 
-// Helper to load USD and wait
 static bool load_usd_and_wait(ovphysx_handle_t handle, const char* usd_path, ovphysx_usd_handle_t& out_handle) {
     out_handle = 1;
     return test_utils::attach_usd_with_ovstage(handle, usd_path);
@@ -563,6 +561,554 @@ TEST_F(TensorBindingCpuTest, CpuRigidBodyDisableSimulationRoundtrip) {
     EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
 }
 
+TEST_F(TensorBindingCpuTest, CpuRigidBodyDisableGravityRoundtrip) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane.usda", usd_handle))
+        << "Failed to load USD";
+
+    ovphysx_tensor_binding_handle_t binding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL;
+
+    ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding);
+    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_spec_t spec{};
+    result = ovphysx_get_tensor_binding_spec(m_handle, binding, &spec);
+    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(spec.ndim, 1);
+    EXPECT_EQ(spec.dtype.code, kDLUInt);
+    EXPECT_EQ(spec.dtype.bits, 8);
+    ASSERT_GT(spec.shape[0], 0);
+
+    const int64_t n = spec.shape[0];
+    std::vector<uint8_t> written(n, 0);
+    for (int64_t i = 0; i < n; ++i)
+        written[i] = static_cast<uint8_t>(i % 2 == 0 ? 1 : 0);
+
+    DLTensor tensor = {};
+    tensor.data = written.data();
+    tensor.device = {kDLCPU, 0};
+    tensor.ndim = 1;
+    tensor.dtype = {kDLUInt, 8, 1};
+    int64_t shape[1] = {n};
+    tensor.shape = shape;
+
+    result = ovphysx_write_tensor_binding(m_handle, binding, &tensor, nullptr);
+    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "write failed";
+
+    std::vector<uint8_t> readback(n, 0xff);
+    tensor.data = readback.data();
+    result = ovphysx_read_tensor_binding(m_handle, binding, &tensor);
+    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "read failed";
+    for (int64_t i = 0; i < n; ++i)
+        EXPECT_EQ(static_cast<int>(readback[i]), static_cast<int>(written[i]))
+            << "body " << i << " disable-gravity round-trip";
+
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST_F(TensorBindingCpuTest, CpuRigidBodyDisableGravitySuppressesFall) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane.usda", usd_handle))
+        << "Failed to load USD";
+
+    ovphysx_tensor_binding_handle_t pose_binding = 0;
+    ovphysx_tensor_binding_handle_t grav_binding = 0;
+    {
+        ovphysx_tensor_binding_desc_t desc{};
+        desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+        desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
+        ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &pose_binding).status, OVPHYSX_API_SUCCESS);
+    }
+    {
+        ovphysx_tensor_binding_desc_t desc{};
+        desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+        desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL;
+        ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &grav_binding).status, OVPHYSX_API_SUCCESS);
+    }
+
+    ovphysx_tensor_spec_t pose_spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, pose_binding, &pose_spec).status, OVPHYSX_API_SUCCESS);
+    const int64_t n = pose_spec.shape[0];
+    ASSERT_GT(n, 0);
+
+    auto step_once = [&]() {
+        ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
+        ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
+        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+    };
+
+    std::vector<float> poses(n * 7, 0.0f);
+    DLTensor pose_t{};
+    pose_t.data = poses.data();
+    pose_t.device = {kDLCPU, 0};
+    pose_t.ndim = 2;
+    pose_t.dtype = {kDLFloat, 32, 1};
+    int64_t pose_shape[2] = {n, 7};
+    pose_t.shape = pose_shape;
+
+    std::vector<float> vels(n * 6, 0.0f);
+    DLTensor vel_t{};
+    vel_t.data = vels.data();
+    vel_t.device = {kDLCPU, 0};
+    vel_t.ndim = 2;
+    vel_t.dtype = {kDLFloat, 32, 1};
+    int64_t vel_shape[2] = {n, 6};
+    vel_t.shape = vel_shape;
+
+    ovphysx_tensor_binding_handle_t vel_binding = 0;
+    {
+        ovphysx_tensor_binding_desc_t desc{};
+        desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+        desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_VELOCITY_F32;
+        ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &vel_binding).status, OVPHYSX_API_SUCCESS);
+    }
+
+    // Capture starting pose before any explicit step.
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, pose_binding, &pose_t).status, OVPHYSX_API_SUCCESS);
+    const float z_initial = poses[2];
+
+    // Let bodies fall briefly, then disable gravity and zero velocity (PhysX keeps
+    // coasting with existing velocity unless it is cleared).
+    for (int i = 0; i < 5; ++i)
+        step_once();
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, pose_binding, &pose_t).status, OVPHYSX_API_SUCCESS);
+    const float z_falling = poses[2];
+
+    std::vector<uint8_t> flags(static_cast<size_t>(n), 1);
+    DLTensor flag_t{};
+    flag_t.data = flags.data();
+    flag_t.device = {kDLCPU, 0};
+    flag_t.ndim = 1;
+    flag_t.dtype = {kDLUInt, 8, 1};
+    int64_t flag_shape[1] = {n};
+    flag_t.shape = flag_shape;
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, grav_binding, &flag_t, nullptr).status, OVPHYSX_API_SUCCESS);
+
+    std::fill(vels.begin(), vels.end(), 0.0f);
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, vel_binding, &vel_t, nullptr).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, pose_binding, &pose_t).status, OVPHYSX_API_SUCCESS);
+    const float z_disabled = poses[2];
+
+    for (int i = 0; i < 20; ++i)
+        step_once();
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, vel_binding, &vel_t).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, pose_binding, &pose_t).status, OVPHYSX_API_SUCCESS);
+    EXPECT_NEAR(vels[2], 0.0f, 1e-3f) << "Gravity-disabled body should stay at zero velocity";
+    EXPECT_NEAR(poses[2], z_disabled, 0.08f) << "Gravity-disabled body should not drift after velocity zeroed";
+
+    std::fill(flags.begin(), flags.end(), 0);
+    flag_t.data = flags.data();
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, grav_binding, &flag_t, nullptr).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_rigid_body_view_wake_up(m_handle, pose_binding, nullptr).status, OVPHYSX_API_SUCCESS);
+    for (int i = 0; i < 10; ++i)
+        step_once();
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, vel_binding, &vel_t).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, pose_binding, &pose_t).status, OVPHYSX_API_SUCCESS);
+    EXPECT_LT(vels[2], -0.5f) << "Body should fall after re-enabling gravity";
+    EXPECT_LT(poses[2], z_disabled - 0.05f) << "Body should fall after re-enabling gravity";
+    EXPECT_LT(z_falling, z_initial) << "Sanity: body fell before gravity was disabled";
+
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, vel_binding).status, OVPHYSX_API_SUCCESS);
+
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, pose_binding).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, grav_binding).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST_F(TensorBindingCpuTest, CpuArticulationDisableGravityRoundtrip) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/two_articulations.usda", usd_handle))
+        << "Failed to load USD";
+
+    ovphysx_tensor_binding_handle_t binding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/articulation*");
+    desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_BODY_DISABLE_GRAVITY_BOOL;
+
+    ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding);
+    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_spec_t spec{};
+    result = ovphysx_get_tensor_binding_spec(m_handle, binding, &spec);
+    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(spec.ndim, 2);
+    EXPECT_EQ(spec.dtype.code, kDLUInt);
+    EXPECT_EQ(spec.dtype.bits, 8);
+    ASSERT_GT(spec.shape[0], 0);
+    ASSERT_GT(spec.shape[1], 0);
+
+    const int64_t n = spec.shape[0];
+    const int64_t l = spec.shape[1];
+    const int64_t total = n * l;
+    std::vector<uint8_t> written(static_cast<size_t>(total), 0);
+    for (int64_t i = 0; i < total; ++i)
+        written[static_cast<size_t>(i)] = static_cast<uint8_t>(i % 2 == 0 ? 1 : 0);
+
+    DLTensor tensor = {};
+    tensor.data = written.data();
+    tensor.device = {kDLCPU, 0};
+    tensor.ndim = 2;
+    tensor.dtype = {kDLUInt, 8, 1};
+    int64_t shape[2] = {n, l};
+    tensor.shape = shape;
+
+    result = ovphysx_write_tensor_binding(m_handle, binding, &tensor, nullptr);
+    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
+
+    std::vector<uint8_t> readback(static_cast<size_t>(total), 0xff);
+    tensor.data = readback.data();
+    result = ovphysx_read_tensor_binding(m_handle, binding, &tensor);
+    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
+    for (int64_t i = 0; i < total; ++i)
+        EXPECT_EQ(static_cast<int>(readback[static_cast<size_t>(i)]),
+                  static_cast<int>(written[static_cast<size_t>(i)]))
+            << "link flag " << i;
+
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
+}
+
+// Mixed link-count sentinel: [N, L] articulation disable-gravity reads must
+// zero-pad columns beyond each articulation's numLinks (L = maxLinks). Prefill
+// the dst with 0xff so an uncleared pad is distinguishable from a real 0 flag.
+TEST_F(TensorBindingCpuTest, CpuArticulationDisableGravityZeroPadsShortRows) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/mixed_link_count_articulations.usda", usd_handle))
+        << "Failed to load USD";
+
+    ovphysx_string_t paths[] = {
+        OVPHYSX_LITERAL("/World/articulation_short"),
+        OVPHYSX_LITERAL("/World/articulation_long"),
+    };
+    ovphysx_tensor_binding_handle_t binding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.prim_paths = paths;
+    desc.prim_paths_count = 2;
+    desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_BODY_DISABLE_GRAVITY_BOOL;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &binding).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, binding, &spec).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(spec.ndim, 2);
+    ASSERT_EQ(spec.shape[0], 2) << "Expected short + long articulations";
+    ASSERT_EQ(spec.shape[1], 3) << "Expected L = maxLinks = 3";
+
+    ovphysx_articulation_metadata_t meta_short{};
+    ovphysx_articulation_metadata_t meta_long{};
+    {
+        ovphysx_tensor_binding_handle_t b = 0;
+        ovphysx_tensor_binding_desc_t d{};
+        d.pattern = OVPHYSX_LITERAL("/World/articulation_short");
+        d.tensor_type = OVPHYSX_TENSOR_ARTICULATION_ROOT_POSE_F32;
+        ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &d, &b).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_get_articulation_metadata(m_handle, b, &meta_short).status, OVPHYSX_API_SUCCESS);
+        ovphysx_destroy_tensor_binding(m_handle, b);
+    }
+    {
+        ovphysx_tensor_binding_handle_t b = 0;
+        ovphysx_tensor_binding_desc_t d{};
+        d.pattern = OVPHYSX_LITERAL("/World/articulation_long");
+        d.tensor_type = OVPHYSX_TENSOR_ARTICULATION_ROOT_POSE_F32;
+        ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &d, &b).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_get_articulation_metadata(m_handle, b, &meta_long).status, OVPHYSX_API_SUCCESS);
+        ovphysx_destroy_tensor_binding(m_handle, b);
+    }
+    ASSERT_EQ(meta_short.body_count, 2);
+    ASSERT_EQ(meta_long.body_count, 3);
+
+    const int64_t n = spec.shape[0];
+    const int64_t l = spec.shape[1];
+    std::vector<uint8_t> readback(static_cast<size_t>(n * l), 0xff);
+    DLTensor tensor{};
+    tensor.data = readback.data();
+    tensor.device = {kDLCPU, 0};
+    tensor.ndim = 2;
+    tensor.dtype = {kDLUInt, 8, 1};
+    int64_t shape[2] = {n, l};
+    tensor.shape = shape;
+
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, binding, &tensor).status, OVPHYSX_API_SUCCESS);
+
+    // Row 0 = short (2 links): columns 0..1 written; column 2 must be 0 (not 0xff).
+    EXPECT_LE(static_cast<int>(readback[0]), 1) << "short link0 should be a 0/1 flag";
+    EXPECT_LE(static_cast<int>(readback[1]), 1) << "short link1 should be a 0/1 flag";
+    EXPECT_EQ(static_cast<int>(readback[2]), 0) << "short row pad column must be zero, not sentinel";
+    // Row 1 = long (3 links): all three columns written.
+    EXPECT_LE(static_cast<int>(readback[3]), 1);
+    EXPECT_LE(static_cast<int>(readback[4]), 1);
+    EXPECT_LE(static_cast<int>(readback[5]), 1);
+
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST_F(TensorBindingCpuTest, CpuArticulationDriveTypeRead) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/two_articulations.usda", usd_handle))
+        << "Failed to load USD";
+
+    ovphysx_tensor_binding_handle_t binding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/articulation*");
+    desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_DRIVE_TYPE_U8;
+
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &binding).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, binding, &spec).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(spec.ndim, 2);
+    EXPECT_EQ(spec.dtype.code, kDLUInt);
+    EXPECT_EQ(spec.dtype.bits, 8);
+    ASSERT_GT(spec.shape[0], 0);
+    ASSERT_GT(spec.shape[1], 0);
+
+    const int64_t n = spec.shape[0];
+    const int64_t d = spec.shape[1];
+    // Sentinel-fill so an unwritten byte is distinguishable from a real eNone(0).
+    std::vector<uint8_t> readback(static_cast<size_t>(n * d), 0xff);
+    DLTensor tensor{};
+    tensor.data = readback.data();
+    tensor.device = {kDLCPU, 0};
+    tensor.ndim = 2;
+    tensor.dtype = {kDLUInt, 8, 1};
+    int64_t shape[2] = {n, d};
+    tensor.shape = shape;
+
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, binding, &tensor).status, OVPHYSX_API_SUCCESS);
+
+    // DofDriveType: 0 = none, 1 = force, 2 = acceleration. The fixture authors
+    // PhysicsDriveAPI on its angular DOFs, so at least one DOF must report a
+    // driven type. The exact enum mapping is pinned separately by
+    // CpuArticulationDriveTypeExactMapping, which authors each type explicitly.
+    int drivenCount = 0;
+    for (int64_t i = 0; i < n * d; ++i) {
+        const int value = static_cast<int>(readback[static_cast<size_t>(i)]);
+        EXPECT_LE(value, 2) << "drive type at " << i << " is outside {0,1,2}";
+        if (value != 0)
+            ++drivenCount;
+    }
+    EXPECT_GT(drivenCount, 0) << "fixture authors drives, so some DOF should report a driven type";
+
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
+}
+
+// Pins the exact DofDriveType mapping. The fixture authors one DOF per drive
+// type, so an off-by-one or swapped force/acceleration mapping fails here rather
+// than passing an in-range {0,1,2} check.
+TEST_F(TensorBindingCpuTest, CpuArticulationDriveTypeExactMapping) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/drive_type_articulation.usda", usd_handle))
+        << "Failed to load USD";
+
+    ovphysx_tensor_binding_handle_t binding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/articulation_drives");
+    desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_DRIVE_TYPE_U8;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &binding).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, binding, &spec).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(spec.ndim, 2);
+    ASSERT_EQ(spec.shape[0], 1) << "one articulation";
+    ASSERT_EQ(spec.shape[1], 3) << "joint1 + joint2 + joint3 = 3 revolute DOFs";
+
+    std::vector<uint8_t> readback(3, 0xff);
+    DLTensor tensor{};
+    tensor.data = readback.data();
+    tensor.device = {kDLCPU, 0};
+    tensor.ndim = 2;
+    tensor.dtype = {kDLUInt, 8, 1};
+    int64_t shape[2] = {1, 3};
+    tensor.shape = shape;
+
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, binding, &tensor).status, OVPHYSX_API_SUCCESS);
+
+    // Solver DOF order follows the joint chain: joint1, joint2, joint3.
+    EXPECT_EQ(static_cast<int>(readback[0]), 1) << "joint1 authors type=force -> eForce";
+    EXPECT_EQ(static_cast<int>(readback[1]), 2) << "joint2 authors type=acceleration -> eAcceleration";
+    EXPECT_EQ(static_cast<int>(readback[2]), 0) << "joint3 authors no drive -> eNone";
+
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
+}
+
+// A read-only tensor type must reject writes with the documented "read-only"
+// error rather than falling through to "unsupported tensor type", on both the
+// indexed and masked write paths.
+TEST_F(TensorBindingCpuTest, CpuArticulationDriveTypeRejectsWrites) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/two_articulations.usda", usd_handle))
+        << "Failed to load USD";
+
+    ovphysx_tensor_binding_handle_t binding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/articulation*");
+    desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_DRIVE_TYPE_U8;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &binding).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, binding, &spec).status, OVPHYSX_API_SUCCESS);
+    const int64_t n = spec.shape[0];
+    const int64_t d = spec.shape[1];
+
+    // A well-formed uint8 source: rejection must come from the read-only
+    // classification, not from a dtype or shape mismatch.
+    std::vector<uint8_t> src(static_cast<size_t>(n * d), 0);
+    DLTensor tensor{};
+    tensor.data = src.data();
+    tensor.device = {kDLCPU, 0};
+    tensor.ndim = 2;
+    tensor.dtype = {kDLUInt, 8, 1};
+    int64_t shape[2] = {n, d};
+    tensor.shape = shape;
+
+    ovphysx_result_t writeResult = ovphysx_write_tensor_binding(m_handle, binding, &tensor, nullptr);
+    EXPECT_EQ(writeResult.status, OVPHYSX_API_INVALID_ARGUMENT) << "write must be rejected";
+    EXPECT_NE(std::string(ovphysx_get_last_error().ptr).find("read-only"), std::string::npos)
+        << "rejection should name the read-only contract, not 'unsupported tensor type'";
+
+    std::vector<uint8_t> mask(static_cast<size_t>(n), 1);
+    DLTensor maskTensor{};
+    maskTensor.data = mask.data();
+    maskTensor.device = {kDLCPU, 0};
+    maskTensor.ndim = 1;
+    maskTensor.dtype = {kDLUInt, 8, 1};
+    int64_t maskShape[1] = {n};
+    maskTensor.shape = maskShape;
+
+    ovphysx_result_t maskedResult = ovphysx_write_tensor_binding_masked(m_handle, binding, &tensor, &maskTensor);
+    EXPECT_EQ(maskedResult.status, OVPHYSX_API_INVALID_ARGUMENT) << "masked write must be rejected";
+    EXPECT_NE(std::string(ovphysx_get_last_error().ptr).find("read-only"), std::string::npos)
+        << "masked rejection should name the read-only contract";
+
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
+}
+
+// Mixed DOF-count sentinel: [N, D] drive-type reads must zero-pad columns beyond
+// each articulation's numDofs (D = maxDofs). The two articulations author
+// different leading drive types, so row order is observable and a row swap fails
+// here rather than satisfying the per-row checks. Prefill with 0xff so an
+// uncleared pad is distinguishable from a real eNone(0).
+TEST_F(TensorBindingCpuTest, CpuArticulationDriveTypeZeroPadsShortRows) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/drive_type_articulation.usda", usd_handle))
+        << "Failed to load USD";
+
+    // Short row first, so the padded row is row 0.
+    ovphysx_string_t paths[] = {
+        OVPHYSX_LITERAL("/World/articulation_one_dof"),
+        OVPHYSX_LITERAL("/World/articulation_drives"),
+    };
+    ovphysx_tensor_binding_handle_t binding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.prim_paths = paths;
+    desc.prim_paths_count = 2;
+    desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_DRIVE_TYPE_U8;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &binding).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, binding, &spec).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(spec.ndim, 2);
+    ASSERT_EQ(spec.shape[0], 2) << "one_dof + drives articulations";
+    ASSERT_EQ(spec.shape[1], 3) << "D = maxDofs = 3 (the drives articulation)";
+
+    std::vector<uint8_t> readback(6, 0xff);
+    DLTensor tensor{};
+    tensor.data = readback.data();
+    tensor.device = {kDLCPU, 0};
+    tensor.ndim = 2;
+    tensor.dtype = {kDLUInt, 8, 1};
+    int64_t shape[2] = {2, 3};
+    tensor.shape = shape;
+
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, binding, &tensor).status, OVPHYSX_API_SUCCESS);
+
+    // Row 0 = articulation_one_dof: 1 real DOF authored "acceleration", then 2 pad
+    // columns. The leading 2 also proves this row is not the 3-DOF articulation,
+    // whose first DOF is "force" (1).
+    EXPECT_EQ(static_cast<int>(readback[0]), 2) << "row 0 must be one_dof (acceleration), not a swapped row";
+    EXPECT_EQ(static_cast<int>(readback[1]), 0) << "row 0 pad col 1 must be zero, not sentinel";
+    EXPECT_EQ(static_cast<int>(readback[2]), 0) << "row 0 pad col 2 must be zero, not sentinel";
+
+    // Row 1 = articulation_drives: force, acceleration, none -- no padding.
+    EXPECT_EQ(static_cast<int>(readback[3]), 1) << "row 1 joint1 -> eForce";
+    EXPECT_EQ(static_cast<int>(readback[4]), 2) << "row 1 joint2 -> eAcceleration";
+    EXPECT_EQ(static_cast<int>(readback[5]), 0) << "row 1 joint3 -> eNone";
+
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST_F(TensorBindingCpuTest, CpuArticulationDisableGravitySuppressesFall) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/mixed_base_articulations.usda", usd_handle))
+        << "Failed to load USD";
+
+    ovphysx_tensor_binding_handle_t root_binding = 0;
+    ovphysx_tensor_binding_handle_t grav_binding = 0;
+    {
+        ovphysx_tensor_binding_desc_t desc{};
+        desc.pattern = OVPHYSX_LITERAL("/World/articulation2");
+        desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_ROOT_POSE_F32;
+        ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &root_binding).status, OVPHYSX_API_SUCCESS);
+    }
+    {
+        ovphysx_tensor_binding_desc_t desc{};
+        desc.pattern = OVPHYSX_LITERAL("/World/articulation2");
+        desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_BODY_DISABLE_GRAVITY_BOOL;
+        ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &grav_binding).status, OVPHYSX_API_SUCCESS);
+    }
+
+    ovphysx_tensor_spec_t grav_spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, grav_binding, &grav_spec).status, OVPHYSX_API_SUCCESS);
+    const int64_t n = grav_spec.shape[0];
+    const int64_t l = grav_spec.shape[1];
+    ASSERT_EQ(n, 1);
+    ASSERT_GT(l, 0);
+
+    auto step_once = [&]() {
+        ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
+        ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
+        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+    };
+
+    std::vector<float> root_pose(7, 0.0f);
+    DLTensor root_t{};
+    root_t.data = root_pose.data();
+    root_t.device = {kDLCPU, 0};
+    root_t.ndim = 2;
+    root_t.dtype = {kDLFloat, 32, 1};
+    int64_t root_shape[2] = {1, 7};
+    root_t.shape = root_shape;
+
+    step_once();
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, root_binding, &root_t).status, OVPHYSX_API_SUCCESS);
+    const float z0 = root_pose[2];
+
+    std::vector<uint8_t> flags(static_cast<size_t>(n * l), 1);
+    DLTensor flag_t{};
+    flag_t.data = flags.data();
+    flag_t.device = {kDLCPU, 0};
+    flag_t.ndim = 2;
+    flag_t.dtype = {kDLUInt, 8, 1};
+    int64_t flag_shape[2] = {n, l};
+    flag_t.shape = flag_shape;
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, grav_binding, &flag_t, nullptr).status, OVPHYSX_API_SUCCESS);
+
+    for (int i = 0; i < 20; ++i)
+        step_once();
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, root_binding, &root_t).status, OVPHYSX_API_SUCCESS);
+    EXPECT_NEAR(root_pose[2], z0, 0.08f) << "Floating-base root Z should stay stable with gravity disabled";
+
+    std::fill(flags.begin(), flags.end(), 0);
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, grav_binding, &flag_t, nullptr).status, OVPHYSX_API_SUCCESS);
+    for (int i = 0; i < 20; ++i)
+        step_once();
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, root_binding, &root_t).status, OVPHYSX_API_SUCCESS);
+    EXPECT_LT(root_pose[2], z0 - 0.05f) << "Floating-base root should fall after re-enabling gravity";
+
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, root_binding).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, grav_binding).status, OVPHYSX_API_SUCCESS);
+}
+
 // OMPE-94459 (_KINEMATIC_UPDATE_NOOP fix): writing dof-positions and then
 // calling ovphysx_articulation_update_kinematic must propagate the new joint
 // state into the link buffer without stepping the simulator. Locks down the
@@ -776,7 +1322,6 @@ TEST_F(TensorBindingCpuTest, CpuArticulationRootTransformPropagates) {
               << "  read_after_write=" << root_after_write[0]
               << "  (delta to set: " << (root_after_write[0] - root_new[0]) << ")\n";
 
-    // Step.
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
@@ -1784,12 +2329,10 @@ TEST_F(TensorBindingCpuTest, CpuRigidBodyViewWakeUpOnArticulationFails) {
 }
 
 TEST_F(TensorBindingCpuTest, CpuArticulationDofReadWrite) {
-    // Load articulation scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample.usda", usd_handle))
         << "Failed to load USD";
 
-    // Create DOF position binding
     ovphysx_tensor_binding_handle_t dof_binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation");
@@ -1798,7 +2341,6 @@ TEST_F(TensorBindingCpuTest, CpuArticulationDofReadWrite) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &dof_binding);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "Failed to create binding";
 
-    // Get spec
     ovphysx_tensor_spec_t spec;
     result = ovphysx_get_tensor_binding_spec(m_handle, dof_binding, &spec);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
@@ -1824,11 +2366,9 @@ TEST_F(TensorBindingCpuTest, CpuArticulationDofReadWrite) {
     tensor.strides = nullptr;
     tensor.byte_offset = 0;
 
-    // Read DOF positions
     result = ovphysx_read_tensor_binding(m_handle, dof_binding, &tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "CPU read should work";
 
-    // Write new DOF positions
     for (size_t i = 0; i < total_elements; ++i) {
         data[i] = 0.1f;  // Set all to 0.1 rad
     }
@@ -1839,7 +2379,6 @@ TEST_F(TensorBindingCpuTest, CpuArticulationDofReadWrite) {
     // Note: Read-back verification removed because CPU mode TensorAPI may not reflect
     // writes immediately. Write verification is tested in GPU mode tests instead.
 
-    // Cleanup
     result = ovphysx_destroy_tensor_binding(m_handle, dof_binding);
     EXPECT_EQ(result.status, OVPHYSX_API_SUCCESS);
 }
@@ -1856,7 +2395,6 @@ TEST_F(TensorBindingErrorTest, InvalidHandle) {
     desc.pattern = OVPHYSX_LITERAL("/World/*");
     desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
 
-    // Use invalid handle
     ovphysx_result_t result = ovphysx_create_tensor_binding(OVPHYSX_INVALID_HANDLE, &desc, &binding);
     EXPECT_NE(result.status, OVPHYSX_API_SUCCESS);
 }
@@ -1927,7 +2465,6 @@ TEST_F(TensorBindingErrorTest, RejectsEmbeddedNulCreateSdfView) {
 }
 
 TEST_F(TensorBindingErrorTest, InvalidBindingHandle) {
-    // Try to read from non-existent binding
     float data[7];
     int64_t shape[2] = {1, 7};
     DLTensor tensor = {};
@@ -1942,11 +2479,9 @@ TEST_F(TensorBindingErrorTest, InvalidBindingHandle) {
 }
 
 TEST_F(TensorBindingErrorTest, ShapeMismatch) {
-    // Load scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample.usda", usd_handle));
 
-    // Create binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation");
@@ -1955,7 +2490,6 @@ TEST_F(TensorBindingErrorTest, ShapeMismatch) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Try to read with wrong shape
     float data[3];  // Wrong size
     int64_t wrong_shape[2] = {1, 3};  // Wrong shape
     DLTensor tensor = {};
@@ -1972,11 +2506,9 @@ TEST_F(TensorBindingErrorTest, ShapeMismatch) {
 }
 
 TEST_F(TensorBindingErrorTest, WrongDtype) {
-    // Load scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample.usda", usd_handle));
 
-    // Create binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation");
@@ -1985,12 +2517,10 @@ TEST_F(TensorBindingErrorTest, WrongDtype) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Get correct spec
     ovphysx_tensor_spec_t spec;
     result = ovphysx_get_tensor_binding_spec(m_handle, binding, &spec);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Try to read with wrong dtype (int32 instead of float32)
     std::vector<int32_t> data(spec.shape[0] * spec.shape[1], 0);
     int64_t shape[2] = {spec.shape[0], spec.shape[1]};
     DLTensor tensor = {};
@@ -2007,11 +2537,9 @@ TEST_F(TensorBindingErrorTest, WrongDtype) {
 }
 
 TEST_F(TensorBindingErrorTest, ZeroMatchesSucceeds) {
-    // Load scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample.usda", usd_handle));
 
-    // Create binding with pattern that matches nothing
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/NonExistent/Path/That/Matches/Nothing");
@@ -2022,7 +2550,6 @@ TEST_F(TensorBindingErrorTest, ZeroMatchesSucceeds) {
     EXPECT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
     if (result.status == OVPHYSX_API_SUCCESS) {
-        // Get spec - should show 0 elements
         ovphysx_tensor_spec_t spec;
         result = ovphysx_get_tensor_binding_spec(m_handle, binding, &spec);
         EXPECT_EQ(result.status, OVPHYSX_API_SUCCESS);
@@ -2139,11 +2666,9 @@ TEST_F(TensorBindingErrorTest, ExplicitPrimPathPartialMissStillLogsError) {
 // ============================================================================
 
 TEST_F(TensorBindingCpuTest, IndexedWrite) {
-    // Load scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample.usda", usd_handle));
 
-    // Create DOF target binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation");
@@ -2152,7 +2677,6 @@ TEST_F(TensorBindingCpuTest, IndexedWrite) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Get spec
     ovphysx_tensor_spec_t spec;
     result = ovphysx_get_tensor_binding_spec(m_handle, binding, &spec);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
@@ -2234,7 +2758,6 @@ TEST_F(TensorBindingCpuTest, IndexedWrite) {
 // ============================================================================
 
 TEST_F(TensorBindingCpuTest, MultipleSamePatternBindings) {
-    // Load scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample.usda", usd_handle));
 
@@ -2282,14 +2805,12 @@ TEST_F(TensorBindingCpuTest, MultipleSamePatternBindings) {
     EXPECT_EQ(pos_spec.shape[1], vel_spec.shape[1]);
     EXPECT_EQ(pos_spec.shape[1], target_spec.shape[1]);
 
-    // Cleanup
     ovphysx_destroy_tensor_binding(m_handle, pos_binding);
     ovphysx_destroy_tensor_binding(m_handle, vel_binding);
     ovphysx_destroy_tensor_binding(m_handle, target_binding);
 }
 
 TEST_F(TensorBindingCpuTest, DuplicateBindingSameType) {
-    // Load scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample.usda", usd_handle));
 
@@ -2362,7 +2883,6 @@ TEST_F(TensorBindingCpuTest, DuplicateBindingSameType) {
 // not just API success. Uses boxes_falling_on_groundplane.usda (11 cubes at Z=10).
 
 TEST_F(TensorBindingCpuTest, ForceWriteEffect_RigidBodyDisplacement) {
-    // Load scene with rigid body cubes
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane.usda", usd_handle))
         << "Failed to load USD";
@@ -2394,7 +2914,6 @@ TEST_F(TensorBindingCpuTest, ForceWriteEffect_RigidBodyDisplacement) {
         ASSERT_EQ(r.status, OVPHYSX_API_SUCCESS) << "Failed to create pose binding";
     }
 
-    // Get specs
     ovphysx_tensor_spec_t force_spec, pose_spec;
     {
         ovphysx_result_t r = ovphysx_get_tensor_binding_spec(m_handle, force_binding, &force_spec);
@@ -2411,7 +2930,6 @@ TEST_F(TensorBindingCpuTest, ForceWriteEffect_RigidBodyDisplacement) {
     ASSERT_EQ(pose_spec.shape[0], N);
     ASSERT_EQ(pose_spec.shape[1], 7);
 
-    // Read initial poses
     std::vector<float> initial_poses(N * 7, 0.0f);
     {
         DLTensor dst{};
@@ -2455,7 +2973,6 @@ TEST_F(TensorBindingCpuTest, ForceWriteEffect_RigidBodyDisplacement) {
         ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
     }
 
-    // Read final poses
     std::vector<float> final_poses(N * 7, 0.0f);
     {
         DLTensor dst{};
@@ -2526,7 +3043,6 @@ TEST_F(TensorBindingCpuTest, WrenchWriteEffect_RigidBodyDisplacement) {
         ASSERT_EQ(r.status, OVPHYSX_API_SUCCESS) << "Failed to create pose binding";
     }
 
-    // Get specs
     ovphysx_tensor_spec_t wrench_spec, pose_spec;
     {
         ovphysx_result_t r = ovphysx_get_tensor_binding_spec(m_handle, wrench_binding, &wrench_spec);
@@ -2542,7 +3058,6 @@ TEST_F(TensorBindingCpuTest, WrenchWriteEffect_RigidBodyDisplacement) {
     ASSERT_EQ(wrench_spec.shape[1], 9);
     ASSERT_EQ(pose_spec.shape[0], N);
 
-    // Read initial poses
     std::vector<float> initial_poses(N * 7, 0.0f);
     {
         DLTensor dst{};
@@ -2588,7 +3103,6 @@ TEST_F(TensorBindingCpuTest, WrenchWriteEffect_RigidBodyDisplacement) {
         ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
     }
 
-    // Read final poses
     std::vector<float> final_poses(N * 7, 0.0f);
     {
         DLTensor dst{};
@@ -2914,12 +3428,10 @@ ovphysx::test_cuda::CudaOps TensorBindingGpuTest::s_cudaOps{};
 std::string TensorBindingGpuTest::s_skipReason;
 
 TEST_F(TensorBindingGpuTest, GpuArticulationDofReadWrite) {
-    // Load articulation scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample_gpu.usda", usd_handle))
         << "Failed to load USD";
 
-    // Create DOF position binding
     ovphysx_tensor_binding_handle_t dof_binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation");
@@ -2928,7 +3440,6 @@ TEST_F(TensorBindingGpuTest, GpuArticulationDofReadWrite) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &dof_binding);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "Failed to create binding";
 
-    // Get spec
     ovphysx_tensor_spec_t spec;
     result = ovphysx_get_tensor_binding_spec(m_handle, dof_binding, &spec);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
@@ -2937,7 +3448,6 @@ TEST_F(TensorBindingGpuTest, GpuArticulationDofReadWrite) {
     EXPECT_GT(spec.shape[0], 0);  // At least one articulation
     EXPECT_GT(spec.shape[1], 0);  // At least one DOF
 
-    // Explicit GPU warmup
     result = ovphysx_warmup_gpu(m_handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "GPU warmup failed";
 
@@ -2947,7 +3457,6 @@ TEST_F(TensorBindingGpuTest, GpuArticulationDofReadWrite) {
     void* gpu_data = allocGpuBuffer(buffer_size, dof_binding);
     ASSERT_NE(gpu_data, nullptr) << "Failed to allocate GPU buffer";
 
-    // Initialize GPU buffer to zeros
     ASSERT_TRUE(m_cudaOps.memsetD32(m_gpuBuffer, 0u, total_elements));
 
     DLTensor tensor = {};
@@ -2960,7 +3469,6 @@ TEST_F(TensorBindingGpuTest, GpuArticulationDofReadWrite) {
     tensor.strides = nullptr;
     tensor.byte_offset = 0;
 
-    // Read DOF positions
     result = ovphysx_read_tensor_binding(m_handle, dof_binding, &tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "GPU read failed";
 
@@ -2971,7 +3479,6 @@ TEST_F(TensorBindingGpuTest, GpuArticulationDofReadWrite) {
     result = ovphysx_write_tensor_binding(m_handle, dof_binding, &tensor, nullptr);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "GPU write failed";
 
-    // Read back and verify
     ASSERT_TRUE(m_cudaOps.memsetD32(m_gpuBuffer, 0u, total_elements));  // Clear to verify read works
     result = ovphysx_read_tensor_binding(m_handle, dof_binding, &tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
@@ -2983,7 +3490,6 @@ TEST_F(TensorBindingGpuTest, GpuArticulationDofReadWrite) {
         EXPECT_NEAR(verify_data[i], 0.1f, 0.01f) << "DOF position mismatch at index " << i;
     }
 
-    // Cleanup
     result = ovphysx_destroy_tensor_binding(m_handle, dof_binding);
     EXPECT_EQ(result.status, OVPHYSX_API_SUCCESS);
 }
@@ -3372,11 +3878,9 @@ TEST_F(TensorBindingGpuTest, GpuDeformableMaterialReadIndexedAndMaskedWrite) {
 }
 
 TEST_F(TensorBindingGpuTest, GpuWriteAutoWarmupWithoutExplicitWarmup) {
-    // Load GPU articulation scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample_gpu.usda", usd_handle));
 
-    // Create a writable DOF target binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation");
@@ -3652,11 +4156,9 @@ TEST_F(TensorBindingGpuTest, CrossDeviceReadCpuTensorFromGpuBinding) {
 }
 
 TEST_F(TensorBindingGpuTest, NonContiguousTensorRejected) {
-    // Load scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample_gpu.usda", usd_handle));
 
-    // Create binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation");
@@ -3665,16 +4167,13 @@ TEST_F(TensorBindingGpuTest, NonContiguousTensorRejected) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Warmup first
     result = ovphysx_warmup_gpu(m_handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Get spec
     ovphysx_tensor_spec_t spec;
     result = ovphysx_get_tensor_binding_spec(m_handle, binding, &spec);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Allocate GPU buffer
     size_t total_elements = spec.shape[0] * spec.shape[1];
     void* gpu_data = allocGpuBuffer(total_elements * sizeof(float), binding);
     ASSERT_NE(gpu_data, nullptr);
@@ -3720,7 +4219,6 @@ TEST_F(TensorBindingGpuTest, NonContiguousTensorRejected) {
 // ============================================================================
 
 TEST_F(TensorBindingCpuTest, MaskedWriteCpu_DofPositionTargets_Alternating) {
-    // Load two-articulation scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/two_articulations.usda", usd_handle))
         << "Failed to load two_articulations.usda";
@@ -3734,7 +4232,6 @@ TEST_F(TensorBindingCpuTest, MaskedWriteCpu_DofPositionTargets_Alternating) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "Failed to create binding";
 
-    // Get spec and verify shape
     ovphysx_tensor_spec_t spec;
     result = ovphysx_get_tensor_binding_spec(m_handle, binding, &spec);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
@@ -3745,7 +4242,6 @@ TEST_F(TensorBindingCpuTest, MaskedWriteCpu_DofPositionTargets_Alternating) {
     int64_t D = spec.shape[1];
     ASSERT_GT(D, 0);
 
-    // Read initial values
     size_t total = N * D;
     std::vector<float> initial_data(total, -1.0f);
     int64_t shape[2] = {N, D};
@@ -3788,11 +4284,9 @@ TEST_F(TensorBindingCpuTest, MaskedWriteCpu_DofPositionTargets_Alternating) {
     mask_tensor.strides = nullptr;
     mask_tensor.byte_offset = 0;
 
-    // Write masked
     result = ovphysx_write_tensor_binding_masked(m_handle, binding, &src_tensor, &mask_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "Masked write failed";
 
-    // Read back
     std::vector<float> readback(total, -1.0f);
     DLTensor readback_tensor = {};
     readback_tensor.data = readback.data();
@@ -3821,11 +4315,9 @@ TEST_F(TensorBindingCpuTest, MaskedWriteCpu_DofPositionTargets_Alternating) {
 }
 
 TEST_F(TensorBindingCpuTest, MaskedWriteCpu_DofPositionTargets_AllTrue) {
-    // Load two-articulation scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/two_articulations.usda", usd_handle));
 
-    // Create DOF position target binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation*");
@@ -3894,11 +4386,9 @@ TEST_F(TensorBindingCpuTest, MaskedWriteCpu_DofPositionTargets_AllTrue) {
 }
 
 TEST_F(TensorBindingCpuTest, MaskedWriteCpu_DofPositionTargets_AllFalse) {
-    // Load two-articulation scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/two_articulations.usda", usd_handle));
 
-    // Create DOF position target binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation*");
@@ -3917,7 +4407,6 @@ TEST_F(TensorBindingCpuTest, MaskedWriteCpu_DofPositionTargets_AllFalse) {
     size_t total = N * D;
     int64_t shape[2] = {N, D};
 
-    // Read initial values
     std::vector<float> initial_data(total, -1.0f);
     DLTensor read_tensor = {};
     read_tensor.data = initial_data.data();
@@ -3982,12 +4471,10 @@ TEST_F(TensorBindingCpuTest, MaskedWriteCpu_DofPositionTargets_AllFalse) {
 }
 
 TEST_F(TensorBindingCpuTest, MaskedWriteCpu_RigidBodyPose_Alternating) {
-    // Load rigid body scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane.usda", usd_handle))
         << "Failed to load boxes_falling_on_groundplane.usda";
 
-    // Create rigid body pose binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
@@ -3996,7 +4483,6 @@ TEST_F(TensorBindingCpuTest, MaskedWriteCpu_RigidBodyPose_Alternating) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "Failed to create rigid body pose binding";
 
-    // Get spec and verify shape
     ovphysx_tensor_spec_t spec;
     result = ovphysx_get_tensor_binding_spec(m_handle, binding, &spec);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
@@ -4009,7 +4495,6 @@ TEST_F(TensorBindingCpuTest, MaskedWriteCpu_RigidBodyPose_Alternating) {
     size_t total = N * D;
     int64_t shape[2] = {N, D};
 
-    // Read initial poses
     std::vector<float> initial_data(total, -1.0f);
     DLTensor read_tensor = {};
     read_tensor.data = initial_data.data();
@@ -4058,11 +4543,9 @@ TEST_F(TensorBindingCpuTest, MaskedWriteCpu_RigidBodyPose_Alternating) {
     mask_tensor.strides = nullptr;
     mask_tensor.byte_offset = 0;
 
-    // Write masked
     result = ovphysx_write_tensor_binding_masked(m_handle, binding, &src_tensor, &mask_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "Masked write for rigid body pose failed";
 
-    // Read back
     std::vector<float> readback(total, -1.0f);
     DLTensor readback_tensor = {};
     readback_tensor.data = readback.data();
@@ -4094,11 +4577,9 @@ TEST_F(TensorBindingCpuTest, MaskedWriteCpu_RigidBodyPose_Alternating) {
 }
 
 TEST_F(TensorBindingCpuTest, MaskedWriteCpu_ValidationErrors) {
-    // Load scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/two_articulations.usda", usd_handle));
 
-    // Create binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation*");
@@ -4178,12 +4659,10 @@ TEST_F(TensorBindingCpuTest, MaskedWriteCpu_ValidationErrors) {
 // ============================================================================
 
 TEST_F(TensorBindingGpuTest, MaskedWriteGpu_DofPositionTargets_Alternating) {
-    // Load GPU two-articulation scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/two_articulations_gpu.usda", usd_handle))
         << "Failed to load two_articulations_gpu.usda";
 
-    // Create DOF position target binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation*");
@@ -4192,7 +4671,6 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_DofPositionTargets_Alternating) {
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "Failed to create binding";
 
-    // Get spec
     ovphysx_tensor_spec_t spec;
     result = ovphysx_get_tensor_binding_spec(m_handle, binding, &spec);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
@@ -4204,7 +4682,6 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_DofPositionTargets_Alternating) {
     size_t total = N * D;
     size_t buffer_size = total * sizeof(float);
 
-    // GPU warmup
     result = ovphysx_warmup_gpu(m_handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "GPU warmup failed";
 
@@ -4254,11 +4731,9 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_DofPositionTargets_Alternating) {
     mask_tensor.strides = nullptr;
     mask_tensor.byte_offset = 0;
 
-    // Write masked
     result = ovphysx_write_tensor_binding_masked(m_handle, binding, &gpu_tensor, &mask_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "GPU masked write failed";
 
-    // Read back
     ASSERT_TRUE(m_cudaOps.memsetD32(m_gpuBuffer, 0u, total));
     result = ovphysx_read_tensor_binding(m_handle, binding, &gpu_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
@@ -4282,11 +4757,9 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_DofPositionTargets_Alternating) {
 }
 
 TEST_F(TensorBindingGpuTest, MaskedWriteGpu_DofPositionTargets_AllTrue) {
-    // Load GPU two-articulation scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/two_articulations_gpu.usda", usd_handle));
 
-    // Create DOF position target binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation*");
@@ -4305,7 +4778,6 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_DofPositionTargets_AllTrue) {
     size_t total = N * D;
     size_t buffer_size = total * sizeof(float);
 
-    // GPU warmup
     result = ovphysx_warmup_gpu(m_handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
@@ -4346,11 +4818,9 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_DofPositionTargets_AllTrue) {
     mask_tensor.strides = nullptr;
     mask_tensor.byte_offset = 0;
 
-    // Write masked
     result = ovphysx_write_tensor_binding_masked(m_handle, binding, &gpu_tensor, &mask_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Read back
     ASSERT_TRUE(m_cudaOps.memsetD32(m_gpuBuffer, 0u, total));
     result = ovphysx_read_tensor_binding(m_handle, binding, &gpu_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
@@ -4408,7 +4878,6 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_BoolDtype_Alternating) {
     gpu_tensor.strides = nullptr;
     gpu_tensor.byte_offset = 0;
 
-    // Read initial values
     result = ovphysx_read_tensor_binding(m_handle, binding, &gpu_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
@@ -4440,7 +4909,6 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_BoolDtype_Alternating) {
     result = ovphysx_write_tensor_binding_masked(m_handle, binding, &gpu_tensor, &mask_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "GPU masked write with kDLBool dtype should succeed";
 
-    // Read back
     ASSERT_TRUE(m_cudaOps.memsetD32(m_gpuBuffer, 0u, total));
     result = ovphysx_read_tensor_binding(m_handle, binding, &gpu_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
@@ -4464,11 +4932,9 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_BoolDtype_Alternating) {
 }
 
 TEST_F(TensorBindingGpuTest, MaskedWriteGpu_DofPositionTargets_AllFalse) {
-    // Load GPU two-articulation scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/two_articulations_gpu.usda", usd_handle));
 
-    // Create DOF position target binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation*");
@@ -4487,11 +4953,9 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_DofPositionTargets_AllFalse) {
     size_t total = N * D;
     size_t buffer_size = total * sizeof(float);
 
-    // GPU warmup
     result = ovphysx_warmup_gpu(m_handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Allocate GPU buffer
     void* gpu_data = allocGpuBuffer(buffer_size, binding);
     ASSERT_NE(gpu_data, nullptr);
 
@@ -4506,7 +4970,6 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_DofPositionTargets_AllFalse) {
     gpu_tensor.strides = nullptr;
     gpu_tensor.byte_offset = 0;
 
-    // Read initial values
     result = ovphysx_read_tensor_binding(m_handle, binding, &gpu_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
@@ -4539,7 +5002,6 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_DofPositionTargets_AllFalse) {
     result = ovphysx_write_tensor_binding_masked(m_handle, binding, &gpu_tensor, &mask_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Read back
     ASSERT_TRUE(m_cudaOps.memsetD32(m_gpuBuffer, 0u, total));
     result = ovphysx_read_tensor_binding(m_handle, binding, &gpu_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
@@ -4557,12 +5019,10 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_DofPositionTargets_AllFalse) {
 }
 
 TEST_F(TensorBindingGpuTest, MaskedWriteGpu_RigidBodyPose_SingleElement) {
-    // Load GPU rigid body scene
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane_gpu.usda", usd_handle))
         << "Failed to load boxes_falling_on_groundplane_gpu.usda";
 
-    // Create rigid body pose binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
@@ -4582,11 +5042,9 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_RigidBodyPose_SingleElement) {
     size_t total = N * D;
     size_t buffer_size = total * sizeof(float);
 
-    // GPU warmup
     result = ovphysx_warmup_gpu(m_handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Allocate GPU buffer
     void* gpu_data = allocGpuBuffer(buffer_size, binding);
     ASSERT_NE(gpu_data, nullptr);
 
@@ -4601,7 +5059,6 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_RigidBodyPose_SingleElement) {
     gpu_tensor.strides = nullptr;
     gpu_tensor.byte_offset = 0;
 
-    // Read initial values
     result = ovphysx_read_tensor_binding(m_handle, binding, &gpu_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
@@ -4640,11 +5097,9 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_RigidBodyPose_SingleElement) {
     mask_tensor.strides = nullptr;
     mask_tensor.byte_offset = 0;
 
-    // Write masked
     result = ovphysx_write_tensor_binding_masked(m_handle, binding, &gpu_tensor, &mask_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "GPU masked write for rigid body pose failed";
 
-    // Read back
     ASSERT_TRUE(m_cudaOps.memsetD32(m_gpuBuffer, 0u, total));
     result = ovphysx_read_tensor_binding(m_handle, binding, &gpu_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
@@ -4784,7 +5239,6 @@ TEST_F(TensorBindingGpuTest, IndexedWriteFullTensor_GpuRegression) {
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/two_articulations_gpu.usda", usd_handle))
         << "Failed to load two_articulations_gpu.usda";
 
-    // Create DOF position target binding
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation*");
@@ -4804,7 +5258,6 @@ TEST_F(TensorBindingGpuTest, IndexedWriteFullTensor_GpuRegression) {
     size_t buffer_size = total * sizeof(float);
     int64_t full_shape[2] = {N, D};
 
-    // GPU warmup
     result = ovphysx_warmup_gpu(m_handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
@@ -5071,7 +5524,6 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_RigidBodyVelocity_SingleElement) {
     tensor.strides = nullptr;
     tensor.byte_offset = 0;
 
-    // Read initial velocities
     result = ovphysx_read_tensor_binding(m_handle, binding, &tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
     std::vector<float> initial(total);
@@ -5104,7 +5556,6 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_RigidBodyVelocity_SingleElement) {
     result = ovphysx_write_tensor_binding_masked(m_handle, binding, &tensor, &mask_tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-    // Read back
     result = ovphysx_read_tensor_binding(m_handle, binding, &tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
@@ -5159,7 +5610,6 @@ TEST_F(TensorBindingGpuTest, MaskedWriteGpu_ArticulationRootPose_Alternating) {
     tensor.strides = nullptr;
     tensor.byte_offset = 0;
 
-    // Read initial
     result = ovphysx_read_tensor_binding(m_handle, binding, &tensor);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
     std::vector<float> initial(total);
@@ -5534,7 +5984,6 @@ TEST_F(TensorBindingGpuTest, GpuSurfaceDeformableBodyReadWriteAndReadOnly) {
     result = ovphysx_warmup_gpu(m_handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "GPU warmup failed";
 
-    // Read initial positions
     const size_t pos_total = static_cast<size_t>(pos_spec.shape[0] * pos_spec.shape[1] * pos_spec.shape[2]);
     const size_t pos_bytes = pos_total * sizeof(float);
     void* gpu_data = allocGpuBuffer(pos_bytes, pos);
@@ -5671,6 +6120,205 @@ TEST_F(TensorBindingGpuTest, GpuRigidBodyDisableSimulationRoundtrip) {
     ovphysx_destroy_tensor_binding(m_handle, binding);
 }
 
+TEST_F(TensorBindingGpuTest, GpuRigidBodyDisableGravityRoundtrip) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane_gpu.usda", usd_handle))
+        << "Failed to load USD";
+
+    ovphysx_tensor_binding_handle_t binding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &binding).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, binding, &spec).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(spec.ndim, 1);
+    EXPECT_EQ(spec.dtype.code, kDLUInt);
+    EXPECT_EQ(spec.dtype.bits, 8);
+    ASSERT_GT(spec.shape[0], 0);
+
+    ASSERT_EQ(ovphysx_warmup_gpu(m_handle).status, OVPHYSX_API_SUCCESS);
+
+    const int64_t n = spec.shape[0];
+    const size_t bytes = static_cast<size_t>(n);
+    void* gpu_data = allocGpuBuffer(bytes, binding);
+    ASSERT_NE(gpu_data, nullptr);
+
+    std::vector<uint8_t> written(n, 0);
+    for (int64_t i = 0; i < n; ++i)
+        written[i] = static_cast<uint8_t>(i % 2 == 0 ? 1 : 0);
+    ASSERT_TRUE(m_cudaOps.memcpyHtoD(m_gpuBuffer, written.data(), bytes));
+
+    DLTensor tensor{};
+    tensor.data = gpu_data;
+    tensor.device = {kDLCUDA, 0};
+    tensor.ndim = 1;
+    tensor.dtype = {kDLUInt, 8, 1};
+    int64_t shape[1] = {n};
+    tensor.shape = shape;
+
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, binding, &tensor, nullptr).status, OVPHYSX_API_SUCCESS);
+
+    std::vector<uint8_t> readback(n, 0xff);
+    std::vector<uint8_t> sentinel(n, 0xff);
+    ASSERT_TRUE(m_cudaOps.memcpyHtoD(m_gpuBuffer, sentinel.data(), bytes));
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, binding, &tensor).status, OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(m_cudaOps.memcpyDtoH(readback.data(), m_gpuBuffer, bytes));
+    for (int64_t i = 0; i < n; ++i)
+        EXPECT_EQ(static_cast<int>(readback[i]), static_cast<int>(written[i])) << "body " << i;
+
+    ovphysx_destroy_tensor_binding(m_handle, binding);
+}
+
+// Companion to CpuRigidBodyDisableGravitySuppressesFall: umbrella sets disable
+// flags before the first physics step and checks vz on step 1 (no mid-flight swap).
+TEST_F(TensorBindingGpuTest, GpuRigidBodyDisableGravitySuppressesFall) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane_gpu.usda", usd_handle))
+        << "Failed to load USD";
+
+    ovphysx_tensor_binding_handle_t vel_binding = 0;
+    ovphysx_tensor_binding_handle_t grav_binding = 0;
+    {
+        ovphysx_tensor_binding_desc_t desc{};
+        desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+        desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_VELOCITY_F32;
+        ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &vel_binding).status, OVPHYSX_API_SUCCESS);
+    }
+    {
+        ovphysx_tensor_binding_desc_t desc{};
+        desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+        desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL;
+        ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &grav_binding).status, OVPHYSX_API_SUCCESS);
+    }
+
+    ovphysx_tensor_spec_t vel_spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, vel_binding, &vel_spec).status, OVPHYSX_API_SUCCESS);
+    const int64_t n = vel_spec.shape[0];
+    ASSERT_GT(n, 0);
+
+    ASSERT_EQ(ovphysx_warmup_gpu(m_handle).status, OVPHYSX_API_SUCCESS);
+
+    const size_t vel_bytes = static_cast<size_t>(n * 6) * sizeof(float);
+    void* gpu_vel = allocGpuBuffer(vel_bytes, vel_binding);
+    ASSERT_NE(gpu_vel, nullptr);
+
+    int64_t vel_shape[2] = {n, 6};
+    DLTensor vel_t{};
+    vel_t.data = gpu_vel;
+    vel_t.device = {kDLCUDA, 0};
+    vel_t.ndim = 2;
+    vel_t.dtype = {kDLFloat, 32, 1};
+    vel_t.shape = vel_shape;
+
+    auto step_once = [&]() {
+        ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
+        ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
+        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+    };
+
+    auto read_vels_to_host = [&](std::vector<float>& out) {
+        out.resize(static_cast<size_t>(n * 6));
+        ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, vel_binding, &vel_t).status, OVPHYSX_API_SUCCESS);
+        ASSERT_TRUE(m_cudaOps.memcpyDtoH(out.data(), m_gpuBuffer, vel_bytes));
+    };
+
+    // Disable gravity on even-indexed bodies before the assertion window (umbrella pattern).
+    std::vector<uint8_t> flags(static_cast<size_t>(n), 0);
+    for (int64_t i = 0; i < n; i += 2)
+        flags[static_cast<size_t>(i)] = 1;
+    int64_t flag_shape[1] = {n};
+    DLTensor flag_t{};
+    flag_t.data = flags.data();
+    flag_t.device = {kDLCPU, 0};
+    flag_t.ndim = 1;
+    flag_t.dtype = {kDLUInt, 8, 1};
+    flag_t.shape = flag_shape;
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, grav_binding, &flag_t, nullptr).status, OVPHYSX_API_SUCCESS);
+
+    step_once();
+
+    std::vector<float> vels;
+    read_vels_to_host(vels);
+    const float dt = 1.0f / 60.0f;
+    const float expected_fall_vz = -dt * 9.81f;
+    for (int64_t i = 0; i < n; ++i) {
+        const float vz = vels[static_cast<size_t>(i * 6 + 2)];
+        if (i % 2 == 0)
+            EXPECT_NEAR(vz, 0.0f, 1e-2f) << "body " << i << " should not fall with gravity disabled";
+        else
+            EXPECT_NEAR(vz, expected_fall_vz, 0.05f) << "body " << i << " should fall under gravity";
+    }
+
+    ovphysx_destroy_tensor_binding(m_handle, grav_binding);
+    ovphysx_destroy_tensor_binding(m_handle, vel_binding);
+}
+
+// Partial mask + CPU-resident source against a GPU DirectGPU scene.
+// disable-gravity is a CPU-only tensor type (isCpuOnlyTensorType), so a masked
+// write routes through the CPU-only masked branch: the mask is scanned on host,
+// a CPU index is built, and it is forwarded to the indexed setter. The DirectGPU
+// body-sim refresh still runs in GpuRigidBodyView::setDisableGravities. This
+// verifies per-body selectivity of a partial masked write; empty/full masks
+// bypass the indexed path and are not covered here.
+TEST_F(TensorBindingGpuTest, GpuRigidBodyDisableGravityPartialMaskCpuSource) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane_gpu.usda", usd_handle))
+        << "Failed to load USD";
+
+    ovphysx_tensor_binding_handle_t binding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &binding).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, binding, &spec).status, OVPHYSX_API_SUCCESS);
+    const int64_t n = spec.shape[0];
+    ASSERT_GT(n, 1);
+
+    ASSERT_EQ(ovphysx_warmup_gpu(m_handle).status, OVPHYSX_API_SUCCESS);
+
+    std::vector<uint8_t> flags(static_cast<size_t>(n), 0);
+    std::vector<uint8_t> mask(static_cast<size_t>(n), 0);
+    for (int64_t i = 0; i < n; i += 2) {
+        flags[static_cast<size_t>(i)] = 1;
+        mask[static_cast<size_t>(i)] = 1;
+    }
+
+    int64_t flag_shape[1] = {n};
+    DLTensor flag_t{};
+    flag_t.data = flags.data();
+    flag_t.device = {kDLCPU, 0};
+    flag_t.ndim = 1;
+    flag_t.dtype = {kDLUInt, 8, 1};
+    flag_t.shape = flag_shape;
+
+    int64_t mask_shape[1] = {n};
+    DLTensor mask_t{};
+    mask_t.data = mask.data();
+    mask_t.device = {kDLCPU, 0};
+    mask_t.ndim = 1;
+    mask_t.dtype = {kDLUInt, 8, 1};
+    mask_t.shape = mask_shape;
+
+    ASSERT_EQ(ovphysx_write_tensor_binding_masked(m_handle, binding, &flag_t, &mask_t).status,
+              OVPHYSX_API_SUCCESS);
+
+    std::vector<uint8_t> readback(static_cast<size_t>(n), 0xff);
+    DLTensor read_t = flag_t;
+    read_t.data = readback.data();
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, binding, &read_t).status, OVPHYSX_API_SUCCESS);
+    for (int64_t i = 0; i < n; ++i) {
+        const uint8_t expected = (i % 2 == 0) ? 1 : 0;
+        EXPECT_EQ(static_cast<int>(readback[static_cast<size_t>(i)]), static_cast<int>(expected))
+            << "body " << i;
+    }
+
+    ovphysx_destroy_tensor_binding(m_handle, binding);
+}
+
 // Companion to CpuRigidBodyDisableSimulationStopsSimulation: verifies that the
 // GPU path (GpuRigidBodyView::setDisableSimulations) actually suppresses
 // simulation -- disabled bodies must not move after the flag is applied.
@@ -5769,6 +6417,145 @@ TEST_F(TensorBindingGpuTest, GpuRigidBodyDisableSimulationStopsSimulation) {
 
     ovphysx_destroy_tensor_binding(m_handle, disable_binding);
     ovphysx_destroy_tensor_binding(m_handle, pose_binding);
+}
+
+TEST_F(TensorBindingGpuTest, GpuArticulationDisableGravityRoundtrip) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/two_articulations_gpu.usda", usd_handle))
+        << "Failed to load USD";
+
+    ovphysx_tensor_binding_handle_t binding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/articulation*");
+    desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_BODY_DISABLE_GRAVITY_BOOL;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &binding).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, binding, &spec).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(spec.ndim, 2);
+    EXPECT_EQ(spec.dtype.code, kDLUInt);
+    EXPECT_EQ(spec.dtype.bits, 8);
+    ASSERT_GT(spec.shape[0], 0);
+    ASSERT_GT(spec.shape[1], 0);
+
+    ASSERT_EQ(ovphysx_warmup_gpu(m_handle).status, OVPHYSX_API_SUCCESS);
+
+    const int64_t n = spec.shape[0];
+    const int64_t l = spec.shape[1];
+    const size_t bytes = static_cast<size_t>(n * l);
+    void* gpu_data = allocGpuBuffer(bytes, binding);
+    ASSERT_NE(gpu_data, nullptr);
+
+    std::vector<uint8_t> written(bytes, 0);
+    for (size_t i = 0; i < bytes; ++i)
+        written[i] = static_cast<uint8_t>(i % 2 == 0 ? 1 : 0);
+    ASSERT_TRUE(m_cudaOps.memcpyHtoD(m_gpuBuffer, written.data(), bytes));
+
+    DLTensor tensor{};
+    tensor.data = gpu_data;
+    tensor.device = {kDLCUDA, 0};
+    tensor.ndim = 2;
+    tensor.dtype = {kDLUInt, 8, 1};
+    int64_t shape[2] = {n, l};
+    tensor.shape = shape;
+
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, binding, &tensor, nullptr).status, OVPHYSX_API_SUCCESS);
+
+    std::vector<uint8_t> readback(bytes, 0xff);
+    std::vector<uint8_t> sentinel(bytes, 0xff);
+    ASSERT_TRUE(m_cudaOps.memcpyHtoD(m_gpuBuffer, sentinel.data(), bytes));
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, binding, &tensor).status, OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(m_cudaOps.memcpyDtoH(readback.data(), m_gpuBuffer, bytes));
+    for (size_t i = 0; i < bytes; ++i)
+        EXPECT_EQ(static_cast<int>(readback[i]), static_cast<int>(written[i])) << "link flag " << i;
+
+    ovphysx_destroy_tensor_binding(m_handle, binding);
+}
+
+TEST_F(TensorBindingGpuTest, GpuArticulationDisableGravitySuppressesFall) {
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/mixed_base_articulations_gpu.usda", usd_handle))
+        << "Failed to load USD";
+
+    ovphysx_tensor_binding_handle_t root_binding = 0;
+    ovphysx_tensor_binding_handle_t grav_binding = 0;
+    {
+        ovphysx_tensor_binding_desc_t desc{};
+        desc.pattern = OVPHYSX_LITERAL("/World/articulation2");
+        desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_ROOT_POSE_F32;
+        ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &root_binding).status, OVPHYSX_API_SUCCESS);
+    }
+    {
+        ovphysx_tensor_binding_desc_t desc{};
+        desc.pattern = OVPHYSX_LITERAL("/World/articulation2");
+        desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_BODY_DISABLE_GRAVITY_BOOL;
+        ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &grav_binding).status, OVPHYSX_API_SUCCESS);
+    }
+
+    ovphysx_tensor_spec_t grav_spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, grav_binding, &grav_spec).status, OVPHYSX_API_SUCCESS);
+    const int64_t n = grav_spec.shape[0];
+    const int64_t l = grav_spec.shape[1];
+    ASSERT_EQ(n, 1);
+    ASSERT_GT(l, 0);
+
+    ASSERT_EQ(ovphysx_warmup_gpu(m_handle).status, OVPHYSX_API_SUCCESS);
+
+    const size_t root_bytes = static_cast<size_t>(n * 7) * sizeof(float);
+    void* gpu_root = allocGpuBuffer(root_bytes, root_binding);
+    ASSERT_NE(gpu_root, nullptr);
+
+    int64_t root_shape[2] = {n, 7};
+    DLTensor root_t{};
+    root_t.data = gpu_root;
+    root_t.device = {kDLCUDA, 0};
+    root_t.ndim = 2;
+    root_t.dtype = {kDLFloat, 32, 1};
+    root_t.shape = root_shape;
+
+    auto step_once = [&]() {
+        ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
+        ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
+        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+    };
+
+    auto read_root_z = [&](float& out_z) {
+        std::vector<float> root_pose(static_cast<size_t>(n * 7), 0.0f);
+        ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, root_binding, &root_t).status, OVPHYSX_API_SUCCESS);
+        ASSERT_TRUE(m_cudaOps.memcpyDtoH(root_pose.data(), m_gpuBuffer, root_bytes));
+        out_z = root_pose[2];
+    };
+
+    step_once();
+    float z0 = 0.0f;
+    read_root_z(z0);
+
+    std::vector<uint8_t> flags(static_cast<size_t>(n * l), 1);
+    int64_t flag_shape[2] = {n, l};
+    DLTensor flag_t{};
+    flag_t.data = flags.data();
+    flag_t.device = {kDLCPU, 0};
+    flag_t.ndim = 2;
+    flag_t.dtype = {kDLUInt, 8, 1};
+    flag_t.shape = flag_shape;
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, grav_binding, &flag_t, nullptr).status, OVPHYSX_API_SUCCESS);
+
+    for (int i = 0; i < 20; ++i)
+        step_once();
+    float z_disabled = 0.0f;
+    read_root_z(z_disabled);
+    EXPECT_NEAR(z_disabled, z0, 0.08f) << "Floating-base root Z should stay stable with gravity disabled";
+
+    std::fill(flags.begin(), flags.end(), 0);
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, grav_binding, &flag_t, nullptr).status, OVPHYSX_API_SUCCESS);
+    for (int i = 0; i < 20; ++i)
+        step_once();
+    float z_reenabled = 0.0f;
+    read_root_z(z_reenabled);
+    EXPECT_LT(z_reenabled, z0 - 0.05f) << "Floating-base root should fall after re-enabling gravity";
+
+    ovphysx_destroy_tensor_binding(m_handle, root_binding);
+    ovphysx_destroy_tensor_binding(m_handle, grav_binding);
 }
 
 // OMPE-94459 (§B0 GPU path): ARTICULATION_MASS_CENTER_WORLD read into a GPU

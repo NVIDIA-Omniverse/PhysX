@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -41,7 +41,7 @@
 #include "nputils.cuh"
 
 #include "PxgCommonDefines.h"
-#include "PxsTransformCache.h"
+#include "PxsCachedTransform.h"
 #include "PxsContactManagerState.h"
 #include "PxgContactManager.h"
 #include "PxgConvexConvexShape.h"
@@ -429,6 +429,81 @@ struct TempBoxBoxBuffer
 	PxVec4 tempBuff[NumWarps * 32 * 3];
 };
 
+// Flip to 0 to revert to the legacy face-only contact generation path.
+#ifndef BOXBOX_EDGE_EDGE_FIX
+#define BOXBOX_EDGE_EDGE_FIX 1
+#endif
+
+#if BOXBOX_EDGE_EDGE_FIX
+// Given a winning edge pair (ua_i of box0, ub_j of box1), emit a single
+// world-space edge-edge contact at the midpoint of the closest points on
+// the two edges. Normal = (ua x ub) normalized, oriented box0 -> box1.
+//
+// Called only by thread 0 of a 4-thread group; other threads produce 0.
+// Returns the contact (xyz = world contact point, w = signed separation,
+// negative for interpenetration). w == PX_MAX_F32 signals the edge pair
+// was degenerate (parallel) and the caller should fall through.
+static __device__ PxVec4 computeEdgeEdgeContactWorld(
+	const PxVec3& box0Extent, const PxVec3& box1Extent,
+	const PxMat34& transform0, const PxMat34& transform1,
+	PxU32 uaIdx, PxU32 ubIdx,
+	const PxReal edgeMargin,     // positive; = radiusSum - |signedProj|
+	const PxReal contactDist,
+	PxVec3& outNormalWorld)
+{
+	const PxVec3 uaAxis = (&transform0.m.column0)[uaIdx]; // unit
+	const PxVec3 ubAxis = (&transform1.m.column0)[ubIdx]; // unit
+
+	// Contact normal along ua x ub, oriented box0 -> box1.
+	PxVec3 n = uaAxis.cross(ubAxis);
+	const PxReal mag2 = n.magnitudeSquared();
+	if(mag2 < 1e-12f)
+	{
+		// Edges parallel: degenerate, signal caller to fall through.
+		outNormalWorld = PxVec3(0.f, 1.f, 0.f);
+		return PxVec4(0.f, 0.f, 0.f, PX_MAX_F32);
+	}
+	n *= rsqrtf(mag2);
+	if(n.dot(transform1.p - transform0.p) < 0.f) n = -n;
+	outNormalWorld = n;
+
+	// Out of box0's 4 edges parallel to uaAxis, pick the one on the +n side
+	// (closest to box1). Analogously for box1, pick the edge on the -n side.
+	const PxU32 ja = (uaIdx + 1) % 3;
+	const PxU32 ka = (uaIdx + 2) % 3;
+	const PxU32 jb = (ubIdx + 1) % 3;
+	const PxU32 kb = (ubIdx + 2) % 3;
+	const PxVec3 axJa = (&transform0.m.column0)[ja];
+	const PxVec3 axKa = (&transform0.m.column0)[ka];
+	const PxVec3 axJb = (&transform1.m.column0)[jb];
+	const PxVec3 axKb = (&transform1.m.column0)[kb];
+	const PxReal exA = (&box0Extent.x)[uaIdx];
+	const PxReal exB = (&box1Extent.x)[ubIdx];
+
+	const PxVec3 off0 = axJa * ((n.dot(axJa) >= 0.f) ? (&box0Extent.x)[ja] : -(&box0Extent.x)[ja])
+					  + axKa * ((n.dot(axKa) >= 0.f) ? (&box0Extent.x)[ka] : -(&box0Extent.x)[ka]);
+	const PxVec3 off1 = axJb * ((n.dot(axJb) <= 0.f) ? (&box1Extent.x)[jb] : -(&box1Extent.x)[jb])
+					  + axKb * ((n.dot(axKb) <= 0.f) ? (&box1Extent.x)[kb] : -(&box1Extent.x)[kb]);
+
+	// Parameterise each edge as start + s*dir with s in [0,1] so we can use
+	// the shared distanceSegmentSegmentSquared helper.
+	const PxVec3 dir0  = uaAxis * (2.f * exA);
+	const PxVec3 dir1  = ubAxis * (2.f * exB);
+	const PxVec3 start0 = transform0.p + off0 - uaAxis * exA;
+	const PxVec3 start1 = transform1.p + off1 - ubAxis * exB;
+
+	PxReal s, t;
+	distanceSegmentSegmentSquared(start0, dir0, start1, dir1, s, t);
+
+	const PxVec3 c0 = start0 + dir0 * s;
+	const PxVec3 c1 = start1 + dir1 * t;
+	const PxVec3 contactPoint = (c0 + c1) * 0.5f;
+	const PxReal separation   = -edgeMargin + contactDist; // <0 for interpenetration
+
+	return PxVec4(contactPoint, separation);
+}
+#endif // BOXBOX_EDGE_EDGE_FIX
+
 
 template<PxU32 NumWarps>
 __device__ PxU32 doBoxBoxGenerateContacts(const PxVec3& box0Extent, const PxVec3& box1Extent,
@@ -526,6 +601,12 @@ __device__ PxU32 doBoxBoxGenerateContacts(const PxVec3& box0Extent, const PxVec3
 
 	//printf("%i: feature = %i\n", threadIdx.x, feature);
 
+#if BOXBOX_EDGE_EDGE_FIX
+	// Each thread tracks the smallest edge-axis margin it has seen.
+	// ubIdx is implicitly threadIndexInGroup; uaIdx is the block (0..2).
+	PxReal bestEdgeMarginT = PX_MAX_F32;
+	PxU32  bestEdgeUaIdxT  = 0;
+#endif
 
 	//ua0 X ub0
 
@@ -546,8 +627,17 @@ __device__ PxU32 doBoxBoxGenerateContacts(const PxVec3& box0Extent, const PxVec3
 		const PxReal vtemp02 = abs0To1.column0[threadIndexInGroup == 0 ? 1 : 0] * box1Extent[threadIndexInGroup == 2 ? 1 : 2];
 		rb = vtemp01 + vtemp02;
 		radiusSum = ra + rb + contactDist;
-	}
 
+#if BOXBOX_EDGE_EDGE_FIX
+		// Block tests ua0 x ub[threadIdx]; keep the smallest edge margin.
+		const PxReal margin = radiusSum - absSign;
+		if(margin < bestEdgeMarginT)
+		{
+			bestEdgeMarginT = margin;
+			bestEdgeUaIdxT  = 0;
+		}
+#endif
+	}
 	if (__any_sync(groupMask, absSign > radiusSum))
 		return false;
 
@@ -568,8 +658,17 @@ __device__ PxU32 doBoxBoxGenerateContacts(const PxVec3& box0Extent, const PxVec3
 		rb = vtemp01 + vtemp02;
 
 		radiusSum = ra + rb + contactDist;
-	}
 
+#if BOXBOX_EDGE_EDGE_FIX
+		// Block tests ua1 x ub[threadIdx]; keep the smallest edge margin.
+		const PxReal margin = radiusSum - absSign;
+		if(margin < bestEdgeMarginT)
+		{
+			bestEdgeMarginT = margin;
+			bestEdgeUaIdxT  = 1;
+		}
+#endif
+	}
 	if (__any_sync(groupMask, absSign > radiusSum))
 		return false;
 
@@ -590,8 +689,17 @@ __device__ PxU32 doBoxBoxGenerateContacts(const PxVec3& box0Extent, const PxVec3
 		rb = vtemp01 + vtemp02;
 
 		radiusSum = ra + rb + contactDist;
-	}
 
+#if BOXBOX_EDGE_EDGE_FIX
+		// Block tests ua2 x ub[threadIdx]; keep the smallest edge margin.
+		const PxReal margin = radiusSum - absSign;
+		if(margin < bestEdgeMarginT)
+		{
+			bestEdgeMarginT = margin;
+			bestEdgeUaIdxT  = 2;
+		}
+#endif
+	}
 	if (__any_sync(groupMask, absSign > radiusSum))
 		return false;
 
@@ -809,6 +917,54 @@ __device__ PxU32 doBoxBoxGenerateContacts(const PxVec3& box0Extent, const PxVec3
 	const PxU32 count = calculateContacts(e0, e1, point, &shVerts[groupStartIndex], incidentFaceNormalInNew, localNormal, contactDist, groupMask, threadIndexInGroup,
 		groupStartIndex, contacts);
 	assert(count <= 3);
+
+#if BOXBOX_EDGE_EDGE_FIX
+	// Fallback: if face-face clipping produced 0 contacts across the whole
+	// group, but SAT already confirmed the pair is overlapping, emit one
+	// edge-edge contact at the closest points of the winning edge pair.
+	// This handles the case where the minimum separating axis is an edge
+	// pair and the incident polygon projects outside the reference face.
+	{
+		// Butterfly reduction across the 4-thread group (2 shuffles).
+		PxU32 groupContactCount = count;
+		groupContactCount += __shfl_xor_sync(groupMask, groupContactCount, 1);
+		groupContactCount += __shfl_xor_sync(groupMask, groupContactCount, 2);
+		if(groupContactCount == 0)
+		{
+			// Resolve the winning edge pair now that we know we need it.
+			// ubIdx = which thread holds the min edge margin; uaIdx was recorded
+			// per-thread in bestEdgeUaIdxT during the edge-SAT blocks above.
+			const PxReal em0 = __shfl_sync(groupMask, bestEdgeMarginT, groupStartIndex);
+			const PxReal em1 = __shfl_sync(groupMask, bestEdgeMarginT, groupStartIndex + 1);
+			const PxReal em2 = __shfl_sync(groupMask, bestEdgeMarginT, groupStartIndex + 2);
+			PxU32 winUb = 0; PxReal winEdgeMargin = em0;
+			if(em1 < winEdgeMargin) { winUb = 1; winEdgeMargin = em1; }
+			if(em2 < winEdgeMargin) { winUb = 2; winEdgeMargin = em2; }
+			const PxU32 winUa = __shfl_sync(groupMask, bestEdgeUaIdxT, groupStartIndex + winUb);
+
+			PxVec4 worldContact(0.f, 0.f, 0.f, PX_MAX_F32);
+			PxVec3 worldNormal(0.f, 1.f, 0.f);
+			if(threadIndexInGroup == 0)
+			{
+				worldContact = computeEdgeEdgeContactWorld(
+					box0Extent, box1Extent, transform0, transform1,
+					winUa, winUb, winEdgeMargin, contactDist, worldNormal);
+			}
+			const PxReal wBroadcast = __shfl_sync(groupMask, worldContact.w, groupStartIndex);
+			if(wBroadcast < PX_MAX_F32)
+			{
+				normal = PxVec3(
+					__shfl_sync(groupMask, worldNormal.x, groupStartIndex),
+					__shfl_sync(groupMask, worldNormal.y, groupStartIndex),
+					__shfl_sync(groupMask, worldNormal.z, groupStartIndex));
+				if(threadIndexInGroup == 0)
+					localContacts[0] = worldContact;
+				__syncwarp(groupMask);
+				return 1u; // group total: one contact from thread 0
+			}
+		}
+	}
+#endif // BOXBOX_EDGE_EDGE_FIX
 
 	// Now every thread has between zero and three contacts.
 

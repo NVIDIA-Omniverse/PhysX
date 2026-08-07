@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -193,15 +193,8 @@ namespace physx
 
 			PxU32		flags;
 			PxReal		recipResponse;			//Constant. Only used for articulations;
-			//PxReal		angularErrorScale;		//Constant
-			PxReal		residualVelIter;
-		private:
-			union
-			{
-				PxU32		useAngularError; //Use only the most significant bit (which corresponds to the float's sign bit)
-				PxReal		residualPosIter;
-			};
-		public:
+			PxReal		angularErrorScale;		//Constant
+			PxU32		pad;
 
 			void setSolverConstants(const Constraint1dSolverConstantsTGS& desc)
 			{
@@ -210,50 +203,13 @@ namespace physx
 				velTarget = desc.targetVel;
 				velMultiplier = desc.velMultiplier;
 			}
-
-
-			PX_FORCE_INLINE PxU32 setBit(PxU32 value, PxU32 bitLocation, bool bitState)
-			{
-				if (bitState)
-					return value | (1 << bitLocation);
-				else
-					return value & (~(1 << bitLocation));
-			}
-
-			PX_FORCE_INLINE void setUseAngularError(bool b)
-			{
-				useAngularError = setBit(useAngularError, 31, b);
-			}
-
-			PX_FORCE_INLINE PxReal getUseAngularError() const
-			{
-				return (useAngularError & 0x80000000) ? 1.0f : 0.0f;
-			}
-
-			PX_FORCE_INLINE void setPositionIterationResidual(PxReal residual)
-			{
-				bool b = getUseAngularError();
-				residualPosIter = residual;
-				setUseAngularError(b);
-			}
-
-			PX_FORCE_INLINE PxReal getPositionIterationResidual() const
-			{
-				return PxAbs(residualPosIter);
-			}
-
-			PX_FORCE_INLINE void setVelocityIterationResidual(PxReal residual)
-			{
-				residualVelIter = residual;
-			}
-
 		} PX_ALIGN_SUFFIX(16);
 
 		struct SolverConstraint1DExtStep : public SolverConstraint1DStep
 		{
 		public:
-			Cm::SpatialVectorV deltaVA;
-			Cm::SpatialVectorV deltaVB;
+			Cm::SpatialVector deltaVA_;
+			Cm::SpatialVector deltaVB_;
 		};
 
 		PX_FORCE_INLINE void init(SolverConstraint1DStep& c,
@@ -271,9 +227,7 @@ namespace physx
 			c.maxImpulse = _maxImpulse;
 			c.flags = 0;
 			c.appliedForce = 0;
-			c.setUseAngularError(true);
-			c.residualVelIter = 0.0f;
-			c.setPositionIterationResidual(0.0f);
+			c.angularErrorScale = 1.f;
 		}
 
 	}//namespace Dy

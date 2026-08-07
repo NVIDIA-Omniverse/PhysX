@@ -1,0 +1,18 @@
+<project toolsVersion="6.11">
+  <!-- ovstage: local link to a prebuilt ovstage package (ADR-0002 / omni.physics.ovstage M1).
+       Links the unpacked artifactory ovstage package, whose packaged layout is:
+         include/{ovstage,ovx,dlpack}, bin/libovstage.so (+ bin/plugins runtime closure), lib/cmake/ovstage
+       cmake/OvstageDependency.cmake resolves this packaged layout.
+       (The legacy source-tree layout — ovstage/public/include + _build/.../release — is still
+       supported by OvstageDependency.cmake; point <source> at a rendering checkout to use it.) -->
+  <!-- NO packman dependency is declared here on purpose. ovstage is fetched from the
+       NVIDIA Artifactory PyPI registry (per platform) by
+       ovphysx/scripts/fetch_ovstage_release.py, which downloads the self-contained
+       ovstage wheel and extracts its C++ package into ../_build/target-deps/ovstage
+       (the path OvstageDependency.cmake resolves). For a LOCAL checkout workflow,
+       add a packman dependency named "ovstage" (linkPath ../_build/target-deps/ovstage)
+       with a local source-path entry; the pull_dependencies scripts detect a configured
+       source-path line and then use packman instead of the release fetch.
+       (Do not write the literal source-path tag inside this comment — the scripts
+       grep the file for it and would match the example.) -->
+</project>

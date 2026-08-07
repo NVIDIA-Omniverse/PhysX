@@ -1,0 +1,13 @@
+########################################################################################################################
+# ovphysx packman package
+#
+# Maps _install/ contents to the package root (no reshuffling).
+# This means the downloaded package layout matches the local _install/ tree,
+# so source-linking works: <source path="../../ovphysx/_install"/> gives the
+# same structure as the downloaded package at linkPath/.
+########################################################################################################################
+
+[ovphysx]
+files = [
+    ["_install/**", "."],
+]

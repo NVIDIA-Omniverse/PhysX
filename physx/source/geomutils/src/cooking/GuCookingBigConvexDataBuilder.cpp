@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -103,7 +103,7 @@ bool BigConvexDataBuilder::save(PxOutputStream& stream, bool platformMismatch) c
 // compute valencies for each vertex
 // we dont compute the edges again here, we have them temporary stored in mHullDataFacesByAllEdges8 structure
 bool BigConvexDataBuilder::computeValencies(const ConvexHullBuilder& meshBuilder)
-{	
+{
 	// Create valencies
 	const PxU32 numVertices = meshBuilder.mHull->mNbHullVertices;
 	mSVM->mData.mNbVerts = numVertices;
@@ -125,7 +125,7 @@ bool BigConvexDataBuilder::computeValencies(const ConvexHullBuilder& meshBuilder
 		const PxU32 numVerts = meshBuilder.mHullDataPolygons[i].mNbVerts;
 		const PxU8* Data = meshBuilder.mHullDataVertexData8 + meshBuilder.mHullDataPolygons[i].mVRef8;
 		for (PxU32 j = 0; j < numVerts; j++)
-		{			
+		{
 			mSVM->mData.mValencies[Data[j]].mCount++;
 			PX_ASSERT(mSVM->mData.mValencies[Data[j]].mCount != 0xffff);
 		}
@@ -229,7 +229,7 @@ void BigConvexDataBuilder::precomputeSample(const PxVec3& dir, PxU8& startIndex_
 		const PxU32 offset = valency[startIndex].mOffset;
 
 		for (PxU32 a = 0; a < numNeighbours; ++a)
-		{			
+		{
 			const PxU8 neighbourIndex = adjacentVerts[offset + a];			
 			const float dist = negativeDir * verts[neighbourIndex].dot(dir);
 			if (dist < minimum)
@@ -302,7 +302,7 @@ bool BigConvexDataBuilder::precompute(PxU32 subdiv)
 			{
 				precomputeSample(dirs[dStep], startIndex[dStep], 1.0f);
 				precomputeSample(dirs[dStep], startIndex2[dStep], -1.0f);
-			}			
+			}
 
 			// decompose the vector results into face directions
 			for (PxU32 k = 0; k < 6; k++)

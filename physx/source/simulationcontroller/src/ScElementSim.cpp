@@ -22,13 +22,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "ScElementSim.h"
 #include "ScElementSimInteraction.h"
 #include "ScSimStats.h"
+
+#if PX_SUPPORT_GPU_PHYSX
+#include "cudamanager/PxCudaContextManager.h"
+#include "cudamanager/PxCudaContext.h"
+#endif
 
 using namespace physx;
 using namespace Sc;
@@ -131,8 +136,18 @@ Sc::ElementSim::ElementSim(ActorSim& actor) :
 	mInBroadPhase	(false),
 	mShapeArrayIndex(0xffffffff)
 {
+#if PX_SUPPORT_GPU_PHYSX
+	if(!initID())
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL,
+								"Sc::ElementSim::ElementSim failed to allocate pinned memory bounds array");
+		mActor.getScene().getCudaContextManager()->getCudaContext()->setAbortMode(true);
+		// executing onElementAttach below is safe, as initID always sets allocated the elementID successfully, 
+		// but might fail to expand the bounds array.
+	}
+#else
 	initID();
-
+#endif
 	onElementAttach(*this, actor);
 }
 

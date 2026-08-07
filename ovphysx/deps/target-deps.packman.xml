@@ -1,0 +1,9 @@
+<project toolsVersion="5.0">
+  <!-- omni_physics needed for headers -->
+  <dependency name="omni_physics" linkPath="../_build/target-deps/omni_physics">
+    <!-- <package name="omni_physics" version="110.0.1-41662029-release_omni_110.0-63f795ec-${platform_target_abi}" /> -->
+    <source path="../ovruntime/" />
+  </dependency>
+
+  <!-- Do not add any other dependencies here, this file is not scanned for licences -->
+</project>

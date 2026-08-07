@@ -167,7 +167,6 @@ def test_cpu_numpy_indexed_write_to_gpu_binding(physx_sdk):
         before = np.zeros((N, D), dtype=np.float32)
         binding.read(before)
 
-        # Only update row 0
         src = before.copy()
         src[0, :] = 0.1
         idx = np.array([0], dtype=np.int32)

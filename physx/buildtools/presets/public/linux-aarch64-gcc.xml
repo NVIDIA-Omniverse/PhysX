@@ -7,6 +7,7 @@
     <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libs" />    
     <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="True" comment="Generate the GPU projects, if possible." />
     <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS_ONLY" value="False" comment="Generate ONLY the GPU projects, if possible." />
+    <cmakeSwitch name="PX_CUDA_DEVICE_DEBUG" value="False" comment="Build debug CUDA device code with -G for single line stepping" />
     <cmakeSwitch name="PX_SCALAR_MATH" value="False" comment="Disable SIMD math" />
     <cmakeSwitch name="NV_USE_STATIC_WINCRT" value="True" comment="Use the statically linked windows CRT" />
     <cmakeSwitch name="NV_USE_DEBUG_WINCRT" value="True" comment="Use the debug version of the CRT" />
@@ -15,6 +16,6 @@
     <cmakeSwitch name="PX_GENERATE_GPU_REDUCED_ARCHITECTURES" value="False" comment="Generate only a reduced number of GPU architectures for faster compilation" />  
   </CMakeSwitches>
   <CMakeParams>
-    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/linux-aarch64-gccPhysX" comment="Install path relative to PhysX SDK root" />
+    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/linux-aarch64-gcc/PhysX" comment="Install path relative to PhysX SDK root" />
   </CMakeParams>
 </preset>

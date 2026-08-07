@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -37,7 +37,7 @@
 #include "convexFormat.h"
 #include "cudaNpCommon.h"
 
-#include "PxsTransformCache.h"
+#include "PxsCachedTransform.h"
 #include "PxsContactManagerState.h"
 #include "PxgContactManager.h"
 #include "PxgConvexConvexShape.h"
@@ -298,7 +298,7 @@ int reduce(PxVec3 point, PxReal separation, PxVec3 normal, int nbContacts, int a
 	
 	// post-cull clustering for mesh collisions
 	if(TClustering)
-	{	
+	{
 		int nbClusters = 0, label;													// label each point with its closest cluster (distance measured orthogonal to the normal)
 		for(PxReal t = FLT_MAX; mask; nbClusters++, mask &= (mask-1))
 		{
@@ -884,7 +884,9 @@ bool generateConvexContacts(EpaAndClipScratch& ss_epa_clip_scratch, CollideScrat
 	//ML: after we refresh the contacts(newContacts) and generate a GJK/EPA contacts(we will store that in the manifold), if the number of contacts is still less than the original contacts,
 	//which means we lose too many contacts and we should regenerate all the contacts in the current configuration
 	//const bool fullContactGen = (0.707106781f > localNor.dot(-normal)) || (numManifoldContacts < ss_scratch.initialNbContacts);
-	const bool fullContactGen = (0.707106781f > localNor.dot(-normal)) || (numManifoldContacts < 4);
+	//const bool fullContactGen = (0.707106781f > localNor.dot(-normal)) || (numManifoldContacts < 4);	
+	const bool fullContactGen = (ss_scratch.initialNbContacts > 1)	// PT: this one was added to fix a jittering bug
+								|| (0.707106781f > localNor.dot(-normal)) || (numManifoldContacts < 4);
 	
 	if (fullContactGen)
 	{
@@ -897,7 +899,6 @@ bool generateConvexContacts(EpaAndClipScratch& ss_epa_clip_scratch, CollideScrat
 			ss_scratch.aToB.rotateInv(-normal),
 			ss_scratch.inSphereRadius0,
 			ss_scratch.toleranceLength);
-
 
 		PxI32 bestPlaneBIdx = getPolygonIndexFromLocalWitness(
 			ss_scratch.nbPolygons1,
@@ -1646,7 +1647,7 @@ static __device__ inline void writeContactsToStream4threads(
 	{
 		//each 4 thread in a warp deal with a pair. Each thread in a group write to one contact to the output cm. 
 		const PxU32 elementGlobalIndex = warpBeg + baseOffs + groupId;
-		PxTransform t1;
+		PxTransform t1(PxIdentity);
 		PxReal contactDist;
 		PxGeometryType::Enum type0;
 		PxGeometryType::Enum type1;
@@ -1780,7 +1781,7 @@ static __device__ inline void writeContactsToStream4threads(
 
 	
 		if (threadIdx.x == 0 )
-		{		
+		{
 			PxU32 totalContacts = __popc(keepContactW) + __popc(extraContactsW);
 
 			if (totalContacts)
@@ -1868,7 +1869,7 @@ static __device__ inline void writeContactsToStream4threads(
 				output->contactForces = reinterpret_cast<PxReal*>(startContactForces + forceAndIndiceByteOffset);
 				output->contactPoints = startContactPoints + contactByteOffset;
 
-			}		
+			}
 			s_scratch.contactParams[baseOffs + groupId].nbContacts = numManifoldContacts + (numManifoldContacts > 1 && insertAveragePoint);
 		}
 	}

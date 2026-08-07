@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build Server Test template
@@ -42,6 +42,8 @@ SET(PVDRUNTIME_HEADERS
   ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdFileReadStream.h
   ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdFileWriteStream.h
   ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdMemoryStream.h
+  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdSocketWriteStream.h
+  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdSocketReadStream.h
   ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdLibraryHelpers.h
   ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdLoader.h
 )
@@ -74,6 +76,13 @@ SET(PVDRUNTIME_SOURCES
   ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdMemoryReadStreamImpl.cpp
   ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdMemoryWriteStreamImpl.h
   ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdMemoryWriteStreamImpl.cpp
+  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocket.h
+  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocket.cpp
+  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocketProtocol.h
+  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocketWriteStreamImpl.h
+  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocketWriteStreamImpl.cpp
+  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocketReadStreamImpl.h
+  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocketReadStreamImpl.cpp
 )
 SOURCE_GROUP(src FILES ${PVDRUNTIME_SOURCES})
 

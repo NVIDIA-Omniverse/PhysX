@@ -10,6 +10,7 @@ This module handles library loading and defines C structures and function protot
 import ctypes
 import glob
 import importlib
+import importlib.util
 import logging
 import os
 import sys
@@ -57,6 +58,17 @@ def _add_dll_directory(path: str) -> None:
         _logger.debug("Added DLL directory: %s", path)
 
 
+def _ovstage_bin_dir(pkg_dir: str) -> str:
+    """ovstage runtime dir; find_spec locates the package without importing it."""
+    hint = os.environ.get("OVSTAGE_LIBRARY_PATH_HINT")
+    if hint and os.path.isdir(hint):
+        return hint
+    spec = importlib.util.find_spec("ovstage")
+    if spec is not None and spec.origin:
+        return os.path.join(os.path.dirname(spec.origin), "bin")
+    return os.path.join(os.path.dirname(pkg_dir), "ovstage", "bin")
+
+
 def _prefer_ovstage_runtime_dir(path: str) -> None:
     """Make ovstage's Python loader reuse the ovstage runtime paired with ovphysx."""
     if not path:
@@ -71,6 +83,20 @@ def _prefer_ovstage_runtime_dir(path: str) -> None:
             ovstage_bindings.OVSTAGE_LIBRARY_PATH_HINT = path
     except Exception as exc:  # noqa: BLE001 -- best-effort hint; ovstage import is optional
         _logger.debug("Could not hint ovstage runtime dir to %s: %s", path, exc)
+
+
+def _reuse_loaded_runtime_dependency(path: str) -> bool:
+    """Promote and retain an already-loaded Linux dependency by SONAME."""
+    if sys.platform != "linux" or not hasattr(os, "RTLD_NOLOAD"):
+        return False
+    mode = os.RTLD_NOW | os.RTLD_NOLOAD | os.RTLD_GLOBAL
+    try:
+        handle = ctypes.CDLL(os.path.basename(path), mode=mode)
+    except OSError:
+        return False
+    _runtime_library_handles.append(handle)
+    _logger.debug("Reusing already-loaded runtime dependency: %s", os.path.basename(path))
+    return True
 
 
 def _preload_ovstage_runtime_deps() -> None:
@@ -104,6 +130,8 @@ def _preload_ovstage_runtime_deps() -> None:
     candidates.append(os.path.join(ov_bin, "libovstage.so"))
     for dep in candidates:
         if os.path.exists(dep):
+            if _reuse_loaded_runtime_dependency(dep):
+                continue
             try:
                 _runtime_library_handles.append(ctypes.CDLL(dep, mode=os.RTLD_GLOBAL))
                 _logger.debug("Preloaded ovstage runtime dependency: %s", dep)
@@ -111,7 +139,6 @@ def _preload_ovstage_runtime_deps() -> None:
                 _logger.debug("Could not preload ovstage runtime dependency %s: %s", dep, exc)
 
 
-# Import DLPack structures from dlpack module
 from .dlpack import (
     DLDataType,
     DLDataTypeCode,
@@ -220,7 +247,7 @@ def _load_library() -> ctypes.CDLL:
     if sys.platform == "win32":
         _preload_windows_cpp_runtime()
         pkg_dir = os.path.dirname(__file__)
-        ovstage_bin_dir = os.path.join(os.path.dirname(pkg_dir), "ovstage", "bin")
+        ovstage_bin_dir = _ovstage_bin_dir(pkg_dir)
         try:
             if lib_env and not uses_bundled_lib:
                 # Derive SDK root from OVPHYSX_LIB (<root>/bin/ovphysx.dll on Windows,
@@ -239,16 +266,15 @@ def _load_library() -> ctypes.CDLL:
                         _add_dll_directory(kit_sdk_dir)
                         _logger.info("Adding kit SDK DLL directory from OVPHYSX_LIB: %s", kit_sdk_dir)
             else:
-                for d in (
-                    os.path.join(pkg_dir, "lib"),
-                    os.path.join(pkg_dir, "plugins"),
-                    ovstage_bin_dir,
-                    # ovstage.dll's USD/TBB import closure is in this sibling.
-                    # os.add_dll_directory() does not search subdirectories.
-                    os.path.join(ovstage_bin_dir, "plugins"),
-                ):
-                    _add_dll_directory(d)
-                _prefer_ovstage_runtime_dir(ovstage_bin_dir)
+                _add_dll_directory(os.path.join(pkg_dir, "lib"))
+                _add_dll_directory(os.path.join(pkg_dir, "plugins"))
+
+            # Neither the SDK nor this wheel ships ovstage, and ovphysx.dll imports
+            # it. os.add_dll_directory() does not search subdirectories, so the
+            # USD/TBB closure under plugins/ needs its own entry.
+            _add_dll_directory(ovstage_bin_dir)
+            _add_dll_directory(os.path.join(ovstage_bin_dir, "plugins"))
+            _prefer_ovstage_runtime_dir(ovstage_bin_dir)
         except Exception as e:
             _logger.debug("Failed to add DLL directories to search path: %s", e)
 
@@ -299,7 +325,6 @@ _lib = _load_library()
 _logger.debug("Loaded library: %s", _lib)
 
 
-# ovphysx_string_t - matches C API definition
 class ovphysx_string_t(ctypes.Structure):
     """String structure with pointer and length (matches ovphysx_string_t in C API)."""
 

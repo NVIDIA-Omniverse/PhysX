@@ -21,7 +21,6 @@ def test_clone_basic_functionality(physx_sdk):
     """Smoke test: verify clone works through Python wrapper."""
     sdk = physx_sdk
 
-    # Load USD file
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     usd_path = os.path.join(test_dir, "data", "basic_simulation.usda")
     load_usd_with_ovstage(sdk, usd_path)
@@ -54,7 +53,6 @@ def test_clone_error_handling(physx_sdk):
     """Verify Python wrapper converts C errors to Python exceptions correctly."""
     sdk = physx_sdk
 
-    # Load USD file for some tests
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     usd_path = os.path.join(test_dir, "data", "basic_simulation.usda")
     load_usd_with_ovstage(sdk, usd_path)
@@ -158,7 +156,6 @@ def test_clone_error_no_usd_loaded(physx_sdk):
     """Verify clone without an attached ovstage raises RuntimeError."""
     sdk = physx_sdk
 
-    # Try to clone without attaching an ovstage - should raise RuntimeError
     with pytest.raises(RuntimeError, match="no ovstage is attached"):
         sdk.clone("/World/envs/env0", ["/World/envs/env1"])
 
@@ -210,8 +207,6 @@ def test_clone_multiple_targets_stress(physx_sdk):
     load_usd_with_ovstage(physx_sdk, usd_path)
     physx_sdk.wait_all()
 
-    # Clone env0 to many targets (stress test)
-    # basic_simulation.usda has /World/envs/env0 as a proper cloneable hierarchy
     target_paths = [f"/World/envs/env{i}" for i in range(10, 20)]  # env10-env19
 
     try:

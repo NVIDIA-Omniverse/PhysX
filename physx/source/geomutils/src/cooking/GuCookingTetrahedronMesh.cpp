@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved. 
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved. 
 
 #define USE_GJK_VIRTUAL
 
@@ -56,6 +56,32 @@ using namespace Cm;
 using namespace physx;
 
 #define SB_PARTITION_LIMIT 8 // max # partitions allowed. This value SHOULD NOT change. See also PxgSoftBody.h.
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace
+{
+#if PX_CHECKED
+	bool validateTetrahedronIndices(const IndTetrahedron32* tetrahedrons, PxU32 numTetrahedrons, PxU32 numVertices)
+	{
+		for (PxU32 i = 0; i < numTetrahedrons; i++)
+		{
+			const IndTetrahedron32& tet = tetrahedrons[i];
+			for (PxU32 j = 0; j < 4; j++)
+			{
+				if (tet.mRef[j] >= numVertices)
+				{
+					PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
+						"TetrahedronMeshBuilder: tetrahedron %u has vertex index %u >= numVertices %u. Invalid mesh data.",
+						i, tet.mRef[j], numVertices);
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+#endif
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -238,7 +264,7 @@ bool TetrahedronMeshBuilder::importMesh(const PxTetrahedronMeshDesc& collisionMe
 	{
 		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Invalid tetrahedron indices.");
 		return false;
-	}	
+	}
 #endif
 
 	//copy the material index list if any:
@@ -1571,7 +1597,7 @@ static bool gDistanceCheckCallback(const AABBTreeNode* current, PxU32 /*depth*/,
 					Data->mDistanceSq = distanceSq;
 					Data->mTetInd = tetId;
 				}
-			}				
+			}
 		}
 	}
 	else
@@ -1681,7 +1707,7 @@ static bool gOverlapCallback(const AABBTreeNode* current, PxU32 /*depth*/, void*
 	return true;
 }
 
-void TetrahedronMeshBuilder::createCollisionModelMapping(const TetrahedronMeshData& collisionMesh, const DeformableVolumeCollisionData& collisionData, CollisionMeshMappingData& mappingData)
+bool TetrahedronMeshBuilder::createCollisionModelMapping(const TetrahedronMeshData& collisionMesh, const DeformableVolumeCollisionData& collisionData, CollisionMeshMappingData& mappingData)
 {
 	const PxU32 nbVerts = collisionMesh.mNbVertices;
 
@@ -1697,6 +1723,21 @@ void TetrahedronMeshBuilder::createCollisionModelMapping(const TetrahedronMeshDa
 	const PxU32 nbTetrahedrons = collisionMesh.mNbTetrahedrons;
 		
 	IndTetrahedron32* tetra = reinterpret_cast<IndTetrahedron32*>(collisionData.mGRB_primIndices);
+
+#if PX_CHECKED
+	if (!validateTetrahedronIndices(tetra, nbTetrahedrons, nbVerts))
+	{
+		// Free mapping data allocations
+		PX_FREE(mappingData.mCollisionAccumulatedTetrahedronsRef);
+
+		// Free temp allocations
+		PX_FREE(tempCounts);
+
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "TetrahedronMeshBuilder::createCollisionModelMapping: invalid tetrahedron vertex indices.");
+
+		return false;
+	}
+#endif
 
 	for (PxU32 i = 0; i < nbTetrahedrons; i++)
 	{
@@ -1834,7 +1875,7 @@ void TetrahedronMeshBuilder::createCollisionModelMapping(const TetrahedronMeshDa
 			}
 
 			if (hint & 8)//1110
-			{			
+			{
 				if (surfaceVertsHint[originalTet.mRef[1]] == 0)
 				{
 					surfaceVertsHint[originalTet.mRef[1]] = 1;
@@ -1878,14 +1919,29 @@ void TetrahedronMeshBuilder::createCollisionModelMapping(const TetrahedronMeshDa
 
 	if (!aabbTree.buildFromMesh(meshInterface, nbPrimsPerLeaf))
 	{
+		// Free mapping data allocations
+		PX_FREE(mappingData.mCollisionAccumulatedTetrahedronsRef);
+		PX_FREE(mappingData.mCollisionTetrahedronsReferences);
+		PX_FREE(mappingData.mCollisionSurfaceVertsHint);
+		PX_FREE(mappingData.mCollisionSurfaceVertToTetRemap);
+
+		// Free temp allocations
+		PX_FREE(tempCounts);
+		PX_FREE(surfaceTets);
+		PX_FREE(surfaceVertsHint);
+		PX_FREE(surfaceVertToTetRemap);
+
 		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "BV4_AABBTree tree failed to build.");
-		return;
+
+		return false;
 	}
 
 	PX_FREE(tempCounts);
 	PX_FREE(surfaceTets);
 	PX_FREE(surfaceVertsHint);
 	PX_FREE(surfaceVertToTetRemap);
+
+	return true;
 }
 
 /*//Keep for debugging & verification
@@ -1913,11 +1969,12 @@ void writeTets(const char* path, const PxVec3* tetPoints, PxU32 numPoints, const
 	fclose(fp);
 }*/
 
-void TetrahedronMeshBuilder::computeModelsMapping(TetrahedronMeshData& simulationMesh,
+bool TetrahedronMeshBuilder::computeModelsMapping(TetrahedronMeshData& simulationMesh,
 	const TetrahedronMeshData& collisionMesh, const DeformableVolumeCollisionData& collisionData,
 	CollisionMeshMappingData& mappingData, bool buildGPUData, const PxBoundedData* vertexToTet)
 {
-	createCollisionModelMapping(collisionMesh, collisionData, mappingData);
+	if (!createCollisionModelMapping(collisionMesh, collisionData, mappingData))
+		return false;
 
 	if (buildGPUData)
 	{
@@ -1942,6 +1999,24 @@ void TetrahedronMeshBuilder::computeModelsMapping(TetrahedronMeshData& simulatio
 		IndTetrahedron32* tetrahedron32 = reinterpret_cast<IndTetrahedron32*>(simulationMesh.mTetrahedrons);
 		meshInterface.setPointers(tetrahedron32, NULL, gridModelVertices);
 
+#if PX_CHECKED
+		if (!validateTetrahedronIndices(tetrahedron32, simulationMesh.mNbTetrahedrons, simulationMesh.mNbVertices))
+		{
+			// Free mapping data allocations
+			PX_FREE(mappingData.mCollisionAccumulatedTetrahedronsRef);
+			PX_FREE(mappingData.mCollisionTetrahedronsReferences);
+			PX_FREE(mappingData.mCollisionSurfaceVertsHint);
+			PX_FREE(mappingData.mCollisionSurfaceVertToTetRemap);
+
+			// Free temp allocations
+			PX_FREE(gridModelVertices);
+
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "TetrahedronMeshBuilder::computeModelsMapping: invalid tetrahedron vertex indices.");
+
+			return false;
+		}
+#endif
+
 		//writeTets("C:\\tmp\\grid.tet", gridModelVertices, simulationMesh.mNbVertices, tetrahedron32, simulationMesh.mNbTetrahedrons);
 		//writeTets("C:\\tmp\\col.tet", mVertices, mNbVertices, reinterpret_cast<IndTetrahedron32*>(mTetrahedrons), mNbTetrahedrons);
 
@@ -1950,8 +2025,18 @@ void TetrahedronMeshBuilder::computeModelsMapping(TetrahedronMeshData& simulatio
 		
 		if (!aabbTree.buildFromMesh(meshInterface, nbPrimsPerLeaf))
 		{
+			// Free mapping data allocations
+			PX_FREE(mappingData.mCollisionAccumulatedTetrahedronsRef);
+			PX_FREE(mappingData.mCollisionTetrahedronsReferences);
+			PX_FREE(mappingData.mCollisionSurfaceVertsHint);
+			PX_FREE(mappingData.mCollisionSurfaceVertToTetRemap);
+
+			// Free temp allocations
+			PX_FREE(gridModelVertices);
+			
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "BV32 tree failed to build.");
-			return;
+			
+			return false;
 		}
 
 		const PxU32 nbTetModelVerts = collisionMesh.mNbVertices;
@@ -2136,6 +2221,8 @@ void TetrahedronMeshBuilder::computeModelsMapping(TetrahedronMeshData& simulatio
 
 		PX_FREE(gridModelVertices);			
 	}
+
+	return true;
 }
 
 PX_FORCE_INLINE PxF32 tetVolume(const PxVec3& a, const PxVec3& b, const PxVec3& c, const PxVec3& d)
@@ -2383,7 +2470,7 @@ bool TetrahedronMeshBuilder::computeCollisionData(const PxTetrahedronMeshDesc& c
 bool TetrahedronMeshBuilder::loadFromDesc(const PxTetrahedronMeshDesc& simulationMeshDesc, const PxTetrahedronMeshDesc& collisionMeshDesc,
 	PxDeformableVolumeSimulationDataDesc deformableVolumeDataDesc, TetrahedronMeshData& simulationMesh, DeformableVolumeSimulationData& simulationData,
 	TetrahedronMeshData& collisionMesh, DeformableVolumeCollisionData& collisionData, CollisionMeshMappingData& mappingData, const PxCookingParams&	params, bool validateMesh)
-{		
+{
 	if (!simulationMeshDesc.isValid() || !collisionMeshDesc.isValid() || !deformableVolumeDataDesc.isValid())
 		return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "TetrahedronMesh::loadFromDesc: desc.isValid() failed!");
 
@@ -2396,7 +2483,8 @@ bool TetrahedronMeshBuilder::loadFromDesc(const PxTetrahedronMeshDesc& simulatio
 
 	computeSimData(simulationMeshDesc, simulationMesh, simulationData, params);
 
-	computeModelsMapping(simulationMesh, collisionMesh, collisionData, mappingData, params.buildGPUData, &deformableVolumeDataDesc.vertexToTet);
+	if (!computeModelsMapping(simulationMesh, collisionMesh, collisionData, mappingData, params.buildGPUData, &deformableVolumeDataDesc.vertexToTet))
+		return false;
 
 #if PX_DEBUG
 	for (PxU32 i = 0; i < collisionMesh.mNbVertices; ++i) {
@@ -2670,7 +2758,7 @@ bool TetrahedronMeshBuilder::createMidPhaseStructure(TetrahedronMeshData& collis
 
 	const PxU32 nbTetsPerLeaf = 15;
 
-	if (!BuildBV4Ex(collisionData.mBV4Tree, meshInterface, gBoxEpsilon, nbTetsPerLeaf, false))
+	if (!buildBV4Ex(collisionData.mBV4Tree, meshInterface, gBoxEpsilon, nbTetsPerLeaf, false))
 		return PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "BV4 tree failed to build.");
 			
 	const PxU32* order = meshInterface.getRemap();

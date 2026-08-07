@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -94,7 +94,7 @@ namespace Gu
 						aos::Vec3V	support(const aos::Vec3VArg v)					const	{ return getConvex<Convex>().supportLocal(v);			}
 						aos::Vec3V	support(const aos::Vec3VArg dir, PxI32& index)	const	{ return getConvex<Convex>().supportLocal(dir, index);	}
 		PX_INLINE		aos::FloatV	getSweepMargin()								const	{ return getConvex<Convex>().getSweepMargin();			}
-		virtual			aos::Vec3V	getCenter()										const	{ return getConvex<Convex>().getCenter();				}
+						aos::Vec3V	getCenter()										const	{ return getConvex<Convex>().getCenter();				}
 		//~GjkConvex
 
 		//ML: we can't force inline function, otherwise win modern will throw compiler error
@@ -125,7 +125,7 @@ namespace Gu
 						aos::Vec3V	support(const aos::Vec3VArg v)					const	{ return getConvex<Convex>().supportRelative(v, mAToB, mAToBTransposed);			}
 						aos::Vec3V	support(const aos::Vec3VArg dir, PxI32& index)	const	{ return getConvex<Convex>().supportRelative(dir, mAToB, mAToBTransposed, index);	}
 		PX_INLINE		aos::FloatV	getSweepMargin()								const	{ return getConvex<Convex>().getSweepMargin();										}
-		virtual			aos::Vec3V	getCenter()										const	{ return mAToB.transform(getConvex<Convex>().getCenter());							}
+						aos::Vec3V	getCenter()										const	{ return mAToB.transform(getConvex<Convex>().getCenter());							}
 		//~GjkConvex
 
 		PX_FORCE_INLINE const aos::PxMatTransformV&	getRelativeTransform()			const	{ return mAToB;	}

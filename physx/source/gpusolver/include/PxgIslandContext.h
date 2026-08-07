@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,6 +30,8 @@
 #define PXG_ISLAND_CONTEXT_H
 
 #include "foundation/PxArray.h"
+
+#include "DyCpuGpuBiasCoefficient.h"
 
 namespace physx
 {
@@ -59,8 +61,7 @@ namespace physx
 
 		PxU32 mStaticRigidBatchCount;
 
-		PxReal mBiasCoefficient;
-
+		Dy::BiasCoefficientCollection mBiasCoefficients;
 	};
 }
 #endif

@@ -7,23 +7,10 @@
 This module provides common helper functions used across multiple test files
 to avoid duplication and maintain consistency.
 
-MR 6300 Migration Notes:
-    The old AttributeBinding API required low-level DLPack tensor manipulation via
-    make_tensor() and read_tensor() helpers. These have been removed because:
-
-    - The new TensorBinding API uses NumPy arrays directly
-    - Functions were only used in test_attributes_OLD_API_OBSOLETE.py (not run)
-    - If needed for reference, they can be recovered from git history
-
-    Old pattern (REMOVED):
-        tensor = make_tensor([1.0, 2.0, 3.0], (3,), DLDataTypeCode.kDLFloat, 32)
-        sdk.write_attribute(binding, tensor)
-        result = read_tensor(output_tensor, (3,), DLDataTypeCode.kDLFloat, 32)
-
-    New pattern (CURRENT):
-        data = np.array([[1.0, 2.0, 3.0]], dtype=np.float32)
-        binding.write(data)
-        binding.read(data)
+Tests use the TensorBinding API with NumPy arrays directly, e.g.:
+    data = np.array([[1.0, 2.0, 3.0]], dtype=np.float32)
+    binding.write(data)
+    binding.read(data)
 """
 
 import ctypes
@@ -198,6 +185,10 @@ def attach_usd_with_ovstage(physx, usd_path: str, ordinal: int = 1):
             ordinal=ordinal,
             domains=ovstage.PopulationDomain.PHYSICS,
         )
+        # Population never opens or commits an ordinal of its own; the caller owns
+        # ordinal lifecycle. attach_ovstage() reads at a *sealed* ordinal, so seal
+        # what population just authored before attaching.
+        stage.advance_write_floor(ordinal=ordinal).wait()
         physx.attach_ovstage(stage, read_ordinal=ordinal)
         attached = True
     except Exception as exc:

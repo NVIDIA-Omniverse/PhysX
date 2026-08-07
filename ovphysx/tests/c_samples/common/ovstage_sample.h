@@ -107,6 +107,43 @@ static inline int ovphysx_sample_attach_usd_with_ovstage(
         return 0;
     }
 
+    /* Population never opens or commits an ordinal of its own -- the caller owns
+       ordinal lifecycle. Waiting on the population op only completes population, so
+       seal the ordinal before attaching: ovphysx_attach_ovstage() reads at a sealed
+       ordinal. Canonical sequence (ovstage_population.h): open_usd_* -> wait_op ->
+       advance_write_floor -> consumer attach/update. */
+    ovstage_write_floor_desc_t write_floor;
+    memset(&write_floor, 0, sizeof(write_floor));
+    write_floor.ordinal = attachment->ordinal;
+    write_floor.scope = OVSTAGE_SCOPE_ALL;
+
+    ovstage_enqueue_result_t floor_enqueue = ovstage_advance_write_floor(attachment->stage, &write_floor);
+    if (floor_enqueue.status != OVSTAGE_OK)
+    {
+        ovx_string_t err = ovstage_get_last_error();
+        fprintf(stderr, "ERROR: ovstage_advance_write_floor failed: %d %.*s\n",
+                (int)floor_enqueue.status, (int)err.length, err.ptr ? err.ptr : "");
+        ovphysx_sample_destroy_stage(handle, attachment);
+        return 0;
+    }
+
+    ovstage_op_wait_result_t floor_wait;
+    memset(&floor_wait, 0, sizeof(floor_wait));
+    ovstage_api_status_t floor_status = ovstage_wait_op(
+        attachment->stage,
+        floor_enqueue.op_index,
+        OVSTAGE_TIMEOUT_INFINITE,
+        &floor_wait);
+    ovstage_release_op(attachment->stage, floor_enqueue.op_index);
+    if (floor_status != OVSTAGE_OK)
+    {
+        ovx_string_t err = ovstage_get_last_error();
+        fprintf(stderr, "ERROR: ovstage write-floor wait failed: %d %.*s\n",
+                (int)floor_status, (int)err.length, err.ptr ? err.ptr : "");
+        ovphysx_sample_destroy_stage(handle, attachment);
+        return 0;
+    }
+
     ovphysx_result_t attach = ovphysx_attach_ovstage(handle, attachment->stage, attachment->ordinal);
     if (attach.status != OVPHYSX_API_SUCCESS)
     {

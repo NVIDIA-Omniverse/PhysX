@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -44,7 +44,7 @@ public:
 	PX_FORCE_INLINE		PreallocatingRegion() : mMemory(NULL), mFirstFree(NULL), mNbElements(0)	{}
 
 	void		init(PxU32 maxElements, PxU32 elementSize, const char* typeName)
-	{	
+	{
 		mFirstFree	= NULL;
 		mNbElements	= 0;
 		PX_ASSERT(typeName);
@@ -229,8 +229,8 @@ private:
 		PreallocatingRegion tmp;
 		tmp.init(maxElements, elementSize, mTypeName);
 
-		PreallocatingRegion& newPool = mPools.pushBack(tmp);		// ### addActor alloc (StaticSim, ShapeSim, SceneQueryShapeData)
-		return newPool.allocateMemory(maxElements, elementSize);
+		PreallocatingRegion* newPool = mPools.pushBack(tmp);		// ### addActor alloc (StaticSim, ShapeSim, SceneQueryShapeData)
+		return newPool->allocateMemory(maxElements, elementSize);
 	}
 
 	PX_FORCE_INLINE	bool contains(PxU8* memory, const PxU32 slabSize, PxU8* element)
@@ -384,7 +384,7 @@ template<class T>
 class BufferedPreallocatingPool : public PreallocatingPool<T>
 {
 	PxArray<T*> mDeletedElems;
-	PX_NOCOPY(BufferedPreallocatingPool<T>)
+	PX_NOCOPY(BufferedPreallocatingPool)
 public:
 	BufferedPreallocatingPool(PxU32 maxElements, const char* typeName) : PreallocatingPool<T>(maxElements, typeName)
 	{

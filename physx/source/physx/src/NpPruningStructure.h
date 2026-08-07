@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -53,11 +53,11 @@ namespace physx
 			//~PX_SERIALIZATION
 
 			// PxPruningStructure
-			virtual			void					release();
-			virtual			PxU32					getRigidActors(PxRigidActor** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const;
-			virtual			PxU32					getNbRigidActors()			const;
-			virtual			const void*				getStaticMergeData()		const;
-			virtual			const void*				getDynamicMergeData()		const;
+			virtual			void					release() PX_OVERRIDE;
+			virtual			PxU32					getRigidActors(PxRigidActor** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const PX_OVERRIDE;
+			virtual			PxU32					getNbRigidActors()			const PX_OVERRIDE;
+			virtual			const void*				getStaticMergeData()		const PX_OVERRIDE;
+			virtual			const void*				getDynamicMergeData()		const PX_OVERRIDE;
 			// ~PxPruningStructure
 													PruningStructure();
 			virtual									~PruningStructure();

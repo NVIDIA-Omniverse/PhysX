@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -45,6 +45,7 @@ class PxActor;
 
 namespace Sc
 {
+	class Scene;
 
 #define SC_NOT_IN_SCENE_INDEX		0xffffffff  // the body is not in the scene yet
 #define SC_NOT_IN_ACTIVE_LIST_INDEX	0xfffffffe  // the body is in the scene but not in the active list
@@ -123,6 +124,7 @@ namespace Sc
 			BF_KINEMATIC_MOVE_FLAGS			= BF_KINEMATIC_MOVED | BF_KINEMATIC_SETTLING | BF_KINEMATIC_SETTLING_2, //Used to clear kinematic masks in 1 call
 			BF_KINEMATIC_SURFACE_VELOCITY	= 1 << 11,	//Set when the application calls setKinematicVelocity. Actor remains awake until application calls clearKinematicVelocity. 
 			BF_IS_COMPOUND_RIGID			= 1 << 12,	// Set when the body is a compound actor, we dont want to set the sq bounds
+			BF_RESET_ACCELERATION			= 1 << 13,	// Set when acceleration state should be reset (teleport, wake-up, etc.)
 
 											// PT: WARNING: flags stored on 16-bits now.
 		};

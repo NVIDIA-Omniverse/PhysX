@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -59,8 +59,8 @@ class PsPvd : public physx::PxPvd, public PxAllocationListener
 	virtual bool unRegisterObject(const void* inItem) = 0;
 
 	//AllocationListener
-	void onAllocation(size_t size, const char* typeName, const char* filename, int line, void* allocatedMemory) = 0;
-	void onDeallocation(void* addr) = 0;
+	virtual void onAllocation(size_t size, const char* typeName, const char* filename, int line, void* allocatedMemory) = 0;
+	virtual void onDeallocation(void* addr) = 0;
 
 	virtual PvdOMMetaDataProvider& getMetaDataProvider() = 0;
 	

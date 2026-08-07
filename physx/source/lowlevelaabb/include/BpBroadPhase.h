@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -40,8 +40,6 @@ namespace physx
 
 namespace Bp
 {
-
-class BroadPhaseUpdateData;
 
 /**
 \brief Base broad phase class.  Functions only relevant to MBP.
@@ -203,7 +201,7 @@ public:
 	2. object ids can only be added to the updated list if they have been previously added without being removed.
 	3. objects ids can only be added to the removed list if they have been previously added without being removed.
 	*/
-	virtual bool	isValid(const BroadPhaseUpdateData& updateData) const = 0;
+	virtual BroadPhaseUpdateError::Enum	isValid(const BroadPhaseUpdateData& updateData) const = 0;
 #endif
 };
 

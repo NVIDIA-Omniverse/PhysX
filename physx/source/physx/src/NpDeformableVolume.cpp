@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,7 +33,6 @@
 
 #if PX_SUPPORT_GPU_PHYSX
 #include "NpDeformableVolume.h"
-#include "NpPBDParticleSystem.h"
 #include "NpCheck.h"
 #include "NpScene.h"
 #include "NpShape.h"
@@ -42,39 +41,13 @@
 #include "PxPhysXGpu.h"
 #include "PxvGlobals.h"
 #include "GuTetrahedronMesh.h"
-#include "NpRigidDynamic.h"
-#include "NpRigidStatic.h"
-#include "NpArticulationLink.h"
 #include "ScDeformableVolumeSim.h"
 #include "NpDeformableVolumeMaterial.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 using namespace physx;
 
 class PxCudaContextManager;
-
-namespace
-{
-	// for deprecation
-	static const PxU32 sNumTwinFlags = 3;
-	static PxDeformableVolumeFlag::Enum sVFlags[sNumTwinFlags] = { PxDeformableVolumeFlag::eDISABLE_SELF_COLLISION, PxDeformableVolumeFlag::eENABLE_CCD, PxDeformableVolumeFlag::eKINEMATIC };
-	static PxDeformableBodyFlag::Enum sBFlags[sNumTwinFlags] = { PxDeformableBodyFlag::eDISABLE_SELF_COLLISION, PxDeformableBodyFlag::eENABLE_SPECULATIVE_CCD, PxDeformableBodyFlag::eKINEMATIC };
-
-	void mirrorTwinFlags(PxDeformableBodyFlags& bodyFlags, const PxDeformableVolumeFlags volumeFlags)
-	{
-		for (PxU32 f = 0; f < sNumTwinFlags; ++f)
-		{
-			bool val = volumeFlags.isSet(sVFlags[f]);
-			if (val)
-			{
-				bodyFlags.raise(sBFlags[f]);
-			}
-			else
-			{
-				bodyFlags.clear(sBFlags[f]);
-			}
-		}
-	}
-}
 
 namespace physx
 {
@@ -82,6 +55,8 @@ namespace physx
 NpDeformableVolume::NpDeformableVolume(PxCudaContextManager& cudaContextManager) :
 	NpActorTemplate	(PxConcreteType::eDEFORMABLE_VOLUME, PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE, NpType::eDEFORMABLE_VOLUME),
 	mShape			(NULL),
+	mSimulationMesh(NULL),
+	mAuxData		(NULL),
 	mCudaContextManager(&cudaContextManager),
 	mMemoryManager(NULL),
 	mDeviceMemoryAllocator(NULL)
@@ -91,6 +66,8 @@ NpDeformableVolume::NpDeformableVolume(PxCudaContextManager& cudaContextManager)
 NpDeformableVolume::NpDeformableVolume(PxBaseFlags baseFlags, PxCudaContextManager& cudaContextManager) :
 	NpActorTemplate	(baseFlags), 
 	mShape			(NULL),
+	mSimulationMesh(NULL),
+	mAuxData		(NULL),
 	mCudaContextManager(&cudaContextManager),
 	mMemoryManager(NULL),
 	mDeviceMemoryAllocator(NULL)
@@ -139,9 +116,13 @@ PxBounds3 NpDeformableVolume::getWorldBounds(float inflation) const
 	const Sc::DeformableVolumeSim* sim = mCore.getSim();
 	PX_ASSERT(sim);
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
-	const PxBounds3 bounds = getNpScene()->getScScene().getBoundsArray().getBounds(sim->getShapeSim().getElementID());
+	NP_CHECK_SCENE_CORRUPTION_AND_RETURN_VAL(getNpScene(), PxBounds3::empty())
+
+	const PxU32 boundsIndex = sim->getShapeSim().getElementID();
+	const Bp::BoundsArray& boundsArray = getNpScene()->getScScene().getBoundsArray();
+	const PxBounds3 bounds = boundsArray.getBounds(boundsIndex);
 	PX_ASSERT(bounds.isValid());
 
 	// PT: unfortunately we can't just scale the min/max vectors, we need to go through center/extents.
@@ -187,11 +168,13 @@ void NpDeformableVolume::setDeformableBodyFlag(PxDeformableBodyFlag::Enum flag, 
 		flags.clear(flag);
 
 	mCore.setBodyFlags(flags);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, deformableBodyFlags, static_cast<PxDeformableBody&>(*this), flags);
 }
 
 void NpDeformableVolume::setDeformableBodyFlags(PxDeformableBodyFlags flags)
 {
 	mCore.setBodyFlags(flags);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, deformableBodyFlags, static_cast<PxDeformableBody&>(*this), flags);
 }
 
 PxDeformableBodyFlags NpDeformableVolume::getDeformableBodyFlags() const
@@ -207,6 +190,7 @@ void NpDeformableVolume::setLinearDamping(const PxReal v)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setLinearDamping() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setLinearDamping(v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, linearDamping, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -220,10 +204,11 @@ void NpDeformableVolume::setMaxLinearVelocity(const PxReal v)
 	NpScene* npScene = getNpScene();
 	NP_WRITE_CHECK(npScene);
 
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setMaxVelocity() not allowed while simulation is running. "
+	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setMaxLinearVelocity() not allowed while simulation is running. "
 		"Call will be ignored.");
 
 	mCore.setMaxLinearVelocity(v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, maxLinearVelocity, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -241,6 +226,7 @@ void NpDeformableVolume::setMaxDepenetrationVelocity(const PxReal v)
 		"Call will be ignored.");
 
 	mCore.setMaxPenetrationBias(-v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, maxDepenetrationVelocity, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -258,6 +244,7 @@ void NpDeformableVolume::setSelfCollisionFilterDistance(const PxReal v)
 		"Call will be ignored.");
 
 	mCore.setSelfCollisionFilterDistance(v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, selfCollisionFilterDistance, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -278,6 +265,7 @@ void NpDeformableVolume::setSolverIterationCounts(PxU32 minPositionIters, PxU32 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setSolverIterationCounts() not allowed while simulation is running. Call will be ignored.");
 
 	mCore.setSolverIterationCounts((minVelocityIters & 0xff) << 8 | (minPositionIters & 0xff));
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, solverIterationCount, static_cast<PxDeformableBody&>(*this), minPositionIters);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -298,6 +286,7 @@ void NpDeformableVolume::setSleepThreshold(const PxReal v)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setSleepThreshold() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setSleepThreshold(v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, sleepThreshold, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -314,6 +303,7 @@ void NpDeformableVolume::setSettlingThreshold(const PxReal v)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setSettlingThreshold() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setSettlingThreshold(v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, settlingThreshold, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -330,6 +320,7 @@ void NpDeformableVolume::setSettlingDamping(const PxReal v)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setSettlingDamping() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setSettlingDamping(v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, settlingDamping, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -345,7 +336,7 @@ void NpDeformableVolume::setWakeCounter(PxReal wakeCounterValue)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setWakeCounter() not allowed while simulation is running. Call will be ignored.")
 
-		mCore.setWakeCounter(wakeCounterValue);
+	mCore.setWakeCounter(wakeCounterValue);
 	//UPDATE_PVD_PROPERTIES_OBJECT()
 }
 
@@ -357,6 +348,11 @@ PxReal NpDeformableVolume::getWakeCounter() const
 
 bool NpDeformableVolume::isSleeping() const
 {
+	NpScene* npScene = getNpScene();
+	// The rest of the function is incorrect if sleeping is disabled, return false immediately
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eDISABLE_SLEEPING))
+		return false;
+
 	Sc::DeformableVolumeSim* sim = mCore.getSim();
 	if (sim)
 	{
@@ -389,7 +385,7 @@ bool NpDeformableVolume::attachShape(PxShape& shape)
 	PX_CHECK_AND_RETURN_NULL(tetMesh->getNbTetrahedronsFast() <= PX_MAX_NB_DEFORMABLE_VOLUME_TET,
 		"PxDeformableVolume::attachShape: collision mesh consists of too many tetrahedrons, see PX_MAX_NB_DEFORMABLE_VOLUME_TET");
 
-	PX_CHECK_AND_RETURN_NULL(npShape->getCore().getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_VOLUME_SHAPE,
+	PX_CHECK_AND_RETURN_NULL(npShape->getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_VOLUME_SHAPE,
 		"PxDeformableVolume::attachShape: shape must be a deformable volume shape!");
 
 	Dy::DeformableVolumeCore& core = mCore.getCore();
@@ -408,14 +404,20 @@ bool NpDeformableVolume::attachShape(PxShape& shape)
 
 	updateMaterials();
 
+	// Stream collision shape to OmniPVD
+	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, shapes, static_cast<PxDeformableBody&>(*this), shape);
+
 	return true;
 }
 
 void NpDeformableVolume::detachShape()
 {
-	PX_CHECK_MSG(getNpSceneFromActor(*this) == NULL, 
+	PX_CHECK_MSG(getNpSceneFromActor(*this) == NULL,
 		"Detaching a shape from a PxDeformableVolume is currenly only allowed as long as it is not part of a scene. "
 		"Please remove the deformable volume from its scene first.");
+
+	if (!mShape)
+		return;
 
 	PX_ASSERT(mDeviceMemoryAllocator);
 
@@ -431,45 +433,14 @@ void NpDeformableVolume::detachShape()
 		core.positionInvMass = NULL;
 	}
 
-	if (mShape)
-		mShape->onActorDetach();
+	OMNI_PVD_REMOVE(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, shapes, static_cast<PxDeformableBody&>(*this), *mShape);
+	mShape->onActorDetach();
 	mShape = NULL;
 }
 
 PxCudaContextManager* NpDeformableVolume::getCudaContextManager() const
 {
 	return mCudaContextManager;
-}
-
-// deprecated
-void NpDeformableVolume::setParameter(const PxFEMParameters& parameters)
-{
-	NpScene* npScene = getNpScene();
-	NP_WRITE_CHECK(npScene);
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setParameter() not allowed while simulation is running. Call will be ignored.")
-
-	mCore.setLinearDamping(parameters.velocityDamping);
-	mCore.setSettlingThreshold(parameters.settlingThreshold);
-	mCore.setSleepThreshold(parameters.sleepThreshold);
-	mCore.setSettlingDamping(parameters.sleepDamping);
-	mCore.setSelfCollisionFilterDistance(parameters.selfCollisionFilterDistance);
-	mCore.setSelfCollisionStressTolerance(parameters.selfCollisionStressTolerance);
-	UPDATE_PVD_PROPERTY
-}
-
-// deprecated
-PxFEMParameters NpDeformableVolume::getParameter() const
-{
-	NP_READ_CHECK(getNpScene());
-	PxFEMParameters parameters;
-	parameters.velocityDamping = mCore.getLinearDamping();
-	parameters.settlingThreshold = mCore.getSettlingThreshold();
-	parameters.sleepThreshold = mCore.getSleepThreshold();
-	parameters.sleepDamping = mCore.getSettlingDamping();
-	parameters.selfCollisionFilterDistance = mCore.getSelfCollisionFilterDistance();
-	parameters.selfCollisionStressTolerance = mCore.getSelfCollisionStressTolerance();
-	return parameters;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -485,21 +456,11 @@ void NpDeformableVolume::setDeformableVolumeFlag(PxDeformableVolumeFlag::Enum fl
 		flags.clear(flag);
 
 	mCore.setVolumeFlags(flags);
-
-	//deprecation functionality
-	PxDeformableBodyFlags bodyFlags = mCore.getBodyFlags();
-	mirrorTwinFlags(bodyFlags, flags);
-	mCore.setBodyFlags(bodyFlags);
 }
 
 void NpDeformableVolume::setDeformableVolumeFlags(PxDeformableVolumeFlags flags)
 {
 	mCore.setVolumeFlags(flags);
-
-	//deprecation functionality
-	PxDeformableBodyFlags bodyFlags = mCore.getBodyFlags();
-	mirrorTwinFlags(bodyFlags, flags);
-	mCore.setBodyFlags(bodyFlags);
 }
 
 PxDeformableVolumeFlags NpDeformableVolume::getDeformableVolumeFlags() const
@@ -573,44 +534,6 @@ void NpDeformableVolume::setKinematicTargetBufferD(const PxVec4* positions)
 	mCore.setKinematicTargets(positions);
 }
 
-// deprecated
-void NpDeformableVolume::setKinematicTargetBufferD(const PxVec4* positions, PxDeformableVolumeFlags flags)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(),
-		"PxDeformableVolume::setKinematicTargetBufferD() not allowed while simulation is running. Call will be ignored.")
-	
-	PX_CHECK_AND_RETURN(!(positions == NULL && flags != PxDeformableVolumeFlags(0)),
-		"PxDeformableVolume::setKinematicTargetBufferD: targets cannot be null if flags are set to be kinematic.");
-
-	//toggling flags automatically seems SDK atypcal, hence the deprecation ...
-	PxDeformableVolumeFlags volumeFlags = mCore.getVolumeFlags();
-	if (positions != NULL)
-	{
-		if (flags.isSet(PxDeformableVolumeFlag::ePARTIALLY_KINEMATIC))
-		{
-			volumeFlags.raise(PxDeformableVolumeFlag::ePARTIALLY_KINEMATIC);
-		}
-		if (flags.isSet(PxDeformableVolumeFlag::eKINEMATIC))
-		{
-			volumeFlags.raise(PxDeformableVolumeFlag::eKINEMATIC);
-		}
-	}
-	else
-	{
-		volumeFlags.clear(PxDeformableVolumeFlag::ePARTIALLY_KINEMATIC);
-		volumeFlags.clear(PxDeformableVolumeFlag::eKINEMATIC);
-	}
-	mCore.setVolumeFlags(volumeFlags);
-
-	//deprecation functionality
-	PxDeformableBodyFlags bodyFlags = mCore.getBodyFlags();
-	mirrorTwinFlags(bodyFlags, volumeFlags);
-	mCore.setBodyFlags(bodyFlags);
-
-	mCore.setKinematicTargets(positions);
-}
-
 bool NpDeformableVolume::attachSimulationMesh(PxTetrahedronMesh& simulationMesh, PxDeformableVolumeAuxData& deformableVolumeAuxData)
 {
 	Dy::DeformableVolumeCore& core = mCore.getCore();
@@ -634,6 +557,9 @@ bool NpDeformableVolume::attachSimulationMesh(PxTetrahedronMesh& simulationMesh,
 
 void NpDeformableVolume::detachSimulationMesh()
 {
+	if (!mSimulationMesh)
+		return;
+
 	PX_ASSERT(mDeviceMemoryAllocator);
 
 	Dy::DeformableVolumeCore& core = mCore.getCore();
@@ -671,269 +597,6 @@ PxU32 NpDeformableVolume::getGpuDeformableVolumeIndex()
 	PX_CHECK_AND_RETURN_VAL(getNpScene(), "PxDeformableVolume::getGpuDeformableVolumeIndex: Soft body must be in a scene.", 0xffffffff);
 
 	return mCore.getGpuIndex();
-}
-
-// deprecated
-void NpDeformableVolume::addParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxDeformableVolume::addParticleFilter: Soft body must be inserted into the scene.");
-	PX_CHECK_AND_RETURN((particlesystem == NULL || particlesystem->getScene() != NULL), "PxDeformableVolume::addParticleFilter: actor must be inserted into the scene.");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxDeformableVolume::addParticleFilter: Illegal to call while simulation is running.");
-
-	NpPBDParticleSystem* npParticleSystem = static_cast<NpPBDParticleSystem*>(particlesystem);
-	Sc::ParticleSystemCore& core = npParticleSystem->getCore();
-	mCore.addParticleFilter(&core, particleId, buffer ? buffer->getUniqueId() : 0, tetId);
-}
-
-// deprecated
-void NpDeformableVolume::removeParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxDeformableVolume::removeParticleFilter: Soft body must be inserted into the scene.");
-	PX_CHECK_AND_RETURN((particlesystem == NULL || particlesystem->getScene() != NULL), "PxDeformableVolume::removeParticleFilter: actor must be inserted into the scene.");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxDeformableVolume::removeParticleFilter: Illegal to call while simulation is running.");
-
-	NpPBDParticleSystem* npParticleSystem = static_cast<NpPBDParticleSystem*>(particlesystem);
-	Sc::ParticleSystemCore& core = npParticleSystem->getCore();
-	mCore.removeParticleFilter(&core, particleId, buffer ? buffer->getUniqueId() : 0, tetId);
-}
-
-// deprecated
-PxU32 NpDeformableVolume::addParticleAttachment(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId, const PxVec4& barycentric)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN_VAL(getNpScene() != NULL, "PxDeformableVolume::addParticleAttachment: Soft body must be inserted into the scene.", 0xFFFFFFFF);
-	PX_CHECK_AND_RETURN_VAL((particlesystem == NULL || particlesystem->getScene() != NULL), "PxDeformableVolume::addParticleAttachment: actor must be inserted into the scene.", 0xFFFFFFFF);
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "PxDeformableVolume::addParticleAttachment: Illegal to call while simulation is running.", 0xFFFFFFFF);
-
-	NpPBDParticleSystem* npParticleSystem = static_cast<NpPBDParticleSystem*>(particlesystem);
-	Sc::ParticleSystemCore& core = npParticleSystem->getCore();
-	return mCore.addParticleAttachment(&core, particleId, buffer ? buffer->getUniqueId() : 0, tetId, barycentric);
-}
-
-// deprecated
-void NpDeformableVolume::removeParticleAttachment(PxPBDParticleSystem* particlesystem, PxU32 handle)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxDeformableVolume::addParticleAttachment: Soft body must be inserted into the scene.");
-	PX_CHECK_AND_RETURN((particlesystem == NULL || particlesystem->getScene() != NULL), "PxDeformableVolume::addParticleAttachment: actor must be inserted into the scene.");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxDeformableVolume::addParticleAttachment: Illegal to call while simulation is running.");
-
-	NpPBDParticleSystem* npParticleSystem = static_cast<NpPBDParticleSystem*>(particlesystem);
-	Sc::ParticleSystemCore& core = npParticleSystem->getCore();
-	mCore.removeParticleAttachment(&core, handle);
-}
-
-// deprecated
-void NpDeformableVolume::addRigidFilter(PxRigidActor* actor, PxU32 vertId)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxDeformableVolume::addRigidFilter: Soft body must be inserted into the scene.");
-	PX_CHECK_AND_RETURN((actor == NULL || actor->getScene() != NULL), "PxDeformableVolume::addRigidFilter: actor must be inserted into the scene.");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxDeformableVolume::addRigidFilter: Illegal to call while simulation is running.");
-
-	Sc::BodyCore* core = getBodyCore(actor);
-	mCore.addRigidFilter(core, vertId);
-}
-
-// deprecated
-void NpDeformableVolume::removeRigidFilter(PxRigidActor* actor, PxU32 vertId)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxDeformableVolume::removeRigidFilter: soft body must be inserted into the scene.");
-	PX_CHECK_AND_RETURN((actor == NULL || actor->getScene() != NULL), "PxDeformableVolume::removeRigidFilter: actor must be inserted into the scene.");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxDeformableVolume::removeRigidFilter: Illegal to call while simulation is running.");
-
-	Sc::BodyCore* core = getBodyCore(actor);
-	mCore.removeRigidFilter(core, vertId);
-}
-
-// deprecated
-PxU32 NpDeformableVolume::addRigidAttachment(PxRigidActor* actor, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN_VAL(getNpScene() != NULL, "PxDeformableVolume::addRigidAttachment: Soft body must be inserted into the scene.", 0xFFFFFFFF);
-	PX_CHECK_AND_RETURN_VAL((actor == NULL || actor->getScene() != NULL), "PxDeformableVolume::addRigidAttachment: actor must be inserted into the scene.", 0xFFFFFFFF);
-	PX_CHECK_AND_RETURN_VAL(constraint == NULL || constraint->isValid(), "PxDeformableVolume::addRigidAttachment: PxConeLimitedConstraint needs to be valid if specified.", 0xFFFFFFFF);
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "PxDeformableVolume::addRigidAttachment: Illegal to call while simulation is running.", 0xFFFFFFFF);
-
-	Sc::BodyCore* core = getBodyCore(actor);
-
-	PxVec3 aPose = actorSpacePose;
-	if (actor && actor->getConcreteType()==PxConcreteType::eRIGID_STATIC)
-	{
-		NpRigidStatic* stat = static_cast<NpRigidStatic*>(actor);
-		aPose = stat->getGlobalPose().transform(aPose);
-	}
-
-	return mCore.addRigidAttachment(core, vertId, aPose, constraint, true);
-}
-
-// deprecated
-void NpDeformableVolume::removeRigidAttachment(PxRigidActor* actor, PxU32 handle)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxDeformableVolume::removeRigidAttachment: soft body must be inserted into the scene.");
-	PX_CHECK_AND_RETURN((actor == NULL || actor->getScene() != NULL), "PxDeformableVolume::removeRigidAttachment: actor must be inserted into the scene.");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxDeformableVolume::removeRigidAttachment: Illegal to call while simulation is running.");
-
-	Sc::BodyCore* core = getBodyCore(actor);
-	mCore.removeRigidAttachment(core, handle);
-}
-
-// deprecated
-void NpDeformableVolume::addTetRigidFilter(PxRigidActor* actor, PxU32 tetIdx)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxDeformableVolume::addTetRigidFilter: Soft body must be inserted into the scene.");
-	PX_CHECK_AND_RETURN((actor == NULL || actor->getScene() != NULL), "PxDeformableVolume::addTetRigidFilter: actor must be inserted into the scene.");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxDeformableVolume::addTetRigidFilter: Illegal to call while simulation is running.");
-
-	Sc::BodyCore* core = getBodyCore(actor);
-	return mCore.addTetRigidFilter(core, tetIdx);
-}
-
-// deprecated
-void NpDeformableVolume::removeTetRigidFilter(PxRigidActor* actor, PxU32 tetIdx)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxDeformableVolume::removeTetRigidFilter: soft body must be inserted into the scene.");
-	PX_CHECK_AND_RETURN((actor == NULL || actor->getScene() != NULL), "PxDeformableVolume::removeTetRigidFilter: actor must be inserted into the scene.");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxDeformableVolume::removeTetRigidFilter: Illegal to call while simulation is running.");
-
-	Sc::BodyCore* core = getBodyCore(actor);
-	mCore.removeTetRigidFilter(core, tetIdx);
-}
-
-// deprecated
-PxU32 NpDeformableVolume::addTetRigidAttachment(PxRigidActor* actor, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN_VAL(getNpScene() != NULL, "PxDeformableVolume::addTetRigidAttachment: Soft body must be inserted into the scene.", 0xFFFFFFFF);
-	PX_CHECK_AND_RETURN_VAL((actor == NULL || actor->getScene() != NULL), "PxDeformableVolume::addTetRigidAttachment: actor must be inserted into the scene.", 0xFFFFFFFF);
-	PX_CHECK_AND_RETURN_VAL(constraint == NULL || constraint->isValid(), "PxDeformableVolume::addTetRigidAttachment: PxConeLimitedConstraint needs to be valid if specified.", 0xFFFFFFFF);
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "PxDeformableVolume::addTetRigidAttachment: Illegal to call while simulation is running.", 0xFFFFFFFF);
-
-	Sc::BodyCore* core = getBodyCore(actor);
-
-	PxVec3 aPose = actorSpacePose;
-	if (actor && actor->getConcreteType()==PxConcreteType::eRIGID_STATIC)
-	{
-		NpRigidStatic* stat = static_cast<NpRigidStatic*>(actor);
-		aPose = stat->getGlobalPose().transform(aPose);
-	}
-
-	return mCore.addTetRigidAttachment(core, tetIdx, barycentric, aPose, constraint, true);
-}
-
-// deprecated
-void NpDeformableVolume::addSoftBodyFilter(PxDeformableVolume* softbody0, PxU32 tetIdx0, PxU32 tetIdx1)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(softbody0 != NULL, "PxDeformableVolume::addSoftBodyFilter: soft body must not be null");
-	PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxDeformableVolume::addSoftBodyFilter: soft body must be inserted into the scene.");
-	PX_CHECK_AND_RETURN(softbody0->getScene() != NULL, "PxDeformableVolume::addSoftBodyFilter: soft body must be inserted into the scene.");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxDeformableVolume::addSoftBodyFilter: Illegal to call while simulation is running.");
-
-	NpDeformableVolume* dyn = static_cast<NpDeformableVolume*>(softbody0);
-	Sc::DeformableVolumeCore* core = &dyn->getCore();
-
-	mCore.addSoftBodyFilter(*core, tetIdx0, tetIdx1);
-}
-
-// deprecated
-void NpDeformableVolume::removeSoftBodyFilter(PxDeformableVolume* softbody0, PxU32 tetIdx0, PxU32 tetIdx1)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(softbody0 != NULL, "PxDeformableVolume::removeSoftBodyFilter: soft body must not be null");
-	PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxDeformableVolume::removeSoftBodyFilter: soft body must be inserted into the scene.");
-	PX_CHECK_AND_RETURN(softbody0->getScene() != NULL, "PxDeformableVolume::removeSoftBodyFilter: soft body must be inserted into the scene.");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxDeformableVolume::removeSoftBodyFilter: Illegal to call while simulation is running.");
-
-	NpDeformableVolume* dyn = static_cast<NpDeformableVolume*>(softbody0);
-	Sc::DeformableVolumeCore* core = &dyn->getCore();
-
-	mCore.removeSoftBodyFilter(*core, tetIdx0, tetIdx1);
-}
-
-// deprecated
-void NpDeformableVolume::addSoftBodyFilters(PxDeformableVolume* softbody0, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(softbody0 != NULL, "PxDeformableVolume::addSoftBodyFilter: soft body must not be null");
-	PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxDeformableVolume::addSoftBodyFilter: soft body must be inserted into the scene.");
-	PX_CHECK_AND_RETURN(softbody0->getScene() != NULL, "PxDeformableVolume::addSoftBodyFilter: soft body must be inserted into the scene.");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxDeformableVolume::addSoftBodyFilter: Illegal to call while simulation is running.");
-
-	NpDeformableVolume* dyn = static_cast<NpDeformableVolume*>(softbody0);
-	Sc::DeformableVolumeCore* core = &dyn->getCore();
-
-	mCore.addSoftBodyFilters(*core, tetIndices0, tetIndices1, tetIndicesSize);
-}
-
-// deprecated
-void NpDeformableVolume::removeSoftBodyFilters(PxDeformableVolume* softbody0, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(softbody0 != NULL, "PxDeformableVolume::removeSoftBodyFilter: soft body must not be null");
-	PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxDeformableVolume::removeSoftBodyFilter: soft body must be inserted into the scene.");
-	PX_CHECK_AND_RETURN(softbody0->getScene() != NULL, "PxDeformableVolume::removeSoftBodyFilter: soft body must be inserted into the scene.");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxDeformableVolume::removeSoftBodyFilter: Illegal to call while simulation is running.");
-
-	NpDeformableVolume* dyn = static_cast<NpDeformableVolume*>(softbody0);
-	Sc::DeformableVolumeCore* core = &dyn->getCore();
-
-	mCore.removeSoftBodyFilters(*core, tetIndices0, tetIndices1, tetIndicesSize);
-}
-
-// deprecated
-PxU32 NpDeformableVolume::addSoftBodyAttachment(PxDeformableVolume* softbody0, PxU32 tetIdx0, const PxVec4& tetBarycentric0, PxU32 tetIdx1, const PxVec4& tetBarycentric1,
-										PxConeLimitedConstraint* constraint, PxReal constraintOffset)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN_VAL(softbody0 != NULL, "PxDeformableVolume::addSoftBodyAttachment: soft body must not be null", 0xFFFFFFFF);
-	PX_CHECK_AND_RETURN_VAL(getNpScene() != NULL, "PxDeformableVolume::addSoftBodyAttachment: soft body must be inserted into the scene.", 0xFFFFFFFF);
-	PX_CHECK_AND_RETURN_VAL(softbody0->getScene() != NULL, "PxDeformableVolume::addSoftBodyAttachment: soft body must be inserted into the scene.", 0xFFFFFFFF);
-	PX_CHECK_AND_RETURN_VAL(constraint == NULL || constraint->isValid(), "PxDeformableVolume::addSoftBodyAttachment: PxConeLimitedConstraint needs to be valid if specified.", 0xFFFFFFFF);
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "PxDeformableVolume::addSoftBodyAttachment: Illegal to call while simulation is running.", 0xFFFFFFFF);
-
-	NpDeformableVolume* dyn = static_cast<NpDeformableVolume*>(softbody0);
-	Sc::DeformableVolumeCore* core = &dyn->getCore();
-
-	return mCore.addSoftBodyAttachment(*core, tetIdx0, tetBarycentric0, tetIdx1, tetBarycentric1, constraint, constraintOffset, true);
-}
-
-// deprecated
-void NpDeformableVolume::removeSoftBodyAttachment(PxDeformableVolume* softbody0, PxU32 handle)
-{
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(softbody0 != NULL, "PxDeformableVolume::removeSoftBodyAttachment: soft body must not be null");
-	PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxDeformableVolume::removeSoftBodyAttachment: soft body must be inserted into the scene.");
-	PX_CHECK_AND_RETURN(softbody0->getScene() != NULL, "PxDeformableVolume::removeSoftBodyAttachment: soft body must be inserted into the scene.");
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxDeformableVolume::removeSoftBodyAttachment: Illegal to call while simulation is running.");
-
-	NpDeformableVolume* dyn = static_cast<NpDeformableVolume*>(softbody0);
-	Sc::DeformableVolumeCore* core = &dyn->getCore();
-
-	mCore.removeSoftBodyAttachment(*core, handle);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

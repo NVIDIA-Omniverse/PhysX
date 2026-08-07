@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -42,7 +42,6 @@ namespace physx
 class NpScene;
 class NpShape;
 class PxsMemoryManager;
-class PxVirtualAllocatorCallback;
 
 class NpDeformableVolume : public NpActorTemplate<PxDeformableVolume>
 {
@@ -54,114 +53,84 @@ public:
 	
 	// PxActor API
 
-	virtual void							release();
-	virtual PxActorType::Enum				getType() const { return PxActorType::eDEFORMABLE_VOLUME; }
-	virtual PxBounds3						getWorldBounds(float inflation = 1.01f) const;
-	virtual void							setActorFlag(PxActorFlag::Enum flag, bool value);
-	virtual void							setActorFlags(PxActorFlags inFlags);
+	virtual void							release() PX_OVERRIDE;
+	virtual PxActorType::Enum				getType() const PX_OVERRIDE { return PxActorType::eDEFORMABLE_VOLUME; }
+	virtual PxBounds3						getWorldBounds(float inflation = 1.01f) const PX_OVERRIDE;
+	virtual void							setActorFlag(PxActorFlag::Enum flag, bool value) PX_OVERRIDE;
+	virtual void							setActorFlags(PxActorFlags inFlags) PX_OVERRIDE;
 
 	// PxDeformableBody API
 
-	virtual		void						setDeformableBodyFlag(PxDeformableBodyFlag::Enum flag, bool val);
-	virtual		void						setDeformableBodyFlags(PxDeformableBodyFlags flags);
-	virtual		PxDeformableBodyFlags		getDeformableBodyFlags() const;
+	virtual		void						setDeformableBodyFlag(PxDeformableBodyFlag::Enum flag, bool val) PX_OVERRIDE;
+	virtual		void						setDeformableBodyFlags(PxDeformableBodyFlags flags) PX_OVERRIDE;
+	virtual		PxDeformableBodyFlags		getDeformableBodyFlags() const PX_OVERRIDE;
 
-	virtual		void						setLinearDamping(const PxReal linearDamping);
-	virtual		PxReal						getLinearDamping() const;
+	virtual		void						setLinearDamping(const PxReal linearDamping) PX_OVERRIDE;
+	virtual		PxReal						getLinearDamping() const PX_OVERRIDE;
 
-	virtual		void						setMaxLinearVelocity(const PxReal maxLinearVelocity);
-	virtual		PxReal						getMaxLinearVelocity() const;
+	virtual		void						setMaxLinearVelocity(const PxReal maxLinearVelocity) PX_OVERRIDE;
+	virtual		PxReal						getMaxLinearVelocity() const PX_OVERRIDE;
 
-	virtual		void						setMaxDepenetrationVelocity(const PxReal maxDepenetrationVelocity);
-	virtual		PxReal						getMaxDepenetrationVelocity() const;
+	virtual		void						setMaxDepenetrationVelocity(const PxReal maxDepenetrationVelocity) PX_OVERRIDE;
+	virtual		PxReal						getMaxDepenetrationVelocity() const PX_OVERRIDE;
 
-	virtual		void						setSelfCollisionFilterDistance(const PxReal selfCollisionFilterDistance);
-	virtual		PxReal						getSelfCollisionFilterDistance() const;
+	virtual		void						setSelfCollisionFilterDistance(const PxReal selfCollisionFilterDistance) PX_OVERRIDE;
+	virtual		PxReal						getSelfCollisionFilterDistance() const PX_OVERRIDE;
 
-	virtual		void						setSolverIterationCounts(PxU32 minPositionIters, PxU32 minVelocityIters);
-	virtual		void						getSolverIterationCounts(PxU32& minPositionIters, PxU32& minVelocityIters) const;
+	virtual		void						setSolverIterationCounts(PxU32 minPositionIters, PxU32 minVelocityIters) PX_OVERRIDE;
+	virtual		void						getSolverIterationCounts(PxU32& minPositionIters, PxU32& minVelocityIters) const PX_OVERRIDE;
 
-	virtual		void						setSleepThreshold(const PxReal sleepThreshold);
-	virtual		PxReal						getSleepThreshold() const;
+	virtual		void						setSleepThreshold(const PxReal sleepThreshold) PX_OVERRIDE;
+	virtual		PxReal						getSleepThreshold() const PX_OVERRIDE;
 
-	virtual		void						setSettlingThreshold(const PxReal settlingThreshold);
-	virtual		PxReal						getSettlingThreshold() const;
+	virtual		void						setSettlingThreshold(const PxReal settlingThreshold) PX_OVERRIDE;
+	virtual		PxReal						getSettlingThreshold() const PX_OVERRIDE;
 
-	virtual		void						setSettlingDamping(const PxReal linearDamping);
-	virtual		PxReal						getSettlingDamping() const;
+	virtual		void						setSettlingDamping(const PxReal linearDamping) PX_OVERRIDE;
+	virtual		PxReal						getSettlingDamping() const PX_OVERRIDE;
 
-	virtual		void						setWakeCounter(PxReal wakeCounterValue);
-	virtual		PxReal						getWakeCounter() const;
-	virtual		bool						isSleeping() const;
+	virtual		void						setWakeCounter(PxReal wakeCounterValue) PX_OVERRIDE;
+	virtual		PxReal						getWakeCounter() const PX_OVERRIDE;
+	virtual		bool						isSleeping() const PX_OVERRIDE;
 
-	virtual		PxShape*					getShape();
-	virtual		bool						attachShape(PxShape& shape);
-	virtual		void						detachShape();
+	virtual		PxShape*					getShape() PX_OVERRIDE;
+	virtual		bool						attachShape(PxShape& shape) PX_OVERRIDE;
+	virtual		void						detachShape() PX_OVERRIDE;
 
-	virtual		PxCudaContextManager*		getCudaContextManager() const;
-
-	PX_DEPRECATED virtual void				setParameter(const PxFEMParameters& params);
-	PX_DEPRECATED virtual PxFEMParameters	getParameter() const;
+	virtual		PxCudaContextManager*		getCudaContextManager() const PX_OVERRIDE;
 
 	// PxDeformableVolume API
 	
-	virtual void							setDeformableVolumeFlag(PxDeformableVolumeFlag::Enum flag, bool val);
-	virtual void							setDeformableVolumeFlags(PxDeformableVolumeFlags flags);
-	virtual PxDeformableVolumeFlags			getDeformableVolumeFlags() const;
+	virtual void							setDeformableVolumeFlag(PxDeformableVolumeFlag::Enum flag, bool val) PX_OVERRIDE;
+	virtual void							setDeformableVolumeFlags(PxDeformableVolumeFlags flags) PX_OVERRIDE;
+	virtual PxDeformableVolumeFlags			getDeformableVolumeFlags() const PX_OVERRIDE;
 
-	virtual void							setSelfCollisionStressTolerance(const PxReal selfCollisionStressTolerance);
-	virtual PxReal							getSelfCollisionStressTolerance() const;
+	virtual void							setSelfCollisionStressTolerance(const PxReal selfCollisionStressTolerance) PX_OVERRIDE;
+	virtual PxReal							getSelfCollisionStressTolerance() const PX_OVERRIDE;
 
-	virtual PxVec4*							getPositionInvMassBufferD();
-	virtual PxVec4*							getRestPositionBufferD();
+	virtual PxVec4*							getPositionInvMassBufferD() PX_OVERRIDE;
+	virtual PxVec4*							getRestPositionBufferD() PX_OVERRIDE;
 
-	virtual PxVec4*							getSimPositionInvMassBufferD();
-	virtual PxVec4*							getSimVelocityBufferD();
+	virtual PxVec4*							getSimPositionInvMassBufferD() PX_OVERRIDE;
+	virtual PxVec4*							getSimVelocityBufferD() PX_OVERRIDE;
 
-	virtual void							markDirty(PxDeformableVolumeDataFlags flags);
+	virtual void							markDirty(PxDeformableVolumeDataFlags flags) PX_OVERRIDE;
 
-	virtual	void							setKinematicTargetBufferD(const PxVec4* positions);
-	PX_DEPRECATED virtual void				setKinematicTargetBufferD(const PxVec4* positions, PxDeformableVolumeFlags flags);
+	virtual	void							setKinematicTargetBufferD(const PxVec4* positions) PX_OVERRIDE;
 
-	virtual bool							attachSimulationMesh(PxTetrahedronMesh& simulationMesh, PxDeformableVolumeAuxData& softBodyAuxData);
-	virtual void							detachSimulationMesh();
-	virtual PxTetrahedronMesh*				getSimulationMesh() { return mSimulationMesh; }
-	virtual const PxTetrahedronMesh*		getSimulationMesh() const { return mSimulationMesh; }
+	virtual bool							attachSimulationMesh(PxTetrahedronMesh& simulationMesh, PxDeformableVolumeAuxData& softBodyAuxData) PX_OVERRIDE;
+	virtual void							detachSimulationMesh() PX_OVERRIDE;
+	virtual PxTetrahedronMesh*				getSimulationMesh() PX_OVERRIDE { return mSimulationMesh; }
+	virtual const PxTetrahedronMesh*		getSimulationMesh() const PX_OVERRIDE { return mSimulationMesh; }
 
-	virtual PxTetrahedronMesh*				getCollisionMesh();
-	virtual const PxTetrahedronMesh*		getCollisionMesh() const;
+	virtual PxTetrahedronMesh*				getCollisionMesh() PX_OVERRIDE;
+	virtual const PxTetrahedronMesh*		getCollisionMesh() const PX_OVERRIDE;
 
-	virtual PxDeformableVolumeAuxData*		getDeformableVolumeAuxData() { return mAuxData; }
+	virtual PxDeformableVolumeAuxData*		getDeformableVolumeAuxData() PX_OVERRIDE { return mAuxData; }
 	virtual const PxDeformableVolumeAuxData*
-											getDeformableVolumeAuxData() const { return mAuxData; }
+											getDeformableVolumeAuxData() const PX_OVERRIDE	{ return mAuxData; }
 
-	virtual PxU32							getGpuDeformableVolumeIndex();
-
-	PX_DEPRECATED virtual void				addParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId);
-	PX_DEPRECATED virtual void				removeParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId);
-
-	PX_DEPRECATED virtual PxU32				addParticleAttachment(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId, const PxVec4& barycentric);
-	PX_DEPRECATED virtual void				removeParticleAttachment(PxPBDParticleSystem* particlesystem, PxU32 handle);
-
-	PX_DEPRECATED virtual void				addRigidFilter(PxRigidActor* actor, PxU32 vertId);
-	PX_DEPRECATED virtual void				removeRigidFilter(PxRigidActor* actor, PxU32 vertId);
-
-	PX_DEPRECATED virtual PxU32				addRigidAttachment(PxRigidActor* actor, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint);
-	PX_DEPRECATED virtual void				removeRigidAttachment(PxRigidActor* actor, PxU32 handle);
-
-	PX_DEPRECATED virtual void				addTetRigidFilter(PxRigidActor* actor, PxU32 tetIdx);
-	PX_DEPRECATED virtual void				removeTetRigidFilter(PxRigidActor* actor, PxU32 tetIdx);
-
-	PX_DEPRECATED virtual PxU32				addTetRigidAttachment(PxRigidActor* actor, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose,
-												PxConeLimitedConstraint* constraint);
-	PX_DEPRECATED virtual void				addSoftBodyFilter(PxDeformableVolume* softbody0, PxU32 tetIdx0, PxU32 tetIdx1);
-	PX_DEPRECATED virtual void				removeSoftBodyFilter(PxDeformableVolume* softbody0, PxU32 tetIdx0, PxU32 tetIdx1);
-	PX_DEPRECATED virtual void				addSoftBodyFilters(PxDeformableVolume* softbody0, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
-	PX_DEPRECATED virtual void				removeSoftBodyFilters(PxDeformableVolume* softbody0, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
-
-	PX_DEPRECATED virtual PxU32				addSoftBodyAttachment(PxDeformableVolume* softbody0, PxU32 tetIdx0, const PxVec4& tetBarycentric0, PxU32 tetIdx1, const PxVec4& tetBarycentric1,
-												PxConeLimitedConstraint* constraint, PxReal constraintOffset);
-	PX_DEPRECATED virtual void				removeSoftBodyAttachment(PxDeformableVolume* softbody0, PxU32 handle);
+	virtual PxU32							getGpuDeformableVolumeIndex() PX_OVERRIDE;
 
 	// Internal
 
@@ -181,7 +150,7 @@ private:
 	Sc::DeformableVolumeCore				mCore;
 	PxCudaContextManager*					mCudaContextManager;
 	PxsMemoryManager*						mMemoryManager;
-	PxVirtualAllocatorCallback*				mDeviceMemoryAllocator;
+	Cm::VirtualAllocatorCallback*				mDeviceMemoryAllocator;
 };
 
 Sc::DeformableVolumeCore* getDeformableVolumeCore(PxActor* actor);

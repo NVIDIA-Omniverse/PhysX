@@ -44,7 +44,7 @@ def _candidate_roots():
     # 1. Installed wheel: the schemas tree is bundled next to this package.
     yield pkg.joinpath(*_SCHEMA_SUBDIR)
     # 2. Source / editable checkout after `cmake -P scripts/install.cmake`:
-    #    python/ovphysx/../../ == the omni/ovphysx project root, which holds
+    #    python/ovphysx/../../ == the ovphysx project root, which holds
     #    the staged _install/schemas/physx tree.
     yield pkg.parent.parent.joinpath("_install", *_SCHEMA_SUBDIR)
 

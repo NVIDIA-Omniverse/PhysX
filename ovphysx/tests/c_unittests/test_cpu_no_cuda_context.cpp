@@ -144,6 +144,18 @@ TEST(CpuNoCudaContextGpuTest, CpuOnlyFlagCreatesNoCudaContextOnGpuBox)
                   stage, enqueue.op_index, OVSTAGE_TIMEOUT_INFINITE, &populationWait),
               OVSTAGE_OK);
 
+    // Population does not seal: the caller owns ordinal lifecycle, and
+    // ovphysx_attach_ovstage() reads at a sealed ordinal.
+    ovstage_write_floor_desc_t writeFloor{};
+    writeFloor.ordinal = 1;
+    writeFloor.scope = OVSTAGE_SCOPE_ALL;
+    const ovstage_enqueue_result_t floorEnqueue = ovstage_advance_write_floor(stage, &writeFloor);
+    ASSERT_EQ(floorEnqueue.status, OVSTAGE_OK);
+
+    ovstage_op_wait_result_t floorWait{};
+    ASSERT_EQ(ovstage_wait_op(stage, floorEnqueue.op_index, OVSTAGE_TIMEOUT_INFINITE, &floorWait), OVSTAGE_OK);
+    (void)ovstage_release_op(stage, floorEnqueue.op_index);
+
     ASSERT_EQ(ovphysx_attach_ovstage(h, stage, 1).status, OVPHYSX_API_SUCCESS);
 
     for (int s = 0; s < 3; ++s)

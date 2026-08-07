@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef EXT_MESH_SIMPLIFICATOR_H
 #define EXT_MESH_SIMPLIFICATOR_H
@@ -111,6 +111,7 @@ namespace physx
 			PxReal flatnessDetectionThreshold;
 
 			PxArray<PxI32> simplificationMap;
+			PxArray<PxI32> borderVertices;
 
 			struct HeapElem 
 			{

@@ -3,7 +3,6 @@
 #
 
 # NOTE: This file is included verbatim in documentation via literalinclude.
-# Markers [tutorial-*] define the included ranges.
 """
 ContactBinding sample: reading contact forces between sensor and filter bodies.
 
@@ -30,6 +29,9 @@ def attach_scene(physx, usd_path, stage_name):
     ordinal = 1
     try:
         ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
+        # Population does not seal: the caller owns ordinal lifecycle, and
+        # attach_ovstage() reads at a sealed ordinal.
+        stage.advance_write_floor(ordinal=ordinal).wait()
         physx.attach_ovstage(stage, read_ordinal=ordinal)
         return stage
     except Exception:
@@ -38,8 +40,6 @@ def attach_scene(physx, usd_path, stage_name):
 
 
 def main():
-    # [tutorial-start]
-
     # --- 1. Initialize SDK and load scene ---
     PhysX.set_cpu_mode(True)
     physx = PhysX()
@@ -73,7 +73,7 @@ def main():
         physx.wait_all()
 
         # --- 4. Read net contact forces: shape [S, 3] ---
-        # dt is taken automatically from the last step() call.
+        # dt is taken automatically from the last successful stepping call.
         net_forces = np.zeros((sensor_count, 3), dtype=np.float32)
         cb.read_net_forces(net_forces)
         print("Net contact forces [S, 3]:", net_forces)
@@ -86,8 +86,6 @@ def main():
         # --- 6. Clean up first demo ---
         cb.destroy()
 
-        # [tutorial-end]
-
         # Context-manager usage (alternative to manual destroy):
         # Reset the stage so we can reuse the same PhysX instance.
         physx.reset_stage()
@@ -98,7 +96,6 @@ def main():
         stage = attach_scene(physx, data_dir / "boxes_falling_on_groundplane.usda", "ovphysx-contact-sample-reload")
         physx.wait_all()
 
-        # [tutorial-context-manager]
         with physx.create_contact_binding(sensor_patterns=["/World/Cube1"]) as cb2:
             for _ in range(60):
                 physx.step(1.0 / 60.0)
@@ -107,7 +104,6 @@ def main():
             cb2.read_net_forces(out)
             print("Net forces (context manager):", out)
         # cb2 is automatically destroyed here
-        # [tutorial-context-manager-end]
 
         print("Contact binding sample completed successfully")
     finally:

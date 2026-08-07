@@ -30,8 +30,7 @@ def test_error_markers_catch_native_warnings():
         import sys
 
         def test_emit_sentinel():
-            # Print a string that matches an ERROR_MARKERS entry.
-            # The conftest makereport hook scans captured stderr for these.
+            # Matches an ERROR_MARKERS entry; the conftest makereport hook scans captured stderr for these.
             print("[ErrorMarkerSentinel]", file=sys.stderr)
     """)
 

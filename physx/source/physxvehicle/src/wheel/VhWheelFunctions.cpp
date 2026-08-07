@@ -22,23 +22,21 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "vehicle2/PxVehicleParams.h"
+#include "vehicle/PxVehicleParams.h"
 
-#include "vehicle2/suspension/PxVehicleSuspensionStates.h"
+#include "vehicle/suspension/PxVehicleSuspensionStates.h"
 
-#include "vehicle2/tire/PxVehicleTireStates.h"
+#include "vehicle/tire/PxVehicleTireStates.h"
 
-#include "vehicle2/wheel/PxVehicleWheelFunctions.h"
-#include "vehicle2/wheel/PxVehicleWheelStates.h"
-#include "vehicle2/wheel/PxVehicleWheelParams.h"
+#include "vehicle/wheel/PxVehicleWheelFunctions.h"
+#include "vehicle/wheel/PxVehicleWheelStates.h"
+#include "vehicle/wheel/PxVehicleWheelParams.h"
 
 namespace physx
-{
-namespace vehicle2
 {
 
 void PxVehicleWheelRotationAngleUpdate
@@ -88,5 +86,4 @@ void PxVehicleWheelRotationAngleUpdate
 	whlRigidBody1dState.rotationAngle = newRotAngle;
 }
 
-} //namespace vehicle2
 } //namespace physx

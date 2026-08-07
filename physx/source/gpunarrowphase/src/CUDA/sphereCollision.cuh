@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,6 +32,9 @@
 #include "foundation/PxVec3.h"
 #include "foundation/PxTransform.h"
 #include "distanceSegmentSegment.cuh"
+
+namespace physx
+{
 
 //0 is sphere, 1 is sphere, point = [x, y, z, pen];
 __device__ __forceinline__ static
@@ -836,5 +839,6 @@ PxU32 capsuleCapsule(const PxTransform& transform0, const PxTransform& transform
 
 }
 
+} // namespace physx
 
 #endif

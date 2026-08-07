@@ -10,11 +10,16 @@ it works correctly on the CPU path.
 """
 
 import os
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
-from ovphysx.types import TensorType
+from ovphysx._dlpack_utils import numpy_to_dltensor
+from ovphysx.api import TensorBinding
+from ovphysx.types import ApiStatus, TensorType
 from test_utils import load_usd_with_ovstage
+
+from ovphysx import ManagedDLTensor
 
 _TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -43,6 +48,8 @@ def test_read_cache_populated(physx_sdk):
     binding.read(buf)
     assert binding._read_cache is not None
     assert binding._read_cache.tensor is buf
+    assert "keepalive" not in binding._read_cache._fields
+    assert binding._read_cache.data_ptr == buf.ctypes.data
 
     binding.destroy()
 
@@ -165,6 +172,8 @@ def test_write_cache_populated(physx_sdk):
     binding.write(buf)
     assert binding._write_cache is not None
     assert binding._write_cache.tensor is buf
+    assert "keepalive" not in binding._write_cache._fields
+    assert binding._write_cache.data_ptr == buf.ctypes.data
 
     binding.destroy()
 
@@ -203,6 +212,123 @@ def test_write_with_mask_no_cache(physx_sdk):
     assert binding._write_cache is None
 
     binding.destroy()
+
+
+def test_unknown_dlpack_provider_is_not_cached(physx_sdk):
+    """Unknown providers release their export capsule after each synchronous call."""
+
+    class CountingManagedDLTensor(ManagedDLTensor):
+        def __init__(self, dl_tensor):
+            super().__init__(dl_tensor, None)
+            self.export_count = 0
+
+        def __dlpack__(self, stream=None):
+            self.export_count += 1
+            return super().__dlpack__(stream)
+
+    load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
+    physx_sdk.wait_all()
+
+    read_binding = physx_sdk.create_tensor_binding(
+        pattern="/World/Cube*",
+        tensor_type=TensorType.RIGID_BODY_POSE,
+    )
+    read_buffer = np.zeros(read_binding.shape, dtype=np.float32)
+    read_binding.read(read_buffer)
+    assert read_binding._read_cache is not None
+    read_provider = CountingManagedDLTensor(numpy_to_dltensor(read_buffer))
+    read_binding.read(read_provider)
+    read_binding.read(read_provider)
+    assert read_binding._read_cache is None
+    assert read_provider.export_count == 2
+    assert read_provider._dlpack_callbacks == {}
+
+    write_binding = physx_sdk.create_tensor_binding(
+        pattern="/World/Cube*",
+        tensor_type=TensorType.RIGID_BODY_VELOCITY,
+    )
+    write_buffer = np.zeros(write_binding.shape, dtype=np.float32)
+    write_binding.write(write_buffer)
+    assert write_binding._write_cache is not None
+    write_provider = CountingManagedDLTensor(numpy_to_dltensor(write_buffer))
+    write_binding.write(write_provider)
+    write_binding.write(write_provider)
+    assert write_binding._write_cache is None
+    assert write_provider.export_count == 2
+    assert write_provider._dlpack_callbacks == {}
+
+    read_binding.destroy()
+    write_binding.destroy()
+
+
+def _managed_dlpack_provider(dtype):
+    return ManagedDLTensor(numpy_to_dltensor(np.zeros((1,), dtype=dtype)), None)
+
+
+@pytest.fixture
+def failing_tensor_binding():
+    failure = SimpleNamespace(status=ApiStatus.INVALID_ARGUMENT)
+    success = SimpleNamespace(status=ApiStatus.SUCCESS)
+    sdk = SimpleNamespace(
+        _omni_physx_sdk_handle=SimpleNamespace(value=1),
+        _lib=SimpleNamespace(
+            ovphysx_read_tensor_binding=lambda *args: failure,
+            ovphysx_write_tensor_binding=lambda *args: failure,
+            ovphysx_write_tensor_binding_masked=lambda *args: failure,
+            ovphysx_destroy_tensor_binding=lambda *args: success,
+        ),
+        _get_last_error=lambda: "forced native failure",
+    )
+    binding = TensorBinding(
+        sdk=sdk,
+        handle=1,
+        tensor_type=TensorType.RIGID_BODY_POSE,
+        ndim=1,
+        shape=(1,),
+    )
+    yield binding
+    binding.destroy()
+
+
+@pytest.mark.parametrize("operation", ("read", "write", "mask", "indices"))
+def test_native_failure_releases_all_dlpack_capsules(failing_tensor_binding, operation):
+    tensor = _managed_dlpack_provider(np.float32)
+    providers = [tensor]
+    kwargs = {}
+
+    if operation == "mask":
+        secondary = _managed_dlpack_provider(np.uint8)
+        providers.append(secondary)
+        kwargs["mask"] = secondary
+    elif operation == "indices":
+        secondary = _managed_dlpack_provider(np.int32)
+        providers.append(secondary)
+        kwargs["indices"] = secondary
+
+    with pytest.raises(RuntimeError, match="forced native failure") as exc_info:
+        if operation == "read":
+            failing_tensor_binding.read(tensor)
+        else:
+            failing_tensor_binding.write(tensor, **kwargs)
+
+    assert exc_info.traceback is not None
+    assert all(not provider._dlpack_callbacks for provider in providers)
+
+
+class _FailingDLPackProvider:
+    def __dlpack__(self, stream=None):
+        raise ValueError("forced DLPack acquisition failure")
+
+
+@pytest.mark.parametrize("argument_name", ("mask", "indices"))
+def test_secondary_acquisition_failure_releases_main_capsule(failing_tensor_binding, argument_name):
+    tensor = _managed_dlpack_provider(np.float32)
+
+    with pytest.raises(ValueError, match="forced DLPack acquisition failure") as exc_info:
+        failing_tensor_binding.write(tensor, **{argument_name: _FailingDLPackProvider()})
+
+    assert exc_info.traceback is not None
+    assert tensor._dlpack_callbacks == {}
 
 
 def test_write_repeated_same_buffer(physx_sdk):

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -299,6 +299,28 @@ void PxTetMaker::simplifyTriangleMesh(const PxArray<PxVec3>& inputVertices, cons
 	PxArray<PxU32> *vertexMap, PxReal edgeLengthCostWeight, PxReal flatnessDetectionThreshold,
 	bool projectSimplifiedPointsOnInputMeshSurface, PxArray<PxU32>* outputVertexToInputTriangle, bool removeDisconnectedPatches)
 {
+	// MeshSimplificator indexes its per-vertex arrays with the triangle indices without any bounds
+	// check, so an out-of-range vertex index causes an out-of-bounds access and crashes. Reject
+	// malformed input here instead of dereferencing it.
+	const PxU32 numVertices = inputVertices.size();
+	bool validInput = numVertices > 0 && inputIndices.size() > 0 && (inputIndices.size() % 3 == 0);
+	for (PxU32 i = 0; validInput && i < inputIndices.size(); ++i)
+		validInput = inputIndices[i] < numVertices;
+
+	if (!validInput)
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
+			"PxTetMaker::simplifyTriangleMesh(): input mesh is empty or has a triangle index count "
+			"that is not a multiple of 3 or a vertex index out of range; aborting simplification.");
+		outputVertices.clear();
+		outputIndices.clear();
+		if (vertexMap)
+			vertexMap->clear();
+		if (outputVertexToInputTriangle)
+			outputVertexToInputTriangle->clear();
+		return;
+	}
+
 	Ext::MeshSimplificator ms;
 
 	PxArray<PxU32> indexMapToFullTriangleSet;

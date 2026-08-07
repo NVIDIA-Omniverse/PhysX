@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -67,7 +67,7 @@ PruningStructure::PruningStructure()
 
 //////////////////////////////////////////////////////////////////////////
 PruningStructure::~PruningStructure()
-{	
+{
 	if(getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
 	{
 		for(PxU32 i=0; i<2; i++)
@@ -85,7 +85,7 @@ void PruningStructure::release()
 {
 	// if we release the pruning structure we set the pruner structure to NUUL
 	for (PxU32 i = 0; i < mNbActors; i++)
-	{		
+	{
 		PX_ASSERT(mActors[i]);			
 
 		PxType type = mActors[i]->getConcreteType();
@@ -172,7 +172,7 @@ bool PruningStructure::build(PxRigidActor*const* actors, PxU32 nbActors)
 			{
 				PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PrunerStructure::build: Provided actor has already a pruning structure!");
 				return false;
-			}			
+			}
 			rs->getShapeManager().setPruningStructure(this);
 		}
 		else if (type == PxConcreteType::eRIGID_DYNAMIC)
@@ -240,7 +240,7 @@ bool PruningStructure::build(PxRigidActor*const* actors, PxU32 nbActors)
 
 			// discard the data
 			bounds[i].release();
-		}		
+		}
 	}
 
 	// store the actors for verification and serialization
@@ -362,7 +362,7 @@ const void* PruningStructure::getDynamicMergeData()		const
 }
 
 PxU32 PruningStructure::getRigidActors(PxRigidActor** userBuffer, PxU32 bufferSize, PxU32 startIndex/* =0 */) const
-{	
+{
 	if(!isValid())
 	{
 		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, "PrunerStructure::getRigidActors: Pruning structure is invalid!");
@@ -393,7 +393,7 @@ void PruningStructure::invalidate(PxActor* actor)
 
 			mActors[i] = mActors[mNbActors--];
 			break;
-		}		
+		}
 	}
 
 	mValid = false;

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,23 +30,18 @@
 #define	PXG_BODYSIM_MANAGER_H
 
 #include "foundation/PxBitMap.h"
-#include "foundation/PxPinnedArray.h"
-#include "PxgCudaMemoryAllocator.h"
+#include "foundation/PxHashMap.h"
 #include "PxNodeIndex.h"
-#include "PxgBodySim.h"
+#include "CmPinnableArray.h"
 #include "CmIDPool.h"
 #include "CmBlockArray.h"
-#include "foundation/PxHashMap.h"
+#include "PxsHeapStats.h"
+#include "PxgBodySim.h"
 
 namespace physx
 {
 	class PxsRigidBody;
 	struct PxsExternalAccelerationProvider;
-
-	namespace IG
-	{
-		class NodeIndex;
-	}
 
 	namespace Dy
 	{
@@ -105,16 +100,17 @@ namespace physx
 	{
 		PX_NOCOPY(PxgBodySimManager)
 	public:
-		PxgBodySimManager(const PxVirtualAllocator& allocator) : mNewUpdatedBodies(allocator), 
+		PxgBodySimManager(Cm::VirtualAllocatorCallback& hostAlloc) :
+			mNewUpdatedBodies(hostAlloc, PxsHeapStats::eSIMULATION), 
 			mTotalNumBodies(0), mNbUpdatedBodies(0), 
 			mTotalNumArticulations(0), mTotalNumSoftBodies(0), mTotalNumFEMCloths(0),
 			mTotalNumPBDParticleSystems(0),
-			mActivePBDParticleSystems(allocator),
+			mActivePBDParticleSystems(hostAlloc, PxsHeapStats::eSIMULATION_PARTICLES),
 			mActivePBDParticleSystemsDirty(false),
-			mActiveSoftbodies(allocator),
-			mActiveSelfCollisionSoftbodies(allocator),
+			mActiveSoftbodies(hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+			mActiveSelfCollisionSoftbodies(hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 			mActiveSoftbodiesDirty(false),
-			mActiveFEMCloths(allocator),
+			mActiveFEMCloths(hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 			mActiveFEMClothsDirty(false),
 			mTotalStaticArticContacts(0), 
 			mTotalStaticArticJoints(0),
@@ -211,7 +207,7 @@ namespace physx
 		Cm::DeferredIDPool										mPBDParticleSystemIdPool; //generate the remap id between pxgbodysim and pxgparticlesystem
 
 
-		PxPinnedArray<PxgBodySimVelocityUpdate>					mNewUpdatedBodies;
+		Cm::PinnableArray<PxgBodySimVelocityUpdate>				mNewUpdatedBodies;
 		PxU32													mTotalNumBodies; //include rigid body and articulation
 		PxU32													mNbUpdatedBodies; //this is used for multiply threads in the ScBeforeSolverTask to update body information
 
@@ -224,14 +220,14 @@ namespace physx
 		PxArray<PxU32>											mActiveSoftbodyIndex;
 		PxArray<PxU32>											mActiveSelfCollisionSoftbodyIndex;
 
-		PxInt32ArrayPinned										mActivePBDParticleSystems;
+		Cm::PinnableArray<PxU32>								mActivePBDParticleSystems;
 		bool													mActivePBDParticleSystemsDirty;
-		PxInt32ArrayPinned										mActiveSoftbodies;
-		PxInt32ArrayPinned										mActiveSelfCollisionSoftbodies;
+		Cm::PinnableArray<PxU32>								mActiveSoftbodies;
+		Cm::PinnableArray<PxU32>								mActiveSelfCollisionSoftbodies;
 		PxArray<PxU32>											mActiveSoftbodiesStaging;
 		PxArray<PxU32>											mActiveSelfCollisionSoftBodiesStaging;
 		bool													mActiveSoftbodiesDirty;
-		PxInt32ArrayPinned										mActiveFEMCloths;
+		Cm::PinnableArray<PxU32>								mActiveFEMCloths;
 		PxArray<PxU32>											mActiveFEMClothStaging;
 		bool													mActiveFEMClothsDirty;
 

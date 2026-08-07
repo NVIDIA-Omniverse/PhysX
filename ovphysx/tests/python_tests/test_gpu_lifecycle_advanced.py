@@ -56,7 +56,7 @@ def test_warmup_gpu_explicit_then_first_read(physx_sdk):
     """Explicit warmup_gpu before first tensor read must succeed and not error."""
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
     physx_sdk.wait_all()
-    physx_sdk.warmup_gpu()  # explicit warmup
+    physx_sdk.warmup_gpu()
 
     # Tensor read after explicit warmup should not trigger another warmup step
     binding = physx_sdk.create_tensor_binding(pattern=_RB_PATTERN, tensor_type=TensorType.RIGID_BODY_POSE)
@@ -95,7 +95,6 @@ def test_warmup_gpu_after_reset_triggers_again(physx_sdk):
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
     physx_sdk.wait_all()
 
-    # warmup_gpu after reload must succeed without error
     physx_sdk.warmup_gpu()
 
     binding = physx_sdk.create_tensor_binding(pattern=_RB_PATTERN, tensor_type=TensorType.RIGID_BODY_POSE)

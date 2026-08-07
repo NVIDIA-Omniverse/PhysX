@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -34,7 +34,6 @@
 
 namespace physx
 {
-
 	struct PxsContactManagerBase
 	{
 		static const PxU32 NEW_CONTACT_MANAGER_MASK = 0x80000000;
@@ -46,7 +45,6 @@ namespace physx
 		{
 			PX_ASSERT(bucketId < (1 << MaxBucketBits));
 		}
-
 
 		PX_FORCE_INLINE PxU32 computeId(const PxU32 index) const { PX_ASSERT(index < PxU32(1 << (32 - (MaxBucketBits - 1)))); return (index << MaxBucketBits) | (mBucketId); }
 		static PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 computeIndexFromId(const PxU32 id) { return id >> MaxBucketBits; }

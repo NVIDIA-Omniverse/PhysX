@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -56,9 +56,9 @@ public:
 											}
 	virtual			void					requiresObjects(PxProcessPxBaseCallback& c);
 					void					preExportDataReset();
-	virtual			void					exportExtraData(PxSerializationContext& context);
-					void					importExtraData(PxDeserializationContext& context);
-					void					resolveReferences(PxDeserializationContext& context);
+	virtual			void					exportExtraData(PxSerializationContext& context) PX_OVERRIDE;
+					void					importExtraData(PxDeserializationContext& context) PX_OVERRIDE;
+					void					resolveReferences(PxDeserializationContext& context) PX_OVERRIDE;
 //~PX_SERIALIZATION
 	virtual									~NpRigidActorTemplate();
 
@@ -66,7 +66,7 @@ public:
 
 	// PxActor
 					void					removeShapes(PxSceneQuerySystem* sqManager);
-	virtual			PxActorType::Enum		getType() const = 0;
+	virtual			PxActorType::Enum		getType() const PX_OVERRIDE = 0;
 	virtual			PxBounds3				getWorldBounds(float inflation=1.01f) const	PX_OVERRIDE PX_FINAL;
 	virtual			void					setActorFlag(PxActorFlag::Enum flag, bool value)	PX_OVERRIDE PX_FINAL;
 	virtual			void					setActorFlags(PxActorFlags inFlags)	PX_OVERRIDE PX_FINAL;
@@ -166,9 +166,10 @@ void NpRigidActorTemplate<APIClass>::resolveReferences(PxDeserializationContext&
 	const PxU32 nbShapes = mShapeManager.getNbShapes();
 	NpShape** shapes = const_cast<NpShape**>(mShapeManager.getShapes());
 	for(PxU32 j=0;j<nbShapes;j++)
-	{						
+	{
 		context.translatePxBase(shapes[j]);
 		shapes[j]->onActorAttach(*this);
+		shapes[j]->setShapeManagerArrayIndex(j);
 	}
 
 	ActorTemplateClass::resolveReferences(context);
@@ -219,12 +220,14 @@ bool NpRigidActorTemplate<APIClass>::attachShape(PxShape& shape)
 	NpShape& npShape = static_cast<NpShape&>(shape);
 	PX_CHECK_AND_RETURN_VAL(!static_cast<NpShape&>(shape).isExclusive() || shape.getActor()==NULL,
 		"PxRigidActor::attachShape: shape must be shared or unowned", false);
-	PX_CHECK_AND_RETURN_VAL(!(npShape.getCore().getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_VOLUME_SHAPE),
+	PX_CHECK_AND_RETURN_VAL(!(npShape.getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_VOLUME_SHAPE),
 		"PxRigidActor::attachShape() not allowed to attach a deformable volume shape to a rigid actor", false);
-	PX_CHECK_AND_RETURN_VAL(!(npShape.getCore().getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_SURFACE_SHAPE),
+	PX_CHECK_AND_RETURN_VAL(!(npShape.getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_SURFACE_SHAPE),
 		"PxRigidActor::attachShape() not allowed to attach a deformable surface shape to a rigid actor", false);
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(npScene, "PxRigidActor::attachShape() not allowed while simulation is running. Call will be ignored.", false);
+
+	NP_CHECK_SCENE_CORRUPTION_AND_RETURN_VAL(npScene, false)
 
 	PX_SIMD_GUARD
 	// invalidate the pruning structure if the actor bounds changed
@@ -234,10 +237,12 @@ bool NpRigidActorTemplate<APIClass>::attachShape(PxShape& shape)
 		mShapeManager.getPruningStructure()->invalidate(this);
 	}
 
-	mShapeManager.attachShape(npShape, *this);
+	if(!mShapeManager.attachShape(npShape, *this))
+		return PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxRigidActor::attachShape: actor already contains this shape. It is illegal to add the same shape to an actor multiple times.");
 
 	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, shapes, static_cast<PxRigidActor&>(*this), shape)
 
+	NP_CHECK_SCENE_CUDA_ABORT_AND_SET_CORRUPTION(npScene)
 	return true;
 }
 
@@ -299,7 +304,7 @@ PxBounds3 NpRigidActorTemplate<APIClass>::getWorldBounds(float inflation) const
 	NP_READ_CHECK(ActorTemplateClass::getNpScene());
 
 	PX_CHECK_SCENE_API_READ_FORBIDDEN_EXCEPT_COLLIDE_AND_RETURN_VAL(ActorTemplateClass::getNpScene(), "PxRigidActor::getWorldBounds() not allowed while simulation is running (except during PxScene::collide()).", PxBounds3::empty());
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	const PxBounds3 bounds = mShapeManager.getWorldBounds_(*this);
 	PX_ASSERT(bounds.isValid());
@@ -344,10 +349,14 @@ void NpRigidActorTemplate<APIClass>::setActorFlag(PxActorFlag::Enum flag, bool v
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidActor::setActorFlag() not allowed while simulation is running. Call will be ignored.")
 
+	NP_CHECK_SCENE_CORRUPTION_AND_RETURN(npScene)
+
 	if (flag == PxActorFlag::eDISABLE_SIMULATION)
 		setActorSimFlag(value);
 	
 	ActorTemplateClass::setActorFlagInternal(flag, value);
+
+	NP_CHECK_SCENE_CUDA_ABORT_AND_SET_CORRUPTION(npScene)
 }
 
 template<class APIClass>
@@ -358,10 +367,13 @@ void NpRigidActorTemplate<APIClass>::setActorFlags(PxActorFlags inFlags)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidActor::setActorFlags() not allowed while simulation is running. Call will be ignored.")
 
+	NP_CHECK_SCENE_CORRUPTION_AND_RETURN(npScene)
+
 	bool noSim = inFlags.isSet(PxActorFlag::eDISABLE_SIMULATION);
 	setActorSimFlag(noSim);
 	
 	ActorTemplateClass::setActorFlagsInternal(inFlags);
+	NP_CHECK_SCENE_CUDA_ABORT_AND_SET_CORRUPTION(npScene)
 }
 
 template<class APIClass>

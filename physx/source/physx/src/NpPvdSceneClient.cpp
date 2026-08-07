@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -249,7 +249,7 @@ namespace
 			mStream->release();
 		}
 
-		virtual void handleBufferFlush(const uint8_t* inData, uint32_t inLength)
+		virtual void handleBufferFlush(const uint8_t* inData, uint32_t inLength) PX_OVERRIDE
 		{
 			mStream->setPropertyValue(mRenderer, "events", inData, inLength);
 		}
@@ -353,7 +353,7 @@ void PvdSceneClient::updatePvdProperties()
 void PvdSceneClient::releasePvdInstance()
 {
 	if(mPvdDataStream)
-	{		
+	{
 		PxScene* theScene = &mScene;
 		// remove from parent	
 		mPvdDataStream->removeObjectRef(&PxGetPhysics(), "Scenes", theScene);
@@ -551,7 +551,7 @@ void PvdSceneClient::releasePvdInstance(const NpRigidStatic* rigidStatic)
 }
 
 void PvdSceneClient::createPvdInstance(const NpRigidStatic* rigidStatic)
-{	
+{
 	if(checkPvdDebugFlag())	
 		mMetaDataBinding.createInstance(*mPvdDataStream, *rigidStatic, mScene, PxGetPhysics(), mPvd);
 }
@@ -577,7 +577,7 @@ void PvdSceneClient::updatePvdProperties(const NpConstraint* constraint)
 }
 
 void PvdSceneClient::releasePvdInstance(const NpConstraint* constraint)
-{	
+{
 	const Sc::ConstraintCore& scConstraint = constraint->getCore();
 	PxConstraintConnector* conn;
 	if(checkPvdDebugFlag() && (conn = scConstraint.getPxConnector()) != NULL)
@@ -684,7 +684,7 @@ void PvdSceneClient::releasePvdInstance(const NpArticulationMimicJoint* mimicJoi
 ///////////////////////////////////////////////////////////////////////////////
 
 void PvdSceneClient::createPvdInstance(const PxsMaterialCore* materialCore)
-{	
+{
 	if(checkPvdDebugFlag())	
 	{
 		const PxMaterial* theMaterial = materialCore->mMaterial;
@@ -862,7 +862,7 @@ void PvdSceneClient::originShift(PxVec3 shift)
 }
 
 void PvdSceneClient::frameStart(PxReal simulateElapsedTime)
-{	
+{
 	PX_PROFILE_ZONE("Basic.pvdFrameStart", mScene.getScScene().getContextId());
 
 	if(!mIsConnected)

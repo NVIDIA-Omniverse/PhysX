@@ -3,6 +3,7 @@
 #
 
 import ctypes
+import gc
 
 from ovphysx import (
     DLPACK_VERSION,
@@ -72,7 +73,6 @@ def test_dldevice_creation():
     Returns:
         None: Ensures DLDevice can be created and accessed.
     """
-    # Create DLDevice for CPU
     device = DLDevice()
     device.device_type = DLDeviceType.kDLCPU
     device.device_id = 0
@@ -97,7 +97,6 @@ def test_dldatatype_creation():
     Returns:
         None: Ensures DLDataType can be created and accessed.
     """
-    # Create DLDataType for float32
     dtype = DLDataType()
     dtype.code = DLDataTypeCode.kDLFloat
     dtype.bits = 32
@@ -237,6 +236,14 @@ def test_dldatatype_code_compares_equal_to_constants():
     assert dtype.code != 2.7
 
 
+def test_dldatatype_code_converts_to_integer():
+    """DLDataType.code should convert to its integer DLPack type code."""
+    dtype = DLDataType()
+    dtype.code = DLDataTypeCode.kDLFloat
+
+    assert int(dtype.code) == DLDataTypeCode.kDLFloat
+
+
 def test_dltensor_structure_fields():
     """Test DLTensor structure field access and initialization.
 
@@ -252,16 +259,13 @@ def test_dltensor_structure_fields():
     """
     tensor = DLTensor()
 
-    # Set device
     tensor.device.device_type = DLDeviceType.kDLCPU
     tensor.device.device_id = 0
 
-    # Set data type
     tensor.dtype.code = DLDataTypeCode.kDLFloat
     tensor.dtype.bits = 32
     tensor.dtype.lanes = 1
 
-    # Set dimensions
     tensor.ndim = 2
     shape_array = (ctypes.c_int64 * 2)(3, 4)
     tensor.shape = ctypes.cast(shape_array, ctypes.POINTER(ctypes.c_int64))
@@ -295,12 +299,10 @@ def test_managed_dltensor_structure():
     assert hasattr(dl_managed, "deleter"), "DLManagedTensor Structure should have deleter field"
 
     # Test high-level ManagedDLTensor wrapper
-    # Create a DLTensor instance to wrap
     tensor = DLTensor()
     tensor.ndim = 1
 
-    # Construct wrapper with the tensor and manager_ctx (required argument)
-    # manager_ctx can be None for testing purposes
+    # manager_ctx is a required argument; None is fine for testing purposes
     wrapper = ManagedDLTensor(tensor, manager_ctx=None)
 
     # Verify raw_dltensor property returns the same tensor
@@ -517,7 +519,6 @@ def test_acquire_dltensor_direct():
     """
     from ovphysx._dlpack_utils import acquire_dltensor
 
-    # Create a DLTensor directly
     dl_tensor = DLTensor()
     dl_tensor.ndim = 1
 
@@ -555,6 +556,90 @@ def test_acquire_dltensor_numpy_array():
     assert result_tensor.ndim == 1, "Should have 1 dimension"
     # NumPy uses __dlpack__() which returns a capsule that must be kept alive
     assert keepalive is not None, "Keepalive capsule should be returned for __dlpack__() path"
+
+
+def test_copy_dltensor_owns_shape_and_strides():
+    """Copied descriptors must not alias producer-owned metadata."""
+    from ovphysx._dlpack_utils import copy_dltensor
+
+    storage = (ctypes.c_float * 6)(*range(6))
+    shape = (ctypes.c_int64 * 2)(2, 3)
+    strides = (ctypes.c_int64 * 2)(3, 1)
+    source = DLTensor()
+    source.data = ctypes.addressof(storage)
+    source.device.device_type = DLDeviceType.kDLCPU
+    source.device.device_id = 0
+    source.ndim = 2
+    source.dtype.code = DLDataTypeCode.kDLFloat
+    source.dtype.bits = 32
+    source.dtype.lanes = 1
+    source.shape = shape
+    source.strides = strides
+    source.byte_offset = ctypes.sizeof(ctypes.c_float)
+
+    source_address = ctypes.addressof(source)
+    copied = copy_dltensor(source)
+    source.strides = None
+    copied_without_strides = copy_dltensor(source)
+
+    assert ctypes.addressof(copied) != source_address
+    assert copied.data == ctypes.addressof(storage)
+    assert copied.device.device_type.value == DLDeviceType.kDLCPU
+    assert copied.device.device_id == 0
+    assert copied.ndim == 2
+    assert copied.dtype.code.value == source.dtype.code.value
+    assert copied.dtype.bits == source.dtype.bits
+    assert copied.dtype.lanes == source.dtype.lanes
+    assert copied.byte_offset == ctypes.sizeof(ctypes.c_float)
+    assert ctypes.cast(copied.shape, ctypes.c_void_p).value != ctypes.addressof(shape)
+
+    del source
+    del shape
+    del strides
+    gc.collect()
+
+    assert tuple(copied.shape[i] for i in range(copied.ndim)) == (2, 3)
+    assert tuple(copied.strides[i] for i in range(copied.ndim)) == (3, 1)
+    assert tuple(copied_without_strides.shape[i] for i in range(copied_without_strides.ndim)) == (2, 3)
+    assert not copied_without_strides.strides
+
+
+def test_acquire_dltensor_releases_capsule_on_validation_error(monkeypatch):
+    """Validation failures must not leave a capsule in the retained traceback."""
+    import numpy as np
+    import ovphysx._dlpack_utils as dlpack_utils
+    import pytest
+
+    provider = ManagedDLTensor(
+        dlpack_utils.numpy_to_dltensor(np.zeros((1,), dtype=np.float32)),
+        None,
+    )
+
+    def fail_validation(_dl_tensor):
+        raise ValueError("forced validation failure")
+
+    monkeypatch.setattr(dlpack_utils, "_validate_c_contiguous_layout", fail_validation)
+
+    with pytest.raises(ValueError, match="forced validation failure") as exc_info:
+        dlpack_utils.acquire_dltensor(provider)
+
+    assert exc_info.traceback is not None
+    assert provider._dlpack_callbacks == {}
+
+
+def test_detect_data_ptr_uses_warp_public_ptr():
+    """Warp cache validation must re-read the array's public ptr value."""
+    from ovphysx.api import _detect_data_ptr
+
+    warp_like_type = type("WarpLike", (), {"__module__": "warp.fake"})
+    tensor = warp_like_type()
+    tensor.ptr = 1234
+
+    data_ptr, ptr_getter = _detect_data_ptr(tensor)
+
+    assert data_ptr == 1234
+    tensor.ptr = 5678
+    assert ptr_getter(tensor) == 5678
 
 
 def test_acquire_dltensor_non_contiguous_dlpack():

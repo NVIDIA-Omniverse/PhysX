@@ -23,7 +23,7 @@
 static void test_typedefs(void)
 {
     ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    (void)args; /* suppress unused warning */
+    (void)args;
 
     /* Log level constants and types should compile in C */
     ovphysx_log_level_t level = OVPHYSX_LOG_INFO;
@@ -39,15 +39,15 @@ static void test_null_usage(void)
 {
     ovphysx_result_t result;
     result.status = OVPHYSX_API_SUCCESS;
-    (void)result;  /* suppress unused-but-set-variable warning */
+    (void)result;
 }
 
 /* Test 3: Handles and NULL usage */
 static void test_macros_with_null(void)
 {
     ovphysx_handle_t handle = 0;
-    (void)handle;  /* Suppress unused warning */
-    
+    (void)handle;
+
     /* If the macro used nullptr, this file would fail to compile in C mode */
 }
 
@@ -57,8 +57,8 @@ static void test_enqueue_result(void)
     ovphysx_enqueue_result_t result;
     result.status = OVPHYSX_API_SUCCESS;
     result.op_index = 0;
-    
-    (void)result;  /* Suppress unused warning */
+
+    (void)result;
 }
 
 /* Test 5: Status codes and handles */

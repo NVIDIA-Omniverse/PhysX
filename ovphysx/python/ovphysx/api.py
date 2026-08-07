@@ -283,17 +283,19 @@ def _check_version_match() -> None:
 
 from collections import namedtuple
 
-_CacheEntry = namedtuple("_CacheEntry", [
-    "tensor",        # the tensor object (identity check)
-    "c_func",        # C function pointer
-    "sdk_handle",    # SDK handle integer
-    "bind_handle",   # binding handle
-    "dl_ptr",        # ctypes pointer to DLTensor
-    "dl_tensor",     # DLTensor struct (prevents GC)
-    "keepalive",     # DLPack capsule keepalive (prevents GC)
-    "data_ptr",      # data pointer at cache time (int or None)
-    "ptr_getter",    # callable to re-extract data pointer (or None)
-])
+_CacheEntry = namedtuple(
+    "_CacheEntry",
+    [
+        "tensor",  # the tensor object (identity check)
+        "c_func",  # C function pointer
+        "sdk_handle",  # SDK handle integer
+        "bind_handle",  # binding handle
+        "dl_ptr",  # ctypes pointer to DLTensor
+        "dl_tensor",  # DLTensor struct (prevents GC)
+        "data_ptr",  # data pointer at cache time (int or None)
+        "ptr_getter",  # callable to re-extract data pointer (or None)
+    ],
+)
 
 
 def _copy_dl_data_type(dtype: DLDataType | None = None) -> DLDataType:
@@ -328,14 +330,55 @@ def _detect_data_ptr(tensor):
     old DLTensor (pointing to freed memory) to the C layer.
 
     Returns ``(current_ptr, getter_fn)`` where *getter_fn* re-extracts the
-    pointer on the fast path, or ``(None, None)`` for types we cannot cheaply
-    check (raw DLTensor structs, etc.).
+    pointer on the fast path, or ``(None, None)`` for providers whose storage
+    ownership is not known.
     """
-    if hasattr(tensor, "ctypes"):
+    module_root = type(tensor).__module__.partition(".")[0]
+    if module_root == "numpy" and hasattr(tensor, "ctypes"):
         return tensor.ctypes.data, lambda t: t.ctypes.data
-    if hasattr(tensor, "data_ptr") and callable(tensor.data_ptr):
+    if module_root == "torch" and hasattr(tensor, "data_ptr") and callable(tensor.data_ptr):
         return tensor.data_ptr(), lambda t: t.data_ptr()
+    if module_root == "warp" and hasattr(tensor, "ptr"):
+        return tensor.ptr, lambda t: t.ptr
     return None, None
+
+
+def _dltensor_data_ptr(dl_tensor: DLTensor) -> int:
+    """Return the effective first-element address of a DLTensor."""
+    return int(dl_tensor.data or 0) + int(dl_tensor.byte_offset)
+
+
+def _make_cache_entry(tensor, c_func, sdk_handle, bind_handle, dl_tensor):
+    """Build a cache entry when the tensor has stable, known storage."""
+    if isinstance(tensor, DLTensor):
+        return _CacheEntry(
+            tensor,
+            c_func,
+            sdk_handle,
+            bind_handle,
+            ctypes.byref(tensor),
+            tensor,
+            None,
+            None,
+        )
+
+    cached_ptr, ptr_getter = _detect_data_ptr(tensor)
+    if ptr_getter is None or cached_ptr != _dltensor_data_ptr(dl_tensor):
+        return None
+
+    from ._dlpack_utils import copy_dltensor
+
+    cached_dl_tensor = copy_dltensor(dl_tensor)
+    return _CacheEntry(
+        tensor,
+        c_func,
+        sdk_handle,
+        bind_handle,
+        ctypes.byref(cached_dl_tensor),
+        cached_dl_tensor,
+        cached_ptr,
+        ptr_getter,
+    )
 
 
 def _contact_header_to_dict(h: "ContactEventHeader") -> dict:
@@ -470,7 +513,9 @@ class TensorBinding:
         """Get the required DLPack dtype for tensors passed to this binding.
 
         Most bindings use ``float32``. Index bindings (deformable element indices)
-        use ``int32``; bool bindings (DISABLE_SIMULATION) use ``uint8``.
+        use ``int32``. The bool bindings (DISABLE_SIMULATION, DISABLE_GRAVITY) use
+        ``uint8``, as does ARTICULATION_DOF_DRIVE_TYPE, which is a per-DOF enum
+        byte rather than a flag.
         See :attr:`dtype_name` for a compact string form.
         """
         return _copy_dl_data_type(self._dtype)
@@ -632,14 +677,16 @@ class TensorBinding:
         :attr:`dtype`). Can be a NumPy array, PyTorch tensor, or any object
         with __dlpack__ protocol.
 
-        When called repeatedly with the same buffer object, an internal cache
-        skips DLPack acquisition and attribute chain lookups, giving
-        near-raw-C-call overhead.  The numpy writeable guard is preserved
-        on the fast path.  Callers that want this fast path should reuse
-        the same tensor object with unchanged backing storage across calls.
-        Calling ``numpy.ndarray.resize()`` or ``torch.Tensor.resize_()``
-        between calls is safe (a staleness guard detects the pointer change
-        and rebuilds the cache) but defeats the purpose of caching.
+        When called repeatedly with the same NumPy, PyTorch, Warp, or direct
+        ``DLTensor`` buffer object, an internal cache skips DLPack acquisition
+        and attribute chain lookups, giving near-raw-C-call overhead. The numpy
+        writeable guard is preserved on the fast path. Other DLPack providers
+        are reacquired on every call. Callers that want the fast path should
+        reuse the same tensor object with unchanged backing storage across calls.
+        Do not resize or rebind storage between cached calls. The staleness
+        guard rebuilds the cache when it detects a pointer change, but storage
+        mutations that reuse the same pointer violate the cache contract.
+        Direct ``DLTensor`` inputs retain their caller-owned descriptor.
 
         Args:
             tensor: DLPack-compatible tensor with pre-allocated storage matching self.shape.
@@ -655,9 +702,9 @@ class TensorBinding:
         Ownership/Lifetime:
             - Caller owns tensor storage and must keep it alive for the duration of the call.
             - Do not mutate the tensor's backing storage (``resize()``, ``set_()``,
-              etc.) between cached calls.  For numpy and torch tensors, a staleness
-              guard detects common mutations and falls back to the slow path; other
-              types rely on the caller honouring this contract.
+              etc.) between cached calls. A staleness guard detects pointer changes
+              for NumPy, PyTorch, and Warp inputs and falls back to the slow path.
+              Direct ``DLTensor`` inputs retain their caller-owned descriptor.
         Threading:
             - Serialized per binding via an internal lock.
         Errors:
@@ -702,22 +749,25 @@ class TensorBinding:
                         "Use np.array(buf) to create a writeable copy."
                     )
 
-            dl_tensor, keepalive = self._acquire_dltensor(tensor)
-            dl_ptr = ctypes.byref(dl_tensor)
-            c_func = self._sdk._lib.ovphysx_read_tensor_binding
-            sdk_handle_val = self._sdk._omni_physx_sdk_handle.value
+            keepalive = None
+            cache_entry = None
+            try:
+                dl_tensor, keepalive = self._acquire_dltensor(tensor)
+                dl_ptr = ctypes.byref(dl_tensor)
+                c_func = self._sdk._lib.ovphysx_read_tensor_binding
+                sdk_handle_val = self._sdk._omni_physx_sdk_handle.value
 
-            result = c_func(sdk_handle_val, self._handle, dl_ptr)
-
-            # Keep capsule alive through the native call.
-            _ = keepalive
+                result = c_func(sdk_handle_val, self._handle, dl_ptr)
+                if result.status == ApiStatus.SUCCESS:
+                    cache_entry = _make_cache_entry(tensor, c_func, sdk_handle_val, self._handle, dl_tensor)
+            finally:
+                del keepalive
 
             if result.status != ApiStatus.SUCCESS:
                 error_msg = self._sdk._get_last_error()
                 raise RuntimeError(f"Failed to read tensor binding: {error_msg}")
 
-            _cached_ptr, _ptr_getter = _detect_data_ptr(tensor)
-            self._read_cache = _CacheEntry(tensor, c_func, sdk_handle_val, self._handle, dl_ptr, dl_tensor, keepalive, _cached_ptr, _ptr_getter)
+            self._read_cache = cache_entry
 
     def write(self, tensor, indices=None, mask=None) -> None:
         """Write data from a user-provided tensor into the simulation (synchronous).
@@ -726,11 +776,12 @@ class TensorBinding:
         :attr:`dtype`). Can be a NumPy array, PyTorch tensor, or any object
         with __dlpack__ protocol.
 
-        When called repeatedly with the same buffer object and no indices/mask,
-        an internal cache skips DLPack acquisition and attribute chain lookups,
-        giving near-raw-C-call overhead.  Callers that want this fast path
-        should reuse the same tensor object with unchanged backing storage
-        across calls; see :meth:`read` for the full contract.
+        When called repeatedly with the same supported buffer object and no
+        indices/mask, an internal cache skips DLPack acquisition and attribute
+        chain lookups, giving near-raw-C-call overhead. Callers that want this
+        fast path should reuse the same tensor object with unchanged backing
+        storage across calls; see :meth:`read` for the supported providers and
+        full contract.
 
         Args:
             tensor: DLPack-compatible tensor with data to write, shape matching self.shape.
@@ -802,47 +853,56 @@ class TensorBinding:
                 indices = None
 
             if mask is not None:
+                keepalive = None
+                mask_keepalive = None
+                try:
+                    dl_tensor, keepalive = self._acquire_dltensor(tensor)
+                    dl_mask, mask_keepalive = self._acquire_dltensor(mask)
+
+                    result = self._sdk._lib.ovphysx_write_tensor_binding_masked(
+                        self._sdk._omni_physx_sdk_handle.value,
+                        self._handle,
+                        ctypes.byref(dl_tensor),
+                        ctypes.byref(dl_mask),
+                    )
+
+                    if result.status != ApiStatus.SUCCESS:
+                        error_msg = self._sdk._get_last_error()
+                        raise RuntimeError(f"Failed to write tensor binding (masked): {error_msg}")
+                    return
+                finally:
+                    del keepalive
+                    del mask_keepalive
+
+            keepalive = None
+            idx_keepalive = None
+            cache_entry = None
+            try:
                 dl_tensor, keepalive = self._acquire_dltensor(tensor)
-                dl_mask, mask_keepalive = self._acquire_dltensor(mask)
+                dl_ptr = ctypes.byref(dl_tensor)
+                c_func = self._sdk._lib.ovphysx_write_tensor_binding
+                sdk_handle_val = self._sdk._omni_physx_sdk_handle.value
 
-                result = self._sdk._lib.ovphysx_write_tensor_binding_masked(
-                    self._sdk._omni_physx_sdk_handle.value, self._handle, ctypes.byref(dl_tensor), ctypes.byref(dl_mask)
-                )
+                if indices is not None:
+                    idx_dl_tensor, idx_keepalive = self._acquire_dltensor(indices)
+                    idx_ptr = ctypes.byref(idx_dl_tensor)
+                else:
+                    idx_dl_tensor = None
+                    idx_ptr = None
 
-                # prevent GC of DLPack capsules while the C call borrows their pointers
-                _ = (keepalive, mask_keepalive)
-
-                if result.status != ApiStatus.SUCCESS:
-                    error_msg = self._sdk._get_last_error()
-                    raise RuntimeError(f"Failed to write tensor binding (masked): {error_msg}")
-                return
-
-            dl_tensor, keepalive = self._acquire_dltensor(tensor)
-            dl_ptr = ctypes.byref(dl_tensor)
-            c_func = self._sdk._lib.ovphysx_write_tensor_binding
-            sdk_handle_val = self._sdk._omni_physx_sdk_handle.value
-
-            if indices is not None:
-                idx_dl_tensor, idx_keepalive = self._acquire_dltensor(indices)
-                idx_ptr = ctypes.byref(idx_dl_tensor)
-            else:
-                idx_dl_tensor = None
-                idx_keepalive = None
-                idx_ptr = None
-
-            result = c_func(sdk_handle_val, self._handle, dl_ptr, idx_ptr)
-
-            # Keep capsules alive through the native call.
-            _ = (keepalive, idx_keepalive)
+                result = c_func(sdk_handle_val, self._handle, dl_ptr, idx_ptr)
+                if result.status == ApiStatus.SUCCESS and indices is None:
+                    cache_entry = _make_cache_entry(tensor, c_func, sdk_handle_val, self._handle, dl_tensor)
+            finally:
+                del keepalive
+                del idx_keepalive
 
             if result.status != ApiStatus.SUCCESS:
                 error_msg = self._sdk._get_last_error()
                 raise RuntimeError(f"Failed to write tensor binding: {error_msg}")
 
-            # Only cache simple writes (no indices, no mask).
-            if indices is None and mask is None:
-                _cached_ptr, _ptr_getter = _detect_data_ptr(tensor)
-                self._write_cache = _CacheEntry(tensor, c_func, sdk_handle_val, self._handle, dl_ptr, dl_tensor, keepalive, _cached_ptr, _ptr_getter)
+            if indices is None:
+                self._write_cache = cache_entry
 
     def _acquire_dltensor(self, obj) -> tuple[DLTensor, object | None]:
         """Extract DLTensor and a keepalive reference (if needed)."""
@@ -1018,6 +1078,10 @@ class SdfView:
     Evaluation is GPU-only: the query and output tensors must live on the
     same CUDA device as the instance (e.g. torch/cupy tensors).
 
+    SdfView handles are tied to the attached USD stage. After
+    :meth:`PhysX.reset_stage` or :meth:`PhysX.detach_ovstage`, existing views
+    are invalid; destroy them and create replacements after re-attaching a stage.
+
     Example::
 
         with physx.create_sdf_view(pattern="/World/Mesh*", max_query_points=100) as sdf:
@@ -1082,7 +1146,11 @@ class SdfView:
                 raise RuntimeError(f"ovphysx_evaluate_sdf failed: {self._sdk._get_last_error()}")
 
     def destroy(self) -> None:
-        """Release the SDF view and its resources."""
+        """Release the SDF view and its resources.
+
+        Safe to call multiple times, including on stale handles after
+        reset_stage() or detach_ovstage() cleanup removed the native view.
+        """
         with self._lock:
             if self._destroyed:
                 return
@@ -1094,7 +1162,7 @@ class SdfView:
                 return
             result = _lib.ovphysx_destroy_sdf_view(sdk_handle.value, self._handle)
             self._destroyed = True
-            if result.status != 0:
+            if result.status != ApiStatus.SUCCESS:
                 raise RuntimeError(f"ovphysx_destroy_sdf_view failed: {self._sdk._get_last_error()}")
 
     def __enter__(self):
@@ -1126,7 +1194,7 @@ class SdfView:
 class ContactBinding:
     """Contact tensor binding backed by IRigidContactView.
 
-    Do not instantiate directly. Use :meth:`PhysxSDK.create_contact_binding` to
+    Do not instantiate directly. Use :meth:`PhysX.create_contact_binding` to
     obtain an instance. The :attr:`sensor_paths` and :attr:`filter_paths`
     properties expose the row/column metadata for the returned tensors.
     """
@@ -1156,7 +1224,7 @@ class ContactBinding:
 
     @property
     def max_contact_data_count(self) -> int:
-        """Flat-buffer capacity for detailed contact and friction reads."""
+        """Flat-buffer capacity for raw and detailed contact/friction reads."""
         return self._max_contact_data_count
 
     @property
@@ -1235,7 +1303,8 @@ class ContactBinding:
         """Read net contact forces into output. Expected shape: [sensor_count, 3].
 
         The dt for impulse-to-force conversion is taken automatically from the
-        last :meth:`PhysxSDK.step` call.
+        last successful :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
+        :meth:`PhysX.step_n_sync` call.
         """
         with self._lock:
             if self._destroyed:
@@ -1255,7 +1324,8 @@ class ContactBinding:
         """Read contact force matrix into output. Expected shape: [sensor_count, filter_count, 3].
 
         The dt for impulse-to-force conversion is taken automatically from the
-        last :meth:`PhysxSDK.step` call.
+        last successful :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
+        :meth:`PhysX.step_n_sync` call.
         """
         with self._lock:
             if self._destroyed:
@@ -1279,6 +1349,17 @@ class ContactBinding:
         filter_count]`` for ``counts`` and ``start_indices``. ``C`` is
         :attr:`max_contact_data_count`; both ``C`` and ``filter_count`` must
         be positive. Count and start-index tensors may be int32 or uint32.
+        Contact force magnitudes use the timestep from the last successful
+        :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
+        :meth:`PhysX.step_n_sync` call.
+
+        Raises:
+            RuntimeError: If ``C`` is too small. The payload arrays must not
+                be used; ``counts`` and ``start_indices`` contain the full
+                required layout. Set ``max_contact_data_count`` to the maximum
+                element of ``start_indices + counts`` when recreating the
+                binding for subsequent simulation steps. Recreating a binding
+                does not recover the overflowing step's payload.
         """
         with self._lock:
             if self._destroyed:
@@ -1342,6 +1423,18 @@ class ContactBinding:
         :attr:`max_contact_data_count` and must be positive; no filter
         dimension is required. Count and start-index tensors may be
         int32 or uint32; ``other_actor_ids`` must be int64 or uint64.
+        Contact force magnitudes use the timestep from the last successful
+        :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
+        :meth:`PhysX.step_n_sync` call.
+
+        Raises:
+            RuntimeError: If ``C`` is too small. The payload arrays, including
+                ``other_actor_ids``, must not be used; ``counts`` and
+                ``start_indices`` contain the full required layout. Set
+                ``max_contact_data_count`` to the maximum element of
+                ``start_indices + counts`` when recreating the binding for
+                subsequent simulation steps. Recreating a binding does not
+                recover the overflowing step's payload.
         """
         with self._lock:
             if self._destroyed:
@@ -1441,6 +1534,17 @@ class ContactBinding:
         start-index tensors may be int32 or uint32.
         Friction entries are per-anchor; sum each flat slice to build a
         pair-level ``[sensor_count, filter_count, 3]`` force tensor.
+        Friction forces use the timestep from the last successful
+        :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
+        :meth:`PhysX.step_n_sync` call.
+
+        Raises:
+            RuntimeError: If ``C`` is too small. The payload arrays must not
+                be used; ``counts`` and ``start_indices`` contain the full
+                required layout. Set ``max_contact_data_count`` to the maximum
+                element of ``start_indices + counts`` when recreating the
+                binding for subsequent simulation steps. Recreating a binding
+                does not recover the overflowing step's payload.
         """
         with self._lock:
             if self._destroyed:
@@ -1724,7 +1828,6 @@ class PhysX:
         if not ignore_version_mismatch:
             _check_version_match()
 
-        # Create args structure
         args = ovphysx_create_args()
 
         args.active_cuda_gpus = ovphysx_string_t(active_cuda_gpus or "")
@@ -1733,7 +1836,6 @@ class PhysX:
         # plugins/, so the Python wrapper leaves bundled_deps_path empty.
         args.bundled_deps_path = ovphysx_string_t()
 
-        # Build config entries from PhysXConfig dataclass
         all_entries = []
         if config is not None:
             from .config import _to_c_config
@@ -1849,10 +1951,10 @@ class PhysX:
               detach_ovstage internally). Callers must re-attach with
               attach_ovstage() before any further update_from_ovstage().
         Ownership/Lifetime:
-            - All TensorBinding and ContactBinding objects for the previous
-              stage become invalid. Destroy cached bindings before reset when
-              practical; if a stale binding survives, only destroy it. Create
-              replacement bindings after the reset completes.
+            - All TensorBinding, ContactBinding, and SdfView objects for the previous
+              stage become invalid. Destroy cached bindings and SDF views before reset
+              when practical; if a stale handle survives, only destroy it. Create
+              replacement bindings and SDF views after the reset completes.
         Threading:
             - Do not call concurrently on the same instance without external sync.
         Errors:
@@ -2266,6 +2368,13 @@ class PhysX:
         Preconditions:
             - Instance must be valid.
             - Not already attached to a Stage.
+            - ``read_ordinal`` is sealed by a completed write-floor advance
+              covering it. The population API never opens or commits an ordinal
+              of its own, so waiting on ``ovstage.population.open_usd()`` only
+              completes population; call
+              ``stage.advance_write_floor(ordinal=read_ordinal).wait()`` first.
+              Reads target sealed data, so attaching at an unsealed ordinal
+              fails the parse and yields an empty scene.
 
         Lifetime:
             - ``stage`` must outlive the attachment because ovphysx captures and
@@ -2345,9 +2454,10 @@ class PhysX:
         subsequent :meth:`attach_ovstage` to a different Stage starts clean.
         After detach, stage-dependent calls such as :meth:`update_from_ovstage`
         and :meth:`step` fail until a Stage is attached again. Detach invalidates
-        the stage's tensor and contact views. Do not read or write existing
-        bindings; destroy them and create replacements after calling
-        :meth:`attach_ovstage` and realizing a stage again.
+        the stage's tensor, contact, and SDF views. Do not read, write, or
+        evaluate existing bindings or SDF views; destroy them and create
+        replacements after calling :meth:`attach_ovstage` and realizing a stage
+        again.
 
         Errors:
             - Raises ``RuntimeError`` on internal failures.
@@ -2395,6 +2505,8 @@ class PhysX:
 
         Raises:
             RuntimeError: on a native error (e.g. no ovstage attached).
+            TypeError: if a returned column carries a DLPack dtype this reader does
+                not support, instead of silently decoding it as float32.
         """
         import numpy as np
 
@@ -2445,6 +2557,8 @@ class PhysX:
 
         Raises:
             RuntimeError: on a native error (e.g. no ovstage attached).
+            TypeError: if a returned column carries a DLPack dtype this reader does
+                not support, instead of silently decoding it as float32.
         """
         self._check_valid()
         handle = self._omni_physx_sdk_handle.value
@@ -2554,12 +2668,18 @@ class PhysX:
 
     # DLPack dtype.code/bits -> (ctypes element type, numpy dtype). The output read
     # produces float32 columns today; ints/uints are mapped for forward safety.
+    # (6, 8) is kDLBool (bits=8): a supported encoding the native decoder emits (e.g.
+    # OvstagePopulator.setBool writes {kDLBool, 8, 1}); it must decode, not raise.
     _DL_READ_CTYPE = {
         (2, 32): (ctypes.c_float, "float32"),
         (2, 64): (ctypes.c_double, "float64"),
+        (0, 64): (ctypes.c_int64, "int64"),
         (0, 32): (ctypes.c_int32, "int32"),
+        (0, 8): (ctypes.c_int8, "int8"),
+        (1, 64): (ctypes.c_uint64, "uint64"),
         (1, 32): (ctypes.c_uint32, "uint32"),
         (1, 8): (ctypes.c_uint8, "uint8"),
+        (6, 8): (ctypes.c_uint8, "bool"),
     }
 
     @staticmethod
@@ -2587,7 +2707,16 @@ class PhysX:
             return int(getattr(v, "value", v))
 
         code, bits, lanes = _ival(t.dtype.code), _ival(t.dtype.bits), _ival(t.dtype.lanes) or 1
-        ctype, npdt = cls._DL_READ_CTYPE.get((code, bits), (ctypes.c_float, "float32"))
+        mapped = cls._DL_READ_CTYPE.get((code, bits))
+        if mapped is None:
+            # Never silently reinterpret an unmapped dtype as float32: that returns wrong
+            # values (and only half the buffer for 64-bit elements) with no error. Fail
+            # loudly so a native dtype-encoding change is caught instead of corrupting data.
+            raise TypeError(
+                f"ovphysx read column has unsupported DLPack dtype "
+                f"(code={code}, bits={bits}, lanes={lanes}); cannot decode to NumPy"
+            )
+        ctype, npdt = mapped
         ndim = int(t.ndim)
         shape = [int(t.shape[i]) for i in range(ndim)]
         elems = 1
@@ -2599,7 +2728,11 @@ class PhysX:
             return np.empty(out_shape, dtype=npdt)
         addr = ctypes.cast(t.data, ctypes.c_void_p).value + int(t.byte_offset)
         buf = (ctype * total).from_address(addr)
-        return np.ctypeslib.as_array(buf).reshape(out_shape).copy()
+        # astype(npdt) rather than copy() so the returned dtype matches the empty path:
+        # a kDLBool column (ctype c_uint8) becomes numpy bool, not uint8. copy=True keeps
+        # the result safe past the borrowed-buffer window. For non-bool types npdt already
+        # equals the ctype's natural dtype, so this is a plain copy.
+        return np.ctypeslib.as_array(buf).reshape(out_shape).astype(npdt, copy=True)
 
     def set_config(self, entry: ovphysx_config_entry_t) -> None:
         """Set a typed global config entry at runtime (process-global).
@@ -2844,7 +2977,6 @@ class PhysX:
             - Raises ``RuntimeError`` on creation failure.
         """
         self._check_valid()
-        # Validate arguments
         if pattern is None and prim_paths is None:
             raise ValueError("Either 'pattern' or 'prim_paths' must be provided")
         if pattern is not None and prim_paths is not None:
@@ -2852,7 +2984,6 @@ class PhysX:
         if prim_paths is not None and len(prim_paths) == 0:
             raise ValueError("prim_paths must not be empty; pass at least one prim path.")
 
-        # Build descriptor
         desc = ovphysx_tensor_binding_desc_t()
         desc.tensor_type = tensor_type
 
@@ -2861,7 +2992,6 @@ class PhysX:
         c_paths_refs = []
 
         if prim_paths is not None:
-            # Use explicit prim paths
             desc.pattern = ovphysx_string_t()  # Empty pattern
             desc.prim_paths_count = len(prim_paths)
             c_paths_array = (ovphysx_string_t * len(prim_paths))()
@@ -2870,12 +3000,10 @@ class PhysX:
                 c_paths_refs.append(c_paths_array[i])
             desc.prim_paths = cast(c_paths_array, POINTER(ovphysx_string_t))
         else:
-            # Use pattern
             desc.pattern = ovphysx_string_t(pattern)
             desc.prim_paths = None
             desc.prim_paths_count = 0
 
-        # Create binding
         handle = c_uint64(0)
         result = self._lib.ovphysx_create_tensor_binding(self._omni_physx_sdk_handle.value, byref(desc), byref(handle))
 
@@ -2883,19 +3011,16 @@ class PhysX:
             error_msg = self._get_last_error()
             raise RuntimeError(f"Failed to create tensor binding: {error_msg}")
 
-        # Get tensor spec to know the shape
         spec = ovphysx_tensor_spec_t()
         spec_result = self._lib.ovphysx_get_tensor_binding_spec(
             self._omni_physx_sdk_handle.value, handle.value, byref(spec)
         )
 
         if spec_result.status != ApiStatus.SUCCESS:
-            # Clean up the binding we just created
             self._lib.ovphysx_destroy_tensor_binding(self._omni_physx_sdk_handle.value, handle.value)
             error_msg = self._get_last_error()
             raise RuntimeError(f"Failed to get tensor binding spec: {error_msg}")
 
-        # Extract shape from spec
         ndim = spec.ndim
         shape = tuple(spec.shape[i] for i in range(ndim))
 
@@ -3307,13 +3432,23 @@ class PhysX:
 
         A **sensor** is a set of rigid body prims matched by a USD prim path
         pattern. A **filter** is a second set of bodies whose contacts with each
-        sensor you want to measure. No extra USD schema is needed beyond the
-        rigid bodies themselves.
+        sensor you want to measure.
+
+        Contact reporting is opt-in: every authored USD prim matched by
+        ``sensor_patterns`` must have ``PhysxContactReportAPI`` applied, on the
+        prim named as the sensor itself (not a parent body or child collider). A
+        matched prim without the schema is dropped from the binding, and if that
+        leaves no sensors this call raises ``RuntimeError``. Filter prims need no
+        extra schema, and runtime-only clones inherit contact reporting from the
+        source actor.
 
         The binding must be created *before* the first simulation step whose
-        contacts you want to observe. Call :meth:`read_net_forces` or
-        :meth:`read_force_matrix` after :meth:`PhysxSDK.step`. Before the first
-        step, both return all-zeros tensors.
+        contacts you want to observe. Call
+        :meth:`ContactBinding.read_net_forces` or
+        :meth:`ContactBinding.read_force_matrix` after a successful
+        :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
+        :meth:`PhysX.step_n_sync` call. Before the first step, both return
+        all-zeros tensors.
 
         Result tensor shapes after step:
           - net forces:    ``[S, 3]``   where S = matched sensor count
@@ -3333,7 +3468,7 @@ class PhysX:
                 filters_per_sensor=1,
                 max_contact_data_count=256,
             )
-            # After sdk.step():
+            # After a successful simulation step:
             forces = torch.zeros(cb.sensor_count, 3, device="cuda")
             cb.read_net_forces(forces)
 
@@ -3343,10 +3478,12 @@ class PhysX:
                 Total length must equal ``len(sensor_patterns) * filters_per_sensor``.
                 Pass ``None`` with ``filters_per_sensor=0`` to get contacts with all bodies.
             filters_per_sensor: Number of filter patterns per sensor (same for all sensors).
-            max_contact_data_count: Max raw contact pairs to track in the native
-                backend; also caps the detailed contact/friction flat-buffer reads.
+            max_contact_data_count: Maximum contact-data entries that the raw
+                and detailed contact/friction flat-buffer reads can hold.
                 Detailed reads require this value and ``filters_per_sensor`` to
-                be positive.
+                be positive. If it is too small, raw and detailed reads raise
+                ``RuntimeError`` and report the required layout through their
+                count and start-index arrays.
         """
         self._check_valid()
         n_sensors = len(sensor_patterns)

@@ -22,50 +22,67 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "PxgShapeManager.h"
 #include "PxgCopyManager.h"
-#include "PxgHeapMemAllocator.h"
 #include "PxgCudaUtils.h"
+#include "PxgAllocatorDesc.h"
+#include "PxsHeapStats.h"
 #include "PxNodeIndex.h"
 
 using namespace physx;
 
-PxgShapeManager::PxgShapeManager(PxgHeapMemoryAllocatorManager* heapManager) :
-	mHeapManager(heapManager),
-	mHostShapes(PxVirtualAllocator(heapManager->mMappedMemoryAllocators, PxsHeapStats::eNARROWPHASE)),
-	mHostShapesRemapTable(PxVirtualAllocator(heapManager->mMappedMemoryAllocators, PxsHeapStats::eNARROWPHASE)),
-	mHostShapeIdTable(PxVirtualAllocator(heapManager->mMappedMemoryAllocators, PxsHeapStats::eNARROWPHASE)),
-	mHostTransformCacheIdToActorTable(PxVirtualAllocator(heapManager->mMappedMemoryAllocators, PxsHeapStats::eNARROWPHASE)),
-	mGpuShapesBuffer(heapManager, PxsHeapStats::eNARROWPHASE),
-	mGpuShapesRemapTableBuffer(heapManager, PxsHeapStats::eNARROWPHASE),
-	mGpuTransformCacheIdToActorTableBuffer(heapManager, PxsHeapStats::eNARROWPHASE),
-	mGpuRigidIndiceBuffer(heapManager, PxsHeapStats::eNARROWPHASE),
-	mGpuShapeIndiceBuffer(heapManager, PxsHeapStats::eNARROWPHASE),
-	mGpuUnsortedShapeIndicesBuffer(heapManager, PxsHeapStats::eNARROWPHASE),
-	mGpuTempRigidBitIndiceBuffer(heapManager, PxsHeapStats::eNARROWPHASE),
-	mGpuTempRigidIndiceBuffer(heapManager, PxsHeapStats::eNARROWPHASE)
+PxgShapeManager::PxgShapeManager(PxgAllocatorDesc& allocDesc) :
+	mHostShapesMapped(allocDesc.hostMappedAlloc, PxsHeapStats::eNARROWPHASE, Cm::PinnableAllocatorFallback::eDISABLED),
+	mHostShapesRemapTableMapped(allocDesc.hostMappedAlloc, PxsHeapStats::eNARROWPHASE, Cm::PinnableAllocatorFallback::eDISABLED),
+	mHostTransformCacheIdToActorTableMapped(allocDesc.hostMappedAlloc, PxsHeapStats::eNARROWPHASE, Cm::PinnableAllocatorFallback::eDISABLED),
+	mHostShapeIdTableMapped(allocDesc.hostMappedAlloc, PxsHeapStats::eNARROWPHASE, Cm::PinnableAllocatorFallback::eDISABLED),
+	mGpuShapesBuffer(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuShapesRemapTableBuffer(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuTransformCacheIdToActorTableBuffer(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuRigidIndiceBuffer(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuShapeIndiceBuffer(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuUnsortedShapeIndicesBuffer(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuTempRigidBitIndiceBuffer(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuTempRigidIndiceBuffer(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mAllocFailed(false)
 {
 	//allocate x4
 	const PxU32 initialSize = 128;
-	mHostShapes.forceSize_Unsafe(0);
-	mHostShapes.reserve(initialSize);
-	mHostShapes.forceSize_Unsafe(initialSize);
+	if(!mHostShapesMapped.reserve(initialSize))
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgShapeManager: failed to allocate pinned host buffer for mHostShapes");
+		mAllocFailed = true;
+		return;
+	}
+	mHostShapesMapped.forceSize_Unsafe(initialSize);
 
-	mHostShapesRemapTable.forceSize_Unsafe(0);
-	mHostShapesRemapTable.reserve(initialSize);
-	mHostShapesRemapTable.forceSize_Unsafe(initialSize);
+	if(!mHostShapesRemapTableMapped.reserve(initialSize))
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgShapeManager: failed to allocate pinned host buffer for mHostShapesRemapTable");
+		mAllocFailed = true;
+		return;
+	}
+	mHostShapesRemapTableMapped.forceSize_Unsafe(initialSize);
 
-	mHostShapeIdTable.forceSize_Unsafe(0);
-	mHostShapeIdTable.reserve(initialSize);
-	mHostShapeIdTable.forceSize_Unsafe(initialSize);
+	if (!mHostShapeIdTableMapped.reserve(initialSize))
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgShapeManager: failed to allocate pinned host buffer for mHostShapeIdTable");
+		mAllocFailed = true;
+		return;
+	}
+	mHostShapeIdTableMapped.forceSize_Unsafe(initialSize);
 
-	mHostTransformCacheIdToActorTable.forceSize_Unsafe(0);
-	mHostTransformCacheIdToActorTable.reserve(initialSize);
-	mHostTransformCacheIdToActorTable.forceSize_Unsafe(initialSize);
+	if(!mHostTransformCacheIdToActorTableMapped.reserve(initialSize))
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgShapeManager: failed to allocate pinned host buffer for mHostTransformCacheIdToActorTable");
+		mAllocFailed = true;
+		return;
+	}
+	mHostTransformCacheIdToActorTableMapped.forceSize_Unsafe(initialSize);
 
 	mGpuShapesBuffer.allocate(sizeof(PxgShape)*initialSize, PX_FL);
 	mGpuShapesRemapTableBuffer.allocate(sizeof(PxNodeIndex) * initialSize, PX_FL);
@@ -96,20 +113,32 @@ void PxgShapeManager::initialize(PxCudaContext* cudaContext, CUstream stream)
 
 PxU32 PxgShapeManager::registerShape(PxgShape& shape)
 {
+	if(mAllocFailed)
+	{
+		return PX_INVALID_U32;
+	}
+
 	const PxU32 shapeId = mIdPool.getNewID();
 
-	if (shapeId >= mHostShapes.capacity())
+	if (shapeId >= mHostShapesMapped.capacity())
 	{
 		mResizeRequired = true;
 		const PxU32 capacity = shapeId * 2;
 
 		//make sure capacity is x4 because we need to use radix sort to sort shape id based on rigid body index later
 		const PxU32 tempCapacity = (capacity + 3)&(~3);
-		mHostShapes.resize(tempCapacity);
+		
+		if(!mHostShapesMapped.resize(tempCapacity))
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgShapeManager: failed to allocate pinned host buffer for mHostShapes");
+			mAllocFailed = true;
+			return PX_INVALID_U32;
+		}
+
 		mDirtyShapeMap.resize(tempCapacity);
 	}
 
-	mHostShapes[shapeId] = shape;
+	mHostShapesMapped[shapeId] = shape;
 	mDirtyShapeMap.growAndSet(shapeId);
 
 	mMaxShapeId = PxMax(PxI32(shapeId), mMaxShapeId);
@@ -121,21 +150,44 @@ PxU32 PxgShapeManager::registerShape(PxgShape& shape)
 
 void PxgShapeManager::registerShapeInstance(const PxNodeIndex& nodeIndex, const PxU32 transformCacheID, PxActor* actor, bool aggregate)
 {
-	if (transformCacheID >= mHostShapesRemapTable.capacity())
+	if(mAllocFailed)
+	{
+		return;
+	}
+
+	if (transformCacheID >= mHostShapesRemapTableMapped.capacity())
 	{
 		const PxU32 capacity = transformCacheID*2;
 		//make sure capacity is x4 because we need to use radix sort to sort shape id based on rigid body index later
 		const PxU32 tempCapacity = (capacity + 3)&(~3);
 		mTransformCacheResizeRequired = true;
-		mHostShapesRemapTable.resize(tempCapacity);
-		mHostShapeIdTable.resize(tempCapacity);
-		mHostTransformCacheIdToActorTable.resize(tempCapacity);
+		if(!mHostShapesRemapTableMapped.resize(tempCapacity))
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgShapeManager: failed to allocate pinned host buffer for mHostShapesRemapTable");
+			mAllocFailed = true;
+			return;
+		}
+
+		if(!mHostShapeIdTableMapped.resize(tempCapacity))
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgShapeManager: failed to allocate pinned host buffer for mHostShapeIdTable");
+			mAllocFailed = true;
+			return;
+		}
+		
+		if(!mHostTransformCacheIdToActorTableMapped.resize(tempCapacity))
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgShapeManager: failed to allocate pinned host buffer for mHostTransformCacheIdToActorTable");
+			mAllocFailed = true;
+			return;
+		}
+
 		mDirtyTransformCacheMap.resize(tempCapacity);
 	}
 		
-	mHostShapesRemapTable[transformCacheID] = nodeIndex;
-	mHostShapeIdTable[transformCacheID] = aggregate? 0xffffffff : transformCacheID;
-	mHostTransformCacheIdToActorTable[transformCacheID] = aggregate ? NULL : actor;
+	mHostShapesRemapTableMapped[transformCacheID] = nodeIndex;
+	mHostShapeIdTableMapped[transformCacheID] = aggregate ? 0xffffffff : transformCacheID;
+	mHostTransformCacheIdToActorTableMapped[transformCacheID] = aggregate ? NULL : actor;
 	mHasShapeInstanceChanged = true;
 	mDirtyTransformCacheMap.growAndSet(transformCacheID);
 	mMaxTransformCacheID = PxMax(PxI32(transformCacheID), mMaxTransformCacheID);
@@ -143,6 +195,11 @@ void PxgShapeManager::registerShapeInstance(const PxNodeIndex& nodeIndex, const 
 
 void PxgShapeManager::unregisterShape(const PxU32 id)
 {
+	if(mAllocFailed)
+	{
+		return;
+	}
+
 	mDirtyShapeMap.reset(id);
 	mIdPool.deferredFreeID(id);
 	mHasShapeChanged = true;
@@ -150,18 +207,30 @@ void PxgShapeManager::unregisterShape(const PxU32 id)
 
 void PxgShapeManager::unregisterShapeInstance(const PxU32 transformCacheID)
 {
+	if(mAllocFailed)
+	{
+		return;
+	}
+
 	mDirtyTransformCacheMap.set(transformCacheID);
-	mHostShapesRemapTable[transformCacheID] = PxNodeIndex(PX_INVALID_NODE);
-	mHostShapeIdTable[transformCacheID] = 0xffffffff;
-	mHostTransformCacheIdToActorTable[transformCacheID] = NULL;
+	mHostShapesRemapTableMapped[transformCacheID] = PxNodeIndex(PX_INVALID_NODE);
+	mHostShapeIdTableMapped[transformCacheID] = 0xffffffff;
+	mHostTransformCacheIdToActorTableMapped[transformCacheID] = NULL;
 	mHasShapeInstanceChanged = true;
 }
 
 void PxgShapeManager::scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaContext* cudaContext, CUstream stream)
 {
 	PX_UNUSED(copyManager);
+	PX_ASSERT(cudaContext);
 
 	const PxU32 maxGrouping = 16;
+
+	if (mAllocFailed)
+	{
+		cudaContext->setAbortMode(true);
+		return;
+	}
 
 	if (mHasShapeChanged)
 	{
@@ -170,7 +239,7 @@ void PxgShapeManager::scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaContex
 		if (mResizeRequired)
 		{
 			//Allocate and copy data across
-			mGpuShapesBuffer.allocateCopyOldDataAsync(sizeof(PxgShape)*mHostShapes.capacity(), cudaContext, stream, PX_FL);
+			mGpuShapesBuffer.allocateCopyOldDataAsync(sizeof(PxgShape)*mHostShapesMapped.capacity(), cudaContext, stream, PX_FL);
 
 			mResizeRequired = false;
 		}
@@ -197,9 +266,9 @@ void PxgShapeManager::scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaContex
 					//dirtyId is the next bit that's set to 1!
 					const PxU32 dirtyId = PxU32(w << 5 | PxLowestSetBit(b));
 
-					void* hostPtr = mHostShapes.begin() + dirtyId;
+					void* hostPtr = mHostShapesMapped.begin() + dirtyId;
 
-					PxgCopyManager::CopyDesc desc;
+					PxgCopyDesc desc;
 					desc.source = reinterpret_cast<size_t>(getMappedDevicePtr(cudaContext, hostPtr));
 					desc.dest = reinterpret_cast<size_t>(reinterpret_cast<PxU8*>(mGpuShapesBuffer.getDevicePtr()) + dirtyId * sizeof(PxgShape));
 					desc.bytes = sizeof(PxgShape);
@@ -245,28 +314,28 @@ void PxgShapeManager::scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaContex
 		if (mTransformCacheResizeRequired)
 		{
 			PxU64 oldCapacity = mGpuShapesRemapTableBuffer.getSize();
-			mGpuShapesRemapTableBuffer.allocateCopyOldDataAsync(sizeof(PxNodeIndex)*mHostShapesRemapTable.capacity(), cudaContext, stream, PX_FL);
+			mGpuShapesRemapTableBuffer.allocateCopyOldDataAsync(sizeof(PxNodeIndex)*mHostShapesRemapTableMapped.capacity(), cudaContext, stream, PX_FL);
 			cudaContext->memsetD32Async(mGpuShapesRemapTableBuffer.getDevicePtr() + oldCapacity, 0xFFFFFFFF, (mGpuShapesRemapTableBuffer.getSize() - oldCapacity) / sizeof(PxU32), stream);
 
 			oldCapacity = mGpuRigidIndiceBuffer.getSize();
-			mGpuRigidIndiceBuffer.allocateCopyOldDataAsync(sizeof(PxNodeIndex) * mHostShapesRemapTable.capacity(), cudaContext, stream, PX_FL);
+			mGpuRigidIndiceBuffer.allocateCopyOldDataAsync(sizeof(PxNodeIndex) * mHostShapesRemapTableMapped.capacity(), cudaContext, stream, PX_FL);
 			cudaContext->memsetD32Async(mGpuRigidIndiceBuffer.getDevicePtr() + oldCapacity, 0xFFFFFFFF, (mGpuRigidIndiceBuffer.getSize() - oldCapacity) / sizeof(PxU32), stream);
 
-			mGpuTempRigidIndiceBuffer.allocate(sizeof(PxNodeIndex) * mHostShapesRemapTable.capacity(), PX_FL);
+			mGpuTempRigidIndiceBuffer.allocate(sizeof(PxNodeIndex) * mHostShapesRemapTableMapped.capacity(), PX_FL);
 
 			oldCapacity = mGpuShapeIndiceBuffer.getSize();
-			mGpuShapeIndiceBuffer.allocateCopyOldDataAsync(sizeof(PxU32) * mHostShapeIdTable.capacity(), cudaContext, stream, PX_FL);
+			mGpuShapeIndiceBuffer.allocateCopyOldDataAsync(sizeof(PxU32) * mHostShapeIdTableMapped.capacity(), cudaContext, stream, PX_FL);
 			cudaContext->memsetD32Async(mGpuShapeIndiceBuffer.getDevicePtr() + oldCapacity, 0xFFFFFFFF, (mGpuShapeIndiceBuffer.getSize() - oldCapacity) / sizeof(PxU32), stream);
 
 			oldCapacity = mGpuUnsortedShapeIndicesBuffer.getSize();
-			mGpuUnsortedShapeIndicesBuffer.allocateCopyOldDataAsync(sizeof(PxU32) * mHostShapeIdTable.capacity(), cudaContext, stream, PX_FL);
+			mGpuUnsortedShapeIndicesBuffer.allocateCopyOldDataAsync(sizeof(PxU32) * mHostShapeIdTableMapped.capacity(), cudaContext, stream, PX_FL);
 			cudaContext->memsetD32Async(mGpuUnsortedShapeIndicesBuffer.getDevicePtr() + oldCapacity, 0xFFFFFFFF, (mGpuUnsortedShapeIndicesBuffer.getSize() - oldCapacity) / sizeof(PxU32), stream);
 
 
-			mGpuTempRigidBitIndiceBuffer.allocate(sizeof(PxU32) * mHostShapeIdTable.capacity(), PX_FL);
+			mGpuTempRigidBitIndiceBuffer.allocate(sizeof(PxU32) * mHostShapeIdTableMapped.capacity(), PX_FL);
 
 			oldCapacity = mGpuTransformCacheIdToActorTableBuffer.getSize();
-			mGpuTransformCacheIdToActorTableBuffer.allocateCopyOldDataAsync(sizeof(PxActor*) * mHostTransformCacheIdToActorTable.capacity(), cudaContext, stream, PX_FL);
+			mGpuTransformCacheIdToActorTableBuffer.allocateCopyOldDataAsync(sizeof(PxActor*) * mHostTransformCacheIdToActorTableMapped.capacity(), cudaContext, stream, PX_FL);
 			cudaContext->memsetD32Async(mGpuTransformCacheIdToActorTableBuffer.getDevicePtr() + oldCapacity, 0, (mGpuTransformCacheIdToActorTableBuffer.getSize() - oldCapacity) / sizeof(PxActor*), stream);
 
 			mTransformCacheResizeRequired = false;
@@ -278,12 +347,12 @@ void PxgShapeManager::scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaContex
 		//make sure the dirty shape map cover x4 case and set those to invalid value
 		for (PxU32 i = totalNumOfShapeInstances; i < numShapeInstances; ++i)
 		{
-			if (!mHostShapesRemapTable[i].isStaticBody())
+			if (!mHostShapesRemapTableMapped[i].isStaticBody())
 			{
 				mDirtyTransformCacheMap.growAndSet(i);
-				mHostShapesRemapTable[i] = PxNodeIndex(PX_INVALID_NODE);
-				mHostShapeIdTable[i] = 0xffffffff;
-				mHostTransformCacheIdToActorTable[i] = NULL;
+				mHostShapesRemapTableMapped[i] = PxNodeIndex(PX_INVALID_NODE);
+				mHostShapeIdTableMapped[i] = 0xffffffff;
+				mHostTransformCacheIdToActorTableMapped[i] = NULL;
 			}
 		}
 
@@ -301,28 +370,28 @@ void PxgShapeManager::scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaContex
 					//dirtyId is the next bit that's set to 1!
 					const PxU32 dirtyId = PxU32(w << 5 | PxLowestSetBit(b));
 
-					void* hostRemapPtr = mHostShapesRemapTable.begin() + dirtyId;
+					void* hostRemapPtr = mHostShapesRemapTableMapped.begin() + dirtyId;
 
-					void* hostShapeIdPtr = mHostShapeIdTable.begin() + dirtyId;
+					void* hostShapeIdPtr = mHostShapeIdTableMapped.begin() + dirtyId;
 
-					void* hostTransformCacheIdToActorPtr = mHostTransformCacheIdToActorTable.begin() + dirtyId;
+					void* hostTransformCacheIdToActorPtr = mHostTransformCacheIdToActorTableMapped.begin() + dirtyId;
 
-					PxgCopyManager::CopyDesc desc1;
+					PxgCopyDesc desc1;
 					desc1.source = reinterpret_cast<size_t>(getMappedDevicePtr(cudaContext, hostRemapPtr));
 					desc1.dest = reinterpret_cast<size_t>(reinterpret_cast<PxU8*>(mGpuShapesRemapTableBuffer.getDevicePtr()) + dirtyId * sizeof(PxNodeIndex));
 					desc1.bytes = sizeof(PxNodeIndex);
 
-					PxgCopyManager::CopyDesc desc2;
+					PxgCopyDesc desc2;
 					desc2.source = reinterpret_cast<size_t>(getMappedDevicePtr(cudaContext, hostRemapPtr));
 					desc2.dest = reinterpret_cast<size_t>(reinterpret_cast<PxU8*>(mGpuRigidIndiceBuffer.getDevicePtr()) + dirtyId * sizeof(PxNodeIndex));
 					desc2.bytes = sizeof(PxNodeIndex);
 
-					PxgCopyManager::CopyDesc desc3;
+					PxgCopyDesc desc3;
 					desc3.source = reinterpret_cast<size_t>(getMappedDevicePtr(cudaContext, hostShapeIdPtr));
 					desc3.dest = reinterpret_cast<size_t>(reinterpret_cast<PxU8*>(mGpuUnsortedShapeIndicesBuffer.getDevicePtr()) + dirtyId * sizeof(PxU32));
 					desc3.bytes = sizeof(PxU32);
 
-					PxgCopyManager::CopyDesc desc4;
+					PxgCopyDesc desc4;
 					desc4.source = reinterpret_cast<size_t>(getMappedDevicePtr(cudaContext, hostTransformCacheIdToActorPtr));
 					desc4.dest = reinterpret_cast<size_t>(reinterpret_cast<PxU8*>(mGpuTransformCacheIdToActorTableBuffer.getDevicePtr()) + dirtyId * sizeof(PxActor*));
 					desc4.bytes = sizeof(PxActor*);
@@ -367,23 +436,31 @@ void PxgShapeManager::scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaContex
 
 void PxgShapeManager::updateShapeMaterial(const PxU32 materialIndex, const PxU32 id)
 {
-	PX_ASSERT(id < mHostShapes.size());
-	mHostShapes[id].materialIndex = materialIndex;
+	if(mAllocFailed)
+	{
+		return;
+	}
+	PX_ASSERT(id < mHostShapesMapped.size());
+	mHostShapesMapped[id].materialIndex = materialIndex;
 	mDirtyShapeMap.growAndSet(id);
 	mHasShapeChanged = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-PxgMaterialManager::PxgMaterialManager(PxgHeapMemoryAllocatorManager* heapManager, const PxU32 elemSize) :
-	mGpuMaterialBuffer(heapManager, PxsHeapStats::eNARROWPHASE),
-	mHeapManager(heapManager),
-	mHostMaterial(PxVirtualAllocator(heapManager->mMappedMemoryAllocators, PxsHeapStats::eNARROWPHASE))
+PxgMaterialManager::PxgMaterialManager(PxgAllocatorDesc& allocDesc, const PxU32 elemSize) :
+	mAllocFailed(false),
+	mGpuMaterialBuffer(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mHostMaterialMapped(allocDesc.hostMappedAlloc, PxsHeapStats::eNARROWPHASE, Cm::PinnableAllocatorFallback::eDISABLED)
 {
 	const PxU32 originalSize = elemSize * 128;
-	mHostMaterial.forceSize_Unsafe(0);
-	mHostMaterial.reserve(originalSize);
-	mHostMaterial.forceSize_Unsafe(originalSize);
+	if(!mHostMaterialMapped.reserve(originalSize))
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgMaterialManager: failed to allocate pinned host buffer for mHostMaterial");
+		mAllocFailed = true;
+		return;
+	}
+	mHostMaterialMapped.forceSize_Unsafe(originalSize);
 
 	mGpuMaterialBuffer.allocate(originalSize, PX_FL);
 	mResizeRequired = false;
@@ -391,26 +468,38 @@ PxgMaterialManager::PxgMaterialManager(PxgHeapMemoryAllocatorManager* heapManage
 
 PxU32 PxgMaterialManager::registerMaterial(const PxU8* materialData, const PxU32 elemSize)
 {
-	const PxU32 shapeId = mIdPool.getNewID();
-	PxU32 capacity = mHostMaterial.capacity() / elemSize;
+	const PxU32 materialId = mIdPool.getNewID();
+	PxU32 capacity = mHostMaterialMapped.capacity() / elemSize;
 	
-	if (shapeId >= capacity)
+	if(materialId >= capacity)
 	{
-		capacity = PxMax(capacity * 2 + 1, shapeId + 1);
-		mHostMaterial.resize(capacity * elemSize);
+		capacity = PxMax(capacity * 2 + 1, materialId + 1);
+		const PxU32 newBytes = capacity * elemSize;
+		if(!mHostMaterialMapped.resize(newBytes))
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgMaterialManager: failed to allocate pinned host buffer for mHostMaterial");
+			mAllocFailed = true;
+			return PX_INVALID_U32;
+		}
 		mResizeRequired = true;
 	}
 
-	PxU8* destPtr = mHostMaterial.begin() + shapeId * elemSize;
+	PxU8* destPtr = mHostMaterialMapped.begin() + materialId * elemSize;
 	PxMemCopy(destPtr, materialData, elemSize);
 		
-	mDirtyMaterialMap.growAndSet(shapeId);
+	mDirtyMaterialMap.growAndSet(materialId);
 
-	return shapeId;
+
+	return materialId;
 }
 
 void PxgMaterialManager::unregisterMaterial(const PxU32 id)
 {
+	if(mAllocFailed)
+	{
+		return;
+	}
+
 	mDirtyMaterialMap.reset(id);
 	mIdPool.deferredFreeID(id);
 }
@@ -420,9 +509,16 @@ void PxgMaterialManager::scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaCon
 {
 	if (mResizeRequired)
 	{
-		mGpuMaterialBuffer.allocateCopyOldDataAsync(mHostMaterial.capacity(), cudaContext, stream, PX_FL);
+		mGpuMaterialBuffer.allocateCopyOldDataAsync(mHostMaterialMapped.capacity(), cudaContext, stream, PX_FL);
 		mResizeRequired = false;
 	}
+
+	if (mAllocFailed)
+	{
+		cudaContext->setAbortMode(true);
+		return;
+	}
+
 	const PxU32* bits = mDirtyMaterialMap.getWords();
 
 	const PxU32 maxGrouping = 16;
@@ -439,9 +535,9 @@ void PxgMaterialManager::scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaCon
 				//dirtyId is the next bit that's set to 1!
 				const PxU32 dirtyId = PxU32(w << 5 | PxLowestSetBit(b));
 
-				void* hostPtr = mHostMaterial.begin() + dirtyId * elemSize;
+				void* hostPtr = mHostMaterialMapped.begin() + dirtyId * elemSize;
 
-				PxgCopyManager::CopyDesc desc;
+				PxgCopyDesc desc;
 				desc.source = reinterpret_cast<size_t>(getMappedDevicePtr(cudaContext, hostPtr));
 				desc.dest = reinterpret_cast<size_t>(reinterpret_cast<PxU8*>(mGpuMaterialBuffer.getDevicePtr()) + dirtyId * elemSize);
 				desc.bytes = elemSize;
@@ -481,30 +577,33 @@ void PxgMaterialManager::scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaCon
 
 void PxgMaterialManager::updateMaterial(const PxU8* materialCore, const PxU32 elemSize, const PxU32 id)
 {
-	PX_ASSERT(id < mHostMaterial.size());
-	PxU8* destptr = reinterpret_cast<PxU8*>(mHostMaterial.begin() + id * elemSize);
+	if(mAllocFailed)
+	{
+		return;
+	}
+
+	PX_ASSERT(id < mHostMaterialMapped.size());
+	PxU8* destptr = reinterpret_cast<PxU8*>(mHostMaterialMapped.begin() + id * elemSize);
 	PxMemCopy(destptr, materialCore, elemSize);
-	//mHostMaterial[id] = materialCore;
 	mDirtyMaterialMap.growAndSet(id);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-	
-PxgFEMMaterialManager::PxgFEMMaterialManager(PxgHeapMemoryAllocatorManager* heapManager, const PxU32 elemSize) :
-	PxgMaterialManager(heapManager, elemSize)
-{
-
-}
 
 void PxgFEMMaterialManager::scheduleCopyHtoD(PxgCopyManager& copyManager, PxCudaContext* cudaContext,
 	CUstream stream, const PxU32 elemSize)
 {
 	if (mResizeRequired)
 	{
-		mGpuMaterialBuffer.allocateCopyOldDataAsync(mHostMaterial.capacity(), cudaContext, stream, PX_FL);
+		mGpuMaterialBuffer.allocateCopyOldDataAsync(mHostMaterialMapped.capacity(), cudaContext, stream, PX_FL);
 		mResizeRequired = false;
 	}
 
+	if(mAllocFailed)
+	{
+		cudaContext->setAbortMode(true);
+		return;
+	}
 
 	const PxU32* bits = mDirtyMaterialMap.getWords();
 
@@ -522,9 +621,9 @@ void PxgFEMMaterialManager::scheduleCopyHtoD(PxgCopyManager& copyManager, PxCuda
 				//dirtyId is the next bit that's set to 1!
 				const PxU32 dirtyId = PxU32(w << 5 | PxLowestSetBit(b));
 
-				void* hostPtr = mHostMaterial.begin() + dirtyId * elemSize;
+				void* hostPtr = mHostMaterialMapped.begin() + dirtyId * elemSize;
 
-				PxgCopyManager::CopyDesc desc;
+				PxgCopyDesc desc;
 				desc.source = reinterpret_cast<size_t>(getMappedDevicePtr(cudaContext, hostPtr));
 				desc.dest = reinterpret_cast<size_t>(reinterpret_cast<PxU8*>(mGpuMaterialBuffer.getDevicePtr()) + dirtyId * elemSize);
 				desc.bytes = elemSize;
@@ -564,7 +663,3 @@ void PxgFEMMaterialManager::scheduleCopyHtoD(PxgCopyManager& copyManager, PxCuda
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 	
-PxgFEMSoftBodyMaterialManager::PxgFEMSoftBodyMaterialManager(PxgHeapMemoryAllocatorManager* heapManager) :
-	PxgFEMMaterialManager(heapManager, sizeof(PxsDeformableVolumeMaterialData))
-{
-}

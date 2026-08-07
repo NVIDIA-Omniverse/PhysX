@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.   
 
@@ -51,31 +51,15 @@ struct PxParticleBufferFlag
 		eUPDATE_POSITION = 1 << 0,				//!< Specifies the position (first 3 floats) and inverse mass (last float) data (array of PxVec4 * number of particles)
 		eUPDATE_VELOCITY = 1 << 1,				//!< Specifies the velocity (first 3 floats) data (array of PxVec4 * number of particles)
 		eUPDATE_PHASE = 1 << 2,					//!< Specifies the per-particle phase flag data (array of PxU32 * number of particles)
-		eUPDATE_RESTPOSITION = 1 << 3,			//!< Specifies the rest position (first 3 floats) data for cloth buffers
-		eUPDATE_CLOTH = 1 << 5,					//!< Specifies the cloth buffer (see PxParticleClothBuffer)
-		eUPDATE_RIGID = 1 << 6,					//!< Specifies the rigid buffer (see PxParticleRigidBuffer)
-		eUPDATE_DIFFUSE_PARAM = 1 << 7,			//!< Specifies the diffuse particle parameter buffer (see PxDiffuseParticleParams)
-		eUPDATE_ATTACHMENTS = 1 << 8,			//!< Specifies the attachments.
+		eUPDATE_RESTPOSITION = 1 << 3,			//!< Specifies the rest position (first 3 floats) data
+		eUPDATE_DIFFUSE_PARAM = 1 << 4,			//!< Specifies the diffuse particle parameter buffer (see PxDiffuseParticleParams)
 
 		eALL =
-		eUPDATE_POSITION | eUPDATE_VELOCITY | eUPDATE_PHASE | eUPDATE_RESTPOSITION | eUPDATE_CLOTH | eUPDATE_RIGID | eUPDATE_DIFFUSE_PARAM | eUPDATE_ATTACHMENTS
+		eUPDATE_POSITION | eUPDATE_VELOCITY | eUPDATE_PHASE | eUPDATE_RESTPOSITION | eUPDATE_DIFFUSE_PARAM
 	};
 };
 
 typedef PxFlags<PxParticleBufferFlag::Enum, PxU32> PxParticleBufferFlags;
-
-/**
-\brief A pair of particle buffer unique id and GPU particle system index. 
-
-\see PxScene::applyParticleBufferData
-
-\deprecated There is no replacement.
-*/
-PX_DEPRECATED struct PxGpuParticleBufferIndexPair
-{
-	PxU32 		systemIndex; // gpu particle system index	
-	PxU32		bufferIndex; // particle buffer unique id
-};
 
 /**
 \brief Identifies per-particle behavior for a PxParticleSystem.

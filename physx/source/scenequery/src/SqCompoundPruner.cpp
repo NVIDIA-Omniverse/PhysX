@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -154,7 +154,7 @@ bool BVHCompoundPruner::removeCompound(PrunerCompoundId compoundId, PrunerPayloa
 				const PoolIndex index = node->getPrimitives(NULL)[j];
 				mMainTreeUpdateMap[index] = node;
 			}
-		}	
+		}
 
 		// fix indices if we made a swap
 		if(poolRelocatedLastIndex != poolIndex)
@@ -695,7 +695,7 @@ namespace
 		{
 		}
 			
-		virtual	bool	visualizeNode(const IncrementalAABBTreeNode& /*node*/, const PxBounds3& bounds)
+		virtual	bool	visualizeNode(const IncrementalAABBTreeNode& /*node*/, const PxBounds3& bounds) PX_OVERRIDE
 		{
 			if(0)
 			{
@@ -735,7 +735,7 @@ namespace
 			mDebugVizDynamic(debugDynamic)
 		{}
 			
-		virtual	bool	visualizeNode(const IncrementalAABBTreeNode& node, const PxBounds3& /*bounds*/)
+		virtual	bool	visualizeNode(const IncrementalAABBTreeNode& node, const PxBounds3& /*bounds*/) PX_OVERRIDE
 		{
 			if(node.isLeaf())
 			{

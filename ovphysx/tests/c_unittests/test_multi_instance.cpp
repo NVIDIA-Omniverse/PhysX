@@ -23,7 +23,6 @@ TEST(MultiInstance, SequentialCreateDestroy) {
     const int NUM_ITERATIONS = 3;
     
     for (int i = 0; i < NUM_ITERATIONS; ++i) {
-        // Create instance
         ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
         
         ovphysx_handle_t handle = 0;
@@ -31,7 +30,6 @@ TEST(MultiInstance, SequentialCreateDestroy) {
         ASSERT_EQ(create_result.status, OVPHYSX_API_SUCCESS) << "Failed to create instance " << (i + 1);
         ASSERT_NE(handle, 0) << "Instance handle should not be 0 for iteration " << (i + 1);
         
-        // Destroy instance
         ovphysx_result_t destroy_result = ovphysx_destroy_instance(handle);
         ASSERT_EQ(destroy_result.status, OVPHYSX_API_SUCCESS) << "Failed to destroy instance " << (i + 1);
     }
@@ -42,7 +40,6 @@ TEST(MultiInstance, SequentialWithUSDLoad) {
     const int NUM_ITERATIONS = 2;
     
     for (int i = 0; i < NUM_ITERATIONS; ++i) {
-        // Create instance
         ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
         
         ovphysx_handle_t handle = 0;
@@ -62,7 +59,6 @@ TEST(MultiInstance, SequentialWithUSDLoad) {
             << "Reset failed in iteration " << (i + 1);
         destroy_ovstage_test_attachments(handle);
         
-        // Destroy instance
         ovphysx_result_t destroy_result = ovphysx_destroy_instance(handle);
         ASSERT_EQ(destroy_result.status, OVPHYSX_API_SUCCESS) << "Failed to destroy instance " << (i + 1);
     }
@@ -72,7 +68,6 @@ TEST(MultiInstance, MultipleSimultaneousInstances) {
     const int NUM_INSTANCES = 3;
     ovphysx_handle_t handles[NUM_INSTANCES] = {0};
 
-    // Create all instances
     for (int i = 0; i < NUM_INSTANCES; ++i) {
         ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
 
@@ -81,7 +76,6 @@ TEST(MultiInstance, MultipleSimultaneousInstances) {
         ASSERT_NE(handles[i], 0) << "Instance handle should not be 0 for instance " << (i + 1);
     }
 
-    // Destroy all instances
     for (int i = 0; i < NUM_INSTANCES; ++i) {
         ovphysx_result_t result = ovphysx_destroy_instance(handles[i]);
         ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << "Failed to destroy instance " << (i + 1);
@@ -144,4 +138,53 @@ TEST(MultiInstance, StagelessHandleAsyncStepRejectedDoesNotAdvanceOtherHandleSta
 
     ovphysx_destroy_instance(handle_a);
     ovphysx_destroy_instance(handle_b);
+}
+
+// NVBug 6504951, second half. Tensor-binding handles used to count from 1 inside
+// each instance, so the first binding of a destroyed instance and the first
+// binding of the next instance were both the number 1 and a stale token from the
+// first resolved the second instance's live binding. For the valid second
+// instance, one process-wide never-reused sequence makes the tensor-binding spec
+// lookup below miss the map, so its result has status OVPHYSX_API_NOT_FOUND.
+TEST(MultiInstance, TensorBindingHandleIsNotReusedByAnotherInstance)
+{
+    const char* usd_path = OVPHYSX_SOURCE_DIR "/tests/data/basic_simulation.usda";
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/envs/env0/table");
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
+
+    ovphysx_create_args args_a = OVPHYSX_CREATE_ARGS_DEFAULT;
+    ovphysx_handle_t handle_a = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&args_a, &handle_a).status, OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(attach_usd_with_ovstage(handle_a, usd_path));
+
+    ovphysx_tensor_binding_handle_t binding_a = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_tensor_binding(handle_a, &desc, &binding_a).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_enqueue_result_t reset_a = ovphysx_reset_stage(handle_a);
+    ASSERT_EQ(reset_a.status, OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(waitForOperationSuccess(handle_a, reset_a.op_index, 5'000'000'000ULL));
+    destroy_ovstage_test_attachments(handle_a);
+    ASSERT_EQ(ovphysx_destroy_instance(handle_a).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_create_args args_b = OVPHYSX_CREATE_ARGS_DEFAULT;
+    ovphysx_handle_t handle_b = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&args_b, &handle_b).status, OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(attach_usd_with_ovstage(handle_b, usd_path));
+
+    ovphysx_tensor_binding_handle_t binding_b = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_tensor_binding(handle_b, &desc, &binding_b).status, OVPHYSX_API_SUCCESS);
+
+    EXPECT_NE(binding_a, binding_b);
+
+    ovphysx_tensor_spec_t spec{};
+    EXPECT_EQ(ovphysx_get_tensor_binding_spec(handle_b, binding_a, &spec).status, OVPHYSX_API_NOT_FOUND);
+    EXPECT_EQ(ovphysx_get_tensor_binding_spec(handle_b, binding_b, &spec).status, OVPHYSX_API_SUCCESS);
+
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(handle_b, binding_b).status, OVPHYSX_API_SUCCESS);
+    ovphysx_enqueue_result_t reset_b = ovphysx_reset_stage(handle_b);
+    ASSERT_EQ(reset_b.status, OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(waitForOperationSuccess(handle_b, reset_b.op_index, 5'000'000'000ULL));
+    destroy_ovstage_test_attachments(handle_b);
+    EXPECT_EQ(ovphysx_destroy_instance(handle_b).status, OVPHYSX_API_SUCCESS);
 }

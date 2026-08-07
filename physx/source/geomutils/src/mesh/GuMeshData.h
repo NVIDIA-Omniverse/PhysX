@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -344,7 +344,7 @@ enum InternalMeshSerialFlag
 		}
 
 		bool checkTetrahedronIndices() const
-		{			
+		{
 			if (!mTetrahedrons) 
 				return false;
 
@@ -487,7 +487,7 @@ enum InternalMeshSerialFlag
 		void allocatemappingData(const PxU32 nbVerts, const PxU32 tetRemapSize, const PxU32 nbColTetrahedrons, const PxU32 allocateGPUData = 0)
 		{
 			if (allocateGPUData)
-			{	
+			{
 				mVertsBarycentricInGridModel = reinterpret_cast<PxReal*>(PX_ALLOC(nbVerts * sizeof(PxReal) * 4, "mVertsBarycentricInGridModel"));
 				mVertsRemapInGridModel = reinterpret_cast<PxU32*>(PX_ALLOC(nbVerts * sizeof(PxU32), "mVertsRemapInGridModel"));
 				mTetsRemapColToSim = reinterpret_cast<PxU32*>(PX_ALLOC(tetRemapSize * sizeof(PxU32), "mTetsRemapInSimModel"));
@@ -510,7 +510,7 @@ enum InternalMeshSerialFlag
 			mCollisionNbTetrahedronsReferences = totalTetReference;
 		}
 
-		virtual void release()
+		virtual void release() PX_OVERRIDE
 		{
 			PX_DELETE_THIS; 
 		}
@@ -597,10 +597,10 @@ enum InternalMeshSerialFlag
 		TetrahedronMeshData* mMesh;
 		DeformableVolumeCollisionData* mCollisionData;
 
-		virtual PxTetrahedronMeshData* getMesh() { return mMesh; }
-		virtual const PxTetrahedronMeshData* getMesh() const { return mMesh; }
-		virtual PxDeformableVolumeCollisionData* getData() { return mCollisionData; }
-		virtual const PxDeformableVolumeCollisionData* getData() const { return mCollisionData; }
+		virtual PxTetrahedronMeshData* getMesh() PX_OVERRIDE { return mMesh; }
+		virtual const PxTetrahedronMeshData* getMesh() const PX_OVERRIDE { return mMesh; }
+		virtual PxDeformableVolumeCollisionData* getData() PX_OVERRIDE { return mCollisionData; }
+		virtual const PxDeformableVolumeCollisionData* getData() const PX_OVERRIDE { return mCollisionData; }
 
 		virtual ~CollisionTetrahedronMeshData()
 		{
@@ -608,7 +608,7 @@ enum InternalMeshSerialFlag
 			PX_FREE(mCollisionData);
 		}
 
-		virtual void release()
+		virtual void release() PX_OVERRIDE
 		{
 			PX_DELETE_THIS; 
 		}
@@ -620,8 +620,8 @@ enum InternalMeshSerialFlag
 		TetrahedronMeshData* mMesh;
 		DeformableVolumeSimulationData* mSimulationData;
 
-		virtual PxTetrahedronMeshData* getMesh() { return mMesh; }
-		virtual PxDeformableVolumeSimulationData* getData() { return mSimulationData; }
+		virtual PxTetrahedronMeshData* getMesh() PX_OVERRIDE { return mMesh; }
+		virtual PxDeformableVolumeSimulationData* getData() PX_OVERRIDE { return mSimulationData; }
 
 		virtual ~SimulationTetrahedronMeshData()
 		{
@@ -629,7 +629,7 @@ enum InternalMeshSerialFlag
 			PX_FREE(mSimulationData);
 		}
 
-		virtual void release()
+		virtual void release() PX_OVERRIDE
 		{
 			PX_DELETE_THIS; 
 		}

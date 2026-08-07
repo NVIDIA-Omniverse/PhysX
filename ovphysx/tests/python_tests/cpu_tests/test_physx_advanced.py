@@ -175,6 +175,9 @@ def test_attach_ovstage_and_update_range(physx_sdk):
             ordinal=ordinal,
             domains=ovstage.PopulationDomain.PHYSICS,
         )
+        # Population does not seal: the caller owns ordinal lifecycle, and
+        # attach_ovstage() reads at a sealed ordinal.
+        stage.advance_write_floor(ordinal=ordinal).wait()
         physx_sdk.attach_ovstage(stage, read_ordinal=ordinal)
         physx_sdk.update_from_ovstage(ordinal + 1, ordinal + 1)
     finally:

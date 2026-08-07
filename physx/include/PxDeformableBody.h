@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,7 +31,6 @@
 
 #include "PxActor.h"
 #include "PxDeformableBodyFlag.h"
-#include "PxFEMParameter.h" // deprecated
 
 #if !PX_DOXYGEN
 namespace physx
@@ -116,31 +115,11 @@ public:
 	virtual		void						setMaxLinearVelocity(const PxReal maxLinearVelocity) = 0;
 
 	/**
-	\brief Sets the maximal velocity vertices can reach
-
-	\deprecated Use setMaxLinearVelocity instead.
-
-	Allows to limit the vertices' maximal velocity to control the maximal distance a vertex can move per frame
-	<b>Default:</b> 1.0e32
-	\param[in] maxVelocity The maximal velocity
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE void		setMaxVelocity(const PxReal maxVelocity) { setMaxLinearVelocity(maxVelocity); }
-
-	/**
 	\brief Retrieves maximal velocity a vertex can have.
 
 	\return The maximal velocity
 	*/
 	virtual		PxReal						getMaxLinearVelocity() const = 0;
-
-	/**
-	\brief Retrieves maximal velocity a vertex can have.
-
-	\deprecated Use getMaxLinearVelocity instead.
-
-	\return The maximal velocity
-	*/
-	PX_DEPRECATED PX_FORCE_INLINE PxReal	getMaxVelocity() const { return getMaxLinearVelocity(); }
 
 	/**
 	\brief Sets the maximal depenetration velocity vertices can reach
@@ -361,20 +340,6 @@ public:
 	\return The cuda context manager
 	*/
 	virtual		PxCudaContextManager*		getCudaContextManager() const = 0;
-
-	/**
-	\brief Deprecated: Sets parameters for FEM internal solve
-	\param[in] params parameters
-	\see getParameter()
-	*/
-	PX_DEPRECATED virtual void				setParameter(const PxFEMParameters& params) = 0;
-
-	/**
-	\brief Deprecated: Gets parameters for FEM internal solve
-	\return parameters
-	\see setParameter()
-	*/
-	PX_DEPRECATED virtual PxFEMParameters	getParameter() const = 0;
 
 protected:
 	PX_INLINE			PxDeformableBody(PxType concreteType, PxBaseFlags baseFlags) : PxActor(concreteType, baseFlags) {}

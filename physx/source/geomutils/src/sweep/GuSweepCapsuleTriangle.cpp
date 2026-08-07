@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -48,7 +48,7 @@ using namespace aos;
 	extrudedTris[nbExtrudedTris].denormalizedNormal(extrudedTrisNormals[nbExtrudedTris]);	\
 	nbExtrudedTris++;}
 
-#define OUTPUT_TRI2(p0, p1, p2, d){				\
+#define OUTPUT_TRI2(p0, p1, p2, d){					\
 	PxTriangle& tri = extrudedTris[nbExtrudedTris];	\
 	tri.verts[0] = p0;								\
 	tri.verts[1] = p1;								\

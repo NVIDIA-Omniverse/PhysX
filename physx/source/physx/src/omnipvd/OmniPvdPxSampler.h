@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -37,6 +37,7 @@
 #include "foundation/PxMutex.h"
 #include "foundation/PxUserAllocated.h"
 #include "foundation/PxErrorCallback.h"
+#include "common/PxPhysXCommonConfig.h"
 #include "OmniPvdChunkAlloc.h"
 
 namespace physx
@@ -52,27 +53,39 @@ namespace physx
 	class PxArticulationJointReducedCoordinate;
 	class PxArticulationLink;
 	class PxRigidDynamic;
+	class PxRigidBody;
 	class PxArticulationMimicJoint;
 
-	class PxDeformableMaterial;
+	namespace Sc { class BodyCore; }
+
+	class PxDeformableBody;
+	class PxDeformableSurface;
 	class PxDeformableSurfaceMaterial;
+	class PxDeformableVolume;
 	class PxDeformableVolumeMaterial;
 	class PxPBDMaterial;
 	class PxDiffuseParticleParams;
+	class PxParticleBuffer;
 
 	struct OmniPvdPxCoreRegistrationData;
 
 	class NpOmniPvd;
 }
 
+class OmniPvdWriter;
+
 void streamActorName(const physx::PxActor & a, const char* name);
 void streamSceneName(const physx::PxScene & s, const char* name);
 void streamArticulationName(const physx::PxArticulationReducedCoordinate & art, const char* name);
 void streamArticulationJointName(const physx::PxArticulationJointReducedCoordinate& joint, const char* name);
+void streamParticleBufferName(const physx::PxParticleBuffer& pb, const char* name);
+// Explicit forms used by the full-state snapshot (caller already holds a write scope).
+void streamSceneName(OmniPvdWriter* pvdWriter, const physx::OmniPvdPxCoreRegistrationData* pvdRegData, const physx::PxScene& s, const char* name);
+void streamArticulationName(OmniPvdWriter* pvdWriter, const physx::OmniPvdPxCoreRegistrationData* pvdRegData, const physx::PxArticulationReducedCoordinate& art, const char* name);
+void streamArticulationJointName(OmniPvdWriter* pvdWriter, const physx::OmniPvdPxCoreRegistrationData* pvdRegData, const physx::PxArticulationJointReducedCoordinate& joint, const char* name);
 
 void streamShapeMaterials(const physx::PxShape&, physx::PxMaterial* const * mats, physx::PxU32 nbrMaterials);
 
-void streamShapeMaterials(const physx::PxShape&, physx::PxDeformableMaterial* const * mats, physx::PxU32 nbrMaterials);
 void streamShapeMaterials(const physx::PxShape&, physx::PxDeformableSurfaceMaterial* const * mats, physx::PxU32 nbrMaterials);
 void streamShapeMaterials(const physx::PxShape&, physx::PxDeformableVolumeMaterial* const * mats, physx::PxU32 nbrMaterials);
 void streamShapeMaterials(const physx::PxShape&, physx::PxPBDMaterial* const * mats, physx::PxU32 nbrMaterials);
@@ -81,10 +94,16 @@ void streamDiffuseParticleParamsAttributes(const physx::PxDiffuseParticleParams&
 
 void streamArticulationMimicJoint(const physx::PxArticulationMimicJoint& mj);
 
+void streamShapeUpdateGeometry(const physx::PxShape& shape);
+
+void streamDeformableVolumeAttributes(const physx::PxDeformableVolume& dv);
+void streamDeformableSurfaceAttributes(const physx::PxDeformableSurface& ds);
+
 enum OmniPvdSharedMeshEnum {
 	eOmniPvdTriMesh     = 0,
 	eOmniPvdConvexMesh  = 1,
 	eOmniPvdHeightField = 2,
+	eOmniPvdTetraMesh   = 3,
 };
 
 class OmniPvdWriter;
@@ -127,6 +146,7 @@ public:
 	void startFirstFrame(OmniPvdWriter& pvdWriter);
 	void incrementFrame(OmniPvdWriter& pvdWriter, bool recordProfileFrame = false); // stopFrame (frameID), then startFrame (frameID + 1)
 	void stopLastFrame(OmniPvdWriter& pvdWriter);
+	void resetFrameId(); // rewind mFrameId to 1 (odd = pre-sim) for a snapshot onto a fresh stream
 	
 	void addRigidDynamicReset(const physx::PxRigidDynamic* rigidDynamic);
 	void addRigidDynamicForceReset(const physx::PxRigidDynamic* rigidDynamic);
@@ -160,8 +180,22 @@ class OmniPvdPxSampler : public physx::PxUserAllocated, public physx::PxErrorCal
 public:
 	OmniPvdPxSampler();
 	~OmniPvdPxSampler();
-	bool startSampling();
+	// Stops sampling: flips the sampling flag off so subsequent SDK object
+	// add/remove notifications and per-frame writes are suppressed. Calling it twice is
+	// harmless and calling it is optional; a later snapshotAll() (driven by startSampling())
+	// records the current state again regardless.
+	bool stopSampling();
 	bool isSampling();
+	// Emits a full snapshot of the current live simulation state to the currently
+	// bound write stream, in referenced-before-referrer order: registers the full
+	// schema + singletons, then walks shared resources -> shapes -> actors /
+	// articulations / aggregates -> deformables / particles -> per-scene state. Called
+	// from NpOmniPvd::startSampling() so the bound stream is self-contained (a full
+	// state to attach to, followed by the changes after it). The writer's handle counters
+	// were zeroed by OmniPvdWriter::setWriteStream when the stream was bound, so the schema
+	// registration re-mints identical handles. Ensures sampling is on (emission flows via
+	// onObjectAdd). Returns false if there is no sampler.
+	bool snapshotAll();
 	void setOmniPvdInstance(physx::NpOmniPvd* omniPvdIntance);
 
 	// writes all contacts to the stream
@@ -171,6 +205,11 @@ public:
 	static OmniPvdPxSampler* getSamplingInstance();
 
 	void onObjectAdd(const physx::PxBase& object);
+	// Batch variant: emits the object under a caller-owned write scope (the caller holds the
+	// exclusive writer lock and provides the bound writer + registration data). snapshotAll()
+	// uses this so a whole batch of objects shares one lock acquisition instead of one per object.
+	// The single-object onObjectAdd(object) above opens exactly one scope and forwards here.
+	void onObjectAdd(OmniPvdWriter* pvdWriter, const physx::OmniPvdPxCoreRegistrationData* pvdRegData, const physx::PxBase& object);
 	void onObjectRemove(const physx::PxBase& object);
 	
 	virtual void reportError(physx::PxErrorCode::Enum code, const char* message, const char* file, int line) PX_OVERRIDE;
@@ -182,6 +221,11 @@ namespace physx
 
 const OmniPvdPxCoreRegistrationData* NpOmniPvdGetPxCoreRegistrationData();
 NpOmniPvd* NpOmniPvdGetInstance();
+
+// True only while a recording is active (between startSampling() and stopSampling()). The OVD
+// write macros gate on this so that no PhysX operation writes OVD data when not sampling. Used
+// only inside PhysX core; the extensions write path gates on PxOmniPvd::isSampling() instead.
+bool NpOmniPvdSampling();
 
 }
 

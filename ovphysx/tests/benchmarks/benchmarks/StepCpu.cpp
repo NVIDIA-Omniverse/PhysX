@@ -49,7 +49,7 @@ public:
     {
         // Cache the PhysX* once so step() doesn't pay for a global lookup
         // on every measured iteration (defensive coding has no place in
-        // the hot path — review on MR !7247).
+        // the hot path).
         mPhysX = BmGlobals::getInstance().getPhysX();
         if (!mPhysX) return;
 

@@ -15,13 +15,11 @@ TEST_F(PhysXTestFixture, HandleLeakDetection_CleanShutdown) {
     EXPECT_NE(event2, 0);
     EXPECT_EQ(async_get_active_event_count(), 2);
     
-    // Clean up properly
     async_cleanup_event(event1);
     async_cleanup_event(event2);
     
     EXPECT_EQ(async_get_active_event_count(), 0);
     
-    // Test shutdown (should show no leaks)
     async_shutdown();
 }
 
@@ -42,10 +40,8 @@ TEST_F(PhysXTestFixture, HandleLeakDetection_LeakyShutdown) {
     
     EXPECT_EQ(async_get_active_event_count(), 2);
     
-    // Test shutdown with leak detection
     async_shutdown();
     
-    // Verify all events are cleaned up
     EXPECT_EQ(async_get_active_event_count(), 0);
 }
 

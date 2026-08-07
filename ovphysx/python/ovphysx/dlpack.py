@@ -106,6 +106,9 @@ class DLDataTypeCode(ctypes.c_uint8):
     # FP4 types
     kDLFloat4_e2m1fn = 17
 
+    def __int__(self):
+        return self.value
+
     def __eq__(self, other):
         other_value = getattr(other, "value", other)
         if not isinstance(other_value, Integral):

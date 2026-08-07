@@ -22,13 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #include "PxNodeIndex.h"
-#include "PxgCudaMemoryAllocator.h"
-#include "PxsHeapMemoryAllocator.h"
 #include "PxsContactManagerState.h"
 #include "common/PxProfileZone.h"
 #include "cudaNpCommon.h"
@@ -96,45 +94,64 @@
 
 #define GPU_NP_DEBUG 0
 #define GPU_NP_DEBUG_VERBOSE 0
-#define GPU_NP_VISUALIZATION 0
+// GPU_NP_LEGACY_MANIFOLD_VIZ gates only the legacy/incomplete narrowphase debug-viz blocks
+// (a trimesh-plane manifold dump and the soft-body contact dumps) - kept 0 (off); they are
+// dead/bit-rotted and are NOT the contact viz. The convex / sphere / box / mesh / heightfield
+// / convex-core contact viz is UNCONDITIONAL (no #if) and runtime-gated via the standard
+// PxVisualizationParameter (eSCALE + eCONTACT_POINT / eCONTACT_NORMAL), like the CPU
+// narrowphase (ScVisualize). DirectGPU note: that viz reads the same mGpuTransformCache
+// indices the GJK-EPA kernels consume, so contacts are world-correct; DirectGPU only gates
+// CPU result-readback, never the cache update.
+// Cost: when the gate is OFF (eSCALE or both eCONTACT_POINT / eCONTACT_NORMAL are 0) an
+// inactive viz costs only a few inlined PxVisualizationParameter reads at the end of
+// narrowphase -- no host copy, no draw. When ON, drawNewStreamContacts does two bulk
+// device-to-host copies (the used patch + contact streams) and draws; it rides the existing
+// end-of-NP streamSynchronize and adds no GPU sync of its own.
+#define GPU_NP_LEGACY_MANIFOLD_VIZ 0
 
 using namespace physx;
 using namespace Gu;
+using namespace Cm;
 
 PxgGpuNarrowphaseCore::PxgGpuNarrowphaseCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, const PxGpuDynamicsMemoryConfig& gpuDynamicsConfig,
-	void* contactStreamBase, void* patchStreamBase, void* forceAndIndiceStreamBase, IG::IslandSim* islandSim, CUstream solverStream, PxgHeapMemoryAllocatorManager* heapMemoryManager,
+	void* contactStreamBase, void* patchStreamBase, void* forceAndIndiceStreamBase, IG::IslandSim* islandSim, CUstream solverStream, PxgAllocatorDesc& allocDesc,
 	PxgNphaseImplementationContext* nphaseImplContext) :
-	mPairManagementBuffers(heapMemoryManager),
-	mGpuTransformCache(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mGpuContactDistance(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mLostFoundPairsOutputData(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mLostFoundPairsCms(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-	mGpuPairManagementData(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mRSDesc(heapMemoryManager->mMappedMemoryAllocators),
-	mRadixSortDescBuf(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mTempGpuRigidIndiceBuf(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mTempGpuShapeIndiceBuf(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mRadixCountTotalBuf(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mPatchAndContactCountersOnDevice(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mPatchAndContactCountersReadback(NULL),
-	mGpuShapesManager(heapMemoryManager),
-	mGpuMaterialManager(heapMemoryManager),
-	mGpuFEMMaterialManager(heapMemoryManager),
-	mGpuFEMClothMaterialManager(heapMemoryManager),
-	mGpuPBDMaterialManager(heapMemoryManager),
-	mIntermStackAlloc(*heapMemoryManager->mDeviceMemoryAllocators, gpuDynamicsConfig.collisionStackSize),
+	mPairManagementBuffers(allocDesc.deviceAlloc),
+	mGpuTransformCache(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuContactDistance(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mLostFoundPairsOutputData(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE),
+	mLostFoundPairsCms(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE),
+	mPairManagementData(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuPairManagementData(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mRSDesc(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE),
+	mRadixSortDescBuf(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mTempGpuRigidIndiceBuf(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mTempGpuShapeIndiceBuf(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mRadixCountTotalBuf(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mPatchAndContactCountersOnDevice(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mPatchAndContactCountersReadback(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuShapesManager(allocDesc),
+	mGpuMaterialManager(allocDesc),
+	mGpuFEMMaterialManager(allocDesc),
+	mGpuFEMClothMaterialManager(allocDesc),
+	mGpuPBDMaterialManager(allocDesc),
+	mIntermStackAlloc(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE, gpuDynamicsConfig.collisionStackSize),
 	mSolverStream(solverStream),
 	mGpuKernelWranglerManager(gpuKernelWrangler),
 	mCudaContextManager(cudaContextManager),
 	mCudaContext(cudaContextManager->getCudaContext()),
-	mHeapMemoryManager(heapMemoryManager),
-	mCopyMan(heapMemoryManager),
-	mCopyManBp(heapMemoryManager),
-	mGeometryManager(heapMemoryManager),
+	mCopyMan(allocDesc.hostMappedAlloc),
+	mCopyManBp(allocDesc.hostMappedAlloc),
+	mGeometryManager(allocDesc),
 	mIslandSim(islandSim),
 	mNphaseImplContext(nphaseImplContext),
-	mGpuMultiManifold(heapMemoryManager, PxsHeapStats::eNARROWPHASE),
-	mGpuManifold(heapMemoryManager, PxsHeapStats::eNARROWPHASE)
+	mMaxConvexMeshTempMemoryMapped(allocDesc.hostMappedAlloc, PxsHeapStats::eNARROWPHASE, Cm::PinnableAllocatorFallback::eDISABLED),
+	mGpuMultiManifold(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mGpuManifold(allocDesc.deviceAlloc, PxsHeapStats::eNARROWPHASE),
+	mParticleEvent(NULL),
+	mSoftbodyEvent(NULL),
+	mFemClothEvent(NULL),
+	mDirectApiDmaEvent(NULL)
 #if PX_ENABLE_SIM_STATS
 	, mGpuDynamicsRigidContactCountStats(0),
 	mGpuDynamicsRigidPatchCountStats(0),
@@ -142,17 +159,24 @@ PxgGpuNarrowphaseCore::PxgGpuNarrowphaseCore(PxgCudaKernelWranglerManager* gpuKe
 #else
 	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
 #endif
-{	
+{
+	if(mGpuShapesManager.mAllocFailed || mCopyMan.mAllocFailed || mCopyManBp.mAllocFailed || 
+		mGpuMaterialManager.mAllocFailed || mGpuFEMMaterialManager.mAllocFailed || mGpuFEMClothMaterialManager.mAllocFailed ||
+		mGpuPBDMaterialManager.mAllocFailed)
+	{
+		mCudaContext->setAbortMode(true);
+	}
+
 	mTotalLostFoundPatches = 0;
 	mTotalLostFoundPairs = 0;
 	mTotalNumPairs = 0;
 
 	for (PxU32 i = 0; i < GPU_BUCKET_ID::eCount; ++i)
 	{
-		mRemovedIndices[i] = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(RemovedIndicesArray), "RemovedIndicesArray"), RemovedIndicesArray(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)));
+		mRemovedIndices[i] = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(RemovedIndicesArray), "RemovedIndicesArray"), RemovedIndicesArray(allocDesc.hostAlloc, PxsHeapStats::eNARROWPHASE));
 
-		mContactManagers[i] = PX_NEW(PxgMirroredContactManagerPair)(i, PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators));
-		mGpuContactManagers[i] = PX_NEW(PxgGpuContactManagerPair)(i, heapMemoryManager);
+		mContactManagers[i] = PX_NEW(PxgMirroredContactManagerPair)(i, allocDesc.hostAlloc);
+		mGpuContactManagers[i] = PX_NEW(PxgGpuContactManagerPair)(i, allocDesc);
 	}
 
 	PxgPersistentContactManifold emptyManifold;
@@ -196,14 +220,20 @@ PxgGpuNarrowphaseCore::PxgGpuNarrowphaseCore(PxgCudaKernelWranglerManager* gpuKe
 
 	mPairManagementBuffers.mBlockAccumulationArray.allocate(sizeof(PxU32) * PxgNarrowPhaseGridDims::REMOVE_CONTACT_MANAGERS, PX_FL);
 
+	mPairManagementData.resize(GPU_BUCKET_ID::eCount);
 	for (PxU32 i = GPU_BUCKET_ID::eConvex; i < GPU_BUCKET_ID::eCount; ++i)
 	{
-		mGpuContactManagers[i]->allocateLostAndTotalReportedPairsCount(mHeapMemoryManager->mMappedMemoryAllocators);
-		mPairManagementData[i] = reinterpret_cast<PxgPairManagementData*>(mHeapMemoryManager->mMappedMemoryAllocators->allocate(sizeof(PxgPairManagementData), PxsHeapStats::eNARROWPHASE, PX_FL));
+		PxgGpuContactManagerPair& gpuContactManagers = *mGpuContactManagers[i];
+		if(!gpuContactManagers.mContactManagers.mLostAndTotalReportedPairsCountMapped.isValid() ||
+		   !gpuContactManagers.mNewContactManagers.mLostAndTotalReportedPairsCountMapped.isValid())
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL,
+				"PxgNarrowphaseCore: failed to allocate pinned host counters for lost/total reported pairs");
+			mCudaContext->setAbortMode(true);
+		}
 	}
 
 	mPatchAndContactCountersOnDevice.allocateElements(1, PX_FL);
-	mPatchAndContactCountersReadback = reinterpret_cast<PxgPatchAndContactCounters*>(mHeapMemoryManager->mMappedMemoryAllocators->allocate(sizeof(PxgPatchAndContactCounters), PxsHeapStats::eNARROWPHASE, PX_FL));
 
 	mGeometryManager.addBoxHull();
 
@@ -220,8 +250,16 @@ PxgGpuNarrowphaseCore::PxgGpuNarrowphaseCore(PxgCudaKernelWranglerManager* gpuKe
 
 	mGpuShapesManager.initialize(mCudaContext, mStream);
 
-	mMaxConvexMeshTempMemory = reinterpret_cast<PxU32*>(heapMemoryManager->mMappedMemoryAllocators->allocate(sizeof(PxU32), PxsHeapStats::eNARROWPHASE, PX_FL));
-	*mMaxConvexMeshTempMemory = 0;
+	if(!mMaxConvexMeshTempMemoryMapped.isValid())
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL,
+								"PxgNarrowphaseCore: failed to allocate pinned host for max convex mesh temp memory counter");
+		mCudaContext->setAbortMode(true);
+	}
+	else
+	{
+		mMaxConvexMeshTempMemoryMapped.get() = 0;
+	}
 
 	cudaContextManager->releaseContext();
 }
@@ -235,27 +273,12 @@ PxgGpuNarrowphaseCore::~PxgGpuNarrowphaseCore()
 
 	for (PxU32 i = 0; i < GPU_BUCKET_ID::eCount; ++i)
 	{
-		if (i >= GPU_BUCKET_ID::eConvex)
-		{
-			if (mPairManagementData[i])
-				mHeapMemoryManager->mMappedMemoryAllocators->deallocate(mPairManagementData[i]);
-
-			if (mGpuContactManagers[i]->mContactManagers.mLostAndTotalReportedPairsCountPinned)
-				mHeapMemoryManager->mMappedMemoryAllocators->deallocate(mGpuContactManagers[i]->mContactManagers.mLostAndTotalReportedPairsCountPinned);
-
-			if (mGpuContactManagers[i]->mNewContactManagers.mLostAndTotalReportedPairsCountPinned)
-				mHeapMemoryManager->mMappedMemoryAllocators->deallocate(mGpuContactManagers[i]->mNewContactManagers.mLostAndTotalReportedPairsCountPinned);
-		}
-
 		mRemovedIndices[i]->~RemovedIndicesArray();
 		PX_FREE(mRemovedIndices[i]);
 
 		PX_DELETE(mContactManagers[i]);
 		PX_DELETE(mGpuContactManagers[i]);
 	}
-
-	mHeapMemoryManager->mMappedMemoryAllocators->deallocate(mMaxConvexMeshTempMemory);
-	mHeapMemoryManager->mMappedMemoryAllocators->deallocate(mPatchAndContactCountersReadback);
 
 	mCudaContextManager->releaseContext();
 
@@ -326,6 +349,298 @@ void PxgGpuNarrowphaseCore::drawManifold(PxgPersistentContactManifold* manifolds
 	}
 }
 
+// Visualize the narrowphase contacts (points + normals) for the contact debug viz,
+// driven PER contact-manager so each contact's normal comes from ITS OWN patch. The
+// global patch and contact streams are filled by two independent atomicAdds (patchesBytes
+// vs contactsBytes), so cross-pair patch order need not match contact order -- a flat sequential walk
+// mis-attaches normals to the wrong points. Instead we use each PxsContactManagerOutput's
+// own contactPatches / contactPoints (the canonical per-pair association, exactly as
+// Sc::Scene::visualizeContacts does on the CPU).
+//
+// Called once at the end of narrowphase from fetchNarrowPhaseResults, AFTER its single
+// streamSynchronize(mStream): by then every GPU bucket pair's output is in the host-side
+// flat list and the contact/patch device streams are complete and idle, so this needs no
+// streamSynchronize and no output copy of its own -- one end-of-NP sync covers all buckets
+// (instead of one per bucket).
+//
+// DirectGPU only: without it the contacts are read back to the CPU and
+// Sc::Scene::visualizeContacts draws them, so drawing here too would double-visualize.
+// Gated like the CPU narrowphase: eSCALE + eCONTACT_POINT / eCONTACT_NORMAL, so no host
+// copy / draw happens when viz is off. Sizing follows eSCALE + the parameter magnitudes
+// to match the CPU path.
+// The simulation controller caches the pair-level visualization decision on the
+// contact manager. Unresolvable pairs fail open.
+static bool isPairVisualized(PxgMirroredContactManagerPair* const* buckets, PxU32 rigidLocalIndex)
+{
+	for (PxU32 b = GPU_BUCKET_ID::eConvex; b <= GPU_BUCKET_ID::eTriangleTriangle; ++b)
+	{
+		if (buckets[b] == NULL)
+			continue;
+		const Cm::PinnableArray<PxsContactManager*>* mappings[2] = {
+			&buckets[b]->mContactManagers.mCpuContactManagerMapping,
+			&buckets[b]->mNewContactManagers.mCpuContactManagerMapping };
+		for (PxU32 pass = 0; pass < 2; ++pass)
+		{
+			const PxU32 count = mappings[pass]->size();
+			if (rigidLocalIndex < count)
+			{
+				const PxsContactManager* cm = (*mappings[pass])[rigidLocalIndex];
+				return cm == NULL || cm->isVisualizationEnabled();
+			}
+			rigidLocalIndex -= count;
+		}
+	}
+	return true;
+}
+
+void PxgGpuNarrowphaseCore::drawNewStreamContacts(PxsContactManagerOutput* hostOutputs, PxU32 startIndex, PxU32 numGpuPairs,
+	PxU32 patchesBytes, PxU32 contactsBytes)
+{
+	PxsContext& vizCtx = mNphaseImplContext->getContext();
+	const PxReal vizScale   = vizCtx.getRenderScale();
+	const PxReal contactPointMag  = vizCtx.getVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT);
+	const PxReal contactNormalMag = vizCtx.getVisualizationParameter(PxVisualizationParameter::eCONTACT_NORMAL);
+	const bool showPoints  = contactPointMag  > 0.0f;
+	const bool showNormals = contactNormalMag > 0.0f;
+	if (vizScale <= 0.0f || (!showPoints && !showNormals))
+		return;
+	// DirectGPU only: without it the contacts are read back to the CPU and
+	// Sc::Scene::visualizeContacts draws them, so drawing here too would double-
+	// visualize. The OmniPVD collision sampler is the one DirectGPU sub-case that
+	// also forces that CPU readback on (getEnableOVDCollisionReadback()); there the
+	// CPU path draws the full contact viz, so gate this GPU draw OFF to keep a
+	// single draw path (no double-draw of point/normal).
+	if (mGpuContext == NULL || !mGpuContext->getEnableDirectGPUAPI() ||
+		mGpuContext->getSimulationController()->getEnableOVDCollisionReadback())
+		return;
+	if (hostOutputs == NULL || numGpuPairs == 0)
+		return;
+
+	PxRenderOutput out(vizCtx.getRenderBuffer());
+	const PxMat44 m(PxIdentity);
+	const PxReal pointSize = vizScale * 0.1f;              // CPU cross half-size (ScVisualize)
+	const PxReal normalLen = vizScale * contactNormalMag;  // CPU normal length = scale * contactNormal
+	const PxVec3 up(0.f, pointSize, 0.f), right(pointSize, 0.f, 0.f), fwd(0.f, 0.f, pointSize);
+
+	// cmOutput->contactPatches / contactPoints are pointers relative to the HOST
+	// stream-pool bases (for the CPU readback path); convert each to a byte offset and
+	// read from the live DEVICE streams (mPatchStream / mContactStream).
+	const PxU8* const hostPatchBase   = vizCtx.mPatchStreamPool   ? vizCtx.mPatchStreamPool->mDataStream   : NULL;
+	const PxU8* const hostContactBase = vizCtx.mContactStreamPool ? vizCtx.mContactStreamPool->mDataStream : NULL;
+	if (hostPatchBase == NULL || hostContactBase == NULL)
+		return;
+	// Overflow guard: patchesBytes / contactsBytes are the raw stream counters, which on a
+	// contact/patch overflow can exceed the allocated stream capacity (fetchNarrowPhaseResults
+	// clamps the readback to the pool size only AFTER this draw). Clamp to the pool capacity
+	// here so the bulk copy below cannot read past the device streams; pairs whose data lies
+	// beyond the cap are then dropped by the per-pair bounds check.
+	if (patchesBytes > vizCtx.mPatchStreamPool->mDataStreamSize)
+		patchesBytes = vizCtx.mPatchStreamPool->mDataStreamSize;
+	if (contactsBytes > vizCtx.mContactStreamPool->mDataStreamSize)
+		contactsBytes = vizCtx.mContactStreamPool->mDataStreamSize;
+	if (patchesBytes == 0 || contactsBytes == 0)
+		return;
+
+	// One bulk device-to-host copy of the whole used patch + contact streams into grow-only
+	// host scratch, then index per pair below -- instead of a dynamic array + a synchronous
+	// memcpy per pair. The caller already synchronized mStream (end of narrowphase), so this
+	// adds no GPU sync of its own.
+	if (mVizPatchHostBuf.size() < patchesBytes)
+		mVizPatchHostBuf.resize(patchesBytes);
+	if (mVizContactHostBuf.size() < contactsBytes)
+		mVizContactHostBuf.resize(contactsBytes);
+	PxU8* const bulkPatch = mVizPatchHostBuf.begin();
+	PxU8* const bulkContact = mVizContactHostBuf.begin();
+	// 16-byte aligned (foundation allocator guarantee) so the reinterpret_casts below are valid.
+	PX_ASSERT((size_t(bulkPatch) & 0xF) == 0 && (size_t(bulkContact) & 0xF) == 0);
+	if (mCudaContext->memcpyDtoH(bulkPatch, mPatchStream, patchesBytes) != CUDA_SUCCESS ||
+		mCudaContext->memcpyDtoH(bulkContact, mContactStream, contactsBytes) != CUDA_SUCCESS)
+	{
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "drawNewStreamContacts: contact/patch stream copy failed\n");
+		return;
+	}
+
+	// hostOutputs is the end-of-NP flat list: fallback/CPU pairs first, then the GPU bucket
+	// pairs. Only the GPU pairs [startIndex, startIndex + numGpuPairs) live in the device
+	// streams, so walk just that range.
+	//
+	// Known limitation: the fallback pairs [0, startIndex) are NOT visualized under DirectGPU.
+	// They hold pairs whose contact gen fell back to the CPU (non-GPU-compatible triangle mesh
+	// or convex, custom geometry) -- this can happen under DirectGPU, which only requires GPU
+	// dynamics + GPU broadphase. Their contacts are computed CPU-side and never written to the
+	// device streams this walk reads, and the CPU viz path (Sc::Scene::visualizeContacts) early-
+	// outs for every pair under DirectGPU, so neither path draws them. Adding fallback-pair
+	// drawing here would need the CPU-side host streams and is left out for now.
+	//
+	// Restrict the walk to the RIGID buckets only. The flat list appends bucket pairs in
+	// GPU_BUCKET_ID enum order, and the rigid pair types occupy the contiguous low range
+	// eConvex .. eTriangleTriangle (see PxgBucket.h); the non-rigid buckets (softbody /
+	// FEM-cloth / particle, eSoftbody onward) follow. Those non-rigid kernels do not write
+	// the rigid contact/patch streams this draw reads -- today their flat-list entries keep
+	// nbPatches / nbContacts / contactPatches / contactPoints at their zero/NULL init and so
+	// are dropped by the per-pair guard below, but that is a latent dependency. Summing the
+	// rigid buckets' pass-test counts and stopping the walk there makes the rigid-only scope
+	// explicit, so a future non-rigid kernel that happened to populate those fields can never
+	// be misread through the rigid streams. numGpuPairs (the all-bucket count) still bounds
+	// the clamp so we never walk past what the caller copied.
+	PxU32 numRigidPairs = 0;
+	for (PxU32 b = GPU_BUCKET_ID::eConvex; b <= GPU_BUCKET_ID::eTriangleTriangle; ++b)
+	{
+		if (mContactManagers[b] != NULL)
+			numRigidPairs += mContactManagers[b]->getNbPassTests();
+	}
+	if (numRigidPairs > numGpuPairs)
+		numRigidPairs = numGpuPairs;
+	for (PxU32 i = startIndex; i < startIndex + numRigidPairs; ++i)
+	{
+		const PxsContactManagerOutput& o = hostOutputs[i];
+		const PxU32 nbPatches = o.nbPatches;
+		const PxU32 nbContacts = o.nbContacts;
+		// nbContacts == 0 also covers pairs whose stream slot overflowed (the kernel
+		// zeroes nbContacts on overflow), so overflow degrades to drawing nothing.
+		if (nbPatches == 0 || nbContacts == 0 || o.contactPatches == NULL || o.contactPoints == NULL)
+			continue;
+		if (o.contactPatches < hostPatchBase || o.contactPoints < hostContactBase)
+			continue;
+
+		// contactPatches / contactPoints are byte offsets relative to the HOST stream-pool
+		// base (the CPU readback path, unpopulated under DirectGPU); use them to index the
+		// bulk host copies of the device streams. Defensive bounds: the kernel never writes a
+		// sub-allocation past the used cursor, and overflowed pairs have nbContacts == 0 above.
+		const size_t patchOffset = size_t(o.contactPatches - hostPatchBase);
+		const size_t contactOffset = size_t(o.contactPoints - hostContactBase);
+		if (patchOffset + nbPatches * sizeof(PxContactPatch) > patchesBytes ||
+			contactOffset + nbContacts * sizeof(PxContact) > contactsBytes)
+			continue;
+		if (!isPairVisualized(mContactManagers, i - startIndex))
+			continue;
+		const PxContactPatch* patches = reinterpret_cast<const PxContactPatch*>(bulkPatch + patchOffset);
+		const PxContact* contacts = reinterpret_cast<const PxContact*>(bulkContact + contactOffset);
+
+		// Walk this pair's own patches + contacts (contiguous per pair, so contacts
+		// are consumed in patch order -- the cross-pair atomic disorder that breaks a
+		// global walk does not apply within one pair). Each contact gets ITS patch's
+		// normal. The single-patch primitive paths (box/sphere/plane) pack the patch's
+		// startContactIndex/nbContacts fields, so for nbPatches==1 we trust the pair's
+		// own contact total (cmOutput.nbContacts); multi-patch paths (mesh/heightfield/
+		// convex) write clean per-patch counts.
+		PxU32 ci = 0;
+		for (PxU32 p = 0; p < nbPatches && ci < nbContacts; ++p)
+		{
+			const PxVec3 n = patches[p].normal;
+			const PxU32 nc = (nbPatches == 1) ? nbContacts : PxU32(patches[p].nbContacts);
+			for (PxU32 k = 0; k < nc && ci < nbContacts; ++k, ++ci)
+			{
+				const PxVec3 a = contacts[ci].contact;
+				if (showPoints)   // eCONTACT_POINT: world-space cross, same colour as the CPU path (ScVisualize)
+				{
+					out << PxU32(PxDebugColor::eARGB_RED) << m << PxRenderOutput::LINES << a + up << a - up;
+					out << PxU32(PxDebugColor::eARGB_RED) << m << PxRenderOutput::LINES << a + right << a - right;
+					out << PxU32(PxDebugColor::eARGB_RED) << m << PxRenderOutput::LINES << a + fwd << a - fwd;
+				}
+				if (showNormals)  // eCONTACT_NORMAL: world-space normal ray, same colour as the CPU path (ScVisualize)
+					out << PxU32(PxDebugColor::eARGB_BLUE) << m << PxRenderOutput::LINES << a << a + n * normalLen;
+			}
+		}
+	}
+}
+
+// DirectGPU friction anchors, drawn post-solve.
+void PxgGpuNarrowphaseCore::drawFrictionAnchors()
+{
+	PxsContext& vizCtx = mNphaseImplContext->getContext();
+	const PxReal vizScale = vizCtx.getRenderScale();
+	const PxReal frictionPointMag   = vizCtx.getVisualizationParameter(PxVisualizationParameter::eFRICTION_POINT);
+	const PxReal frictionNormalMag  = vizCtx.getVisualizationParameter(PxVisualizationParameter::eFRICTION_NORMAL);
+	const PxReal frictionImpulseMag = vizCtx.getVisualizationParameter(PxVisualizationParameter::eFRICTION_IMPULSE);
+	const bool showPoints   = frictionPointMag   > 0.0f;
+	const bool showNormals  = frictionNormalMag  > 0.0f;
+	const bool showImpulses = frictionImpulseMag > 0.0f;
+	if (vizScale <= 0.0f || (!showPoints && !showNormals && !showImpulses))
+		return;
+	// DirectGPU only, same gating as drawNewStreamContacts: with readback (or the OmniPVD
+	// collision sampler forcing it) the CPU path in Sc::Scene::visualizeContacts draws
+	// the full friction viz itself and never calls this.
+	if (mGpuContext == NULL || !mGpuContext->getEnableDirectGPUAPI() ||
+		mGpuContext->getSimulationController()->getEnableOVDCollisionReadback())
+		return;
+	const PxU32 numPairs = mVizFrictionPatchRanges.size();
+	if (numPairs == 0)
+		return;
+
+	// Patches live in the solver compressed-patch buffer, friction anchors in the
+	// friction buffer (one PxFrictionPatch per patch slot). Both coherent with the
+	// captured offsets only after the solve, hence the fetchResults draw site.
+	PxgTypedCudaBuffer<PxContactPatch>& patchBuf = mGpuContext->mGpuSolverCore->mCompressedPatches;
+	PxgTypedCudaBuffer<PxFrictionPatch>& frictionBuf = mGpuContext->mGpuSolverCore->mFrictionPatches;
+	if (patchBuf.getDevicePtr() == 0 || frictionBuf.getDevicePtr() == 0)
+		return;
+
+	PxU32 patchesBytes = mPatchAndContactCountersReadback.get().patchesBytes;
+	if (PxU64(patchesBytes) > patchBuf.getSize())
+		patchesBytes = PxU32(patchBuf.getSize());
+	if (patchesBytes == 0)
+		return;
+	const PxU32 usedPatches = patchesBytes / PxU32(sizeof(PxContactPatch));
+	PxU64 frictionBytes64 = PxU64(usedPatches) * sizeof(PxFrictionPatch);
+	if (frictionBytes64 > frictionBuf.getSize())
+		frictionBytes64 = frictionBuf.getSize();
+	const PxU32 frictionBytes = PxU32(frictionBytes64);
+	if (frictionBytes == 0)
+		return;
+
+	// Contact drawing is synchronous and complete before this post-solve copy.
+	if (mVizPatchHostBuf.size() < patchesBytes)
+		mVizPatchHostBuf.resize(patchesBytes);
+	if (mVizContactHostBuf.size() < frictionBytes)
+		mVizContactHostBuf.resize(frictionBytes);
+	{
+		PxScopedCudaLock lock(*mCudaContextManager);
+		if (mCudaContext->memcpyDtoH(mVizPatchHostBuf.begin(), patchBuf.getDevicePtr(), patchesBytes) != CUDA_SUCCESS ||
+			mCudaContext->memcpyDtoH(mVizContactHostBuf.begin(), frictionBuf.getDevicePtr(), frictionBytes) != CUDA_SUCCESS)
+		{
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "drawFrictionAnchors: patch/friction stream copy failed\n");
+			return;
+		}
+	}
+	const PxU8* const bulkPatch = mVizPatchHostBuf.begin();
+	const PxU8* const bulkFriction = mVizContactHostBuf.begin();
+
+	PxRenderOutput out(vizCtx.getRenderBuffer());
+	const PxReal pointSize = vizScale * 0.1f;
+
+	// Narrowphase offsets index mCompressedPatches and its parallel friction slots.
+	for (PxU32 i = 0; i < numPairs; ++i)
+	{
+		const PxPair<PxU32, PxU32>& range = mVizFrictionPatchRanges[i];
+		const PxU32 patchOffset = range.first;
+		const PxU32 nbPatches = range.second;
+		if (patchOffset + nbPatches * sizeof(PxContactPatch) > patchesBytes)
+			continue;
+		const PxU32 firstPatchIndex = patchOffset / PxU32(sizeof(PxContactPatch));
+		if ((PxU64(firstPatchIndex) + nbPatches) * sizeof(PxFrictionPatch) > frictionBytes)
+			continue;
+		const PxContactPatch* patches = reinterpret_cast<const PxContactPatch*>(bulkPatch + patchOffset);
+		const PxFrictionPatch* frictions = reinterpret_cast<const PxFrictionPatch*>(bulkFriction) + firstPatchIndex;
+
+		for (PxU32 p = 0; p < nbPatches; ++p)
+		{
+			const PxFrictionPatch& fp = frictions[p];
+			const PxU32 anchorCount = PxMin(fp.anchorCount, PxFrictionPatch::MAX_ANCHOR_COUNT);
+			for (PxU32 k = 0; k < anchorCount; ++k)
+			{
+				const PxVec3& a = fp.anchorPositions[k];
+				if (showImpulses)
+					drawLine(out, a, a + fp.anchorImpulses[k] * (vizScale * frictionImpulseMag), PxU32(PxDebugColor::eARGB_DARKRED));
+				else if (showNormals)
+					drawLine(out, a, a + patches[p].normal * (vizScale * frictionNormalMag), PxU32(PxDebugColor::eARGB_BLUE));
+				if (showPoints)
+					drawPoint(out, a, PxU32(PxDebugColor::eARGB_DARKRED), pointSize);
+			}
+		}
+	}
+}
+
 void PxgGpuNarrowphaseCore::compactLostFoundPairs(PxgGpuContactManagers& gpuManagers, const PxU32 numTests, PxU32* touchChangeFlags, PxsContactManagerOutput* cmOutputs)
 {
 	CUresult result;
@@ -334,12 +649,12 @@ void PxgGpuNarrowphaseCore::compactLostFoundPairs(PxgGpuContactManagers& gpuMana
 	PxsContactManagerOutputCounts* lostFoundOutputs = (PxsContactManagerOutputCounts*)gpuManagers.mLostFoundPairsOutputData.getDevicePtr();
 	PxsContactManager** lostFoundCms = (PxsContactManager**)gpuManagers.mLostFoundPairsCms.getDevicePtr();
 	PxU32* blockAccumArray = (PxU32*)gpuManagers.mBlockAccumulationArray.getDevicePtr();
-	uint2* lostAndTotalReportedPairsCount = reinterpret_cast<uint2*>(getMappedDevicePtr(mCudaContext, gpuManagers.mLostAndTotalReportedPairsCountPinned));
+	uint2* lostAndTotalReportedPairsCount = reinterpret_cast<uint2*>(getMappedDevicePtr(mCudaContext, gpuManagers.mLostAndTotalReportedPairsCountMapped.data()));
 	PxsContactManager** cmArray = (PxsContactManager**)gpuManagers.mCpuContactManagerMapping.getDevicePtr();
 
 	{
-		CUfunction kernelFunction1 = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPACT_LOST_FOUND_PAIRS_1);
-		CUfunction kernelFunction2 = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPACT_LOST_FOUND_PAIRS_2);
+		CUfunction kernelFunction1 = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPACT_LOST_FOUND_PAIRS_1);
+		CUfunction kernelFunction2 = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPACT_LOST_FOUND_PAIRS_2);
 
 		PxCudaKernelParam kernelParams1[] =
 		{
@@ -419,7 +734,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereGpu(
 	PxgDevicePointer<PxgPatchAndContactCounters> patchAndContactCountersD = mPatchAndContactCountersOnDevice.getTypedDevicePtr();
 
 	{
-		CUfunction sphereKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SPHERE_KERNEL_MAIN);
+		CUfunction sphereKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SPHERE_KERNEL_MAIN);
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -457,25 +772,6 @@ void PxgGpuNarrowphaseCore::testSDKSphereGpu(
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU cudaMainGjkEpa error in kernel stage 3!!!\n");
 #endif
 
-#if GPU_NP_VISUALIZATION
-		result = mCudaContext->streamSynchronize(mStream);
-		
-		PxArray<PxgContactManagerInput> tCmInput(numTests);
-		PxArray<PxsContactManagerOutput> tCmOutput(numTests);
-		PxArray<PxsCachedTransform> tCachedTransform(PxU32((mGpuTransformCache.getSize() / sizeof(PxsCachedTransform)) + 1));
-		PxArray<PxContactPatch> tPatch(numTests);
-		PxArray<PxContact> tContact(numTests);
-		mCudaContext->memcpyDtoH(tCmInput.begin(), gpuManagers.mContactManagerInputData.getDevicePtr(), sizeof(PxgContactManagerInput) * numTests);
-		mCudaContext->memcpyDtoH(tCachedTransform.begin(), mGpuTransformCache.getDevicePtr(), mGpuTransformCache.getSize());
-		mCudaContext->memcpyDtoH(tCmOutput.begin(), gpuManagers.mContactManagerOutputData.getDevicePtr(), sizeof(PxsContactManagerOutput) * numTests);
-		mCudaContext->memcpyDtoH(tPatch.begin(), mPatchStream, sizeof(PxContactPatch) * numTests);
-		mCudaContext->memcpyDtoH(tContact.begin(), mContactStream, sizeof(PxContact) * numTests);
-
-		int bob = 0;
-		PX_UNUSED(bob);
-		//drawManifold(tManifold.begin(), tCmInput.begin(), tCachedTransform.begin(), numTests, *renderOutput, 0xffffff, 0.05f);
-
-#endif
 	}
 
 	compactLostFoundPairs(gpuManagers, numTests, touchChangeFlags, cmOutputs);
@@ -511,7 +807,7 @@ void PxgGpuNarrowphaseCore::testSDKBoxBoxGpu(
 	CUresult result;
 
 	{
-		CUfunction sphereKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::BOX_BOX_KERNEL_MAIN);
+		CUfunction sphereKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::BOX_BOX_KERNEL_MAIN);
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -550,25 +846,6 @@ void PxgGpuNarrowphaseCore::testSDKBoxBoxGpu(
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU cudaMainGjkEpa error in kernel stage 3!!!\n");
 #endif
 
-#if GPU_NP_VISUALIZATION
-		result = mCudaContext->streamSynchronize(mStream);
-
-		PxArray<PxgContactManagerInput> tCmInput(numTests);
-		PxArray<PxsContactManagerOutput> tCmOutput(numTests);
-		PxArray<PxsCachedTransform> tCachedTransform(PxU32((mGpuTransformCache.getSize() / sizeof(PxsCachedTransform)) + 1));
-		PxArray<PxContactPatch> tPatch(numTests);
-		PxArray<PxContact> tContact(numTests);
-		mCudaContext->memcpyDtoH(tCmInput.begin(), gpuManagers.mContactManagerInputData.getDevicePtr(), sizeof(PxgContactManagerInput) * numTests);
-		mCudaContext->memcpyDtoH(tCachedTransform.begin(), mGpuTransformCache.getDevicePtr(), mGpuTransformCache.getSize());
-		mCudaContext->memcpyDtoH(tCmOutput.begin(), gpuManagers.mContactManagerOutputData.getDevicePtr(), sizeof(PxsContactManagerOutput) * numTests);
-		mCudaContext->memcpyDtoH(tPatch.begin(), mPatchStream, sizeof(PxContactPatch) * numTests);
-		mCudaContext->memcpyDtoH(tContact.begin(), mContactStream, sizeof(PxContact) * numTests);
-
-		int bob = 0;
-		PX_UNUSED(bob);
-		//drawManifold(tManifold.begin(), tCmInput.begin(), tCachedTransform.begin(), numTests, *renderOutput, 0xffffff, 0.05f);
-
-#endif
 	}
 
 	compactLostFoundPairs(gpuManagers, numTests, touchLostFlags, cmOutputs);
@@ -615,9 +892,9 @@ void PxgGpuNarrowphaseCore::testSDKConvexConvexGjkEpaGpu(
 
 		PxU32 numBlocks_stage1 = (numTests * 4 + PxgNarrowPhaseBlockDims::EARLY_OUT_KERNEL - 1) / PxgNarrowPhaseBlockDims::EARLY_OUT_KERNEL;
 		
-		CUfunction kernelFunction_stage1 = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_CONVEX_KERNEL_EARLY_OUT);
+		CUfunction kernelFunction_stage1 = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_CONVEX_KERNEL_EARLY_OUT);
 
-		CUfunction kernelFunction_stage2 = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_CONVEX_KERNEL_MAIN);
+		CUfunction kernelFunction_stage2 = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_CONVEX_KERNEL_MAIN);
 
 		result = mCudaContext->launchKernel(kernelFunction_stage1, numBlocks_stage1, 1, 1, WARP_SIZE, PxgNarrowPhaseBlockDims::EARLY_OUT_KERNEL / WARP_SIZE, 1, 0,
 			mStream, kernelParams_stage1, sizeof(kernelParams_stage1), 0, PX_FL);
@@ -657,21 +934,9 @@ void PxgGpuNarrowphaseCore::testSDKConvexConvexGjkEpaGpu(
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,"GPU cudaMainGjkEpa error in kernel stage 3!!!\n");
 #endif
 
-#if GPU_NP_VISUALIZATION
-		result = mCudaContext->streamSynchronize(mStream);
-		PxArray<PxgPersistentContactManifold> tManifold(numTests);
-		PxArray<PxgContactManagerInput> tCmInput(numTests);
-		PxArray<PxsCachedTransform> tCachedTransform(PxU32((mGpuTransformCache.getSize() / sizeof(PxsCachedTransform)) + 1));
-		mCudaContext->memcpyDtoH(tManifold.begin(), gpuManagers.mPersistentContactManifolds.getDevicePtr(), sizeof(PxgPersistentContactManifold) * numTests);
-		mCudaContext->memcpyDtoH(tCmInput.begin(), gpuManagers.mContactManagerInputData.getDevicePtr(), sizeof(PxgContactManagerInput) * numTests);
-		mCudaContext->memcpyDtoH(tCachedTransform.begin(), mGpuTransformCache.getDevicePtr(), mGpuTransformCache.getSize());
-
-		drawManifold(tManifold.begin(), tCmInput.begin(), tCachedTransform.begin(), numTests, *renderOutput, 0xffffff, 0.05f);
-#endif
-
 		PxgDevicePointer<PxgPatchAndContactCounters> patchAndContactCountersD = mPatchAndContactCountersOnDevice.getTypedDevicePtr();
 
-		CUfunction kernelFunctionFinishContacts = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::FINISH_CONTACTS_KERNEL);
+		CUfunction kernelFunctionFinishContacts = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::FINISH_CONTACTS_KERNEL);
 
 		PxCudaKernelParam kernelParamsFinishContacts[] =
 		{
@@ -711,6 +976,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexConvexGjkEpaGpu(
 		if(result != CUDA_SUCCESS)
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,"GPU kernelFunctionFinishContacts fail to launch kernel stage!!!\n");
 #endif
+
 	}
 
 	compactLostFoundPairs(gpuManagers, numTests, touchLostFlags, cmOutputs);
@@ -747,7 +1013,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexPlaneGjkEpaGpu(
 	CUresult result;
 
 	{
-		CUfunction convexPlaneKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_PLANE_KERNEL_MAIN);
+		CUfunction convexPlaneKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_PLANE_KERNEL_MAIN);
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -821,7 +1087,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexCorePlaneGjkEpaGpu(
 
 	CUresult result;
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEXCORE_PLANE_KERNEL_MAIN);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEXCORE_PLANE_KERNEL_MAIN);
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -891,7 +1157,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreConvexGjkEpaGpu(
 
 	CUresult result;
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEXCORE_CONVEX_KERNEL_MAIN);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEXCORE_CONVEX_KERNEL_MAIN);
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -985,7 +1251,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreTrimeshGjkEpaGpu(
 		const PxU32 blockWarpCount = 4;
 		const PxU32 blockTests = blockWarpCount;
 		const PxU32 numBlocks = (numTests + (blockTests - 1)) / blockTests;
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEXCORE_TRIMESH_KERNEL32_MAIN);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEXCORE_TRIMESH_KERNEL32_MAIN);
 		result = mCudaContext->launchKernel(kernelFunction, numBlocks, 1, 1, warpThreadCount, blockWarpCount, 1, 0, mStream, kernelParams_stage, sizeof(kernelParams_stage), 0, PX_FL);
 		if (result != CUDA_SUCCESS)
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU convexCoreTrimeshNphase_Kernel fail to launch!!\n");
@@ -1021,7 +1287,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreTetmeshGjkEpaGpu(
 	const PxReal* restDistanced = reinterpret_cast<PxReal*>(gpuManagers.mRestDistances.getDevicePtr());
 	PX_ASSERT(transformCache);
 	PxgSoftBodyCore* softBodyCore = mGpuContext->mGpuSoftBodyCore;
-	PxgFEMContactWriter writer(softBodyCore);
+	PxgFEMContactWriter writer = softBodyCore->createContactWriter();
 
 	CUstream softbodyStream = softBodyCore->getStream();
 
@@ -1047,7 +1313,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreTetmeshGjkEpaGpu(
 		const PxU32 blockWarpCount = 4;
 		const PxU32 blockTests = blockWarpCount;
 		const PxU32 numBlocks = (numTests + (blockTests - 1)) / blockTests;
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEXCORE_TETMESH_KERNEL32_MAIN);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEXCORE_TETMESH_KERNEL32_MAIN);
 		result = mCudaContext->launchKernel(kernelFunction, numBlocks, 1, 1, warpThreadCount, blockWarpCount, 1, 0, softbodyStream, kernelParams_stage, sizeof(kernelParams_stage), 0, PX_FL);
 		if (result != CUDA_SUCCESS)
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU convexCoreTetmeshNphase_Kernel fail to launch!!\n");
@@ -1101,7 +1367,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreClothmeshGjkEpaGpu(
 
 	PxgFEMClothCore* femClothCore = mGpuContext->mGpuFEMClothCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = femClothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = femClothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream femClothStream = femClothCore->getStream();
@@ -1140,7 +1406,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreClothmeshGjkEpaGpu(
 		//each warp deals with one test
 		PxU32 numWarpsPerBlock = MIDPHASE_WARPS_PER_BLOCK;
 		PxU32 numBlocks = (numTests + numWarpsPerBlock - 1) / numWarpsPerBlock;
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_PRIMITIVES);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_PRIMITIVES);
 		result = mCudaContext->launchKernel(kernelFunction, numBlocks, 1, 1, WARP_SIZE, numWarpsPerBlock, 1, 0, femClothStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
 
 		if (result != CUDA_SUCCESS)
@@ -1161,7 +1427,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreClothmeshGjkEpaGpu(
 	CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 	CUdeviceptr filterPairs = simulationCore->getRigidClothFilters();
 	const PxU32 nbFilterPairs = simulationCore->getNbRigidClothFilters();
-	PxgFEMContactWriter writer(femClothCore);
+	PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 	// convex core contact generation
 	{
@@ -1186,7 +1452,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreClothmeshGjkEpaGpu(
 		//each thread deals with one test
 		const PxU32 numBlocks = 32;
 		const PxU32 blockThreadCount = 512;
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEXCORE_CLOTHMESH_KERNEL32_MAIN);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEXCORE_CLOTHMESH_KERNEL32_MAIN);
 		result = mCudaContext->launchKernel(kernelFunction, numBlocks, 1, 1, blockThreadCount, 1, 1, 0, femClothStream, kernelParams, sizeof(kernelParams), 0, PX_FL);
 
 		if (result != CUDA_SUCCESS)
@@ -1231,7 +1497,7 @@ void PxgGpuNarrowphaseCore::testSDKTriMeshPlaneGpu(PxgGpuContactManagers& gpuMan
 	const PxReal clusterBias = 1e-3f*toleranceLength;
 
 	{
-		CUfunction triMeshPlaneKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::TRIMESH_PLANE_CORE);
+		CUfunction triMeshPlaneKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::TRIMESH_PLANE_CORE);
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -1270,7 +1536,7 @@ void PxgGpuNarrowphaseCore::testSDKTriMeshPlaneGpu(PxgGpuContactManagers& gpuMan
 			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "GPU trimeshPlaneNarrowphase error in kernel!!!\n");
 #endif
 
-#if GPU_NP_VISUALIZATION
+#if GPU_NP_LEGACY_MANIFOLD_VIZ
 		result = mCudaContext->streamSynchronize(mStream);
 
 		PxArray<PxgContactManagerInput> tCmInput(numTests);
@@ -1319,7 +1585,7 @@ void PxgGpuNarrowphaseCore::testSDKTriMeshHeightfieldGpu(
 	CUresult result;
 
 	{
-		CUfunction trimeshKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::TRIMESH_HEIGHTFIELD_CORE);
+		CUfunction trimeshKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::TRIMESH_HEIGHTFIELD_CORE);
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -1388,7 +1654,7 @@ void PxgGpuNarrowphaseCore::testSDKTriMeshTriMeshGpu(PxgGpuContactManagers& gpuM
 	CUdeviceptr gpuIntermOverlap = reinterpret_cast<CUdeviceptr>(mIntermStackAlloc.allocateAligned(256, numTests * sizeof(PxU8)));
 
 	{
-		CUfunction tritriOverlapKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::TRIMESH_TRIMESH_OVERLAP);
+		CUfunction tritriOverlapKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::TRIMESH_TRIMESH_OVERLAP);
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -1419,7 +1685,7 @@ void PxgGpuNarrowphaseCore::testSDKTriMeshTriMeshGpu(PxgGpuContactManagers& gpuM
 
 	{
 		PxgDevicePointer<PxgPatchAndContactCounters> patchAndContactCountersD = mPatchAndContactCountersOnDevice.getTypedDevicePtr();
-		CUfunction tritriKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::TRIMESH_TRIMESH_CORE);
+		CUfunction tritriKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::TRIMESH_TRIMESH_CORE);
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -1465,19 +1731,19 @@ void PxgGpuNarrowphaseCore::testSDKTriMeshTriMeshGpu(PxgGpuContactManagers& gpuM
 	mIntermStackAlloc.mMutex.unlock();
 }
 
-static void fetchLostFoundPatchData(PxgGpuContactManagers& gpuContactManagers, PxPinnedArray<PxsContactManagerOutputCounts>& lostFoundPairsOutputData, 
-	PxPinnedArray<PxsContactManager*>& lostFoundPairsCms, PxCudaContext* cudaContext, CUstream stream, PxU32& touchChangeOffset, PxU32& patchChangeOffset)
+static void fetchLostFoundPatchData(PxgGpuContactManagers& gpuContactManagers, PinnableArray<PxsContactManagerOutputCounts>& lostFoundPairsOutputData, 
+	PinnableArray<PxsContactManager*>& lostFoundPairsCms, PxCudaContext* cudaContext, CUstream stream, PxU32& touchChangeOffset, PxU32& patchChangeOffset)
 {
-	if (gpuContactManagers.mLostAndTotalReportedPairsCountPinned->x)
+	if (gpuContactManagers.mLostAndTotalReportedPairsCountMapped.isValid() && gpuContactManagers.mLostAndTotalReportedPairsCountMapped.get().x)
 	{
-		const PxU32 count = gpuContactManagers.mLostAndTotalReportedPairsCountPinned->x;
+		const PxU32 count = gpuContactManagers.mLostAndTotalReportedPairsCountMapped.get().x;
 
 		PX_ASSERT(lostFoundPairsOutputData.size() >= (touchChangeOffset + count));
 		PX_ASSERT(lostFoundPairsCms.size() >= touchChangeOffset + count);
 
 		PxsContactManagerOutputCounts* p = &lostFoundPairsOutputData[touchChangeOffset];
 		PxsContactManager** p2 = &lostFoundPairsCms[touchChangeOffset];
-		
+
 		// AD: DtoH memcopy marker, needs to be safe in case we skip!
 		cudaContext->memcpyDtoHAsync(p, 
 			gpuContactManagers.mLostFoundPairsOutputData.getDevicePtr(),
@@ -1491,7 +1757,12 @@ static void fetchLostFoundPatchData(PxgGpuContactManagers& gpuContactManagers, P
 		touchChangeOffset += count;
 	}
 
-	PxU32 count = gpuContactManagers.mLostAndTotalReportedPairsCountPinned->y - gpuContactManagers.mLostAndTotalReportedPairsCountPinned->x;
+	PxU32 count = 0;
+	if (gpuContactManagers.mLostAndTotalReportedPairsCountMapped.isValid())
+	{
+		count = gpuContactManagers.mLostAndTotalReportedPairsCountMapped.get().y - gpuContactManagers.mLostAndTotalReportedPairsCountMapped.get().x;
+	}
+
 	if (count)
 	{
 		PX_ASSERT(lostFoundPairsOutputData.size() >= patchChangeOffset);
@@ -1499,16 +1770,16 @@ static void fetchLostFoundPatchData(PxgGpuContactManagers& gpuContactManagers, P
 
 		PxsContactManagerOutputCounts* p = &lostFoundPairsOutputData[patchChangeOffset];
 		PxsContactManager** p2 = &lostFoundPairsCms[patchChangeOffset];
-		
+
 		// AD: DtoH memcopy marker, needs to be safe in case we skip!
 		cudaContext->memcpyDtoHAsync(p, 
-			gpuContactManagers.mLostFoundPairsOutputData.getDevicePtr() + gpuContactManagers.mLostAndTotalReportedPairsCountPinned->x * sizeof(PxsContactManagerOutputCounts),
+			gpuContactManagers.mLostFoundPairsOutputData.getDevicePtr() + gpuContactManagers.mLostAndTotalReportedPairsCountMapped.get().x * sizeof(PxsContactManagerOutputCounts),
 			sizeof(PxsContactManagerOutputCounts) * count, stream);
 
 
 		// AD: DtoH memcopy marker, needs to be safe in case we skip!
 		cudaContext->memcpyDtoHAsync(p2, 
-			gpuContactManagers.mLostFoundPairsCms.getDevicePtr() + gpuContactManagers.mLostAndTotalReportedPairsCountPinned->x * sizeof(PxsContactManager*),
+			gpuContactManagers.mLostFoundPairsCms.getDevicePtr() + gpuContactManagers.mLostAndTotalReportedPairsCountMapped.get().x * sizeof(PxsContactManager*),
 			sizeof(PxsContactManager*) * count, stream);
 
 		patchChangeOffset += count;
@@ -1600,21 +1871,24 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 	mTotalLostFoundPatches = 0;
 	mTotalNumPairs = numTests;
 
+	mVizFrictionPatchRanges.forceSize_Unsafe(0);
+
+	PxgPatchAndContactCounters& patchAndContactCountersReadback = mPatchAndContactCountersReadback.get();
 	if (numTests != 0)
 	{
 		// This copies back the sizes and overflow status of the contact stream.
 		// After this, we know all the sizes.
 
-		// AD: DtoH memcopy marker, needs to be safe in case we skip!
-		mCudaContext->memcpyDtoHAsync(mPatchAndContactCountersReadback, mPatchAndContactCountersOnDevice.getDevicePtr(), sizeof(PxgPatchAndContactCounters), mStream);
+		// AD: DtoH memcopy marker, needs to be safe in case we skip!	
+		mCudaContext->memcpyDtoHAsync(&patchAndContactCountersReadback, mPatchAndContactCountersOnDevice.getDevicePtr(), sizeof(PxgPatchAndContactCounters), mStream);
 
 		// set to 0 to be safe.
 		if (mCudaContext->isInAbortMode())
 		{
-			mPatchAndContactCountersReadback->contactsBytes = 0;
-			mPatchAndContactCountersReadback->patchesBytes = 0;
-			mPatchAndContactCountersReadback->forceAndIndiceBytes = 0;
-			mPatchAndContactCountersReadback->overflowError = 0;
+			patchAndContactCountersReadback.contactsBytes = 0;
+			patchAndContactCountersReadback.patchesBytes = 0;
+			patchAndContactCountersReadback.forceAndIndiceBytes = 0;
+			patchAndContactCountersReadback.overflowError = 0;
 		}
 
 		{
@@ -1623,33 +1897,86 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 			// it looks like we're only syncing here because of the overflow messages? is it ok to skip this sync if we don't run this block because there are no pairs?
 			CUresult result = mCudaContext->streamSynchronize(mStream);
 			if (result != CUDA_SUCCESS)
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Synchronizing GPU Narrowphase failed! %d\n", result);
-		}	
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Synchronizing GPU Narrowphase failed! %u\n", result);
+		}
 
-		PxU32 err = mPatchAndContactCountersReadback->getOverflowError();
+		// Contact debug viz (DirectGPU only): one draw over all GPU bucket pairs, riding
+		// the single sync above instead of syncing per bucket. The flat output list holds
+		// the fallback/CPU pairs in [0, nbFallbackPairs) and the GPU bucket pairs (whose
+		// contacts live in the device streams) in [nbFallbackPairs, nbFallbackPairs + numTests).
+		drawNewStreamContacts(contactManagerOutputs, nbFallbackPairs, numTests,
+			patchAndContactCountersReadback.patchesBytes, patchAndContactCountersReadback.contactsBytes);
+
+		// Capture narrowphase patch offsets for the post-solve friction draw.
+		{
+			PxsContext& vizCtx = mNphaseImplContext->getContext();
+			const PxReal frictionPointMag = vizCtx.getVisualizationParameter(PxVisualizationParameter::eFRICTION_POINT);
+			const PxReal frictionNormalMag = vizCtx.getVisualizationParameter(PxVisualizationParameter::eFRICTION_NORMAL);
+			const PxReal frictionImpulseMag = vizCtx.getVisualizationParameter(PxVisualizationParameter::eFRICTION_IMPULSE);
+			if (vizCtx.getRenderScale() > 0.0f && (frictionPointMag > 0.0f || frictionNormalMag > 0.0f || frictionImpulseMag > 0.0f) &&
+				mGpuContext != NULL && mGpuContext->getEnableDirectGPUAPI() &&
+				!mGpuContext->getSimulationController()->getEnableOVDCollisionReadback() &&
+				vizCtx.mPatchStreamPool != NULL && vizCtx.mPatchStreamPool->mDataStream != NULL)
+			{
+				const PxU8* const hostBase = vizCtx.mPatchStreamPool->mDataStream;
+				PxU32 vizPatchesBytes = patchAndContactCountersReadback.patchesBytes;
+				if (vizPatchesBytes > vizCtx.mPatchStreamPool->mDataStreamSize)
+					vizPatchesBytes = vizCtx.mPatchStreamPool->mDataStreamSize;
+				PxU32 numRigid = 0;
+				for (PxU32 b = GPU_BUCKET_ID::eConvex; b <= GPU_BUCKET_ID::eTriangleTriangle; ++b)
+				{
+					if (mContactManagers[b] != NULL)
+						numRigid += mContactManagers[b]->getNbPassTests();
+				}
+				numRigid = PxMin(numRigid, numTests);
+				for (PxU32 k = nbFallbackPairs; k < nbFallbackPairs + numRigid; ++k)
+				{
+					const PxsContactManagerOutput& o = contactManagerOutputs[k];
+					if (o.nbPatches == 0 || o.nbContacts == 0 || o.contactPatches == NULL)
+						continue;
+					if (o.contactPatches < hostBase)
+						continue;
+					const size_t off = size_t(o.contactPatches - hostBase);
+					if (off + o.nbPatches * sizeof(PxContactPatch) > vizPatchesBytes)
+						continue;
+					if (!isPairVisualized(mContactManagers, k - nbFallbackPairs))
+						continue;
+					mVizFrictionPatchRanges.pushBack(
+						PxPair<PxU32, PxU32>(PxU32(off), o.nbPatches));
+				}
+			}
+		}
+
+		PxU32 err = patchAndContactCountersReadback.getOverflowError();
 		if (err)
 		{
 			if (err & PxgPatchAndContactCounters::CONTACT_BUFFER_OVERFLOW)
 			{
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Contact buffer overflow detected, please increase its size to at least %i in the scene desc!\n", mPatchAndContactCountersReadback->contactsBytes/sizeof(PxContact));
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Contact buffer overflow detected, please increase its size to at least %u in the scene desc!\n",
+					patchAndContactCountersReadback.contactsBytes/sizeof(PxContact));
 			}
 
 			if (err & PxgPatchAndContactCounters::PATCH_BUFFER_OVERFLOW)
 			{
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Patch buffer overflow detected, please increase its size to at least %i in the scene desc!\n", mPatchAndContactCountersReadback->patchesBytes/sizeof(PxContactPatch));
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Patch buffer overflow detected, please increase its size to at least %u in the scene desc!\n",
+					patchAndContactCountersReadback.patchesBytes/sizeof(PxContactPatch));
 			}
 		}
 
+		PxU32 maxConvexMeshTempMemory = mMaxConvexMeshTempMemoryMapped.isValid() ? mMaxConvexMeshTempMemoryMapped.get() : 0;
+
 		// AD: todo verify that we catch all the overflows with this.
-		if (*mMaxConvexMeshTempMemory > mCollisionStackSizeBytes)
+			if(maxConvexMeshTempMemory > mCollisionStackSizeBytes)
 		{
-			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "PxGpuDynamicsMemoryConfig::collisionStackSize buffer overflow detected, please increase its size to at least %i in the scene desc! Contacts have been dropped.\n", *mMaxConvexMeshTempMemory);
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+				"PxGpuDynamicsMemoryConfig::collisionStackSize buffer overflow detected, please increase its size to at least %u in the scene desc! Contacts have been dropped.\n",
+				maxConvexMeshTempMemory);
 		}
 
 #if PX_ENABLE_SIM_STATS
-		mGpuDynamicsRigidContactCountStats = PxMax(PxU32(mPatchAndContactCountersReadback->contactsBytes / sizeof(PxContact)), mGpuDynamicsRigidContactCountStats);
-		mGpuDynamicsRigidPatchCountStats = PxMax(PxU32(mPatchAndContactCountersReadback->patchesBytes / sizeof(PxContactPatch)), mGpuDynamicsRigidPatchCountStats);
-		mGpuDynamicsCollisionStackSizeStats = PxMax(*mMaxConvexMeshTempMemory, mGpuDynamicsCollisionStackSizeStats); // AD: this does not include the non-rigid stack usages yet!
+		mGpuDynamicsRigidContactCountStats = PxMax(PxU32(patchAndContactCountersReadback.contactsBytes / sizeof(PxContact)), mGpuDynamicsRigidContactCountStats);
+		mGpuDynamicsRigidPatchCountStats = PxMax(PxU32(patchAndContactCountersReadback.patchesBytes / sizeof(PxContactPatch)), mGpuDynamicsRigidPatchCountStats);
+		mGpuDynamicsCollisionStackSizeStats = PxMax(maxConvexMeshTempMemory, mGpuDynamicsCollisionStackSizeStats); // AD: this does not include the non-rigid stack usages yet!
 
 		// update simulation statistics:
 		mNphaseImplContext->getContext().getSimStats().mGpuDynamicsRigidContactCount = mGpuDynamicsRigidContactCountStats;
@@ -1660,8 +1987,8 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 #else
 		PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
 #endif
-
-		*mMaxConvexMeshTempMemory = 0;
+		if(mMaxConvexMeshTempMemoryMapped.isValid())
+			mMaxConvexMeshTempMemoryMapped.get() = 0;
 	}
 
 	{
@@ -1734,18 +2061,29 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 
 			CUresult result =  mCudaContext->streamSynchronize(mStream);
 			if (result != CUDA_SUCCESS)
-				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Fetching GPU Narrowphase failed! %d\n", result);
+			{
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Fetching GPU Narrowphase failed! %u\n", result);
+
+				// ### DEFENSIVE (OMPE-99346): the DtoH copies that populate the lost/found CM-pointer
+				// list did not complete this frame, so mLostFoundPairsCms holds stale/uninitialized
+				// entries while the counts are non-zero. Drop the lost/found results (as in the abort
+				// mode path above) so PxgNphaseImplementationContext::processResults cannot dereference them.
+				mLostFoundPairsCms.forceSize_Unsafe(0);
+				mLostFoundPairsOutputData.forceSize_Unsafe(0);
+				mTotalLostFoundPairs = 0;
+				mTotalLostFoundPatches = 0;
+			}
 		}
 		
 		//KS - no need for atomics - we now fetch all results at once!
 		//FD: if there is an overflow, the counter value may exceed the limit, though the contacts\patches should be dropped
-		mPatchAndContactCountersReadback->contactsBytes = PxMin(mPatchAndContactCountersReadback->contactsBytes, contactStreamPool->mDataStreamSize);
-		mPatchAndContactCountersReadback->patchesBytes = PxMin(mPatchAndContactCountersReadback->patchesBytes, patchStreamPool->mDataStreamSize);
-		mPatchAndContactCountersReadback->forceAndIndiceBytes = PxMin(mPatchAndContactCountersReadback->forceAndIndiceBytes, forceStreamPool->mDataStreamSize);
+		patchAndContactCountersReadback.contactsBytes = PxMin(patchAndContactCountersReadback.contactsBytes, contactStreamPool->mDataStreamSize);
+		patchAndContactCountersReadback.patchesBytes = PxMin(patchAndContactCountersReadback.patchesBytes, patchStreamPool->mDataStreamSize);
+		patchAndContactCountersReadback.forceAndIndiceBytes = PxMin(patchAndContactCountersReadback.forceAndIndiceBytes, forceStreamPool->mDataStreamSize);
 
-		contactStreamPool->mSharedDataIndexGPU = mPatchAndContactCountersReadback->contactsBytes;
-		patchStreamPool->mSharedDataIndexGPU = mPatchAndContactCountersReadback->patchesBytes;
-		forceStreamPool->mSharedDataIndexGPU = mPatchAndContactCountersReadback->forceAndIndiceBytes;
+		contactStreamPool->mSharedDataIndexGPU = patchAndContactCountersReadback.contactsBytes;
+		patchStreamPool->mSharedDataIndexGPU = patchAndContactCountersReadback.patchesBytes;
+		forceStreamPool->mSharedDataIndexGPU = patchAndContactCountersReadback.forceAndIndiceBytes;
 
 		mGpuContext->getFrictionPatchStreamPool().mSharedDataIndexGPU = patchStreamPool->mSharedDataIndexGPU * sizeof(PxFrictionPatch) / sizeof(PxContactPatch);
 	}
@@ -1838,8 +2176,8 @@ void PxgGpuNarrowphaseCore::fetchNarrowPhaseResults(
 	// finally we copy the GPU contact stream data to the CPU.
 	if (!mGpuContext->getEnableDirectGPUAPI() || mGpuContext->getSimulationController()->getEnableOVDCollisionReadback())
 	{
-		PxU32 numNewContactBytes = mPatchAndContactCountersReadback->contactsBytes;
-		PxU32 numNewPatchBytes = mPatchAndContactCountersReadback->patchesBytes;
+		PxU32 numNewContactBytes = patchAndContactCountersReadback.contactsBytes;
+		PxU32 numNewPatchBytes = patchAndContactCountersReadback.patchesBytes;
 
 		////Copy contact/patch stream. TODO - defer this so that we don't sync on it
 		if (numNewContactBytes)
@@ -1947,7 +2285,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereTriMeshSATGpu(PxgGpuContactManagers& gp
 		PxU32 numWarpsPerBlock = MIDPHASE_WARPS_PER_BLOCK;
 		PxU32 numBlocks = (numTests + numWarpsPerBlock - 1) / numWarpsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_MIDPHASE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_MIDPHASE);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -1989,7 +2327,9 @@ void PxgGpuNarrowphaseCore::testSDKSphereTriMeshSATGpu(PxgGpuContactManagers& gp
 		const PxU32 numThreadsPerBlock = 64;
 		PxU32 numBlocks = (numTests + numThreadsPerBlock - 1) / numThreadsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SPHERE_TRIMESH_CORE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SPHERE_TRIMESH_CORE);
+
+		void* mappedMaxConvexMeshTempMemory = getMappedDevicePtr(mCudaContext, mMaxConvexMeshTempMemoryMapped.data());
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2016,7 +2356,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereTriMeshSATGpu(PxgGpuContactManagers& gp
 
 			PX_CUDA_KERNEL_PARAM(gpuTempContactStack),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactIndex),
-			PX_CUDA_KERNEL_PARAM(mMaxConvexMeshTempMemory),
+			PX_CUDA_KERNEL_PARAM(mappedMaxConvexMeshTempMemory),
 			PX_CUDA_KERNEL_PARAM(gpuStackShift),
 			PX_CUDA_KERNEL_PARAM(numTests)
 		};
@@ -2033,7 +2373,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereTriMeshSATGpu(PxgGpuContactManagers& gp
 #endif
 	}
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_SORT_TRIANGLES);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_SORT_TRIANGLES);
 		PxU32 numWarpsPerBlock = NP_TRIMESH_WARPS_PER_BLOCK;
 		PxU32 numBlocks = (numTests + numWarpsPerBlock - 1) / numWarpsPerBlock;
 
@@ -2063,7 +2403,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereTriMeshSATGpu(PxgGpuContactManagers& gp
 		PxU32 numWarpsPerBlock = NP_TRIMESH_WARPS_PER_BLOCK;
 		PxU32 numBlocks = (numTests*coreGridMultiplier + numWarpsPerBlock - 1) / numWarpsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_POST_PROCESS);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_POST_PROCESS);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2096,7 +2436,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereTriMeshSATGpu(PxgGpuContactManagers& gp
 		PxU32 numThreadGroupsPerBlock = numWarpsPerBlock;
 		PxU32 numBlocks = (numTests + numThreadGroupsPerBlock - 1) / numThreadGroupsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_CORRELATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_CORRELATE);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2137,7 +2477,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereTriMeshSATGpu(PxgGpuContactManagers& gp
 		PxsMaterialData* materials = reinterpret_cast<PxsMaterialData*>(mGpuMaterialManager.mGpuMaterialBuffer.getDevicePtr());
 		PxgDevicePointer<PxgPatchAndContactCounters> patchAndContactCountersD = mPatchAndContactCountersOnDevice.getTypedDevicePtr();
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_FINISHCONTACTS);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_FINISHCONTACTS);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2250,7 +2590,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereHeightfieldGpu(PxgGpuContactManagers& g
 		PxU32 numWarpsPerBlock = MIDPHASE_WARPS_PER_BLOCK;
 		PxU32 numBlocks = (numTests + numWarpsPerBlock - 1) / numWarpsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_HEIGHTFIELD_MIDPHASE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_HEIGHTFIELD_MIDPHASE);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2292,7 +2632,9 @@ void PxgGpuNarrowphaseCore::testSDKSphereHeightfieldGpu(PxgGpuContactManagers& g
 		const PxU32 numThreadsPerBlock = 64;
 		PxU32 numBlocks = (numTests + numThreadsPerBlock - 1) / numThreadsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SPHERE_HEIGHTFIELD_CORE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SPHERE_HEIGHTFIELD_CORE);
+
+		void* mappedMaxConvexMeshTempMemory = getMappedDevicePtr(mCudaContext, mMaxConvexMeshTempMemoryMapped.data());
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2316,7 +2658,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereHeightfieldGpu(PxgGpuContactManagers& g
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactStack),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactIndex),
-			PX_CUDA_KERNEL_PARAM(mMaxConvexMeshTempMemory),
+			PX_CUDA_KERNEL_PARAM(mappedMaxConvexMeshTempMemory),
 			PX_CUDA_KERNEL_PARAM(gpuStackShift),
 			PX_CUDA_KERNEL_PARAM(numTests)
 		};
@@ -2334,7 +2676,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereHeightfieldGpu(PxgGpuContactManagers& g
 	}
 
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_SORT_TRIANGLES);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_SORT_TRIANGLES);
 		PxU32 numWarpsPerBlock = NP_TRIMESH_WARPS_PER_BLOCK;
 		PxU32 numBlocks = (numTests + numWarpsPerBlock - 1) / numWarpsPerBlock;
 
@@ -2364,7 +2706,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereHeightfieldGpu(PxgGpuContactManagers& g
 		PxU32 numWarpsPerBlock = NP_TRIMESH_WARPS_PER_BLOCK;
 		PxU32 numBlocks = (numTests*coreGridMultiplier + numWarpsPerBlock - 1) / numWarpsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_HEIGHTFIELD_POST_PROCESS);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_HEIGHTFIELD_POST_PROCESS);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2396,7 +2738,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereHeightfieldGpu(PxgGpuContactManagers& g
 		PxU32 numThreadGroupsPerBlock = numWarpsPerBlock;
 		PxU32 numBlocks = (numTests + numThreadGroupsPerBlock - 1) / numThreadGroupsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_CORRELATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_CORRELATE);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2437,7 +2779,7 @@ void PxgGpuNarrowphaseCore::testSDKSphereHeightfieldGpu(PxgGpuContactManagers& g
 		PxsMaterialData* materials = reinterpret_cast<PxsMaterialData*>(mGpuMaterialManager.mGpuMaterialBuffer.getDevicePtr());
 		PxgDevicePointer<PxgPatchAndContactCounters> patchAndContactCountersD = mPatchAndContactCountersOnDevice.getTypedDevicePtr();
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_FINISHCONTACTS);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_FINISHCONTACTS);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2551,7 +2893,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexTriMeshSATGpu(PxgGpuContactManagers& gp
 		PxU32 numWarpsPerBlock = MIDPHASE_WARPS_PER_BLOCK;
 		PxU32 numBlocks = (numTests + numWarpsPerBlock - 1) / numWarpsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_MIDPHASE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_MIDPHASE);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2596,7 +2938,9 @@ void PxgGpuNarrowphaseCore::testSDKConvexTriMeshSATGpu(PxgGpuContactManagers& gp
 		PxU32 numWarpsPerBlock = NP_TRIMESH_WARPS_PER_BLOCK;
 		PxU32 numBlocks = PxMax(2048u, (numTests*coreGridMultiplier + numWarpsPerBlock - 1) / numWarpsPerBlock);
 			
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_CORE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_CORE);
+
+		void* mappedMaxConvexMeshTempMemory = getMappedDevicePtr(mCudaContext, mMaxConvexMeshTempMemoryMapped.data());
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2622,7 +2966,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexTriMeshSATGpu(PxgGpuContactManagers& gp
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactStack),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactIndex),
-			PX_CUDA_KERNEL_PARAM(mMaxConvexMeshTempMemory),
+			PX_CUDA_KERNEL_PARAM(mappedMaxConvexMeshTempMemory),
 			PX_CUDA_KERNEL_PARAM(gpuStackShift),
 			PX_CUDA_KERNEL_PARAM(numTests)
 		};
@@ -2640,7 +2984,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexTriMeshSATGpu(PxgGpuContactManagers& gp
 	}
 
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_SORT_TRIANGLES);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_SORT_TRIANGLES);
 		PxU32 numWarpsPerBlock = NP_TRIMESH_WARPS_PER_BLOCK;
 		PxU32 numBlocks = (numTests + numWarpsPerBlock - 1) / numWarpsPerBlock;
 
@@ -2670,7 +3014,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexTriMeshSATGpu(PxgGpuContactManagers& gp
 		PxU32 numWarpsPerBlock = NP_TRIMESH_WARPS_PER_BLOCK;
 		PxU32 numBlocks = PxMax(8192u, (numTests*coreGridMultiplier + numWarpsPerBlock - 1) / numWarpsPerBlock);
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_POST_PROCESS);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_POST_PROCESS);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2703,7 +3047,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexTriMeshSATGpu(PxgGpuContactManagers& gp
 		PxU32 numThreadGroupsPerBlock = numWarpsPerBlock;
 		PxU32 numBlocks = (numTests + numThreadGroupsPerBlock - 1) / numThreadGroupsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_CORRELATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_CORRELATE);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2744,7 +3088,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexTriMeshSATGpu(PxgGpuContactManagers& gp
 		PxsMaterialData* materials = reinterpret_cast<PxsMaterialData*>( mGpuMaterialManager.mGpuMaterialBuffer.getDevicePtr());
 		PxgDevicePointer<PxgPatchAndContactCounters> patchAndContactCountersD = mPatchAndContactCountersOnDevice.getTypedDevicePtr();
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_FINISHCONTACTS);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_FINISHCONTACTS);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2856,7 +3200,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexHeightfieldGpu(PxgGpuContactManagers& g
 		PxU32 numWarpsPerBlock = MIDPHASE_WARPS_PER_BLOCK;
 		PxU32 numBlocks = (numTests + numWarpsPerBlock - 1) / numWarpsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_HEIGHTFIELD_MIDPHASE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_HEIGHTFIELD_MIDPHASE);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2900,7 +3244,9 @@ void PxgGpuNarrowphaseCore::testSDKConvexHeightfieldGpu(PxgGpuContactManagers& g
 		PxU32 numWarpsPerBlock = NP_TRIMESH_WARPS_PER_BLOCK;
 		PxU32 numBlocks = (numTests*coreGridMultiplier + numWarpsPerBlock - 1) / numWarpsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_HEIGHTFIELD_CORE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_HEIGHTFIELD_CORE);
+
+		void* mappedMaxConvexMeshTempMemory = getMappedDevicePtr(mCudaContext, mMaxConvexMeshTempMemoryMapped.data());
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -2924,7 +3270,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexHeightfieldGpu(PxgGpuContactManagers& g
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactStack),
 			PX_CUDA_KERNEL_PARAM(gpuTempContactIndex),
-			PX_CUDA_KERNEL_PARAM(mMaxConvexMeshTempMemory),
+			PX_CUDA_KERNEL_PARAM(mappedMaxConvexMeshTempMemory),
 			PX_CUDA_KERNEL_PARAM(gpuStackShift),
 			PX_CUDA_KERNEL_PARAM(numTests)
 		};
@@ -2942,7 +3288,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexHeightfieldGpu(PxgGpuContactManagers& g
 	}
 
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_SORT_TRIANGLES);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_SORT_TRIANGLES);
 		PxU32 numWarpsPerBlock = NP_TRIMESH_WARPS_PER_BLOCK;
 		PxU32 numBlocks = (numTests + numWarpsPerBlock - 1) / numWarpsPerBlock;
 
@@ -2972,7 +3318,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexHeightfieldGpu(PxgGpuContactManagers& g
 		PxU32 numWarpsPerBlock = NP_TRIMESH_WARPS_PER_BLOCK;
 		PxU32 numBlocks = (numTests*coreGridMultiplier + numWarpsPerBlock - 1) / numWarpsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_HEIGHTFIELD_POST_PROCESS);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_HEIGHTFIELD_POST_PROCESS);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -3004,7 +3350,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexHeightfieldGpu(PxgGpuContactManagers& g
 		PxU32 numThreadGroupsPerBlock = numWarpsPerBlock;
 		PxU32 numBlocks = (numTests + numThreadGroupsPerBlock - 1) / numThreadGroupsPerBlock;
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_CORRELATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_CORRELATE);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -3045,7 +3391,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexHeightfieldGpu(PxgGpuContactManagers& g
 		PxsMaterialData* materials = reinterpret_cast<PxsMaterialData*>(mGpuMaterialManager.mGpuMaterialBuffer.getDevicePtr());
 		PxgDevicePointer<PxgPatchAndContactCounters> patchAndContactCountersD = mPatchAndContactCountersOnDevice.getTypedDevicePtr();
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_FINISHCONTACTS);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CONVEX_TRIMESH_FINISHCONTACTS);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -3148,7 +3494,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleSystemGpu(PxgGpuContactManagers& gpuM
 	{
 		CUresult result;
 		{
-			CUfunction firstPassFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PS_PRIMITIVES_BOUND_FIRST);
+			CUfunction firstPassFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_PRIMITIVES_BOUND_FIRST);
 			PxCudaKernelParam kernelParams_stage[] =
 			{
 				PX_CUDA_KERNEL_PARAM(numTests),
@@ -3187,7 +3533,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleSystemGpu(PxgGpuContactManagers& gpuM
 		}
 
 		{
-			CUfunction secondPassFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PS_PRIMITIVES_BOUND_SECOND);
+			CUfunction secondPassFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_PRIMITIVES_BOUND_SECOND);
 			PxCudaKernelParam kernelParams_stage[] =
 			{
 				PX_CUDA_KERNEL_PARAM(numTests),
@@ -3222,7 +3568,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleSystemGpu(PxgGpuContactManagers& gpuM
 		{
 			CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 
-			CUfunction psCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PS_PRIMITIVES_COLLISION);
+			CUfunction psCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_PRIMITIVES_COLLISION);
 
 			PxgParticleContactWriter writer;
 			initParticleContactWriter(writer, particleCore);
@@ -3275,7 +3621,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleSystemGpu(PxgGpuContactManagers& gpuM
 		{
 			CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 		
-			CUfunction psCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PS_PRIMITIVES_DIFFUSE_COLLISION);
+			CUfunction psCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_PRIMITIVES_DIFFUSE_COLLISION);
 
 			PxCudaKernelParam kernelParams_stage[] =
 			{
@@ -3338,7 +3684,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 	//contact gen is done at soft body stream
 	CUstream softbodyStream = softBodyCore->getStream();
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = softBodyCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = softBodyCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	const PxU32 stackSizeBytes = mCollisionStackSizeBytes;
@@ -3353,9 +3699,6 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 	PxgParticleSystem* particleSystemsd = reinterpret_cast<PxgParticleSystem*>(particleCore->getParticleSystemBuffer().getDevicePtr());
 
 	CUresult result;
-		
-	CUdeviceptr pairs = simulationCore->getSoftBodyParticleFilters();
-	const PxU32 nbPairs = simulationCore->getNbSoftBodyParticleFilters();
 
 	//initialize gpu variables
 	mCudaContext->memsetD32Async(gpuMidphasePairsNumOnDevice, 0, 1, softbodyStream);
@@ -3364,7 +3707,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 
 	{
 		PX_PROFILE_ZONE("PxgGpuNarrowphaseCore.testSDKParticleSoftbody.midphase", 0);
-		CUfunction sbMidphaseKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_PS_MIDPHASE); //sb_psMidphaseGeneratePairsLaunch
+		CUfunction sbMidphaseKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_PS_MIDPHASE); //sb_psMidphaseGeneratePairsLaunch
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -3418,9 +3761,9 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 		PX_PROFILE_ZONE("PxgGpuNarrowphaseCore.testSDKParticleSoftbody.contactGen", 0);
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), softbodyStream);
 
-		PxgFEMContactWriter writer(softBodyCore, true);
+		PxgFEMContactWriter writer = softBodyCore->createContactWriter(true);
 
-		CUfunction sbCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_PS_CG); //sb_psContactGenLaunch
+		CUfunction sbCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_PS_CG); //sb_psContactGenLaunch
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -3432,8 +3775,6 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 			PX_CUDA_KERNEL_PARAM(gpuShapes),
 			PX_CUDA_KERNEL_PARAM(particleSystemsd),
 			PX_CUDA_KERNEL_PARAM(softBodiesd),
-			PX_CUDA_KERNEL_PARAM(pairs),
-			PX_CUDA_KERNEL_PARAM(nbPairs),
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 			PX_CUDA_KERNEL_PARAM(gpuIntermStack),
 			PX_CUDA_KERNEL_PARAM(gpuMidphasePairsNumOnDevice),
@@ -3548,7 +3889,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleFemCloth(PxgGpuContactManagers& gpuMa
 	
 	CUstream clothStream = clothCore->getStream();
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = clothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = clothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUdeviceptr gpuMidphasePairsNumOnDevice = reinterpret_cast<CUdeviceptr>(stackAlloc.allocateAligned(sizeof(PxU32), sizeof(PxU32)));
@@ -3574,7 +3915,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleFemCloth(PxgGpuContactManagers& gpuMa
 
 		
 	{
-		CUfunction clothMidphaseKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_PS_MIDPHASE);
+		CUfunction clothMidphaseKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_PS_MIDPHASE);
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -3623,9 +3964,9 @@ void PxgGpuNarrowphaseCore::testSDKParticleFemCloth(PxgGpuContactManagers& gpuMa
 	{
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), clothStream);
 
-		PxgFEMContactWriter writer(clothCore, true);
+		PxgFEMContactWriter writer = clothCore->createContactWriter(true);
 
-		CUfunction clothCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_PS_CG);
+		CUfunction clothCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_PS_CG);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -3714,7 +4055,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexParticle(PxgGpuContactManagers& gpuMana
 	CUresult result;
 	{
 
-		CUfunction firstPassFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PS_PRIMITIVES_BOUND_FIRST);
+		CUfunction firstPassFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_PRIMITIVES_BOUND_FIRST);
 		PxCudaKernelParam kernelParams_stage[] =
 		{
 			PX_CUDA_KERNEL_PARAM(numTests),
@@ -3739,7 +4080,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexParticle(PxgGpuContactManagers& gpuMana
 	}
 
 	{
-		CUfunction secondPassFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PS_PRIMITIVES_BOUND_SECOND);
+		CUfunction secondPassFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_PRIMITIVES_BOUND_SECOND);
 		PxCudaKernelParam kernelParams_stage[] =
 		{
 			PX_CUDA_KERNEL_PARAM(numTests),
@@ -3769,10 +4110,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexParticle(PxgGpuContactManagers& gpuMana
 		CUdeviceptr contactRemapSortedByRigidd = particleCore->getContactRemapSortedByRigid().getDevicePtr();
 		CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 
-		//CUdeviceptr pairs = simulationCore->getRigidParticleFilters();
-		//const PxU32 nbPairs = simulationCore->getNbRigidParticleFilters();
-
-		CUfunction psCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PS_CONVEX_COLLISION);
+		CUfunction psCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_CONVEX_COLLISION);
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -3819,7 +4157,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexParticle(PxgGpuContactManagers& gpuMana
 
 	{
 		CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
-		CUfunction psCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PS_CONVEX_DIFFUSE_COLLISION);
+		CUfunction psCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_CONVEX_DIFFUSE_COLLISION);
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -3883,7 +4221,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleSdfTriMesh(PxgGpuContactManagers& gpu
 
 	// Particle-Sdf-Trimesh Midphase and contact gen kernel
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PS_SDF_TRIMESH_COLLISION);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_SDF_TRIMESH_COLLISION);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -3947,7 +4285,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleTriMesh(PxgGpuContactManagers& gpuMan
 
 	// Particle-Trimesh Midphase and contact gen kernel
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PS_TRIMESH_COLLISION);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_TRIMESH_COLLISION);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -4044,7 +4382,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleHeightfield(PxgGpuContactManagers& gp
 
 	// Particle-Trimesh Midphase and contact gen kernel
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::PS_HEIGHTFIELD_COLLISION);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_HEIGHTFIELD_COLLISION);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -4095,7 +4433,7 @@ void PxgGpuNarrowphaseCore::softbodyOtherContactApplyCollisionToSimMeshMapping(
 	CUstream softbodyStream = softBodyCore->getStream();
 	CUresult result;
 
-	CUfunction sbContactRemapKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_OTHER_CONTACT_REMAP_TO_SIM);
+	CUfunction sbContactRemapKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_OTHER_CONTACT_REMAP_TO_SIM);
 
 	PxCudaKernelParam kernelParams[] =
 	{
@@ -4134,7 +4472,7 @@ void PxgGpuNarrowphaseCore::softbodyFemContactApplyCollisionToSimMeshMapping(
 	CUresult result;
 
 	CUfunction sbContactRemapKernelFunction =
-		mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_FEM_CONTACT_REMAP_TO_SIM);
+		mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_FEM_CONTACT_REMAP_TO_SIM);
 
 	PxCudaKernelParam kernelParams[] = {
 		PX_CUDA_KERNEL_PARAM(softBodiesd),
@@ -4196,7 +4534,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 	PxgSimulationCore* simulationCore = mNphaseImplContext->getSimulationCore();
 	PxgSoftBodyCore* softBodyCore = mGpuContext->mGpuSoftBodyCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = softBodyCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = softBodyCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream softbodyStream = softBodyCore->getStream();
@@ -4218,7 +4556,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 
 	// soft body midphasekernel
 	{
-		CUfunction sbMidphasekernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_MIDPHASE_PRIMITIVES);
+		CUfunction sbMidphasekernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_MIDPHASE_PRIMITIVES);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -4251,7 +4589,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 
 		PX_ASSERT(result == CUDA_SUCCESS);
 
-#if GPU_NP_VISUALIZATION
+#if GPU_NP_LEGACY_MANIFOLD_VIZ
 
 		PxU32 numPairs;
 		mCudaContext->memcpyDtoH(&numPairs, gpuMidphasePairsNumOnDevice, sizeof(PxU32));
@@ -4265,10 +4603,10 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 			int bob = 0;
 			PX_UNUSED(bob);
 		}
-#endif //GPU_NP_VISUALIZATION
+#endif //GPU_NP_LEGACY_MANIFOLD_VIZ
 
 #endif //GPU_NP_DEBUG
-	}	
+	}
 
 	{
 		CUdeviceptr totalNumCountsd = softBodyCore->getRigidContactCount().getDevicePtr();
@@ -4282,9 +4620,9 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 		CUdeviceptr pairs = simulationCore->getRigidSoftBodyFilters();
 		const PxU32 nbPairs = simulationCore->getNbRigidSoftBodyFilters();
 
-		PxgFEMContactWriter writer(softBodyCore);
+		PxgFEMContactWriter writer = softBodyCore->createContactWriter();
 
-		CUfunction sbCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_PRIMITIVES_CG);
+		CUfunction sbCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_PRIMITIVES_CG);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -4321,7 +4659,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 
 		PX_ASSERT(result == CUDA_SUCCESS);
 
-#if GPU_NP_VISUALIZATION
+#if GPU_NP_LEGACY_MANIFOLD_VIZ
 		PxU32 numContacts;
 		mCudaContext->memcpyDtoH(&numContacts, totalNumCountsd, sizeof(PxU32));
 
@@ -4367,7 +4705,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 
 		int bob = 0;
 		PX_UNUSED(bob);
-#endif //GPU_NP_VISUALIZATION
+#endif //GPU_NP_LEGACY_MANIFOLD_VIZ
 
 #endif //GPU_NP_DEBUG
 	}
@@ -4432,13 +4770,13 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodies(PxgGpuContactManagers& gpuManagers
 
 	mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), softbodyStream);
 
-	PxgSoftBodyContactWriter writer(softBodyCore);
+	PxgSoftBodyContactWriter writer = softBodyCore->createSoftBodyContactWriter();
 
 	CUresult result;
 
 	// soft body first midphase kernel(each output is the index to a bound in one tree and tetrahedron index in other tree)
 	{
-		CUfunction sbsbMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SB_MIDPHASE);
+		CUfunction sbsbMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_SB_MIDPHASE);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -4467,7 +4805,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodies(PxgGpuContactManagers& gpuManagers
 
 		PX_ASSERT(result == CUDA_SUCCESS);
 
-#if GPU_NP_VISUALIZATION
+#if GPU_NP_LEGACY_MANIFOLD_VIZ
 		PxU32 numContacts;
 		mCudaContext->memcpyDtoH(&numContacts, totalNumCountsd, sizeof(PxU32));
 
@@ -4509,7 +4847,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodies(PxgGpuContactManagers& gpuManagers
 			}
 		}
 
-#endif //GPU_NP_VISUALIZATION
+#endif //GPU_NP_LEGACY_MANIFOLD_VIZ
 
 #endif //GPU_NP_DEBUG
 	}
@@ -4552,7 +4890,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 	//OK. If we sync the soft bodies and particles here, we don't get crashes!
 	synchronizeStreams(mCudaContext, femClothCore->getStream(), softbodyStream);
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = softBodyCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = softBodyCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUdeviceptr gpuMidphasePairsNumOnDevice = reinterpret_cast<CUdeviceptr>(stackAlloc.allocateAligned(sizeof(PxU32), sizeof(PxU32)));
@@ -4582,7 +4920,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 
 	CUresult result;
 
-	PxgSoftBodyContactWriter writer(softBodyCore, femClothCore);
+	PxgSoftBodyContactWriter writer = softBodyCore->createClothVsSoftBodyContactWriter(femClothCore->mMaxContacts);
 
 	//!
 	//! softbody tet - cloth triangle collision
@@ -4592,7 +4930,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 	{
 		// soft body midphase kernel(each output is the index to a bound in one tree and tetrahedron index in other tree)
 		{
-			CUfunction sbmeshMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_CLOTH_MIDPHASE);
+			CUfunction sbmeshMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_CLOTH_MIDPHASE);
 
 			PxCudaKernelParam kernelParams[] =
 			{
@@ -4678,7 +5016,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 		}
 
 		{
-			CUfunction sbClothContactGenkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_CLOTH_CG);
+			CUfunction sbClothContactGenkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_CLOTH_CG);
 
 			PxCudaKernelParam kernelParams[] =
 			{
@@ -4737,7 +5075,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 
 		//generate vert contacts
 		{
-			CUfunction sbClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_CLOTH_VERT_MIDPHASE);
+			CUfunction sbClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_CLOTH_VERT_MIDPHASE);
 
 			PxCudaKernelParam kernelParams[] =
 			{
@@ -4780,7 +5118,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 		}
 
 		{
-			CUfunction sbClothVertContactGenKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_CLOTH_VERT_CG);
+			CUfunction sbClothVertContactGenKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_CLOTH_VERT_CG);
 
 			PxCudaKernelParam kernelParams[] =
 			{
@@ -4867,7 +5205,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodySdfTrimesh(PxgGpuContactManagers& gpu
 	//initialize gpu variables
 	CUdeviceptr softBodiesd = simulationCore->getSoftBodyBuffer().getDevicePtr();
 
-	PxgFEMContactWriter writer(softBodyCore);
+	PxgFEMContactWriter writer = softBodyCore->createContactWriter();
 
 	CUresult result;
 
@@ -4883,7 +5221,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodySdfTrimesh(PxgGpuContactManagers& gpu
 
 	// soft body first midphase kernel(each output is the index to a bound in one tree and tetrahedron index in other tree)
 	{
-		CUfunction sbmeshMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_SDF_MESH_MIDPHASE);
+		CUfunction sbmeshMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_SDF_MESH_MIDPHASE);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -5011,7 +5349,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyTrimesh(PxgGpuContactManagers& gpuMan
 	PxgSimulationCore* simulationCore = mNphaseImplContext->getSimulationCore();
 	PxgSoftBodyCore* softBodyCore = mGpuContext->mGpuSoftBodyCore; 
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = softBodyCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = softBodyCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream softbodyStream = softBodyCore->getStream();
@@ -5032,7 +5370,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyTrimesh(PxgGpuContactManagers& gpuMan
 
 	// soft body first midphase kernel(each output is the index to a bound in one tree and tetrahedron index in other tree)
 	{
-		CUfunction sbmeshMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_MESH_MIDPHASE);
+		CUfunction sbmeshMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_MESH_MIDPHASE);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -5123,9 +5461,9 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyTrimesh(PxgGpuContactManagers& gpuMan
 		CUdeviceptr pairs = simulationCore->getRigidSoftBodyFilters();
 		const PxU32 nbPairs = simulationCore->getNbRigidSoftBodyFilters();
 
-		PxgFEMContactWriter writer(softBodyCore);
+		PxgFEMContactWriter writer = softBodyCore->createContactWriter();
 
-		CUfunction sbmeshContactGenkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_MESH_CG);
+		CUfunction sbmeshContactGenkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_MESH_CG);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -5317,7 +5655,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyHeightfield(PxgGpuContactManagers& gp
 
 	PxgSoftBodyCore* softbodyCore = mGpuContext->mGpuSoftBodyCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = softbodyCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = softbodyCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream softbodyStream = softbodyCore->getStream();
@@ -5338,7 +5676,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyHeightfield(PxgGpuContactManagers& gp
 
 	// soft body first midphase kernel(each output is the index to a bound in one tree and tetrahedron index in other tree)
 	{
-		CUfunction sbHFMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_HF_MIDPHASE);
+		CUfunction sbHFMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_HF_MIDPHASE);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -5435,9 +5773,9 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyHeightfield(PxgGpuContactManagers& gp
 	{
 		CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 		
-		PxgFEMContactWriter writer(softBodyCore);
+		PxgFEMContactWriter writer = softBodyCore->createContactWriter();
 
-		CUfunction sbHFContactGenkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::SB_HF_CG);
+		CUfunction sbHFContactGenkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_HF_CG);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -5617,7 +5955,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothSphere(PxgGpuContactManagers& gpuMana
 
 	PxgFEMClothCore* femClothCore = mGpuContext->mGpuFEMClothCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = femClothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = femClothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream femClothStream = femClothCore->getStream();
@@ -5636,7 +5974,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothSphere(PxgGpuContactManagers& gpuMana
 	CUresult result;
 	if (1)	// fem cloth first midphase kernel(each output is the index to a bound in one tree and tetrahedron index in other tree)
 	{
-		CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_PRIMITIVES);
+		CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_PRIMITIVES);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -5731,11 +6069,11 @@ void PxgGpuNarrowphaseCore::testSDKFemClothSphere(PxgGpuContactManagers& gpuMana
 	CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 	const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-	PxgFEMContactWriter writer(femClothCore);
+	PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 	if (1)	//contact gen
 	{
-		CUfunction fcTriangleCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_SPHERE_CG);
+		CUfunction fcTriangleCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_SPHERE_CG);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -5773,7 +6111,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothSphere(PxgGpuContactManagers& gpuMana
 
 	if (0) // cloth vertex vs. sphere contact gen.
 	{
-		CUfunction fcVertCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_VERT_SPHERE_CG);
+		CUfunction fcVertCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_VERT_SPHERE_CG);
 
 		PxCudaKernelParam vertKernelParams[] =
 		{
@@ -5848,9 +6186,9 @@ void PxgGpuNarrowphaseCore::testSDKFemClothPlane(PxgGpuContactManagers& gpuManag
 		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-		PxgFEMContactWriter writer(femClothCore);
+		PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
-		CUfunction fcVertCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_PLANE_VERTEX_CG);
+		CUfunction fcVertCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_PLANE_VERTEX_CG);
 		PxCudaKernelParam vertKernelParams[] =
 		{
 			PX_CUDA_KERNEL_PARAM(numTests),
@@ -5920,7 +6258,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothBox(PxgGpuContactManagers& gpuManager
 
 	PxgFEMClothCore* femClothCore = mGpuContext->mGpuFEMClothCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = femClothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = femClothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream femClothStream = femClothCore->getStream();
@@ -5940,7 +6278,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothBox(PxgGpuContactManagers& gpuManager
 
 	// fem cloth first midphase kernel(each output is the index to a bound in one tree and tetrahedron index in other tree)
 	{
-		CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_PRIMITIVES);
+		CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_PRIMITIVES);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -5988,9 +6326,9 @@ void PxgGpuNarrowphaseCore::testSDKFemClothBox(PxgGpuContactManagers& gpuManager
 
 		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
-		CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_BOX_TRIANGLE_CG);
+		CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_BOX_TRIANGLE_CG);
 
-		PxgFEMContactWriter writer(femClothCore);
+		PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -6085,9 +6423,9 @@ void PxgGpuNarrowphaseCore::testSDKFemClothBox(PxgGpuContactManagers& gpuManager
 		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-		PxgFEMContactWriter writer(femClothCore);
+		PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
-		CUfunction fcBoxVertCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_BOX_VERTEX_COLLISION);
+		CUfunction fcBoxVertCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_BOX_VERTEX_COLLISION);
 		PxCudaKernelParam vertKernelParams[] =
 		{
 			PX_CUDA_KERNEL_PARAM(numTests),
@@ -6157,7 +6495,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothConvexes(PxgGpuContactManagers& gpuMa
 
 	PxgFEMClothCore* femClothCore = mGpuContext->mGpuFEMClothCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = femClothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = femClothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream femClothStream = femClothCore->getStream();
@@ -6177,7 +6515,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothConvexes(PxgGpuContactManagers& gpuMa
 #if 1 // cloth triangle vs. convex rigid
 
 	{
-		CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_PRIMITIVES);
+		CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_PRIMITIVES);
 		PxCudaKernelParam kernelParams[] =
 		{
 			PX_CUDA_KERNEL_PARAM(numTests),
@@ -6257,9 +6595,9 @@ void PxgGpuNarrowphaseCore::testSDKFemClothConvexes(PxgGpuContactManagers& gpuMa
 		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-		PxgFEMContactWriter writer(femClothCore);
+		PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
-		CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_CONVEX_CG);
+		CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_CONVEX_CG);
 		PxCudaKernelParam kernelParams[] =
 		{
 			PX_CUDA_KERNEL_PARAM(toleranceLength),
@@ -6314,7 +6652,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothConvexes(PxgGpuContactManagers& gpuMa
 	{
 		mCudaContext->memsetD32Async(gpuMidphasePairsNumOnDevice, 0, 1, femClothStream);
 
-		CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_VERTEX_PRIMS);
+		CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_VERTEX_PRIMS);
 		PxCudaKernelParam kernelParams[] =
 		{
 			PX_CUDA_KERNEL_PARAM(numTests),
@@ -6409,9 +6747,9 @@ void PxgGpuNarrowphaseCore::testSDKFemClothConvexes(PxgGpuContactManagers& gpuMa
 		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-		PxgFEMContactWriter writer(femClothCore);
+		PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
-		CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_CONVEX_VERTEX_COLLISION);
+		CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_CONVEX_VERTEX_COLLISION);
 		PxCudaKernelParam kernelParams[] =
 		{
 			PX_CUDA_KERNEL_PARAM(toleranceLength),
@@ -6502,9 +6840,9 @@ void PxgGpuNarrowphaseCore::testSDKFemClothSdfTrimesh(PxgGpuContactManagers& gpu
 	CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 	const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-	PxgFEMContactWriter writer(femClothCore);
+	PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
-	CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_SDF_MESH_CG);
+	CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_SDF_MESH_CG);
 	PxCudaKernelParam kernelParams[] =
 	{
 		PX_CUDA_KERNEL_PARAM(numTests),
@@ -6554,7 +6892,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 	
 	PxgFEMClothCore* femClothCore = mGpuContext->mGpuFEMClothCore;
 	
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = femClothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = femClothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream femClothStream = femClothCore->getStream();
@@ -6576,7 +6914,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 	if (1)
 	{
 		{
-			CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_MESH_MIDPHASE);
+			CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_MESH_MIDPHASE);
 			PxCudaKernelParam kernelParams[] =
 			{
 				PX_CUDA_KERNEL_PARAM(toleranceLength),
@@ -6664,9 +7002,9 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 			CUdeviceptr pairs = simulationCore->getRigidClothFilters();
 			const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-			PxgFEMContactWriter writer(femClothCore);
+			PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
-			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_MESH_CG);
+			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_MESH_CG);
 			PxCudaKernelParam kernelParams[] =
 			{
 				PX_CUDA_KERNEL_PARAM(toleranceLength),
@@ -6721,7 +7059,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 
 		//vertex collision
 		{
-			CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_VERTEX_MESH);
+			CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_VERTEX_MESH);
 			PxCudaKernelParam kernelParams[] =
 			{
 				PX_CUDA_KERNEL_PARAM(numTests),
@@ -6806,9 +7144,9 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 
 			CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 			
-			PxgFEMContactWriter writer(femClothCore);
+			PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
-			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_MESH_VERTEX_CG);
+			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_MESH_VERTEX_CG);
 			PxCudaKernelParam kernelParams[] =
 			{
 				PX_CUDA_KERNEL_PARAM(toleranceLength),
@@ -6883,7 +7221,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothHeightfield(PxgGpuContactManagers& gp
 
 	PxgFEMClothCore* femClothCore = mGpuContext->mGpuFEMClothCore;
 
-	PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& stackAlloc = femClothCore->getStackAllocator();
+	PxgCudaPagedLinearAllocator& stackAlloc = femClothCore->getStackAllocator();
 	stackAlloc.mMutex.lock();
 
 	CUstream femClothStream = femClothCore->getStream();
@@ -6906,7 +7244,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothHeightfield(PxgGpuContactManagers& gp
 	{
 		// fem cloth first midphase kernel(each output is the index to a bound in one tree and tetrahedron index in other tree)
 		{
-			CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_HF_MIDPHASE);
+			CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_HF_MIDPHASE);
 			PxCudaKernelParam kernelParams[] =
 			{
 				PX_CUDA_KERNEL_PARAM(numTests),
@@ -7000,9 +7338,9 @@ void PxgGpuNarrowphaseCore::testSDKFemClothHeightfield(PxgGpuContactManagers& gp
 
 			CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 			
-			PxgFEMContactWriter writer(femClothCore);
+			PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
-			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_HF_CG);
+			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_HF_CG);
 			PxCudaKernelParam kernelParams[] =
 			{
 				PX_CUDA_KERNEL_PARAM(toleranceLength),
@@ -7057,7 +7395,7 @@ void PxgGpuNarrowphaseCore::testSDKFemClothHeightfield(PxgGpuContactManagers& gp
 			//initialize gpu variables
 			mCudaContext->memsetD32Async(gpuMidphasePairsNumOnDevice, 0, 1, femClothStream);
 
-			CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_VERTEX_HF);
+			CUfunction femClothMidphaseFirstkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_MIDPHASE_VERTEX_HF);
 			PxCudaKernelParam kernelParams[] =
 			{
 				PX_CUDA_KERNEL_PARAM(numTests),
@@ -7151,9 +7489,9 @@ void PxgGpuNarrowphaseCore::testSDKFemClothHeightfield(PxgGpuContactManagers& gp
 
 			CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 			
-			PxgFEMContactWriter writer(femClothCore);
+			PxgFEMContactWriter writer = femClothCore->createContactWriter();
 
-			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::CLOTH_HF_VERTEX_CG);
+			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_HF_VERTEX_CG);
 			PxCudaKernelParam kernelParams[] =
 			{
 				PX_CUDA_KERNEL_PARAM(toleranceLength),
@@ -7217,7 +7555,7 @@ void PxgGpuNarrowphaseCore::updateFrictionPatches(PxgGpuContactManagers& gpuMana
 
 	CUresult result;
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::UPDATE_FRICTION_PATCHES);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::UPDATE_FRICTION_PATCHES);
 
 		PxCudaKernelParam kernelParams_stage[] =
 		{
@@ -7321,7 +7659,7 @@ void PxgGpuNarrowphaseCore::uploadDataChunksToGpu()
 	mGpuMaterialManager.scheduleCopyHtoD(mCopyMan, mCudaContext, stream, sizeof(PxsMaterialData));
 	mGpuFEMClothMaterialManager.scheduleCopyHtoD(mCopyMan, mCudaContext, stream, sizeof(PxsDeformableSurfaceMaterialData));
 	mGpuFEMMaterialManager.scheduleCopyHtoD(mCopyMan, mCudaContext, stream, sizeof(PxsDeformableVolumeMaterialData));
-	mCopyMan.dispatchCopy(stream, mCudaContextManager, mGpuKernelWranglerManager->getKernelWrangler());
+	mCopyMan.dispatchCopy(stream, mCudaContextManager, mGpuKernelWranglerManager);
 }
 
 void PxgGpuNarrowphaseCore::waitAndResetCopyQueues()
@@ -7340,7 +7678,7 @@ void PxgGpuNarrowphaseCore::uploadDataChunksToGpuBp()
 	{
 		CUstream stream = mGpuContext->mGpuBp->getBpStream();
 		mGpuPBDMaterialManager.scheduleCopyHtoD(mCopyManBp, mCudaContext, stream, sizeof(PxsPBDMaterialData));
-		mCopyManBp.dispatchCopy(stream, mCudaContextManager, mGpuKernelWranglerManager->getKernelWrangler());
+		mCopyManBp.dispatchCopy(stream, mCudaContextManager, mGpuKernelWranglerManager);
 	}
 }
 
@@ -7539,6 +7877,10 @@ void PxgGpuNarrowphaseCore::registerShape(const PxNodeIndex& nodeIndex, const Px
 		const RefcountedRecordsMap::Entry* e = mShapesMap->find((size_t)&shapeCore);
 
 		mGpuShapesManager.registerShapeInstance(nodeIndex, transformCacheID, actor);
+		if(mGpuShapesManager.mAllocFailed)
+		{
+			mCudaContext->setAbortMode(true);
+		}
 
 		if (!e)
 		{
@@ -7557,6 +7899,10 @@ void PxgGpuNarrowphaseCore::registerShape(const PxNodeIndex& nodeIndex, const Px
 			mCudaContextManager->acquireContext();
 			rec.idx = mGpuShapesManager.registerShape(newShape);
 			mCudaContextManager->releaseContext();
+			if(mGpuShapesManager.mAllocFailed)
+			{
+				mCudaContext->setAbortMode(true);
+			}
 
 			mShapesMap->insert((size_t)&shapeCore, rec);
 
@@ -7693,6 +8039,10 @@ void PxgGpuNarrowphaseCore::unregisterShape(const PxsShapeCore& shapeCore, const
 void PxgGpuNarrowphaseCore::registerAggregate(const PxU32 transformCacheID)
 {
 	mGpuShapesManager.registerShapeInstance(PxNodeIndex(PX_INVALID_NODE), transformCacheID, NULL, true);
+	if(mGpuShapesManager.mAllocFailed)
+	{
+		mCudaContext->setAbortMode(true);
+	}
 }
 
 template <typename MaterialCore, typename MaterialData>
@@ -7702,7 +8052,7 @@ PxU32 PxgGpuNarrowphaseCore::registerMaterialInternal(const MaterialCore& materi
 	const RefcountedRecordsMap::Entry* me = materialsMap->find(sdkMaterialIndex);
 
 	const MaterialData& data = materialCore;
-	PxU32 shapeId = 0xffffffff;
+	PxU32 materialId = PX_INVALID_U32;
 	if (!me)
 	{
 		RefcountedRecord rec;
@@ -7711,17 +8061,24 @@ PxU32 PxgGpuNarrowphaseCore::registerMaterialInternal(const MaterialCore& materi
 		//this might involve reallocating the materials array, so we do need the context
 		mCudaContextManager->acquireContext();
 
-		shapeId = materialManager.registerMaterial(reinterpret_cast<const PxU8*>(&data), sizeof(MaterialData));
-		rec.idx = shapeId;
-		
+		materialId = materialManager.registerMaterial(reinterpret_cast<const PxU8*>(&data), sizeof(MaterialData));
+
 		mCudaContextManager->releaseContext();
 
+		if(materialId == PX_INVALID_U32)
+		{
+			mCudaContextManager->getCudaContext()->setAbortMode(true);
+		}
+
+		//write invalid index to map in case of allocation failure
+		rec.idx = materialId;
 		materialsMap->insert(sdkMaterialIndex, rec);
+		
 	}
 	else
 	{
 		RefcountedRecord& rec = (*materialsMap)[sdkMaterialIndex];
-		shapeId = rec.idx;
+		materialId = rec.idx;
 		//we support setting materials to shapes before they are added to the scene. Should be done on the same frame.
 		if (rec.refCnt == 0)
 		{
@@ -7731,14 +8088,14 @@ PxU32 PxgGpuNarrowphaseCore::registerMaterialInternal(const MaterialCore& materi
 		++rec.refCnt;
 	}
 
-	return shapeId;
+	return materialId;
 }
 
 template <typename MaterialCore, typename MaterialData>
 void PxgGpuNarrowphaseCore::updateMaterialInternal(const MaterialCore& materialCore, RefcountedRecordsMap* materialsMap, PxgMaterialManager& materialManager)
 {
 	const PxU16 sdkMaterialIndex = materialCore.mMaterialIndex;
-	PX_ASSERT(materialsMap->find(sdkMaterialIndex));
+	PX_ASSERT(materialsMap->find(sdkMaterialIndex) || materialManager.mAllocFailed);
 
 	RefcountedRecord& rec = (*materialsMap)[sdkMaterialIndex];
 	PX_ASSERT(rec.refCnt);
@@ -7752,7 +8109,7 @@ template <typename MaterialCore>
 void PxgGpuNarrowphaseCore::unregisterMaterialInternal(const MaterialCore& materialCore, RefcountedRecordsMap* materialsMap, PxgMaterialManager& materialManager)
 {
 	const PxU16 sdkMaterialIndex = materialCore.mMaterialIndex;
-	PX_ASSERT(materialsMap->find(sdkMaterialIndex));
+	PX_ASSERT(materialsMap->find(sdkMaterialIndex) || materialManager.mAllocFailed);
 
 	RefcountedRecord& rec = (*materialsMap)[sdkMaterialIndex];
 	PX_ASSERT(rec.refCnt);
@@ -7770,10 +8127,10 @@ PxU16 PxgGpuNarrowphaseCore::mapMaterialIndexInternal(PxU16 sdkMaterialIndex, Re
 	PxgMaterialManager& materialManager, PxU32 materialDataByteSize)
 {
 	const RefcountedRecordsMap::Entry* me = materialsMap->find(sdkMaterialIndex);
-
+	PxU16 gpuIndex = PX_INVALID_U16;
 	if (me)
 	{
-		return PxTo16(me->second.idx);
+		gpuIndex = (me->second.idx == PX_INVALID_U32) ? PX_INVALID_U16 : PxTo16(me->second.idx);
 	}
 	else
 	{
@@ -7786,12 +8143,19 @@ PxU16 PxgGpuNarrowphaseCore::mapMaterialIndexInternal(PxU16 sdkMaterialIndex, Re
 
 		PxsMaterialData dummy;
 		rec.idx = materialManager.registerMaterial(reinterpret_cast<const PxU8*>(&dummy), materialDataByteSize);
+		
 		mCudaContextManager->releaseContext();
 
-		materialsMap->insert(sdkMaterialIndex, rec);
+		if(rec.idx == PX_INVALID_U32)
+		{
+			mCudaContextManager->getCudaContext()->setAbortMode(true);
+		}
 
-		return PxTo16(rec.idx);
+		//write invalid index to map in case of allocation failure
+		materialsMap->insert(sdkMaterialIndex, rec);
+		gpuIndex = (rec.idx == PX_INVALID_U32) ? PX_INVALID_U16 : PxTo16(rec.idx);
 	}
+	return gpuIndex;
 }
 
 //we expect no removals before adds, this should be handled at a higher level
@@ -7864,12 +8228,12 @@ void PxgGpuNarrowphaseCore::unregisterParticleMaterial(const PxsPBDMaterialCore&
 
 void PxgGpuNarrowphaseCore::registerContactManagerInternal(PxsContactManager* cm, const Sc::ShapeInteraction* shapeInteraction, PxgContactManagerInput* input, PxsContactManagerOutput& output, PxgNewContactManagers& newContactManagers)
 {
-	PxPinnedArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
-	PxPinnedArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
-	PxPinnedArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
-	PxPinnedArray<const Sc::ShapeInteraction*>& itSI = newContactManagers.mShapeInteractions;
-	PxFloatArrayPinned& itR = newContactManagers.mRestDistances;
-	PxPinnedArray<PxsTorsionalFrictionData>& itTor = newContactManagers.mTorsionalProperties;
+	PinnableArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
+	PinnableArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
+	PinnableArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
+	PinnableArray<const Sc::ShapeInteraction*>& itSI = newContactManagers.mShapeInteractions;
+	PinnableArray<PxReal>& itR = newContactManagers.mRestDistances;
+	PinnableArray<PxsTorsionalFrictionData>& itTor = newContactManagers.mTorsionalProperties;
 	
 	PxcNpWorkUnit& workUnit = cm->getWorkUnit();
 
@@ -7892,7 +8256,7 @@ void PxgGpuNarrowphaseCore::registerContactManagerInternal(PxsContactManager* cm
 		workUnit.mStatusFlags |= PxcNpWorkUnitStatusFlag::eREFRESHED_WITH_TOUCH;
 }
 
-void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* cm, PxInt32ArrayPinned& removedIndices, PxgNewContactManagers& newContactManagers)
+void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* cm, PinnableArray<PxU32>& removedIndices, PxgNewContactManagers& newContactManagers)
 {
 	PxcNpWorkUnit& unit = cm->getWorkUnit();
 	PxU32 index = unit.mNpIndex;
@@ -7909,12 +8273,12 @@ void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* 
 		index &= ~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK;
 		index = PxgContactManagers::computeIndexFromId(index);
 			
-		PxPinnedArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
-		PxPinnedArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
-		PxPinnedArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
-		PxPinnedArray<const Sc::ShapeInteraction*>& itSI = newContactManagers.mShapeInteractions;
-		PxFloatArrayPinned& itR = newContactManagers.mRestDistances;
-		PxPinnedArray<PxsTorsionalFrictionData>& itTor = newContactManagers.mTorsionalProperties;
+		PinnableArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
+		PinnableArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
+		PinnableArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
+		PinnableArray<const Sc::ShapeInteraction*>& itSI = newContactManagers.mShapeInteractions;
+		PinnableArray<PxReal>& itR = newContactManagers.mRestDistances;
+		PinnableArray<PxsTorsionalFrictionData>& itTor = newContactManagers.mTorsionalProperties;
 	
 		itInputs.replaceWithLast(index);
 		itOutputs.replaceWithLast(index);
@@ -7933,14 +8297,14 @@ void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* 
 			if(unit_.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_TOUCH)
 				processPartitionEdges(mIslandSim->mGpuData, unit_);
 		}
-	
-		cm->getWorkUnit().mNpIndex = 0xFFffFFff;
 	}
+
+	unit.mNpIndex = 0xFFffFFff;
 }
 
 
 void PxgGpuNarrowphaseCore::refreshContactManagerInternal(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs, const Sc::ShapeInteraction** shapeInteractions, PxgContactManagerInput& input, PxgNewContactManagers& newContactManagers, 
-	PxInt32ArrayPinned& removedIndices)
+	PinnableArray<PxU32>& removedIndices)
 {
 	PxcNpWorkUnit& unit = cm->getWorkUnit();
 	PxU32 index = unit.mNpIndex;
@@ -7963,12 +8327,12 @@ void PxgGpuNarrowphaseCore::refreshContactManagerInternal(PxsContactManager* cm,
 		index &= ~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK;
 		index = PxgContactManagers::computeIndexFromId(index);
 			
-		PxPinnedArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
-		PxPinnedArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
-		PxPinnedArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
-		PxPinnedArray<const Sc::ShapeInteraction*>& itSI = newContactManagers.mShapeInteractions;
-		PxFloatArrayPinned& itR = newContactManagers.mRestDistances;
-		PxPinnedArray<PxsTorsionalFrictionData>& itTor = newContactManagers.mTorsionalProperties;
+		PinnableArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
+		PinnableArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
+		PinnableArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
+		PinnableArray<const Sc::ShapeInteraction*>& itSI = newContactManagers.mShapeInteractions;
+		PinnableArray<PxReal>& itR = newContactManagers.mRestDistances;
+		PinnableArray<PxsTorsionalFrictionData>& itTor = newContactManagers.mTorsionalProperties;
 
 		output = itOutputs[index];
 
@@ -8057,7 +8421,7 @@ void PxgGpuNarrowphaseCore::releaseContext()
 
 void PxgGpuNarrowphaseCore::removeLostPairsGpu(const PxU32 bucketID, const PxU16 stage5KernelID, const bool copyManifold)
 {
-	removeLostPairsGpuInternal<PxgPairManagementData, PxgPersistentContactManifold>(*mPairManagementData[bucketID],
+	removeLostPairsGpuInternal<PxgPairManagementData, PxgPersistentContactManifold>(mPairManagementData[bucketID],
 		mGpuPairManagementData.getDevicePtr(), mContactManagers[bucketID]->mContactManagers, mGpuContactManagers[bucketID]->mContactManagers, *mRemovedIndices[bucketID], mPairManagementBuffers,
 		stage5KernelID, copyManifold);
 }
@@ -8162,12 +8526,12 @@ void PxgGpuNarrowphaseCore::prepareTempContactManagers(PxgGpuContactManagers& gp
 	gpuManagers.mTempRunsumArray.allocate(2 * nbNewManagers * sizeof(PxU32), PX_FL);
 	gpuManagers.mTempRunsumArray2.allocate(2 * nbNewManagers * sizeof(PxU32), PX_FL);
 	
-	PxPinnedArray<PxgContactManagerInput>& itInputs = newManagers.mGpuInputContactManagers;
-	PxPinnedArray<PxsContactManagerOutput>& itOutputs = newManagers.mGpuOutputContactManagers;
-	PxPinnedArray<PxsContactManager*>& itCms = newManagers.mCpuContactManagerMapping;
-	PxPinnedArray<const Sc::ShapeInteraction*>& itSI = newManagers.mShapeInteractions;
-	PxFloatArrayPinned& itR = newManagers.mRestDistances;
-	PxPinnedArray<PxsTorsionalFrictionData>& itTor = newManagers.mTorsionalProperties;
+	PinnableArray<PxgContactManagerInput>& itInputs = newManagers.mGpuInputContactManagers;
+	PinnableArray<PxsContactManagerOutput>& itOutputs = newManagers.mGpuOutputContactManagers;
+	PinnableArray<PxsContactManager*>& itCms = newManagers.mCpuContactManagerMapping;
+	PinnableArray<const Sc::ShapeInteraction*>& itSI = newManagers.mShapeInteractions;
+	PinnableArray<PxReal>& itR = newManagers.mRestDistances;
+	PinnableArray<PxsTorsionalFrictionData>& itTor = newManagers.mTorsionalProperties;
 	
 	mCudaContext->memcpyHtoDAsync(gpuManagers.mContactManagerInputData.getDevicePtr(), itInputs.begin(), sizeof(PxgContactManagerInput) * nbNewManagers, mStream);
 	mCudaContext->memcpyHtoDAsync(gpuManagers.mContactManagerOutputData.getDevicePtr(), itOutputs.begin(), sizeof(PxsContactManagerOutput) * nbNewManagers, mStream);
@@ -8176,7 +8540,7 @@ void PxgGpuNarrowphaseCore::prepareTempContactManagers(PxgGpuContactManagers& gp
 	mCudaContext->memcpyHtoDAsync(gpuManagers.mRestDistances.getDevicePtr(), itR.begin(), sizeof(PxReal) * nbNewManagers, mStream);
 	mCudaContext->memcpyHtoDAsync(gpuManagers.mTorsionalProperties.getDevicePtr(), itTor.begin(), sizeof(PxsTorsionalFrictionData) * nbNewManagers, mStream);
 
-	CUfunction initializeManifolds = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::INITIALIZE_MANIFOLDS);
+	CUfunction initializeManifolds = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::INITIALIZE_MANIFOLDS);
 
 	CUdeviceptr devicePtr = gpuManagers.mPersistentContactManifolds.getDevicePtr();
 	//void* mappedPtr = getMappedDevicePtr(emptyManifold);
@@ -8219,12 +8583,12 @@ void PxgGpuNarrowphaseCore::prepareTempContactManagers(PxgGpuContactManagers& gp
 	gpuManagers.mTempRunsumArray.allocate(2 * nbNewManagers * sizeof(PxU32), PX_FL);
 	gpuManagers.mTempRunsumArray2.allocate(2 * nbNewManagers * sizeof(PxU32), PX_FL);
 
-	PxPinnedArray<PxgContactManagerInput>& itInputs = newManagers.mGpuInputContactManagers;
-	PxPinnedArray<PxsContactManagerOutput>& itOutputs = newManagers.mGpuOutputContactManagers;
-	PxPinnedArray<PxsContactManager*>& itCms = newManagers.mCpuContactManagerMapping;
-	PxPinnedArray<const Sc::ShapeInteraction*>& itSI = newManagers.mShapeInteractions;
-	PxFloatArrayPinned& itR = newManagers.mRestDistances;
-	PxPinnedArray<PxsTorsionalFrictionData>& itTor = newManagers.mTorsionalProperties;
+	PinnableArray<PxgContactManagerInput>& itInputs = newManagers.mGpuInputContactManagers;
+	PinnableArray<PxsContactManagerOutput>& itOutputs = newManagers.mGpuOutputContactManagers;
+	PinnableArray<PxsContactManager*>& itCms = newManagers.mCpuContactManagerMapping;
+	PinnableArray<const Sc::ShapeInteraction*>& itSI = newManagers.mShapeInteractions;
+	PinnableArray<PxReal>& itR = newManagers.mRestDistances;
+	PinnableArray<PxsTorsionalFrictionData>& itTor = newManagers.mTorsionalProperties;
 
 	mCudaContext->memcpyHtoDAsync(gpuManagers.mContactManagerInputData.getDevicePtr(), itInputs.begin(), sizeof(PxgContactManagerInput) * nbNewManagers, mStream);
 	mCudaContext->memcpyHtoDAsync(gpuManagers.mContactManagerOutputData.getDevicePtr(), itOutputs.begin(), sizeof(PxsContactManagerOutput) * nbNewManagers, mStream);
@@ -8261,9 +8625,9 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "PrepareInputTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "PrepareInputTask"; }
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		for (PxU32 a = 0; a < mNbToProcess; ++a)
 		{
@@ -8290,8 +8654,8 @@ void PxgGpuNarrowphaseCore::prepareTempContactManagersInternal(PxgNewContactMana
 	PX_UNUSED(flushPool);
 	PX_PROFILE_ZONE("GpuNarrowPhase.prepareInputs", 0);
 
-	PxPinnedArray<PxgContactManagerInput>& itInputs = newManagers.mGpuInputContactManagers;
-	PxPinnedArray<PxsContactManager*>& itCms = newManagers.mCpuContactManagerMapping;
+	PinnableArray<PxgContactManagerInput>& itInputs = newManagers.mGpuInputContactManagers;
+	PinnableArray<PxsContactManager*>& itCms = newManagers.mCpuContactManagerMapping;
 
 	const PxU32 nbPerTask = 256;
 
@@ -8314,13 +8678,13 @@ void PxgGpuNarrowphaseCore::prepareTempContactManagersTasks(Cm::FlushPool& flush
 	}
 }
 
-void PxgGpuNarrowphaseCore::removeLostPairsInternal(PxInt32ArrayPinned& removedIndices, PxgContactManagers& contactManagers)
+void PxgGpuNarrowphaseCore::removeLostPairsInternal(PinnableArray<PxU32>& removedIndices, PxgContactManagers& contactManagers)
 {
-	PxPinnedArray<PxgContactManagerInput>& itInputs = contactManagers.mGpuInputContactManagers;
-	PxPinnedArray<PxsContactManager*>& itCms = contactManagers.mCpuContactManagerMapping;
-	PxPinnedArray<const Sc::ShapeInteraction*>& itSI = contactManagers.mShapeInteractions;
-	PxFloatArrayPinned& itR = contactManagers.mRestDistances;
-	PxPinnedArray<PxsTorsionalFrictionData>& itTor = contactManagers.mTorsionalProperties;
+	PinnableArray<PxgContactManagerInput>& itInputs = contactManagers.mGpuInputContactManagers;
+	PinnableArray<PxsContactManager*>& itCms = contactManagers.mCpuContactManagerMapping;
+	PinnableArray<const Sc::ShapeInteraction*>& itSI = contactManagers.mShapeInteractions;
+	PinnableArray<PxReal>& itR = contactManagers.mRestDistances;
+	PinnableArray<PxsTorsionalFrictionData>& itTor = contactManagers.mTorsionalProperties;
 	
 	const PxU32 finalSize = contactManagers.mCpuContactManagerMapping.size() - removedIndices.size();
 
@@ -8399,7 +8763,7 @@ bool validateInputPairs(PxgContactManagers& gpuConvexConvexManagers, PxgGpuConta
 
 	cudaContext->memcpyDtoH(tempInputArray.begin(), gpuContactManagers.mContactManagerInputData.getDevicePtr(), sizeof(PxgContactManagerInput)* count);
 
-	PxPinnedArray<PxgContactManagerInput>& iter = gpuConvexConvexManagers.mGpuInputContactManagers;
+	PinnableArray<PxgContactManagerInput>& iter = gpuConvexConvexManagers.mGpuInputContactManagers;
 
 	for (PxU32 i = 0; i < count; ++i)
 	{
@@ -8494,7 +8858,7 @@ void PxgGpuNarrowphaseCore::removeLostPairs()
 
 template <typename ManagementData, typename Manifold>
 void PxgGpuNarrowphaseCore::removeLostPairsGpuInternal(ManagementData& cpuBuffer, CUdeviceptr gpuBuffer,
-	PxgContactManagers& contactManagers, PxgGpuContactManagers& gpuContactManagers, PxInt32ArrayPinned& removedIndices, PxgGpuPairManagementBuffers& pairManagementBuffers,
+	PxgContactManagers& contactManagers, PxgGpuContactManagers& gpuContactManagers, PinnableArray<PxU32>& removedIndices, PxgGpuPairManagementBuffers& pairManagementBuffers,
 	PxU16 stage5KernelID, const bool copyManifold)
 {
 	if (removedIndices.size() > 0)
@@ -8518,11 +8882,11 @@ void PxgGpuNarrowphaseCore::removeLostPairsGpuInternal(ManagementData& cpuBuffer
 
 		mCudaContext->memcpyHtoDAsync(pairManagementBuffers.mRemovedIndicesArray.getDevicePtr(), removedIndices.begin(), removedIndices.size()*sizeof(PxU32), mStream);
 
-		CUfunction remove1 = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::REMOVE_CONTACT_MANAGERS_1);
-		CUfunction remove2 = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::REMOVE_CONTACT_MANAGERS_2);
-		CUfunction remove3 = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::REMOVE_CONTACT_MANAGERS_3);
-		CUfunction remove4 = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::REMOVE_CONTACT_MANAGERS_4);
-		CUfunction remove5 = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(stage5KernelID);
+		CUfunction remove1 = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::REMOVE_CONTACT_MANAGERS_1);
+		CUfunction remove2 = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::REMOVE_CONTACT_MANAGERS_2);
+		CUfunction remove3 = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::REMOVE_CONTACT_MANAGERS_3);
+		CUfunction remove4 = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::REMOVE_CONTACT_MANAGERS_4);
+		CUfunction remove5 = mGpuKernelWranglerManager->getCuFunction(stage5KernelID);
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -8571,13 +8935,13 @@ void PxgGpuNarrowphaseCore::updateContactDistance(const PxReal* contactDistances
 	}
 }
 
-void PxgGpuNarrowphaseCore::adjustNpIndices(PxgNewContactManagers& newContactManagers, PxPinnedArray<PxgContactManagerInput>& itMainInputs,
-	PxPinnedArray<PxsContactManager*>& itCms, PxPinnedArray<const Sc::ShapeInteraction*>& itSIs, 
-	PxFloatArrayPinned& itR, PxPinnedArray<PxsTorsionalFrictionData>& itTor,
-	PxPinnedArray<PxgContactManagerInput>& itNewInputs,
-	PxPinnedArray<PxsContactManager*>& itNewCms,
-	PxPinnedArray<const Sc::ShapeInteraction*>& itNewSIs, PxFloatArrayPinned& itNewR,
-	PxPinnedArray<PxsTorsionalFrictionData>& itNewTor)
+void PxgGpuNarrowphaseCore::adjustNpIndices(PxgNewContactManagers& newContactManagers, PinnableArray<PxgContactManagerInput>& itMainInputs,
+	PinnableArray<PxsContactManager*>& itCms, PinnableArray<const Sc::ShapeInteraction*>& itSIs, 
+	PinnableArray<PxReal>& itR, PinnableArray<PxsTorsionalFrictionData>& itTor,
+	PinnableArray<PxgContactManagerInput>& itNewInputs,
+	PinnableArray<PxsContactManager*>& itNewCms,
+	PinnableArray<const Sc::ShapeInteraction*>& itNewSIs, PinnableArray<PxReal>& itNewR,
+	PinnableArray<PxsTorsionalFrictionData>& itNewTor)
 {
 	for(PxU32 i = 0; i < newContactManagers.mCpuContactManagerMapping.size(); ++i)
 	{
@@ -8616,17 +8980,17 @@ void PxgGpuNarrowphaseCore::appendContactManagers(PxsContactManagerOutput* /*cmO
 		appendContactManagersGpu(mContactManagers[i]->getNbFirstPassTests(), mContactManagers[i]->getNbSecondPassTests(),
 			mGpuContactManagers[i]->mContactManagers, mGpuContactManagers[i]->mNewContactManagers, BUCKET_ManifoldSize[i]);
 	
-		PxPinnedArray<PxgContactManagerInput>& itMainInputs = mContactManagers[i]->mContactManagers.mGpuInputContactManagers;
-		PxPinnedArray<PxsContactManager*>&  itCms = mContactManagers[i]->mContactManagers.mCpuContactManagerMapping;
-		PxPinnedArray<const Sc::ShapeInteraction*>&  itSIs = mContactManagers[i]->mContactManagers.mShapeInteractions;
-		PxFloatArrayPinned& itR = mContactManagers[i]->mContactManagers.mRestDistances;
-		PxPinnedArray<PxsTorsionalFrictionData>& itTor = mContactManagers[i]->mContactManagers.mTorsionalProperties;
+		PinnableArray<PxgContactManagerInput>& itMainInputs = mContactManagers[i]->mContactManagers.mGpuInputContactManagers;
+		PinnableArray<PxsContactManager*>&  itCms = mContactManagers[i]->mContactManagers.mCpuContactManagerMapping;
+		PinnableArray<const Sc::ShapeInteraction*>&  itSIs = mContactManagers[i]->mContactManagers.mShapeInteractions;
+		PinnableArray<PxReal>& itR = mContactManagers[i]->mContactManagers.mRestDistances;
+		PinnableArray<PxsTorsionalFrictionData>& itTor = mContactManagers[i]->mContactManagers.mTorsionalProperties;
 
-		PxPinnedArray<PxgContactManagerInput>& itNewInputs = mContactManagers[i]->mNewContactManagers.mGpuInputContactManagers;
-		PxPinnedArray<PxsContactManager*>& itNewCms = mContactManagers[i]->mNewContactManagers.mCpuContactManagerMapping;
-		PxPinnedArray<const Sc::ShapeInteraction*>& itNewSIs = mContactManagers[i]->mNewContactManagers.mShapeInteractions;
-		PxFloatArrayPinned& itNewR = mContactManagers[i]->mNewContactManagers.mRestDistances;
-		PxPinnedArray<PxsTorsionalFrictionData>& itNewTor = mContactManagers[i]->mNewContactManagers.mTorsionalProperties;
+		PinnableArray<PxgContactManagerInput>& itNewInputs = mContactManagers[i]->mNewContactManagers.mGpuInputContactManagers;
+		PinnableArray<PxsContactManager*>& itNewCms = mContactManagers[i]->mNewContactManagers.mCpuContactManagerMapping;
+		PinnableArray<const Sc::ShapeInteraction*>& itNewSIs = mContactManagers[i]->mNewContactManagers.mShapeInteractions;
+		PinnableArray<PxReal>& itNewR = mContactManagers[i]->mNewContactManagers.mRestDistances;
+		PinnableArray<PxsTorsionalFrictionData>& itNewTor = mContactManagers[i]->mNewContactManagers.mTorsionalProperties;
 
 		adjustNpIndices(mContactManagers[i]->mNewContactManagers, itMainInputs, itCms, itSIs, itR, itTor, itNewInputs, itNewCms, itNewSIs, itNewR, itNewTor);
 	}
@@ -8662,7 +9026,7 @@ void PxgGpuNarrowphaseCore::computeRigidsToShapes()
 	{
 		const bool lower32Bit = true;
 		//copy the lower 32 bit to the temp contact rigid index buffer
-		CUfunction copyFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RS_COPY_BITS2);
+		CUfunction copyFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::RS_COPY_BITS2);
 
 		PxCudaKernelParam copyKernelParams[] =
 		{
@@ -8711,8 +9075,8 @@ void PxgGpuNarrowphaseCore::computeRigidsToShapes()
 	mCudaContext->memcpyHtoDAsync(mRadixSortDescBuf[1].getDevicePtr(), (void*)&mRSDesc[1], sizeof(PxgRadixSortDesc), mStream);
 
 	//run radix sort
-	CUfunction radixFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RS_MULTIBLOCK_COUNT);
-	CUfunction calculateRanksFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RS_CALCULATERANKS_MULTIBLOCK_COUNT);
+	CUfunction radixFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::RS_MULTIBLOCK_COUNT);
+	CUfunction calculateRanksFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::RS_CALCULATERANKS_MULTIBLOCK_COUNT);
 
 	//sort the lower 32 bits
 	{
@@ -8764,7 +9128,7 @@ void PxgGpuNarrowphaseCore::computeRigidsToShapes()
 	{
 		const bool lower32Bit = false;
 		//copy the higher 32 bit to the team contact rigid index buffer
-		CUfunction copyFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RS_COPY_BITS2);
+		CUfunction copyFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::RS_COPY_BITS2);
 
 		PxCudaKernelParam copyKernelParams[] =
 		{
@@ -8838,7 +9202,7 @@ void PxgGpuNarrowphaseCore::computeRigidsToShapes()
 
 	{
 		//copy the original rigidId to the sorted buffer based on mContactRemapSortedByRigidBuf
-		CUfunction copyFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RS_COPY_VALUE2);
+		CUfunction copyFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::RS_COPY_VALUE2);
 
 		PxCudaKernelParam copyKernelParams[] =
 		{
@@ -8883,15 +9247,15 @@ void PxgGpuNarrowphaseCore::prepareGpuNarrowphase(PxsTransformCache& cache, cons
 
 	uploadDataChunksToGpu();
 
-	mPatchAndContactCountersReadback->contactsBytes = 0;
-	mPatchAndContactCountersReadback->patchesBytes = 0;
-	mPatchAndContactCountersReadback->forceAndIndiceBytes = 0;
+	mPatchAndContactCountersReadback.get().contactsBytes = 0;
+	mPatchAndContactCountersReadback.get().patchesBytes = 0;
+	mPatchAndContactCountersReadback.get().forceAndIndiceBytes = 0;
 
-	CUresult result = mCudaContext->memsetD8Async(mPatchAndContactCountersOnDevice.getDevicePtr(), 0, 
+	CUresult result = mCudaContext->memsetD8Async(mPatchAndContactCountersOnDevice.getDevicePtr(), 0,
 		sizeof(PxgPatchAndContactCounters), mStream);
 
 	if(result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,"prepareGpuNarrowphase GPU error! code %d \n", result);
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,"prepareGpuNarrowphase GPU error! code %u \n", result);
 
 	mGpuShapesManager.mHasShapeInstanceChanged = false;
 }
@@ -8908,7 +9272,7 @@ bool PxgGpuNarrowphaseCore::evaluateSDFDistances(PxVec4* PX_RESTRICT localGradie
 
 	PxgShape* gpuShapes = reinterpret_cast<PxgShape*>(mGpuShapesManager.mGpuShapesBuffer.getDevicePtr());
 
-	CUfunction cuFunc = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::EVALUATE_POINT_DISTANCES_SDF);
+	CUfunction cuFunc = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::EVALUATE_POINT_DISTANCES_SDF);
 	PxCudaKernelParam kernelParams[] =
 	{
 		PX_CUDA_KERNEL_PARAM(gpuShapes),
@@ -8979,7 +9343,7 @@ bool PxgGpuNarrowphaseCore::copyContactData(void* PX_RESTRICT data, PxU32* PX_RE
 
 			//const PxU32 numWarpsPerBlock = PxgNarrowPhaseBlockDims::COMPRESS_CONTACT / WARP_SIZE;
 
-			CUfunction kernelFunction_stage1 = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPRESS_CONTACT_STAGE_1);
+			CUfunction kernelFunction_stage1 = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPRESS_CONTACT_STAGE_1);
 
 			result = mCudaContext->launchKernel(kernelFunction_stage1, PxgNarrowPhaseGridDims::COMPRESS_CONTACT, 1, 1, PxgNarrowPhaseBlockDims::COMPRESS_CONTACT, 1, 1, 0,
 				mStream, kernelParams_stage1, sizeof(kernelParams_stage1), 0, PX_FL);
@@ -9020,7 +9384,7 @@ bool PxgGpuNarrowphaseCore::copyContactData(void* PX_RESTRICT data, PxU32* PX_RE
 
 			};
 
-			CUfunction kernelFunction_stage2 = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPRESS_CONTACT_STAGE_2);
+			CUfunction kernelFunction_stage2 = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPRESS_CONTACT_STAGE_2);
 
 			result = mCudaContext->launchKernel(kernelFunction_stage2, PxgNarrowPhaseGridDims::COMPRESS_CONTACT, 1, 1, PxgNarrowPhaseBlockDims::COMPRESS_CONTACT, 1, 1, 0,
 				mStream, kernelParams_stage2, sizeof(kernelParams_stage2), 0, PX_FL);

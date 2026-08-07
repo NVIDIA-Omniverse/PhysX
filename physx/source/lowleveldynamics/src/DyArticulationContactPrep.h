@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
    
@@ -65,32 +65,13 @@ namespace Dy
 		const PxReal invDtF32,
 		const PxReal dtF32,
 		PxReal bounceThresholdF32,
+		const PxReal biasCoefficient,
 		PxReal invMassScale0, PxReal invInertiaScale0,
 		PxReal invMassScale1, PxReal invInertiaScale1,
 		PxReal restDistance, PxU8* frictionDataPtr,
 		PxReal ccdMaxContactDist,
 		Cm::SpatialVectorF* Z,
 		const PxReal offsetSlop);
-
-
-	bool setupFinalizeExtSolverContactsCoulomb(
-		const PxContactBuffer& buffer,
-		const CorrelationBuffer& c,
-		const PxTransform& bodyFrame0,
-		const PxTransform& bodyFrame1,
-		PxU8* workspace,
-		PxReal invDt,
-		PxReal dtF32,
-		PxReal bounceThreshold,
-		const SolverExtBody& b0,
-		const SolverExtBody& b1,
-		PxU32 frictionCountPerPoint,
-		PxReal invMassScale0, PxReal invInertiaScale0,
-		PxReal invMassScale1, PxReal invInertiaScale1,
-		PxReal restDist,
-		PxReal ccdMaxContactDist,
-		Cm::SpatialVectorF* Z,
-		const PxReal solverOffsetSlop);
 
 } //namespace Dy
 

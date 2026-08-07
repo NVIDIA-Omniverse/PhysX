@@ -22,13 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PX_VEC3_H
 #define PX_VEC3_H
-
 
 #include "foundation/PxMath.h"
 #include "foundation/PxConstructor.h"
@@ -389,10 +388,11 @@ typedef PxVec3T<double>	PxVec3d;
 class PxVec3Padded : public PxVec3
 {
 	public:
-	PX_FORCE_INLINE	PxVec3Padded()								{}
-	PX_FORCE_INLINE	~PxVec3Padded()								{}
-	PX_FORCE_INLINE	PxVec3Padded(const PxVec3& p) : PxVec3(p)	{}
-	PX_FORCE_INLINE	PxVec3Padded(float f) : PxVec3(f)			{}
+	PX_CUDA_CALLABLE PX_FORCE_INLINE	PxVec3Padded()													{}
+	PX_CUDA_CALLABLE PX_FORCE_INLINE	~PxVec3Padded()													{}
+	PX_CUDA_CALLABLE PX_FORCE_INLINE	PxVec3Padded(const PxVec3& p) : PxVec3(p)						{}
+	PX_CUDA_CALLABLE PX_FORCE_INLINE	PxVec3Padded(float f) : PxVec3(f)								{}
+	PX_CUDA_CALLABLE PX_FORCE_INLINE	PxVec3Padded(float _x, float _y, float _z) : PxVec3(_x, _y, _z)	{}
 
 	/**
 	\brief Assignment operator.

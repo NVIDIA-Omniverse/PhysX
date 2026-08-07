@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,16 +31,20 @@
 
 #include "omnipvd/PxOmniPvd.h"
 #include "foundation/PxMutex.h"
+#include "foundation/PxArray.h"
 #include "NpOmniPvdMetaData.h"
 
 class OmniPvdReader;
 class OmniPvdWriter;
 class OmniPvdLoader;
 class OmniPvdFileWriteStream;
+class OmniPvdSocketWriteStream;
 class OmniPvdPxSampler;
 
 namespace physx
 {
+
+class PxPhysics;
 
 class NpOmniPvd : public PxOmniPvd
 {
@@ -50,25 +54,34 @@ public:
 	static void destroyInstance();
 	static void incRefCount();
 	static void decRefCount();
-	void release();
+	void release() PX_OVERRIDE;
 
 	bool initOmniPvd();
 	
-	OmniPvdWriter* getWriter();
+	OmniPvdWriter* getWriter() PX_OVERRIDE;
 	
 	OmniPvdWriter* blockingWriterLoad();
 
-	OmniPvdWriter* acquireExclusiveWriterAccess();
-	void releaseExclusiveWriterAccess();
+	OmniPvdWriter* acquireExclusiveWriterAccess() PX_OVERRIDE;
+	void releaseExclusiveWriterAccess() PX_OVERRIDE;
 
-	OmniPvdFileWriteStream* getFileWriteStream();
-	bool startSampling();
-	
+	OmniPvdFileWriteStream* getFileWriteStream() PX_OVERRIDE;
+	OmniPvdSocketWriteStream* createSocketWriteStream(const char* address, PxU16 port, PxU32 sendTimeout) PX_OVERRIDE;
+	void releaseSocketWriteStream(OmniPvdSocketWriteStream& stream) PX_OVERRIDE;
+	bool startSampling() PX_OVERRIDE;
+	bool stopSampling() PX_OVERRIDE;
+	bool isSampling() const PX_OVERRIDE;
+	// Callback registry (see PxOmniPvdEventCallback): startSampling() invokes each registered
+	// callback's onStartSampling(*this) after the core objects are recorded.
+	void addEventCallback(PxOmniPvdEventCallback& callback) PX_OVERRIDE;
+	void removeEventCallback(PxOmniPvdEventCallback& callback) PX_OVERRIDE;
+
 	OmniPvdLoader* mLoader;
 	OmniPvdFileWriteStream* mFileWriteStream;
 	OmniPvdWriter* mWriter;
 	OmniPvdPxSampler* mPhysXSampler;
 	NpOmniPvdMetaData mMetaData;
+	PxArray<PxOmniPvdEventCallback*> mEventCallbacks;
 	static PxU32 mRefCount;
 	static NpOmniPvd* mInstance;
 	PxMutex mMutex;

@@ -72,11 +72,8 @@ TEST(CppWrapper, SDKConstruction) {
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
     
     ovphysx::PhysX sdk(handle);
-    
-    // SDK should be usable
+
     EXPECT_TRUE(sdk) << "SDK is in valid state";
-    
-    // Destructor will be called automatically (RAII)
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -130,7 +127,6 @@ TEST(CppWrapper, CreateArgsCreateCpu) {
     // attached instead).
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(sdk.handle(), "tests/data/simple_physics_scene.usda"));
 
-    // Verify the instance is functional
     status = sdk.step(0.016f);
     EXPECT_EQ(status, OVPHYSX_API_SUCCESS);
     auto wait = sdk.waitAll();
@@ -234,11 +230,9 @@ TEST(CppWrapper, SDKLifecycle) {
         ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
         
         ovphysx::PhysX sdk1(handle);
-        // SDK created successfully (constructor didn't throw)
         EXPECT_TRUE(sdk1);
     }
-    // SDK properly destroyed when going out of scope
-    
+
     {
         ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
 
@@ -249,9 +243,7 @@ TEST(CppWrapper, SDKLifecycle) {
         ovphysx::PhysX sdk2(handle);
         EXPECT_TRUE(sdk2);
     }
-    // Second SDK properly destroyed
-    
-    // If we got here, SDK lifecycle management is working correctly
+
     SUCCEED();
 }
 
@@ -310,7 +302,6 @@ TEST_F(CppWrapperTest, ErrorHandling) {
 //------------------------------------------------------------------------------------------------------------
 
 TEST_F(CppWrapperTest, ResourceManagement) {
-    // Test that creating and destroying SDK works properly
     {
         ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
 
@@ -319,12 +310,9 @@ TEST_F(CppWrapperTest, ResourceManagement) {
         ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
         
         ovphysx::PhysX sdk(handle);
-        
-        // Use the SDK
+
         sdk.step(0.016f);
         sdk.waitAll();
-        
-        // sdk will be destroyed here
     }
     
     SUCCEED() << "Resource management (RAII) works correctly";

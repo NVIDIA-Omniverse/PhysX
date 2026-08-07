@@ -22,33 +22,24 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef DY_SOLVER_EXT_H
 #define DY_SOLVER_EXT_H
 
-#include "foundation/PxVec3.h"
-#include "foundation/PxTransform.h"
 #include "CmSpatialVector.h"
 #include "foundation/PxVecMath.h"
 
 namespace physx
 {
-
-class PxsRigidBody;
-struct PxsBodyCore;
 struct PxSolverBody;
 struct PxSolverBodyData;
 
-
 namespace Dy
 {
-
-
 class FeatherstoneArticulation;
-struct SolverConstraint1D;
 
 class SolverExtBody
 {
@@ -62,28 +53,17 @@ public:
 
 	PxU32 mLinkIndex;
 
-	SolverExtBody(const void* bodyOrArticulationOrSoftBody, const void* bodyData, PxU32 linkIndex): 
-	  mBody(reinterpret_cast<const PxSolverBody*>(bodyOrArticulationOrSoftBody)),
-	  mBodyData(reinterpret_cast<const PxSolverBodyData*>(bodyData)),
-		  mLinkIndex(linkIndex)
-	  {}
+	SolverExtBody(const void* bodyOrArticulationOrSoftBody, const void* bodyData, PxU32 linkIndex) :
+		mBody(reinterpret_cast<const PxSolverBody*>(bodyOrArticulationOrSoftBody)),
+		mBodyData(reinterpret_cast<const PxSolverBodyData*>(bodyData)),
+		mLinkIndex(linkIndex)
+	{}
 
-	  void getResponse(const PxVec3& linImpulse, const PxVec3& angImpulse,
-					   PxVec3& linDeltaV, PxVec3& angDeltaV, PxReal dominance) const;
+	PxReal projectVelocity(const PxVec3& linear, const PxVec3& angular) const;
+	aos::FloatV projectVelocity(const aos::Vec3V& linear, const aos::Vec3V& angular) const;
 
-	  void getResponse(const aos::Vec3V& linImpulse, const aos::Vec3V& angImpulse,
-		  aos::Vec3V& linDeltaV, aos::Vec3V& angDeltaV, aos::FloatV dominance) const;
-
-	  PxReal projectVelocity(const PxVec3& linear, const PxVec3& angular) const;
-	  aos::FloatV projectVelocity(const aos::Vec3V& linear, const aos::Vec3V& angular) const;
-	  PxVec3 getLinVel() const;
-	  PxVec3 getAngVel() const;
-
-	  aos::Vec3V getLinVelV() const;
-	  aos::Vec3V getAngVelV() const;
-
-	  Cm::SpatialVectorV getVelocity() const;
-	  PxReal getCFM() const;
+	Cm::SpatialVectorV getVelocity() const;
+	PxReal getCFM() const;
 };
 
 }

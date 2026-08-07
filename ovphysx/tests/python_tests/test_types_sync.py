@@ -35,12 +35,26 @@ def _extract_cpp_max_tensor_rank(header_text: str) -> int:
     return int(values[0])
 
 
+def test_debug_render_scope_api_is_token_only():
+    """Debug-render filtering must expose only the OVStage-native token API."""
+    public_header = (_repo_root() / "include" / "ovphysx" / "ovphysx.h").read_text()
+    runtime_header = (
+        _repo_root() / "ovruntime" / "include" / "omni" / "physx" / "IPhysxVisualization.h"
+    ).read_text()
+
+    assert re.search(r"\bovphysx_debug_render_set_scope\s*\(", public_header) is None
+    assert re.search(r"\bovphysx_intern_paths\s*\(", public_header) is None
+    assert "ovphysx_debug_render_set_scope_tokens" in public_header
+    assert re.search(r"\bsetVisualizationScope\s*\(", runtime_header) is None
+    assert "setVisualizationScopeTokens" in runtime_header
+
+
 def test_max_tensor_rank_matches_cpp_header():
     """The Python DLPack guard must accept the same ranks as TensorDesc."""
     from ovphysx._dlpack_utils import _MAX_TENSOR_RANK
 
     header = (
-        _repo_root().parent / "ovruntime" / "include" / "omni" / "physics" / "tensors" / "TensorDesc.h"
+        _repo_root() / "ovruntime" / "include" / "omni" / "physics" / "tensors" / "TensorDesc.h"
     ).read_text()
     assert _MAX_TENSOR_RANK == _extract_cpp_max_tensor_rank(header)
 

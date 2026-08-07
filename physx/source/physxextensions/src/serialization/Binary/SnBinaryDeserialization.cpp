@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -119,7 +119,7 @@ namespace
 					return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxSerialization::createCollectionFromBinary: External reference %llu expected in externalRefs collection but not found.", id);
 
 				if (referencedObject->getConcreteType() != type)
-					return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxSerialization::createCollectionFromBinary: External reference %d type mismatch. Expected %d but found %d in externalRefs collection.", type, referencedObject->getConcreteType());
+					return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxSerialization::createCollectionFromBinary: External reference %u type mismatch. Expected %u but found %u in externalRefs collection.", type, referencedObject->getConcreteType());
 			}
 		}
 		return true;

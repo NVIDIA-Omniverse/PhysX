@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project toolsVersion="5.0">
+  <dependency name="mirror" linkPath="../_build/host-deps/mirror">
+    <package name="mirror" version="0.1.110-a2df2ebd-windows-x86_64" platforms="windows-x86_64" />
+    <package name="mirror" version="0.1.100-81448125-linux-x86_64" platforms="linux-x86_64" />
+    <package name="mirror" version="0.1.100-dev-linux-aarch64" platforms="linux-aarch64" />
+  </dependency>
+  <dependency name="llvm" linkPath="../_build/host-deps/llvm">
+    <package name="llvm" version="6.0.0-linux-x86_64" platforms="linux-x86_64 linux-aarch64 manylinux_2_35_x86_64 manylinux_2_35_aarch64" />
+  </dependency>
+</project>

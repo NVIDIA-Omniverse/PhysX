@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -76,6 +76,13 @@ public:
 
 	/**
 	 * \brief Sets the write stream to receive the API command stream
+	 *
+	 * Binding a stream resets the writer's per-stream state, so every stream is
+	 * self-contained and can be decoded on its own. This happens on every setWriteStream()
+	 * call (binding a different stream, or re-binding the same stream object after a
+	 * reconnect), so no separate reset call is needed: the version header is written again at
+	 * the start of the stream, and the per-stream numbering restarts so the stream does not
+	 * depend on anything written to a previously bound stream.
 	 *
 	 * \param writeStream The OmniPvdWriteStream to receive the stream of API calls/notifications
 	 */
@@ -388,9 +395,9 @@ public:
 	/**
 	 * \brief Clears or resets the status of the writer
 	 *
-	 */	
+	 */
 	virtual void OMNI_PVD_CALL clearStatus() = 0;
-	
+
 };
 
 #endif

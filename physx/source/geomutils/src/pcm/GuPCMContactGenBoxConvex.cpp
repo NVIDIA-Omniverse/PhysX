@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -157,7 +157,7 @@ static bool testFaceNormal(const PolygonalData& polyData0, const PolygonalData& 
 
 //plane is in the shape space of polyData
 static void buildPartialHull(const PolygonalData& polyData, const SupportLocal* map, SeparatingAxes& validAxes, const Vec3VArg planeP, const Vec3VArg planeDir)
-{		
+{
 	const FloatV zero = FZero();
 	const Vec3V dir = V3Normalize(planeDir);
 	for(PxU32 i=0; i<polyData.mNbPolygons; ++i)

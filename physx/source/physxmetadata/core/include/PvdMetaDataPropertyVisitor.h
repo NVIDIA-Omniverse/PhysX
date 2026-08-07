@@ -22,21 +22,22 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PX_META_DATA_PROPERTY_VISITOR_H
 #define PX_META_DATA_PROPERTY_VISITOR_H
 
 #include <stdio.h>
+#include "foundation/PxString.h"
 #include "PvdMetaDataExtensions.h"
 namespace physx
 {
 
 namespace Vd
 {
-	
+
 //PVD only deals with read-only properties, indexed, and properties like this by in large.
 //so we have a filter that expands properties to a level where we can get to them and expands them into
 //named functions that make more sense and are easier to read than operator()
@@ -53,12 +54,12 @@ public:
 	PxU32*				mKeyOverride;
 	PxU32*				mOffsetOverride;
 
-	PvdPropertyFilter( TOperatorType& inOperator ) 
+	PvdPropertyFilter( TOperatorType& inOperator )
 				: mOperator( inOperator )
 				, mKeyOverride( 0 )
 				, mOffsetOverride( 0 ) {}
 
-	PvdPropertyFilter( TOperatorType& inOperator, PxU32* inKeyOverride, PxU32* inOffsetOverride ) 
+	PvdPropertyFilter( TOperatorType& inOperator, PxU32* inKeyOverride, PxU32* inOffsetOverride )
 				: mOperator( inOperator )
 				, mKeyOverride( inKeyOverride )
 				, mOffsetOverride( inOffsetOverride ) {}
@@ -76,13 +77,13 @@ public:
 	{
 		mOperator.flagsProperty(inKey, inAccessor, inConversions );
 	}
-	
+
 	template<PxU32 TKey, typename TAccessorType>
 	void dispatchAccessor( PxU32 inKey, const TAccessorType& inAccessor, const PxU32ToName* inConversions, bool, bool )
 	{
 		mOperator.enumProperty( inKey, inAccessor, inConversions );
 	}
-	
+
 	template<PxU32 TKey, typename TAccessorType, typename TInfoType>
 	void dispatchAccessor(PxU32, const TAccessorType& inAccessor, bool, const TInfoType* inInfo, bool )
 	{
@@ -102,15 +103,15 @@ public:
 		return retval;
 	}
 
-	
+
 	void setupValueStructOffset( const ValueStructOffsetRecord&, bool, PxU32* ) {}
-	void setupValueStructOffset( const ValueStructOffsetRecord& inAccessor, PxU32 inOffset, PxU32* inAdditionalOffset ) 
+	void setupValueStructOffset( const ValueStructOffsetRecord& inAccessor, PxU32 inOffset, PxU32* inAdditionalOffset )
 	{
 		//This allows us to nest properties correctly.
 		if ( inAdditionalOffset ) inOffset += *inAdditionalOffset;
 		inAccessor.setupValueStructOffset( inOffset );
 	}
-	
+
 	template<PxU32 TKey, typename TAccessorType>
 	void handleAccessor( PxU32 inKey, const TAccessorType& inAccessor )
 	{
@@ -150,9 +151,9 @@ public:
 		mOperator.pushName( inProp.mName );
 		PxU32 rangeStart = TKey;
 		PxU32& propIdx = mKeyOverride == NULL ? rangeStart : *mKeyOverride;
-		PxU32 theOffset = 0; 
+		PxU32 theOffset = 0;
 		if ( mOffsetOverride ) theOffset = *mOffsetOverride;
-		
+
 		while( theConversions->mName != NULL )
 		{
 			mOperator.pushBracketedName( theConversions->mName );
@@ -173,7 +174,7 @@ public:
 		//ouch, not nice.  Indexed complex property.
 		mOperator.pushName( inProp.mName );
 		PxU32 propIdx = TKey;
-		PxU32 theOffset = 0; 
+		PxU32 theOffset = 0;
 		if ( mOffsetOverride ) theOffset = *mOffsetOverride;
 
 		while( theConversions->mName != NULL )
@@ -181,7 +182,7 @@ public:
 			mOperator.pushBracketedName( theConversions->mName );
 			PxPvdIndexedPropertyAccessor<TKey, TObjType, TIndexType, TPropertyType> theAccessor( inProp, theConversions->mValue );
 			setupValueStructOffset( theAccessor, PxPropertyToValueStructMemberMap<TKey>().Offset, &theOffset );
-			PX_ASSERT( theAccessor.mHasValidOffset );			
+			PX_ASSERT( theAccessor.mHasValidOffset );
 			mOperator.complexProperty( &propIdx, theAccessor, inInfo );
 			mOperator.popName();
 			++theConversions;
@@ -189,15 +190,14 @@ public:
 		}
 		mOperator.popName();
 	}
-	
+
 	static char* myStrcat(const char* a,const char * b)
 	{
-		size_t len = strlen(a)+strlen(b);
+		size_t len = strnlen(a, UINT32_MAX - 1) + strnlen(b, UINT32_MAX - 1);
 		char* result = new char[len+1];
 
-		strcpy(result,a);
-		strcat(result,b);
-		result[len] = 0;
+		Pxstrlcpy(result, len+1, a);
+		Pxstrlcat(result, len+1, b);
 
 		return result;
 	}
@@ -206,69 +206,69 @@ public:
 	void handleBufferCollectionProperty(PxU32 , const PxBufferCollectionPropertyInfo<TKey, TObjType, TPropertyType >& inProp, const TInfoType& inInfo)
 	{
 		//append 'Collection' to buffer properties
-		char* name = myStrcat(inProp.mName, "Collection");		
-		
+		char* name = myStrcat(inProp.mName, "Collection");
+
 		mOperator.pushName(name);
 		PxU32 propIdx = TKey;
-		PxU32 theOffset = 0; 
-		
+		PxU32 theOffset = 0;
+
 		PxBufferCollectionPropertyAccessor<TKey, TObjType, TPropertyType> theAccessor( inProp, inProp.mName );
 		setupValueStructOffset( theAccessor, PxPropertyToValueStructMemberMap<TKey>().Offset, &theOffset );
-			
-		mOperator.bufferCollectionProperty( &propIdx, theAccessor, inInfo );	
+
+		mOperator.bufferCollectionProperty( &propIdx, theAccessor, inInfo );
 		mOperator.popName();
 		delete []name;
 	}
 
 	template<PxU32 TKey, typename TObjType, typename TIndexType, typename TPropertyType>
-	void operator()( const PxIndexedPropertyInfo<TKey, TObjType, TIndexType, TPropertyType >& inProp, PxU32 inIndex ) 
+	void operator()( const PxIndexedPropertyInfo<TKey, TObjType, TIndexType, TPropertyType >& inProp, PxU32 inIndex )
 	{
 		indexedProperty( inIndex, inProp, IndexerToNameMap<TKey,TIndexType>().Converter.NameConversion
 							, PxClassInfoTraits<TPropertyType>().Info );
 	}
-	
+
 	template<PxU32 TKey, typename TObjType, typename TPropertyType, typename TIndexType, typename TInfoType>
 	void handleExtendedIndexProperty(PxU32 inIndex, const PxExtendedIndexedPropertyInfo<TKey, TObjType, TIndexType, TPropertyType >& inProp, const TInfoType& inInfo)
 	{
 		mOperator.pushName(inProp.mName);
 		PxU32 propIdx = TKey;
-		PxU32 theOffset = 0; 
-		
+		PxU32 theOffset = 0;
+
 		PxPvdExtendedIndexedPropertyAccessor<TKey, TObjType, TIndexType, TPropertyType> theAccessor( inProp, inIndex );
 		setupValueStructOffset( theAccessor, PxPropertyToValueStructMemberMap<TKey>().Offset, &theOffset );
-			
-		mOperator.extendedIndexedProperty( &propIdx, theAccessor, inInfo );	
+
+		mOperator.extendedIndexedProperty( &propIdx, theAccessor, inInfo );
 		mOperator.popName();
 	}
 
 	template<PxU32 TKey, typename TObjType, typename TPropertyType, typename TIndexType, typename TInfoType>
-	void handlePxFixedSizeLookupTableProperty( const PxU32 inIndex, const PxFixedSizeLookupTablePropertyInfo<TKey, TObjType, TIndexType, TPropertyType >& inProp, const TInfoType& inInfo) 
+	void handlePxFixedSizeLookupTableProperty( const PxU32 inIndex, const PxFixedSizeLookupTablePropertyInfo<TKey, TObjType, TIndexType, TPropertyType >& inProp, const TInfoType& inInfo)
 	{
 		mOperator.pushName(inProp.mName);
-		
+
 		PxU32 propIdx = TKey;
-		PxU32 theOffset = 0; 
-		
+		PxU32 theOffset = 0;
+
 		PxPvdFixedSizeLookupTablePropertyAccessor<TKey, TObjType, TIndexType, TPropertyType> theAccessor( inProp, inIndex );
 		setupValueStructOffset( theAccessor, PxPropertyToValueStructMemberMap<TKey>().Offset, &theOffset );
-			
-		mOperator.PxFixedSizeLookupTableProperty( &propIdx, theAccessor, inInfo );	
+
+		mOperator.PxFixedSizeLookupTableProperty( &propIdx, theAccessor, inInfo );
 
 		mOperator.popName();
 	}
 
     template<PxU32 TKey, typename TObjType, typename TIndexType, typename TPropertyType>
-	void operator()( const PxExtendedIndexedPropertyInfo<TKey, TObjType, TIndexType, TPropertyType >& inProp, PxU32 inIndex ) 
+	void operator()( const PxExtendedIndexedPropertyInfo<TKey, TObjType, TIndexType, TPropertyType >& inProp, PxU32 inIndex )
 	{
 		handleExtendedIndexProperty( inIndex, inProp, PxClassInfoTraits<TPropertyType>().Info );
 	}
 
     template<PxU32 TKey, typename TObjType, typename TIndexType, typename TPropertyType>
-	void operator()( const PxFixedSizeLookupTablePropertyInfo<TKey, TObjType, TIndexType, TPropertyType >& inProp, PxU32 inIndex) 
+	void operator()( const PxFixedSizeLookupTablePropertyInfo<TKey, TObjType, TIndexType, TPropertyType >& inProp, PxU32 inIndex)
 	{
 		handlePxFixedSizeLookupTableProperty(inIndex, inProp, PxClassInfoTraits<TPropertyType>().Info);
 	}
-	
+
 	//We don't handle unbounded indexed properties
 	template<PxU32 TKey, typename TObjType, typename TIndexType, typename TIndex2Type, typename TPropertyType, typename TNameConv, typename TNameConv2 >
 	void dualIndexedProperty( PxU32 idx, const PxDualIndexedPropertyInfo<TKey, TObjType, TIndexType, TIndex2Type, TPropertyType >&, TNameConv, TNameConv2 ) { PX_UNUSED(idx); }
@@ -279,7 +279,7 @@ public:
 		mOperator.pushName( inProp.mName );
 		PxU32 rangeStart = TKey;
 		PxU32& propIdx = mKeyOverride == NULL ? rangeStart : *mKeyOverride;
-		PxU32 theOffset = 0; 
+		PxU32 theOffset = 0;
 		if ( mOffsetOverride ) theOffset = *mOffsetOverride;
 		while( c1->mName != NULL )
 		{
@@ -308,18 +308,18 @@ public:
 		mOperator.pushName( inProp.mName );
 		PxU32 rangeStart = TKey;
 		PxU32& propIdx = mKeyOverride == NULL ? rangeStart : *mKeyOverride;
-		PxU32 theOffset = 0; 
+		PxU32 theOffset = 0;
 		if ( mOffsetOverride ) theOffset = *mOffsetOverride;
 		for(PxU32 i = 0; i < id0Count; ++i)
 		{
 			char buffer1[32] = { 0 };
-		    sprintf( buffer1, "eId1_%u", i );
+		    Pxsnprintf( buffer1, sizeof(buffer1), "eId1_%u", i );
 
 			mOperator.pushBracketedName( buffer1 );
 			for(PxU32 j = 0; j < id1Count; ++j)
 			{
 				char buffer2[32] = { 0 };
-				sprintf( buffer2, "eId2_%u", j );
+				Pxsnprintf( buffer2, sizeof(buffer2), "eId2_%u", j );
 
 				mOperator.pushBracketedName( buffer2 );
 				PxPvdExtendedDualIndexedPropertyAccessor<TKey, TObjType, TIndexType, TIndex2Type, TPropertyType> theAccessor( inProp, i, j );
@@ -335,15 +335,15 @@ public:
 	}
 
 	template<PxU32 TKey, typename TObjType, typename TIndexType, typename TIndex2Type, typename TPropertyType>
-	void operator()( const PxDualIndexedPropertyInfo<TKey, TObjType, TIndexType, TIndex2Type, TPropertyType >& inProp, PxU32 idx ) 
+	void operator()( const PxDualIndexedPropertyInfo<TKey, TObjType, TIndexType, TIndex2Type, TPropertyType >& inProp, PxU32 idx )
 	{
 		dualIndexedProperty( idx, inProp
 								, IndexerToNameMap<TKey,TIndexType>().Converter.NameConversion
 								, IndexerToNameMap<TKey,TIndex2Type>().Converter.NameConversion );
 	}
-	
+
 	template<PxU32 TKey, typename TObjType, typename TIndexType, typename TIndex2Type, typename TPropertyType>
-	void operator()( const PxExtendedDualIndexedPropertyInfo<TKey, TObjType, TIndexType, TIndex2Type, TPropertyType >& inProp, PxU32 idx ) 
+	void operator()( const PxExtendedDualIndexedPropertyInfo<TKey, TObjType, TIndexType, TIndex2Type, TPropertyType >& inProp, PxU32 idx )
 	{
 		extendedDualIndexedProperty( idx, inProp, inProp.mId0Count, inProp.mId1Count );
 	}
@@ -353,7 +353,7 @@ public:
 	{
 		PxU32 rangeStart = TKey;
 		PxU32& propIdx = mKeyOverride == NULL ? rangeStart : *mKeyOverride;
-		PxU32 theOffset = 0; 
+		PxU32 theOffset = 0;
 		if ( mOffsetOverride ) theOffset = *mOffsetOverride;
 
 		mOperator.pushName( inProperty.mName );
@@ -383,21 +383,21 @@ public:
 	{
 		mOperator.handleBuffer( inProp );
 	}
-	
+
 	template<PxU32 TKey, typename TObjectType, typename TPropertyType, PxU32 TEnableFlag>
 	void operator()( const PxBufferPropertyInfo<TKey, TObjectType, TPropertyType, TEnableFlag>& inProp, PxU32 )
 	{
 		handleBuffer( inProp );
 	}
-	
+
 	template<PxU32 TKey, typename TObjType>
-	void operator()( const PxReadOnlyCollectionPropertyInfo<TKey, TObjType, PxU32>& prop, PxU32 ) 
+	void operator()( const PxReadOnlyCollectionPropertyInfo<TKey, TObjType, PxU32>& prop, PxU32 )
 	{
 		mOperator.handleCollection( prop );
 	}
-	
+
 	template<PxU32 TKey, typename TObjType>
-	void operator()( const PxReadOnlyCollectionPropertyInfo<TKey, TObjType, PxReal>& prop, PxU32 ) 
+	void operator()( const PxReadOnlyCollectionPropertyInfo<TKey, TObjType, PxReal>& prop, PxU32 )
 	{
 		mOperator.handleCollection( prop );
 	}
@@ -416,7 +416,7 @@ public:
 #define DEFINE_PVD_PROPERTY_NOP(datatype) \
 	template<PxU32 TKey, typename TObjType> \
 	void operator()( const PxReadOnlyPropertyInfo<TKey,TObjType,datatype>& inProperty, PxU32 ){PX_UNUSED(inProperty); }
-	
+
 	DEFINE_PVD_PROPERTY_NOP( const void* )
 	DEFINE_PVD_PROPERTY_NOP( void* )
 	DEFINE_PVD_PROPERTY_NOP( PxSimulationFilterCallback * )
@@ -467,7 +467,7 @@ inline void visitWithPvdFilter( TOperator inOperator, TFuncType inFuncType )
 	TFuncType( makePvdPropertyFilter( inOperator ) );
 }
 
-template<typename TObjType, typename TOperator> 
+template<typename TObjType, typename TOperator>
 inline void visitInstancePvdProperties( TOperator inOperator )
 {
 	visitInstanceProperties<TObjType>( makePvdPropertyFilter( inOperator ) );
@@ -489,15 +489,15 @@ struct PvdAllInfoVisitor
 	TOperator mOperator;
 	PvdAllInfoVisitor( TOperator op ) : mOperator( op ) {}
 	template<typename TInfoType>
-	void operator()( TInfoType inInfo ) 
-	{ 
+	void operator()( TInfoType inInfo )
+	{
 		inInfo.template visitType<bool>( PvdAllPropertyVisitor<TOperator>( mOperator ) );
 		inInfo.visitBases( *this );
 	}
 };
 
 
-template<typename TObjType, typename TOperator> 
+template<typename TObjType, typename TOperator>
 inline void visitAllPvdProperties( TOperator inOperator )
 {
 	visitAllProperties<TObjType>( makePvdPropertyFilter( inOperator ) );

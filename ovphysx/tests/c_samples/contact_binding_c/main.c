@@ -3,7 +3,6 @@
 //
 
 // NOTE: This file is included verbatim in documentation via literalinclude.
-// Tutorial marker comments below define the included range.
 
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_types.h>
@@ -112,7 +111,6 @@ static int run(void)
     ovphysx_result_t r;
     ovphysx_enqueue_result_t er;
 
-    // [tutorial-start]
     /* 1. Initialize SDK */
     r = ovphysx_initialize();
     if (!check_result(r, "ovphysx_initialize")) return 1;
@@ -139,12 +137,10 @@ static int run(void)
     filters[0] = ovphysx_cstr("/World/GroundPlane/CollisionMesh");
 
     ovphysx_contact_binding_handle_t cb = 0;
-    r = ovphysx_create_contact_binding(
-        handle,
-        sensors, 1,     /* 1 sensor pattern */
-        filters, 1,     /* 1 filter pattern per sensor */
-        256,            /* max raw contact pairs */
-        &cb);
+    r = ovphysx_create_contact_binding(handle, sensors, 1, /* 1 sensor pattern */
+                                       filters, 1, /* 1 filter pattern per sensor */
+                                       256, /* flat contact-data capacity */
+                                       &cb);
     if (!check_result(r, "ovphysx_create_contact_binding")) {
         ovphysx_sample_destroy_stage(handle, &stage_attachment);
         ovphysx_destroy_instance(handle); ovphysx_shutdown(); return 1;
@@ -182,7 +178,7 @@ static int run(void)
     }
 
     /* 6. Read net contact forces: shape [S, 3].
-     *    dt is taken automatically from the last ovphysx_step() call. */
+     *    dt is taken automatically from the last successful stepping call. */
     float* net_data   = NULL;
     int64_t* net_shp  = NULL;
     DLTensor net_tensor = make_tensor_f32_2d(
@@ -240,7 +236,6 @@ static int run(void)
 
     /* 8. Destroy contact binding */
     ovphysx_destroy_contact_binding(handle, cb);
-    // [tutorial-end]
 
     ovphysx_sample_destroy_stage(handle, &stage_attachment);
     ovphysx_destroy_instance(handle);

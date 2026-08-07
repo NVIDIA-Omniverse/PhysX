@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,7 +30,6 @@
 #define PXG_D6_JOINT_H
 
 #include "PxConstraintDesc.h"
-#include "PxgD6JointLimit.h"
 
 namespace physx
 {
@@ -41,11 +40,10 @@ namespace physx
 			eX			= 0,		//!< drive along the X-axis
 			eY			= 1,		//!< drive along the Y-axis
 			eZ			= 2,		//!< drive along the Z-axis
-			eSWING		= 3,		//!< drive of displacement from the X-axis
-			eTWIST		= 4,		//!< drive of the displacement around the X-axis
-			eSLERP		= 5,		//!< drive of all three angular degrees along a SLERP-path
-			eSWING1		= 6,
-			eSWING2		= 7,
+			eTWIST		= 3,		//!< drive of the displacement around the X-axis
+			eSWING1		= 4,		//!< drive of the displacement around the Y-axis
+			eSWING2		= 5,		//!< drive of the displacement around the Z-axis
+			eSLERP		= 6,		//!< drive of all three angular degrees along a SLERP-path
 			eCOUNT
 		};
 	};

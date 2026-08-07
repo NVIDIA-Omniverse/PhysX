@@ -141,7 +141,6 @@ TEST(UsdVersionCheck, ExtractPackmanPackageId_NonPackmanPath) {
     EXPECT_EQ(extractPackmanPackageId("libusd_tf.so"), "");
 }
 
-// Test version compatibility checking
 TEST(UsdVersionCheck, CheckCompatibility_SimpleRange) {
     EXPECT_TRUE(checkCompatibility("25.11", "==25.11"));
     EXPECT_FALSE(checkCompatibility("25.10", "==25.11"));
@@ -214,14 +213,12 @@ TEST(UsdVersionCheck, CheckCompatibility_CompatibleRelease_EdgeCases) {
     EXPECT_FALSE(checkCompatibility("25.12.0", "~=25.11.0"));
 }
 
-// Test config file parsing with Carbonite
 // Note: These tests require Carbonite framework to be initialized
 TEST(UsdVersionCheck, LoadConfig_ValidFile) {
     ASSERT_TRUE(requireCarboniteRuntime());
 
     std::string config_path = "tests/configs/valid_config.toml";
     
-    // Check if file exists first
     std::ifstream test(config_path);
     ASSERT_TRUE(test.good()) << "Config file not found: " << config_path;
     
@@ -289,8 +286,6 @@ TEST(UsdVersionCheck, LoadConfig_InvalidSyntax) {
 TEST(UsdVersionCheck, DetectUsd_ReturnsValidResult) {
     UsdDetectionResult result = detectUsdInProcess();
     
-    // Result should have valid is_loaded flag
-    // If USD is loaded, version should not be empty
     if (result.is_loaded) {
         EXPECT_FALSE(result.version.empty());
     } else {
@@ -298,7 +293,6 @@ TEST(UsdVersionCheck, DetectUsd_ReturnsValidResult) {
     }
 }
 
-// Test error formatting
 TEST(UsdVersionCheck, FormatCompatibilityError_ContainsRelevantInfo) {
     LibraryConfig config;
     config.name = "ovphysx";
@@ -314,28 +308,23 @@ TEST(UsdVersionCheck, FormatCompatibilityError_ContainsRelevantInfo) {
     EXPECT_NE(error.find("/opt/usd-21.8"), std::string::npos);
 }
 
-// Test library directory detection
 TEST(UsdVersionCheck, GetLibraryDirectory_ReturnsValidPath) {
     std::string lib_dir = getLibraryDirectory();
     
-    // Should return a non-empty string (path to library)
     EXPECT_FALSE(lib_dir.empty());
     
-    // Should be an absolute path
     // Unix: starts with '/', Windows: starts with drive letter and ':'
     EXPECT_TRUE(lib_dir[0] == '/' || (lib_dir.size() > 1 && lib_dir[1] == ':'));
 }
 
-// Test config file discovery
 TEST(UsdVersionCheck, FindConfigFile_FoundInRepoRoot) {
     ASSERT_TRUE(requireCarboniteRuntime());
 
-    // This test assumes we're running from the build directory
-    // and config.toml exists at repo root
+    // Assumes we're running from the build directory, where config.toml
+    // exists at the repo root and findConfigFile locates it relative to
+    // the library location (parent directory in a dev build).
     std::string config_path;
     
-    // findConfigFile should search relative to library location
-    // In a dev build, it should find config.toml in parent directory
     bool found = findConfigFile(config_path);
     
     ASSERT_TRUE(found) << "Config file not found - requires Carbonite filesystem";
@@ -343,7 +332,6 @@ TEST(UsdVersionCheck, FindConfigFile_FoundInRepoRoot) {
     EXPECT_NE(config_path.find("config.toml"), std::string::npos);
 }
 
-// Test USD version check initialization/shutdown
 TEST(UsdVersionCheck, InitializeShutdown_NoThrow) {
     ASSERT_TRUE(requireCarboniteRuntime());
     shutdownUsdVersionCheck();
@@ -353,9 +341,7 @@ TEST(UsdVersionCheck, InitializeShutdown_NoThrow) {
     shutdownUsdVersionCheck();
 }
 
-// Test cached config cleanup
 TEST(UsdVersionCheck, ShutdownWithoutInit_NoThrow) {
-    // Calling shutdown without init should be safe
     shutdownUsdVersionCheck();
     // Should not crash
     EXPECT_TRUE(true);

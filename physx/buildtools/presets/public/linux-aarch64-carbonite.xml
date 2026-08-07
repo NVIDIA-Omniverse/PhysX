@@ -11,6 +11,7 @@
     <cmakeSwitch name="PX_CMAKE_SUPPRESS_REGENERATION" value="False" comment="Disable zero_check projects" />
     <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="True" comment="Generate the GPU projects, if possible." />
     <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS_ONLY" value="False" comment="Generate ONLY the GPU projects, if possible." />
+    <cmakeSwitch name="PX_CUDA_DEVICE_DEBUG" value="False" comment="Build debug CUDA device code with -G for single line stepping" />
     <cmakeSwitch name="PX_SCALAR_MATH" value="False" comment="Disable SIMD math" />
     <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libraries" />
     <cmakeSwitch name="PX_EXPORT_LOWLEVEL_PDB" value="False" comment="Export low level pdb's" />

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -40,25 +40,20 @@
 #pragma clang diagnostic pop
 #endif
 
-#include "PxgHeapMemAllocator.h"
+#include "foundation/PxAssert.h"
+#include "foundation/PxAllocator.h"
 #include "PxgDevicePointer.h"
 
 namespace physx
 {
 	class PxCudaContext;
+	class PxgHeapMemoryAllocator;
 	
 	class PxgCudaBuffer
 	{
 		PX_NOCOPY(PxgCudaBuffer)
 	public:
-		PxgCudaBuffer(PxgHeapMemoryAllocatorManager* heapMemoryManager, PxsHeapStats::Enum statGroup)
-			: mPtr(0)
-			, mHeapMemoryAllocator(heapMemoryManager->mDeviceMemoryAllocators)
-			, mSize(0)
-			, mStatGroup(statGroup)
-		{
-		}
-
+		PxgCudaBuffer(PxgHeapMemoryAllocator& deviceAlloc, PxI32 statGroup);
 		~PxgCudaBuffer();
 
 		void allocate(const PxU64 size, const char* filename, PxI32 line);
@@ -84,7 +79,7 @@ namespace physx
 
 		void assign(PxgCudaBuffer& b1)
 		{
-			PX_ASSERT(mHeapMemoryAllocator == b1.mHeapMemoryAllocator);
+			PX_ASSERT(&mDeviceAlloc == &b1.mDeviceAlloc);
 			PX_ASSERT(mStatGroup == b1.mStatGroup);
 
 			deallocate();
@@ -98,17 +93,17 @@ namespace physx
 
 	protected:
 		CUdeviceptr					mPtr;
-		PxgHeapMemoryAllocator*		mHeapMemoryAllocator;
+		PxgHeapMemoryAllocator&		mDeviceAlloc;
 		PxU64						mSize;
-		const PxsHeapStats::Enum	mStatGroup;
+		const PxU32					mStatGroup;
 	};
 
 	template <typename T>
 	class PxgTypedCudaBuffer : public PxgCudaBuffer
 	{
 	public:
-		PxgTypedCudaBuffer(PxgHeapMemoryAllocatorManager* heapMemoryManager, PxsHeapStats::Enum statGroup)
-			: PxgCudaBuffer(heapMemoryManager, statGroup) 
+		PxgTypedCudaBuffer(PxgHeapMemoryAllocator& deviceAlloc, PxI32 statGroup)
+			: PxgCudaBuffer(deviceAlloc, statGroup) 
 		{ }
 
 		PX_FORCE_INLINE	void allocateElements(const PxU64 nbElements, const char* filename, PxI32 line) { allocate(nbElements * sizeof(T), filename, line); }
@@ -125,12 +120,12 @@ namespace physx
 	{
 		PxU8 mCudaArrays[sizeof(PxgCudaBuffer)*NbBuffers];
 	public:
-		PxgCudaBufferN(PxgHeapMemoryAllocatorManager* heapMemoryManager, PxsHeapStats::Enum statGroup)
+		PxgCudaBufferN(PxgHeapMemoryAllocator& deviceAlloc, PxI32 statGroup)
 		{
 			PxgCudaBuffer* buffers = reinterpret_cast<PxgCudaBuffer*>(mCudaArrays);
 			for (PxU32 i = 0; i < NbBuffers; ++i)
 			{
-				PX_PLACEMENT_NEW(&buffers[i], PxgCudaBuffer)(heapMemoryManager, statGroup);
+				PX_PLACEMENT_NEW(&buffers[i], PxgCudaBuffer)(deviceAlloc, statGroup);
 			}
 		}
 

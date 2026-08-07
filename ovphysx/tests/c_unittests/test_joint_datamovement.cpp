@@ -7,7 +7,6 @@
 // - Write DOF velocity targets using ovphysx_write_tensor_binding()
 // - Read DOF positions and velocities using ovphysx_read_tensor_binding()
 // - Step the simulation and verify the articulation moves as expected
-// This replaces the old async attribute-based data movement API with synchronous tensor binding API.
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
@@ -19,11 +18,9 @@
 using namespace test_utils;
 
 TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofTensorBinding) {
-    // Load articulation USD scene
     const char* usd_path = OVPHYSX_SOURCE_DIR "/tests/data/links_chain_sample.usda";
     ASSERT_TRUE(attach_usd_with_ovstage(m_handle, usd_path));
 
-    // Create tensor bindings using the new tensor binding API
     // 1. DOF position binding (to read joint positions)
     ovphysx_tensor_binding_handle_t dof_pos_binding = 0;
     ovphysx_tensor_binding_desc_t dof_pos_desc{};
@@ -64,7 +61,6 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofTensorBinding) {
     size_t num_dofs = static_cast<size_t>(dof_spec.shape[1]);
     size_t total_elements = num_articulations * num_dofs;
 
-    // Allocate CPU buffers for DOF data
     std::vector<float> dof_positions(total_elements, 0.0f);
     std::vector<float> dof_velocities(total_elements, 0.0f);
     std::vector<float> dof_vel_targets(total_elements, 0.0f);
@@ -99,7 +95,6 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofTensorBinding) {
     vel_target_tensor.strides = nullptr;
     vel_target_tensor.byte_offset = 0;
 
-    // Run simulation steps
     for (int i = 0; i < 100; ++i)
     {
         if(i % 5 == 0) {
@@ -118,11 +113,9 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofTensorBinding) {
         // Read DOF positions and velocities periodically (tensor API is synchronous)
         if (i % 10 == 0)
         {
-            // Read DOF positions
             result = ovphysx_read_tensor_binding(m_handle, dof_pos_binding, &pos_tensor);
             ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
-            // Read DOF velocities
             result = ovphysx_read_tensor_binding(m_handle, dof_vel_binding, &vel_tensor);
             ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
 
@@ -136,7 +129,6 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofTensorBinding) {
                         break;
                     }
                 }
-                // After initial steps, we expect some movement
                 EXPECT_TRUE(has_nonzero_velocity) << "Expected non-zero velocities after " << i << " steps";
             }
         }

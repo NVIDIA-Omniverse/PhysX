@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -539,7 +539,10 @@ bool TriangleMeshBuilder::loadFromDescInternal(PxTriangleMeshDesc& desc, PxTrian
 	recordTriangleIndices();
 
 	// Compute local bounds
-	computeLocalBoundsAndGeomEpsilon(mMeshData.mVertices, mMeshData.mNbVertices, mMeshData.mAABB, mMeshData.mGeomEpsilon);	
+	computeLocalBoundsAndGeomEpsilon(mMeshData.mVertices, mMeshData.mNbVertices, mMeshData.mAABB, mMeshData.mGeomEpsilon);
+
+	if(desc.geomEpsilon > 0.0f)
+		mMeshData.mGeomEpsilon = desc.geomEpsilon;
 
 	createSharedEdgeData(mParams.buildTriangleAdjacencies, !(mParams.meshPreprocessParams & PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE));
 
@@ -1057,7 +1060,7 @@ bool BV4TriangleMeshBuilder::createMidPhaseStructure()
 		gubs = BV4_SAH;
 	else if(strategy==PxBVH34BuildStrategy::eFAST)
 		gubs = BV4_SPLATTER_POINTS;
-	if(!BuildBV4Ex(mData.mBV4Tree, mData.mMeshInterface, gBoxEpsilon, nbTrisPerLeaf, quantized, gubs))
+	if(!buildBV4Ex(mData.mBV4Tree, mData.mMeshInterface, gBoxEpsilon, nbTrisPerLeaf, quantized, gubs))
 		return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "BV4 tree failed to build.");
 
 	{
@@ -1248,7 +1251,7 @@ struct RTreeCookerRemap : RTreeCooker::RemapCallback
 	{
 	}
 
-	virtual void remap(PxU32* val, PxU32 start, PxU32 leafCount)
+	virtual void remap(PxU32* val, PxU32 start, PxU32 leafCount) PX_OVERRIDE
 	{
 		PX_ASSERT(leafCount > 0);
 		PX_ASSERT(leafCount <= 16); // sanity check
@@ -1353,7 +1356,7 @@ PxTriangleMesh* immediateCooking::createTriangleMesh(const PxCookingParams& para
 	struct Local
 	{
 		static PxTriangleMesh* createTriangleMesh(const PxCookingParams& cookingParams_, TriangleMeshBuilder& builder, const PxTriangleMeshDesc& desc_, PxInsertionCallback& insertionCallback_, PxTriangleMeshCookingResult::Enum* condition_)
-		{	
+		{
 			// cooking code does lots of float bitwise reinterpretation that generates exceptions
 			PX_FPU_GUARD;
 

@@ -10,7 +10,8 @@ references go away **before** interpreter shutdown. The ``del physx;
 gc.collect()`` below drops the refcount to zero and runs ``PhysX.__del__``
 synchronously inside the test body. ``__del__`` emits the ResourceWarning
 **and then calls ``self.release()`` itself**, so by the time the test
-returns the native instance is fully torn down. The module-level
+returns the native instance is fully torn down.
+
 The Python API does not register a process-exit cleanup hook. Applications
 should use ``with PhysX() as physx:`` or call ``release()`` explicitly;
 mid-run garbage collection remains a warning-and-release fallback.

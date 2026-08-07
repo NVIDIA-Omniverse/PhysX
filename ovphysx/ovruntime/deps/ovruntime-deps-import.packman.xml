@@ -1,0 +1,37 @@
+<project toolsVersion="5.0">
+  <!-- Namespaced ovruntime source-build dependency set.
+       Runtime plugins come from ovruntime_deps, while OVStage supplies the
+       matched resolver, OmniClient, and omniverse_connection runtime set. Do
+       not import RTX runtime packages here; the separate
+       rtx-plugins-deps.packman.xml pull is only a source-build header input for
+       omni.physx.foundation and is not used by ovphysx packaging/licensing. -->
+  <import path="../_build/target-deps/kit_sdk_${config}/dev/all-deps.packman.xml">
+    <filter include="glm" />
+    <filter include="python" />
+    <filter include="cxxopts" />
+    <filter include="doctest" />
+    <filter include="cuda" />
+    <filter include="imgui" />
+    <filter include="gsl" />
+    <filter include="boost_preprocessor" />
+    <filter include="premake" linkPath="../_build/host-deps/premake" />
+  </import>
+  <import path="carb-sdk-deps.packman.xml">
+    <filter include="carb_sdk_plugins" linkPath="../_build/target-deps/carb_sdk_plugins" tags="slim-package" />
+  </import>
+
+  <dependency name="glm" linkPath="../_build/target-deps/glm" />
+  <dependency name="python" linkPath="../_build/target-deps/python" />
+  <dependency name="cxxopts" linkPath="../_build/target-deps/cxxopts" />
+  <!-- override doctest version; the Kit SDK one is not yet publicly available -->
+  <dependency name="doctest" linkPath="../_build/target-deps/doctest">
+    <package name="doctest" version="2.4.5+nv1-3" />
+  </dependency>
+  <dependency name="usd-${config}" linkPath="../_build/target-deps/usd/${config}">
+    <package name="usd.nopy.${platform_target_abi}.ov-full-monolithic.${config}" version="0.25.11.kit.4-gl.21081" />
+  </dependency>
+  <dependency name="cuda" linkPath="../_build/target-deps/cuda" />
+  <dependency name="imgui" linkPath="../_build/target-deps/imgui" />
+  <dependency name="gsl" linkPath="../_build/target-deps/gsl" />
+  <dependency name="boost_preprocessor" linkPath="../_build/target-deps/boost_preprocessor" />
+</project>

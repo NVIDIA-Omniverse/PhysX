@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,6 +32,8 @@
 #include "OmniPvdFileReadStreamImpl.h"
 #include "OmniPvdFileWriteStreamImpl.h"
 #include "OmniPvdMemoryStreamImpl.h"
+#include "OmniPvdSocketWriteStreamImpl.h"
+#include "OmniPvdSocketReadStreamImpl.h"
 
 OMNI_PVD_EXPORT OmniPvdReader* OMNI_PVD_CALL createOmniPvdReader()
 {
@@ -85,5 +87,28 @@ OMNI_PVD_EXPORT OmniPvdMemoryStream* OMNI_PVD_CALL createOmniPvdMemoryStream()
 OMNI_PVD_EXPORT void OMNI_PVD_CALL destroyOmniPvdMemoryStream(OmniPvdMemoryStream& memoryStream)
 {
 	OmniPvdMemoryStreamImpl* impl = (OmniPvdMemoryStreamImpl*)(&memoryStream);
+	delete impl;
+}
+
+OMNI_PVD_EXPORT OmniPvdSocketWriteStream* OMNI_PVD_CALL createOmniPvdSocketWriteStream(const char* address, uint16_t port, uint32_t sendTimeout)
+{
+	return new OmniPvdSocketWriteStreamImpl(address, port, sendTimeout);
+}
+
+OMNI_PVD_EXPORT void OMNI_PVD_CALL destroyOmniPvdSocketWriteStream(OmniPvdSocketWriteStream& writeStream)
+{
+	OmniPvdSocketWriteStreamImpl* impl = (OmniPvdSocketWriteStreamImpl*)(&writeStream);
+	delete impl;
+}
+
+OMNI_PVD_EXPORT OmniPvdSocketReadStream* OMNI_PVD_CALL createOmniPvdSocketReadStream(uint16_t port)
+{
+	// The read stream is the TCP server: it listens on the given port for a producer.
+	return new OmniPvdSocketReadStreamImpl(port);
+}
+
+OMNI_PVD_EXPORT void OMNI_PVD_CALL destroyOmniPvdSocketReadStream(OmniPvdSocketReadStream& readStream)
+{
+	OmniPvdSocketReadStreamImpl* impl = (OmniPvdSocketReadStreamImpl*)(&readStream);
 	delete impl;
 }

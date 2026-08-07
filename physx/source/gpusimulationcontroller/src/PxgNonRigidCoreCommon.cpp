@@ -22,54 +22,54 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #include "PxgNonRigidCoreCommon.h"
-#include "PxgCudaMemoryAllocator.h"
 #include "cudamanager/PxCudaContext.h"
 #include "cudamanager/PxCudaContextManager.h"
+#include "PxgRadixSortDesc.h"
 #include "PxgRadixSortKernelIndices.h"
 #include "common/PxPhysXCommonConfig.h"
 
 using namespace physx;
 
 PxgEssentialCore::PxgEssentialCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
-	PxgHeapMemoryAllocatorManager* heapMemoryManager, PxgSimulationController* simController, PxgGpuContext* gpuContext) :
+	PxgAllocatorDesc& allocDesc, PxgSimulationController* simController, PxgGpuContext* gpuContext) :
 	mGpuKernelWranglerManager(gpuKernelWrangler),
 	mCudaContextManager(cudaContextManager),
 	mCudaContext(cudaContextManager->getCudaContext()),
-	mHeapMemoryManager(heapMemoryManager),
 	mSimController(simController),
 	mGpuContext(gpuContext),
+	mAllocDesc(allocDesc),
 	mStream(0)
 {
 }
 
 PxgNonRigidCore::PxgNonRigidCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
-	PxgHeapMemoryAllocatorManager* heapMemoryManager, PxgSimulationController* simController, PxgGpuContext* gpuContext,
-	const PxU32 maxContacts, const PxU32 collisionStackSize, PxsHeapStats::Enum statType) :		
-	PxgEssentialCore(gpuKernelWrangler, cudaContextManager, heapMemoryManager, simController, gpuContext),
-	mIntermStackAlloc(*heapMemoryManager->mDeviceMemoryAllocators, collisionStackSize),
-	mStackSizeNeededOnDevice(heapMemoryManager, statType),
-	mStackSizeNeededPinned(NULL),	
+	PxgAllocatorDesc& allocDesc, PxgSimulationController* simController, PxgGpuContext* gpuContext,
+	const PxU32 maxContacts, const PxU32 collisionStackSize, PxU32 statType) :
+	PxgEssentialCore(gpuKernelWrangler, cudaContextManager, allocDesc, simController, gpuContext),
+	mIntermStackAlloc(allocDesc.deviceAlloc, statType, collisionStackSize),
+	mStackSizeNeededOnDevice(allocDesc.deviceAlloc, statType),
+	mStackSizeNeededPinned(allocDesc.hostAlloc, statType),
 	mMaxContacts(maxContacts),
 	mCollisionStackSizeBytes(collisionStackSize),
-	mRSDesc(heapMemoryManager->mMappedMemoryAllocators),
-	mRadixSortDescBuf(heapMemoryManager, statType),
-	mRadixCountTotalBuf(heapMemoryManager, statType),
-	mContactByRigidBuf(heapMemoryManager, statType),
-	mContactSortedByRigidBuf(heapMemoryManager, statType),
-	mTempContactByRigidBitBuf(heapMemoryManager, statType),
-	mContactRemapSortedByRigidBuf(heapMemoryManager, statType),
-	mContactSortedByParticleBuf(heapMemoryManager, statType),
-	mTempContactByParticleBitBuf(heapMemoryManager, statType),
-	mContactRemapSortedByParticleBuf(heapMemoryManager, statType),
-	mTempContactBuf(heapMemoryManager, statType),
-	mTempContactRemapBuf(heapMemoryManager, statType),
-	mTempContactBuf2(heapMemoryManager, statType),
-	mTempContactRemapBuf2(heapMemoryManager, statType),
+	mRSDesc(allocDesc.hostAlloc, statType),
+	mRadixSortDescBuf(allocDesc.deviceAlloc, statType),
+	mRadixCountTotalBuf(allocDesc.deviceAlloc, statType),
+	mContactByRigidBuf(allocDesc.deviceAlloc, statType),
+	mContactSortedByRigidBuf(allocDesc.deviceAlloc, statType),
+	mTempContactByRigidBitBuf(allocDesc.deviceAlloc, statType),
+	mContactRemapSortedByRigidBuf(allocDesc.deviceAlloc, statType),
+	mContactSortedByParticleBuf(allocDesc.deviceAlloc, statType),
+	mTempContactByParticleBitBuf(allocDesc.deviceAlloc, statType),
+	mContactRemapSortedByParticleBuf(allocDesc.deviceAlloc, statType),
+	mTempContactBuf(allocDesc.deviceAlloc, statType),
+	mTempContactRemapBuf(allocDesc.deviceAlloc, statType),
+	mTempContactBuf2(allocDesc.deviceAlloc, statType),
+	mTempContactRemapBuf2(allocDesc.deviceAlloc, statType),
 #if PX_ENABLE_SIM_STATS
 	mCollisionStackSizeBytesStats(0)
 #else
@@ -77,8 +77,7 @@ PxgNonRigidCore::PxgNonRigidCore(PxgCudaKernelWranglerManager* gpuKernelWrangler
 #endif
 {
 	mStackSizeNeededOnDevice.allocateElements(1, PX_FL);
-	mStackSizeNeededPinned = PX_PINNED_MEMORY_ALLOC(PxU32, *mCudaContextManager, 1);
-	*mStackSizeNeededPinned = 0;
+	mStackSizeNeededPinned.get() = 0;
 
 	mRadixCountSize = sizeof(PxU32) * PxgRadixSortKernelGridDim::RADIX_SORT * 16;
 
@@ -102,8 +101,6 @@ PxgNonRigidCore::PxgNonRigidCore(PxgCudaKernelWranglerManager* gpuKernelWrangler
 PxgNonRigidCore::~PxgNonRigidCore()
 {
 	mCudaContextManager->acquireContext();
-
-	PX_PINNED_MEMORY_FREE(*mCudaContextManager, mStackSizeNeededPinned);
 
 	//destroy stream
 	mCudaContext->streamDestroy(mStream);

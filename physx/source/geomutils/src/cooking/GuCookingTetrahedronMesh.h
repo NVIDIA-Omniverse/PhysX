@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef GU_COOKING_TETRAHEDRON_MESH_H
 #define GU_COOKING_TETRAHEDRON_MESH_H
@@ -58,9 +58,9 @@ namespace physx
 
 		static bool	createGRBMidPhaseAndData(const PxU32 originalTriangleCount, Gu::TetrahedronMeshData& collisionMesh, Gu::DeformableVolumeCollisionData& collisionData, const PxCookingParams& params);
 		static void	computeSimData(const PxTetrahedronMeshDesc& desc, Gu::TetrahedronMeshData& simulationMesh, Gu::DeformableVolumeSimulationData& simulationData, const PxCookingParams& params);
-		static void	computeModelsMapping(Gu::TetrahedronMeshData& simulationMesh, const Gu::TetrahedronMeshData& collisionMesh, const Gu::DeformableVolumeCollisionData& collisionData,
+		static bool	computeModelsMapping(Gu::TetrahedronMeshData& simulationMesh, const Gu::TetrahedronMeshData& collisionMesh, const Gu::DeformableVolumeCollisionData& collisionData,
 																	Gu::CollisionMeshMappingData& mappingData, bool buildGPUData, const PxBoundedData* vertexToTet);
-		static void	createCollisionModelMapping(const Gu::TetrahedronMeshData& collisionMesh, const Gu::DeformableVolumeCollisionData& collisionData, Gu::CollisionMeshMappingData& mappingData);
+		static bool	createCollisionModelMapping(const Gu::TetrahedronMeshData& collisionMesh, const Gu::DeformableVolumeCollisionData& collisionData, Gu::CollisionMeshMappingData& mappingData);
 		
 		static void	recordTetrahedronIndices(const Gu::TetrahedronMeshData& collisionMesh, Gu::DeformableVolumeCollisionData& collisionData, bool buildGPUData);
 		static bool	importMesh(const PxTetrahedronMeshDesc& collisionMeshDesc, const PxCookingParams& params, 

@@ -22,13 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #include "PxgGeometryManager.h"
 
-#include "PxsHeapMemoryAllocator.h"
 #include "foundation/PxAssert.h"
 #include "foundation/PxBasicTemplates.h"
 #include "foundation/PxMemory.h"
@@ -68,11 +67,11 @@ static void layOutHeightfield(void* mem, const HeightFieldData& hf);
 template<typename T> static void createTextureObject(CUarray_format format, CUtexObject*& texture, CUarray& cuArray, PxU32 width, PxU32 height, PxU32 depth, const T* data, CUstream stream);
 
 // PxgGeometryManager definitions
-PxgGeometryManager::PxgGeometryManager(PxgHeapMemoryAllocatorManager* heapMemoryManager): 
-	mDeviceMemoryAllocator(heapMemoryManager->mDeviceMemoryAllocators),
-	mPinnedMemoryAllocator(static_cast<PxgHeapMemoryAllocator*>(heapMemoryManager->mMappedMemoryAllocators)),
-	mPinnedMemoryBasePtr(NULL),
-	mPinnedHostMemoryRequirements(0),
+PxgGeometryManager::PxgGeometryManager(PxgAllocatorDesc& allocDesc): 
+	mDeviceAlloc(allocDesc.deviceAlloc),
+	mHostMappedAlloc(allocDesc.hostMappedAlloc),
+	mHostMemoryMapped(NULL),
+	mHostMemoryRequirements(0),
 	mFreeGeometryIndices(mGeometryData),
 	mBoxHullIdx(0xFFffFFff)
 {
@@ -81,12 +80,12 @@ PxgGeometryManager::PxgGeometryManager(PxgHeapMemoryAllocatorManager* heapMemory
 PxgGeometryManager::~PxgGeometryManager()
 {
 	if (mBoxHullIdx != 0xFFFFFFFF)
-		mDeviceMemoryAllocator->deallocate(reinterpret_cast<void*>(getGeometryDevPtrByIndex(mBoxHullIdx)));
+		mDeviceAlloc.deallocate(reinterpret_cast<void*>(getGeometryDevPtrByIndex(mBoxHullIdx)));
 
-	if (mPinnedMemoryBasePtr)
+	if (mHostMemoryMapped)
 	{
-		mPinnedMemoryAllocator->deallocate(mPinnedMemoryBasePtr);
-		mPinnedMemoryBasePtr = NULL;
+		mHostMappedAlloc.deallocate(mHostMemoryMapped);
+		mHostMemoryMapped = NULL;
 	}
 }
 
@@ -94,10 +93,10 @@ PxU32 PxgGeometryManager::addGeometryInternal(PxU64 byteSize, const void* geomPt
 {
 	byteSize = (byteSize + 255) & ~255;
 
-	mPinnedHostMemoryRequirements += byteSize;
+	mHostMemoryRequirements += byteSize;
 
 	PxU32 idx = mFreeGeometryIndices.getFreeIndex();
-	void* devicePtr = mDeviceMemoryAllocator->allocate(byteSize, PxsHeapStats::eNARROWPHASE, PX_FL);
+	void* devicePtr = mDeviceAlloc.allocate(byteSize, PxsHeapStats::eNARROWPHASE, PX_FL);
 
 	PxU32 copyIndex = mScheduledCopies.size();
 
@@ -107,7 +106,7 @@ PxU32 PxgGeometryManager::addGeometryInternal(PxU64 byteSize, const void* geomPt
 	scheduledCopy.mType = type;
 	scheduledCopy.mNumPolyVertices = numPolyVertices;
 
-	PxgCopyManager::CopyDesc desc;
+	PxgCopyDesc desc;
 	desc.dest = (size_t)devicePtr;
 	desc.bytes = (size_t)byteSize;
 
@@ -182,15 +181,26 @@ void PxgGeometryManager::removeGeometry(PxU32 idx)
 		mMeshToTextureMap.erase(geometryToRemove.mDeviceMemPointer);
 	}
 
-	mDeviceMemoryAllocator->deallocate(geometryToRemove.mDeviceMemPointer);
+	mDeviceAlloc.deallocate(geometryToRemove.mDeviceMemPointer);
 	mFreeGeometryIndices.setFreeIndex(idx);
 }
 
 void PxgGeometryManager::scheduleCopyHtoD(PxgCopyManager& copyMan, PxCudaContext& cudaContext, CUstream stream)
 {
 	// allocate the proper amount of pinned memory
-	mPinnedMemoryBasePtr = mPinnedMemoryAllocator->allocate(mPinnedHostMemoryRequirements, PxsHeapStats::eNARROWPHASE, PX_FL);
-	PxU8* basePtr = reinterpret_cast<PxU8*>(mPinnedMemoryBasePtr);
+	if(mHostMemoryRequirements > 0)
+	{
+		mHostMemoryMapped = static_cast<PxU8*>(mHostMappedAlloc.allocate(mHostMemoryRequirements, PxsHeapStats::eNARROWPHASE, PX_FL));
+		if(!mHostMemoryMapped)
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgGeometryManager: failed to allocate pinned host mHostMemoryMapped");
+			mScheduledCopies.forceSize_Unsafe(0);
+			cudaContext.setAbortMode(true);
+			return;
+		}
+	}
+
+	PxU8* basePtr = reinterpret_cast<PxU8*>(mHostMemoryMapped);
 
 	for (PxArray<ScheduledCopyData>::Iterator it = mScheduledCopies.begin(), end = mScheduledCopies.end(); it != end; ++it)
 	{
@@ -239,17 +249,17 @@ void PxgGeometryManager::scheduleCopyHtoD(PxgCopyManager& copyMan, PxCudaContext
 	}
 
 	mScheduledCopies.forceSize_Unsafe(0);
-	mPinnedHostMemoryRequirements = 0;
+	mHostMemoryRequirements = 0;
 }
 
 void PxgGeometryManager::resetAfterMemcpyCompleted()
 {
 	// AD: we basically never send geometry each frame, and they're usually sized differently anyway, so let's give this memory back
 	// to keep pinned memory usage under control.
-	if (mPinnedMemoryBasePtr)
+	if (mHostMemoryMapped)
 	{
-		mPinnedMemoryAllocator->deallocate(mPinnedMemoryBasePtr);
-		mPinnedMemoryBasePtr = NULL;
+		mHostMappedAlloc.deallocate(mHostMemoryMapped);
+		mHostMemoryMapped = NULL;
 	}
 
 	mFreeGeometryIndices.releaseFreeIndices();

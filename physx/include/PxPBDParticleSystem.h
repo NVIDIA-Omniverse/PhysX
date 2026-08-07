@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -293,6 +293,8 @@ public:
 
 	Allows to limit the particles' maximal depenetration velocity to avoid that collision responses lead to very high particle velocities
 
+	<b>Default:</b> 1.0e32
+
 	\param[in] maxDepenetrationVelocity The maximal depenetration velocity
 	*/
 	virtual     void					setMaxDepenetrationVelocity(PxReal maxDepenetrationVelocity) = 0;
@@ -305,20 +307,32 @@ public:
 	virtual     PxReal					getMaxDepenetrationVelocity() const = 0;
 
 	/**
-	\brief Set the maximal velocity particles can reach
+	\brief Set the maximal linear velocity particles can reach.
 
-	Allows to limit the particles' maximal velocity to control the maximal distance a particle can move per frame
+	Allows to limit the particles' maximal velocity to control the maximal distance a particle can move per frame.
 
-	\param[in] maxVelocity The maximal velocity
+	<b>Default:</b> PX_MAX_F32
+
+	\param[in] maxLinearVelocity The maximal linear velocity
 	*/
-	virtual     void					setMaxVelocity(PxReal maxVelocity) = 0;
+	virtual     void					setMaxLinearVelocity(PxReal maxLinearVelocity) = 0;
 
 	/**
-	\brief Retrieves maximal velocity a particle can have.
+	\brief Retrieves maximal linear velocity a particle can have.
 
-	\return The maximal velocity
+	\return The maximal linear velocity
 	*/
-	virtual     PxReal					getMaxVelocity() const = 0;
+	virtual     PxReal					getMaxLinearVelocity() const = 0;
+
+	/**
+	\deprecated Use setMaxLinearVelocity() instead.
+	*/
+	PX_DEPRECATED PX_FORCE_INLINE void	setMaxVelocity(PxReal maxVelocity) { setMaxLinearVelocity(maxVelocity); }
+
+	/**
+	\deprecated Use getMaxLinearVelocity() instead.
+	*/
+	PX_DEPRECATED PX_FORCE_INLINE PxReal getMaxVelocity() const { return getMaxLinearVelocity(); }
 
 
 	/**
@@ -397,46 +411,6 @@ public:
 	See #setSolidRestOffset()
 	*/
 	virtual     PxReal					getSolidRestOffset() const = 0;
-
-
-	/**
-	\brief Creates a rigid attachment between a particle and a rigid actor.
-
-	\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
-
-	This method creates a symbolic attachment between the particle system and a rigid body for the purpose of island management.
-	The actual attachments will be contained in the particle buffers.
-
-	Be aware that destroying the rigid body before destroying the attachment is illegal and may cause a crash.
-	The particle system keeps track of these attachments but the rigid body does not.
-
-	\param[in] actor The rigid actor used for the attachment
-	*/
-	PX_DEPRECATED virtual void			addRigidAttachment(PxRigidActor* actor) = 0;
-
-	/**
-	\brief Removes a rigid attachment between a particle and a rigid body.
-
-	\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
-
-	This method destroys a symbolic attachment between the particle system and a rigid body for the purpose of island management.
-
-	Be aware that destroying the rigid body before destroying the attachment is illegal and may cause a crash.
-	The particle system keeps track of these attachments but the rigid body does not.
-
-	\param[in] actor The rigid body actor used for the attachment
-	*/
-	PX_DEPRECATED virtual void			removeRigidAttachment(PxRigidActor* actor) = 0;
-
-
-	/**
-	\brief Enable continuous collision detection for particles
-
-	\deprecated Replaced by particle flag, \see PxParticleFlag::eENABLE_SPECULATIVE_CCD.
-
-	\param[in] enable Boolean indicates whether continuous collision detection is enabled.
-	*/
-	PX_DEPRECATED virtual void			enableCCD(bool enable) = 0;
 
 
 	/**

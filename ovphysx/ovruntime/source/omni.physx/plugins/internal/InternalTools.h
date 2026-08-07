@@ -1,0 +1,40 @@
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+//
+
+#pragma once
+
+namespace omni
+{
+namespace physx
+{
+namespace internal
+{
+// extracts and returns scale vec in precision set in template
+// use GfVec3d, GfVec3f, GfVec3h accordingly
+// returns success of read && cast operation
+template <class T>
+bool getScaleFromXformOp(T& scaleVec, const PXR_NS::UsdPrim& prim)
+{
+    PXR_NS::UsdGeomXformable primXform(prim);
+    if (!primXform)
+    {
+        return false;
+    }
+
+    bool resetXformStack = false;
+    const std::vector<PXR_NS::UsdGeomXformOp> xformOps = primXform.GetOrderedXformOps(&resetXformStack);
+    // this will be used mostly on sanitized xform op stacks, so search for
+    // scale op in reverse order as scale will usually be on top:
+    for (auto crit = xformOps.crbegin(); crit != xformOps.crend(); ++crit)
+    {
+        if (crit->GetOpType() == PXR_NS::UsdGeomXformOp::TypeScale)
+        {
+            return crit->GetAs<T>(&scaleVec, PXR_NS::UsdTimeCode::Default());
+        }
+    }
+    return false;
+}
+} // namespace internal
+} // namespace physx
+} // namespace omni

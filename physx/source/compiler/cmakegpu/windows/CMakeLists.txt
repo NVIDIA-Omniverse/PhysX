@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 IF(NOT DEFINED PHYSX_WINDOWS_COMPILE_DEFS)
 	MESSAGE(FATAL ERROR "PHYSXGPU uses the PhysX compile defs, and they're not defined when they need to be.")
@@ -54,7 +54,7 @@ SET(CUDA_SUPPRESS_WARNINGS "-Xptxas -w -ftemplate-backtrace-limit=2")
 SET(PHYSX_CUDA_FLAGS "${PHYSX_CUDA_FLAGS} -D_WIN32_WINNT=0x0601 ${CUDA_SUPPRESS_WARNINGS}")
 
 # Build debug info for all configurations
-SET(PHYSX_CUDA_FLAGS_DEBUG   "${CUDA_DEBUG_FLAG} --compiler-options=/W4,/nologo,/Zi,/Od,/RTC1,/wd4505,/wd4459,/wd4324,/wd4244 -G -g" CACHE INTERNAL "PhysX Debug CUDA Flags")
+SET(PHYSX_CUDA_FLAGS_DEBUG   "${CUDA_DEBUG_FLAG} --compiler-options=/W4,/nologo,/Zi,/Od,/RTC1,/wd4505,/wd4459,/wd4324,/wd4244 ${PX_CUDA_DEBUG_DEVICE_FLAGS}" CACHE INTERNAL "PhysX Debug CUDA Flags")
 SET(PHYSX_CUDA_FLAGS_CHECKED "${CUDA_NDEBUG_FLAG} -lineinfo --compiler-options=/W4,/nologo,/Ot,/Ox,/Zi,/wd4505,/wd4459,/wd4324,/wd4244" CACHE INTERNAL "PhysX Checked CUDA Flags")
 SET(PHYSX_CUDA_FLAGS_PROFILE "${CUDA_NDEBUG_FLAG} -lineinfo --compiler-options=/W4,/nologo,/Ot,/Ox,/Zi,/wd4505,/wd4459,/wd4324,/wd4244" CACHE INTERNAL "PhysX Profile CUDA Flags")
 SET(PHYSX_CUDA_FLAGS_RELEASE "${CUDA_NDEBUG_FLAG} -lineinfo --compiler-options=/W4,/nologo,/Ot,/Ox,/Zi,/wd4505,/wd4459,/wd4324,/wd4244" CACHE INTERNAL "PhysX Release CUDA Flags")
@@ -102,8 +102,13 @@ SET_PROPERTY(TARGET PhysXGpu PROPERTY FOLDER "PhysX SDK/GPU")
 SET_PROPERTY(TARGET PhysXCudaContextManager PROPERTY FOLDER "PhysX SDK/GPU")	
 
 SET(PHYSXDISTRO_LIBS PhysXGpu)
-INSTALL(
-	TARGETS ${PHYSXDISTRO_LIBS}
-	EXPORT PhysXSDK
-	DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile>	
-)	
+
+# Only install the legacy PhysXSDK export set in standalone mode (PX_ENABLE_INSTALL not defined).
+# The FetchContent entry point (physx/CMakeLists.txt) uses its own PhysXTargets export set.
+IF(NOT DEFINED PX_ENABLE_INSTALL)
+	INSTALL(
+		TARGETS ${PHYSXDISTRO_LIBS}
+		EXPORT PhysXSDK
+		DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile>
+	)
+ENDIF()	

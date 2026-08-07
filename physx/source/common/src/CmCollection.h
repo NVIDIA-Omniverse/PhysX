@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -37,7 +37,7 @@
 namespace physx
 {
 namespace Cm
-{	
+{
 	template <class Key, 
 			  class Value,
 			  class HashFn = PxHash<Key>, 
@@ -63,23 +63,23 @@ namespace Cm
 		typedef CollectionHashMap<PxBase*, PxSerialObjectId> ObjectToIdMap;
 		typedef CollectionHashMap<PxSerialObjectId, PxBase*> IdToObjectMap;
 					
-		virtual void						add(PxBase& object, PxSerialObjectId ref);
-		virtual	void						remove(PxBase& object);	
-		virtual bool						contains(PxBase& object) const;
-		virtual void						addId(PxBase& object, PxSerialObjectId id);
-		virtual void						removeId(PxSerialObjectId id);
-		virtual PxBase*						find(PxSerialObjectId ref) const;
-		virtual void						add(PxCollection& collection);
-		virtual void						remove(PxCollection& collection);		
-		virtual	PxU32						getNbObjects() const;
-		virtual PxBase&						getObject(PxU32 index) const;
-		virtual	PxU32						getObjects(PxBase** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const;
+		virtual void						add(PxBase& object, PxSerialObjectId ref) PX_OVERRIDE;
+		virtual	void						remove(PxBase& object) PX_OVERRIDE;	
+		virtual bool						contains(PxBase& object) const PX_OVERRIDE;
+		virtual void						addId(PxBase& object, PxSerialObjectId id) PX_OVERRIDE;
+		virtual void						removeId(PxSerialObjectId id) PX_OVERRIDE;
+		virtual PxBase*						find(PxSerialObjectId ref) const PX_OVERRIDE;
+		virtual void						add(PxCollection& collection) PX_OVERRIDE;
+		virtual void						remove(PxCollection& collection) PX_OVERRIDE;		
+		virtual	PxU32						getNbObjects() const PX_OVERRIDE;
+		virtual PxBase&						getObject(PxU32 index) const PX_OVERRIDE;
+		virtual	PxU32						getObjects(PxBase** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const PX_OVERRIDE;
 
-		virtual PxU32						getNbIds() const;		
-		virtual PxSerialObjectId			getId(const PxBase& object) const;
-		virtual	PxU32						getIds(PxSerialObjectId* userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const;
+		virtual PxU32						getNbIds() const PX_OVERRIDE;		
+		virtual PxSerialObjectId			getId(const PxBase& object) const PX_OVERRIDE;
+		virtual	PxU32						getIds(PxSerialObjectId* userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const PX_OVERRIDE;
 
-		void								release() { PX_DELETE_THIS; }
+		virtual	void						release() PX_OVERRIDE	{ PX_DELETE_THIS; }
 
 		// Only for internal use. Bypasses virtual calls, specialized behaviour.
 		PX_INLINE	void						internalAdd(PxBase* s, PxSerialObjectId id = PX_SERIAL_OBJECT_ID_INVALID)	{ mObjects.insertUnique(s, id);	}

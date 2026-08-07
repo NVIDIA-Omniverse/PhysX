@@ -4,13 +4,9 @@
 
 // Tensor binding I/O throughput across scaled scenes. CPU-only.
 //
-// Per review on MR !7247: the previous version measured against
-// /World/envs/env0/* on basic_simulation.usda, which exposes only ~32
-// objects to the binding. That's well below the regime where pose I/O
-// throughput is meaningful. We now clone cubes20 into 1024 / 8192 env
-// targets so the binding's spec yields N×21 prims (20 dynamic cubes +
-// ground per env) and the timed read/write op covers a realistic
-// IsaacLab-scale payload.
+// Clones cubes20 into 1024 / 8192 env targets so the binding's spec yields
+// Nx21 prims (20 dynamic cubes + ground per env) and the timed read/write op
+// covers a realistic IsaacLab-scale payload.
 
 #include "framework/UsdPCH.h"
 
@@ -107,7 +103,7 @@ public:
     void startRun() override
     {
         // Cache PhysX* + DLTensor view once so step() doesn't pay for a
-        // global lookup or rebuild per measured iteration (MR !7247).
+        // global lookup or rebuild per measured iteration.
         mPhysX = BmGlobals::getInstance().getPhysX();
         if (!mPhysX) return;
 

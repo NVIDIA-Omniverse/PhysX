@@ -49,10 +49,80 @@ target_link_libraries(c_unittests
 # Tests consume ovphysx through the C API; ovphysx owns the static Carbonite framework.
 target_compile_definitions(c_unittests PRIVATE CARB_STATIC_PLUGIN_BUILD=1)
 
+# Feature-gated tests skip via GTEST_SKIP() inside #ifndef guards on the SDK/GPU
+# capability defines; when a define is absent the body after the (return-like)
+# GTEST_SKIP is unreachable, which MSVC flags as C4702 and the project-wide /WX
+# promotes to an error. The skip-then-dead-code is intentional and documented
+# per test, and Linux/clang do not warn, so silence C4702 for the test TU only.
+if(MSVC)
+    target_compile_options(c_unittests PRIVATE /wd4702)
+endif()
+
 if(OVPHYSX_ENABLE_GPU_TESTS)
     target_compile_definitions(c_unittests PRIVATE OVPHYSX_ENABLE_GPU_TESTS=1)
 else()
     target_compile_definitions(c_unittests PRIVATE OVPHYSX_ENABLE_GPU_TESTS=0)
+endif()
+
+# Whether the PhysXGpu module the tests will load contains the DirectGPU debug-viz
+# features added by this tree (friction-anchor emission + the contact scope gate).
+# Two ways to have them:
+#   - PhysXGpu built from THIS tree's source (devphysx with CUDA): TARGET PhysXGpu
+#     exists (the prebuilt path links raw *_static_64 libs and creates no target).
+#   - A prebuilt physxsdk package NEW ENOUGH to contain them: probe the packaged
+#     binary for a literal the feature embeds ("drawFrictionAnchors:", the error
+#     string in PxgGpuNarrowphaseCore::drawFrictionAnchors). This re-arms the
+#     hard assertions automatically once the package pin rolls past the merge --
+#     without it, the tests' documented skip would hide a future trunk regression
+#     in the shipped PhysXGpu forever (review).
+# Tests hard-assert when either holds and carry a documented skip otherwise.
+set(_OVPHYSX_TEST_GPU_VIZ_CAPABLE FALSE)
+if(TARGET PhysXGpu)
+    set(_OVPHYSX_TEST_GPU_VIZ_CAPABLE TRUE)
+else()
+    # Probe the packman physx package -- the module the tests actually load in both
+    # non-source-GPU configurations. PHYSX_SDK_DIR is the WRONG base for this
+    # (review): on prebuilt builds it is a directory-scope variable inside the
+    # ovruntime subdirectory (not DEFINED here), and on devphysx it is CACHE-set to
+    # the physx SOURCE tree, which has no bin/. Glob the platform dir instead of
+    # requiring PHYSX_PLATFORM_BIN, which has the same scope problem.
+    if(WIN32)
+        set(_physxgpu_probe_name "PhysXGpu_64.dll")
+    else()
+        set(_physxgpu_probe_name "libPhysXGpu_64.so")
+    endif()
+    file(GLOB _physxgpu_probe_candidates
+        "${OVRUNTIME_TARGET_DEPS}/physx/bin/*/checked/${_physxgpu_probe_name}"
+        "${OVRUNTIME_TARGET_DEPS}/physx/bin/*/debug/${_physxgpu_probe_name}"
+        "${OVRUNTIME_TARGET_DEPS}/physx/bin/*/release/${_physxgpu_probe_name}")
+    if(_physxgpu_probe_candidates)
+        list(GET _physxgpu_probe_candidates 0 _physxgpu_probe)
+        file(STRINGS "${_physxgpu_probe}" _physxgpu_viz_marker REGEX "drawFrictionAnchors:" LIMIT_COUNT 1)
+        if(_physxgpu_viz_marker)
+            set(_OVPHYSX_TEST_GPU_VIZ_CAPABLE TRUE)
+        endif()
+    endif()
+endif()
+if(_OVPHYSX_TEST_GPU_VIZ_CAPABLE)
+    target_compile_definitions(c_unittests PRIVATE OVPHYSX_TEST_PHYSXGPU_DEBUG_VIZ=1)
+    message(STATUS "c_unittests: PhysXGpu provides the DirectGPU debug-viz features -- hard-asserting emission")
+else()
+    message(STATUS "c_unittests: prebuilt PhysXGpu predates the DirectGPU debug-viz features -- emission tests skip")
+endif()
+
+# The contact-scope rule is implemented in the CPU PhysX SDK. Source builds use
+# this tree directly and must always assert it, even when PhysXGpu is unavailable.
+# For prebuilt SDKs, the GPU marker above identifies packages built from the same
+# PhysX change and re-arms the CPU assertion once that package pin rolls forward.
+set(_OVPHYSX_TEST_CPU_SCOPE_VIZ_CAPABLE FALSE)
+if(TARGET PhysX OR _OVPHYSX_TEST_GPU_VIZ_CAPABLE)
+    set(_OVPHYSX_TEST_CPU_SCOPE_VIZ_CAPABLE TRUE)
+endif()
+if(_OVPHYSX_TEST_CPU_SCOPE_VIZ_CAPABLE)
+    target_compile_definitions(c_unittests PRIVATE OVPHYSX_TEST_PHYSXSDK_CONTACT_SCOPE_VIZ=1)
+    message(STATUS "c_unittests: PhysX SDK provides contact-scope visualization -- hard-asserting scope")
+else()
+    message(STATUS "c_unittests: prebuilt PhysX SDK predates contact-scope visualization -- scope test skips")
 endif()
 
 if(NOT WIN32)
@@ -89,7 +159,7 @@ target_include_directories(c_unittests
 # Python libraries are added to RPATH below so the plugin can resolve them.
 
 # Add compile definitions for test data paths
-# Relative paths assume cwd = PROJECT_ROOT (omni/ovphysx/), enforced by test_cpp.cmake
+# Relative paths assume cwd = PROJECT_ROOT (ovphysx/), enforced by test_cpp.cmake
 # WORKING_DIRECTORY and by bootstrap_test_environment() error messages in test_main.cpp
 target_compile_definitions(c_unittests
     PRIVATE
@@ -145,6 +215,46 @@ if(NOT WIN32)
 else()
     # Windows: DLLs must be on PATH before process launch (no RPATH equivalent).
     # test_cpp.cmake sets PATH; standalone runs require the user to set it.
+endif()
+
+# Isolated sidecar tests inject a fake visualization accessor. Keep them
+# out of c_unittests so no other test process can observe those process-global seams.
+add_executable(sidecar_token_scope_unittests
+    ${PROJECT_SOURCE_DIR}/tests/internal_unittests/test_token_scope_sidecar.cpp
+)
+target_link_libraries(sidecar_token_scope_unittests
+    PRIVATE
+        gtest_main
+        ovphysx_internal
+        ovphysx::ovstage
+)
+target_include_directories(sidecar_token_scope_unittests
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/src/include
+        ${OMNI_PHYSICS_DIR}/include
+        ${CARB_SDK_INCLUDE_DIR}
+)
+target_include_directories(sidecar_token_scope_unittests SYSTEM PRIVATE
+    ${USD_TDEP_INCLUDE_DIR}
+    ${OVSTAGE_INCLUDE_DIRS}
+)
+ovphysx_apply_compiler_defaults(sidecar_token_scope_unittests)
+ovphysx_apply_windows_tbb_config(sidecar_token_scope_unittests)
+set_target_properties(sidecar_token_scope_unittests PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+)
+if(NOT WIN32)
+    target_link_options(sidecar_token_scope_unittests PRIVATE
+        -Wl,--allow-shlib-undefined
+        "LINKER:--disable-new-dtags"
+    )
+    set_target_properties(sidecar_token_scope_unittests PROPERTIES
+        BUILD_RPATH "${TEST_RPATH}"
+        INSTALL_RPATH "\$ORIGIN"
+        SKIP_BUILD_RPATH FALSE
+    )
 endif()
 
 # ============================================================================

@@ -1,0 +1,8 @@
+<project toolsVersion="5.0">
+  <!-- Import kit-kernel from the ovruntime project to ensure ABI compatibility -->
+  <import path="../ovruntime/deps/kit-kernel-deps.packman.xml">
+    <filter include="kit_sdk_${config}" />
+  </import>
+  <!-- Override linkPath to install into ovphysx/_build/ instead of ovruntime/_build/ -->
+  <dependency name="kit_sdk_${config}" linkPath="../_build/target-deps/kit_sdk_${config}" />
+</project>

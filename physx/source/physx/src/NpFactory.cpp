@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -76,15 +76,16 @@ NpFactory::NpFactory() :
 {
 }
 
+// Only the deformable-attachment and element-filter tracking sets (both PX_SUPPORT_GPU_PHYSX) use the
+// plain hash-set form, so guard it; otherwise it is an unused template on cpu-only builds
+// (clang -Werror,-Wunused-template).
+#if PX_SUPPORT_GPU_PHYSX
 template <typename T>
 static void releaseAll(PxHashSet<T*>& container)
 {
 	// a bit tricky: release will call the factory back to remove the object from
 	// the tracking array, immediately invalidating the iterator. Reconstructing the
 	// iterator per delete can be expensive. So, we use a temporary object.
-	//
-	// a coalesced hash would be efficient too, but we only ever iterate over it
-	// here so it's not worth the 2x remove penalty over the normal hash.
 
 	PxArray<T*, PxReflectionAllocator<T*> > tmp;
 	tmp.reserve(container.size());
@@ -94,6 +95,21 @@ static void releaseAll(PxHashSet<T*>& container)
 	PX_ASSERT(tmp.size() == container.size());
 	for(PxU32 i=0;i<tmp.size();i++)
 		tmp[i]->release();
+}
+#endif
+
+// Same idea for a coalesced set, which has no iterator: release from the back of its contiguous
+// entries buffer (release calls back into the factory and erases from the set), so no temporary copy
+// is needed.
+template <typename T>
+static void releaseAll(PxCoalescedHashSet<T*>& container)
+{
+	// Release from the back of the contiguous entries buffer. Each release() calls the factory back to
+	// erase that object, which removes the last entry, so the entries still ahead stay valid and no
+	// temporary copy is needed.
+	T* const* entries = container.getEntries();
+	for(PxU32 i = container.size(); i > 0; i--)
+		entries[i - 1]->release();
 }
 
 NpFactory::~NpFactory()
@@ -106,7 +122,15 @@ void NpFactory::release()
 	releaseAll(mAggregateTracking);
 	releaseAll(mConstraintTracking);
 	releaseAll(mArticulationTracking);
-	releaseAll(mActorTracking);
+	releaseAll(mRigidStaticTracking);
+	releaseAll(mRigidDynamicTracking);
+	// Deformables and PBD particle systems are tracked separately but, like the rigid actors above,
+	// must be released before the shapes they reference.
+#if PX_SUPPORT_GPU_PHYSX
+	releaseAll(mDeformableSurfaceTracking);
+	releaseAll(mDeformableVolumeTracking);
+	releaseAll(mPBDParticleSystemTracking);
+#endif
 	while(mShapeTracking.size())
 		static_cast<NpShape*>(mShapeTracking.getEntries()[0])->releaseInternal();
 
@@ -155,13 +179,13 @@ static void addToTracking(T1& set, T0* element, PxMutex& mutex, bool lock)
 
 void NpFactory::addRigidStatic(PxRigidStatic* npActor, bool lock)
 {
-	addToTracking(mActorTracking, npActor, mTrackingMutex, lock);
+	addToTracking(mRigidStaticTracking, npActor, mTrackingMutex, lock);
 	OMNI_PVD_NOTIFY_ADD(npActor);
 }
 
 void NpFactory::addRigidDynamic(PxRigidDynamic* npBody, bool lock)
 {
-	addToTracking(mActorTracking, npBody, mTrackingMutex, lock);
+	addToTracking(mRigidDynamicTracking, npBody, mTrackingMutex, lock);
 	OMNI_PVD_NOTIFY_ADD(npBody);
 }
 
@@ -175,7 +199,19 @@ void NpFactory::onActorRelease(PxActor* a)
 {
 	OMNI_PVD_NOTIFY_REMOVE(a);
 	PxMutex::ScopedLock lock(mTrackingMutex);
-	mActorTracking.erase(a);
+	// Erase from the single tracking set that matches the concrete type. The PxBase subobject (which
+	// holds the concrete type) outlives ~NpActorTemplate, so getConcreteType() is valid on this path.
+	switch (a->getConcreteType())
+	{
+	case PxConcreteType::eRIGID_STATIC:			mRigidStaticTracking.erase(static_cast<PxRigidStatic*>(a));		break;
+	case PxConcreteType::eRIGID_DYNAMIC:		mRigidDynamicTracking.erase(static_cast<PxRigidDynamic*>(a));	break;
+#if PX_SUPPORT_GPU_PHYSX
+	case PxConcreteType::eDEFORMABLE_SURFACE:	mDeformableSurfaceTracking.erase(a);							break;
+	case PxConcreteType::eDEFORMABLE_VOLUME:	mDeformableVolumeTracking.erase(a);								break;
+	case PxConcreteType::ePBD_PARTICLESYSTEM:	mPBDParticleSystemTracking.erase(a);							break;
+#endif
+	default:																									break;
+	}
 }
 
 void NpFactory::onShapeRelease(PxShape* a)
@@ -262,8 +298,8 @@ PxArticulationLink* NpFactory::createArticulationLink(NpArticulationReducedCoord
 	PxArticulationJointReducedCoordinate* npArticulationJoint = 0;
 	if (parent)
 	{
-		PxTransform parentPose = parent->getCMassLocalPose().transformInv(pose);
-		PxTransform childPose = PxTransform(PxIdentity);
+		const PxTransform parentPose = parent->getCMassLocalPose().transformInv(pose);
+		const PxTransform childPose(PxIdentity);
 						
 		npArticulationJoint = root.createArticulationJoint(*parent, parentPose, *npArticulationLink, childPose);
 		if (!npArticulationJoint)
@@ -275,7 +311,7 @@ PxArticulationLink* NpFactory::createArticulationLink(NpArticulationReducedCoord
 		}
 
 		npArticulationLink->setInboundJoint(*npArticulationJoint);
-	}	
+	}
 	return npArticulationLink;
 }
 
@@ -330,6 +366,7 @@ PxDeformableSurface* NpFactory::createDeformableSurface(PxCudaContextManager& cu
 	NpDeformableSurface* ds;
 	{	PxMutex::ScopedLock lock(mDeformableSurfacePoolLock);
 	ds = mDeformableSurfacePool.construct(cudaContextManager);	}
+	addToTracking(mDeformableSurfaceTracking, static_cast<PxActor*>(ds), mTrackingMutex, true); // track for the full-state snapshot (scene membership aside); ~NpActorTemplate erases it
 	OMNI_PVD_NOTIFY_ADD(ds);
 	return ds;
 }
@@ -349,6 +386,7 @@ PxDeformableVolume* NpFactory::createDeformableVolume(PxCudaContextManager& cuda
 	NpDeformableVolume* dv;
 	{	PxMutex::ScopedLock lock(mDeformableVolumePoolLock);
 	dv = mDeformableVolumePool.construct(cudaContextManager);	}
+	addToTracking(mDeformableVolumeTracking, static_cast<PxActor*>(dv), mTrackingMutex, true); // track for the full-state snapshot (scene membership aside); ~NpActorTemplate erases it
 	OMNI_PVD_NOTIFY_ADD(dv);
 	return dv;
 }
@@ -449,6 +487,7 @@ PxPBDParticleSystem* NpFactory::createPBDParticleSystem(PxU32 maxNeighborhood, P
 {
 	PxMutex::ScopedLock lock(mPBDParticleSystemPoolLock);
 	PxPBDParticleSystem* ps = mPBDParticleSystemPool.construct(maxNeighborhood, neighborhoodScale, cudaContextManager);
+	addToTracking(mPBDParticleSystemTracking, static_cast<PxActor*>(ps), mTrackingMutex, true); // track for the full-state snapshot (scene membership aside); ~NpActorTemplate erases it
 	OMNI_PVD_NOTIFY_ADD(ps);
 	return ps;
 }
@@ -463,34 +502,18 @@ void NpFactory::releasePBDParticleSystemToPool(PxPBDParticleSystem& particleSyst
 
 /////////////////////////////////////////////////////////////////////////////// Particle Buffers
 
-PxParticleBuffer* NpFactory::createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager& cudaContextManager)
+PxParticleBuffer* NpFactory::createParticleBuffer(PxU32 maxParticles, PxCudaContextManager& cudaContextManager)
 {
 	PxMutex::ScopedLock lock(mParticleBufferPoolLock);
-	PxParticleBuffer* buffer = mParticleBufferPool.construct(maxParticles, maxVolumes, cudaContextManager);
+	PxParticleBuffer* buffer = mParticleBufferPool.construct(maxParticles, cudaContextManager);
 	addParticleBuffer(buffer);
 	return buffer;
 }
 
-PxParticleAndDiffuseBuffer* NpFactory::createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager)
+PxParticleAndDiffuseBuffer* NpFactory::createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager)
 {
 	PxMutex::ScopedLock lock(mParticleAndDiffuseBufferPoolLock);
-	PxParticleAndDiffuseBuffer* buffer = mParticleAndDiffuseBufferPool.construct(maxParticles, maxVolumes, maxDiffuseParticles, cudaContextManager);
-	addParticleBuffer(buffer);
-	return buffer;
-}
-
-PxParticleClothBuffer* NpFactory::createParticleClothBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager& cudaContextManager)
-{
-	PxMutex::ScopedLock lock(mParticleClothBufferPoolLock);
-	PxParticleClothBuffer* buffer = mParticleClothBufferPool.construct(maxParticles, maxNumVolumes, maxNumCloths, maxNumTriangles, maxNumSprings, cudaContextManager);
-	addParticleBuffer(buffer);
-	return buffer;
-}
-
-PxParticleRigidBuffer* NpFactory::createParticleRigidBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumRigids, PxCudaContextManager& cudaContextManager)
-{
-	PxMutex::ScopedLock lock(mParticleRigidBufferPoolLock);
-	PxParticleRigidBuffer* buffer = mParticleRigidBufferPool.construct(maxParticles, maxNumVolumes, maxNumRigids, cudaContextManager);
+	PxParticleAndDiffuseBuffer* buffer = mParticleAndDiffuseBufferPool.construct(maxParticles, maxDiffuseParticles, cudaContextManager);
 	addParticleBuffer(buffer);
 	return buffer;
 }
@@ -515,25 +538,23 @@ void NpFactory::releaseParticleAndDiffuseBufferToPool(PxParticleAndDiffuseBuffer
 	mParticleAndDiffuseBufferPool.destroy(static_cast<NpParticleAndDiffuseBuffer*>(&particleBuffer));
 }
 
-void NpFactory::releaseParticleClothBufferToPool(PxParticleClothBuffer& particleBuffer)
-{
-	PX_ASSERT(particleBuffer.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
-	PxMutex::ScopedLock lock(mParticleClothBufferPoolLock);
-	mParticleClothBufferPool.destroy(static_cast<NpParticleClothBuffer*>(&particleBuffer));
-}
-
-void NpFactory::releaseParticleRigidBufferToPool(PxParticleRigidBuffer& particleBuffer)
-{
-	PX_ASSERT(particleBuffer.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
-	PxMutex::ScopedLock lock(mParticleRigidBufferPoolLock);
-	mParticleRigidBufferPool.destroy(static_cast<NpParticleRigidBuffer*>(&particleBuffer));
-}
-
 void NpFactory::onParticleBufferRelease(PxParticleBuffer* buffer)
 {
 	OMNI_PVD_NOTIFY_REMOVE(buffer);
 	PxMutex::ScopedLock lock(mTrackingMutex);
 	mParticleBufferTracking.erase(buffer);
+}
+
+PxU32 NpFactory::getNbParticleBuffers() const
+{
+	return mParticleBufferTracking.size();
+}
+
+PxU32 NpFactory::getParticleBuffers(PxParticleBuffer** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
+{
+	// Every PxParticleBuffer the factory tracks, whether or not it has been attached to a particle
+	// system, so a full-state snapshot reaches standalone buffers too (see getConstraints).
+	return getArrayOfPointers(userBuffer, bufferSize, startIndex, mParticleBufferTracking.getEntries(), mParticleBufferTracking.size());
 }
 
 #endif
@@ -543,6 +564,68 @@ void NpFactory::onParticleBufferRelease(PxParticleBuffer* buffer)
 PxU32 NpFactory::getNbConstraints() const
 {
 	return mConstraintTracking.size();
+}
+
+PxU32 NpFactory::getConstraints(PxConstraint** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
+{
+	// Enumerates every constraint the factory tracks, regardless of whether it has been added to a
+	// scene, so a full-state snapshot reaches scene-less constraints too. No lock, matching
+	// getShapes(): the snapshot runs at a safe point with no concurrent creation.
+	return getArrayOfPointers(userBuffer, bufferSize, startIndex, mConstraintTracking.getEntries(), mConstraintTracking.size());
+}
+
+PxU32 NpFactory::getNbRigidStatics() const
+{
+	return mRigidStaticTracking.size();
+}
+
+PxU32 NpFactory::getRigidStatics(PxRigidStatic** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
+{
+	// The rigid statics the factory tracks, regardless of scene membership (see getConstraints).
+	return getArrayOfPointers(userBuffer, bufferSize, startIndex, mRigidStaticTracking.getEntries(), mRigidStaticTracking.size());
+}
+
+PxU32 NpFactory::getNbRigidDynamics() const
+{
+	return mRigidDynamicTracking.size();
+}
+
+PxU32 NpFactory::getRigidDynamics(PxRigidDynamic** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
+{
+	// The rigid dynamics the factory tracks, regardless of scene membership (see getConstraints).
+	return getArrayOfPointers(userBuffer, bufferSize, startIndex, mRigidDynamicTracking.getEntries(), mRigidDynamicTracking.size());
+}
+
+#if PX_SUPPORT_GPU_PHYSX
+PxU32 NpFactory::getNbDeformableSurfaces() const { return mDeformableSurfaceTracking.size(); }
+PxU32 NpFactory::getDeformableSurfaces(PxActor** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
+{
+	return getArrayOfPointers(userBuffer, bufferSize, startIndex, mDeformableSurfaceTracking.getEntries(), mDeformableSurfaceTracking.size());
+}
+
+PxU32 NpFactory::getNbDeformableVolumes() const { return mDeformableVolumeTracking.size(); }
+PxU32 NpFactory::getDeformableVolumes(PxActor** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
+{
+	return getArrayOfPointers(userBuffer, bufferSize, startIndex, mDeformableVolumeTracking.getEntries(), mDeformableVolumeTracking.size());
+}
+
+PxU32 NpFactory::getNbPBDParticleSystems() const { return mPBDParticleSystemTracking.size(); }
+PxU32 NpFactory::getPBDParticleSystems(PxActor** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
+{
+	return getArrayOfPointers(userBuffer, bufferSize, startIndex, mPBDParticleSystemTracking.getEntries(), mPBDParticleSystemTracking.size());
+}
+#endif
+
+PxU32 NpFactory::getArticulations(PxArticulationReducedCoordinate** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
+{
+	// Every PxArticulationReducedCoordinate the factory tracks, regardless of scene membership (see getConstraints).
+	return getArrayOfPointers(userBuffer, bufferSize, startIndex, mArticulationTracking.getEntries(), mArticulationTracking.size());
+}
+
+PxU32 NpFactory::getAggregates(PxAggregate** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
+{
+	// Every PxAggregate the factory tracks, regardless of scene membership (see getConstraints).
+	return getArrayOfPointers(userBuffer, bufferSize, startIndex, mAggregateTracking.getEntries(), mAggregateTracking.size());
 }
 
 void NpFactory::addConstraint(PxConstraint* npConstraint, bool lock)
@@ -703,7 +786,6 @@ PxDeformableVolumeMaterial* NpFactory::createDeformableVolumeMaterial(PxReal you
 	materialData.poissons = poissons;
 	materialData.dynamicFriction = dynamicFriction;
 	materialData.elasticityDamping = elasticityDamping;
-	materialData.dampingScale = toUniformU16(1.f);
 	materialData.materialModel = PxDeformableVolumeMaterialModel::eCO_ROTATIONAL;
 	materialData.deformThreshold = PX_MAX_F32;
 	materialData.deformLowLimitRatio = 1.f;
@@ -1191,15 +1273,6 @@ static PX_FORCE_INLINE void releaseToPool(NpParticleAndDiffuseBuffer* np)
 	NpFactory::getInstance().releaseParticleAndDiffuseBufferToPool(*np);
 }
 
-static PX_FORCE_INLINE void releaseToPool(NpParticleClothBuffer* np)
-{
-	NpFactory::getInstance().releaseParticleClothBufferToPool(*np);
-}
-
-static PX_FORCE_INLINE void releaseToPool(NpParticleRigidBuffer* np)
-{
-	NpFactory::getInstance().releaseParticleRigidBufferToPool(*np);
-}
 #endif
 
 template<class T>
@@ -1232,6 +1305,4 @@ void physx::NpDestroyElementFilter(NpDeformableElementFilter* np)					{ NpDestro
 void physx::NpDestroyParticleSystem(NpPBDParticleSystem* np)						{ NpDestroy(np);	}
 void physx::NpDestroyParticleBuffer(NpParticleBuffer* np)							{ NpDestroy(np);	}
 void physx::NpDestroyParticleBuffer(NpParticleAndDiffuseBuffer* np)					{ NpDestroy(np);	}
-void physx::NpDestroyParticleBuffer(NpParticleClothBuffer* np)						{ NpDestroy(np);	}
-void physx::NpDestroyParticleBuffer(NpParticleRigidBuffer* np)						{ NpDestroy(np);	}
 #endif

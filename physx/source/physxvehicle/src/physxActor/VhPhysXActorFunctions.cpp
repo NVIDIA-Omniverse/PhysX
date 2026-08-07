@@ -22,35 +22,33 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "vehicle2/PxVehicleParams.h"
+#include "vehicle/PxVehicleParams.h"
 
-#include "vehicle2/commands/PxVehicleCommandStates.h"
+#include "vehicle/commands/PxVehicleCommandStates.h"
 
-#include "vehicle2/drivetrain/PxVehicleDrivetrainParams.h"
-#include "vehicle2/drivetrain/PxVehicleDrivetrainStates.h"
+#include "vehicle/drivetrain/PxVehicleDrivetrainParams.h"
+#include "vehicle/drivetrain/PxVehicleDrivetrainStates.h"
 
-#include "vehicle2/rigidBody/PxVehicleRigidBodyStates.h"
+#include "vehicle/rigidBody/PxVehicleRigidBodyStates.h"
 
-#include "vehicle2/physxActor/PxVehiclePhysXActorFunctions.h"
-#include "vehicle2/physxActor/PxVehiclePhysXActorStates.h"
+#include "vehicle/physxActor/PxVehiclePhysXActorFunctions.h"
+#include "vehicle/physxActor/PxVehiclePhysXActorStates.h"
 
-#include "vehicle2/physxConstraints/PxVehiclePhysXConstraintStates.h"
-#include "vehicle2/physxConstraints/PxVehiclePhysXConstraintHelpers.h"
+#include "vehicle/physxConstraints/PxVehiclePhysXConstraintStates.h"
+#include "vehicle/physxConstraints/PxVehiclePhysXConstraintHelpers.h"
 
-#include "vehicle2/wheel/PxVehicleWheelParams.h"
-#include "vehicle2/wheel/PxVehicleWheelStates.h"
+#include "vehicle/wheel/PxVehicleWheelParams.h"
+#include "vehicle/wheel/PxVehicleWheelStates.h"
 
 #include "PxRigidDynamic.h"
 #include "PxArticulationLink.h"
 #include "PxArticulationReducedCoordinate.h"
 
 namespace physx
-{
-namespace vehicle2
 {
 
 void PxVehiclePhysxActorWakeup(
@@ -346,5 +344,4 @@ void PxVehicleWriteRigidBodyStateToPhysXActor
 	}
 }
 
-} //namespace vehicle2
 } //namespace physx

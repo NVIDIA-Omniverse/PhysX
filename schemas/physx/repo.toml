@@ -1,0 +1,8 @@
+[repo]
+logging = "warn"
+import_optional_configs = ["${root}/repo_tools.toml"]
+
+[repo.folders]
+packages = "${root}/_builtpackages"
+version_file = "${root}/VERSION"
+

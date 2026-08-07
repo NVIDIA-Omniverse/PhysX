@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -37,6 +37,7 @@
 #include "foundation/PxArray.h"
 #include "foundation/PxAllocator.h"
 #include "foundation/PxMemory.h"
+#include "foundation/PxSIMDHelpers.h"
 
 namespace physx
 {
@@ -54,11 +55,19 @@ PX_FORCE_INLINE PxU32 getArrayOfPointers(DstType** PX_RESTRICT userBuffer, PxU32
 	return writeCount;
 }
 
-PX_CUDA_CALLABLE PX_INLINE void transformInertiaTensor(const PxVec3& invD, const PxMat33& M, PxMat33& mIInv)
+template<class DstType>
+PX_FORCE_INLINE DstType safeRecip(const PxVec3& v)
 {
-	const float	axx = invD.x*M(0,0), axy = invD.x*M(1,0), axz = invD.x*M(2,0);
-	const float	byx = invD.y*M(0,1), byy = invD.y*M(1,1), byz = invD.y*M(2,1);
-	const float	czx = invD.z*M(0,2), czy = invD.z*M(1,2), czz = invD.z*M(2,2);
+	return DstType(	v.x == 0.0f ? 0.0f : 1.0f/v.x,
+					v.y == 0.0f ? 0.0f : 1.0f/v.y,
+					v.z == 0.0f ? 0.0f : 1.0f/v.z);
+}
+
+PX_CUDA_CALLABLE PX_INLINE void transformInertiaTensor(const PxVec3& PX_RESTRICT invD, const PxMat33& PX_RESTRICT M, PxMat33& PX_RESTRICT mIInv)
+{
+	const float axx = invD.x*M(0,0), axy = invD.x*M(1,0), axz = invD.x*M(2,0);
+	const float byx = invD.y*M(0,1), byy = invD.y*M(1,1), byz = invD.y*M(2,1);
+	const float czx = invD.z*M(0,2), czy = invD.z*M(1,2), czz = invD.z*M(2,2);
 
 	mIInv(0,0) = axx*M(0,0) + byx*M(0,1) + czx*M(0,2);
 	mIInv(1,1) = axy*M(1,0) + byy*M(1,1) + czy*M(1,2);
@@ -67,6 +76,44 @@ PX_CUDA_CALLABLE PX_INLINE void transformInertiaTensor(const PxVec3& invD, const
 	mIInv(0,1) = mIInv(1,0)	= axx*M(1,0) + byx*M(1,1) + czx*M(1,2);
 	mIInv(0,2) = mIInv(2,0)	= axx*M(2,0) + byx*M(2,1) + czx*M(2,2);
 	mIInv(1,2) = mIInv(2,1)	= axy*M(2,0) + byy*M(2,1) + czy*M(2,2);
+}
+
+// PT: this version combines the above reference code (scalar) with a SIMD quat-to-matrix call.
+// At time of writing, new code is 18% smaller with SSE2, 43% smaller with SSE4.2 (see __SSE4_2__).
+PX_INLINE void transformInertiaTensor(const PxVec3p& PX_RESTRICT invD, const PxQuat& PX_RESTRICT q, PxMat33& PX_RESTRICT mIInv)
+{
+	using namespace aos;
+
+	const PxQuat qc = q.getConjugate();	// same as transposing the matrix
+	const QuatV qV = V4LoadU(&qc.x);
+	Vec3V m0, m1, m2;
+	QuatGetMat33V(qV, m0, m1, m2);
+
+	// PT: in theory we could replace the Vec3V_From_Vec4V with Vec3V_From_Vec4V_WUndefined,
+	// since we are going to multiply invDV.w with m0.w/m1.w/m2.w, which are all zero. But
+	// it would assert in Debug inside V3Mul because of the improper Vec3s, and more importantly
+	// it would fail anyway in the presence of NaNs (because 0 * NaN gives NaN instead of 0).
+	// The NaNs could appear at any time when reading the padding bytes of PxVec3p, these are
+	// not NaNs coming from bad input data etc. We could protect against this by always initializing
+	// the padding bytes of PxVec3p to zero, but we do not do that at the moment, and that cost
+	// would spread everywhere PxVec3p is used. Instead, we just keep clearing W here.
+	const Vec3V invDV = Vec3V_From_Vec4V(V4LoadU(&invD.x));
+
+	const Vec3V x = V3Mul(invDV, m0);
+	FStore(V3Dot(x, m0), &mIInv.column0.x);
+	FStore(V3Dot(x, m1), &mIInv.column0.y);
+	FStore(V3Dot(x, m2), &mIInv.column0.z);
+
+	const Vec3V y = V3Mul(invDV, m1);
+	FStore(V3Dot(y, m1), &mIInv.column1.y);
+	FStore(V3Dot(y, m2), &mIInv.column1.z);
+
+	const Vec3V z = V3Mul(invDV, m2);
+	FStore(V3Dot(z, m2), &mIInv.column2.z);
+
+	mIInv.column1.x = mIInv.column0.y;
+	mIInv.column2.x = mIInv.column0.z;
+	mIInv.column2.y = mIInv.column1.z;
 }
 
 // PT: TODO: refactor this with PxBounds3 header
@@ -293,8 +340,6 @@ static PX_INLINE T* reserveContainerMemory(PxArray<T>& container, PxU32 nb)
 }
 
 } // namespace Cm
-
-
 
 }
 

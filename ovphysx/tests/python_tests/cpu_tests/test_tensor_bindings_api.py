@@ -494,6 +494,42 @@ class TestTensorBindingSpec:
         assert str(b.dtype) == "uint8"
         b.destroy()
 
+    def test_rigid_body_disable_gravity_dtype_is_uint8(self, physx_sdk_cpu):
+        b = self._make_rigid_body_binding(physx_sdk_cpu, TensorType.RIGID_BODY_DISABLE_GRAVITY)
+        assert b.dtype.code == DLDataTypeCode.kDLUInt
+        assert b.dtype.bits == 8
+        assert b.ndim == 1
+        assert str(b.dtype) == "uint8"
+        b.destroy()
+
+    def test_articulation_disable_gravity_dtype_is_uint8(self, physx_sdk_cpu):
+        load_usd_with_ovstage(physx_sdk_cpu, data_path("two_articulations.usda"))
+        physx_sdk_cpu.wait_all()
+        b = physx_sdk_cpu.create_tensor_binding(
+            raise_if_empty=True,
+            pattern="/World/articulation*",
+            tensor_type=TensorType.ARTICULATION_BODY_DISABLE_GRAVITY,
+        )
+        assert b.dtype.code == DLDataTypeCode.kDLUInt
+        assert b.dtype.bits == 8
+        assert b.ndim == 2
+        assert str(b.dtype) == "uint8"
+        b.destroy()
+
+    def test_articulation_drive_type_dtype_is_uint8(self, physx_sdk_cpu):
+        load_usd_with_ovstage(physx_sdk_cpu, data_path("two_articulations.usda"))
+        physx_sdk_cpu.wait_all()
+        b = physx_sdk_cpu.create_tensor_binding(
+            raise_if_empty=True,
+            pattern="/World/articulation*",
+            tensor_type=TensorType.ARTICULATION_DOF_DRIVE_TYPE,
+        )
+        assert b.dtype.code == DLDataTypeCode.kDLUInt
+        assert b.dtype.bits == 8
+        assert b.ndim == 2
+        assert str(b.dtype) == "uint8"
+        b.destroy()
+
     def test_tensor_binding_spec_matches_individual_properties(self, physx_sdk_cpu):
         b = self._make_rigid_body_binding(physx_sdk_cpu, TensorType.RIGID_BODY_DISABLE_SIMULATION)
         spec = b.spec
@@ -851,6 +887,44 @@ class TestContactBinding:
         out = np.zeros((sensor_count, 3), dtype=np.float32)
         cb.read_net_forces(output=out)
         assert np.any(np.abs(out) > 0.0), "After landing, contact net forces should be non-zero"
+        cb.destroy()
+
+    @pytest.mark.parametrize("sync_api", ["step_sync", "step_n_sync"])
+    def test_sync_contact_force_uses_current_dt(self, physx_sdk_cpu, sync_api):
+        """Synchronous stepping must convert contact impulse with its own dt."""
+        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
+        physx_sdk_cpu.wait_all()
+
+        cb = physx_sdk_cpu.create_contact_binding(sensor_patterns=["/World/Cube1"])
+        assert cb.sensor_count == 1
+
+        # Seed the cache with a deliberately different async dt. This makes the
+        # regression independent of test order and exposes a stale last_step_dt.
+        seed_dt = 1.0 / 60.0
+        sync_dt = 1.0 / 240.0
+        physx_sdk_cpu.step(seed_dt)
+        physx_sdk_cpu.wait_all()
+
+        # Three simulated seconds lets Cube1 land and settle on the ground.
+        num_steps = 720
+        if sync_api == "step_sync":
+            for _ in range(num_steps):
+                physx_sdk_cpu.step_sync(sync_dt)
+        else:
+            physx_sdk_cpu.step_n_sync(num_steps, sync_dt)
+
+        sync_forces = np.zeros((cb.sensor_count, 3), dtype=np.float32)
+        cb.read_net_forces(output=sync_forces)
+
+        # The next async step at the same dt is the documented reference path.
+        physx_sdk_cpu.step(sync_dt)
+        physx_sdk_cpu.wait_all()
+        async_forces = np.zeros_like(sync_forces)
+        cb.read_net_forces(output=async_forces)
+
+        assert sync_forces[0, 2] > 0.0
+        assert async_forces[0, 2] > 0.0
+        np.testing.assert_allclose(sync_forces, async_forces, rtol=0.05, atol=1.0)
         cb.destroy()
 
     def test_contact_force_matrix_shape(self, physx_sdk_cpu):

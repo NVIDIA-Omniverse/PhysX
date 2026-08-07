@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -322,12 +322,6 @@ public:
 	PxU64	gpuMemDeformableVolumes;
 
 	/**
-	\brief Deprecated
-	\see gpuMemDeformableVolumes
-	*/
-	PX_DEPRECATED PxU64	gpuMemSoftBodies;
-
-	/**
 	\brief GPU device memory in bytes allocated for internal heap allocation
 	*/
 	PxU64	gpuMemHeap;
@@ -378,12 +372,6 @@ public:
 	PxU64	gpuMemHeapSimulationDeformableVolume;
 
 	/**
-	\brief Deprecated
-	\see gpuMemHeapSimulationDeformableVolume
-	*/
-	PX_DEPRECATED PxU64	gpuMemHeapSimulationSoftBody;
-
-	/**
 	\brief GPU device heap memory used for shared buffers in the particles pipeline in bytes
 	*/
 	PxU64	gpuMemHeapParticles;
@@ -397,12 +385,6 @@ public:
 	\brief GPU device heap memory used for shared buffers in the deformable volume pipeline in bytes
 	*/
 	PxU64	gpuMemHeapDeformableVolumes;
-
-	/**
-	\brief Deprecated
-	\see gpuMemHeapDeformableVolumes
-	*/
-	PX_DEPRECATED PxU64	gpuMemHeapSoftBodies;
 
 	/**
 	\brief GPU device heap memory not covered by other stats in bytes
@@ -439,7 +421,6 @@ public:
 		gpuMemParticles							(0),
 		gpuMemDeformableSurfaces				(0),
 		gpuMemDeformableVolumes					(0),
-		gpuMemSoftBodies						(0), // deprecated
 		gpuMemHeap								(0),
 		gpuMemHeapBroadPhase					(0),
 		gpuMemHeapNarrowPhase					(0),
@@ -450,11 +431,9 @@ public:
 		gpuMemHeapSimulationParticles			(0),
 		gpuMemHeapSimulationDeformableSurface	(0),
 		gpuMemHeapSimulationDeformableVolume	(0),
-		gpuMemHeapSimulationSoftBody			(0), // deprecated
 		gpuMemHeapParticles						(0),
 		gpuMemHeapDeformableSurfaces			(0), 
 		gpuMemHeapDeformableVolumes				(0),
-		gpuMemHeapSoftBodies					(0), // deprecated
 		gpuMemHeapOther							(0)
 	{
 		nbBroadPhaseAdds = 0;

@@ -36,7 +36,6 @@ def test_operations_on_destroyed_binding(physx_sdk):
 
     import numpy as np
 
-    # Load USD file to create binding
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     usd_path = os.path.join(test_dir, "data", "basic_simulation.usda")
     load_usd_with_ovstage(physx_sdk, usd_path)
@@ -50,7 +49,6 @@ def test_operations_on_destroyed_binding(physx_sdk):
 
     binding.destroy()
 
-    # Using a destroyed binding should fail
     # The binding should be invalidated after destroy()
     tensor = np.zeros((1, 7), dtype=np.float32)
     with pytest.raises(RuntimeError, match=r"(?i)(destroyed|invalid)"):
@@ -73,7 +71,6 @@ def test_binding_double_destroy(physx_sdk):
     """
     import os
 
-    # Load USD file to create binding
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     usd_path = os.path.join(test_dir, "data", "basic_simulation.usda")
     load_usd_with_ovstage(physx_sdk, usd_path)
@@ -105,7 +102,6 @@ def test_binding_context_manager_with_exception(physx_sdk):
     """
     import os
 
-    # Load USD file to create binding
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     usd_path = os.path.join(test_dir, "data", "basic_simulation.usda")
     load_usd_with_ovstage(physx_sdk, usd_path)

@@ -22,14 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PXS_CONTACT_MANAGER_H
 #define PXS_CONTACT_MANAGER_H
 
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 #include "PxcNpWorkUnit.h"
 
 namespace physx
@@ -105,6 +105,7 @@ public:
 	PX_FORCE_INLINE	PxIntBool				isChangeable()				const	{ return PxIntBool(mFlags & PXS_CM_CHANGEABLE);		}
 	PX_FORCE_INLINE	PxIntBool				getCCD()					const	{ return PxIntBool((mFlags & PXS_CM_CCD_LINEAR) && (mNpUnit.mFlags & PxcNpWorkUnitFlag::eDETECT_CCD_CONTACTS)); }
 	PX_FORCE_INLINE	PxIntBool				getHadCCDContact()			const	{ return PxIntBool(mFlags & PXS_CM_CCD_CONTACT); }
+	PX_FORCE_INLINE	PxIntBool				isVisualizationEnabled()	const	{ return PxIntBool(mFlags & PXS_CM_VISUALIZATION); }
 	PX_FORCE_INLINE	void					setHadCCDContact()					{ mFlags |= PXS_CM_CCD_CONTACT; }
 					void					setCCD(bool enable);
 	PX_FORCE_INLINE	void					clearCCDContactInfo()				{ mFlags &= ~PXS_CM_CCD_CONTACT; mNpUnit.mCCDContacts = NULL; }
@@ -137,7 +138,8 @@ private:
 	{
 		PXS_CM_CHANGEABLE	= (1 << 0),
 		PXS_CM_CCD_LINEAR	= (1 << 1),
-		PXS_CM_CCD_CONTACT	= (1 << 2)
+		PXS_CM_CCD_CONTACT	= (1 << 2),
+		PXS_CM_VISUALIZATION	= (1 << 3)
 	};
 
 	friend class Sc::ShapeInteraction;

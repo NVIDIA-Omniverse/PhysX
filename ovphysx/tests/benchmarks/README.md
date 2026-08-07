@@ -17,7 +17,7 @@ The suite is **off by default** so it never affects normal `validate_all`
 runs. Opt in by passing `--benchmarks` to the build script:
 
 ```bash
-cd omni/ovphysx
+cd ovphysx
 ./build.sh --benchmarks                    # add --rebuild for a clean build
 cmake -P scripts/install.cmake
 ```

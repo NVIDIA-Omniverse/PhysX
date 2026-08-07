@@ -13,18 +13,18 @@
 namespace fs = std::filesystem;
 
 // Self-bootstrap the test environment so the binary can run standalone from
-// PROJECT_ROOT (omni/ovphysx/) after build+install.
+// PROJECT_ROOT (ovphysx/) after build+install.
 // OVPHYSX_INSTALL_DIR is set via a CMake compile definition as a relative path,
 // so the binary must be launched with cwd = PROJECT_ROOT.
 static void bootstrap_test_environment()
 {
     const fs::path installDir(OVPHYSX_INSTALL_DIR);
 
-    // Verify install layout exists — relative paths require cwd = omni/ovphysx/
+    // Verify install layout exists — relative paths require cwd = ovphysx/
     if (!fs::is_directory(installDir))
     {
         std::cerr << "ERROR: Install directory not found: " << fs::absolute(installDir) << "\n"
-                  << "Make sure you run from omni/ovphysx/ (PROJECT_ROOT) and that\n"
+                  << "Make sure you run from ovphysx/ (PROJECT_ROOT) and that\n"
                   << "the SDK is installed: cmake -P scripts/install.cmake\n";
         std::exit(1);
     }

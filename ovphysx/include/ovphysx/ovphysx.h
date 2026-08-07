@@ -803,62 +803,31 @@ extern "C" {
     * The target paths must not already exist in the stage.
     *
     * Clones are created in the internal representation only (USD file will not be modified)
-    * and immediately participate in physics simulation. Cloning is backed by the PhysX SDK
-    * replicator (binary serialization), so cloned articulations are real articulations. This is
-    * optimized for RL training scenarios with mass replication (1000s of instances).
+    * and immediately participate in physics simulation. Backed by the PhysX SDK replicator, so
+    * cloned articulations are real articulations. Optimized for RL mass replication (1000s of
+    * instances). This is the clone entrypoint for both standalone callers and callers using an
+    * ovstage Stage (@ref ovphysx_attach_ovstage).
     *
-    * @note This is the clone entrypoint for both standalone callers and callers that
-    *       populate the scene through an ovstage Stage attached via
-    *       @ref ovphysx_attach_ovstage(). Replication runs in the runtime/internal
-    *       representation only (USD untouched); the clones exist as runtime physics only.
-    *
-    * @note Collision isolation between clones (e.g., preventing clones in env1 from colliding with
-    *       clones in env2) has two mechanisms: PhysX environment ids (the notes below -- automatic
-    *       per-environment isolation under GPU dynamics + GPU broadphase, with the `env_ids`
-    *       parameter naming environments across calls) and USD scene properties (collision groups,
-    *       filtering) authored before cloning -- still available for finer-grained control and for
-    *       scenes where the GPU env-id gate does not engage.
-    *
-    * @note Cross-environment collision filtering can also use PhysX environment ids, controlled by
-    *       the `/ovphysx/clone/useEnvIds` setting (default: on). When enabled and the scene runs GPU
-    *       dynamics + GPU broadphase, each cloned environment is assigned a distinct environment id
-    *       so copies in different environments do not collide. The source environment is included:
-    *       its bodies are created holding environment id 0 (assigned as the attach parses them;
-    *       clones get 1..N), so co-located clones (NULL `parent_transforms`) are
-    *       collision-isolated from the source as well. Like all carbonite settings it is
-    *       **per-process** -- every ovphysx instance in the process shares it -- so set it
-    *       consistently before attaching.
-    *
-    * @note When one logical environment is assembled from SEVERAL clone calls (e.g. an IsaacLab
-    *       ClonePlan cloning one source row at a time: first `/env0/Robot` to every environment,
-    *       then `/env0/Object`), pass `env_ids` so objects that share an environment share an
-    *       environment id. With `env_ids` NULL each call numbers its copies afresh, so
-    *       `/env1/Robot` and `/env1/Object` cloned by different calls would land on different ids
-    *       and never collide with each other.
+    * @note Cross-environment collision isolation uses PhysX environment ids under GPU dynamics +
+    *       GPU broadphase, controlled by `/ovphysx/clone/useEnvIds` (default on, per-process). The
+    *       source holds env id 0 and clones get 1..N, so co-located clones (NULL parent_transforms)
+    *       are isolated from the source too. USD collision groups/filtering authored before cloning
+    *       still work for finer control. Pass `env_ids` when one logical environment is assembled
+    *       from several clone calls, so its objects share an id.
     *
     * @param handle PhysX instance handle
     * @param source_path_in_usd Path to the source subtree to clone (must exist)
     * @param target_paths Array of target paths to clone to (must not exist)
     * @param num_target_paths Number of target paths to clone to
-    * @param parent_transforms  World pose of each copy's parent.  Flat array of
-    *        [num_target_paths x 7] floats: (px, py, pz, qx, qy, qz, qw) per
-    *        target -- position followed by quaternion rotation.  Quaternion
-    *        convention: imaginary-first, matching the tensor binding pose
-    *        format (OVPHYSX_TENSOR_RIGID_BODY_POSE_F32).
-    *        Identity rotation = (0, 0, 0, 1).  Each cloned body keeps its pose
-    *        relative to the source's parent, so a copy's world pose is
-    *        parent_transforms[i] * inverse(source_parent) * source_body -- for a
-    *        source authored at the origin this places each body exactly at
-    *        parent_transforms[i].
-    *        Pass NULL to co-locate every copy on the source pose (use it when you don't care
-    *        about spatial separation).
-    * @param env_ids  Optional logical environment id per target ([num_target_paths] uint32).
-    *        Stable across calls: the same id always maps to the same runtime environment, so
-    *        clones from different calls that share an id collide with each other and are isolated
-    *        from every other environment (engages under GPU dynamics + GPU broadphase, like all
-    *        env-id filtering; ids must be < 0x00FFFFFF -- PhysX supports at most 1<<24 environments and
-    *        the runtime id is env_ids[i] + 1). Pass NULL for automatic per-call
-    *        numbering (each call's copies get fresh ids past every previous call's).
+    * @param parent_transforms World pose of each copy's parent. Flat [num_target_paths x 7]
+    *        floats: (px, py, pz, qx, qy, qz, qw), quaternion imaginary-first
+    *        (OVPHYSX_TENSOR_RIGID_BODY_POSE_F32, identity = (0,0,0,1)). Each body keeps its pose
+    *        relative to the source's parent (world = parent_transforms[i] *
+    *        inverse(source_parent) * source_body). Pass NULL to co-locate every copy on the source.
+    * @param env_ids Optional logical environment id per target ([num_target_paths] uint32).
+    *        Stable across calls: a shared id maps to one runtime environment (clones sharing it
+    *        collide, isolated from others). Ids must be < 0x00FFFFFF (runtime id is env_ids[i] + 1).
+    *        Pass NULL for automatic per-call numbering.
     *
     * @return ovphysx_enqueue_result_t with status and operation index for the clone. On failure,
     *         call ovphysx_get_last_error() on the same thread for the error message.
@@ -892,28 +861,11 @@ extern "C" {
     * - OVPHYSX_API_ERROR if no ovstage is attached or the clone fails
     *
     * @code
-    * // EITHER clone whole environments (one call, one target per environment; NULL transforms
-    * // co-locate the copies on the source)...
+    * // Clone whole environments (one target per environment; NULL transforms co-locate on the source).
     * ovphysx_string_t targets[2] = { ovphysx_cstr("/World/env1"), ovphysx_cstr("/World/env2") };
     * ovphysx_enqueue_result_t r = ovphysx_clone(handle, ovphysx_cstr("/World/env0"), targets, 2, NULL, NULL);
-    *
-    * // ...OR assemble the same environments from per-row calls (heterogeneous ClonePlan).
-    * // The two shapes are ALTERNATIVES for an environment, not steps: a row target inside an
-    * // already-cloned environment is rejected (it would create duplicate actors).
-    * // Each transform is that ROW's world pose re-based to its environment (environment origin
-    * // composed with the row's pose inside the source env) -- NOT the bare environment origin,
-    * // which would collapse every row onto the origin and lose its authored offset. Same
-    * // env_ids in every call keeps /World/env1's robot and object colliding with each other
-    * // while staying isolated from /World/env2.
-    * const float robot_tf[2 * 7]  = { 10.f, 0.f, 0.5f, 0.f, 0.f, 0.f, 1.f,   // env1 origin * Robot pose
-    *                                  20.f, 0.f, 0.5f, 0.f, 0.f, 0.f, 1.f }; // env2 origin * Robot pose
-    * const float object_tf[2 * 7] = { 10.f, 0.f, 2.0f, 0.f, 0.f, 0.f, 1.f,   // env1 origin * Object pose
-    *                                  20.f, 0.f, 2.0f, 0.f, 0.f, 0.f, 1.f }; // env2 origin * Object pose
-    * uint32_t env_ids[2] = { 0, 1 };
-    * ovphysx_string_t robots[2]  = { ovphysx_cstr("/World/envA/Robot"),  ovphysx_cstr("/World/envB/Robot") };
-    * ovphysx_string_t objects[2] = { ovphysx_cstr("/World/envA/Object"), ovphysx_cstr("/World/envB/Object") };
-    * ovphysx_clone(handle, ovphysx_cstr("/World/env0/Robot"),  robots,  2, robot_tf,  env_ids);
-    * ovphysx_clone(handle, ovphysx_cstr("/World/env0/Object"), objects, 2, object_tf, env_ids);
+    * // To assemble one environment from several calls (heterogeneous ClonePlan), pass the same
+    * // env_ids in each call so its objects share a runtime environment.
     * @endcode
     */
     OVPHYSX_API ovphysx_enqueue_result_t ovphysx_clone(
@@ -1583,24 +1535,32 @@ extern "C" {
      * A **sensor** is a set of rigid body prims identified by a USD prim path
      * pattern that you pass to ovphysx_create_contact_binding().  A **filter**
      * is a second set of bodies whose contacts with each sensor you want to
-     * measure.  Both are specified as USD prim path patterns; no extra USD
-     * authoring or physics schema is required beyond the rigid bodies themselves.
+     * measure.  Both are specified as USD prim path patterns.
+     *
+     * Contact reporting is opt-in: every authored USD prim matched by a sensor
+     * pattern must have `PhysxContactReportAPI` applied, on the prim named as the
+     * sensor itself (not a parent body or child collider).  A matched prim
+     * without the schema is dropped from the binding, and if that leaves no
+     * sensors the call fails.  Filter prims need no extra schema, and
+     * runtime-only clones inherit contact reporting from the source actor.
      *
      * **Lifecycle and read timing**
      *
      * A contact binding must be created *before* the first simulation step whose
      * contacts you want to observe.  After creation it registers sensors inside
      * the PhysX contact-report callback; no contact data exists until at least
-     * one `ovphysx_step()` has completed.
+     * one `ovphysx_step()`, `ovphysx_step_sync()`, or `ovphysx_step_n_sync()`
+     * call has completed.
      *
-     * - Call contact binding read functions *after* `ovphysx_step()`.
+     * - Call contact binding read functions *after* a stepping call completes.
      * - Reads reflect the contacts accumulated during the **last completed
      *   simulation step**.
      * - Calling a read function before any simulation step returns all-zero
      *   output tensors (no contacts have been reported yet).
      * - The `dt` for impulse-to-force conversion (`force = impulse / dt`) is
-     *   automatically taken from the last `ovphysx_step()` call; you do not
-     *   need to pass it explicitly.
+     *   automatically taken from the last successful `ovphysx_step()`,
+     *   `ovphysx_step_sync()`, or `ovphysx_step_n_sync()` call; you do not need
+     *   to pass it explicitly.
      *
      * **Why a separate binding type (not tensor binding)**
      *
@@ -1619,7 +1579,7 @@ extern "C" {
     /** @{ */
 
     /**
-     * @brief Create a contact binding for reading net contact forces and force matrices.
+     * @brief Create a contact binding for aggregate and detailed contact reads.
      *
      * @param handle Instance handle
      * @param sensor_patterns Array of USD prim path patterns matching sensor bodies
@@ -1628,9 +1588,10 @@ extern "C" {
      *   have the same number of filters. Total length = sensor_patterns_count * filters_per_sensor.
      *   Pass NULL with filters_per_sensor=0 for unfiltered contacts.
      * @param filters_per_sensor Number of filter patterns per sensor (same for all sensors)
-     * @param max_contact_data_count Max detailed contact/friction entries to track.
-     *   Set this to a positive value before using ovphysx_read_contact_data()
-     *   or ovphysx_read_friction_data(). Detailed reads also require
+     * @param max_contact_data_count Maximum entries in raw or detailed
+     *   contact/friction flat-buffer reads. Set this to a positive value before
+     *   using ovphysx_read_contact_data(), ovphysx_read_friction_data(), or
+     *   ovphysx_read_raw_contact_data(). Filtered detailed reads also require
      *   filters_per_sensor > 0. Aggregate net-force reads do not need detailed
      *   contact capacity or filters.
      * @param out_handle [out] Contact binding handle
@@ -1648,9 +1609,9 @@ extern "C" {
      *     handle,
      *     sensors, 1,          // 1 sensor pattern
      *     filters, 1,          // 1 filter pattern per sensor
-     *     256,                 // max raw contact pairs
+     *     256,                 // flat contact-data capacity
      *     &cb);
-     * // After ovphysx_step():
+     * // After a stepping call completes:
      * // - net forces  tensor shape: [S, 3]   (S = matched sensor count)
      * // - force matrix tensor shape: [S, F, 3] (F = matched filter count per sensor)
      * @endcode
@@ -1735,17 +1696,19 @@ extern "C" {
         uint32_t* out_count);
 
     /**
-     * @brief Query detailed contact/friction flat-buffer capacity.
+     * @brief Query raw and detailed contact/friction flat-buffer capacity.
      *
-     * This is the C dimension for `ovphysx_read_contact_data()` and
-     * `ovphysx_read_friction_data()` flat buffers. Allocate force/separation
-     * buffers as `[C, 1]`, point/normal/friction buffers as `[C, 3]`, and
-     * count/start-index buffers as `[S, F]`, where `C` is this value and
-     * `S`, `F` come from `ovphysx_get_contact_binding_spec()`.
+     * This is the C dimension for `ovphysx_read_contact_data()`,
+     * `ovphysx_read_friction_data()`, and `ovphysx_read_raw_contact_data()`
+     * flat buffers. Allocate force/separation buffers as `[C, 1]` and
+     * point/normal/friction buffers as `[C, 3]`. Filtered reads use `[S, F]`
+     * count/start-index buffers; raw reads use `[S]` count/start-index buffers
+     * and `[C]` actor IDs. `S` and `F` come from
+     * `ovphysx_get_contact_binding_spec()`.
      *
      * @param handle Instance handle
      * @param contact_handle Contact binding
-     * @param out_max_contact_data_count [out] Max detailed contact/friction entries
+     * @param out_max_contact_data_count [out] Raw or detailed contact/friction flat-buffer capacity
      * @return ovphysx_result_t
      */
     OVPHYSX_API ovphysx_result_t ovphysx_get_contact_binding_capacity(
@@ -1757,7 +1720,8 @@ extern "C" {
      * @brief Read net contact forces. dst shape: [S, 3] where S = sensor_count.
      *
      * The dt for impulse-to-force conversion is taken automatically from the
-     * last ovphysx_step() call.
+     * last successful ovphysx_step(), ovphysx_step_sync(), or
+     * ovphysx_step_n_sync() call.
      *
      * @param handle Instance handle
      * @param contact_handle Contact binding
@@ -1773,7 +1737,8 @@ extern "C" {
      * @brief Read contact force matrix. dst shape: [S, F, 3].
      *
      * The dt for impulse-to-force conversion is taken automatically from the
-     * last ovphysx_step() call.
+     * last successful ovphysx_step(), ovphysx_step_sync(), or
+     * ovphysx_step_n_sync() call.
      *
      * @param handle Instance handle
      * @param contact_handle Contact binding
@@ -1805,6 +1770,17 @@ extern "C" {
      * and filters_per_sensor > 0 when creating the binding. Count and
      * start-index tensors may be int32 or uint32.
      *
+     * If the required number of entries exceeds `C`, this function returns
+     * `OVPHYSX_API_BUFFER_TOO_SMALL`. The payload tensors must not be used,
+     * but the count and start-index tensors contain the full required layout.
+     * Set `max_contact_data_count` to the maximum element of
+     * `start_indices + counts` when recreating the binding for subsequent
+     * simulation steps. Recreating a binding does not recover the overflowing
+     * step's payload.
+     *
+     * Contact force magnitudes use the timestep from the last successful
+     * ovphysx_step(), ovphysx_step_sync(), or ovphysx_step_n_sync() call.
+     *
      * @param handle Instance handle
      * @param contact_handle Contact binding
      * @param contact_force_tensor Pre-allocated contact normal force magnitudes
@@ -1813,7 +1789,8 @@ extern "C" {
      * @param contact_separation_tensor Pre-allocated contact separations
      * @param contact_count_tensor Pre-allocated count matrix
      * @param contact_start_indices_tensor Pre-allocated start-index matrix
-     * @return ovphysx_result_t
+     * @return ovphysx_result_t. Returns `OVPHYSX_API_BUFFER_TOO_SMALL` when
+     *   `C` cannot hold all entries.
      */
     OVPHYSX_API ovphysx_result_t ovphysx_read_contact_data(
         ovphysx_handle_t handle,
@@ -1841,13 +1818,25 @@ extern "C" {
      * max_contact_data_count and filters_per_sensor > 0 when creating the
      * binding. Count and start-index tensors may be int32 or uint32.
      *
+     * If the required number of entries exceeds `C`, this function returns
+     * `OVPHYSX_API_BUFFER_TOO_SMALL`. The payload tensors must not be used,
+     * but the count and start-index tensors contain the full required layout.
+     * Set `max_contact_data_count` to the maximum element of
+     * `start_indices + counts` when recreating the binding for subsequent
+     * simulation steps. Recreating a binding does not recover the overflowing
+     * step's payload.
+     *
+     * Friction forces use the timestep from the last successful
+     * ovphysx_step(), ovphysx_step_sync(), or ovphysx_step_n_sync() call.
+     *
      * @param handle Instance handle
      * @param contact_handle Contact binding
      * @param friction_force_tensor Pre-allocated world-frame friction forces
      * @param friction_point_tensor Pre-allocated world-frame friction points
      * @param contact_count_tensor Pre-allocated count matrix
      * @param contact_start_indices_tensor Pre-allocated start-index matrix
-     * @return ovphysx_result_t
+     * @return ovphysx_result_t. Returns `OVPHYSX_API_BUFFER_TOO_SMALL` when
+     *   `C` cannot hold all entries.
      */
     OVPHYSX_API ovphysx_result_t ovphysx_read_friction_data(
         ovphysx_handle_t handle,
@@ -1878,11 +1867,29 @@ extern "C" {
      * The contact binding must be created with `max_contact_data_count > 0`.
      * No filter dimension is required; `filters_per_sensor` may be zero. The
      * dt for impulse-to-force conversion is taken automatically from the last
-     * ovphysx_step() call.
+     * successful ovphysx_step(), ovphysx_step_sync(), or
+     * ovphysx_step_n_sync() call.
+     *
+     * If the required number of entries exceeds `C`, this function returns
+     * `OVPHYSX_API_BUFFER_TOO_SMALL`. The payload tensors, including
+     * `other_actor_ids_tensor`, must not be used, but the count and
+     * start-index tensors contain the full required layout. Set
+     * `max_contact_data_count` to the maximum element of
+     * `start_indices + counts` when recreating the binding for subsequent
+     * simulation steps. Recreating a binding does not recover the overflowing
+     * step's payload.
      *
      * @param handle Instance handle
      * @param contact_handle Contact binding
-     * @return ovphysx_result_t
+     * @param contact_force_tensor Pre-allocated contact normal force magnitudes
+     * @param contact_point_tensor Pre-allocated world-frame contact points
+     * @param contact_normal_tensor Pre-allocated world-frame contact normals
+     * @param contact_separation_tensor Pre-allocated contact separations
+     * @param contact_count_tensor Pre-allocated per-sensor counts
+     * @param contact_start_indices_tensor Pre-allocated per-sensor start indices
+     * @param other_actor_ids_tensor Pre-allocated per-contact actor IDs
+     * @return ovphysx_result_t. Returns `OVPHYSX_API_BUFFER_TOO_SMALL` when
+     *   `C` cannot hold all entries.
      */
     OVPHYSX_API ovphysx_result_t ovphysx_read_raw_contact_data(
         ovphysx_handle_t handle,
@@ -2640,9 +2647,12 @@ extern "C" {
      * evaluation is not yet implemented and create will fail for CPU instances.
      *
      * The returned handle must be released with ovphysx_destroy_sdf_view when
-     * no longer needed. The handle is invalidated when the instance is
-     * destroyed (via ovphysx_destroy) even if ovphysx_destroy_sdf_view is not
-     * called explicitly.
+     * no longer needed. The handle is invalidated when the attached USD stage
+     * changes (ovphysx_reset_stage, ovphysx_detach_ovstage, or loading a new
+     * stage) or when the instance is destroyed (via ovphysx_destroy) even if
+     * ovphysx_destroy_sdf_view is not called explicitly. After invalidation,
+     * evaluate/get calls return OVPHYSX_API_NOT_FOUND; recreate the view after
+     * re-attaching a stage.
      *
      * Thread safety: safe to call concurrently with other ovphysx API functions
      * on the same handle, but not concurrently with ovphysx_destroy on the
@@ -2723,48 +2733,53 @@ extern "C" {
     /**
      * Destroy an SDF view and release its resources.
      *
-     * Safe to call more than once on the same handle (second call returns
-     * OVPHYSX_API_NOT_FOUND but is otherwise harmless). After this call
-     * the handle is invalid and must not be used.
+     * Idempotent: returns OVPHYSX_API_SUCCESS if the view was already
+     * destroyed or removed by stage reset/detach cleanup. After this call
+     * the handle is invalid and must not be used for evaluate/read paths.
      *
      * @param handle        Instance handle.
      * @param sdf_handle    SDF view handle from ovphysx_create_sdf_view.
-     * @return OVPHYSX_API_SUCCESS or OVPHYSX_API_NOT_FOUND if already destroyed.
+     * @return OVPHYSX_API_SUCCESS, or OVPHYSX_API_ERROR on invalid instance handle.
      */
     OVPHYSX_API ovphysx_result_t ovphysx_destroy_sdf_view(
         ovphysx_handle_t handle,
         ovphysx_sdf_view_handle_t sdf_handle);
 
     /**
-     * @defgroup debugrender PhysX debug render buffer
-     * @brief Drive PhysX's debug-visualization pipeline and read back its debug RENDER
-     *        BUFFER (points / lines / triangles). OvPhysX has NO built-in viewer: these
-     *        functions toggle which PhysX debug primitives are generated and let you
-     *        read the raw geometry; YOU render it yourself (pair the set_* calls with
-     *        the get_* readback). Forwards to omni::physx::IPhysxVisualization -- the
-     *        per-actor / shape / constraint eVISUALIZATION flag authoring and the params
-     *        all happen inside omni.physx; OvPhysX is the sole entry point, with no raw
-     *        PhysX access by the caller.
+     * @defgroup debugrender Debug render buffer
+     * @brief Generate physics debug geometry (points / lines / triangles) and read
+     *        it back. OvPhysX has no built-in viewer: the set_* calls choose what is
+     *        generated, the get_* calls return the raw geometry, and you render it
+     *        yourself.
      *
-     *        Return convention: when the visualization interface / sidecar is
-     *        unavailable the functions are no-ops returning OVPHYSX_API_SUCCESS; when no
-     *        USD stage is attached they return OVPHYSX_API_ERROR; invalid arguments
-     *        return OVPHYSX_API_INVALID_ARGUMENT (documented per function).
+     *        Return convention: when debug rendering is unavailable, most functions
+     *        are no-ops returning OVPHYSX_API_SUCCESS.
+     *        ovphysx_debug_render_set_scope_tokens returns OVPHYSX_API_ERROR when
+     *        scope infrastructure is unavailable. When no USD stage is attached,
+     *        the functions return OVPHYSX_API_ERROR; invalid arguments return
+     *        OVPHYSX_API_INVALID_ARGUMENT (documented per function).
+     *
+     *        Granularity: the debug-render state (enable, parameters, scale,
+     *        scope) applies to every physics scene of the attached stage and
+     *        is process-global; there is no per-scene control. Use
+     *        ovphysx_debug_render_set_scope_tokens to restrict WHAT is drawn.
+     *
+     *        While disabled (the default), debug rendering performs no per-step
+     *        CPU or GPU visualization work, GPU-to-host visualization copies, or
+     *        scratch-allocation growth. Scratch capacity acquired while enabled
+     *        may remain reserved until scene teardown.
      * @{
      */
 
     /**
-     * @brief Enable or disable PhysX debug-render generation.
+     * @brief Enable or disable debug-render generation.
      *
-     * Authors PxActorFlag::eVISUALIZATION on every rigid actor and articulation link,
-     * PxShapeFlag::eVISUALIZATION on each exclusive simulation shape (shared and
-     * trigger-only shapes are skipped, matching omni.physx), and
-     * PxConstraintFlag::eVISUALIZATION on joints, sets the master scale, and applies the
-     * current parameter set. Re-call after a scene rebuild / reset to re-author the
-     * flags. Read the generated geometry with ovphysx_debug_render_get_points / _lines /
-     * _triangles.
+     * Enables debug geometry for every body, shape and joint in the scene, applies
+     * the master scale and the current parameter set. Re-call after a scene rebuild
+     * or reset. Read the generated geometry with ovphysx_debug_render_get_points /
+     * _lines / _triangles.
      *
-     * @param handle  Instance handle.
+     * @param handle  Simulator instance (drives the attached stage).
      * @param enable  true to start generating debug geometry, false to stop.
      * @return OVPHYSX_API_SUCCESS (also a no-op SUCCESS when the viz interface is
      *         unavailable); OVPHYSX_API_ERROR when no USD stage is attached.
@@ -2772,35 +2787,75 @@ extern "C" {
     OVPHYSX_API ovphysx_result_t ovphysx_debug_render_enable(ovphysx_handle_t handle, bool enable);
 
     /**
-     * @brief Turn a single debug-render parameter on or off.
-     * @param handle  Instance handle.
-     * @param param   One of ovphysx_debug_render_parameter_t (named constants mirroring
-     *                omni::physx::PhysXVisualizationParameter). NONE (0) and values
+     * @brief Set one debug-geometry parameter.
+     *
+     * 0 disables the geometry type and a positive value enables it. For
+     * parameters whose PhysX semantics define a magnitude, that value scales the
+     * geometry together with the master scale. CONTACT_POINT and FRICTION_POINT
+     * use a positive value only as an enable gate; their marker size follows the
+     * master scale. Geometry with an inherent shape (collision shapes, bounds) is
+     * drawn at that shape's dimensions.
+     * @param handle  Simulator instance (drives the attached stage).
+     * @param param   One of ovphysx_debug_render_parameter_t. NONE (0) and values
      *                >= OVPHYSX_DEBUG_RENDER_PARAM_COUNT are rejected.
-     * @param enable  true to draw this primitive type, false to stop.
-     * @return OVPHYSX_API_INVALID_ARGUMENT if param is NONE or out of range;
-     *         OVPHYSX_API_ERROR when no USD stage is attached; otherwise
-     *         OVPHYSX_API_SUCCESS (a no-op SUCCESS when the viz interface is unavailable).
+     * @param value   Finite value >= 0; 0 disables and a positive value enables.
+     * @return OVPHYSX_API_INVALID_ARGUMENT if param is out of range or value is
+     *         non-finite or negative; OVPHYSX_API_ERROR when no USD stage is
+     *         attached; otherwise OVPHYSX_API_SUCCESS (a no-op SUCCESS when debug
+     *         rendering is unavailable).
      */
     OVPHYSX_API ovphysx_result_t ovphysx_debug_render_set_parameter(
-        ovphysx_handle_t handle, uint32_t param, bool enable);
+        ovphysx_handle_t handle, uint32_t param, float value);
 
     /**
-     * @brief Read back whether a debug-render parameter is currently enabled.
+     * @brief Limit debug rendering to an exact set of interned prim paths.
      *
-     * Returns the value last set through ovphysx_debug_render_set_parameter, cached on
-     * the OvPhysX side (process-global, matching the global PhysX visualization state).
-     * @param handle       Instance handle.
-     * @param param        One of ovphysx_debug_render_parameter_t (NONE / out-of-range rejected).
-     * @param[out] out_on  Set to the cached enabled state. Must be non-NULL.
-     * @return OVPHYSX_API_INVALID_ARGUMENT if param is NONE / out of range or out_on is NULL.
+     * An object is in scope when its interned prim path is one of the handles
+     * (exact membership, NO prefix expansion). Build the list through the attached
+     * Stage's
+     * path_dictionary_instance_t or from a query's prim list; expand a hierarchy
+     * into its exact object set on the caller side (that is a helper's job, not
+     * this call's). count 0 clears the scope. Joints follow their attached bodies.
+     * The scope applies immediately
+     * to currently instantiated runtime objects; reapply it after runtime topology
+     * changes. Out-of-scope objects are skipped at emission.
+     *
+     * Requires an OVStage attached through ovphysx_attach_ovstage (the path
+     * dictionary lives there). Handles are valid only for that exact dictionary,
+     * require no per-handle release, and the scope is cleared automatically by
+     * ovphysx_detach_ovstage. Re-intern and reapply the scope after attaching a
+     * different Stage. Returns OVPHYSX_API_ERROR when the sidecar symbol,
+     * visualization slot, or attached Stage dictionary is unavailable. Scope
+     * state remains unchanged on every error.
+     *
+     * @param handle  Simulator instance (drives the attached stage).
+     * @param tokens  Array of count interned ovx_primpath_t handles from the
+     *                attached Stage's dictionary. May be NULL when count is 0.
+     * @param count   Number of entries; 0 clears the scope.
+     * @return OVPHYSX_API_INVALID_ARGUMENT when tokens is NULL with count > 0 or
+     *         any token is invalid; OVPHYSX_API_ERROR when the sidecar symbol,
+     *         visualization slot, or attached Stage dictionary is unavailable.
+     */
+    OVPHYSX_API ovphysx_result_t ovphysx_debug_render_set_scope_tokens(
+        ovphysx_handle_t handle, const ovx_primpath_t* tokens, uint32_t count);
+
+    /**
+     * @brief Read back a debug-render parameter's value.
+     *
+     * Returns the value last set through ovphysx_debug_render_set_parameter,
+     * cached on the OvPhysX side (the debug-render state is process-global;
+     * 0 = off, the default before any set).
+     * @param handle          Instance handle.
+     * @param param           One of ovphysx_debug_render_parameter_t (NONE / out-of-range rejected).
+     * @param[out] out_value  Set to the cached value. Must be non-NULL.
+     * @return OVPHYSX_API_INVALID_ARGUMENT if param is NONE / out of range or out_value is NULL.
      */
     OVPHYSX_API ovphysx_result_t ovphysx_debug_render_get_parameter(
-        ovphysx_handle_t handle, uint32_t param, bool* out_on);
+        ovphysx_handle_t handle, uint32_t param, float* out_value);
 
     /**
-     * @brief Set the master debug-render scale (PxVisualizationParameter::eSCALE multiplier).
-     * @param handle  Instance handle.
+     * @brief Set the master PhysX debug-render scale.
+     * @param handle  Simulator instance (drives the attached stage).
      * @param scale   Must be finite and >= 0.
      * @return OVPHYSX_API_INVALID_ARGUMENT if scale is non-finite or negative;
      *         OVPHYSX_API_ERROR when no USD stage is attached; otherwise OVPHYSX_API_SUCCESS.
@@ -2818,7 +2873,7 @@ extern "C" {
 
     /**
      * @brief Restrict debug-render generation to a world-space AABB.
-     * @param handle  Instance handle.
+     * @param handle  Simulator instance (drives the attached stage).
      * @param min3    Box minimum, float[3]. Must be non-NULL and finite.
      * @param max3    Box maximum, float[3]. Must be non-NULL, finite, and >= min3 per axis.
      * @return OVPHYSX_API_INVALID_ARGUMENT if min3/max3 is NULL, non-finite, or min > max;
@@ -2828,16 +2883,16 @@ extern "C" {
         ovphysx_handle_t handle, const float min3[3], const float max3[3]);
 
     /**
-     * @brief Read the current debug-render point buffer (the geometry PhysX's debug
-     *        pipeline produced during the step). OvPhysX has no viewer; draw it yourself.
+     * @brief Read the current debug-render point buffer (the debug geometry produced
+     *        during the step). OvPhysX has no viewer; draw it yourself.
      *
      * **Ownership / lifetime:** the returned pointer aliases an OvPhysX-owned buffer and
      * is invalidated by the next ovphysx_step() OR by any stage / scene change
      * (ovphysx_reset_stage, ovphysx_update_from_ovstage, ovphysx_detach_ovstage,
-     * ovphysx_destroy_instance) -- the underlying PhysX scenes and debug buffers may
-     * be recreated. Copy out before any of
-     * those; do not hold the pointer across a step or re-attach. On success-with-no-data
-     * *out_points is set to NULL and *out_count to 0.
+     * ovphysx_destroy_instance): the underlying PhysX scenes and debug buffers may
+     * be recreated. Copy out before any of those; do not hold the pointer across a
+     * step or re-attach. On
+     * success-with-no-data *out_points is set to NULL and *out_count to 0.
      *
      * @param handle           Instance handle.
      * @param[out] out_points  Set to the buffer base (NULL when empty). Must be non-NULL.

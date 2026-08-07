@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "ExtOctreeTetrahedralizer.h"
 #include "foundation/PxSort.h"
@@ -266,7 +266,7 @@ void OctreeTetrahedralizer::createTetVerts(bool includeOctreeNodes)
 				i++;
 			}
 		}
-	}			
+	}
 }
 
 // -----------------------------------------------------------------------------------
@@ -337,7 +337,7 @@ PxI32 OctreeTetrahedralizer::getNewTetNr()
 		firstFreeTet = tetIds[4 * firstFreeTet];
 	}
 	else 
-	{		
+	{
 		// append
 		newTetNr = PxI32(tetIds.size()) / 4;
 		resizeFast(tetIds, tetIds.size() + 4);

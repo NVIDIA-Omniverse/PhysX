@@ -179,9 +179,8 @@ def test_carbonite_overrides_value_coercion():
         }
     )
     entries = _to_c_config(cfg)
-    # Four carbonite entries expected
     assert len(entries) == 4
-    # Entries are non-null config structs (no exception means coercion worked)
+    # No exception means coercion worked
 
 
 def test_combined_typed_and_overrides():

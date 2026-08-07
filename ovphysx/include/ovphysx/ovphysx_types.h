@@ -15,11 +15,11 @@
 // own types directly (no ovphysx mirror): a read group is an `ovstage_read_group_t`,
 // discovery is an `ovstage_query_result_t`, attribute names/tokens are
 // `ovx_string_or_token_t`, ordinals are `ovstage_ordinal_t` / `ovstage_ordinal_range_t`,
-// and an attached Stage is an `ovstage_instance_t*`. Consumers of this header need
-// the ovstage include dirs on their include path; ovphysx ships these headers in its
-// SDK/wheel alongside ovphysx.h.
+// and an attached Stage is an `ovstage_instance_t*`. ovphysx does NOT ship these
+// headers: fetch the ovstage release and add its root to CMAKE_PREFIX_PATH.
 #include <ovstage/ovstage_api/ovstage_api_types.h>
 #include <ovx/string_types.h>
+#include <ovx/types.h>  // ovx_primpath_t (interned prim-path handle for the token scope)
 
 /**
  * String with pointer and length.
@@ -70,6 +70,10 @@ extern "C"
     /* Opaque handle types */
     /*--------------------------------------------------*/
 
+    /**
+     * One ovphysx simulator instance, created by ovphysx_create_instance. Owns its
+     * simulation and drives at most one attached USD stage; not per-stage or per-scene.
+     */
     typedef uint64_t ovphysx_handle_t;
     typedef uint64_t ovphysx_usd_handle_t;
     typedef uint64_t ovphysx_attribute_binding_handle_t;
@@ -84,7 +88,7 @@ extern "C"
 
     /**
      * Sentinel value representing an invalid/null ovphysx instance handle.
-     * Valid handles start at 1, so 0 is reserved to indicate "no handle" or "invalid handle".
+     * Valid handles are nonzero, so 0 is reserved to indicate "no handle" or "invalid handle".
      * Use this when a handle parameter is required but no valid instance is available.
      */
     #define OVPHYSX_INVALID_HANDLE 0
@@ -297,7 +301,7 @@ extern "C"
      * for prim_path / type from a deferred handler.
      *
      * Only fires for creations triggered by stage edits during simulation. The
-     * initial object population from ovstage attach/update is NOT notified --
+     * initial object population from ovstage attach/update is NOT notified:
      * the caller already has that state from their setup code. See
      * ovphysx_subscribe_object_changes() for the full lifecycle contract.
      *
@@ -457,16 +461,17 @@ extern "C"
 
     typedef enum
     {
-        OVPHYSX_API_SUCCESS = 0,             /**< Operation completed or enqueued successfully */
-        OVPHYSX_API_ERROR = 1,               /**< Operation failed - check error field */
-        OVPHYSX_API_TIMEOUT = 2,             /**< Operation timed out */
-        OVPHYSX_API_NOT_IMPLEMENTED = 3,     /**< Feature not yet implemented */
-        OVPHYSX_API_INVALID_ARGUMENT = 4,    /**< Invalid argument provided */
-        OVPHYSX_API_NOT_FOUND = 5,           /**< Requested resource not found (handle unknown, binding invalidated) */
-        OVPHYSX_API_BUFFER_TOO_SMALL = 6,    /**< Caller-supplied buffer is too small; check out_required_size */
-        OVPHYSX_API_DEVICE_MISMATCH = 7,     /**< Tensor device cannot be used or staged for this binding/policy */
-        OVPHYSX_API_GPU_NOT_AVAILABLE = 8,   /**< GPU requested but not available or CUDA init failed */
-        OVPHYSX_API_END_OF_ITERATION = 9,    /**< Iterator exhausted (e.g. ovphysx_fetch_read_next past the last group) — not an error */
+        OVPHYSX_API_SUCCESS = 0, /**< Operation completed or enqueued successfully */
+        OVPHYSX_API_ERROR = 1, /**< Operation failed - check error field */
+        OVPHYSX_API_TIMEOUT = 2, /**< Operation timed out */
+        OVPHYSX_API_NOT_IMPLEMENTED = 3, /**< Feature not yet implemented */
+        OVPHYSX_API_INVALID_ARGUMENT = 4, /**< Invalid argument provided */
+        OVPHYSX_API_NOT_FOUND = 5, /**< Requested resource not found (handle unknown, binding invalidated) */
+        OVPHYSX_API_BUFFER_TOO_SMALL = 6, /**< Caller-supplied buffer is too small; check API-specific size metadata */
+        OVPHYSX_API_DEVICE_MISMATCH = 7, /**< Tensor device cannot be used or staged for this binding/policy */
+        OVPHYSX_API_GPU_NOT_AVAILABLE = 8, /**< GPU requested but not available or CUDA init failed */
+        OVPHYSX_API_END_OF_ITERATION = 9, /**< Iterator exhausted (e.g. ovphysx_fetch_read_next past the last group) --
+                                             not an error */
     } ovphysx_api_status_t;
 
     /**
@@ -680,6 +685,14 @@ extern "C"
      *             PxActorFlag::eDISABLE_SIMULATION on the underlying PxRigidActor
      *             so the body stops participating in the next solver step).
      *
+     *   OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL
+     *     Shape: [N] where N = number of rigid bodies
+     *     Layout: per-body byte; nonzero disables gravity, zero enables.
+     *     DType: bool / uint8
+     *     Access: read/write. Writes apply at runtime (engine toggles
+     *             PxActorFlag::eDISABLE_GRAVITY on the underlying PxRigidActor).
+     *     Reads return live PhysX actor flags (post-parse internal state only).
+     *
      *   OVPHYSX_TENSOR_RIGID_BODY_COM_POSE_F32
      *     Shape: [N, 7] where N = number of rigid bodies
      *     Layout: [px, py, pz, qx, qy, qz, qw] (position xyz, quaternion xyzw)
@@ -697,7 +710,7 @@ extern "C"
      *     DType: float32
      *
      * ============================================================================
-     * ARTICULATION DOF PROPERTY TENSORS (read/write)
+     * ARTICULATION DOF PROPERTY TENSORS (read/write, except where noted)
      * ============================================================================
      *
      *   OVPHYSX_TENSOR_ARTICULATION_DOF_STIFFNESS_F32
@@ -744,6 +757,14 @@ extern "C"
      *     Note: only DOFs with PhysxDrivePerformanceEnvelopeAPI applied in USD accept writes;
      *           writes to other DOFs are silently dropped.
      *
+     *   OVPHYSX_TENSOR_ARTICULATION_DOF_DRIVE_TYPE_U8
+     *     Shape: [N, D] where N = articulations, D = max DOFs (zero-padded)
+     *     Layout: per-DOF byte in solver DOF order; 0 = no drive, 1 = force,
+     *             2 = acceleration.
+     *     DType: uint8
+     *     Access: read-only. Reads return the live PxArticulationDrive driveType.
+     *             Trailing padded DOF columns beyond numDofs read as 0.
+     *
      * ============================================================================
      * ARTICULATION BODY PROPERTY TENSORS (read/write, except where noted)
      * ============================================================================
@@ -775,6 +796,15 @@ extern "C"
      *     Shape: [N, L, 9]
      *     Layout: row-major 3x3 inverse inertia in COM frame per link
      *     DType: float32
+     *
+     *   OVPHYSX_TENSOR_ARTICULATION_BODY_DISABLE_GRAVITY_BOOL
+     *     Shape: [N, L] where N = articulations, L = max links (zero-padded)
+     *     Layout: per-link byte in solver link order; nonzero disables gravity.
+     *     DType: bool / uint8
+     *     Access: read/write. Writes apply at runtime (engine toggles
+     *             PxActorFlag::eDISABLE_GRAVITY on each link actor). Trailing
+     *             padded link columns beyond numLinks are ignored on write.
+     *     Reads return live PhysX actor flags (post-parse internal state only).
      *
      * ============================================================================
      * DYNAMICS QUERY TENSORS (READ-ONLY)
@@ -1017,6 +1047,7 @@ extern "C"
         OVPHYSX_TENSOR_ARTICULATION_DOF_ARMATURE_F32 = 40,         /**< [N, D] armature per DOF */
         OVPHYSX_TENSOR_ARTICULATION_DOF_FRICTION_PROPERTIES_F32 = 41, /**< [N, D, 3] (static, dynamic, viscous) */
         OVPHYSX_TENSOR_ARTICULATION_DOF_DRIVE_MODEL_F32 = 42, /**< [N, D, 3] (speedEffortGradient, maxActuatorVelocity, velocityDependentResistance) */
+        OVPHYSX_TENSOR_ARTICULATION_DOF_DRIVE_TYPE_U8 = 43, /**< [N, D] uint8 drive type per DOF; 0=none, 1=force, 2=acceleration (READ-ONLY) */
 
         /**
          * External forces/wrenches - WRITE-ONLY (control inputs applied each step).
@@ -1037,6 +1068,7 @@ extern "C"
         OVPHYSX_TENSOR_ARTICULATION_BODY_INERTIA_F32 = 62,         /**< [N, L, 9] row-major 3x3 inertia in COM frame */
         OVPHYSX_TENSOR_ARTICULATION_BODY_INV_MASS_F32 = 63,        /**< [N, L] inverse mass (1/m) per link (READ-ONLY) */
         OVPHYSX_TENSOR_ARTICULATION_BODY_INV_INERTIA_F32 = 64,     /**< [N, L, 9] inverse inertia in COM frame (READ-ONLY) */
+        OVPHYSX_TENSOR_ARTICULATION_BODY_DISABLE_GRAVITY_BOOL = 65, /**< [N, L] uint8/bool; nonzero disables PxActorFlag::eDISABLE_GRAVITY per link at runtime */
 
         /* Dynamics query tensors (READ-ONLY) */
         /** [N, R, C] from getJacobianShape().
@@ -1070,6 +1102,7 @@ extern "C"
         OVPHYSX_TENSOR_RIGID_BODY_SHAPE_FRICTION_AND_RESTITUTION_F32 = 100, /**< [N, S, 3] (static friction, dynamic friction, restitution) per shape */
         OVPHYSX_TENSOR_RIGID_BODY_CONTACT_OFFSET_F32 = 101,            /**< [N, S] contact offset per shape */
         OVPHYSX_TENSOR_RIGID_BODY_REST_OFFSET_F32 = 102,               /**< [N, S] rest offset per shape */
+        OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL = 103,          /**< [N] uint8/bool; nonzero disables PxActorFlag::eDISABLE_GRAVITY at runtime */
 
         OVPHYSX_TENSOR_ARTICULATION_SHAPE_FRICTION_AND_RESTITUTION_F32 = 110, /**< [N, S, 3] (static friction, dynamic friction, restitution) per link shape */
         OVPHYSX_TENSOR_ARTICULATION_CONTACT_OFFSET_F32 = 111,          /**< [N, S] contact offset per link shape */
@@ -1161,15 +1194,19 @@ extern "C"
      *   - Deformable element index tensors (DEFORMABLE_SIM_ELEMENT_INDICES_S32,
      *     DEFORMABLE_COLLISION_ELEMENT_INDICES_S32, SURFACE_DEFORMABLE_SIM_ELEMENT_INDICES_S32)
      *     use int32 (kDLInt, 32 bits, 1 lane)
-     *   - OVPHYSX_TENSOR_RIGID_BODY_DISABLE_SIMULATION_BOOL uses
-     *     bool/uint8 (kDLUInt, 8 bits, 1 lane) -- per-body byte flag.
+     *   - OVPHYSX_TENSOR_RIGID_BODY_DISABLE_SIMULATION_BOOL,
+     *     OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL, and
+     *     OVPHYSX_TENSOR_ARTICULATION_BODY_DISABLE_GRAVITY_BOOL use
+     *     bool/uint8 (kDLUInt, 8 bits, 1 lane) -- per-body/per-link byte flags.
+     *   - OVPHYSX_TENSOR_ARTICULATION_DOF_DRIVE_TYPE_U8 also uses uint8
+     *     (kDLUInt, 8 bits, 1 lane), but as a per-DOF enum byte (0/1/2), not a flag.
      *   Always call ovphysx_get_tensor_binding_spec() and respect
      *   the returned dtype; do not assume float32.
      *   - Layout: row-major contiguous (C-order)
      */
     typedef struct
     {
-        DLDataType dtype;                    /**< DLPack data type for this tensor type. Most bindings use float32; element-index tensors use int32; DISABLE_SIMULATION_BOOL uses uint8. Always honor this field rather than assuming float32. */
+        DLDataType dtype;                    /**< DLPack data type for this tensor type. Most bindings use float32; element-index tensors use int32; disable-simulation/gravity bool bindings and the DOF drive-type enum binding use uint8. Always honor this field rather than assuming float32. */
         int32_t ndim;                        /**< Number of dimensions */
         int64_t shape[4];                    /**< Shape dimensions [dim0, dim1, dim2, 0] */
     } ovphysx_tensor_spec_t;

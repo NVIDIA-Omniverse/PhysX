@@ -1,0 +1,107 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 16,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "host-release",
+      "displayName": "Host Release",
+      "description": "Release build for local development (no -Werror, skip glibc check)",
+      "binaryDir": "${sourceDir}/_build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "OVPHYSX_WARNINGS_AS_ERRORS": "OFF",
+        "SKIP_GLIBC_CHECK": "ON"
+      }
+    },
+    {
+      "name": "host-debug",
+      "displayName": "Host Debug",
+      "description": "Debug build for local development (no -Werror, skip glibc check)",
+      "binaryDir": "${sourceDir}/_build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "OVPHYSX_WARNINGS_AS_ERRORS": "OFF",
+        "SKIP_GLIBC_CHECK": "ON"
+      }
+    },
+    {
+      "name": "host-devphysx",
+      "displayName": "Host Release (Dev PhysX)",
+      "description": "Release build against local PhysX SDK source",
+      "binaryDir": "${sourceDir}/_build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "OVPHYSX_WARNINGS_AS_ERRORS": "OFF",
+        "OVPHYSX_DEV_PHYSX": "ON",
+        "SKIP_GLIBC_CHECK": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "install-sdk",
+      "displayName": "Install SDK",
+      "configurePreset": "host-release",
+      "targets": ["install_sdk"]
+    },
+    {
+      "name": "build-wheel",
+      "displayName": "Build Wheel",
+      "configurePreset": "host-release",
+      "targets": ["build_wheel"]
+    },
+    {
+      "name": "validate-runtime",
+      "displayName": "Validate Runtime",
+      "configurePreset": "host-release",
+      "targets": ["validate_runtime"]
+    },
+    {
+      "name": "validate-wheel",
+      "displayName": "Validate Wheel",
+      "configurePreset": "host-release",
+      "targets": ["validate_wheel"]
+    },
+    {
+      "name": "validate-all",
+      "displayName": "Validate All",
+      "configurePreset": "host-release",
+      "targets": ["validate_all"]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "runtime",
+      "displayName": "Runtime Tests",
+      "configurePreset": "host-release",
+      "filter": {
+        "include": {
+          "label": "runtime"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "wheel",
+      "displayName": "Wheel Tests",
+      "configurePreset": "host-release",
+      "filter": {
+        "include": {
+          "label": "wheel"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

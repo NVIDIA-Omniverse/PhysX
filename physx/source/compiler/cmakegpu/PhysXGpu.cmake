@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXGpu common
@@ -30,12 +30,7 @@
 
 SET(PHYSX_SOURCE_DIR ${PHYSX_ROOT_DIR}/source)
 
-# Conditionally set the device source directory based on PUBLIC_RELEASE
-IF(PUBLIC_RELEASE)
-    SET(DEVICE_INCLUDE_DIR ${PHYSX_SOURCE_DIR}/physx/src/opensource/cudamanager/include)
-ELSE()
-    SET(DEVICE_INCLUDE_DIR ${PHYSX_SOURCE_DIR}/physx/src/internal/cudamanager/include)
-ENDIF()
+SET(DEVICE_INCLUDE_DIR ${PHYSX_SOURCE_DIR}/physx/src/opensource/cudamanager/include)
 
 # Include here after the directories are defined so that the platform specific file can use the variables.
 include(${PHYSX_ROOT_DIR}/${PROJECT_CMAKE_FILES_DIR}/${TARGET_BUILD_PLATFORM}/PhysXGpu.cmake)
@@ -65,6 +60,22 @@ ADD_LIBRARY(PhysXGpu ${PHYSXGPU_LIBTYPE}
 	$<TARGET_OBJECTS:PhysXSolverGpu>
 	$<TARGET_OBJECTS:PhysXGpuDependencies>
 )
+
+# Match the output name expected by the runtime loader (PX_PHYSX_GPU_SHARED_LIB_NAME).
+# The PhysX runtime does dlopen("libPhysXGpu_64.so") / LoadLibrary("PhysXGpu_64.dll"),
+# so the built library must use the _64 suffix to be found at runtime.
+#
+# In the standalone build (via source/compiler/cmake/CMakeLists.txt), NvidiaBuildOptions.cmake
+# sets CMAKE_DEBUG_POSTFIX="_64" etc., so OUTPUT_NAME="PhysXGpu" + postfix="_64" produces the
+# correct name. We only override OUTPUT_NAME when postfixes are NOT set (FetchContent path).
+IF(NOT CMAKE_DEBUG_POSTFIX)
+	IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		SET(_PX_GPU_BITNESS "64")
+	ELSE()
+		SET(_PX_GPU_BITNESS "32")
+	ENDIF()
+	SET_TARGET_PROPERTIES(PhysXGpu PROPERTIES OUTPUT_NAME "PhysXGpu_${_PX_GPU_BITNESS}")
+ENDIF()
 
 TARGET_INCLUDE_DIRECTORIES(PhysXGpu
 	PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
@@ -97,15 +108,14 @@ TARGET_INCLUDE_DIRECTORIES(PhysXGpu
 )
 
 # Add CUDA manager include directory
-IF(PUBLIC_RELEASE)
-    TARGET_INCLUDE_DIRECTORIES(PhysXGpu PRIVATE ${PHYSX_SOURCE_DIR}/physx/src/opensource/cudamanager/include)
-ELSE()
-    TARGET_INCLUDE_DIRECTORIES(PhysXGpu PRIVATE ${PHYSX_SOURCE_DIR}/physx/src/internal/cudamanager/include)
-ENDIF()
+TARGET_INCLUDE_DIRECTORIES(PhysXGpu PRIVATE ${PHYSX_SOURCE_DIR}/physx/src/opensource/cudamanager/include)
 
-SET_TARGET_PROPERTIES(PhysXGpu PROPERTIES
-	OUTPUT_NAME PhysXGpu
-)
+# For standalone builds (CMAKE_DEBUG_POSTFIX is set), keep the base name as "PhysXGpu"
+# and let the postfix system add "_64". For FetchContent builds (no postfix), the
+# OUTPUT_NAME was already set to "PhysXGpu_64" above.
+IF(CMAKE_DEBUG_POSTFIX)
+	SET_TARGET_PROPERTIES(PhysXGpu PROPERTIES OUTPUT_NAME "PhysXGpu")
+ENDIF()
 
 IF(PHYSXGPU_LIBTYPE STREQUAL "STATIC")
 	SET_TARGET_PROPERTIES(PhysXGpu PROPERTIES

@@ -2,7 +2,7 @@
 # using add_subdirectory() instead of find_package().
 #
 # Usage (from the repo root):
-#   cmake -S omni/ovphysx/tests/c_samples/hello_world_source_link -B /tmp/sl_test
+#   cmake -S ovphysx/tests/c_samples/hello_world_source_link -B /tmp/sl_test
 #   cmake --build /tmp/sl_test
 #   /tmp/sl_test/hello_world_source_link
 #

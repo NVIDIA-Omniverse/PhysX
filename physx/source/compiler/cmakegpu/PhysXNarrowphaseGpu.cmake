@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXGpu common
@@ -41,6 +41,7 @@ SET(PHYXGPU_NARROWPHASE_HEADERS
 	${PHYSX_SOURCE_DIR}/gpunarrowphase/include/convexFormat.h
 	${PHYSX_SOURCE_DIR}/gpunarrowphase/include/convexNpCommon.h
 	${PHYSX_SOURCE_DIR}/gpunarrowphase/include/cudaNpCommon.h
+	${PHYSX_SOURCE_DIR}/gpunarrowphase/include/PxgBucket.h
 	${PHYSX_SOURCE_DIR}/gpunarrowphase/include/PxgContactManager.h
 	${PHYSX_SOURCE_DIR}/gpunarrowphase/include/PxgConvexConvexShape.h
 	${PHYSX_SOURCE_DIR}/gpunarrowphase/include/PxgGeometryManager.h

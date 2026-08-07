@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,10 +30,12 @@
 #define PXG_KERNEL_LAUNCHER_H
 
 #include "cudamanager/PxCudaContextManager.h"
-#include "CudaKernelWrangler.h"
-#include "PxgKernelWrangler.h"
 #include "cudamanager/PxCudaContext.h"
 #include "foundation/PxString.h"
+
+#include "CudaKernelWrangler.h"
+#include "PxgKernelWrangler.h"
+
 
 #define KERNEL_LAUNCH_ERROR_CHECK 0
 
@@ -181,7 +183,7 @@ namespace physx
 			PxU16 kernelFunctionId, PxU32 gridDimX, PxU32 gridDimY, PxU32 gridDimZ,
 			PxU32 blockDimX, PxU32 blockDimY, PxU32 blockDimZ, PxU32 sharedMemBytes, CUstream stream, PxCudaKernelParam* kernelParams, PxU32 kernelParamsSize)
 		{
-			return _launch<KERNEL_LAUNCH_ERROR_CHECK>(gpuKernelWranglerManager->mKernelWrangler, cudaContext, kernelFunctionId,
+			return _launch<KERNEL_LAUNCH_ERROR_CHECK>(gpuKernelWranglerManager, cudaContext, kernelFunctionId,
 													gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ,
 													sharedMemBytes, stream, kernelParams, kernelParamsSize, PX_FL);
 		}
@@ -190,7 +192,7 @@ namespace physx
 			PxU16 kernelFunctionId, PxU32 gridDimX, PxU32 gridDimY, PxU32 gridDimZ,
 			PxU32 blockDimX, PxU32 blockDimY, PxU32 blockDimZ, PxU32 sharedMemBytes, CUstream stream, void** kernelParams)
 		{
-			return _launch<KERNEL_LAUNCH_ERROR_CHECK>(gpuKernelWranglerManager->mKernelWrangler, cudaContext, kernelFunctionId,
+			return _launch<KERNEL_LAUNCH_ERROR_CHECK>(gpuKernelWranglerManager, cudaContext, kernelFunctionId,
 				gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ,
 				sharedMemBytes, stream, kernelParams, PX_FL);
 		}

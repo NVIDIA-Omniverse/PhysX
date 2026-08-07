@@ -27,9 +27,6 @@ from datetime import datetime
 import pytest
 
 
-_remote_resolver_dll_directory_handles = []
-
-
 def _get_pkg_dir():
     """Return the ovphysx package directory without importing it."""
     spec = importlib.util.find_spec("ovphysx")
@@ -58,86 +55,6 @@ def _get_install_dir():
     if os.path.isdir(install_dir):
         return install_dir
     return None
-
-
-def _remote_usd_tests_enabled():
-    return bool(
-        os.environ.get("OVPHYSX_S3_TEST_URI")
-        and os.environ.get("OVPHYSX_AWS_ACCESS_KEY_ID")
-        and os.environ.get("OVPHYSX_AWS_SECRET_ACCESS_KEY")
-    )
-
-
-def _prepare_remote_usd_resolver(install_dir):
-    """Register and select OmniUsdResolver before OpenUSD caches a resolver."""
-    plugins_dir = os.path.join(install_dir, "plugins")
-    resources_dir = os.path.join(plugins_dir, "usd", "omni_usd_resolver", "resources")
-    if not os.path.isdir(resources_dir):
-        raise pytest.UsageError(f"OmniUsdResolver resources not found: {resources_dir}")
-
-    if sys.platform == "win32":
-        for directory in (os.path.join(install_dir, "bin"), plugins_dir):
-            if not os.path.isdir(directory):
-                raise pytest.UsageError(f"Remote USD DLL directory not found: {directory}")
-            try:
-                _remote_resolver_dll_directory_handles.append(os.add_dll_directory(directory))
-            except OSError as exc:
-                raise pytest.UsageError(f"Failed to add remote USD DLL directory {directory}: {exc}") from exc
-        os.environ.setdefault("OVSTAGE_LIBRARY_PATH_HINT", os.path.join(install_dir, "bin"))
-
-    import ovphysx
-
-    # Publish the PhysX schema path before constructing Plug.Registry below.
-    # This is pure Python environment setup and does not load native Carbonite.
-    ovphysx.register_schema_paths()
-
-    from pxr import Ar, Plug, Tf
-
-    registry = Plug.Registry()
-    registry.RegisterPlugins(resources_dir)
-    resolver_type = Tf.Type.FindByName("OmniUsdResolver")
-    if resolver_type.isUnknown:
-        raise pytest.UsageError(f"OmniUsdResolver type was not registered from {resources_dir}")
-
-    plugin = registry.GetPluginForType(resolver_type)
-    if plugin is None:
-        raise pytest.UsageError("No USD plugin owns the OmniUsdResolver type")
-
-    # This must happen before GetUnderlyingResolver/Stage.Open: Ar chooses once.
-    # Do not load the plugin or access the resolver here. Debug ovphysx and the
-    # release-built resolver carry different Carbonite frameworks; eager loading
-    # the resolver before PhysX initialization makes those frameworks collide.
-    Ar.SetPreferredResolver("OmniUsdResolver")
-    print(
-        "[conftest] remote USD resolver: "
-        f"preferred=OmniUsdResolver plugin={plugin.path} activation=pending",
-        flush=True,
-    )
-
-
-def _activate_remote_usd_resolver():
-    """Activate OmniUsdResolver after PhysX has initialized Carbonite."""
-    from pxr import Ar, Plug, Tf
-
-    resolver_type = Tf.Type.FindByName("OmniUsdResolver")
-    if resolver_type.isUnknown:
-        raise pytest.UsageError("OmniUsdResolver type is not registered")
-
-    plugin = Plug.Registry().GetPluginForType(resolver_type)
-    if plugin is None:
-        raise pytest.UsageError("No USD plugin owns the OmniUsdResolver type")
-    if not plugin.isLoaded and not plugin.Load():
-        raise pytest.UsageError(f"Failed to load OmniUsdResolver plugin: {plugin.path}")
-
-    resolver = Ar.GetUnderlyingResolver()
-    using_default = isinstance(resolver, Ar.DefaultResolver)
-    print(
-        "[conftest] remote USD resolver: "
-        f"plugin={plugin.path} loaded={plugin.isLoaded} default={using_default}",
-        flush=True,
-    )
-    if using_default:
-        raise pytest.UsageError("OpenUSD selected ArDefaultResolver instead of OmniUsdResolver")
 
 
 def pytest_configure(config):
@@ -210,9 +127,6 @@ def pytest_configure(config):
                         break
                 if preloaded:
                     break
-
-    if _remote_usd_tests_enabled():
-        _prepare_remote_usd_resolver(install_dir)
 
 
 DETAILED_LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "detailed_log.txt")
@@ -383,7 +297,6 @@ def pytest_sessionfinish(session, exitstatus):
     if not _test_results:
         return
 
-    # Calculate statistics
     results = list(_test_results.values())
     total = len(results)
     passed = sum(1 for r in results if r["status"] == "PASSED")
@@ -391,7 +304,6 @@ def pytest_sessionfinish(session, exitstatus):
     skipped = sum(1 for r in results if r["status"] == "SKIPPED")
     total_duration = sum(r["duration"] for r in results)
 
-    # Sort by duration for slowest tests
     sorted_by_duration = sorted(results, key=lambda x: x["duration"], reverse=True)
 
     # Categorize tests (basic heuristic based on test name)
@@ -422,7 +334,6 @@ def pytest_sessionfinish(session, exitstatus):
         elif result["status"] == "SKIPPED":
             categories[cat]["skipped"] += 1
 
-    # Build summary
     summary_lines = [
         "",
         "=" * 80,
@@ -452,7 +363,6 @@ def pytest_sessionfinish(session, exitstatus):
         "=" * 80,
     ]
 
-    # Add all tests
     for idx, result in enumerate(results, 1):
         test_name = result["nodeid"]
         status = result["status"]
@@ -466,7 +376,6 @@ def pytest_sessionfinish(session, exitstatus):
         ]
     )
 
-    # Failed tests details
     failed_tests = [r for r in results if r["status"] == "FAILED"]
     if failed_tests:
         summary_lines.extend(
@@ -496,7 +405,6 @@ def pytest_sessionfinish(session, exitstatus):
             ]
         )
 
-    # Skipped tests details
     skipped_tests = [r for r in results if r["status"] == "SKIPPED"]
     if skipped_tests:
         summary_lines.extend(
@@ -522,7 +430,6 @@ def pytest_sessionfinish(session, exitstatus):
             ]
         )
 
-    # Category breakdown
     summary_lines.extend(
         [
             "=" * 80,
@@ -549,7 +456,6 @@ def pytest_sessionfinish(session, exitstatus):
         summary_lines.append(f"{status_icon} {cat_name.upper()} ({total_cat} tests)")
         summary_lines.append(f"   - {status_text}")
 
-        # List failed tests in category
         failed_in_cat = [r for r in cat_data["tests"] if r["status"] == "FAILED"]
         if failed_in_cat:
             for result in failed_in_cat:
@@ -565,7 +471,6 @@ def pytest_sessionfinish(session, exitstatus):
         ]
     )
 
-    # Slowest tests
     summary_lines.extend(
         [
             "=" * 80,
@@ -587,7 +492,6 @@ def pytest_sessionfinish(session, exitstatus):
         ]
     )
 
-    # Quick reference
     summary_lines.extend(
         [
             "=" * 80,
@@ -697,8 +601,6 @@ def _gpu_session_instance():
             }
         ),
     )
-    if _remote_usd_tests_enabled():
-        _activate_remote_usd_resolver()
     yield physx
     try:
         from test_utils import destroy_ovstage_test_attachments

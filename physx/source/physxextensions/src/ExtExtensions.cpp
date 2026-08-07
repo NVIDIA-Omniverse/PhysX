@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -67,7 +67,7 @@ struct JointConnectionHandler : public PvdClient
 	PvdDataStream*		getDataStream()
 	{
 		return NULL;
-	}	
+	}
 
 	void onPvdConnected()
 	{
@@ -77,7 +77,7 @@ struct JointConnectionHandler : public PvdClient
 			mConnected = true;
 			Ext::Pvd::sendClassDescriptions(*stream);	
 			stream->release();
-		}		
+		}
 	}
 
 	bool isConnected() const
@@ -117,12 +117,22 @@ bool PxInitExtensions(PxPhysics& physics, PxPvd* pvd)
 #endif
 
 #if PX_SUPPORT_OMNI_PVD
-	if (physics.getOmniPvd() && physics.getOmniPvd()->getWriter())
+	// If OmniPVD is bound (it is created up front and passed to PxCreatePhysics), create the
+	// extensions callback, capture the PxPhysics, and register it with the PxOmniPvd. Its
+	// onStartSampling() then fires whenever PxOmniPvd::startSampling() takes a full-state
+	// snapshot, re-emitting the live extension joints onto the bound stream -- including the
+	// late-attach case, where startSampling() runs long after PxInitExtensions.
+	PxOmniPvd* omniPvd = physics.getOmniPvd();
+	if (omniPvd && omniPvd->getWriter())
 	{
-		if (OmniPvdPxExtensionsSampler::createInstance())
+		if (OmniPvdPxExtensionsSampler::createInstance(physics))
 		{
-			OmniPvdPxExtensionsSampler::getInstance()->setOmniPvdInstance(physics.getOmniPvd());
-			OmniPvdPxExtensionsSampler::getInstance()->registerClasses();
+			OmniPvdPxExtensionsSampler* sampler = OmniPvdPxExtensionsSampler::getInstance();
+			sampler->setOmniPvdInstance(omniPvd);
+			// The joint schema is registered lazily in onStartSampling() (via registerClasses()),
+			// matching the core sampler, which registers nothing until startSampling(). Registering
+			// here would run before the core handle re-numbering and emit before recording is on.
+			omniPvd->addEventCallback(*sampler);
 		}
 	}
 #endif
@@ -181,7 +191,7 @@ void PxCloseExtensions()
 
 #if PX_SUPPORT_PVD
 	if(gPvdHandler.mConnected)
-	{	
+	{
 		PX_ASSERT(gPvdHandler.mPvd);
 		gPvdHandler.mPvd->removeClient(&gPvdHandler);
 		gPvdHandler.mPvd = NULL;
@@ -189,8 +199,13 @@ void PxCloseExtensions()
 #endif
 
 #if PX_SUPPORT_OMNI_PVD
-	if (OmniPvdPxExtensionsSampler::getInstance())
+	// Unregister the extensions callback from the PxOmniPvd before destroying it, so a later
+	// startSampling() snapshot cannot call into freed extension state.
+	OmniPvdPxExtensionsSampler* sampler = OmniPvdPxExtensionsSampler::getInstance();
+	if (sampler)
 	{
+		if (PxOmniPvd* omniPvd = sampler->getOmniPvdInstance())
+			omniPvd->removeEventCallback(*sampler);
 		OmniPvdPxExtensionsSampler::destroyInstance();
 	}
 #endif

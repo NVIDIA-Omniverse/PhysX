@@ -151,7 +151,7 @@ not reduced.
 ## Python suite
 
 `tests/python_benchmarks/` is pytest-based, driven by `pytest-benchmark`.
-Scoped per review on MR !7247 to signals the C++ harness genuinely can't
+Scoped per review to signals the C++ harness genuinely can't
 measure: DLPack ↔ numpy/torch.cuda roundtrip cost (`bench_tensor_io_*.py`)
 and true process-restart cold start via subprocess
 (`bench_process_cold_start.py`). The earlier Python step/usd_load/clone/lab

@@ -207,16 +207,21 @@ class CMakePreset:
         # Only add CUDA paths if GPU is enabled
         if gpuEnabled:
             if os.environ.get('PM_CUDA_PATH') is not None:
-                if os.environ.get('PM_CUDA_PATH') is not None:
-                    outString = outString + ' -DCUDAToolkit_ROOT_DIR=' + \
-                            os.environ['PM_CUDA_PATH']
-                    if self.compiler in ['vc15', 'vc16', 'vc17'] and self.generator != 'ninja':
-                        outString = outString + ' -T cuda=' + os.environ['PM_CUDA_PATH']
-                    # TODO: Need to do the same for gcc (aarch64) when we package it with Packman
-                    elif self.compiler == 'clang':
-                        if os.environ.get('PM_clang_PATH') is not None:
-                            outString = outString + ' -DCMAKE_CUDA_HOST_COMPILER=' + \
-                                os.environ['PM_clang_PATH'] + '/bin/clang++'
+                cuda_path = os.environ['PM_CUDA_PATH']
+                outString = outString + ' -DCUDAToolkit_ROOT_DIR=' + cuda_path
+
+                nvcc_name = 'nvcc.exe' if sys.platform == 'win32' else 'nvcc'
+                nvcc_path = cuda_path + '/bin/' + nvcc_name
+                if os.path.isfile(nvcc_path):
+                    outString = outString + ' -DCMAKE_CUDA_COMPILER=' + nvcc_path
+
+                if self.compiler in ['vc15', 'vc16', 'vc17'] and self.generator != 'ninja':
+                    outString = outString + ' -T cuda=' + cuda_path
+                # TODO: Need to do the same for gcc (aarch64) when we package it with Packman
+                elif self.compiler == 'clang':
+                    if os.environ.get('PM_clang_PATH') is not None:
+                        outString = outString + ' -DCMAKE_CUDA_HOST_COMPILER=' + \
+                            os.environ['PM_clang_PATH'] + '/bin/clang++'
                         
         return outString
 

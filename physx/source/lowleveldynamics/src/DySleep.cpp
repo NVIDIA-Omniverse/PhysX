@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,6 +31,15 @@
 using namespace physx;
 
 // PT: TODO: refactor this, parts of the two codepaths are very similar
+
+// PT: set sleeping flags but preserve other non-sleeping-related flags
+static PX_FORCE_INLINE void setSleepingFlags(PxsRigidBody* originalBody, PxU16 sleepingFlags)
+{
+	PxU16 flags = originalBody->mInternalFlags;
+	flags &= ~PxsRigidBody::eSLEEPING_FLAGS;
+	flags |= sleepingFlags;
+	originalBody->mInternalFlags = flags;
+}
 
 static PX_FORCE_INLINE PxReal updateWakeCounter(PxsRigidBody* originalBody, PxReal dt, bool enableStabilization, const Cm::SpatialVector& motionVelocity, PxIntBool hasStaticTouch)
 {
@@ -97,7 +106,7 @@ static PX_FORCE_INLINE PxReal updateWakeCounter(PxsRigidBody* originalBody, PxRe
 				const PxReal d = 1.0f - sleepDampingTimesDT;
 				bodyCore.linearVelocity = bodyCore.linearVelocity * d;
 				bodyCore.angularVelocity = bodyCore.angularVelocity * d;
-				accelScale = accelScale * 0.75f + 0.25f*PXD_FREEZE_SCALE;
+				accelScale = accelScale * 0.75f + 0.25f * PXD_FREEZE_SCALE;
 			}
 			freeze = originalBody->mFreezeCount == 0.0f && frameNormalizedEnergy < (bodyCore.freezeThreshold * PXD_FREEZE_TOLERANCE);
 		}
@@ -120,7 +129,7 @@ static PX_FORCE_INLINE PxReal updateWakeCounter(PxsRigidBody* originalBody, PxRe
 			if(wasFrozen)
 				flags |= PxsRigidBody::eUNFREEZE_THIS_FRAME;
 		}
-		originalBody->mInternalFlags = flags;
+		setSleepingFlags(originalBody, flags);
 
 		/*KS: New algorithm for sleeping when using stabilization:
 		* Energy *this frame* must be higher than sleep threshold and accumulated energy over previous frames
@@ -211,7 +220,7 @@ static PX_FORCE_INLINE PxReal updateWakeCounter(PxsRigidBody* originalBody, PxRe
 					//notifyNotReadyForSleeping(bodyCore.nodeIndex);
 				}
 
-				originalBody->mInternalFlags = flags;
+				setSleepingFlags(originalBody, flags);
 
 				return wc;
 			}

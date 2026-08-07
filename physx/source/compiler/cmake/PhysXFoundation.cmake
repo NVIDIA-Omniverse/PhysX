@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXFoundation common
@@ -66,8 +66,6 @@ SET(PHYSXFOUNDATION_HEADERS
 	${PHYSX_ROOT_DIR}/include/foundation/PxHashSet.h
 	${PHYSX_ROOT_DIR}/include/foundation/PxInlineAllocator.h
 	${PHYSX_ROOT_DIR}/include/foundation/PxInlineArray.h
-	${PHYSX_ROOT_DIR}/include/foundation/PxPinnedArray.h
-	${PHYSX_ROOT_DIR}/include/foundation/PxPinnedBitMap.h
 	${PHYSX_ROOT_DIR}/include/foundation/PxMathIntrinsics.h
 	${PHYSX_ROOT_DIR}/include/foundation/PxMutex.h
 	${PHYSX_ROOT_DIR}/include/foundation/PxIO.h
@@ -128,10 +126,14 @@ ADD_LIBRARY(PhysXFoundation ${PHYSXFOUNDATION_LIBTYPE}
 )
 
 # Add the headers to the install
-INSTALL(FILES ${PHYSXFOUNDATION_HEADERS} DESTINATION include/foundation)
+IF(NOT DEFINED PX_ENABLE_INSTALL OR PX_ENABLE_INSTALL)
+	INSTALL(FILES ${PHYSXFOUNDATION_HEADERS} DESTINATION include/foundation)
+ENDIF()
 
 TARGET_INCLUDE_DIRECTORIES(PhysXFoundation 
-	PUBLIC ${PHYSX_ROOT_DIR}/include
+	PUBLIC 
+		$<BUILD_INTERFACE:${PHYSX_ROOT_DIR}/include>
+		$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     
 	PRIVATE ${PHYSXFOUNDATION_PLATFORM_INCLUDES}
 )

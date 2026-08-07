@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -1012,7 +1012,6 @@ SweepTest::SweepTest(bool registerDeletionListener) :
 	mTouchedTriMax = 0.0f;
 }
 
-
 SweepTest::~SweepTest()
 {
 	// set the TouchedObject to NULL so we unregister the actor/shape
@@ -1029,7 +1028,7 @@ void SweepTest::voidTestCache()
 }
 
 void SweepTest::onRelease(const PxBase& observed)
-{	
+{
 	if (mTouchedActor == &observed)
 	{
 		mTouchedShape = NULL;
@@ -2027,7 +2026,6 @@ PxControllerCollisionFlags SweepTest::moveCharacter(
 	return CollisionFlags;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // This is an interface between NX users and the internal character controller module.
@@ -2508,7 +2506,6 @@ PxControllerCollisionFlags Controller::move(SweptVolume& volume, const PxVec3& o
 		}
 	}
 
-
 	UserObstacles userObstacles;
 
 	const PxU32 nbBoxes = boxes.size();
@@ -2590,12 +2587,11 @@ PxControllerCollisionFlags Controller::move(SweptVolume& volume, const PxVec3& o
 	return collisionFlags;
 }
 
-
 PxControllerCollisionFlags BoxController::move(const PxVec3& disp, PxF32 minDist, PxF32 elapsedTime, const PxControllerFilters& filters, const PxObstacleContext* obstacles)
 {
 	PX_PROFILE_ZONE("CharacterController.move", getContextId());
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	// Create internal swept box
 	SweptBox sweptBox;
@@ -2609,7 +2605,7 @@ PxControllerCollisionFlags CapsuleController::move(const PxVec3& disp, PxF32 min
 {
 	PX_PROFILE_ZONE("CharacterController.move", getContextId());
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
 	// Create internal swept capsule
 	SweptCapsule sweptCapsule;

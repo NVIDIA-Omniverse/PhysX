@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -694,7 +694,7 @@ struct ExtCapturePvdOnReturn : public PxHitCallback<HitType>
 		mParentCallback			(parentCallback)
 	{}
 
-	virtual PxAgain processTouches(const HitType* hits, PxU32 nbHits)
+	virtual PxAgain processTouches(const HitType* hits, PxU32 nbHits) PX_OVERRIDE
 	{
 		const PxAgain again = mParentCallback.processTouches(hits, nbHits);
 		for(PxU32 i=0; i<nbHits; i++)
@@ -830,7 +830,7 @@ struct LocalRaycastCallback : LocalBaseCallback<HitType>, PxBVH::RaycastCallback
 	LocalRaycastCallback(const ExtMultiQueryInput& input, ExtMultiQueryCallback<HitType>& pcb, const Sq::ExtPrunerManager& manager, const ExtQueryAdapter& adapter, PxHitCallback<HitType>& hits, const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall) :
 		LocalBaseCallback<HitType>(pcb, manager, adapter, hits, filterData, filterCall), mInput(input)	{}
 
-	virtual bool	reportHit(PxU32 boundsIndex, PxReal& distance)
+	virtual bool	reportHit(PxU32 boundsIndex, PxReal& distance) PX_OVERRIDE
 	{
 		const Pruner* pruner = LocalBaseCallback<HitType>::filtering(boundsIndex);
 		if(!pruner)
@@ -849,7 +849,7 @@ struct LocalOverlapCallback : LocalBaseCallback<HitType>, PxBVH::OverlapCallback
 	LocalOverlapCallback(const ShapeData& shapeData, ExtMultiQueryCallback<HitType>& pcb, const Sq::ExtPrunerManager& manager, const ExtQueryAdapter& adapter, PxHitCallback<HitType>& hits, const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall) :
 		LocalBaseCallback<HitType>(pcb, manager, adapter, hits, filterData, filterCall), mShapeData(shapeData)	{}
 
-	virtual bool	reportHit(PxU32 boundsIndex)
+	virtual bool	reportHit(PxU32 boundsIndex) PX_OVERRIDE
 	{
 		const Pruner* pruner = LocalBaseCallback<HitType>::filtering(boundsIndex);
 		if(!pruner)
@@ -868,7 +868,7 @@ struct LocalSweepCallback : LocalBaseCallback<HitType>, PxBVH::RaycastCallback
 	LocalSweepCallback(const ShapeData& shapeData, const PxVec3& dir, ExtMultiQueryCallback<HitType>& pcb, const Sq::ExtPrunerManager& manager, const ExtQueryAdapter& adapter, PxHitCallback<HitType>& hits, const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall) :
 		LocalBaseCallback<HitType>(pcb, manager, adapter, hits, filterData, filterCall), mShapeData(shapeData), mDir(dir)	{}
 
-	virtual bool	reportHit(PxU32 boundsIndex, PxReal& distance)
+	virtual bool	reportHit(PxU32 boundsIndex, PxReal& distance) PX_OVERRIDE
 	{
 		const Pruner* pruner = LocalBaseCallback<HitType>::filtering(boundsIndex);
 		if(!pruner)

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,9 +30,14 @@
 #define	PXG_SHAPESIM_MANAGER_H
 
 #include "foundation/PxArray.h"
-#include "foundation/PxPinnedArray.h"
+#include "common/PxPhysXCommonConfig.h"
+
+#include "CmPinnableArray.h"
+
 #include "PxgShapeSim.h"
 #include "PxgCudaBuffer.h"
+
+#define PXG_SC_DEBUG 0
 
 namespace physx
 {
@@ -47,8 +52,9 @@ namespace physx
 	}
 
 	struct PxsShapeCore;
+	struct PxsCachedTransform;
 	class PxBaseTask;
-	class PxgHeapMemoryAllocatorManager;
+	struct PxgAllocatorDesc;
 	class PxgGpuNarrowphaseCore;
 	class KernelWrangler;
 
@@ -71,7 +77,7 @@ namespace physx
 	{
 														PX_NOCOPY(PxgShapeSimManager)
 		public:
-														PxgShapeSimManager(PxgHeapMemoryAllocatorManager* heapMemoryManager);
+														PxgShapeSimManager(PxgAllocatorDesc& allocDesc);
 
 						void							addPxgShape(Sc::ShapeSimBase* shapeSimBase, const PxsShapeCore* shapeCore, PxNodeIndex nodeIndex, PxU32 index);
 						void							setPxgShapeBodyNodeIndex(PxNodeIndex nodeIndex, PxU32 index);
@@ -92,6 +98,10 @@ namespace physx
 		PX_FORCE_INLINE	const PxgShapeSim*				getShapeSimsDeviceTypedPtr()	const	{ return mShapeSimBuffer.getTypedPtr();		}
 		PX_FORCE_INLINE	Sc::ShapeSimBase**				getShapeSims()							{ return mShapeSimPtrs.begin();				}
 
+#if PXG_SC_DEBUG
+		void											validateCacheAndBounds(const PxBounds3* bounds, const PxsCachedTransform* cachedTransforms);
+#endif
+
 		private:
 						PxArray<PxgShapeSimData>		mShapeSims;
 						PxArray<Sc::ShapeSimBase*>		mShapeSimPtrs;
@@ -99,7 +109,7 @@ namespace physx
 						PxU32							mTotalNumShapes;
 						PxU32							mNbTotalShapeSim;
 
-						PxPinnedArray<PxgNewShapeSim>		mPxgShapeSimPool;
+						Cm::PinnableArray<PxgNewShapeSim>	mPxgShapeSimPool;
 						PxgTypedCudaBuffer<PxgShapeSim>		mShapeSimBuffer;
 						PxgTypedCudaBuffer<PxgNewShapeSim>	mNewShapeSimBuffer;
 

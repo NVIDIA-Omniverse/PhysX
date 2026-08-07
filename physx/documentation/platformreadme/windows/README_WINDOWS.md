@@ -13,7 +13,7 @@
 * NVIDIA CUDA Toolkit 12.8 (Not required for CPU only builds)
 
 Compilers and C++ Standard:
-  * Microsoft Visual Studio 2017, 2019, 2022 (64 bit)
+  * Microsoft Visual Studio 2019, 2022 (64 bit)
   * Tested with C++14 standard
 
 ## PhysX GPU Acceleration:

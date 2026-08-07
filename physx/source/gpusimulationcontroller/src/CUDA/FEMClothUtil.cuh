@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,6 +31,7 @@
 
 #include "PxgFEMCloth.h"
 #include "vector_types.h"
+#include "foundation/PxVec2.h"
 #include "foundation/PxVec3.h"
 #include "foundation/PxVec4.h"
 #include "foundation/PxBounds3.h"
@@ -48,7 +49,8 @@
 #include "utils.cuh"
 
 
-using namespace physx;
+namespace physx
+{
 
 
 /*******************************************************************************
@@ -63,6 +65,10 @@ using namespace physx;
 #define FEMCLOTH_SQRT3		1.7320508075688772935274463415059f
 
 #define FEMCLOTH_THRESHOLD	1.0e-14f
+
+// Closest-pt direction is precision-unreliable below this dist^2; fall back to triangle/edge normal.
+#define FEMCLOTH_NORMAL_FALLBACK_DISTSQ	1.0e-10f
+
 #define FEMCLOTH_PI			3.14159265358979323846f
 #define FEMCLOTH_HALF_PI	1.57079632679489661923f
 #define FEMCLOTH_2PI		6.28318530717958647692f
@@ -541,7 +547,7 @@ static __device__ inline void membraneEnergySolvePerTriangle(PxgFEMCloth& shFEMC
 //! 
 
 static __device__ inline void bendingEnergySolvePerTrianglePair(PxgFEMCloth& shFEMCloth, float4& x0, float4& x1, float4& x2, float4& x3,
-																const float4& vertexReferenceCounts, float dt, PxU32 trianglePairIndex,
+																const float4& vertexRefCounts, float dt, PxU32 trianglePairIndex,
 																bool isSharedTrianglePartition, bool isTGS)
 {
 	const PxVec3 x02 = PxLoad3(x2 - x0);
@@ -616,8 +622,8 @@ static __device__ inline void bendingEnergySolvePerTrianglePair(PxgFEMCloth& shF
 	}
 
 	float deltaLambda =
-		queryDeltaLambda(C, dCdx0, dCdx1, dCdx2, dCdx3, alphaTilde, lambda, vertexReferenceCounts.x * x0.w, vertexReferenceCounts.y * x1.w,
-						 vertexReferenceCounts.z * x2.w, vertexReferenceCounts.w * x3.w);
+		queryDeltaLambda(C, dCdx0, dCdx1, dCdx2, dCdx3, alphaTilde, lambda, vertexRefCounts.x * x0.w, vertexRefCounts.y * x1.w,
+						 vertexRefCounts.z * x2.w, vertexRefCounts.w * x3.w);
 
 	if (!isTGS)
 	{
@@ -631,22 +637,22 @@ static __device__ inline void bendingEnergySolvePerTrianglePair(PxgFEMCloth& shF
 		}
 	}
 
-	PxReal scale0 = vertexReferenceCounts.x * x0.w * deltaLambda;
+	PxReal scale0 = vertexRefCounts.x * x0.w * deltaLambda;
 	x0.x += scale0 * dCdx0.x;
 	x0.y += scale0 * dCdx0.y;
 	x0.z += scale0 * dCdx0.z;
 
-	PxReal scale1 = vertexReferenceCounts.y * x1.w * deltaLambda;
+	PxReal scale1 = vertexRefCounts.y * x1.w * deltaLambda;
 	x1.x += scale1 * dCdx1.x;
 	x1.y += scale1 * dCdx1.y;
 	x1.z += scale1 * dCdx1.z;
 
-	PxReal scale2 = vertexReferenceCounts.z * x2.w * deltaLambda;
+	PxReal scale2 = vertexRefCounts.z * x2.w * deltaLambda;
 	x2.x += scale2 * dCdx2.x;
 	x2.y += scale2 * dCdx2.y;
 	x2.z += scale2 * dCdx2.z;
 
-	PxReal scale3 = vertexReferenceCounts.w * x3.w * deltaLambda;
+	PxReal scale3 = vertexRefCounts.w * x3.w * deltaLambda;
 	x3.x += scale3 * dCdx3.x;
 	x3.y += scale3 * dCdx3.y;
 	x3.z += scale3 * dCdx3.z;
@@ -661,7 +667,7 @@ static __device__ inline void bendingEnergySolvePerTrianglePair(PxgFEMCloth& shF
 static __device__ inline 
 void
 	clothSharedEnergySolvePerTrianglePair(PxgFEMCloth& shFEMCloth, float4& x0, float4& x1, float4& x2, float4& x3,
-										  const float4& vertexReferenceCount, const PxsDeformableSurfaceMaterialData* PX_RESTRICT clothMaterials,
+										  const float4& vertexRefCount, const PxsDeformableSurfaceMaterialData* PX_RESTRICT clothMaterials,
 										  float dt, PxU32 trianglePairIndex, bool isTGS)
 {
 	// shared edge: the shared edge between two adjacent triangles (triangle0, triangle1).
@@ -685,8 +691,8 @@ void
 	{
 		const PxU32 lambdaIndex = 2*trianglePairIndex;
 		const float4 QInv0 = make_float4(restEdge0.y, 0.0f, -restEdge0.x, restSharedEdgeLength) / det0;
-		membraneEnergySolvePerTriangle(shFEMCloth, x2, x3, x0, dt, clothMaterials[globalMaterialIndex0], QInv0, vertexReferenceCount.z,
-									   vertexReferenceCount.w, vertexReferenceCount.x, lambdaIndex, true, isTGS);
+		membraneEnergySolvePerTriangle(shFEMCloth, x2, x3, x0, dt, clothMaterials[globalMaterialIndex0], QInv0, vertexRefCount.z,
+									   vertexRefCount.w, vertexRefCount.x, lambdaIndex, true, isTGS);
 	}
 
 	// In-plane constraint for triangle1 with vertex x2, x3, and x1.
@@ -694,12 +700,14 @@ void
 	{
 		const PxU32 lambdaIndex = 2 * trianglePairIndex + 1;
 		const float4 QInv1 = make_float4(restEdge1.y, 0.0f, -restEdge1.x, restSharedEdgeLength) / det1;
-		membraneEnergySolvePerTriangle(shFEMCloth, x2, x3, x1, dt, clothMaterials[globalMaterialIndex1], QInv1, vertexReferenceCount.z,
-									   vertexReferenceCount.w, vertexReferenceCount.y, lambdaIndex, true, isTGS);
+		membraneEnergySolvePerTriangle(shFEMCloth, x2, x3, x1, dt, clothMaterials[globalMaterialIndex1], QInv1, vertexRefCount.z,
+									   vertexRefCount.w, vertexRefCount.y, lambdaIndex, true, isTGS);
 	}
 
 	// Bending constraint for the triangle pair
-	bendingEnergySolvePerTrianglePair(shFEMCloth, x0, x1, x2, x3, vertexReferenceCount, dt, trianglePairIndex, true, isTGS);
+	bendingEnergySolvePerTrianglePair(shFEMCloth, x0, x1, x2, x3, vertexRefCount, dt, trianglePairIndex, true, isTGS);
 }
+
+} // namespace physx
 
 #endif  // FEMCLOTHUTIL

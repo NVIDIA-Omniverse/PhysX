@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,6 +30,9 @@
 #define __MATERIAL_COMBINER_CUH__
 
 #include "PxsMaterialCombiner.h"
+
+namespace physx
+{
 
 __device__ static __forceinline__
 void combineMaterials(const PxsMaterialData* PX_RESTRICT materials, PxU16 index0, PxU16 index1,
@@ -47,5 +50,7 @@ void combineMaterials(const PxsMaterialData* PX_RESTRICT materials, PxU16 index0
 		combinedStaticFriction, combinedDynamicFriction, 
 		combinedRestitution, combinedFlags, combinedDamping);
 }
+
+} // namespace physx
 
 #endif

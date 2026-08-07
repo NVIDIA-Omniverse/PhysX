@@ -1,0 +1,17 @@
+#usda 1.0
+(
+    subLayers = [
+        @./mixed_base_articulations.usda@
+    ]
+)
+
+over "World"
+{
+    over "physicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        bool physxScene:enableGPUDynamics = true
+        uniform token physxScene:broadphaseType = "GPU"
+    }
+}

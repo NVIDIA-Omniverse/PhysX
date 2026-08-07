@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,13 +33,13 @@
 #include "DyThresholdTable.h"
 #include "PxcNpThreadContext.h"
 #include "PxsSimulationController.h"
+#include "PxsHeapStats.h"
 #include "DyConstraintWriteBack.h"
 #include "foundation/PxAllocator.h"
 #include "foundation/PxUserAllocated.h"
-#include "foundation/PxPinnedArray.h"
-#include "foundation/PxPinnedBitMap.h"
+#include "CmPinnableArray.h"
+#include "CmPinnableBitMap.h"
 #include "PxsRigidBody.h"
-#include "DyResidualAccumulator.h"
 
 namespace physx
 {
@@ -55,15 +55,32 @@ namespace IG
 	class SimpleIslandManager;
 }
 
-class PxcScratchAllocator;
 struct PxvSimStats;
-class PxTaskManager;
 class PxsContactManager;
 struct PxsContactManagerOutputCounts;
 class PxvNphaseImplementationContext;
 
 namespace Dy
 {
+
+/**
+Defining class, so it can be forward declared without pulling in DyThreasholdTable.h.
+*/
+class ThresholdStream : public PxArray<ThresholdStreamElement>{};
+
+/**
+Threshold stream that may be backed by device mapped host memory for the GPU pipeline,
+hence the pageable fallback is disabled.
+For the CPU pipeline, the stream is backed by pageable memory anyways, so no fallback 
+required either.
+*/
+class ThresholdStreamMapped : public Cm::PinnableArray<ThresholdStreamElement>
+{
+public:
+	ThresholdStreamMapped(Cm::VirtualAllocatorCallback& allocator) :
+		Cm::PinnableArray<ThresholdStreamElement>(allocator, PxsHeapStats::eSOLVER, Cm::PinnableAllocatorFallback::eDISABLED)
+	{}
+};
 
 class Context : public PxUserAllocated
 {
@@ -110,32 +127,22 @@ public:
 	PX_FORCE_INLINE const PxVec3&			getGravity()						const	{ return mGravity;		}
 	PX_FORCE_INLINE	PxU64					getContextId()						const	{ return mContextID;	}
 
-	PX_FORCE_INLINE ThresholdStream&		getThresholdStream()						{ return *mThresholdStream;				}
-	PX_FORCE_INLINE ThresholdStream&		getForceChangedThresholdStream()			{ return *mForceChangedThresholdStream;	}
+	PX_FORCE_INLINE ThresholdStream&		getThresholdStream()						{ return mThresholdStream;				}
+	PX_FORCE_INLINE ThresholdStreamMapped&	getForceChangedThresholdStream()			{ return mForceChangedThresholdStream;	}
 	PX_FORCE_INLINE ThresholdTable&			getThresholdTable()							{ return mThresholdTable;				}
-
-	void createThresholdStream(PxVirtualAllocatorCallback& callback)			{ PX_ASSERT(!mThresholdStream);	mThresholdStream = PX_NEW(ThresholdStream)(callback);	}
-	void createForceChangeThresholdStream(PxVirtualAllocatorCallback& callback) { PX_ASSERT(!mForceChangedThresholdStream); mForceChangedThresholdStream = PX_NEW(ThresholdStream)(callback);	}
 
 	PX_FORCE_INLINE PxcDataStreamPool&							getContactStreamPool()			{ return mContactStreamPool;		}
 	PX_FORCE_INLINE PxcDataStreamPool&							getPatchStreamPool()			{ return mPatchStreamPool;			}
 	PX_FORCE_INLINE PxcDataStreamPool&							getForceStreamPool()			{ return mForceStreamPool;			}
-	PX_FORCE_INLINE PxPinnedArray<Dy::ConstraintWriteback>&		getConstraintWriteBackPool()	{ return mConstraintWriteBackPool;	}
+	PX_FORCE_INLINE Cm::PinnableArray<Dy::ConstraintWriteback>&	getConstraintWriteBackPool()	{ return mConstraintWriteBackPool; }
 	PX_FORCE_INLINE PxcDataStreamPool&							getFrictionPatchStreamPool()	{ return mFrictionPatchStreamPool;	}
 
-	PX_FORCE_INLINE PxPinnedArray<PxReal>&						getConstraintPositionIterResidualPoolGpu() { return mConstraintPositionIterResidualPoolGpu; }
-
-	//Reports the sum of squared errors of the delta Force corrections. Geometric error was not possible because a compliant contact might have penetration (=geometric error) but can still be solved perfectly
-	PX_FORCE_INLINE PxReal										getContactError() const			{ return (mContactErrorVelIter ? mContactErrorVelIter->mErrorSumOfSquares : 0.0f) + (mArticulationContactErrorVelIter.size() ? mArticulationContactErrorVelIter[0].mErrorSumOfSquares : 0.0f); }
-	PX_FORCE_INLINE PxU32										getContactErrorCounter() const	{ return (mContactErrorVelIter ? mContactErrorVelIter->mCounter : 0u) + (mArticulationContactErrorVelIter.size() ? mArticulationContactErrorVelIter[0].mCounter : 0u); }
-	PX_FORCE_INLINE PxReal										getMaxContactError() const { return PxMax(mContactErrorVelIter ? mContactErrorVelIter->mMaxError : 0.0f, mArticulationContactErrorVelIter.size() ? mArticulationContactErrorVelIter[0].mMaxError : 0.0f); }
-	
-	PX_FORCE_INLINE PxReal										getContactErrorPosIter() const { return (mContactErrorPosIter ? mContactErrorPosIter->mErrorSumOfSquares : 0.0f) + (mArticulationContactErrorPosIter.size() ? mArticulationContactErrorPosIter[0].mErrorSumOfSquares : 0.0f); }
-	PX_FORCE_INLINE PxU32										getContactErrorCounterPosIter() const { return (mContactErrorPosIter ? mContactErrorPosIter->mCounter : 0u) + (mArticulationContactErrorPosIter.size() ? mArticulationContactErrorPosIter[0].mCounter : 0u); }
-	PX_FORCE_INLINE PxReal										getMaxContactErrorPosIter() const { return PxMax(mContactErrorPosIter ? mContactErrorPosIter->mMaxError : 0.0f, mArticulationContactErrorPosIter.size() ? mArticulationContactErrorPosIter[0].mMaxError : 0.0f); }
-
-
-	PX_FORCE_INLINE bool										isResidualReportingEnabled() const { return mIsResidualReportingEnabled; }
+	/**
+	\brief Returns whether sleeping is disabled in the scene
+	\return True if sleeping is disabled (PxSceneFlag::eDISABLE_SLEEPING is set)
+	*/
+	PX_FORCE_INLINE bool										isSleepingDisabled()			const	{ return mIsSleepingDisabled;			}
+	PX_FORCE_INLINE bool										isEnhancedDeterminismEnabled()	const	{ return mUseEnhancedDeterminism;		}
 	
 	/**
 	\brief Destroys this dynamics context
@@ -158,10 +165,10 @@ public:
 	*/
 	virtual void						update(	Cm::FlushPool& flushPool, PxBaseTask* continuation, PxBaseTask* postPartitioningTask, PxBaseTask* processLostTouchTask,
 												PxvNphaseImplementationContext* nPhaseContext, PxU32 maxPatchesPerCM, PxU32 maxArticulationLinks,
-												PxReal dt, const PxVec3& gravity, PxBitMapPinned& changedHandleMap) = 0;
+												PxReal dt, const PxVec3& gravity, Cm::PinnableBitMap& changedHandleMap) = 0;
 	virtual void						updatePostPartitioning(PxBaseTask* /*processLostTouchTask*/,
 												PxvNphaseImplementationContext* /*nPhaseContext*/, PxU32 /*maxPatchesPerCM*/, PxU32 /*maxArticulationLinks*/,
-												PxReal /*dt*/, const PxVec3& /*gravity*/, PxBitMapPinned& /*changedHandleMap*/)	{}
+												PxReal /*dt*/, const PxVec3& /*gravity*/, Cm::PinnableBitMap& /*changedHandleMap*/)	{}
 
 	virtual void						processPatches(	Cm::FlushPool& /*flushPool*/, PxBaseTask* /*continuation*/,
 														PxsContactManager** /*lostFoundPatchManagers*/, PxU32 /*nbLostFoundPatchManagers*/, PxsContactManagerOutputCounts* /*outCounts*/)	{}
@@ -190,44 +197,32 @@ public:
 
 protected:
 
-	Context(IG::SimpleIslandManager& islandManager, PxVirtualAllocatorCallback* allocatorCallback,
-			PxvSimStats& simStats, bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
-			PxReal maxBiasCoefficient, PxReal lengthScale, PxU64 contextID, bool isResidualReportingEnabled) :
-		mThresholdStream			(NULL),
-		mForceChangedThresholdStream(NULL),		
+	Context(IG::SimpleIslandManager& islandManager, Cm::VirtualAllocatorCallback& allocator, Cm::VirtualAllocatorCallback& mappedAllocator,
+			PxvSimStats& simStats, PxReal maxBiasCoefficient, PxReal lengthScale, PxU64 contextID, PxSceneFlags sceneFlags) :
+		mForceChangedThresholdStream(mappedAllocator),
 		mIslandManager				(islandManager),
 		mDt							(1.0f), 
 		mInvDt						(1.0f),
 		mMaxBiasCoefficient			(maxBiasCoefficient),
-		mEnableStabilization		(enableStabilization),
-		mUseEnhancedDeterminism		(useEnhancedDeterminism),
-		mSolveArticulationContactLast(solveArticulationContactLast),	 
+		mEnableStabilization		(sceneFlags & PxSceneFlag::eENABLE_STABILIZATION),
+		mUseEnhancedDeterminism		(sceneFlags & PxSceneFlag::eENABLE_ENHANCED_DETERMINISM),
+		mSolveArticulationContactLast(sceneFlags & PxSceneFlag::eSOLVE_ARTICULATION_CONTACT_LAST),
+		mIsSleepingDisabled			(sceneFlags & PxSceneFlag::eDISABLE_SLEEPING),
 		mBounceThreshold			(-2.0f),
 		mLengthScale				(lengthScale),
 		mSolverBatchSize			(32),
-		mConstraintWriteBackPool	(PxVirtualAllocator(allocatorCallback)),
-		mConstraintPositionIterResidualPoolGpu(PxVirtualAllocator(allocatorCallback)),
-		mIsResidualReportingEnabled(isResidualReportingEnabled),
-		mContactErrorPosIter		(NULL),
-		mContactErrorVelIter		(NULL),
-		mArticulationContactErrorVelIter(PxVirtualAllocator(allocatorCallback)),
-		mArticulationContactErrorPosIter(PxVirtualAllocator(allocatorCallback)),
+		mConstraintWriteBackPool	(allocator),
 		mSimStats					(simStats),
 		mContextID					(contextID),
-		mBodyStateDirty(false),
-		mTotalContactError			()
-		{
-		}
-
-	virtual ~Context() 
-	{ 
-		PX_DELETE(mThresholdStream);
-		PX_DELETE(mForceChangedThresholdStream);
+		mBodyStateDirty				(false)
+	{
 	}
 
-	ThresholdStream*			mThresholdStream;
-	ThresholdStream*			mForceChangedThresholdStream;
-	ThresholdTable				mThresholdTable;
+	virtual ~Context() {}
+
+	ThresholdStream					mThresholdStream;
+	ThresholdStreamMapped			mForceChangedThresholdStream;
+	ThresholdTable					mThresholdTable;
 
 	IG::SimpleIslandManager&	mIslandManager;
 	PxsSimulationController*	mSimulationController;
@@ -243,10 +238,9 @@ protected:
 	PxReal						mMaxBiasCoefficient;
 
 	const bool					mEnableStabilization;
-
 	const bool					mUseEnhancedDeterminism;
-
 	const bool					mSolveArticulationContactLast;
+	const bool					mIsSleepingDisabled;
 
 	PxVec3						mGravity;
 	/**
@@ -312,38 +306,7 @@ protected:
 	/**
 	\brief Structure to encapsulate constraint write back allocations. Used by GPU/CPU solver to reference pre-allocated pinned host memory for breakable joint reports.
 	*/
-	PxPinnedArray<Dy::ConstraintWriteback>	mConstraintWriteBackPool;
-
-	/**
-	\brief Buffer that contains only the joint residuals for the gpu solver, cpu solver residuals take a different code path
-	*/
-	PxPinnedArray<PxReal>	mConstraintPositionIterResidualPoolGpu;
-
-	/**
-	\brief Indicates if solver residuals should get computed and reported
-	*/
-	bool mIsResidualReportingEnabled;
-
-	/**
-	\brief Pointer to contact error data during the last position iteration (can point to memory owned by the GPU solver context that is copied to the host asynchronously)
-	*/
-	Dy::ErrorAccumulator* mContactErrorPosIter;
-	
-	/**
-	\brief Pointer to contact error data during the last velocity iteration (can point to memory owned by the GPU solver context that is copied to the host asynchronously)
-	*/
-	Dy::ErrorAccumulator* mContactErrorVelIter;
-
-	/**
-	\brief Contains the articulation contact error during the last velocity iteration. Has size 1 if articulations are present in the scene. Pinned host memory for fast device to host copies.
-	*/
-	PxPinnedArray<Dy::ErrorAccumulator> mArticulationContactErrorVelIter;
-
-	/**
-	\brief Contains the articulation contact error during the last position iteration. Has size 1 if articulations are present in the scene. Pinned host memory for fast device to host copies.
-	*/
-	PxPinnedArray<Dy::ErrorAccumulator> mArticulationContactErrorPosIter;
-
+	Cm::PinnableArray<Dy::ConstraintWriteback> mConstraintWriteBackPool;
 
 	PxvSimStats& mSimStats;
 
@@ -352,19 +315,17 @@ protected:
 	PxsExternalAccelerationProvider mRigidExternalAccelerations;
 
 	bool mBodyStateDirty;
-
-	Dy::ErrorAccumulatorEx mTotalContactError; 
 };
 
-Context* createDynamicsContext(	PxcNpMemBlockPool* memBlockPool, PxcScratchAllocator& scratchAllocator, Cm::FlushPool& taskPool,
-								PxvSimStats& simStats, PxTaskManager* taskManager, PxVirtualAllocatorCallback* allocatorCallback, PxsMaterialManager* materialManager,
-								IG::SimpleIslandManager& islandManager, PxU64 contextID, bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
-								PxReal maxBiasCoefficient, bool frictionEveryIteration, PxReal lengthScale, bool isResidualReportingEnabled);
+Context* createDynamicsContext(	PxcNpMemBlockPool* memBlockPool, Cm::FlushPool& taskPool, PxvSimStats& simStats,
+								Cm::VirtualAllocatorCallback& allocator, PxsMaterialManager* materialManager,
+								IG::SimpleIslandManager& islandManager, PxU64 contextID, PxReal maxBiasCoefficient,
+								PxReal lengthScale, PxSceneFlags sceneFlags);
 
-Context* createTGSDynamicsContext(	PxcNpMemBlockPool* memBlockPool, PxcScratchAllocator& scratchAllocator, Cm::FlushPool& taskPool,
-									PxvSimStats& simStats, PxTaskManager* taskManager, PxVirtualAllocatorCallback* allocatorCallback, PxsMaterialManager* materialManager,
-									IG::SimpleIslandManager& islandManager, PxU64 contextID, bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast, PxReal lengthScale, 
-									bool externalForcesEveryTgsIterationEnabled, bool isResidualReportingEnabled);
+Context* createTGSDynamicsContext(	PxcNpMemBlockPool* memBlockPool, Cm::FlushPool& taskPool, PxvSimStats& simStats,
+									Cm::VirtualAllocatorCallback& allocator, PxsMaterialManager* materialManager,
+									IG::SimpleIslandManager& islandManager, PxU64 contextID,
+									PxReal lengthScale, PxSceneFlags sceneFlags);
 }
 
 }

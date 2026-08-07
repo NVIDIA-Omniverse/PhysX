@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,6 +35,7 @@ void resetElementID(Scene& scene, ShapeSimBase& shapeSim);
 
 ShapeSim::ShapeSim(ActorSim& owner, ShapeCore& core) : ShapeSimBase(owner, &core)
 {
+	PX_ASSERT(core.getGeometryType() != PxGeometryType::eINVALID);
 	const PxU32 index = getElementID();
 	initSubsystemsDependingOnElementID(index);
 	core.setExclusiveSim(this);
@@ -42,7 +43,7 @@ ShapeSim::ShapeSim(ActorSim& owner, ShapeCore& core) : ShapeSimBase(owner, &core
 
 ShapeSim::~ShapeSim()
 {
-	Sc::ShapeCore::getCore(*mShapeCore).setExclusiveSim(NULL);
+	mShapeCore->setExclusiveSim(NULL);
 	Scene& scScene = getScene();
 	resetElementID(scScene, *this);
 }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -280,7 +280,7 @@ bool IncrementalAABBPrunerCore::overlap(const ShapeData& queryVolume, PrunerOver
 				case PxGeometryType::eBOX:
 				{
 					if(queryVolume.isOBB())
-					{	
+					{
 						const DefaultOBBAABBTest test(queryVolume);
 						again = AABBTreeOverlap<true, OBBAABBTest, IncrementalAABBTree, IncrementalAABBTreeNode, OverlapCallbackAdapter>()(mPool->getCurrentAABBTreeBounds(), *tree.tree, test, pcb);
 					}
@@ -396,7 +396,7 @@ void IncrementalAABBPrunerCore::test(bool hierarchyCheck)
 {
 	PxU32 maxDepth[NUM_TREES] = { 0, 0 };
 	for(PxU32 i=0; i<NUM_TREES; i++)
-	{		
+	{
 		if(mAABBTree[i].tree)
 		{
 			if(hierarchyCheck)

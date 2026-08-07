@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,6 +33,9 @@
 
 namespace physx
 {
+	struct PxgAllocatorDesc;
+	template <typename IterData> struct PxgSolverSharedDesc;
+
 	// PT: TODO: rename to just PxgTGSSolverCore ?
 	class PxgTGSCudaSolverCore : public PxgSolverCore
 	{
@@ -52,7 +55,7 @@ namespace physx
 		//This is the new articulation block constraint format!
 		//It shares the original rigid body contact/constraint format but adds in
 		//an additional buffer for the response vectors
-		PxgTypedCudaBuffer<PxgArticulationBlockResponse>		mArtiConstraintBlockResponse;
+		PxgTypedCudaBuffer<struct PxgArticulationBlockResponse>	mArtiConstraintBlockResponse;
 		
 		PxgTypedCudaBuffer<Dy::ThresholdStreamElement>		mForceThresholdStream;
 		PxgTypedCudaBuffer<Dy::ThresholdStreamElement>		mTmpForceThresholdStream;
@@ -76,7 +79,7 @@ namespace physx
 		PxgTypedCudaBuffer<PxU32>		mIslandIds;
 		PxgTypedCudaBuffer<PxU32>		mIslandStaticTouchCount;
 
-		PxgSolverSharedDesc<IterativeSolveDataTGS>* mSharedDesc;
+		PxgSolverSharedDesc<struct IterativeSolveDataTGS>*	mSharedDesc;
 
 		void radixSort(const PxU32 nbPasses);
 
@@ -85,7 +88,7 @@ namespace physx
 	public:
 
 		PxgTGSCudaSolverCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, 
-			PxgGpuContext* dynamicContext, PxgHeapMemoryAllocatorManager* heapMemoryManager, const PxGpuDynamicsMemoryConfig& init);
+			PxgGpuContext* dynamicContext, PxgAllocatorDesc& allocDesc, const PxGpuDynamicsMemoryConfig& init);
 		~PxgTGSCudaSolverCore();
 
 		void constructSolverSharedDesc(PxgSolverSharedDesc<IterativeSolveDataTGS>& desc, const PxgConstantData& cData,
@@ -103,15 +106,15 @@ namespace physx
 		void constructSolverDesc(PxgSolverCoreDesc& desc, PxU32 numIsland, PxU32 numSolverBodies, PxU32 numConstraintBatchHeader,
 			PxU32 numArticConstraints, PxU32 numSlabs, bool enableStabilization);
 
-		void syncSimulationController();
+		virtual void syncSimulationController()	PX_OVERRIDE;
 
-		virtual void createStreams();
-		virtual void releaseStreams();
+		virtual void createStreams() PX_OVERRIDE;
+		virtual void releaseStreams() PX_OVERRIDE;
 
-		virtual void acquireContext();
-		virtual void releaseContext();
+		virtual void acquireContext() PX_OVERRIDE;
+		virtual void releaseContext() PX_OVERRIDE;
 
-		void gpuMemDMAUpContactData(PxgPinnedHostLinearMemoryAllocator* compressedContactsHostMemoryAllocator,
+		virtual	void gpuMemDMAUpContactData(PxgPinnedHostLinearMemoryAllocator* compressedContactsHostMemoryAllocator,
 			PxU32 compressedContactStreamUpperPartSize,
 			PxU32 compressedContactStreamLowerPartSize,
 			PxgPinnedHostLinearMemoryAllocator* compressedPatchesHostMemoryAllocator,
@@ -132,22 +135,22 @@ namespace physx
 			PxU32 nbDestroyedEdges,
 			const PxU32* npIndexArray, PxU32 npIndexArraySize,
 			PxU32 totalNumJoints,
-			const PxU32* islandIds, const PxU32* nodeInteractionCounts, PxU32 nbNodes, const PxU32* islandStaticTouchCount, PxU32 nbIslands);
+			const PxU32* islandIds, const PxU32* nodeInteractionCounts, PxU32 nbNodes, const PxU32* islandStaticTouchCount, PxU32 nbIslands)	PX_OVERRIDE;
 
-		void gpuMemDmaUpBodyData(PxPinnedArray<PxgSolverBodyData>& solverBodyDataPool,
-			PxPinnedArray<PxgSolverTxIData>& solverTxIDataPool,
+		virtual	void gpuMemDmaUpBodyData(Cm::PinnableArray<PxgSolverBodyData>& solverBodyDataPool,
+			Cm::PinnableArray<PxgSolverTxIData>& solverTxIDataPool,
 			const PxU32 numSolverBodies,
 			const PxU32 totalNumRigidBatches, const PxU32 totalNumArticBatches,
-			const PxU32 nbSlabs, const PxU32 nbStaticSlabs, const PxU32 maxNumStaticPartitions);
+			const PxU32 nbSlabs, const PxU32 nbStaticSlabs, const PxU32 maxNumStaticPartitions)	PX_OVERRIDE;
 
-		void allocateSolverBodyBuffers(const PxU32 numSolverBodies,
-			PxPinnedArray<PxNodeIndex>& islandNodeIndices,
-			const PxU32 numActiveActiculations, const PxU32 maxArticulationLinks);
+		virtual	void allocateSolverBodyBuffers(const PxU32 numSolverBodies,
+			Cm::PinnableArray<PxNodeIndex>& islandNodeIndices,
+			const PxU32 numActiveActiculations, const PxU32 maxArticulationLinks)	PX_OVERRIDE;
 
-		PxU32 getDescriptorsAllocationSize();
-		void allocatePinnedDescriptors(PxgPinnedHostLinearMemoryAllocator& hostAllocator); 
+		virtual	PxU32 getDescriptorsAllocationSize()	PX_OVERRIDE;
+		virtual	void allocatePinnedDescriptors(PxgPinnedHostLinearMemoryAllocator& hostAllocator)	PX_OVERRIDE;
 
-		void gpuMemDMAUp(PxgPinnedHostLinearMemoryAllocator& hostAllocator, const PxgConstraintPrePrepData& data,
+		virtual	void gpuMemDMAUp(PxgPinnedHostLinearMemoryAllocator& hostAllocator, const PxgConstraintPrePrepData& data,
 			const PxU32 numSolverBodies, PxgConstraintBatchHeader* constraintBatchHeaders,
 			PxgIslandContext* islandContextPool, const PxU32 numIslands, const PxgPartitionData& partitionData,
 			const PxU32 numConstraintBatchHeader, const PxU32 numStaticConstraintBatchHeader,
@@ -165,39 +168,38 @@ namespace physx
 			PxU32* artiSelfContactIndices, const PxU32 artiSelfContactIndSize, PxU32* artiSelfJointIndices, PxU32 artiSelfJointSize,
 			PxU32* artiSelfContactCounts, PxU32* artiSelfJointCounts, 
 			PxU32* rigidStaticContactIndices, const PxU32 rigidContactIndSize, PxU32* rigidStaticJointIndices, const PxU32 rigidStaticJointSize,
-			PxU32* rigidStaticContactCounts, PxU32* rigidSaticJointCounts, const PxReal lengthScale, bool hasForceThresholds);
+			PxU32* rigidStaticContactCounts, PxU32* rigidSaticJointCounts, const PxReal lengthScale, bool hasForceThresholds)	PX_OVERRIDE;
 
-		void gpuMemDMAbackSolverData(PxU8* forceBufferPool, PxU32 forceBufferOffset, PxU32 forceBufferUpperPartSize,
+		virtual	void gpuMemDMAbackSolverData(PxU8* forceBufferPool, PxU32 forceBufferOffset, PxU32 forceBufferUpperPartSize,
 			PxU32 forceBufferLowerPartSize, Dy::ThresholdStreamElement* changedElems, bool hasForceThresholds, Dy::ConstraintWriteback* constraintWriteBack,
-			const PxU32 writeBackSize, bool copyAllToHost, Dy::ErrorAccumulator*& contactError);
+			const PxU32 writeBackSize, bool copyAllToHost)	PX_OVERRIDE;
 
-		void syncDmaBack(PxU32& nbChangedThresholdElements);
+		virtual	void syncDmaBack(PxU32& nbChangedThresholdElements)	PX_OVERRIDE;
 
-		void preIntegration(const PxU32 offset, const PxU32 nbSolverBodies, const PxReal dt, const PxVec3& gravity);
+		virtual	void preIntegration(const PxU32 offset, const PxU32 nbSolverBodies, const PxReal dt, const PxVec3& gravity)	PX_OVERRIDE;
 		
-		void jointConstraintBlockPrePrepParallel(PxU32 nbConstraintBatches);
+		virtual	void jointConstraintBlockPrePrepParallel(PxU32 nbConstraintBatches)	PX_OVERRIDE;
 
-		void jointConstraintPrepareParallel(PxU32 nbJointBatches);
-		void contactConstraintPrepareParallel(PxU32 nbContactBatches);
-		void artiJointConstraintPrepare(PxU32 nbArtiJointBatches);
-		void artiContactConstraintPrepare(PxU32 nbArtiContactBatches);
+		virtual	void jointConstraintPrepareParallel(PxU32 nbJointBatches)	PX_OVERRIDE;
+		virtual	void contactConstraintPrepareParallel(PxU32 nbContactBatches)	PX_OVERRIDE;
+		virtual	void artiJointConstraintPrepare(PxU32 nbArtiJointBatches)	PX_OVERRIDE;
+		virtual	void artiContactConstraintPrepare(PxU32 nbArtiContactBatches)	PX_OVERRIDE;
 		//soft body/cloth/particle constraint prepare
-		void nonRigidConstraintPrepare(PxU32 nbArticulations);
+		virtual	void nonRigidConstraintPrepare(PxU32 nbArticulations)	PX_OVERRIDE;
 
-		void solveContactMultiBlockParallel(PxgIslandContext* islandContexts, const PxU32 numIslands, const PxU32 maxPartitions,
-			PxInt32ArrayPinned& constraintsPerPartition, PxInt32ArrayPinned& artiConstraintsPerPartition, const PxVec3& gravity, const bool solveArticulationContactLast,
-			PxReal* posIterResidualSharedMem, PxU32 posIterResidualSharedMemSize, Dy::ErrorAccumulator* posIterError, PxPinnedArray<Dy::ErrorAccumulator>& artiContactPosIterError,
-			PxPinnedArray<Dy::ErrorAccumulator>& perArticulationInternalError);
+		virtual	void solveContactMultiBlockParallel(PxgIslandContext* islandContexts, const PxU32 numIslands, const PxU32 maxPartitions,
+			Cm::PinnableArray<PxU32>& constraintsPerPartition, Cm::PinnableArray<PxU32>& artiConstraintsPerPartition, const PxVec3& gravity,
+			const bool solveArticulationContactLast)	PX_OVERRIDE;
 
 		void writeBackBlock(PxU32 a, PxgIslandContext& context);
 
-		void solvePartitions(PxgIslandContext* islandContexts, PxInt32ArrayPinned& constraintsPerPartition, PxInt32ArrayPinned& artiConstraintsPerPartition,
+		void solvePartitions(PxgIslandContext* islandContexts, Cm::PinnableArray<PxU32>& constraintsPerPartition, Cm::PinnableArray<PxU32>& artiConstraintsPerPartition,
 			PxU32 islandIndex, bool doFriction, PxReal accumulatedDt, PxReal minPen, bool anyArticulationConstraints, bool isVelocityIteration);
 
-		void accumulatedForceThresholdStream(PxU32 maxNodes);
-		void integrateCoreParallel(const PxU32 offset, const PxU32 nbSolverBodies);
+		virtual	void accumulatedForceThresholdStream(PxU32 maxNodes)	PX_OVERRIDE;
+		virtual	void integrateCoreParallel(const PxU32 offset, const PxU32 nbSolverBodies)	PX_OVERRIDE;
 
-		void getDataStreamBase(void*& contactStreamBase, void*& patchStreamBase, void*& forceAndIndexStreamBase);
+		virtual	void getDataStreamBase(void*& contactStreamBase, void*& patchStreamBase, void*& forceAndIndexStreamBase)	PX_OVERRIDE;
 	};
 }
 

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -45,7 +45,7 @@ void Collection::add(PxBase& object, PxSerialObjectId id)
 	}
 	
 	if(id != PX_SERIAL_OBJECT_ID_INVALID)
-	{		
+	{
 		if(!mIds.insert(id, &object))
 		{
 		   PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL,
@@ -70,7 +70,7 @@ void Collection::remove(PxBase& object)
 }
 
 bool Collection::contains(PxBase& object) const
-{	
+{
 	return  mObjects.find(&object) != NULL;
 }
 
@@ -94,7 +94,7 @@ void Collection::removeId(PxSerialObjectId id)
 	PX_CHECK_AND_RETURN(mIds.find(id), "PxCollection::removeId called with PxSerialObjectId not contained in the collection!");
 	const IdToObjectMap::Entry* e = mIds.find(id);
 	if(e)
-	{	
+	{
 		mObjects[e->second] = PX_SERIAL_OBJECT_ID_INVALID;
 	    mIds.erase(id);	   
 	}
@@ -181,7 +181,7 @@ PxU32 Collection::getNbIds() const
 }
 
 PxSerialObjectId Collection::getId(const PxBase& object) const
-{	
+{
 	const ObjectToIdMap::Entry* e =  mObjects.find(const_cast<PxBase*>(&object));
 	return e ? e->second : PX_SERIAL_OBJECT_ID_INVALID;
 }

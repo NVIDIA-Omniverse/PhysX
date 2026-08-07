@@ -29,10 +29,10 @@ from package_deps import copy_usd_registry  # noqa: E402
 
 
 def test_resolver_and_client_have_no_direct_packman_coordinates():
-    repo_omni_dir = Path(__file__).resolve().parents[3]
+    repo_root = Path(__file__).resolve().parents[3]
     manifests = [
-        repo_omni_dir / "ovphysx" / "deps" / "kit-deps-import.packman.xml",
-        repo_omni_dir / "ovruntime" / "deps" / "ovruntime-deps-import.packman.xml",
+        repo_root / "ovphysx" / "deps" / "kit-deps-import.packman.xml",
+        repo_root / "ovphysx" / "ovruntime" / "deps" / "ovruntime-deps-import.packman.xml",
     ]
     combined = "\n".join(path.read_text() for path in manifests)
 
@@ -178,10 +178,10 @@ def _create_package_deps_layout(tmp_path: Path) -> dict[str, Path]:
     manifest_path = tmp_path / "deps_manifest.toml"
     _write_stub_manifest(manifest_path)
 
-    omni_root = tmp_path / "omni"
-    ovruntime_root = omni_root / "ovruntime"
+    ovphysx_root = tmp_path / "ovphysx"
+    ovruntime_root = ovphysx_root / "ovruntime"
     # Codeless schema: a single flat, config- and platform-neutral tree.
-    local_schema_root = omni_root / "schema" / "_build" / "schema"
+    local_schema_root = tmp_path / "schemas" / "physx" / "_build" / "schema"
     (local_schema_root / "share" / "usd" / "plugins").mkdir(parents=True)
     (ovruntime_root / "_install" / "release").mkdir(parents=True)
     (ovruntime_root / "_install" / "debug").mkdir(parents=True)
@@ -373,10 +373,11 @@ def test_package_deps_excludes_host_fabric_and_uses_exact_ovstage_payloads(tmp_p
     plugins = layout["install_dir"] / "plugins"
     assert (plugins / "libomniclient.so").read_text() == "ovstage-client"
     assert (plugins / "libomniverse_connection.so").read_text() == "ovstage-connection"
-    assert (plugins / "libomni_usd_resolver.so").read_text() == "ovstage-resolver"
     assert (plugins / "ovstage-omniclient.version").read_text() == "test-ovstage-client\n"
-    copied_plug_info = plugins / "usd" / "omni_usd_resolver" / "resources" / "plugInfo.json"
-    assert json.loads(copied_plug_info.read_text())["Plugins"][0]["LibraryPath"] == ("../../../libomni_usd_resolver.so")
+    # The resolver and its registry stay with the application's OVStage; a second
+    # copy here registers OMNI_USD_RESOLVER twice and aborts the process.
+    assert not (plugins / "libomni_usd_resolver.so").exists()
+    assert not (plugins / "usd" / "omni_usd_resolver").exists()
 
 
 def test_package_deps_errors_when_infra_payload_is_empty(tmp_path, monkeypatch):

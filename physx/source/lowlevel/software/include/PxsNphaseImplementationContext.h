@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,7 +32,7 @@
 #include "PxvNphaseImplementationContext.h" 
 #include "PxsContactManagerState.h"
 #include "PxcNpCache.h"
-#include "foundation/PxPinnedArray.h"
+#include "CmPinnableArray.h"
 
 class PxsCMDiscreteUpdateTask;
 
@@ -46,17 +46,17 @@ struct PxsContactManagers : PxsContactManagerBase
 	PxArray<Gu::Cache>					mCaches;
 
 	// PT: these buffers should be in pinned memory but may not be if pinned allocation failed.
-	PxPinnedArraySafe<const Sc::ShapeInteraction*>	mShapeInteractionsGPU;
-	PxFloatArrayPinnedSafe							mRestDistancesGPU;
-	PxPinnedArraySafe<PxsTorsionalFrictionData>		mTorsionalPropertiesGPU;
+	Cm::PinnableArray<const Sc::ShapeInteraction*>	mShapeInteractionsGPU;
+	Cm::PinnableArray<PxReal>						mRestDistancesGPU;
+	Cm::PinnableArray<PxsTorsionalFrictionData>		mTorsionalPropertiesGPU;
 
-	PxsContactManagers(const PxU32 bucketId, PxVirtualAllocatorCallback* callback) : PxsContactManagerBase(bucketId),
+	PxsContactManagers(const PxU32 bucketId, Cm::VirtualAllocatorCallback& alloc) : PxsContactManagerBase(bucketId),
 		mOutputContactManagers	("mOutputContactManagers"),
 		mContactManagerMapping	("mContactManagerMapping"),
 		mCaches					("mCaches"),
-		mShapeInteractionsGPU	(callback),
-		mRestDistancesGPU		(callback),
-		mTorsionalPropertiesGPU	(callback)
+		mShapeInteractionsGPU	(alloc, PxsHeapStats::eNARROWPHASE),
+		mRestDistancesGPU		(alloc, PxsHeapStats::eNARROWPHASE),
+		mTorsionalPropertiesGPU	(alloc, PxsHeapStats::eNARROWPHASE)
 	{
 	}
 		
@@ -77,10 +77,10 @@ class PxsNphaseImplementationContext : public PxvNphaseImplementationFallback
 {
 	PX_NOCOPY(PxsNphaseImplementationContext)
 public:
-											PxsNphaseImplementationContext(PxsContext& context, IG::IslandSim* islandSim, PxVirtualAllocatorCallback* callback, PxU32 index, bool gpu) :
+											PxsNphaseImplementationContext(PxsContext& context, IG::IslandSim* islandSim, Cm::VirtualAllocatorCallback& alloc, PxU32 index, bool gpu) :
 											PxvNphaseImplementationFallback	(context), 
-											mNarrowPhasePairs				(index, callback), 
-											mNewNarrowPhasePairs			(index, callback),
+											mNarrowPhasePairs				(index, alloc), 
+											mNewNarrowPhasePairs			(index, alloc),
 											mModifyCallback					(NULL),
 											mIslandSim						(islandSim),
 											mGPU							(gpu)
@@ -136,9 +136,9 @@ public:
 	virtual void							lock()		PX_OVERRIDE	PX_FINAL	{ mContactManagerMutex.lock();		}
 	virtual void							unlock()	PX_OVERRIDE	PX_FINAL	{ mContactManagerMutex.unlock();	}
 
-	virtual PxsContactManagerOutputCounts*	getLostFoundPatchOutputCounts()	PX_OVERRIDE	PX_FINAL	{ return mGPU ? mCmFoundLostOutputCounts.begin() : NULL; }
-	virtual PxsContactManager**				getLostFoundPatchManagers()		PX_OVERRIDE	PX_FINAL	{ return mGPU ? mCmFoundLost.begin() : NULL; }
-	virtual PxU32							getNbLostFoundPatchManagers()	PX_OVERRIDE	PX_FINAL	{ return mGPU ? mCmFoundLost.size() : 0; }
+	virtual PxsContactManagerOutputCounts*	getLostFoundPatchOutputCounts()	PX_OVERRIDE	PX_FINAL	{ return mGPU ? mGPU_CmFoundLostOutputCounts.begin() : NULL; }
+	virtual PxsContactManager**				getLostFoundPatchManagers()		PX_OVERRIDE	PX_FINAL	{ return mGPU ? mGPU_CmFoundLost.begin() : NULL; }
+	virtual PxU32							getNbLostFoundPatchManagers()	PX_OVERRIDE	PX_FINAL	{ return mGPU ? mGPU_CmFoundLost.size() : 0; }
 
 	virtual PxsContactManagerOutput*		getGPUContactManagerOutputBase()	PX_OVERRIDE	PX_FINAL	{ return NULL; }
 	virtual PxReal*							getGPURestDistances()				PX_OVERRIDE	PX_FINAL	{ return NULL; }
@@ -168,10 +168,9 @@ public:
 
 			PxMutex							mContactManagerMutex;
 
-			PxArray<PxsCMDiscreteUpdateTask*> mCmTasks;
-
-			PxArray<PxsContactManagerOutputCounts> mCmFoundLostOutputCounts;
-			PxArray<PxsContactManager*>		mCmFoundLost;
+			PxArray<PxsCMDiscreteUpdateTask*> mGPU_CmTasks;
+			PxArray<PxsContactManagerOutputCounts> mGPU_CmFoundLostOutputCounts;
+			PxArray<PxsContactManager*>		mGPU_CmFoundLost;
 
 			const bool						mGPU;
 private:
