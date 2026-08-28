@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # AGENTS.md -- ovphysx
 
 This file is for AI agents and automation. It describes how to build, test, and safely use ovphysx.
@@ -170,9 +173,8 @@ Async/execution model:
 
 ## MR hygiene
 
-- If a change in `ovphysx/` or `ovphysx/ovruntime` causes user-facing changes for ovphysx, update `docs/changelog.md` in the same MR.
-- **On a release branch, the changelog's top section is `VERSION` + 0.0.1.** Releases are cut from `release/ovphysx/*`, where `ovphysx/VERSION` holds the last *released* version -- so the section every in-flight entry goes into is `## [<VERSION + 0.0.1>] - Date TBD`. Read `VERSION`; do not assume the top section is current. Keep exactly one unreleased section: no `[Unreleased]` heading, no second unreleased section, and no release date on a section that has not shipped. The release bump moves `VERSION` and dates that section; the next entry then opens the following one.
-- **On `trunk`, `VERSION` matches the top changelog section.** Nothing is released from `trunk`, so `VERSION` there is the version under development rather than the last released one, and it should equal the version of the top changelog section. That is the expected state, not drift, and the `VERSION` + 0.0.1 rule above does not apply.
+- **A `docs/changelog.md` entry is not required in a feature MR.** The changelog is generated before each release from the merged commits and their merge-request titles and descriptions, so put the user-facing rationale there; that is what the generator reads. Writing an entry by hand is still allowed for a change whose rationale is hard to reconstruct later -- the generator merges it rather than replacing it. The file is public and user-level: no bug or ticket IDs, no merge-request links, no internal implementation detail.
+- **The changelog's top section names `VERSION`, or `VERSION` + 0.0.1 before the bump.** The section is written in full at release time, after `VERSION` has been bumped to the version being released, and is dated the day it is generated: `## [<VERSION>] - Date <YYYY-MM-DD>`. A hand-written entry landing before the bump opens that section one version early with `- Date TBD`, which is fine; the bump lines the two up and the generator replaces the date. No `[Unreleased]` heading, and never a second section above the last released one.
 - **Do not cherry-pick a changelog entry from a release branch to `trunk`.** Each branch has its own `VERSION`, so an entry written on `release/ovphysx/*` names a version that does not exist on `trunk`. Carrying it over files one fix under two different versions and drags the branches' section structures out of sync. When cherry-picking a release-branch commit to `trunk`, drop the `docs/changelog.md` hunk and take the rest. If the change warrants a trunk changelog entry in its own right, write a fresh one into trunk's own top section rather than copying the release-branch text.
 
 ## Common footguns

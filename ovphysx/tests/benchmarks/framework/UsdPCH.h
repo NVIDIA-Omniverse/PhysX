@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // Minimal shim. omni.physx ships a real precompiled header named "UsdPCH.h"
 // that pulls in USD, std and other dependencies. The framework files we

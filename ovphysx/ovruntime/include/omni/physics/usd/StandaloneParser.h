@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
+
 /**
  * Standalone parse entry points — on-demand, single-prim parsing for callers
  * outside the runtime's stage-attach lifecycle (e.g. authoring UI tools).

@@ -27,13 +27,16 @@ else
 	PM_CURL_SILENT="-s -S"
 	PM_WGET_QUIET="--quiet"
 fi
-export PM_PACKMAN_VERSION=8.2.1
+export PM_PACKMAN_VERSION=8.5.0
 
 
 cleanup() {
     # Remove temporary variable file if it exists
     if [[ -n "${PM_VAR_PATH:-}" && -f "$PM_VAR_PATH" ]]; then
         rm -f "$PM_VAR_PATH"
+    fi
+    if [[ -n "${PM_VAR_DIR:-}" && -d "$PM_VAR_DIR" ]]; then
+        rmdir "$PM_VAR_DIR"
     fi
 
     # Restore the settings we may have altered during our run
@@ -142,8 +145,9 @@ main() {
     {
         PLATFORM=`uname`
         PROCESSOR=`uname -m`
-        PYTHON_VERSION=3.12.13-nv1
+        PYTHON_VERSION=3.12.13-nv6
         PYTHON_EXE=python
+        PYTHON_CONTAINER=tar.gz
 
         if [ $PLATFORM == 'Darwin' ]; then
             PYTHON_PACKAGE=3.12.13-macos-aarch64
@@ -154,24 +158,72 @@ main() {
         elif [[ $PLATFORM =~ ^MINGW.* ]] && [ $PROCESSOR == 'x86_64' ]; then
             PYTHON_PACKAGE=$PYTHON_VERSION-windows-x86_64
             PYTHON_EXE=python.exe
+            PYTHON_CONTAINER=zip
         else
             echo "Operating system not supported"
             return 1
         fi
 
-        PYTHON_INSTALL_FOLDER="$PM_PACKAGES_ROOT/python/$PYTHON_PACKAGE"
-        if [ ! -d "$PYTHON_INSTALL_FOLDER" ]; then
-            mkdir -p "$PYTHON_INSTALL_FOLDER" || return 1
-        fi
-
+        PYTHON_INSTALL_ROOT="$PM_PACKAGES_ROOT/python"
+        PYTHON_INSTALL_FOLDER="$PYTHON_INSTALL_ROOT/$PYTHON_PACKAGE"
         export PM_PYTHON="$PYTHON_INSTALL_FOLDER/$PYTHON_EXE"
 
         if [ ! -f "$PM_PYTHON" ]; then
+            mkdir -p "$PYTHON_INSTALL_ROOT" || return 1
+
+            PYTHON_PACKAGE_TMP=""
+            PYTHON_INSTALL_STAGING_PARENT=""
+            PYTHON_INSTALL_STATUS=0
+            cleanup_python_install()
+            {
+                local CLEANUP_STATUS=0
+                if [ -n "$PYTHON_PACKAGE_TMP" ]; then
+                    rm -f "$PYTHON_PACKAGE_TMP" || CLEANUP_STATUS=1
+                fi
+                if [ -n "$PYTHON_INSTALL_STAGING_PARENT" ]; then
+                    rm -rf "$PYTHON_INSTALL_STAGING_PARENT" || CLEANUP_STATUS=1
+                fi
+                return $CLEANUP_STATUS
+            }
+
             PYTHON_PACKAGE_TMP=$(generate_temp_file_name)
-            fetch_file_from_s3 "python@$PYTHON_PACKAGE.tar.gz" "$PYTHON_PACKAGE_TMP" || return 1
-            echo "Unpacking python"
-            tar -xf "$PYTHON_PACKAGE_TMP" -C "$PYTHON_INSTALL_FOLDER" || return 1
-            rm "$PYTHON_PACKAGE_TMP" || return 1
+            fetch_file_from_s3 "python@$PYTHON_PACKAGE.$PYTHON_CONTAINER" "$PYTHON_PACKAGE_TMP" || PYTHON_INSTALL_STATUS=1
+
+            if [ $PYTHON_INSTALL_STATUS -eq 0 ]; then
+                PYTHON_INSTALL_STAGING_PARENT=$(mktemp -d "$PYTHON_INSTALL_ROOT/$PYTHON_PACKAGE.tmp.XXXXXXXX") || PYTHON_INSTALL_STATUS=1
+            fi
+
+            if [ $PYTHON_INSTALL_STATUS -eq 0 ]; then
+                PYTHON_INSTALL_TMP="$PYTHON_INSTALL_STAGING_PARENT/$PYTHON_PACKAGE"
+                mkdir "$PYTHON_INSTALL_TMP" || PYTHON_INSTALL_STATUS=1
+            fi
+
+            if [ $PYTHON_INSTALL_STATUS -eq 0 ]; then
+                echo "Unpacking python"
+                if [ "$PYTHON_CONTAINER" == "zip" ]; then
+                    unzip -q "$PYTHON_PACKAGE_TMP" -d "$PYTHON_INSTALL_TMP" || PYTHON_INSTALL_STATUS=1
+                else
+                    tar -xf "$PYTHON_PACKAGE_TMP" -C "$PYTHON_INSTALL_TMP" || PYTHON_INSTALL_STATUS=1
+                fi
+            fi
+
+            if [ $PYTHON_INSTALL_STATUS -eq 0 ]; then
+                # Move a version-named child into the install root instead of moving the
+                # unique temp folder directly to $PYTHON_INSTALL_FOLDER. If another
+                # process has already created $PYTHON_INSTALL_FOLDER, plain mv treats
+                # that existing folder as a parent and may nest the source inside it.
+                # Keeping the source basename equal to $PYTHON_PACKAGE makes that
+                # competing install fail cleanly instead.
+                mv "$PYTHON_INSTALL_TMP" "$PYTHON_INSTALL_ROOT" 2> /dev/null || {
+                    if [ ! -f "$PM_PYTHON" ]; then
+                        echo "Failed to install Python to '$PYTHON_INSTALL_FOLDER'. Please remove the directory and try again."
+                        PYTHON_INSTALL_STATUS=1
+                    fi
+                }
+            fi
+
+            cleanup_python_install || PYTHON_INSTALL_STATUS=1
+            return $PYTHON_INSTALL_STATUS
         fi
     }
 
@@ -205,8 +257,9 @@ main() {
         rm "$TARGET" || return 1
     fi
 
-    # Generate temporary file name for environment variables:
-    PM_VAR_PATH=`mktemp -u -t tmp.$$.pmvars.XXXXXX`
+    # Use a private directory so the variable file cannot be replaced before Python opens it.
+    PM_VAR_DIR=$(mktemp -d -t tmp.$$.pmvars.XXXXXX) || return 1
+    PM_VAR_PATH="$PM_VAR_DIR/variables"
 
     if [ $# -ne 0 ]; then
         PM_VAR_PATH_ARG=--var-path="$PM_VAR_PATH"
@@ -219,7 +272,8 @@ main() {
     if [ -f "$PM_VAR_PATH" ]; then
         while read -r line
         do
-            if [ ${#line} -gt 0 ]; then
+            name=${line%%=*}
+            if [[ "$line" == *=* && "$name" == PM_* && "$name" != *[!A-Za-z0-9_]* ]]; then
                 export "$line"
             fi
         done < "$PM_VAR_PATH"

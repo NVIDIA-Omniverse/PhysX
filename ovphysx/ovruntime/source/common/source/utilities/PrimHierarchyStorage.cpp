@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
+
+/**
+ * @implements REQ-REPLICATE-001
+ * @covers AC-7
+ */
 
 #include "UsdPCH.h"
 
@@ -70,15 +74,23 @@ void PrimHierarchyStorage::addPrimSubtree(const PXR_NS::SdfPath& primPath, const
 void PrimHierarchyStorage::mergeHierarchyStorage(const PXR_NS::SdfPath& topPath, const PrimHierarchyStorage& storage)
 {
     mStorageMap.insert(storage.getStorageMap().begin(), storage.getStorageMap().end());
+    if (topPath.IsEmpty())
+        return;
 
     PXR_NS::SdfPath parentPath = topPath.GetParentPath();
-    if (parentPath != SdfPath() && !parentPath.IsAbsoluteRootPath())
+    if (parentPath.IsAbsolutePath() && !parentPath.IsAbsoluteRootPath())
     {
-        // Nested target: attach the clone root beneath its already-registered parent.
-        mStorageMap[topPath].parent = parentPath;
-        mStorageMap[parentPath].children.insert(topPath);
+        // Materialize and repair every lexical link up to the root prim.
+        PXR_NS::SdfPath childPath = topPath;
+        while (parentPath.IsAbsolutePath() && !parentPath.IsAbsoluteRootPath())
+        {
+            mStorageMap[childPath].parent = parentPath;
+            mStorageMap[parentPath].children.insert(childPath);
+            childPath = parentPath;
+            parentPath = parentPath.GetParentPath();
+        }
     }
-    else
+    else if (parentPath.IsAbsoluteRootPath())
     {
         // Top-level target (parent is the absolute root "/"): consumers select roots by
         // parent.IsEmpty(), so linking under "/" would orphan the subtree instead. addPrimSubtree()

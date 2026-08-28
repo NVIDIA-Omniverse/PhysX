@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 #ifndef OVPHYSX_LOG_MANAGER_HPP
 #define OVPHYSX_LOG_MANAGER_HPP

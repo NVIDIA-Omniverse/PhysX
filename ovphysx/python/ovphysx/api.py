@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
 
 """High-level Python API for the ovphysx library.
 
@@ -14,19 +13,26 @@ order as if on a single queue. This provides sequential consistency:
 - You don't need explicit synchronization between dependent operations
 - Independent operations may execute concurrently internally for performance
 
-Example (no explicit waits needed between dependent operations):
+Example (no explicit ovphysx waits needed between dependent operations):
 
 .. code-block:: python
    :caption: Stream-ordered operation sequence
 
-    physx.attach_ovstage(stage, read_ordinal=initial_ordinal)
-    # After the application authors later ovstage edits:
-    physx.update_from_ovstage(from_ordinal, to_ordinal)
-    physx.step(dt)                               # Sees the drained stage edits
-    binding = physx.create_tensor_binding(
-        "/World/Cube", tensor_type=TensorType.RIGID_BODY_POSE
-    )  # Sees step results
-    binding.read(output)                         # Reads current state
+    from ovphysx import TensorType
+
+    def step_and_read(
+        physx, stage, output, initial_ordinal, from_ordinal, to_ordinal, dt
+    ):
+        stage.advance_write_floor(ordinal=initial_ordinal).wait()
+        physx.attach_ovstage(stage, read_ordinal=initial_ordinal)
+        # After the application authors later ovstage edits:
+        stage.advance_write_floor(ordinal=to_ordinal).wait()
+        physx.update_from_ovstage(from_ordinal, to_ordinal)
+        physx.step(dt)  # Sees the drained stage edits
+        with physx.create_tensor_binding(
+            "/World/Cube", tensor_type=TensorType.RIGID_BODY_POSE
+        ) as binding:
+            binding.read(output)  # Reads current state
 
 Use wait_op() when:
 
@@ -428,8 +434,9 @@ def _friction_anchor_to_dict(a: "FrictionAnchor") -> dict:
 class TensorBinding:
     """Tensor binding for bulk physics data access via DLPack.
 
-    A tensor binding connects a USD prim pattern to a tensor type, enabling efficient
-    bulk read/write of physics data (poses, velocities, joint positions, etc.).
+    A tensor binding connects a physics-object path pattern to a tensor type,
+    enabling efficient bulk read/write for authored USD objects and runtime-only
+    clones (poses, velocities, joint positions, etc.).
     The :attr:`shape`, :attr:`ndim`, and :attr:`dtype` metadata come from
     ``ovphysx_get_tensor_binding_spec()``. Use them to allocate compatible
     buffers instead of assuming every tensor type is ``float32``.
@@ -446,19 +453,32 @@ class TensorBinding:
 
     - Context manager (auto-cleanup)::
 
-        with sdk.create_tensor_binding("/World/robot*", tensor_type=TensorType.RIGID_BODY_POSE) as binding:
-            poses = np.zeros(binding.shape, dtype=np.dtype(str(binding.dtype)))
-            binding.read(poses)
-            poses[:, 2] += 0.1  # raise z position
-            binding.write(poses)
-        # Auto-destroyed here
+        import numpy as np
+        from ovphysx import TensorType
+
+        def raise_robot_poses(physx):
+            with physx.create_tensor_binding(
+                "/World/robot*", tensor_type=TensorType.RIGID_BODY_POSE
+            ) as binding:
+                poses = np.zeros(binding.shape, dtype=np.dtype(str(binding.dtype)))
+                binding.read(poses)
+                poses[:, 2] += 0.1  # raise z position
+                binding.write(poses)
+            # Auto-destroyed here
 
     - Manual (explicit cleanup)::
 
-        binding = sdk.create_tensor_binding("/World/robot*", tensor_type=TensorType.RIGID_BODY_POSE)
-        poses = np.zeros(binding.shape, dtype=np.dtype(str(binding.dtype)))
-        binding.read(poses)
-        binding.destroy()
+        import numpy as np
+        from ovphysx import TensorType
+
+        def read_robot_poses(physx):
+            binding = physx.create_tensor_binding(
+                "/World/robot*", tensor_type=TensorType.RIGID_BODY_POSE
+            )
+            poses = np.zeros(binding.shape, dtype=np.dtype(str(binding.dtype)))
+            binding.read(poses)
+            binding.destroy()
+            return poses
     """
 
     def __init__(self, sdk, handle: int, tensor_type: int, ndim: int, shape: tuple, dtype: DLDataType | None = None):
@@ -542,10 +562,10 @@ class TensorBinding:
 
     @property
     def prim_paths(self) -> list[str]:
-        """Resolved USD prim paths in tensor row order.
+        """Resolved physics-object paths in tensor row order.
 
         Rigid-body bindings return one path per rigid-body tensor row.
-        Articulation bindings return one root prim path per articulation row.
+        Articulation bindings return one root object path per articulation row.
         For per-articulation link names, use :attr:`body_names`.
         """
         with self._lock:
@@ -1229,7 +1249,7 @@ class ContactBinding:
 
     @property
     def sensor_paths(self) -> list[str]:
-        """Resolved sensor USD prim paths in contact tensor row order.
+        """Resolved sensor physics-object paths in contact tensor row order.
 
         Returns:
             list[str]: One path per sensor row, in the same order as the
@@ -1264,7 +1284,7 @@ class ContactBinding:
 
     @property
     def filter_paths(self) -> list[list[str]]:
-        """Resolved filter USD prim paths in contact tensor column order.
+        """Resolved filter physics-object paths in contact tensor column order.
 
         The outer list is indexed by sensor row and the inner list by filter
         column. Each inner list is empty for unfiltered contact bindings
@@ -1472,7 +1492,7 @@ class ContactBinding:
                 raise RuntimeError(f"Failed to read raw contact data: {self._sdk._get_last_error()}")
 
     def get_other_actor_paths_from_ids(self, ids_array) -> list[str]:
-        """Resolve actor IDs from :meth:`read_raw_contact_data` to USD prim paths.
+        """Resolve actor IDs from :meth:`read_raw_contact_data` to physics-object paths.
 
         ``ids_array`` is a 1D int64/uint64 array (numpy / warp / torch with
         DLPack support) holding actor IDs. IDs that cannot be resolved
@@ -1480,7 +1500,7 @@ class ContactBinding:
         caller can keep them across subsequent ovphysx calls.
 
         Returns:
-            list[str]: USD prim paths in the same order as the input IDs.
+            list[str]: Physics-object paths in the same order as the input IDs.
         """
         with self._lock:
             if self._destroyed:
@@ -1808,10 +1828,14 @@ class PhysX:
         Args:
             config: Typed config dataclass. Only non-None fields are applied.
             ignore_version_mismatch: Skip Python/native version match check.
-            active_cuda_gpus: Comma-separated CUDA device ordinals (default: None = GPU 0).
+            active_cuda_gpus: Comma-separated CUDA device ordinals
+                (default: None = PhysX automatic CUDA selection).
                 Restricts which GPU ordinal(s) are used.
-                Supported: None/"0" (GPU 0), "N" (GPU N), "-1" (PhysX default),
+                Supported: None/"" (automatic), "0" (GPU 0), "N" (GPU N),
+                "-1" (PhysX automatic selection),
                 "0,1,...,N-1" (all GPUs round-robin), "1,2,...,N-1" (skip first).
+                Any non-empty value overrides config.scene_multi_gpu_mode; a single
+                ordinal disables multi-GPU scene distribution.
 
         To force process-wide CPU-only mode, call PhysX.set_cpu_mode(True) before
         creating any PhysX instances.
@@ -2010,7 +2034,8 @@ class PhysX:
 
         Args:
             source_path: USD path of the source prim hierarchy to clone (e.g., "/World/env0")
-            target_paths: List of USD paths for the cloned hierarchies (e.g., ["/World/env1", "/World/env2"])
+            target_paths: Runtime physics-object paths for the cloned hierarchies
+                (e.g., ["/World/env1", "/World/env2"])
             parent_transforms: Optional list of (px, py, pz, qx, qy, qz, qw) transforms
                 giving the world pose of each copy's parent.  Position followed by
                 quaternion rotation (imaginary-first, matching tensor API convention).
@@ -2140,7 +2165,7 @@ class PhysX:
         return result.op_index
 
     def get_object_type(self, prim_path: str) -> int:
-        """Classify a USD prim by TensorAPI object type.
+        """Classify an authored USD prim by TensorAPI object type.
 
         Unresolved paths return INVALID. Raises RuntimeError for invalid input
         (empty path, embedded NUL byte) or if no stage is attached.
@@ -2374,7 +2399,8 @@ class PhysX:
               completes population; call
               ``stage.advance_write_floor(ordinal=read_ordinal).wait()`` first.
               Reads target sealed data, so attaching at an unsealed ordinal
-              fails the parse and yields an empty scene.
+              yields a partial parse: rigid bodies may still load while
+              articulations and joints can be dropped.
 
         Lifetime:
             - ``stage`` must outlive the attachment because ovphysx captures and
@@ -2911,39 +2937,49 @@ class PhysX:
     ) -> TensorBinding:
         """Create tensor binding for bulk physics data access (synchronous).
 
-        A tensor binding connects USD prims (by pattern or explicit paths) to a
-        tensor type, enabling efficient bulk read/write of physics data.
+        A tensor binding connects physics objects (by path pattern or explicit
+        paths) to a tensor type, including authored USD objects and runtime-only
+        clones.
 
-        :param pattern: USD path glob pattern (e.g., "/World/robot*", "/World/env[N]/robot").
+        :param pattern: Physics-object path glob pattern
+            (e.g., "/World/robot*", "/World/env[N]/robot").
             Mutually exclusive with ``prim_paths``.
-        :param prim_paths: Explicit list of prim paths. Mutually exclusive with ``pattern``.
+        :param prim_paths: Explicit list of physics-object paths. Mutually
+            exclusive with ``pattern``.
         :param tensor_type: Tensor type enum value (``TensorType.*``).
         :param raise_if_empty: If ``True``, raise ``ValueError`` when the
-            binding matches zero prims. The default keeps empty bindings valid;
+            binding matches zero physics objects. The default keeps empty bindings valid;
             prefer it for optional or broad queries and check ``binding.count``.
         :returns: TensorBinding object for reading/writing tensor data.
         :raises ValueError: If neither ``pattern`` nor ``prim_paths`` is provided, both are,
-            or ``raise_if_empty`` is true and no prims match.
+            or ``raise_if_empty`` is true and no physics objects match.
         :raises RuntimeError: If binding creation fails.
 
         Examples::
 
-            # Read all robot poses by pattern. Optional broad queries can be empty.
-            with sdk.create_tensor_binding(
-                "/World/robot*", tensor_type=TensorType.RIGID_BODY_POSE
-            ) as binding:
-                if binding.count:
-                    poses = np.zeros(binding.shape, dtype=np.dtype(str(binding.dtype)))
-                    binding.read(poses)
+            import numpy as np
+            from ovphysx import TensorType
 
-            # Set joint position targets for specific articulations
-            binding = physx.create_tensor_binding(
-                prim_paths=["/World/env1/robot", "/World/env2/robot"],
-                tensor_type=TensorType.ARTICULATION_DOF_POSITION_TARGET,
-            )
-            targets = np.zeros(binding.shape, dtype=np.dtype(str(binding.dtype)))
-            binding.write(targets)
-            binding.destroy()
+            def use_tensor_bindings(physx):
+                # Optional broad queries can be empty.
+                with physx.create_tensor_binding(
+                    "/World/robot*", tensor_type=TensorType.RIGID_BODY_POSE
+                ) as binding:
+                    if binding.count:
+                        poses = np.zeros(
+                            binding.shape, dtype=np.dtype(str(binding.dtype))
+                        )
+                        binding.read(poses)
+
+                binding = physx.create_tensor_binding(
+                    prim_paths=["/World/env1/robot", "/World/env2/robot"],
+                    tensor_type=TensorType.ARTICULATION_DOF_POSITION_TARGET,
+                )
+                targets = np.zeros(
+                    binding.shape, dtype=np.dtype(str(binding.dtype))
+                )
+                binding.write(targets)
+                binding.destroy()
 
         Preconditions:
             - Exactly one of ``pattern`` or ``prim_paths`` must be provided.
@@ -2963,7 +2999,7 @@ class PhysX:
               binding survives, only destroy it. Create replacements after the
               operation completes.
         Diagnostics:
-            - Pattern bindings can intentionally match zero prims, so expected
+            - Pattern bindings can intentionally match zero physics objects, so expected
               TensorAPI no-match diagnostics are quieted on the simulation view
               used to create that binding.
             - Explicit ``prim_paths`` keep the default error-level no-match
@@ -3430,9 +3466,10 @@ class PhysX:
         via :meth:`ContactBinding.read_contact_data` and
         :meth:`ContactBinding.read_friction_data`.
 
-        A **sensor** is a set of rigid body prims matched by a USD prim path
+        A **sensor** is a set of rigid bodies matched by a physics-object path
         pattern. A **filter** is a second set of bodies whose contacts with each
-        sensor you want to measure.
+        sensor you want to measure. Patterns include authored USD objects and
+        runtime-only clones.
 
         Contact reporting is opt-in: every authored USD prim matched by
         ``sensor_patterns`` must have ``PhysxContactReportAPI`` applied, on the
@@ -3458,23 +3495,29 @@ class PhysX:
 
         Use :attr:`ContactBinding.sensor_paths` and
         :attr:`ContactBinding.filter_paths` to map rows and columns back to
-        resolved USD prim paths.
+        resolved physics-object paths.
 
         Example::
 
-            cb = sdk.create_contact_binding(
-                sensor_patterns=["/World/robot_0/ee"],
-                filter_patterns=["/World/obstacles/box"],
-                filters_per_sensor=1,
-                max_contact_data_count=256,
-            )
-            # After a successful simulation step:
-            forces = torch.zeros(cb.sensor_count, 3, device="cuda")
-            cb.read_net_forces(forces)
+            import torch
+
+            def read_contact_forces(physx):
+                with physx.create_contact_binding(
+                    sensor_patterns=["/World/robot_0/ee"],
+                    filter_patterns=["/World/obstacles/box"],
+                    filters_per_sensor=1,
+                    max_contact_data_count=256,
+                ) as binding:
+                    # Call this after a successful simulation step.
+                    forces = torch.zeros(
+                        (binding.sensor_count, 3), device="cuda"
+                    )
+                    binding.read_net_forces(forces)
+                    return forces
 
         Args:
-            sensor_patterns: USD prim path patterns for sensor bodies.
-            filter_patterns: Flat list of USD prim path patterns for filters.
+            sensor_patterns: Physics-object path patterns for sensor bodies.
+            filter_patterns: Flat list of physics-object path patterns for filters.
                 Total length must equal ``len(sensor_patterns) * filters_per_sensor``.
                 Pass ``None`` with ``filters_per_sensor=0`` to get contacts with all bodies.
             filters_per_sensor: Number of filter patterns per sensor (same for all sensors).
@@ -3552,7 +3595,8 @@ class PhysX:
         Requires a GPU instance; CPU SDF evaluation is not yet implemented.
 
         Args:
-            pattern: USD glob pattern matching SDF collision shapes.
+            pattern: USD-style object-path glob matching SDF collision shapes,
+                including runtime-only clones.
             max_query_points: Number of query points per shape per call. Query
                 tensors passed to ``SdfView.evaluate`` must have Q equal to this.
 

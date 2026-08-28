@@ -1,12 +1,20 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: MIT
 
 set -e
 
 # Set OMNI_REPO_ROOT early so `repo` bootstrapping can target the repository
 # root when writing out Python dependencies.
 export OMNI_REPO_ROOT="$( cd "$(dirname "$0")" ; pwd -P )"
+
+# Force Python's UTF-8 Mode (PEP 540) for every interpreter launched by repo_man.
+# Without this, text-mode open() defaults to locale.getpreferredencoding(), which
+# can be non-UTF-8 on hosts with non-UTF-8 system locales and raises
+# UnicodeDecodeError on TOML/JSON/config files containing bytes that aren't valid
+# in that codepage. This env var is exported only for the duration of this script's
+# child processes (the `exec` below); the parent shell is not affected.
+export PYTHONUTF8=1
 
 # By default custom caching is disabled in repo_man. But if a repo-cache.json
 # caching configuration file is generated via the `repo cache` command, it's

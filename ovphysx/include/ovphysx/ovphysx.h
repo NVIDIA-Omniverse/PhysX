@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 
 // C-compatible PhysX API
@@ -861,9 +860,17 @@ extern "C" {
     * - OVPHYSX_API_ERROR if no ovstage is attached or the clone fails
     *
     * @code
-    * // Clone whole environments (one target per environment; NULL transforms co-locate on the source).
-    * ovphysx_string_t targets[2] = { ovphysx_cstr("/World/env1"), ovphysx_cstr("/World/env2") };
-    * ovphysx_enqueue_result_t r = ovphysx_clone(handle, ovphysx_cstr("/World/env0"), targets, 2, NULL, NULL);
+    * #include <ovphysx/ovphysx.h>
+    *
+    * static ovphysx_enqueue_result_t clone_two_environments(ovphysx_handle_t handle)
+    * {
+    *     ovphysx_string_t targets[2] = {
+    *         ovphysx_cstr("/World/env1"),
+    *         ovphysx_cstr("/World/env2"),
+    *     };
+    *     return ovphysx_clone(
+    *         handle, ovphysx_cstr("/World/env0"), targets, 2, NULL, NULL);
+    * }
     * // To assemble one environment from several calls (heterogeneous ClonePlan), pass the same
     * // env_ids in each call so its objects share a runtime environment.
     * @endcode
@@ -988,8 +995,9 @@ extern "C" {
 
     /*
      * The Tensor Binding API provides efficient bulk access to physics simulation data.
-     * It maps USD prim patterns to typed tensor views, enabling same-device zero-copy data
-     * exchange and transparent cross-device staging with tensors (PyTorch, NumPy, etc.) via DLPack.
+     * It maps physics-object path patterns to typed tensor views, including authored USD objects
+     * and runtime-only clones. This enables same-device zero-copy data exchange and transparent
+     * cross-device staging with tensors (PyTorch, NumPy, etc.) via DLPack.
      * 
      * DLPack compatibility:
      *   We vendor the official DLPack header (see dlpack/dlpack.h from github.com/dmlc/dlpack).
@@ -1023,8 +1031,8 @@ extern "C" {
      *   5. Main loop: read/write tensors, step, wait
      * 
      * Pattern matching:
-     *   Patterns use USD prim path glob syntax:
-     *   - Exact path: "/World/robot" - matches single prim
+     *   Patterns use USD-style path glob syntax over realized physics objects:
+     *   - Exact path: "/World/robot" - matches one object
      *   - Wildcard:   "/World/robot*" - matches robot1, robot2, robotArm, etc.
      *   - Nested:     "/World/env[N]/robot" with [N] as wildcard - matches /World/env0/robot, etc.
      */
@@ -1032,14 +1040,15 @@ extern "C" {
     /**
      * Create a tensor binding for bulk data access (synchronous).
      * 
-     * A tensor binding connects a USD prim pattern (e.g., "/World/robot*") to a
+     * A tensor binding connects a physics-object path pattern (e.g., "/World/robot*") to a
      * tensor type (e.g., OVPHYSX_TENSOR_RIGID_BODY_POSE_F32), enabling efficient
-     * bulk read/write of physics data for all matching prims.
+     * bulk read/write of physics data for all matching objects. Runtime-only clone
+     * paths are eligible even when no USD prim is authored at the path.
      * 
-     * If the pattern matches zero prims, the binding is still created successfully
+     * If the pattern matches zero physics objects, the binding is still created successfully
      * with element_count = 0. This lets callers treat optional scene content as
      * an empty current result instead of an error. Empty bindings do not update
-     * when matching prims are added or recreated; destroy the old binding and
+     * when matching physics objects are added or recreated; destroy the old binding and
      * create a new one after topology changes.
      *
      * Binding lifetime is tied to the currently realized physics objects. The
@@ -1050,13 +1059,6 @@ extern "C" {
      * binding survives, only destroy it; do not read or write through it. Create
      * replacement bindings after the operation completes. ovphysx_step(),
      * ovphysx_step_sync(), and ovphysx_step_n_sync() do not invalidate bindings.
-     * 
-     * Example:
-     *   ovphysx_tensor_binding_desc_t desc = {
-     *       .pattern = OVPHYSX_LITERAL("/World/robot*"),  // compile-time string literal
-     *       .tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32
-     *   };
-     *   ovphysx_create_tensor_binding(handle, &desc, &binding);
      * 
      * @param handle Instance handle
      * @param desc Binding descriptor with pattern and tensor_type
@@ -1088,8 +1090,18 @@ extern "C" {
      * - OVPHYSX_API_ERROR for internal failures
      *
      * @code
-     * ovphysx_tensor_binding_handle_t binding = 0;
-     * ovphysx_create_tensor_binding(handle, &desc, &binding);
+     * #include <ovphysx/ovphysx.h>
+     *
+     * static ovphysx_result_t create_pose_binding(
+     *     ovphysx_handle_t handle,
+     *     ovphysx_tensor_binding_handle_t* out_binding)
+     * {
+     *     ovphysx_tensor_binding_desc_t desc = {
+     *         .pattern = OVPHYSX_LITERAL("/World/robot*"),
+     *         .tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32,
+     *     };
+     *     return ovphysx_create_tensor_binding(handle, &desc, out_binding);
+     * }
      * @endcode
      */
     OVPHYSX_API ovphysx_result_t ovphysx_create_tensor_binding(
@@ -1490,11 +1502,11 @@ extern "C" {
         uint32_t* out_count);
 
     /**
-     * @brief Get resolved USD prim paths for a tensor binding.
+     * @brief Get resolved physics-object paths for a tensor binding.
      *
      * The returned array order matches row order for every `RIGID_BODY_*`
      * tensor read/write on the same binding. For `ARTICULATION_*` tensor
-     * bindings, the returned paths are articulation root prim paths in the
+     * bindings, the returned paths are articulation root object paths in the
      * binding's first-dimension row order. ovphysx owns the returned string
      * storage; string pointers remain valid until the binding is destroyed.
      *
@@ -1532,10 +1544,11 @@ extern "C" {
      * ovphysx_read_friction_data(). Use ovphysx_get_contact_report() when you
      * need event headers or raw actor-pair report records.
      *
-     * A **sensor** is a set of rigid body prims identified by a USD prim path
-     * pattern that you pass to ovphysx_create_contact_binding().  A **filter**
+     * A **sensor** is a set of rigid bodies identified by a physics-object path
+     * pattern that you pass to ovphysx_create_contact_binding(). A **filter**
      * is a second set of bodies whose contacts with each sensor you want to
-     * measure.  Both are specified as USD prim path patterns.
+     * measure. Both patterns can resolve authored USD objects and runtime-only
+     * clones.
      *
      * Contact reporting is opt-in: every authored USD prim matched by a sensor
      * pattern must have `PhysxContactReportAPI` applied, on the prim named as the
@@ -1582,9 +1595,9 @@ extern "C" {
      * @brief Create a contact binding for aggregate and detailed contact reads.
      *
      * @param handle Instance handle
-     * @param sensor_patterns Array of USD prim path patterns matching sensor bodies
+     * @param sensor_patterns Array of physics-object path patterns matching sensor bodies
      * @param sensor_patterns_count Number of sensor patterns
-     * @param filter_patterns Flat array of filter prim path patterns. All sensors must
+     * @param filter_patterns Flat array of filter object-path patterns. All sensors must
      *   have the same number of filters. Total length = sensor_patterns_count * filters_per_sensor.
      *   Pass NULL with filters_per_sensor=0 for unfiltered contacts.
      * @param filters_per_sensor Number of filter patterns per sensor (same for all sensors)
@@ -1601,19 +1614,21 @@ extern "C" {
      *       or until the parent instance is destroyed.
      *
      * @code
-     * // Track contacts on the robot end-effector against the box obstacle.
-     * ovphysx_string_t sensors[]  = { ovphysx_cstr("/World/robot_0/ee") };
-     * ovphysx_string_t filters[]  = { ovphysx_cstr("/World/obstacles/box") };
-     * ovphysx_contact_binding_handle_t cb;
-     * ovphysx_create_contact_binding(
-     *     handle,
-     *     sensors, 1,          // 1 sensor pattern
-     *     filters, 1,          // 1 filter pattern per sensor
-     *     256,                 // flat contact-data capacity
-     *     &cb);
-     * // After a stepping call completes:
-     * // - net forces  tensor shape: [S, 3]   (S = matched sensor count)
-     * // - force matrix tensor shape: [S, F, 3] (F = matched filter count per sensor)
+     * #include <ovphysx/ovphysx.h>
+     *
+     * static ovphysx_result_t create_filtered_contact_binding(
+     *     ovphysx_handle_t handle,
+     *     ovphysx_contact_binding_handle_t* out_binding)
+     * {
+     *     ovphysx_string_t sensors[] = {
+     *         ovphysx_cstr("/World/robot_0/ee"),
+     *     };
+     *     ovphysx_string_t filters[] = {
+     *         ovphysx_cstr("/World/obstacles/box"),
+     *     };
+     *     return ovphysx_create_contact_binding(
+     *         handle, sensors, 1, filters, 1, 256, out_binding);
+     * }
      * @endcode
      */
     OVPHYSX_API ovphysx_result_t ovphysx_create_contact_binding(
@@ -1652,7 +1667,7 @@ extern "C" {
         int32_t* out_filter_count);
 
     /**
-     * @brief Get resolved sensor USD prim paths for a contact binding.
+     * @brief Get resolved sensor physics-object paths for a contact binding.
      *
      * The returned array order matches row order for contact binding reads.
      * ovphysx owns the returned string storage; string pointers remain valid
@@ -1674,7 +1689,7 @@ extern "C" {
         uint32_t* out_count);
 
     /**
-     * @brief Get resolved filter USD prim paths for a contact binding.
+     * @brief Get resolved filter physics-object paths for a contact binding.
      *
      * Paths are returned in row-major `[sensor, filter]` order with total
      * count `sensor_count * filter_count`. ovphysx owns the returned string
@@ -1903,11 +1918,11 @@ extern "C" {
         DLTensor* other_actor_ids_tensor);
 
     /**
-     * @brief Resolve actor IDs from @ref ovphysx_read_raw_contact_data to USD prim paths.
+     * @brief Resolve actor IDs from @ref ovphysx_read_raw_contact_data to physics-object paths.
      *
      * Given a tensor of opaque actor IDs (the `other_actor_ids_tensor`
      * returned by @ref ovphysx_read_raw_contact_data), fills `out_paths` with
-     * the corresponding USD prim paths in the same order. IDs whose actors
+     * the corresponding physics-object paths in the same order. IDs whose actors
      * cannot be resolved (e.g. removed since the step) yield empty paths.
      *
      * @param handle Instance handle
@@ -2053,7 +2068,7 @@ extern "C" {
         void** out_ptr);
 
     /**
-     * @brief Classify a prim by its high-level TensorAPI object type.
+     * @brief Classify an authored USD prim by its high-level TensorAPI object type.
      *
      * Returns the umbrella's view of what kind of simulation object lives at
      * `prim_path`: rigid body, articulation, articulation link, articulation
@@ -2062,7 +2077,7 @@ extern "C" {
      * itself didn't fail, the path just isn't a known simulation object).
      *
      * @param handle Instance handle (must have a stage attached)
-     * @param prim_path USD prim path (ovphysx_string_t; embedded NUL bytes are rejected)
+     * @param prim_path Authored USD prim path (embedded NUL bytes are rejected)
      * @param[out] out_type Receives the object type
      * @return OVPHYSX_API_SUCCESS on success, or OVPHYSX_API_ERROR if no
      *         stage is attached or the TensorAPI simulation view cannot be
@@ -2659,9 +2674,9 @@ extern "C" {
      * same handle.
      *
      * @param handle            Instance handle.
-     * @param pattern           USD glob pattern selecting SDF-enabled collision
-     *                          shapes (e.g. "/World/Mesh*"). Must match at
-     *                          least one shape or the call returns an error.
+     * @param pattern           USD-style path glob selecting SDF-enabled collision
+     *                          shapes, including runtime-only clones (e.g. "/World/Mesh*").
+     *                          Must match at least one shape or the call returns an error.
      * @param max_query_points  Number of query points per shape per evaluate
      *                          call. Query tensors passed to ovphysx_evaluate_sdf
      *                          must have Q == this value (second dimension).

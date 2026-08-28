@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // This file provides helper functions for resolving ovphysx runtime library and
 // USD plugin paths, and for publishing the namespaced USD schema path to

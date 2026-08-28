@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // Sidecar lifecycle entry points. Currently just the version probe used by
 // the SDK loader as a handshake after dlopen/LoadLibrary.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """Generate a C++ header with PXR TfToken definitions from a Newton USD schema.
 
 Parses a generatedSchema.usda file and emits a header containing a token list

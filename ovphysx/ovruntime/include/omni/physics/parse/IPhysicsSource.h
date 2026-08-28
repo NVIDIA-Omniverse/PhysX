@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
+
 /**
  * @implements REQ-PARSE-CORE-001
  * @covers AC-1 AC-2
  *
  * @implements REQ-PARSE-CORE-003
- * @covers AC-1 AC-2 AC-3 AC-4
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-6
  *
  * @implements REQ-PARSE-SHAPE-001
  * @covers AC-1
@@ -240,9 +240,30 @@ public:
     /// @brief Invoke `cb` once per direct child of `parent`.
     /// @param parent Object whose direct children to enumerate. Pass
     ///        `getRootKey()` to walk the scene's top-level objects.
-    /// @param cb Invoked once per child, in the source's declaration
-    ///        order. Not invoked when `parent` has no children or is
-    ///        the invalid sentinel.
+    /// @param cb Invoked once per child. Not invoked when `parent` has no
+    ///        children or is the invalid sentinel.
+    ///
+    /// @note **Ordering contract.** The order is *source-defined* but must be a
+    ///       pure function of the scene: two sources built from the same scene,
+    ///       in the same process or in different ones, enumerate a given
+    ///       parent's children identically. Backends that carry an authoring
+    ///       order publish it (the USD backend enumerates in namespace /
+    ///       declaration order). Backends whose storage exposes no authoring
+    ///       signal must impose one of their own -- the OVStage backend sorts
+    ///       each parent's children by path, because its native row order is
+    ///       bucketed by prim type / attribute set and the bucket order varies
+    ///       with process history rather than with the stage
+    ///       (`OvstageSource::buildChildCache`).
+    ///
+    ///       Consequence for consumers: enumeration order is stable and
+    ///       reproducible **per backend**, but is NOT comparable *across*
+    ///       backends. Order-sensitive consumers -- e.g. `PhysXAttachment`
+    ///       selecting the first matching attachment child, or pairing filter
+    ///       children with colliders positionally -- are therefore
+    ///       deterministic under either backend, but may select a different
+    ///       child under OVStage than under USD when several children match.
+    ///       Consumers that need cross-backend identity must key on something
+    ///       authored (name / relationship), not on position.
     virtual void forEachChild(ObjectKey parent, std::function<void(ObjectKey)> cb) const = 0;
 
     /// @brief Scoped query: invoke `cb` for every object in the subtree rooted

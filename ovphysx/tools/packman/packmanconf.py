@@ -28,7 +28,6 @@ import os
 import platform
 import sys
 
-
 MIN_PYTHON_VERSION = (3, 10, 0)
 MAX_PYTHON_VERSION = (3, 12, 13)
 

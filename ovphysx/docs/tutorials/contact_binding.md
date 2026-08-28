@@ -1,9 +1,12 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # Contact Binding: Reading Contact Forces
 
 Contact bindings let you read contact forces between **sensor** bodies and
-**filter** bodies. A sensor is a rigid body prim (or a set of prims matched by a
-USD path pattern) whose contacts you want to measure. A filter is a second set of
-bodies whose contacts with each sensor you want to isolate.
+**filter** bodies. A sensor is a rigid body (or a set of bodies matched by a
+physics-object path pattern) whose contacts you want to measure. A filter is a
+second set of bodies whose contacts with each sensor you want to isolate.
 
 Contact reporting is opt-in: every authored USD prim matched by `sensor_patterns`
 must have `PhysxContactReportAPI` applied. A matched prim without it is dropped
@@ -55,7 +58,7 @@ USD prim) inherit contact reporting from the source actor.
   automatically from the last successful `step()`, `step_sync()`, or
   `step_n_sync()` call. You do not pass it manually.
 - Result tensor shapes:
-  - Net forces: `[S, 3]` — one 3-D force vector per matched sensor prim.
+  - Net forces: `[S, 3]` -- one 3-D force vector per matched sensor object.
   - Force matrix: `[S, F, 3]` — force vectors per (sensor, filter) pair.
   - Detailed contact data: contact forces and separations use `[C, 1]`;
     positions and normals use `[C, 3]`; all are indexed by `[S, F]`
@@ -88,18 +91,26 @@ Pass `filter_patterns=None` and `filters_per_sensor=0` to collect contacts with
 all bodies:
 
 ```python
-cb = physx.create_contact_binding(
-    sensor_patterns=["/World/robot/ee"],
-    max_contact_data_count=512,
-)
+def create_unfiltered_binding(physx):
+    return physx.create_contact_binding(
+        sensor_patterns=["/World/robot/ee"],
+        max_contact_data_count=512,
+    )
 ```
 
 In C:
 
 ```c
-ovphysx_string_t sensors[] = { ovphysx_cstr("/World/robot/ee") };
-ovphysx_contact_binding_handle_t cb;
-ovphysx_create_contact_binding(handle, sensors, 1, NULL, 0, 512, &cb);
+#include <ovphysx/ovphysx.h>
+
+static ovphysx_result_t create_unfiltered_binding(
+    ovphysx_handle_t handle,
+    ovphysx_contact_binding_handle_t* out_binding)
+{
+    ovphysx_string_t sensors[] = { ovphysx_cstr("/World/robot/ee") };
+    return ovphysx_create_contact_binding(
+        handle, sensors, 1, NULL, 0, 512, out_binding);
+}
 ```
 
 ## Multiple Sensors and Filters
@@ -109,16 +120,16 @@ The `filter_patterns` array is **flat** and must have length
 entries corresponds to one sensor:
 
 ```python
-# 2 sensors, 2 filters each -> 4 filter entries total
-cb = physx.create_contact_binding(
-    sensor_patterns=["/World/robot_0/ee", "/World/robot_1/ee"],
-    filter_patterns=[
-        "/World/obstacle_A", "/World/obstacle_B",  # filters for robot_0/ee
-        "/World/obstacle_A", "/World/obstacle_B",  # filters for robot_1/ee
-    ],
-    filters_per_sensor=2,
-)
-# force_matrix shape: [2, 2, 3]
+def create_filtered_binding(physx):
+    # 2 sensors, 2 filters each -> 4 filter entries total
+    return physx.create_contact_binding(
+        sensor_patterns=["/World/robot_0/ee", "/World/robot_1/ee"],
+        filter_patterns=[
+            "/World/obstacle_A", "/World/obstacle_B",  # robot_0/ee filters
+            "/World/obstacle_A", "/World/obstacle_B",  # robot_1/ee filters
+        ],
+        filters_per_sensor=2,
+    )
 ```
 
 ## Detailed Contact and Friction Data
@@ -146,40 +157,45 @@ recreating the binding for subsequent simulation steps. Recreating a binding
 does not recover the overflowing step's payload.
 
 ```python
-C = cb.max_contact_data_count
-contact_forces = np.zeros((C, 1), dtype=np.float32)
-positions = np.zeros((C, 3), dtype=np.float32)
-normals = np.zeros((C, 3), dtype=np.float32)
-separations = np.zeros((C, 1), dtype=np.float32)
-counts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
-starts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
+import numpy as np
 
-cb.read_contact_data(
-    contact_forces,
-    positions,
-    normals,
-    separations,
-    counts,
-    starts,
-)
+def read_detailed_data(binding):
+    capacity = binding.max_contact_data_count
+    contact_forces = np.zeros((capacity, 1), dtype=np.float32)
+    positions = np.zeros((capacity, 3), dtype=np.float32)
+    normals = np.zeros((capacity, 3), dtype=np.float32)
+    separations = np.zeros((capacity, 1), dtype=np.float32)
+    shape = (binding.sensor_count, binding.filter_count)
+    counts = np.zeros(shape, dtype=np.int32)
+    starts = np.zeros(shape, dtype=np.int32)
 
-s = 0
-f = 0
-start = starts[s, f]
-stop = start + counts[s, f]
-sensor_filter_positions = positions[start:stop]
+    binding.read_contact_data(
+        contact_forces,
+        positions,
+        normals,
+        separations,
+        counts,
+        starts,
+    )
 
-friction_forces = np.zeros((C, 3), dtype=np.float32)
-friction_points = np.zeros((C, 3), dtype=np.float32)
-friction_counts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
-friction_starts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
+    sensor = 0
+    contact_filter = 0
+    start = starts[sensor, contact_filter]
+    stop = start + counts[sensor, contact_filter]
+    sensor_filter_positions = positions[start:stop]
 
-cb.read_friction_data(
-    friction_forces,
-    friction_points,
-    friction_counts,
-    friction_starts,
-)
+    friction_forces = np.zeros((capacity, 3), dtype=np.float32)
+    friction_points = np.zeros((capacity, 3), dtype=np.float32)
+    friction_counts = np.zeros(shape, dtype=np.int32)
+    friction_starts = np.zeros(shape, dtype=np.int32)
+
+    binding.read_friction_data(
+        friction_forces,
+        friction_points,
+        friction_counts,
+        friction_starts,
+    )
+    return sensor_filter_positions, friction_forces, friction_points
 ```
 
 Friction data is per friction anchor, not a pre-summed `[S, F, 3]` pair
@@ -188,5 +204,5 @@ force. To build a pair-level friction force tensor, sum
 matching `friction_counts` and `friction_starts` entries.
 
 This flat representation matches the underlying PhysX tensor API and avoids a
-fixed per-pair contact-point dimension. Build a padded `[S, F, K, ...]` view in
+fixed per-pair contact-point dimension. Build a padded `[S, F, K, D]` view in
 application code only if that layout is useful for a specific algorithm.

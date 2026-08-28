@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """Windows regression for OMPE-91565: a venv subprocess must resolve its own prefix.
 
 The reporter hit this with rerun.io running inside a venv: importing ovphysx in

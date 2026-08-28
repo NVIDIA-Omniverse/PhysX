@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # ovphysx Overview
 
 ovphysx is a self-contained PhysX runtime exposed as a C API with Python bindings.
@@ -49,7 +52,7 @@ Applications own scene population through ovstage. ovphysx consumes that stage t
 ## Core Concepts
 
 - Stream-ordered execution: calls run in submission order and see prior writes without extra sync.
-- Tensor bindings: synchronous read/write operations for physics data (rigid body poses, velocities, etc.). Includes pattern matching (glob patterns) to bind to multiple prims at once (`/World/robot*`, `/World/env[N]/robot`).
+- Tensor bindings: synchronous read/write operations for physics data (rigid body poses, velocities, etc.). Includes path-pattern matching for authored USD physics objects and runtime-only clones (`/World/robot*`, `/World/env[N]/robot`).
 - Thread safety: instances share the underlying physics runtime; serialize simulation,
   stage mutation, and binding creation across instances. A single instance is not
   safe for concurrent calls.
@@ -60,8 +63,9 @@ Applications own scene population through ovstage. ovphysx consumes that stage t
 Typical usage of ovphysx:
 
 - Create and release instances with `PhysX()` and `physx.release()`.
-- Attach caller-owned ovstage data with `physx.attach_ovstage(stage)` and apply committed edits with `physx.update_from_ovstage(from_ordinal, to_ordinal)`.
-- Create tensor bindings with `physx.create_tensor_binding()` specifying tensor type and a prim path pattern or explicit prim paths.
+- After population, seal the ordinal with `stage.advance_write_floor(ordinal).wait()`, then attach with `physx.attach_ovstage(stage, read_ordinal=ordinal)`. Apply later committed edits with `physx.update_from_ovstage(from_ordinal, to_ordinal)`.
+- Create tensor bindings with `physx.create_tensor_binding()` specifying a tensor type and a
+  physics-object path pattern or explicit object paths.
 - Write and read tensor data with `binding.write()` and `binding.read()` using NumPy arrays or dlpack-compatible buffers.
 - Step the simulation with `physx.step()` — it is **asynchronous** (returns an `op_index`); use `physx.step_sync()` to step and wait in one call, or `wait_op()` / `wait_all()` when consuming results outside the ovphysx stream. In-stream tensor reads wait automatically.
 
@@ -75,7 +79,8 @@ The C API mirrors the Python flow:
 - Attach ovstage with `ovphysx_attach_ovstage()` and apply committed edits with
   `ovphysx_update_from_ovstage(handle, range)`, where `range` is an
   `ovstage_ordinal_range_t`.
-- Create tensor bindings with `ovphysx_create_tensor_binding()` specifying tensor type and prim paths.
+- Create tensor bindings with `ovphysx_create_tensor_binding()` specifying a tensor type and
+  physics-object paths.
 - Write and read tensor data with `ovphysx_write_tensor_binding()` and `ovphysx_read_tensor_binding()`.
 - Step the simulation with `ovphysx_step()` — it is **asynchronous** (returns an `op_index`); use `ovphysx_step_sync()` to step and wait in one call, or `ovphysx_wait_op()` when consuming results outside the stream.
 

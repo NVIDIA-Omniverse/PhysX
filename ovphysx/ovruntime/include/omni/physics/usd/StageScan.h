@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
+
 /**
  * Whole-stage scan API — produces a `ScannedStage` snapshot of a USD
  * stage's parsed physics state.

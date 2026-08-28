@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // Same shape as omni.physx/tests/test.benchmarks/BenchmarkList.cpp: each
 // benchmark .cpp exposes an init*() symbol that this file references, just

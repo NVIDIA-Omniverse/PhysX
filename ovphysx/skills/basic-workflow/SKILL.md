@@ -141,7 +141,7 @@ int main(void)
     ovstage_population_op_wait_result_t open_wait;
     memset(&open_wait, 0, sizeof(open_wait));
     if (open.status != OVSTAGE_OK ||
-        ovstage_population_wait_op(stage, open.op_id, OVSTAGE_TIMEOUT_INFINITE, &open_wait) != OVSTAGE_OK) {
+        ovstage_population_wait_op(stage, open.op_index, OVSTAGE_TIMEOUT_INFINITE, &open_wait) != OVSTAGE_OK) {
         fprintf(stderr, "Failed to populate ovstage\n");
         ovstage_destroy_instance(stage);
         ovphysx_destroy_instance(handle);
@@ -157,7 +157,7 @@ int main(void)
     ovstage_op_wait_result_t floor_wait;
     memset(&floor_wait, 0, sizeof(floor_wait));
     if (floor.status != OVSTAGE_OK ||
-        ovstage_wait_op(stage, floor.op_id, OVSTAGE_TIMEOUT_INFINITE, &floor_wait) != OVSTAGE_OK ||
+        ovstage_wait_op(stage, floor.op_index, OVSTAGE_TIMEOUT_INFINITE, &floor_wait) != OVSTAGE_OK ||
         floor_wait.error_op_id_count != 0) {
         fprintf(stderr, "Failed to seal ovstage ordinal\n");
         ovstage_destroy_instance(stage);

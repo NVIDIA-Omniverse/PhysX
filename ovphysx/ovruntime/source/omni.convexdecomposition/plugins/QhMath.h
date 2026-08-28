@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 #ifndef QH_MATH_H
 #define QH_MATH_H

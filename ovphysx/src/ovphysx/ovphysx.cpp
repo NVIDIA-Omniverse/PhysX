@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 #include "internal/CpuFeatureCheck.h"
 #include "ovphysx/ovphysx.h"
@@ -114,8 +113,9 @@ InstanceData::~InstanceData()
 {
 }
 
-// Serializes the /physics/cudaDevice write and physxSim->attachStage() so concurrent
-// instances with different active_cuda_gpus ordinals don't stomp each other's setting.
+// Serializes the process-global attach-time GPU selector with scene attachment
+// so simultaneous attach calls from different handles cannot overwrite it while
+// PhysX consumes it.
 std::mutex g_gpuAttachMutex;
 
 // Process-wide CPU-only mode. Set via ovphysx_set_cpu_mode(true) before any instances
@@ -162,7 +162,9 @@ static constexpr int32_t kMultiGPU_SkipFirst = 2; // all except first GPU (eSkip
 // ---------------------------------------------------------------------------
 
 // Parse a comma-separated GPU ordinal string into a sorted vector.
-// Empty input returns {0} (default: GPU 0).
+// Empty input returns {0} as an internal parse placeholder. The create path
+// preserves empty input as automatic selection and distinguishes it from an
+// explicit "0" before storing the parsed ordinals.
 // On error, writes a message to errbuf and returns an empty vector.
 static std::vector<int32_t> parseActiveCudaGpus(const char* str, size_t len,
                                                  char* errbuf, size_t errsize)
@@ -308,6 +310,53 @@ static int32_t determineMultiGPUMode(const std::vector<int32_t>& ordinals, int32
              "all %d GPUs (0..%d), or all except first (1..%d). Got %d CUDA device(s).",
              ordStr.c_str(), deviceCount, deviceCount - 1, deviceCount - 1, deviceCount);
     return -1;
+}
+
+// Apply the per-instance GPU selection immediately before PhysX attaches a
+// scene. PhysX reads these process-global settings lazily while creating the
+// first GPU scene. The caller must hold g_gpuAttachMutex and keep it held until
+// the immediately following attachStage/attachOvstage call returns.
+static void applyAttachTimeGpuSelection(const InstanceData& instance,
+                                        carb::Framework* framework,
+                                        const char* attachPath)
+{
+    // active_cuda_gpus is meaningless when GPU use is disabled. Avoid the
+    // device-count probe as part of the process-wide no-CUDA-touch contract.
+    const std::vector<int32_t>& ordinals = instance.active_cuda_ordinals;
+    if (ordinals.empty() || isProcessGpuDisabled() || !framework)
+        return;
+
+    carb::settings::ISettings* settings =
+        framework->tryAcquireInterface<carb::settings::ISettings>();
+    if (!settings)
+        return;
+
+    const int32_t gpuIndex = ordinals[0];
+    settings->setInt("/physics/cudaDevice", gpuIndex);
+    CARB_LOG_INFO("[ovphysx] Applying CUDA device %d before %s", gpuIndex, attachPath);
+
+    if (ordinals.size() <= 1)
+    {
+        settings->setInt("/physics/sceneMultiGPUMode", kMultiGPU_Disabled);
+        return;
+    }
+
+    int count = 0;
+    const CUresult deviceCountResult = omni::physx::cudaShim::cuDeviceGetCount_(&count);
+    if (deviceCountResult != CUDA_SUCCESS || count <= 0)
+        return;
+
+    char modeErr[384] = {};
+    const int32_t multiGPUMode = determineMultiGPUMode(ordinals, count, modeErr, sizeof(modeErr));
+    if (multiGPUMode >= 0)
+    {
+        settings->setInt("/physics/sceneMultiGPUMode", multiGPUMode);
+        return;
+    }
+
+    // Create-time validation normally rejects unsupported patterns. Preserve a
+    // diagnostic here in case device discovery was unavailable during create.
+    CARB_LOG_WARN("[ovphysx] active_cuda_gpus multi-GPU mode not applied: %s", modeErr);
 }
 
 // Serialize ovphysx_create_instance() to protect shared Carbonite/plugin init.
@@ -569,8 +618,8 @@ ovphysx_api_status_t ovphysx_ensure_physics_attached(ovphysx_handle_t handle)
 
     // Attach PhysX to the stage if not done yet.
     if (!instance->physics_attached.load(std::memory_order_acquire)) {
-        // All attaches hold g_gpuAttachMutex so concurrent instances with different
-        // active_cuda_gpus ordinals don't stomp each other's /physics/cudaDevice setting.
+        // All attach calls hold g_gpuAttachMutex so simultaneous calls from different
+        // handles cannot overwrite /physics/cudaDevice while PhysX consumes it.
         std::unique_lock<std::mutex> attachLock(g_gpuAttachMutex);
 
         // Re-check under the lock: a concurrent ensure_physics_attached() for this same
@@ -590,43 +639,7 @@ ovphysx_api_status_t ovphysx_ensure_physics_attached(ovphysx_handle_t handle)
                 }
             }
 
-            // Write /physics/cudaDevice if the caller restricted GPU ordinals.
-            // Skipped when GPU is disabled for the process (ovphysx_set_cpu_mode(true)
-            // or OVPHYSX_DISABLE_GPU): active_cuda_gpus is meaningless in CPU-only mode,
-            // and the multi-GPU branch below probes the driver via the CUDA shim, which
-            // would violate the "no CUDA driver touch" contract. Mirrors the same gate on
-            // the create-time ordinal validation in createInstanceInternal().
-            // Ordinals were parsed and validated at create time (active_cuda_ordinals);
-            // empty means the caller did not restrict GPU ordinals.
-            const std::vector<int32_t>& ords = instance->active_cuda_ordinals;
-            if (!ords.empty() && !isProcessGpuDisabled())
-            {
-                if (auto* settings = framework->tryAcquireInterface<carb::settings::ISettings>())
-                {
-                    const int32_t gpuIndex = ords[0];
-                    settings->setInt("/physics/cudaDevice", gpuIndex);
-                    CARB_LOG_INFO("[ovphysx] /physics/cudaDevice=%d before attachStage (stage=%" PRId64 ")", gpuIndex, stageId);
-
-                    if (ords.size() > 1)
-                    {
-                        int count = 0;
-                        const CUresult deviceCountResult = omni::physx::cudaShim::cuDeviceGetCount_(&count);
-                        if (deviceCountResult == CUDA_SUCCESS && count > 0)
-                        {
-                            char modeErr[384] = {};
-                            int32_t multiGPUMode = determineMultiGPUMode(ords, count, modeErr, sizeof(modeErr));
-                            if (multiGPUMode >= 0)
-                                settings->setInt("/physics/sceneMultiGPUMode", multiGPUMode);
-                            else
-                                // Unsupported multi-GPU pattern (e.g. non-contiguous ordinals).
-                                // The first ordinal still drives /physics/cudaDevice above, so we
-                                // proceed single-GPU rather than fail the attach -- but surface the
-                                // misconfiguration instead of silently dropping modeErr.
-                                CARB_LOG_WARN("[ovphysx] active_cuda_gpus multi-GPU mode not applied: %s", modeErr);
-                        }
-                    }
-                }
-            }
+            applyAttachTimeGpuSelection(*instance, framework, "attachStage");
 
             bool physx_ok = false;
             if (physxSim) {
@@ -1417,8 +1430,12 @@ ovphysx_api_status_t omni_sdk_physx_unload_usd(ovphysx_handle_t handle)
                 if (!instance->physics_attached.load(std::memory_order_acquire)) {
                     // Pair a quick attach+detach so the PhysX plugin releases
                     // any refs it accumulated during load.
-                    if (physxSim)
+                    if (physxSim) {
+                        std::lock_guard<std::mutex> attachLock(g_gpuAttachMutex);
+                        applyAttachTimeGpuSelection(
+                            *instance, carb::getFramework(), "late attachStage for detach");
                         physxSim->attachStage(stageId);
+                    }
                     CARB_LOG_INFO("[UNLOAD #%u] Stage %" PRId64 " - late attach for clean detach (physics was deferred)", unloadSeq, stageId);
                 }
 
@@ -1630,8 +1647,8 @@ static ovphysx_result_t createInstanceInternal(const ovphysx_create_args* create
     // Parse active_cuda_gpus early to fail fast on bad syntax before bringing up
     // Carbonite/PhysX. The parsed ordinals are range-validated post-init (device
     // count) and stored on the instance for the deferred /physics/cudaDevice write
-    // at first attach. CarboniteLoader is given the fixed -2 sentinel below, not an
-    // ordinal from this list.
+    // by either supported scene-attach path. CarboniteLoader is given the fixed
+    // -2 sentinel below, not an ordinal from this list.
     std::vector<int32_t> requestedOrdinals;
     {
         char parseErr[256] = {};
@@ -1654,18 +1671,16 @@ static ovphysx_result_t createInstanceInternal(const ovphysx_create_args* create
     }
 
     // ========================================================================
-    // Configure startup settings that MUST be applied before PhysX plugins load.
-    //
-    // Note: carb.settings.plugin is loaded by CarboniteLoader, so we cannot set these
-    // directly via ISettings yet. Instead, we pass them to CarboniteLoader which applies
-    // them immediately after carb.settings.plugin loads, but BEFORE PhysX plugins load.
+    // Configure Carbonite bootstrap before PhysX plugins load. The -2 sentinel
+    // below skips unused Carbonite GPU plugins; it does not select the PhysX
+    // CUDA ordinal, which is applied by the scene-attach paths.
     // ========================================================================
     {
         // Pass -2 to CarboniteLoader so it skips loading omni.gpucompute-cuda.plugin
         // and related Carbonite GPU plugins at startup. PhysX manages its own GPU
         // context via the PhysX SDK directly and does not depend on those plugins.
-        // /physics/cudaDevice (the GPU ordinal) is written separately below, after
-        // plugin load, inside g_createInstanceMutex.
+        // /physics/cudaDevice (the GPU ordinal) is written later by the selected
+        // scene-attach path under g_gpuAttachMutex.
         int32_t cudaDevice = -2;
 
         if (args && args->config_entry_count > 0 && args->config_entries)
@@ -1767,8 +1782,8 @@ static ovphysx_result_t createInstanceInternal(const ovphysx_create_args* create
 
     // Validate active_cuda_gpus ordinal early so the user gets a fast error at create
     // time rather than at first attach. The actual /physics/cudaDevice write is
-    // deferred to ovphysx_ensure_physics_attached() under g_gpuAttachMutex so that
-    // it is held atomically with physxSim->attachStage().
+    // deferred to the selected scene-attach path under g_gpuAttachMutex so that
+    // it is held atomically with PhysX attachment.
     if (args && args->active_cuda_gpus.ptr && args->active_cuda_gpus.length > 0 &&
         !isProcessGpuDisabled())
     {
@@ -2376,9 +2391,17 @@ OVPHYSX_API ovphysx_result_t ovphysx_attach_ovstage(ovphysx_handle_t handle,
         }
     }
 
+    // GPU selection is process-global and PhysX consumes it synchronously while
+    // attachOvstage creates the first GPU scene. Keep the setting and attach in
+    // the same transaction, matching the legacy attachStage path.
     // The caller owns the sealed read ordinal and passes it explicitly; the
     // initial scene parse reads at this ordinal.
-    const bool attached = physxSim->attachOvstage(&instanceShared->ovstage_attach_payload, read_ordinal);
+    bool attached = false;
+    {
+        std::lock_guard<std::mutex> attachLock(g_gpuAttachMutex);
+        applyAttachTimeGpuSelection(*instanceShared, carb::getFramework(), "attachOvstage");
+        attached = physxSim->attachOvstage(&instanceShared->ovstage_attach_payload, read_ordinal);
+    }
     if (!attached) {
         instanceShared->ovstage_attach_payload = OvstageAttachPayload{};
         return set_error(OVPHYSX_API_ERROR,

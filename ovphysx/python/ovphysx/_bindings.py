@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
 
 """Low-level ctypes bindings for the ovphysx library.
 
@@ -448,20 +447,20 @@ class ovphysx_cuda_sync_t(ctypes.Structure):
 class ovphysx_tensor_binding_desc_t(ctypes.Structure):
     """Descriptor for creating a tensor binding.
 
-    A tensor binding connects USD prims to a tensor type, enabling bulk
-    read/write of physics data for all matching prims.
+    A tensor binding connects physics-object paths to a tensor type, enabling
+    bulk read/write for authored USD objects and runtime-only clones.
 
     Prim selection (mutually exclusive - use ONE of these):
       - pattern: Glob pattern like "/World/robot*"
-      - prim_paths: Explicit list of exact prim paths
+      - prim_paths: Explicit list of exact physics-object paths
 
     If prim_paths is set, pattern is ignored.
     """
 
     _fields_ = [
-        ("pattern", ovphysx_string_t),  # USD path glob pattern
-        ("prim_paths", POINTER(ovphysx_string_t)),  # Explicit list of exact prim paths (NULL = use pattern)
-        ("prim_paths_count", c_uint32),  # Number of prim paths (0 = use pattern)
+        ("pattern", ovphysx_string_t),  # Physics-object path glob
+        ("prim_paths", POINTER(ovphysx_string_t)),  # Exact object paths (NULL = use pattern)
+        ("prim_paths_count", c_uint32),  # Number of object paths (0 = use pattern)
         ("tensor_type", c_int),  # ovphysx_tensor_type_t enum
     ]
 

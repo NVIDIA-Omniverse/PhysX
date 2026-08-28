@@ -1,6 +1,7 @@
 @echo off
 REM SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 REM SPDX-License-Identifier: BSD-3-Clause
+
 REM Usage: pull_dependencies.bat [--config release|debug|all] [--devphysx] [--devschema]
 
 set "DO_DEV_PHYSX=0"

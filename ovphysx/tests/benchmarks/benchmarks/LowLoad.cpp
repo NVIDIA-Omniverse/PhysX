@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // Low-load benchmarks measuring per-call overhead (dispatch, init, reset)
 // rather than steady-state simulation cost. Useful for catching regressions

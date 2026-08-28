@@ -1,10 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 /**
  * @implements REQ-PARSE-SCAN-001
- * @covers AC-1 AC-14
+ * @covers AC-1 AC-14 AC-16
  */
 
 #include "OvstageWalker.h"
@@ -26,10 +25,12 @@
 #include <cstring>
 #include <functional>
 #include <initializer_list>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 namespace omni::physics::ovstage
 {
@@ -2093,6 +2094,77 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                 return true;
         return false;
     };
+
+    // Ovstage enumeration and schema-cache iteration order can vary with
+    // process history. Re-rank every bucket by one stable depth-first traversal
+    // of the path-sorted source hierarchy so scan order depends only on the
+    // populated stage.
+    std::unordered_map<uint64_t, uint32_t> namespaceOrder;
+    bool namespaceOrderBuilt = false;
+    auto buildNamespaceOrder = [&]()
+    {
+        if (namespaceOrderBuilt)
+            return;
+        namespaceOrderBuilt = true;
+
+        std::vector<ObjectKey> hierarchy;
+        src.collectDescendantKeys(src.getRootKey(), hierarchy);
+        namespaceOrder.reserve(hierarchy.size() * 2);
+        uint32_t index = 0;
+        for (const ObjectKey key : hierarchy)
+        {
+            namespaceOrder.emplace(key.handle, index);
+            const uint64_t canonical = src.canonicalPath(key);
+            if (canonical && canonical != key.handle)
+                namespaceOrder.emplace(canonical, index);
+            ++index;
+        }
+    };
+    auto orderBucketKeys = [&](std::vector<ObjectKey>& keys)
+    {
+        if (keys.size() < 2)
+            return;
+        buildNamespaceOrder();
+
+        struct RankedKey
+        {
+            uint32_t rank;
+            std::string fallback;
+            ObjectKey key;
+        };
+
+        std::vector<RankedKey> ranked;
+        ranked.reserve(keys.size());
+        for (const ObjectKey key : keys)
+        {
+            std::unordered_map<uint64_t, uint32_t>::const_iterator it = namespaceOrder.find(key.handle);
+            if (it == namespaceOrder.end())
+            {
+                const uint64_t canonical = src.canonicalPath(key);
+                if (canonical)
+                    it = namespaceOrder.find(canonical);
+            }
+            if (it != namespaceOrder.end())
+            {
+                ranked.push_back(RankedKey{ it->second, std::string(), key });
+            }
+            else
+            {
+                ranked.push_back(
+                    RankedKey{ std::numeric_limits<uint32_t>::max(), std::string(src.sourceKeyToString(key)), key });
+            }
+        }
+        std::sort(ranked.begin(), ranked.end(),
+                  [](const RankedKey& a, const RankedKey& b)
+                  {
+                      if (a.rank != b.rank)
+                          return a.rank < b.rank;
+                      return a.fallback < b.fallback;
+                  });
+        for (size_t i = 0; i < ranked.size(); ++i)
+            keys[i] = ranked[i].key;
+    };
+
     auto applyScanFilter = [&](Bucket bucket) -> Bucket
     {
         if (bucket.keys.empty())
@@ -2103,6 +2175,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                                              return !keyPassesFilter(key) || isBelowPointInstancer(key);
                                          }),
                           bucket.keys.end());
+        orderBucketKeys(bucket.keys);
         return bucket;
     };
     auto enumerateFiltered = [&](const char* predAttr, ovstage_filter_op_t op, const char* predValue,
@@ -2151,6 +2224,8 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                     outBucket.attrs.push_back(attr);
             }
         }
+        // Re-order the union rather than preserving schema-bucket append order.
+        orderBucketKeys(outBucket.keys);
         return outBucket;
     };
 

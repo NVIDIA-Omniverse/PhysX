@@ -13,8 +13,11 @@ metadata:
 
 This skill explains how to author a USD scene so that ovphysx can load and
 simulate it. ovphysx consumes pre-authored USD: you build the scene first, then
-attach it through an `ovstage.Stage` with `attach_ovstage()`, drain later edits
-with `update_from_ovstage()`, and clear the stage with `reset_stage()`.
+populate an `ovstage.Stage`, call `advance_write_floor()` to seal the ordinal,
+and attach with `attach_ovstage()`. Drain later edits with
+`update_from_ovstage()`, and clear the stage with `reset_stage()`. See
+`basic-workflow` and `docs/ovstage_integration.md` for the populate/seal/attach
+sequence.
 
 ## When to Use
 

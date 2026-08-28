@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """GPU-mode scene query tests: raycast, sweep, and overlap.
 
 No scene query tests exist for GPU mode. This file mirrors the structure of

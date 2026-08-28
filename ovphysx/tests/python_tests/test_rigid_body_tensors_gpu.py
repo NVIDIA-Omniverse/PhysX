@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """GPU-mode tests for rigid-body and articulation-root tensor types that are
 covered by CPU tests but NOT by test_tensor_bindings_api_gpu.py.
 

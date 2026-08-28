@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Dependency Manifest for ovphysx SDK
 # This file controls native dependencies staged into _install/plugins/ by
 # scripts/package_deps.py. The Python wheel copies that _install payload into

@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 #ifndef OVPHYSX_CARBONITE_LOADER_HPP
 #define OVPHYSX_CARBONITE_LOADER_HPP
@@ -86,12 +85,13 @@ public:
     const std::string& getLastError() const;
 
     /**
-     * Configure startup settings that must be applied BEFORE the PhysX runtime starts.
+     * Configure the internal Carbonite GPU-plugin bootstrap sentinel.
      *
-     * These are process-wide settings (Carbonite settings are global). Used to
-     * select the CUDA device in SDK mode.
-     *
-     * Call this BEFORE initialize().
+     * Current ovphysx callers pass -2 before initialize() to skip Carbonite GPU
+     * plugins that PhysX does not use. This does not select the PhysX CUDA
+     * ordinal; active_cuda_gpus is applied immediately before scene attachment.
+     * Values other than -2 are currently unused by ovphysx; that branch is
+     * retained to preserve existing internal CarboniteLoader behavior.
      *
      * Note: /physics/suppressReadback (DirectGPU-API mode) is NOT managed
      * here — it is opt-in by the host. Callers who want DirectGPU set the

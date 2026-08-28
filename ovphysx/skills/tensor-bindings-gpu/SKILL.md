@@ -13,7 +13,8 @@ metadata:
 
 GPU tensor bindings use GPU-mode PhysX with DLPack CUDA tensors.
 DirectGPU (`/physics/suppressReadback`) is a separate setting: keep it enabled for fastest tensor-pipeline workloads and disabled for workflows that need contact modification.
-ovstage is used to populate the scene and resolve prim path patterns, but the tensor data path does not go through ovstage.
+ovstage populates the authored scene, while binding path resolution also includes
+runtime-only clone paths. The tensor data path does not go through ovstage.
 
 ## When to Use
 
@@ -22,7 +23,9 @@ Use this skill when a caller needs GPU-to-GPU tensor exchange through CUDA devic
 ## Instructions
 
 1. Read the full C or Python sample before adapting this pattern because CUDA memory lifetime, DLPack shape storage, and device ordinal handling matter.
-2. Allocate CUDA device memory before wrapping it in `DLTensor`, derive `cuda_device_id` from `active_cuda_gpus`, and keep shape storage valid until the synchronous read or write returns.
+2. Select an explicit CUDA ordinal with `active_cuda_gpus`, allocate memory on
+   that device before wrapping it in `DLTensor`, and keep shape storage valid
+   until the synchronous read or write returns.
 3. Use Shell to compile and run the full sample or a local integration test after adapting the scene path and tensor type.
 
 ## C sample (CUDA)
@@ -98,9 +101,12 @@ static int read_and_write_gpu_tensor(
 }
 ```
 
-Use the first CUDA ordinal in `active_cuda_gpus` as the `cuda_device_id`.
-Default (empty) means GPU 0; `"1"` means GPU 1; `"0,1"` means primary ordinal 0.
-Read this from the same `ovphysx_create_args.active_cuda_gpus` string you used when creating the instance; the full C sample shows the parsing code.
+Use the first explicit CUDA ordinal in `active_cuda_gpus` as the
+`cuda_device_id`: `"1"` means GPU 1 and `"0,1"` means primary ordinal 0.
+Empty input leaves device choice to PhysX and therefore does not identify a
+stable device ordinal for caller-allocated tensors. GPU tensor integrations
+should pass an explicit ordinal and use that same value in the DLPack metadata;
+the full C sample shows explicit device selection and reuse.
 This helper wraps an existing CUDA allocation; it does not allocate memory.
 `device_buffer`, `shape_storage`, and optional `strides` storage must stay valid until the synchronous read or write call returns.
 The snippet uses `strides = NULL` for C-contiguous tensors, matching the ovphysx C samples.
@@ -113,13 +119,17 @@ from ovphysx import PhysX, PhysXConfig
 from ovphysx.types import TensorType
 import ovstage
 
+cuda_device = 0
 physx = PhysX(
+    active_cuda_gpus=str(cuda_device),
     config=PhysXConfig(
         carbonite_overrides={"/physics/suppressReadback": True},
     ),
 )
 stage = ovstage.Stage("ovphysx-gpu-tensors")
 ovstage.population.open_usd(stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+# attach_ovstage() reads at a sealed ordinal.
+stage.advance_write_floor(ordinal=1).wait()
 physx.attach_ovstage(stage, read_ordinal=1)
 
 binding = physx.create_tensor_binding(
@@ -129,7 +139,9 @@ binding = physx.create_tensor_binding(
 
 # Write poses from a PyTorch CUDA tensor via DLPack (e.g. an RL env reset).
 # The pose layout is [px, py, pz, qx, qy, qz, qw]; qw = 1 is identity rotation.
-reset_poses = torch.zeros(binding.shape, dtype=torch.float32, device="cuda")
+reset_poses = torch.zeros(
+    binding.shape, dtype=torch.float32, device=f"cuda:{cuda_device}"
+)
 reset_poses[..., 6] = 1.0
 binding.write(reset_poses)
 
@@ -137,7 +149,9 @@ binding.write(reset_poses)
 physx.step_sync(1.0 / 60.0)
 
 # Read simulated poses back into a CUDA tensor (no CPU staging)
-output = torch.zeros(binding.shape, dtype=torch.float32, device="cuda")
+output = torch.zeros(
+    binding.shape, dtype=torch.float32, device=f"cuda:{cuda_device}"
+)
 binding.read(output)
 
 binding.destroy()
@@ -151,7 +165,7 @@ physx.release()
 - The physics-only `domains` mask above is fine for this skill's non-instanced sample USD. For arbitrary content prefer `ALL` -- see `docs/ovstage_integration.md` ("Population domains").
 - GPU dynamics are enabled by authoring `physxScene:enableGPUDynamics=true` in the USD stage (PhysX reads this). To prevent any GPU usage in ovphysx, call `PhysX.set_cpu_mode(True)` before creating any `PhysX` instance. Process-wide CPU-only mode rejects CUDA DLPack tensors before accessing CUDA.
 - DLPack interop works with PyTorch and other objects implementing the `__dlpack__` protocol.
-- Masked writes are supported on GPU as well via `ovphysx_write_tensor_binding_masked()` / `binding.write(..., mask=...)`.
+- Masked writes are supported on GPU as well via `ovphysx_write_tensor_binding_masked()` / `binding.write(tensor, mask=mask)`.
 - Create bindings once outside simulation loops and reuse them; binding creation allocates native TensorAPI resources.
 
 ## References

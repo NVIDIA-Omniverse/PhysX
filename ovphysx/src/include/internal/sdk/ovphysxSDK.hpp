@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 #pragma once
 
@@ -116,9 +115,9 @@ struct InstanceData
     // Parsed active_cuda_gpus ordinals, resolved once at create time. Empty when
     // the caller did not restrict GPU ordinals. create_args.active_cuda_gpus is a
     // non-owning {ptr,length} view into the caller's buffer, which may be freed
-    // once ovphysx_create_instance() returns; ovphysx_ensure_physics_attached()
-    // reads the ordinals lazily at first attach, so we keep the parsed result here
-    // rather than the dangling string (and avoid re-parsing the same input).
+    // once ovphysx_create_instance() returns. Both supported scene-attach paths
+    // read the ordinals lazily, so we keep the parsed result here rather than the
+    // dangling string (and avoid re-parsing the same input).
     std::vector<int32_t> active_cuda_ordinals;
     int64_t attachedStageId = 0;
     bool ovstage_attached = false;

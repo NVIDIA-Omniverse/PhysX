@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // Sidecar module bootstrap: holds the peer-DSO OmniCore/Carbonite globals and the
 // two setter exports the SDK loader calls right after dlopen to seed them from the

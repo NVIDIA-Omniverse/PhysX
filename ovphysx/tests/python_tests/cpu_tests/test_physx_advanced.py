@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """Advanced PhysX instance tests: handle property, warmup_gpu CPU behavior,
 update_articulations_kinematic CPU mode, attach_ovstage / update_from_ovstage error paths,
 detach_ovstage on a non-attached stage, and get_config_string / runtime

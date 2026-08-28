@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // C-API tests for ovphysx_clone (replicator-backed). Clones are physics-only: live PhysX bodies
 // addressable by their target path via the tensor API, not authored as USD prims -- so a clone is

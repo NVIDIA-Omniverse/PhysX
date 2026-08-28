@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # ovphysx
 
 ovphysx is a self-contained library package offering PhysX simulation through a C API and corresponding Python bindings for inclusion in user applications.

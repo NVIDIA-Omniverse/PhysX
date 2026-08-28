@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
+
 /**
  * `ScannedStage` — the source-agnostic snapshot of a scanned physics
  * scene. Owns the parse-library descriptors plus the `IPhysicsSource`

@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // Per-step simulation cost on CPU device. Loads a fixture once per run and
 // measures step+waitAll over getNbSteps() steps.

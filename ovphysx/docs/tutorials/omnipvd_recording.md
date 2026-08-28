@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # OmniPVD Recording: Capture Physics Internals to .ovd
 
 This tutorial shows how to record OmniPVD data from ovphysx to `.ovd` files for offline inspection in a Kit application. OmniPVD captures the full internal state of the PhysX simulation each frame — shapes, contacts, solver data — so you can debug and visualize physics behavior after the fact.

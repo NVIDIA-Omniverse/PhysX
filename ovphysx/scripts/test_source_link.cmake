@@ -54,6 +54,11 @@ endif()
 file(REMOVE_RECURSE "${SAMPLE_BUILD_DIR}")
 file(MAKE_DIRECTORY "${SAMPLE_BUILD_DIR}")
 
+# Build with the packaged toolchain the SDK was built with, not whatever Visual
+# Studio the machine has.
+set(_SOURCE_LINK_TOOLCHAIN_ARGS "")
+ovphysx_pin_packaged_host_toolchain(_SOURCE_LINK_TOOLCHAIN_ARGS)
+
 # Configure — deps should already be fetched by the main build, so skip auto-fetch
 message(STATUS "Configuring ${SAMPLE_NAME}...")
 execute_process(
@@ -62,6 +67,7 @@ execute_process(
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
         -DOVPHYSX_FETCH_DEPS=OFF
         ${_SOURCE_LINK_OVSTAGE_ARGS}
+        ${_SOURCE_LINK_TOOLCHAIN_ARGS}
     WORKING_DIRECTORY "${SAMPLE_BUILD_DIR}"
     RESULT_VARIABLE CONFIG_RESULT
 )

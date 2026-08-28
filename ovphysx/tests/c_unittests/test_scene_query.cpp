@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // Direct C API coverage for ovphysx_raycast / ovphysx_sweep / ovphysx_overlap.
 // Python tests exercise the ctypes mirror; this file validates the C ABI.

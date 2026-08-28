@@ -1,6 +1,50 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # Changelog
 
 All notable changes to `ovphysx` are documented in this file.
+
+## [0.5.11] - Date 2026-08-21
+
+### Changed
+
+- **OVStage-backed articulation link and DOF indices now use stable path-derived ordering.**
+  This fixes run-to-run tensor-column drift, but it may change which link or DOF
+  occupies a given tensor column compared with 0.5.10. OVStage ordering is not
+  guaranteed to match USD backend authoring order; consumers needing identity
+  across upgrades or backends should use reported paths or names.
+- **Windows source and SDK sample builds now require CMake 4.1 or newer.**
+  Linux is unchanged at CMake 3.16 or newer. The prerequisite lists in the
+  README, the quickstart, and the source-link build tutorial state the split.
+
+### Fixed
+
+- **OVStage attachment now honors explicit CUDA device selection.**
+  `active_cuda_gpus` applies on every attach path, so a CUDA context left
+  current by a renderer can no longer make PhysX pick a different device than
+  the one you asked for. A single explicit ordinal also disables stale
+  multi-GPU scene distribution for that attachment.
+- **GPU-selection documentation matches the runtime contract.**
+  Empty `active_cuda_gpus` means PhysX automatic selection, while GPU tensor
+  callers should pass an explicit ordinal and reuse it in their DLPack device
+  metadata. This is a documentation correction, not a runtime change, and
+  supersedes the older 0.4.1 note that grouped empty input with GPU 0.
+- **Wildcard tensor bindings now reach runtime clones through unauthored
+  intermediate target paths.** Cloning `/World/envs/env0/robot` directly to
+  `/World/envs/env1/robot` creates runtime physics without authoring
+  `/World/envs/env1` in USD. Patterns such as `/World/envs/env*/robot` now match
+  the source and every clone. Removing an authored ancestor also removes the
+  clones below it, instead of leaving orphaned physics behind. Exact-path
+  bindings work as before.
+- **Collider cooking no longer writes `[Error] [omni.datastore]` lines when
+  `cooked_collider_cache_dir` is unset.** The data store used to default to a
+  path next to the Python interpreter, which a normal Linux venv cannot write.
+  Simulation was correct, but every run printed errors. Cooking now uses a
+  private directory under the OS temp directory and deletes it at process exit,
+  so nothing is persisted. A configured directory that cannot be created or
+  written falls back the same way. The configured directory takes effect at the
+  first runtime bootstrap; changing it later in the same process does nothing.
 
 ## [0.5.10] - Date 2026-08-05
 
@@ -56,6 +100,21 @@ All notable changes to `ovphysx` are documented in this file.
   payload tensors are not valid.
 
 ### Fixed
+- **`basic-workflow` C sample compiles again (NVBug 6557378).** The fenced sample
+  waited on enqueue results via `.op_id`, but the ovstage members are named
+  `.op_index`. The two wait calls now use `.op_index`.
+- **Shipped skills and docs now seal the ovstage write floor before attach
+  (NVBug 6557378).** `open_usd()` does not advance the write floor;
+  `attach_ovstage()` reads a sealed ordinal. Four skills
+  (`clone-environments`, `tensor-bindings-cpu`, `tensor-bindings-gpu`,
+  `ovphysx-usd-authoring`), the quickstart, developer-guide snippets,
+  overview/physics-scene prose, and top-level README examples omitted
+  `advance_write_floor()`, so following them as published attached
+  successfully but silently dropped every articulation and joint while
+  rigid bodies still loaded. The Python `attach_ovstage` docstring also
+  misdescribed that failure as an empty scene; it now states the real
+  partial-parse behaviour. Product samples and `basic-workflow` already
+  had the seal call.
 - **The documented `.usda` scene template now sets the mass unit (NVBug 6557394 /
   OMPE-104387).** The template in `simulation_setup/physics_scene.md` authored
   `kilogramsPerMass`, which is not a USD stage-metadata key: USD accepted the

@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
+
 #pragma once
 
 // This just implements a very simple multi-threaded job system.

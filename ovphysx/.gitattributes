@@ -9,13 +9,9 @@
 # Make sure shell scripts have LF line endings, even when checked out on a Windows client with autocrlf=true
 *.sh text eol=lf
 tools/packman/packman text eol=lf
-# Make sure schema files have LF line endings
-*.usda text eol=lf
 # LFS
 **/data/** filter=lfs diff=lfs merge=lfs -text
-**/data/**/*.py filter=text diff=text merge=text
 *.png filter=lfs diff=lfs merge=lfs -text
-*.usda filter=lfs diff=lfs merge=lfs -text
 *.usd filter=lfs diff=lfs merge=lfs -text
 *.ovd filter=lfs diff=lfs merge=lfs -text
 *.wav filter=lfs diff=lfs merge=lfs -text
@@ -28,9 +24,7 @@ tools/packman/packman text eol=lf
 *.gif filter=lfs diff=lfs merge=lfs -text
 *.hdr filter=lfs diff=lfs merge=lfs -text
 *.npy filter=lfs diff=lfs merge=lfs -text
-# USD scene files should be stored as text, overriding the LFS rule above so
-# diffs and code review can see content.  `-filter -diff -merge` unsets the lfs
-# driver bindings; the boolean `text` attribute (plus `eol=lf`) restores normal
-# text handling.  ovruntime re-asserts LFS for its own *.usda assets in
-# ovruntime/.gitattributes.
-*.usda -filter -diff -merge text eol=lf
+# LFS exclude
+**/data/**/*.py filter=text diff=text merge=text
+**/data/**/*.yaml !filter diff=text merge=text text eol=lf
+*.usda !filter diff=text merge=text text eol=lf

@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 #include "ovphysxTestHelpers.h"
 
@@ -8,6 +7,7 @@
 #include <omni/physx/PhysXRuntime.h>
 
 #include <carb/Framework.h>
+#include <carb/settings/ISettings.h>
 #include <omni/physx/IOptionalCuda.h>
 #include <omni/physics/tensors/ISimulationView.h>
 
@@ -47,6 +47,22 @@ OVPHYSX_API void* ovphysx_get_optional_cuda_internal(void)
 OVPHYSX_API void* ovphysx_get_tensor_api_internal(void)
 {
     return static_cast<void*>(omni::physx::runtime::tryGetTensorApiInterface());
+}
+
+OVPHYSX_API bool ovphysx_get_attach_cuda_selector_for_test_internal(int32_t* out_value)
+{
+    if (!out_value)
+        return false;
+
+    carb::Framework* framework = carb::getFramework();
+    carb::settings::ISettings* settings =
+        framework ? framework->tryAcquireInterface<carb::settings::ISettings>() : nullptr;
+    constexpr const char* cudaDevicePath = "/physics/cudaDevice";
+    if (!settings || settings->getItemType(cudaDevicePath) != carb::dictionary::ItemType::eInt)
+        return false;
+
+    *out_value = settings->getAsInt(cudaDevicePath);
+    return true;
 }
 
 OVPHYSX_API void ovphysx_reset_schema_path_registration_internal(void)

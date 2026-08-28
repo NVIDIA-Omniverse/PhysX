@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 #ifndef OVPHYSX_EXPERIMENTAL_OVPHYSX_HPP
 #define OVPHYSX_EXPERIMENTAL_OVPHYSX_HPP
@@ -194,7 +193,8 @@ public:
     /// only (USD untouched).
     ///
     /// @param sourcePath USD path of the source prim hierarchy (e.g., "/World/env0")
-    /// @param targetPaths Vector of USD paths for cloned hierarchies (e.g., ["/World/env1", "/World/env2"])
+    /// @param targetPaths Vector of runtime physics-object paths for cloned hierarchies
+    ///        (e.g., ["/World/env1", "/World/env2"])
     /// @param parentTransforms World pose of each copy's parent. Flat array of
     ///        [targetPaths.size() * 7] floats: (px, py, pz, qx, qy, qz, qw) per target
     ///        (copy = transform * inverse(source_parent) * body). Pass nullptr to
@@ -249,11 +249,11 @@ public:
     /**
      * @brief Create a tensor binding for bulk physics data access
      *
-     * Creates a binding that connects USD prim paths (matched by pattern) to a tensor type,
-     * enabling efficient bulk read/write of simulation state.
+     * Creates a binding that connects physics-object paths (matched by pattern) to a tensor type,
+     * enabling efficient bulk read/write for authored USD objects and runtime-only clones.
      *
      * @param out_binding  Receives the created TensorBinding on success
-     * @param pattern      USD prim path pattern (e.g., "/World/robot*")
+     * @param pattern      Physics-object path pattern (e.g., "/World/robot*")
      * @param tensor_type  The type of tensor data to bind
      * @return OVPHYSX_API_SUCCESS on success
      */
@@ -405,18 +405,9 @@ public:
      * This is the primary creation path. Use CreateArgs to configure device
      * selection, GPU index, config entries, and other options.
      *
-     * Example:
-     * @code
-     *   ovphysx_initialize();
-     *   {
-     *       CreateArgs args;
-     *       args.setConfigEntries(entries, 2);
-     *       PhysX physx;
-     *       auto status = PhysX::create(physx, args);
-     *       if (status != OVPHYSX_API_SUCCESS) { ... handle error ... }
-     *   }
-     *   ovphysx_shutdown();
-     * @endcode
+     * Initialize the C API first, construct CreateArgs, call create(), and check
+     * its returned status. Destroy the PhysX instance before calling
+     * ovphysx_shutdown().
      *
      * @param out_instance Receives the created PhysX instance on success.
      * @param args         Creation arguments (default-constructed = OVPHYSX_CREATE_ARGS_DEFAULT).

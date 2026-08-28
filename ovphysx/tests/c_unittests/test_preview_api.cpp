@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // Tests for the preview (not-yet-implemented) APIs:
 //   ovphysx_find_prims     - must return OVPHYSX_API_NOT_IMPLEMENTED

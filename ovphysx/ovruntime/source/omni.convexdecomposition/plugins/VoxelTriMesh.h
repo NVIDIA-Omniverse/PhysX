@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
+
 #pragma once
 
 // Helper function to convert a set of voxels

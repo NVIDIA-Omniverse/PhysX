@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // Verbatim from omni.physx/tests/test.benchmarks/Harness.h. Keeping this
 // header byte-identical means any improvement upstream (new CLI flag, new

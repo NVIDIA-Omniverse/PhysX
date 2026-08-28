@@ -1,12 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
+#include "ovphysx/ovphysx_config.h"
 #include "ovphysx/version.h"
+#include "ovphysxTestHelpers.h"
 #include "global_test_environment.h"
+#include "test_utilities.h"
 #include <iostream>
 
 // Note: This test is also used to trigger extension pre-caching during build.
@@ -164,4 +166,56 @@ TEST(ActiveCudaGpusParsing, ValidFormat_SingleDigitOrdinal)
 TEST(ActiveCudaGpusParsing, ValidFormat_WhitespaceAroundOrdinals)
 {
     EXPECT_EQ(try_create_with_gpus(" 0 "), OVPHYSX_API_SUCCESS);
+}
+
+TEST(ActiveCudaGpusAttachTest, DirectOvstageAttachPropagatesExplicitOrdinal)
+{
+    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
+    args.active_cuda_gpus = OVPHYSX_LITERAL("0");
+    const ovphysx_config_entry_t staleMultiGpuMode =
+        ovphysx_config_entry_scene_multi_gpu_mode(1);
+    args.config_entries = &staleMultiGpuMode;
+    args.config_entry_count = 1;
+
+    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    const ovphysx_result_t createResult = ovphysx_create_instance(&args, &handle);
+    if (createResult.status != OVPHYSX_API_SUCCESS)
+    {
+        ADD_FAILURE() << "Failed to create an instance with active_cuda_gpus=0";
+        return;
+    }
+
+    int32_t attachCudaSelector = 0;
+    if (!ovphysx_get_attach_cuda_selector_for_test_internal(&attachCudaSelector))
+    {
+        ADD_FAILURE() << "Attach-time CUDA selector is unavailable";
+        EXPECT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+        return;
+    }
+    EXPECT_EQ(attachCudaSelector, -1);
+
+    int32_t multiGpuMode = -1;
+    EXPECT_EQ(ovphysx_get_global_config_int32(
+                  OVPHYSX_CONFIG_SCENE_MULTI_GPU_MODE, &multiGpuMode).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(multiGpuMode, 1);
+
+    const bool attached = test_utils::attach_usd_with_ovstage(
+        handle, OVPHYSX_SOURCE_DIR "/tests/data/minimal_scene.usda");
+    EXPECT_TRUE(attached);
+    if (attached)
+    {
+        EXPECT_TRUE(ovphysx_get_attach_cuda_selector_for_test_internal(&attachCudaSelector));
+        EXPECT_EQ(attachCudaSelector, 0);
+        EXPECT_EQ(ovphysx_get_global_config_int32(
+                      OVPHYSX_CONFIG_SCENE_MULTI_GPU_MODE, &multiGpuMode).status,
+                  OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(multiGpuMode, 0);
+    }
+
+    if (attached)
+    {
+        EXPECT_TRUE(test_utils::destroy_ovstage_test_attachments(handle));
+    }
+    EXPECT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
 }

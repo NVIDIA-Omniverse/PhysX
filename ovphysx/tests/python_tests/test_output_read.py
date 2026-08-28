@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
 
 """Tests for the physics output read API (ADR-0007): PhysX.read over an
 ovstage-attached scene. The read is ovstage-native, so the scene is attached

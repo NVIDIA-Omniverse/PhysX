@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // IsaacLab-style Anymal benchmarks. Quadruped articulation per env, cloned
 // via clone() into N envs. Four ops per size: step / reset / tensor_read /

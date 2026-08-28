@@ -1,6 +1,7 @@
 #!/bin/bash
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Usage: ./pull_dependencies.sh [--config release|debug|all] [--devphysx] [--devschema]
 

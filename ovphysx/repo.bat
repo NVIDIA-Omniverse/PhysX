@@ -1,6 +1,6 @@
 @echo off
-REM SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-REM SPDX-License-Identifier: BSD-3-Clause
+REM SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+REM SPDX-License-Identifier: MIT
 
 :: Set OMNI_REPO_ROOT early so `repo` bootstrapping can target the repository
 :: root when writing out Python dependencies.
@@ -9,6 +9,14 @@ REM SPDX-License-Identifier: BSD-3-Clause
 :: at execution time.
 SETLOCAL ENABLEDELAYEDEXPANSION
 set OMNI_REPO_ROOT="%~dp0"
+
+:: Force Python's UTF-8 Mode (PEP 540) for every interpreter launched by repo_man.
+:: Without this, text-mode open() defaults to the host's ANSI codepage
+:: (e.g. cp932 on Japanese Windows, cp936 on Simplified Chinese, cp1252 on most
+:: Western locales), which raises UnicodeDecodeError on any TOML/JSON/config file
+:: containing bytes that aren't valid in that codepage. SETLOCAL above scopes this
+:: to the lifetime of this batch invocation so we don't pollute the parent shell.
+set PYTHONUTF8=1
 
 :: Set Packman cache directory early if repo-cache.json is configured
 :: so that the Packman Python version is not fetched from the web.

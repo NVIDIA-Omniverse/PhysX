@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 #include "CarboniteLoader/CarboniteLoader.hpp"
 #include "cuda_shim/CudaShim.h"
@@ -11,6 +10,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <mutex>
+#include <random>
+#include <string>
 #include <climits>
 #include <filesystem>
 #include <fstream>
@@ -31,6 +32,8 @@
     #define PATH_MAX MAX_PATH
 #else
     #include <dlfcn.h>
+    #include <fcntl.h>
+    #include <sys/stat.h>
     #include <unistd.h>
 #endif
 
@@ -80,16 +83,22 @@ namespace
     static std::mutex g_bootstrapMutex;
     static bool g_bootstrapDone = false;
     static bool g_usdPreloadDone = false;
+    // Live CarboniteLoaders holding the process-wide framework. Guards teardown of the
+    // process-private cooked-collider cache (see releaseProcessCacheDir).
+    static std::atomic<int> g_activeLoaders{ 0 };
     // Borrowed when reusing a co-tenant's already-loaded OmniClient, otherwise
     // loaded from ovphysx's package path. Intentionally kept resident for the
     // process lifetime. ovphysx is a shared library, not the whole program, so
     // it cannot safely pick a time to call omniClientShutdown().
     static void* g_omniClientLibraryHandle = nullptr;
 
-    // Startup settings that must be applied before PhysX plugins load.
-    // These are process-wide (Carbonite settings are global).
-    // -2 = CPU mode (GPU not requested by user), -1 = auto-select GPU, >=0 = specific GPU ordinal.
-    // Always written by ovphysx_create_instance() via setStartupCudaDevice() before initialize().
+    // Internal Carbonite GPU-plugin bootstrap sentinel. Current ovphysx callers
+    // always pass -2 before initialize() so optional Carbonite GPU plugins are
+    // skipped; PhysX manages its own CUDA context without those plugins.
+    // This does not select the PhysX CUDA ordinal. Explicit active_cuda_gpus
+    // selection is applied immediately before scene attachment. Values other
+    // than -2 are currently unused by ovphysx; that branch is retained to
+    // preserve existing internal CarboniteLoader behavior.
     //
     // Note: /physics/suppressReadback (DirectGPU-API mode) is NOT managed here.
     // It is opt-in by the host: callers who want DirectGPU set the Carbonite
@@ -214,13 +223,13 @@ namespace
     }
 
     // Log level is managed globally by LogManager (ovphysx_set_log_level / ovphysx_get_log_level).
-    // Consolidated GPU-disable check with optional reason string.
-    // GPU is disabled if any of these hold:
+    // Consolidated Carbonite GPU-plugin loading check with optional reason string.
+    // Optional Carbonite GPU plugins are skipped if any of these hold:
     //   1. OVPHYSX_DISABLE_GPU env var is set
-    //   2. User requested CPU mode (cudaDevice == -2)
+    //   2. ovphysx passed its -2 bootstrap sentinel
     //   3. No CUDA driver/device detected at runtime (via the internal CUDA shim)
     //
-    // We short-circuit on (1) and (2) to avoid probing the driver when CPU is explicit.
+    // We short-circuit on (1) and (2) to avoid an unnecessary driver probe.
     //
     // NOTE: Device resolution for AUTO is handled via the same runtime CUDA shim
     // used by PhysX foundation. It never links against libcuda/nvcuda and lets
@@ -245,7 +254,7 @@ namespace
         if (cudaDevice == -2)
         {
             if (outReason)
-                *outReason = "CPU mode requested";
+                *outReason = "Carbonite GPU plugins skipped by ovphysx";
             return true;
         }
 
@@ -460,6 +469,7 @@ bool CarboniteLoader::initialize()
 
         // Re-populate per-instance paths (pluginsDir/usdLibDir) for subsequent tests.
         m->frameworkAcquired = true;
+        g_activeLoaders.fetch_add(1, std::memory_order_relaxed);
         m->pluginsDir = omni::sdk::usd_version::getPluginsDirectory();
         if (!m->pluginsDir.empty())
         {
@@ -596,6 +606,7 @@ bool CarboniteLoader::initialize()
             frameworkAlreadyExisted = true;
     }
     m->frameworkAcquired = true;
+    g_activeLoaders.fetch_add(1, std::memory_order_relaxed);
 
     // Set up logging -- apply the global level and register any pending user callbacks.
     ovphysx::onCarboniteLoggingReady();
@@ -853,13 +864,11 @@ bool CarboniteLoader::initialize()
     {
         
         // ====================================================================
-        // CRITICAL: Apply startup CUDA settings BEFORE PhysX plugins load.
-        //
-        // PhysX foundation startup consults /physics/cudaDevice to choose
-        // the CUDA ordinal. Provided by ovphysx_create_instance() via
-        // CarboniteLoader::setStartupCudaDevice() and applied here (after
-        // carb.settings.plugin is loaded) but before the static PhysX runtime
-        // is started.
+        // Apply process-wide bootstrap settings before PhysX plugins load.
+        // Explicit CPU-only mode must reach the foundation before any CUDA
+        // probe. Device ordinal selection is different: PhysX reads
+        // /physics/cudaDevice lazily when the first GPU scene attaches, so the
+        // public active_cuda_gpus path writes it immediately before attachment.
         //
         // /physics/suppressReadback (DirectGPU-API mode) is NOT applied here.
         // It is opt-in by the host: callers who want DirectGPU set the
@@ -867,9 +876,11 @@ bool CarboniteLoader::initialize()
         // writes this setting because DirectGPU is incompatible with contact
         // modification (used by surface velocity, custom contact callbacks).
         //
-        // /physics/cudaDevice is process-wide and PhysX reads it during plugin
-        // startup. A conflicting pre-set value means the process is already in
-        // a different mode, so fail instead of silently using the wrong mode.
+        // The current public caller passes the -2 bootstrap sentinel below and
+        // leaves /physics/cudaDevice untouched here. The cudaDevice != -2
+        // branch is currently unused by ovphysx and remains only to preserve
+        // existing internal CarboniteLoader behavior; it is not
+        // active_cuda_gpus handling.
         // ====================================================================
         if (::isProcessGpuDisabled())
         {
@@ -905,11 +916,11 @@ bool CarboniteLoader::initialize()
         }
         else
         {
-            // No active_cuda_gpus set: leave /physics/cudaDevice at the PhysX default.
-            // Per-scene device selection (CPU vs GPU dynamics) is owned by PhysX via
-            // physxScene:enableGPUDynamics in USD. Process-wide CPU-only mode is
-            // controlled separately via ovphysx_set_cpu_mode().
-            CARB_LOG_INFO("[CarboniteLoader] Startup: no active_cuda_gpus — /physics/cudaDevice left at default");
+            // The public active_cuda_gpus path deliberately leaves this setting
+            // untouched during bootstrap and applies it immediately before scene
+            // attachment. Process-wide CPU-only mode is controlled separately via
+            // ovphysx_set_cpu_mode().
+            CARB_LOG_INFO("[CarboniteLoader] Startup: CUDA ordinal selection deferred to scene attachment");
         }
 
         // Surface the host-set suppressReadback value at INFO so misconfigurations
@@ -1199,11 +1210,96 @@ namespace
 // /UJITSO/datastore/* at plugin startup) and BEFORE omni.physx.cooking loads (its
 // service reads ujitsoCollisionCooking at construction).
 //
-// The cache directory is APP-PROVIDED: the consuming app passes it via
+// The cache directory is APP-PROVIDED: the app passes it via
 // PhysXConfig(cooked_collider_cache_dir=...) (C: OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY),
-// which is written to /UJITSO/datastore/localCachePath before this runs. ovphysx does
-// not read environment variables and does not pick a location on the app's behalf: if
-// the app configured no directory, cooking simply runs without cross-run persistence.
+// which lands in /UJITSO/datastore/localCachePath before this runs. ovphysx is a library, so it
+// does not read the environment for a location and does not persist to one of its own choosing
+// (3746c9b20f). With nothing configured, cooking runs without cross-run persistence -- but it
+// still needs SOME writable path, because carb.ujitso.default otherwise defaults the datastore
+// to <carb app dir>/cache/DerivedDataCache, and carb's app dir is the resolved interpreter dir,
+// i.e. the non-writable /usr/bin for a Linux venv. carb.datastore then logs two [Error] lines on
+// every scene attach (NVBugs 6504275). So the fallback is a process-private temp dir, discarded
+// on shutdown: no environment lookup, nothing persisted, no errors.
+
+// The process-private cache dir, empty when unused. The datastore and this directory are
+// process-wide and outlive any single instance, so cleanup is refcounted: it happens when the
+// LAST loader shuts down, never on an arbitrary per-instance shutdown that would pull the
+// directory out from under another instance still cooking against it. atexit is a backstop for
+// callers that never shut down (the OS reclaims the temp tree in any case).
+std::filesystem::path g_processCacheDir;
+
+std::string uniqueToken()
+{
+    std::random_device rd;
+    return std::to_string(rd()) + "-" + std::to_string(rd());
+}
+
+// Best effort: on Windows the datastore may still hold files open. The path is kept on failure
+// so a later attempt can retry. Safe to call more than once.
+void releaseProcessCacheDir()
+{
+    if (g_processCacheDir.empty())
+        return;
+    std::error_code ec;
+    std::filesystem::remove_all(g_processCacheDir, ec);
+    if (!ec)
+        g_processCacheDir.clear();
+}
+
+// Create a file in `dir` to prove this process can write there, then remove it. Exclusive
+// create with a process-unique name: it never follows or truncates a pre-existing entry, and
+// only ever removes the entry it just created (cpp:S5443).
+bool canWriteInto(const std::filesystem::path& dir)
+{
+    const std::filesystem::path probe = dir / (".ovphysx-probe-" + uniqueToken());
+#ifdef _WIN32
+    HANDLE h = ::CreateFileW(probe.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW,
+                             FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, nullptr);
+    if (h == INVALID_HANDLE_VALUE)
+        return false;
+    ::CloseHandle(h); // FILE_FLAG_DELETE_ON_CLOSE removes it
+    return true;
+#else
+    const int fd = ::open(probe.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, S_IRUSR | S_IWUSR);
+    if (fd < 0)
+        return false;
+    ::close(fd);
+    std::error_code ec;
+    std::filesystem::remove(probe, ec);
+    return true;
+#endif
+}
+
+// Fresh, process-private cache dir under the OS temp dir. The name is unpredictable and the
+// directory is never adopted from an existing entry, so another local user cannot pre-create or
+// hijack it in a shared temp root.
+std::filesystem::path createProcessCacheDir()
+{
+    std::error_code ec;
+    const std::filesystem::path tempRoot = std::filesystem::temp_directory_path(ec);
+    // A relative TMPDIR would put the cache under whatever cwd the process was launched from.
+    if (ec || !tempRoot.is_absolute())
+        return {};
+
+#ifndef _WIN32
+    // mkdtemp gives an unpredictable name and 0700 in one step, independent of the umask.
+    std::string pattern = (tempRoot / "ovphysx-cache-XXXXXX").string();
+    if (::mkdtemp(pattern.data()) == nullptr)
+        return {};
+    return std::filesystem::path(pattern);
+#else
+    // No mkdtemp on Windows, but the per-user temp dir is already ACL-restricted to its owner.
+    // create_directory fails rather than following a pre-existing entry.
+    for (unsigned attempt = 0; attempt < 64; ++attempt)
+    {
+        std::filesystem::path candidate = tempRoot / ("ovphysx-cache-" + uniqueToken());
+        if (std::filesystem::create_directory(candidate, ec))
+            return candidate;
+    }
+    return {};
+#endif
+}
+
 void configureUjitsoLocalCache(carb::settings::ISettings* settings)
 {
     if (!settings)
@@ -1221,25 +1317,50 @@ void configureUjitsoLocalCache(carb::settings::ISettings* settings)
     // (omni.physx.cooking loads before omni.physx seeds this default -- the seeding race).
     settings->setDefaultBool(omni::physx::kSettingUjitsoCollisionCooking, true);
 
-    // If the app configured a cache directory, make sure it exists so the datastore can
-    // persist to it (a non-writable dir degrades to memory-only). WARN, never fail.
-    const char* cachePath = settings->getStringBuffer("/UJITSO/datastore/localCachePath");
-    if (cachePath && *cachePath)
+    // Nothing to cache to: the app opted out of the local datastore, or out of cooking.
+    if (!settings->getAsBool("/UJITSO/datastore/allowLocalDataStore") ||
+        !settings->getAsBool(omni::physx::kSettingUjitsoCollisionCooking))
+        return;
+
+    // The app configured a dir: create it and confirm it is writable. If it is not, fall through
+    // to the process-private cache -- leaving the unusable path in place would just make
+    // carb.datastore retry it and log the very errors this avoids. WARN, never fail.
+    const char* configured = settings->getStringBuffer("/UJITSO/datastore/localCachePath");
+    if (configured && *configured)
     {
+        // u8path: the app hands us UTF-8 (Python str), which is not the Windows narrow encoding.
+        const std::filesystem::path dir = std::filesystem::u8path(configured);
         std::error_code ec;
-        std::filesystem::create_directories(cachePath, ec);
-        if (!std::filesystem::exists(cachePath))
-        {
-            CARB_LOG_WARN("[CarboniteLoader] Configured UJITSO cooked-collider cache dir '%s' is not "
-                          "writable; cooking will not persist across runs.", cachePath);
-        }
+        std::filesystem::create_directories(dir, ec);
+        if (std::filesystem::is_directory(dir, ec) && canWriteInto(dir))
+            return;
+        CARB_LOG_WARN("[CarboniteLoader] Configured UJITSO cooked-collider cache dir '%s' is not "
+                      "writable; cooking will not persist across runs.", configured);
     }
-    else
+
+    g_processCacheDir = createProcessCacheDir();
+    if (g_processCacheDir.empty())
     {
-        CARB_LOG_INFO("[CarboniteLoader] No cooked-collider cache directory configured "
-                      "(PhysXConfig.cooked_collider_cache_dir); collision cooking runs without "
-                      "cross-run persistence.");
+        // Nowhere writable at all. Suppress the local datastore rather than let
+        // carb.ujitso.default fall back to its unwritable app-dir default.
+        settings->setBool("/UJITSO/datastore/allowLocalDataStore", false);
+        CARB_LOG_WARN("[CarboniteLoader] No writable cooked-collider cache directory available; "
+                      "collision cooking runs uncached.");
+        return;
     }
+
+    // u8string: Carbonite setting strings are UTF-8, while path::string() would convert through
+    // the Windows narrow code page and mangle a non-ASCII temp path.
+    // atexit as well as CarboniteLoader::shutdown(): shutdown is not guaranteed to run (callers
+    // may leave the instance alive and let the OS reclaim at process exit).
+    static std::once_flag cleanupOnce;
+    std::call_once(cleanupOnce, [] { std::atexit(&releaseProcessCacheDir); });
+
+    const std::string dir = g_processCacheDir.u8string();
+    settings->setString("/UJITSO/datastore/localCachePath", dir.c_str());
+    CARB_LOG_INFO("[CarboniteLoader] No cooked-collider cache directory configured "
+                  "(PhysXConfig.cooked_collider_cache_dir); using the process-private cache '%s'. "
+                  "Cooked colliders are discarded at shutdown.", dir.c_str());
 }
 
 } // namespace
@@ -1517,6 +1638,11 @@ void CarboniteLoader::shutdown()
     CARB_LOG_INFO("[CarboniteLoader] Shutdown starting (framework=%p)", static_cast<void*>(carb::getFramework()));
     m->physxSim = nullptr;
     m->frameworkAcquired = false;
+    // The process-private cooked-collider cache is process-wide, like the runtime and the
+    // datastore, so only the LAST loader may remove it -- an earlier one would pull it out from
+    // under an instance still cooking.
+    if (g_activeLoaders.fetch_sub(1, std::memory_order_acq_rel) == 1)
+        releaseProcessCacheDir();
     CARB_LOG_INFO("[CarboniteLoader] Shutdown complete");
 }
 

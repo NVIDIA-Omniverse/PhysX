@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # Developer Guide
 
 Use this guide when you integrate, build, and operate ovphysx in your own application. You learn how to build the SDK, run samples, and apply core runtime rules for synchronization, threading, and resource ownership.
@@ -179,8 +182,9 @@ cache. The cache key includes the mesh geometry, the cooking parameters, the coo
 a cooker/PhysX version token, so a changed mesh, changed parameters, or a different PhysX build
 automatically re-cooks instead of returning a stale shape.
 
-The cache directory is **application-provided**: ovphysx does not read environment variables
-and does not choose a location on your behalf. Set it to enable cross-run persistence:
+The cache directory is **application-provided**: ovphysx does not derive a persistent cache
+location from the environment and does not persist to a location of its own choosing. Set it to
+enable cross-run persistence:
 
 ```python
 import ovstage
@@ -193,16 +197,34 @@ In C, set the `OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY` string config key
 a given cache cooks and stores the result; later runs with an unchanged scene are served from the
 cache without re-cooking.
 
+With no directory configured, nothing is persisted: cooked colliders go to a **process-private**
+directory under the OS temp directory, so every run re-cooks. ovphysx removes that directory at
+process exit; on Windows the removal is best-effort, because the datastore may still hold files
+open, in which case the OS reclaims the temp tree instead. The cache still needs a real path in
+that case -- the underlying datastore has no memory-only mode and would otherwise report an error
+for a path it cannot open -- but nothing is left behind for the next run to reuse. The temp
+location itself follows the platform's `TMPDIR`/`TMP`/`TEMP` convention; what ovphysx will not do
+is derive a *persistent* cache location from the environment. The same process-private fallback is
+used when a configured directory cannot be created or written.
+
+The configured directory is applied when the ovphysx runtime first starts in a process. Once the
+runtime is up, a later `PhysXConfig(cooked_collider_cache_dir=...)` in the same process is not
+picked up -- the datastore is built once. Set it on the first instance, or use a separate process
+per cache location.
+
 Cooked colliders are **not** reused across runs when:
 
 - No `cooked_collider_cache_dir` is configured: cooking still runs, but nothing is persisted, so it re-cooks every run.
-- ovphysx cannot create or write the configured directory: cooked colliders are not persisted across runs (a warning is logged when the directory cannot be created).
+- ovphysx cannot create or write the configured directory: it falls back to the process-private cache, so nothing is persisted (a warning is logged).
 - The mesh, the cooking parameters/type, or the PhysX build changed: the key differs, so the shape is re-cooked (this is correct, not a fault).
 - Collision cooking has been disabled (it is enabled by default).
 
 ovphysx uses UJITSO as a local, in-process cache. (UJITSO can also operate as a distributed cache;
 ovphysx does not use that.) The cache is per-machine, shared only through the directory you
-configure, and it grows without automatic eviction -- delete that directory to reclaim space. If
+configure. It is bounded: the datastore runs disk garbage collection against
+`/UJITSO/datastore/localDataStore/largeChunkDiskBudgetMB` (default 102,400 MB) and
+`smallChunkDiskBudgetMB` (default 1,024 MB), evicting toward the budget once it is exceeded.
+Raise those settings for a larger cache, or delete the directory to reclaim space immediately. If
 collision cooking is enabled but the required UJITSO cache plugins are not loaded, instance creation
 fails fast with a clear error rather than silently cooking uncached.
 
@@ -273,22 +295,25 @@ and only read or write tensors after that step is finished:
 ```python
 import threading
 
-lock = threading.Lock()
+def run_workers(physx, binding, output_buffer, dt):
+    lock = threading.Lock()
 
-def sim_thread(physx, dt):
-    for _ in range(1000):
-        with lock:
-            physx.step_sync(dt)  # mutation completes before lock is released
+    def sim_thread():
+        for _ in range(1000):
+            with lock:
+                physx.step_sync(dt)  # mutation completes before lock is released
 
-def read_thread(physx, binding, buf):
-    for _ in range(1000):
-        with lock:
-            binding.read(buf)    # no concurrent step() on another thread
+    def read_thread():
+        for _ in range(1000):
+            with lock:
+                binding.read(output_buffer)  # no concurrent step on another thread
 
-t1 = threading.Thread(target=sim_thread, args=(physx, dt))
-t2 = threading.Thread(target=read_thread, args=(physx, binding, buf))
-t1.start()
-t2.start()
+    sim_worker = threading.Thread(target=sim_thread)
+    read_worker = threading.Thread(target=read_thread)
+    sim_worker.start()
+    read_worker.start()
+    sim_worker.join()
+    read_worker.join()
 ```
 
 When using asynchronous `step()`, the same rule applies: do not call
@@ -300,11 +325,11 @@ wait; cross-thread use always requires external serialization.
 
 ## Tensor Binding Diagnostics
 
-- Pattern bindings can intentionally match zero prims, so expected TensorAPI
+- Pattern bindings can intentionally match zero physics objects, so expected TensorAPI
   no-match diagnostics are quieted on the simulation view used to create that
   binding.
-- Explicit `prim_paths` keep the default error-level no-match diagnostics for
-  typo detection.
+- Explicit object paths supplied through `prim_paths` keep the default
+  error-level no-match diagnostics for typo detection.
 - To detect partial misses programmatically, compare requested explicit paths
   with Python `binding.prim_paths` or C `ovphysx_tensor_binding_get_prim_paths()`
   after binding creation.
@@ -502,16 +527,15 @@ OmniClient before populating ovstage from a private URL. ovphysx does not wrap
 this (it only consumes an already-populated Stage). The examples below use
 placeholder strings; do not commit real credentials in source code.
 
-- **Python:** use the `omni.client` S3 / Azure configuration API
-  (for example `omni.client.set_s3_configuration(...)` / `set_azure_sas_token(...)`).
-- **C / C++:** call OmniClient directly — `omniClientSetS3Configuration2(...)` /
-  `omniClientSetAzureSASToken(...)`.
+- **Python:** use the `omni.client` S3 / Azure configuration APIs
+  `omni.client.set_s3_configuration` and `omni.client.set_azure_sas_token`.
+- **C / C++:** call OmniClient directly through
+  `omniClientSetS3Configuration2` and `omniClientSetAzureSASToken`.
 
 ```python
 import ovphysx
 import ovstage
-# Configure credentials on the asset layer your app uses, BEFORE population, e.g.:
-#   import omni.client
+# Configure credentials on the asset layer your app uses before population.
 # Configure the access key, secret, and region with omni.client's S3 API.
 
 physx = ovphysx.PhysX()
@@ -523,6 +547,8 @@ ovstage.population.open_usd(
     ordinal=1,
     domains=ovstage.PopulationDomain.PHYSICS,
 )
+# attach_ovstage() reads at a sealed ordinal.
+stage.advance_write_floor(ordinal=1).wait()
 physx.attach_ovstage(stage, read_ordinal=1)
 ```
 
@@ -907,9 +933,13 @@ Important process rules:
 - Sharing a pre-loaded Carbonite PhysX runtime stack is not supported.
 - Kit or Isaac Sim processes that already loaded their physics extensions are
   not supported ovphysx embedding targets.
-- Device settings are process-global. If `/physics/cudaDevice` or
-  `/physics/suppressReadback` is already set to a conflicting value,
-  `ovphysx_create_instance()` fails instead of silently using the wrong mode.
+- Use `active_cuda_gpus` for CUDA device selection. ovphysx applies an explicit
+  selection as part of serialized scene attachment; other subsystems must not
+  reconfigure physics GPU selection during that attachment. A non-empty
+  `active_cuda_gpus` value takes precedence over `scene_multi_gpu_mode`. The
+  expert DirectGPU setting `/physics/suppressReadback` is host-managed and
+  should be configured before instance creation rather than changed while
+  physics is active.
 - If another Carbonite user already set the app directory, ovphysx preserves it.
 
 Schema-path registration governs coexistence in the *process*. If the subsystems
@@ -1032,6 +1062,8 @@ stage = ovstage.Stage("recorded-scene")
 ovstage.population.open_usd(
     stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
 )
+# attach_ovstage() reads at a sealed ordinal.
+stage.advance_write_floor(ordinal=1).wait()
 physx.attach_ovstage(stage, read_ordinal=1)
 for i in range(100):
     physx.step_sync(1/60)

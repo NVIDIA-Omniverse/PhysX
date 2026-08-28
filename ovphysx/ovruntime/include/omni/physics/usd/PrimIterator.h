@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
+
 /**
  * Polymorphic prim iterators that abstract over whole-stage USD
  * traversal, single-prim-range traversal, and prim-map-driven

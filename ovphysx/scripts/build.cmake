@@ -360,6 +360,17 @@ if(WIN32)
         set(VSWHERE "$ENV{ProgramFiles\(x86\)}/Microsoft Visual Studio/Installer/vswhere.exe")
     endif()
 
+    # Put vswhere on PATH for the CMake invocations below. CMake enumerates VS
+    # instances through the VS Installer COM API, falling back to vswhere.exe;
+    # with neither available it gives up before considering
+    # CMAKE_GENERATOR_INSTANCE and rejects even a fully packaged MSVC. A
+    # reachable vswhere lets that enumeration succeed (empty list), so CMake
+    # goes on to accept the packaged instance from disk.
+    if(EXISTS "${VSWHERE}")
+        get_filename_component(VSWHERE_DIR "${VSWHERE}" DIRECTORY)
+        set(ENV{PATH} "${VSWHERE_DIR};$ENV{PATH}")
+    endif()
+
     # ---- Toolchain mode ----
     # Internal checkouts pull the packaged MSVC/WinSDK via packman. The public
     # source drop does not ship them (non-redistributable, not on the public
@@ -420,47 +431,9 @@ if(WIN32)
     endif()
     set(MSBUILD_EXE "${MSVC_ROOT}/MSBuild/Current/Bin/MSBuild.exe")
 
-    # ---- Discover MSVC tools version (e.g., 14.29.30133); use the newest ----
-    file(GLOB MSVC_TOOLS_DIRS "${MSVC_ROOT}/VC/Tools/MSVC/*")
-    if(NOT MSVC_TOOLS_DIRS)
-        message(FATAL_ERROR "MSVC tools not found in ${MSVC_ROOT}/VC/Tools/MSVC/")
-    endif()
-    list(SORT MSVC_TOOLS_DIRS)
-    list(GET MSVC_TOOLS_DIRS -1 MSVC_TOOLS_DIR)
-    message(STATUS "  Found MSVC tools: ${MSVC_TOOLS_DIR}")
-
-    # ---- Discover WinSDK layout (flat vs versioned) ----
-    if(EXISTS "${WINSDK_ROOT}/Include/ucrt")
-        # Flat structure (packaged WinSDK)
-        set(WINSDK_INCLUDE_BASE "${WINSDK_ROOT}/Include")
-        set(WINSDK_LIB_BASE "${WINSDK_ROOT}/Lib")
-        set(WINSDK_BIN_BASE "${WINSDK_ROOT}/bin")
-        message(STATUS "  Found WinSDK (flat structure)")
-    else()
-        # Versioned structure (full WinSDK installation); use the newest
-        file(GLOB WINSDK_VERSION_DIRS "${WINSDK_ROOT}/Include/10.*")
-        if(NOT WINSDK_VERSION_DIRS)
-            message(FATAL_ERROR "WinSDK include not found in ${WINSDK_ROOT}/Include/")
-        endif()
-        list(SORT WINSDK_VERSION_DIRS)
-        list(GET WINSDK_VERSION_DIRS -1 WINSDK_VERSION_DIR)
-        get_filename_component(WINSDK_VERSION "${WINSDK_VERSION_DIR}" NAME)
-        set(WINSDK_INCLUDE_BASE "${WINSDK_ROOT}/Include/${WINSDK_VERSION}")
-        set(WINSDK_LIB_BASE "${WINSDK_ROOT}/Lib/${WINSDK_VERSION}")
-        set(WINSDK_BIN_BASE "${WINSDK_ROOT}/bin/${WINSDK_VERSION}")
-        message(STATUS "  Found WinSDK version: ${WINSDK_VERSION}")
-    endif()
-
-    # ---- Compute all include/lib/bin paths (shared by both generators) ----
-    set(MSVC_BIN_DIR "${MSVC_TOOLS_DIR}/bin/Hostx64/x64")
-    set(WINSDK_BIN_DIR "${WINSDK_BIN_BASE}/x64")
-    set(MSVC_INCLUDE "${MSVC_TOOLS_DIR}/include")
-    set(MSVC_LIB "${MSVC_TOOLS_DIR}/lib/x64")
-    set(WINSDK_UCRT_INCLUDE "${WINSDK_INCLUDE_BASE}/ucrt")
-    set(WINSDK_UM_INCLUDE "${WINSDK_INCLUDE_BASE}/um")
-    set(WINSDK_SHARED_INCLUDE "${WINSDK_INCLUDE_BASE}/shared")
-    set(WINSDK_UCRT_LIB "${WINSDK_LIB_BASE}/ucrt/x64")
-    set(WINSDK_UM_LIB "${WINSDK_LIB_BASE}/um/x64")
+    # ---- Discover the MSVC/WinSDK include, lib and bin layout ----
+    # (shared with the standalone sample builds; see scripts/host_toolchain.cmake)
+    ovphysx_resolve_msvc_layout("${MSVC_ROOT}" "${WINSDK_ROOT}")
 
     if(NOT EXISTS "${MSVC_BIN_DIR}/cl.exe")
         message(FATAL_ERROR "cl.exe not found at ${MSVC_BIN_DIR}\n"
@@ -744,6 +717,17 @@ if(WIN32)
         set(ENV{LIB} "${MSVC_LIB};${WINSDK_UCRT_LIB};${WINSDK_UM_LIB}")
 
         if(TOOLCHAIN_MODE STREQUAL "packaged")
+            # CMake accepts a portable (unregistered) VS instance only if it can
+            # read the default toolset version from this marker and finds the
+            # matching VC/Tools/MSVC/<version>. The packman MSVC does not ship
+            # the Auxiliary/Build tree, so synthesize it.
+            set(_vctools_default_file
+                "${MSVC_ROOT}/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt")
+            if(NOT EXISTS "${_vctools_default_file}")
+                file(WRITE "${_vctools_default_file}" "${_vc_tools_version}\n")
+                message(STATUS "  Created missing toolset marker: ${_vctools_default_file}")
+            endif()
+
             # Ensure the exact toolset props file exists for imports generated
             # during compiler-id checks. A local VS installation ships the real
             # props file and must never be written into.

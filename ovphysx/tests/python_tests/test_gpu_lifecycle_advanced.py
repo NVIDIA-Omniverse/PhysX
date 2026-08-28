@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """GPU-mode lifecycle and state-management tests.
 
 Covers gaps not addressed by test_tensor_bindings_api_gpu.py or the GPU session

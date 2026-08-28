@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // Trivial smoke benchmark used to validate the harness loop, output and
 // golden compare. Does no real work -- it just spends a fixed amount of CPU

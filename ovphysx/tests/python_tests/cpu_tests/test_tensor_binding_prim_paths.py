@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """Tests for TensorBinding.prim_paths property.
 
 Complements the existing prim_paths coverage in test_tensor_bindings_api.py

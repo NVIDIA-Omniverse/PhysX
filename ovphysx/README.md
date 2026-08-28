@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # ovphysx — USD-native physics simulation library, no Omniverse Kit installation required
 
 > **`pip install ovphysx`** · Real-time, GPU-accelerated physics from a USD scene to ML-ready tensors in a handful of lines. Powered by the NVIDIA PhysX SDK.
@@ -86,6 +89,8 @@ stage = ovstage.Stage("scene")
 ovstage.population.open_usd(
     stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
 )
+# attach_ovstage() reads at a sealed ordinal.
+stage.advance_write_floor(ordinal=1).wait()
 
 physx = PhysX()
 physx.attach_ovstage(stage, read_ordinal=1)
@@ -126,6 +131,8 @@ stage = ovstage.Stage("scene")
 ovstage.population.open_usd(
     stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
 )
+# attach_ovstage() reads at a sealed ordinal.
+stage.advance_write_floor(ordinal=1).wait()
 physx.attach_ovstage(stage, read_ordinal=1)
 physx.wait_all()
 

@@ -1,6 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
+
+/**
+ * @implements REQ-PARSE-CORE-003
+ * @covers AC-6
+ *
+ * @implements REQ-PARSE-SCAN-001
+ * @covers AC-16
+ */
 
 #include "OvstageSource.h"
 
@@ -1418,6 +1425,31 @@ void OvstageSource::buildChildCache() const
         }
     }
 
+    // Ovstage publishes sibling groups in an order that can vary with process
+    // history. Sort every complete child list by path so traversal order depends
+    // only on the populated stage. The handle is a total-order tiebreaker for the
+    // degenerate case where two handles resolve to the same path.
+    for (std::pair<const uint64_t, std::vector<uint64_t>>& entry : mChildCache)
+    {
+        std::vector<uint64_t>& children = entry.second;
+        if (children.size() < 2)
+            continue;
+
+        std::vector<std::pair<std::string, uint64_t>> sorted;
+        sorted.reserve(children.size());
+        for (const uint64_t child : children)
+            sorted.emplace_back(pathOf(ObjectKey{ child }), child);
+        std::sort(sorted.begin(), sorted.end(),
+                  [](const std::pair<std::string, uint64_t>& a, const std::pair<std::string, uint64_t>& b)
+                  {
+                      if (a.first != b.first)
+                          return a.first < b.first;
+                      return a.second < b.second;
+                  });
+        for (size_t i = 0; i < sorted.size(); ++i)
+            children[i] = sorted[i].second;
+    }
+
     // Trust the negative-leaf fast path in forEachChild() only when the
     // authoritative usd-path enumeration completed cleanly (terminated at
     // END_OF_ITERATION) and produced rows. A transient or partial read must not
@@ -1617,6 +1649,9 @@ void OvstageSource::forEachChild(ObjectKey parent, std::function<void(ObjectKey)
     range.end_ordinal = ~ovstage_ordinal_t(0); // latest
     range.has_start_ordinal = false;
 
+    // The live fallback must provide the same stage-derived ordering contract as
+    // the cache. Collect across all read groups, then emit in path order.
+    std::vector<std::pair<std::string, ObjectKey>> matched;
     for (const ovx_token_t probe : probes)
     {
         ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
@@ -1638,12 +1673,12 @@ void OvstageSource::forEachChild(ObjectKey parent, std::function<void(ObjectKey)
                     if (idx >= count)
                         continue;
                     const ObjectKey childKey{ paths[idx] };
-                    const std::string childPath = pathOf(childKey);
+                    std::string childPath = pathOf(childKey);
                     if (childPath.size() > prefix.size() &&
                         childPath.compare(0, prefix.size(), prefix) == 0 &&
                         childPath.find('/', prefix.size()) == std::string::npos)
                     {
-                        emitChild(childKey);
+                        matched.emplace_back(std::move(childPath), childKey);
                     }
                 }
             }
@@ -1651,6 +1686,15 @@ void OvstageSource::forEachChild(ObjectKey parent, std::function<void(ObjectKey)
         }
         waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
     }
+    std::sort(matched.begin(), matched.end(),
+              [](const std::pair<std::string, ObjectKey>& a, const std::pair<std::string, ObjectKey>& b)
+              {
+                  if (a.first != b.first)
+                      return a.first < b.first;
+                  return a.second.handle < b.second.handle;
+              });
+    for (const std::pair<std::string, ObjectKey>& child : matched)
+        emitChild(child.second);
     waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
 }
 

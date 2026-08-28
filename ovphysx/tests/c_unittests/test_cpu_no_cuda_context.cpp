@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // CpuNoCudaContextGpuTest: on a GPU-capable box, calling ovphysx_set_cpu_mode(true)
 // before creating an instance and stepping must NOT open a CUDA context. This is

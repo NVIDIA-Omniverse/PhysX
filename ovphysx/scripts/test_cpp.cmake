@@ -7,9 +7,10 @@
 #
 # The device mode (CPU vs GPU) and lifecycle refs are process-global. Tests run
 # in separate processes so those locks and refs start clean for each pass:
-#   Pass 1: GPU tests              (filter: *GpuTest*)          -- GPU lock
-#   Pass 2: Global lifecycle tests (filter: GlobalLifecycle.*)  -- clean refs
-#   Pass 3: Non-GPU tests          (filter: -*GpuTest*:GlobalLifecycle.*) -- CPU lock
+#   Attach-time CUDA selection test (isolated process)         -- clean selector
+#   Remaining GPU tests       (filter: *GpuTest*)               -- GPU lock
+#   Global lifecycle tests    (filter: GlobalLifecycle.*)       -- clean refs
+#   Non-GPU tests             (filter: -*GpuTest*:GlobalLifecycle.*) -- CPU lock
 #
 # Prerequisite: cmake -P scripts/build.cmake && cmake -P scripts/install.cmake
 
@@ -195,39 +196,45 @@ function(run_gtest_pass _P_LABEL _P_FILTER)
 endfunction()
 
 # -------------------------------------------------------------------------
-# Pass 1 - GPU tests (separate process; if CUDA is present tests will use GPU).
-# Exclude CpuNoCudaContextGpuTest: it must run in a process where no GPU test
-# has yet created a CUDA context (see Pass 3), so it is routed to its own pass.
+# Attach-time CUDA selection runs in a fresh process so the selector starts at
+# automatic (-1) before the OVStage attach under test.
+# -------------------------------------------------------------------------
+run_gtest_pass("cuda-selection-attach" "ActiveCudaGpusAttachTest.*")
+
+# -------------------------------------------------------------------------
+# Remaining GPU tests. The CPU-no-CUDA-context test also requires a fresh
+# process and is routed to its own pass below.
 # -------------------------------------------------------------------------
 run_gtest_pass("gpu" "*GpuTest*:-CpuNoCudaContextGpuTest.*")
 
 # -------------------------------------------------------------------------
-# Pass 2 - Global lifecycle tests (own process so runtime refs start clean)
+# Global lifecycle tests (own process so runtime refs start clean)
 # -------------------------------------------------------------------------
 run_gtest_pass("lifecycle" "GlobalLifecycle.*")
 
 # -------------------------------------------------------------------------
-# Pass 3 - Non-GPU tests
+# Non-GPU tests
 # -------------------------------------------------------------------------
-run_gtest_pass("cpu" "-*GpuTest*:GlobalLifecycle.*")
+run_gtest_pass("cpu" "-*GpuTest*:GlobalLifecycle.*:ActiveCudaGpusAttachTest.*")
 
 # -------------------------------------------------------------------------
-# Pass 4 - CPU-no-CUDA-context contract (own fresh process). On a GPU box, a
+# CPU-no-CUDA-context contract (own fresh process). On a GPU box, a
 # cpu_only instance must not open a CUDA context. Isolated so the primary-context
 # probe starts from a clean state; self-skips on CPU-only runners.
 # -------------------------------------------------------------------------
 run_gtest_pass("cpu-no-cuda-context" "CpuNoCudaContextGpuTest.*")
 
 # -------------------------------------------------------------------------
-# Pass 5 - isolated checked token-scope sidecar bridge tests.
+# Isolated checked token-scope sidecar bridge tests.
 # -------------------------------------------------------------------------
 run_gtest_pass("sidecar-token-scope" "*" "${SIDECAR_GTEST_EXECUTABLE}")
 
 # -------------------------------------------------------------------------
-# Check for simulation stage leaks across both passes
+# Check for simulation stage leaks across all passes
 # -------------------------------------------------------------------------
 set(GTEST_ALL_OUTPUT "")
 foreach(_LEAK_LOG
+    "${TEST_RESULTS_DIR}/gtest_cuda-selection-attach.log"
     "${TEST_RESULTS_DIR}/gtest_gpu.log"
     "${TEST_RESULTS_DIR}/gtest_lifecycle.log"
     "${TEST_RESULTS_DIR}/gtest_cpu.log"

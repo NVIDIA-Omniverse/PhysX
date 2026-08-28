@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
+
 #pragma once
 
 // Header-only SdfPath <-> integer encoding helpers: reinterpret SdfPath's internal 8-byte

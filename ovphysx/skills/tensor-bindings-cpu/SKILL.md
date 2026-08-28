@@ -11,7 +11,9 @@ metadata:
 
 # Tensor Bindings: CPU Read and Write
 
-Tensor bindings map USD prim patterns to typed tensor views, enabling bulk data exchange with NumPy, PyTorch, Warp, or any other DLPack-compatible framework.
+Tensor bindings map physics-object path patterns to typed tensor views, including
+authored USD objects and runtime-only clones. This enables bulk data exchange with
+NumPy, PyTorch, Warp, or any other DLPack-compatible framework.
 
 ## When to Use
 
@@ -20,7 +22,9 @@ Use this skill when a caller needs bulk CPU tensor reads or writes for simulatio
 ## Instructions
 
 1. Read `docs/tutorials/tensor_bindings.md` and the sample for the caller's language before changing code.
-2. Populate an ovstage, attach it at that ordinal, create bindings once from stable prim patterns, then reuse them to read or write tensors with the binding shape and dtype.
+2. Populate an ovstage, attach it at that ordinal, create bindings once from stable
+   physics-object path patterns, then reuse them to read or write tensors with the
+   binding shape and dtype.
 3. Use Shell to run the Python sample or compile the C sample after adapting the scene path and tensor type.
 
 ## Python
@@ -35,15 +39,17 @@ PhysX.set_cpu_mode(True)
 physx = PhysX()
 stage = ovstage.Stage("ovphysx-tensors")
 ovstage.population.open_usd(stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+# attach_ovstage() reads at a sealed ordinal.
+stage.advance_write_floor(ordinal=1).wait()
 physx.attach_ovstage(stage, read_ordinal=1)
 
-# Write a control-input binding (targets you set) ...
+# Write a control-input binding for targets you set.
 velocity_target_binding = physx.create_tensor_binding(
     pattern="/World/articulation/articulationLink*",
     tensor_type=TensorType.ARTICULATION_DOF_VELOCITY_TARGET,
 )
 
-# ... and a separate binding for the simulated state you read back.
+# Use a separate binding for the simulated state you read back.
 link_pose_binding = physx.create_tensor_binding(
     pattern="/World/articulation/articulationLink*",
     tensor_type=TensorType.ARTICULATION_LINK_POSE,
@@ -117,7 +123,7 @@ TensorBindings supports selectively applying actions without changing the bindin
   - C: `ovphysx_write_tensor_binding_masked()`
 - **Indexed write**: pass an int32 index tensor of shape `[K]` (rows to update).
   - Python: `binding.write(tensor, indices=indices)`
-  - C: `ovphysx_write_tensor_binding(..., index_tensor)`
+  - C: `ovphysx_write_tensor_binding(handle, binding_handle, &src_tensor, &index_tensor)`
 
 ## References
 

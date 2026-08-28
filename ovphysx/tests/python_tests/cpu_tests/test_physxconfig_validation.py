@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """Pure-Python validation tests for PhysXConfig.__post_init__.
 
 No PhysX SDK instance is needed — these tests only exercise the dataclass

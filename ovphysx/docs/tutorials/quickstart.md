@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # Quickstart
 
 ovphysx is an SDK for ovstage/USD-based physics simulation, available as a Python wheel and a C/C++ package.
@@ -32,6 +35,8 @@ stage = ovstage.Stage("scene")
 ovstage.population.open_usd(
     stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
 )
+# attach_ovstage() reads at a sealed ordinal.
+stage.advance_write_floor(ordinal=1).wait()
 
 physx = PhysX()
 physx.attach_ovstage(stage, read_ordinal=1)

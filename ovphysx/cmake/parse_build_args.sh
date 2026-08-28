@@ -1,6 +1,7 @@
 #!/bin/bash
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Shared argument parser for build scripts (ovphysx, ovruntime).
 # Source this file to parse unified build flags.

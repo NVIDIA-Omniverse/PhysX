@@ -1,6 +1,9 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # Tensor Bindings: Read and Write Simulation Data
 
-This tutorial shows how to read and write simulation data through tensor bindings after you attach an ovstage-populated scene. You learn how to use path patterns to bind multiple prims in one call.
+This tutorial shows how to read and write simulation data through tensor bindings after you attach an ovstage-populated scene. You learn how to use path patterns to bind multiple physics objects in one call, including runtime-only clone paths.
 
 ## Prerequisites
 
@@ -39,10 +42,10 @@ DirectGPU TensorAPI before creating the `PhysX` instance with
 
 ## Empty Optional Bindings
 
-A tensor binding that matches zero prims is valid. This is useful when absence
+A tensor binding that matches zero physics objects is valid. This is useful when absence
 is a legitimate result for the current scene, such as optional assets or broad
 inspection queries. Empty bindings remain zero-count views; if topology changes
-and matching prims are added or recreated, destroy the old binding and create a
+and matching physics objects are added or recreated, destroy the old binding and create a
 new one. For optional queries, keep the default `raise_if_empty=False` and
 check `binding.count` before allocating or reading tensors. Use
 `raise_if_empty=True` only when zero matches are a configuration error for your
@@ -65,7 +68,7 @@ Create them after loading USD and reuse them across simulation steps. A normal
 `step()` or `step_sync()` does not invalidate a binding.
 
 Do not keep cached bindings across application-owned topology changes. Before
-`reset()`, before removing USD data that contains bound objects, or before
+`reset_stage()`, before removing USD data that contains bound objects, or before
 loading or reparsing a stage so bound objects are destroyed and recreated,
 destroy cached bindings when practical. If a stale binding survives one of those
 lifecycle operations, only destroy it; do not read or write through it. Create a
@@ -136,8 +139,8 @@ acceleration, force, and wrench use the simulation device.
 
 For Python bindings, `binding.prim_paths` returns row metadata only; tensor
 reads and writes keep using the shapes above. Rigid-body bindings return one
-rigid body prim path per row. Articulation bindings return one articulation
-root prim path per `A` row; link names remain available through
+rigid-body object path per row. Articulation bindings return one articulation
+root object path per `A` row; link names remain available through
 `binding.body_names`.
 
 **Rigid Body Shape Properties**

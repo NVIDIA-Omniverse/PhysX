@@ -22,7 +22,6 @@ import time
 import hashlib
 from typing import Any, Callable, Union
 
-
 RENAME_RETRY_COUNT = 100
 RENAME_RETRY_DELAY = 0.1
 
@@ -134,6 +133,7 @@ def rename_folder_with_retry(staging_dir: StagingDirectory, folder_name):
 def generate_sha256_for_file(file_path: Union[str, os.PathLike]) -> str:
     """Returns the SHA-256 hex digest for the file at `file_path`"""
     hash = hashlib.sha256()
+    # Read the file in binary mode and update the hash object with data
     with open(file_path, "rb") as file:
         for chunk in iter(lambda: file.read(4096), b""):
             hash.update(chunk)
@@ -141,7 +141,7 @@ def generate_sha256_for_file(file_path: Union[str, os.PathLike]) -> str:
 
 
 def install_common_module(package_path, install_path):
-    COMMON_SHA256 = "09f0615cbc788ce4043c32275732bd020463f008fd90336f3a944bbafa3f81dc"
+    COMMON_SHA256 = "be14504cef37be569fea949fe7c778963841b63fdf459d9b25d8a99a0570caf3"
     package_sha256 = generate_sha256_for_file(package_path)
     if package_sha256 != COMMON_SHA256:
         raise RuntimeError(
@@ -154,6 +154,7 @@ def install_common_module(package_path, install_path):
         with zipfile.ZipFile(package_path, allowZip64=True) as zip_file:
             zip_file.extractall(output_folder)
 
+            # attempt the rename operation
             rename_folder_with_retry(staging_dir, version)
 
     print(f"Package successfully installed to {install_path}")

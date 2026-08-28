@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // Clone scaling benchmarks: replicate /World/envs/env0 from
 // basic_simulation.usda into N target paths. GPU-only.

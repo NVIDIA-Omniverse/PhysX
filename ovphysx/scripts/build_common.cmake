@@ -7,6 +7,7 @@
 get_filename_component(SCRIPT_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 get_filename_component(PROJECT_ROOT "${SCRIPT_DIR}/.." ABSOLUTE)
 include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
+include("${SCRIPT_DIR}/host_toolchain.cmake")
 
 if(NOT DEFINED BUILD_TYPE)
     set(BUILD_TYPE "Release")

@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
+
 /**
  * Whole-stage scan implementation — see ADR-0002 for the architecture
  * and ADR-0003 for the native USD driver design. This file is the

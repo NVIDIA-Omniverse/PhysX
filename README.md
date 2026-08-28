@@ -47,7 +47,7 @@ This repo contains:
 
 | Release | Compatibility |
 |---|---|
-| [0.5](https://github.com/NVIDIA-Omniverse/PhysX/tree/ovphysx-0.5.10) | PhysX SDK 5.10.0 |
+| [0.5](https://github.com/NVIDIA-Omniverse/PhysX/tree/ovphysx-0.5.11) | PhysX SDK 5.10.0 |
 | [0.4](https://github.com/NVIDIA-Omniverse/PhysX/tree/ovphysx-0.4.13) | PhysX SDK 5.9.0 |
 | [0.3](https://github.com/NVIDIA-Omniverse/PhysX/tree/ovphysx-0.3.7) | PhysX SDK 5.9.0 |
 | [0.2](https://github.com/NVIDIA-Omniverse/PhysX/tree/ovphysx-0.2.9) | PhysX SDK 5.8.0 |

@@ -1,9 +1,13 @@
-:: RUN_PM_MODULE must always be at the same spot for packman update to work (batch reloads file during update!) 
-:: [xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]
-:: Reset errorlevel status (don't inherit from caller) 
+:: SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+:: SPDX-License-Identifier: Apache-2.0
+:: pad [xxxx]
 @call :ECHO_AND_RESET_ERROR
 
-:: You can remove this section if you do your own manual configuration of the dev machines
+set PM_PACKMAN_VERSION=8.5.0
+set PM_PYTHON_VERSION=3.12.13-nv6-windows-x86_64
+set PM_PACKMAN_COMMON_SHA256=be14504cef37be569fea949fe7c778963841b63fdf459d9b25d8a99a0570caf3
+
+:: Optional configuration for local dev
 call :CONFIGURE
 if %errorlevel% neq 0 ( exit /b %errorlevel% )
 
@@ -21,8 +25,9 @@ if "%1"=="install" goto :SET_VAR_PATH
 if %errorlevel% neq 0 ( exit /b %errorlevel% )
 
 :: Marshall environment variables into the current environment if they have been generated and remove temporary file
+if not defined PM_VAR_PATH_ARG goto :eof
 if exist "%PM_VAR_PATH%" (
-	for /F "usebackq tokens=*" %%A in ("%PM_VAR_PATH%") do set "%%A"
+	for /F "usebackq tokens=*" %%A in (`findstr /R /X "PM_[A-Za-z0-9_]*=.*" "%PM_VAR_PATH%"`) do set "%%A"
 )
 if %errorlevel% neq 0 ( goto :VAR_ERROR )
 
@@ -77,20 +82,19 @@ set PM_OLD_CODE_PAGE=%PM_OLD_CODE_PAGE:~1%
 if "%PM_OLD_CODE_PAGE%" equ "65001" (
 	chcp 437 > nul 2>&1 && set PM_RESTORE_CODE_PAGE=1
 )
-set "PM_CONFIG_OUTPUT=%TEMP%\packman-configure-%RANDOM%%RANDOM%.tmp"
-powershell -ExecutionPolicy ByPass -NoLogo -NoProfile -File "%~dp0\bootstrap\configure.ps1" > "%PM_CONFIG_OUTPUT%"
-set PM_CONFIG_ERRORLEVEL=%errorlevel%
-if %PM_CONFIG_ERRORLEVEL% equ 0 (
-	for /f "usebackq delims=" %%A in ("%PM_CONFIG_OUTPUT%") do set "%%A"
-)
-if exist "%PM_CONFIG_OUTPUT%" (
-	del /F "%PM_CONFIG_OUTPUT%" > nul
+:: Capture configure.ps1 stdout directly via `for /f` instead of a shared file since those get messy
+:: and we can run into race conditions. The trailing `&& echo PM_CONFIGURE_OK=1` sentinel lets us
+:: recover the exit status that `for /f` would otherwise swallow.
+set PM_CONFIG_ERRORLEVEL=1
+for /f "delims=" %%A in ('powershell -ExecutionPolicy ByPass -NoLogo -NoProfile -File "%~dp0\bootstrap\configure.ps1" -PackmanVersion "%PM_PACKMAN_VERSION%" -PythonVersion "%PM_PYTHON_VERSION%" -PackmanCommonSha256 "%PM_PACKMAN_COMMON_SHA256%" ^&^& echo PM_CONFIGURE_OK^=1') do set "%%A"
+if defined PM_CONFIGURE_OK (
+	set PM_CONFIG_ERRORLEVEL=0
+	set "PM_CONFIGURE_OK="
 )
 if defined PM_RESTORE_CODE_PAGE (
 	:: Restore code page
 	chcp %PM_OLD_CODE_PAGE% > nul
 )
 set PM_OLD_CODE_PAGE=
-set PM_CONFIG_OUTPUT=
 set PM_RESTORE_CODE_PAGE=
 exit /b %PM_CONFIG_ERRORLEVEL%

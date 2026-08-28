@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """Regression for OMPE-91565: importing ovphysx must not set PYTHONHOME.
 
 Older ovphysx wheel-mode bootstrap set ``os.environ["PYTHONHOME"] = sys.prefix``

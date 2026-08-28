@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """GPU SDF view lifecycle tests (NVBug 6473872).
 
 Regression guards for undisposed or stale SdfView handles across reset_stage()

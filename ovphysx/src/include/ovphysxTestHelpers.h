@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 #pragma once
 
@@ -46,6 +45,17 @@ OVPHYSX_API void* ovphysx_get_optional_cuda_internal(void);
  * @return Opaque pointer to omni::physics::tensors::TensorApi (cast to void*), or nullptr
  */
 OVPHYSX_API void* ovphysx_get_tensor_api_internal(void);
+
+/**
+ * @brief Read the process-global attach-time CUDA selector for an isolated test.
+ *
+ * This is a test-only observation of private runtime state, not the device of
+ * an actual CUDA context or independent state owned by each ovphysx handle.
+ *
+ * @param out_value [out] Receives the current integer value
+ * @return true when the setting exists as an integer, false otherwise
+ */
+OVPHYSX_API bool ovphysx_get_attach_cuda_selector_for_test_internal(int32_t* out_value);
 
 /**
  * @brief Reset schema-path registration one-shot state for isolated unit tests.

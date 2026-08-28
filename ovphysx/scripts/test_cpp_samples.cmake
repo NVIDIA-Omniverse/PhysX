@@ -123,6 +123,13 @@ if(EXISTS "${C_SAMPLES_INTERNAL_DIR}")
     list(APPEND SAMPLE_DIRS ${INTERNAL_SAMPLE_DIRS})
 endif()
 
+# Build with the packaged toolchain the SDK was built with, not whatever Visual
+# Studio the machine has. Resolved once; also exports INCLUDE/LIB/PATH here.
+set(SAMPLE_TOOLCHAIN_ARGS "")
+if(NOT SAMPLES_RUN_ONLY)
+    ovphysx_pin_packaged_host_toolchain(SAMPLE_TOOLCHAIN_ARGS)
+endif()
+
 set(SAMPLES_RUN 0)
 set(SAMPLES_PASSED 0)
 set(SAMPLES_FAILED 0)
@@ -170,6 +177,7 @@ foreach(SAMPLE_DIR ${SAMPLE_DIRS})
         set(SAMPLE_CMAKE_ARGS
             -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
             "-DCMAKE_PREFIX_PATH=${PROJECT_ROOT}/_install\\;${OVPHYSX_OVSTAGE_ROOT}"
+            ${SAMPLE_TOOLCHAIN_ARGS}
         )
 
         # Add GCC/Clang-specific flags only on non-Windows platforms

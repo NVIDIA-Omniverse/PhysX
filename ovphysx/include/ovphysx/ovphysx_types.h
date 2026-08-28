@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 #ifndef OVPHYSX_TYPES_H
 #define OVPHYSX_TYPES_H
@@ -202,7 +201,7 @@ extern "C"
     /*--------------------------------------------------*/
 
     /**
-     * Identifies the type of PhysX object at a USD prim path.
+     * Identifies the type of PhysX object at a physics-object path.
      *
      * Used with ovphysx_get_physx_ptr() to retrieve raw PhysX SDK pointers.
      * The named constants below cover common runtime object types. Unknown
@@ -1135,12 +1134,12 @@ extern "C"
     /**
      * Descriptor for creating a tensor binding.
      * 
-     * A tensor binding connects a list of USD prim paths to a tensor type, enabling bulk
-     * read/write of physics data for all matching prims.
+     * A tensor binding connects physics-object paths to a tensor type, enabling bulk
+     * read/write of physics data for authored USD objects and runtime-only clones.
      * 
      * Prim selection (mutually exclusive - use ONE of these):
      *   - pattern: Glob pattern like "/World/robot*" or "/World/env[N]/robot"
-     *   - prim_paths: Explicit list of exact prim paths
+     *   - prim_paths: Explicit list of exact physics-object paths
      * 
      * Precedence rules:
      *   1. If prim_paths != NULL AND prim_paths_count > 0, uses explicit paths
@@ -1155,7 +1154,7 @@ extern "C"
      *       .tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32
      *   };
      * 
-     * Example with explicit prim paths:
+     * Example with explicit physics-object paths:
      *   ovphysx_string_t paths[] = {
      *       OVPHYSX_LITERAL("/World/env1/robot"),
      *       OVPHYSX_LITERAL("/World/env4/robot"),
@@ -1169,9 +1168,9 @@ extern "C"
      */
     typedef struct
     {
-        ovphysx_string_t pattern;                /**< USD path glob pattern (ignored if prim_paths is set) */
-        const ovphysx_string_t* prim_paths;      /**< Explicit list of exact prim paths (NULL = use pattern) */
-        uint32_t prim_paths_count;               /**< Number of prim paths (0 = use pattern) */
+        ovphysx_string_t pattern;                /**< Physics-object path glob (ignored if prim_paths is set) */
+        const ovphysx_string_t* prim_paths;      /**< Explicit list of exact object paths (NULL = use pattern) */
+        uint32_t prim_paths_count;               /**< Number of object paths (0 = use pattern) */
         ovphysx_tensor_type_t tensor_type;       /**< Type of tensor data to bind */
     } ovphysx_tensor_binding_desc_t;
 
@@ -1388,7 +1387,8 @@ extern "C"
     typedef enum ovphysx_config_int32_t
     {
         OVPHYSX_CONFIG_NUM_THREADS,          /**< /physics/numThreads */
-        OVPHYSX_CONFIG_SCENE_MULTI_GPU_MODE, /**< /physics/sceneMultiGPUMode (0=disabled, 1=all, 2=skip-first) */
+        OVPHYSX_CONFIG_SCENE_MULTI_GPU_MODE, /**< /physics/sceneMultiGPUMode (0=disabled, 1=all, 2=skip-first);
+                                                  used only when active_cuda_gpus is empty */
         OVPHYSX_CONFIG_INT32_COUNT
     } ovphysx_config_int32_t;
 
@@ -1402,7 +1402,7 @@ extern "C"
     typedef enum ovphysx_config_string_t
     {
         OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY, /**< /persistent/physics/omniPvdOvdRecordingDirectory */
-        OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY, /**< /UJITSO/datastore/localCachePath: app-provided dir for the local cooked-collider cache */
+        OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY, /**< /UJITSO/datastore/localCachePath: app-provided dir for the local cooked-collider cache; unset cooks to a process-private temp dir (nothing persists) */
         OVPHYSX_CONFIG_STRING_COUNT
     } ovphysx_config_string_t;
 
@@ -1467,13 +1467,16 @@ extern "C"
         const ovphysx_config_entry_t* config_entries; /**< Array of typed config entries */
         uint32_t config_entry_count;                  /**< Number of config entries */
 
-        ovphysx_string_t active_cuda_gpus;  /**< Comma-separated CUDA device ordinals (default: empty = GPU 0).
+        ovphysx_string_t active_cuda_gpus;  /**< Comma-separated CUDA device ordinals (default: empty = PhysX automatic selection).
                                                  Restricts which GPU ordinal(s) are used. Supported patterns:
-                                                 - Empty or "0": single GPU 0 (default)
+                                                 - Empty: PhysX automatic CUDA selection (default)
+                                                 - "0": single GPU 0
                                                  - "N": single GPU N
                                                  - "-1": PhysX default CUDA selection
                                                  - "0,1,...,N-1": all N GPUs, round-robin across scenes
                                                  - "1,2,...,N-1": all GPUs except first, round-robin
+                                                 A non-empty value takes precedence over OVPHYSX_CONFIG_SCENE_MULTI_GPU_MODE;
+                                                 a single ordinal disables multi-GPU scene distribution.
                                                  Other patterns return OVPHYSX_API_INVALID_ARGUMENT. */
     } ovphysx_create_args;
 

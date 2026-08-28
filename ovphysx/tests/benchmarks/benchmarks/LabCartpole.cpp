@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // IsaacLab-style cartpole benchmarks. One cartpole articulation per env,
 // cloned into N envs via the same clone() path that Clone.envs_* uses.

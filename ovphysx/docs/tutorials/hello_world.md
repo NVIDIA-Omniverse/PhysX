@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # Hello World: Populate ovstage and Step
 
 This tutorial shows the smallest end-to-end ovphysx workflow: create an instance,

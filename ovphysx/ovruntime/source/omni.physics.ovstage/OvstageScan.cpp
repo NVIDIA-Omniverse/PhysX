@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 #include <omni/physics/ovstage/OvstageScan.h>
 #include <omni/physics/ovstage/OvstageParseBackend.h> // OvstageAttach

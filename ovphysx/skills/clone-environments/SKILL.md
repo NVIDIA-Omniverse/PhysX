@@ -44,6 +44,8 @@ PhysX.set_cpu_mode(True)
 physx = PhysX()
 stage = ovstage.Stage("ovphysx-clone")
 ovstage.population.open_usd(stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+# attach_ovstage() reads at a sealed ordinal.
+stage.advance_write_floor(ordinal=1).wait()
 physx.attach_ovstage(stage, read_ordinal=1)
 
 targets = ["/World/envs/env1", "/World/envs/env2", "/World/envs/env3"]
@@ -113,6 +115,21 @@ static int load_and_clone_envs(ovphysx_handle_t handle, ovstage_instance_t* stag
         ovstage_population_wait_op(stage, open.op_index, OVSTAGE_TIMEOUT_INFINITE, &open_wait) != OVSTAGE_OK) {
         return 0;
     }
+
+    // attach_ovstage() reads at a sealed ordinal.
+    ovstage_write_floor_desc_t floor_desc;
+    memset(&floor_desc, 0, sizeof(floor_desc));
+    floor_desc.ordinal = ordinal;
+    floor_desc.scope = OVSTAGE_SCOPE_ALL;
+    ovstage_enqueue_result_t floor = ovstage_advance_write_floor(stage, &floor_desc);
+    ovstage_op_wait_result_t floor_wait;
+    memset(&floor_wait, 0, sizeof(floor_wait));
+    if (floor.status != OVSTAGE_OK ||
+        ovstage_wait_op(stage, floor.op_index, OVSTAGE_TIMEOUT_INFINITE, &floor_wait) != OVSTAGE_OK ||
+        floor_wait.error_op_id_count != 0) {
+        return 0;
+    }
+
     if (ovphysx_attach_ovstage(handle, stage, ordinal).status != OVPHYSX_API_SUCCESS) {
         return 0;
     }

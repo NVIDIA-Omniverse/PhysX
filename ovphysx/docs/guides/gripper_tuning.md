@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # Joint Parameter Tuning Example: Robotiq 2F-85
 
 A worked example of tuning articulation joint drives (spring/damper model) for a

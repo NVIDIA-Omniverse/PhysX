@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # Simulation Performance Guide
 
 Best practices for optimizing simulation performance with ovphysx. Most tuning is
@@ -72,9 +75,9 @@ def PhysicsScene "physicsScene" (
 
 ## Multi-GPU
 
-On multi-GPU machines you can distribute simulation across GPUs (through
-`active_cuda_gpus` and `PhysXConfig(scene_multi_gpu_mode=...)`) for a potential
-speedup — refer to
+On multi-GPU machines, pass a supported multi-GPU pattern through
+`active_cuda_gpus` for a potential speedup. Alternatively, when
+`active_cuda_gpus` is empty, use `PhysXConfig(scene_multi_gpu_mode=...)`. Refer to
 [CPU vs GPU Simulation](../simulation_setup/physics_scene.md#cpu-vs-gpu-simulation).
 
 ## Collision Geometry Choice

@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
+
 /**
  * @implements REQ-WRITE-CORE-001
  * @covers AC-2 AC-6

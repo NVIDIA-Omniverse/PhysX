@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # PhysX Interop: Direct PhysX SDK Access
 
 This tutorial shows how to get a raw PhysX SDK pointer from ovphysx and call

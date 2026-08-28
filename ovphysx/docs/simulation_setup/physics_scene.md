@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # Physics Scene and Simulation Configuration
 
 Every stage that ovphysx simulates needs a **physics scene**: a `PhysicsScene`
@@ -16,8 +19,9 @@ This is the foundation the other Simulation Setup pages build on
 ovphysx consumes **pre-authored USD** owned by the application through ovstage.
 Once a stage is attached, a step proceeds roughly as follows:
 
-1. On [`attach_ovstage()`](../ovphysx_overview.md), the USD stage is parsed and
-   PhysX objects are created for the prims that carry physics schemas.
+1. After population, seal the ordinal with `advance_write_floor()`, then call
+   [`attach_ovstage()`](../ovphysx_overview.md). Attach parses the sealed ordinal
+   and creates PhysX objects for the prims that carry physics schemas.
 2. Colliders that need cooking (convex hull, convex decomposition, SDF, triangle
    mesh) are cooked. Results are cached on disk so recomputation is usually
    avoided — refer to the cooked-collider cache (UJITSO) in the
@@ -239,9 +243,12 @@ per-scene USD settings:
 
 - `ovphysx.PhysX.set_cpu_mode(True)` forces a process-wide CPU-only mode (must be
   called before any instance is created; it cannot be reverted in that process).
-- `PhysX(active_cuda_gpus="0,1")` selects which CUDA GPUs an instance uses.
-- `PhysXConfig(scene_multi_gpu_mode=...)` distributes multiple `PhysicsScene`
-  prims across GPUs.
+- `PhysX(active_cuda_gpus="0,1")` selects explicit CUDA ordinals and their
+  supported scene-distribution mode. Any non-empty value takes precedence over
+  `PhysXConfig.scene_multi_gpu_mode`; one ordinal disables distribution.
+- With `active_cuda_gpus` empty,
+  `PhysXConfig(scene_multi_gpu_mode=...)` controls distribution of multiple
+  `PhysicsScene` prims across GPUs.
 
 GPU features (deformables, particles, SDF meshes, DirectGPU tensor workloads)
 require GPU dynamics. Refer to the GPU/CPU and determinism sections of the

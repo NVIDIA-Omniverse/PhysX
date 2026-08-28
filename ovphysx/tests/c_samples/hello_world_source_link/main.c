@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // Minimal source-link example: builds against the ovphysx source tree via
 // add_subdirectory() instead of find_package(). The simulation logic is

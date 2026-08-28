@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // USD load benchmarks: time the cost of ovstage population plus attach/update across
 // representative scene fixtures. Each step performs one full load cycle;

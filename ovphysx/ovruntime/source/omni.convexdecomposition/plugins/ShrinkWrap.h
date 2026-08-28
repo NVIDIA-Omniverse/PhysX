@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
+
 #pragma once
 
 // This is a code snippet which 'shrinkwraps' a convex hull

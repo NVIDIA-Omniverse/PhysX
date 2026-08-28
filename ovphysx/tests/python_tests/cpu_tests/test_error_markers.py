@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """Verify that ERROR_MARKERS in conftest.py catch native C++ runtime warnings.
 
 The conftest hook checks captured stdout/stderr and native log records for

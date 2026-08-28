@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """Advanced stage management tests: path_prefix, reset/reload workflow.
 
 These tests complement test_usd_loading.py (which covers ovstage attach/update

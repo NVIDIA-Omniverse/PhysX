@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """Boundary condition tests for step/step_n_sync and wait_op semantics.
 
 Complements test_simulation.py (which covers basic dt validation, rapid queuing,

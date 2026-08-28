@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
+
 """Advanced scene query tests: both_sides, overlap CLOSEST rejection, hit field types,
 proto_index, result lifetime across queries, and missing kwargs errors.
 

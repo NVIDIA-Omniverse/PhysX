@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+
 # Cloning: Replicate Environments
 
 This tutorial shows how to use the clone API to replicate sub-sections of a USD scene. Cloning creates copies in the internal physics representation (not USD prims), optimized for large-scale parallel simulation.
@@ -15,6 +18,11 @@ This tutorial shows how to use the clone API to replicate sub-sections of a USD 
 - **ovstage duplication** (`ovstage.Stage.clone()` / `ovstage_clone()`) — apps that own the ovstage `Stage` can duplicate the source subtree and drain the clone delta with `update_from_ovstage()`. This creates the physics objects, but in ovphysx 0.5 TensorBindingsAPI does not discover objects created by the clone delta. Complete TensorBindingsAPI support for this path is scheduled for ovstage after 0.5.
 
 Refer to [Scene Cloning](../developer_guide.md#scene-cloning) for the full comparison.
+
+Tensor-binding path patterns include direct ovphysx runtime clones even when an
+intermediate target path has no authored USD prim. For example, after cloning
+`/World/envs/env0/robot` to `/World/envs/env1/robot`, the pattern
+`/World/envs/env*/robot` resolves both objects.
 
 **Tensor binding limitation in 0.5.** For clones that need tensor bindings, use
 the direct `clone()` API and complete cloning before `warmup_gpu()` or the first

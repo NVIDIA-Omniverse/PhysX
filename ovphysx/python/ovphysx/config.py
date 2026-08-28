@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
 
 """Typed config for ovphysx.
 
@@ -129,12 +128,13 @@ class PhysXConfig:
     collision_cone_custom_geometry: bool | None = None
     collision_cylinder_custom_geometry: bool | None = None
     num_threads: int | None = None
-    scene_multi_gpu_mode: int | None = None  #: 0=disabled, 1=all GPUs, 2=skip first GPU
+    scene_multi_gpu_mode: int | None = None  #: 0=disabled, 1=all GPUs, 2=skip first GPU; used only when active_cuda_gpus is empty
     omnipvd_output_enabled: bool | None = None  #: Must be set before instance creation
     omnipvd_ovd_recording_directory: str | None = None  #: Must be set before instance creation
-    #: Directory for the local cooked-collider (UJITSO) cache. Provide this to persist
-    #: cooked colliders across runs and reuse them on the next launch; if left None,
-    #: ovphysx does not choose a location and cooking runs without cross-run persistence.
+    #: Directory for the local cooked-collider (UJITSO) cache. Provide this to persist cooked
+    #: colliders across runs and reuse them on the next launch; if left None, ovphysx cooks to a
+    #: process-private temp directory that is discarded at shutdown, so nothing persists.
+    #: Applied when the runtime first starts in a process; later changes have no effect.
     cooked_collider_cache_dir: str | None = None
     carbonite_overrides: dict[str, bool | int | float | str] | None = None
 

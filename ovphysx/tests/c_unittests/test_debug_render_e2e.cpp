@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 // End-to-end debug-render EMISSION tests: load a real dynamics scene, step the simulation,
 // and verify that each drawable PhysX visualization parameter exports render-buffer

@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
 
 """Process-restart cold start: subprocess per measurement so PhysX bootstrap
 isn't amortized. This is the unique-value Python bench — the C++ harness

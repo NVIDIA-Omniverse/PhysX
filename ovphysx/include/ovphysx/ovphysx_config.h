@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 /**
  * @file ovphysx_config.h
@@ -113,7 +112,9 @@ static inline ovphysx_config_entry_t ovphysx_config_entry_num_threads(int32_t va
     return ovphysx_config_entry_int32(OVPHYSX_CONFIG_NUM_THREADS, value);
 }
 
-/** Set scene multi-GPU mode (/physics/sceneMultiGPUMode). 0=disabled, 1=all GPUs, 2=skip first GPU. */
+/** Set scene multi-GPU mode (/physics/sceneMultiGPUMode).
+ *  0=disabled, 1=all GPUs, 2=skip first GPU. Used only when
+ *  ovphysx_create_args.active_cuda_gpus is empty. */
 static inline ovphysx_config_entry_t ovphysx_config_entry_scene_multi_gpu_mode(int32_t value)
 {
     return ovphysx_config_entry_int32(OVPHYSX_CONFIG_SCENE_MULTI_GPU_MODE, value);
