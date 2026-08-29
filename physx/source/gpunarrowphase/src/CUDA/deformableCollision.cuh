@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -33,6 +33,9 @@
 #include "foundation/PxVecMath.h"
 #include "GuDistancePointTriangle.h"
 #include "PxgFEMCloth.h"
+
+namespace physx
+{
 
 #define DEFORMABLE_BARYCENTRIC_THRESHOLD (1.0e-6f)
 #define DEFORMABLE_ONE_MINUS_BARYCENTRIC_THRESHOLD (1.0f - DEFORMABLE_BARYCENTRIC_THRESHOLD)
@@ -376,5 +379,7 @@ PX_FORCE_INLINE __device__ static bool isType1VertexActive(PxU32 edgeAuthorship,
 {
 	return (edgeAuthorship & (1U << (EdgeEncoding::TYPE1_VERTEX0_ACTIVE_POS + localVertexIndex))) != 0;
 }
+
+} // namespace physx
 
 #endif // __DEFORMABLE_COLLISION_CUH__

@@ -1,0 +1,269 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Y"
+    doc = "20 falling cubes + ground plane. Minimal scene for overhead-floor benchmarking. See gen_cubes20.py."
+)
+
+def Xform "World"
+{
+    def PhysicsScene "physicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+        uint physxScene:timeStepsPerSecond = 240
+    }
+
+    def Cube "GroundPlane" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        double size = 1.0
+        double3 xformOp:scale = (20.0, 0.02, 20.0)
+        double3 xformOp:translate = (0, -0.01, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "cube_00" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (-1.9156383335447533, 1.27944248692428, 2.8279037934264846)
+        double3 xformOp:translate = (-0.14755746443941198, 1.3260904911770708, -0.23836118416397456)
+        quatd xformOp:orient = (0.48501086690525075, 0.8652181603599708, 0.04891584786940744, -0.11734237850982102)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_01" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (2.6888513807120296, -0.2175655012956117, 1.2864576278097832)
+        double3 xformOp:translate = (-0.4486812282278707, 4.819647485027826, 0.6305495007252091)
+        quatd xformOp:orient = (-0.11894596215993661, -0.05038014260428323, 0.04187948967336971, 0.990737002267361)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_02" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (-0.6111517674636011, 2.468674328276246, -0.03078101504515729)
+        double3 xformOp:translate = (0.023325594140489514, 3.8987048319957185, 0.46932623377169125)
+        quatd xformOp:orient = (0.5666160049623534, 0.778267702189206, -0.259259089832928, -0.07765572090089377)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_03" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (0.2739069276259607, -0.5301588579104806, -2.3023836465225753)
+        double3 xformOp:translate = (-0.4923853262168867, 4.256111674258382, -0.4423184841691046)
+        quatd xformOp:orient = (0.9805606268424921, 0.09764187742782811, -0.01814957010182767, 0.1692262212653431)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_04" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (0.007977900446863195, 2.939256724802987, 1.8993954454025186)
+        double3 xformOp:translate = (-0.814315308475499, 3.77073930467783, -0.4036062557131386)
+        quatd xformOp:orient = (-0.8905135826440813, -0.08429241828525204, -0.3345123470093936, -0.2966173242484229)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_05" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (1.3091322190886956, 0.6590467441726959, -0.5456602339240106)
+        double3 xformOp:translate = (0.9352447663480643, 0.8781632604427447, -0.10940037497075994)
+        quatd xformOp:orient = (0.40551529583211143, -0.5672839514627561, -0.4342084373078289, -0.570271247942319)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_06" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (0.6622771435560599, -0.11807131035506391, -2.4486536568437813)
+        double3 xformOp:translate = (0.19181280500523945, 2.570881888806479, 0.9409528068378505)
+        quatd xformOp:orient = (-0.5587201322049912, 0.2468010146505091, 0.5483065756763676, 0.57121009454173)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_07" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (-1.5319570750849447, -0.978001665721207, 1.3462972876495982)
+        double3 xformOp:translate = (-0.5011025545013192, 3.317918542065236, 0.5852518135303046)
+        quatd xformOp:orient = (0.7874599215137219, -0.07840238249821488, -0.23138360777258818, -0.5658812282470125)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_08" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (-1.4406683736094195, 1.0012431964828519, 2.0573499391372847)
+        double3 xformOp:translate = (-0.3222173623319722, 3.4899951710965103, -0.04079892976327493)
+        quatd xformOp:orient = (0.5683228378396814, 0.4381359254940602, -0.4385197834690424, 0.5410604978073881)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_09" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (2.215693673754667, -1.649913788469603, 0.3653320741544235)
+        double3 xformOp:translate = (-0.7625229817976633, 3.3296127782832956, -0.8874921021152835)
+        quatd xformOp:orient = (0.963213544088744, -0.06801663111851632, 0.21164391301046115, 0.15099755117520677)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_10" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (1.7874424346706892, 0.21551574023291753, -2.3622688363362467)
+        double3 xformOp:translate = (0.39592072624301133, 2.7441018280029827, -0.936573822343908)
+        quatd xformOp:orient = (-0.4110663224550259, 0.6443809276527432, 0.3487248156062131, 0.5423916496417542)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_11" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (-2.029872590614132, -1.3994550062409299, 0.006149350249987862)
+        double3 xformOp:translate = (-0.027516633371651666, 2.0148141714706505, -0.7353791934045502)
+        quatd xformOp:orient = (0.9992424767896746, -0.0312715416536876, 0.010978592088575097, -0.02039690607888767)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_12" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (0.022879486375547042, 1.8049170833183164, 0.430805222152856)
+        double3 xformOp:translate = (-0.9305743663149308, 0.6723318095495671, 0.7122416224998929)
+        quatd xformOp:orient = (0.003654333414852222, -0.6219409164837789, 0.3174195632789562, 0.7158358492688156)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_13" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (-2.3192299114989914, 0.29155147873352494, -0.4872317963629449)
+        double3 xformOp:translate = (-0.3744708279398634, 4.143245444536792, -0.7666106359044453)
+        quatd xformOp:orient = (-0.2732821928741006, -0.405774943519523, -0.8658020812780804, -0.10512038015625258)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_14" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (-2.5582689787118205, 0.133892478524686, -2.1149383308118415)
+        double3 xformOp:translate = (0.549370579934779, 3.1106177441663694, 0.5459232077969582)
+        quatd xformOp:orient = (0.805047309531025, 0.4462919464799033, -0.3892770805837435, 0.03443374008490351)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_15" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (0.46983541298389087, -1.8756657759054822, 0.4148364582270627)
+        double3 xformOp:translate = (-0.7949476870664307, 1.3212203450986244, -0.5621665791603463)
+        quatd xformOp:orient = (0.32463851064960414, 0.4696708450925813, 0.8203264366863157, -0.032919172935531836)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_16" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (-2.611500405814967, -0.6988568896954241, 2.031576429294484)
+        double3 xformOp:translate = (0.4258636275011136, 2.052143086906387, -0.4943588653995512)
+        quatd xformOp:orient = (-0.5966965495207843, -0.691127811357392, -0.38532444497092555, -0.13349400086213373)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_17" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (1.3883116213570847, -0.24892170494472543, 2.502849250134058)
+        double3 xformOp:translate = (-0.7537637619065933, 1.0163137871232617, 0.3709930910245012)
+        quatd xformOp:orient = (0.7759944238958476, 0.5945918378517202, -0.11863407391172313, -0.17383658116108064)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_18" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (2.8176553831769446, -2.142075971880312, 1.244365368236764)
+        double3 xformOp:translate = (0.5895730721230115, 2.3225269862387066, -0.4432731424681986)
+        quatd xformOp:orient = (0.738855016661324, -0.04433934064298927, -0.5148989853739278, 0.43244227601685675)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cube "cube_19" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 0.3
+        float physics:mass = 1.0
+        vector3f physics:angularVelocity = (-1.6790948578821447, 1.7302386126070601, 2.5513853523468057)
+        double3 xformOp:translate = (-0.14982449968930522, 1.5117737831809441, 0.07501647195615146)
+        quatd xformOp:orient = (-0.9971226319038425, -0.0078097351935093135, -0.02523513022698823, -0.0710538752200636)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+}

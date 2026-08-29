@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Test config - valid complete configuration
+
+[library]
+name = "test.library"
+version = "1.0.0"
+description = "Test library for unit testing"
+
+[usd]
+required = true
+version_spec = "==25.11"
+
+[[schemas.required]]
+name = "UsdPhysics"
+type = "schema"
+required = true
+version_spec = ">=1.0"
+
+[dependencies]
+preload_libraries_linux = ["libtest.so"]

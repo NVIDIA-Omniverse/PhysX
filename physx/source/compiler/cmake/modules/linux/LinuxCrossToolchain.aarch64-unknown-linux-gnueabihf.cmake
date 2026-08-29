@@ -22,11 +22,12 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 IF(NOT $ENV{PM_PACKAGES_ROOT} EQUAL "")
-	# See https://stackoverflow.com/a/53635241 - CMake needs this for cross-compiling
-	# see also: https://cmake.org/cmake/help/latest/module/CMakeForceCompiler.html
+	# CMake needs this for cross-compiling: the default try_compile() builds an
+	# executable, which cannot be linked before the sysroot below is configured.
+	# see: https://cmake.org/cmake/help/latest/module/CMakeForceCompiler.html
 	# and https://cmake.org/cmake/help/latest/variable/CMAKE_TRY_COMPILE_TARGET_TYPE.html
 	SET(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
 

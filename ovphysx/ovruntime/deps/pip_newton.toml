@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+
+########################################################################################################################
+# Newton USD Schemas
+########################################################################################################################
+
+# Newton USD schema definitions for physics attributes.
+#
+# SWIPAT Dependencies List:
+# -------------------------
+# Package              | Version | License    | Source
+# newton-usd-schemas   | 0.1.0   | Apache-2.0 | PyPI (https://pypi.nvidia.com)
+
+[[dependency]]
+python = "../_build/target-deps/python"
+packages = [
+    "newton-usd-schemas==0.1.0",
+]
+target = "../_build/target-deps/newton_prebundle"
+platforms = ["*-x86_64", "*-aarch64"]
+download_only = false
+install_dependencies = false
+extra_args = ["--extra-index-url", "https://pypi.nvidia.com"]

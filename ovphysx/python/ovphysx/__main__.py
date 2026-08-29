@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
 
 """Verify ovphysx installation: ``python -m ovphysx``."""
 
@@ -20,7 +19,10 @@ from ovphysx import PhysX
 print(f"ovphysx {ovphysx.__version__}")
 
 physx = PhysX()
-physx.step(1.0 / 60.0, 0.0)
+# step() requires an attached stage (rejects stage-less handles -- see NVBugs
+# 6433668), and this smoke test intentionally has none to load: constructing
+# and releasing PhysX() already verifies the native library loaded, linked,
+# and initialized correctly, which is all an installation check needs.
 physx.release()
 
 print("OK")

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -92,7 +92,7 @@ void NpActor::exportExtraData(PxSerializationContext& stream)
 {
 	const PxCollection& collection = stream.getCollection();
 	if(mConnectorArray)
-	{		
+	{
 		PxU32 connectorSize = mConnectorArray->size();	
 		PxU32 missedCount = 0;
 		for(PxU32 i = 0; i < connectorSize; ++i)
@@ -122,7 +122,7 @@ void NpActor::exportExtraData(PxSerializationContext& stream)
 						exportConnectorArray->pushBack(c);
 					}
 				}
-			}			
+			}
 		}
 
 		stream.alignData(PX_SERIAL_ALIGN);
@@ -161,7 +161,7 @@ void NpActor::resolveReferences(PxDeserializationContext& context)
 			NpConnector& c = (*mConnectorArray)[i];
 			context.translatePxBase(c.mObject);
 		}
-	}	
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -335,7 +335,7 @@ void NpActor::addConnector(NpConnectorType::Enum type, PxBase* object, const cha
 	PX_UNUSED(errMsg);
 		
 	if(mConnectorArray->isInUserMemory() && mConnectorArray->size() == mConnectorArray->capacity())
-	{		
+	{
 		NpConnectorArray* newConnectorArray = NpFactory::getInstance().acquireConnectorArray();		
 		newConnectorArray->assign(mConnectorArray->begin(), mConnectorArray->end());
 		mConnectorArray->~NpConnectorArray();

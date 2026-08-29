@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_PROFILE_EVENT_MUTEX_H
 #define PX_PROFILE_EVENT_MUTEX_H
@@ -51,8 +51,8 @@ namespace physx { namespace profile {
 	{
 		TMutexType* mMutex;
 		PxProfileEventMutexImpl( TMutexType* inMtx ) : mMutex( inMtx ) {}
-		virtual void lock() { mMutex->lock(); }
-		virtual void unlock() { mMutex->unlock(); }
+		virtual void lock() PX_OVERRIDE { mMutex->lock(); }
+		virtual void unlock() PX_OVERRIDE { mMutex->unlock(); }
 	};
 
 } }

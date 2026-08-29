@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -42,6 +42,7 @@
 #include "PxvGlobals.h"
 #include "GuTriangleMesh.h"
 #include "ScDeformableSurfaceSim.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 
 using namespace physx;
@@ -108,10 +109,13 @@ PxBounds3 NpDeformableSurface::getWorldBounds(float inflation) const
 	const Sc::DeformableSurfaceSim* sim = mCore.getSim();
 	PX_ASSERT(sim);
 
-	PX_SIMD_GUARD;
+	PX_SIMD_GUARD
 
-	const PxBounds3 bounds = getNpScene()->getScScene().getBoundsArray().getBounds(sim->getShapeSim().getElementID());
+	NP_CHECK_SCENE_CORRUPTION_AND_RETURN_VAL(getNpScene(), PxBounds3::empty())
 
+	const PxU32 boundsIndex = sim->getShapeSim().getElementID();
+	const Bp::BoundsArray& boundsArray = getNpScene()->getScScene().getBoundsArray();
+	const PxBounds3 bounds = boundsArray.getBounds(boundsIndex);
 	PX_ASSERT(bounds.isValid());
 
 	// PT: unfortunately we can't just scale the min/max vectors, we need to go through center/extents.
@@ -157,11 +161,13 @@ void NpDeformableSurface::setDeformableBodyFlag(PxDeformableBodyFlag::Enum flag,
 		flags.clear(flag);
 
 	mCore.setBodyFlags(flags);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, deformableBodyFlags, static_cast<PxDeformableBody&>(*this), flags);
 }
 
 void NpDeformableSurface::setDeformableBodyFlags(PxDeformableBodyFlags flags)
 {
 	mCore.setBodyFlags(flags);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, deformableBodyFlags, static_cast<PxDeformableBody&>(*this), flags);
 }
 
 PxDeformableBodyFlags NpDeformableSurface::getDeformableBodyFlags() const
@@ -177,6 +183,7 @@ void NpDeformableSurface::setLinearDamping(const PxReal v)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setLinearDamping() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setLinearDamping(v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, linearDamping, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -190,9 +197,10 @@ void NpDeformableSurface::setMaxLinearVelocity(const PxReal v)
 	NpScene* npScene = getNpScene();
 	NP_WRITE_CHECK(npScene);
 
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setMaxVelocity() not allowed while simulation is running. Call will be ignored.")
+	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setMaxLinearVelocity() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setMaxLinearVelocity(v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, maxLinearVelocity, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -210,6 +218,7 @@ void NpDeformableSurface::setMaxDepenetrationVelocity(const PxReal v)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setMaxDepenetrationVelocity() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setMaxPenetrationBias(-v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, maxDepenetrationVelocity, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -226,6 +235,7 @@ void NpDeformableSurface::setSelfCollisionFilterDistance(const PxReal v)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setSelfCollisionFilterDistance() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setSelfCollisionFilterDistance(v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, selfCollisionFilterDistance, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -246,6 +256,7 @@ void NpDeformableSurface::setSolverIterationCounts(PxU32 minPositionIters, PxU32
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setSolverIterationCounts() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setSolverIterationCounts((minVelocityIters & 0xff) << 8 | (minPositionIters & 0xff));
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, solverIterationCount, static_cast<PxDeformableBody&>(*this), minPositionIters);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -266,6 +277,7 @@ void NpDeformableSurface::setSleepThreshold(const PxReal v)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setSleepThreshold() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setSleepThreshold(v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, sleepThreshold, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -282,6 +294,7 @@ void NpDeformableSurface::setSettlingThreshold(const PxReal v)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setSettlingThreshold() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setSettlingThreshold(v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, settlingThreshold, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -298,6 +311,7 @@ void NpDeformableSurface::setSettlingDamping(const PxReal v)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setSettlingDamping() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setSettlingDamping(v);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, settlingDamping, static_cast<PxDeformableBody&>(*this), v);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -325,6 +339,10 @@ PxReal NpDeformableSurface::getWakeCounter() const
 
 bool NpDeformableSurface::isSleeping() const
 {
+	NpScene* npScene = getNpScene();
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eDISABLE_SLEEPING))
+		return false;
+
 	Sc::DeformableSurfaceSim* sim = mCore.getSim();
 	if (sim)
 	{
@@ -365,7 +383,7 @@ bool NpDeformableSurface::attachShape(PxShape& shape)
 		"PxDeformableSurface::attachShape: deformable surface triangle mesh has been cooked with eENABLE_VERT_MAPPING");
 #endif
 
-	PX_CHECK_AND_RETURN_NULL(npShape->getCore().getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_SURFACE_SHAPE,
+	PX_CHECK_AND_RETURN_NULL(npShape->getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_SURFACE_SHAPE,
 		"PxDeformableSurface::attachShape: shape must be a deformable surface shape!");
 
 	Dy::DeformableSurfaceCore& core = mCore.getCore();
@@ -390,14 +408,20 @@ bool NpDeformableSurface::attachShape(PxShape& shape)
 
 	updateMaterials();
 
+	// Stream collision shape to OmniPVD
+	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, shapes, static_cast<PxDeformableBody&>(*this), shape);
+
 	return true;
 }
-	
+
 void NpDeformableSurface::detachShape()
 {
-	Dy::DeformableSurfaceCore& core = mCore.getCore();
+	if (!mShape)
+		return;
 
 	PX_ASSERT(mDeviceMemoryAllocator);
+
+	Dy::DeformableSurfaceCore& core = mCore.getCore();
 
 	if (core.positionInvMass)
 	{
@@ -417,45 +441,14 @@ void NpDeformableSurface::detachShape()
 		core.restPosition = NULL;
 	}
 
-	if (mShape)
-		mShape->onActorDetach();
+	OMNI_PVD_REMOVE(OMNI_PVD_CONTEXT_HANDLE, PxDeformableBody, shapes, static_cast<PxDeformableBody&>(*this), *mShape);
+	mShape->onActorDetach();
 	mShape = NULL;
 }
 
 PxCudaContextManager* NpDeformableSurface::getCudaContextManager() const
 {
 	return mCudaContextManager;
-}
-
-// deprecated
-void NpDeformableSurface::setParameter(const PxFEMParameters& parameters)
-{
-	NpScene* npScene = getNpScene();
-	NP_WRITE_CHECK(npScene);
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableBody::setParameter() not allowed while simulation is running. Call will be ignored.")
-
-	mCore.setLinearDamping(parameters.velocityDamping);
-	mCore.setSettlingThreshold(parameters.settlingThreshold);
-	mCore.setSleepThreshold(parameters.sleepThreshold);
-	mCore.setSettlingDamping(parameters.sleepDamping);
-	mCore.setSelfCollisionFilterDistance(parameters.selfCollisionFilterDistance);
-	mCore.setSelfCollisionStressTolerance(parameters.selfCollisionStressTolerance);
-	UPDATE_PVD_PROPERTY
-}
-
-// deprecated
-PxFEMParameters NpDeformableSurface::getParameter() const
-{
-	NP_READ_CHECK(getNpScene());
-	PxFEMParameters parameters;
-	parameters.velocityDamping = mCore.getLinearDamping();
-	parameters.settlingThreshold = mCore.getSettlingThreshold();
-	parameters.sleepThreshold = mCore.getSleepThreshold();
-	parameters.sleepDamping = mCore.getSettlingDamping();
-	parameters.selfCollisionFilterDistance = mCore.getSelfCollisionFilterDistance();
-	parameters.selfCollisionStressTolerance = mCore.getSelfCollisionStressTolerance();
-	return parameters;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -491,6 +484,7 @@ void NpDeformableSurface::setNbCollisionPairUpdatesPerTimestep(const PxU32 frequ
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableSurface::setNbCollisionPairUpdatesPerTimestep() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setNbCollisionPairUpdatesPerTimestep(frequency);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableSurface, nbCollisionPairUpdatesPerTimestep, static_cast<PxDeformableSurface&>(*this), frequency);
 	UPDATE_PVD_PROPERTY
 }
 
@@ -507,6 +501,7 @@ void NpDeformableSurface::setNbCollisionSubsteps(const PxU32 frequency)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableSurface::setNbCollisionSubsteps() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.setNbCollisionSubsteps(frequency);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDeformableSurface, nbCollisionSubsteps, static_cast<PxDeformableSurface&>(*this), frequency);
 	UPDATE_PVD_PROPERTY
 }
 

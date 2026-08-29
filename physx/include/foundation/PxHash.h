@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -53,7 +53,7 @@ namespace physx
 
 // Thomas Wang's 32 bit mix
 // http://www.cris.com/~Ttwang/tech/inthash.htm
-PX_FORCE_INLINE uint32_t PxComputeHash(const uint32_t key)
+PX_FORCE_INLINE uint32_t PxComputeHash_Wang(const uint32_t key)
 {
 	uint32_t k = key;
 	k += ~(k << 15);
@@ -65,14 +65,9 @@ PX_FORCE_INLINE uint32_t PxComputeHash(const uint32_t key)
 	return uint32_t(k);
 }
 
-PX_FORCE_INLINE uint32_t PxComputeHash(const int32_t key)
-{
-	return PxComputeHash(uint32_t(key));
-}
-
 // Thomas Wang's 64 bit mix
 // http://www.cris.com/~Ttwang/tech/inthash.htm
-PX_FORCE_INLINE uint32_t PxComputeHash(const uint64_t key)
+PX_FORCE_INLINE uint32_t PxComputeHash_Wang(const uint64_t key)
 {
 	uint64_t k = key;
 	k += ~(k << 32);
@@ -86,26 +81,41 @@ PX_FORCE_INLINE uint32_t PxComputeHash(const uint64_t key)
 	return uint32_t(UINT32_MAX & k);
 }
 
-#if PX_APPLE_FAMILY
-// hash for size_t, to make gcc happy
-PX_INLINE uint32_t PxComputeHash(const size_t key)
+template <typename T, size_t byteSize>
+struct HashSized
 {
-#if PX_P64_FAMILY
-	return PxComputeHash(uint64_t(key));
-#else
-	return PxComputeHash(uint32_t(key));
-#endif
-}
-#endif
+	PX_FORCE_INLINE uint32_t operator()(const T key) const
+	{
+		PX_COMPILE_TIME_ASSERT(byteSize <= 4);
+		uint32_t x = uint32_t(key);
+		x ^= x >> 16;
+		x *= 0x21f0aaadU;
+		x ^= x >> 15;
+		x *= 0x735a2d97U;
+		x ^= x >> 15;
+		return x;
+	}
+};
 
-// Hash function for pointers
-PX_INLINE uint32_t PxComputeHash(const void* ptr)
+template <typename T>
+struct HashSized<T, 8>
 {
-#if PX_P64_FAMILY
-	return PxComputeHash(uint64_t(ptr));
-#else
-	return PxComputeHash(uint32_t(UINT32_MAX & size_t(ptr)));
-#endif
+	PX_FORCE_INLINE uint32_t operator()(const T key) const
+	{
+		uint64_t x = uint64_t(key);
+		x ^= x >> 30;
+		x *= 0xbf58476d1ce4e5b9;
+		x ^= x >> 27;
+		x *= 0x94d049bb133111eb;
+		x ^= x >> 31;
+		return uint32_t(x);
+	}
+};
+
+template <typename T>
+PX_FORCE_INLINE uint32_t PxComputeHash(const T key)
+{
+	return HashSized<T, sizeof(T)>()(key);
 }
 
 // Hash function for pairs

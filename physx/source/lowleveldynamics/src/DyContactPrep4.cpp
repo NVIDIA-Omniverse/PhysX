@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
      
@@ -49,7 +49,7 @@ inline bool ValidateVec4(const Vec4V v)
 }
 
 static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT descs, CorrelationBuffer& c, PxU8* PX_RESTRICT workspace,
-											PxReal invDtF32, PxReal dtF32, PxReal bounceThresholdF32,
+											PxReal invDtF32, PxReal dtF32, PxReal bounceThresholdF32, const PxReal biasCoefficient,
 											const Vec4VArg invMassScale0, const Vec4VArg invInertiaScale0, 
 											const Vec4VArg invMassScale1, const Vec4VArg invInertiaScale1)
 {
@@ -198,11 +198,11 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 
 	const FloatV invDt = FLoad(invDtF32);
 	const FloatV dt = FLoad(dtF32);
-	const FloatV p8 = FLoad(0.8f);
-	const Vec4V p84 = V4Splat(p8);
+	const FloatV biasCoefficientV = FLoad(biasCoefficient);
+	const Vec4V biasCoefficientV4 = V4Splat(biasCoefficientV);
 	const Vec4V bounceThreshold = V4Splat(FLoad(bounceThresholdF32));
 
-	const FloatV invDtp8 = FMul(invDt, p8);
+	const FloatV invDtWithBiasCoefficient = FMul(invDt, biasCoefficientV);
 
 	Vec4V bodyFrame00p4 = V4LoadU(&descs[0].bodyFrame0.p.x);	// PT: safe because of compile-time-assert in PxSolverConstraintPrepDescBase
 	Vec4V bodyFrame01p4 = V4LoadU(&descs[1].bodyFrame0.p.x);	// PT: safe because of compile-time-assert in PxSolverConstraintPrepDescBase
@@ -540,7 +540,7 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 				}
 
 				const Vec4V penetration = V4Sub(separation, restDistance);
-				const Vec4V penInvDtPt8 = V4Max(maxPenBias, V4Scale(penetration, invDtp8));
+				const Vec4V penInvDtWithBiasCoefficient = V4Max(maxPenBias, V4Scale(penetration, invDtWithBiasCoefficient));
 
 				const Vec4V penetrationInvDt = V4Scale(penetration, invDt);
 				const BoolV isSeparated = V4IsGrtrOrEq(penetration, zero);
@@ -560,7 +560,7 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 				const Vec4V velMultiplier = V4Sel(isCompliant, V4Mul(V4Mul(x, a), massIfAccelElseOne), recipResponse);
 				const Vec4V impulseMultiplier = V4Sub(one, V4Sel(isCompliant, x, zero));
 
-				Vec4V scaledBias = V4Mul(V4Sel(isSeparated, penetrationInvDt, penInvDtPt8), velMultiplier);
+				Vec4V scaledBias = V4Mul(V4Sel(isSeparated, penetrationInvDt, penInvDtWithBiasCoefficient), velMultiplier);
 
 				const BoolV isGreater2 = BAnd(BAnd(V4IsGrtr(zero, restitution), V4IsGrtr(bounceThreshold, vrel)),
 					collidingWithVrel);
@@ -929,7 +929,7 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 							vrel = V4Sub(vrel, dotRbXnAngVel1);
 						}
 
-						const Vec4V velMultiplier = V4Mul(maxImpulseScale, V4Sel(V4IsGrtr(resp, zero), V4Div(p84, resp), zero));
+						const Vec4V velMultiplier = V4Mul(maxImpulseScale, V4Sel(V4IsGrtr(resp, zero), V4Div(biasCoefficientV4, resp), zero));
 
 						Vec4V bias = V4Scale(V4MulAdd(t0Z, errorZ, V4MulAdd(t0Y, errorY, V4Mul(t0X, errorX))), invDt);
 
@@ -1024,7 +1024,7 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 							vrel = V4Sub(vrel, dotRbXnAngVel1);
 						}
 
-						const Vec4V velMultiplier = V4Mul(maxImpulseScale, V4Sel(V4IsGrtr(resp, zero), V4Div(p84, resp), zero));
+						const Vec4V velMultiplier = V4Mul(maxImpulseScale, V4Sel(V4IsGrtr(resp, zero), V4Div(biasCoefficientV4, resp), zero));
 
 						Vec4V bias = V4Scale(V4MulAdd(t1Z, errorZ, V4MulAdd(t1Y, errorY, V4Mul(t1X, errorX))), invDt);
 
@@ -1230,6 +1230,7 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4(
 	PxReal bounceThresholdF32,
 	PxReal	frictionOffsetThreshold,
 	PxReal correlationDistance,
+	const PxReal biasCoefficient,
 	PxConstraintAllocator& constraintAllocator)
 {
 	PX_ALIGN(16, PxReal invMassScale0[4]);
@@ -1361,7 +1362,7 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4(
 		const Vec4V iMassScale1 = V4LoadA(invMassScale1);
 		const Vec4V iInertiaScale1 = V4LoadA(invInertiaScale1);
 
-		setupFinalizeSolverConstraints4(blockDescs, c, solverConstraint, invDtF32, dtF32, bounceThresholdF32,
+		setupFinalizeSolverConstraints4(blockDescs, c, solverConstraint, invDtF32, dtF32, bounceThresholdF32, biasCoefficient,
 			iMassScale0, iInertiaScale0, iMassScale1, iInertiaScale1);
 
 		PX_ASSERT((*solverConstraint == DY_SC_TYPE_BLOCK_RB_CONTACT) || (*solverConstraint == DY_SC_TYPE_BLOCK_STATIC_RB_CONTACT));
@@ -1382,6 +1383,7 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4(
 	PxReal bounceThresholdF32,
 	PxReal frictionOffsetThreshold,
 	PxReal correlationDistance,
+	const PxReal biasCoefficient,
 	PxConstraintAllocator& constraintAllocator)
 {
 	for (PxU32 a = 0; a < 4; ++a)
@@ -1452,7 +1454,7 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4(
 	}
 	return createFinalizeSolverContacts4(c, blockDescs,
 		invDtF32, dtF32, bounceThresholdF32, frictionOffsetThreshold,
-		correlationDistance, constraintAllocator);
+		correlationDistance, biasCoefficient, constraintAllocator);
 }
 
 }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -148,7 +148,7 @@ PX_FORCE_INLINE PxU32 extractContacts(PxContactBuffer& buffer, const PxsContactM
 		while(iter.hasNextPatch())
 		{
 			iter.nextPatch();
-			while(iter.hasNextContact())
+			while(iter.hasNextContact() && (numContacts < PxContactBuffer::MAX_CONTACTS))
 			{
 				iter.nextContact();
 				PxPrefetchLine(iter.contact, 128);
@@ -298,7 +298,7 @@ PX_FORCE_INLINE void computeCompliantContactCoefficientsTGS(const FloatVArg dt, 
 PX_FORCE_INLINE void constructContactConstraint(const Mat33V& invSqrtInertia0, const Mat33V& invSqrtInertia1, const FloatVArg invMassNorLenSq0, 
 	const FloatVArg invMassNorLenSq1, const FloatVArg angD0, const FloatVArg angD1, const Vec3VArg bodyFrame0p, const Vec3VArg bodyFrame1p,
 	const Vec3VArg normal, const FloatVArg norVel, const VecCrossV& norCross, const Vec3VArg angVel0, const Vec3VArg angVel1,
-	const FloatVArg invDt, const FloatVArg invDtp8, const FloatVArg dt, const FloatVArg restDistance, const FloatVArg maxPenBias, const FloatVArg restitution,
+	const FloatVArg invDt, const FloatVArg invDtWithBiasCoefficient, const FloatVArg dt, const FloatVArg restDistance, const FloatVArg maxPenBias, const FloatVArg restitution,
 	const FloatVArg bounceThreshold, const PxContactPoint& contact, SolverContactPoint& solverContact,
 	const FloatVArg ccdMaxSeparation, const Vec3VArg solverOffsetSlop, const FloatVArg damping, const BoolVArg accelerationSpring)
 {
@@ -366,7 +366,7 @@ PX_FORCE_INLINE void constructContactConstraint(const Mat33V& invSqrtInertia0, c
 		// Divide bias term by dt and additionally scale it down if it's in penetration
 		// Do not scale it if it's not in penetration, otherwise we falsely act on contacts that are still
 		// sufficiently far away.
-		const FloatV penetrationInvDtScaled = FSel(isSeparated, penetrationInvDt, FMul(penetration, invDtp8));
+		const FloatV penetrationInvDtScaled = FSel(isSeparated, penetrationInvDt, FMul(penetration, invDtWithBiasCoefficient));
 
 		FloatV scaledBias = FMul(velMultiplier, FMax(maxPenBias, penetrationInvDtScaled));
 

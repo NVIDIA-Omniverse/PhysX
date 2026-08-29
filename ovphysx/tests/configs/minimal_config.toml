@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Test config - minimal valid configuration
+
+[library]
+name = "minimal.library"
+version = "0.1.0"
+
+[usd]
+required = false
+version_spec = ""

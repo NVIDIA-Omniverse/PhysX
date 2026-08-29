@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef SC_DEFORMABLE_SURFACE_SIM_H
 #define SC_DEFORMABLE_SURFACE_SIM_H
@@ -50,7 +50,7 @@ public:
 
 	PX_INLINE	Dy::DeformableSurface*	getLowLevelDeformableSurface() const { return mLLDeformableSurface; }
 	PX_INLINE	DeformableSurfaceCore&	getCore() const { return static_cast<DeformableSurfaceCore&>(mCore); }
-	virtual		PxActor*				getPxActor() const { return getCore().getPxActor(); }
+	virtual		PxActor*				getPxActor() const PX_OVERRIDE { return getCore().getPxActor(); }
 
 	bool							isSleeping() const;
 	PX_FORCE_INLINE	bool			isActive() const { return !isSleeping(); }

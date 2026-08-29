@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "PxPvdUserRenderImpl.h"
 #include "PxPvdInternalByteStreams.h"
@@ -63,57 +63,57 @@ struct RenderWriter : public RenderSerializer
 			write(val.begin(), amount);
 	}
 
-	virtual void streamify(uint64_t& val)
+	virtual void streamify(uint64_t& val) PX_OVERRIDE
 	{
 		write(val);
 	}
-	virtual void streamify(uint32_t& val)
+	virtual void streamify(uint32_t& val) PX_OVERRIDE
 	{
 		write(val);
 	}
-	virtual void streamify(float& val)
+	virtual void streamify(float& val) PX_OVERRIDE
 	{
 		write(val);
 	}
-	virtual void streamify(uint8_t& val)
+	virtual void streamify(uint8_t& val) PX_OVERRIDE
 	{
 		write(val);
 	}
-	virtual void streamify(DataRef<uint8_t>& val)
+	virtual void streamify(DataRef<uint8_t>& val) PX_OVERRIDE
 	{
 		writeRef(val);
 	}
 
-	virtual void streamify(PxDebugText& val)
+	virtual void streamify(PxDebugText& val) PX_OVERRIDE
 	{
 		write(val.color);
 		write(val.position);
 		write(val.size);
 
-		uint32_t amount = static_cast<uint32_t>(strlen(val.string)) + 1;
+		uint32_t amount = static_cast<uint32_t>(strnlen(val.string, UINT32_MAX - 1)) + 1;
 		write(amount);
 		if(amount)
 			write(val.string, amount);
 	}
 
-	virtual void streamify(DataRef<PxDebugPoint>& val)
+	virtual void streamify(DataRef<PxDebugPoint>& val) PX_OVERRIDE
 	{
 		writeRef(val);
 	}
-	virtual void streamify(DataRef<PxDebugLine>& val)
+	virtual void streamify(DataRef<PxDebugLine>& val) PX_OVERRIDE
 	{
 		writeRef(val);
 	}
-	virtual void streamify(DataRef<PxDebugTriangle>& val)
+	virtual void streamify(DataRef<PxDebugTriangle>& val) PX_OVERRIDE
 	{
 		writeRef(val);
 	}
 
-	virtual uint32_t hasData()
+	virtual uint32_t hasData() PX_OVERRIDE
 	{
 		return false;
 	}
-	virtual bool isGood()
+	virtual bool isGood() PX_OVERRIDE
 	{
 		return true;
 	}
@@ -135,7 +135,7 @@ struct UserRenderer : public PvdUserRenderer
 	virtual ~UserRenderer()
 	{
 	}
-	virtual void release()
+	virtual void release() PX_OVERRIDE
 	{
 		PVD_DELETE(this);
 	}
@@ -152,33 +152,33 @@ struct UserRenderer : public PvdUserRenderer
 		if(mBuffer.size() >= mBufferCapacity)
 			flushRenderEvents();
 	}
-	virtual void setInstanceId(const void* iid)
+	virtual void setInstanceId(const void* iid) PX_OVERRIDE
 	{
 		handleEvent(SetInstanceIdRenderEvent(PVD_POINTER_TO_U64(iid)));
 	}
 	// Draw these points associated with this instance
-	virtual void drawPoints(const PxDebugPoint* points, uint32_t count)
+	virtual void drawPoints(const PxDebugPoint* points, uint32_t count) PX_OVERRIDE
 	{
 		handleEvent(PointsRenderEvent(points, count));
 	}
 	// Draw these lines associated with this instance
-	virtual void drawLines(const PxDebugLine* lines, uint32_t count)
+	virtual void drawLines(const PxDebugLine* lines, uint32_t count) PX_OVERRIDE
 	{
 		handleEvent(LinesRenderEvent(lines, count));
 	}
 	// Draw these triangles associated with this instance
-	virtual void drawTriangles(const PxDebugTriangle* triangles, uint32_t count)
+	virtual void drawTriangles(const PxDebugTriangle* triangles, uint32_t count) PX_OVERRIDE
 	{
 		handleEvent(TrianglesRenderEvent(triangles, count));
 	}
 
-	virtual void drawText(const PxDebugText& text)
+	virtual void drawText(const PxDebugText& text) PX_OVERRIDE
 	{
 		handleEvent(TextRenderEvent(text));
 	}
 
 	virtual void drawRenderbuffer(const PxDebugPoint* pointData, uint32_t pointCount, const PxDebugLine* lineData,
-	                              uint32_t lineCount, const PxDebugTriangle* triangleData, uint32_t triangleCount)
+	                              uint32_t lineCount, const PxDebugTriangle* triangleData, uint32_t triangleCount) PX_OVERRIDE
 	{
 		handleEvent(DebugRenderEvent(pointData, pointCount, lineData, lineCount, triangleData, triangleCount));
 	}
@@ -205,14 +205,14 @@ struct UserRenderer : public PvdUserRenderer
 		handleEvent(DoubleConeRenderEvent(t, angle, true));
 	}
 	// Clear the immedate buffer.
-	virtual void flushRenderEvents()
+	virtual void flushRenderEvents() PX_OVERRIDE
 	{
 		if(mClient)
 			mClient->handleBufferFlush(mBuffer.begin(), mBuffer.size());
 		mBuffer.clear();
 	}
 
-	virtual void setClient(RendererEventClient* client)
+	virtual void setClient(RendererEventClient* client) PX_OVERRIDE
 	{
 		mClient = client;
 	}
@@ -234,19 +234,19 @@ struct RenderReader : public RenderSerializer
 	{
 		mStream.setup(const_cast<uint8_t*>(data.begin()), const_cast<uint8_t*>(data.end()));
 	}
-	virtual void streamify(uint32_t& val)
+	virtual void streamify(uint32_t& val) PX_OVERRIDE
 	{
 		mStream >> val;
 	}
-	virtual void streamify(uint64_t& val)
+	virtual void streamify(uint64_t& val) PX_OVERRIDE
 	{
 		mStream >> val;
 	}
-	virtual void streamify(float& val)
+	virtual void streamify(float& val) PX_OVERRIDE
 	{
 		mStream >> val;
 	}
-	virtual void streamify(uint8_t& val)
+	virtual void streamify(uint8_t& val) PX_OVERRIDE
 	{
 		mStream >> val;
 	}
@@ -262,19 +262,19 @@ struct RenderReader : public RenderSerializer
 		val = DataRef<TDataType>(dataPtr, count);
 	}
 
-	virtual void streamify(DataRef<PxDebugPoint>& val)
+	virtual void streamify(DataRef<PxDebugPoint>& val) PX_OVERRIDE
 	{
 		readRef(val);
 	}
-	virtual void streamify(DataRef<PxDebugLine>& val)
+	virtual void streamify(DataRef<PxDebugLine>& val) PX_OVERRIDE
 	{
 		readRef(val);
 	}
-	virtual void streamify(DataRef<PxDebugTriangle>& val)
+	virtual void streamify(DataRef<PxDebugTriangle>& val) PX_OVERRIDE
 	{
 		readRef(val);
 	}
-	virtual void streamify(PxDebugText& val)
+	virtual void streamify(PxDebugText& val) PX_OVERRIDE
 	{
 		mStream >> val.color;
 		mStream >> val.position;
@@ -287,15 +287,15 @@ struct RenderReader : public RenderSerializer
 		mStream.read(dataPtr, len);
 		val.string = reinterpret_cast<const char*>(dataPtr);
 	}
-	virtual void streamify(DataRef<uint8_t>& val)
+	virtual void streamify(DataRef<uint8_t>& val) PX_OVERRIDE
 	{
 		readRef(val);
 	}
-	virtual bool isGood()
+	virtual bool isGood() PX_OVERRIDE
 	{
 		return mStream.isGood();
 	}
-	virtual uint32_t hasData()
+	virtual uint32_t hasData() PX_OVERRIDE
 	{
 		return uint32_t(mStream.size() > 0);
 	}
@@ -323,19 +323,19 @@ struct RenderReader<true> : public RenderSerializer
 		mStream >> val;
 		swapBytes(val);
 	}
-	virtual void streamify(uint64_t& val)
+	virtual void streamify(uint64_t& val) PX_OVERRIDE
 	{
 		read(val);
 	}
-	virtual void streamify(uint32_t& val)
+	virtual void streamify(uint32_t& val) PX_OVERRIDE
 	{
 		read(val);
 	}
-	virtual void streamify(float& val)
+	virtual void streamify(float& val) PX_OVERRIDE
 	{
 		read(val);
 	}
-	virtual void streamify(uint8_t& val)
+	virtual void streamify(uint8_t& val) PX_OVERRIDE
 	{
 		read(val);
 	}
@@ -353,19 +353,19 @@ struct RenderReader<true> : public RenderSerializer
 		val = DataRef<TDataType>(dataPtr, count);
 	}
 
-	virtual void streamify(DataRef<PxDebugPoint>& val)
+	virtual void streamify(DataRef<PxDebugPoint>& val) PX_OVERRIDE
 	{
 		readRef(val);
 	}
-	virtual void streamify(DataRef<PxDebugLine>& val)
+	virtual void streamify(DataRef<PxDebugLine>& val) PX_OVERRIDE
 	{
 		readRef(val);
 	}
-	virtual void streamify(DataRef<PxDebugTriangle>& val)
+	virtual void streamify(DataRef<PxDebugTriangle>& val) PX_OVERRIDE
 	{
 		readRef(val);
 	}
-	virtual void streamify(PxDebugText& val)
+	virtual void streamify(PxDebugText& val) PX_OVERRIDE
 	{
 		mStream >> val.color;
 		mStream >> val.position;
@@ -378,15 +378,15 @@ struct RenderReader<true> : public RenderSerializer
 		mStream.read(dataPtr, len);
 		val.string = reinterpret_cast<const char*>(dataPtr);
 	}
-	virtual void streamify(DataRef<uint8_t>& val)
+	virtual void streamify(DataRef<uint8_t>& val) PX_OVERRIDE
 	{
 		readRef(val);
 	}
-	virtual bool isGood()
+	virtual bool isGood() PX_OVERRIDE
 	{
 		return mStream.isGood();
 	}
-	virtual uint32_t hasData()
+	virtual uint32_t hasData() PX_OVERRIDE
 	{
 		return uint32_t(mStream.size() > 0);
 	}

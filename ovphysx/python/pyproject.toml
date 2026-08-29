@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -5,11 +8,17 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ovphysx"
 dynamic = ["version"]
-description = "Self-contained Python library for USD-based physics simulation with DLPack tensor interoperability"
+description = "Self-contained Python library for USD-based physics simulation with DLPack tensor interoperability. x86_64 wheels require a CPU with AVX."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "packaging>=20.0",  # PEP 440 version checking for USD compatibility
+  "packaging>=20,<24",  # PEP 440 version checking for USD compatibility
+  # ovstage ships the USD backend + monolith + libovstage that ovphysx loads at
+  # runtime. Keep the two-wheel release pair exact: this ovphysx build is validated
+  # against the population/runtime ABI of the pinned ovstage release. This pin is
+  # generated from the OVSTAGE_VERSION constant in scripts/fetch_ovstage_release.py
+  # (the version source of truth); do not edit this line by hand.
+  "ovstage==0.1.1.355824",
 ]
 license = "LicenseRef-NVIDIA-Omniverse"
 license-files = ["LICENSE.txt", "ovphysx-LICENSES.zip"]
@@ -26,7 +35,7 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/NVIDIA-Omniverse/PhysX/tree/main/ovphysx"
+Homepage = "https://github.com/NVIDIA-Omniverse/PhysX/"
 Documentation = "https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/index.html"
 Repository = "https://github.com/NVIDIA-Omniverse/PhysX"
 Issues = "https://github.com/NVIDIA-Omniverse/PhysX/issues"
@@ -57,10 +66,9 @@ include = ["ovphysx*"]
   "lib/**/*",
   "plugins/**/*",
   "deps/**/*",  # Extension Python packages (v2/) and kernel/py packages (_kit_py/)
+  "schemas/**/*",  # Codeless PhysX USD schemas for external authoring/validation
   "SKILLS.md",
   "skills/**/*",
   "samples/**/*",
   "docs/**/*",
 ]
-
-

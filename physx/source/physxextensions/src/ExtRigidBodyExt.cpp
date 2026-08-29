@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -476,10 +476,11 @@ void PxRigidBodyExt::computeVelocityDeltaFromImpulse(const PxRigidBody& body, co
 {
 	const PxVec3 centerOfMass = globalPose.transform(body.getCMassLocalPose().p);
 	const PxReal invMass = body.getInvMass() * invMassScale;
-	const PxVec3 invInertiaMS = body.getMassSpaceInvInertiaTensor() * invInertiaScale;
+	const PxVec3p invInertiaMS = body.getMassSpaceInvInertiaTensor() * invInertiaScale;
 
 	PxMat33 invInertia;
-	transformInertiaTensor(invInertiaMS, PxMat33Padded(globalPose.q), invInertia);
+	transformInertiaTensor(invInertiaMS, globalPose.q, invInertia);
+
 	linearVelocityChange = impulse * invMass;
 	const PxVec3 rXI = (point - centerOfMass).cross(impulse);
 	angularVelocityChange = invInertia * rXI;

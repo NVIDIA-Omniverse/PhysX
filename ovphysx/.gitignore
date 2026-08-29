@@ -1,0 +1,51 @@
+# Build and test outputs
+_build/
+_builtpackages/
+_install/
+_dist/
+_repo/
+config.toml
+tests/python_tests/detailed_log.txt
+
+# IDE
+.vscode/
+.cursor/
+
+# CMake user-local presets (CMakePresets.json is checked in)
+CMakeUserPresets.json
+
+# NVIDIA shader cache
+nv_shadercache/
+**/nv_shadercache/
+
+# Python packaging artifacts
+**/*.egg-info/
+**/.venv/
+
+# Python virtual envs (e.g. tests/python_tests/.venv from uv run / validate_all.cmake)
+.venv/
+.venv_build/
+venv/
+
+# Packaging lock CI artifacts (generated fresh each build, not committed)
+packaging_lock/*_new.json
+
+# Formatting markers (omni.repo.format writes `.lastformat-clang`,
+# `.lastverify-clang`, etc. -- the suffix varies by formatter)
+.lastformat*
+.lastverify*
+
+# Python packaging venvs (build_wheel.cmake may create these)
+python/.venv*/
+
+# Generated at wheel-build time by scripts/build_wheel.cmake; must not be committed
+python/ovphysx/_version.py
+
+# Benchmark baselines are per-machine and not committed; the runtime
+# `_baseline.txt` written by the harness lives under `_build/` which is
+# already ignored, but in case anyone hand-copies one into the source
+# tree keep it out of the repo here too.
+tests/benchmarks/golden/
+
+# Generated at configure time from omni.physx (OMPE-94459)
+tests/data/Ant.usda

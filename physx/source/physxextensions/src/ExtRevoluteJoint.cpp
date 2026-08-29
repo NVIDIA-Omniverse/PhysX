@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -296,14 +296,21 @@ void RevoluteJoint::updateOmniPvdProperties() const
 	OMNI_PVD_WRITE_SCOPE_END
 }
 
+template<> void physx::Ext::omniPvdInitJoint<RevoluteJoint>(OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData, RevoluteJoint& joint); // declared before the wrapper so the wrapper binds the explicit form below instead of implicitly instantiating it
 template<>
 void physx::Ext::omniPvdInitJoint<RevoluteJoint>(RevoluteJoint& joint)
 {
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	omniPvdInitJoint(pvdWriter, pvdRegData, joint);
+	OMNI_PVD_WRITE_SCOPE_END
+}
 
+template<>
+void physx::Ext::omniPvdInitJoint<RevoluteJoint>(OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData, RevoluteJoint& joint)
+{
 	PxRevoluteJoint& j = static_cast<PxRevoluteJoint&>(joint);
 	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, j);
-	omniPvdSetBaseJointParams(static_cast<PxJoint&>(joint), PxJointConcreteType::eREVOLUTE);
+	omniPvdSetBaseJointParams(pvdWriter, pvdRegData, static_cast<PxJoint&>(joint), PxJointConcreteType::eREVOLUTE);
 	
 	PxJointAngularLimitPair limit = joint.getLimit();
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, limitLower, j, limit.lower)
@@ -320,8 +327,6 @@ void physx::Ext::omniPvdInitJoint<RevoluteJoint>(RevoluteJoint& joint)
 
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, angle, j, joint.getAngle())
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, velocity, j, joint.getVelocity())
-
-	OMNI_PVD_WRITE_SCOPE_END
 }
 
 #endif

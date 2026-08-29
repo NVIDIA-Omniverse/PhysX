@@ -1,0 +1,50 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 0.01
+    upAxis = "Z"
+)
+
+# Minimal scene exercising the modern particle schema:
+#   - PhysicsScene with PhysxSceneAPI (GPU dynamics + GPU broadphase, required
+#     by the runtime because particles only register on a GPU-capable scene).
+#   - PhysxParticleSystem prim at /World/particleSystem -- registers as the
+#     ePTParticleSystem internal type, resolves to a PxPBDParticleSystem.
+#   - UsdGeomPoints with PhysxParticleSetAPI at /World/particles, pointing at
+#     the particle system via the physxParticle:particleSystem rel --
+#     registers as the ePTParticleSet internal type, resolves to a
+#     PxParticleBuffer.
+#
+# Used by the PARTICLE_SYSTEM / PARTICLE_SET happy-path tests in
+# tests/c_unittests/test_physx_ptr.cpp. GPU-only (the C runtime rejects
+# particle creation on a CPU scene).
+
+def Xform "World"
+{
+    def PhysicsScene "physicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 981
+        bool physxScene:enableGPUDynamics = true
+        uniform token physxScene:broadphaseType = "GPU"
+    }
+
+    def PhysxParticleSystem "particleSystem"
+    {
+        float particleContactOffset = 0.5
+        bool particleSystemEnabled = 1
+        rel simulationOwner = </World/physicsScene>
+    }
+
+    def Points "particles" (
+        prepend apiSchemas = ["PhysxParticleSetAPI"]
+    )
+    {
+        point3f[] points = [(0, 0, 1), (0, 0, 2), (0, 0, 3)]
+        float[] widths = [0.1, 0.1, 0.1]
+        bool physxParticle:fluid = 0
+        rel physxParticle:particleSystem = </World/particleSystem>
+    }
+}

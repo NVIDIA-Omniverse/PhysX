@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -781,6 +781,8 @@ void BVHPartialRefitData::markNodeForRefit(TreeNodeIndex nodeIndex)
 
 	if(!refitBitmask->getBits())
 		refitBitmask->init(mNbNodes);
+	else
+		refitBitmask->resize(mNbNodes);   // PT: AI-suggested fix for https://github.com/NVIDIAGameWorks/PhysX/issues/680
 
 	PX_ASSERT(nodeIndex<mNbNodes);
 
@@ -1371,7 +1373,7 @@ void AABBTree::mergeTree(const AABBTreeMergeData& treeParams)
 	for (PxU32 i = 0; i < treeParams.mNbIndices; i++)
 	{
 		mIndices[mNbIndices + i] = treeParams.mIndicesOffset + treeParams.mIndices[i];
-	}	
+	}
 
 	// check the mRefitBitmask if we fit all the new nodes
 	mRefitBitmask.resize(mNbNodes + treeParams.mNbNodes + 1);	
@@ -1386,13 +1388,13 @@ void AABBTree::mergeTree(const AABBTreeMergeData& treeParams)
 		traverseRuntimeNode(mNodes[0], treeParams, 0);
 	}
 	else
-	{				
+	{
 		if(mNodes[0].isLeaf())
-		{			
+		{
 			mergeRuntimeLeaf(mNodes[0], treeParams, 0);
 		}
 		else		
-		{			
+		{
 			mergeRuntimeNode(mNodes[0], treeParams, 0);		
 		}
 

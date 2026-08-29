@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -99,7 +99,7 @@ namespace physx {
 		//Increases the subdivision level by one and sets the index to the specified sub triangle that got created out of the previous triangle due to one additional level of subdivision
 		PX_FORCE_INLINE PX_CUDA_CALLABLE PxU32 elevateSubdivisionId(PxU32 encodedId, PxU32 subTriangle = 0)
 		{
-			PX_ASSERT(subTriangle >= 0 && subTriangle < 4);
+			PX_ASSERT(subTriangle < 4);
 
 			PxU32 subdivisionLevel;
 			PxU32 subTriangleIndex;

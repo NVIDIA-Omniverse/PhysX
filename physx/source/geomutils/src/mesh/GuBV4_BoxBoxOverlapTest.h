@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -164,7 +164,7 @@
 		}
 
 		Vec4V tV;
-		{			
+		{
 			const Vec4V T_YZX_V = V4Perm<1, 2, 0, 3>(TV);
 			const Vec4V T_ZXY_V = V4Perm<2, 0, 1, 3>(TV);
 

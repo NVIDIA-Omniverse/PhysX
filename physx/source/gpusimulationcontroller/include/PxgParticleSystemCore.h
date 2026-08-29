@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -30,22 +30,8 @@
 #define PXG_PARTICLE_SYSTEM_CORE_H
 
 #include "foundation/PxArray.h"
-#include "foundation/PxPinnedArray.h"
-#include "foundation/PxSimpleTypes.h"
-#include "foundation/PxVec3.h"
-
-#include "PxSparseGridParams.h"
-
-#include "cudamanager/PxCudaTypes.h"
-
-#include "PxgCudaBuffer.h"
-#include "PxgNarrowphaseCore.h"
 #include "PxgNonRigidCoreCommon.h"
 #include "PxgParticleSystem.h"
-#include "PxgRadixSortDesc.h"
-#include "PxgSimulationCoreDesc.h"
-
-#include <vector_types.h>
 
 namespace physx
 {
@@ -53,34 +39,19 @@ namespace physx
 	void createPxgParticleSystem();
 
 	class PxgBodySimManager;
-	class PxgEssentialCore;
-	class PxgCudaKernelWranglerManager;
-	class PxCudaContextManager;
-	class PxgHeapMemoryAllocatorManager;
-	class PxgSimulationController;
-	class PxgGpuContext;
-	class PxBounds3;
+	class PxgParticleSystemBuffer;
+	class PxgParticleSystemDiffuseBuffer;
 
-	struct PxgShapeDescBuffer;
-
-	struct PxgParticlePrimitiveConstraintBlock
+	namespace Dy
 	{
-		float4 raXn_velMultiplierW[32];
-		float4 normal_errorW[32];
-		//Friction tangent + invMass of the rigid body (avoids needing to read the mass)
-		//Second tangent can be found by cross producting normal with fricTan0
-		float4 fricTan0_invMass0[32];
-		float4 raXnF0_velMultiplierW[32];
-		float4 raXnF1_velMultiplierW[32];
-		PxU64  rigidId[32];
-		PxU64  particleId[32];
-	};
+		class ParticleSystemCore;
+	}
 
 	class PxgParticleSystemCore : public PxgNonRigidCore
 	{
 	public:
 		PxgParticleSystemCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
-			PxgHeapMemoryAllocatorManager* heapMemoryManager, PxgSimulationController* simController, 
+			PxgAllocatorDesc& allocDesc, PxgSimulationController* simController, 
 			PxgGpuContext* gpuContext, PxU32 maxParticleContacts);
 		virtual ~PxgParticleSystemCore();
 	
@@ -96,10 +67,10 @@ namespace physx
 
 		virtual void constraintPrep(CUdeviceptr prePrepDescd, CUdeviceptr prepDescd, CUdeviceptr solverCoreDescd, CUdeviceptr sharedDescd,
 			const PxReal dt, CUstream solverStream, bool isTGS, PxU32 numSolverBodies) = 0;
-		virtual void solve(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd, 
-			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, const PxReal dt, CUstream solverStream) = 0;
+		virtual void solve(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
+			CUdeviceptr artiCoreDescd, const PxReal dt, CUstream solverStream, PxReal biasCoefficient) = 0;
 		virtual void solveTGS(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
-			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, const PxReal dt, const PxReal totalInvDt, CUstream solverStream,
+			CUdeviceptr artiCoreDescd, const PxReal dt, const PxReal totalInvDt, CUstream solverStream,
 			const bool isVelocityIteration, PxI32 iterationIndex, PxI32 numTGSIterations, PxReal coefficient) = 0;
 
 		virtual void integrateSystems(const PxReal dt, const PxReal epsilonSq) = 0;
@@ -136,15 +107,15 @@ namespace physx
 		
 		PX_FORCE_INLINE PxU32 getMaxParticles() { return mMaxParticles; }
 
-		PxU32 getHostContactCount() { return *mHostContactCount; }
+		PxU32 getHostContactCount() { return mHostContactCount.get(); }
 
-		PxPinnedArray<PxgParticleSystem>			mNewParticleSystemPool; //record the newly created particle system
-		PxPinnedArray<PxgParticleSystem>			mParticleSystemPool; //persistent cpu mirror
+		Cm::PinnableArray<PxgParticleSystem>		mNewParticleSystemPool; //record the newly created particle system
+		Cm::PinnableArray<PxgParticleSystem>		mParticleSystemPool; //persistent cpu mirror
 
 		PxArray<PxU32>								mNewParticleSystemNodeIndexPool;
 		PxArray<PxU32>								mParticleSystemNodeIndexPool;
 
-		PxInt32ArrayPinned							mDirtyParamsParticleSystems;
+		Cm::PinnableArray<PxU32>					mDirtyParamsParticleSystems;
 
 	protected:
 
@@ -193,8 +164,8 @@ namespace physx
 		/*void solveSprings(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemsd,
 			const PxU32 nbActiveParticleSystems, const PxReal dt, bool isTGS);
 */
-		void solveOneWayCollision(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemsd, 
-			const PxU32 nbActiveParticleSystems, const PxReal dt, const PxReal biasCoefficient, const bool isVelocityIteration);
+		void solveOneWayCollision(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemsd,
+			const PxU32 nbActiveParticleSystems, const PxReal dt, const bool isVelocityIteration);
 
 		void updateSortedVelocity(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemsd,
 			const PxU32 nbActiveParticleSystems, const PxReal dt, const bool skipNewPositionAdjustment = false);
@@ -208,24 +179,17 @@ namespace physx
 			const PxReal dt, bool isTGS, CUstream solverStream);
 		
 		//this is for solving contacts between particles and primitives based on sorted by rigid id
-		void solvePrimitiveCollisionForParticles(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd, 
-			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, const PxReal dt, bool isTGS, const PxReal coefficient,
+		void solvePrimitiveCollisionForParticles(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
+			CUdeviceptr artiCoreDescd, const PxReal dt, bool isTGS,
 			bool isVelIteration);
 
 		void solvePrimitiveCollisionForRigids(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
-			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, CUstream solverStream, const PxReal dt, bool isTGS, const PxReal coefficient,
+			CUdeviceptr artiCoreDescd, CUstream solverStream, const PxReal dt, bool isTGS,
 			bool isVelIteration);
 
-		void accumulateRigidDeltas(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd, 
-			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, CUdeviceptr rigidIdsd, CUdeviceptr numIdsd, CUstream stream,
+		void accumulateRigidDeltas(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
+			CUdeviceptr artiCoreDescd, CUdeviceptr rigidIdsd, CUdeviceptr numIdsd, CUstream stream,
 			const bool isTGS);
-
-		void prepRigidAttachments(CUdeviceptr prePrepDescd, CUdeviceptr prepDescd, bool isTGS, const PxReal dt, CUstream stream,
-			const PxU32 nbActiveParticleSystems, CUdeviceptr activeParticleSystemsd, PxU32 numSolverBodies);
-
-		void solveRigidAttachments(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd, 
-			CUdeviceptr sharedDescd, CUdeviceptr artiCoreDescd, CUstream solverStream, const PxReal dt, 
-			const bool isTGS, 	const PxReal biasCoefficient, const bool isVelocityIteration, CUdeviceptr particleSystemd, CUdeviceptr activeParticleSystemd, const PxU32 nbActiveParticleSystems);
 
 		//integrate particle position and velocity based on contact constraints
 		void integrateSystem(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemd, const PxU32 nbActiveParticleSystems, const PxReal dt, const PxReal epsilonSq);
@@ -250,8 +214,8 @@ namespace physx
 		PxgTypedCudaBuffer<PxgParticlePrimitiveContact> mPrimitiveContactSortedByParticleBuf;
 		PxgTypedCudaBuffer<PxgParticlePrimitiveContact> mPrimitiveContactSortedByRigidBuf;
 
-		PxgTypedCudaBuffer<PxgParticlePrimitiveConstraintBlock> mPrimitiveConstraintSortedByParticleBuf;
-		PxgTypedCudaBuffer<PxgParticlePrimitiveConstraintBlock> mPrimitiveConstraintSortedByRigidBuf;
+		PxgTypedCudaBuffer<PxgParticleRigidContactBlock> mRigidContactBlocksSortedByParticle;
+		PxgTypedCudaBuffer<PxgParticleRigidContactBlock> mRigidContactBlocksSortedByRigid;
 
 		PxgTypedCudaBuffer<float2>		mPrimitiveConstraintAppliedParticleForces;
 		PxgTypedCudaBuffer<float2>		mPrimitiveConstraintAppliedRigidForces;
@@ -262,11 +226,8 @@ namespace physx
 		PxgTypedCudaBuffer<PxVec4>		mTempBlockDeltaVelBuf;
 		PxgTypedCudaBuffer<PxU64>		mTempBlockRigidIdBuf;
 
-		PxgTypedCudaBuffer<PxgParticleRigidConstraint> mParticleRigidConstraints;
-		PxgTypedCudaBuffer<PxU64>		mParticleRigidAttachmentIds;
-		PxgTypedCudaBuffer<PxU32>		mParticleRigidConstraintCount;
-		PxgTypedCudaBuffer<PxReal>		mParticleRigidAttachmentScaleBuffer;
-		
+		PxgTypedCudaBuffer<PxU32>		mParticleRigidRefCount;
+
 
 
 		//------------------------------------------------------------------------
@@ -278,6 +239,7 @@ namespace physx
 		CUevent									mSelfCollisionEvent;
 		CUevent									mSolveParticleRigidEvent;
 		CUevent									mSolveRigidParticleEvent;
+		CUevent									mPreCountParticleRigidEvent; // rigid solve waits for the PC pre-count, not behind the particle solve
 		PxU32									mCurrentTMIndex; //current temp marker buffer index
 
 		PxgCudaBuffer							mHasFlipPhase;
@@ -287,7 +249,7 @@ namespace physx
 
 
 		// Diffuse particles
-		PxPinnedArray<PxgRadixSortBlockDesc> mDiffuseParticlesRSDesc;
+		Cm::PinnableArray<PxgRadixSortBlockDesc>	mDiffuseParticlesRSDesc;
 	
 		PxVec3									mGravity; //this get set in preIntegrateSystems
 
@@ -298,10 +260,7 @@ namespace physx
 		PxU32									mMaxBuffersPerSystem;
 		PxU32									mMaxDiffusePerBuffer;
 		PxU32									mMaxDiffuseBuffersPerSystem;
-		PxU32									mMaxRigidAttachmentsPerSystem;
-		PxU32									mTotalRigidAttachments;
-		PxU32*									mHostContactCount;
-	
+		Cm::PinnableObject<PxU32>				mHostContactCount;
 
 		friend class PxgSoftBodyCore;
 };

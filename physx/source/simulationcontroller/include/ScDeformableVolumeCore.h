@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -47,7 +47,6 @@ namespace Sc
 class DeformableVolumeSim;
 class BodyCore;
 class DeformableSurfaceCore;
-class ParticleSystemCore;
 
 class DeformableVolumeCore : public ActorCore
 {
@@ -114,23 +113,14 @@ public:
 
 	PxU32						getGpuIndex()	const;
 
-	void						addParticleFilter(Sc::ParticleSystemCore* core, PxU32 particleId, PxU32 userBufferId, PxU32 tetId);
-	void						removeParticleFilter(Sc::ParticleSystemCore* core, PxU32 particleId, PxU32 userBufferId, PxU32 tetId);
-
-	PxU32						addParticleAttachment(Sc::ParticleSystemCore* core, PxU32 particleId, PxU32 userBufferId, PxU32 tetId, const PxVec4& barycentric);
-	void						removeParticleAttachment(Sc::ParticleSystemCore* core, PxU32 handle);
-
-	void						addRigidFilter(Sc::BodyCore* core, PxU32 vertId);
-	void						removeRigidFilter(Sc::BodyCore* core, PxU32 vertId);
-
-	PxU32						addRigidAttachment(Sc::BodyCore* core, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint, bool doConversion);
+	PxU32						addRigidAttachment(Sc::BodyCore* core, PxU32 vertId, const PxVec3& actorSpacePose, bool doConversion);
 	void						removeRigidAttachment(Sc::BodyCore* core, PxU32 handle);
 
 	void						addTetRigidFilter(Sc::BodyCore* core, PxU32 tetIdx);
 	void						removeTetRigidFilter(Sc::BodyCore* core, PxU32 tetIdx);
 
 	PxU32						addTetRigidAttachment(Sc::BodyCore* core, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose,
-									PxConeLimitedConstraint* constraint, bool doConversion);
+									bool doConversion);
 
 	void						addSoftBodyFilter(Sc::DeformableVolumeCore& core, PxU32 tetIdx0, PxU32 tetIdx1);
 	void						removeSoftBodyFilter(Sc::DeformableVolumeCore& core, PxU32 tetIdx0, PxU32 tetIdx1);
@@ -138,14 +128,14 @@ public:
 	void						removeSoftBodyFilters(Sc::DeformableVolumeCore& core, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
 
 	PxU32						addSoftBodyAttachment(Sc::DeformableVolumeCore& core, PxU32 tetIdx0, const PxVec4& triBarycentric0, PxU32 tetIdx1, const PxVec4& tetBarycentric1,
-									PxConeLimitedConstraint* constraint, PxReal constraintOffset, bool doConversion);
+									bool doConversion);
 	void						removeSoftBodyAttachment(Sc::DeformableVolumeCore& core, PxU32 handle);
 
 	void						addClothFilter(Sc::DeformableSurfaceCore& core, PxU32 triIdx, PxU32 tetIdx);
 	void						removeClothFilter(Sc::DeformableSurfaceCore& core, PxU32 triIdx, PxU32 tetIdx);
 
 	PxU32						addClothAttachment(Sc::DeformableSurfaceCore& core, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric,
-									PxConeLimitedConstraint* constraint, PxReal constraintOffset, bool doConversion);
+									bool doConversion);
 	void						removeClothAttachment(Sc::DeformableSurfaceCore& core, PxU32 handle);
 
 	//---------------------------------------------------------------------------------

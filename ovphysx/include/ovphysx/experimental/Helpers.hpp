@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-//
 
 #ifndef OVPHYSX_EXPERIMENTAL_HELPERS_HPP
 #define OVPHYSX_EXPERIMENTAL_HELPERS_HPP

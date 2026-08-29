@@ -1,0 +1,18 @@
+<project toolsVersion="5.0">
+  <!-- Import build dependencies from Kit SDK, but override USD with the
+       namespaced, py-less package. The resolver, OmniClient, and
+       omniverse_connection runtime set comes from the exact OVStage package.
+       Python here is build tooling only; namespaced install/wheel staging skips
+       Python runtime libs and verify_pyless_closure.py rejects them if they
+       appear. -->
+  <import path="../_build/target-deps/kit_sdk_${config}/dev/all-deps.packman.xml">
+    <filter include="python" />
+    <filter include="gsl" />
+  </import>
+
+  <dependency name="usd-${config}" linkPath="../_build/target-deps/usd/${config}">
+    <package name="usd.nopy.${platform_target_abi}.ov-full-monolithic.${config}" version="0.25.11.kit.4-gl.21081" />
+  </dependency>
+  <dependency name="python" linkPath="../_build/target-deps/python" />
+  <dependency name="gsl" linkPath="../_build/target-deps/gsl" />
+</project>

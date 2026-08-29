@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -138,56 +138,49 @@ const char * getPxGearJoint_ConcreteTypeName( const PxGearJoint* inObj ) { retur
 void setPxD6Joint_Motion( PxD6Joint* inObj, PxD6Axis::Enum inIndex, PxD6Motion::Enum inArg ){ inObj->setMotion( inIndex, inArg ); }
 PxD6Motion::Enum getPxD6Joint_Motion( const PxD6Joint* inObj, PxD6Axis::Enum inIndex ) { return inObj->getMotion( inIndex ); }
 PxReal getPxD6Joint_TwistAngle( const PxD6Joint* inObj ) { return inObj->getTwistAngle(); }
-PxReal getPxD6Joint_Twist( const PxD6Joint* inObj ) { return inObj->getTwist(); }
 PxReal getPxD6Joint_SwingYAngle( const PxD6Joint* inObj ) { return inObj->getSwingYAngle(); }
 PxReal getPxD6Joint_SwingZAngle( const PxD6Joint* inObj ) { return inObj->getSwingZAngle(); }
 void setPxD6Joint_DistanceLimit( PxD6Joint* inObj, const PxJointLinearLimit & inArg){ inObj->setDistanceLimit( inArg ); }
 PxJointLinearLimit getPxD6Joint_DistanceLimit( const PxD6Joint* inObj ) { return inObj->getDistanceLimit(); }
-void setPxD6Joint_LinearLimit( PxD6Joint* inObj, const PxJointLinearLimit & inArg){ inObj->setLinearLimit( inArg ); }
-PxJointLinearLimit getPxD6Joint_LinearLimit( const PxD6Joint* inObj ) { return inObj->getLinearLimit(); }
 void setPxD6Joint_TwistLimit( PxD6Joint* inObj, const PxJointAngularLimitPair & inArg){ inObj->setTwistLimit( inArg ); }
 PxJointAngularLimitPair getPxD6Joint_TwistLimit( const PxD6Joint* inObj ) { return inObj->getTwistLimit(); }
 void setPxD6Joint_SwingLimit( PxD6Joint* inObj, const PxJointLimitCone & inArg){ inObj->setSwingLimit( inArg ); }
 PxJointLimitCone getPxD6Joint_SwingLimit( const PxD6Joint* inObj ) { return inObj->getSwingLimit(); }
 void setPxD6Joint_PyramidSwingLimit( PxD6Joint* inObj, const PxJointLimitPyramid & inArg){ inObj->setPyramidSwingLimit( inArg ); }
 PxJointLimitPyramid getPxD6Joint_PyramidSwingLimit( const PxD6Joint* inObj ) { return inObj->getPyramidSwingLimit(); }
+void setPxD6Joint_AngularDriveConfig( PxD6Joint* inObj, PxD6AngularDriveConfig::Enum inArg){ inObj->setAngularDriveConfig( inArg ); }
+PxD6AngularDriveConfig::Enum getPxD6Joint_AngularDriveConfig( const PxD6Joint* inObj ) { return inObj->getAngularDriveConfig(); }
 void setPxD6Joint_Drive( PxD6Joint* inObj, PxD6Drive::Enum inIndex, PxD6JointDrive inArg ){ inObj->setDrive( inIndex, inArg ); }
 PxD6JointDrive getPxD6Joint_Drive( const PxD6Joint* inObj, PxD6Drive::Enum inIndex ) { return inObj->getDrive( inIndex ); }
 void setPxD6Joint_DrivePosition( PxD6Joint* inObj, const PxTransform & inArg){ inObj->setDrivePosition( inArg ); }
 PxTransform getPxD6Joint_DrivePosition( const PxD6Joint* inObj ) { return inObj->getDrivePosition(); }
 const char * getPxD6Joint_ConcreteTypeName( const PxD6Joint* inObj ) { return inObj->getConcreteTypeName(); }
-void setPxD6Joint_AngularDriveConfig( PxD6Joint* inObj, PxD6AngularDriveConfig::Enum inArg){ inObj->setAngularDriveConfig( inArg ); }
-PxD6AngularDriveConfig::Enum getPxD6Joint_AngularDriveConfig( const PxD6Joint* inObj ) { return inObj->getAngularDriveConfig(); }
  PxD6JointGeneratedInfo::PxD6JointGeneratedInfo()
 	: Motion( "Motion", setPxD6Joint_Motion, getPxD6Joint_Motion)
 	, TwistAngle( "TwistAngle", getPxD6Joint_TwistAngle)
-	, Twist( "Twist", getPxD6Joint_Twist)
 	, SwingYAngle( "SwingYAngle", getPxD6Joint_SwingYAngle)
 	, SwingZAngle( "SwingZAngle", getPxD6Joint_SwingZAngle)
 	, DistanceLimit( "DistanceLimit", setPxD6Joint_DistanceLimit, getPxD6Joint_DistanceLimit)
-	, LinearLimit( "LinearLimit", setPxD6Joint_LinearLimit, getPxD6Joint_LinearLimit)
 	, TwistLimit( "TwistLimit", setPxD6Joint_TwistLimit, getPxD6Joint_TwistLimit)
 	, SwingLimit( "SwingLimit", setPxD6Joint_SwingLimit, getPxD6Joint_SwingLimit)
 	, PyramidSwingLimit( "PyramidSwingLimit", setPxD6Joint_PyramidSwingLimit, getPxD6Joint_PyramidSwingLimit)
+	, AngularDriveConfig( "AngularDriveConfig", setPxD6Joint_AngularDriveConfig, getPxD6Joint_AngularDriveConfig)
 	, Drive( "Drive", setPxD6Joint_Drive, getPxD6Joint_Drive)
 	, DrivePosition( "DrivePosition", setPxD6Joint_DrivePosition, getPxD6Joint_DrivePosition)
 	, ConcreteTypeName( "ConcreteTypeName", getPxD6Joint_ConcreteTypeName)
-	, AngularDriveConfig( "AngularDriveConfig", setPxD6Joint_AngularDriveConfig, getPxD6Joint_AngularDriveConfig)
 {}
  PxD6JointGeneratedValues::PxD6JointGeneratedValues( const PxD6Joint* inSource )
 		:PxJointGeneratedValues( inSource )
 		,TwistAngle( getPxD6Joint_TwistAngle( inSource ) )
-		,Twist( getPxD6Joint_Twist( inSource ) )
 		,SwingYAngle( getPxD6Joint_SwingYAngle( inSource ) )
 		,SwingZAngle( getPxD6Joint_SwingZAngle( inSource ) )
 		,DistanceLimit( getPxD6Joint_DistanceLimit( inSource ) )
-		,LinearLimit( getPxD6Joint_LinearLimit( inSource ) )
 		,TwistLimit( getPxD6Joint_TwistLimit( inSource ) )
 		,SwingLimit( getPxD6Joint_SwingLimit( inSource ) )
 		,PyramidSwingLimit( getPxD6Joint_PyramidSwingLimit( inSource ) )
+		,AngularDriveConfig( getPxD6Joint_AngularDriveConfig( inSource ) )
 		,DrivePosition( getPxD6Joint_DrivePosition( inSource ) )
 		,ConcreteTypeName( getPxD6Joint_ConcreteTypeName( inSource ) )
-		,AngularDriveConfig( getPxD6Joint_AngularDriveConfig( inSource ) )
 {
 	PX_UNUSED(inSource);
 		for ( PxU32 idx = 0; idx < static_cast<PxU32>( physx::PxD6Axis::eCOUNT ); ++idx )

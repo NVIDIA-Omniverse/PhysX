@@ -22,20 +22,20 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "vehicle2/PxVehicleParams.h"
+#include "vehicle/PxVehicleParams.h"
 
-#include "vehicle2/roadGeometry/PxVehicleRoadGeometryState.h"
-#include "vehicle2/physxRoadGeometry/PxVehiclePhysXRoadGeometryFunctions.h"
-#include "vehicle2/physxRoadGeometry/PxVehiclePhysXRoadGeometryParams.h"
-#include "vehicle2/physxRoadGeometry/PxVehiclePhysXRoadGeometryState.h"
+#include "vehicle/roadGeometry/PxVehicleRoadGeometryState.h"
+#include "vehicle/physxRoadGeometry/PxVehiclePhysXRoadGeometryFunctions.h"
+#include "vehicle/physxRoadGeometry/PxVehiclePhysXRoadGeometryParams.h"
+#include "vehicle/physxRoadGeometry/PxVehiclePhysXRoadGeometryState.h"
 
-#include "vehicle2/rigidBody/PxVehicleRigidBodyStates.h"
+#include "vehicle/rigidBody/PxVehicleRigidBodyStates.h"
 
-#include "vehicle2/suspension/PxVehicleSuspensionHelpers.h"
+#include "vehicle/suspension/PxVehicleSuspensionHelpers.h"
 
 #include "extensions/PxRigidBodyExt.h"
 
@@ -48,8 +48,6 @@
 #include "geometry/PxGeometryQuery.h"
 
 namespace physx
-{
-namespace vehicle2
 {
 
 PX_FORCE_INLINE PxF32 computeMaterialFriction(const PxShape* hitShape, const PxU32 hitFaceIndex, 
@@ -227,5 +225,4 @@ void PxVehiclePhysXRoadGeometryQueryUpdate
 
 }
 
-} //namespace vehicle2
 } //namespace physx

@@ -1,6 +1,6 @@
 <project toolsVersion="6.4">
 	<dependency name="clangMetadata" tags="requiredForDistro requiredForMetaGen">
-		<package name="clang-physxmetadata" version="4.0.0.32489833_1"/>
+		<package name="clang-physxmetadata" version="4.0.0.32489833_public"/>
 	</dependency>
 
 	<dependency name="vswhere">
@@ -11,11 +11,7 @@
 		<package name="freeglut-windows" version="3.4_1.1"  platforms="vc15win64* vc16win64* vc17win64*"/>
 	</dependency>
 
-	<dependency name="opengllinux" tags="requiredForDistro">
-		<package name="opengl-linux" version="2017.5.19.1"  platforms="linux-gcc* linux-clang*"/>
-	</dependency>
-
     <dependency name="rapidjson">
-		<package name="rapidjson" version="1.1.0-67fac85-073453e1" />
+		<package name="rapidjson" version="1.1.0-67fac85-073453e1_public" />
 	</dependency>
 </project>

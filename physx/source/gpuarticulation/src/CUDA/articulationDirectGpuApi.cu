@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -38,7 +38,7 @@
 #include "PxgArticulationLink.h"
 #include "PxgArticulationCoreDesc.h"
 #include "PxgShapeSim.h"
-#include "PxsTransformCache.h"
+#include "PxsCachedTransform.h"
 
 
 #include "DyArticulationCore.h"
@@ -205,7 +205,7 @@ static PX_FORCE_INLINE __device__ void updateKinematicInternal(
             {
                 // link velocity update - unfortunately also dependent on parent position and velocity.
                 Cm::UnAlignedSpatialVector parentVel = articulation.motionVelocities[parent];
-                const PxVec3 c2p = body2World.p - pBody2World.p;
+                const PxVec3 c2p = body2World.q.rotate(r); // r is already the local-frame Rw; avoid world-scale subtraction
                 Cm::UnAlignedSpatialVector linkVelocity = FeatherstoneArticulation::translateSpatialVector(-c2p, parentVel);
 
                 // AD unfortunately this is more-or-less the same code as in computeLinkVelocities, minus the maxJointVel clamping.
@@ -527,6 +527,71 @@ extern "C" __global__ void getArtiVelocityStates(
 				dstData[elementIndex] = srcDataU[elementIndex];
 			}
 		}
+	}
+}
+
+// OVD full-state snapshot readback: recover the applied (and, with retained accelerations, retained)
+// link force/torque from the per-link external-acceleration accumulator, so a late attach can re-emit
+// what was set through the direct-GPU articulation API. These invert setArtiLinkForceState /
+// setArtiLinkTorqueState. 1 thread per link (the torque inverse mixes components via the link rotation).
+extern "C" __global__ void getArtiLinkForceState(
+	const PxgArticulationCoreDesc* PX_RESTRICT scDesc,
+	PxVec3* PX_RESTRICT data,
+	const PxArticulationGPUIndex* PX_RESTRICT index,
+	const PxU32 nbElements,
+	const PxU32 maxLinks
+)
+{
+	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
+	const PxU32 groupIndex = globalThreadIndex / maxLinks;
+	const PxU32 linkIndex = globalThreadIndex % maxLinks;
+
+	if (groupIndex < nbElements)
+	{
+		const PxgArticulation& articulation = scDesc->articulations[index[groupIndex]];
+		// externalAccelerations[link].top = force * invMass  ->  force = top / invMass
+		PxVec3 force(0.0f);
+		if (linkIndex < articulation.data.numLinks)
+		{
+			const float invMass = articulation.linkProps[linkIndex].invInertiaXYZ_invMass.w;
+			const PxVec3 linAccel = articulation.externalAccelerations[linkIndex].top;
+			force = (invMass > 0.0f) ? (linAccel * (1.0f / invMass)) : PxVec3(0.0f);
+		}
+		data[groupIndex * maxLinks + linkIndex] = force;
+	}
+}
+
+extern "C" __global__ void getArtiLinkTorqueState(
+	const PxgArticulationCoreDesc* PX_RESTRICT scDesc,
+	PxVec3* PX_RESTRICT data,
+	const PxArticulationGPUIndex* PX_RESTRICT index,
+	const PxU32 nbElements,
+	const PxU32 maxLinks
+)
+{
+	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
+	const PxU32 groupIndex = globalThreadIndex / maxLinks;
+	const PxU32 linkIndex = globalThreadIndex % maxLinks;
+
+	if (groupIndex < nbElements)
+	{
+		const PxgArticulation& articulation = scDesc->articulations[index[groupIndex]];
+		// externalAccelerations[link].bottom = q.rotate( invInertia .* q.rotateInv(torque) )
+		// -> torque = q.rotate( inertia .* q.rotateInv(bottom) ), inertia = 1/invInertia
+		PxVec3 torque(0.0f);
+		if (linkIndex < articulation.data.numLinks)
+		{
+			const PxQuat& q = articulation.linkBody2Worlds[linkIndex].q;
+			const PxVec3 worldAccel = articulation.externalAccelerations[linkIndex].bottom;
+			const PxVec3 localAccel = q.rotateInv(worldAccel);
+			const PxVec3 invInertia = PxLoad3(articulation.linkProps[linkIndex].invInertiaXYZ_invMass);
+			const PxVec3 localTorque(
+				invInertia.x > 0.0f ? localAccel.x / invInertia.x : 0.0f,
+				invInertia.y > 0.0f ? localAccel.y / invInertia.y : 0.0f,
+				invInertia.z > 0.0f ? localAccel.z / invInertia.z : 0.0f);
+			torque = q.rotate(localTorque);
+		}
+		data[groupIndex * maxLinks + linkIndex] = torque;
 	}
 }
 

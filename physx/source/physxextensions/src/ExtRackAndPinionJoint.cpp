@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -376,17 +376,28 @@ void RackAndPinionJoint::resolveReferences(PxDeserializationContext& context)
 
 #if PX_SUPPORT_OMNI_PVD
 
+template<> void physx::Ext::omniPvdInitJoint<RackAndPinionJoint>(OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData, RackAndPinionJoint& joint); // declared before the wrapper so the wrapper binds the explicit form below instead of implicitly instantiating it
 template<>
 void physx::Ext::omniPvdInitJoint<RackAndPinionJoint>(RackAndPinionJoint& joint)
 {
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	omniPvdInitJoint(pvdWriter, pvdRegData, joint);
+	OMNI_PVD_WRITE_SCOPE_END
+}
 
+template<>
+void physx::Ext::omniPvdInitJoint<RackAndPinionJoint>(OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData, RackAndPinionJoint& joint)
+{
 	PxRackAndPinionJoint& j = static_cast<PxRackAndPinionJoint&>(joint);
 	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRackAndPinionJoint, j);
-	omniPvdSetBaseJointParams(static_cast<PxJoint&>(joint), PxJointConcreteType::eRACK_AND_PINION);
+	omniPvdSetBaseJointParams(pvdWriter, pvdRegData, static_cast<PxJoint&>(joint), PxJointConcreteType::eRACK_AND_PINION);
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRackAndPinionJoint, ratio, j, joint.getRatio())
 
-	OMNI_PVD_WRITE_SCOPE_END
+	// Re-emit the linked hinge + prismatic references (set live by setJoints) so a late attach reconstructs them.
+	const PxBase* hinge = NULL; const PxBase* prismatic = NULL;
+	joint.getJoints(hinge, prismatic);
+	const PxBase* joints[] = { hinge, prismatic };
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRackAndPinionJoint, joints, j, joints, PxU32(sizeof(joints) / sizeof(joints[0])))
 }
 
 #endif

@@ -1,0 +1,179 @@
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
+// clang-format off
+#include <UsdPCH.h>
+// clang-format on
+
+#include "tensors/base/BaseRigidContactView.h"
+#include "tensors/base/BaseSimulationView.h"
+
+#include "tensors/GlobalsAreBad.h"
+#include "tensors/CommonTypes.h"
+
+#include <PxPhysicsAPI.h>
+
+#include <carb/logging/Log.h>
+#include <omni/physx/IPhysx.h>
+#include <omni/physics/tensors/TensorUtils.h>
+
+using namespace physx;
+using omni::physics::tensors::checkTensorDevice;
+using omni::physics::tensors::checkTensorInt64;
+using omni::physics::tensors::getTensorTotalSize;
+
+namespace omni
+{
+namespace physx
+{
+namespace tensors
+{
+
+BaseRigidContactView::BaseRigidContactView(BaseSimulationView* sim,
+                                           const std::vector<RigidContactSensorEntry>& entries,
+                                           uint32_t numFilters,
+                                           uint32_t maxContactDataCount)
+    : mSim(sim),
+      mEntries(entries),
+      mNumFilters(numFilters),
+      mMaxContactDataCount(maxContactDataCount)
+{
+    if (mSim)
+    {
+        // acquire a shared data pointer so the stuff we need doesn't get deleted
+        mSimData = mSim->getBaseSimulationData();
+    }
+}
+
+BaseRigidContactView::~BaseRigidContactView()
+{
+    if (mSim)
+    {
+        mSim->_onChildRelease(this);
+    }
+}
+
+uint32_t BaseRigidContactView::getSensorCount() const
+{
+    return uint32_t(mEntries.size());
+}
+
+uint32_t BaseRigidContactView::getFilterCount() const
+{
+    return mNumFilters;
+}
+
+uint32_t BaseRigidContactView::getMaxContactDataCount() const
+{
+    return mMaxContactDataCount;
+}
+
+bool BaseRigidContactView::check() const
+{
+    bool result = true;
+
+    return result;
+}
+
+
+const char* BaseRigidContactView::getUsdPrimPath(uint32_t sensorIdx) const
+{
+    if (sensorIdx < mEntries.size())
+    {
+        return mEntries[sensorIdx].path.GetString().c_str();
+    }
+    return nullptr;
+}
+
+const char* BaseRigidContactView::getUsdPrimName(uint32_t sensorIdx) const
+{
+    if (sensorIdx < mEntries.size())
+    {
+        return mSimData->mUniqueRCIdx2Names[mEntries[sensorIdx].nameID].c_str();
+    }
+    return nullptr;
+}
+
+const char* BaseRigidContactView::getFilterUsdPrimPath(uint32_t sensorIdx, uint32_t filterIdx) const
+{
+    if (sensorIdx < mEntries.size())
+    {
+        if (filterIdx < mEntries[sensorIdx].filterPaths.size())
+        {
+            return mEntries[sensorIdx].filterPaths[filterIdx].GetString().c_str();
+        }
+    }
+    return nullptr;
+}
+
+const char* BaseRigidContactView::getFilterUsdPrimName(uint32_t sensorIdx, uint32_t filterIdx) const
+{
+    if (sensorIdx < mEntries.size())
+    {
+        if (filterIdx < mEntries[sensorIdx].filterPaths.size())
+        {
+            return mEntries[sensorIdx].filterPaths[filterIdx].GetName().c_str();
+        }
+    }
+    return nullptr;
+}
+
+void BaseRigidContactView::release()
+{
+    delete this;
+}
+
+void BaseRigidContactView::_onParentRelease()
+{
+    mSim = nullptr;
+}
+
+void BaseRigidContactView::getOtherActorPathsFromIds(const TensorDesc* otherActorIdsTensor, std::vector<std::string>& outPaths) const
+{
+    outPaths.clear();
+
+    if (!otherActorIdsTensor || !otherActorIdsTensor->data)
+    {
+        return;
+    }
+
+    // Path conversion is a CPU-only operation - expect CPU data
+    if (!checkTensorDevice(*otherActorIdsTensor, -1, "other actor IDs tensor", __FUNCTION__) ||
+        !checkTensorInt64(*otherActorIdsTensor, "other actor IDs tensor", __FUNCTION__))
+    {
+        return;
+    }
+
+    size_t count = getTensorTotalSize(*otherActorIdsTensor);
+    if (count == 0)
+    {
+        return;
+    }
+
+    const uint64_t* actorIds = static_cast<const uint64_t*>(otherActorIdsTensor->data);
+    outPaths.reserve(count);
+    for (size_t i = 0; i < count; ++i)
+    {
+        uint64_t id = actorIds[i];
+        if (id == 0)
+        {
+            outPaths.emplace_back("");
+            continue;
+        }
+
+        auto it = mPathCache.find(id);
+        if (it != mPathCache.end())
+        {
+            outPaths.push_back(it->second);
+        }
+        else
+        {
+            auto result = mPathCache.emplace(id, intToPath(id).GetString());
+            outPaths.push_back(result.first->second);
+        }
+    }
+}
+
+}
+}
+}

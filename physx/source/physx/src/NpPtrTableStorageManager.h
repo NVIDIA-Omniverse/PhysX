@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -46,7 +46,7 @@ public:
 	~NpPtrTableStorageManager() {}
 
 	// PtrTableStorageManager
-	virtual	void**	allocate(PxU32 capacity)
+	virtual	void**	allocate(PxU32 capacity) PX_OVERRIDE
 	{
 		PX_ASSERT(PxIsPowerOfTwo(capacity));
 
@@ -58,7 +58,7 @@ public:
 			 :					reinterpret_cast<void**>(PX_ALLOC(capacity*sizeof(void*), "CmPtrTable pointer array"));
 	}
 
-	virtual	void	deallocate(void** addr, PxU32 capacity)
+	virtual	void	deallocate(void** addr, PxU32 capacity) PX_OVERRIDE
 	{
 		PX_ASSERT(PxIsPowerOfTwo(capacity));
 
@@ -73,7 +73,7 @@ public:
 	// originalCapacity is the only way we know which pool the alloc request belongs to,
 	// so if those are no longer going to match, we need to realloc.
 
-	virtual	bool canReuse(PxU32 originalCapacity, PxU32 newCapacity)
+	virtual	bool canReuse(PxU32 originalCapacity, PxU32 newCapacity) PX_OVERRIDE
 	{
 		PX_ASSERT(PxIsPowerOfTwo(originalCapacity));
 		PX_ASSERT(PxIsPowerOfTwo(newCapacity));

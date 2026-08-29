@@ -22,13 +22,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef	__CONSTRAINT_PREP_SHARED_CUH__
 #define	__CONSTRAINT_PREP_SHARED_CUH__
 
+#include "foundation/PxSimpleTypes.h"
+#include "mathsExtensions.h"
 #include "PxgBodySim.h"
 #include "PxgSolverBody.h"
 #include "PxgConstraint.h"
@@ -37,7 +39,7 @@
 #include "PxgSolverCoreDesc.h"
 #include "DySolverConstraintTypes.h"
 #include "PxNodeIndex.h"
-#include "PxgArticulation.h"
+#include "PxgArticulationBlockData.h"
 #include "PxgEdgeType.h"
 #include "PxgDynamicsConfiguration.h"
 #include "stdio.h"
@@ -46,28 +48,30 @@
 #include "DyCpuGpu1dConstraint.h"
 #include "PxgPartitionNode.h"
 
+namespace physx
+{
+
 #define PXC_SAME_NORMAL 0.999f
 
-static __device__ physx::PxU32 computeRemapIndexRigidBody(bool isSecondBody, 
-	const physx::PxU32* const PX_RESTRICT partitionStartIndices, 
-	const physx::PxU32* const PX_RESTRICT partitionArticStartIndices, 
-	const physx::PxU32* const PX_RESTRICT partitionJointCounts,
-	const physx::PxU32* const PX_RESTRICT partitionArticulationJointCounts, 
-	const physx::PartitionIndexData& indexData, 
-	physx::PxgSolverReferences* solverBodyReferences, 
-	physx::PxU32 currPartition, 
-	physx::PxU32 maxNbPartitions, 
-	const physx::PxU32 totalActiveBodyCount,
-	const physx::PxU32 bodyId,
-	const physx::PxU32 activeBodyOffset, 
-	const physx::PxU32 totalRigidBatches, 
-	const physx::PxU32 totalArticBatches,
-	const physx::PxU32 nbElemsPerBody,
-	const physx::PxU32 nbSlabs,
-	const physx::PxU32 solverBodyOutputVelocityOffset //Only used for assert
+static __device__ PxU32 computeRemapIndexRigidBody(bool isSecondBody, 
+	const PxU32* const PX_RESTRICT partitionStartIndices, 
+	const PxU32* const PX_RESTRICT partitionArticStartIndices, 
+	const PxU32* const PX_RESTRICT partitionJointCounts,
+	const PxU32* const PX_RESTRICT partitionArticulationJointCounts, 
+	const PartitionIndexData& indexData, 
+	PxgSolverReferences* solverBodyReferences, 
+	PxU32 currPartition, 
+	PxU32 maxNbPartitions, 
+	const PxU32 totalActiveBodyCount,
+	const PxU32 bodyId,
+	const PxU32 activeBodyOffset, 
+	const PxU32 totalRigidBatches, 
+	const PxU32 totalArticBatches,
+	const PxU32 nbElemsPerBody,
+	const PxU32 nbSlabs,
+	const PxU32 solverBodyOutputVelocityOffset //Only used for assert
 )
 {
-	using namespace physx;
 	//Computes the remapped index for the rigid body being referenced by this constraint.
 	//This is quite complicated. For rigid body constraints, there are up to 32 pairs of rigid bodies referenced
 	//by each constraint batch.
@@ -161,12 +165,10 @@ static __device__ physx::PxU32 computeRemapIndexRigidBody(bool isSecondBody,
 }
 
 
-static __device__ PX_FORCE_INLINE bool pointsAreClose(const physx::PxAlignedTransform& body1ToBody0,
+static __device__ PX_FORCE_INLINE bool pointsAreClose(const PxAlignedTransform& body1ToBody0,
 	const float4& localAnchor0, const float4& localAnchor1,
 	const float4& axis, float correlDist)
 {
-	using namespace physx;
-
 	const float4 body0PatchPoint1 = body1ToBody0.transform(localAnchor1);
 
 	return PxAbs(dot3(localAnchor0 - body0PatchPoint1, axis))<correlDist;
@@ -309,12 +311,12 @@ queryReducedCompliantContactCoefficients(PxReal dt, PxU8 flags, PxReal restituti
 }
 
 
-// Compute contact-related coefficients, velMultiplier, impulseMultiplier, unbiasedErr, and biasedErr with precomputed coefficients, coeff0 and coeff1.
+// Compute contact-related coefficients, velMultiplier, impulseMultiplier and biasedErr with precomputed coefficients, coeff0 and coeff1.
 // See "computeCompliantContactCoefficients".
 static __device__ PX_FORCE_INLINE void 
 computeContactCoefficients(PxU8 flags, PxReal restitution, PxReal unitResponse, PxReal recipResponse, PxReal targetVelocity, 
 						   PxReal coeff0, PxReal coeff1, PxReal& velMultiplier, PxReal& impulseMultiplier, 
-						   PxReal& unbiasedErr, PxReal& biasedErr)
+						   PxReal& biasedErr)
 {
 	if (restitution < 0.f)
 	{
@@ -330,13 +332,17 @@ computeContactCoefficients(PxU8 flags, PxReal restitution, PxReal unitResponse, 
 
 		velMultiplier = x * a * massIfAccelElseOne;
 		impulseMultiplier = 1.f - x;
-		unbiasedErr = biasedErr = targetVelocity * velMultiplier - scaledBias;
+		biasedErr = targetVelocity * velMultiplier - scaledBias;
 	}
 	else
 	{
 		velMultiplier = recipResponse;
 		biasedErr = coeff0 * velMultiplier;
-		unbiasedErr = coeff1 * velMultiplier;
+		// coeff0 is expected to be:
+		//   position iteration: coeff0 = targetVelocity - (penetration/dt * biasCoefficient)
+		//   velocity iteration: coeff0 = targetVelocity (= coeff1)
+		// note that coeff1 gets copied to coeff0 after position iterations and thus only coeff0
+		// is considered here.
 		impulseMultiplier = 1.f;
 	}
 }
@@ -374,5 +380,7 @@ computeCompliantContactCoefficientsTGS(PxU8 flags, PxReal nrdt, PxReal unitRespo
 	velMultiplier = x * a * massIfAccelElseOne;
 	scaledBias = nrdt * x * oneIfAccelElseR;
 }
+
+} // namespace physx
 
 #endif

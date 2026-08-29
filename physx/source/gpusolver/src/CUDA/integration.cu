@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -46,7 +46,7 @@ extern "C" __global__ void integrateCoreParallelLaunch(
 	const PxU32* PX_RESTRICT islandIds, 
 	const PxU32* PX_RESTRICT islandStaticTouchCounts,
 	const PxU32* PX_RESTRICT numCountedInteractions)
-{	
+{
 	//integrateCoreParallel(motionVelocity, solverBody, solverBodyData, numBodies, dt);
 	uint32_t idx = threadIdx.x + blockIdx.x * blockDim.x;
 	const float4* PX_RESTRICT motionVelocityArray = solverCoreDesc->motionVelocityArray;

@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXSimulationControllerGpu common
@@ -41,16 +41,24 @@ SET(PHYXGPU_SIMCONTROLLER_HEADERS
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgBodySim.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgBodySimManager.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgArticulation.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgArticulationBlockData.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgArticulationBuffer.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgArticulationLink.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgArticulationTendon.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSoftBody.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSoftBodyBuffer.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgDeformableContactInfo.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgDeformableConstraints.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgFEMCloth.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgFEMClothBuffer.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgParticleSystem.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgParticleSystemBuffer.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSimulationCore.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgJointManager.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgShapeSim.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgShapeSimManager.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSimulationController.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgAttachmentManager.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSimulationCoreDesc.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSimulationCoreKernelIndices.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgParticleSystemCoreKernelIndices.h
@@ -107,10 +115,8 @@ SET(PHYXGPU_SIMCONTROLLER_CUDA_KERNELS
 SOURCE_GROUP("simulation controller kernels/CUDA" FILES ${PHYXGPU_SIMCONTROLLER_CUDA_KERNELS})
 
 SET(PHYXGPU_SIMCONTROLLER_CUDA_INCLUDE
-	${GPUSIMCTRL_SOURCE_DIR}/CUDA/attachments.cuh
 	${GPUSIMCTRL_SOURCE_DIR}/CUDA/deformableUtils.cuh
 	${GPUSIMCTRL_SOURCE_DIR}/CUDA/particleSystem.cuh
-	${GPUSIMCTRL_SOURCE_DIR}/CUDA/softBody.cuh
 	${GPUSIMCTRL_SOURCE_DIR}/CUDA/FEMClothUtil.cuh
 	${GPUSIMCTRL_SOURCE_DIR}/CUDA/matrixDecomposition.cuh
 	${GPUSIMCTRL_SOURCE_DIR}/CUDA/marchingCubesTables.cuh

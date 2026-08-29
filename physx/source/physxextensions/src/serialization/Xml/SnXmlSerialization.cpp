@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 #include "SnXmlImpl.h"
@@ -48,7 +48,7 @@ using namespace Sn;
 
 using namespace physx::profile; //for the foundation wrapper system.
 
-namespace physx { namespace Sn {	
+namespace physx { namespace Sn {
 
 	class XmlNodeWriter : public SimpleXmlWriter
 	{
@@ -78,33 +78,33 @@ namespace physx { namespace Sn {
 
 		XmlNode* getTopNode() const { return mTopNode; }
 
-		virtual void beginTag( const char* inTagname )
+		virtual void beginTag( const char* inTagname ) PX_OVERRIDE
 		{
 			onNewNode( allocateRepXNode( &mParseAllocator.mManager, inTagname, NULL ) );
 		}
-		virtual void endTag()
+		virtual void endTag() PX_OVERRIDE
 		{
 			if ( mCurrentNode )
 				mCurrentNode = mCurrentNode->mParent;
 			if ( mTabCount )
 				--mTabCount;
 		}
-		virtual void addAttribute( const char*, const char* )
+		virtual void addAttribute( const char*, const char* ) PX_OVERRIDE
 		{
 			PX_ASSERT( false );
 		}
-		virtual void writeContentTag( const char* inTag, const char* inContent )
+		virtual void writeContentTag( const char* inTag, const char* inContent ) PX_OVERRIDE
 		{
 			onNewNode( allocateRepXNode( &mParseAllocator.mManager, inTag, inContent ) );
 			endTag();
 		}
-		virtual void addContent( const char* inContent )
+		virtual void addContent( const char* inContent ) PX_OVERRIDE
 		{
 			if ( mCurrentNode->mData )
 				releaseStr( &mParseAllocator.mManager, mCurrentNode->mData );
 			mCurrentNode->mData = copyStr( &mParseAllocator.mManager, inContent );
 		}
-		virtual PxU32 tabCount() { return mTabCount; }
+		virtual PxU32 tabCount() PX_OVERRIDE { return mTabCount; }
 	};
 
 	struct XmlWriterImpl : public XmlWriter
@@ -127,21 +127,21 @@ namespace physx { namespace Sn {
 				mWriter->endTag();
 			}
 		}
-		virtual void write( const char* inName, const char* inData )
+		virtual void write( const char* inName, const char* inData ) PX_OVERRIDE
 		{
 			mWriter->writeContentTag( inName, inData );
 		}
-		virtual void write( const char* inName, const PxRepXObject& inLiveObject )
+		virtual void write( const char* inName, const PxRepXObject& inLiveObject ) PX_OVERRIDE
 		{
 			(*mMemBuffer) << inLiveObject.id;
 			writeProperty( *mWriter, *mMemBuffer, inName );
 		}
-		virtual void addAndGotoChild( const char* inName )
+		virtual void addAndGotoChild( const char* inName ) PX_OVERRIDE
 		{
 			mWriter->beginTag( inName );
 			mTagDepth++;
 		}
-		virtual void leaveChild()
+		virtual void leaveChild() PX_OVERRIDE
 		{
 			if ( mTagDepth )
 			{
@@ -181,7 +181,7 @@ namespace physx { namespace Sn {
 		}
 
 		//Does this node exist as data in the format.
-		virtual bool read( const char* inName, const char*& outData )
+		virtual bool read( const char* inName, const char*& outData ) PX_OVERRIDE
 		{
 			XmlNode* theChild( mCurrentNode->findChildByName( inName ) );
 			if ( theChild )
@@ -192,7 +192,7 @@ namespace physx { namespace Sn {
 			return false;
 		}
 
-		virtual bool read( const char* inName, PxSerialObjectId& outId )
+		virtual bool read( const char* inName, PxSerialObjectId& outId ) PX_OVERRIDE
 		{
 			XmlNode* theChild( mCurrentNode->findChildByName( inName ) );
 			if ( theChild )
@@ -204,7 +204,7 @@ namespace physx { namespace Sn {
 			return false;
 		}
 
-		virtual bool gotoChild( const char* inName )
+		virtual bool gotoChild( const char* inName ) PX_OVERRIDE
 		{
 			XmlNode* theChild( mCurrentNode->findChildByName( inName ) );
 			if ( theChild )
@@ -214,7 +214,7 @@ namespace physx { namespace Sn {
 			}
 			return false;
 		}
-		virtual bool gotoFirstChild()
+		virtual bool gotoFirstChild() PX_OVERRIDE
 		{
 			if ( mCurrentNode->mFirstChild )
 			{
@@ -223,7 +223,7 @@ namespace physx { namespace Sn {
 			}
 			return false;
 		}
-		virtual bool gotoNextSibling()
+		virtual bool gotoNextSibling() PX_OVERRIDE
 		{
 			if ( mCurrentNode->mNextSibling )
 			{
@@ -232,23 +232,23 @@ namespace physx { namespace Sn {
 			}
 			return false;
 		}
-		virtual PxU32 countChildren()
+		virtual PxU32 countChildren() PX_OVERRIDE
 		{
 			PxU32 retval =  0;
 			for ( XmlNode* theChild = mCurrentNode->mFirstChild; theChild != NULL; theChild = theChild->mNextSibling )
 				++retval;
 			return retval;
 		}
-		virtual const char* getCurrentItemName()
+		virtual const char* getCurrentItemName() PX_OVERRIDE
 		{
 			return mCurrentNode->mName;
 		}
-		virtual const char* getCurrentItemValue()
+		virtual const char* getCurrentItemValue() PX_OVERRIDE
 		{
 			return mCurrentNode->mData;
 		}
 
-		virtual bool leaveChild()
+		virtual bool leaveChild() PX_OVERRIDE
 		{
 			if ( mCurrentNode != mTopNode && mCurrentNode->mParent )
 			{
@@ -258,11 +258,11 @@ namespace physx { namespace Sn {
 			return false;
 		}
 
-		virtual void pushCurrentContext()
+		virtual void pushCurrentContext() PX_OVERRIDE
 		{
 			mContext.pushBack( mCurrentNode );
 		}
-		virtual void popCurrentContext()
+		virtual void popCurrentContext() PX_OVERRIDE
 		{
 			if ( mContext.size() )
 			{
@@ -271,21 +271,21 @@ namespace physx { namespace Sn {
 			}
 		}
 
-		virtual void setNode( XmlNode& inNode )
+		virtual void setNode( XmlNode& inNode ) PX_OVERRIDE
 		{
 			mContext.clear();
 			mCurrentNode = &inNode;
 			mTopNode = mCurrentNode;
 		}
 
-		virtual XmlReader* getParentReader()
+		virtual XmlReader* getParentReader() PX_OVERRIDE
 		{
 			XmlReader* retval = PX_PLACEMENT_NEW((mWrapper.getAllocator().allocate(sizeof(XmlNodeReader), "createNodeEditor", PX_FL)), XmlNodeReader) 
 				( mTopNode, mWrapper.getAllocator(), mManager );
 			return retval;
 		}
 
-		virtual void addOrGotoChild( const char* inName )
+		virtual void addOrGotoChild( const char* inName ) PX_OVERRIDE
 		{
 			if ( gotoChild( inName )== false )
 			{
@@ -294,11 +294,11 @@ namespace physx { namespace Sn {
 				mCurrentNode = newNode;
 			}
 		}
-		virtual void setCurrentItemValue( const char* inValue )
+		virtual void setCurrentItemValue( const char* inValue ) PX_OVERRIDE
 		{
 			mCurrentNode->mData = copyStr( &mManager, inValue ); 
 		}
-		virtual bool removeChild( const char* name )
+		virtual bool removeChild( const char* name ) PX_OVERRIDE
 		{
 			XmlNode* theChild( mCurrentNode->findChildByName( name ) );
 			if ( theChild )
@@ -308,7 +308,7 @@ namespace physx { namespace Sn {
 			}
 			return false;
 		}
-		virtual void release() { this->~XmlNodeReader(); mWrapper.getAllocator().deallocate(this); }
+		virtual void release() PX_OVERRIDE { this->~XmlNodeReader(); mWrapper.getAllocator().deallocate(this); }
 
 	private:
 		XmlNodeReader& operator=(const XmlNodeReader&);
@@ -341,13 +341,13 @@ namespace physx { namespace Sn {
 
 		virtual ~XmlParser(){}
 
-		virtual bool processComment(const char* /*comment*/) { return true; }
+		virtual bool processComment(const char* /*comment*/) PX_OVERRIDE { return true; }
 		// 'element' is the name of the element that is being closed.
 		// depth is the recursion depth of this element.
 		// Return true to continue processing the XML file.
 		// Return false to stop processing the XML file; leaves the read pointer of the stream right after this close tag.
 		// The bool 'isError' indicates whether processing was stopped due to an error, or intentionally canceled early.
-		virtual bool processClose(const char* /*element*/,physx::PxU32 /*depth*/,bool& isError)
+		virtual bool processClose(const char* /*element*/,physx::PxU32 /*depth*/,bool& isError) PX_OVERRIDE
 		{
 			if (NULL != mCurrentNode)
 			{
@@ -363,7 +363,7 @@ namespace physx { namespace Sn {
 			const char *elementName,   // name of the element		
 			const char  *elementData,  // element data, null if none
 			const shdfnd::FastXml::AttributePairs& attr,      // attributes
-			PxI32 /*lineno*/)
+			PxI32 /*lineno*/) PX_OVERRIDE
 		{
 			XmlNode* newNode = allocateRepXNode( &mParseAllocator.mManager, elementName, elementData );
 			if ( mCurrentNode )
@@ -381,13 +381,13 @@ namespace physx { namespace Sn {
 
 		XmlNode* getTopNode() { return mTopNode; }
 
-		virtual void *  allocate(PxU32 size)
+		virtual void *  allocate(PxU64 size) PX_OVERRIDE
 		{ 
 			if ( size )
 				return mParseAllocator.allocate(size);
 			return NULL; 
 		}
-		virtual void	deallocate(void *mem)
+		virtual void	deallocate(void *mem) PX_OVERRIDE
 		{ 
 			if ( mem )
 				mParseAllocator.deallocate(reinterpret_cast<PxU8*>(mem)); 
@@ -497,17 +497,17 @@ namespace physx { namespace Sn {
 		}
 		RepXCollectionImpl& operator=(const RepXCollectionImpl&);
 
-		virtual void destroy() 
+		virtual void destroy() PX_OVERRIDE
 		{ 
 			PxProfileAllocatorWrapper tempWrapper( mSharedData->mWrapper.getAllocator() );
 			this->~RepXCollectionImpl();
 			tempWrapper.getAllocator().deallocate(this); 
 		}
 		
-		virtual void setTolerancesScale(const PxTolerancesScale& inScale) {  mScale = inScale; }
-		virtual PxTolerancesScale getTolerancesScale() const { return mScale; }
-		virtual void setUpVector( const PxVec3& inUpVector ) { mUpVector = inUpVector; }
-		virtual PxVec3 getUpVector() const { return mUpVector; }
+		virtual void setTolerancesScale(const PxTolerancesScale& inScale) PX_OVERRIDE {  mScale = inScale; }
+		virtual PxTolerancesScale getTolerancesScale() const PX_OVERRIDE { return mScale; }
+		virtual void setUpVector( const PxVec3& inUpVector ) PX_OVERRIDE { mUpVector = inUpVector; }
+		virtual PxVec3 getUpVector() const PX_OVERRIDE { return mUpVector; }
 
 	
 		PX_INLINE RepXCollectionItem findItemBySceneItem( const PxRepXObject& inObject ) const
@@ -519,7 +519,7 @@ namespace physx { namespace Sn {
 			return RepXCollectionItem();
 		}
 
-		virtual RepXAddToCollectionResult addRepXObjectToCollection( const PxRepXObject& inObject, PxCollection* inCollection, PxRepXInstantiationArgs& inArgs )
+		virtual RepXAddToCollectionResult addRepXObjectToCollection( const PxRepXObject& inObject, PxCollection* inCollection, PxRepXInstantiationArgs& inArgs ) PX_OVERRIDE
 		{
 			PX_ASSERT( inObject.serializable );
 			PX_ASSERT( inObject.id );
@@ -545,7 +545,7 @@ namespace physx { namespace Sn {
 			return RepXAddToCollectionResult( RepXAddToCollectionResult::Success, inObject.id );
 		}
 
-		virtual bool instantiateCollection( PxRepXInstantiationArgs& inArgs, PxCollection& inCollection )
+		virtual bool instantiateCollection( PxRepXInstantiationArgs& inArgs, PxCollection& inCollection ) PX_OVERRIDE
 		{
 			for ( PxU32 idx =0; idx < mCollection.size(); ++idx )
 			{
@@ -570,7 +570,7 @@ namespace physx { namespace Sn {
 						"PxSerialization::createCollectionFromXml: "
 						"PxRepXSerializer missing for type %s", theItem.liveObject.typeName);
 					return false;					
-				}				
+				}
 			}
 
 			return true;
@@ -594,7 +594,7 @@ namespace physx { namespace Sn {
 			}
 		}
 
-		virtual void save( PxOutputStream& inStream )
+		virtual void save( PxOutputStream& inStream ) PX_OVERRIDE
 		{
 			SimpleXmlWriterImpl<PxOutputStream> theWriter( inStream, mAllocator.getAllocator() );
 			theWriter.beginTag( "PhysXCollection" );
@@ -663,18 +663,18 @@ namespace physx { namespace Sn {
 			theFastXml->release();
 		}
 		
-		virtual const char* getVersion() { return mVersionStr; }
+		virtual const char* getVersion() PX_OVERRIDE { return mVersionStr; }
 		
-		virtual const RepXCollectionItem* begin() const
+		virtual const RepXCollectionItem* begin() const PX_OVERRIDE
 		{
 			return mCollection.begin();
 		}
-		virtual const RepXCollectionItem* end() const
+		virtual const RepXCollectionItem* end() const PX_OVERRIDE
 		{
 			return mCollection.end();
 		}
 		
-		virtual RepXCollection& createCollection( const char* inVersionStr )
+		virtual RepXCollection& createCollection( const char* inVersionStr ) PX_OVERRIDE
 		{
 			PxAllocatorCallback& allocator = mSharedData->mWrapper.getAllocator(); 
 			RepXCollectionImpl* retval = PX_PLACEMENT_NEW((allocator.allocate(sizeof(RepXCollectionImpl), "createCollection", PX_FL)), RepXCollectionImpl) ( mSerializationRegistry, *this, inVersionStr );
@@ -683,26 +683,26 @@ namespace physx { namespace Sn {
 		}
 		
 		//Performs a deep copy of the repx node.
-		virtual XmlNode* copyRepXNode( const XmlNode* srcNode ) 
+		virtual XmlNode* copyRepXNode( const XmlNode* srcNode ) PX_OVERRIDE
 		{
 			return physx::Sn::copyRepXNode( &mAllocator.mManager, srcNode );
 		}
 
-		virtual void addCollectionItem( RepXCollectionItem inItem ) 
+		virtual void addCollectionItem( RepXCollectionItem inItem ) PX_OVERRIDE
 		{
 			mCollection.pushBack( inItem );
 		}
 		
-		virtual PxAllocatorCallback& getAllocator() { return mSharedData->mAllocator.getAllocator(); }
+		virtual PxAllocatorCallback& getAllocator() PX_OVERRIDE { return mSharedData->mAllocator.getAllocator(); }
 		//Create a new repx node with this name.  Its value is unset.
-		virtual XmlNode& createRepXNode( const char* name )
+		virtual XmlNode& createRepXNode( const char* name ) PX_OVERRIDE
 		{
 			XmlNode* newNode = allocateRepXNode( &mSharedData->mAllocator.mManager, name, NULL );
 			return *newNode;
 		}
 
 		//Release this when finished.
-		virtual XmlReaderWriter& createNodeEditor()
+		virtual XmlReaderWriter& createNodeEditor() PX_OVERRIDE
 		{
 			PxAllocatorCallback& allocator = mSharedData->mWrapper.getAllocator(); 
 			XmlReaderWriter* retval = PX_PLACEMENT_NEW((allocator.allocate(sizeof(XmlNodeReader), "createNodeEditor", PX_FL)), XmlNodeReader) ( NULL, allocator, mAllocator.mManager );
@@ -726,7 +726,7 @@ namespace physx { namespace Sn {
 	}
 
 	static RepXCollection* create(SerializationRegistry& s, PxInputData &data, PxAllocatorCallback& inAllocator, PxCollection& inCollection )
-	{			
+	{
 		RepXCollectionImpl* theCollection = static_cast<RepXCollectionImpl*>( create(s, inAllocator, inCollection ) );
 		theCollection->load( data, s );
 		return theCollection;
@@ -759,7 +759,7 @@ namespace physx { namespace Sn {
 		{
 			theRepXCollection->setTolerancesScale(inArgs->scale);
 			theRepXCollection->setUpVector(inArgs->upVector);
-		}		
+		}
 
 		PxU32 nbObjects = collection.getNbObjects();
 		if( nbObjects )

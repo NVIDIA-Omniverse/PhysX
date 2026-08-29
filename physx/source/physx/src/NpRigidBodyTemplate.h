@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -45,7 +45,7 @@
 		{																												\
 			NpScene* sceneForPVD = RigidActorTemplateClass::getNpScene();	/* shared shapes also return zero here */	\
 			if(sceneForPVD)																								\
-				sceneForPVD->getScenePvdClientInternal().updateBodyPvdProperties(static_cast<NpActor*>(this));				\
+				sceneForPVD->getScenePvdClientInternal().updateBodyPvdProperties(static_cast<NpActor*>(this));			\
 		}
 #else
 	#define UPDATE_PVD_PROPERTY_BODY
@@ -92,7 +92,7 @@ public:
 	// The rule is: If an API method is used somewhere in here, it has to be redeclared, else GCC whines
 
 	// PxRigidActor
-	virtual			PxTransform			getGlobalPose() const = 0;
+	virtual			PxTransform			getGlobalPose() const PX_OVERRIDE = 0;
 	virtual			bool				attachShape(PxShape& shape)	PX_OVERRIDE;
 	//~PxRigidActor
 
@@ -315,7 +315,8 @@ public:
 	PX_INLINE	PxMat33					scGetGlobalInertiaTensorInverse() const
 										{
 											PxMat33 inverseInertiaWorldSpace;
-											Cm::transformInertiaTensor(mCore.getInverseInertia(), PxMat33Padded(mCore.getBody2World().q), inverseInertiaWorldSpace);
+											const PxVec3p invInertia = mCore.getInverseInertia();
+											Cm::transformInertiaTensor(invInertia, mCore.getBody2World().q, inverseInertiaWorldSpace);
 											return inverseInertiaWorldSpace;
 										}
 
@@ -751,10 +752,13 @@ void NpRigidBodyTemplate<APIClass>::setRigidBodyFlag(PxRigidBodyFlag::Enum flag,
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidBody::setRigidBodyFlag() not allowed while simulation is running. Call will be ignored.")
 
+	NP_CHECK_SCENE_CORRUPTION_AND_RETURN(npScene)
+
 	const PxRigidBodyFlags currentFlags = mCore.getFlags();
 	const PxRigidBodyFlags newFlags = value ? currentFlags | flag : currentFlags & (~PxRigidBodyFlags(flag));
 
 	setRigidBodyFlagsInternal(currentFlags, newFlags);
+	NP_CHECK_SCENE_CUDA_ABORT_AND_SET_CORRUPTION(npScene)
 }
 
 template<class APIClass>
@@ -765,9 +769,12 @@ void NpRigidBodyTemplate<APIClass>::setRigidBodyFlags(PxRigidBodyFlags inFlags)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidBody::setRigidBodyFlags() not allowed while simulation is running. Call will be ignored.")
 
+	NP_CHECK_SCENE_CORRUPTION_AND_RETURN(npScene)
+
 	const PxRigidBodyFlags currentFlags = mCore.getFlags();
 
 	setRigidBodyFlagsInternal(currentFlags, inFlags);
+	NP_CHECK_SCENE_CUDA_ABORT_AND_SET_CORRUPTION(npScene)
 }
 
 template<class APIClass>
@@ -780,8 +787,7 @@ void NpRigidBodyTemplate<APIClass>::setMinCCDAdvanceCoefficient(PxReal minCCDAdv
 
 	mCore.setCCDAdvanceCoefficient(minCCDAdvanceCoefficient);
 	UPDATE_PVD_PROPERTY_BODY
-	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, minAdvancedCCDCoefficient, static_cast<PxRigidBody&>(*this), minCCDAdvanceCoefficient)
-
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, minCCDAdvanceCoefficient, static_cast<PxRigidBody&>(*this), minCCDAdvanceCoefficient)
 }
 
 template<class APIClass>

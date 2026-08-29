@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -44,7 +44,7 @@ SphericalJoint::SphericalJoint(const PxTolerancesScale& /*scale*/, PxRigidActor*
 }
 
 void SphericalJoint::setLimitCone(const PxJointLimitCone &limit)
-{	
+{
 	PX_CHECK_AND_RETURN(limit.isValid(), "PxSphericalJoint::setLimit: invalid parameter");
 	data().limit = limit; 
 	markDirty();
@@ -64,7 +64,7 @@ void SphericalJoint::setLimitCone(const PxJointLimitCone &limit)
 }
 
 PxJointLimitCone SphericalJoint::getLimitCone() const
-{	
+{
 	return data().limit; 
 }
 
@@ -197,14 +197,21 @@ void SphericalJoint::updateOmniPvdProperties() const
 	OMNI_PVD_WRITE_SCOPE_END
 }
 
+template<> void physx::Ext::omniPvdInitJoint<SphericalJoint>(OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData, SphericalJoint& joint); // declared before the wrapper so the wrapper binds the explicit form below instead of implicitly instantiating it
 template<>
 void physx::Ext::omniPvdInitJoint<SphericalJoint>(SphericalJoint& joint)
 {
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	omniPvdInitJoint(pvdWriter, pvdRegData, joint);
+	OMNI_PVD_WRITE_SCOPE_END
+}
 
+template<>
+void physx::Ext::omniPvdInitJoint<SphericalJoint>(OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData, SphericalJoint& joint)
+{
 	PxSphericalJoint& j = static_cast<PxSphericalJoint&>(joint);
 	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, j);
-	omniPvdSetBaseJointParams(static_cast<PxJoint&>(joint), PxJointConcreteType::eSPHERICAL);
+	omniPvdSetBaseJointParams(pvdWriter, pvdRegData, static_cast<PxJoint&>(joint), PxJointConcreteType::eSPHERICAL);
 
 	PxJointLimitCone limit = joint.getLimitCone();
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, limitYAngle, j, limit.yAngle)
@@ -218,8 +225,6 @@ void physx::Ext::omniPvdInitJoint<SphericalJoint>(SphericalJoint& joint)
 
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, swingYAngle, j, joint.getSwingYAngle())
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, swingZAngle, j, joint.getSwingZAngle())
-
-	OMNI_PVD_WRITE_SCOPE_END
 }
 
 #endif

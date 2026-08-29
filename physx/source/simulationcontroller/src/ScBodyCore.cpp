@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,11 +35,15 @@
 
 using namespace physx;
 
-static void updateBodySim(Sc::BodyCore& bodyCore)
+static void gpu_updateBodySim(Sc::BodyCore& bodyCore)
 {
+#if PX_SUPPORT_GPU_PHYSX
 	Sc::BodySim* bodySim = bodyCore.getSim();
 	if(bodySim)
-		bodySim->getScene().updateBodySim(*bodySim);
+		bodySim->getScene().gpu_updateBodySim(*bodySim);
+#else
+	PX_UNUSED(bodyCore);
+#endif
 }
 
 Sc::BodyCore::BodyCore(PxActorType::Enum type, const PxTransform& bodyPose) : RigidCore(type)
@@ -91,7 +95,7 @@ void Sc::BodyCore::setBody2World(const PxTransform& p)
 	if(sim)
 	{
 		sim->postBody2WorldChange();
-		sim->getScene().updateBodySim(*sim);
+		sim->getScene().gpu_updateBodySim(*sim);
 	}
 }
 
@@ -114,7 +118,7 @@ void Sc::BodyCore::setLinearVelocity(const PxVec3& v, bool skipBodySimUpdate)
 	PX_ASSERT(!skipBodySimUpdate || (getFlags() & PxRigidBodyFlag::eKINEMATIC));
 
 	if(!skipBodySimUpdate)
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 }
 
 void Sc::BodyCore::setAngularVelocity(const PxVec3& v, bool skipBodySimUpdate)
@@ -124,14 +128,14 @@ void Sc::BodyCore::setAngularVelocity(const PxVec3& v, bool skipBodySimUpdate)
 	PX_ASSERT(!skipBodySimUpdate || (getFlags() & PxRigidBodyFlag::eKINEMATIC));
 
 	if(!skipBodySimUpdate)
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 }
 
 void Sc::BodyCore::setCfmScale(PxReal cfmScale)
 {
 	mCore.cfmScale = cfmScale;
 
-	updateBodySim(*this);
+	gpu_updateBodySim(*this);
 }
 
 void Sc::BodyCore::setBody2Actor(const PxTransform& p)
@@ -141,7 +145,7 @@ void Sc::BodyCore::setBody2Actor(const PxTransform& p)
 
 	mCore.setBody2Actor(p);
 
-	updateBodySim(*this);
+	gpu_updateBodySim(*this);
 }
 
 void Sc::BodyCore::addSpatialAcceleration(const PxVec3* linAcc, const PxVec3* angAcc)
@@ -203,7 +207,7 @@ void Sc::BodyCore::setInverseMass(PxReal m)
 	if (!sim || (!(getFlags() & PxRigidBodyFlag::eKINEMATIC)))
 	{
 		mCore.inverseMass = m;
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 	}
 	else
 	{
@@ -236,7 +240,7 @@ void Sc::BodyCore::setInverseInertia(const PxVec3& i)
 	if (!sim || (!(getFlags() & PxRigidBodyFlag::eKINEMATIC)))
 	{
 		mCore.inverseInertia = i;
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 	}
 	else
 	{
@@ -269,7 +273,7 @@ void Sc::BodyCore::setLinearDamping(PxReal d)
 	if (!sim || (!(getFlags() & PxRigidBodyFlag::eKINEMATIC)))
 	{
 		mCore.linearDamping = d;
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 	}
 	else
 	{
@@ -302,7 +306,7 @@ void Sc::BodyCore::setAngularDamping(PxReal v)
 	if (!sim || (!(getFlags() & PxRigidBodyFlag::eKINEMATIC)))
 	{
 		mCore.angularDamping = v;
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 	}
 	else
 	{
@@ -335,7 +339,7 @@ void Sc::BodyCore::setMaxAngVelSq(PxReal v)
 	if (!sim || (!(getFlags() & PxRigidBodyFlag::eKINEMATIC)))
 	{
 		mCore.maxAngularVelocitySq = v;
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 	}
 	else
 	{
@@ -368,7 +372,7 @@ void Sc::BodyCore::setMaxLinVelSq(PxReal v)
 	if (!sim || (!(getFlags() & PxRigidBodyFlag::eKINEMATIC)))
 	{
 		mCore.maxLinearVelocitySq = v;
-		updateBodySim(*this);
+		gpu_updateBodySim(*this);
 	}
 	else
 	{
@@ -408,14 +412,13 @@ void Sc::BodyCore::setFlags(PxRigidBodyFlags f)
 
 			const PxU32 wasSpeculativeCCD = old & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD;
 			const PxU32 isSpeculativeCCD = f & PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD;
-
 			if(wasSpeculativeCCD ^ isSpeculativeCCD)
 			{
 				if(wasSpeculativeCCD)
 				{
 					sim->removeFromSpeculativeCCDMap();
 
-					sim->getLowLevelBody().mInternalFlags &= (~PxsRigidBody::eSPECULATIVE_CCD);
+					sim->getLowLevelBody().mInternalFlags &= ~PxsRigidBody::eSPECULATIVE_CCD_GPU;
 				}
 				else
 				{
@@ -423,7 +426,7 @@ void Sc::BodyCore::setFlags(PxRigidBodyFlags f)
 					if(!switchToKinematic)
 						sim->addToSpeculativeCCDMap();
 
-					sim->getLowLevelBody().mInternalFlags |= (PxsRigidBody::eSPECULATIVE_CCD);
+					sim->getLowLevelBody().mInternalFlags |= PxsRigidBody::eSPECULATIVE_CCD_GPU;
 				}
 			}
 
@@ -432,25 +435,23 @@ void Sc::BodyCore::setFlags(PxRigidBodyFlags f)
 			if (wasIntegrateGyroscopic ^ isIntegrateGyroscopic)
 			{
 				if(wasIntegrateGyroscopic)
-					sim->getLowLevelBody().mInternalFlags &= (~PxsRigidBody::eENABLE_GYROSCOPIC);
+					sim->getLowLevelBody().mInternalFlags &= ~PxsRigidBody::eENABLE_GYROSCOPIC_GPU;
 				else
-					sim->getLowLevelBody().mInternalFlags |= (PxsRigidBody::eENABLE_GYROSCOPIC);				
+					sim->getLowLevelBody().mInternalFlags |= PxsRigidBody::eENABLE_GYROSCOPIC_GPU;
 			}
 
 			const PxU32 wasRetainAccel = old & PxRigidBodyFlag::eRETAIN_ACCELERATIONS;
 			const PxU32 isRetainAccel = f & PxRigidBodyFlag::eRETAIN_ACCELERATIONS;
-
 			if (wasRetainAccel ^ isRetainAccel)
 			{
 				if (wasRetainAccel)
-					sim->getLowLevelBody().mInternalFlags &= (~PxsRigidBody::eRETAIN_ACCELERATION);
+					sim->getLowLevelBody().mInternalFlags &= ~PxsRigidBody::eRETAIN_ACCELERATION_GPU;
 				else
-					sim->getLowLevelBody().mInternalFlags |= (PxsRigidBody::eRETAIN_ACCELERATION);
+					sim->getLowLevelBody().mInternalFlags |= PxsRigidBody::eRETAIN_ACCELERATION_GPU;
 			}
 
 			//Force flag change through...
-			sim->getScene().updateBodySim(*sim);
-			
+			sim->getScene().gpu_updateBodySim(*sim);
 		}
 
 		if(switchToKinematic)
@@ -458,7 +459,6 @@ void Sc::BodyCore::setFlags(PxRigidBodyFlags f)
 			if (sim)
 				sim->getLowLevelBody().mInternalFlags |= PxsRigidBody::eVELOCITY_COPY_GPU;	
 			putToSleep();
-
 		}
 
 		if(sim)
@@ -477,13 +477,13 @@ void Sc::BodyCore::setFlags(PxRigidBodyFlags f)
 void Sc::BodyCore::setMaxContactImpulse(PxReal m)	
 { 
 	mCore.maxContactImpulse = m; 
-	updateBodySim(*this);
+	gpu_updateBodySim(*this);
 }
 
 void Sc::BodyCore::setOffsetSlop(PxReal slop)
 {
 	mCore.offsetSlop = slop;
-	updateBodySim(*this);
+	gpu_updateBodySim(*this);
 }
 
 PxNodeIndex Sc::BodyCore::getInternalIslandNodeIndex() const
@@ -499,7 +499,7 @@ void Sc::BodyCore::setWakeCounter(PxReal wakeCounter, bool forceWakeUp)
 	if(sim)
 	{
 		//wake counter change, we need to trigger dma pxgbodysim data again
-		sim->getScene().updateBodySim(*sim);
+		sim->getScene().gpu_updateBodySim(*sim);
 		if ((wakeCounter > 0.0f) || forceWakeUp)
 			sim->wakeUp();
 		sim->postSetWakeCounter(wakeCounter, forceWakeUp);
@@ -509,13 +509,13 @@ void Sc::BodyCore::setWakeCounter(PxReal wakeCounter, bool forceWakeUp)
 void Sc::BodyCore::setSleepThreshold(PxReal t)
 {
 	mCore.sleepThreshold = t;
-	updateBodySim(*this);
+	gpu_updateBodySim(*this);
 }
 
 void Sc::BodyCore::setFreezeThreshold(PxReal t)
 {
 	mCore.freezeThreshold = t;
-	updateBodySim(*this);
+	gpu_updateBodySim(*this);
 }
 
 bool Sc::BodyCore::isSleeping() const
@@ -555,13 +555,10 @@ PxIntBool Sc::BodyCore::isFrozen() const
 
 void Sc::BodyCore::setSolverIterationCounts(PxU16 c)	
 { 
-	mCore.solverIterationCounts = c;	
+	mCore.solverIterationCounts = c;
 	Sc::BodySim* sim = getSim();
 	if (sim)
-	{
-		sim->getLowLevelBody().mSolverIterationCounts = c;
 		sim->getScene().setDynamicsDirty();
-	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -1,9 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
 
-# NOTE: This file is included verbatim in documentation.
-# When editing, keep tutorial line ranges in sync.
+# NOTE: This file is included verbatim in documentation via literalinclude (full file).
 
 """
 Visualize rigid body simulation with Rerun.
@@ -23,9 +21,29 @@ from urllib.parse import quote
 
 import numpy as np
 import rerun as rr
+from ovphysx.types import TensorType
 
 from ovphysx import PhysX
-from ovphysx.types import TensorType
+
+
+def attach_scene(physx, usd_path, stage_name):
+    import ovstage
+
+    if not ovstage.population.available():
+        raise RuntimeError("ovstage population bridge is unavailable")
+
+    stage = ovstage.Stage(stage_name)
+    ordinal = 1
+    try:
+        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
+        # Population does not seal: the caller owns ordinal lifecycle, and
+        # attach_ovstage() reads at a sealed ordinal.
+        stage.advance_write_floor(ordinal=ordinal).wait()
+        physx.attach_ovstage(stage, read_ordinal=ordinal)
+        return stage
+    except Exception:
+        stage.destroy()
+        raise
 
 
 def main():
@@ -52,7 +70,7 @@ def main():
     rr.log("world", rr.ViewCoordinates.RIGHT_HAND_Z_UP, static=True)
 
     # --- ovphysx setup ---
-    sdk = PhysX(device="cpu")
+    sdk = PhysX()
 
     script_dir = Path(__file__).resolve().parent
     usd_path = script_dir / ".." / ".." / "data" / "boxes_falling_on_groundplane.usda"
@@ -60,7 +78,7 @@ def main():
         raise RuntimeError(f"USD scene not found: {usd_path}")
 
     print(f"Loading USD scene: {usd_path}")
-    usd_handle, _ = sdk.add_usd(str(usd_path))
+    stage = attach_scene(sdk, usd_path, "ovphysx-rerun-sample")
     sdk.wait_all()
 
     # Create tensor binding for rigid body poses: [N, 7] = [px, py, pz, qx, qy, qz, qw]
@@ -102,7 +120,7 @@ def main():
     print(f"Simulating {num_steps} steps...")
     wall_start = time.monotonic()
     for i in range(num_steps):
-        sdk.step(dt, i * dt)
+        sdk.step(dt)
         sdk.wait_all()
 
         pose_binding.read(poses)
@@ -128,11 +146,13 @@ def main():
             if elapsed < sim_time:
                 time.sleep(sim_time - elapsed)
 
-    pose_binding.destroy()
-    sdk.remove_usd(usd_handle)
-    sdk.release()
+    print(f"Visualization sample completed successfully ({num_steps} steps)")
 
-    print("[SUCCESS]", flush=True)
+    pose_binding.destroy()
+    sdk.detach_ovstage()
+    stage.destroy()
+    sdk.release()
+    print("Cleanup complete")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,169 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+# Floating-base articulations for the DOF drive-type tensor.
+#
+# /World/articulation_drives - 3 DOFs, one per drive type, pinning the exact
+#   enum mapping:
+#     joint1 - PhysicsDriveAPI with type "force"        -> DofDriveType::eForce        (1)
+#     joint2 - PhysicsDriveAPI with type "acceleration" -> DofDriveType::eAcceleration (2)
+#     joint3 - no PhysicsDriveAPI                       -> DofDriveType::eNone         (0)
+#
+# /World/articulation_one_dof - 1 DOF authored "acceleration" (2). Paired with
+#   the above it gives a mixed-DOF-count view (D = maxDofs = 3) whose rows carry
+#   distinct leading values, so row order is observable and the zero-padding of
+#   the short row is distinguishable from a real eNone(0).
+def Xform "World"
+{
+    def PhysicsScene "physicsScene"
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    def Xform "articulation_drives" (
+        apiSchemas = ["PhysicsArticulationRootAPI"]
+    )
+    {
+        def Capsule "link0" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (0, 0, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        }
+
+        def PhysicsRevoluteJoint "joint1" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/articulation_drives/link0>
+            rel physics:body1 = </World/articulation_drives/link1>
+            point3f physics:localPos0 = (0.25, 0, 0)
+            point3f physics:localPos1 = (-0.25, 0, 0)
+            float drive:angular:physics:damping = 1000
+            float drive:angular:physics:stiffness = 1000
+            float drive:angular:physics:targetVelocity = 0
+            uniform token drive:angular:physics:type = "force"
+        }
+
+        def Capsule "link1" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (0.5, 0, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        }
+
+        def PhysicsRevoluteJoint "joint2" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/articulation_drives/link1>
+            rel physics:body1 = </World/articulation_drives/link2>
+            point3f physics:localPos0 = (0.25, 0, 0)
+            point3f physics:localPos1 = (-0.25, 0, 0)
+            float drive:angular:physics:damping = 1000
+            float drive:angular:physics:stiffness = 1000
+            float drive:angular:physics:targetVelocity = 0
+            uniform token drive:angular:physics:type = "acceleration"
+        }
+
+        def Capsule "link2" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (1, 0, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        }
+
+        def PhysicsRevoluteJoint "joint3"
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/articulation_drives/link2>
+            rel physics:body1 = </World/articulation_drives/link3>
+            point3f physics:localPos0 = (0.25, 0, 0)
+            point3f physics:localPos1 = (-0.25, 0, 0)
+        }
+
+        def Capsule "link3" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (1.5, 0, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        }
+    }
+
+    def Xform "articulation_one_dof" (
+        apiSchemas = ["PhysicsArticulationRootAPI"]
+    )
+    {
+        def Capsule "link0" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (0, 3, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        }
+
+        def PhysicsRevoluteJoint "joint1" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/articulation_one_dof/link0>
+            rel physics:body1 = </World/articulation_one_dof/link1>
+            point3f physics:localPos0 = (0.25, 0, 0)
+            point3f physics:localPos1 = (-0.25, 0, 0)
+            float drive:angular:physics:damping = 1000
+            float drive:angular:physics:stiffness = 1000
+            float drive:angular:physics:targetVelocity = 0
+            uniform token drive:angular:physics:type = "acceleration"
+        }
+
+        def Capsule "link1" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (0.5, 3, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        }
+    }
+}

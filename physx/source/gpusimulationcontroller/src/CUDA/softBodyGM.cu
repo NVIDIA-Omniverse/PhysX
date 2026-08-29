@@ -22,15 +22,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "vector_types.h"
 #include "foundation/PxVec3.h"
 #include "foundation/PxVec4.h"
+#include "foundation/PxVecMath.h"
 #include "foundation/PxBounds3.h"
-#include "PxgSoftBodyCore.h"
 #include "PxgSoftBody.h"
 #include "PxgSoftBodyCoreKernelIndices.h"
 #include "PxgBodySim.h"
@@ -41,9 +41,7 @@
 #include "atomic.cuh"
 #include "gridCal.cuh"
 #include "copy.cuh"
-#include "softBody.cuh"
 #include "deformableUtils.cuh"
-#include "attachments.cuh"
 #include "particleSystem.cuh"
 #include "utils.cuh"
 
@@ -67,9 +65,28 @@ using namespace physx;
 
 extern "C" __host__ void initSoftBodyKernels1() {}
 
+static __device__ inline PxMat33 calculateDeformationGradient(
+	const PxVec3& u1,
+	const PxVec3& u2,
+	const PxVec3& u3,
+	const PxMat33& Qinv,
+	const PxMat33& RTranspose)
+{
+	// calculate deformation gradient
+	PxMat33 P = PxMat33(u1, u2, u3);
+	PxMat33 F = P * Qinv;
+
+	// remove rotation factor from strain, tranfrom into element space
+	F = RTranspose * F;
+
+	return F;
+}
+
 
 //This kernel is called before refitBound
-extern "C" __global__ void sb_gm_preIntegrateLaunch(
+extern "C" __global__
+__launch_bounds__(PxgSoftBodyKernelBlockDim::SB_PREINTEGRATION, 1)
+void sb_gm_preIntegrateLaunch(
 	PxgSoftBody* PX_RESTRICT softbodies,
 	const PxU32* activeId,
 	const PxVec3 gravity,
@@ -156,7 +173,7 @@ extern "C" __global__ void sb_gm_preIntegrateLaunch(
 						tPos.w = 0.0f;
 					}
 				}
-			}		
+			}
 
 			if (tPos.w != 0.f && !kinematic)
 			{
@@ -275,7 +292,7 @@ extern "C" __global__ void sb_gm_stepSoftbodyLaunch(
 			vel = (maxVel != PX_MAX_REAL && maxVel * maxVel < velMagSq) ? maxVel / PxSqrt(velMagSq) * vel : vel;
 
 			velocities[globalThreadIndex] = make_float4(vel.x, vel.y, vel.z, v.w);
-		}	
+		}
 		
 		PxVec3 delta = vel * dt;
 
@@ -559,7 +576,7 @@ static PX_FORCE_INLINE __device__ void compute_deltaLambdaXgradC(PxMat33& deltaL
                                                                  const PxMat33& dCdF, const PxMat33& DmInv,
                                                                  const float4& v0, const float4& v1, const float4& v2,
                                                                  const float4& v3, PxReal alphaTilde, PxReal dtInv,
-                                                                 PxReal damping, PxReal scaledDamping)
+                                                                 PxReal damping)
 {
 	PxVec3 dCdx1, dCdx2, dCdx3;
 	compute_dCdx(dCdx1, dCdx2, dCdx3, dCdF, DmInv);
@@ -590,8 +607,8 @@ static PX_FORCE_INLINE __device__ void compute_deltaLambdaXgradC(PxMat33& deltaL
 		}
 
 		deltaLambda = (-C - alphaTilde * lambda -
-		               scaledDamping * (dCdx0.dot(PxLoad3(v0)) + dCdx1.dot(PxLoad3(v1)) + dCdx2.dot(PxLoad3(v2)) +
-		                                dCdx3.dot(PxLoad3(v3)))) /
+		               damping * (dCdx0.dot(PxLoad3(v0)) + dCdx1.dot(PxLoad3(v1)) + dCdx2.dot(PxLoad3(v2)) +
+		                          dCdx3.dot(PxLoad3(v3)))) /
 		              denom;
 	}
 
@@ -690,7 +707,7 @@ PX_FORCE_INLINE __device__ PxMat33 tetrahedronsSolveInnerNeoHookean(const PxMat3
 
 
 	// use the first element which for linear isotropic materials is a rough average of compliance (see XPD)
-	// invE is 1.0/youngs, see PxgShapeManager.cpp line 609
+	// invE is 1.0/youngs, set by the material-update path in PxgShapeManager.
 	const PxReal alpha = invDtSq * invE;
 	PxReal dlambda;
 
@@ -722,7 +739,7 @@ PX_FORCE_INLINE __device__ PxMat33 tetrahedronsSolveInnerNeoHookean(const PxMat3
 PX_FORCE_INLINE __device__ void ARAP_constraint(PxMat33& deltaLambdaXgradC, PxReal& lambda, const float4& v0,
                                                 const float4& v1, const float4& v2, const float4& v3, const PxQuat& tetR,
                                                 const PxMat33& F, PxReal dtInv, const PxMat33& DmInv, PxReal alphaTilde,
-                                                PxReal damping = 0.f, PxReal scaledDamping = 0.f)
+                                                PxReal damping = 0.f)
 {
 	const PxMat33 R(tetR);
 	PxMat33 tensor = F - R;
@@ -732,15 +749,14 @@ PX_FORCE_INLINE __device__ void ARAP_constraint(PxMat33& deltaLambdaXgradC, PxRe
 
 	tensor *= (1.f / ARAP_C); // dCdF
 	compute_deltaLambdaXgradC(deltaLambdaXgradC, lambda, ARAP_C, tensor, DmInv, v0, v1, v2, v3, alphaTilde, dtInv,
-	                          damping, scaledDamping);
+	                          damping);
 }
 
 // trace(S - I): C = tr(S - I), F = RS
 PX_FORCE_INLINE __device__ void traceSMinusI_constraint(PxMat33& deltaLambdaXgradC, PxReal& lambda, const float4& v0,
                                                         const float4& v1, const float4& v2, const float4& v3,
                                                         const PxQuat& tetR, const PxMat33& F, PxReal invDt,
-                                                        const PxMat33& DmInv, PxReal alphaTilde, PxReal damping = 0.f,
-                                                        PxReal scaledDamping = 0.f)
+                                                        const PxMat33& DmInv, PxReal alphaTilde, PxReal damping = 0.f)
 {
 	const PxMat33 R(tetR);
 	PxMat33 S = R.getTranspose() * F; // to do: convert R^T*F into simpler computation.
@@ -748,22 +764,20 @@ PX_FORCE_INLINE __device__ void traceSMinusI_constraint(PxMat33& deltaLambdaXgra
 	const PxReal C = S.column0.x + S.column1.y + S.column2.z - 3.f;
 
 	// dCdF = R;
-	compute_deltaLambdaXgradC(deltaLambdaXgradC, lambda, C, R, DmInv, v0, v1, v2, v3, alphaTilde, invDt, damping,
-	                          scaledDamping);
+	compute_deltaLambdaXgradC(deltaLambdaXgradC, lambda, C, R, DmInv, v0, v1, v2, v3, alphaTilde, invDt, damping);
 }
 
 // volume preservation: C = (J - 1), where J is det(F).
 PX_FORCE_INLINE __device__ void volume_constraint(PxMat33& deltaLambdaXgradC, PxReal& lambda, const float4& v0,
                                                   const float4& v1, const float4& v2, const float4& v3,
                                                   const PxMat33& F, PxReal invDt, const PxMat33& DmInv,
-                                                  PxReal alphaTilde, PxReal damping = 0.f, PxReal scaledDamping = 0.f)
+                                                  PxReal alphaTilde, PxReal damping = 0.f)
 {
 	const PxReal detF = F.getDeterminant();
 	const PxReal C = detF - 1.f;
 	PxMat33 dCdF(F.column1.cross(F.column2), F.column2.cross(F.column0), F.column0.cross(F.column1));
 
-	compute_deltaLambdaXgradC(deltaLambdaXgradC, lambda, C, dCdF, DmInv, v0, v1, v2, v3, alphaTilde, invDt, damping,
-	                          scaledDamping);
+	compute_deltaLambdaXgradC(deltaLambdaXgradC, lambda, C, dCdF, DmInv, v0, v1, v2, v3, alphaTilde, invDt, damping);
 }
 
 PX_FORCE_INLINE __device__ PxMat33 tetrahedronsSolveInner(const PxMat33& P,
@@ -797,9 +811,7 @@ PX_FORCE_INLINE __device__ PxMat33 tetrahedronsSolveInner(const PxMat33& P,
 	// use the first element which for linear isotropic materials is a rough average of compliance (see XPD)
 	const float alpha = invDtSq * (1.0f / material.youngs);
 
-	// Damping
 	const float damping = material.elasticityDamping;
-	const float scaledDamping = damping * toUniformReal(material.dampingScale);
 
 	/*const float youngs = material.youngs;
 	const float poissons = material.poissons;
@@ -808,7 +820,7 @@ PX_FORCE_INLINE __device__ PxMat33 tetrahedronsSolveInner(const PxMat33& P,
 	const float highLimit = material.deformHighLimitRatio;
 	if (workIndex == 0)
 	{
-		printf("invDtSq %f alpha %f, alpha2 %f, damping %f, scaledDamping %f youngs %f, poissons %f, deformThreshold %f, lowLimit %f, highLimit %f\n", invDtSq, alpha, alpha2, damping, scaledDamping,
+		printf("invDtSq %f alpha %f, alpha2 %f, damping %f youngs %f, poissons %f, deformThreshold %f, lowLimit %f, highLimit %f\n", invDtSq, alpha, alpha2, damping,
 			youngs, poissons, deformThreshold, lowLimit, highLimit);
 	}*/
 	const PxVec3 uv1 = PxLoad3(v1 - v0);
@@ -842,23 +854,23 @@ PX_FORCE_INLINE __device__ PxMat33 tetrahedronsSolveInner(const PxMat33& P,
 		PxReal nu = material.poissons;
 
 		Cm::UnAlignedSpatialVector totalLambda = loadSpatialVector(shSoftbody.mSimTetraMultipliers[workIndex / 32], workIndex & 31);
-		lambda.top.x = computeLambda<0, 0, 0>(G, E, totalLambda, scaledDamping, scale, invE, nu, invDtSq);
-		lambda.top.y = computeLambda<1, 1, 1>(G, E, totalLambda, scaledDamping, scale, invE, nu, invDtSq);
-		lambda.top.z = computeLambda<2, 2, 2>(G, E, totalLambda, scaledDamping, scale, invE, nu, invDtSq);
-		lambda.bottom.x = computeLambda<1, 2, 3>(G, E, totalLambda, scaledDamping, scale, invE, nu, invDtSq);
-		lambda.bottom.y = computeLambda<0, 2, 4>(G, E, totalLambda, scaledDamping, scale, invE, nu, invDtSq);
-		lambda.bottom.z = computeLambda<0, 1, 5>(G, E, totalLambda, scaledDamping, scale, invE, nu, invDtSq);
+		lambda.top.x = computeLambda<0, 0, 0>(G, E, totalLambda, damping, scale, invE, nu, invDtSq);
+		lambda.top.y = computeLambda<1, 1, 1>(G, E, totalLambda, damping, scale, invE, nu, invDtSq);
+		lambda.top.z = computeLambda<2, 2, 2>(G, E, totalLambda, damping, scale, invE, nu, invDtSq);
+		lambda.bottom.x = computeLambda<1, 2, 3>(G, E, totalLambda, damping, scale, invE, nu, invDtSq);
+		lambda.bottom.y = computeLambda<0, 2, 4>(G, E, totalLambda, damping, scale, invE, nu, invDtSq);
+		lambda.bottom.z = computeLambda<0, 1, 5>(G, E, totalLambda, damping, scale, invE, nu, invDtSq);
 		totalLambda += lambda;
 		storeSpatialVector(shSoftbody.mSimTetraMultipliers[workIndex / 32], totalLambda, workIndex & 31);
 	}
 	else
 	{
-		lambda.top.x = computeLambda<0, 0>(G, E, scaledDamping, scale, invDtSq);
-		lambda.top.y = computeLambda<1, 1>(G, E, scaledDamping, scale, invDtSq);
-		lambda.top.z = computeLambda<2, 2>(G, E, scaledDamping, scale, invDtSq);
-		lambda.bottom.x = computeLambda<1, 2>(G, E, scaledDamping, scale, invDtSq);
-		lambda.bottom.y = computeLambda<0, 2>(G, E, scaledDamping, scale, invDtSq);
-		lambda.bottom.z = computeLambda<0, 1>(G, E, scaledDamping, scale, invDtSq);
+		lambda.top.x = computeLambda<0, 0>(G, E, damping, scale, invDtSq);
+		lambda.top.y = computeLambda<1, 1>(G, E, damping, scale, invDtSq);
+		lambda.top.z = computeLambda<2, 2>(G, E, damping, scale, invDtSq);
+		lambda.bottom.x = computeLambda<1, 2>(G, E, damping, scale, invDtSq);
+		lambda.bottom.y = computeLambda<0, 2>(G, E, damping, scale, invDtSq);
+		lambda.bottom.z = computeLambda<0, 1>(G, E, damping, scale, invDtSq);
 	}
 		
 	
@@ -976,14 +988,11 @@ __device__ void tetrahedronsSolveGM(PxMat33& deltaLambdaXgradC, const PxVec3& u1
 		// linear corot without voigt notation
 		const PxReal alphaTilde0 = invDtSq / (2.f * mu * volume);
 				
-		// damping: note that it follows the style of "tetrahedronsSolveInner".
-		PxReal damping = material.elasticityDamping; // damping for ARAP term.
-		PxReal scaledDamping = damping * toUniformReal(material.dampingScale); // this is maybe not really useful.
+		PxReal damping = material.elasticityDamping;
 
 		float2 lambdas = isTGS ? make_float2(0.f) : shSoftbody.mSimTetraMultipliers[workIndex / 32].mbyz[workIndex & 31];
 
-		ARAP_constraint(deltaLambdaXgradC, lambdas.x, v0, v1, v2, v3, tetR, F, invDt, Qinv, alphaTilde0, damping,
-		                scaledDamping);
+		ARAP_constraint(deltaLambdaXgradC, lambdas.x, v0, v1, v2, v3, tetR, F, invDt, Qinv, alphaTilde0, damping);
 
 		PxVec3 dx0 = -(deltaLambdaXgradC.column0 + deltaLambdaXgradC.column1 + deltaLambdaXgradC.column2) * v0.w;
 		PxVec3 dx1 = deltaLambdaXgradC.column0 * v1.w;
@@ -1011,12 +1020,10 @@ __device__ void tetrahedronsSolveGM(PxMat33& deltaLambdaXgradC, const PxVec3& u1
 			}
 
 			damping *= ratio; // damping for volume term.
-			scaledDamping *= ratio;
 
 			// linearized volume vs. nonlinear volume.
 			// To use linaerized volume, use "traceSMinusI_constraint" instead of "volume_constraint"
-			volume_constraint(deltaLambdaXgradC, lambdas.y, v0, v1, v2, v3, F, invDt, Qinv, alphaTilde1, damping,
-				scaledDamping);
+			volume_constraint(deltaLambdaXgradC, lambdas.y, v0, v1, v2, v3, F, invDt, Qinv, alphaTilde1, damping);
 		}
 
 		if (!isTGS)
@@ -1506,7 +1513,9 @@ void sb_gm_cp_solveTetrahedronsJacobiPartitionLaunch(
 }
 
 //multiple blocks per soft body(NUM_BLOCK_PER_SOFTBODY_SOLVE_TETRA), each block has 256 threads
-extern "C" __global__ void sb_gm_cp_averageVertsLaunch(
+extern "C" __global__
+__launch_bounds__(PxgSoftBodyKernelBlockDim::SB_PREINTEGRATION, 1)
+void sb_gm_cp_averageVertsLaunch(
 	PxgSoftBody* gSoftbodies,
 	const PxU32* activeSoftbodies,
 	const PxReal invDt)
@@ -1586,7 +1595,9 @@ extern "C" __global__ void sb_gm_cp_averageVertsLaunch(
 
 
 //Multiple blocks deal with one soft body. This uses grid model verts to update tet model verts.
-extern "C" __global__ void sb_gm_updateTetModelVertsLaunch(
+extern "C" __global__
+__launch_bounds__(PxgSoftBodyKernelBlockDim::SB_PREINTEGRATION, 1)
+void sb_gm_updateTetModelVertsLaunch(
 	PxgSoftBody* gSoftbodies,
 	const PxU32* activeSoftbodies
 )
@@ -1825,20 +1836,13 @@ extern "C" __global__ void sb_rigidAttachmentPrepareLaunch(
 	PxU32*										activeRigidAttachments,
 	PxNodeIndex*								rigidAttachmentIds,
 	PxU32										numRigidAttachments,
-	PxgFEMRigidAttachmentConstraint*			attachmentConstraints,
+	PxgDbRigidAttachmentBlock*					attachmentBlocks,
 	PxgPrePrepDesc*								preDesc,
 	PxgConstraintPrepareDesc*					prepareDesc,
 	PxgSolverSharedDescBase*					sharedDesc,
 	float4*										rigidDeltaVel
 )
 {
-	PxAlignedTransform* bodyFrames = prepareDesc->body2WorldPool;
-
-	PxU32* solverBodyIndices = preDesc->solverBodyIndices;
-	PxgSolverBodyData* solverBodyData = prepareDesc->solverBodyDataPool;
-	PxgSolverTxIData* solverDataTxIPool = prepareDesc->solverBodyTxIDataPool;
-
-	PxgBodySim* bodySims = sharedDesc->mBodySimBufferDeviceData;
 	const PxU32 nbBlocksRequired = (numRigidAttachments + blockDim.x - 1) / blockDim.x;
 	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
 	const PxU32 idx = threadIdx.x;
@@ -1851,12 +1855,11 @@ extern "C" __global__ void sb_rigidAttachmentPrepareLaunch(
 			return;
 
 		const PxU32 index = workIndex / 32;
-		const PxU32 offset = workIndex & 31;
 
 		PxU32 attachmentIndex = activeRigidAttachments[workIndex];
 
 		PxgFEMRigidAttachment& attachment = rigidAttachments[attachmentIndex];
-		PxgFEMRigidAttachmentConstraint& constraint = attachmentConstraints[index];
+		PxgDbRigidAttachmentBlock& block = attachmentBlocks[index];
 
 		PxU32 elemId = attachment.index1;
 		PxU32 softBodyId = PxGetSoftBodyId(elemId);
@@ -1884,151 +1887,22 @@ extern "C" __global__ void sb_rigidAttachmentPrepareLaunch(
 			const float4 pos_iMass2 = pos_invMassGM[tetInd.z];
 			const float4 pos_iMass3 = pos_invMassGM[tetInd.w];
 			gridPos = pos_iMass0 * barycentric.x + pos_iMass1 * barycentric.y + pos_iMass2 * barycentric.z + pos_iMass3 * barycentric.w;
-			invMass1 = getSoftBodyInvMass(gridPos.w, barycentric);
+			// Squared-bary invMass for the constraint Jacobian-Mass-Jacobian denominator.
+			invMass1 = barycentric.x * barycentric.x * pos_iMass0.w
+			         + barycentric.y * barycentric.y * pos_iMass1.w
+			         + barycentric.z * barycentric.z * pos_iMass2.w
+			         + barycentric.w * barycentric.w * pos_iMass3.w;
 		}
 		
 		const PxVec3 point(gridPos.x, gridPos.y, gridPos.z);
 
-		float4 ra4 = attachment.localPose0;
-
-		//nodeIndex
-		PxNodeIndex rigidId = reinterpret_cast<PxNodeIndex&>(attachment.index0);
-		PxU32 idx = 0;
-		if (!rigidId.isStaticBody())
-		{
-			idx = solverBodyIndices[rigidId.index()];
-		}
-		
+		PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(attachment.index0);
 		rigidAttachmentIds[workIndex] = rigidId;
 
-		const PxVec3 normal0(1.f, 0.f, 0.f);
-		const PxVec3 normal1(0.f, 1.f, 0.f);
-		const PxVec3 normal2(0.f, 0.f, 1.f);
-
-		const float4 low_high_limits = attachment.coneLimitParams.low_high_limits;
-		const float4 axis_angle = attachment.coneLimitParams.axis_angle;
-		const PxVec3 axis(axis_angle.x, axis_angle.y, axis_angle.z);
-
-		if (rigidId.isArticulation())
-		{
-	
-			PxU32 nodeIndexA = rigidId.index();
-			PxU32 artiId = bodySims[nodeIndexA].articulationRemapId;
-
-			PxgArticulation& articulation = sharedDesc->articulations[artiId];
-
-			const PxU32 linkID = rigidId.articulationLinkId();
-			const PxTransform body2World = articulation.linkBody2Worlds[linkID];
-
-			const PxVec3 bodyFrame0p(body2World.p.x, body2World.p.y, body2World.p.z);
-
-			PxVec3 ra(ra4.x, ra4.y, ra4.z);
-			ra = body2World.rotate(ra);
-			PxVec3 error = ra + bodyFrame0p - point;
-
-			const PxVec3 worldAxis = (body2World.rotate(axis)).getNormalized();
-
-			const PxVec3 raXn0 = ra.cross(normal0);
-			const PxVec3 raXn1 = ra.cross(normal1);
-			const PxVec3 raXn2 = ra.cross(normal2);
-
-			PxSpatialMatrix& spatialResponse = articulation.spatialResponseMatrixW[linkID];
-			const Cm::UnAlignedSpatialVector deltaV0 = spatialResponse * Cm::UnAlignedSpatialVector(normal0, raXn0);
-			const Cm::UnAlignedSpatialVector deltaV1 = spatialResponse * Cm::UnAlignedSpatialVector(normal1, raXn1);
-			const Cm::UnAlignedSpatialVector deltaV2 = spatialResponse * Cm::UnAlignedSpatialVector(normal2, raXn2);
-
-			const PxReal resp0 = deltaV0.top.dot(raXn0) + deltaV0.bottom.dot(normal0) + invMass1;
-			const PxReal resp1 = deltaV1.top.dot(raXn1) + deltaV1.bottom.dot(normal1) + invMass1;
-			const PxReal resp2 = deltaV2.top.dot(raXn2) + deltaV2.bottom.dot(normal2) + invMass1;
-
-			const float velMultiplier0 = (resp0 > 0.f) ? (1.f / resp0) : 0.f;
-			const float velMultiplier1 = (resp1 > 0.f) ? (1.f / resp1) : 0.f;
-			const float velMultiplier2 = (resp2 > 0.f) ? (1.f / resp2) : 0.f;
-
-			PxReal biasedErr0 = (error.dot(normal0));
-			PxReal biasedErr1 = (error.dot(normal1));
-			PxReal biasedErr2 = (error.dot(normal2));
-
-			constraint.raXn0_biasW[offset] = make_float4(raXn0.x, raXn0.y, raXn0.z, biasedErr0);
-			constraint.raXn1_biasW[offset] = make_float4(raXn1.x, raXn1.y, raXn1.z, biasedErr1);
-			constraint.raXn2_biasW[offset] = make_float4(raXn2.x, raXn2.y, raXn2.z, biasedErr2);
-			//articulation don't use invMass0. We set it to 1.0 here so that the impulse scaling for the linear impulse
-			//to convert it to a velocity change remains an impulse if it is dealing with an articulation.
-			constraint.velMultiplierXYZ_invMassW[offset] = make_float4(velMultiplier0, velMultiplier1, velMultiplier2, 1.f); 
-			constraint.elemId[offset] = elemId;
-			constraint.rigidId[offset] = rigidId.getInd();
-			constraint.baryOrType[offset] = attachment.baryOrType1;
-			constraint.low_high_limits[offset] = low_high_limits;
-			constraint.axis_angle[offset] = make_float4(worldAxis.x, worldAxis.y, worldAxis.z, axis_angle.w);
-		}
-		else
-		{
-			
-			//PxMat33 invSqrtInertia0 = solverDataTxIPool[idx].sqrtInvInertia;
-			const float4 linVel_invMass0 = solverBodyData[idx].initialLinVelXYZ_invMassW;
-			const PxReal invMass0 = linVel_invMass0.w;
-
-			PxMat33 invSqrtInertia0;
-			PxReal inertiaScale = 1.f;
-			if (invMass0 == 0.f && !rigidId.isStaticBody())
-			{
-				invSqrtInertia0 = PxMat33(PxIdentity);
-				inertiaScale = 0.f;
-			}
-			else
-			{
-				invSqrtInertia0 = solverDataTxIPool[idx].sqrtInvInertia;
-			}
-
-			PxAlignedTransform bodyFrame0 = bodyFrames[idx];
-			const PxVec3 bodyFrame0p(bodyFrame0.p.x, bodyFrame0.p.y, bodyFrame0.p.z);
-
-			PxVec3 ra(ra4.x, ra4.y, ra4.z);
-			ra = bodyFrame0.rotate(ra);
-			PxVec3 error = ra + bodyFrame0p - point;
-
-			const PxVec3 worldAxis = (bodyFrame0.rotate(axis)).getNormalized();
-
-			const PxVec3 raXn0 = ra.cross(normal0);
-			const PxVec3 raXn1 = ra.cross(normal1);
-			const PxVec3 raXn2 = ra.cross(normal2);
-
-			const PxVec3 raXnSqrtInertia0 = invSqrtInertia0 * raXn0;
-			const PxVec3 raXnSqrtInertia1 = invSqrtInertia0 * raXn1;
-			const PxVec3 raXnSqrtInertia2 = invSqrtInertia0 * raXn2;
-			const float resp0 = (raXnSqrtInertia0.dot(raXnSqrtInertia0))*inertiaScale + invMass0 + invMass1;
-			const float resp1 = (raXnSqrtInertia1.dot(raXnSqrtInertia1))*inertiaScale + invMass0 + invMass1;
-			const float resp2 = (raXnSqrtInertia2.dot(raXnSqrtInertia2))*inertiaScale + invMass0 + invMass1;
-
-			const float velMultiplier0 = (resp0 > 0.f) ? (1.f / resp0) : 0.f;
-			const float velMultiplier1 = (resp1 > 0.f) ? (1.f / resp1) : 0.f;
-			const float velMultiplier2 = (resp2 > 0.f) ? (1.f / resp2) : 0.f;
-
-			//PxReal biasedErr0 = biasCoefficient * (error.dot(normal0));
-			//PxReal biasedErr1 = biasCoefficient * (error.dot(normal1));
-			//PxReal biasedErr2 = biasCoefficient * (error.dot(normal2));
-
-
-			PxReal biasedErr0 = (error.dot(normal0));
-			PxReal biasedErr1 = (error.dot(normal1));
-			PxReal biasedErr2 = (error.dot(normal2));
-
-			constraint.raXn0_biasW[offset] = make_float4(raXnSqrtInertia0.x, raXnSqrtInertia0.y, raXnSqrtInertia0.z, biasedErr0);
-			constraint.raXn1_biasW[offset] = make_float4(raXnSqrtInertia1.x, raXnSqrtInertia1.y, raXnSqrtInertia1.z, biasedErr1);
-			constraint.raXn2_biasW[offset] = make_float4(raXnSqrtInertia2.x, raXnSqrtInertia2.y, raXnSqrtInertia2.z, biasedErr2);
-			constraint.velMultiplierXYZ_invMassW[offset] = make_float4(velMultiplier0, velMultiplier1, velMultiplier2, invMass0);
-			constraint.elemId[offset] = elemId;
-			constraint.rigidId[offset] = rigidId.getInd();
-			constraint.baryOrType[offset] = attachment.baryOrType1;
-			constraint.low_high_limits[offset] = low_high_limits;
-			constraint.axis_angle[offset] = make_float4(worldAxis.x, worldAxis.y, worldAxis.z, axis_angle.w);
-
-			if (rigidDeltaVel)
-			{
-				rigidDeltaVel[workIndex] = make_float4(0.f);
-				rigidDeltaVel[workIndex + numRigidAttachments] = make_float4(0.f);
-			}
-		}
+		prepareDbRigidAttachment(block, point, invMass1, attachment.localPose0, rigidId,
+		                         elemId, attachment.baryOrType1, attachment.rigidBodyRefCount,
+		                         prepareDesc, preDesc->solverBodyIndices, sharedDesc,
+		                         rigidDeltaVel, workIndex, numRigidAttachments);
 	}
 }
 
@@ -2036,9 +1910,8 @@ extern "C" __global__ void sb_rigidAttachmentPrepareLaunch(
 extern "C" __global__ void femAttachmentPrepareLaunch(
 	PxgFEMFEMAttachment*						femAttachments,
 	PxU32*										activeFemAttachments,
-	/*PxU64*										femAttachmentIds,*/
 	PxU32										numFemAttachments,
-	PxgFEMFEMAttachmentConstraint*				attachmentConstraints
+	PxgDbDbAttachmentBlock*						attachmentBlocks
 )
 {
 
@@ -2062,162 +1935,88 @@ extern "C" __global__ void femAttachmentPrepareLaunch(
 		const PxU32 attachmentIndex = activeFemAttachments[workIndex];
 
 		PxgFEMFEMAttachment& attachment = femAttachments[attachmentIndex];		
-		PxgFEMFEMAttachmentConstraint& constraint = attachmentConstraints[index];
+		PxgDbDbAttachmentBlock& block = attachmentBlocks[index];
 
 		const PxU64 compressedElemId = attachment.index0;
-		//femAttachmentIds[workIndex] = compressedElemId;
 
-		const float4 low_high_angle = attachment.coneLimitParams.low_high_angle;
-		const float4 barycentric = attachment.coneLimitParams.barycentric;
-
-		constraint.barycentric0[offset] = attachment.barycentricCoordinates0;
-		constraint.barycentric1[offset] = attachment.barycentricCoordinates1;
-		constraint.elemId0[offset] = compressedElemId;
-		constraint.elemId1[offset] = attachment.index1;
-		constraint.constraintOffset[offset] = attachment.constraintOffset;
-		constraint.low_high_angles[offset] = make_float4(low_high_angle.x, low_high_angle.y, low_high_angle.z, 0.f);
-		constraint.attachmentBarycentric[offset] = barycentric;
+		block.barycentric0[offset] = attachment.barycentricCoordinates0;
+		block.barycentric1[offset] = attachment.barycentricCoordinates1;
+		block.elemId0[offset] = compressedElemId;
+		block.elemId1[offset] = attachment.index1;
 		
 	}
 }
 
-//solve rigid attachment
-extern "C" __global__ void sb_solveRigidSoftAttachmentLaunch(
+// Pre-count pass for rigid-soft attachments. Mirrors the contact-path pre-count
+// (sb_queryRigidSoftContactReferenceCountLaunch in softBody.cu): for each active
+// attachment, bumps softbody.mSimDelta[v].w by 1.0 for each deformable vertex
+// that will receive a write from the matching solve kernel. The solve kernel
+// then reads .w as the per-vertex reference count, multiplies it into
+// per-vertex invMass for the constraint denominator and per-vertex write, and
+// does NOT bump .w itself. Finalize (sb_gm_applyExternalDeltasLaunch) divides
+// by .w, cancelling the inflation -- net per-vertex contribution matches the
+// single-writer-no-averaging response, including for vertices shared with
+// contacts in the same iter (their pre-count and ours co-accumulate into the
+// same .w channel).
+//
+// Single kernel shared by both PGS and TGS host dispatch -- the pre-count
+// itself is solver-kind-agnostic (no velocity read, no constraint init), so
+// we don't need the PGS/TGS template split that the contact pre-count has.
+extern "C" __global__ void sb_queryRigidSoftAttachmentReferenceCountLaunch(
 	PxgSoftBody*								softbodies,
-	PxgFEMRigidAttachmentConstraint*			attachments,
-	const PxU32									numAttachments,
-	PxgPrePrepDesc*								prePrepDesc,
-	PxgSolverCoreDesc*							solverCoreDesc,
-	PxgArticulationCoreDesc*					artiCoreDesc,
-	PxgSolverSharedDesc<IterativeSolveData>*	sharedDesc,
-	const PxReal								dt,
-	float4*										rigidDeltaVel				//output
-)
+	PxgDbRigidAttachmentBlock*					attachmentBlocks,
+	const PxU32									numAttachments)
 {
-	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
 	const PxU32 nbBlocksRequired = (numAttachments + blockDim.x - 1) / blockDim.x;
 	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
 	const PxU32 idx = threadIdx.x;
-
-	PxgVelocityReader velocityReader(prePrepDesc, solverCoreDesc, artiCoreDesc, sharedDesc, numSolverBodies);
 
 	for(PxU32 i = 0; i < nbIterationsPerBlock; ++i)
 	{
 		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
 		if(workIndex >= numAttachments)
-		{
 			return;
-		}
 
 		const PxU32 index = workIndex / 32;
 		const PxU32 offset = workIndex & 31;
 
-		const PxgFEMRigidAttachmentConstraint& constraint = attachments[index];
+		const PxgDbRigidAttachmentBlock& block = attachmentBlocks[index];
 
-		// Soft body info
-		const PxU32 elemId = constraint.elemId[offset];
+		const PxU32 elemId = block.elemId[offset];
 		const PxU32 softBodyId = PxGetSoftBodyId(elemId);
 		const PxU32 elemIdx = PxGetSoftBodyElementIndex(elemId);
-		const bool elemIsVertex = PxGetIsVertexType(constraint.baryOrType[offset]);
+		const bool elemIsVertex = PxGetIsVertexType(block.baryOrType[offset]);
 
 		PxgSoftBody& softbody = softbodies[softBodyId];
-		const float4* velGM = softbody.mSimVelocity_InvMass;
-
-		float4 softbodyVel;
-		uint4 tetInd;
-		float4 tetInvMass;
-		float4 barycentric;
 
 		if(elemIsVertex)
 		{
-			softbodyVel = velGM[elemIdx];
+			bumpDbRefCountVtx(softbody.mSimDelta, elemIdx);
 		}
 		else
 		{
-			barycentric = constraint.baryOrType[offset];
-			const uint4* tetsGM = softbody.mSimTetIndices;
-			tetInd = tetsGM[elemIdx];
-			const float4 v0 = velGM[tetInd.x];
-			const float4 v1 = velGM[tetInd.y];
-			const float4 v2 = velGM[tetInd.z];
-			const float4 v3 = velGM[tetInd.w];
-			softbodyVel = v0 * barycentric.x + v1 * barycentric.y + v2 * barycentric.z + v3 * barycentric.w;
-
-			tetInvMass.x = v0.w;
-			tetInvMass.y = v1.w;
-			tetInvMass.z = v2.w;
-			tetInvMass.w = v3.w;
-		}
-
-		PxVec3 linVel1(softbodyVel.x, softbodyVel.y, softbodyVel.z);
-
-		// Rigid body info
-		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(constraint.rigidId[offset]);
-		if(rigidId.isStaticBody() && softbodyVel.w == 0.0f)
-		{
-			continue;
-		}
-
-		PxgVelocityPackPGS vel0;
-		velocityReader.readVelocitiesPGS(rigidId, vel0);
-
-		// Compute impulses
-		PxVec3 deltaLinVel, deltaAngVel;
-		const PxVec3 deltaImpulse =
-			calculateAttachmentDeltaImpulsePGS(offset, constraint, vel0, linVel1, 1.f / dt, 0.5f, deltaLinVel, deltaAngVel);
-
-		// Update rigid body
-		if(!rigidId.isStaticBody())
-		{
-			const float4 velMultiplierXYZ_invMassW = constraint.velMultiplierXYZ_invMassW[offset];
-			if(velMultiplierXYZ_invMassW.w == 0.0f)
-			{
-				rigidDeltaVel[workIndex] = make_float4(0.0f);
-				rigidDeltaVel[workIndex + numAttachments] = make_float4(0.0f);
-			}
-			else
-			{
-				rigidDeltaVel[workIndex] = make_float4(deltaLinVel.x, deltaLinVel.y, deltaLinVel.z, 1.0f);
-				rigidDeltaVel[workIndex + numAttachments] = make_float4(deltaAngVel.x, deltaAngVel.y, deltaAngVel.z, 0.0f);
-			}
-		}
-
-		// Update soft body
-		if(!deltaImpulse.isZero())
-		{
-			const PxVec3 deltaPos = -deltaImpulse * dt;
-
-			if(elemIsVertex)
-			{
-				AtomicAdd(softbody.mSimDelta[elemIdx], deltaPos * softbodyVel.w, 1.f);
-			}
-			else
-			{
-				AtomicAdd(softbody.mSimDelta[tetInd.x], deltaPos * tetInvMass.x * barycentric.x, 1.f);
-				AtomicAdd(softbody.mSimDelta[tetInd.y], deltaPos * tetInvMass.y * barycentric.y, 1.f);
-				AtomicAdd(softbody.mSimDelta[tetInd.z], deltaPos * tetInvMass.z * barycentric.z, 1.f);
-				AtomicAdd(softbody.mSimDelta[tetInd.w], deltaPos * tetInvMass.w * barycentric.w, 1.f);
-			}
+			const float4 barycentric = block.baryOrType[offset];
+			bumpDbRefCountTet(softbody.mSimDelta, softbody.mSimTetIndices[elemIdx], barycentric.x, barycentric.y, barycentric.z, barycentric.w);
 		}
 	}
 }
 
-//////TGS//////////////
-
-
-//solve rigid attachment
-extern "C" __global__ void sb_solveRigidSoftAttachmentLaunchTGS(
+// Solves rigid-soft attachments. Serves both PGS and TGS dispatches via the
+// isTGS arg. PGS callers pass biasCoefficient = 0.5f and isVelocityIteration
+// = false; TGS callers thread the kernel-arg values through.
+extern "C" __global__ void sb_solveRigidSoftAttachmentLaunch(
 	PxgSoftBody*								softbodies,
-	PxgFEMRigidAttachmentConstraint*			attachments,
+	PxgDbRigidAttachmentBlock*					attachmentBlocks,
 	const PxU32									numAttachments,
 	PxgPrePrepDesc*								prePrepDesc,
 	PxgSolverCoreDesc*							solverCoreDesc,
 	PxgArticulationCoreDesc*					artiCoreDesc,
-	PxgSolverSharedDesc<IterativeSolveData>*	sharedDesc,
+	float4*										solverBodyVelPool,
 	const PxReal								dt,
 	const PxReal								biasCoefficient,
 	float4*										rigidDeltaVel,				//output
-	bool										isVelocityIteration
+	bool										isVelocityIteration,
+	bool										isTGS
 )
 {
 	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
@@ -2225,7 +2024,7 @@ extern "C" __global__ void sb_solveRigidSoftAttachmentLaunchTGS(
 	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
 	const PxU32 idx = threadIdx.x;
 
-	PxgVelocityReader velocityReader(prePrepDesc, solverCoreDesc, artiCoreDesc, sharedDesc, numSolverBodies);
+	PxgVelocityReader velocityReader(prePrepDesc, solverCoreDesc, artiCoreDesc, solverBodyVelPool, numSolverBodies);
 
 	for(PxU32 i = 0; i < nbIterationsPerBlock; ++i)
 	{
@@ -2238,90 +2037,146 @@ extern "C" __global__ void sb_solveRigidSoftAttachmentLaunchTGS(
 		const PxU32 index = workIndex / 32;
 		const PxU32 offset = workIndex & 31;
 
-		const PxgFEMRigidAttachmentConstraint& constraint = attachments[index];
+		const PxgDbRigidAttachmentBlock& block = attachmentBlocks[index];
 
 		// Soft body info
-		const PxU32 softBodyId = PxGetSoftBodyId(constraint.elemId[offset]);
-		const PxU32 elemIdx = PxGetSoftBodyElementIndex(constraint.elemId[offset]);
-		const bool elemIsVertex = PxGetIsVertexType(constraint.baryOrType[offset]);
-		
+		const PxU32 elemId = block.elemId[offset];
+		const PxU32 softBodyId = PxGetSoftBodyId(elemId);
+		const PxU32 elemIdx = PxGetSoftBodyElementIndex(elemId);
+		const float4 baryOrType = block.baryOrType[offset];
+		const bool elemIsVertex = PxGetIsVertexType(baryOrType);
 		PxgSoftBody& softbody = softbodies[softBodyId];
-		const float4* deltaGM = softbody.mSimDeltaPos;
 
-		float4 softbodyDelta;
-		uint4 tetInd;
-		float4 tetInvMass;
-		float4 barycentric;
+		// Deformable side: PGS reads mSimVelocity_InvMass, TGS reads
+		// mSimDeltaPos. vertexInvMasses come refCount-inflated;
+		// attachPointInvMass carries the raw bc^2*invM scalar for denomBias.
+		PxgDeformablePart<PxVec4> db;
+		db.readSoftBodyAttachment(softbody, elemIdx, baryOrType, elemIsVertex, isTGS);
 
-		if(elemIsVertex)
-		{
-			softbodyDelta = deltaGM[elemIdx];
-		}
-		else
-		{
-			barycentric = constraint.baryOrType[offset];
-			const uint4* tetsGM = softbody.mSimTetIndices;
-			tetInd = tetsGM[elemIdx];
-			const float4 d0 = deltaGM[tetInd.x];
-			const float4 d1 = deltaGM[tetInd.y];
-			const float4 d2 = deltaGM[tetInd.z];
-			const float4 d3 = deltaGM[tetInd.w];
-			softbodyDelta = d0 * barycentric.x + d1 * barycentric.y + d2 * barycentric.z + d3 * barycentric.w;
-
-			tetInvMass.x = d0.w;
-			tetInvMass.y = d1.w;
-			tetInvMass.z = d2.w;
-			tetInvMass.w = d3.w;
-		}
-		PxVec3 linDelta1(softbodyDelta.x, softbodyDelta.y, softbodyDelta.z);
-
-		// Rigid body info
-		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(constraint.rigidId[offset]);
-		if(rigidId.isStaticBody() && softbodyDelta.w == 0.0f)
+		// Both-static early exit: rigid static AND every contributing vertex
+		// kinematic => attachPointInvMass = 0.
+		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(block.rigidId[offset]);
+		if(rigidId.isStaticBody() && db.attachPointInvMass == 0.0f)
 		{
 			continue;
 		}
 
-		PxgVelocityPackTGS vel0;
-		velocityReader.readVelocitiesTGS(rigidId, vel0);
+		// Rigid side. PGS: readVelocity zeros linDelta/angDelta; TGS: they carry
+		// the rigid's accumulated linear/angular delta.
+		PxgRigidPart rigid;
+		rigid.readAttachmentPrep(block, offset);
+		rigid.readVelocity(velocityReader, rigidId, isTGS);
 
-		// Compute impulses
 		PxVec3 deltaLinVel, deltaAngVel;
-		PxVec3 deltaImpulse = calculateAttachmentDeltaImpulseTGS(offset, constraint, vel0, linDelta1, dt, biasCoefficient,
-																 isVelocityIteration, deltaLinVel, deltaAngVel);
+		const PxVec3 deltaImpulse = solveRbDbAttachment(rigid, db, dt, biasCoefficient,
+															 isTGS, isVelocityIteration,
+															 deltaLinVel, deltaAngVel);
 
-		// Update rigid body
-		if(!rigidId.isStaticBody())
-		{
-			const float4 velMultiplierXYZ_invMassW = constraint.velMultiplierXYZ_invMassW[offset];
-			if(velMultiplierXYZ_invMassW.w == 0.0f)
-			{
-				rigidDeltaVel[workIndex] = make_float4(0.0f);
-				rigidDeltaVel[workIndex + numAttachments] = make_float4(0.0f);
-			}
-			else
-			{
-				rigidDeltaVel[workIndex] = make_float4(deltaLinVel.x, deltaLinVel.y, deltaLinVel.z, 1.0f);
-				rigidDeltaVel[workIndex + numAttachments] = make_float4(deltaAngVel.x, deltaAngVel.y, deltaAngVel.z, 0.0f);
-			}
-		}
+		// Rigid writeback
+		rigid.writeAttachmentDeltas(rigidDeltaVel, rigidId, deltaLinVel, deltaAngVel, workIndex, workIndex + numAttachments);
 
-		// Update soft body
+		// Scatter .xyz weighted by the refCount-inflated vertexInvMasses; the pre-count owns .w.
+		// elemIsVertex (from PxGetIsVertexType) selects the vertex/tet scatter; bc unread for a vertex.
 		if(!deltaImpulse.isZero())
 		{
 			const PxVec3 deltaPos = -deltaImpulse * dt;
+			db.writeSoftBody(softbody, elemIdx, baryOrType, elemIsVertex, deltaPos);
+		}
+	}
+}
 
-			if(elemIsVertex)
-			{
-				AtomicAdd(softbody.mSimDelta[elemIdx], deltaPos * softbodyDelta.w, 1.0f);
-			}
-			else
-			{
-				AtomicAdd(softbody.mSimDelta[tetInd.x], deltaPos * barycentric.x * tetInvMass.x, 1.0f);
-				AtomicAdd(softbody.mSimDelta[tetInd.y], deltaPos * barycentric.y * tetInvMass.y, 1.0f);
-				AtomicAdd(softbody.mSimDelta[tetInd.z], deltaPos * barycentric.z * tetInvMass.z, 1.0f);
-				AtomicAdd(softbody.mSimDelta[tetInd.w], deltaPos * barycentric.w * tetInvMass.w, 1.0f);
-			}
+// Pre-count pass for DB-DB softbody-softbody attachments. Mirrors
+// sb_queryRigidSoftAttachmentReferenceCount above but for the two-softbody
+// case: bumps softbody{0,1}.mSimDelta[v].w by 1 for each contributing tet
+// vertex on BOTH sides. The DbDb solve below then reads .w as the per-vertex
+// Jacobi mass-splitting factor (via readSoftBodyAttachmentDbDb), inflates
+// per-vertex invMass + attachPointInvMass by it, scatters .xyz only, and the
+// next finalize divides .xyz/.w cancelling the inflation. Self-attach
+// (softBodyId0 == softBodyId1) is OK -- atomicAdd handles shared verts.
+extern "C" __global__ void sb_querySoftBodyAttachmentReferenceCountLaunch(
+	PxgSoftBody*								softbodies,
+	PxgDbDbAttachmentBlock*						attachmentBlocks,
+	const PxU32									numAttachments)
+{
+	const PxU32 nbBlocksRequired = (numAttachments + blockDim.x - 1) / blockDim.x;
+	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
+	const PxU32 idx = threadIdx.x;
+
+	for(PxU32 i = 0; i < nbIterationsPerBlock; ++i)
+	{
+		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
+		if(workIndex >= numAttachments)
+			return;
+
+		const PxU32 index = workIndex / 32;
+		const PxU32 offset = workIndex & 31;
+
+		const PxgDbDbAttachmentBlock& block = attachmentBlocks[index];
+
+		// Side 0
+		{
+			const PxU32 elemId0 = block.elemId0[offset];
+			const PxU32 softBodyId0 = PxGetSoftBodyId(elemId0);
+			const PxU32 tetIdx0 = PxGetSoftBodyElementIndex(elemId0);
+			const float4 bary0 = block.barycentric0[offset];
+			PxgSoftBody& softbody0 = softbodies[softBodyId0];
+			bumpDbRefCountTet(softbody0.mSimDelta, softbody0.mSimTetIndices[tetIdx0], bary0.x, bary0.y, bary0.z, bary0.w);
+		}
+
+		// Side 1
+		{
+			const PxU32 elemId1 = block.elemId1[offset];
+			const PxU32 softBodyId1 = PxGetSoftBodyId(elemId1);
+			const PxU32 tetIdx1 = PxGetSoftBodyElementIndex(elemId1);
+			const float4 bary1 = block.barycentric1[offset];
+			PxgSoftBody& softbody1 = softbodies[softBodyId1];
+			bumpDbRefCountTet(softbody1.mSimDelta, softbody1.mSimTetIndices[tetIdx1], bary1.x, bary1.y, bary1.z, bary1.w);
+		}
+	}
+}
+
+// Pre-count pass for DB-DB cloth-softbody attachments. Side 0 = cloth
+// (3 triangle verts), side 1 = softbody (4 tet verts). Bumps
+// cloth.mDeltaPos[v].w + softbody.mSimDelta[v].w for each contributing vertex.
+extern "C" __global__ void sb_queryClothAttachmentReferenceCountLaunch(
+	PxgSoftBody*								softbodies,
+	PxgFEMCloth*								clothes,
+	PxgDbDbAttachmentBlock*						attachmentBlocks,
+	const PxU32									numAttachments)
+{
+	const PxU32 nbBlocksRequired = (numAttachments + blockDim.x - 1) / blockDim.x;
+	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
+	const PxU32 idx = threadIdx.x;
+
+	for(PxU32 i = 0; i < nbIterationsPerBlock; ++i)
+	{
+		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
+		if(workIndex >= numAttachments)
+			return;
+
+		const PxU32 index = workIndex / 32;
+		const PxU32 offset = workIndex & 31;
+
+		const PxgDbDbAttachmentBlock& block = attachmentBlocks[index];
+
+		// Side 0: cloth (triangle, 3 verts)
+		{
+			const PxU32 elemId0 = block.elemId0[offset];
+			const PxU32 clothId = PxGetClothId(elemId0);
+			const PxU32 triIdx = PxGetClothElementIndex(elemId0);
+			const float4 bary0 = block.barycentric0[offset];
+			PxgFEMCloth& cloth = clothes[clothId];
+			bumpDbRefCountTri(cloth.mDeltaPos, cloth.mTriangleVertexIndices[triIdx], bary0.x, bary0.y, bary0.z);
+		}
+
+		// Side 1: softbody (tet, 4 verts)
+		{
+			const PxU32 elemId1 = block.elemId1[offset];
+			const PxU32 softBodyId = PxGetSoftBodyId(elemId1);
+			const PxU32 tetIdx = PxGetSoftBodyElementIndex(elemId1);
+			const float4 bary1 = block.barycentric1[offset];
+			PxgSoftBody& softbody = softbodies[softBodyId];
+			bumpDbRefCountTet(softbody.mSimDelta, softbody.mSimTetIndices[tetIdx], bary1.x, bary1.y, bary1.z, bary1.w);
 		}
 	}
 }
@@ -2329,7 +2184,7 @@ extern "C" __global__ void sb_solveRigidSoftAttachmentLaunchTGS(
 //solve softbody attachment, output soft body delta
 extern "C" __global__ void sb_solveOutputSoftBodyAttachmentDeltaVLaunch(
 	PxgSoftBody*								softbodies,
-	PxgFEMFEMAttachmentConstraint*				attachments,
+	PxgDbDbAttachmentBlock*						attachmentBlocks,
 	const PxU32									numAttachments
 )
 {
@@ -2346,75 +2201,41 @@ extern "C" __global__ void sb_solveOutputSoftBodyAttachmentDeltaVLaunch(
 		const PxU32 index = workIndex / 32;
 		const PxU32 offset = workIndex & 31;
 
-		const PxgFEMFEMAttachmentConstraint& constraint = attachments[index];
+		const PxgDbDbAttachmentBlock& block = attachmentBlocks[index];
 
-		const PxU32 elemId1 = constraint.elemId1[offset];
+		const PxU32 elemId0 = block.elemId0[offset];
+		const PxU32 softBodyId0 = PxGetSoftBodyId(elemId0);
+		const PxU32 tetrahedronIdx0 = PxGetSoftBodyElementIndex(elemId0);
+		const float4 bary0 = block.barycentric0[offset];
+		PxgSoftBody& softbody0 = softbodies[softBodyId0];
+
+		PxgDeformablePart<PxVec4> db0;
+		const PxVec3 pos0 = db0.readSoftBodyAttachmentDbDb(softbody0, tetrahedronIdx0, bary0);
+
+		const PxU32 elemId1 = block.elemId1[offset];
 		const PxU32 softBodyId1 = PxGetSoftBodyId(elemId1);
 		const PxU32 tetrahedronIdx1 = PxGetSoftBodyElementIndex(elemId1);
+		const float4 bary1 = block.barycentric1[offset];
 		PxgSoftBody& softbody1 = softbodies[softBodyId1];
-		const float4* simPos1 = softbody1.mSimPosition_InvMass;
-		const uint4* simTets1 = softbody1.mSimTetIndices;
-		const uint4 tetInd1 = simTets1[tetrahedronIdx1];
-		const float4 bary1 = constraint.barycentric1[offset];
 
-		float4 p10 = simPos1[tetInd1.x];
-		float4 p11 = simPos1[tetInd1.y];
-		float4 p12 = simPos1[tetInd1.z];
-		float4 p13 = simPos1[tetInd1.w];
-		float4 pos1 = p10*bary1.x + p11*bary1.y + p12*bary1.z + p13*bary1.w;
+		PxgDeformablePart<PxVec4> db1;
+		const PxVec3 pos1 = db1.readSoftBodyAttachmentDbDb(softbody1, tetrahedronIdx1, bary1);
 
-		const PxU32 elemInd0 = constraint.elemId0[offset];
-		const PxU32 softBodyId0 = PxGetSoftBodyId(elemInd0);
-		const PxU32 tetrahedronIdx0 = PxGetSoftBodyElementIndex(elemInd0);
-		const float4 bary0 = constraint.barycentric0[offset];
-		PxgSoftBody& softbody0 = softbodies[softBodyId0];
-		const float4* simPos0 = softbody0.mSimPosition_InvMass;
-		const uint4* simTets0 = softbody0.mSimTetIndices;
-		const uint4 tetInd0 = simTets0[tetrahedronIdx0];
-
-		float4 p00 = simPos0[tetInd0.x];
-		float4 p01 = simPos0[tetInd0.y];
-		float4 p02 = simPos0[tetInd0.z];
-		float4 p03 = simPos0[tetInd0.w];
-		float4 pos0 = p00*bary0.x + p01*bary0.y + p02*bary0.z + p03*bary0.w;
-		
-		//output for the soft body 0 and 1 - just do atomics on this for now...
-		float4* PX_RESTRICT accumDeltaV1 = softbody1.mSimDelta;
-		float4* PX_RESTRICT accumDeltaV0 = softbody0.mSimDelta;
-
-		const float4 relPos1 = (pos1 - pos0);
-
-		const float4 low_high_angle = constraint.low_high_angles[offset];
-		
-		PxVec3 error;
-		if (isConeLimitedEnabled(low_high_angle.z, low_high_angle.x, low_high_angle.y))
+		PxVec3 delta;
+		if(solveDbDbAttachment(db0, db1, pos0, pos1, delta))
 		{
-			const float4 attachmentBary = constraint.attachmentBarycentric[offset];
-			const float constraintOffset = constraint.constraintOffset[offset];
-			const float4 projectP = p00*attachmentBary.x + p01*attachmentBary.y + p02*attachmentBary.z + p03*attachmentBary.w;
-			const float4 axis = (projectP - pos0);
-			const PxVec3 worldAxis = PxVec3(axis.x, axis.y, axis.z).getNormalized();
-
-			error = computeConeLimitedError(low_high_angle.z, low_high_angle.x, low_high_angle.y, worldAxis, 
-						PxVec3(relPos1.x, relPos1.y, relPos1.z) - worldAxis*constraintOffset);
-		}
-		else
-		{
-			error = PxVec3(relPos1.x, relPos1.y, relPos1.z);
-		}
-
-		float4 b0w = make_float4(bary0.x*p00.w, bary0.y*p01.w, bary0.z*p02.w, bary0.w*p03.w);
-		float4 b1w = make_float4(bary1.x*p10.w, bary1.y*p11.w, bary1.z*p12.w, bary1.w*p13.w);
-
-		const PxReal wTot0 = b0w.x*bary0.x + b0w.y*bary0.y + b0w.z*bary0.z + b0w.w*bary0.w;
-		const PxReal wTot1 = b1w.x*bary1.x + b1w.y*bary1.y + b1w.z*bary1.z + b1w.w*bary1.w;
-		const PxReal wTot = wTot0 + wTot1;
-
-		if (wTot > 0.0f)
-		{
-			const PxVec3 delta = error * (1.0f/wTot);
-			updateTetPositionDelta(accumDeltaV1, tetInd1, -delta, b1w, 1.f);
-			updateTetPositionDelta(accumDeltaV0, tetInd0, delta, b0w, 1.f);
+			// .xyz-only scatter: vertexInvMasses is refCount-inflated by
+			// readSoftBodyAttachmentDbDb, so b{0,1}w = bary * refCount *
+			// raw_invMass. Pre-count populated .w; finalize divides .xyz/.w
+			// cancelling the inflation.
+			const uint4 tetInd0 = softbody0.mSimTetIndices[tetrahedronIdx0];
+			const uint4 tetInd1 = softbody1.mSimTetIndices[tetrahedronIdx1];
+			const float4 b0w = make_float4(db0.bc.x*db0.vertexInvMasses.x, db0.bc.y*db0.vertexInvMasses.y,
+				db0.bc.z*db0.vertexInvMasses.z, db0.bc.w*db0.vertexInvMasses.w);
+			const float4 b1w = make_float4(db1.bc.x*db1.vertexInvMasses.x, db1.bc.y*db1.vertexInvMasses.y,
+				db1.bc.z*db1.vertexInvMasses.z, db1.bc.w*db1.vertexInvMasses.w);
+			updatePositionDeltaTet(softbody1.mSimDelta, tetInd1, -delta, b1w);
+			updatePositionDeltaTet(softbody0.mSimDelta, tetInd0,  delta, b0w);
 		}
 	}
 
@@ -2424,7 +2245,7 @@ extern "C" __global__ void sb_solveOutputSoftBodyAttachmentDeltaVLaunch(
 extern "C" __global__ void sb_solveOutputClothAttachmentDeltaVLaunch(
 	PxgSoftBody*								softbodies,
 	PxgFEMCloth*								clothes,
-	PxgFEMFEMAttachmentConstraint*				attachments,
+	PxgDbDbAttachmentBlock*						attachmentBlocks,
 	const PxU32									numAttachments
 )
 {
@@ -2442,165 +2263,37 @@ extern "C" __global__ void sb_solveOutputClothAttachmentDeltaVLaunch(
 		const PxU32 index = workIndex / 32;
 		const PxU32 offset = workIndex & 31;
 
-		const PxgFEMFEMAttachmentConstraint& constraint = attachments[index];
-		const PxU32 elemId1 = constraint.elemId1[offset];
+		const PxgDbDbAttachmentBlock& block = attachmentBlocks[index];
+
+		const PxU32 elemId0 = block.elemId0[offset];
+		const PxU32 clothId = PxGetClothId(elemId0);
+		const PxU32 elementId = PxGetClothElementIndex(elemId0);
+		const float4 bary0 = block.barycentric0[offset];
+		PxgFEMCloth& cloth = clothes[clothId];
+
+		PxgDeformablePart<PxVec3> db0;
+		const PxVec3 pos0 = db0.readClothAttachmentDbDb(cloth, elementId, bary0);
+
+		const PxU32 elemId1 = block.elemId1[offset];
 		const PxU32 softBodyId = PxGetSoftBodyId(elemId1);
 		const PxU32 tetrahedronIdx = PxGetSoftBodyElementIndex(elemId1);
-
+		const float4 bary1 = block.barycentric1[offset];
 		PxgSoftBody& softbody = softbodies[softBodyId];
-		const float4* simPos = softbody.mSimPosition_InvMass;
-		const uint4* simTets = softbody.mSimTetIndices;
-		const uint4 tetInd = simTets[tetrahedronIdx];
-		const float4 bary1 = constraint.barycentric1[offset];
 
-		const float4 sp0 = simPos[tetInd.x];
-		const float4 sp1 = simPos[tetInd.y];
-		const float4 sp2 = simPos[tetInd.z];
-		const float4 sp3 = simPos[tetInd.w];
-		const float4 pos1 = sp0*bary1.x + sp1*bary1.y + sp2*bary1.z + sp3*bary1.w;
+		PxgDeformablePart<PxVec4> db1;
+		const PxVec3 pos1 = db1.readSoftBodyAttachmentDbDb(softbody, tetrahedronIdx, bary1);
 
-		const PxU32 elemInd0 = constraint.elemId0[offset];
-		const PxU32 clothId = PxGetClothId(elemInd0);
-		const PxU32 elementId = PxGetClothElementIndex(elemInd0);
-		const float4 bary0 = constraint.barycentric0[offset];
-		PxgFEMCloth& cloth = clothes[clothId];
-		const float4* clothPos = cloth.mPosition_InvMass;
-		const uint4 triInd = cloth.mTriangleVertexIndices[elementId];
-		
-		const float4 cp0 = clothPos[triInd.x];
-		const float4 cp1 = clothPos[triInd.y];
-		const float4 cp2 = clothPos[triInd.z];
-		const float4 pos0 = cp0*bary0.x + cp1*bary0.y + cp2*bary0.z;
-
-		//output for the soft body and cloth- just do atomics on this for now...
-		float4* PX_RESTRICT accumDeltaV1 = softbody.mSimDelta;
-		float4* PX_RESTRICT accumDeltaV0 = cloth.mDeltaPos;
-
-		const float4 relPos1 = (pos1 - pos0);
-		
-		const float4 low_high_angle = constraint.low_high_angles[offset];
-
-		PxVec3 error;
-		if (isConeLimitedEnabled(low_high_angle.z, low_high_angle.x, low_high_angle.y))
+		PxVec3 delta;
+		if(solveDbDbAttachment(db0, db1, pos0, pos1, delta))
 		{
-			const float4 attachmentBary = constraint.attachmentBarycentric[offset];
-			const float constraintOffset = constraint.constraintOffset[offset];
-			const float4 projectP = sp0 * attachmentBary.x + sp1 * attachmentBary.y + sp2 * attachmentBary.z + sp3 * attachmentBary.w;
-			const float4 axis = (pos1 - projectP);
-			const PxVec3 worldAxis = PxVec3(axis.x, axis.y, axis.z).getNormalized();
-
-			error = computeConeLimitedError(low_high_angle.z, low_high_angle.x, low_high_angle.y, worldAxis,
-						PxVec3(relPos1.x, relPos1.y, relPos1.z) - worldAxis*constraintOffset);
-		}
-		else
-		{
-			error = PxVec3(relPos1.x, relPos1.y, relPos1.z);
-		}
-
-		float4 b0w = make_float4(bary0.x*cp0.w, bary0.y*cp1.w, bary0.z*cp2.w, 0.0f);
-		float4 b1w = make_float4(bary1.x*sp0.w, bary1.y*sp1.w, bary1.z*sp2.w, bary1.w*sp3.w);
-
-		const PxReal wTot0 = b0w.x*bary0.x + b0w.y*bary0.y + b0w.z*bary0.z;
-		const PxReal wTot1 = b1w.x*bary1.x + b1w.y*bary1.y + b1w.z*bary1.z + b1w.w*bary1.w;
-		const PxReal wTot = wTot0 + wTot1;
-		if (wTot > 0.0f)
-		{
-			const PxVec3 delta = error * (1.0f/wTot);
-			updateTetPositionDelta(accumDeltaV1, tetInd, -delta, b1w, 1.f);
-			updateTriPositionDelta(accumDeltaV0, triInd, delta, b0w, 1.f);
-		}
-	}
-}
-
-static __device__ PxU32 findBufferOffset(PxgParticleSystem& particleSystem, PxU32 uniqueBufferId)
-{
-	PxU32 bufferIndex = findBufferIndexFromUniqueId(particleSystem, uniqueBufferId);
-	return particleSystem.mParticleBufferRunsum[bufferIndex];
-}
-
-//solve cloth attachment, output soft body/cloth delta
-extern "C" __global__ void sb_solveOutputParticleAttachmentDeltaVLaunch(
-	PxgSoftBody*								softbodies,
-	PxgParticleSystem*							particleSystems,
-	PxgFEMFEMAttachmentConstraint*				attachments,
-	const PxU32									numAttachments
-)
-{
-
-	const PxU32 nbBlocksRequired = (numAttachments + blockDim.x - 1) / blockDim.x;
-
-	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
-	const PxU32 idx = threadIdx.x;
-
-
-	for (PxU32 i = 0; i < nbIterationsPerBlock; ++i)
-	{
-
-		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
-		if (workIndex >= numAttachments)
-			return;
-
-
-		const PxU32 index = workIndex / 32;
-		const PxU32 offset = workIndex & 31;
-
-		const PxgFEMFEMAttachmentConstraint& constraint = attachments[index];
-	
-		const PxU32 elemId1 = constraint.elemId1[offset];
-		const PxU32 softBodyId = PxGetSoftBodyId(elemId1);
-		const PxU32 tetrahedronId = PxGetSoftBodyElementIndex(elemId1);
-		PxgSoftBody& softbody = softbodies[softBodyId];
-		const float4* simPos = softbody.mSimPosition_InvMass;
-		const uint4* simTets = softbody.mSimTetIndices;
-		const uint4 tetInd = simTets[tetrahedronId];
-
-		const float4 bary1 = constraint.barycentric1[offset];
-
-		//Output for the soft body - just do atomics on this for now...
-		float4* PX_RESTRICT accumDeltaV = softbody.mSimDelta;
-
-		const float4 sp0 = simPos[tetInd.x];
-		const float4 sp1 = simPos[tetInd.y];
-		const float4 sp2 = simPos[tetInd.z];
-		const float4 sp3 = simPos[tetInd.w];
-		const float4 pos1 = sp0 * bary1.x + sp1 * bary1.y + sp2 * bary1.z + sp3 * bary1.w;
-
-		const PxReal invMass1 = pos1.w;
-
-		const PxU64 elemId0 = constraint.elemId0[offset];
-		const PxU32 particleSystemId = PxGetParticleSystemId(elemId0);		
-		PxgParticleSystem& particleSystem = particleSystems[particleSystemId];
-
-		PxU32 userBufferId = PxU32(constraint.barycentric0[offset].x);
-		PxU32 o = findBufferOffset(particleSystem, userBufferId);		
-		PxU32 particleId = PxGetParticleIndex(elemId0) + o;
-
-		const PxU32* PX_RESTRICT reverseLookup = particleSystem.mUnsortedToSortedMapping;
-		particleId = reverseLookup[particleId];
-		const float4 pos0 = particleSystem.mSortedPositions_InvMass[particleId];
-
-		const PxReal invMass0 = pos0.w;
-
-		if (invMass1 == 0.f && invMass0 == 0.f)
-			continue; //Constrainint an infinte mass particle to an infinite mass soft body. Won't work so skip!
-
-		const float4 diff = (pos1 - pos0);
-		const PxVec3 error(diff.x, diff.y, diff.z);
-
-		float4 b1w = make_float4(bary1.x*sp0.w, bary1.y*sp1.w, bary1.z*sp2.w, bary1.w*sp3.w);
-
-		const PxReal wTot0 = pos0.w;
-		const PxReal wTot1 = b1w.x*bary1.x + b1w.y*bary1.y + b1w.z*bary1.z + b1w.w*bary1.w;
-		const PxReal wTot = wTot0 + wTot1;
-		
-		if (wTot > 0.0f)
-		{
-			const PxVec3 delta = error * (1.0f/wTot);
-			updateTetPositionDelta(accumDeltaV, tetInd, -delta, b1w, 1.f);
-			if (pos0.w > 0.0f)
-			{
-				AtomicAdd(particleSystem.mDelta[particleId], delta*pos0.w);
-			}
+			const uint4 triInd  = cloth.mTriangleVertexIndices[elementId];
+			const uint4 tetInd  = softbody.mSimTetIndices[tetrahedronIdx];
+			const float4 b0w = make_float4(db0.bc.x*db0.vertexInvMasses.x, db0.bc.y*db0.vertexInvMasses.y,
+				db0.bc.z*db0.vertexInvMasses.z, 0.0f);
+			const float4 b1w = make_float4(db1.bc.x*db1.vertexInvMasses.x, db1.bc.y*db1.vertexInvMasses.y,
+				db1.bc.z*db1.vertexInvMasses.z, db1.bc.w*db1.vertexInvMasses.w);
+			updatePositionDeltaTet(softbody.mSimDelta, tetInd, -delta, b1w);
+			updatePositionDeltaTri(cloth.mDeltaPos,    triInd,  delta, b0w);
 		}
 	}
 }
@@ -2650,7 +2343,7 @@ extern "C" __global__ void sb_gm_applyExternalDeltasLaunch(
 
 		//tempPos[vertIdx] = pos;
 		curPositions[vertIdx] = pos + delta;
-		
+
 		vels[vertIdx] = newVel;
 
 		shSoftbody.mSimDeltaPos[vertIdx] += delta;
@@ -3091,55 +2784,15 @@ extern "C" __global__ void sb_initPlasticDeformLaunch(
 	}
 }
 
-extern "C" __global__ void sb_copyOrApplySoftBodyDataDEPRECATED(
-	PxgSoftBody* PX_RESTRICT softbodies,
-	const PxU32 dataIndex,
-	const PxU32* softBodyIndices,
-	const PxU32 softBodyIndicesSize,
-	PxU32** data,
-	const PxU32* dataSizes,
-	const PxU32 threadsPerSoftBody,
-	const PxU32 applyDataToSoftBodies)
-{
-	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
-	const PxU32 sectionIndex = globalThreadIndex / threadsPerSoftBody;
-
-	
-	if (sectionIndex < softBodyIndicesSize)
-	{
-		const PxU32 softBodyIndex = softBodyIndices[sectionIndex];
-		PxgSoftBody& softbody = softbodies[softBodyIndex];
-		
-		PxU32* dest;
-		PxU32 * source;
-		if (applyDataToSoftBodies)
-		{
-			dest = (PxU32*)(((void**)&softbody)[dataIndex]);
-			source = data[sectionIndex];
-		}
-		else
-		{
-			source = (PxU32*)(((void**)&softbody)[dataIndex]);
-			dest = data[sectionIndex];
-		}
-
-		PxU32 index = globalThreadIndex % threadsPerSoftBody;
-		const PxU32 end = (dataSizes[sectionIndex] + 4 - 1) / 4; //We copy 4 bytes at a time
-		while (index < end)
-		{
-			dest[index] = source[index]; //Write to the output buffer	
-			index += threadsPerSoftBody;
-		}
-	}
-}
-
-extern "C" __global__ void sb_gm_finalizeVelocitiesLaunch(
+extern "C" __global__
+__launch_bounds__(PxgSoftBodyKernelBlockDim::SB_PREINTEGRATION, 1)
+void sb_gm_finalizeVelocitiesLaunch(
 	PxgSoftBody* gSoftbodies,
 	const PxU32* activeSoftbodies,
 	const PxReal invDt,
-	const PxReal velocityScale,
 	const PxReal dt,
-	const bool alwaysRunVelocityAveraging
+	const bool alwaysRunVelocityAveraging,
+	const PxU32 nbPosIters
 )
 {
 	__shared__ bool isAwake[PxgSoftBodyKernelBlockDim::SB_PREINTEGRATION / 32];
@@ -3147,54 +2800,18 @@ extern "C" __global__ void sb_gm_finalizeVelocitiesLaunch(
 	const PxU32 softbodyId = activeSoftbodies[blockIdx.y];
 	PxgSoftBody& shSoftbody = gSoftbodies[softbodyId];
 
-	float4* deltaPos = shSoftbody.mSimDeltaPos;
-	float4* vels = shSoftbody.mSimVelocity_InvMass;
-	float4* positions = shSoftbody.mSimPosition_InvMass;
-
 	const PxU32 vertIdx = threadIdx.x + blockIdx.x * blockDim.x;
-
 	const PxU32 nbVerts = shSoftbody.mNumVertsGM;
 
 	bool awake = false;
 
 	if (vertIdx < nbVerts)
 	{
-		const PxReal settleTolerance = shSoftbody.mSettlingThreshold*dt;
-		const PxReal tolerance = shSoftbody.mSleepThreshold*dt;
-		const PxReal sleepDamping = 1.f - PxMin(1.f, shSoftbody.mSettlingDamping*dt);
-
-		float4 delta = deltaPos[vertIdx];
-		PxVec3 tDelta = PxLoad3(delta);
-		PxVec3 deltaVel = tDelta*invDt;
-		float4 pos = positions[vertIdx];
-
-		if (pos.w != 0.0f) // skip kinematic and  infinite mass particles
-		{
-			PxReal velocityScaling = 1.0f;
-
-			const PxReal magSq = tDelta.magnitudeSquared();
-			if (magSq < settleTolerance*settleTolerance)
-			{
-				awake = magSq >= tolerance*tolerance;
-
-				velocityScaling = sleepDamping;
-			}
-			else
-			{
-				awake = true;
-			}
-
-			if (alwaysRunVelocityAveraging || velocityScaling != 1.0f)
-			{
-				float4 vel = vels[vertIdx];
-				PxVec3 tVel = PxLoad3(vel);
-
-				if (alwaysRunVelocityAveraging && deltaVel.magnitudeSquared() < tVel.magnitudeSquared())
-					tVel = tVel * (velocityScale)+deltaVel * (1.f - velocityScale);
-
-				vels[vertIdx] = make_float4(velocityScaling * tVel.x, velocityScaling * tVel.y, velocityScaling * tVel.z, vel.w);
-			}
-		}
+		float4 vel = shSoftbody.mSimVelocity_InvMass[vertIdx];
+		awake = finalizeVertexVelocity(shSoftbody.mSimPosition_InvMass[vertIdx], vel, shSoftbody.mSimDeltaPos[vertIdx],
+			shSoftbody.mSettlingThreshold, shSoftbody.mSleepThreshold, shSoftbody.mSettlingDamping,
+			dt, invDt, alwaysRunVelocityAveraging, LinearBlendVelocityAveraging(nbPosIters));
+		shSoftbody.mSimVelocity_InvMass[vertIdx] = vel;
 	}
 
 	awake = __any_sync(FULL_MASK, awake);

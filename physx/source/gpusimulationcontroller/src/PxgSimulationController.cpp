@@ -22,9 +22,10 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "PxgSimulationController.h"
+#include "PxgNarrowphaseCore.h"
 #include "PxDirectGPUAPI.h"
 #include "PxsRigidBody.h"
 #include "PxvGeometry.h"
@@ -32,6 +33,7 @@
 #include "cudamanager/PxCudaContextManager.h"
 #include "foundation/PxAllocator.h"
 #include "PxgSimulationCore.h"
+#include "PxgArticulation.h"
 #include "PxgDynamicsContext.h"
 #include "PxgNphaseImplementationContext.h"
 #include "PxgCudaBroadPhaseSap.h"
@@ -39,7 +41,6 @@
 #include "PxgBodySim.h"
 #include "PxgShapeSim.h"
 #include "PxsTransformCache.h"
-#include "PxgCudaMemoryAllocator.h"
 #include "PxgKernelWrangler.h"
 #include "GuBounds.h"
 #include "GuTriangleMesh.h"
@@ -50,12 +51,14 @@
 #include "DyDeformableSurface.h"
 #include "DyDeformableVolume.h"
 #include "DyParticleSystem.h"
+#include "DyArticulationMimicJointCore.h"
 #include "PxgArticulationCore.h"
 #include "PxgSoftBody.h"
 #include "PxgSoftBodyCore.h"
 #include "PxgFEMCloth.h"
 #include "PxgFEMClothCore.h"
 #include "PxgParticleSystem.h"
+#include "PxgParticleSystemBuffer.h"
 #include "PxgParticleSystemCore.h"
 #include "PxArticulationTendonData.h"
 #include "foundation/PxErrors.h"
@@ -78,7 +81,12 @@
 #include "PxgAABBManager.h"
 #include "PxgSimulationCoreKernelIndices.h"
 
-// PT: TODO: don't indent the whole damn file
+// TODO: Consider refactoring indentation for improved code readability
+
+namespace physx
+{
+void addRef(PxCudaContextManager* cudaContextManager);
+}
 
 using namespace physx;
 
@@ -119,70 +127,73 @@ namespace physx
 
 	PxgSimulationController::PxgSimulationController(PxsKernelWranglerManager* gpuWranglerManager, PxCudaContextManager* cudaContextManager, PxgGpuContext* dynamicContext,
 		PxgNphaseImplementationContext* npContext, Bp::BroadPhase* bp, bool useGpuBroadphase, PxsSimulationControllerCallback* callback,
-		PxgHeapMemoryAllocatorManager* heapMemoryManager, PxU32 maxSoftBodyContacts, PxU32 maxFemClothContacts, PxU32 maxParticleContacts,
+		PxgAllocatorDesc& allocDesc, PxU32 maxSoftBodyContacts, PxU32 maxFemClothContacts, PxU32 maxParticleContacts,
 		PxU32 collisionStackSizeBytes, bool enableBodyAccelerations) :
 		PxsSimulationController(callback, PxIntTrue),
 		mPostCopyShapeSimTask(*this),
 		mPostCopyBodySimTask(*this, enableBodyAccelerations),
 		mPostUpdateParticleSystemTask(*this),
-		mBodySimManager(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mJointManager(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators), dynamicContext->getEnableDirectGPUAPI()),
+		mBodySimManager(allocDesc.hostAlloc),
+		mJointManager(allocDesc.hostAlloc, allocDesc.hostMappedAlloc, dynamicContext->getEnableDirectGPUAPI(), cudaContextManager->getCudaContext()),
 		mSoftBodyCore(NULL),
 		mFEMClothCore(NULL),
 		mPBDParticleSystemCore(NULL),
 		mDynamicContext(dynamicContext), mNpContext(npContext),
-		mNewBodySimPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mLinksPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mLinkWakeCounterPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mLinkAccelPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mLinkPropPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mLinkChildPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mLinkParentPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mLinkBody2WorldPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mLinkBody2ActorPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mJointPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mJointDataPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mLinkJointIndexPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArticulationPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mSpatialTendonParamPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mSpatialTendonPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mAttachmentFixedPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mAttachmentModPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mTendonAttachmentMapPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mFixedTendonParamPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mFixedTendonPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mTendonJointFixedDataPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mTendonJointCoefficientDataPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mTendonTendonJointMapPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mPathToRootPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mMimicJointPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArticulationUpdatePool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mArticulationDofDataPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mNewSoftBodyPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mSoftBodyPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mSoftBodyElementIndexPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mParticleSoftBodyAttachments(heapMemoryManager),
-		mSoftBodyParticleFilterPairs(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mRigidSoftBodyAttachments(heapMemoryManager),
-		mSoftBodyRigidFilterPairs(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mSoftBodySoftBodyAttachments(heapMemoryManager),
-		mSoftBodyClothAttachments(heapMemoryManager),
-		mSoftBodyClothTetVertFilterPairs(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mClothClothAttachments(heapMemoryManager),
-		mClothClothVertTriFilterPairs(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mNewFEMClothPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mFEMClothPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mFEMClothElementIndexPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mClothRigidAttachments(heapMemoryManager),
-		mClothRigidFilterPairs(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mFrozenPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mUnfrozenPool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mActivatePool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
-		mDeactivatePool(PxVirtualAllocator(heapMemoryManager->mMappedMemoryAllocators)),
+		mNewBodySimPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mLinksPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mLinkWakeCounterPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mLinkAccelPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mLinkPropPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mLinkSleepDataPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mLinkChildPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mLinkParentPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mLinkBody2WorldPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mLinkBody2ActorPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mJointPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mJointDataPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mLinkJointIndexPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mArticulationPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_ARTICULATION),
+		mSpatialTendonParamPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mSpatialTendonPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mAttachmentFixedPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mAttachmentModPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mTendonAttachmentMapPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mFixedTendonParamPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mFixedTendonPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mTendonJointFixedDataPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mTendonJointCoefficientDataPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mTendonTendonJointMapPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mPathToRootPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mMimicJointPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mArticulationUpdatePoolMapped(allocDesc.hostMappedAlloc, PxsHeapStats::eSIMULATION_ARTICULATION, Cm::PinnableAllocatorFallback::eDISABLED),
+		mArticulationDofDataPoolMapped(allocDesc.hostMappedAlloc, PxsHeapStats::eSIMULATION_ARTICULATION, Cm::PinnableAllocatorFallback::eDISABLED),
+		mNewSoftBodyPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+		mSoftBodyPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+		mSoftBodyElementIndexPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+		mRigidSoftBodyAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+		mSoftBodyRigidFilterPairs(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+		mSoftBodyRigidFilterPairsDirty(false),
+		mSoftBodySoftBodyAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+		mSoftBodyClothAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+		mSoftBodyClothTetVertFilterPairs(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+		mSoftBodyClothFilterPairsDirty(false),
+		mClothClothAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+		mClothClothVertTriFilterPairs(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+		mClothClothFilterPairsDirty(false),
+		mNewFEMClothPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+		mFEMClothPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+		mFEMClothElementIndexPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+		mClothRigidAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+		mClothRigidFilterPairs(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+		mClothRigidFilterPairsDirty(false),
+		mFrozenPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mUnfrozenPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mActivatePool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
+		mDeactivatePool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
 		mHasBeenSimulated(false),
 		mGpuWranglerManager(static_cast<PxgCudaKernelWranglerManager*>(gpuWranglerManager)),
 		mCudaContextManager(cudaContextManager),
-		mHeapMemoryManager(heapMemoryManager),
+		mAllocDesc(allocDesc),
 		mBroadPhase(NULL),
 		mMaxLinks(0),
 		mMaxDofs(0),
@@ -203,10 +214,13 @@ namespace physx
 		,mOvdCallbacks(NULL)
 #endif
 	{
+		// OMPE-70739: Hold a reference so the context manager is not destroyed while GPU simulation tasks may still run (use-after-free fix).
+		addRef(mCudaContextManager);
+
 		if(bp->getType() == PxBroadPhaseType::eGPU)
 			mBroadPhase = static_cast<PxgCudaBroadPhaseSap*>(bp);
 
-		mSimulationCore = PX_NEW(PxgSimulationCore)(mGpuWranglerManager, mCudaContextManager, mHeapMemoryManager, mDynamicContext, useGpuBroadphase);
+		mSimulationCore = PX_NEW(PxgSimulationCore)(mGpuWranglerManager, mCudaContextManager, mAllocDesc, mDynamicContext, useGpuBroadphase);
 
 		mNpContext->setSimulationCore(mSimulationCore);
 
@@ -235,6 +249,9 @@ namespace physx
 			mFEMClothCore->~PxgFEMClothCore();
 			PX_FREE(mFEMClothCore);
 		}
+
+		// Release the reference taken in constructor so the context manager can be destroyed when the app releases it.
+		mCudaContextManager->release();
 	}
 
 	void PxgSimulationController::addPxgShape(Sc::ShapeSimBase* shapeSimBase, const PxsShapeCore* shapeCore, PxNodeIndex nodeIndex, PxU32 index)
@@ -291,7 +308,7 @@ namespace physx
 			bool isTGS = mDynamicContext->isTGS();
 			const PxU32 maxSoftBodyContacts = mMaxSoftBodyContacts;
 			mSoftBodyCore = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgSoftBodyCore), "PxgSoftBodyCore"),
-				PxgSoftBodyCore(mGpuWranglerManager, mCudaContextManager, mHeapMemoryManager, this,
+				PxgSoftBodyCore(mGpuWranglerManager, mCudaContextManager, mAllocDesc, this,
 					mDynamicContext, maxSoftBodyContacts, mCollisionStackSizeBytes, isTGS));
 		}
 	}
@@ -319,11 +336,6 @@ namespace physx
 			const PxU32 numSoftbodies = mBodySimManager.mTotalNumSoftBodies;
 			mSimulationCore->setSoftBodyWakeCounter(deformableVolume->getGpuRemapId(), deformableVolume->getCore().wakeCounter, numSoftbodies);
 			
-			for (PxU32 i = 0; i < deformableVolume->mParticleVolumeAttachments.size(); ++i)
-			{
-				mParticleSoftBodyAttachments.activateAttachment(deformableVolume->mParticleVolumeAttachments[i]);
-			}
-
 			for (PxU32 i = 0; i < deformableVolume->mRigidVolumeAttachments.size(); ++i)
 			{
 				mRigidSoftBodyAttachments.activateAttachment(deformableVolume->mRigidVolumeAttachments[i]);
@@ -345,11 +357,6 @@ namespace physx
 	{
 		if (mBodySimManager.deactivateSoftbody(deformableVolume))
 		{
-			for (PxU32 i = 0; i < deformableVolume->mParticleVolumeAttachments.size(); ++i)
-			{
-				mParticleSoftBodyAttachments.deactivateAttachment(deformableVolume->mParticleVolumeAttachments[i]);
-			}
-
 			for (PxU32 i = 0; i < deformableVolume->mRigidVolumeAttachments.size(); ++i)
 			{
 				mRigidSoftBodyAttachments.deactivateAttachment(deformableVolume->mRigidVolumeAttachments[i]);
@@ -399,7 +406,7 @@ namespace physx
 			bool isTGS = mDynamicContext->isTGS();
 			const PxU32 maxFemClothContacts = mMaxFemClothContacts;
 			mFEMClothCore = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgFEMClothCore), "PxgFEMClothCore"),
-				PxgFEMClothCore(mGpuWranglerManager, mCudaContextManager, mHeapMemoryManager, this,
+				PxgFEMClothCore(mGpuWranglerManager, mCudaContextManager, mAllocDesc, this,
 					mDynamicContext, maxFemClothContacts, mCollisionStackSizeBytes, isTGS));
 		}
 	}
@@ -413,6 +420,9 @@ namespace physx
 	void PxgSimulationController::releaseFEMCloth(Dy::DeformableSurface* deformableSurface)
 	{
 		mBodySimManager.releaseFEMCloth(deformableSurface);
+
+		if (mFEMClothCore)
+			mFEMClothCore->onClothRemoved();
 	}
 
 	void PxgSimulationController::releaseDeferredFEMClothIds()
@@ -474,7 +484,7 @@ namespace physx
 		if (!mPBDParticleSystemCore)
 		{
 			mPBDParticleSystemCore = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(PxgPBDParticleSystemCore), "PxgPBDParticleSystemCore"),
-				PxgPBDParticleSystemCore(mGpuWranglerManager, mCudaContextManager, mHeapMemoryManager, this,
+				PxgPBDParticleSystemCore(mGpuWranglerManager, mCudaContextManager, mAllocDesc, this,
 					mDynamicContext, mMaxParticleContacts));
 		}
 
@@ -497,9 +507,8 @@ namespace physx
 	{
 		if (articulation)
 		{
-			Dy::FeatherstoneArticulation* featherstoneArtic = static_cast<Dy::FeatherstoneArticulation*>(articulation);
-			featherstoneArtic->raiseGPUDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_LINKS);
-			mBodySimManager.updateArticulation(featherstoneArtic, nodeIndex.index());
+			articulation->raiseGPUDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_LINKS);
+			mBodySimManager.updateArticulation(articulation, nodeIndex.index());
 		}
 		else
 			mBodySimManager.updateBody(nodeIndex);
@@ -515,24 +524,26 @@ namespace physx
 		mJointManager.updateJoint(edgeIndex, constraint);
 	}
 
+	const void* PxgSimulationController::getRigidBodyAccelerations() const
+	{
+		return mSimulationCore->getRigidBodyAccelerations();
+	}
+
 	void PxgSimulationController::updateArticulation(Dy::FeatherstoneArticulation* articulation, const PxNodeIndex& nodeIndex)
 	{
-		Dy::FeatherstoneArticulation* featherstoneArtic = static_cast<Dy::FeatherstoneArticulation*>(articulation);
-		mBodySimManager.updateArticulation(featherstoneArtic, nodeIndex.index());
+		mBodySimManager.updateArticulation(articulation, nodeIndex.index());
 	}
 
 	void PxgSimulationController::updateArticulationJoint(Dy::FeatherstoneArticulation* articulation, const PxNodeIndex& nodeIndex)
 	{
-		Dy::FeatherstoneArticulation* featherstoneArtic = static_cast<Dy::FeatherstoneArticulation*>(articulation);
-		featherstoneArtic->raiseGPUDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_JOINTS);
-		mBodySimManager.updateArticulation(featherstoneArtic, nodeIndex.index());
+		articulation->raiseGPUDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_JOINTS);
+		mBodySimManager.updateArticulation(articulation, nodeIndex.index());
 	}
 
 	void PxgSimulationController::updateArticulationExtAccel(Dy::FeatherstoneArticulation* articulation, const PxNodeIndex& nodeIndex)
 	{
-		Dy::FeatherstoneArticulation* featherstoneArtic = static_cast<Dy::FeatherstoneArticulation*>(articulation);
-		featherstoneArtic->raiseGPUDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_EXT_ACCEL);
-		mBodySimManager.updateArticulation(featherstoneArtic, nodeIndex.index());
+		articulation->raiseGPUDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_EXT_ACCEL);
+		mBodySimManager.updateArticulation(articulation, nodeIndex.index());
 	}
 
 	void PxgSimulationController::updateBodies(PxsRigidBody** rigidBodies, PxU32* nodeIndices, const PxU32 nbBodies, 
@@ -561,29 +572,9 @@ namespace physx
 		mDynamicContext->mGpuFEMClothCore->mPostSolveCallback = postSolveCallback;		
 	}
 
-	void PxgSimulationController::copySoftBodyDataDEPRECATED(void** data, void* dataEndIndices, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbCopySoftBodies, const PxU32 maxSize, CUevent copyEvent)
+	bool PxgSimulationController::getRigidDynamicData(void* PX_RESTRICT data, const PxRigidDynamicGPUIndex* PX_RESTRICT gpuIndices, PxRigidDynamicGPUAPIReadType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent) const
 	{
-		PxgSolverCore* gpuSolverCore = mDynamicContext->getGpuSolverCore();
-		PxgSoftBodyCore* softBodyCore = mDynamicContext->mGpuSoftBodyCore;
-
-		gpuSolverCore->acquireContext();
-		softBodyCore->copySoftBodyDataDEPRECATED(data, dataEndIndices, softBodyIndices, flag, nbCopySoftBodies, maxSize, copyEvent);
-		gpuSolverCore->releaseContext();
-	}
-
-	void PxgSimulationController::applySoftBodyDataDEPRECATED(void** data, void* dataEndIndices, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbUpdatedSoftBodies, const PxU32 maxSize, CUevent applyEvent, CUevent signalEvent)
-	{
-		PxgSolverCore* gpuSolverCore = mDynamicContext->getGpuSolverCore();
-		PxgSoftBodyCore* softBodyCore = mDynamicContext->mGpuSoftBodyCore;
-
-		gpuSolverCore->acquireContext();
-		softBodyCore->applySoftBodyDataDEPRECATED(data, dataEndIndices, softBodyIndices, flag, nbUpdatedSoftBodies, maxSize, applyEvent, signalEvent);
-		gpuSolverCore->releaseContext();
-	}
-
-	bool PxgSimulationController::getRigidDynamicData(void* PX_RESTRICT data, const PxRigidDynamicGPUIndex* PX_RESTRICT gpuIndices, PxRigidDynamicGPUAPIReadType::Enum dataType, PxU32 nbElements, float oneOverDt, CUevent startEvent, CUevent finishEvent) const
-	{
-		return mSimulationCore->getRigidDynamicData(data, gpuIndices, dataType, nbElements, oneOverDt, startEvent, finishEvent);
+		return mSimulationCore->getRigidDynamicData(data, gpuIndices, dataType, nbElements, startEvent, finishEvent);
 	}
 
 	bool PxgSimulationController::setRigidDynamicData(const void* PX_RESTRICT data, const PxRigidDynamicGPUIndex* PX_RESTRICT gpuIndices, PxRigidDynamicGPUAPIWriteType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent)
@@ -685,12 +676,6 @@ namespace physx
 		mDynamicContext->getSimStats().mGpuDynamicsParticleContacts = PxMax(mDynamicContext->getSimStats().mGpuDynamicsParticleContacts, contactCountNeeded);
 	}
 	
-	void PxgSimulationController::applyParticleBufferDataDEPRECATED(const PxU32* indices, const PxGpuParticleBufferIndexPair* indexPairs, const PxParticleBufferFlags* flags, PxU32 nbUpdatedBuffers, CUevent waitEvent, CUevent signalEvent)
-	{
-		PxScopedCudaLock lock(*mPBDParticleSystemCore->mCudaContextManager);
-		mPBDParticleSystemCore->applyParticleBufferDataDEPRECATED(indices, indexPairs, flags, nbUpdatedBuffers, waitEvent, signalEvent);
-	}
-
 	void PxgSimulationController::updateBoundsAndTransformCache(Bp::AABBManagerBase& aabbManager, CUstream npStream,
 																PxsTransformCache& transformCache, PxgCudaBuffer& gpuTransformCache)
 	{
@@ -704,15 +689,21 @@ namespace physx
 			PxgBoundsArray& directGPUBoundsArray = static_cast<PxgBoundsArray&>(boundsArray);
 			const PxU32 numChanges = directGPUBoundsArray.getNumberOfChanges();
 
-			if(directGPUBoundsArray.isFirstCopy())
+			if(!directGPUBoundsArray.isChangeTrackingEnabled())
 			{
 				copyBoundsAndTransforms(boundsArray, transformCache, gpuTransformCache, boundsArraySize, totalTransformCacheSize, npStream);
-				directGPUBoundsArray.setCopied();			}
-
+				if(!directGPUBoundsArray.enableChangeTracking())
+				{
+					PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY,
+						PX_FL, "PxgSimulationController::updateBoundsAndTransformCache: failed to allocate pinned host buffer for bounds change tracking");
+					mCudaContextManager->getCudaContext()->setAbortMode(true);
+				}
+			}
 			else if(numChanges)
 			{
+				CUdeviceptr updatedActorDescd = mSimulationCore->getUpdatedActorDescDesc();
 				mergeBoundsAndTransformsChanges(directGPUBoundsArray, transformCache, gpuTransformCache, boundsArraySize,
-												totalTransformCacheSize, numChanges, npStream);
+												totalTransformCacheSize, numChanges, updatedActorDescd, npStream);
 			}
 		}
 		else
@@ -725,15 +716,15 @@ namespace physx
 	void PxgSimulationController::mergeBoundsAndTransformsChanges(PxgBoundsArray& directGPUBoundsArray,
 																  PxsTransformCache& transformCache,
 																  PxgCudaBuffer& gpuTransformCache, PxU32 boundsArraySize,
-																  PxU32 totalTransformCacheSize, PxU32 numChanges, CUstream npStream)
+																  PxU32 totalTransformCacheSize, PxU32 numChanges, CUdeviceptr updatedActorDescd, CUstream npStream)
 	{
 
-		PxBoundTransformUpdate* changes = reinterpret_cast<PxBoundTransformUpdate*>(
-			getMappedDevicePtr(mCudaContextManager->getCudaContext(), directGPUBoundsArray.getStagingBuffer().begin()));
+		const PxgBoundTransformUpdate* changes = reinterpret_cast<const PxgBoundTransformUpdate*>(
+			getMappedDeviceConstPtr(mCudaContextManager->getCudaContext(), directGPUBoundsArray.getStagingBuffer()));
 
 
 		PxBounds3* cpuBounds =
-			reinterpret_cast<PxBounds3*>(getMappedDevicePtr(mCudaContextManager->getCudaContext(), directGPUBoundsArray.getBounds().begin()));
+			reinterpret_cast<PxBounds3*>(getMappedDevicePtr(mCudaContextManager->getCudaContext(), directGPUBoundsArray.getBounds()));
 
 		PxsCachedTransform* cpuTransforms = reinterpret_cast<PxsCachedTransform*>(getMappedDevicePtr(mCudaContextManager->getCudaContext(), transformCache.getTransforms()));
 		
@@ -746,10 +737,10 @@ namespace physx
 		gpuTransformCache.allocateCopyOldDataAsync(sizeof(PxsCachedTransform) * totalTransformCacheSize, mCudaContextManager->getCudaContext(), npStream, PX_FL);
 		CUdeviceptr transformCachePtr = gpuTransformCache.getDevicePtr();
 
-		CUfunction kernelFunction = mSimulationCore->mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(
+		CUfunction kernelFunction = mSimulationCore->mGpuKernelWranglerManager->getCuFunction(
 			PxgKernelIds::MERGE_TRANSFORMCACHE_AND_BOUNDARRAY_CHANGES);
 
-		PxCudaKernelParam kernelParams[] = { PX_CUDA_KERNEL_PARAM(boundsPtr),	 PX_CUDA_KERNEL_PARAM(transformCachePtr),
+		PxCudaKernelParam kernelParams[] = { PX_CUDA_KERNEL_PARAM(boundsPtr), PX_CUDA_KERNEL_PARAM(transformCachePtr), PX_CUDA_KERNEL_PARAM(updatedActorDescd),
 											 PX_CUDA_KERNEL_PARAM(cpuBounds), PX_CUDA_KERNEL_PARAM(cpuTransforms),
 											 PX_CUDA_KERNEL_PARAM(changes),	 PX_CUDA_KERNEL_PARAM(numChanges) };
 
@@ -772,7 +763,7 @@ namespace physx
 			boundsArray.resetChangedState();
 			mSimulationCore->getBoundArrayBuffer()->allocate(boundsArraySize, PX_FL);
 			mCudaContextManager->getCudaContext()->memcpyHtoDAsync(mSimulationCore->getBoundArrayBuffer()->getDevicePtr(),
-																   boundsArray.getBounds().begin(), boundsArraySize, npStream);
+																   boundsArray.getBounds(), boundsArraySize, npStream);
 		}
 		if(transformCache.hasChanged())
 		{
@@ -1030,13 +1021,21 @@ namespace physx
 		mLinkJointIndexPool.reserve(nbNewArticulations);
 		mLinkJointIndexPool.forceSize_Unsafe(nbNewArticulations);
 
-		mArticulationUpdatePool.forceSize_Unsafe(0);
-		mArticulationUpdatePool.reserve(nbUpdatedArticulations);
-		mArticulationUpdatePool.forceSize_Unsafe(nbUpdatedArticulations);
+		if (!mArticulationUpdatePoolMapped.resize(nbUpdatedArticulations))
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL,
+				"PxgSimulationController::copyToGpuBodySim: failed to allocate pinned host buffer for articulation update");
+			mCudaContextManager->getCudaContext()->setAbortMode(true);
+			return;
+		}
 
-		mArticulationDofDataPool.forceSize_Unsafe(0);
-		mArticulationDofDataPool.reserve(nbUpdatedDofs);
-		mArticulationDofDataPool.forceSize_Unsafe(nbUpdatedDofs);
+		if(!mArticulationDofDataPoolMapped.resize(nbUpdatedDofs))
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL,
+				"PxgSimulationController::copyToGpuBodySim: failed to allocate pinned host buffer for articulation dof data");
+			mCudaContextManager->getCudaContext()->setAbortMode(true);
+			return;
+		}
 
 		mSpatialTendonParamPool.forceSize_Unsafe(0);
 		mSpatialTendonParamPool.reserve(nbNewSpatialTendons);
@@ -1475,7 +1474,7 @@ namespace physx
 			const PxU32 linkCount = data.getLinkCount();
 			for (PxU32 a = 0; a < linkCount; ++a)
 			{
-				Dy::ArticulationLink& cpuLink = data.getLink(a);
+				const Dy::ArticulationLink& cpuLink = data.getLink(a);
 
 				const PxU32 index = linkBegin + a;
 				PxgArticulationLink& link = mLinksPool[index];
@@ -1547,27 +1546,27 @@ namespace physx
 			{
 				if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_POSITIONS)
 				{
-					PxMemCopy(&mArticulationDofDataPool[dofBegin], data.getJointPositions(), dofs * sizeof(PxReal));
+					PxMemCopy(&mArticulationDofDataPoolMapped[dofBegin], data.getJointPositions(), dofs * sizeof(PxReal));
 					dofBegin += dofs;
 				}
 				if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_VELOCITIES)
 				{
-					PxMemCopy(&mArticulationDofDataPool[dofBegin], data.getJointVelocities(), dofs * sizeof(PxReal));
+					PxMemCopy(&mArticulationDofDataPoolMapped[dofBegin], data.getJointVelocities(), dofs * sizeof(PxReal));
 					dofBegin += dofs;
 				}
 				if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_FORCES)
 				{
-					PxMemCopy(&mArticulationDofDataPool[dofBegin], data.getJointForces(), dofs * sizeof(PxReal));
+					PxMemCopy(&mArticulationDofDataPoolMapped[dofBegin], data.getJointForces(), dofs * sizeof(PxReal));
 					dofBegin += dofs;
 				}
 				if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_JOINT_TARGET_POS)
 				{
-					PxMemCopy(&mArticulationDofDataPool[dofBegin], data.getJointTargetPositions(), dofs * sizeof(PxReal));
+					PxMemCopy(&mArticulationDofDataPoolMapped[dofBegin], data.getJointTargetPositions(), dofs * sizeof(PxReal));
 					dofBegin += dofs;
 				}
 				if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_JOINT_TARGET_VEL)
 				{
-					PxMemCopy(&mArticulationDofDataPool[dofBegin], data.getJointTargetVelocities(), dofs * sizeof(PxReal));
+					PxMemCopy(&mArticulationDofDataPoolMapped[dofBegin], data.getJointTargetVelocities(), dofs * sizeof(PxReal));
 					dofBegin += dofs;
 				}
 			}
@@ -1604,7 +1603,7 @@ namespace physx
 	
 		PxU32 endIndex = startIndex + nbToCopy;
 
-		PxsHeapMemoryAllocator* alloc = mSoftBodyCore->mHeapMemoryManager->mMappedMemoryAllocators;
+		Cm::VirtualAllocatorCallback& hostAlloc = mAllocDesc.hostAlloc;
 
 		for (PxU32 i = startIndex; i<endIndex; ++i)
 		{
@@ -1629,11 +1628,11 @@ namespace physx
 			const Gu::DeformableVolumeAuxData* softBodyAuxData = static_cast<const Gu::DeformableVolumeAuxData*>(deformableVolume->getAuxData());
 
 			const PxU32 nbTets = colTetMesh->getNbTetrahedronsFast();
-			gpuSoftBody.mTetIndices = reinterpret_cast<uint4*>( alloc->allocate(sizeof(uint4) * nbTets, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
-			gpuSoftBody.mTetMeshSurfaceHint = reinterpret_cast<PxU8*>( alloc->allocate(sizeof(PxU8) * nbTets, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
-			gpuSoftBody.mTetIndicesRemapTable = reinterpret_cast<PxU32*>( alloc->allocate(sizeof(float) * nbTets, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
+			gpuSoftBody.mTetIndices = reinterpret_cast<uint4*>(hostAlloc.allocate(sizeof(uint4) * nbTets, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
+			gpuSoftBody.mTetMeshSurfaceHint = reinterpret_cast<PxU8*>(hostAlloc.allocate(sizeof(PxU8) * nbTets, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
+			gpuSoftBody.mTetIndicesRemapTable = reinterpret_cast<PxU32*>(hostAlloc.allocate(sizeof(float) * nbTets, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
 			
-			gpuSoftBody.mTetraRestPoses = reinterpret_cast<PxMat33*>(alloc->allocate(sizeof(PxMat33) * nbTets, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
+			gpuSoftBody.mTetraRestPoses = reinterpret_cast<PxMat33*>(hostAlloc.allocate(sizeof(PxMat33) * nbTets, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
 			
 			const PxU32 nbVerts = colTetMesh->getNbVerticesFast();
 
@@ -1647,46 +1646,41 @@ namespace physx
 			const PxU32 nbRemapOutputSize = softBodyAuxData->getGMRemapOutputSizeFast();
 			const PxU32 nbTetRemapSize = softBodyAuxData->getNbTetRemapSizeFast();
 
-			gpuSoftBody.mVertsBarycentricInGridModel = reinterpret_cast<float4*>(alloc->allocate(sizeof(float4) * nbVerts, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
-			gpuSoftBody.mVertsRemapInGridModel = reinterpret_cast<PxU32*>(alloc->allocate(sizeof(PxU32) * nbVerts, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
+			gpuSoftBody.mVertsBarycentricInGridModel = reinterpret_cast<float4*>(hostAlloc.allocate(sizeof(float4) * nbVerts, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
+			gpuSoftBody.mVertsRemapInGridModel = reinterpret_cast<PxU32*>(hostAlloc.allocate(sizeof(PxU32) * nbVerts, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
 
-			gpuSoftBody.mTetsRemapColToSim = reinterpret_cast<PxU32*>(alloc->allocate(sizeof(PxU32) * nbTetRemapSize, PxsHeapStats::eSIMULATION, PX_FL));
-			gpuSoftBody.mTetsAccumulatedRemapColToSim = reinterpret_cast<PxU32*>(alloc->allocate(sizeof(PxU32) * nbTets, PxsHeapStats::eSIMULATION, PX_FL));
+			gpuSoftBody.mTetsRemapColToSim = reinterpret_cast<PxU32*>(hostAlloc.allocate(sizeof(PxU32) * nbTetRemapSize, PxsHeapStats::eSIMULATION, PX_FL));
+			gpuSoftBody.mTetsAccumulatedRemapColToSim = reinterpret_cast<PxU32*>(hostAlloc.allocate(sizeof(PxU32) * nbTets, PxsHeapStats::eSIMULATION, PX_FL));
 
-			gpuSoftBody.mSurfaceVertsHint = reinterpret_cast<PxU8*>(alloc->allocate(sizeof(PxU8) * nbVerts, PxsHeapStats::eSIMULATION, PX_FL));
-			gpuSoftBody.mSurfaceVertToTetRemap = reinterpret_cast<PxU32*>(alloc->allocate(sizeof(PxU32) * nbVerts, PxsHeapStats::eSIMULATION, PX_FL));
+			gpuSoftBody.mSurfaceVertsHint = reinterpret_cast<PxU8*>(hostAlloc.allocate(sizeof(PxU8) * nbVerts, PxsHeapStats::eSIMULATION, PX_FL));
+			gpuSoftBody.mSurfaceVertToTetRemap = reinterpret_cast<PxU32*>(hostAlloc.allocate(sizeof(PxU32) * nbVerts, PxsHeapStats::eSIMULATION, PX_FL));
 
-			gpuSoftBody.mOrderedMaterialIndices = reinterpret_cast<PxU16*>(alloc->allocate(sizeof(PxU16) * nbTetsGM, PxsHeapStats::eSIMULATION, PX_FL));
-			gpuSoftBody.mMaterialIndices = reinterpret_cast<PxU16*>(alloc->allocate(sizeof(PxU16) * nbTetsGM, PxsHeapStats::eSIMULATION, PX_FL));
+			gpuSoftBody.mOrderedMaterialIndices = reinterpret_cast<PxU16*>(hostAlloc.allocate(sizeof(PxU16) * nbTetsGM, PxsHeapStats::eSIMULATION, PX_FL));
+			gpuSoftBody.mMaterialIndices = reinterpret_cast<PxU16*>(hostAlloc.allocate(sizeof(PxU16) * nbTetsGM, PxsHeapStats::eSIMULATION, PX_FL));
 
-			gpuSoftBody.mSimTetIndices = reinterpret_cast<uint4*>(alloc->allocate(sizeof(uint4) * nbTetsGM, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
-			gpuSoftBody.mSimTetraRestPoses = reinterpret_cast<PxgMat33Block*>(alloc->allocate(sizeof(PxgMat33Block) * ((nbTetsGM+31)/32), PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
+			gpuSoftBody.mSimTetIndices = reinterpret_cast<uint4*>(hostAlloc.allocate(sizeof(uint4) * nbTetsGM, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
+			gpuSoftBody.mSimTetraRestPoses = reinterpret_cast<PxgMat33Block*>(hostAlloc.allocate(sizeof(PxgMat33Block) * ((nbTetsGM+31)/32), PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
 			
-			gpuSoftBody.mSimOrderedTetrahedrons = reinterpret_cast<PxU32*>(alloc->allocate(sizeof(PxU32) * nbElementsGM, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
-			gpuSoftBody.mSimPullIndices = reinterpret_cast<uint4*>(alloc->allocate(sizeof(PxU32) * nbElementsGM * nbVertsPerElementGM, PxsHeapStats::eSIMULATION, PX_FL));
+			gpuSoftBody.mSimOrderedTetrahedrons = reinterpret_cast<PxU32*>(hostAlloc.allocate(sizeof(PxU32) * nbElementsGM, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
+			gpuSoftBody.mSimPullIndices = reinterpret_cast<uint4*>(hostAlloc.allocate(sizeof(PxU32) * nbElementsGM * nbVertsPerElementGM, PxsHeapStats::eSIMULATION, PX_FL));
 
 			//we need to allocate more memory for mGMOrderedVertInvMassCP for the accumulated buffer for duplicate verts 
 			//gpuSoftBody.mGMOrderedVertInvMassCP = reinterpret_cast<float4*>(alloc->allocate(sizeof(float4) * nbRemapOutputSize, PX_FL));
 
-			gpuSoftBody.mSimAccumulatedPartitionsCP = reinterpret_cast<PxU32*>(alloc->allocate(sizeof(PxU32) * nbPartitionsGM, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
+			gpuSoftBody.mSimAccumulatedPartitionsCP = reinterpret_cast<PxU32*>(hostAlloc.allocate(sizeof(PxU32) * nbPartitionsGM, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
 
 			if (nbRemapOutputSize) // used for tet mesh only
 			{
-				gpuSoftBody.mSimRemapOutputCP = reinterpret_cast<uint4*>(alloc->allocate(sizeof(PxU32) * nbElementsGM * nbVertsPerElementGM, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
-				gpuSoftBody.mSimAccumulatedCopiesCP = reinterpret_cast<PxU32*>(alloc->allocate(sizeof(PxU32) * nbVertsGM, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
+				gpuSoftBody.mSimRemapOutputCP = reinterpret_cast<uint4*>(hostAlloc.allocate(sizeof(PxU32) * nbElementsGM * nbVertsPerElementGM, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
+				gpuSoftBody.mSimAccumulatedCopiesCP = reinterpret_cast<PxU32*>(hostAlloc.allocate(sizeof(PxU32) * nbVertsGM, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
 			}
 
 			const Dy::DeformableVolumeCore& core = deformableVolume->getCore();
 
 			PxgSoftBodyUtil::initialTetData(gpuSoftBody, colTetMesh, simTetMesh, softBodyAuxData, 
-				core.materialHandles.begin(), alloc);
-			//copy tetMesh data to mapped memory
-			//const PxU32 byteSize = PxgSoftBodyUtil::computeTetMeshByteSize(tetMesh);
-			//void* mem = alloc->allocate(byteSize, PX_FL);
+				core.materialHandles.begin(), hostAlloc);
 
-			//PxgSoftBodyUtil::computeBasisMatrix(restPoses.begin(), tetMesh);
-
-			PxU8* tMem = reinterpret_cast<PxU8*>(alloc->allocate(byteSize, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
+			PxU8* tMem = reinterpret_cast<PxU8*>(hostAlloc.allocate(byteSize, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
 			mNewTetMeshByteSizePool[i] = byteSize;
 
 			const PxU32 nbPackedNodes = PxgSoftBodyUtil::loadOutTetMesh(tMem, colTetMesh);
@@ -1739,7 +1733,7 @@ namespace physx
 
 		PxU32 endIndex = startIndex + nbToCopy;
 
-		PxsHeapMemoryAllocator* alloc = mFEMClothCore->mHeapMemoryManager->mMappedMemoryAllocators;
+		Cm::VirtualAllocatorCallback& hostAlloc = mAllocDesc.hostAlloc;
 		PxgGpuNarrowphaseCore* npCore = mDynamicContext->getNarrowphaseCore();
 
 		PxsDeformableSurfaceMaterialData* materials = npCore->mGpuFEMClothMaterialManager.getCPUMaterialData();
@@ -1786,18 +1780,18 @@ namespace physx
 			const PxU32 nbVerts = triangleMesh->getNbVerticesFast();
 
 			gpuFEMCloth.mTriangleVertexIndices =
-				reinterpret_cast<uint4*>(alloc->allocate(sizeof(uint4) * nbTriangles, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+				reinterpret_cast<uint4*>(hostAlloc.allocate(sizeof(uint4) * nbTriangles, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 
 			gpuFEMCloth.mMaterialIndices = reinterpret_cast<PxU16*>(
-				alloc->allocate(sizeof(PxU16) * nbTriangles, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+				hostAlloc.allocate(sizeof(PxU16) * nbTriangles, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 			gpuFEMCloth.mDynamicFrictions = reinterpret_cast<float*>(
-				alloc->allocate(sizeof(float) * nbVerts, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+				hostAlloc.allocate(sizeof(float) * nbVerts, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 
 			const PxU16* materialHandles = core.materialHandles.begin();
 			const PxU32 nbMaterials = core.materialHandles.size();
 
 			PxU8* tMem = reinterpret_cast<PxU8*>(
-				alloc->allocate(sizeof(PxU8) * byteSize, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+				hostAlloc.allocate(sizeof(PxU8) * byteSize, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 			const PxU32 nbPackedNodes = PxgFEMClothUtil::loadOutTriangleMesh(tMem, triangleMesh);
 			gpuFEMCloth.mTriMeshData = tMem;
 
@@ -1808,7 +1802,7 @@ namespace physx
 			// initial "unordered" triangle and triangle-pair data
 			const PxU32 nbTrianglePairs =
 				PxgFEMClothUtil::initialTriangleData(gpuFEMCloth, trianglePairTriangleIndices, trianglePairVertexIndices, triangleMesh,
-													 materialHandles, materials, nbMaterials, alloc);
+													 materialHandles, materials, nbMaterials, hostAlloc);
 
 			PxArray<PxU32> sharedTrianglePairs;
 			PxArray<PxU32> nonSharedTriangles;
@@ -1831,37 +1825,37 @@ namespace physx
 			if (nbNonSharedTriangles)
 			{
 				gpuFEMCloth.mOrderedNonSharedTriangleVertexIndices_triIndex =
-					reinterpret_cast<uint4*>(alloc->allocate(sizeof(uint4) * nbNonSharedTriangles, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+					reinterpret_cast<uint4*>(hostAlloc.allocate(sizeof(uint4) * nbNonSharedTriangles, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 				gpuFEMCloth.mOrderedNonSharedTriangleRestPoseInv =
-					reinterpret_cast<float4*>(alloc->allocate(sizeof(float4) * nbNonSharedTriangles, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+					reinterpret_cast<float4*>(hostAlloc.allocate(sizeof(float4) * nbNonSharedTriangles, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 			}
 
 			if (nbSharedTrianglePairs)
 			{
-				gpuFEMCloth.mOrderedSharedTrianglePairVertexIndices = reinterpret_cast<uint4*>(alloc->allocate(
+				gpuFEMCloth.mOrderedSharedTrianglePairVertexIndices = reinterpret_cast<uint4*>(hostAlloc.allocate(
 					sizeof(uint4) * nbSharedTrianglePairs, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
-				gpuFEMCloth.mOrderedSharedRestBendingAngle_flexuralStiffness_damping = reinterpret_cast<float4*>(alloc->allocate(
+				gpuFEMCloth.mOrderedSharedRestBendingAngle_flexuralStiffness_damping = reinterpret_cast<float4*>(hostAlloc.allocate(
 					sizeof(float4) * nbSharedTrianglePairs, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
-				gpuFEMCloth.mOrderedSharedRestEdge0_edge1 = reinterpret_cast<float4*>(alloc->allocate(
+				gpuFEMCloth.mOrderedSharedRestEdge0_edge1 = reinterpret_cast<float4*>(hostAlloc.allocate(
 					sizeof(float4) * nbSharedTrianglePairs, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
-				gpuFEMCloth.mOrderedSharedRestEdgeLength_material0_material1 = reinterpret_cast<float4*>(alloc->allocate(
+				gpuFEMCloth.mOrderedSharedRestEdgeLength_material0_material1 = reinterpret_cast<float4*>(hostAlloc.allocate(
 					sizeof(float4) * nbSharedTrianglePairs, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 				gpuFEMCloth.mSharedTriPairAccumulatedCopiesCP =
-					reinterpret_cast<PxU32*>(alloc->allocate(sizeof(PxU32) * nbVerts, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+					reinterpret_cast<PxU32*>(hostAlloc.allocate(sizeof(PxU32) * nbVerts, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 			}
 
 			if (nbNonSharedTrianglePairs)
 			{
-				gpuFEMCloth.mOrderedNonSharedTrianglePairVertexIndices = reinterpret_cast<uint4*>(alloc->allocate(
+				gpuFEMCloth.mOrderedNonSharedTrianglePairVertexIndices = reinterpret_cast<uint4*>(hostAlloc.allocate(
 					sizeof(uint4) * nbNonSharedTrianglePairs, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
-				gpuFEMCloth.mOrderedNonSharedRestBendingAngle_flexuralStiffness_damping = reinterpret_cast<float4*>(alloc->allocate(
+				gpuFEMCloth.mOrderedNonSharedRestBendingAngle_flexuralStiffness_damping = reinterpret_cast<float4*>(hostAlloc.allocate(
 					sizeof(float4) * nbNonSharedTrianglePairs, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 				gpuFEMCloth.mNonSharedTriPairAccumulatedCopiesCP =
-					reinterpret_cast<PxU32*>(alloc->allocate(sizeof(PxU32) * nbVerts, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+					reinterpret_cast<PxU32*>(hostAlloc.allocate(sizeof(PxU32) * nbVerts, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 			}
 
 			PxArray<PxU32> orderedNonSharedTriangles;
-			getFEMClothCore()->partitionTriangleSimData(gpuFEMCloth, gpuFEMClothData, orderedNonSharedTriangles, nonSharedTriangles, alloc);
+			getFEMClothCore()->partitionTriangleSimData(gpuFEMCloth, gpuFEMClothData, orderedNonSharedTriangles, nonSharedTriangles);
 
 			PxgFEMClothUtil::computeNonSharedTriangleConfiguration(gpuFEMCloth, orderedNonSharedTriangles, nonSharedTriangles, triangleMesh);
 
@@ -1874,14 +1868,16 @@ namespace physx
 
 			getFEMClothCore()->partitionTrianglePairSimData(gpuFEMCloth, gpuFEMClothData, nbSharedTriPairPartitions,
 															orderedSharedTrianglePairs, sharedTrianglePairs, trianglePairVertexIndices,
-															true, alloc);
+															true);
+
 			getFEMClothCore()->partitionTrianglePairSimData(gpuFEMCloth, gpuFEMClothData, nbNonSharedTriPairPartitions,
 															orderedNonSharedTrianglePairs, nonSharedTrianglePairs,
-															trianglePairVertexIndices, false, alloc);
+															trianglePairVertexIndices, false);
 
 			PxgFEMClothUtil::computeTrianglePairConfiguration(gpuFEMCloth, trianglePairTriangleIndices, trianglePairVertexIndices,
 															  orderedSharedTrianglePairs, sharedTrianglePairs, triangleMesh, materials,
 															  core.surfaceFlags & PxDeformableSurfaceFlag::eENABLE_FLATTENING, true);
+
 			PxgFEMClothUtil::computeTrianglePairConfiguration(gpuFEMCloth, trianglePairTriangleIndices, trianglePairVertexIndices,
 															  orderedNonSharedTrianglePairs, nonSharedTrianglePairs, triangleMesh, materials,
 															  core.surfaceFlags & PxDeformableSurfaceFlag::eENABLE_FLATTENING, false);
@@ -1904,6 +1900,11 @@ namespace physx
 		PxI32* sharedFixedIndex, PxI32* sharedFixedTendonJointIndex,
 		PxI32* sharedMimicJointIndex)
 	{
+		if(mCudaContextManager->getCudaContext()->isInAbortMode())
+		{
+			return;
+		}
+
 		PxgArticulationUpdate* updatedArtics = &mBodySimManager.mUpdatedArticulations[startIndex];
 		PxU32 totalDofNeeded = 0;
 		PxU32 totalLinks = 0;
@@ -1989,7 +1990,7 @@ namespace physx
 			//Copy data...
 			PxU32 dirtyFlags = artic->mGPUDirtyFlags;
 
-			PxgArticulationSimUpdate& update = mArticulationUpdatePool[startIndex + i];
+			PxgArticulationSimUpdate& update = mArticulationUpdatePoolMapped[startIndex + i];
 
 			update.articulationIndex = updatedArtics[i].articulationIndex;
 			update.dirtyFlags = artic->mGPUDirtyFlags;
@@ -2009,7 +2010,7 @@ namespace physx
 				const PxU32 linkCount = data.getLinkCount();
 				for (PxU32 a = 0; a < linkCount; ++a)
 				{
-					Dy::ArticulationLink& cpuLink = data.getLink(a);
+					const Dy::ArticulationLink& cpuLink = data.getLink(a);
 
 					if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_LINKS)
 					{
@@ -2073,7 +2074,7 @@ namespace physx
 				if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_ROOT_TRANSFORM
 					|| dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_ROOT_VELOCITIES)
 				{
-					Dy::ArticulationLink& cpuLink = data.getLink(0);
+					const Dy::ArticulationLink& cpuLink = data.getLink(0);
 
 					const PxU32 index = linkBegin;
 					PxgArticulationLink& link = mLinksPool[index];
@@ -2112,7 +2113,7 @@ namespace physx
 
 					for (PxU32 a = 0; a < linkCount; ++a)
 					{
-						Dy::ArticulationLink& cpuLink = data.getLink(a);
+						const Dy::ArticulationLink& cpuLink = data.getLink(a);
 
 						PxTransform& body2World = mLinkBody2WorldPool[index++];
 						PxsBodyCore& core = *cpuLink.bodyCore;
@@ -2274,28 +2275,28 @@ namespace physx
 			{
 				if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_POSITIONS)
 				{
-					PxMemCopy(&mArticulationDofDataPool[dofBegin], data.getJointPositions(), dofs * sizeof(PxReal));
+					PxMemCopy(&mArticulationDofDataPoolMapped[dofBegin], data.getJointPositions(), dofs * sizeof(PxReal));
 					dofBegin += dofs;
 				}
 
 				if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_VELOCITIES)
 				{
-					PxMemCopy(&mArticulationDofDataPool[dofBegin], data.getJointVelocities(), dofs * sizeof(PxReal));
+					PxMemCopy(&mArticulationDofDataPoolMapped[dofBegin], data.getJointVelocities(), dofs * sizeof(PxReal));
 					dofBegin += dofs;
 				}
 				if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_FORCES)
 				{
-					PxMemCopy(&mArticulationDofDataPool[dofBegin], data.getJointForces(), dofs * sizeof(PxReal));
+					PxMemCopy(&mArticulationDofDataPoolMapped[dofBegin], data.getJointForces(), dofs * sizeof(PxReal));
 					dofBegin += dofs;
 				}
 				if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_JOINT_TARGET_POS)
 				{
-					PxMemCopy(&mArticulationDofDataPool[dofBegin], data.getJointTargetPositions(), dofs * sizeof(PxReal));
+					PxMemCopy(&mArticulationDofDataPoolMapped[dofBegin], data.getJointTargetPositions(), dofs * sizeof(PxReal));
 					dofBegin += dofs;
 				}
 				if (dirtyFlags & Dy::ArticulationDirtyFlag::eDIRTY_JOINT_TARGET_VEL)
 				{
-					PxMemCopy(&mArticulationDofDataPool[dofBegin], data.getJointTargetVelocities(), dofs * sizeof(PxReal));
+					PxMemCopy(&mArticulationDofDataPoolMapped[dofBegin], data.getJointTargetVelocities(), dofs * sizeof(PxReal));
 					dofBegin += dofs;
 				}
 			}
@@ -2351,22 +2352,6 @@ namespace physx
 				numMaxParticles += particleBuffers[j]->mMaxNumParticles;
 			}
 
-			PxgParticleClothBuffer** clothBuffers = reinterpret_cast<PxgParticleClothBuffer**>(dyParticleSystemCore.mParticleClothBuffers.begin());
-			const PxU32 numClothBuffers = dyParticleSystemCore.mParticleClothBuffers.size();
-			for (PxU32 j = 0; j < numClothBuffers; ++j)
-			{
-				numActiveParticles += clothBuffers[j]->mNumActiveParticles;
-				numMaxParticles += clothBuffers[j]->mMaxNumParticles;
-			}
-
-			PxgParticleRigidBuffer** rigidBuffers = reinterpret_cast<PxgParticleRigidBuffer**>(dyParticleSystemCore.mParticleRigidBuffers.begin());
-			const PxU32 numRigidBuffers = dyParticleSystemCore.mParticleRigidBuffers.size();
-			for (PxU32 j = 0; j < numRigidBuffers; ++j)
-			{
-				numActiveParticles += rigidBuffers[j]->mNumActiveParticles;
-				numMaxParticles += rigidBuffers[j]->mMaxNumParticles;
-			}
-
 			PxgParticleAndDiffuseBuffer** diffuseBuffers = reinterpret_cast<PxgParticleAndDiffuseBuffer**>(dyParticleSystemCore.mParticleDiffuseBuffers.begin());
 			const PxU32 numDiffuseBuffers = dyParticleSystemCore.mParticleDiffuseBuffers.size();
 			for (PxU32 j = 0; j < numDiffuseBuffers; ++j)
@@ -2378,9 +2363,7 @@ namespace physx
 
 			newParticleSystem.mCommonData.mNumParticles = numActiveParticles;
 			newParticleSystem.mCommonData.mMaxParticles = numMaxParticles;
-			newParticleSystem.mCommonData.mNumParticleBuffers = numParticleBuffers + numClothBuffers + numRigidBuffers + numDiffuseBuffers;
-			newParticleSystem.mNumClothBuffers = numClothBuffers;
-			newParticleSystem.mNumRigidBuffers = numRigidBuffers;
+			newParticleSystem.mCommonData.mNumParticleBuffers = numParticleBuffers + numDiffuseBuffers;
 			newParticleSystem.mNumDiffuseBuffers = numDiffuseBuffers;
 			newParticleSystem.mCommonData.mMaxDiffuseParticles = numMaxDiffuseParticles;
 			
@@ -2451,7 +2434,7 @@ namespace physx
 		mSimulationCore->mPxgShapeSimManager.gpuMemDmaUpShapeSim(
 			mSimulationCore->mCudaContext,
 			mSimulationCore->getStream(),
-			mSimulationCore->mGpuKernelWranglerManager->getKernelWrangler()
+			mSimulationCore->mGpuKernelWranglerManager
 		);
 
 		mCudaContextManager->releaseContext();
@@ -2459,11 +2442,15 @@ namespace physx
 
 	void PxgSimulationController::postCopyToBodySim(bool enableBodyAccelerations)
 	{
+		if(mCudaContextManager->getCudaContext()->isInAbortMode())
+		{
+			return;
+		}
 		mCudaContextManager->acquireContext();
 
 		//ML: we reserve the mNewUpdatedBodies before we kick off the beforeSolver task, which update the the mNewUpdatedBodies using multiple thread. After the beforeSolver task,
 		//we kick off updateBodiesAndShapes tasks. We need to set the size of mNewUpdatedBodies here 
-		PxPinnedArray<PxgBodySimVelocityUpdate>& updatedBodySimPool = mBodySimManager.mNewUpdatedBodies;
+		Cm::PinnableArray<PxgBodySimVelocityUpdate>& updatedBodySimPool = mBodySimManager.mNewUpdatedBodies;
 		updatedBodySimPool.forceSize_Unsafe(mBodySimManager.mNbUpdatedBodies);
 
 		const PxU32 nbTotalBodies = mBodySimManager.mTotalNumBodies;
@@ -2482,8 +2469,8 @@ namespace physx
 
 		mSimulationCore->updateBodies(updatedBodySimPool.size(), mNewBodySimPool.size());
 
-		mSimulationCore->updateArticulations(mBodySimManager.mNewArticulationSims.size(), mArticulationUpdatePool.begin(),
-			mArticulationUpdatePool.size(), mArticulationDofDataPool.begin());
+		mSimulationCore->updateArticulations(mBodySimManager.mNewArticulationSims.size(), mArticulationUpdatePoolMapped.begin(),
+			mArticulationUpdatePoolMapped.size(), mArticulationDofDataPoolMapped.begin());
 
 		//this is for kinematic bodies. Because for kinematic bodies, we still update the transform everyframe but we don't need to simulate(solve and integrate) so mHasBeenSimulated
 		//flag will be false, but we still need to reset the new bodies/shapes sim managers
@@ -2526,10 +2513,17 @@ namespace physx
 
 		mCudaContextManager->acquireContext();
 
+		// Refresh per-attachment refcounts (mass-splitting) into the staging array before the DMA-up
+		// of mRigidSoftBodyAttachments below. The persistent count map on the manager is kept in
+		// sync at activate/deactivate time; this writes the derived per-attachment field.
+		if (mRigidSoftBodyAttachments.mAttachmentsDirty || mRigidSoftBodyAttachments.mActiveAttachmentsDirty)
+			mRigidSoftBodyAttachments.flushRefCountsToAttachments();
+
 		SoftBodyAttachmentAndFilterData dmaData;
 		dmaData.rigidAttachments = &mRigidSoftBodyAttachments.mAttachments;
 		dmaData.rigidFilterPairs = &mSoftBodyRigidFilterPairs;
 		dmaData.dirtyRigidAttachments = mRigidSoftBodyAttachments.mAttachmentsDirty;
+		dmaData.dirtyRigidFilterPairs = mSoftBodyRigidFilterPairsDirty;
 		dmaData.activeRigidAttachments = &mRigidSoftBodyAttachments.mActiveAttachments;
 		dmaData.dirtyActiveRigidAttachments = mRigidSoftBodyAttachments.mActiveAttachmentsDirty;
 		dmaData.softBodyAttachments = &mSoftBodySoftBodyAttachments.mAttachments;
@@ -2541,14 +2535,9 @@ namespace physx
 		dmaData.clothAttachments = &mSoftBodyClothAttachments.mAttachments;
 		dmaData.clothFilterPairs = &mSoftBodyClothTetVertFilterPairs;
 		dmaData.dirtyClothAttachments = mSoftBodyClothAttachments.mAttachmentsDirty;
+		dmaData.dirtyClothFilterPairs = mSoftBodyClothFilterPairsDirty;
 		dmaData.activeClothAttachments = &mSoftBodyClothAttachments.mActiveAttachments;
 		dmaData.dirtyActiveClothAttachments = mSoftBodyClothAttachments.mActiveAttachmentsDirty;
-
-		dmaData.particleAttachments = &mParticleSoftBodyAttachments.mAttachments;
-		dmaData.particleFilterPairs = &mSoftBodyParticleFilterPairs;
-		dmaData.dirtyParticleAttachments = mParticleSoftBodyAttachments.mAttachmentsDirty;
-		dmaData.activeParticleAttachments = &mParticleSoftBodyAttachments.mActiveAttachments;
-		dmaData.dirtyActiveParticleAttachments = mParticleSoftBodyAttachments.mActiveAttachmentsDirty;
 
 		mSimulationCore->gpuMemDmaUpSoftBodies(mNewSoftBodyPool,
 			mNewTetMeshByteSizePool.begin(),
@@ -2565,12 +2554,11 @@ namespace physx
 
 		mRigidSoftBodyAttachments.mAttachmentsDirty = false;
 		mRigidSoftBodyAttachments.mActiveAttachmentsDirty = false;
+		mSoftBodyRigidFilterPairsDirty = false;
 
 		mSoftBodyClothAttachments.mAttachmentsDirty = false;
 		mSoftBodyClothAttachments.mActiveAttachmentsDirty = false;
-
-		mParticleSoftBodyAttachments.mAttachmentsDirty = false;
-		mParticleSoftBodyAttachments.mActiveAttachmentsDirty = false;
+		mSoftBodyClothFilterPairsDirty = false;
 
 		mSoftBodySoftBodyAttachments.mAttachmentsDirty = false;
 		mSoftBodySoftBodyAttachments.mActiveAttachmentsDirty = false;
@@ -2603,6 +2591,11 @@ namespace physx
 
 		mCudaContextManager->acquireContext();
 
+		// Refresh per-attachment refcounts (mass-splitting) into the staging array before the DMA-up
+		// of mClothRigidAttachments below; mirror of the SB path.
+		if (mClothRigidAttachments.mAttachmentsDirty || mClothRigidAttachments.mActiveAttachmentsDirty)
+			mClothRigidAttachments.flushRefCountsToAttachments();
+
 		mSimulationCore->gpuMemDmaUpFEMCloths(
 			mNewFEMClothPool,
 			mNewTriangleMeshByteSizePool.begin(),
@@ -2617,18 +2610,22 @@ namespace physx
 			mClothRigidAttachments.mAttachments,
 			mClothRigidFilterPairs,
 			mClothRigidAttachments.mAttachmentsDirty,
+			mClothRigidFilterPairsDirty,
 			mClothRigidAttachments.mActiveAttachments,
 			mClothRigidAttachments.mActiveAttachmentsDirty,
 			mClothClothAttachments.mAttachments,
 			mClothClothVertTriFilterPairs,
 			mClothClothAttachments.mAttachmentsDirty,
+			mClothClothFilterPairsDirty,
 			mClothClothAttachments.mActiveAttachments,
 			mClothClothAttachments.mActiveAttachmentsDirty
 		);
 
 		mClothRigidAttachments.mAttachmentsDirty = false;
 		mClothRigidAttachments.mActiveAttachmentsDirty = false;
+		mClothRigidFilterPairsDirty = false;
 		mClothClothAttachments.mAttachmentsDirty = false;
+		mClothClothFilterPairsDirty = false;
 		mClothClothAttachments.mActiveAttachmentsDirty = false;
 
 		mFEMClothCore->preIntegrateSystems(nbActiveFEMCloths, gravity, dt);
@@ -2661,7 +2658,18 @@ namespace physx
 		PX_UNUSED(continuation);
 		PX_PROFILE_ZONE("GpuSimulationController.updateBodiesAndShapes", 0);
 		//mDynamicContext->getGpuSolverCore()->acquireContext();
-
+		
+		// PdHC: Copy velocities to "previous" buffer BEFORE uploading CPU changes.
+		// This captures end-of-last-frame velocities, so velocity-delta will correctly
+		// reflect forces applied via addForce/addLocalForceAtLocalPos between frames.
+		// Works for both DirectGPU and non-DirectGPU (CPU Frontend + GPU Backend) modes.
+		if(mBodySimManager.mTotalNumBodies > 0 && mSimulationCore->hasAccelerationBuffers())
+		{
+			mCudaContextManager->acquireContext();
+			mSimulationCore->launchCopyRigidBodyVelocitiesToPrevious(mBodySimManager.mTotalNumBodies);
+			mCudaContextManager->releaseContext();
+		}
+		
 		mPostCopyBodySimTask.setContinuation(continuation);
 
 		copyToGpuBodySim(&mPostCopyBodySimTask);
@@ -2736,7 +2744,7 @@ namespace physx
 	{
 		const PxU32 nbActivePBDParticleSystems = mBodySimManager.mActivePBDParticleSystems.size();
 		const PxU32 nbActiveSoftbodies = mBodySimManager.mActiveSoftbodies.size();
-		const PxU32 nbActiveFemClothes = mBodySimManager.mActiveFEMCloths.size();
+		const PxU32 nbActiveFemCloths = mBodySimManager.mActiveFEMCloths.size();
 
 		mCudaContextManager->acquireContext();
 		
@@ -2756,11 +2764,11 @@ namespace physx
 			mSoftBodyCore->sortContacts(nbActiveSoftbodies);
 		}
 
-		if (nbActiveFemClothes > 0)
+		if (nbActiveFemCloths > 0)
 		{
 			
 			PX_PROFILE_ZONE("GpuSimulationController.sortClothContacts", 0);
-			mFEMClothCore->sortContacts(nbActiveFemClothes);
+			mFEMClothCore->sortContacts(nbActiveFemCloths);
 		}
 
 		mCudaContextManager->releaseContext();
@@ -2770,15 +2778,19 @@ namespace physx
 	void PxgSimulationController::updateJointsAndSyncData()
 	{
 		PX_PROFILE_ZONE("PxgSimulationController.updateGPUJoints", 0);
+		if(mCudaContextManager->getCudaContext()->isInAbortMode())
+		{
+			return;
+		}
 		mCudaContextManager->acquireContext();
 
-		const PxInt32ArrayPinned& updatedRigidJointIndices = mJointManager.getDirtyGPURigidJointDataIndices();
-		const PxPinnedArray<PxgD6JointData>& rigidJointData = mJointManager.getGpuRigidJointData();
-		const PxPinnedArray<PxgConstraintPrePrep>& rigidJointPrePrep = mJointManager.getGpuRigidJointPrePrep();
+		const Cm::PinnableArray<PxU32>& updatedRigidJointIndices = mJointManager.getDirtyGPURigidJointDataIndices();
+		const Cm::PinnableArray<PxgD6JointData>& rigidJointData = mJointManager.getGpuRigidJointData();
+		const Cm::PinnableArray<PxgConstraintPrePrep>& rigidJointPrePrep = mJointManager.getGpuRigidJointPrePrep();
 
-		const PxInt32ArrayPinned& updatedArtiJointIndices = mJointManager.getDirtyGPUArtiJointDataIndices();
-		const PxPinnedArray<PxgD6JointData>& artiJointData = mJointManager.getGpuArtiJointData();
-		const PxPinnedArray<PxgConstraintPrePrep>& artiJointPrePrep = mJointManager.getGpuArtiJointPrePrep();
+		const Cm::PinnableArray<PxU32>& updatedArtiJointIndices = mJointManager.getDirtyGPUArtiJointDataIndices();
+		const Cm::PinnableArray<PxgD6JointData>& artiJointData = mJointManager.getGpuArtiJointData();
+		const Cm::PinnableArray<PxgConstraintPrePrep>& artiJointPrePrep = mJointManager.getGpuArtiJointPrePrep();
 
 		mSimulationCore->updateJointsAndSyncData(rigidJointData, updatedRigidJointIndices, artiJointData, updatedArtiJointIndices, 
 			rigidJointPrePrep, artiJointPrePrep, mJointManager.getGpuConstraintIdMapHost(), mJointManager.getAndClearConstraintIdMapDirtyFlag(),
@@ -2790,9 +2802,13 @@ namespace physx
 	}
 
 	//This is called after solver integration gpu task
-	void PxgSimulationController::update(PxBitMapPinned& changedHandleMap)
+	void PxgSimulationController::update(Cm::PinnableBitMap& changedHandleMap)
 	{
 		PX_PROFILE_ZONE("GpuSimulationController.update", 0);
+		if(mSimulationCore->mCudaContext->isInAbortMode())
+		{
+			return;
+		}
 
 		mCudaContextManager->acquireContext();
 
@@ -2803,40 +2819,25 @@ namespace physx
 
 		const bool enableDirectGPUAPI = mDynamicContext->getEnableDirectGPUAPI();
 		mSimulationCore->gpuMemDmaUp(nbTotalBodies, nbTotalShapes, changedHandleMap, enableDirectGPUAPI);
-
+		
 		mSimulationCore->update(enableDirectGPUAPI);
 
 		mCudaContextManager->releaseContext();
 	}
 
-#if PXG_SC_DEBUG
-	void PxgSimulationController::validateCacheAndBounds(PxBoundsArrayPinned& boundArray, PxCachedTransformArrayPinned& cachedTransform)
+	void PxgSimulationController::initDirectGPUAPIState()
 	{
+		if(mSimulationCore->mCudaContext->isInAbortMode())
+			return;
 
-		for (PxU32 i = 0; i < mShapeSimManager.mTotalNumShapes; ++i)
-		{
-			PxsShapeSim& shapeSim = mShapeSimManager.mShapeSims[i];
-			if (shapeSim.mBodySimIndex.index() != 0xffffffff)
-			{
-
-				PxBounds3& bound = boundArray[shapeSim.mElementIndex];
-				if (!bound.isValid())
-				{
-					int bob = 0;
-					PX_UNUSED(bob);
-				}
-				PX_ASSERT(bound.isValid());
-				PxsCachedTransform& cache = cachedTransform[shapeSim.mElementIndex];
-				PX_ASSERT(cache.transform.isSane());
-				if (!cache.transform.isSane())
-				{
-					int bob = 0;
-					PX_UNUSED(bob);
-				}
-			}
-		}
+		mCudaContextManager->acquireContext();
+		// mHasBeenSimulated is intentionally NOT set here. It is set in update() when
+		// the solver actually runs and gpuMemDmaUp() sizes the device buffers. Setting
+		// it here would cause gpuMemDmaBack() to run even when the solver was skipped
+		// (e.g. needsSolve() == false), leading to memcpy from undersized device buffers.
+		mSimulationCore->initDirectGPUAPIDescriptor();
+		mCudaContextManager->releaseContext();
 	}
-#endif
 
 	void PxgSimulationController::mergeChangedAABBMgHandle()
 	{
@@ -2845,7 +2846,7 @@ namespace physx
 		mSimulationCore->mergeChangedAABBMgHandle();
 	}
 
-	void PxgSimulationController::gpuDmabackData(PxsTransformCache& cache, Bp::BoundsArray& boundArray, PxBitMapPinned&  changedAABBMgrHandles,
+	void PxgSimulationController::gpuDmabackData(PxsTransformCache& cache, Bp::BoundsArray& boundArray, Cm::PinnableBitMap&  changedAABBMgrHandles,
 		bool enableDirectGPUAPI)
 	{
 		if (mHasBeenSimulated)
@@ -2871,13 +2872,13 @@ namespace physx
 			mDeactivatePool.reserve(nbTotalBodies);
 			mDeactivatePool.forceSize_Unsafe(nbTotalBodies);
 
-			PxCachedTransformArrayPinned* cachedTransform = cache.getCachedTransformArray();
+			PxsCachedTransform* cachedTransforms = cache.getTransforms();
 
 #if PXG_SC_DEBUG
-			validateCacheAndBounds(bounds, *cachedTransform);
+			mSimulationCore->mPxgShapeSimManager.validateCacheAndBounds(boundArray.getBounds(), cachedTransforms);
 #endif // PXG_SC_BEBUG
 
-			mSimulationCore->gpuMemDmaBack(mFrozenPool, mUnfrozenPool, mActivatePool, mDeactivatePool, cachedTransform, cache.getTotalSize(), boundArray, changedAABBMgrHandles, nbTotalShapes,
+			mSimulationCore->gpuMemDmaBack(mFrozenPool, mUnfrozenPool, mActivatePool, mDeactivatePool, cachedTransforms, cache.getTotalSize(), boundArray, changedAABBMgrHandles, nbTotalShapes,
 				nbTotalBodies, enableDirectGPUAPI);
 
 
@@ -2907,8 +2908,8 @@ namespace physx
 		if (mHasBeenSimulated)
 		{
 #if PXG_SC_DEBUG
-			validateCacheAndBounds(boundArray.getBounds(), *cache.getCachedTransformArray());
-#endif // PXG_SC_BEBUG
+			mSimulationCore->mPxgShapeSimManager.validateCacheAndBounds(boundArray.getBounds(), cache.getTransforms());
+#endif
 			if ( (!mDynamicContext->getEnableDirectGPUAPI()) || mEnableOVDReadback)
 			{
 				mCallback->updateScBodyAndShapeSim(continuation);
@@ -3036,13 +3037,13 @@ namespace physx
 	}
 
 	PxU32 PxgSimulationController::addRigidAttachmentInternal(const PxU32 nonRigidId, const PxU32 elemId, const bool isVertex, const PxVec4& barycentric, PxsRigidBody* rigidBody,
-		const PxNodeIndex& rigidNodeIndex, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint, AttachmentManager<PxgFEMRigidAttachment>& attachments, bool addToActive)
+		const PxNodeIndex& rigidNodeIndex, const PxVec3& actorSpacePose, AttachmentManager<PxgFEMRigidAttachment>& attachments, bool addToActive)
 	{
 		PX_ASSERT(isVertex == barycentric.isZero());
 
 		PxgFEMRigidAttachment attachment;
 		const PxVec3 localPose = rigidBody ? rigidBody->getCore().getBody2Actor().transformInv(actorSpacePose) : actorSpacePose;
-		attachment.localPose0 = make_float4(localPose.x, localPose.y, localPose.z, 0.f);
+		attachment.localPose0 = localPose;
 		attachment.index1 = PxEncodeSoftBodyIndex(nonRigidId, elemId);
 		PxU32 handle = attachments.mBaseHandle++;
 		attachment.index2 = handle;
@@ -3051,17 +3052,6 @@ namespace physx
 		attachment.baryOrType1.y = isVertex ? 0.0f : barycentric.y;
 		attachment.baryOrType1.z = isVertex ? 0.0f : barycentric.z;
 		attachment.baryOrType1.w = isVertex ? 0.0f : barycentric.w;
-
-		if (constraint)
-		{
-			attachment.coneLimitParams.low_high_limits = make_float4(constraint->mLowLimit, constraint->mHighLimit, 0.f, 0.f);
-			attachment.coneLimitParams.axis_angle = make_float4(constraint->mAxis.x, constraint->mAxis.y, constraint->mAxis.z, constraint->mAngle);
-		}
-		else
-		{
-			attachment.coneLimitParams.low_high_limits = make_float4(0.f, 0.f, 0.f, 0.f);
-			attachment.coneLimitParams.axis_angle = make_float4(0.f, 0.f, 0.f, -1.f);
-		}
 
 		attachments.addAttachment(attachment, handle);
 		if (addToActive)
@@ -3175,7 +3165,7 @@ namespace physx
 		pair.index1 = tetHandle;
 		pair.index0 = reinterpret_cast<const PxU64&>(rigidNodeIndex);
 
-		addFilterPairInternal(pair, mSoftBodyRigidFilterPairs, mSoftBodyRigidFilterRefs, mRigidSoftBodyAttachments.mAttachmentsDirty);
+		addFilterPairInternal(pair, mSoftBodyRigidFilterPairs, mSoftBodyRigidFilterRefs, mSoftBodyRigidFilterPairsDirty);
 	}
 
 	void PxgSimulationController::removeTetRigidFilter(Dy::DeformableVolume* deformableVolume, const PxNodeIndex& rigidNodeIndex,
@@ -3197,11 +3187,11 @@ namespace physx
 		PxgRigidFilterPair pair;
 		pair.index1 = tetHandle;
 		pair.index0 = reinterpret_cast<const PxU64&>(rigidNodeIndex);
-		releaseFilterPairInternal(pair, mSoftBodyRigidFilterPairs, mSoftBodyRigidFilterRefs, mRigidSoftBodyAttachments.mAttachmentsDirty);
+		releaseFilterPairInternal(pair, mSoftBodyRigidFilterPairs, mSoftBodyRigidFilterRefs, mSoftBodyRigidFilterPairsDirty);
 	}
 
 	PxU32 PxgSimulationController::addTetRigidAttachment(Dy::DeformableVolume* deformableVolume, PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex, PxU32 tetId, const PxVec4& barycentric,
-		const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint, const bool isActive, bool doConversion)
+		const PxVec3& actorSpacePose, const bool isActive, bool doConversion)
 	{
 		PxU32 simTetIdx = tetId;
 		PxVec4 simBarycentric = barycentric;
@@ -3211,7 +3201,7 @@ namespace physx
 		}
 
 		const bool isVertex = false;
-		PxU32 handle = addRigidAttachmentInternal(deformableVolume->getGpuRemapId(), simTetIdx, isVertex, simBarycentric, rigidBody, rigidNodeIndex, actorSpacePose, constraint, mRigidSoftBodyAttachments, isActive);
+		PxU32 handle = addRigidAttachmentInternal(deformableVolume->getGpuRemapId(), simTetIdx, isVertex, simBarycentric, rigidBody, rigidNodeIndex, actorSpacePose, mRigidSoftBodyAttachments, isActive);
 		deformableVolume->mRigidVolumeAttachments.pushBack(handle);
 
 		return handle;
@@ -3226,14 +3216,14 @@ namespace physx
 
 		if (deformableVolume0->mVolumeVolumeFilterPairs == NULL)
 		{
-			deformableVolume0->mVolumeVolumeFilterPairs = PX_PLACEMENT_NEW(PX_ALLOCATE(Dy::VolumeVolumeFilterArray, 1, "VolumeVolumeFilterArray"), Dy::VolumeVolumeFilterArray)(mHeapMemoryManager->mMappedMemoryAllocators);
+			deformableVolume0->mVolumeVolumeFilterPairs = PX_PLACEMENT_NEW(PX_ALLOCATE(Dy::VolumeVolumeFilterArray, 1, "VolumeVolumeFilterArray"), Dy::VolumeVolumeFilterArray)(mAllocDesc.hostAlloc);
 		
 			deformableVolume0->mDirtyVolumeForFilterPairs = &mDirtyDeformableVolumeForFilterPairs;
 		}
 
 		if (deformableVolume1->mVolumeVolumeFilterPairs == NULL)
 		{
-			deformableVolume1->mVolumeVolumeFilterPairs = PX_PLACEMENT_NEW(PX_ALLOCATE(Dy::VolumeVolumeFilterArray, 1, "VolumeVolumeFilterArray"), Dy::VolumeVolumeFilterArray)(mHeapMemoryManager->mMappedMemoryAllocators);
+			deformableVolume1->mVolumeVolumeFilterPairs = PX_PLACEMENT_NEW(PX_ALLOCATE(Dy::VolumeVolumeFilterArray, 1, "VolumeVolumeFilterArray"), Dy::VolumeVolumeFilterArray)(mAllocDesc.hostAlloc);
 		
 			deformableVolume1->mDirtyVolumeForFilterPairs = &mDirtyDeformableVolumeForFilterPairs;
 		}
@@ -3254,7 +3244,7 @@ namespace physx
 		if (tetId0 != PX_MAX_NB_DEFORMABLE_VOLUME_TET)
 		{
 			uint4* collInds0 = reinterpret_cast<uint4*>(tetMesh0->mGRB_tetraIndices);
-			PxPinnedArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<PxPinnedArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
+			Cm::PinnableArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
 			uint4 ind0 = collInds0[tetId0];
 			int* index0 = reinterpret_cast<int*>(&ind0);
 			for (PxU32 i = 0; i < 4; ++i)
@@ -3273,7 +3263,7 @@ namespace physx
 		if (tetId1 != PX_MAX_NB_DEFORMABLE_VOLUME_TET)
 		{
 			uint4* collInds1 = reinterpret_cast<uint4*>(tetMesh1->mGRB_tetraIndices);
-			PxPinnedArray<PxgNonRigidFilterPair>* softBody1FilterPairs = reinterpret_cast<PxPinnedArray<PxgNonRigidFilterPair>*>(deformableVolume1->mVolumeVolumeFilterPairs);
+			Cm::PinnableArray<PxgNonRigidFilterPair>* softBody1FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume1->mVolumeVolumeFilterPairs);
 			uint4 ind1 = collInds1[tetId1];
 			int* index1 = reinterpret_cast<int*>(&ind1);
 			for (PxU32 i = 0; i < 4; ++i)
@@ -3326,7 +3316,7 @@ namespace physx
 		{
 			uint4* collInds0 = reinterpret_cast<uint4*>(tetMesh0->mGRB_tetraIndices);
 
-			PxPinnedArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<PxPinnedArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
+			Cm::PinnableArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
 			uint4 ind0 = collInds0[tetId0];
 
 			int* index0 = reinterpret_cast<int*>(&ind0);
@@ -3345,7 +3335,7 @@ namespace physx
 		if (tetId1 != PX_MAX_NB_DEFORMABLE_VOLUME_TET)
 		{
 			uint4* collInds1 = reinterpret_cast<uint4*>(tetMesh1->mGRB_tetraIndices);
-			PxPinnedArray<PxgNonRigidFilterPair>* softBody1FilterPairs = reinterpret_cast<PxPinnedArray<PxgNonRigidFilterPair>*>(deformableVolume1->mVolumeVolumeFilterPairs);
+			Cm::PinnableArray<PxgNonRigidFilterPair>* softBody1FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume1->mVolumeVolumeFilterPairs);
 			uint4 ind1 = collInds1[tetId1];
 			int* index1 = reinterpret_cast<int*>(&ind1);
 			for (PxU32 i = 0; i < 4; ++i)
@@ -3393,17 +3383,17 @@ namespace physx
 
 		if (deformableVolume0->mVolumeVolumeFilterPairs == NULL)
 		{
-			deformableVolume0->mVolumeVolumeFilterPairs = PX_PLACEMENT_NEW(PX_ALLOCATE(Dy::VolumeVolumeFilterArray, 1, "VolumeVolumeFilterArray"), Dy::VolumeVolumeFilterArray)(mHeapMemoryManager->mMappedMemoryAllocators);
+			deformableVolume0->mVolumeVolumeFilterPairs = PX_PLACEMENT_NEW(PX_ALLOCATE(Dy::VolumeVolumeFilterArray, 1, "VolumeVolumeFilterArray"), Dy::VolumeVolumeFilterArray)(mAllocDesc.hostAlloc);
 
 			deformableVolume0->mDirtyVolumeForFilterPairs = &mDirtyDeformableVolumeForFilterPairs;
 
-			PxPinnedArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<PxPinnedArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
+			Cm::PinnableArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
 			softBody0FilterPairs->reserve(size * 4);
 			deformableVolume0->mVolumeVolumeAttachmentIdReferences.reserve(size * 4);
 		}
 		else
 		{
-			PxPinnedArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<PxPinnedArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
+			Cm::PinnableArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
 			PxU32 maxSize = softBody0FilterPairs->size() + (size * 4);
 			if (softBody0FilterPairs->capacity() < maxSize)
 			{
@@ -3415,7 +3405,7 @@ namespace physx
 		//Convert from coll mesh to sim mesh now...
 		const Gu::BVTetrahedronMesh* tetMesh0 = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume0->getCollisionMesh());
 		uint4* collInds0 = reinterpret_cast<uint4*>(tetMesh0->mGRB_tetraIndices);
-		PxPinnedArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<PxPinnedArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
+		Cm::PinnableArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
 
 		PxArray<PxgNonRigidFilterPair> sortList;
 		sortList.reserve(softBody0FilterPairs->capacity() * 4);
@@ -3524,7 +3514,7 @@ namespace physx
 		//Convert from coll mesh to sim mesh now...
 		const Gu::BVTetrahedronMesh* tetMesh0 = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume0->getCollisionMesh());
 		uint4* collInds0 = reinterpret_cast<uint4*>(tetMesh0->mGRB_tetraIndices);
-		PxPinnedArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<PxPinnedArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
+		Cm::PinnableArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
 
 		PxArray<PxgNonRigidFilterPair> sortList;
 		sortList.reserve(softBody0FilterPairs->capacity() * 4);
@@ -3628,7 +3618,7 @@ namespace physx
 	}
 
 	PxU32 PxgSimulationController::addSoftBodyAttachment(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32 tetId0, PxU32 tetId1,
-		const PxVec4& tetBarycentric0, const PxVec4& tetBarycentric1, PxConeLimitedConstraint* constraint, PxReal constraintOffset, const bool addToActive, bool doConversion)
+		const PxVec4& tetBarycentric0, const PxVec4& tetBarycentric1, const bool addToActive, bool doConversion)
 	{
 		// Convert from coll mesh to sim mesh now...
 
@@ -3669,33 +3659,11 @@ namespace physx
 
 		attachment.index0 = tetHandle0;
 		attachment.index1 = tetHandle1;
-		attachment.constraintOffset = constraintOffset;
 		PxU32 handle = mSoftBodySoftBodyAttachments.mBaseHandle++;
 
 		attachment.barycentricCoordinates0 = make_float4(outBarycentric0.x, outBarycentric0.y, outBarycentric0.z, outBarycentric0.w);
 		attachment.barycentricCoordinates1 = make_float4(outBarycentric1.x, outBarycentric1.y, outBarycentric1.z, outBarycentric1.w);
 
-		//for solve body, user define axis in world space. We need to generate a point based on the direction and compute the barycentric for that.
-		if (constraint)
-		{
-			attachment.coneLimitParams.low_high_angle = make_float4(constraint->mLowLimit, constraint->mHighLimit, constraint->mAngle, 0.f);
-
-			if (constraint->mAngle >= 0.f)
-			{
-				const Gu::TetrahedronMesh* simMesh = static_cast<const Gu::TetrahedronMesh*>(deformableVolume0->getSimulationMesh());
-				PxVec4 barycentric = Gu::addAxisToSimMeshBarycentric(*simMesh, outTetIdx0, outBarycentric0, constraint->mAxis.getNormalized());
-				attachment.coneLimitParams.barycentric = make_float4(barycentric.x, barycentric.y, barycentric.z, barycentric.w);
-			}
-			else
-			{
-				attachment.coneLimitParams.barycentric = make_float4(0.f, 0.f, 0.f, 0.f);
-			}
-		}
-		else
-		{
-			attachment.coneLimitParams.low_high_angle = make_float4(0.f, 0.f, -1.f, 0.f);
-			attachment.coneLimitParams.barycentric = make_float4(0.f, 0.f, 0.f, 0.f);
-		}
 		//These are used for activate and deactivate soft body
 		mSoftBodySoftBodyAttachments.addAttachment(attachment, handle);
 		if (addToActive)
@@ -3743,7 +3711,7 @@ namespace physx
 				PxgNonRigidFilterPair tetVertPair;
 				tetVertPair.index0 = softBodyTetHandle;
 				tetVertPair.index1 = clothTriVertHandle;
-				addFilterPairInternal(tetVertPair, mSoftBodyClothTetVertFilterPairs, mSoftBodyClothTetVertFilterRefs, mSoftBodyClothAttachments.mAttachmentsDirty);
+				addFilterPairInternal(tetVertPair, mSoftBodyClothTetVertFilterPairs, mSoftBodyClothTetVertFilterRefs, mSoftBodyClothFilterPairsDirty);
 			}
 		}
 		else
@@ -3752,7 +3720,7 @@ namespace physx
 			PxgNonRigidFilterPair tetVertPair;
 			tetVertPair.index0 = softBodyTetHandle;
 			tetVertPair.index1 = clothVertFullMask;
-			addFilterPairInternal(tetVertPair, mSoftBodyClothTetVertFilterPairs, mSoftBodyClothTetVertFilterRefs, mSoftBodyClothAttachments.mAttachmentsDirty);
+			addFilterPairInternal(tetVertPair, mSoftBodyClothTetVertFilterPairs, mSoftBodyClothTetVertFilterRefs, mSoftBodyClothFilterPairsDirty);
 		}
 	}
 
@@ -3788,7 +3756,7 @@ namespace physx
 				PxgNonRigidFilterPair tetVertPair;
 				tetVertPair.index0 = tetHandle;
 				tetVertPair.index1 = triVertHandle;
-				releaseFilterPairInternal(tetVertPair, mSoftBodyClothTetVertFilterPairs, mSoftBodyClothTetVertFilterRefs, mSoftBodyClothAttachments.mAttachmentsDirty);
+				releaseFilterPairInternal(tetVertPair, mSoftBodyClothTetVertFilterPairs, mSoftBodyClothTetVertFilterRefs, mSoftBodyClothFilterPairsDirty);
 			}
 		}
 		else
@@ -3797,12 +3765,12 @@ namespace physx
 			PxgNonRigidFilterPair tetVertPair;
 			tetVertPair.index0 = tetHandle;
 			tetVertPair.index1 = clothVertFullMask;
-			releaseFilterPairInternal(tetVertPair, mSoftBodyClothTetVertFilterPairs, mSoftBodyClothTetVertFilterRefs, mSoftBodyClothAttachments.mAttachmentsDirty);
+			releaseFilterPairInternal(tetVertPair, mSoftBodyClothTetVertFilterPairs, mSoftBodyClothTetVertFilterRefs, mSoftBodyClothFilterPairsDirty);
 		}
 	}
 
 	PxU32 PxgSimulationController::addClothAttachment(Dy::DeformableVolume* deformableVolume, Dy::DeformableSurface* deformableSurface, PxU32 triIdx,
-		const PxVec4& triBary, PxU32 tetId, const PxVec4& tetBary, PxConeLimitedConstraint* constraint, PxReal constraintOffset, const bool isActive, bool doConversion)
+		const PxVec4& triBary, PxU32 tetId, const PxVec4& tetBary, const bool isActive, bool doConversion)
 	{
 		PxU32 simTetIdx = 0xFFFFFFFF;
 		PxVec4 simTetBary;
@@ -3834,31 +3802,11 @@ namespace physx
 		
 		attachment.index0 = triHandle;
 		attachment.index1 = tetHandle;
-		attachment.constraintOffset = constraintOffset;
 		PxU32 handle = mSoftBodyClothAttachments.mBaseHandle++;
 
 		attachment.barycentricCoordinates0 = make_float4(triBary.x, triBary.y, triBary.z, 0.f);
 		attachment.barycentricCoordinates1 = make_float4(simTetBary.x, simTetBary.y, simTetBary.z, simTetBary.w);
-		
-		if (constraint)
-		{
-			attachment.coneLimitParams.low_high_angle = make_float4(constraint->mLowLimit, constraint->mHighLimit, constraint->mAngle, 0.f);
-			if (constraint->mAngle >= 0.f)
-			{
-				const Gu::TetrahedronMesh* simMesh = static_cast<const Gu::TetrahedronMesh*>(deformableVolume->getSimulationMesh());
-				PxVec4 barycentric = Gu::addAxisToSimMeshBarycentric(*simMesh, simTetIdx, simTetBary, constraint->mAxis.getNormalized());
-				attachment.coneLimitParams.barycentric = make_float4(barycentric.x, barycentric.y, barycentric.z, barycentric.w);
-			}
-			else
-			{
-				attachment.coneLimitParams.barycentric = make_float4(0.f, 0.f, 0.f, 0.f);
-			}
-		}
-		else
-		{
-			attachment.coneLimitParams.low_high_angle = make_float4(0.f, 0.f, -1.0f, 0.f);
-			attachment.coneLimitParams.barycentric = make_float4(0.f, 0.f, 0.f, 0.f);
-		}
+
 		mSoftBodyClothAttachments.addAttachment(attachment, handle);
 		if(isActive)
 			mSoftBodyClothAttachments.activateAttachment(handle);
@@ -3874,156 +3822,20 @@ namespace physx
 			deformableVolume->mSurfaceVolumeAttachments.findAndReplaceWithLast(handle);
 	}
 
-	void PxgSimulationController::addParticleFilter(Dy::DeformableVolume* deformableVolume, Dy::ParticleSystem* particleSystem,
-		PxU32 particleId, PxU32 userBufferId, PxU32 tetId)
-	{
-		const PxU32 softBodyId = deformableVolume->getGpuRemapId();
-		const PxU32 particleSystemId = particleSystem->getGpuRemapId();
-
-		const Gu::BVTetrahedronMesh* tetMesh = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
-		
-		//Map from CPU tet ID (corresponds to the ID in the BV4 mesh) to the GPU tet ID (corresponds to the ID in the BV32 mesh)
-		tetId = (tetId == PX_MAX_NB_DEFORMABLE_VOLUME_TET ? tetId : static_cast<PxU32*>(tetMesh->mGRB_faceRemapInverse)[tetId]);
-		PxU32 tetHandle = PxEncodeSoftBodyIndex(softBodyId, tetId); //soft body and tet index
-		PxU64 particleHandle = PxEncodeParticleIndex(particleSystemId, particleId);
-		
-		PxgNonRigidFilterPair pair;
-		pair.index1 = tetHandle;
-		pair.index0 = particleHandle;
-		pair.index2 = userBufferId;
-
-		addFilterPairInternal(pair, mSoftBodyParticleFilterPairs, mSoftBodyParticleFilterRefs, mParticleSoftBodyAttachments.mAttachmentsDirty);
-	}
-
-	void PxgSimulationController::removeParticleFilter(Dy::DeformableVolume* deformableVolume,
-		const Dy::ParticleSystem* particleSystem, PxU32 particleId, PxU32 userBufferId, PxU32 tetId)
-	{
-		const PxU32 softBodyId = deformableVolume->getGpuRemapId();
-		const PxU32 particleSystemId = particleSystem->getGpuRemapId();
-
-		const Gu::BVTetrahedronMesh* tetMesh = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
-
-		//Map from CPU tet ID (corresponds to the ID in the BV4 mesh) to the GPU tet ID (corresponds to the ID in the BV32 mesh)
-		tetId = (tetId == PX_MAX_NB_DEFORMABLE_VOLUME_TET ? tetId : static_cast<PxU32*>(tetMesh->mGRB_faceRemapInverse)[tetId]);
-
-		PxU32 tetHandle = PxEncodeSoftBodyIndex(softBodyId, tetId);
-		PxU64 particleHandle = PxEncodeParticleIndex(particleSystemId, particleId);
-		PxgNonRigidFilterPair pair;
-		pair.index1 = tetHandle;
-		pair.index0 = particleHandle;
-		pair.index2 = userBufferId;
-
-		releaseFilterPairInternal(pair, mSoftBodyParticleFilterPairs, mSoftBodyParticleFilterRefs, mParticleSoftBodyAttachments.mAttachmentsDirty);
-	}
-
-	PxU32 PxgSimulationController::addParticleAttachment(Dy::DeformableVolume* deformableVolume, const Dy::ParticleSystem* particleSystem,
-		PxU32 particleId, PxU32 userBufferId, PxU32 tetId, const PxVec4& barycentric, const bool isActive)
-	{
-		PxU32 outTetIdx = 0xFFFFFFFF;
-		PxVec4 outBarycentric;
-
-		computeSoftBodySimMeshData(deformableVolume, tetId, barycentric, outTetIdx, outBarycentric);
-
-		const PxU32 softBodyId = deformableVolume->getGpuRemapId();
-		const PxU32 particleSystemId = particleSystem->getGpuRemapId();
-
-		const PxU32 tetHandle = PxEncodeSoftBodyIndex(softBodyId, outTetIdx);
-		const PxU64 particleHandle = PxEncodeParticleIndex(particleSystemId, particleId);
-		//create attachment
-		PxgFEMFEMAttachment attachment;
-		attachment.index0 = particleHandle;
-		attachment.index1 = tetHandle;
-		PxU32 handle = mParticleSoftBodyAttachments.mBaseHandle++;
-		attachment.barycentricCoordinates0 = make_float4(PxReal(userBufferId), 0.f, 0.f, 1.f); 
-		attachment.barycentricCoordinates1 = make_float4(outBarycentric.x, outBarycentric.y, outBarycentric.z, outBarycentric.w);
-
-		mParticleSoftBodyAttachments.addAttachment(attachment, handle);
-		if (isActive)
-			mParticleSoftBodyAttachments.activateAttachment(handle);
-
-		deformableVolume->mParticleVolumeAttachments.pushBack(handle);
-
-		return handle;
-	}
-
-	void PxgSimulationController::removeParticleAttachment(Dy::DeformableVolume* deformableVolume, PxU32 handle)
-	{
-		if (mParticleSoftBodyAttachments.removeAttachment(handle))
-			deformableVolume->mParticleVolumeAttachments.findAndReplaceWithLast(handle);
-	}
-
-	//DEPRECATED
-	void PxgSimulationController::addRigidFilter(Dy::DeformableVolume* deformableVolume, const PxNodeIndex& rigidNodeIndex, PxU32 vertIndex)
-	{
-		PxU32 softBodyId = deformableVolume->getGpuRemapId();
-
-		const Gu::BVTetrahedronMesh* tetMesh = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
-		const Gu::DeformableVolumeAuxData* softBodyAuxData = static_cast<const Gu::DeformableVolumeAuxData*>(deformableVolume->getAuxData());
-
-		PxU32* accumulatedTetRefs = softBodyAuxData->getCollisionAccumulatedTetrahedronRefs();
-		PxU32* tetRefs = softBodyAuxData->getCollisionTetrahedronRefs();
-		const PxU32 nbTetRefs = softBodyAuxData->getCollisionNbTetrahedronRefs();
-		const PxU32 nbVerts = tetMesh->getNbVerticesFast();
-
-		const PxU32 startIndex = accumulatedTetRefs[vertIndex];
-		const PxU32 endIndex = (vertIndex == nbVerts - 1) ? nbTetRefs : accumulatedTetRefs[vertIndex + 1];
-
-		for (PxU32 i = startIndex; i < endIndex; ++i)
-		{
-			const PxU32 tetInd = tetRefs[i];
-			PxU32 tetHandle = PxEncodeSoftBodyIndex(softBodyId, tetInd); //soft body and tet index
-
-			PxgRigidFilterPair pair;
-			pair.index1 = tetHandle;
-			pair.index0 = reinterpret_cast<const PxU64&>(rigidNodeIndex);
-
-			addFilterPairInternal(pair, mSoftBodyRigidFilterPairs, mSoftBodyRigidFilterRefs, mRigidSoftBodyAttachments.mAttachmentsDirty);
-		}
-	}
-
-	//DEPRECATED
-	void PxgSimulationController::removeRigidFilter(Dy::DeformableVolume* deformableVolume, const PxNodeIndex& rigidNodeIndex, PxU32 vertIndex)
-	{
-		PxU32 softBodyId = deformableVolume->getGpuRemapId();
-		const Gu::TetrahedronMesh* tetMesh = static_cast<const Gu::TetrahedronMesh*>(deformableVolume->getCollisionMesh());
-		const Gu::DeformableVolumeAuxData* softBodyAuxData = static_cast<const Gu::DeformableVolumeAuxData*>(deformableVolume->getAuxData());
-
-		{
-			PxU32* accumulatedTetRefs = softBodyAuxData->getCollisionAccumulatedTetrahedronRefs();
-			PxU32* tetRefs = softBodyAuxData->getCollisionTetrahedronRefs();
-			const PxU32 nbTetRefs = softBodyAuxData->getCollisionNbTetrahedronRefs();
-			const PxU32 nbVerts = tetMesh->getNbVerticesFast();
-
-			const PxU32 startIndex = accumulatedTetRefs[vertIndex];
-			const PxU32 endIndex = (vertIndex == nbVerts - 1) ? nbTetRefs : accumulatedTetRefs[vertIndex + 1];
-
-			for (PxU32 i = startIndex; i < endIndex; ++i)
-			{
-				const PxU32 tetInd = tetRefs[i];
-				PxU32 tetHandle = PxEncodeSoftBodyIndex(softBodyId, tetInd);
-
-				PxgRigidFilterPair pair;
-				pair.index1 = tetHandle;
-				pair.index0 = reinterpret_cast<const PxU64&>(rigidNodeIndex);
-
-				releaseFilterPairInternal(pair, mSoftBodyRigidFilterPairs, mSoftBodyRigidFilterRefs, mRigidSoftBodyAttachments.mAttachmentsDirty);
-			}
-		}
-	}
 
 	PxU32 PxgSimulationController::addRigidAttachment(Dy::DeformableVolume* deformableVolume, const PxNodeIndex& softBodyNodeIndex,
 		PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex, PxU32 vertIndex, const PxVec3& actorSpacePose,
-		PxConeLimitedConstraint* constraint, const bool isActive, bool doConversion)
+		const bool isActive, bool doConversion)
 	{
 		PX_UNUSED(softBodyNodeIndex);
 		//PxU32 softBodyId = deformableVolume->getGpuRemapId();
 
 		//const Gu::BVTetrahedronMesh* tetMesh = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
 		const Gu::DeformableVolumeAuxData* softBodyAuxData = static_cast<const Gu::DeformableVolumeAuxData*>(deformableVolume->getAuxData());
-		
+
 		//Now we make sure that the bodies are sorted...
 		PxU32 handle = 0xFFFFFFFF;
-		
+
 		PxU32 elemIdx = vertIndex;
 		bool isVertex = true;
 		PxVec4 barycentric(0.0f);
@@ -4036,7 +3848,7 @@ namespace physx
 		}
 
 		handle = addRigidAttachmentInternal(deformableVolume->getGpuRemapId(), elemIdx, isVertex, barycentric,
-			rigidBody, rigidNodeIndex, actorSpacePose, constraint, mRigidSoftBodyAttachments, isActive);
+			rigidBody, rigidNodeIndex, actorSpacePose, mRigidSoftBodyAttachments, isActive);
 
 		deformableVolume->mRigidVolumeAttachments.pushBack(handle);
 		return handle;
@@ -4050,14 +3862,14 @@ namespace physx
 
 	PxU32 PxgSimulationController::addRigidAttachment(Dy::DeformableSurface* deformableSurface, const PxNodeIndex& clothNodeIndex,
 		PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex, PxU32 vertIndex, const PxVec3& actorSpacePose,
-		PxConeLimitedConstraint* constraint, const bool addToActive)
+		const bool addToActive)
 	{
 		PX_UNUSED(clothNodeIndex);
 
 		const bool isVertex = true;
 		const PxVec4 barycentric(0.0f);
 		PxU32 handle = addRigidAttachmentInternal(deformableSurface->getGpuRemapId(), vertIndex, isVertex, barycentric,
-			rigidBody, rigidNodeIndex, actorSpacePose, constraint, mClothRigidAttachments, addToActive);
+			rigidBody, rigidNodeIndex, actorSpacePose, mClothRigidAttachments, addToActive);
 
 		deformableSurface->addAttachmentHandle(handle);
 		return handle;
@@ -4095,7 +3907,7 @@ namespace physx
 			PxgRigidFilterPair pair;
 			pair.index1 = vertHandle;
 			pair.index0 = rigidIdx;
-			addFilterPairInternal(pair, mClothRigidFilterPairs, mClothRigidFilterRefs, mClothRigidAttachments.mAttachmentsDirty);
+			addFilterPairInternal(pair, mClothRigidFilterPairs, mClothRigidFilterRefs, mClothRigidFilterPairsDirty);
 		}
 	}
 
@@ -4124,12 +3936,12 @@ namespace physx
 			PxgRigidFilterPair pair;
 			pair.index1 = vertHandle;
 			pair.index0 = rigidIdx;
-			releaseFilterPairInternal(pair, mClothRigidFilterPairs, mClothRigidFilterRefs, mClothRigidAttachments.mAttachmentsDirty);
+			releaseFilterPairInternal(pair, mClothRigidFilterPairs, mClothRigidFilterRefs, mClothRigidFilterPairsDirty);
 		}
 	}
 
 	PxU32 PxgSimulationController::addTriRigidAttachment(Dy::DeformableSurface* deformableSurface, PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex, PxU32 triIdx, const PxVec4& barycentric,
-		const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint, const bool isActive)
+		const PxVec3& actorSpacePose, const bool isActive)
 	{
 		PxsShapeCore& shapeCore = deformableSurface->getShapeCore();
 		const Gu::TriangleMesh* triangleMesh = _getMeshData(shapeCore.mGeometry.get<PxTriangleMeshGeometry>());
@@ -4139,7 +3951,7 @@ namespace physx
 
 		const bool isVertex = false;
 		PxU32 handle = addRigidAttachmentInternal(deformableSurface->getGpuRemapId(), triIdx, isVertex, barycentric,
-			rigidBody, rigidNodeIndex, actorSpacePose, constraint, mClothRigidAttachments, isActive);
+			rigidBody, rigidNodeIndex, actorSpacePose, mClothRigidAttachments, isActive);
 		
 		deformableSurface->addAttachmentHandle(handle);
 		return handle;
@@ -4190,7 +4002,7 @@ namespace physx
 				PxgNonRigidFilterPair pair;
 				pair.index0 = triVertHandle;
 				pair.index1 = triHandle1;
-				addFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothAttachments.mAttachmentsDirty);
+				addFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
 			}
 
 			if (triIdx1 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
@@ -4199,7 +4011,7 @@ namespace physx
 				PxgNonRigidFilterPair pair;
 				pair.index0 = vtxMaskFull1; 
 				pair.index1 = triHandle0;
-				addFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothAttachments.mAttachmentsDirty);
+				addFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
 			}
 		}
 
@@ -4214,7 +4026,7 @@ namespace physx
 				PxgNonRigidFilterPair pair;
 				pair.index0 = triVertHandle;
 				pair.index1 = triHandle0;
-				addFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothAttachments.mAttachmentsDirty);
+				addFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
 			}
 
 			if (triIdx0 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
@@ -4223,7 +4035,7 @@ namespace physx
 				PxgNonRigidFilterPair pair;
 				pair.index0 = vtxMaskFull0;
 				pair.index1 = triHandle1;
-				addFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothAttachments.mAttachmentsDirty);
+				addFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
 			}
 		}
 	}
@@ -4261,7 +4073,7 @@ namespace physx
 				PxgNonRigidFilterPair pair;
 				pair.index0 = triVertHandle;
 				pair.index1 = triHandle1;
-				releaseFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothAttachments.mAttachmentsDirty);
+				releaseFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
 			}
 
 			if (triIdx1 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
@@ -4270,7 +4082,7 @@ namespace physx
 				PxgNonRigidFilterPair pair;
 				pair.index0 = vtxMaskFull1;
 				pair.index1 = triHandle0;
-				releaseFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothAttachments.mAttachmentsDirty);
+				releaseFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
 			}
 		}
 
@@ -4285,7 +4097,7 @@ namespace physx
 				PxgNonRigidFilterPair pair;
 				pair.index0 = triVertHandle;
 				pair.index1 = triHandle0;
-				releaseFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothAttachments.mAttachmentsDirty);
+				releaseFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
 			}
 
 			if (triIdx0 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
@@ -4294,14 +4106,14 @@ namespace physx
 				PxgNonRigidFilterPair pair;
 				pair.index0 = vtxMaskFull0;
 				pair.index1 = triHandle1;
-				releaseFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothAttachments.mAttachmentsDirty);
+				releaseFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
 			}
 		}
 	}
 
 	PxU32 PxgSimulationController::addTriClothAttachment(Dy::DeformableSurface* deformableSurface0, Dy::DeformableSurface* deformableSurface1, PxU32 triIdx0, PxU32 triIdx1,
 		const PxVec4& triBarycentric0, const PxVec4& triBarycentric1, const bool addToActive)
-	{	
+	{
 		PxsShapeCore& shapeCore0 = deformableSurface0->getShapeCore();
 		const Gu::TriangleMesh* triangleMesh0 = _getMeshData(shapeCore0.mGeometry.get<PxTriangleMeshGeometry>());
 
@@ -4416,6 +4228,18 @@ namespace physx
 	void PxgSimulationController::setOVDCallbacks(PxsSimulationControllerOVDCallbacks& ovdCallbacks)
 	{
 		mOvdCallbacks = &ovdCallbacks;
+	}
+
+	void PxgSimulationController::ovdSnapshotRigidDynamicForces(const PxRigidDynamicGPUIndex* gpuIndices, PxU32 nbElements)
+	{
+		mSimulationCore->ovdSnapshotRigidDynamicForces(gpuIndices, nbElements);
+	}
+
+	void PxgSimulationController::ovdSnapshotArticulationForces(const PxArticulationGPUIndex* gpuIndices, PxU32 nbElements)
+	{
+		PxgArticulationCore* artiCore = mDynamicContext->getArticulationCore();
+		if (artiCore)
+			artiCore->ovdSnapshotArticulationForces(gpuIndices, nbElements, mMaxLinks, mMaxDofs, mMaxFixedTendons, mMaxTendonJoints, mMaxSpatialTendons, mMaxAttachments);
 	}
 #endif
 }

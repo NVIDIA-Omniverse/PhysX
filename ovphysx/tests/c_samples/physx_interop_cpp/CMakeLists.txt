@@ -8,7 +8,8 @@ find_package(ovphysx REQUIRED)
 
 add_executable(physx_interop_cpp main.cpp)
 
-target_link_libraries(physx_interop_cpp PRIVATE ovphysx::ovphysx)
+target_link_libraries(physx_interop_cpp PRIVATE ovphysx::ovphysx ovphysx::ovstage)
+target_include_directories(physx_interop_cpp PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../common")
 
 # PhysX SDK headers shipped with the ovphysx SDK (headers only, no library linking needed)
 target_include_directories(physx_interop_cpp PRIVATE ${ovphysx_PHYSX_INCLUDE_DIR})

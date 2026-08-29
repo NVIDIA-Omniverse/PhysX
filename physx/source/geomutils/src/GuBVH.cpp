@@ -22,14 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #include "foundation/PxFoundation.h"
 #include "foundation/PxFPU.h"
 #include "foundation/PxPlane.h"
-#include "geometry/PxGeometryInternal.h"
 #include "GuBVH.h"
 #include "GuAABBTreeQuery.h"
 #include "GuAABBTreeNode.h"
@@ -126,41 +125,6 @@ bool BVHData::save(PxOutputStream& stream, bool endian) const
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
-// PT: temporary for Kit
-
-BVH::BVH(const PxBVHInternalData& data) :
-	PxBVH			(PxType(PxConcreteType::eBVH), PxBaseFlags(0)),
-	mMeshFactory	(NULL)
-{
-	mData.mNbIndices	= data.mNbIndices;
-	mData.mNbNodes		= data.mNbNodes;
-	mData.mIndices		= data.mIndices;
-	mData.mNodes		= reinterpret_cast<BVHNode*>(data.mNodes);
-	mData.mBounds.setBounds(reinterpret_cast<PxBounds3*>(data.mBounds));
-}
-
-bool BVH::getInternalData(PxBVHInternalData& data, bool takeOwnership) const
-{
-	data.mNbIndices	= mData.mNbIndices;
-	data.mNbNodes	= mData.mNbNodes;
-	data.mNodeSize	= sizeof(BVHNode);
-	data.mNodes		= mData.mNodes;
-	data.mIndices	= mData.mIndices;
-	data.mBounds	= const_cast<PxBounds3*>(mData.mBounds.getBounds());
-
-	if(takeOwnership)
-		const_cast<BVH*>(this)->mData.mBounds.takeOwnership();
-
-	return true;
-}
-
-bool physx::PxGetBVHInternalData(PxBVHInternalData& data, const PxBVH& bvh, bool takeOwnership)
-{
-	return static_cast<const BVH&>(bvh).getInternalData(data, takeOwnership);
-}
-
-//~ PT: temporary for Kit
 
 BVH::BVH(MeshFactory* factory) :
 	PxBVH			(PxType(PxConcreteType::eBVH), PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE),
@@ -353,7 +317,7 @@ bool BVH::overlap(const ShapeData& queryVolume, OverlapCallback& cb, PxGeometryQ
 		case PxGeometryType::eBOX:
 		{
 			if(queryVolume.isOBB())
-			{	
+			{
 				const DefaultOBBAABBTest test(queryVolume);
 				if(mData.mIndices)
 					return AABBTreeOverlap<true, OBBAABBTest, BVHTree, BVHNode, OverlapAdapter>()(mData.mBounds, BVHTree(mData), test, oa);
@@ -404,6 +368,122 @@ bool BVH::overlap(const PxGeometry& geom, const PxTransform& pose, OverlapCallba
 	const ShapeData queryVolume(geom, pose, 0.0f);
 	return overlap(queryVolume, cb, flags);
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+// PT: specialized version for operating on PxBounds3/min-max values directly.
+// This is needed for solving a non-determinism issue in the clash broadphase.
+// Let's keep this code local to this cpp for now.
+template<const bool tHasIndices, typename Test, typename Node, typename QueryCallback>
+static PX_FORCE_INLINE bool doOverlapLeafTestMinMax(const Test& test, const Node* node, const PxBounds3* bounds, const PxU32* indices, QueryCallback& visitor)
+{
+	PxU32 nbPrims = node->getNbPrimitives();
+	const bool doBoxTest = nbPrims > 1;
+	const PxU32* prims = tHasIndices ? node->getPrimitives(indices) : NULL;
+	while(nbPrims--)
+	{
+		const PxU32 primIndex = tHasIndices ? *prims++ : node->getPrimitiveIndex();
+		if(doBoxTest)
+		{
+			const PxBounds3* objectBounds = bounds + primIndex;
+
+			if(!test(*objectBounds))
+				continue;
+		}
+
+		if(!visitor.invoke(primIndex))
+			return false;
+	}
+	return true;
+}
+
+namespace
+{
+	template<const bool tHasIndices, typename Test, typename Tree, typename Node, typename QueryCallback>
+	class AABBTreeOverlapMinMax
+	{
+	public:
+		bool operator()(const AABBTreeBounds& treeBounds, const Tree& tree, const Test& test, QueryCallback& visitor)
+		{
+			const PxBounds3* bounds = treeBounds.getBounds();
+
+			PxInlineArray<const Node*, RAW_TRAVERSAL_STACK_SIZE> stack;
+			stack.forceSize_Unsafe(RAW_TRAVERSAL_STACK_SIZE);
+			const Node* const nodeBase = tree.getNodes();
+			stack[0] = nodeBase;
+			PxU32 stackIndex = 1;
+
+			while(stackIndex > 0)
+			{
+				const Node* node = stack[--stackIndex];
+				const PxBounds3* nodeBounds = &node->mBV;
+
+				while(test(*nodeBounds))
+				{
+					if(node->isLeaf())
+					{
+						if(!doOverlapLeafTestMinMax<tHasIndices, Test, Node>(test, node, bounds, tree.getIndices(), visitor))
+							return false;
+						break;
+					}
+
+					const Node* children = node->getPos(nodeBase);
+
+					node = children;
+					stack[stackIndex++] = children + 1;
+					if(stackIndex == stack.capacity())
+						stack.resizeUninitialized(stack.capacity() * 2);
+					nodeBounds = &node->mBV;
+				}
+			}
+			return true;
+		}
+	};
+}
+
+bool BVH::overlap(const PxBounds3& bounds, OverlapCallback& cb, PxGeometryQueryFlags queryFlags) const
+{
+	PX_SIMD_GUARD_CNDT(queryFlags & PxGeometryQueryFlag::eSIMD_GUARD)
+
+	OverlapAdapter oa(cb);
+
+	struct AABBAABBMinMaxTest
+	{
+		PX_FORCE_INLINE AABBAABBMinMaxTest(const PxBounds3& bounds) :
+			mMinV(V4LoadU(&bounds.minimum.x)),
+			mMaxV(Vec4V_From_Vec3V(V3LoadU(&bounds.maximum.x)))
+		{}
+
+		PX_FORCE_INLINE PxIntBool operator()(const PxBounds3& bounds) const		
+		{
+			// PT: it's safe to V4LoadU because the pointer comes from the AABBTreeBounds class
+			const Vec4V minV = V4LoadU(&bounds.minimum.x);
+			const Vec4V maxV = V4LoadU(&bounds.maximum.x);
+
+			// PT: alternative implementation, might be better (only one movemask) ?
+			//const BoolV b0 = V4IsGrtrOrEq(mMaxV, minV);
+			//const BoolV b1 = V4IsGrtrOrEq(maxV, mMinV);
+			//const BoolV b = BAnd(b0, b1);
+			//const PxU32 moveMask = BGetBitMask(b);
+			//return PxU32((moveMask & 0x7) == 0x7);
+	
+			return PxIntBool(V4AllGrtrOrEq3(mMaxV, minV) && V4AllGrtrOrEq3(maxV, mMinV));
+		}
+
+	private:
+		const Vec4V	mMinV;
+		const Vec4V	mMaxV;
+	};
+
+	const AABBAABBMinMaxTest test(bounds);
+
+	if(mData.mIndices)
+		return AABBTreeOverlapMinMax<true, AABBAABBMinMaxTest, BVHTree, BVHNode, OverlapAdapter>()(mData.mBounds, BVHTree(mData), test, oa);
+	else
+		return AABBTreeOverlapMinMax<false, AABBAABBMinMaxTest, BVHTree, BVHNode, OverlapAdapter>()(mData.mBounds, BVHTree(mData), test, oa);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 bool BVH::sweep(const ShapeData& queryVolume, const PxVec3& unitDir, float distance, RaycastCallback& cb, PxGeometryQueryFlags flags) const
 {

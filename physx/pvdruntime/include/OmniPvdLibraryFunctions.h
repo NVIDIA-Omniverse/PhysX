@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 #ifndef OMNI_PVD_LIBRARY_FUNCTIONS_H
@@ -35,6 +35,8 @@ class OmniPvdWriter;
 class OmniPvdFileReadStream;
 class OmniPvdFileWriteStream;
 class OmniPvdMemoryStream;
+class OmniPvdSocketReadStream;
+class OmniPvdSocketWriteStream;
 
 typedef OmniPvdReader* (OMNI_PVD_CALL *createOmniPvdReaderFp)();
 typedef void (OMNI_PVD_CALL *destroyOmniPvdReaderFp)(OmniPvdReader& reader);
@@ -50,5 +52,15 @@ typedef void (OMNI_PVD_CALL *destroyOmniPvdFileWriteStreamFp)(OmniPvdFileWriteSt
 
 typedef OmniPvdMemoryStream* (OMNI_PVD_CALL *createOmniPvdMemoryStreamFp)();
 typedef void (OMNI_PVD_CALL *destroyOmniPvdMemoryStreamFp)(OmniPvdMemoryStream& memoryStream);
+
+// Creates a socket read stream (the reader-side TCP server). port: the TCP port to listen on.
+typedef OmniPvdSocketReadStream* (OMNI_PVD_CALL *createOmniPvdSocketReadStreamFp)(uint16_t port);
+typedef void (OMNI_PVD_CALL *destroyOmniPvdSocketReadStreamFp)(OmniPvdSocketReadStream& socketReadStream);
+
+// Creates a socket write stream (the producer-side TCP client). address: the IP-address of the
+// listening reader to connect to. port: its TCP port. sendTimeout: upper bound in milliseconds on a
+// blocked send, so a stalled reader cannot block the producer.
+typedef OmniPvdSocketWriteStream* (OMNI_PVD_CALL *createOmniPvdSocketWriteStreamFp)(const char* address, uint16_t port, uint32_t sendTimeout);
+typedef void (OMNI_PVD_CALL *destroyOmniPvdSocketWriteStreamFp)(OmniPvdSocketWriteStream& socketWriteStream);
 
 #endif

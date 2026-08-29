@@ -8,6 +8,19 @@ error_exit() {
     exit 1
 }
 
+# Copy files that only exist in the full internal source tree. In the
+# open-source / staging distro they are absent (licenses are handled
+# separately and VHACD is a FetchContent dependency, so externals/VHACD/
+# does not exist), so warn and skip instead of aborting the build. See OMPE-100118.
+copy_optional() {
+    # $1 may be a glob; leave it unquoted below so it expands here, not at the call site.
+    if ls $1 > /dev/null 2>&1; then
+        cp $1 "$2" || error_exit "Failed to copy $1"
+    else
+        echo "Warning: '$1' not found; skipping copy (expected for open-source distro builds)."
+    fi
+}
+
 # Check if two arguments are passed
 if [ "$#" -ne 2 ]; then
     error_exit "Usage: $0 <preset> <build_config>. Example: $0 linux-aarch64-gcc debug"
@@ -22,14 +35,17 @@ if [[ ! "checked debug profile release all" =~ (^|[[:space:]])$BUILD_CONFIG($|[[
     error_exit "Invalid build configuration. Use one of: checked, debug, profile, release, all."
 fi
 
-# Get number of CPU cores
-if [ -f /proc/cpuinfo ]; then
+# Get number of CPU cores, respecting cgroup limits (Kubernetes / Docker).
+# Cap at 16 to avoid OOM from concurrent linker instances.
+_HELPERS_DIR="$(cd "$(dirname "$0")/../../.." && pwd)/ci/helpers"
+if [ -f "$_HELPERS_DIR/get_build_jobs.sh" ]; then
+    source "$_HELPERS_DIR/get_build_jobs.sh"
+    CPUS=$(get_build_jobs 16)
+elif [ -f /proc/cpuinfo ]; then
     CPUS=$(grep processor /proc/cpuinfo | wc -l)
 else
     CPUS=1
 fi
-
-# Stackoverflow suggests jobs count of (CPU cores + 1) as a good number!
 JOBS=$(expr $CPUS + 1)
 
 # Define build function for presets other than linux-carbonite and linux-aarch64-carbonite (no install)
@@ -92,13 +108,13 @@ if [[ "$PRESET" == "linux-aarch64-carbonite" || "$PRESET" == "linux-carbonite" ]
     pushd "$(dirname "$0")/../.." || error_exit "Failed to enter base directory"
     mkdir -p "$INSTALL_PATH/PhysX/PACKAGE-LICENSES/" "$INSTALL_PATH/VHACD/" "$INSTALL_PATH/VHACD/include/" "$INSTALL_PATH/VHACD/PACKAGE-LICENSES/" || error_exit "Failed to create installation directories"
 
-    cp "documentation/license/PACKAGE-LICENSES/LICENSE.md" "$INSTALL_PATH/PhysX/PACKAGE-LICENSES/physxsdk-LICENSE.md" || error_exit "Failed to copy PhysX license"
-    cp "documentation/license/PACKAGE-LICENSES/vhacd-LICENSE.md" "$INSTALL_PATH/VHACD/PACKAGE-LICENSES/vhacd-LICENSE.md" || error_exit "Failed to copy VHACD license"
+    copy_optional "documentation/license/PACKAGE-LICENSES/LICENSE.md" "$INSTALL_PATH/PhysX/PACKAGE-LICENSES/physxsdk-LICENSE.md"
+    copy_optional "documentation/license/PACKAGE-LICENSES/vhacd-LICENSE.md" "$INSTALL_PATH/VHACD/PACKAGE-LICENSES/vhacd-LICENSE.md"
 
-    cp "documentation/license/physxsdk-PACKAGE-INFO.yaml" "$INSTALL_PATH/PhysX/PACKAGE-INFO.yaml" || error_exit "Failed to copy PhysX package info"
-    cp "documentation/license/vhacd-PACKAGE-INFO.yaml" "$INSTALL_PATH/VHACD/PACKAGE-INFO.yaml" || error_exit "Failed to copy VHACD package info"
+    copy_optional "documentation/license/physxsdk-PACKAGE-INFO.yaml" "$INSTALL_PATH/PhysX/PACKAGE-INFO.yaml"
+    copy_optional "documentation/license/vhacd-PACKAGE-INFO.yaml" "$INSTALL_PATH/VHACD/PACKAGE-INFO.yaml"
 
-    cp "externals/VHACD/public/"* "$INSTALL_PATH/VHACD/include/" || error_exit "Failed to copy VHACD include files"
+    copy_optional "externals/VHACD/public/*" "$INSTALL_PATH/VHACD/include/"
     popd
 else
     # Build without install for other presets

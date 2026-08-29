@@ -1,16 +1,15 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
 
 """
-Sample: "TensorAPI-like" views built on TensorBindingsAPI (ctypes).
+Sample: lightweight view wrappers built on TensorBindingsAPI (ctypes).
 
 Purpose
 -------
 This file is intentionally copy/paste-friendly for downstream users (e.g. IsaacLab)
-who want some of the legacy TensorAPI ergonomics (SimulationView/ArticulationView)
-without depending on the CPython-minor-specific pybind11 bindings from
-`omni.physics.tensors`.
+who want convenient SimulationView/ArticulationView-style helpers on top of the
+official TensorBindingsAPI, without depending on any CPython-minor-specific
+pybind11 bindings.
 
 This is *not* an ovphysx-maintained library module; it is a sample that shows
 how easy it is to build these helpers on top of the official TensorBindingsAPI.
@@ -38,6 +37,26 @@ def _find_usd_path() -> str:
         if c.exists():
             return str(c)
     raise RuntimeError(f"Test data not found. Tried: {candidates}")
+
+
+def attach_scene(physx: PhysX, usd_path: str, stage_name: str):
+    import ovstage
+
+    if not ovstage.population.available():
+        raise RuntimeError("ovstage population bridge is unavailable")
+
+    stage = ovstage.Stage(stage_name)
+    ordinal = 1
+    try:
+        ovstage.population.open_usd(stage, usd_path, ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
+        # Population does not seal: the caller owns ordinal lifecycle, and
+        # attach_ovstage() reads at a sealed ordinal.
+        stage.advance_write_floor(ordinal=ordinal).wait()
+        physx.attach_ovstage(stage, read_ordinal=ordinal)
+        return stage
+    except Exception:
+        stage.destroy()
+        raise
 
 
 @dataclass(frozen=True)
@@ -93,33 +112,44 @@ if __name__ == "__main__":
     print("SAMPLE: TensorBindingsAPI views helper (ctypes)")
     print("=" * 60)
 
-    physx = PhysX(device="cpu")
+    PhysX.set_cpu_mode(True)
+    physx = PhysX()
+    stage = None
+    art_view = None
     usd_path = _find_usd_path()
-    print(f"Loading USD scene: {usd_path}")
-    physx.add_usd(usd_path)
-    physx.wait_all()
+    try:
+        print(f"Loading USD scene through ovstage: {usd_path}")
+        stage = attach_scene(physx, usd_path, "ovphysx-tensor-views-sample")
+        physx.wait_all()
 
-    sim_view = create_simulation_view(physx)
-    art_view = sim_view.create_articulation_view("/World/articulation/articulationLink*")
-    print(f"Found {art_view.count} articulations, shape={art_view.shape}")
-    if art_view.count == 0:
-        print("No articulations found in scene")
-        sys.exit(1)
+        sim_view = create_simulation_view(physx)
+        art_view = sim_view.create_articulation_view("/World/articulation/articulationLink*")
+        print(f"Found {art_view.count} articulations, shape={art_view.shape}")
+        if art_view.count == 0:
+            print("No articulations found in scene")
+            sys.exit(1)
 
-    pos0 = art_view.get_dof_positions()
-    print(f"Initial DOF positions (first row): {pos0[0][:5]}...")
+        pos0 = art_view.get_dof_positions()
+        print(f"Initial DOF positions (first row): {pos0[0][:5]}...")
 
-    art_view.set_dof_position_targets(pos0)
-    print("Position targets set (echoing current positions)")
+        art_view.set_dof_position_targets(pos0)
+        print("Position targets set (echoing current positions)")
 
-    for i in range(5):
-        physx.step(1.0 / 60.0, i / 60.0)
-    physx.wait_all()
+        for i in range(5):
+            physx.step(1.0 / 60.0)
+        physx.wait_all()
 
-    pos1 = art_view.get_dof_positions()
-    delta = float(np.abs(pos1 - pos0).max())
-    print(f"Max DOF position change after 5 steps: {delta:.6f}")
+        pos1 = art_view.get_dof_positions()
+        delta = float(np.abs(pos1 - pos0).max())
+        print(f"Max DOF position change after 5 steps: {delta:.6f}")
 
-    physx.release()
-
-    print("[SUCCESS]", flush=True)
+        print("Tensor bindings views sample completed successfully")
+    finally:
+        if art_view is not None:
+            art_view.dof_positions.destroy()
+            art_view.dof_position_targets.destroy()
+        if stage is not None:
+            physx.detach_ovstage()
+            stage.destroy()
+        physx.release()
+        print("Cleanup complete")

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "foundation/PxPreprocessor.h"
 
@@ -87,8 +87,7 @@ void Sc::DeformableSurfaceSim::attachShapeCore(ShapeCore* core)
 		addToAABBMgr(Bp::FilterType::DEFORMABLE_SURFACE);
 	}
 
-	PxsShapeCore* shapeCore = const_cast<PxsShapeCore*>(&core->getCore());
-	mLLDeformableSurface->setShapeCore(shapeCore);
+	mLLDeformableSurface->setShapeCore(core);
 }
 
 PxBounds3 Sc::DeformableSurfaceSim::getWorldBounds() const

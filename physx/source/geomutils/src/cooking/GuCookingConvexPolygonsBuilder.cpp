@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -149,7 +149,7 @@ static bool findLineStrip(PxArray<PxU32>& lineStrip, const PxArray<Pair>& lineSe
 	PxArray<Pair> Copy(lineSegments);
 
 RunAgain:
-	{		
+	{
 		PxU32 nbSegments = Copy.size();
 		for(PxU32 j=0;j<nbSegments;j++)
 		{
@@ -422,7 +422,7 @@ static void checkRedundantVertices(PxU32& nb_polygons, PxArray<PxU32>& polygon_d
 		// go through polygons, if polygons does have only 3 verts we cannot remove any vertex from it, try to decompose the second one
 		PxU32* Data = polygon_data.begin();		
 		for(PxU32 t=0;t<nb_polygons;t++)
-		{			
+		{
 			PxU32 nbVerts = *Data++;
 			PX_ASSERT(nbVerts>=3);			// Else something very wrong happened...
 
@@ -486,7 +486,7 @@ static void checkRedundantVertices(PxU32& nb_polygons, PxArray<PxU32>& polygon_d
 		PxU32* data = polygon_data.begin();		
 		PxU32* triData = triangle_data.begin();		
 		for(PxU32 i=0;i<nb_polygons;i++)
-		{			
+		{
 			PxU32 nbVerts = *data++;
 			PxU32 nbTris = *triData++;
 			if(polygonMarkers[i])
@@ -505,7 +505,7 @@ static void checkRedundantVertices(PxU32& nb_polygons, PxArray<PxU32>& polygon_d
 				}
 			}
 			else
-			{	
+			{
 				newNb_polygons++;
 				// copy the original polygon
 				newPolygon_data.pushBack(nbVerts);
@@ -602,7 +602,7 @@ static bool extractHullPolygons(PxU32& nb_polygons, PxArray<PxU32>& polygon_data
 			}
 
 			static bool GetNeighborFace(PxU32 index,PxU32 triangleIndex,const AdjTriangle* faces, const PxU32* dfaces, PxU32& neighbor, PxU32& current)
-			{			
+			{
 				PxU32 currentIndex = index;
 				PxU32 previousIndex = index;
 				bool firstFace = true;
@@ -660,7 +660,7 @@ static bool extractHullPolygons(PxU32& nb_polygons, PxArray<PxU32>& polygon_data
 								previousIndex = currentIndex;
 								currentIndex = testIndex;
 								break;
-							}							
+							}
 						}
 					}
 					else
@@ -778,27 +778,27 @@ static bool extractHullPolygons(PxU32& nb_polygons, PxArray<PxU32>& polygon_data
 					//const AdjTriangle& AT = faces[indices.GetEntry(i)];
 
 					for(PxU32 j = i + 1;j<indices.size();j++)
-					{						
+					{
 						const AdjTriangle& testAT = faces[indices[j]];
 
 						if(testAT.GetAdjTri(EDGE01) == indices[i])
 						{
 							if(testAT.HasActiveEdge01())
-							{								
+							{
 								valid = false;
 							}
 						}
 						if(testAT.GetAdjTri(EDGE02) == indices[i])
 						{
 							if(testAT.HasActiveEdge20())
-							{							
+							{
 								valid = false;
 							}
 						}
 						if(testAT.GetAdjTri(EDGE12) == indices[i])
 						{
 							if(testAT.HasActiveEdge12())
-							{							
+							{
 								valid  = false;
 							}
 						}
@@ -826,7 +826,7 @@ static bool extractHullPolygons(PxU32& nb_polygons, PxArray<PxU32>& polygon_data
 						AT.mATri[2] |= 0x20000000;
 
 						inMarkers[indices[i]] = false;
-					}					
+					}
 
 					indices.forceSize_Unsafe(0);
 
@@ -847,7 +847,7 @@ static bool extractHullPolygons(PxU32& nb_polygons, PxArray<PxU32>& polygon_data
 				Local::FloodFill(indices, adj.mFaces, currentFace, markers);
 
 				doFill = Local::CheckFloodFill(indices,adj.mFaces,markers, dFaces);
-			}			
+			}
 
 			// Now it would be nice to recreate a closed linestrip, similar to silhouette extraction. The line is composed of active edges, this time.
 
@@ -886,7 +886,7 @@ static bool extractHullPolygons(PxU32& nb_polygons, PxArray<PxU32>& polygon_data
 					{
 						vertexMarkers[entries[i]]++;
 						polygon_data.pushBack(entries[i]);
-					}					
+					}
 					nb_polygons++;
 
 					// Loop through vertices composing the line strip polygon end mark the redundant vertices inside the polygon 
@@ -940,7 +940,7 @@ static bool extractHullPolygons(PxU32& nb_polygons, PxArray<PxU32>& polygon_data
 							if(rendundantVertices.find(VRef2) == rendundantVertices.end())
 								rendundantVertices.pushBack(VRef2);
 						}
-					}					
+					}
 
 					// If needed, output triangle indices used to build this polygon
 					if(triangle_data)
@@ -1082,7 +1082,7 @@ bool ConvexPolygonsBuilder::createPolygonData()
 
 		PxU32* data = temp.begin();
 		for(PxU32 i=0;i<nbPolygons;i++)
-		{			
+		{
 			PxU32 nbVerts = *data++;
 			PX_ASSERT(nbVerts>=3);			// Else something very wrong happened...
 

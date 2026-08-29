@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
 
 """
 DLPack utility functions for tensor interoperability.
@@ -22,27 +21,57 @@ from .dlpack import (
     PyCapsule_IsValid,
 )
 
+# Match omni::physics::tensors::kMaxDimensions in TensorDesc.h.
+_MAX_TENSOR_RANK = 8
+
 
 def _validate_c_contiguous_layout(dl_tensor: DLTensor) -> None:
     """Validate that DLTensor strides describe C-contiguous layout."""
+    ndim = dl_tensor.ndim
+    if ndim <= 0 or ndim > _MAX_TENSOR_RANK:
+        raise ValueError(f"Tensor rank must be between 1 and {_MAX_TENSOR_RANK}, got {ndim}")
+    if not dl_tensor.shape:
+        raise ValueError("Tensor shape must not be null")
     if not dl_tensor.strides:
         return
 
+    # Any zero-sized dim makes the tensor empty; contiguity is trivially
+    # satisfied (no data to lay out). NumPy reports stride 0 for the dims
+    # outside a zero-sized one, which would otherwise fail the per-dim
+    # stride check below.
+    if any(dl_tensor.shape[i] == 0 for i in range(ndim)):
+        return
+
     expected_stride = 1
-    for dim_idx in range(dl_tensor.ndim - 1, -1, -1):
+    for dim_idx in range(ndim - 1, -1, -1):
         dim = dl_tensor.shape[dim_idx]
 
-        # For dimensions of size 0 or 1, stride is irrelevant.
-        if dim <= 1:
+        # Dim of size 1 has irrelevant stride and contributes a factor of 1
+        # to expected_stride, so skip.
+        if dim == 1:
             continue
 
         if dl_tensor.strides[dim_idx] != expected_stride:
             raise ValueError(
-                "Tensor must be C-contiguous (row-major). "
-                "Call .contiguous() on a PyTorch tensor before passing it."
+                "Tensor must be C-contiguous (row-major). Call .contiguous() on a PyTorch tensor before passing it."
             )
 
         expected_stride *= dim
+
+
+def copy_dltensor(dl_tensor: DLTensor) -> DLTensor:
+    """Copy DLTensor metadata without taking ownership of its data buffer."""
+    copied = DLTensor.from_buffer_copy(dl_tensor)
+    shape = (c_int64 * dl_tensor.ndim)(*(dl_tensor.shape[i] for i in range(dl_tensor.ndim)))
+    copied.shape = ctypes.cast(shape, POINTER(c_int64))
+
+    strides = None
+    if dl_tensor.strides:
+        strides = (c_int64 * dl_tensor.ndim)(*(dl_tensor.strides[i] for i in range(dl_tensor.ndim)))
+        copied.strides = ctypes.cast(strides, POINTER(c_int64))
+
+    copied._keepalive = (shape, strides)
+    return copied
 
 
 def acquire_dltensor(obj) -> tuple[DLTensor, object | None]:
@@ -65,14 +94,17 @@ def acquire_dltensor(obj) -> tuple[DLTensor, object | None]:
     # __dlpack__ protocol (NumPy >= 1.22, PyTorch, etc.)
     if hasattr(obj, "__dlpack__"):
         capsule = obj.__dlpack__()
-        if PyCapsule_IsValid(capsule, b"dltensor") != 1:
-            raise TypeError("__dlpack__() did not return a valid 'dltensor' capsule")
-        managed_ptr = PyCapsule_GetPointer(capsule, b"dltensor")
-        if not managed_ptr:
-            raise TypeError("Failed to extract DLManagedTensor from capsule")
-        managed = ctypes.cast(managed_ptr, POINTER(DLManagedTensor)).contents
-        _validate_c_contiguous_layout(managed.dl_tensor)
-        return managed.dl_tensor, capsule
+        try:
+            if PyCapsule_IsValid(capsule, b"dltensor") != 1:
+                raise TypeError("__dlpack__() did not return a valid 'dltensor' capsule")
+            managed_ptr = PyCapsule_GetPointer(capsule, b"dltensor")
+            if not managed_ptr:
+                raise TypeError("Failed to extract DLManagedTensor from capsule")
+            managed = ctypes.cast(managed_ptr, POINTER(DLManagedTensor)).contents
+            _validate_c_contiguous_layout(managed.dl_tensor)
+            return managed.dl_tensor, capsule
+        finally:
+            del capsule
 
     # NumPy-like
     if hasattr(obj, "__array_interface__"):

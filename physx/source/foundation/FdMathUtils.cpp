@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -155,7 +155,7 @@ PxVec3 physx::PxOptimizeBoundingBox(PxMat33& basis)
 
 	// ortho-normalize basis
 
-	PxReal invSqrt = PxRecipSqrt(magnitude[i]);
+	const PxReal invSqrt = magnitude[i] != 0.0f ? PxRecipSqrt(magnitude[i]) : 0.0f;
 	magnitude[i] *= invSqrt;
 	vec[i] *= invSqrt; // normalize the first axis
 	PxReal dotij = vec[i].dot(vec[j]);

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,8 +30,8 @@
 #define PXG_CONTEXT_H
 
 #include "DyContext.h"
-#include "PxSimulationStatistics.h"
 #include "PxgConstraintPartition.h"
+#include "PxgSolverBody.h"
 #include "PxgCudaMemoryAllocator.h"
 #include "PxgConstraintPrep.h"
 #include "PxvNphaseImplementationContext.h"
@@ -45,11 +45,11 @@ namespace physx
 	class PxgSimulationCore;
 	class PxgSoftBodyCore;
 	class PxgFEMClothCore;
-	class PxgPBDParticleSystemCore;
 	class PxgSimulationController;
 	struct PxgIslandContext;
-	class PxgHeapMemoryAllocatorManager;
+	struct PxgAllocatorDesc;
 	struct PxsTorsionalFrictionData;
+	class PxgParticleSystemCore;
 
 	// PT: TODO: all these tasks are missing a proper context ID for the profiler...
 
@@ -284,16 +284,16 @@ namespace physx
 
 	class PxgGpuTask : public Cm::Task
 	{
-		PxgGpuContext&	mContext;
-		PxU32			mMaxNodes;
-		PxBitMapPinned*	mChangedHandleMap;//this is for the simulation controller
+		PxgGpuContext&		mContext;
+		PxU32				mMaxNodes;
+		Cm::PinnableBitMap*	mChangedHandleMap;//this is for the simulation controller
 		
 		PX_NOCOPY(PxgGpuTask)
 
 	public:
 							PxgGpuTask(PxgGpuContext& context) : Cm::Task(0), mContext(context), mMaxNodes(0), mChangedHandleMap(NULL)	{}
 
-				void		setMaxNodesAndWordCounts(const PxU32 maxNodes, PxBitMapPinned& changedHandleMap) { mMaxNodes = maxNodes; mChangedHandleMap = &changedHandleMap; }
+				void		setMaxNodesAndWordCounts(const PxU32 maxNodes, Cm::PinnableBitMap& changedHandleMap) { mMaxNodes = maxNodes; mChangedHandleMap = &changedHandleMap; }
 
 		virtual void		runInternal() PX_OVERRIDE PX_FINAL;
 		virtual const char*	getName() const PX_OVERRIDE PX_FINAL
@@ -324,9 +324,9 @@ namespace physx
 	public:
 
 		PxgGpuContext(Cm::FlushPool& flushPool, IG::SimpleIslandManager& islandManager, 
-			PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions, bool enableStabilization, bool useEnhancedDeterminism, bool solveArticulationContactLast,
-			PxReal maxBiasCoefficient, PxvSimStats& simStats, PxgHeapMemoryAllocatorManager* heapMemoryManager,
-			PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled, bool isTGS);
+			PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
+			PxReal maxBiasCoefficient, PxvSimStats& simStats, PxgAllocatorDesc& allocDesc,
+			PxReal lengthScale, PxU64 contextID, bool isTGS, PxSceneFlags sceneFlags);
 
 		virtual ~PxgGpuContext();
 
@@ -370,11 +370,11 @@ namespace physx
 
 		virtual void						update(	Cm::FlushPool& flushPool, PxBaseTask* continuation, PxBaseTask* postPartitioningTask, PxBaseTask* lostTouchTask,
 													PxvNphaseImplementationContext* nphase, PxU32 maxPatchesPerCM, PxU32 maxArticulationLinks, PxReal dt,
-													const PxVec3& gravity, PxBitMapPinned& changedHandleMap)	PX_OVERRIDE;
+													const PxVec3& gravity, Cm::PinnableBitMap& changedHandleMap)	PX_OVERRIDE;
 
 		virtual void						updatePostPartitioning(	PxBaseTask* lostTouchTask,
 																	PxvNphaseImplementationContext* nphase, PxU32 maxPatchesPerCM, PxU32 maxArticulationLinks, PxReal dt,
-																	const PxVec3& gravity, PxBitMapPinned& changedHandleMap)	PX_OVERRIDE;
+																	const PxVec3& gravity, Cm::PinnableBitMap& changedHandleMap)	PX_OVERRIDE;
 
 		virtual void setActiveBreakableConstraintCount(PxU32 activeBreakableConstraintCount) PX_OVERRIDE
 		{
@@ -388,7 +388,7 @@ namespace physx
 
 		void								doStaticRigidConstraintPrePrep(physx::PxBaseTask* continuation);
 		
-		void								doConstraintSolveGPU(PxU32 maxNodes, PxBitMapPinned& changedHandleMap);
+		void								doConstraintSolveGPU(PxU32 maxNodes, Cm::PinnableBitMap& changedHandleMap);
 
 		void								doPostSolveTask(physx::PxBaseTask* continuation);
 
@@ -427,36 +427,34 @@ namespace physx
 		bool									mSolvedThisFrame;
 		PxgIncrementalPartition					mIncrementalPartition;
 
-		PxPinnedArray<PxNodeIndex>				mActiveNodeIndex;	//this will change everyframe, include rigid bodies and articulation
+		Cm::PinnableArray<PxNodeIndex>			mActiveNodeIndex;	//this will change everyframe, include rigid bodies and articulation
 		
 		PxgSolverBody							mWorldSolverBody;
 		PxgSolverBodyData						mWorldSolverBodyData;
 		PxgSolverBodySleepData					mWorldSolverBodySleepData;
 		PxgSolverTxIData						mWorldTxIData;
 
-		PxPinnedArray<PxgSolverBody>			mSolverBodyPool;
-		PxPinnedArray<PxAlignedTransform>		mBody2WorldPool;
+		Cm::PinnableArray<PxgSolverBody>		mSolverBodyPool;
+		Cm::PinnableArray<PxAlignedTransform>	mBody2WorldPool;
 
 		//write back from the active articulation
 		//each articulation has max 64 links and max 3 * 63 dofsnd 1 wake counter
 		//see PxgArticulationLinkJointRootStateData
-		PxInt8ArrayPinned						mLinkAndJointAndRootStateDataPool;
+		Cm::PinnableArray<PxU8>					mLinkAndJointAndRootStateDataPool;
 
-		PxPinnedArray<PxgSolverBodySleepData>	mArticulationSleepDataPool;
-		PxPinnedArray<Dy::ErrorAccumulator>		mInternalResidualPerArticulationVelIter; //Internal residuals in first half (do not include residuals from external constraints, e. g. contacts or PxConstraints), second half contains residual from contacts
-		PxPinnedArray<Dy::ErrorAccumulator>		mInternalResidualPerArticulationPosIter; //Internal residuals in first half (do not include residuals from external constraints, e. g. contacts or PxConstraints), second half contains residual from contacts
+		Cm::PinnableArray<PxgSolverBodySleepData>	mArticulationSleepDataPool;
 
-		PxInt32ArrayPinned						m1dConstraintBatchIndices;
-		PxInt32ArrayPinned						mContactConstraintBatchIndices;
-		PxInt32ArrayPinned						mArti1dConstraintBatchIndices;
-		PxInt32ArrayPinned						mArtiContactConstraintBatchIndices;
+		Cm::PinnableArray<PxU32>					m1dConstraintBatchIndices;
+		Cm::PinnableArray<PxU32>					mContactConstraintBatchIndices;
+		Cm::PinnableArray<PxU32>					mArti1dConstraintBatchIndices;
+		Cm::PinnableArray<PxU32>					mArtiContactConstraintBatchIndices;
 
-		PxInt32ArrayPinned						mConstraintsPerPartition;
-		PxInt32ArrayPinned						mArtiConstraintsPerPartition;
+		Cm::PinnableArray<PxU32>					mConstraintsPerPartition;
+		Cm::PinnableArray<PxU32>					mArtiConstraintsPerPartition;
 
-		PxPinnedArray<PxgSolverBodyData>		mSolverBodyDataPool;
-		PxPinnedArray<PxgSolverBodySleepData>	mSolverBodySleepDataPool;
-		PxPinnedArray<PxgSolverTxIData>			mSolverTxIDataPool;
+		Cm::PinnableArray<PxgSolverBodyData>		mSolverBodyDataPool;
+		Cm::PinnableArray<PxgSolverBodySleepData>	mSolverBodySleepDataPool;
+		Cm::PinnableArray<PxgSolverTxIData>			mSolverTxIDataPool;
 
 		PxgPinnedHostLinearMemoryAllocator*		mPinnedMemoryAllocator;
 
@@ -524,27 +522,27 @@ namespace physx
 		PxI32									mCachedPositionIterations;
 		PxI32									mCachedVelocityIterations;
 
-		PxInt32ArrayPinned						mArtiStaticContactCounts;
-		PxInt32ArrayPinned						mArtiStaticJointCounts;
+		Cm::PinnableArray<PxU32>				mArtiStaticContactCounts;
+		Cm::PinnableArray<PxU32>				mArtiStaticJointCounts;
 
-		PxInt32ArrayPinned						mArtiStaticContactIndices;
-		PxInt32ArrayPinned						mArtiStaticJointIndices;
+		Cm::PinnableArray<PxU32>				mArtiStaticContactIndices;
+		Cm::PinnableArray<PxU32>				mArtiStaticJointIndices;
 
-		PxInt32ArrayPinned						mArtiSelfContactCounts;
-		PxInt32ArrayPinned						mArtiSelfJointCounts;
+		Cm::PinnableArray<PxU32>				mArtiSelfContactCounts;
+		Cm::PinnableArray<PxU32>				mArtiSelfJointCounts;
 
-		PxInt32ArrayPinned						mArtiSelfContactIndices;
-		PxInt32ArrayPinned						mArtiSelfJointIndices;
+		Cm::PinnableArray<PxU32>				mArtiSelfContactIndices;
+		Cm::PinnableArray<PxU32>				mArtiSelfJointIndices;
 
-		PxInt32ArrayPinned						mRigidStaticContactCounts;
-		PxInt32ArrayPinned						mRigidStaticJointCounts;
+		Cm::PinnableArray<PxU32>				mRigidStaticContactCounts;
+		Cm::PinnableArray<PxU32>				mRigidStaticJointCounts;
 
-		PxInt32ArrayPinned						mRigidStaticContactIndices;
-		PxInt32ArrayPinned						mRigidStaticJointIndices;
+		Cm::PinnableArray<PxU32>				mRigidStaticContactIndices;
+		Cm::PinnableArray<PxU32>				mRigidStaticJointIndices;
 
-		PxInt32ArrayPinned						mNodeIndicesStagingBuffer;
-		PxInt32ArrayPinned						mIslandIds;
-		PxInt32ArrayPinned						mIslandStaticTouchCounts;
+		Cm::PinnableArray<PxU32>				mNodeIndicesStagingBuffer;
+		Cm::PinnableArray<PxU32>				mIslandIds;
+		Cm::PinnableArray<PxU32>				mIslandStaticTouchCounts;
 
 		//other joint type(not d6) cpu constraints
 		PxgConstraintBatchHeader*				mConstraintBatchHeaders;
@@ -560,7 +558,7 @@ namespace physx
 
 		bool									mHasForceThresholds;
 		const bool								mIsTGS;
-	    bool									mIsExternalForcesEveryTgsIterationEnabled;
+		bool									mIsExternalForcesEveryTgsIterationEnabled;
 
 		PxgCudaBroadPhaseSap*					mGpuBp;
 		PxgGpuNarrowphaseCore*					mGpuNpCore;

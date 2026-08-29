@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -47,9 +47,13 @@
 //
 // Define the macros needed in CmOmniPvdAutoGenSetData.h
 //
+// The write scope yields a NULL writer when not sampling, so attribute setters do not write between
+// stopSampling() and the next startSampling(). The gate uses the public PxOmniPvd::isSampling() so
+// PhysXExtensions depends only on the public OVD API, not on PhysX core internals.
 #undef OMNI_PVD_GET_WRITER
 #define OMNI_PVD_GET_WRITER(writer) \
-physx::PxOmniPvd::ScopedExclusiveWriter writeLock(physx::Ext::OmniPvdGetInstance()); \
+physx::PxOmniPvd* omniPvdInstance_ = physx::Ext::OmniPvdGetInstance(); \
+physx::PxOmniPvd::ScopedExclusiveWriter writeLock((omniPvdInstance_ && omniPvdInstance_->isSampling()) ? omniPvdInstance_ : NULL); \
 OmniPvdWriter* writer = writeLock.getWriter();
 
 

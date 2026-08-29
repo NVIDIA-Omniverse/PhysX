@@ -1,0 +1,54 @@
+# ovphysx Library Configuration
+# Auto-generated from config.toml.in
+# This file defines USD version requirements, schema dependencies, and platform-specific settings
+
+[library]
+name = "ovphysx"
+version = "@OVPHYSX_VERSION@"
+description = "PhysX simulation SDK for Omniverse"
+
+[usd]
+required = true
+# Semantic version specification (PEP 440 format)
+# Examples: "==25.11" (exact), ">=22.0,<26.0" (range), ">=22.0,<26.0,!=23.5" (exclude), "~=25.11" (compatible)
+version_spec = "==25.11"
+# Exact packman package identifier ovphysx was built against (auto-populated by CMake
+# from the resolved _build/target-deps/usd/release symlink). Used at runtime to detect
+# drift against a differently-built USD that happens to satisfy version_spec -- e.g.
+# 0.25.11.kit.1 vs 0.25.11.kit.2, which share a major.minor but can differ in ABI.
+# Empty string means "not determined at build time" (e.g. a local build outside
+# the normal packman flow, where USD was pulled from a non-packman source);
+# drift diagnostics are skipped in that case.
+build_package = "@OVPHYSX_USD_BUILD_PACKAGE@"
+notes = "USD version requirements based on PhysX schema compatibility. ovphysx relies on SDK-preloaded USD libs or host application to provide USD."
+
+# USD schemas required for PhysX simulation functionality
+# Each schema can be required (hard fail if missing) or optional (warning only)
+
+[[schemas.required]]
+name = "UsdPhysics"
+type = "schema"
+required = true
+version_spec = ">=1.0"
+notes = "Shipped natively by the USD package (usd_ext_physics); registered via Pixar's TfType plugin discovery."
+
+[[schemas.required]]
+name = "PhysxSchema"
+type = "schema"
+required = true
+version_spec = ">=110.0"
+source = "omni.physicsschema.plugin"
+notes = "PhysX schema version should match PhysX SDK"
+
+[dependencies]
+# Libraries that must be preloaded on Linux for the internal tensor backend.
+# These are loaded with RTLD_GLOBAL before tensor plugins to resolve symbols
+# at plugin dlopen time.
+#
+# Only used when tensor plugins are explicitly requested via
+# ovphysx_load_tensor_plugins(). Namespaced monolithic USD is preloaded by
+# CarboniteLoader before tensor plugin loading, so classic per-module USD
+# libraries and libusd_python are never part of this list.
+preload_libraries_linux = [
+    "libomni.usd.so"
+]

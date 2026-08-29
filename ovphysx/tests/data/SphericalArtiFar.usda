@@ -1,0 +1,57 @@
+#usda 1.0
+(
+    defaultPrim = "envs"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def PhysicsScene "physicsScene"
+{
+    vector3f physics:gravityDirection = (0, 0, -1)
+    float physics:gravityMagnitude = 9.81
+}
+
+def Xform "envs"
+{
+    def Xform "env0"
+    {
+        double3 xformOp:translate = (100.0, 100.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def Xform "spherical_arti" (
+            prepend apiSchemas = ["PhysicsArticulationRootAPI"]
+        )
+        {
+            def Cube "base" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.2
+                float physics:mass = 100.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (0, 0, 2)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "child" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.2
+                float physics:mass = 1.0
+                double3 xformOp:translate = (0, 0, 1.5)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def PhysicsSphericalJoint "joint"
+            {
+                rel physics:body0 = </envs/env0/spherical_arti/base>
+                rel physics:body1 = </envs/env0/spherical_arti/child>
+                point3f physics:localPos0 = (0, 0, -0.1)
+                point3f physics:localPos1 = (0, 0, 0.2)
+                quatf physics:localRot0 = (1, 0, 0, 0)
+                quatf physics:localRot1 = (1, 0, 0, 0)
+            }
+        }
+    }
+}

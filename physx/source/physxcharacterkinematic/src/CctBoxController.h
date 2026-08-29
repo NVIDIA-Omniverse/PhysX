@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -78,13 +78,13 @@ namespace Cct
 		virtual PxF32								getSlopeLimit()						const		PX_OVERRIDE	PX_FINAL	{ return mUserParams.mSlopeLimit;		}
 		virtual void								setSlopeLimit(PxF32 slopeLimit)					PX_OVERRIDE	PX_FINAL	{ if(slopeLimit>0.0f)
 																																mUserParams.mSlopeLimit = slopeLimit;}
-		virtual	void								invalidateCache();
+		virtual	void								invalidateCache()								PX_OVERRIDE	PX_FINAL;
 		virtual	PxScene*							getScene()										PX_OVERRIDE	PX_FINAL	{ return mScene;						}
 		virtual	void*								getUserData()						const		PX_OVERRIDE	PX_FINAL	{ return mUserData;						}
 		virtual	void								setUserData(void* userData)						PX_OVERRIDE	PX_FINAL	{ mUserData = userData;					}
 		virtual	void								getState(PxControllerState& state)	const		PX_OVERRIDE	PX_FINAL	{ return getInternalState(state);		}
 		virtual	void								getStats(PxControllerStats& stats)	const		PX_OVERRIDE	PX_FINAL	{ return getInternalStats(stats);		}
-		virtual	void								resize(PxReal height);
+		virtual	void								resize(PxReal height)							PX_OVERRIDE	PX_FINAL;
 		//~PxController
 
 		// PxBoxController

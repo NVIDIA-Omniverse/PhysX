@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -145,16 +145,16 @@ namespace physx { namespace profile {
 	public:
 		TempMemoryBuffer(uint8_t* data, int32_t size) : mBegin(data), mEnd(data), mCapacityEnd(data + size) {}
 		~TempMemoryBuffer()
-		{			
+		{
 		}
 		uint32_t size() const { return static_cast<uint32_t>(mEnd - mBegin); }
 		uint32_t capacity() const { return static_cast<uint32_t>(mCapacityEnd - mBegin); }
 		const uint8_t* begin() { return mBegin; }
 		uint8_t* end() { return mEnd; }
 		const uint8_t* begin() const { return mBegin; }
-		const uint8_t* end() const { return mEnd; }		
+		const uint8_t* end() const { return mEnd; }
 		uint32_t write(uint8_t inValue)
-		{			
+		{
 			*mEnd = inValue;
 			++mEnd;
 			return 1;

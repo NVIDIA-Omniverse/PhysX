@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -44,7 +44,7 @@ namespace physx
 		// convenient way to find the PGS solver methods, which are scattered in different files and use
 		// the same function names as other functions (with a different signature).
 
-		#define DY_PGS_SOLVE_METHOD_PARAMS		const PxSolverConstraintDesc* desc, PxU32 constraintCount, SolverContext& cache
+		#define DY_PGS_SOLVE_METHOD_PARAMS	const PxSolverConstraintDesc* desc, PxU32 constraintCount, SolverContext& cache
 
 		typedef void (*SolveBlockMethod)			(DY_PGS_SOLVE_METHOD_PARAMS);
 		typedef void (*SolveWriteBackBlockMethod)	(DY_PGS_SOLVE_METHOD_PARAMS);

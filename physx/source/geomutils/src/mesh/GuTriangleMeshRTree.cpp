@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -77,7 +77,7 @@ struct RefitCallback : Gu::RTree::CallbackRefit
 	RefitCallback(const PxVec3* aNewPositions, const IndexType* aIndices) : newPositions(aNewPositions), indices(aIndices) {}
 	PX_FORCE_INLINE ~RefitCallback() {}
 
-	virtual void recomputeBounds(PxU32 index, aos::Vec3V& aMn, aos::Vec3V& aMx)
+	virtual void recomputeBounds(PxU32 index, aos::Vec3V& aMn, aos::Vec3V& aMx) PX_OVERRIDE
 	{
 		using namespace aos;
 

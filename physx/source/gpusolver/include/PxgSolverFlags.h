@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -37,17 +37,20 @@ struct PxgSolverContactFlags
 	{
 		eHAS_FORCE_THRESHOLDS = 1 << 0,
 
-		// This flag...
-		// - disables correlation of contact patches with friction patches from the previous frame
-		// - enables target velocities being read from the friction anchor contact points
+		// This flag enables target velocities being read from the friction anchor contact points.
+		// It will get set when contact modification sets a target velocity on contact points.
+		eHAS_TARGET_VELOCITY = 1 << 1,
+
+		// This flag disables correlation of contact patches with friction patches from the previous frame
+		// and sets the friction constraint bias (geometric error) multiplier to 0.
 		//
 		// Two scenarios will raise this flag:
 		// - strong/sticky friction is disabled
 		// - contact modification sets a target velocity on contact points
-		ePER_POINT_FRICTION = 1 << 1,
+		eDISABLE_STRONG_FRICTION = 1 << 2,
 
-		eDISABLE_FRICTION = 1 << 2,
-		eCOMPLIANT_ACCELERATION_SPRING = 1 << 3,
+		eDISABLE_FRICTION = 1 << 3,
+		eCOMPLIANT_ACCELERATION_SPRING = 1 << 4,
 
 		eLAST
 	};

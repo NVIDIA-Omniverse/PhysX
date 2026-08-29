@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -36,12 +36,12 @@
 
 #include "PxgConvexConvexShape.h"
 #include "PxgContactManager.h"
+#include "PxgDeformableContactInfo.h"
 #include "PxgFEMCloth.h"
-#include "PxgSoftBodyCore.h"
 #include "PxgNpKernelIndices.h"
 #include "PxgSimulationCoreDesc.h"
 #include "PxgSoftBody.h"
-#include "PxsTransformCache.h"
+#include "PxsCachedTransform.h"
 
 #include "assert.h"
 #include <vector_types.h>
@@ -1259,7 +1259,7 @@ void sb_sdfMeshMidphaseGeneratePairsLaunch(
 			writer.writeContactNoBarycentric(contactIndex, make_float4(contactPos.x, contactPos.y, contactPos.z, restDist),
 				make_float4(contactDir.x, contactDir.y, contactDir.z, sep), pairId0, pairId1, rigidId.getInd());
 		}
-	}	
+	}
 }
 
 

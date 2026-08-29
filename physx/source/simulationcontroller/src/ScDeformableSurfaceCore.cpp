@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -175,13 +175,13 @@ void Sc::DeformableSurfaceCore::setNbCollisionSubsteps(const PxU32 frequency)
 // Internal API
 /////////////////////////////////////////////////////////////////////////////////////////
 
-PxU32 Sc::DeformableSurfaceCore::addRigidAttachment(Sc::BodyCore* core, PxU32 particleId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* params)
+PxU32 Sc::DeformableSurfaceCore::addRigidAttachment(Sc::BodyCore* core, PxU32 particleId, const PxVec3& actorSpacePose)
 {
 	Sc::DeformableSurfaceSim* sim = getSim();
 	PxU32 handle = 0xFFFFFFFF;
 	if (sim)
 	{
-		handle = sim->getScene().addRigidAttachment(core, *sim, particleId, actorSpacePose, params);
+		handle = sim->getScene().addRigidAttachment(core, *sim, particleId, actorSpacePose);
 
 	}
 
@@ -215,12 +215,12 @@ void Sc::DeformableSurfaceCore::removeTriRigidFilter(Sc::BodyCore* core, PxU32 t
 }
 
 
-PxU32 Sc::DeformableSurfaceCore::addTriRigidAttachment(Sc::BodyCore* core, PxU32 triIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint)
+PxU32 Sc::DeformableSurfaceCore::addTriRigidAttachment(Sc::BodyCore* core, PxU32 triIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose)
 {
 	Sc::DeformableSurfaceSim* sim = getSim();
 	PxU32 handle = 0xFFFFFFFF;
 	if (sim)
-		handle = sim->getScene().addTriRigidAttachment(core, *sim, triIdx, barycentric, actorSpacePose, constraint);
+		handle = sim->getScene().addTriRigidAttachment(core, *sim, triIdx, barycentric, actorSpacePose);
 
 	return handle;
 }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -79,6 +79,19 @@ public:
 	PxSDFDesc* sdfDesc;
 
 	/**
+	\brief Optional user-defined geometry epsilon for ray-triangle intersection tolerance.
+
+	The geometry epsilon controls how much the barycentric bounds of each triangle are enlarged
+	during raycasts and other scene queries. By default (0.0) it is auto-computed from the mesh's
+	local bounding box. Set a positive value to override the automatic computation.
+
+	<b>Default:</b> 0.0
+
+	<b>Range:</b> [0.0, PX_MAX_F32)
+	*/
+	PxReal geomEpsilon;
+
+	/**
 	\brief Constructor sets to default.
 	*/
 	PX_INLINE PxTriangleMeshDesc();
@@ -100,6 +113,7 @@ PX_INLINE PxTriangleMeshDesc::PxTriangleMeshDesc()	//constructor sets to default
 {
 	PxSimpleTriangleMesh::setToDefault();
 	sdfDesc = NULL;
+	geomEpsilon = 0.0f;
 }
 
 PX_INLINE void PxTriangleMeshDesc::setToDefault()

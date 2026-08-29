@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -61,8 +61,8 @@ public:
 	PxMutex& mMutex;
 
 
-	DefaultProfilerDataBlock(const PxU32 bufferSize, PxOutputStream& outputStream, PxMutex& mutex) : 
-		mOutputStream(outputStream), 
+	DefaultProfilerDataBlock(const PxU32 bufferSize, PxOutputStream& outputStream, PxMutex& mutex) :
+		mOutputStream(outputStream),
 		mMutex(mutex)
 	{
 		mBuffer = static_cast<char*>(PxAlignedAllocator<DEFAULT_PROFILER_REQUIRED_ALIGNMENT>().allocate(bufferSize, PX_FL));
@@ -70,22 +70,22 @@ public:
 		mEndBuffer = mBuffer + bufferSize;
 	}
 
-	~DefaultProfilerDataBlock() 
-	{ 
+	~DefaultProfilerDataBlock()
+	{
 		PxAlignedAllocator<DEFAULT_PROFILER_REQUIRED_ALIGNMENT>().deallocate(mBuffer);
 	}
 
 	PxU32 size() const
-	{ 
+	{
 		return (PxU32)(mNextEntry - mBuffer);
 	}
 
 	bool isFull(const PxU32 size) const
-	{ 
+	{
 		return (mNextEntry + size >= mEndBuffer);
 	}
 
-	void seek(const PxU32 offset) 
+	void seek(const PxU32 offset)
 	{
 		mNextEntry = mBuffer + offset;
 	}
@@ -117,7 +117,7 @@ public:
 		if(name && mNameKeys.contains(key) == false)
 		{
 			nameSize = sNameSize;
-			nameStringSize = (PxU32)strlen(name) + 1;
+			nameStringSize = (PxU32)strnlen(name, UINT32_MAX - 1) + 1;
 
 			// Pad the string buffer.
 			paddedNameStringSize = (nameStringSize + (DEFAULT_PROFILER_REQUIRED_ALIGNMENT - 1)) & ~(DEFAULT_PROFILER_REQUIRED_ALIGNMENT - 1);
@@ -167,7 +167,7 @@ public:
 
 			mNameKeys.insert(key);
 		}
-	} 
+	}
 };
 
 

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -52,8 +52,13 @@ namespace physx
 		const bool visualizeAABBs = scScene.getVisualizationParameter(PxVisualizationParameter::eCOLLISION_AABBS) != 0.0f;
 		if (visualizeAABBs)
 		{
-			out << PxU32(PxDebugColor::eARGB_YELLOW) << PxMat44(PxIdentity);
-			Cm::renderOutputDebugBox(out, scScene.getBoundsArray().getBounds(core.getSim()->getShapeSim().getElementID()));
+			const PxU32 boundsIndex = core.getSim()->getShapeSim().getElementID();
+			const Bp::BoundsArray& boundsArray = scScene.getBoundsArray();
+			if(!boundsArray.hadAllocationFailure())
+			{
+				out << PxU32(PxDebugColor::eARGB_YELLOW) << PxMat44(PxIdentity);
+				Cm::renderOutputDebugBox(out, boundsArray.getBounds(boundsIndex));
+			}
 		}
 	}
 #else
@@ -90,9 +95,13 @@ namespace physx
 		const Sc::ParticleSystemSim* sim = mCore.getSim();
 		PX_ASSERT(sim);
 
-		PX_SIMD_GUARD;
+		PX_SIMD_GUARD
 
-		const PxBounds3 bounds = getNpScene()->getScScene().getBoundsArray().getBounds(sim->getShapeSim().getElementID());
+		NP_CHECK_SCENE_CORRUPTION_AND_RETURN_VAL(getNpScene(), PxBounds3::empty())
+
+		const PxU32 boundsIndex = sim->getShapeSim().getElementID();
+		const Bp::BoundsArray& boundsArray = getNpScene()->getScScene().getBoundsArray();
+		const PxBounds3 bounds = boundsArray.getBounds(boundsIndex);
 		PX_ASSERT(bounds.isValid());
 
 		// PT: unfortunately we can't just scale the min/max vectors, we need to go through center/extents.
@@ -170,18 +179,6 @@ namespace physx
 		for (PxU32 i = 0; i < mParticleDiffuseBuffers.size(); ++i)
 		{
 			NpParticleAndDiffuseBuffer* npBuffer = mParticleDiffuseBuffers[i];
-			npBuffer->setParticleSystem(NULL);
-		}
-
-		for (PxU32 i = 0; i < mParticleClothBuffers.size(); ++i)
-		{
-			NpParticleClothBuffer* npBuffer = mParticleClothBuffers[i];
-			npBuffer->setParticleSystem(NULL);
-		}
-
-		for (PxU32 i = 0; i < mParticleRigidBuffers.size(); ++i)
-		{
-			NpParticleRigidBuffer* npBuffer = mParticleRigidBuffers[i];
 			npBuffer->setParticleSystem(NULL);
 		}
 
@@ -296,18 +293,6 @@ namespace physx
 					llCore.mParticleDiffuseBuffers, llCore.mParticleDiffuseBufferUpdate, particleBuffer);
 				break;
 			}
-			case (PxConcreteType::ePARTICLE_CLOTH_BUFFER):
-			{
-				added = addParticleBufferT<NpParticleClothBuffer>(this, mParticleClothBuffers,
-					llCore.mParticleClothBuffers, llCore.mParticleClothBufferUpdate, particleBuffer);
-				break;
-			}
-			case (PxConcreteType::ePARTICLE_RIGID_BUFFER):
-			{
-				added = addParticleBufferT<NpParticleRigidBuffer>(this, mParticleRigidBuffers,
-					llCore.mParticleRigidBuffers, llCore.mParticleRigidBufferUpdate, particleBuffer);
-				break;
-			}
 			default:
 			{
 				PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "NpPBDParticleSystem::addParticleBuffer: Error, this buffer does not have a valid type!");
@@ -342,18 +327,6 @@ namespace physx
 					llCore.mParticleDiffuseBuffers, llCore.mParticleDiffuseBufferUpdate, particleBuffer);
 				break;
 			}
-			case (PxConcreteType::ePARTICLE_CLOTH_BUFFER):
-			{
-				removed = removeParticleBufferT<NpParticleClothBuffer>(this, mParticleClothBuffers, 
-					llCore.mParticleClothBuffers, llCore.mParticleClothBufferUpdate, particleBuffer);
-				break;
-			}
-			case (PxConcreteType::ePARTICLE_RIGID_BUFFER):
-			{
-				removed = removeParticleBufferT<NpParticleRigidBuffer>(this, mParticleRigidBuffers, 
-					llCore.mParticleRigidBuffers, llCore.mParticleRigidBufferUpdate, particleBuffer);
-				break;
-			}
 			default:
 			{
 				PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "NpPBDParticleSystem::removeParticleBuffer: Error, this buffer does not have a valid type!");
@@ -376,41 +349,6 @@ namespace physx
 #else
 	PX_CATCH_UNDEFINED_ENABLE_DEBUG_VISUALIZATION
 #endif
-
-	static void internalAddRigidAttachment(PxRigidActor* actor, Sc::ParticleSystemCore& psCore)
-	{
-		Sc::BodyCore* core = getBodyCore(actor);
-
-		psCore.addRigidAttachment(core);
-	}
-
-	static void internalRemoveRigidAttachment(PxRigidActor* actor, Sc::ParticleSystemCore& psCore)
-	{
-		Sc::BodyCore* core = getBodyCore(actor);
-		psCore.removeRigidAttachment(core);
-	}
-
-	void NpPBDParticleSystem::addRigidAttachment(PxRigidActor* actor)
-	{
-		NP_WRITE_CHECK(getNpScene());
-		PX_CHECK_AND_RETURN(getNpScene() != NULL, "NpPBDParticleSystem::addRigidAttachment: particleSystem must be inserted into the scene.");
-		PX_CHECK_AND_RETURN((actor == NULL || actor->getScene() != NULL), "NpPBDParticleSystem::addRigidAttachment: actor must be inserted into the scene.");
-
-		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "NpPBDParticleSystem::addRigidAttachment: Illegal to call while simulation is running.");
-
-		internalAddRigidAttachment(actor, mCore);
-	}
-
-	void NpPBDParticleSystem::removeRigidAttachment(PxRigidActor* actor)
-	{
-		NP_WRITE_CHECK(getNpScene());
-		PX_CHECK_AND_RETURN(getNpScene() != NULL, "NpPBDParticleSystem::removeRigidAttachment: particleSystem must be inserted into the scene.");
-		PX_CHECK_AND_RETURN((actor == NULL || actor->getScene() != NULL), "NpPBDParticleSystem::removeRigidAttachment: actor must be inserted into the scene.");
-
-		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "NpPBDParticleSystem::removeRigidAttachment: Illegal to call while simulation is running.");
-
-		internalRemoveRigidAttachment(actor, mCore);
-	}
 
 }
 

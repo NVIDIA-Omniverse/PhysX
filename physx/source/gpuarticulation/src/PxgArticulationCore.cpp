@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -32,9 +32,7 @@
 #include "DyFeatherstoneArticulation.h"
 #include "PxgArticulationCore.h"
 #include "PxgArticulationCoreDesc.h"
-#include "PxgHeapMemAllocator.h"
 #include "PxgCudaSolverCore.h"
-#include "PxgCudaMemoryAllocator.h"
 #include "PxgNarrowphaseCore.h"
 #include "PxgSimulationController.h"
 #include "PxgSimulationCore.h"
@@ -100,29 +98,37 @@ namespace physx
 #endif
 	}
 
-	PxgArticulationCore::PxgArticulationCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager, PxgHeapMemoryAllocatorManager* heapMemoryManager) :
+	PxgArticulationCore::PxgArticulationCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
+											 PxgAllocatorDesc& allocDesc) :
 		mGpuKernelWranglerManager(gpuKernelWrangler), mCudaContextManager(cudaContextManager), mCudaContext(cudaContextManager->getCudaContext()),
-		mArticulationCoreDescd(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mArticulationOutputDescd(heapMemoryManager, PxsHeapStats::eARTICULATION),
+		mFinishEvent(NULL),
+		mFlushArticulationDataEvent(NULL),
+		mArticulationCoreDesc(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION),
+		mArticulationOutputDesc(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION),
+		mArticulationCoreDescd(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mArticulationOutputDescd(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
 		mNbActiveArticulation(0),
-		mDeltaVs(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mSlabHasChanges(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mSlabDirtyMasks(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mPathToRootPerPartition(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mDirtyLinksPerPartition(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mImpulseScalePerPartition(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempContactUniqueIndicesBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempConstraintUniqueIndicesBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempContactHeaderBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempConstraintHeaderBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempSelfContactUniqueIndicesBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempSelfConstraintUniqueIndicesBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempSelfContactHeaderBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
-		mTempSelfConstraintHeaderBlockBuffer(heapMemoryManager, PxsHeapStats::eARTICULATION),
+		mDeltaVs(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mSlabHasChanges(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mSlabDirtyMasks(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mPathToRootPerPartition(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mDirtyLinksPerPartition(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mImpulseScalePerPartition(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempContactUniqueIndicesBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempConstraintUniqueIndicesBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempContactHeaderBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempConstraintHeaderBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempSelfContactUniqueIndicesBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempSelfConstraintUniqueIndicesBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempSelfContactHeaderBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mTempSelfConstraintHeaderBlockBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION),
+		mComputeUnconstrainedEvent(NULL),
 		mNeedsKinematicUpdate(false)
-#if PX_SUPPORT_OMNI_PVD		
-		,mOvdDataBuffer(heapMemoryManager->mMappedMemoryAllocators)
-		,mOvdIndexBuffer(heapMemoryManager->mMappedMemoryAllocators)
+#if PX_SUPPORT_OMNI_PVD
+		,mOvdDataBuffer(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION)
+		,mOvdIndexBuffer(allocDesc.hostAlloc, PxsHeapStats::eARTICULATION)
+		,mOvdSnapshotIndexBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION)
+		,mOvdSnapshotDataBuffer(allocDesc.deviceAlloc, PxsHeapStats::eARTICULATION)
 #endif
 	{
 		PxScopedCudaLock _lock(*mCudaContextManager);
@@ -136,18 +142,12 @@ namespace physx
 		mCudaContext->eventCreate(&mComputeUnconstrainedEvent, CU_EVENT_DISABLE_TIMING);
 
 		mArticulationCoreDescd.allocate(sizeof(PxgArticulationCoreDesc), PX_FL);
-		mArticulationCoreDesc = PX_PINNED_MEMORY_ALLOC(PxgArticulationCoreDesc, *mCudaContextManager, 1);
-
 		mArticulationOutputDescd.allocate(sizeof(PxgArticulationOutputDesc), PX_FL);
-		mArticulationOutputDesc = PX_PINNED_MEMORY_ALLOC(PxgArticulationOutputDesc, *mCudaContextManager, 1);
 	}
 
 	PxgArticulationCore::~PxgArticulationCore()
 	{
 		PxScopedCudaLock lock(*mCudaContextManager);
-
-		PX_PINNED_MEMORY_FREE(*mCudaContextManager, mArticulationCoreDesc);
-		PX_PINNED_MEMORY_FREE(*mCudaContextManager, mArticulationOutputDesc);
 
 		//destroy stream
 		mCudaContext->streamDestroy(mStream);
@@ -199,21 +199,22 @@ namespace physx
 
 		//KS - this is a bit sucky. We already DMAd up this buffer, but now we need to do it again to get the updated deltaV impulse buffer.
 		//The previous one may have been reallocated
-		mArticulationCoreDesc->impulses = reinterpret_cast<Cm::UnAlignedSpatialVector*>(mDeltaVs.getDevicePtr());
-		mArticulationCoreDesc->slabHasChanges = reinterpret_cast<uint2*>(mSlabHasChanges.getDevicePtr());
-		mArticulationCoreDesc->slabDirtyMasks = reinterpret_cast<uint4*>(mSlabDirtyMasks.getDevicePtr());
-		mArticulationCoreDesc->nbSlabs = nbSlabs;
-		mArticulationCoreDesc->nbPartitions = nbPartitions;
+		PxgArticulationCoreDesc* desc = getArticulationCoreDesc();
+		desc->impulses = reinterpret_cast<Cm::UnAlignedSpatialVector*>(mDeltaVs.getDevicePtr());
+		desc->slabHasChanges = reinterpret_cast<uint2*>(mSlabHasChanges.getDevicePtr());
+		desc->slabDirtyMasks = reinterpret_cast<uint4*>(mSlabDirtyMasks.getDevicePtr());
+		desc->nbSlabs = nbSlabs;
+		desc->nbPartitions = nbPartitions;
 		
-		mArticulationCoreDesc->mPathToRootsPerPartition = reinterpret_cast<PxgArticulationBitFieldStackData*>(mPathToRootPerPartition.getDevicePtr());
-		mArticulationCoreDesc->mImpulseHoldingLink = reinterpret_cast<PxU32*>(mDirtyLinksPerPartition.getDevicePtr());
-		mArticulationCoreDesc->mPartitionAverageScale = reinterpret_cast<PxReal*>(mImpulseScalePerPartition.getDevicePtr());
+		desc->mPathToRootsPerPartition = reinterpret_cast<PxgArticulationBitFieldStackData*>(mPathToRootPerPartition.getDevicePtr());
+		desc->mImpulseHoldingLink = reinterpret_cast<PxU32*>(mDirtyLinksPerPartition.getDevicePtr());
+		desc->mPartitionAverageScale = reinterpret_cast<PxReal*>(mImpulseScalePerPartition.getDevicePtr());
 
-		mCudaContext->memcpyHtoDAsync(mArticulationCoreDescd.getDevicePtr(), mArticulationCoreDesc, sizeof(PxgArticulationCoreDesc), stream);
+		mCudaContext->memcpyHtoDAsync(mArticulationCoreDescd.getDevicePtr(), desc, sizeof(PxgArticulationCoreDesc), stream);
 	}
 
 	void PxgArticulationCore::gpuMemDmaUpArticulationDesc(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity,
-		const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled)
+		const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, const bool isSleepingDisabled)
 	{
 		CUstream stream = mStream; //*mSolverStream
 		//CUstream stream = *mSolverStream;
@@ -242,60 +243,62 @@ namespace physx
 		mTempSelfConstraintHeaderBlockBuffer.allocateElements(numBlocks, PX_FL);
 
 		//bodySim has the index to the link buffer and joint buffer
-		mArticulationCoreDesc->mBodySimBufferDeviceData = simulationCore->getBodySimBufferDeviceData().getPointer();
-		mArticulationCoreDesc->articulationSleepData = reinterpret_cast<PxgSolverBodySleepData*>(simulationCore->getArticulationSleepDataBuffer().getDevicePtr());
-		mArticulationCoreDesc->islandNodeIndices = reinterpret_cast<PxNodeIndex*>(islandNodeIndicesd);
-		mArticulationCoreDesc->articulations = reinterpret_cast<PxgArticulation*>(articulationd);
+		PxgArticulationCoreDesc* desc = getArticulationCoreDesc();
+		desc->mBodySimBufferDeviceData = simulationCore->getBodySimBufferDeviceData().getPointer();
+		desc->articulationSleepData = reinterpret_cast<PxgSolverBodySleepData*>(simulationCore->getArticulationSleepDataBuffer().getDevicePtr());
+		desc->islandNodeIndices = reinterpret_cast<PxNodeIndex*>(islandNodeIndicesd);
+		desc->articulations = reinterpret_cast<PxgArticulation*>(articulationd);
 
-		mArticulationCoreDesc->articulationOffset = offset;
-		mArticulationCoreDesc->nbArticulations = nbArticulations;
-		mArticulationCoreDesc->dt = dt;
-		mArticulationCoreDesc->gravity = gravity;
-		mArticulationCoreDesc->invLengthScale = invLengthScale;
-		mArticulationCoreDesc->isExternalForcesEveryTgsIterationEnabled = isExternalForcesEveryTgsIterationEnabled;
-		mArticulationCoreDesc->impulses = reinterpret_cast<Cm::UnAlignedSpatialVector*>(mDeltaVs.getDevicePtr());
-		mArticulationCoreDesc->slabHasChanges = reinterpret_cast<uint2*>(mSlabHasChanges.getDevicePtr());
+		desc->articulationOffset = offset;
+		desc->nbArticulations = nbArticulations;
+		desc->dt = dt;
+		desc->gravity = gravity;
+		desc->invLengthScale = invLengthScale;
+		desc->isExternalForcesEveryTgsIterationEnabled = isExternalForcesEveryTgsIterationEnabled;
+		desc->isSleepingDisabled = isSleepingDisabled;
+		desc->impulses = reinterpret_cast<Cm::UnAlignedSpatialVector*>(mDeltaVs.getDevicePtr());
+		desc->slabHasChanges = reinterpret_cast<uint2*>(mSlabHasChanges.getDevicePtr());
 		//mArticulationCoreDesc->nbSlabs = nbSlabs;
 		//mArticulationCoreDesc->nbPartitions = nbPartitions;
 
-		mArticulationCoreDesc->mArticulationBlocks = reinterpret_cast<PxgArticulationBlockData*>(simulationCore->getArticulationBatchData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationLinkBlocks = reinterpret_cast<PxgArticulationBlockLinkData*>(simulationCore->getArticulationBatchLinkData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationTraversalStackBlocks = reinterpret_cast<PxgArticulationTraversalStackData*>(simulationCore->getArticulationTraversalStackData().getDevicePtr());
-		mArticulationCoreDesc->mTempPathToRootBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldStackData*>(simulationCore->getTempPathToRootBitFieldStackData().getDevicePtr());
-		mArticulationCoreDesc->mTempSharedBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldStackData*>(simulationCore->getTempSharedBitFieldStackData().getDevicePtr());
-		mArticulationCoreDesc->mTempRootBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldStackData*>(simulationCore->getTempRootBitFieldStackData().getDevicePtr());
-		mArticulationCoreDesc->mPathToRootBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldData*>(simulationCore->getPathToRootBitFieldStackData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationDofBlocks = reinterpret_cast<PxgArticulationBlockDofData*>(simulationCore->getArticulationBatchDofData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationMimicJointBlocks =  reinterpret_cast<PxgArticulationBlockMimicJointData*>(simulationCore->getArticulationBatchMimicJointData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationSpatialTendonBlocks = reinterpret_cast<PxgArticulationBlockSpatialTendonData*>(simulationCore->getArticulationBatchSpatialTendonData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationSpatialTendonConstraintBlocks = reinterpret_cast<PxgArticulationInternalTendonConstraintData*>(simulationCore->getArticulationBatchSpatialTendonConstraintData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationAttachmentBlocks = reinterpret_cast<PxgArticulationBlockAttachmentData*>(simulationCore->getArticulationBatchAttachmentData().getDevicePtr());
+		desc->mArticulationBlocks = reinterpret_cast<PxgArticulationBlockData*>(simulationCore->getArticulationBatchData().getDevicePtr());
+		desc->mArticulationLinkBlocks = reinterpret_cast<PxgArticulationBlockLinkData*>(simulationCore->getArticulationBatchLinkData().getDevicePtr());
+		desc->mArticulationTraversalStackBlocks = reinterpret_cast<PxgArticulationTraversalStackData*>(simulationCore->getArticulationTraversalStackData().getDevicePtr());
+		desc->mTempPathToRootBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldStackData*>(simulationCore->getTempPathToRootBitFieldStackData().getDevicePtr());
+		desc->mTempSharedBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldStackData*>(simulationCore->getTempSharedBitFieldStackData().getDevicePtr());
+		desc->mTempRootBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldStackData*>(simulationCore->getTempRootBitFieldStackData().getDevicePtr());
+		desc->mPathToRootBitFieldBlocks = reinterpret_cast<PxgArticulationBitFieldData*>(simulationCore->getPathToRootBitFieldStackData().getDevicePtr());
+		desc->mArticulationDofBlocks = reinterpret_cast<PxgArticulationBlockDofData*>(simulationCore->getArticulationBatchDofData().getDevicePtr());
+		desc->mArticulationMimicJointBlocks =  reinterpret_cast<PxgArticulationBlockMimicJointData*>(simulationCore->getArticulationBatchMimicJointData().getDevicePtr());
+		desc->mArticulationSpatialTendonBlocks = reinterpret_cast<PxgArticulationBlockSpatialTendonData*>(simulationCore->getArticulationBatchSpatialTendonData().getDevicePtr());
+		desc->mArticulationSpatialTendonConstraintBlocks = reinterpret_cast<PxgArticulationInternalTendonConstraintData*>(simulationCore->getArticulationBatchSpatialTendonConstraintData().getDevicePtr());
+		desc->mArticulationAttachmentBlocks = reinterpret_cast<PxgArticulationBlockAttachmentData*>(simulationCore->getArticulationBatchAttachmentData().getDevicePtr());
 		
-		mArticulationCoreDesc->mArticulationFixedTendonBlocks = reinterpret_cast<PxgArticulationBlockFixedTendonData*>(simulationCore->getArticulationBatchFixedTendonData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationFixedTendonConstraintBlocks = reinterpret_cast<PxgArticulationInternalTendonConstraintData*>(simulationCore->getArticulationBatchFixedTendonConstraintData().getDevicePtr());
-		mArticulationCoreDesc->mArticulationTendonJointBlocks = reinterpret_cast<PxgArticulationBlockTendonJointData*>(simulationCore->getArticulationBatchTendonJointData().getDevicePtr());
+		desc->mArticulationFixedTendonBlocks = reinterpret_cast<PxgArticulationBlockFixedTendonData*>(simulationCore->getArticulationBatchFixedTendonData().getDevicePtr());
+		desc->mArticulationFixedTendonConstraintBlocks = reinterpret_cast<PxgArticulationInternalTendonConstraintData*>(simulationCore->getArticulationBatchFixedTendonConstraintData().getDevicePtr());
+		desc->mArticulationTendonJointBlocks = reinterpret_cast<PxgArticulationBlockTendonJointData*>(simulationCore->getArticulationBatchTendonJointData().getDevicePtr());
 
-		mArticulationCoreDesc->mMaxLinksPerArticulation = simulationCore->getMaxArticulationLinks();
-		mArticulationCoreDesc->mMaxDofsPerArticulation = simulationCore->getMaxArticulationDofs();
-		mArticulationCoreDesc->mMaxMimicJointsPerArticulation = simulationCore->getMaxArticulationMimicJoints();
-		mArticulationCoreDesc->mMaxSpatialTendonsPerArticulation = simulationCore->getMaxArticuationSpatialTendons();
-		mArticulationCoreDesc->mMaxAttachmentPerArticulation = simulationCore->getMaxArticuationAttachments();
-		mArticulationCoreDesc->mMaxFixedTendonsPerArticulation = simulationCore->getMaxArticuationFixedTendons();
-		mArticulationCoreDesc->mMaxTendonJointPerArticulation = simulationCore->getMaxArticuationTendonJoints();
-		mArticulationCoreDesc->solverBodyIndices = solverCore->getSolverBodyIndices().getPointer();
+		desc->mMaxLinksPerArticulation = simulationCore->getMaxArticulationLinks();
+		desc->mMaxDofsPerArticulation = simulationCore->getMaxArticulationDofs();
+		desc->mMaxMimicJointsPerArticulation = simulationCore->getMaxArticulationMimicJoints();
+		desc->mMaxSpatialTendonsPerArticulation = simulationCore->getMaxArticuationSpatialTendons();
+		desc->mMaxAttachmentPerArticulation = simulationCore->getMaxArticuationAttachments();
+		desc->mMaxFixedTendonsPerArticulation = simulationCore->getMaxArticuationFixedTendons();
+		desc->mMaxTendonJointPerArticulation = simulationCore->getMaxArticuationTendonJoints();
+		desc->solverBodyIndices = solverCore->getSolverBodyIndices().getPointer();
 
-		mArticulationCoreDesc->mTempContactUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempContactUniqueIndicesBlockBuffer.getDevicePtr());
-		mArticulationCoreDesc->mTempConstraintUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempConstraintUniqueIndicesBlockBuffer.getDevicePtr());
-		mArticulationCoreDesc->mTempContactHeaderBlock = reinterpret_cast<PxU32*>(mTempContactHeaderBlockBuffer.getDevicePtr());
-		mArticulationCoreDesc->mTempConstraintHeaderBlock = reinterpret_cast<PxU32*>(mTempConstraintHeaderBlockBuffer.getDevicePtr());
+		desc->mTempContactUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempContactUniqueIndicesBlockBuffer.getDevicePtr());
+		desc->mTempConstraintUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempConstraintUniqueIndicesBlockBuffer.getDevicePtr());
+		desc->mTempContactHeaderBlock = reinterpret_cast<PxU32*>(mTempContactHeaderBlockBuffer.getDevicePtr());
+		desc->mTempConstraintHeaderBlock = reinterpret_cast<PxU32*>(mTempConstraintHeaderBlockBuffer.getDevicePtr());
 		
-		mArticulationCoreDesc->mTempSelfContactUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempSelfContactUniqueIndicesBlockBuffer.getDevicePtr());
-		mArticulationCoreDesc->mTempSelfConstraintUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempSelfConstraintUniqueIndicesBlockBuffer.getDevicePtr());
-		mArticulationCoreDesc->mTempSelfContactHeaderBlock = reinterpret_cast<PxU32*>(mTempSelfContactHeaderBlockBuffer.getDevicePtr());
-		mArticulationCoreDesc->mTempSelfConstraintHeaderBlock = reinterpret_cast<PxU32*>(mTempSelfConstraintHeaderBlockBuffer.getDevicePtr());
+		desc->mTempSelfContactUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempSelfContactUniqueIndicesBlockBuffer.getDevicePtr());
+		desc->mTempSelfConstraintUniqueIndicesBlock = reinterpret_cast<PxU32*>(mTempSelfConstraintUniqueIndicesBlockBuffer.getDevicePtr());
+		desc->mTempSelfContactHeaderBlock = reinterpret_cast<PxU32*>(mTempSelfContactHeaderBlockBuffer.getDevicePtr());
+		desc->mTempSelfConstraintHeaderBlock = reinterpret_cast<PxU32*>(mTempSelfConstraintHeaderBlockBuffer.getDevicePtr());
 
 		//DMA descriptor up
-		mCudaContext->memcpyHtoDAsync(mArticulationCoreDescd.getDevicePtr(), mArticulationCoreDesc, sizeof(PxgArticulationCoreDesc), stream);
+		mCudaContext->memcpyHtoDAsync(mArticulationCoreDescd.getDevicePtr(), desc, sizeof(PxgArticulationCoreDesc), stream);
 	}
 
 	void PxgArticulationCore::createStaticContactAndConstraintsBatch(const PxU32 nbArticulations)
@@ -310,7 +313,7 @@ namespace physx
 			CUdeviceptr solverCoreptr = solverCore->getSolverCoreDescDeviceptr();
 			CUdeviceptr artiCoreDescptr = mArticulationCoreDescd.getDevicePtr();
 
-			KernelWrangler* wrangler = mGpuKernelWranglerManager->getKernelWrangler();
+			KernelWrangler* wrangler = mGpuKernelWranglerManager;
 
 			{
 				PX_PROFILE_ZONE("GpuDynamics.artiSumInternalContactAndJointBatches1Launch", 0);
@@ -378,7 +381,7 @@ namespace physx
 
 			CUstream stream = *mSolverStream;
 
-			CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_COMPUTE_DEPENDENCIES);
+			CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_COMPUTE_DEPENDENCIES);
 
 			CUdeviceptr descptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -400,7 +403,7 @@ namespace physx
 		}
 	}
 
-	PxU32 PxgArticulationCore::computeUnconstrainedVelocities(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, bool recomputeBlockFormat)
+	PxU32 PxgArticulationCore::computeUnconstrainedVelocities(const PxU32 offset, const PxU32 nbArticulations, PxReal dt, const PxVec3& gravity, const PxReal invLengthScale, const bool isExternalForcesEveryTgsIterationEnabled, bool recomputeBlockFormat, const bool isSleepingDisabled)
 	{
 		mNbActiveArticulation = nbArticulations;
 
@@ -418,9 +421,9 @@ namespace physx
 			//CUstream stream = *mSolverStream;
 
 			//layoutDeltaVBuffer(offset, nbArticulations, nbSlabs, /**mSolverStream*/mStream);
-			gpuMemDmaUpArticulationDesc(offset, nbArticulations, dt, gravity, invLengthScale, isExternalForcesEveryTgsIterationEnabled);
+			gpuMemDmaUpArticulationDesc(offset, nbArticulations, dt, gravity, invLengthScale, isExternalForcesEveryTgsIterationEnabled, isSleepingDisabled);
 
-			KernelWrangler* wrangler = mGpuKernelWranglerManager->getKernelWrangler();
+			KernelWrangler* wrangler = mGpuKernelWranglerManager;
 
 			CUdeviceptr descptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -499,7 +502,7 @@ namespace physx
 
 			CUstream stream = mStream; //*mSolverStream
 
-			const CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_SETUP_INTERNAL);
+			const CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_SETUP_INTERNAL);
 
 			CUdeviceptr descptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -571,7 +574,7 @@ namespace physx
 		PX_PROFILE_ZONE("GpuArticulationCore.saveVelocities", 0);
 	
 		// PGS only
-		CUfunction artiSaveVelocitiesFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_SAVE_VELOCITY_PGS);
+		CUfunction artiSaveVelocitiesFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_SAVE_VELOCITY_PGS);
 
 		const PxU32 numThreadsPerWarp = 32;
 		PxU32 numWarpsPerBlock = PxgArticulationCoreKernelBlockDim::COMPUTE_UNCONSTRAINED_VELOCITES / numThreadsPerWarp;
@@ -624,8 +627,9 @@ namespace physx
 	// solvePartitions).
 
 	void PxgArticulationCore::propagateRigidBodyImpulsesAndSolveInternalConstraints(const PxReal dt, const PxReal invDt, const bool velocityIteration,
-		const PxReal elapsedTime, const PxReal biasCoefficient, const Dy::ArticulationConstraintProcessingConfigGPU& articulationConstraintProcessingConfig,  PxU32* staticContactUniqueIds, PxU32* staticJointUniqueIds, 
-		CUdeviceptr sharedDesc, bool doFriction, bool isTGS, bool residualReportingEnabled, bool isExternalForcesEveryTgsIterationEnabled)
+		const PxReal elapsedTime, const PxReal articulationBiasCoefficient, const PxReal rigidContactBiasCoefficient, 
+		const Dy::ArticulationConstraintProcessingConfigGPU& articulationConstraintProcessingConfig,  PxU32* staticContactUniqueIds, PxU32* staticJointUniqueIds, 
+		CUdeviceptr sharedDesc, bool doFriction, bool isTGS, bool isExternalForcesEveryTgsIterationEnabled)
 	{
 #if ARTI_GPU_DEBUG
 		PX_PROFILE_ZONE("GpuArticulationCore.solveInternalConstraints", 0);
@@ -638,7 +642,7 @@ namespace physx
 
 		if (numBlocks)
 		{
-			KernelWrangler* wrangler = mGpuKernelWranglerManager->getKernelWrangler();
+			KernelWrangler* wrangler = mGpuKernelWranglerManager;
 
 			// In the first kernel called, propagate rigid body impulses as well.
 			const CUfunction artiPropagateRigidImpulseAndSolveSelfConstraintsFunction = isTGS ? wrangler->getCuFunction(PxgKernelIds::ARTI_PROPAGATE_RIGID_IMPULSES_AND_SOLVE_SELF_TGS) :
@@ -662,6 +666,7 @@ namespace physx
 					CUDA_KERNEL_PARAM(elapsedTime),
 					CUDA_KERNEL_PARAM(sharedDesc),
 					CUDA_KERNEL_PARAM(doFriction),
+					CUDA_KERNEL_PARAM(rigidContactBiasCoefficient),
 				};
 
 				// In the first kernel called, propagate rigid body impulses as well.
@@ -677,7 +682,7 @@ namespace physx
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
 					CUDA_KERNEL_PARAM(artiCoreDescptr),
-					CUDA_KERNEL_PARAM(biasCoefficient),
+					CUDA_KERNEL_PARAM(articulationBiasCoefficient),
 					CUDA_KERNEL_PARAM(dt),
 					CUDA_KERNEL_PARAM(invDt),
 					CUDA_KERNEL_PARAM(velocityIteration),
@@ -703,12 +708,12 @@ namespace physx
 					CUDA_KERNEL_PARAM(invDt),
 					CUDA_KERNEL_PARAM(velocityIteration),
 					CUDA_KERNEL_PARAM(elapsedTime),
-					CUDA_KERNEL_PARAM(biasCoefficient),
+					CUDA_KERNEL_PARAM(articulationBiasCoefficient),
+					CUDA_KERNEL_PARAM(rigidContactBiasCoefficient),
 					CUDA_KERNEL_PARAM(staticContactUniqueIds),
 					CUDA_KERNEL_PARAM(staticJointUniqueIds),
 					CUDA_KERNEL_PARAM(sharedDesc),
 					CUDA_KERNEL_PARAM(doFriction),
-					CUDA_KERNEL_PARAM(residualReportingEnabled),
 					CUDA_KERNEL_PARAM(isExternalForcesEveryTgsIterationEnabled),
 					CUDA_KERNEL_PARAM(articulationConstraintProcessingConfig.mDoFrictionDrivePosLimit),
 					CUDA_KERNEL_PARAM(articulationConstraintProcessingConfig.mDoVelLimit),
@@ -737,7 +742,7 @@ namespace physx
 
 		if (numBlocks)
 		{
-			const CUfunction artiOutputVelocityFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_OUTPUT_VELOCITY);
+			const CUfunction artiOutputVelocityFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_OUTPUT_VELOCITY);
 
 			CUdeviceptr descptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -767,7 +772,7 @@ namespace physx
 
 		if (numBlocks)
 		{
-			const CUfunction artiPushImpulseFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_PUSH_IMPULSE);
+			const CUfunction artiPushImpulseFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_PUSH_IMPULSE);
 
 			CUdeviceptr descptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -801,7 +806,7 @@ namespace physx
 		{
 			//validateData();
 
-			CUfunction stepKernel = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_STEP_TGS);
+			CUfunction stepKernel = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_STEP_TGS);
 
 			CUdeviceptr descptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -828,7 +833,7 @@ namespace physx
 
 		if (numBlocks)
 		{
-			CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_APPLY_TGS_SUBSTEP_FORCES);
+			CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_APPLY_TGS_SUBSTEP_FORCES);
 			CUdeviceptr descptr = mArticulationCoreDescd.getDevicePtr();
 
 			KERNEL_PARAM_TYPE kernelParams[] =
@@ -857,7 +862,7 @@ namespace physx
 
 		if (numBlocks)
 		{
-			KernelWrangler* wrangler = mGpuKernelWranglerManager->getKernelWrangler();
+			KernelWrangler* wrangler = mGpuKernelWranglerManager;
 
 			CUfunction propagateImpulseKernel = isTGS?	wrangler->getCuFunction(PxgKernelIds::ARTI_PROPAGATE_IMPULSE_TGS) : 
 														wrangler->getCuFunction(PxgKernelIds::ARTI_PROPAGATE_IMPULSE_PGS);
@@ -914,7 +919,7 @@ namespace physx
 
 			PX_PROFILE_ZONE("GpuArticulationCore.updateBodies1T", 0);
 
-			const CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_UPDATE_BODIES);
+			const CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_UPDATE_BODIES);
 
 			CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -939,7 +944,7 @@ namespace physx
 			{
 				PX_PROFILE_ZONE("GpuArticulationCore.updateBodiesPart2", 0);
 
-				const CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_UPDATE_BODIES2);
+				const CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_UPDATE_BODIES2);
 
 				CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -954,7 +959,7 @@ namespace physx
 
 				const PxU32 gridDimX = num1TBlocks;
 				const PxU32 gridDimY = 1;
-				const PxU32 gridDimZ = (mArticulationCoreDesc->mMaxLinksPerArticulation + nbThreadsZ - 1) / nbThreadsZ;
+				const PxU32 gridDimZ = (getArticulationCoreDesc()->mMaxLinksPerArticulation + nbThreadsZ - 1) / nbThreadsZ;
 				const PxU32 blockDimX = numThreadsPerWarp;
 				const PxU32 blockDimY = numWarpsPerBlock;
 				const PxU32 blockDimZ = nbThreadsZ;
@@ -970,7 +975,7 @@ namespace physx
 			{
 				PX_PROFILE_ZONE("GpuArticulationCore.updateBodiesPart3", 0);
 
-				const CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_UPDATE_BODIES3);
+				const CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_UPDATE_BODIES3);
 
 				CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -999,9 +1004,8 @@ namespace physx
 	}
 
 	void PxgArticulationCore::gpuMemDMAbackArticulation(
-		PxInt8ArrayPinned& linkAndJointAndRootStateData,
-		PxPinnedArray<PxgSolverBodySleepData>& sleepPool, PxPinnedArray<Dy::ErrorAccumulator>& internalResidualPerArticulation, 
-		PxPinnedArray<Dy::ErrorAccumulator>& contactResidual)
+		Cm::PinnableArray<PxU8>& linkAndJointAndRootStateData,
+		Cm::PinnableArray<PxgSolverBodySleepData>& sleepPool)
 	{
 		const PxU32 numThreadsPerWarp = 32;
 		PxU32 numWarpsPerBlock = PxgArticulationCoreKernelBlockDim::COMPUTE_UNCONSTRAINED_VELOCITES / numThreadsPerWarp;
@@ -1009,25 +1013,17 @@ namespace physx
 
 		if (numBlocks)
 		{
-			mArticulationOutputDesc->linkAndJointAndRootStateData = linkAndJointAndRootStateData.begin();
-			mArticulationOutputDesc->sleepData = sleepPool.begin();
-			if (contactResidual.size())
-			{
-				mArticulationOutputDesc->errorAccumulator = internalResidualPerArticulation.begin();
-				mArticulationOutputDesc->contactResidualAccumulator = contactResidual.begin();
-			}
-			else
-			{
-				mArticulationOutputDesc->errorAccumulator = NULL;
-				mArticulationOutputDesc->contactResidualAccumulator = NULL;
-			}
+			PxgArticulationOutputDesc& outDesc = mArticulationOutputDesc.get();
+			outDesc.linkAndJointAndRootStateData = linkAndJointAndRootStateData.begin();
+			outDesc.sleepData = sleepPool.begin();
 
 			//dma output desc to gpu
-			mCudaContext->memcpyHtoDAsync(mArticulationOutputDescd.getDevicePtr(), mArticulationOutputDesc, sizeof(PxgArticulationOutputDesc), *mSolverStream);
+			mCudaContext->memcpyHtoDAsync(mArticulationOutputDescd.getDevicePtr(), &outDesc, sizeof(PxgArticulationOutputDesc),
+										  *mSolverStream);
 
 			PX_PROFILE_ZONE("GpuArticulationCore.gpuMemDMAbackArticulation", 0);
 
-			const CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_DMA_DATA);
+			const CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_DMA_DATA);
 
 			CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 			CUdeviceptr outputDescptr = mArticulationOutputDescd.getDevicePtr();
@@ -1142,7 +1138,7 @@ namespace physx
 
 	bool PxgArticulationCore::getDofStates(void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxDofs, PxArticulationGPUAPIReadType::Enum dataType) const
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_GET_DOF_STATES);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_GET_DOF_STATES);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1168,7 +1164,7 @@ namespace physx
 
 	bool PxgArticulationCore::getTransformStates(void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxLinks, PxArticulationGPUAPIReadType::Enum dataType) const
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_GET_TRANSFORM_STATES);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_GET_TRANSFORM_STATES);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1193,7 +1189,7 @@ namespace physx
 
 	bool PxgArticulationCore::getLinkVelocityStates(void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxLinks, PxArticulationGPUAPIReadType::Enum dataType) const
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_GET_VELOCITY_STATES);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_GET_VELOCITY_STATES);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1222,7 +1218,7 @@ namespace physx
 	{
 		PX_UNUSED(dataType); // right now only link incoming joint force.
 
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_GET_SPATIAL_FORCE_STATES);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_GET_SPATIAL_FORCE_STATES);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1266,7 +1262,7 @@ namespace physx
 			mOvdIndexBuffer.resizeUninitialized(indexBufferBytes);
 
 			if (mOvdDataBuffer.begin() && mOvdIndexBuffer.begin())
-			{				
+			{
 				////////////////////////////////////////////////////////////////////////////////
 				// Copy the forces and gpuIndices from GPU -> CPU
 				////////////////////////////////////////////////////////////////////////////////
@@ -1292,6 +1288,76 @@ namespace physx
 						maxLinks, maxDofs, maxFixedTendons, maxTendonJoints, maxSpatialTendons, maxSpatialTendonAttachments);
 				}
 			}
+		}
+	}
+
+	void PxgArticulationCore::ovdSnapshotArticulationForces(const PxArticulationGPUIndex* gpuIndices, PxU32 nbElements,
+		PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialTendonAttachments)
+	{
+		PxgSimulationController* controller = mGpuContext->getSimulationController();
+		if (nbElements == 0 || maxLinks == 0 || !controller->getEnableOVDReadback() || !controller->getOVDCallbacks())
+			return;
+
+		PxScopedCudaLock _lock(*mCudaContextManager);
+
+		// Keep only indices that address a resident articulation in the device pool. An articulation can have
+		// a GPU index assigned yet not be in the pool yet (added but not simulated since), and the kernel
+		// indexes articulations[index] so a stale index would read out of bounds. Bound by the total resident
+		// articulation count (awake + asleep), not the awake-island count, or a resident sleeping articulation
+		// would be dropped from the snapshot. Mirrors the rigid path's mNbTotalBodySim in PxgSimulationCore.
+		const PxU32 nbResidentArticulations = mGpuContext->getSimulationCore()->getNbTotalArticulations();
+		mOvdSnapshotValidIndices.forceSize_Unsafe(0);
+		mOvdSnapshotValidIndices.reserve(nbElements);
+		for (PxU32 i = 0; i < nbElements; ++i)
+		{
+			if (gpuIndices[i] < nbResidentArticulations)
+				mOvdSnapshotValidIndices.pushBack(gpuIndices[i]);
+		}
+		const PxU32 nbValid = mOvdSnapshotValidIndices.size();
+		if (nbValid == 0)
+			return;
+
+		// Upload the gathered articulation GPU indices and size a per-articulation x per-link output buffer.
+		mOvdSnapshotIndexBuffer.allocateElements(nbValid, PX_FL);
+		mOvdSnapshotDataBuffer.allocateElements(nbValid * maxLinks, PX_FL);
+		if (mCudaContext->memcpyHtoD(mOvdSnapshotIndexBuffer.getDevicePtr(), mOvdSnapshotValidIndices.begin(), sizeof(PxArticulationGPUIndex) * nbValid))
+			return;
+
+		const CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
+		const CUdeviceptr indicesDevicePtr = mOvdSnapshotIndexBuffer.getDevicePtr();
+		const CUdeviceptr dataDevicePtr = mOvdSnapshotDataBuffer.getDevicePtr();
+
+		// Force then torque: each pass reads the per-link external-acceleration accumulator back and converts
+		// to force/torque, then reuses ovdArticulationCallback (DMA + gpu-index -> node-index remap + emit via
+		// processArticulationSet), exactly like the live direct-GPU write path. The emit re-marks the per-frame
+		// reset set, so the value is zeroed again at the next fetchResults, honoring retained accelerations.
+		const PxU16 kernelIds[2] = { PxgKernelIds::ARTI_GET_LINK_FORCE_STATE, PxgKernelIds::ARTI_GET_LINK_TORQUE_STATE };
+		const PxU32 blockDims[2] = { PxgArticulationCoreKernelBlockDim::ARTI_GET_LINK_FORCE_STATE, PxgArticulationCoreKernelBlockDim::ARTI_GET_LINK_TORQUE_STATE };
+		const PxArticulationGPUAPIWriteType::Enum writeTypes[2] = { PxArticulationGPUAPIWriteType::eLINK_FORCE, PxArticulationGPUAPIWriteType::eLINK_TORQUE };
+
+		for (PxU32 pass = 0; pass < 2; ++pass)
+		{
+			CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(kernelIds[pass]);
+			const PxU32 numBlocks = (nbValid * maxLinks + blockDims[pass] - 1) / blockDims[pass];
+			KERNEL_PARAM_TYPE kernelParams[] =
+			{
+				CUDA_KERNEL_PARAM(coreDescptr),
+				CUDA_KERNEL_PARAM(dataDevicePtr),
+				CUDA_KERNEL_PARAM(indicesDevicePtr),
+				CUDA_KERNEL_PARAM(nbValid),
+				CUDA_KERNEL_PARAM(maxLinks)
+			};
+			CUresult result = mCudaContext->launchKernel(kernelFunction, numBlocks, 1, 1, blockDims[pass], 1, 1, 0, mStream, EPILOG);
+			if (result == CUDA_SUCCESS)
+				result = mCudaContext->streamSynchronize(mStream);
+			if (result != CUDA_SUCCESS)
+			{
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "ovdSnapshotArticulationForces: CUDA error, code %u\n", result);
+				return;
+			}
+
+			ovdArticulationCallback(reinterpret_cast<const void*>(dataDevicePtr), reinterpret_cast<const PxRigidDynamicGPUIndex*>(indicesDevicePtr),
+				writeTypes[pass], nbValid, maxLinks, maxDofs, maxFixedTendons, maxTendonJoints, maxSpatialTendons, maxSpatialTendonAttachments);
 		}
 	}
 
@@ -1392,7 +1458,7 @@ namespace physx
 
 	bool PxgArticulationCore::setDofStates(const void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxDofs, PxArticulationGPUAPIWriteType::Enum dataType)
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_SET_DOF_STATES);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_SET_DOF_STATES);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1418,7 +1484,7 @@ namespace physx
 
 	bool PxgArticulationCore::setRootGlobalPoseStates(const void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements)
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_SET_ROOT_GLOBAL_POSE_STATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_SET_ROOT_GLOBAL_POSE_STATE);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1441,7 +1507,7 @@ namespace physx
 
 	bool PxgArticulationCore::setRootVelocityStates(const void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxArticulationGPUAPIWriteType::Enum dataType)
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_SET_ROOT_VELOCITY_STATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_SET_ROOT_VELOCITY_STATE);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1466,7 +1532,7 @@ namespace physx
 
 	bool PxgArticulationCore::setLinkForceStates(const void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxLinks)
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_SET_LINK_FORCE_STATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_SET_LINK_FORCE_STATE);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1491,7 +1557,7 @@ namespace physx
 
 	bool PxgArticulationCore::setLinkTorqueStates(const void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxLinks)
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_SET_LINK_TORQUE_STATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_SET_LINK_TORQUE_STATE);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1515,7 +1581,7 @@ namespace physx
 
 	bool PxgArticulationCore::setTendonStates(const void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxTendons, PxArticulationGPUAPIWriteType::Enum dataType)
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_SET_TENDON_STATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_SET_TENDON_STATE);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1540,7 +1606,7 @@ namespace physx
 
 	bool PxgArticulationCore::getTendonStates(void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxTendons, PxArticulationGPUAPIReadType::Enum dataType) const
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_GET_TENDON_STATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_GET_TENDON_STATE);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1565,7 +1631,7 @@ namespace physx
 
 	bool PxgArticulationCore::setSpatialTendonAttachmentStates(const void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxTendonsXmaxAttachments)
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_SET_SPATIAL_TENDON_ATTACHMENT_STATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_SET_SPATIAL_TENDON_ATTACHMENT_STATE);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1590,7 +1656,7 @@ namespace physx
 
 	bool PxgArticulationCore::getSpatialTendonAttachmentStates(void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxTendonsXmaxAttachments) const
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_GET_SPATIAL_TENDON_ATTACHMENT_STATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_GET_SPATIAL_TENDON_ATTACHMENT_STATE);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1615,7 +1681,7 @@ namespace physx
 
 	bool PxgArticulationCore::setFixedTendonJointStates(const void* PX_RESTRICT data , const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxFixedTendonsXmaxTendonJoints)
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_SET_FIXED_TENDON_JOINT_STATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_SET_FIXED_TENDON_JOINT_STATE);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1639,7 +1705,7 @@ namespace physx
 
 	bool PxgArticulationCore::getFixedTendonJointStates(void* PX_RESTRICT data, const PxArticulationGPUIndex* PX_RESTRICT gpuIndices, PxU32 nbElements, PxU32 maxFixedTendonsXmaxTendonJoints) const
 	{
-		CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_GET_FIXED_TENDON_JOINT_STATE);
+		CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_GET_FIXED_TENDON_JOINT_STATE);
 
 		CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 
@@ -1669,7 +1735,7 @@ namespace physx
 			mNeedsKinematicUpdate = false;
 
 			CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
-			CUfunction updateKinematicKernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::ARTI_UPDATE_KINEMATIC);
+			CUfunction updateKinematicKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_UPDATE_KINEMATIC);
 
 			PxgGpuNarrowphaseCore* npCore = mGpuContext->getNarrowphaseCore();
 			PxgSimulationCore* simCore = mGpuContext->getSimulationCore();
@@ -1712,7 +1778,7 @@ namespace physx
 			// grid that loops is probably better.
 
 			// but we still clamp if the number of articulations in the scene is smaller than what we would launch otherwise.
-			const PxU32 numBlockNeeded = (mArticulationCoreDesc->nbArticulations + numWarpPerBlock - 1) / numWarpPerBlock;
+			const PxU32 numBlockNeeded = (mArticulationCoreDesc.get().nbArticulations + numWarpPerBlock - 1) / numWarpPerBlock;
 			const PxU32 gridDim = PxMin<PxU32>(PxgArticulationCoreKernelGridDim::UPDATE_KINEMATIC, numBlockNeeded);
 
 			const CUresult result = mCudaContext->launchKernel(updateKinematicKernelFunction, gridDim, 1, 1, numThreadPerWarp, numWarpPerBlock, 1, 0, mStream, EPILOG);
@@ -1749,7 +1815,7 @@ namespace physx
 				// Needed in case joint positions have been changed before the call
 				updateArticulationsKinematic(true, gpuIndices, nbElements);
 
-				CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPUTE_ARTI_DENSE_JACOBIANS);
+				CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPUTE_ARTI_DENSE_JACOBIANS);
 
 				const PxU32 threadsPerWarp = 32;
 				const PxU32 warpsPerBlock = 16;
@@ -1762,7 +1828,7 @@ namespace physx
 					CUDA_KERNEL_PARAM(nbElements),
 					CUDA_KERNEL_PARAM(maxLinks),
 					CUDA_KERNEL_PARAM(maxDofs),
-					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
+					CUDA_KERNEL_PARAM(mArticulationCoreDesc.get().articulations),
 				};
 
 				const CUresult result = mCudaContext->launchKernel(kernelFunction, blocks, 1, 1, threadsPerWarp, warpsPerBlock, 1, 0, mStream, EPILOG);
@@ -1771,19 +1837,16 @@ namespace physx
 			}
 			break;
 
-			// This enum has been deprecated, replaced with PxArticulationGPUAPIComputeType::eMASS_MATRICES
-			case PxArticulationGPUAPIComputeType::eGENERALIZED_MASS_MATRICES:
 			case PxArticulationGPUAPIComputeType::eMASS_MATRICES:
 			{
 				// Needed in case joint positions have been changed before the call
 				updateArticulationsKinematic(true, gpuIndices, nbElements);
 
-				CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPUTE_ARTI_MASS_MATRICES);
+				CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPUTE_ARTI_MASS_MATRICES);
 
 				const PxU32 threadsPerWarp = 32;
 				const PxU32 warpsPerBlock = 8;
 				const PxU32 blocks = (nbElements + warpsPerBlock - 1) / warpsPerBlock;
-				const bool rootMotion = (operation == PxArticulationGPUAPIComputeType::eMASS_MATRICES);
 
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
@@ -1791,8 +1854,7 @@ namespace physx
 					CUDA_KERNEL_PARAM(data),
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(maxDofs),
-					CUDA_KERNEL_PARAM(rootMotion),
-					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
+					CUDA_KERNEL_PARAM(mArticulationCoreDesc.get().articulations),
 				};
 
 				const CUresult result = mCudaContext->launchKernel(kernelFunction, blocks, 1, 1, threadsPerWarp, warpsPerBlock, 1, 0, mStream, EPILOG);
@@ -1801,19 +1863,16 @@ namespace physx
 			}
 			break;
 
-			// This enum has been deprecated, replaced with PxArticulationGPUAPIComputeType::eGRAVITY_COMPENSATION
-			case PxArticulationGPUAPIComputeType::eGENERALIZED_GRAVITY_FORCES:
 			case PxArticulationGPUAPIComputeType::eGRAVITY_COMPENSATION:
 			{
 				// Needed in case joint positions have been changed before the call
 				updateArticulationsKinematic(true, gpuIndices, nbElements);
 
-				CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPUTE_ARTI_GRAVITY_FORCES);
+				CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPUTE_ARTI_GRAVITY_FORCES);
 
 				const PxU32 threadsPerWarp = 32;
 				const PxU32 warpsPerBlock = 8;
 				const PxU32 blocks = (nbElements + warpsPerBlock - 1) / warpsPerBlock;
-				const bool rootMotion = (operation == PxArticulationGPUAPIComputeType::eGRAVITY_COMPENSATION);
 
 				const PxVec3 gravity = mGpuContext->getGravity();
 
@@ -1823,8 +1882,7 @@ namespace physx
 					CUDA_KERNEL_PARAM(data),
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(maxDofs),
-					CUDA_KERNEL_PARAM(rootMotion),
-					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
+					CUDA_KERNEL_PARAM(mArticulationCoreDesc.get().articulations),
 					CUDA_KERNEL_PARAM(gravity),
 				};
 
@@ -1834,20 +1892,17 @@ namespace physx
 			}
 			break;
 
-			// This enum has been deprecated, replaced with PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION
-			case PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_FORCES:
 			case PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION:
 			{
 				// Needed in case joint positions have been changed before the call
 				// AD should we zero the state here?
 				updateArticulationsKinematic(true, gpuIndices, nbElements);
 
-				CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPUTE_ARTI_CENTRIFUGAL_FORCES);
+				CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPUTE_ARTI_CENTRIFUGAL_FORCES);
 
 				const PxU32 threadsPerWarp = 32;
 				const PxU32 warpsPerBlock = 8;
 				const PxU32 blocks = (nbElements + warpsPerBlock - 1) / warpsPerBlock;
-				const bool rootMotion = (operation == PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION);
 
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
@@ -1855,8 +1910,7 @@ namespace physx
 					CUDA_KERNEL_PARAM(data),
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(maxDofs),
-					CUDA_KERNEL_PARAM(rootMotion),
-					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
+					CUDA_KERNEL_PARAM(mArticulationCoreDesc.get().articulations),
 				};
 
 				const CUresult result = mCudaContext->launchKernel(kernelFunction, blocks, 1, 1, threadsPerWarp, warpsPerBlock, 1, 0, mStream, EPILOG);
@@ -1871,7 +1925,7 @@ namespace physx
 				// Needed in case joint positions have been changed before the call
 				updateArticulationsKinematic(true, gpuIndices, nbElements);
 
-				CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPUTE_ARTI_COM);
+				CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPUTE_ARTI_COM);
 
 				const PxU32 threadsPerWarp = 32;
 				const PxU32 warpsPerBlock = 8;
@@ -1880,10 +1934,11 @@ namespace physx
 
 				KERNEL_PARAM_TYPE kernelParams[] =
 				{
+					CUDA_KERNEL_PARAM(nbElements),
 					CUDA_KERNEL_PARAM(data),
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(rootFrame),
-					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
+					CUDA_KERNEL_PARAM(mArticulationCoreDesc.get().articulations),
 				};
 
 				const CUresult result = mCudaContext->launchKernel(kernelFunction, blocks, 1, 1, threadsPerWarp, warpsPerBlock, 1, 0, mStream, EPILOG);
@@ -1897,7 +1952,7 @@ namespace physx
 				// Needed in case joint positions have been changed before the call
 				updateArticulationsKinematic(true, gpuIndices, nbElements);
 
-				CUfunction kernelFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::COMPUTE_ARTI_CENTROIDAL_MATRICES);
+				CUfunction kernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::COMPUTE_ARTI_CENTROIDAL_MATRICES);
 
 				const PxU32 threadsPerWarp = 32;
 				const PxU32 warpsPerBlock = 8;
@@ -1909,7 +1964,7 @@ namespace physx
 					CUDA_KERNEL_PARAM(gpuIndices),
 					CUDA_KERNEL_PARAM(nbElements),
 					CUDA_KERNEL_PARAM(maxDofs),
-					CUDA_KERNEL_PARAM(mArticulationCoreDesc->articulations),
+					CUDA_KERNEL_PARAM(mArticulationCoreDesc.get().articulations),
 				};
 
 				const CUresult result = mCudaContext->launchKernel(kernelFunction, blocks, 1, 1, threadsPerWarp, warpsPerBlock, 1, 0, mStream, EPILOG);

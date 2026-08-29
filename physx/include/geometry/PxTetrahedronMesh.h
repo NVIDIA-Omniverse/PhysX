@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -88,8 +88,6 @@ namespace physx
 
 		virtual	bool					isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxDeformableVolumeAuxData", PxRefCounted); }
 	};
-
-	typedef PX_DEPRECATED PxDeformableVolumeAuxData PxSoftBodyAuxData;
 
 	/**
 	\brief A tetramedron mesh, also called a 'tetrahedron soup'.
@@ -257,29 +255,11 @@ namespace physx
 		virtual const PxDeformableVolumeAuxData* getDeformableVolumeAuxData() const = 0;
 
 		/**
-		\brief Deprecated
-		\see getDeformableVolumeAuxData
-		*/
-		PX_DEPRECATED PX_FORCE_INLINE const PxDeformableVolumeAuxData* getSoftBodyAuxData() const
-		{
-			return getDeformableVolumeAuxData();
-		}
-
-		/**
 		\brief Accessor to the deformable volume's auxilary data like mass and rest pose information
 
 		\see PxDeformableVolumeAuxData
 		*/
 		virtual PxDeformableVolumeAuxData* getDeformableVolumeAuxData() = 0;
-
-		/**
-		\brief Deprecated
-		\see getDeformableVolumeAuxData
-		*/
-		PX_DEPRECATED PX_FORCE_INLINE PxDeformableVolumeAuxData* getSoftBodyAuxData()
-		{
-			return getDeformableVolumeAuxData();
-		}
 
 		/**
 		\brief Decrements the reference count of a tetrahedron mesh and releases it if the new reference count is zero.
@@ -296,8 +276,6 @@ namespace physx
 
 		virtual	bool					isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxDeformableVolumeMesh", PxRefCounted); }
 	};
-
-	typedef PX_DEPRECATED PxDeformableVolumeMesh PxSoftBodyMesh;
 
 
 	/**
@@ -325,8 +303,6 @@ namespace physx
 
 	};
 
-	typedef PX_DEPRECATED PxDeformableVolumeCollisionData PxSoftBodyCollisionData;
-
 	/**
 
 	\brief Contains raw geometry information describing the tetmesh's vertices and its elements (tetrahedra)
@@ -348,8 +324,6 @@ namespace physx
 	{
 
 	};
-
-	typedef PX_DEPRECATED PxDeformableVolumeSimulationData PxSoftBodySimulationData;
 
 	/**
 

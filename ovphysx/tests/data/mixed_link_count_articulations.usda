@@ -1,0 +1,121 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+# Two floating-base articulations with different link counts, for exercising
+# [N, L] zero-padding where L = maxLinks across the view:
+#   /World/articulation_short - 2 links
+#   /World/articulation_long  - 3 links
+def Xform "World"
+{
+    def PhysicsScene "physicsScene"
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    def Xform "articulation_short" (
+        apiSchemas = ["PhysicsArticulationRootAPI"]
+    )
+    {
+        def Capsule "link0" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (-2.5, 0, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        }
+
+        def PhysicsRevoluteJoint "joint1"
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/articulation_short/link0>
+            rel physics:body1 = </World/articulation_short/link1>
+            point3f physics:localPos0 = (0.25, 0, 0)
+            point3f physics:localPos1 = (-0.25, 0, 0)
+        }
+
+        def Capsule "link1" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (-2, 0, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        }
+    }
+
+    def Xform "articulation_long" (
+        apiSchemas = ["PhysicsArticulationRootAPI"]
+    )
+    {
+        def Capsule "link0" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (2.5, 0, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        }
+
+        def PhysicsRevoluteJoint "joint1"
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/articulation_long/link0>
+            rel physics:body1 = </World/articulation_long/link1>
+            point3f physics:localPos0 = (0.25, 0, 0)
+            point3f physics:localPos1 = (-0.25, 0, 0)
+        }
+
+        def Capsule "link1" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (3, 0, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        }
+
+        def PhysicsRevoluteJoint "joint2"
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/articulation_long/link1>
+            rel physics:body1 = </World/articulation_long/link2>
+            point3f physics:localPos0 = (0.25, 0, 0)
+            point3f physics:localPos1 = (-0.25, 0, 0)
+        }
+
+        def Capsule "link2" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (3.5, 0, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        }
+    }
+}

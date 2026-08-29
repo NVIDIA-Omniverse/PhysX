@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+
+########################################################################################################################
+# Repo tool base settings
+########################################################################################################################
+
+[repo]
+logging = "warn"
+import_optional_configs = ["${root}/repo_tools.toml"]
+
+[repo.folders]
+packages = "${root}/_builtpackages"
+version_file = "${root}/VERSION"
+
+########################################################################################################################
+# Code Formatter (used mainly for legal text check in headers)
+########################################################################################################################
+[repo_format]
+use_current_year_as_end_year = true
+license_preamble = '''
+SPDX-FileCopyrightText: Copyright (c) {years} NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause
+'''
+license_text = "" # we use two-line SPDX licenses
+
+[repo_format.cpp]
+# oss settings
+files.include = [
+    "include/**",
+    "src/**",
+    "tests/**"
+]
+files.extensions = [".h", ".h.in", ".hpp", ".inl", ".cpp", ".c"]
+
+files.exclude = [
+   "include/ovphysx/dlpack/**"  # vendored third-party header (upstream copyright)
+]
+
+# ovruntime is a nested repo with its own repo.toml and its own legal-format CI
+# job (lint-ovruntime), and it deliberately skips its vendored packman tooling.
+# ovphysx's text-file globs are root-relative, so without these excludes the
+# ovphysx format reaches into ovruntime and stamps files ovruntime skips.
+# "++" appends to repo_format's shipped list rather than replacing it.
+[repo_format.text_files.sh]
+files.exclude."++" = ["ovruntime/**"]
+[repo_format.text_files.bat]
+files.exclude."++" = ["ovruntime/**"]
+[repo_format.text_files.ps1]
+files.exclude."++" = ["ovruntime/**"]
+[repo_format.text_files.lua]
+files.exclude."++" = ["ovruntime/**"]
+[repo_format.text_files.toml]
+files.exclude."++" = ["ovruntime/**"]
+[repo_format.text_files.yaml]
+files.exclude."++" = ["ovruntime/**"]
+[repo_format.text_files.rst]
+files.exclude."++" = ["ovruntime/**"]
+[repo_format.text_files.md]
+files.exclude."++" = ["ovruntime/**"]
+
+[repo_format.python]
+maintain_legal_blurbs = true
+# oss settings
+files.include = [
+    "python/**",
+    "tensorapi/**",
+    "tests/**",
+    "build.sh",
+    "repo.sh",
+    "scripts/*.sh",
+]
+

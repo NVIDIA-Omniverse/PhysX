@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -328,7 +328,7 @@ float localMinDist = 1.0f;
 
 		// PT: TODO: refactor with computeBoxLocalImpact (TA34704)
 		if(hitFlags & (PxHitFlag::eNORMAL|PxHitFlag::ePOSITION))
-		{			
+		{
 			const PxTriangle& tri = triangles[sweepHit.faceIndex];
 
 			// Move to box space
@@ -383,7 +383,7 @@ bool sweepBox_HeightFieldGeom_Precise(GU_BOX_SWEEP_FUNC_PARAMS)
 
 	struct LocalReport : OverlapReport
 	{
-		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
+		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices) PX_OVERRIDE
 		{
 			for(PxU32 i=0; i<nb; i++)
 			{

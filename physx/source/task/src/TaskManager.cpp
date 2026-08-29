@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "task/PxTask.h"
 #include "foundation/PxErrors.h"
@@ -415,7 +415,7 @@ void PxTaskMgr::dispatchTask( PxTaskID taskID )
 
 	// prevent re-submission
     if( tt.mType == PxTaskType::eCOMPLETED )
-    {		
+    {
 		mErrorCallback.reportError(PxErrorCode::eDEBUG_WARNING, "PxTask dispatched twice", PX_FL);
 		return;
     }

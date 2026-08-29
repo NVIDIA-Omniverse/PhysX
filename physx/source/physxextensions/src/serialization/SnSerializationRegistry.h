@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -50,21 +50,21 @@ namespace Sn {
 		SerializationRegistry(PxPhysics& physics);					
 		virtual						~SerializationRegistry();
 
-		virtual void				release(){ PX_DELETE_THIS;  }
+		virtual void				release() PX_OVERRIDE { PX_DELETE_THIS;  }
 		
 		PxPhysics&			        getPhysics() const			{ return mPhysics; }
 		
 		//binary
-		void						registerSerializer(PxType type, PxSerializer& serializer);
-		PxSerializer*               unregisterSerializer(PxType type);
-		const PxSerializer*			getSerializer(PxType type) const;
-		const char*			        getSerializerName(PxU32 index) const;
-		PxType                      getSerializerType(PxU32 index) const;
-		PxU32                       getNbSerializers() const { return mSerializers.size(); } 
+		virtual	void				registerSerializer(PxType type, PxSerializer& serializer)	PX_OVERRIDE;
+		virtual	PxSerializer*		unregisterSerializer(PxType type)	PX_OVERRIDE;
+		virtual	const PxSerializer*	getSerializer(PxType type) const	PX_OVERRIDE;
+				const char*			getSerializerName(PxU32 index) const;
+				PxType				getSerializerType(PxU32 index) const;
+				PxU32				getNbSerializers() const	{ return mSerializers.size(); }
 		//repx
-		void						registerRepXSerializer(PxType type, PxRepXSerializer& serializer);
-		PxRepXSerializer*			getRepXSerializer(const char* typeName) const;
-		PxRepXSerializer*           unregisterRepXSerializer(PxType type);
+		virtual	void				registerRepXSerializer(PxType type, PxRepXSerializer& serializer)	PX_OVERRIDE;
+		virtual	PxRepXSerializer*	getRepXSerializer(const char* typeName) const	PX_OVERRIDE;
+		virtual	PxRepXSerializer*	unregisterRepXSerializer(PxType type)	PX_OVERRIDE;
 	
 	protected:
 		SerializationRegistry &operator=(const SerializationRegistry &);

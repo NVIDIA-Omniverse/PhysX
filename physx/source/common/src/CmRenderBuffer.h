@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -61,41 +61,41 @@ namespace Cm
 		{}
 		
 
-		virtual PxU32 getNbPoints() const { return mPoints.size(); }
-		virtual const PxDebugPoint* getPoints() const { return mPoints.begin(); }
-		virtual void addPoint(const PxDebugPoint& point) { mPoints.pushBack(point); }
+		virtual PxU32 getNbPoints() const PX_OVERRIDE { return mPoints.size(); }
+		virtual const PxDebugPoint* getPoints() const PX_OVERRIDE { return mPoints.begin(); }
+		virtual void addPoint(const PxDebugPoint& point) PX_OVERRIDE { mPoints.pushBack(point); }
 
-		virtual PxU32 getNbLines() const { return mLines.size(); }
-		virtual const PxDebugLine* getLines() const { return mLines.begin(); }
-		virtual void addLine(const PxDebugLine& line) { mLines.pushBack(line); }
-		virtual PxDebugLine* reserveLines(const PxU32 nbLines) {return reserveContainerMemory(mLines, nbLines);}
+		virtual PxU32 getNbLines() const PX_OVERRIDE { return mLines.size(); }
+		virtual const PxDebugLine* getLines() const PX_OVERRIDE { return mLines.begin(); }
+		virtual void addLine(const PxDebugLine& line) PX_OVERRIDE { mLines.pushBack(line); }
+		virtual PxDebugLine* reserveLines(const PxU32 nbLines) PX_OVERRIDE {return reserveContainerMemory(mLines, nbLines);}
 
-		virtual PxDebugPoint* reservePoints(const PxU32 nbPoints) { return reserveContainerMemory(mPoints, nbPoints); }
+		virtual PxDebugPoint* reservePoints(const PxU32 nbPoints) PX_OVERRIDE { return reserveContainerMemory(mPoints, nbPoints); }
 
-		virtual PxU32 getNbTriangles() const { return mTriangles.size(); }
-		virtual const PxDebugTriangle* getTriangles() const { return mTriangles.begin(); }
-		virtual void addTriangle(const PxDebugTriangle& triangle) { mTriangles.pushBack(triangle); }
+		virtual PxU32 getNbTriangles() const PX_OVERRIDE { return mTriangles.size(); }
+		virtual const PxDebugTriangle* getTriangles() const PX_OVERRIDE { return mTriangles.begin(); }
+		virtual void addTriangle(const PxDebugTriangle& triangle) PX_OVERRIDE { mTriangles.pushBack(triangle); }
 
-		virtual void append(const PxRenderBuffer& other)
+		virtual void append(const PxRenderBuffer& other) PX_OVERRIDE
 		{
 			append(mPoints, other.getPoints(), other.getNbPoints());
 			append(mLines, other.getLines(), other.getNbLines());
 			append(mTriangles, other.getTriangles(), other.getNbTriangles());
 		}
 
-		virtual void clear()
+		virtual void clear() PX_OVERRIDE
 		{
 			mPoints.clear(); 
 			mLines.clear();
 			mTriangles.clear();
 		}
 
-		virtual bool empty() const 
+		virtual bool empty() const PX_OVERRIDE
 		{
 			return mPoints.empty() && mLines.empty() && mTriangles.empty();
 		}
 
-		virtual void shift(const PxVec3& delta)
+		virtual void shift(const PxVec3& delta) PX_OVERRIDE
 		{
 			for(PxU32 i=0; i < mPoints.size(); i++)
 				mPoints[i].pos += delta;

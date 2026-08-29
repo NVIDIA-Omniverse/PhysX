@@ -22,46 +22,39 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PXG_ESSENTIAL_COMMON_H
 #define PXG_ESSENTIAL_COMMON_H
 
-#include "foundation/PxVec3.h"
-#include "foundation/PxVec4.h"
 #include "cudamanager/PxCudaTypes.h"
+#include "PxgAllocatorDesc.h"
 
 namespace physx
 {
-
-	class PxgCudaKernelWranglerManager;
 	class PxCudaContextManager;
 	class PxCudaContext;
-	class PxgHeapMemoryAllocatorManager;
 
-	struct PxGpuDynamicsMemoryConfig;
-
+	class PxgCudaKernelWranglerManager;
 	class PxgSimulationController;
-	class PxgCudaBroadPhaseSap;
-	class PxgGpuNarrowphaseCore;
 	class PxgGpuContext;
 
 	class PxgEssentialCore
 	{
 	public:
 		PxgEssentialCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
-			PxgHeapMemoryAllocatorManager* heapMemoryManager, PxgSimulationController* simController,
-			PxgGpuContext* context);
+			PxgAllocatorDesc& allocDesc, PxgSimulationController* simController, PxgGpuContext* context);
 
 		PxgCudaKernelWranglerManager*	mGpuKernelWranglerManager;
 		PxCudaContextManager*			mCudaContextManager;
 		PxCudaContext*					mCudaContext;
-		PxgHeapMemoryAllocatorManager*  mHeapMemoryManager;
 
 		PxgSimulationController*		mSimController;
 		PxgGpuContext*					mGpuContext;
+
+		PxgAllocatorDesc				mAllocDesc;
 
 		CUstream						mStream;
 	};

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -137,11 +137,11 @@ struct TriangleSupport : PxGjkQuery::Support
 		v0(_v0), v1(_v1), v2(_v2), margin(_margin)
 	{}
 
-	virtual PxReal getMargin() const
+	virtual PxReal getMargin() const PX_OVERRIDE
 	{
 		return margin;
 	}
-	virtual PxVec3 supportLocal(const PxVec3& dir) const
+	virtual PxVec3 supportLocal(const PxVec3& dir) const PX_OVERRIDE
 	{
 		float d0 = dir.dot(v0), d1 = dir.dot(v1), d2 = dir.dot(v2);
 		return (d0 > d1 && d0 > d2) ? v0 : (d1 > d2) ? v1 : v2;
@@ -190,7 +190,7 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 	{
 		PxContactBuffer* contactBuffer;
 		ContactRecorder(PxContactBuffer& _contactBuffer) : contactBuffer(&_contactBuffer) {}
-		virtual bool recordContacts(const PxContactPoint* contactPoints, PxU32 nbContacts, PxU32 /*index*/)
+		virtual bool recordContacts(const PxContactPoint* contactPoints, PxU32 nbContacts, PxU32 /*index*/) PX_OVERRIDE
 		{
 			for (PxU32 i = 0; i < nbContacts; ++i)
 				contactBuffer->contact(contactPoints[i]);
@@ -205,7 +205,7 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 	{
 		PxU8 buffer[1024];
 		ContactCacheAllocator() { PxMemSet(buffer, 0, sizeof(buffer)); }
-		virtual PxU8* allocateCacheData(const PxU32 /*byteSize*/) { return reinterpret_cast<PxU8*>(size_t(buffer + 0xf) & ~0xf); }
+		virtual PxU8* allocateCacheData(const PxU32 /*byteSize*/) PX_OVERRIDE { return reinterpret_cast<PxU8*>(size_t(buffer + 0xf) & ~0xf); }
 	}
 	contactCacheAllocator;
 
@@ -233,6 +233,8 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 				immediate::PxGenerateContacts(&pGeom0, &pGeom1, &pose, &pose1, &contactCache, 1, contactRecorder,
 					contactDistance, meshContactMargin, toleranceLength, contactCacheAllocator);
 			}
+			for (PxU32 i = 0; i < contactBuffer.count; ++i)
+				contactBuffer.contacts[i].internalFaceIndex1 = 0;
 		}
 		break;
 	}
@@ -262,6 +264,8 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 				immediate::PxGenerateContacts(&pGeom0, &pGeom1, &pose, &pose1, &contactCache, 1, contactRecorder,
 					contactDistance, meshContactMargin, toleranceLength, contactCacheAllocator);
 			}
+			for (PxU32 i = 0; i < contactBuffer.count; ++i)
+				contactBuffer.contacts[i].internalFaceIndex1 = 0;
 		}
 		break;
 	}
@@ -291,7 +295,7 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 			TriangleSupport triSupport(tri.verts[0], tri.verts[1], tri.verts[2], meshMargin);
 			if (PxGjkQueryExt::generateContacts(*this, triSupport, pose0, identityPose, contactDistance, toleranceLength, contactBuffer))
 			{
-				contactBuffer.contacts[contactBuffer.count - 1].internalFaceIndex1 = triangles[i];
+				const PxU32 firstContact = contactBuffer.count - 1;
 				PxGeometryHolder substituteGeom; PxTransform preTransform;
 				if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0))
 				{
@@ -301,6 +305,8 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 					PxTransform pose = pose0.transform(preTransform);
 					PxGeometryQuery::generateTriangleContacts(geom, pose, tri.verts, triangles[i], contactDistance, meshMargin, toleranceLength, contactBuffer);
 				}
+				for (PxU32 j = firstContact; j < contactBuffer.count; ++j)
+					contactBuffer.contacts[j].internalFaceIndex1 = triangles[i];
 			}
 			if (hasAdjacency)
 			{
@@ -516,6 +522,30 @@ void PxCustomGeometryExt::BaseConvexCallbacks::setMargin(float m)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if PX_SUPPORT_OMNI_PVD
+// Shared OVD emit for one custom-geometry-ext callbacks object, used by the live constructor and by the
+// full-state snapshot (mirrors how omniPvdInitJoint is shared between joint constructors and the
+// snapshot). Explicit form: the caller already holds a write scope. Keep in sync with the schema.
+namespace physx { namespace Ext {
+void omniPvdInitCustomGeometryExt(OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData, const PxCustomGeometryExt::CylinderCallbacks& c)
+{
+	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, c);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtBaseConvexCallbacks, margin, static_cast<const PxCustomGeometryExt::BaseConvexCallbacks&>(c), c.getMargin());
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, height, c, c.getHeight());
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, radius, c, c.getRadius());
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, axis, c, c.getAxis());
+}
+void omniPvdInitCustomGeometryExt(OmniPvdWriter* pvdWriter, const OmniPvdPxExtensionsRegistrationData* pvdRegData, const PxCustomGeometryExt::ConeCallbacks& c)
+{
+	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, c);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtBaseConvexCallbacks, margin, static_cast<const PxCustomGeometryExt::BaseConvexCallbacks&>(c), c.getMargin());
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, height, c, c.getHeight());
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, radius, c, c.getRadius());
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, axis, c, c.getAxis());
+}
+} }
+#endif
+
 IMPLEMENT_CUSTOM_GEOMETRY_TYPE(PxCustomGeometryExt::CylinderCallbacks)
 
 PxCustomGeometryExt::CylinderCallbacks::CylinderCallbacks(float _height, float _radius, int _axis, float _margin)
@@ -524,11 +554,7 @@ PxCustomGeometryExt::CylinderCallbacks::CylinderCallbacks(float _height, float _
 {
 #if PX_SUPPORT_OMNI_PVD
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, *this);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtBaseConvexCallbacks, margin, *static_cast<BaseConvexCallbacks*>(this), margin);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, height, *this, height);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, radius, *this, radius);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, axis, *this, axis);
+	physx::Ext::omniPvdInitCustomGeometryExt(pvdWriter, pvdRegData, *this);
 	OMNI_PVD_WRITE_SCOPE_END
 #endif
 }
@@ -625,6 +651,17 @@ PxVec3 PxCustomGeometryExt::CylinderCallbacks::supportLocal(const PxVec3& dir) c
 	return PxVec3(0);
 }
 
+PxBounds3 PxCustomGeometryExt::CylinderCallbacks::getLocalBounds(const PxGeometry&) const
+{
+	const float h = height * 0.5f;
+	const float r = radius;
+	PxBounds3 localBounds(PxVec3(-r), PxVec3(r));
+	localBounds.minimum[axis] = -h;
+	localBounds.maximum[axis] = h;
+	localBounds.fattenSafe(margin);
+	return localBounds;
+}
+
 void PxCustomGeometryExt::CylinderCallbacks::computeMassProperties(const PxGeometry& /*geometry*/, PxMassProperties& massProperties) const
 {
 	if (margin == 0)
@@ -676,7 +713,7 @@ void PxCustomGeometryExt::CylinderCallbacks::computeMassProperties(const PxGeome
 
 bool PxCustomGeometryExt::CylinderCallbacks::useSubstituteGeometry(PxGeometryHolder& geom, PxTransform& preTransform, const PxContactPoint& p, const PxTransform& pose0) const
 {
-	// here I check if we contact with the cylender bases or the lateral surface
+	// here I check if we contact with the cylinder bases or the lateral surface
 	// where more than 1 contact point can be generated.
 	PxVec3 locN = pose0.rotateInv(p.normal);
 	float nAng = acosf(PxClamp(-locN[axis], -1.0f, 1.0f));
@@ -745,11 +782,7 @@ PxCustomGeometryExt::ConeCallbacks::ConeCallbacks(float _height, float _radius, 
 {
 #if PX_SUPPORT_OMNI_PVD
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, *this);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtBaseConvexCallbacks, margin, *static_cast<BaseConvexCallbacks*>(this), margin);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, height, *this, height);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, radius, *this, radius);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, axis, *this, axis);
+	physx::Ext::omniPvdInitCustomGeometryExt(pvdWriter, pvdRegData, *this);
 	OMNI_PVD_WRITE_SCOPE_END
 #endif
 }

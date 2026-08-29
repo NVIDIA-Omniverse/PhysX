@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -34,7 +34,6 @@
 #include "convexFormat.h"
 #include "cutil_math.h"
 #include "PxgCommonDefines.h"
-#include "PxgPersistentContactManifold.h"
 #include "assert.h"
 
 #define CONVEX_PLANE_WARPS_PER_BLOCK 4
@@ -49,12 +48,12 @@
 
 namespace physx
 {
-	struct PxgPersistentContactManifold;
-	struct PxgPersistentContactMultiManifold;
-	struct PxgContactManagerInput;
-	struct PxsContactManagerOutput;
-	class PxsContactManager;
-	struct PxsTorsionalFrictionData;
+struct PxgPersistentContactManifold;
+struct PxgPersistentContactMultiManifold;
+struct PxgContactManagerInput;
+struct PxsContactManagerOutput;
+class PxsContactManager;
+struct PxsTorsionalFrictionData;
 
 namespace Sc
 {
@@ -62,67 +61,64 @@ namespace Sc
 }
 
 
-	struct PxgPairManagementData
+struct PxgPairManagementData
+{
+	PxgContactManagerInput*			mContactManagerInputData;
+	PxsContactManagerOutput*		mContactManagerOutputData;
+	PxsContactManager**				mCpuContactManagerMapping;
+	Sc::ShapeInteraction**			mShapeInteractions;
+	PxReal*							mRestDistances;
+	PxsTorsionalFrictionData*		mTorsionalData;
+	PxU32*							mTempAccumulator;
+	PxU32*							mBlockSharedAccumulator;
+	PxU32*							mRemoveIndices;
+	PxU32							mNbPairs;
+	PxU32							mNbToRemove;
+
+	void*							mPersistentContactManagers;// either PxgPersistentContactManifold or PxgPersistentMultiManagementData
+
+	PxgPairManagementData() : mContactManagerInputData(NULL), mContactManagerOutputData(NULL), mCpuContactManagerMapping(NULL), mShapeInteractions(NULL), 
+		mRestDistances(NULL), mTorsionalData(NULL), mTempAccumulator(NULL), mBlockSharedAccumulator(NULL), mNbPairs(0)
 	{
-		PxgContactManagerInput*			mContactManagerInputData;
-		PxsContactManagerOutput*		mContactManagerOutputData;
-		PxsContactManager**				mCpuContactManagerMapping;
-		Sc::ShapeInteraction**			mShapeInteractions;
-		PxReal*							mRestDistances;
-		PxsTorsionalFrictionData*		mTorsionalData;
-		PxU32*							mTempAccumulator;
-		PxU32*							mBlockSharedAccumulator;
-		PxU32*							mRemoveIndices;
-		PxU32							mNbPairs;
-		PxU32							mNbToRemove;
+	}
+};
 
-		void*							mPersistentContactManagers;// either PxgPersistentContactManifold or PxgPersistentMultiManagementData
 
-		PxgPairManagementData() : mContactManagerInputData(NULL), mContactManagerOutputData(NULL), mCpuContactManagerMapping(NULL), mShapeInteractions(NULL), 
-			mRestDistances(NULL), mTorsionalData(NULL), mTempAccumulator(NULL), mBlockSharedAccumulator(NULL), mNbPairs(0)
-		{
-		}
+struct PX_ALIGN_PREFIX(16) PxgPatchAndContactCounters
+{
+	enum OverflowError
+	{
+		NO_OVERFLOW = 0,
+		CONTACT_BUFFER_OVERFLOW = 1 << 0,
+		FORCE_BUFFER_OVERFLOW = 1 << 1,
+		PATCH_BUFFER_OVERFLOW = 1 << 2
 	};
 
+	PxU32 patchesBytes;
+	PxU32 contactsBytes;
+	PxU32 forceAndIndiceBytes;
+	PxU32 overflowError;
 
-	struct PX_ALIGN_PREFIX(16) PxgPatchAndContactCounters
+	__device__
+	void setOverflowError(const OverflowError& err)
 	{
-		enum OverflowError
-		{
-			NO_OVERFLOW = 0,
-			CONTACT_BUFFER_OVERFLOW = 1 << 0,
-			FORCE_BUFFER_OVERFLOW = 1 << 1,
-			PATCH_BUFFER_OVERFLOW = 1 << 2
-		};
-
-		PxU32 patchesBytes;
-		PxU32 contactsBytes;
-		PxU32 forceAndIndiceBytes;
-		PxU32 overflowError;
-
-		__device__
-			void setOverflowError(const OverflowError& err)
-		{
-			PX_UNUSED(err);
+		PX_UNUSED(err);
 #if __CUDA_ARCH__
-			atomicOr(&overflowError, PxU32(err));
+		atomicOr(&overflowError, PxU32(err));
 #endif
-		}
+	}
 
-		__host__ __device__
-			PxU32 getOverflowError() const
-		{
-			return overflowError;
-		}
-	} PX_ALIGN_SUFFIX(16);
-
-}
-
+	__host__ __device__
+	PxU32 getOverflowError() const
+	{
+		return overflowError;
+	}
+} PX_ALIGN_SUFFIX(16);
 
 __host__ __device__ inline
-physx::ConvexHullCooked::Valency u32ToValency(physx::PxU32 countOffset)
+ConvexHullCooked::Valency u32ToValency(PxU32 countOffset)
 {
-	physx::ConvexHullCooked::Valency v;
+	ConvexHullCooked::Valency v;
 	v.mCount = u32High(countOffset);
 	v.mOffset = u32Low(countOffset);
 	
@@ -130,67 +126,72 @@ physx::ConvexHullCooked::Valency u32ToValency(physx::PxU32 countOffset)
 }
 
 __host__ __device__ inline
-physx::PxU32 valencyToPxU32(const physx::ConvexHullCooked::Valency& v)
+PxU32 valencyToPxU32(const ConvexHullCooked::Valency& v)
 {
-	return merge(v.mCount, v.mOffset); 
+	return ::merge(v.mCount, v.mOffset); 
 }
 
 __host__ __device__ inline
-physx::PxU8 getNbAdjVerts(physx::PxU32 val)
-{
-	return u16Low(u32Low(val));
-}
-
-__host__ __device__ inline
-physx::PxU16 getNbEdges(physx::PxU32 val)
-{
-	return u32High(val);
-}
-
-__host__ __device__ inline
-physx::PxU8 getNbPolygons(physx::PxU32 val)
+PxU8 getNbAdjVerts(PxU32 val)
 {
 	return u16Low(u32Low(val));
 }
 
 __host__ __device__ inline
-physx::PxU16 getVRef8(physx::PxU32 val)
+PxU16 getNbEdges(PxU32 val)
 {
 	return u32High(val);
 }
 
 __host__ __device__ inline
-physx::PxU8 getNbVerts(physx::PxU32 val)
+PxU8 getNbPolygons(PxU32 val)
+{
+	return u16Low(u32Low(val));
+}
+
+__host__ __device__ inline
+PxU16 getVRef8(PxU32 val)
+{
+	return u32High(val);
+}
+
+__host__ __device__ inline
+PxU8 getNbVerts(PxU32 val)
 {
 	return u16High(u32Low(val));
 }
 
 __host__ __device__ inline
-physx::PxU8 getMinIndex(physx::PxU32 val)
+PxU8 getMinIndex(PxU32 val)
 {
 	return u16Low(u32Low(val));
 }
 
 __host__ __device__ inline
-physx::PxU32 merge(physx::PxU16 hi, physx::PxU8 lohi, physx::PxU8 lolo)
+PxU32 merge(PxU16 hi, PxU8 lohi, PxU8 lolo)
 {
-	return merge(hi, merge(lohi, lolo));
+	return ::merge(hi, ::merge(lohi, lolo));
 }
 
-__host__ __device__ inline bool isValidTet(const physx::PxVec3& worldV0, const physx::PxVec3& worldV1, const physx::PxVec3& worldV2, const physx::PxVec3& worldV3)
+__host__ __device__ inline bool isValidTet(const PxVec3& worldV0, const PxVec3& worldV1, const PxVec3& worldV2, const PxVec3& worldV3)
 {
 	return (worldV1 - worldV0).dot((worldV2 - worldV0).cross(worldV3 - worldV0)) > 1e-9f;
 }
+
+} // namespace physx
 
 //device only functions
 #if PX_CUDA_COMPILER
 
 #include "reduction.cuh"
 
+namespace physx
+{
+
 class MeshScaling
 {
 public:
-	__device__ MeshScaling(const physx::PxVec3& scale_, const physx::PxQuat& rotation_)
+	__device__ MeshScaling(const PxVec3& scale_, const PxQuat& rotation_)
 	{
 		scale = scale_;
 		rotation = rotation_;
@@ -198,10 +199,8 @@ public:
 		flipNormal = ((scale.x * scale.y * scale.z) < 0.0f);
 	}
 
-	__device__ inline physx::PxVec3 vertex2Shape(const physx::PxVec3& v)	const
+	__device__ inline PxVec3 vertex2Shape(const PxVec3& v)	const
 	{
-		using namespace physx;
-
 		PxVec3 temp = rotation.rotate(v);
 
 		temp.x *= scale.x;
@@ -211,10 +210,8 @@ public:
 		return rotation.rotateInv(temp);
 	}
 
-	__device__ inline physx::PxVec3 shape2Vertex(const physx::PxVec3& v)	const
+	__device__ inline PxVec3 shape2Vertex(const PxVec3& v)	const
 	{
-		using namespace physx;
-
 		PxVec3 temp = rotation.rotate(v);
 
 		temp.x /= scale.x;
@@ -226,20 +223,20 @@ public:
 
 	//Transforms a normal vector from vertex to shape space. This keeps the normal vector perpendicular to surfaces that get scaled with the same transform.
 	//Does not preserve length. Is applicable to other covariant vectors too.
-	__device__ inline physx::PxVec3 vertex2ShapeNormalVector(const physx::PxVec3& normal)	const
+	__device__ inline PxVec3 vertex2ShapeNormalVector(const PxVec3& normal)	const
 	{
 		return shape2Vertex(normal);
 	}
 
 	//Transforms a normal vector from shape to vertex space. This keeps the normal vector perpendicular to surfaces that get scaled with the same transform.
 	//Does not preserve length. Is applicable to other covariant vectors too.
-	__device__ inline physx::PxVec3 shape2VertexNormalVector(const physx::PxVec3& normal)	const
+	__device__ inline PxVec3 shape2VertexNormalVector(const PxVec3& normal)	const
 	{
 		return vertex2Shape(normal);
 	}
 
-	__device__ inline void getShapeSpaceVert(physx::PxVec3& triV0, physx::PxVec3& triV1, physx::PxVec3& triV2,
-		physx::PxVec3& v0, physx::PxVec3& v1, physx::PxVec3& v2)	const
+	__device__ inline void getShapeSpaceVert(PxVec3& triV0, PxVec3& triV1, PxVec3& triV2,
+		PxVec3& v0, PxVec3& v1, PxVec3& v2)	const
 	{
 		if (idtMeshScale)
 		{
@@ -259,18 +256,16 @@ public:
 		}
 	}
 
-	physx::PxVec3 scale;
-	physx::PxQuat rotation;
+	PxVec3 scale;
+	PxQuat rotation;
 	bool idtMeshScale;
 	bool flipNormal;
 };
 
 //Applies a potentially non-uniform scaling to the point v. The scaling can be expressed in a rotated coordinate frame defined by the quaternion called rotation.
 __device__ inline
-physx::PxVec3 vertex2Shape(const physx::PxVec3& v, const physx::PxVec3& scale, const physx::PxQuat& rotation)
+PxVec3 vertex2Shape(const PxVec3& v, const PxVec3& scale, const PxQuat& rotation)
 {
-	using namespace physx;
-
 	PxVec3 temp = rotation.rotate(v);
 
 	temp.x *= scale.x; 
@@ -282,10 +277,8 @@ physx::PxVec3 vertex2Shape(const physx::PxVec3& v, const physx::PxVec3& scale, c
 
 //Removes a potentially non-uniform scaling from the point v. The scaling can be expressed in a rotated coordinate frame defined by the quaternion called rotation.
 __device__ inline
-physx::PxVec3 shape2Vertex(const physx::PxVec3& v, const physx::PxVec3& scale, const physx::PxQuat& rotation)
+PxVec3 shape2Vertex(const PxVec3& v, const PxVec3& scale, const PxQuat& rotation)
 {
-	using namespace physx;
-
 	PxVec3 temp = rotation.rotate(v);
 
 	temp.x /= scale.x; 
@@ -298,7 +291,7 @@ physx::PxVec3 shape2Vertex(const physx::PxVec3& v, const physx::PxVec3& scale, c
 //Transforms a normal vector from vertex to shape space. This keeps the normal vector perpendicular to surfaces that get scaled with the same transform.
 //Does not preserve length. Is applicable to other covariant vectors too.
 __device__ inline
-physx::PxVec3 vertex2ShapeNormalVector(const physx::PxVec3& normal, const physx::PxVec3& scale, const physx::PxQuat& rotation)
+PxVec3 vertex2ShapeNormalVector(const PxVec3& normal, const PxVec3& scale, const PxQuat& rotation)
 {
 	return shape2Vertex(normal, scale, rotation);
 }
@@ -306,7 +299,7 @@ physx::PxVec3 vertex2ShapeNormalVector(const physx::PxVec3& normal, const physx:
 //Transforms a normal vector from shape to vertex space. This keeps the normal vector perpendicular to surfaces that get scaled with the same transform.
 //Does not preserve length. Is applicable to other covariant vectors too.
 __device__ inline
-physx::PxVec3 shape2VertexNormalVector(const physx::PxVec3& normal, const physx::PxVec3& scale, const physx::PxQuat& rotation)
+PxVec3 shape2VertexNormalVector(const PxVec3& normal, const PxVec3& scale, const PxQuat& rotation)
 {
 	return vertex2Shape(normal, scale, rotation);
 }
@@ -348,7 +341,6 @@ void prepareVertices(PxVec3 scale, PxQuat rot,
 __device__ inline static
 PxReal calculatePCMConvexMargin(const float4& extents_, const PxVec3& scale, const PxReal toleranceLength)
 {
-	using namespace physx;
 	const PxVec3 extents = PxVec3(extents_.x * scale.x, 
 								 extents_.y * scale.y,
 								 extents_.z * scale.z);
@@ -362,16 +354,14 @@ PxReal calculatePCMConvexMargin(const float4& extents_, const PxVec3& scale, con
 __device__ inline static
 PxReal calculatePCMConvexMargin(const PxVec3& extents, const PxReal toleranceLength)
 {
-	using namespace physx;
 	const PxReal min = fminf(fminf(extents.x, extents.y), extents.z);
 	const PxReal toleranceMargin = toleranceLength * MESH_MANIFOLD_EPSILON;
 	//ML: 25% of the minimum extents of the internal AABB as this convex hull's margin
 	return fminf((min * BOX_MARGIN_RATIO), toleranceMargin);
 }
 
-__device__ inline static physx::PxReal maxTransformPositionDelta(const physx::PxVec3& curP, const physx::PxVec3& preP)
+__device__ inline static PxReal maxTransformPositionDelta(const PxVec3& curP, const PxVec3& preP)
 {
-	using namespace physx;
 	const PxVec3 deltaP = curP - preP;
 	return PxMax(PxAbs(deltaP.x), PxMax(PxAbs(deltaP.y), PxAbs(deltaP.z)));
 }
@@ -388,10 +378,9 @@ __constant__ __device__ PxF32 local_invalidateQuatThresholdsConvexPlane[5] = { 0
 __device__ inline static
 PxU32 invalidate_BoxConvex(const PxVec3& curRelPos, const PxQuat& curQuatA, const PxQuat& curQuatB, 
 	const PxVec3& preRelPos, const PxQuat& preRelQuatA, const PxQuat& preRelQuatB,
-	const physx::PxReal minMargin, const physx::PxReal radiusA, const physx::PxReal radiusB, 
-	const physx::PxU8 manifold_NumContacts, PxF32* local_invalidateThresholds, PxF32* local_invalidateQuatThresholds)
+	const PxReal minMargin, const PxReal radiusA, const PxReal radiusB, 
+	const PxU8 manifold_NumContacts, PxF32* local_invalidateThresholds, PxF32* local_invalidateQuatThresholds)
 {
-	using namespace physx;
 	//This is the translational threshold used in invalidate_BoxConvexHull. 0.5 is 50% of the object margin. we use different threshold between
 	//0 and 4 points. This threashold is a scale that is multiplied by the objects' margins.
 	const PxReal ratio = local_invalidateThresholds[manifold_NumContacts];
@@ -419,6 +408,7 @@ PxU32 invalidate_BoxConvex(const PxVec3& curRelPos, const PxQuat& curQuatA, cons
 	return generateContacts;
 }
 
+} // namespace physx
 
 #endif
 #endif

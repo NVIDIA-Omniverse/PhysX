@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -37,15 +37,16 @@
 #include "PxgParticleSystemCoreKernelIndices.h"
 #include "DyParticleSystem.h"
 #include "PxgKernelLauncher.h"
+#include "PxsHeapStats.h"
 
 #define PS_GPU_SPARSE_GRID_CORE_DEBUG 0
 
 using namespace physx;
 
 PxgRadixSortCore::PxgRadixSortCore(PxgEssentialCore* core) :
-	mRSDesc(core->mHeapMemoryManager->mMappedMemoryAllocators),
-	mRadixSortDescBuf(core->mHeapMemoryManager, PxsHeapStats::eSHARED_PARTICLES),
-	mRadixCountTotalBuf(core->mHeapMemoryManager, PxsHeapStats::eSHARED_PARTICLES)
+	mRSDesc(core->mAllocDesc.hostAlloc, PxsHeapStats::eSHARED_PARTICLES),
+	mRadixSortDescBuf(core->mAllocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES),
+	mRadixCountTotalBuf(core->mAllocDesc.deviceAlloc, PxsHeapStats::eSHARED_PARTICLES)
 {
 	mEssentialCore = core;
 }
@@ -87,8 +88,8 @@ void PxgRadixSortCore::updateGPURadixSortDesc(PxCudaContext*mCudaContext, const 
 void PxgRadixSortCore::sort(PxgCudaKernelWranglerManager* mGpuKernelWranglerManager, PxCudaContext*mCudaContext,
 	const CUstream& stream, PxgCudaBuffer* radixSortDescBuf, const PxU32 numBits)
 {
-	CUfunction radixFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RS_MULTIBLOCK);
-	CUfunction calculateRanksFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RS_CALCULATERANKS_MULTIBLOCK);
+	CUfunction radixFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::RS_MULTIBLOCK);
+	CUfunction calculateRanksFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::RS_CALCULATERANKS_MULTIBLOCK);
 
 	PxU32 startBit = 0;
 	PxU32 numPass = (numBits + 3) / 4;
@@ -127,8 +128,8 @@ void PxgRadixSortCore::sort(PxgCudaKernelWranglerManager* mGpuKernelWranglerMana
 void PxgRadixSortCore::sort(PxgCudaKernelWranglerManager* mGpuKernelWranglerManager, PxCudaContext*mCudaContext, const CUstream& stream,
 	const PxU32 numOfKeys, PxgCudaBuffer* radixSortDescBuf, const PxU32 numBits, PxgRadixSortDesc* rsDescs)
 {
-	CUfunction radixFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RS_MULTIBLOCK_NO_COUNT);
-	CUfunction calculateRanksFunction = mGpuKernelWranglerManager->getKernelWrangler()->getCuFunction(PxgKernelIds::RS_CALCULATERANKS_MULTIBLOCK_NO_COUNT);
+	CUfunction radixFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::RS_MULTIBLOCK_NO_COUNT);
+	CUfunction calculateRanksFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::RS_CALCULATERANKS_MULTIBLOCK_NO_COUNT);
 
 	PxU32 startBit = 0;
 	const PxU32 numPass = (numBits + 3) / 4;

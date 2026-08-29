@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ovphysx-python-benchmarks"
+version = "0.0.1"
+requires-python = ">=3.10"
+dependencies = [
+  "pytest>=7",
+  "pytest-benchmark>=4",
+  "numpy>=1.20",
+  "ovphysx",
+]
+
+[project.optional-dependencies]
+# Optional GPU-side helpers for DLPack roundtrip benchmarks.
+gpu = [
+  "torch>=2.0",
+]
+
+[tool.setuptools]
+py-modules = []
+
+[tool.pytest.ini_options]
+addopts = "-v -s"
+testpaths = ["."]
+# The suite uses bench_*.py rather than the pytest default test_*.py;
+# match both so pytest's auto-discovery picks up bench files.
+python_files = ["bench_*.py", "test_*.py"]
+
+[tool.uv]
+index-url = "https://pypi.org/simple"
+
+[tool.uv.sources]
+"ovphysx" = { path = "../../python", editable = true }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,41 +31,23 @@
 
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxBounds3.h"
-#include "PxgContactManager.h"
+#include "geometry/PxGeometry.h"
+#include "PxNodeIndex.h"
+
 #include "AlignedTransform.h"
-#include "PxsTransformCache.h"
-#include "PxgConvexConvexShape.h"
+#include "PxsCachedTransform.h"
 #include "convexNpCommon.h"
 
 #include "PxgCommonDefines.h"
-#include "geometry/PxGeometry.h"
-#include "utils.cuh"
+#include "PxgContactManager.h"
+#include "PxgConvexConvexShape.h"
 #include "PxgSolverCoreDesc.h"
 #include "PxgArticulationCoreDesc.h"
 
-using namespace physx;
+#include "utils.cuh"
 
-struct PxgVelocityPackPGS
+namespace physx
 {
-	PxVec3 linVel;
-	PxVec3 angVel;
-};
-
-struct PxgVelocityPackTGS
-{
-	PxVec3 linVel;
-	PxVec3 angVel;
-	PxVec3 linDelta;
-	PxVec3 angDelta;
-};
-
-union PxgVelocityPack
-{
-	PxgVelocityPackTGS tgs;
-	PxgVelocityPackPGS pgs;
-
-	PX_FORCE_INLINE __device__ PxgVelocityPack() {}
-};
 
 struct PxgVelocityReader
 {
@@ -83,22 +65,23 @@ struct PxgVelocityReader
 	const float4* const PX_RESTRICT solverBodyDeltaVel;
 	const float4* const PX_RESTRICT initialVel;
 	
-	template <typename IterativeData>
+	// solverBodyVelPool is the raw velocity pool passed in as a kernel arg
+	// from the host (PxgSolverCore::getSolverBodyVelPoolDevPtr()).
 	PX_FORCE_INLINE __device__ PxgVelocityReader(const PxgPrePrepDesc* preDesc, const PxgSolverCoreDesc* solverCoreDesc, const PxgArticulationCoreDesc* artiCoreDesc,
-		const PxgSolverSharedDesc<IterativeData>* sharedDesc, PxU32 numSolverBodies) :
+		float4* solverBodyVelPool, PxU32 numSolverBodies) :
 		solverBodyIndices(preDesc->solverBodyIndices),
 		artiLinkVelocities(solverCoreDesc->outArtiVelocity),
 		maxLinks(artiCoreDesc->mMaxLinksPerArticulation),
 		nbArticulations(artiCoreDesc->nbArticulations),
 		artiOffset(maxLinks * nbArticulations),
-		solverBodyDeltaVel(sharedDesc->iterativeData.solverBodyVelPool + solverCoreDesc->accumulatedBodyDeltaVOffset),
+		solverBodyDeltaVel(solverBodyVelPool + solverCoreDesc->accumulatedBodyDeltaVOffset),
 		initialVel(solverCoreDesc->outSolverVelocity),
 		numSolverBodies(numSolverBodies)
 	{
 	}
 
-	template<typename Pack>
-	PX_FORCE_INLINE __device__ PxU32 readVelocitiesPGS(const PxNodeIndex rigidId, Pack& result)
+	PX_FORCE_INLINE __device__ void readVelocitiesPGS(const PxNodeIndex rigidId,
+		PxVec3& linVel, PxVec3& angVel, PxVec3& linDelta, PxVec3& angDelta)
 	{
 		const PxU32 solverBodyIdx = rigidId.isStaticBody() ? 0 : solverBodyIndices[rigidId.index()];
 
@@ -108,18 +91,22 @@ struct PxgVelocityReader
 			const float4* vels = &artiLinkVelocities[index];
 			const PxU32 linkID = rigidId.articulationLinkId();
 
-			result.linVel = PxLoad3(vels[linkID]);
-			result.angVel = PxLoad3(vels[linkID + artiOffset]);			
+			linVel = PxLoad3(vels[linkID]);
+			angVel = PxLoad3(vels[linkID + artiOffset]);
 		}
 		else
 		{
-			result.linVel = PxLoad3(initialVel[solverBodyIdx]) + PxLoad3(solverBodyDeltaVel[solverBodyIdx]);
-			result.angVel = PxLoad3(initialVel[solverBodyIdx + numSolverBodies]) + PxLoad3(solverBodyDeltaVel[solverBodyIdx + numSolverBodies]);			
+			linVel = PxLoad3(initialVel[solverBodyIdx]) + PxLoad3(solverBodyDeltaVel[solverBodyIdx]);
+			angVel = PxLoad3(initialVel[solverBodyIdx + numSolverBodies]) + PxLoad3(solverBodyDeltaVel[solverBodyIdx + numSolverBodies]);
 		}
-		return solverBodyIdx;
+
+		// PGS carries no position deltas; zero them so the solver math needs no isTGS branch.
+		linDelta = PxVec3(0.0f);
+		angDelta = PxVec3(0.0f);
 	}
 
-	PX_FORCE_INLINE __device__ PxU32 readVelocitiesTGS(const PxNodeIndex rigidId, PxgVelocityPackTGS& result)
+	PX_FORCE_INLINE __device__ void readVelocitiesTGS(const PxNodeIndex rigidId,
+		PxVec3& linVel, PxVec3& angVel, PxVec3& linDelta, PxVec3& angDelta)
 	{
 		const PxU32 solverBodyIdx = rigidId.isStaticBody() ? 0 : solverBodyIndices[rigidId.index()];
 
@@ -131,13 +118,13 @@ struct PxgVelocityReader
 
 			float4 linearVelocity = vels[linkID];
 			float4 angularVelocity = vels[linkID + artiOffset];
-			float4 linDelta = vels[linkID + artiOffset + artiOffset];
-			float4 angDelta = vels[linkID + artiOffset + artiOffset + artiOffset];
+			float4 linearDelta = vels[linkID + artiOffset + artiOffset];
+			float4 angularDelta = vels[linkID + artiOffset + artiOffset + artiOffset];
 
-			result.linVel = PxVec3(linearVelocity.x, linearVelocity.y, linearVelocity.z);
-			result.angVel = PxVec3(angularVelocity.x, angularVelocity.y, angularVelocity.z);
-			result.linDelta = PxVec3(linDelta.x, linDelta.y, linDelta.z);
-			result.angDelta = PxVec3(angDelta.x, angDelta.y, angDelta.z);						
+			linVel = PxVec3(linearVelocity.x, linearVelocity.y, linearVelocity.z);
+			angVel = PxVec3(angularVelocity.x, angularVelocity.y, angularVelocity.z);
+			linDelta = PxVec3(linearDelta.x, linearDelta.y, linearDelta.z);
+			angDelta = PxVec3(angularDelta.x, angularDelta.y, angularDelta.z);
 		}
 		else
 		{
@@ -145,12 +132,11 @@ struct PxgVelocityReader
 			float4 vel1 = solverBodyDeltaVel[solverBodyIdx + numSolverBodies];
 			float4 vel2 = solverBodyDeltaVel[solverBodyIdx + numSolverBodies + numSolverBodies];
 
-			result.linVel = PxVec3(vel0.x, vel0.y, vel0.z);
-			result.angVel = PxVec3(vel0.w, vel1.x, vel1.y);
-			result.linDelta = PxVec3(vel1.z, vel1.w, vel2.x);
-			result.angDelta = PxVec3(vel2.y, vel2.z, vel2.w);
+			linVel = PxVec3(vel0.x, vel0.y, vel0.z);
+			angVel = PxVec3(vel0.w, vel1.x, vel1.y);
+			linDelta = PxVec3(vel1.z, vel1.w, vel2.x);
+			angDelta = PxVec3(vel2.y, vel2.z, vel2.w);
 		}
-		return solverBodyIdx;
 	}
 };
 
@@ -392,5 +378,7 @@ void ConvexMeshPair_WriteWarp(ConvexMeshPair* outp, const ConvexMeshPair& inp)
 	}
 
 }
+
+} // namespace physx
 
 #endif

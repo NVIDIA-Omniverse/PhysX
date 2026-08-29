@@ -1,0 +1,41 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Static SDF cube collider for ovphysx SDF evaluation tests. Half-extent 0.5, centered at origin."
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+        bool physxScene:enableGpuDynamics = 1
+        token physxScene:broadPhaseType = "GPU"
+    }
+
+    # Static SDF cube: half-extent 0.5, no rigid body.
+    # PhysicsMeshCollisionAPI approximation="sdf" triggers SDF cooking.
+    def Mesh "Cube" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI", "PhysxSDFMeshCollisionAPI"]
+    )
+    {
+        token physics:approximation = "sdf"
+
+        point3f[] points = [
+            (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (0.5, 0.5, 0.5), (0.5, -0.5, 0.5),
+            (-0.5, -0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, 0.5, 0.5), (-0.5, -0.5, 0.5)
+        ]
+        int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+        int[] faceVertexIndices = [0, 1, 2, 3, 1, 5, 6, 2, 3, 2, 6, 7, 0, 3, 7, 4, 1, 0, 4, 5, 5, 4, 7, 6]
+        bool doubleSided = 0
+        token subdivisionScheme = "none"
+
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1, 1, 1)
+        float3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+}

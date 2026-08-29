@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -609,7 +609,7 @@ bool sweepConvex_PlaneGeom(GU_CONVEX_SWEEP_FUNC_PARAMS)
 		float t;
 		PxVec3 pointOnPlane;
 		if(intersectRayPlane(worldPt, unitDir, plane, t, &pointOnPlane))
-		{	
+		{
 			if(plane.distance(worldPt) <= 0.0f)
 			{
 				initialOverlap = true;

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -394,7 +394,7 @@ void PersistentContactManifold::drawManifold(PxRenderOutput& out, const PxTransf
 }
 
 void PersistentContactManifold::drawManifold(const PersistentContact& m, PxRenderOutput& out, const PxTransformV& trA, const PxTransformV& trB) const
-{	
+{
 #if VISUALIZE_PERSISTENT_CONTACT
 	drawManifoldPoint(m, trA, trB, out, gColors[0]);
 #else
@@ -1240,7 +1240,7 @@ void PersistentContactManifold::reduceBatchContacts2(const PersistentContact* ma
 	if(secondIndex != index)
 	{
 		mContactPoints[1] = manifoldPoints[secondIndex];
-	}	
+	}
 }
 
 PxU32 PersistentContactManifold::addManifoldPoint(const Vec3VArg localPointA, const Vec3VArg localPointB, const Vec4VArg localNormalPen, const FloatVArg replaceBreakingThreshold)
@@ -2094,7 +2094,7 @@ void MultiplePersistentContactManifold::addManifoldContactPoints(MeshPersistentC
 						const FloatV _maxPen = addBatchManifoldContactsToSingleManifold(manifold, manifoldContact, numManifoldContacts, patch, sqReplaceBreakingThreshold, maxContactsPerManifold);
 						FStore(_maxPen, &mMaxPen[mManifoldIndices[mNumManifolds]]);
 						mNumManifolds++;
-					}	
+					}
 					else
 					{
 						//we can't allocate a new manifold  and no existing manifold has the same normal as this patch, we need to find the shallowest penetration manifold. If this manifold is shallower than
@@ -2263,7 +2263,7 @@ void MultiplePersistentContactManifold::toBuffer(PxU8* PX_RESTRICT buffer) const
 		CachedMeshPersistentContact* contacts = reinterpret_cast<CachedMeshPersistentContact*>(buff);
 		//convert the mesh persistent contact to cached mesh persistent contact to save 16 byte memory per contact
 		for(PxU32 b = 0; b<manifold.mNumContacts; ++b)
-		{	
+		{
 			V4StoreA(Vec4V_From_Vec3V(manifold.mContactPoints[b].mLocalPointA), &contacts[b].mLocalPointA.x);
 			V4StoreA(Vec4V_From_Vec3V(manifold.mContactPoints[b].mLocalPointB), &contacts[b].mLocalPointB.x);
 			V4StoreA(manifold.mContactPoints[b].mLocalNormalPen, &contacts[b].mLocalNormal.x);

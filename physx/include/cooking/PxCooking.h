@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -741,17 +741,6 @@ PX_C_EXPORT PX_PHYSX_COOKING_API	bool PxCookDeformableVolumeMesh(const physx::Px
 	const physx::PxDeformableVolumeSimulationDataDesc& simulationDataDesc, physx::PxOutputStream& stream);
 
 /**
-\brief Deprecated
-\see PxCookDeformableVolumeMesh
-*/
-PX_DEPRECATED PX_FORCE_INLINE bool PxCookSoftBodyMesh(const physx::PxCookingParams& params,
-	const physx::PxTetrahedronMeshDesc& simulationMeshDesc, const physx::PxTetrahedronMeshDesc& collisionMeshDesc,
-	const physx::PxDeformableVolumeSimulationDataDesc& simulationDataDesc, physx::PxOutputStream& stream)
-{
-	return PxCookDeformableVolumeMesh(params, simulationMeshDesc, collisionMeshDesc, simulationDataDesc, stream);
-}
-
-/**
 \brief Cooks and creates a deformable volume mesh without going through a stream.
 
 \note This method does the same as PxCookDeformableVolumeMesh, but the produced mesh is not stored
@@ -775,17 +764,6 @@ PX_C_EXPORT PX_PHYSX_COOKING_API	physx::PxDeformableVolumeMesh* PxCreateDeformab
 	const physx::PxDeformableVolumeSimulationDataDesc& simulationDataDesc, physx::PxInsertionCallback& insertionCallback);
 
 /**
-\brief Deprecated
-\see PxCreateDeformableVolumeMesh
-*/
-PX_DEPRECATED PX_FORCE_INLINE physx::PxDeformableVolumeMesh* PxCreateSoftBodyMesh(const physx::PxCookingParams& params,
-	const physx::PxTetrahedronMeshDesc& simulationMeshDesc, const physx::PxTetrahedronMeshDesc& collisionMeshDesc,
-	const physx::PxDeformableVolumeSimulationDataDesc& simulationDataDesc, physx::PxInsertionCallback& insertionCallback)
-{
-	return PxCreateDeformableVolumeMesh(params, simulationMeshDesc, collisionMeshDesc, simulationDataDesc, insertionCallback);
-}
-
-/**
 \brief Cooks and creates a deformable volume mesh without going through a stream. Convenience function for standalone objects.
 
 \note This method does the same as PxCreateDeformableVolumeMesh, but the produced mesh is not stored
@@ -801,17 +779,6 @@ object. Use this method if you are unable to cook offline.
 \see PxCookTriangleMesh() PxPhysics.createTriangleMesh() PxInsertionCallback
 */
 PX_FORCE_INLINE	physx::PxDeformableVolumeMesh* PxCreateDeformableVolumeMesh(const physx::PxCookingParams& params,
-	const physx::PxTetrahedronMeshDesc& simulationMeshDesc, const physx::PxTetrahedronMeshDesc& collisionMeshDesc,
-	const physx::PxDeformableVolumeSimulationDataDesc& simulationDataDesc)
-{
-	return PxCreateDeformableVolumeMesh(params, simulationMeshDesc, collisionMeshDesc, simulationDataDesc, *PxGetStandaloneInsertionCallback());
-}
-
-/**
-\brief Deprecated
-\see PxCreateDeformableVolumeMesh
-*/
-PX_DEPRECATED PX_FORCE_INLINE	physx::PxDeformableVolumeMesh* PxCreateSoftBodyMesh(const physx::PxCookingParams& params,
 	const physx::PxTetrahedronMeshDesc& simulationMeshDesc, const physx::PxTetrahedronMeshDesc& collisionMeshDesc,
 	const physx::PxDeformableVolumeSimulationDataDesc& simulationDataDesc)
 {
@@ -882,27 +849,5 @@ Creates a container that provides everything to create a PxDeformableVolume
 PX_C_EXPORT PX_PHYSX_COOKING_API	physx::PxDeformableVolumeMesh*	PxAssembleDeformableVolumeMesh(physx::PxTetrahedronMeshData& simulationMesh,
 	physx::PxDeformableVolumeSimulationData& simulationData, physx::PxTetrahedronMeshData& collisionMesh, physx::PxDeformableVolumeCollisionData& collisionData,
 	physx::PxCollisionMeshMappingData& mappingData, physx::PxInsertionCallback& insertionCallback);
-
-/**
-\brief Deprecated
-\see PxAssembleDeformableVolumeMesh
-*/
-PX_DEPRECATED PX_FORCE_INLINE	physx::PxDeformableVolumeMesh* PxAssembleSoftBodyMesh(physx::PxTetrahedronMeshData& simulationMesh,
-	physx::PxDeformableVolumeSimulationData& simulationData, physx::PxTetrahedronMeshData& collisionMesh, physx::PxDeformableVolumeCollisionData& collisionData,
-	physx::PxCollisionMeshMappingData& mappingData, physx::PxInsertionCallback& insertionCallback)
-{
-	return PxAssembleDeformableVolumeMesh(simulationMesh, simulationData, collisionMesh, collisionData, mappingData, insertionCallback);
-}
-
-/**
-\brief Deprecated
-\see PxAssembleDeformableVolumeMesh
-*/
-PX_DEPRECATED PX_FORCE_INLINE	physx::PxDeformableVolumeMesh* PxAssembleSoftBodyMesh_Sim(physx::PxSimulationTetrahedronMeshData& simulationMesh,
-	physx::PxCollisionTetrahedronMeshData& collisionMesh, physx::PxCollisionMeshMappingData& mappingData, physx::PxInsertionCallback& insertionCallback)
-{
-	return PxAssembleDeformableVolumeMesh(*simulationMesh.getMesh(), *simulationMesh.getData(), 
-		*collisionMesh.getMesh(), *collisionMesh.getData(), mappingData, insertionCallback);
-}
 
 #endif

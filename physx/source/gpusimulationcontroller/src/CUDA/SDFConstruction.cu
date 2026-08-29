@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -280,7 +280,7 @@ public:
 	{
 		PxVec3 closestPt = minimum.maximum(maximum.minimum(point));
 		return (closestPt - point).magnitudeSquared();
-	}	
+	}
 
 	PX_FORCE_INLINE __device__ BvhTraversalControl::Enum operator()(const PxgPackedNodeHalf& lower, const PxgPackedNodeHalf& upper, PxI32 nodeIndex)
 	{
@@ -394,7 +394,7 @@ extern "C" __global__ __launch_bounds__(256, 1) void sdfCalculateDenseGridHybrid
 			bool inside = windingNumber.mWindingNumber > 0.5f;
 			if (inside)
 				sign = -1.0f;
-		}			
+		}
 
 		sdfData[Gu::idx3D(x, y, z, sizeX, sizeY)] = d * sign;
 	}
@@ -510,7 +510,7 @@ sdfMarkRequiredSdfSubgrids(PxReal* PX_RESTRICT backgroundSDF, const PxReal* PX_R
 	__syncthreads();
 
 	if (threadIdx.x == 0)
-	{		
+	{
 		bool subgridRequired = rangesOverlaps(sdfMin, sdfMax, -narrowBandThickness, narrowBandThickness);
 		if (maxAbsError < errorThreshold)
 			subgridRequired = false; //No need for a subgrid if the coarse SDF is already almost exact
@@ -524,7 +524,7 @@ sdfMarkRequiredSdfSubgrids(PxReal* PX_RESTRICT backgroundSDF, const PxReal* PX_R
 			
 			subgridInfo[index] = 1;
 			subgridActive[index] = 1;
-		}	
+		}
 		else
 		{
 			subgridInfo[index] = 0;

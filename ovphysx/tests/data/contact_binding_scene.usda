@@ -1,0 +1,54 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Small CPU contact scene for ovphysx contact binding samples"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    def Xform "Ground" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        double3 xformOp:translate = (0, -0.5, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def Cube "GroundGeom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            float3[] extent = [(-5, -0.05, -5), (5, 0.05, 5)]
+            double size = 1
+            double3 xformOp:scale = (10, 0.1, 10)
+            uniform token[] xformOpOrder = ["xformOp:scale"]
+        }
+    }
+
+    def Xform "Cube1" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxContactReportAPI"]
+    )
+    {
+        double3 xformOp:translate = (0, 2, 0)
+        quatd xformOp:orient = (1, 0, 0, 0)
+        double3 xformOp:scale = (1, 1, 1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        float physxContactReport:threshold = 0
+        float physics:mass = 1
+
+        def Cube "CubeGeom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            double size = 1
+        }
+    }
+}

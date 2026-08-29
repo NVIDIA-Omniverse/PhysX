@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -60,7 +60,7 @@ class PxMat34T
 	//! Construct from Type[12]
 	explicit PX_CUDA_CALLABLE PX_FORCE_INLINE PxMat34T(Type values[]) :
 		m(values), p(values[9], values[10], values[11])
-	{		
+	{
 	}
 
 	//! Construct from a 3x3 matrix

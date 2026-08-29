@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -222,7 +222,7 @@ public:
 
 	/** brief computes rotation of x-axis */
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxVec3 getBasisVector0()	const
-	{	
+	{
 		const PxF32 x2 = q.x*2.0f;
 		const PxF32 w2 = q.w*2.0f;
 		return PxVec3(	(q.w * w2) - 1.0f + q.x*x2,
@@ -232,7 +232,7 @@ public:
 	
 	/** brief computes rotation of y-axis */
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxVec3 getBasisVector1()	const 
-	{	
+	{
 		const PxF32 y2 = q.y*2.0f;
 		const PxF32 w2 = q.w*2.0f;
 		return PxVec3(	(-q.z * w2)       + q.x*y2,
@@ -243,7 +243,7 @@ public:
 
 	/** brief computes rotation of z-axis */
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxVec3 getBasisVector2() const	
-	{	
+	{
 		const PxF32 z2 = q.z*2.0f;
 		const PxF32 w2 = q.w*2.0f;
 		return PxVec3(	(q.y * w2)        + q.x*z2,

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -34,6 +34,10 @@
 #include "sphereCollision.cuh"
 #include "deformableCollision.cuh"
 #include "GuConvexSupport.h"
+
+namespace physx
+{
+
 /**
 * Retuns distance and normal information for a particle-box contact.
 * If maxDist < PX_MAX_F32, then no result is provided if the distance is larger than maxDist.
@@ -222,4 +226,7 @@ bool particleConvexCore(PxVec3& normal, PxReal& dist, const PxVec3& particlePos,
 
 	return true;
 }
+
+} // namespace physx
+
 #endif // __PARTICLE_COLLISION_CUH__

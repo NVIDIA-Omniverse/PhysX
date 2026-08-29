@@ -1,0 +1,94 @@
+// SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
+#pragma once
+
+#include "TensorDesc.h"
+
+#include <cstdint>
+#include <string>
+#include <vector>
+
+namespace omni
+{
+namespace physics
+{
+namespace tensors
+{
+
+enum class ContactDataReadStatus
+{
+    eSuccess, //!< Payload, count, and start-index tensors are valid.
+    eBufferTooSmall, //!< Count/start tensors describe the required layout; payload tensors are not valid.
+    eError, //!< The read failed; output tensors are not valid.
+};
+
+class IRigidContactView
+{
+public:
+    virtual uint32_t getSensorCount() const = 0;
+    virtual uint32_t getFilterCount() const = 0;
+    virtual uint32_t getMaxContactDataCount() const = 0;
+
+    // net contact force per sensor, shape (getSensorCount(), 3)
+    virtual bool getNetContactForces(const TensorDesc* dstTensor, float dt) const = 0;
+
+    // contact force per filter per sensor, shape (getSensorCount(), getFilterCount(), 3)
+    virtual bool getContactForceMatrix(const TensorDesc* dstTensor, float dt) const = 0;
+
+    // contact data per filter per sensor per patch
+    virtual ContactDataReadStatus getContactData(const TensorDesc* contactForceTensor, //(getMaxContactDataCount(), 1)
+                                                 const TensorDesc* contactPointTensor, //(getMaxContactDataCount(), 3)
+                                                 const TensorDesc* contactNormalTensor, //(getMaxContactDataCount(), 3)
+                                                 const TensorDesc* contactSeparationTensor, //(getMaxContactDataCount(),
+                                                                                            // 1)
+                                                 const TensorDesc* contactCountTensor, //(getSensorCount(),
+                                                                                       // getFilterCount())
+                                                 const TensorDesc* contactStartIndicesTensor, //(getSensorCount(),
+                                                                                              // getFilterCount())
+                                                 float dt) const = 0;
+
+    // friction data per filter per sensor per patch
+    virtual ContactDataReadStatus getFrictionData(const TensorDesc* FrictionForceTensor, //(getMaxContactDataCount(), 3)
+                                                  const TensorDesc* contactPointTensor, //(getMaxContactDataCount(), 3)
+                                                  const TensorDesc* contactCountTensor, //(getSensorCount(),
+                                                                                        // getFilterCount())
+                                                  const TensorDesc* contactStartIndicesTensor, //(getSensorCount(),
+                                                                                               // getFilterCount())
+                                                  float dt) const = 0;
+
+    // raw contact data for all contacts per sensor (no filter required)
+    // Returns all contacts for each sensor with IDs of the contacting bodies
+    virtual ContactDataReadStatus getRawContactData(const TensorDesc* contactForceTensor, // (getMaxContactDataCount(),
+                                                                                          // 1)
+                                                    const TensorDesc* contactPointTensor, // (getMaxContactDataCount(),
+                                                                                          // 3)
+                                                    const TensorDesc* contactNormalTensor, // (getMaxContactDataCount(),
+                                                                                           // 3)
+                                                    const TensorDesc* contactSeparationTensor, // (getMaxContactDataCount(),
+                                                                                               // 1)
+                                                    const TensorDesc* contactCountTensor, // (getSensorCount(),)
+                                                    const TensorDesc* contactStartIndicesTensor, // (getSensorCount(),)
+                                                    const TensorDesc* otherActorIdsTensor, // (getMaxContactDataCount(),)
+                                                                                           // uint64 IDs
+                                                    float dt) const = 0;
+
+    // Batch convert other actor IDs (from getRawContactData) to USD paths
+    virtual void getOtherActorPathsFromIds(const TensorDesc* otherActorIdsTensor, std::vector<std::string>& outPaths) const = 0;
+
+    virtual bool check() const = 0;
+
+    virtual void release() = 0;
+
+    virtual const char* getUsdPrimPath(uint32_t sensorIdx) const = 0;
+    virtual const char* getUsdPrimName(uint32_t sensorIdx) const = 0;
+    virtual const char* getFilterUsdPrimPath(uint32_t sensorIdx, uint32_t filterIdx) const = 0;
+    virtual const char* getFilterUsdPrimName(uint32_t sensorIdx, uint32_t filterIdx) const = 0;
+
+protected:
+    virtual ~IRigidContactView() = default;
+};
+
+} // namespace tensors
+} // namespace physics
+} // namespace omni

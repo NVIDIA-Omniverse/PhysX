@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_PVD_INTERNAL_BYTE_STREAMS_H
 #define PX_PVD_INTERNAL_BYTE_STREAMS_H
@@ -78,7 +78,7 @@ struct MemPvdInputStream : public PvdInputStream
 		mBegin += len;
 	}
 
-	virtual bool read(uint8_t* buffer, uint32_t& len)
+	virtual bool read(uint8_t* buffer, uint32_t& len) PX_OVERRIDE
 	{
 		if(len == 0)
 			return true;

@@ -1,0 +1,130 @@
+#usda 1.0
+(
+    defaultPrim = "envs"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def PhysicsScene "physicsScene"
+{
+    vector3f physics:gravityDirection = (0, 0, -1)
+    float physics:gravityMagnitude = 0.0
+}
+
+# 16 cartpoles in a 4x4 grid (rather than 42 for runtime brevity; if 42 is
+# needed for the failure mode we'll expand).
+def Xform "envs"
+{
+    def Xform "env0" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (0.0, 0.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env1" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (10.0, 0.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env2" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (20.0, 0.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env3" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (30.0, 0.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env4" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (0.0, 10.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env5" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (10.0, 10.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env6" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (20.0, 10.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env7" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (30.0, 10.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env8" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (0.0, 20.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env9" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (10.0, 20.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env10" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (20.0, 20.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env11" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (30.0, 20.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env12" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (0.0, 30.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env13" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (10.0, 30.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env14" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (20.0, 30.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "env15" (
+        prepend references = @./CartRailNoPole.usda@</cartpole>
+    )
+    {
+        double3 xformOp:translate = (30.0, 30.0, 0.0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}

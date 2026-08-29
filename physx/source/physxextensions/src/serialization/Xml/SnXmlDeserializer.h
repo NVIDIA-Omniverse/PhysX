@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -53,7 +53,7 @@ namespace physx { namespace Sn {
 		XmlMemoryAllocator* mAllocator;
 		XmlMemoryAllocateMemoryPoolAllocator( XmlMemoryAllocator* inAlloc ) : mAllocator( inAlloc ) {}
 
-		PxU8* allocate( PxU32 inSize ) { return mAllocator->allocate( inSize ); }
+		PxU8* allocate( PxU64 inSize ) { return mAllocator->allocate( inSize ); }
 		void deallocate( PxU8* inMem ) { mAllocator->deallocate( inMem ); }
 	};
 
@@ -136,7 +136,7 @@ namespace physx { namespace Sn {
 	}
 
 	template<typename TDataType>
-	inline void readStridedBufferProperty( XmlReader& ioReader, const char* inPropName, TDataType*& outData, PxU32& outStride, PxU32& outCount, XmlMemoryAllocator& inAllocator)
+	inline void readStridedBufferProperty( XmlReader& ioReader, const char* inPropName, TDataType*& outData, PxU32& outStride, PxU64& outCount, XmlMemoryAllocator& inAllocator)
 	{
 		const char* theSrcData;
 		outStride = sizeof( TDataType );
@@ -167,7 +167,7 @@ namespace physx { namespace Sn {
 	}
 	
 	template<typename TDataType>
-	inline void readStridedBufferProperty( XmlReader& ioReader, const char* inPropName, PxStridedData& ioData, PxU32& outCount, XmlMemoryAllocator& inAllocator)
+	inline void readStridedBufferProperty( XmlReader& ioReader, const char* inPropName, PxStridedData& ioData, PxU64& outCount, XmlMemoryAllocator& inAllocator)
 	{
 		TDataType* tempData = NULL;
 		readStridedBufferProperty<TDataType>( ioReader, inPropName, tempData, ioData.stride, outCount, inAllocator ); 
@@ -175,7 +175,7 @@ namespace physx { namespace Sn {
 	}
 	
 	template<typename TDataType>
-	inline void readStridedBufferProperty( XmlReader& ioReader, const char* inPropName, PxTypedBoundedData<const TDataType>& ioData, PxU32& outCount, XmlMemoryAllocator& inAllocator)
+	inline void readStridedBufferProperty( XmlReader& ioReader, const char* inPropName, PxTypedBoundedData<const TDataType>& ioData, PxU64& outCount, XmlMemoryAllocator& inAllocator)
 	{
 		TDataType* tempData = NULL;
 		readStridedBufferProperty<TDataType>( ioReader, inPropName, tempData, ioData.stride, outCount, inAllocator );
@@ -185,7 +185,18 @@ namespace physx { namespace Sn {
 	template<typename TDataType>
 	inline void readStridedBufferProperty( XmlReader& ioReader, const char* inPropName, PxBoundedData& ioData, XmlMemoryAllocator& inAllocator)
 	{
-		return readStridedBufferProperty<TDataType>( ioReader, inPropName, ioData, ioData.count, inAllocator );
+		// This is used by PxBoundedData but we are keeping count as PxU32 for backward compatibility
+		PxU64 outCount;
+		readStridedBufferProperty<TDataType>( ioReader, inPropName, ioData, outCount, inAllocator );
+
+		if (outCount > PX_MAX_U32)
+		{
+			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxBoundedData: The value of count is greater than PX_MAX_U32.");
+		}
+		else
+		{
+			ioData.count = (PxU32)outCount;
+		}
 	}
 
 } }

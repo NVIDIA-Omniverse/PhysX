@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -207,7 +207,7 @@ public:
 			RequiresCallback(PxSerializationContext& c) : context(c) {}
 			RequiresCallback& operator=(RequiresCallback&) { PX_ASSERT(0); return *this; }
 			void process(physx::PxBase& base)
-			{				
+			{
 				context.registerReference(base, PX_SERIAL_REF_KIND_PXBASE, size_t(&base));
 			}
 			PxSerializationContext& context;

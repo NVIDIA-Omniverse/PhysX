@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -433,7 +433,7 @@ bool readSuspensionComplianceParams(const rapidjson::Document& config, const PxV
 			return false;
 		if (!suspensions[i].HasMember("SuspForceAppPoint"))
 			return false;
-		if (!suspensions[i].HasMember("SuspForceAppPoint"))
+		if (!suspensions[i].HasMember("TireForceAppPoint"))
 			return false;
 
 		const PxU32 wheelId = suspensions[i]["WheelId"].GetInt();

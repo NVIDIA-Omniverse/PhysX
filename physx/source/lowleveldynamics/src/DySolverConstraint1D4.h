@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,7 +30,7 @@
 #define DY_SOLVER_CONSTRAINT_1D4_H
 
 #include "foundation/PxVec3.h"
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 #include "DySolverConstraint1D.h"
 
 namespace physx
@@ -84,12 +84,6 @@ public:
 	PxU32		flags[4];
 };
 
-struct SolverConstraint1DBase4WithResidual : public SolverConstraint1DBase4
-{
-	aos::Vec4V		residualVelIter;
-	aos::Vec4V		residualPosIter;
-};
-
 PX_COMPILE_TIME_ASSERT(sizeof(SolverConstraint1DBase4) == 272);
 
 struct SolverConstraint1DDynamic4 : public SolverConstraint1DBase4
@@ -102,12 +96,6 @@ struct SolverConstraint1DDynamic4 : public SolverConstraint1DBase4
 	aos::Vec4V		ang1Z;
 };
 PX_COMPILE_TIME_ASSERT(sizeof(SolverConstraint1DDynamic4) == 368);
-
-struct SolverConstraint1DDynamic4WithResidual : public SolverConstraint1DDynamic4
-{
-	aos::Vec4V		residualVelIter;
-	aos::Vec4V		residualPosIter;
-};
 
 }
 

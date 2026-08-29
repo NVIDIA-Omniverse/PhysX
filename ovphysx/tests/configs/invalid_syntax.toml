@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Test config - intentionally invalid TOML syntax
+
+[library
+name = "broken.library"  # Missing closing bracket above
+version = "1.0.0"
+
+[usd]
+required = true

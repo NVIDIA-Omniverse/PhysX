@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -31,9 +31,9 @@
 #include "foundation/PxVec4.h"
 #include "foundation/PxBounds3.h"
 #include "foundation/PxMathUtils.h"
-#include "PxgParticleSystemCore.h"
 #include "PxgParticleSystem.h"
 #include "PxgParticleSystemCoreKernelIndices.h"
+#include "deformableUtils.cuh"
 #include "PxgBodySim.h"
 #include "PxgCommonDefines.h"
 #include "reduction.cuh"
@@ -51,12 +51,11 @@
 
 #include "PxgArticulation.h"
 #include "PxgArticulationCoreDesc.h"
-#include "PxgFEMCore.h"
+#include "PxgFEMCloth.h"
 #include "PxsPBDMaterialCore.h"
 
 #include "particleSystem.cuh"
 #include "deformableUtils.cuh"
-#include "attachments.cuh"
 #include "atomic.cuh"
 
 #include "matrixDecomposition.cuh"
@@ -476,7 +475,7 @@ void ps_updateBoundFirstPassLaunch(const PxgParticleSystem* PX_RESTRICT particle
 	{
 		bool enableCCD = (particleSystem.mData.mFlags & PxParticleFlag::eENABLE_SPECULATIVE_CCD) > 0;
 		if (globalThreadIndex < particleSystem.mCommonData.mNumParticles)
-		{	
+		{
 			const PxVec3 predictedPos = PxLoad3(predictedPositions[globalThreadIndex]);
 			if (enableCCD)
 			{
@@ -676,127 +675,6 @@ void ps_updateBoundSecondPassLaunch(
 			
 			//printf("boundCenter[%i] %f\n", threadIndexInWarp, boundCenter);
 		}
-	}
-}
-
-//Each block deal with one volume
-extern "C" __global__ void ps_update_volume_bound(
-	const PxgParticleSystem* PX_RESTRICT particleSystems,
-	const PxU32* PX_RESTRICT activeParticleSystemIndices)
-{
-	const PxU32 numWarpsPerBlock = PxgParticleSystemKernelBlockDim::UPDATEBOUND / WARP_SIZE;
-
-	__shared__ PxReal sMax[3][numWarpsPerBlock];
-	__shared__ PxReal sMin[3][numWarpsPerBlock];
-
-
-	const PxU32 warpIndex = threadIdx.y;
-	const PxU32 threadIndexInWarp = threadIdx.x;// &(WARP_SIZE - 1);
-
-	const PxU32 particleSystemId = activeParticleSystemIndices[blockIdx.z];
-
-	const PxgParticleSystem& particleSystem = particleSystems[particleSystemId];
-
-	const PxU32 bufferIndex = blockIdx.y;
-	if (bufferIndex < particleSystem.mCommonData.mNumParticleBuffers)
-	{
-		PxgParticleSimBuffer& buffer = particleSystem.mParticleSimBuffers[bufferIndex];
-		const PxU32 bufferOffset = particleSystem.mParticleBufferRunsum[bufferIndex];
-
-		const PxU32 numParticleVolumes = buffer.mNumVolumes;
-
-		if (blockIdx.x < numParticleVolumes)
-		{
-			PxParticleVolume& volume = buffer.mVolumes[blockIdx.x];
-
-			const PxU32 offset = volume.particleIndicesOffset + bufferOffset;
-			const PxU32 numParticles = volume.numParticles;
-
-			PxBounds3& bound = volume.bound;
-
-			const float4* PX_RESTRICT pos_invmass = reinterpret_cast<float4*>(particleSystem.mUnsortedPositions_InvMass);
-
-			PxReal max[3], min[3];
-
-			const PxU32 numIterations = (numParticles + blockDim.x * blockDim.y - 1) / (blockDim.x * blockDim.y);
-
-			float4 minPos = make_float4(PX_MAX_F32, PX_MAX_F32, PX_MAX_F32, PX_MAX_F32);
-			float4 maxPos = make_float4(-PX_MAX_F32, -PX_MAX_F32, -PX_MAX_F32, -PX_MAX_F32);
-			for (PxU32 i = 0; i < numIterations; ++i)
-			{
-				const PxU32 workIndex = threadIndexInWarp + warpIndex * WARP_SIZE + i * (blockDim.x * blockDim.y);
-				if (workIndex < numParticles)
-				{
-					PxVec3 pos = PxLoad3(pos_invmass[offset + workIndex]);
-					minPos.x = PxMin(minPos.x, pos.x);
-					minPos.y = PxMin(minPos.y, pos.y);
-					minPos.z = PxMin(minPos.z, pos.z);
-					maxPos.x = PxMax(maxPos.x, pos.x);
-					maxPos.y = PxMax(maxPos.y, pos.y);
-					maxPos.z = PxMax(maxPos.z, pos.z);
-				}
-			}
-
-			min[0] = warpReduction<MinOpFloat, PxReal>(FULL_MASK, minPos.x);
-			min[1] = warpReduction<MinOpFloat, PxReal>(FULL_MASK, minPos.y);
-			min[2] = warpReduction<MinOpFloat, PxReal>(FULL_MASK, minPos.z);
-
-			max[0] = warpReduction<MaxOpFloat, PxReal>(FULL_MASK, maxPos.x);
-			max[1] = warpReduction<MaxOpFloat, PxReal>(FULL_MASK, maxPos.y);
-			max[2] = warpReduction<MaxOpFloat, PxReal>(FULL_MASK, maxPos.z);
-
-			//result store in the last thread in the warp 31
-			if (threadIndexInWarp == 31)
-			{
-				sMin[0][warpIndex] = min[0];
-				sMax[0][warpIndex] = max[0];
-
-				sMin[1][warpIndex] = min[1];
-				sMax[1][warpIndex] = max[1];
-
-				sMin[2][warpIndex] = min[2];
-				sMax[2][warpIndex] = max[2];
-			}
-
-			__syncthreads();
-
-			float* minimun = reinterpret_cast<float*>(&bound.minimum.x);
-			float* maximum = reinterpret_cast<float*>(&bound.maximum.x);
-
-			if (warpIndex < 3)
-			{
-				PxReal newMin = warpReduction<MinOpFloat, PxReal>(FULL_MASK, sMin[warpIndex][threadIndexInWarp]);
-				PxReal newMax = warpReduction<MaxOpFloat, PxReal>(FULL_MASK, sMax[warpIndex][threadIndexInWarp]);
-
-				//the final result will be in thread 31
-				if (threadIndexInWarp == 31)
-				{
-					minimun[warpIndex] = newMin;
-					maximum[warpIndex] = newMax;
-				}
-			}
-		}
-	}
-}
-
-extern "C" __global__ void ps_updateSprings(
-	PxParticleSpring* PX_RESTRICT orderedSprings,
-	const PxU32* PX_RESTRICT remapIndices,
-	const PxParticleSpring* PX_RESTRICT springs,
-	const PxU32* PX_RESTRICT updateIndices,
-	const PxU32 numUpdateSprings)
-{
-
-	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
-
-	if (globalThreadIndex < numUpdateSprings)
-	{
-		//original index
-		const PxU32 springInd = updateIndices[globalThreadIndex];
-
-		//remap index to orderedSprings
-		const PxU32 remapInd = remapIndices[springInd];
-		orderedSprings[remapInd] = springs[springInd];
 	}
 }
 
@@ -1239,7 +1117,7 @@ extern "C" __global__ void ps_contactPrepareLaunch(
 	PxgParticleSystem*				particleSystems,
 	PxgParticlePrimitiveContact*	sortedContacts,
 	PxU32*							numContacts,
-	PxgParticlePrimitiveConstraintBlock*	primitiveConstraints,
+	PxgParticleRigidContactBlock*	contactBlocks,
 	PxgPrePrepDesc*					preDesc,
 	PxgConstraintPrepareDesc*		prepareDesc,
 	float2*							appliedForces,
@@ -1275,7 +1153,7 @@ extern "C" __global__ void ps_contactPrepareLaunch(
 		appliedForces[workIndex] = make_float2(0.f, 0.f);
 
 		PxgParticlePrimitiveContact contact = sortedContacts[workIndex];
-		PxgParticlePrimitiveConstraintBlock& constraint = primitiveConstraints[workIndex/32];
+		PxgParticleRigidContactBlock& block = contactBlocks[workIndex/32];
 
 		PxU32 tIdx = workIndex&31;
 
@@ -1290,7 +1168,6 @@ extern "C" __global__ void ps_contactPrepareLaunch(
 		const PxU32 particleId = PxGetParticleIndex(compressedId);
 
 		float4 pointInvM = position_invmass[particleId];
-		float invMass1 = pointInvM.w;
 
 		const PxVec3 point(pointInvM.x, pointInvM.y, pointInvM.z);
 
@@ -1337,21 +1214,12 @@ extern "C" __global__ void ps_contactPrepareLaunch(
 			const PxReal respF0 = deltaV0.top.dot(raXF0) + deltaV0.bottom.dot(t0);
 			const PxReal respF1 = deltaV0.top.dot(raXF1) + deltaV0.bottom.dot(t1);
 
-			const float unitResponse = resp0 + invMass1;
-			const float unitResponseF0 = respF0 + invMass1;
-			const float unitResponseF1 = respF1 + invMass1;
-			//KS - perhaps we don't need the > 0.f check here?
-			const float velMultiplier = (unitResponse > 0.f) ? (1.f / unitResponse) : 0.f;
-			const float velMultiplierF0 = (unitResponseF0 > 0.f) ? (1.f / unitResponseF0) : 0.f;
-			const float velMultiplierF1 = (unitResponseF1 > 0.f) ? (1.f / unitResponseF1) : 0.f;
-
-			constraint.raXn_velMultiplierW[tIdx] = make_float4(raXn.x, raXn.y, raXn.z, velMultiplier);
-			constraint.normal_errorW[tIdx] = make_float4(normal.x, normal.y, normal.z, pen);
-			constraint.fricTan0_invMass0[tIdx] = make_float4(t0.x, t0.y, t0.z, 1.f); //invMass0 is classed as 1 so that we record the impulse rather than deltaV!
-			constraint.raXnF0_velMultiplierW[tIdx] = make_float4(raXF0.x, raXF0.y, raXF0.z, velMultiplierF0);
-			constraint.raXnF1_velMultiplierW[tIdx] = make_float4(raXF1.x, raXF1.y, raXF1.z, velMultiplierF1);
-			constraint.particleId[tIdx] = contact.particleId;
-			constraint.rigidId[tIdx] = contact.rigidId;
+			block.raXn_resp[tIdx] = make_float4(raXn.x, raXn.y, raXn.z, resp0);
+			block.normal_errorW[tIdx] = make_float4(normal.x, normal.y, normal.z, pen);
+			block.fricTan0_invMass0[tIdx] = make_float4(t0.x, t0.y, t0.z, 1.f); //invMass0 is classed as 1 so that we record the impulse rather than deltaV!
+			block.raXnF0_resp[tIdx] = make_float4(raXF0.x, raXF0.y, raXF0.z, respF0);
+			block.raXnF1_resp[tIdx] = make_float4(raXF1.x, raXF1.y, raXF1.z, respF1);
+			block.penBiasClampRigid[tIdx] = articulation.links[linkID].initialAngVelXYZ_penBiasClamp.w;
 		}
 		else
 		{
@@ -1393,21 +1261,13 @@ extern "C" __global__ void ps_contactPrepareLaunch(
 			const float respF0 = (raXF0SqrtInertia.dot(raXF0SqrtInertia))*inertiaScale + invMass0;
 			const float respF1 = (raXF1SqrtInertia.dot(raXF1SqrtInertia))*inertiaScale + invMass0;
 
-			const float unitResponse = resp0 + invMass1;
-			const float unitResponseF0 = respF0 + invMass1;
-			const float unitResponseF1 = respF1 + invMass1;
-			//KS - perhaps we don't need the > 0.f check here?
-			const float velMultiplier = (unitResponse > 0.f) ? (1.f / unitResponse) : 0.f;
-			const float velMultiplierF0 = (unitResponseF0 > 0.f) ? (1.f / unitResponseF0) : 0.f;
-			const float velMultiplierF1 = (unitResponseF1 > 0.f) ? (1.f / unitResponseF1) : 0.f;
-
-			constraint.raXn_velMultiplierW[tIdx] = make_float4(raXnSqrtInertia.x, raXnSqrtInertia.y, raXnSqrtInertia.z, velMultiplier);
-			constraint.normal_errorW[tIdx] = make_float4(normal.x, normal.y, normal.z, pen);
-			constraint.fricTan0_invMass0[tIdx] = make_float4(t0.x, t0.y, t0.z, invMass0);
-			constraint.raXnF0_velMultiplierW[tIdx] = make_float4(raXF0SqrtInertia.x, raXF0SqrtInertia.y, raXF0SqrtInertia.z, velMultiplierF0);
-			constraint.raXnF1_velMultiplierW[tIdx] = make_float4(raXF1SqrtInertia.x, raXF1SqrtInertia.y, raXF1SqrtInertia.z, velMultiplierF1);
-			constraint.particleId[tIdx] = contact.particleId;
-			constraint.rigidId[tIdx] = contact.rigidId;
+			block.raXn_resp[tIdx] = make_float4(raXnSqrtInertia.x, raXnSqrtInertia.y, raXnSqrtInertia.z, resp0);
+			block.normal_errorW[tIdx] = make_float4(normal.x, normal.y, normal.z, pen);
+			block.fricTan0_invMass0[tIdx] = make_float4(t0.x, t0.y, t0.z, invMass0);
+			block.raXnF0_resp[tIdx] = make_float4(raXF0SqrtInertia.x, raXF0SqrtInertia.y, raXF0SqrtInertia.z, respF0);
+			block.raXnF1_resp[tIdx] = make_float4(raXF1SqrtInertia.x, raXF1SqrtInertia.y, raXF1SqrtInertia.z, respF1);
+			// Static -> idx 0 (world solver body, penBiasClamp -1e32 = unbounded); dynamic/kinematic -> their clamp.
+			block.penBiasClampRigid[tIdx] = solverBodyData[idx].initialAngVelXYZ_penBiasClamp.w;
 		}
 
 		if (deltaVel)
@@ -1418,112 +1278,170 @@ extern "C" __global__ void ps_contactPrepareLaunch(
 	}
 }
 
-__device__ inline void solvePCOutputDeltaV(
-	PxVec3 normal, PxReal error, PxVec3 delta,
-	PxVec3 fric0, PxVec3 fric1,
-	PxReal tanVel0, PxReal tanVel1,
-	PxReal normalVel,
-	PxReal velMultiplier,
-	PxReal vmF0, PxReal vmF1,
-	PxReal frictionCoefficient,
-	PxReal restOffset,
-	PxReal adhesion,
-	PxReal adhesionRadiusScale,
-	PxReal dt,
-	float2& appliedForce,
-	PxReal& deltaF, PxReal& deltaFr0, PxReal& deltaFr1
-)
+// Particle adhesion as a normal-impulse lower bound (<= 0): within the adhesion radius it allows an
+// attractive normal impulse that holds the particle to the collider. Returns 0 when the material has no
+// adhesion. Standalone so every particle contact solve can share one adhesion model.
+PX_FORCE_INLINE __device__ PxReal particleAdhesionImpulseBound(
+	PxReal separation, PxReal adhesion, PxReal adhesionRadiusScale, PxReal restOffset,
+	PxReal velMultiplier, PxReal invDt)
 {
-	const PxReal separation = (error - normal.dot(delta));
-	PxReal clamp = -appliedForce.x;
-
-	if (adhesionRadiusScale > 0.f && adhesion > 0.f)
-	{
-		const PxReal adhesionRadius = restOffset * adhesionRadiusScale - restOffset;
-		if (separation < adhesionRadiusScale)
-		{
-			clamp = PxMin(clamp, -PxMax(0.f, adhesion * quart(1.f - separation / adhesionRadius) * PxMax(0.f, separation) * velMultiplier));
-		}
-	}
-
-	deltaF = PxMax(clamp, (-separation - normalVel * dt) * velMultiplier);
-	appliedForce.x = PxMax(0.f, deltaF + appliedForce.x);
-
-	const PxReal friction = appliedForce.x * frictionCoefficient;
-
-	const PxReal biasedF0 = -(fric0.dot(delta));
-	const PxReal biasedF1 = -(fric1.dot(delta));
-	PxReal requiredF0Force = (biasedF0 + tanVel0 * dt) * vmF0;
-	PxReal requiredF1Force = (biasedF1 + tanVel1 * dt) * vmF1;
-
-	const PxReal requiredForce = PxSqrt(requiredF0Force * requiredF0Force + requiredF1Force * requiredF1Force);
-	const PxReal recipRequiredForce = requiredForce >= 1e-16f ? 1.f / requiredForce : 0.f;
-
-	const PxReal ratio0 = requiredF0Force * recipRequiredForce;
-	const PxReal ratio1 = requiredF1Force * recipRequiredForce;
-
-	//requiredForce is always positive!
-	PxReal deltaFr = PxMin(requiredForce + appliedForce.y, friction) - appliedForce.y;
-	appliedForce.y += deltaFr;
-
-	deltaFr0 = deltaFr * ratio0;
-	deltaFr1 = deltaFr * ratio1;
+	if (adhesionRadiusScale <= 0.f || adhesion <= 0.f || separation >= adhesionRadiusScale)
+		return 0.f;
+	const PxReal adhesionRadius = restOffset * adhesionRadiusScale - restOffset;
+	return -PxMax(0.f, adhesion * quart(1.f - separation / adhesionRadius) * PxMax(0.f, separation) * velMultiplier * invDt);
 }
 
-__device__ inline void solvePCOutputDeltaVTGS(
-	PxVec3 normal, PxReal error, PxVec3 delta,
-	PxVec3 fric0, PxVec3 fric1,
-	PxReal tanDelta0, PxReal tanDelta1,
-	PxReal tanVel0, PxReal tanVel1,
-	PxReal normalDelta,
-	PxReal normalVel,
-	PxReal velMultiplier,
-	PxReal vmF0, PxReal vmF1,
+// Particle-vs-rigid contact solve. Participant types: PxgRigidPart (rigid), PxgDeformablePart<PxVec3>
+// (particle, a single vertex with bc=(1,0,0) inline), PxgDbContactState (normal / tangent0 / initPen,
+// filled here with the resolved single-tangent lambdas). Derives the scalar contact terms (mass-split
+// velMultiplier/vmF0/1, normalVel, tanVel, normalDelta, tanDelta, fric0/1) from the rigid, then resolves
+// the normal projection + friction cone + adhesion. Single function for PGS + TGS -- on PGS readVelocity
+// zeros rigid.linDelta / rigid.angDelta. Also serves the bodyless particle-vs-static-mesh (one-way) path,
+// which passes a nodeless-static rigid.
+//
+// This is solveRbDbContact with the deformable being a single-vertex particle, sharing its CN (velocity)
+// units, mass-split and friction. PC-only: particle-material adhesion as a normal-impulse lower bound and
+// the particle-only friction coefficient (no rigid-material combine).
+PX_FORCE_INLINE __device__ void solvePcRbContact(
+	PxgRigidPart& rigid,
+	PxgDeformablePart<PxVec3>& particle,
+	PxgDbContactState& state,
 	PxReal frictionCoefficient,
 	PxReal restOffset,
 	PxReal adhesion,
 	PxReal adhesionRadiusScale,
 	bool isVelocityIteration,
 	PxReal dt,
-	float2& appliedForce,
-	PxReal& deltaF, PxReal& deltaFr0, PxReal& deltaFr1
+	float2& appliedForce
 )
 {
-	PxReal projectionDt = isVelocityIteration ? 0.f : dt;
-	const PxReal separation = (error - normal.dot(delta) + normalDelta) + normalVel * projectionDt;
-	PxReal clamp = -appliedForce.x;
+	const PxReal invMass1 = particle.vertexInvMasses.x; // single vertex: only .x is set
+	const PxVec3& delta = particle.linDelta;
 
-	if (adhesionRadiusScale > 0.f && adhesion > 0.f)
+	const PxVec3& normal = state.normal;
+	const PxVec3& fric0 = state.tangent0;
+	const PxVec3 fric1 = normal.cross(fric0);
+	const PxReal error = state.initPen;
+
+	// Mass-splitting: scale the rigid unit responses by referenceCount (the PC contact count for
+	// this rigid, from ps_queryPCContactReferenceCountLaunch), matching solveRbDbContact. This
+	// softens each of the rigid's N simultaneous PC contacts by 1/N so the rigid is not over-driven;
+	// referenceCount is 1 (a no-op) for static/kinematic rigids.
+	const PxReal rigidRefCount = static_cast<PxReal>(rigid.referenceCount);
+	const PxReal unitResponse_n = rigidRefCount * rigid.raXnResp + invMass1;
+	const PxReal velMultiplier = (unitResponse_n > 0.f) ? (1.0f / unitResponse_n) : 0.f;
+	const PxReal unitResponse_f0 = rigidRefCount * rigid.raXnF0Resp + invMass1;
+	const PxReal vmF0 = (unitResponse_f0 > 0.f) ? (1.0f / unitResponse_f0) : 0.f;
+	const PxReal unitResponse_f1 = rigidRefCount * rigid.raXnF1Resp + invMass1;
+	const PxReal vmF1 = (unitResponse_f1 > 0.f) ? (1.0f / unitResponse_f1) : 0.f;
+
+	const PxReal normalVel = rigid.linVel.dot(normal) + rigid.angVel.dot(rigid.raXn);
+	const PxReal tanVel0   = rigid.linVel.dot(fric0)  + rigid.angVel.dot(rigid.raXnF0);
+	const PxReal tanVel1   = rigid.linVel.dot(fric1)  + rigid.angVel.dot(rigid.raXnF1);
+	const PxReal normalDelta = rigid.linDelta.dot(normal) + rigid.angDelta.dot(rigid.raXn);
+	const PxReal tanDelta0   = rigid.linDelta.dot(fric0)  + rigid.angDelta.dot(rigid.raXnF0);
+	const PxReal tanDelta1   = rigid.linDelta.dot(fric1)  + rigid.angDelta.dot(rigid.raXnF1);
+
+	const PxReal invDt = 1.0f / dt;
+	state.raXn = rigid.raXn;
+
+	const PxReal separation = error - normal.dot(delta) + normalDelta;
+
+	// CN: the contact-normal constraint in velocity units, matching solveRbDbContact. penBiasClamp
+	// (= -maxDepenetrationVelocity) clamps the depenetration rate; the live-velocity term (normalVel)
+	// contributes the position-phase bias only.
+	// One-way static: rigid.penBiasClamp is the unbounded sentinel, so the particle's clamp governs.
+	const PxReal penBiasClamp = PxMax(rigid.penBiasClamp, particle.penBiasClamp);
+	const PxReal liveVelScale = isVelocityIteration ? 0.f : 1.f;
+	const PxReal CN = PxMax(penBiasClamp, separation * invDt) + normalVel * liveVelScale;
+
+	// Normal impulse (solveRbDbContact's deltaLambdaN form), with the adhesion pull as an extra lower bound.
+	const PxReal clamp = PxMin(-appliedForce.x,
+		particleAdhesionImpulseBound(separation, adhesion, adhesionRadiusScale, restOffset, velMultiplier, invDt));
+	const PxReal deltaLambdaN = PxMax(clamp, -CN * velMultiplier);
+	appliedForce.x = PxMax(0.f, appliedForce.x + deltaLambdaN);
+	state.deltaLambdaN = deltaLambdaN;
+
+	// Friction: RB-DB convention (solveRbDbContact) -- per-iteration Coulomb cone clamped by the current
+	// normal impulse (no accumulation), tangent along the relative tangential velocity, magnitude from the
+	// two per-tangent responses vmF0/vmF1 so the rigid's anisotropic angular response is kept.
+	const PxReal CT0 = (tanDelta0 - fric0.dot(delta)) * invDt + tanVel0 * liveVelScale;
+	const PxReal CT1 = (tanDelta1 - fric1.dot(delta)) * invDt + tanVel1 * liveVelScale;
+	const PxVec3 relTanDelta = CT0 * fric0 + CT1 * fric1;
+	const PxReal tanMagSq = relTanDelta.magnitudeSquared();
+	if (tanMagSq > 1.0e-14f)
 	{
-		const PxReal adhesionRadius = restOffset * adhesionRadiusScale - restOffset;
-		if (separation < adhesionRadiusScale)
+		const PxReal CT = PxSqrt(tanMagSq);
+		state.tangent = relTanDelta * (1.0f / CT);
+
+		const PxReal frac0 = state.tangent.dot(fric0);
+		const PxReal frac1 = state.tangent.dot(fric1);
+		state.raXt = frac0 * rigid.raXnF0 + frac1 * rigid.raXnF1;
+
+		const PxReal deltaLambdaT0 = CT0 * vmF0;
+		const PxReal deltaLambdaT1 = CT1 * vmF1;
+		state.deltaLambdaT = PxSqrt(deltaLambdaT0 * deltaLambdaT0 + deltaLambdaT1 * deltaLambdaT1);
+		state.deltaLambdaT = -PxMin(state.deltaLambdaT, frictionCoefficient * PxAbs(deltaLambdaN));
+	}
+	else
+	{
+		state.tangent      = PxVec3(0.f);
+		state.raXt         = PxVec3(0.f);
+		state.deltaLambdaT = 0.f;
+	}
+}
+
+// Per-rigid (per-articulation-link) count of PC contacts: solvePcRbContact down-weights the rigid by
+// it, and the rigid writeback re-inflates each rigid delta by it. accumulateRigidDeltas then divides
+// the summed delta by Sigma(count), and that division cancels the inflation only when this count
+// equals the writeback's count -- so both count every contact on a dynamic rigid (the same set).
+extern "C" __global__ void ps_queryPCContactReferenceCountLaunch(
+	PxgParticleSystem*							particleSystems,
+	PxgParticlePrimitiveContact*				sortedContacts,
+	PxgParticleRigidContactBlock*				contactBlocks,
+	PxU32*										numContacts,
+	PxgPrePrepDesc*								prePrepDesc,
+	PxgSolverCoreDesc*							solverCoreDesc,
+	float4*										solverBodyVelPool,
+	PxU32*										rigidRefCount,			//output
+	PxReal										dt,
+	bool										isTGS,
+	PxgArticulationCoreDesc*					artiCoreDesc
+)
+{
+	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
+	const PxU32 maxLinksPerArticulation = artiCoreDesc->mMaxLinksPerArticulation;
+
+	const PxU32 tNumContacts = *numContacts;
+
+	const PxU32 nbBlocksRequired = (tNumContacts + blockDim.x - 1) / blockDim.x;
+	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
+	const PxU32 idx = threadIdx.x;
+
+	for (PxU32 i = 0; i < nbIterationsPerBlock; ++i)
+	{
+		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
+		if (workIndex >= tNumContacts)
+			return;
+
+		const PxU32 tIdx = workIndex & 31;
+
+		PxgParticleRigidContactBlock& block = contactBlocks[workIndex / 32];
+
+		const PxU64 tRigidId = sortedContacts[workIndex].rigidId;
+		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(tRigidId);
+
+		PxgRigidPart rigid;
+		rigid.readContactPrep(block, tIdx);
+
+		// Dynamic rigids only (static => id -1). Particle mass is irrelevant: a kinematic (invMass == 0)
+		// particle does not move but still pushes the rigid, so it is counted like any other.
+		const int globalRigidBodyId = rigid.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies, maxLinksPerArticulation);
+		if (globalRigidBodyId != -1 && rigid.invMass != 0.0f)
 		{
-			clamp = PxMin(clamp, -PxMax(0.f, adhesion * quart(1.f - separation / adhesionRadius) * PxMax(0.f, separation) * velMultiplier));
+			atomicAdd(&rigidRefCount[globalRigidBodyId], 1);
 		}
 	}
-
-	deltaF = PxMax(clamp, -separation * velMultiplier);
-	appliedForce.x = PxMax(0.f, appliedForce.x + deltaF);
-
-	const PxReal maxFriction = PxAbs(appliedForce.x) * frictionCoefficient;
-
-	const PxReal biasedF0 = -(fric0.dot(delta) - tanDelta0);
-	const PxReal biasedF1 = -(fric1.dot(delta) - tanDelta1);
-	PxReal requiredF0Force = (biasedF0 + tanVel0 * projectionDt) * vmF0;
-	PxReal requiredF1Force = (biasedF1 + tanVel1 * projectionDt) * vmF1;
-
-	const PxReal requiredForce = PxSqrt(requiredF0Force * requiredF0Force + requiredF1Force * requiredF1Force);
-	const PxReal recipRequiredForce = requiredForce >= 1e-16f ? 1.f / requiredForce : 0.f;
-
-	const PxReal ratio0 = requiredF0Force * recipRequiredForce;
-	const PxReal ratio1 = requiredF1Force * recipRequiredForce;
-
-	//requiredForce is always positive!
-	const PxReal deltaFr = PxMin(requiredForce + appliedForce.y, maxFriction) - appliedForce.y;
-	appliedForce.y += deltaFr;
-
-	deltaFr0 = deltaFr * ratio0;
-	deltaFr1 = deltaFr * ratio1;
 }
 
 //solve collision between particles and primitives based on the sorted contacts by particleId
@@ -1531,29 +1449,23 @@ __device__ inline void solvePCOutputDeltaVTGS(
 extern "C" __global__ void ps_solvePCOutputParticleDeltaVLaunch(
 	PxgParticleSystem*							particleSystems,
 	PxgParticlePrimitiveContact*				sortedContacts,
-	PxgParticlePrimitiveConstraintBlock*		primitiveConstraints,
+	PxgParticleRigidContactBlock*				contactBlocks,
 	PxU32*										numContacts,
 	PxgPrePrepDesc*								prePrepDesc,
 	PxgSolverCoreDesc*							solverCoreDesc,
-	PxgSolverSharedDesc<IterativeSolveData>*	sharedDesc,
+	float4*										solverBodyVelPool,
 	float4*										deltaPos, //output
 	float2*										appliedForces,
+	PxU32*										rigidRefCount,
 	PxReal										dt,
-	PxReal										relaxationCoefficient,
 	bool										isVelocityIteration,
 	PxgArticulationCoreDesc*					artiCoreDesc
 )
 {
-	float4* solverBodyDeltaVel = sharedDesc->iterativeData.solverBodyVelPool + solverCoreDesc->accumulatedBodyDeltaVOffset;
-	float4* initialVel = solverCoreDesc->outSolverVelocity;
-
-	const float4* artiLinkVelocities = solverCoreDesc->outArtiVelocity;
-	const PxU32 maxLinks = artiCoreDesc->mMaxLinksPerArticulation;
-	const PxU32 nbArticulations = artiCoreDesc->nbArticulations;
-	const PxU32 artiOffset = maxLinks * nbArticulations;
-
 	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
-	
+	const PxU32 maxLinksPerArticulation = artiCoreDesc->mMaxLinksPerArticulation;
+	PxgVelocityReader velocityReader(prePrepDesc, solverCoreDesc, artiCoreDesc, solverBodyVelPool, numSolverBodies);
+
 	const PxU32 tNumContacts = *numContacts;
 
 	const PxU32 nbBlocksRequired = (tNumContacts + blockDim.x - 1) / blockDim.x;
@@ -1571,8 +1483,8 @@ extern "C" __global__ void ps_solvePCOutputParticleDeltaVLaunch(
 
 		float2 appliedForce = appliedForces[workIndex];
 
-		PxgParticlePrimitiveConstraintBlock& constraint = primitiveConstraints[workIndex / 32];
-		PxU64 tParticleId = constraint.particleId[tIdx];
+		PxgParticleRigidContactBlock& block = contactBlocks[workIndex / 32];
+		PxU64 tParticleId = sortedContacts[workIndex].particleId;
 		const PxU32 particleSystemId = PxGetParticleSystemId(tParticleId);
 		const PxU32 particleId = PxGetParticleIndex(tParticleId);
 
@@ -1580,14 +1492,12 @@ extern "C" __global__ void ps_solvePCOutputParticleDeltaVLaunch(
 		const float4* PX_RESTRICT sortedDeltaP_invMassW = reinterpret_cast<float4*>( particleSystem.mSortedDeltaP);
 		const PxU32* const PX_RESTRICT phases = particleSystem.mSortedPhaseArray;
 		const PxU16* const PX_RESTRICT phaseToMat = particleSystem.mPhaseGroupToMaterialHandle;
-		
+
 		const PxU32 phase = phases[particleId];
 		const PxU32 group = PxGetGroup(phase);
 		const PxU32 mi = phaseToMat[group];
 		const PxsParticleMaterialData& mat = getParticleMaterial<PxsParticleMaterialData>(particleSystem.mParticleMaterials, mi,
 			particleSystem.mParticleMaterialStride);
-
-		const PxReal frictionCoefficient = mat.friction;
 
 		float4 deltaP_invMassW = sortedDeltaP_invMassW[particleId];
 		const PxReal invMass1 = deltaP_invMassW.w;
@@ -1596,89 +1506,37 @@ extern "C" __global__ void ps_solvePCOutputParticleDeltaVLaunch(
 		if(invMass1 == 0.f)
 			continue;
 
-		PxVec3 delta(deltaP_invMassW.x, deltaP_invMassW.y, deltaP_invMassW.z);
-
-		const PxU64 tRigid = constraint.rigidId[tIdx];
-		//nodeIndex
+		const PxU64 tRigid = sortedContacts[workIndex].rigidId;
 		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(tRigid);
 
-		//TODO - need to figure out how to make this work for articulation links!
-		PxU32 solverBodyIndex = 0;
-		
-		if (!rigidId.isStaticBody())
-		{
-			solverBodyIndex = prePrepDesc->solverBodyIndices[rigidId.index()];
-		}
+		PxgRigidPart rigid;
+		// Symmetric PC mass-split: scale the rigid response by its PC contact count (referenceCount),
+		// exactly as ps_solvePCOutputRigidDeltaVLaunch, so both solve halves compute the identical lambda
+		// and the impulse stays equal-and-opposite.
+		const int globalRigidBodyId = rigid.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies, maxLinksPerArticulation);
+		const float rigidInvMass0 = block.fricTan0_invMass0[tIdx].w;
+		rigid.readBodyProperties(rigidId, globalRigidBodyId, rigidInvMass0, rigidRefCount, /*material*/ nullptr);
+		rigid.readContactPrep(block, tIdx);
+		rigid.readVelocity(velocityReader, rigidId, /*isTGS*/ false);
 
-		float4 linearVelocity, angularVelocity;
+		PxgDeformablePart<PxVec3> particle;
+		// PC ignores the particle-side multi-contact inflation that the deformable-particle solves apply;
+		// only the rigid-side referenceCount carries the mass-split.
+		particle.linDelta = PxVec3(deltaP_invMassW.x, deltaP_invMassW.y, deltaP_invMassW.z);
+		particle.vertexInvMasses = PxVec3(invMass1, 0.0f, 0.0f);
+		particle.bc = PxVec3(1.0f, 0.0f, 0.0f);
+		particle.penBiasClamp = particleSystem.mData.mPenBiasClamp;
 
-		if (rigidId.isArticulation())
-		{
-			const PxU32 index = solverBodyIndex * maxLinks;
-			const float4* vels = &artiLinkVelocities[index];
-			const PxU32 linkID = rigidId.articulationLinkId();
+		PxgDbContactState state;
+		state.readContactPrep(block, tIdx);
 
-			linearVelocity = vels[linkID];
-			angularVelocity = vels[linkID + artiOffset];
-		}
-		else
-		{
-			linearVelocity = initialVel[solverBodyIndex] + solverBodyDeltaVel[solverBodyIndex];
-			angularVelocity = initialVel[solverBodyIndex + numSolverBodies] + solverBodyDeltaVel[solverBodyIndex + numSolverBodies];
-		}
+		solvePcRbContact(rigid, particle, state,
+						 mat.friction, particleSystem.mData.mRestOffset, mat.adhesion, mat.adhesionRadiusScale,
+						 /*isVelocityIteration*/ false, dt, appliedForce);
 
-		const float4 raXn_velMultiplierW = constraint.raXn_velMultiplierW[tIdx];
-		const float4 normal_errorW = constraint.normal_errorW[tIdx];
-		const float4 fricTan0_invMass0 = constraint.fricTan0_invMass0[tIdx];
-		const float4 raXnF0_velMultiplierW = constraint.raXnF0_velMultiplierW[tIdx];
-		const float4 raXnF1_velMultiplierW = constraint.raXnF1_velMultiplierW[tIdx];
-
-		const PxVec3 normal(normal_errorW.x, normal_errorW.y, normal_errorW.z);
-		const PxVec3 fric0(fricTan0_invMass0.x, fricTan0_invMass0.y, fricTan0_invMass0.z);
-		const PxVec3 fric1 = normal.cross(fric0);
-		const float error = normal_errorW.w;
-		const PxVec3 raXn = PxVec3(raXn_velMultiplierW.x, raXn_velMultiplierW.y, raXn_velMultiplierW.z);
-		const float velMultiplier = raXn_velMultiplierW.w;
-
-		const PxVec3 raXnF0(raXnF0_velMultiplierW.x, raXnF0_velMultiplierW.y, raXnF0_velMultiplierW.z);
-		const PxReal vmF0 = raXnF0_velMultiplierW.w;
-
-		const PxVec3 raXnF1(raXnF1_velMultiplierW.x, raXnF1_velMultiplierW.y, raXnF1_velMultiplierW.z);
-		const PxReal vmF1 = raXnF1_velMultiplierW.w;
-
-		PxVec3 linVel0(linearVelocity.x, linearVelocity.y, linearVelocity.z);
-		PxVec3 angVel0(angularVelocity.x, angularVelocity.y, angularVelocity.z);
-		//Compute the normal velocity of the constraint.
-
-		const float normalVel = linVel0.dot(normal) + angVel0.dot(raXn);
-		const float tanVel0 = linVel0.dot(fric0) + angVel0.dot(raXnF0);
-		const float tanVel1 = linVel0.dot(fric1) + angVel0.dot(raXnF1);
-
-		const PxReal relaxation = relaxationCoefficient;
-
-		const PxReal adhesionRadiusScale = mat.adhesionRadiusScale;
-		const PxReal adhesion = mat.adhesion;
-		const PxReal restOffset = particleSystem.mData.mRestOffset;
-
-		PxReal deltaF, deltaFr0, deltaFr1;
-		solvePCOutputDeltaV(
-			normal, error, delta,
-			fric0, fric1,
-			tanVel0, tanVel1,
-			normalVel,
-			velMultiplier,
-			vmF0, vmF1,
-			frictionCoefficient,
-			restOffset,
-			adhesion,
-			adhesionRadiusScale,
-			dt,
-			appliedForce,
-			deltaF, deltaFr0, deltaFr1
-		);
-
-		const PxVec3 deltaLinVel = (-(normal * deltaF) + fric0*deltaFr0 + fric1*deltaFr1)*invMass1*relaxation;
-		PxReal scale = deltaF != 0.f ? 1.f : 0.f;
+		// Particle delta: equal-and-opposite to the rigid feedback (writeContactDeltas).
+		const PxVec3 deltaLinVel = -(state.normal * state.deltaLambdaN + state.tangent * state.deltaLambdaT) * invMass1 * dt;
+		PxReal scale = state.deltaLambdaN != 0.f ? 1.f : 0.f;
 
 		deltaPos[workIndex] = make_float4(deltaLinVel.x, deltaLinVel.y, deltaLinVel.z, scale);
 		appliedForces[workIndex] = appliedForce;
@@ -1690,20 +1548,21 @@ extern "C" __global__ void ps_solvePCOutputParticleDeltaVLaunch(
 extern "C" __global__ void ps_solvePCOutputParticleDeltaVTGSLaunch(
 	PxgParticleSystem*							particleSystems,
 	PxgParticlePrimitiveContact*				sortedContacts,
-	PxgParticlePrimitiveConstraintBlock*		primitiveConstraints,
+	PxgParticleRigidContactBlock*				contactBlocks,
 	PxU32*										numContacts,
 	PxgPrePrepDesc*								prePrepDesc,
 	PxgSolverCoreDesc*							solverCoreDesc,
-	PxgSolverSharedDesc<IterativeSolveData>*	sharedDesc,
+	float4*										solverBodyVelPool,
 	float4*										deltaPos, //output
 	float2*										appliedForces,
+	PxU32*										rigidRefCount,
 	PxReal										dt,
-	PxReal										relaxationCoefficient,
 	bool										isVelocityIteration,
 	PxgArticulationCoreDesc*					artiCoreDesc
 )
 {
 	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
+	const PxU32 maxLinksPerArticulation = artiCoreDesc->mMaxLinksPerArticulation;
 
 	const PxU32 tNumContacts = *numContacts;
 
@@ -1711,7 +1570,7 @@ extern "C" __global__ void ps_solvePCOutputParticleDeltaVTGSLaunch(
 	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
 	const PxU32 idx = threadIdx.x;
 
-	PxgVelocityReader velocityReader(prePrepDesc, solverCoreDesc, artiCoreDesc, sharedDesc, numSolverBodies);
+	PxgVelocityReader velocityReader(prePrepDesc, solverCoreDesc, artiCoreDesc, solverBodyVelPool, numSolverBodies);
 	
 	for (PxU32 i = 0; i < nbIterationsPerBlock; ++i)
 	{
@@ -1723,8 +1582,8 @@ extern "C" __global__ void ps_solvePCOutputParticleDeltaVTGSLaunch(
 
 		float2 appliedForce = appliedForces[workIndex];
 
-		PxgParticlePrimitiveConstraintBlock& constraint = primitiveConstraints[workIndex / 32];
-		PxU64 tParticleId = constraint.particleId[tIdx];
+		PxgParticleRigidContactBlock& block = contactBlocks[workIndex / 32];
+		PxU64 tParticleId = sortedContacts[workIndex].particleId;
 
 		const PxU32 particleSystemId = PxGetParticleSystemId(tParticleId);
 		const PxU32 particleId = PxGetParticleIndex(tParticleId);
@@ -1739,7 +1598,6 @@ extern "C" __global__ void ps_solvePCOutputParticleDeltaVTGSLaunch(
 		const PxU32 mi = phaseToMat[group];
 		const PxsParticleMaterialData& mat = getParticleMaterial<PxsParticleMaterialData>(particleSystem.mParticleMaterials, mi,
 			particleSystem.mParticleMaterialStride);
-		const PxReal frictionCoefficient = mat.friction;
 
 		float4 deltaP_invMassW = sortedDeltaP_invMassW[particleId];
 		const PxReal invMass1 = deltaP_invMassW.w;
@@ -1748,72 +1606,37 @@ extern "C" __global__ void ps_solvePCOutputParticleDeltaVTGSLaunch(
 		if (invMass1 == 0.f)
 			continue;
 
-		const PxReal adhesionRadiusScale = mat.adhesionRadiusScale;
-		const PxReal adhesion = mat.adhesion;
-		const PxReal restOffset = particleSystem.mData.mRestOffset;
-
-		PxVec3 delta(deltaP_invMassW.x, deltaP_invMassW.y, deltaP_invMassW.z);
-		
-		const PxU64 tRigidId = constraint.rigidId[tIdx];
-		//nodeIndex
+		const PxU64 tRigidId = sortedContacts[workIndex].rigidId;
 		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(tRigidId);
 
-		//TODO - need to figure out how to make this work for articulation links!
-		
-		PxgVelocityPackTGS vel0;
-		velocityReader.readVelocitiesTGS(rigidId, vel0);
+		PxgRigidPart rigid;
+		// Symmetric PC mass-split: scale the rigid response by its PC contact count (referenceCount),
+		// exactly as ps_solvePCOutputRigidDeltaVTGSLaunch, so both solve halves compute the identical lambda
+		// and the impulse stays equal-and-opposite.
+		const int globalRigidBodyId = rigid.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies, maxLinksPerArticulation);
+		const float rigidInvMass0 = block.fricTan0_invMass0[tIdx].w;
+		rigid.readBodyProperties(rigidId, globalRigidBodyId, rigidInvMass0, rigidRefCount, /*material*/ nullptr);
+		rigid.readContactPrep(block, tIdx);
+		rigid.readVelocity(velocityReader, rigidId, /*isTGS*/ true);
 
-		const float4 raXn_velMultiplierW = constraint.raXn_velMultiplierW[tIdx];
-		const float4 normal_errorW = constraint.normal_errorW[tIdx];
-		const float4 fricTan0_invMass0 = constraint.fricTan0_invMass0[tIdx];
-		const float4 raXnF0_velMultiplierW = constraint.raXnF0_velMultiplierW[tIdx];
-		const float4 raXnF1_velMultiplierW = constraint.raXnF1_velMultiplierW[tIdx];
+		PxgDeformablePart<PxVec3> particle;
+		// PC ignores the particle-side multi-contact inflation that the deformable-particle solves apply;
+		// only the rigid-side referenceCount carries the mass-split.
+		particle.linDelta = PxVec3(deltaP_invMassW.x, deltaP_invMassW.y, deltaP_invMassW.z);
+		particle.vertexInvMasses = PxVec3(invMass1, 0.0f, 0.0f);
+		particle.bc = PxVec3(1.0f, 0.0f, 0.0f);
+		particle.penBiasClamp = particleSystem.mData.mPenBiasClamp;
 
-		const PxVec3 normal(normal_errorW.x, normal_errorW.y, normal_errorW.z);
-		const PxVec3 fric0(fricTan0_invMass0.x, fricTan0_invMass0.y, fricTan0_invMass0.z);
-		const PxVec3 fric1 = normal.cross(fric0);
-		const float error = normal_errorW.w;
-		const PxVec3 raXn = PxVec3(raXn_velMultiplierW.x, raXn_velMultiplierW.y, raXn_velMultiplierW.z);
-		const float velMultiplier = raXn_velMultiplierW.w;
+		PxgDbContactState state;
+		state.readContactPrep(block, tIdx);
 
-		const PxVec3 raXnF0(raXnF0_velMultiplierW.x, raXnF0_velMultiplierW.y, raXnF0_velMultiplierW.z);
-		const PxReal vmF0 = raXnF0_velMultiplierW.w;
+		solvePcRbContact(rigid, particle, state,
+						 mat.friction, particleSystem.mData.mRestOffset, mat.adhesion, mat.adhesionRadiusScale,
+						 isVelocityIteration, dt, appliedForce);
 
-		const PxVec3 raXnF1(raXnF1_velMultiplierW.x, raXnF1_velMultiplierW.y, raXnF1_velMultiplierW.z);
-		const PxReal vmF1 = raXnF1_velMultiplierW.w;
-		
-		//Compute the normal velocity of the constraint.
-		const PxReal normalVel = vel0.linVel.dot(normal) + vel0.angVel.dot(raXn);
-		const PxReal normalDelta = vel0.linDelta.dot(normal) + vel0.angDelta.dot(raXn);
-
-		const PxReal tanVel0 = vel0.linVel.dot(fric0) + vel0.angVel.dot(raXnF0);
-		const PxReal tanDelta0 = vel0.linDelta.dot(fric0) + vel0.angDelta.dot(raXnF0);
-
-		const PxReal tanVel1 = vel0.linVel.dot(fric1) + vel0.angVel.dot(raXnF1);
-		const PxReal tanDelta1 = vel0.linDelta.dot(fric1) + vel0.angDelta.dot(raXnF1);
-
-		PxReal deltaF, deltaFr0, deltaFr1;
-		solvePCOutputDeltaVTGS(
-			normal, error, delta,
-			fric0, fric1,
-			tanDelta0, tanDelta1,
-			tanVel0, tanVel1,
-			normalDelta,
-			normalVel,
-			velMultiplier,
-			vmF0, vmF1,
-			frictionCoefficient,
-			restOffset,
-			adhesion,
-			adhesionRadiusScale,
-			isVelocityIteration,
-			dt,
-			appliedForce,
-			deltaF, deltaFr0, deltaFr1
-		);
-
-		PxVec3 deltaLinVel = (-(normal * deltaF) + fric0 * deltaFr0 + fric1 * deltaFr1) * invMass1 * relaxationCoefficient;
-		PxReal scale = deltaF != 0.f ? 1.f : 0.f;
+		// Particle delta: equal-and-opposite to the rigid feedback (writeContactDeltas).
+		PxVec3 deltaLinVel = -(state.normal * state.deltaLambdaN + state.tangent * state.deltaLambdaT) * invMass1 * dt;
+		PxReal scale = state.deltaLambdaN != 0.f ? 1.f : 0.f;
 
 		deltaPos[workIndex] = make_float4(deltaLinVel.x, deltaLinVel.y, deltaLinVel.z, scale);
 		appliedForces[workIndex] = appliedForce;
@@ -1825,7 +1648,6 @@ extern "C" __global__ void ps_solveOneWayContactDeltaVLaunch(
 	const PxU32*								activeParticleSystems,
 	const PxReal								invDt,
 	const PxReal								dt,
-	const PxReal								biasCoefficient,
 	const bool									isVelocityIteration
 )
 {
@@ -1876,7 +1698,7 @@ extern "C" __global__ void ps_solveOneWayContactDeltaVLaunch(
 		if (contactCount)
 		{
 			float4 dp_ = deltaP[groupThreadIdx];
-			PxVec3 dp(dp_.x, dp_.y, dp_.z);
+			const PxVec3 dp(dp_.x, dp_.y, dp_.z); // particle position delta (mSortedDeltaP)
 
 			PxReal denom = 0.0f;
 
@@ -1891,35 +1713,34 @@ extern "C" __global__ void ps_solveOneWayContactDeltaVLaunch(
 				// normal is flipped to be the same as for constraints.
 				PxVec3 normal(-normalPenW.x, -normalPenW.y, -normalPenW.z);
 
-				//Pick two tangent vectors to the normal
-				PxVec3 t0, t1;
-				PxComputeBasisVectors(normal, t0, t1);
+				//Pick the friction basis tangent (the adapter derives the second as normal x tangent0).
+				PxVec3 tangent0, tangent1;
+				PxComputeBasisVectors(normal, tangent0, tangent1);
 
-				PxReal velMultiplier = 1.f / invMass;
+				// Route the bodyless static-mesh contact through the particle-rigid adapter with a nodeless
+				// static rigid. Only the particle delta is produced -- the static collider has no node, so
+				// there is no rigid writeback.
+				PxgRigidPart rigid;
+				rigid.readNodelessStatic();
 
-				PxReal deltaF, deltaFr0, deltaFr1;
-				solvePCOutputDeltaVTGS(
-					normal, normalPenW.w, dp,
-					t0, t1,
-					0.0f, 0.0f,		//all of these are 0.0 because the PxRigidStatic does not move.
-					0.0f, 0.0f,
-					0.0f,
-					0.0f,
-					velMultiplier,
-					velMultiplier,
-					velMultiplier,	//same for all of these because for static only particle mass is taken into account.
-					frictionCoefficient,
-					restOffset,
-					adhesion,
-					adhesionRadiusScale,
-					isVelocityIteration,
-					dt,
-					appliedForce,
-					deltaF, deltaFr0, deltaFr1
-				);
+				PxgDeformablePart<PxVec3> particle;
+				particle.linDelta = dp;
+				particle.vertexInvMasses = PxVec3(invMass, 0.f, 0.f);
+				particle.bc = PxVec3(1.f, 0.f, 0.f);
+				particle.penBiasClamp = shParticleSystem.mData.mPenBiasClamp;
 
-				PxVec3 deltaLinVel = (-(normal * deltaF) + t0 * deltaFr0 + t1 * deltaFr1) * invMass * biasCoefficient;
-				PxReal scale = deltaF != 0.f ? 1.f : 0.f;
+				PxgDbContactState state;
+				state.normal   = normal;
+				state.tangent0 = tangent0;
+				state.initPen  = normalPenW.w;
+
+				solvePcRbContact(rigid, particle, state,
+								 frictionCoefficient, restOffset, adhesion, adhesionRadiusScale,
+								 isVelocityIteration, dt, appliedForce);
+
+				// Particle delta: equal-and-opposite to the resolved feedback, as a position correction.
+				PxVec3 deltaLinVel = -(state.normal * state.deltaLambdaN + state.tangent * state.deltaLambdaT) * invMass * dt;
+				PxReal scale = state.deltaLambdaN != 0.f ? 1.f : 0.f;
 
 				thisDeltaP += deltaLinVel;
 
@@ -1943,24 +1764,23 @@ extern "C" __global__ void ps_solveOneWayContactDeltaVLaunch(
 extern "C" __global__ void ps_solvePCOutputRigidDeltaVLaunch(
 	PxgParticleSystem*							particleSystems,
 	PxgParticlePrimitiveContact*				sortedContacts,
-	PxgParticlePrimitiveConstraintBlock*		primitiveConstraints,
+	PxgParticleRigidContactBlock*				contactBlocks,
 	PxU32*										numContacts,
 	PxgPrePrepDesc*								prePrepDesc,
 	PxgSolverCoreDesc*							solverCoreDesc,
-	PxgSolverSharedDesc<IterativeSolveData>*	sharedDesc,
+	float4*										solverBodyVelPool,
 	float4*										deltaVel,				//output
 	float2*										appliedForces,
+	PxU32*										rigidRefCount,
 	PxReal										dt,
-	PxReal										relaxationCoefficient,
 	bool										isVelocityIteration,
 	PxgArticulationCoreDesc*					artiCoreDesc
 )
 
 {
-	float4* solverBodyDeltaVel = sharedDesc->iterativeData.solverBodyVelPool + solverCoreDesc->accumulatedBodyDeltaVOffset;
-	float4* initialVel = solverCoreDesc->outSolverVelocity;
-
 	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
+	const PxU32 maxLinksPerArticulation = artiCoreDesc->mMaxLinksPerArticulation;
+	PxgVelocityReader velocityReader(prePrepDesc, solverCoreDesc, artiCoreDesc, solverBodyVelPool, numSolverBodies);
 
 	const PxU32 tNumContacts = *numContacts;
 
@@ -1970,12 +1790,6 @@ extern "C" __global__ void ps_solvePCOutputRigidDeltaVLaunch(
 
 	const PxU32 idx = threadIdx.x;
 
-	const float4* artiLinkVelocities = solverCoreDesc->outArtiVelocity;
-	const PxU32 maxLinks = artiCoreDesc->mMaxLinksPerArticulation;
-	const PxU32 nbArticulations = artiCoreDesc->nbArticulations;
-	const PxU32 artiOffset = maxLinks * nbArticulations;
-
-
 	for (PxU32 i = 0; i < nbIterationsPerBlock; ++i)
 	{
 		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
@@ -1983,10 +1797,10 @@ extern "C" __global__ void ps_solvePCOutputRigidDeltaVLaunch(
 		if (workIndex >= tNumContacts)
 			return;
 
-		PxgParticlePrimitiveConstraintBlock& constraint = primitiveConstraints[workIndex / 32];
+		PxgParticleRigidContactBlock& block = contactBlocks[workIndex / 32];
 		const PxU32 tIdx = workIndex & 31;
 
-		const PxU64 tRigidId = constraint.rigidId[tIdx];
+		const PxU64 tRigidId = sortedContacts[workIndex].rigidId;
 
 		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(tRigidId);
 
@@ -1996,7 +1810,7 @@ extern "C" __global__ void ps_solvePCOutputRigidDeltaVLaunch(
 			continue;
 		}
 
-		const float4 fricTan0_invMass0 = constraint.fricTan0_invMass0[tIdx];
+		const float4 fricTan0_invMass0 = block.fricTan0_invMass0[tIdx];
 		if (fricTan0_invMass0.w == 0.f)
 		{
 			deltaVel[workIndex] = make_float4(0.0f);
@@ -2005,8 +1819,114 @@ extern "C" __global__ void ps_solvePCOutputRigidDeltaVLaunch(
 			continue;
 		}
 
-		const PxU64 tParticleId = constraint.particleId[tIdx];
+		const PxU64 tParticleId = sortedContacts[workIndex].particleId;
 
+		const PxU32 particleSystemId = PxGetParticleSystemId(tParticleId);
+		const PxU32 particleId = PxGetParticleIndex(tParticleId);
+
+		const PxgParticleSystem& particleSystem = particleSystems[particleSystemId];
+		const float4* const PX_RESTRICT sortedDeltaP_invMassW = reinterpret_cast<float4*>(particleSystem.mSortedDeltaP);
+		const PxU32* PX_RESTRICT phases = particleSystem.mSortedPhaseArray;
+		const PxU16* const PX_RESTRICT phaseToMat = particleSystem.mPhaseGroupToMaterialHandle;
+
+		const PxU32 phase = phases[particleId];
+		const PxU32 group = PxGetGroup(phase);
+		const PxU32 mi = phaseToMat[group];
+		const PxsParticleMaterialData& mat = getParticleMaterial<PxsParticleMaterialData>(particleSystem.mParticleMaterials, mi,
+			particleSystem.mParticleMaterialStride);
+
+		const float4 delta4 = sortedDeltaP_invMassW[particleId];
+		const PxReal invMass1 = delta4.w;
+
+		float2 appliedForce = appliedForces[workIndex];
+
+		PxgRigidPart rigid;
+		// PC friction is particle-material based (passed to solvePcRbContact), so no rigid material.
+		const int globalRigidBodyId = rigid.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies, maxLinksPerArticulation);
+		rigid.readBodyProperties(rigidId, globalRigidBodyId, fricTan0_invMass0.w, rigidRefCount, /*material*/ nullptr);
+		rigid.readContactPrep(block, tIdx);
+		rigid.readVelocity(velocityReader, rigidId, /*isTGS*/ false);
+
+		PxgDeformablePart<PxVec3> particle;
+		// Raw particle invMass on the rigid side (no inflation): the rigid side's mass-split is the
+		// rigid referenceCount applied to the unit responses in solvePcRbContact + the integer-count
+		// writeback below.
+		particle.linDelta = PxLoad3(delta4);
+		particle.vertexInvMasses = PxVec3(invMass1, 0.0f, 0.0f);
+		particle.bc = PxVec3(1.0f, 0.0f, 0.0f);
+		particle.penBiasClamp = particleSystem.mData.mPenBiasClamp;
+
+		PxgDbContactState state;
+		state.readContactPrep(block, tIdx);
+
+		solvePcRbContact(rigid, particle, state,
+						 mat.friction, particleSystem.mData.mRestOffset, mat.adhesion, mat.adhesionRadiusScale,
+						 /*isVelocityIteration*/ false, dt, appliedForce);
+
+		// Rigid feedback through the shared writeContactDeltas (same path as cloth/softbody).
+		rigid.writeContactDeltas(deltaVel, rigidId, state, workIndex, workIndex + tNumContacts);
+		appliedForces[workIndex] = appliedForce;
+	}
+}
+
+extern "C" __global__ void ps_solvePCOutputRigidDeltaVTGSLaunch(
+	PxgParticleSystem*							particleSystems,
+	PxgParticlePrimitiveContact*				sortedContacts,
+	PxgParticleRigidContactBlock*				contactBlocks,
+	PxU32*										numContacts,
+	PxgPrePrepDesc*								prePrepDesc,
+	PxgSolverCoreDesc*							solverCoreDesc,
+	float4*										solverBodyVelPool,
+	float4*										deltaVel,				//output
+	float2*										appliedForces,
+	PxU32*										rigidRefCount,
+	PxReal										dt,
+	bool										isVelocityIteration,
+	PxgArticulationCoreDesc*					artiCoreDesc
+)
+
+{
+	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
+	const PxU32 maxLinksPerArticulation = artiCoreDesc->mMaxLinksPerArticulation;
+
+	const PxU32 tNumContacts = *numContacts;
+
+	const PxU32 nbBlocksRequired = (tNumContacts + blockDim.x - 1) / blockDim.x;
+	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
+	const PxU32 idx = threadIdx.x;
+
+	PxgVelocityReader velocityReader(prePrepDesc, solverCoreDesc, artiCoreDesc, solverBodyVelPool, numSolverBodies);
+
+	for (PxU32 i = 0; i < nbIterationsPerBlock; ++i)
+	{
+		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
+
+		if (workIndex >= tNumContacts)
+			return;
+
+		PxgParticleRigidContactBlock& block = contactBlocks[workIndex / 32];
+		const PxU32 tIdx = workIndex & 31;
+
+		const PxU64 tRigidId = sortedContacts[workIndex].rigidId;
+
+		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(tRigidId);
+
+		//TODO - need to figure out how to make this work for articulation links!
+		if (rigidId.isStaticBody())
+		{
+			continue;
+		}
+
+		const float4 fricTan0_invMass0 = block.fricTan0_invMass0[tIdx];
+		if (fricTan0_invMass0.w == 0.f)
+		{
+			deltaVel[workIndex] = make_float4(0.0f);
+			deltaVel[workIndex + tNumContacts] = make_float4(0.0f);
+			appliedForces[workIndex] = make_float2(0.0f);
+			continue;
+		}
+
+		const PxU64 tParticleId = sortedContacts[workIndex].particleId;
 		const PxU32 particleSystemId = PxGetParticleSystemId(tParticleId);
 		const PxU32 particleId = PxGetParticleIndex(tParticleId);
 
@@ -2020,255 +1940,37 @@ extern "C" __global__ void ps_solvePCOutputRigidDeltaVLaunch(
 		const PxU32 mi = phaseToMat[group];
 		const PxsParticleMaterialData& mat = getParticleMaterial<PxsParticleMaterialData>(particleSystem.mParticleMaterials, mi,
 			particleSystem.mParticleMaterialStride);
-		const PxReal frictionCoefficient = mat.friction;
-
-		
-		const float4 delta4 = sortedDeltaP_invMassW[particleId];
-		PxVec3 delta = PxLoad3(delta4);
-		
-
-		float2 appliedForce = appliedForces[workIndex];
-		
-		PxU32 solverBodyIndex = prePrepDesc->solverBodyIndices[rigidId.index()];
-
-		float4 linearVelocity, angularVelocity;
-
-		if (rigidId.isArticulation())
-		{
-			const PxU32 index = solverBodyIndex * maxLinks;
-			const float4* vels = &artiLinkVelocities[index];
-
-			const PxU32 linkID = rigidId.articulationLinkId();
-
-			linearVelocity = vels[linkID];
-			angularVelocity = vels[linkID + artiOffset];
-		}
-		else
-		{
-			linearVelocity = initialVel[solverBodyIndex] + solverBodyDeltaVel[solverBodyIndex];
-			angularVelocity = initialVel[solverBodyIndex + numSolverBodies] + solverBodyDeltaVel[solverBodyIndex + numSolverBodies];
-		}
-
-		
-		const float4 raXn_velMultiplierW = constraint.raXn_velMultiplierW[tIdx];
-		const float4 normal_errorW = constraint.normal_errorW[tIdx];
-		
-		const float4 raXnF0_velMultiplierW = constraint.raXnF0_velMultiplierW[tIdx];
-		const float4 raXnF1_velMultiplierW = constraint.raXnF1_velMultiplierW[tIdx];
-
-
-		const PxVec3 normal(normal_errorW.x, normal_errorW.y, normal_errorW.z);
-		const PxVec3 fric0(fricTan0_invMass0.x, fricTan0_invMass0.y, fricTan0_invMass0.z);
-		const PxVec3 fric1 = normal.cross(fric0);
-		const float error = normal_errorW.w;
-		const PxVec3 raXn = PxVec3(raXn_velMultiplierW.x, raXn_velMultiplierW.y, raXn_velMultiplierW.z);
-		const float velMultiplier = raXn_velMultiplierW.w;
-		const PxReal invMass0 = fricTan0_invMass0.w;
-
-		const PxVec3 raXnF0(raXnF0_velMultiplierW.x, raXnF0_velMultiplierW.y, raXnF0_velMultiplierW.z);
-		const PxReal vmF0 = raXnF0_velMultiplierW.w;
-
-		const PxVec3 raXnF1(raXnF1_velMultiplierW.x, raXnF1_velMultiplierW.y, raXnF1_velMultiplierW.z);
-		const PxReal vmF1 = raXnF1_velMultiplierW.w;
-
-		PxVec3 linVel0(linearVelocity.x, linearVelocity.y, linearVelocity.z);
-		PxVec3 angVel0(angularVelocity.x, angularVelocity.y, angularVelocity.z);
-		//Compute the normal velocity of the constraint.
-
-		const float normalVel = linVel0.dot(normal) + angVel0.dot(raXn);
-		const float tanVel0 = linVel0.dot(fric0) + angVel0.dot(raXnF0);
-		const float tanVel1 = linVel0.dot(fric1) + angVel0.dot(raXnF1);
-
-		const PxReal adhesionRadiusScale = mat.adhesionRadiusScale;
-		const PxReal adhesion = mat.adhesion;
-		const PxReal restOffset = particleSystem.mData.mRestOffset;
-
-		PxReal deltaF, deltaFr0, deltaFr1;
-		solvePCOutputDeltaV(
-			normal, error, delta,
-			fric0, fric1,
-			tanVel0, tanVel1,
-			normalVel,
-			velMultiplier,
-			vmF0, vmF1,
-			frictionCoefficient,
-			restOffset,
-			adhesion,
-			adhesionRadiusScale,
-			dt,
-			appliedForce,
-			deltaF, deltaFr0, deltaFr1
-		);
-
-		const PxReal relaxation = relaxationCoefficient / dt;
-
-		PxReal count = 0.0f;
-		PxVec3 deltaAngVel0(0.0f);
-		PxVec3 deltaLinVel0(0.0f);
-
-		if((deltaF != 0.0f || deltaFr0 != 0.0f || deltaFr1 != 0.0f) && invMass0 > 0.0f) // if rigid is kinematic or static, deltaVel must remain zero
-		{
-			deltaAngVel0 = (raXn * deltaF - raXnF0 * deltaFr0 - raXnF1 * deltaFr1) * relaxation;
-			deltaLinVel0 = ((normal * deltaF) - fric0*deltaFr0 - fric1*deltaFr1)*invMass0*relaxation;
-
-			count = PxMax(invMass0 / PxMax(invMass0, delta4.w), 0.01f);
-		}
-
-		deltaVel[workIndex] = make_float4(deltaLinVel0.x, deltaLinVel0.y, deltaLinVel0.z, count);
-		deltaVel[workIndex + tNumContacts] = make_float4(deltaAngVel0.x, deltaAngVel0.y, deltaAngVel0.z, 0.f);
-		appliedForces[workIndex] = appliedForce;
-	}
-}
-
-extern "C" __global__ void ps_solvePCOutputRigidDeltaVTGSLaunch(
-	PxgParticleSystem*							particleSystems,
-	PxgParticlePrimitiveContact*				sortedContacts,
-	PxgParticlePrimitiveConstraintBlock*		primitiveConstraints,
-	PxU32*										numContacts,
-	PxgPrePrepDesc*								prePrepDesc,
-	PxgSolverCoreDesc*							solverCoreDesc,
-	PxgSolverSharedDesc<IterativeSolveData>*	sharedDesc,
-	float4*										deltaVel,				//output
-	float2*										appliedForces,
-	PxReal										dt,
-	PxReal										relaxationCoefficient,
-	bool										isVelocityIteration,
-	PxgArticulationCoreDesc*					artiCoreDesc
-)
-
-{
-	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
-
-	const PxU32 tNumContacts = *numContacts;
-
-	const PxU32 nbBlocksRequired = (tNumContacts + blockDim.x - 1) / blockDim.x;
-	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
-	const PxU32 idx = threadIdx.x;
-
-	PxgVelocityReader velocityReader(prePrepDesc, solverCoreDesc, artiCoreDesc, sharedDesc, numSolverBodies);
-	
-	for (PxU32 i = 0; i < nbIterationsPerBlock; ++i)
-	{
-		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
-
-		if (workIndex >= tNumContacts)
-			return;
-
-		PxgParticlePrimitiveConstraintBlock& constraint = primitiveConstraints[workIndex / 32];
-		const PxU32 tIdx = workIndex & 31;
-
-		const PxU64 tRigidId = constraint.rigidId[tIdx];
-
-		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(tRigidId);
-
-		//TODO - need to figure out how to make this work for articulation links!
-		if (rigidId.isStaticBody())
-		{
-			continue;
-		}
-
-		const float4 fricTan0_invMass0 = constraint.fricTan0_invMass0[tIdx];
-		if (fricTan0_invMass0.w == 0.f)
-		{
-			deltaVel[workIndex] = make_float4(0.0f);
-			deltaVel[workIndex + tNumContacts] = make_float4(0.0f);
-			appliedForces[workIndex] = make_float2(0.0f);
-			continue;
-		}
-
-		const PxU64 tParticleId = constraint.particleId[tIdx];
-		const PxU32 particleSystemId = PxGetParticleSystemId(tParticleId);
-		const PxU32 particleId = PxGetParticleIndex(tParticleId);
-
-		const PxgParticleSystem& particleSystem = particleSystems[particleSystemId];
-		const float4* const PX_RESTRICT sortedDeltaP_invMassW = reinterpret_cast<float4*>(particleSystem.mSortedDeltaP);
-		const PxU32* PX_RESTRICT phases = particleSystem.mSortedPhaseArray;
-		const PxU16* const PX_RESTRICT phaseToMat = particleSystem.mPhaseGroupToMaterialHandle;
-		
-		const PxU32 phase = phases[particleId];
-		const PxU32 group = PxGetGroup(phase);
-		const PxU32 mi = phaseToMat[group];
-		const PxsParticleMaterialData& mat = getParticleMaterial<PxsParticleMaterialData>(particleSystem.mParticleMaterials, mi,
-			particleSystem.mParticleMaterialStride); 
-		const PxReal frictionCoefficient = mat.friction;
 
 		const float4 delta4 = sortedDeltaP_invMassW[particleId];
-		PxVec3 delta = PxLoad3(delta4);
-
-		const PxReal adhesionRadiusScale = mat.adhesionRadiusScale;
-		const PxReal adhesion = mat.adhesion;
-		const PxReal restOffset = particleSystem.mData.mRestOffset;
+		const PxReal invMass1 = delta4.w;
 
 		float2 appliedForce = appliedForces[workIndex];
 
-		PxgVelocityPackTGS vel0;
-		velocityReader.readVelocitiesTGS(rigidId, vel0);
+		PxgRigidPart rigid;
+		// PC friction is particle-material based (passed to solvePcRbContact), so no rigid material.
+		const int globalRigidBodyId = rigid.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies, maxLinksPerArticulation);
+		rigid.readBodyProperties(rigidId, globalRigidBodyId, fricTan0_invMass0.w, rigidRefCount, /*material*/ nullptr);
+		rigid.readContactPrep(block, tIdx);
+		rigid.readVelocity(velocityReader, rigidId, /*isTGS*/ true);
 
-		const float4 raXn_velMultiplierW = constraint.raXn_velMultiplierW[tIdx];
-		const float4 normal_errorW = constraint.normal_errorW[tIdx];
-		
-		const float4 raXnF0_velMultiplierW = constraint.raXnF0_velMultiplierW[tIdx];
-		const float4 raXnF1_velMultiplierW = constraint.raXnF1_velMultiplierW[tIdx];
+		PxgDeformablePart<PxVec3> particle;
+		// Raw particle invMass on the rigid side (no inflation): the rigid side's mass-split is the
+		// rigid referenceCount applied to the unit responses in solvePcRbContact + the integer-count
+		// writeback below.
+		particle.linDelta = PxLoad3(delta4);
+		particle.vertexInvMasses = PxVec3(invMass1, 0.0f, 0.0f);
+		particle.bc = PxVec3(1.0f, 0.0f, 0.0f);
+		particle.penBiasClamp = particleSystem.mData.mPenBiasClamp;
 
-		const PxVec3 normal(normal_errorW.x, normal_errorW.y, normal_errorW.z);
-		const PxVec3 fric0(fricTan0_invMass0.x, fricTan0_invMass0.y, fricTan0_invMass0.z);
-		const PxVec3 fric1 = normal.cross(fric0);
-		const float error = normal_errorW.w;
-		const PxVec3 raXn = PxVec3(raXn_velMultiplierW.x, raXn_velMultiplierW.y, raXn_velMultiplierW.z);
-		const float velMultiplier = raXn_velMultiplierW.w;
-		const PxReal invMass0 = fricTan0_invMass0.w;
+		PxgDbContactState state;
+		state.readContactPrep(block, tIdx);
 
-		const PxVec3 raXnF0(raXnF0_velMultiplierW.x, raXnF0_velMultiplierW.y, raXnF0_velMultiplierW.z);
-		const PxReal vmF0 = raXnF0_velMultiplierW.w;
+		solvePcRbContact(rigid, particle, state,
+						 mat.friction, particleSystem.mData.mRestOffset, mat.adhesion, mat.adhesionRadiusScale,
+						 isVelocityIteration, dt, appliedForce);
 
-		const PxVec3 raXnF1(raXnF1_velMultiplierW.x, raXnF1_velMultiplierW.y, raXnF1_velMultiplierW.z);
-		const PxReal vmF1 = raXnF1_velMultiplierW.w;
-
-		//Compute the normal velocity of the constraint.
-		const float normalVel = vel0.linVel.dot(normal) + vel0.angVel.dot(raXn);
-		const float normalDelta = vel0.linDelta.dot(normal) + vel0.angDelta.dot(raXn);
-
-		const float tanVel0 = vel0.linVel.dot(fric0) + vel0.angVel.dot(raXnF0);
-		const float tanDelta0 = vel0.linDelta.dot(fric0) + vel0.angDelta.dot(raXnF0);
-
-		const float tanVel1 = vel0.linVel.dot(fric1) + vel0.angVel.dot(raXnF1);
-		const float tanDelta1 = vel0.linDelta.dot(fric1) + vel0.angDelta.dot(raXnF1);
-
-		PxReal deltaF, deltaFr0, deltaFr1;
-		solvePCOutputDeltaVTGS(
-			normal, error, delta,
-			fric0, fric1,
-			tanDelta0, tanDelta1,
-			tanVel0, tanVel1,
-			normalDelta,
-			normalVel,
-			velMultiplier,
-			vmF0, vmF1,
-			frictionCoefficient,
-			restOffset,
-			adhesion,
-			adhesionRadiusScale,
-			isVelocityIteration,
-			dt,
-			appliedForce,
-			deltaF, deltaFr0, deltaFr1
-		);
-		
-		PxReal count = 0.0f;
-		PxVec3 deltaAngVel0(0.0f);
-		PxVec3 deltaLinVel0(0.0f);
-
-		const PxReal relaxation = relaxationCoefficient / dt;
-
-		if((deltaF != 0.0f || deltaFr0 != 0.0f || deltaFr1 != 0.0f) && invMass0 > 0.0f) // if rigid is kinematic or static, deltaVel must remain zero
-		{
-			deltaAngVel0 = (raXn * deltaF - raXnF0 * deltaFr0 - raXnF1 * deltaFr1) * relaxation;
-			deltaLinVel0 = ((normal * deltaF) - fric0*deltaFr0 - fric1*deltaFr1)*invMass0 * relaxation;
-			count = PxMax(invMass0 / PxMax(invMass0, delta4.w), 0.01f);
-		}
-
-		deltaVel[workIndex] = make_float4(deltaLinVel0.x, deltaLinVel0.y, deltaLinVel0.z, count);
-		deltaVel[workIndex + tNumContacts] = make_float4(deltaAngVel0.x, deltaAngVel0.y, deltaAngVel0.z, 0.f);
+		// Rigid feedback through the shared writeContactDeltas (same path as cloth/softbody).
+		rigid.writeContactDeltas(deltaVel, rigidId, state, workIndex, workIndex + tNumContacts);
 		appliedForces[workIndex] = appliedForce;
 	}
 }
@@ -2504,7 +2206,7 @@ extern "C" __global__ void ps_findStartEndParticleSecondLaunch(
 				rangeEnd[endOffset] = workIndex + 1;
 				//printf("workIndex %i rangeEnd[%i] = %i\n", workIndex, endOffset, workIndex+1);
 			}
-		}	
+		}
 
 		__syncthreads(); //sParticleId (shared memory) is read and written in the same loop - read and write must be separated with syncs
 	}
@@ -2820,6 +2522,12 @@ extern "C" __global__ void ps_accumulateFEMParticleDeltaVLaunch(
 		float4* accumDeltaP = reinterpret_cast<float4*>(particleSystem.mAccumDeltaP);
 
 		accumDeltaP[tParticleId] += accumulatedDeltaP;
+
+#if PX_DB_PARTICLE_MASS_SPLIT
+		// Reset the mass-split contact count for the next iteration's pre-count
+		// (plain store: one thread per particle here).
+		accumDeltaP[tParticleId].w = 0.0f;
+#endif
 	}
 
 }
@@ -4040,1694 +3748,6 @@ extern "C" __global__ void ps_solveVelocityLaunch(
 	}
 }
 
-extern "C" __global__ void ps_updateRemapVertsLaunch(
-	const PxgParticleSystem* PX_RESTRICT particleSystems, 
-	const PxU32* PX_RESTRICT activeParticleSystems)
-{
-	__shared__ __align__(16) PxU8 particleSystemMemory[sizeof(PxgParticleSystem)];
-	PxgParticleSystem& shParticleSystem = *(reinterpret_cast<PxgParticleSystem*>(particleSystemMemory));
-
-	const PxU32 particleId = activeParticleSystems[blockIdx.z];
-	
-	const PxgParticleSystem& particleSystem = particleSystems[particleId];
-
-	const uint2* sParticle = reinterpret_cast<const uint2*>(&particleSystem);
-	uint2* dParticle = reinterpret_cast<uint2*>(&shParticleSystem);
-
-	blockCopy<uint2>(dParticle, sParticle, sizeof(PxgParticleSystem));
-
-	__syncthreads();
-
-	const PxU32 bufferIndex = blockIdx.y;
-
-	if (bufferIndex < particleSystem.mNumClothBuffers)
-	{
-		PxgParticleClothSimBuffer& clothBuffer = particleSystem.mClothSimBuffers[bufferIndex];
-
-		const PxU32 groupThreadIdx = threadIdx.x + blockIdx.x * blockDim.x;
-
-		const PxU32 nbSprings = clothBuffer.mNumSprings;
-
-		const PxU32 totalSprings = nbSprings * 2;
-
-		if (groupThreadIdx < totalSprings)
-		{
-		
-			const PxU32 particleBufferIndex = clothBuffer.mParticleBufferIndex;
-
-			//PxgParticleSimBuffer& buffer = particleSystem.mParticleSimBuffers[particleBufferIndex];
-			const PxU32 offset = particleSystem.mParticleBufferRunsum[particleBufferIndex];
-
-			//each 2 threads deal with one tetrahedrons
-			const float4* PX_RESTRICT positions = shParticleSystem.mSortedPositions_InvMass;
-			const float4* PX_RESTRICT velocities = shParticleSystem.mSortedVelocities;
-			//const float4* PX_RESTRICT sortedDeltaP = shParticleSystem.mSortedDeltaP;
-
-			float4* PX_RESTRICT remapPoses = clothBuffer.mRemapPositions;
-			float4* PX_RESTRICT remapVels = clothBuffer.mRemapVelocities;
-			const PxU32* const PX_RESTRICT reverseLookup = shParticleSystem.mUnsortedToSortedMapping;
-
-			const PxParticleSpring* PX_RESTRICT springs = clothBuffer.mOrderedSprings; // shParticleSystem.mOrderedSprings;
-
-			const PxU32 workIndex = groupThreadIdx / 2;
-
-			const PxParticleSpring spring = springs[workIndex];
-
-			const PxU32 index = groupThreadIdx & 1; // 0, 1
-
-			const PxU32 thisInd = index == 0 ? (spring.ind0 + offset) : (spring.ind1 + offset);
-
-			const PxU32 sortedInd = fetch(&reverseLookup[thisInd]);
-
-			remapPoses[workIndex + nbSprings * index] = positions[sortedInd];
-			//remapVels[workIndex + nbSprings * index] = sortedDeltaP[sortedInd];
-			remapVels[workIndex + nbSprings * index] = velocities[sortedInd];
-			
-			//printf("i %i spring(%i %i) thisInd %i remapInd %i\n", i, spring.ind0, spring.ind1, thisInd, remapInd);
-		}
-	}
-}
-
-extern "C" __global__ void ps_initializeSpringsLaunch(
-	const PxgParticleSystem* PX_RESTRICT particleSystems,
-	const PxU32* PX_RESTRICT activeParticleSystems
-)
-{
-	const PxU32 particleId = activeParticleSystems[blockIdx.z];
-
-	const PxgParticleSystem& particleSystem = particleSystems[particleId];
-
-	const PxU32 bufferIndex = blockIdx.y;
-
-	if (bufferIndex < particleSystem.mNumClothBuffers)
-	{
-		PxgParticleClothSimBuffer& clothBuffer = particleSystem.mClothSimBuffers[bufferIndex];
-
-		const PxU32 groupThreadIdx = threadIdx.x + blockIdx.x * blockDim.x;
-
-		const PxU32 nbSprings = clothBuffer.mNumSprings;
-
-		if (groupThreadIdx >= nbSprings)
-			return;
-
-		clothBuffer.mSpringLambda[groupThreadIdx] = 0.f;
-	}
-}
-
-extern "C" __global__ void ps_solveSpringsLaunch(
-	const PxgParticleSystem* PX_RESTRICT particleSystems, 
-	const PxU32* PX_RESTRICT activeParticleSystems,
-	const PxReal invDt, 
-	const PxU32 partitionId,
-	bool isTGS)
-{
-	__shared__ __align__(16) PxU8 particleSystemMemory[sizeof(PxgParticleSystem)];
-	PxgParticleSystem& shParticleSystem = *(reinterpret_cast<PxgParticleSystem*>(particleSystemMemory));
-
-	const PxU32 particleId = activeParticleSystems[blockIdx.z];
-
-	const PxgParticleSystem& particleSystem = particleSystems[particleId];
-
-	const uint2* sParticleSystem = reinterpret_cast<const uint2*>(&particleSystem);
-	uint2* dParticleSystem = reinterpret_cast<uint2*>(&shParticleSystem);
-
-	blockCopy<uint2>(dParticleSystem, sParticleSystem, sizeof(PxgParticleSystem));
-
-	__syncthreads();
-
-	const PxU32 bufferIndex = blockIdx.y;
-
-	const PxU32 groupThreadIdx = threadIdx.x + blockIdx.x * blockDim.x;
-
-
-	if (bufferIndex < shParticleSystem.mNumClothBuffers)
-	{
-		PxgParticleClothSimBuffer& clothBuffer = particleSystem.mClothSimBuffers[bufferIndex];
-
-
-		const PxU32 nbSprings = clothBuffer.mNumSprings;
-
-		const PxU32 nbPartitions = clothBuffer.mNumPartitions;
-
-		/*if (groupThreadIdx == 0)
-			printf("partitionId %i nbPartitions %i nbSprings %i\n", partitionId, nbPartitions, nbSprings);*/
-
-		if (nbSprings > 0 && partitionId < nbPartitions)
-		{
-
-			float4* PX_RESTRICT remapPoses = clothBuffer.mRemapPositions;
-			float4* PX_RESTRICT remapVels = clothBuffer.mRemapVelocities;
-
-			PxReal* PX_RESTRICT springLambda = clothBuffer.mSpringLambda;
-
-			const PxU32* PX_RESTRICT partitions = clothBuffer.mAccumulatedSpringsPerPartitions;
-			const PxU32* PX_RESTRICT writeIndices = clothBuffer.mRemapOutput;
-
-			const PxParticleSpring* PX_RESTRICT springs = clothBuffer.mOrderedSprings;
-
-			const PxU32 startInd = partitionId > 0 ? partitions[partitionId - 1] : 0;
-			const PxU32 endInd = partitions[partitionId];
-
-			const PxU32 workIndex = startInd + groupThreadIdx;
-
-			if (workIndex < endInd)
-			{
-
-				const PxParticleSpring spring = springs[workIndex];
-
-				const float4 pos_im0 = remapPoses[workIndex];
-				const float4 pos_im1 = remapPoses[workIndex + nbSprings];
-
-				const PxVec3 xi(pos_im0.x, pos_im0.y, pos_im0.z);
-				//const float4 pos_im1 = fetch(&sortedNewPositions[sortedOtherInd]);
-				const PxVec3 xj(pos_im1.x, pos_im1.y, pos_im1.z);
-
-				const PxVec3 veli = PxLoad3(remapVels[workIndex]);
-				const PxVec3 velj = PxLoad3(remapVels[workIndex + nbSprings]);
-
-				const PxVec3 xij = xi - xj;
-
-				const PxReal wsum = pos_im0.w + pos_im1.w;
-
-				PxVec3 newPos0 = xi;
-				PxVec3 newPos1 = xj;
-
-				PxVec3 newVel0 = veli;
-				PxVec3 newVel1 = velj;
-				
-				const PxU32 writeIndex0 = writeIndices[workIndex];
-				const PxU32 writeIndex1 = writeIndices[workIndex + nbSprings];
-
-				if (wsum > 0.f)
-				{
-
-					const PxReal dSq = xij.magnitudeSquared();
-
-					if (dSq > 1e-8f)
-					{
-						const PxReal l = PxSqrt(dSq);
-
-						const PxReal len = spring.length;
-						PxReal e = len - l;
-						PxReal k = spring.stiffness;
-
-						// negative stiffness indicates a one sided constraint
-						// behaves the same as a tether (allows compression)
-						if (k < 0.0f)
-						{
-							e = PxMin(e, 0.0f);
-							k *= -1.0f;
-						}
-
-						// calculate constraint time-derivative
-						const PxVec3 cgrad = xij / l;
-
-						PxReal dcdt = cgrad.dot(veli - velj);
-
-						PxReal dt = 1.f / invDt;
-						const PxReal b = dt * k;
-						const PxReal d = dt * (spring.damping);
-						const PxReal a = dt * b + d;
-
-						const PxReal x = 1.f / (1.f + a * wsum);
-						const PxReal bias = x * b * e;
-						const PxReal velBias = -x * a * dcdt;
-
-						/*if (workIndex == 16)
-						{
-							printf("%i: biasCoefficient = %f, velBiasCoefficient = %f, bias = %f, velBias = %f, invM0 %f, invM1 %f, dt %f, wsum %f, x %f\n",
-								workIndex, x*b, -x * a, bias, velBias, pos_im0.w, pos_im1.w, dt, wsum, x);
-						}*/
-
-
-						PxReal dlambda = 0.f;
-
-
-						if (!isTGS)
-						{
-							const PxReal iMul = 1.f - x;
-							PxReal lambda = springLambda[workIndex];
-							dlambda = ((bias + velBias)*dt + iMul * lambda) - lambda;
-							springLambda[workIndex] = lambda + dlambda;
-						}
-						else
-						{
-							dlambda = (bias + velBias) * dt;
-						}
-
-						PxReal errorBias = e / wsum;
-
-						if (PxAbs(dlambda) > PxAbs(errorBias))
-							dlambda = errorBias;
-
-						/*if (PxAbs(dlambda) > (PxAbs(e / wsum) + 1e-6f))
-						{
-							printf("%i: partition = %i, dlambda = %f, e/wsum = %f, velmul = %f, dcdt = %f, bias = %f, veli = (%f, %f, %f), velj = (%f, %f, %f)\n",
-								workIndex, partitionId, dlambda, e / wsum, velMul, dcdt, bias, veli.x, veli.y, veli.z, velj.x, velj.y, velj.z);
-						}*/
-
-
-						const PxVec3 deltaV = dlambda * cgrad;
-						const PxVec3 deltaV0 = deltaV * pos_im0.w;
-						const PxVec3 deltaV1 = deltaV * pos_im1.w;
-
-						newPos0 += deltaV0;
-						newPos1 -= deltaV1;
-
-						newVel0 += deltaV0*invDt;
-						newVel1 -= deltaV1*invDt;
-					}
-				}
-
-				remapPoses[writeIndex0] = make_float4(newPos0.x, newPos0.y, newPos0.z, pos_im0.w);
-				remapPoses[writeIndex1] = make_float4(newPos1.x, newPos1.y, newPos1.z, pos_im1.w);
-				remapVels[writeIndex0] = make_float4(newVel0.x, newVel0.y, newVel0.z, 0.f);
-				remapVels[writeIndex1] = make_float4(newVel1.x, newVel1.y, newVel1.z, 0.f);
-			}
-		}
-	}
-}
-
-//multiple blocks per particle system(NUM_SPRING_PER_BLOCK), each block has 256 threads
-extern "C" __global__ __launch_bounds__(1024, 1) void ps_averageVertsLaunch(
-	PxgParticleSystem* gParticleSystems,
-	const PxU32* activeParticleSystems,
-	const PxReal invDt)
-{
-	__shared__ __align__(16) PxU8 particleSystemMemory[sizeof(PxgParticleSystem)];
-	PxgParticleSystem& shParticleSystem = *(reinterpret_cast<PxgParticleSystem*>(particleSystemMemory));
-
-	const PxU32 particleId = activeParticleSystems[blockIdx.z];
-
-	const PxgParticleSystem& particleSystem = gParticleSystems[particleId];
-
-	const uint2* sParticleSystem = reinterpret_cast<const uint2*>(&particleSystem);
-	uint2* dParticleSystem = reinterpret_cast<uint2*>(&shParticleSystem);
-
-	blockCopy<uint2>(dParticleSystem, sParticleSystem, sizeof(PxgParticleSystem));
-
-	__syncthreads();
-
-	const PxU32 bufferIndex = blockIdx.y;
-	if (bufferIndex < shParticleSystem.mNumClothBuffers)
-	{
-		PxgParticleClothSimBuffer& clothBuffer = particleSystem.mClothSimBuffers[bufferIndex];
-
-		const PxU32 particleBufferIndex = clothBuffer.mParticleBufferIndex;
-		PxgParticleSimBuffer& particleBuffer = particleSystem.mParticleSimBuffers[particleBufferIndex];
-		PxU32 offset = particleSystem.mParticleBufferRunsum[particleBufferIndex]; //offset to UnsortedPositions_InvMass
-
-		const PxU32 groupThreadIdx = threadIdx.x + blockIdx.x * blockDim.x;
-
-		const PxU32 nbParticles = particleBuffer.mNumActiveParticles;
-		const PxU32 nbSprings = clothBuffer.mNumSprings;
-
-		//const PxU32* PX_RESTRICT gridParticleIndex = shParticleSystem.mSortedToUnsortedMapping;
-
-		const PxU32* const PX_RESTRICT reverseLookup = shParticleSystem.mUnsortedToSortedMapping;
-
-		if (groupThreadIdx < nbParticles && nbSprings > 0)
-		{
-			/*if (groupThreadIdx == 0)
-				printf("averageVerts nbParticles %i nbSprings %i bufferOffset %i\n", nbParticles, nbSprings, bufferOffset);*/
-
-			const float4* const PX_RESTRICT positions = shParticleSystem.mSortedPositions_InvMass;
-
-			const float4* const PX_RESTRICT curPositions = clothBuffer.mRemapPositions;
-
-			const PxU32* const PX_RESTRICT startIndices = clothBuffer.mSortedClothStartIndices;
-			//const PxU32* const PX_RESTRICT endIndices = clothBuffer.mSortedClothEndIndices;
-			//const PxReal* const PX_RESTRICT coefficients = clothBuffer.mSortedClothCoefficients;
-
-			const PxParticleCloth* const PX_RESTRICT cloths = clothBuffer.mCloths;
-
-			const PxU32* accumulatedCopies = clothBuffer.mAccumulatedCopiesPerParticles;
-
-			const PxU32 springOffset = nbSprings * 2;
-
-			const float4* const PX_RESTRICT accumulatedPoses = &curPositions[springOffset];
-
-			float4* PX_RESTRICT accumDeltaP = reinterpret_cast<float4*>(shParticleSystem.mAccumDeltaP);
-
-			const PxU32 index = groupThreadIdx + offset;
-
-			const PxU32 sortedInd = reverseLookup[index];
-
-			const float4 pos_invMass = positions[sortedInd];
-
-			if (pos_invMass.w > 0.f)
-			{
-				float4 deltaP = accumDeltaP[sortedInd];
-
-				
-				const PxU32 startInd = groupThreadIdx == 0 ? 0 : accumulatedCopies[groupThreadIdx - 1];
-				const PxU32 endInd = accumulatedCopies[groupThreadIdx];
-
-				const PxU32 numCopies = endInd - startInd;
-
-				//cloth particles has been partitions so it has reference in the accumulatedCopies array. However,
-				//other particle type don't go through partition table so it won't have reference in that array
-				if (numCopies)
-				{
-					
-					float4 diff = accumulatedPoses[startInd] - pos_invMass;
-
-					for (PxU32 j = startInd + 1; j < endInd; ++j)
-					{
-						diff += accumulatedPoses[j] - pos_invMass;
-					}
-
-				/*	
-				    float4 accuPos = accumulatedPoses[startInd];
-					if (index == 0)
-					{
-						printf("startInd %i diff(%f, %f, %f) accumulatedPoses(%f, %f, %f) pos(%f, %f, %f)\n", startInd, diff.x, diff.y, diff.z, accuPos.x, accuPos.y, accuPos.z, pos_invMass.x,
-							pos_invMass.y, pos_invMass.z);
-					}*/
-
-					PxU32 clothIndex = binarySearch(startIndices, clothBuffer.mNumCloths, index);
-
-					PxReal scale;
-
-					if (clothIndex < clothBuffer.mNumCloths &&
-						((cloths[clothIndex].startVertexIndex + offset) + cloths[clothIndex].numVertices) > index)
-					{
-						scale = cloths[clothIndex].clothBlendScale;
-						
-					}
-					else
-					{
-						scale = 1.f / numCopies;
-					}
-
-					float4 averageDeltaP = diff * scale;
-
-					accumDeltaP[sortedInd] = deltaP + averageDeltaP;
-
-					/*if(sortedInd < 10)
-						printf("index %i sortedInd %i groupThreadIdx %i startInd %i endId %i numCopies %i averageDeltaP(%f, %f, %f)\n", index, sortedInd, groupThreadIdx, startInd, endInd, numCopies, averageDeltaP.x, averageDeltaP.y, averageDeltaP.z);*/
-				}
-
-			}
-
-		}
-	}
-}
-
-extern "C" __global__ void ps_solveAerodynamics1Launch(
-	const PxgParticleSystem * PX_RESTRICT particleSystems,
-	const PxU32 * PX_RESTRICT activeParticleSystems,
-	const PxReal dt)
-{
-
-	__shared__ __align__(16) PxU8 particleSystemMemory[sizeof(PxgParticleSystem)];
-	PxgParticleSystem& shParticleSystem = *(reinterpret_cast<PxgParticleSystem*>(particleSystemMemory));
-
-	const PxU32 particleId = activeParticleSystems[blockIdx.z];
-	const PxgParticleSystem& particleSystem = particleSystems[particleId];
-
-	const uint2* sParticleSystem = reinterpret_cast<const uint2*>(&particleSystem);
-	uint2* dParticleSystem = reinterpret_cast<uint2*>(&shParticleSystem);
-
-	blockCopy<uint2>(dParticleSystem, sParticleSystem, sizeof(PxgParticleSystem));
-
-	__syncthreads();
-
-	const PxU32 bufferIndex = blockIdx.y;
-
-	if (bufferIndex < shParticleSystem.mNumClothBuffers)
-	{
-
-		PxgParticleClothSimBuffer& clothBuffer = particleSystem.mClothSimBuffers[bufferIndex];
-
-		const PxU32 particleBufferIndex = clothBuffer.mParticleBufferIndex;
-		PxU32 offset = particleSystem.mParticleBufferRunsum[particleBufferIndex]; //offset to UnsortedPositions_InvMass
-
-		const PxU32 nbTriangles = clothBuffer.mNumTriangles;
-		const PxU32* PX_RESTRICT triangles = clothBuffer.mTriangles;
-
-	
-		const PxU32* const PX_RESTRICT reverseLookup = shParticleSystem.mUnsortedToSortedMapping;
-		const float4* const PX_RESTRICT sortedPosIM = shParticleSystem.mSortedPositions_InvMass;
-		const PxU32* const PX_RESTRICT phases = particleSystem.mSortedPhaseArray;
-		const PxU16* const PX_RESTRICT phaseToMat = particleSystem.mPhaseGroupToMaterialHandle;
-
-		float4* PX_RESTRICT sortedVel = shParticleSystem.mSortedVelocities;
-		float4* PX_RESTRICT normals = shParticleSystem.mNormalArray;
-
-		//mDelta should be set to zero in ps_solveVelocityLaunch
-		float4* PX_RESTRICT delta = shParticleSystem.mDelta;
-
-		const PxgParticleSystemData& data = shParticleSystem.mData;
-
-	/*	const PxgParticleSystemData& data = shParticleSystem.mData;
-
-		const PxU32 nbParticlesWithTriangles = shParticleSystem.mNbParticlesWithTriangles;*/
-
-		const int groupThreadIdx = blockIdx.x * blockDim.x + threadIdx.x;
-
-		if (groupThreadIdx < nbTriangles)
-		{
-			const PxU32 triBase = groupThreadIdx * 3;
-
-			for (PxU32 i = 0; i < 3; ++i)
-			{
-				const PxU32 ind0 = triangles[triBase + i % 3] + offset;
-				const PxU32 ind1 = triangles[triBase + (i + 1) % 3] + offset;
-				const PxU32 ind2 = triangles[triBase + (i + 2) % 3] + offset;
-
-				const PxU32 a = reverseLookup[ind0];
-				const float4 p14 = fetch(&sortedPosIM[a]);
-
-				const PxVec3 p1 = PxLoad3(p14);
-
-				const PxVec3 va = PxLoad3(fetch(&sortedVel[a]));
-
-				const PxU32 phase = phases[a];
-				const PxU32 group = PxGetGroup(phase);
-				const PxU32 mi = phaseToMat[group];
-				const PxsPBDMaterialData& mat = getParticleMaterial<PxsPBDMaterialData>(particleSystem.mParticleMaterials, mi,
-					particleSystem.mParticleMaterialStride);
-
-				const bool calculateDelta = (mat.drag != 0.f || mat.lift != 0.f) && (p14.w != 0.f);
-
-				const PxU32 b = reverseLookup[ind1];
-				const PxU32 c = reverseLookup[ind2];
-
-
-				const PxVec3 p2 = PxLoad3(fetch(&sortedPosIM[b]));
-				const PxVec3 p3 = PxLoad3(fetch(&sortedPosIM[c]));
-
-				const PxVec3 vb = PxLoad3(fetch(&sortedVel[b]));
-				const PxVec3 vc = PxLoad3(fetch(&sortedVel[c]));
-
-				const PxVec3 e1 = p2 - p1;
-				const PxVec3 e2 = p3 - p1;
-				PxVec3 n = e2.cross(e1).getNormalized();
-
-				AtomicAdd(normals, a, n);
-
-				if (calculateDelta)
-				{
-					const PxVec3 v = (va + vb + vc) * 0.3333f;
-					const PxVec3 vrel = data.mWind - v;
-					const PxVec3 vdir = vrel.getNormalized();
-					PxReal cosTheta = vdir.dot(n);
-
-					if (cosTheta < 0.0f)
-					{
-						n *= -1.0f;
-						cosTheta *= -1.0f;
-					}
-
-					// calculate a simple drag force. Needs to be clamped by invMass
-					PxReal dragFactor = PxClamp(dt * mat.drag * cosTheta * p14.w, -0.75f, 0.75f);
-
-					const PxVec3 drag = dragFactor * vrel;
-
-					// calculates 0.5f*sin(alpha) which is an approximation of the lift coefficient for a given angle of attack (alpha)
-					const PxReal liftCoefficient = PxClamp(p14.w * dt * mat.lift * cosTheta * sqrtf(PxMax(0.0f, 1.0f - (cosTheta * cosTheta))), -1.0f, 1.0f) * vrel.magnitude();
-					const PxVec3 liftDir = vrel.cross(n).cross(vrel).getNormalized();
-					// final aerodynamic impulse
-					PxVec3 j = (drag + liftDir * liftCoefficient);
-
-					AtomicAdd(delta, a, j, 1);
-				}
-			}
-		}
-
-	}
-}
-
-
-
-extern "C" __global__ void ps_solveAerodynamics2Launch(
-	const PxgParticleSystem * PX_RESTRICT particleSystems,
-	const PxU32 * PX_RESTRICT activeParticleSystems,
-	const PxReal dt)
-{
-	__shared__ __align__(16) PxU8 particleSystemMemory[sizeof(PxgParticleSystem)];
-	PxgParticleSystem& shParticleSystem = *(reinterpret_cast<PxgParticleSystem*>(particleSystemMemory));
-
-	const PxU32 particleId = activeParticleSystems[blockIdx.z];
-	const PxgParticleSystem& particleSystem = particleSystems[particleId];
-
-	const uint2* sParticleSystem = reinterpret_cast<const uint2*>(&particleSystem);
-	uint2* dParticleSystem = reinterpret_cast<uint2*>(&shParticleSystem);
-
-	blockCopy<uint2>(dParticleSystem, sParticleSystem, sizeof(PxgParticleSystem));
-
-	__syncthreads();
-
-	const PxU32 bufferIndex = blockIdx.y;
-
-	if (bufferIndex < shParticleSystem.mNumClothBuffers)
-	{
-
-		PxgParticleClothSimBuffer& clothBuffer = particleSystem.mClothSimBuffers[bufferIndex];
-
-		const PxU32 particleBufferIndex = clothBuffer.mParticleBufferIndex;
-		PxgParticleSimBuffer& particleBuffer = particleSystem.mParticleSimBuffers[particleBufferIndex];
-		//unsorted phases
-		const PxU32* const PX_RESTRICT phases = particleBuffer.mPhases;
-
-		const PxU32* const PX_RESTRICT reverseLookup = shParticleSystem.mUnsortedToSortedMapping;
-		const float4* const PX_RESTRICT sortedPosIM = shParticleSystem.mSortedPositions_InvMass;
-		const PxU16* const PX_RESTRICT phaseToMat = particleSystem.mPhaseGroupToMaterialHandle;
-
-		float4* PX_RESTRICT sortedVel = shParticleSystem.mSortedVelocities;
-		float4* PX_RESTRICT normals = shParticleSystem.mNormalArray;
-
-		float4* PX_RESTRICT deltas = shParticleSystem.mDelta;
-		const PxU32 numParticles = particleBuffer.mNumActiveParticles;
-
-		const PxU32 globalThreadIndex = blockIdx.x * blockDim.x + threadIdx.x;
-		PxU32 offset = particleSystem.mParticleBufferRunsum[particleBufferIndex];
-
-		if (globalThreadIndex < numParticles)
-		{		
-			const PxU32 unsortedIndex = globalThreadIndex + offset;
-
-			// lookup phase with the buffer-based index
-			const PxU32 phase = phases[globalThreadIndex];
-			const PxU32 group = PxGetGroup(phase);
-			const PxU32 mi = phaseToMat[group];
-			const PxsPBDMaterialData& mat = getParticleMaterial<PxsPBDMaterialData>(particleSystem.mParticleMaterials, mi,
-				particleSystem.mParticleMaterialStride);
-
-			const PxU32 index = reverseLookup[unsortedIndex];
-
-			const float4 p14 = fetch(&sortedPosIM[index]);
-
-			const bool calculateDelta = (mat.drag != 0.f || mat.lift != 0.f) && (p14.w != 0.f);
-
-			float4 delta = deltas[index];
-
-			if (calculateDelta && delta.w > 0)
-			{
-				const PxVec3 va = PxLoad3(fetch(&sortedVel[index]));
-
-				const PxReal scale = 1.f / delta.w;
-
-				sortedVel[index] = make_float4(va.x + delta.x * scale, va.y + delta.y * scale, va.z + delta.z * scale, 0.f);
-
-			}
-
-			deltas[index] = make_float4(0.f, 0.f, 0.f, 0.f);
-
-			const PxVec3 n = PxLoad3(fetch(&normals[unsortedIndex]));
-
-			PxVec3 unitn = -SafeNormalize(n, PxVec3(0.f, 1.f, 0.f));
-
-			normals[unsortedIndex] = make_float4(unitn.x, unitn.y, unitn.z, 0.0f);
-
-		}
-	}
-}
-
-#if 0
-extern "C" __global__ void ps_calculateInflatableVolume(PxgParticleSystem* particleSystems, const PxU32* activeParticleSystems)
-{
-	__shared__ __align__(16) PxU8 particleSystemMemory[sizeof(PxgParticleSystem)];
-	PxgParticleSystem& shParticleSystem = *(reinterpret_cast<PxgParticleSystem*>(particleSystemMemory));
-
-	const PxU32 particleId = activeParticleSystems[blockIdx.z];
-	const PxgParticleSystem& particleSystem = particleSystems[particleId];
-
-	const uint2* sParticleSystem = reinterpret_cast<const uint2*>(&particleSystem);
-	uint2* dParticleSystem = reinterpret_cast<uint2*>(&shParticleSystem);
-
-	blockCopy<uint2>(dParticleSystem, sParticleSystem, sizeof(PxgParticleSystem));
-
-	__syncthreads();
-
-	const PxU32 bufferIndex = blockIdx.y;
-
-	if (bufferIndex >= shParticleSystem.mNumClothBuffers)
-		return;
-
-	PxgParticleClothSimBuffer& clothBuffer = particleSystem.mClothBuffers[bufferIndex];
-
-	const PxU32 numInflatables = clothBuffer.mNumCloths;
-	const PxU32 inflatableIdx = blockIdx.x;
-
-	if (inflatableIdx >= numInflatables)
-		return;
-
-	PxParticleCloth* inflatables = clothBuffer.mCloths;
-
-	const float4* PX_RESTRICT positions = reinterpret_cast<float4*>(shParticleSystem.mSortedPositions_InvMass);
-	const PxU32* PX_RESTRICT reverseLookup = shParticleSystem.mUnsortedToSortedMapping;
-	const PxU32* PX_RESTRICT indices = shParticleSystem.mInflatableTriIndices;
-	
-
-	PxReal *PX_RESTRICT lambdas = shParticleSystem.mPressures;
-
-	const PxU32 numThreadsPerBlock = PxgParticleSystemKernelBlockDim::PS_INFLATABLE;
-
-	// load inflatable to shared memory
-	__shared__ PxParticleCloth inflatable;
-	__shared__ float volume;
-	__shared__ float com[3];
-
-	if (threadIdx.x == 0)
-	{
-		inflatable = inflatables[blockIdx.x];
-		volume = 0.0f;
-		com[0] = 0.0f;
-		com[1] = 0.0f;
-		com[2] = 0.0f;
-	}
-	__syncthreads(); //Writes visible
-
-	//skip inflatables with zero pressure (which marks inflatables that should be solved as cloth)
-	if (inflatable.restVolume == 0.0f)
-		return;
-
-	const int numPasses = (inflatable.numTris + blockDim.x - 1) / blockDim.x;
-
-	
-
-	const float comScale = 1.0f / (3.0f * inflatable.numTris);
-
-	float4* PX_RESTRICT normals = shParticleSystem.mNormalArray;
-
-	for (int i = threadIdx.x + inflatable.vertexIndicesStart,
-		endIndex = inflatable.vertexIndicesStart + inflatable.numVertices; i < endIndex; i += blockDim.x)
-	{
-		normals[i] = make_float4(0.f);
-	}
-
-	__syncthreads(); //Writes visible
-
-
-	for (int pass = 0; pass < numPasses; ++pass)
-	{
-		const int blockStart = pass * numThreadsPerBlock;
-		const int tid = blockStart + threadIdx.x;
-
-		{
-			const int tri = inflatable.triIndicesStart + (tid * 3);
-
-			PxVec3 tc = PxVec3(0.0f);
-			if (tid < inflatable.numTris)
-			{
-				int unsortedA = indices[tri + 0];
-				int unsortedB = indices[tri + 1];
-				int unsortedC = indices[tri + 2];
-
-				int a = reverseLookup[unsortedA];
-				int b = reverseLookup[unsortedB];
-				int c = reverseLookup[unsortedC];
-
-				PxVec3 va = PxLoad3(fetch(&positions[a]));
-				PxVec3 vb = PxLoad3(fetch(&positions[b]));
-				PxVec3 vc = PxLoad3(fetch(&positions[c]));
-
-				tc = (va + vb + vc) * comScale;
-			}
-
-			PxVec3 blockCom;
-			blockCom.x = blockReduction<AddOpPxReal, PxReal, numThreadsPerBlock>(FULL_MASK, tc.x, 0.0f);
-			blockCom.y = blockReduction<AddOpPxReal, PxReal, numThreadsPerBlock>(FULL_MASK, tc.y, 0.0f);
-			blockCom.z = blockReduction<AddOpPxReal, PxReal, numThreadsPerBlock>(FULL_MASK, tc.z, 0.0f);
-
-			if (!threadIdx.x)
-			{
-				com[0] += blockCom.x;
-				com[1] += blockCom.y;
-				com[2] += blockCom.z;
-			}
-		}
-		__syncthreads();
-	}
-	__syncthreads();
-
-	for (int pass = 0; pass < numPasses; ++pass)
-	{
-		const int tid = pass * blockDim.x + threadIdx.x;
-
-		{
-			const int tri = inflatable.triIndicesStart + (tid * 3);
-
-			float signedVolume = 0.0f;
-			if (tid < inflatable.numTris)
-			{
-				int unsortedA = indices[tri + 0];
-				int unsortedB = indices[tri + 1];
-				int unsortedC = indices[tri + 2];
-
-				int a = reverseLookup[unsortedA];
-				int b = reverseLookup[unsortedB];
-				int c = reverseLookup[unsortedC];
-
-				PxVec3 va = PxLoad3(fetch(&positions[a])) - PxVec3(com[0], com[1], com[2]);
-				PxVec3 vb = PxLoad3(fetch(&positions[b])) - PxVec3(com[0], com[1], com[2]);
-				PxVec3 vc = PxLoad3(fetch(&positions[c])) - PxVec3(com[0], com[1], com[2]);
-
-				PxVec3 nor = (vb - va).cross(vc - va);
-
-				signedVolume = va.dot(nor);
-
-				nor.normalize();
-
-				AtomicAdd(normals, unsortedA, nor);
-				AtomicAdd(normals, unsortedB, nor);
-				AtomicAdd(normals, unsortedC, nor);
-			}
-
-			// the sum of all signed tetrahedra volumes in this block
-			PxReal blockVolume = blockReduction<AddOpPxReal, PxReal, numThreadsPerBlock>(FULL_MASK, signedVolume, 0.0f);
-
-			if (!threadIdx.x)
-				volume += blockVolume;
-		}
-		__syncthreads();
-	}
-
-	if (!threadIdx.x)
-	{
-		const PxReal constraintScale = 1.f / inflatable.numVertices;
-
-		const float lambda = cbrtf(PxMax(0.f, (inflatable.restVolume*inflatable.pressure - volume)))*constraintScale*0.25f;
-
-		const PxReal maxDelta = shParticleSystem.mCommonData.mParticleContactDistance*0.1f;
-
-		// constraint lambda
-		lambdas[blockIdx.x] = PxMin(lambda, maxDelta);
-	}
-}
-
-#else
-extern "C" __global__ void ps_calculateInflatableVolume(PxgParticleSystem * particleSystems, const PxU32 * activeParticleSystems)
-{
-	__shared__ __align__(16) PxU8 particleSystemMemory[sizeof(PxgParticleSystem)];
-	PxgParticleSystem& shParticleSystem = *(reinterpret_cast<PxgParticleSystem*>(particleSystemMemory));
-
-	const PxU32 particleId = activeParticleSystems[blockIdx.z];
-	const PxgParticleSystem& particleSystem = particleSystems[particleId];
-
-	const uint2* sParticleSystem = reinterpret_cast<const uint2*>(&particleSystem);
-	uint2* dParticleSystem = reinterpret_cast<uint2*>(&shParticleSystem);
-
-	blockCopy<uint2>(dParticleSystem, sParticleSystem, sizeof(PxgParticleSystem));
-
-	__syncthreads();
-
-	const PxU32 bufferIndex = blockIdx.y;
-
-	if (bufferIndex < shParticleSystem.mNumClothBuffers)
-	{
-		PxgParticleClothSimBuffer& clothBuffer = particleSystem.mClothSimBuffers[bufferIndex];
-
-		const PxU32 numInflatables = clothBuffer.mNumCloths;
-		const PxU32 inflatableIdx = blockIdx.x;
-
-		if (inflatableIdx >= numInflatables)
-			return;
-
-		PxParticleCloth* inflatables = clothBuffer.mCloths;
-
-		// load inflatable to shared memory
-		__shared__ PxParticleCloth inflatable;
-		__shared__ float volume;
-		__shared__ float com[3];
-
-		if (threadIdx.x == 0)
-		{
-			inflatable = inflatables[blockIdx.x];
-			volume = 0.0f;
-			com[0] = 0.0f;
-			com[1] = 0.0f;
-			com[2] = 0.0f;
-		}
-		__syncthreads(); //Writes visible
-
-		//skip inflatables with zero pressure (which marks inflatables that should be solved as cloth)
-		if (inflatable.pressure == 0.0f)
-			return;
-		
-
-		const float4* PX_RESTRICT positions = reinterpret_cast<float4*>(shParticleSystem.mSortedPositions_InvMass);
-		const PxU32* PX_RESTRICT reverseLookup = shParticleSystem.mUnsortedToSortedMapping;
-		//const PxU32* PX_RESTRICT indices = shParticleSystem.mInflatableTriIndices;
-
-		const PxU32* PX_RESTRICT indices = clothBuffer.mTriangles;
-
-
-		const PxU32 particleBufferIndex = clothBuffer.mParticleBufferIndex;
-		PxU32 offset = particleSystem.mParticleBufferRunsum[particleBufferIndex]; //offset to UnsortedPositions_InvMass
-
-
-		PxReal* PX_RESTRICT lambdas = clothBuffer.mInflatableLambda;
-
-		const PxU32 numThreadsPerBlock = PxgParticleSystemKernelBlockDim::PS_INFLATABLE;
-
-
-		const int numPasses = (inflatable.numTriangles + blockDim.x - 1) / blockDim.x;
-
-
-		const float comScale = 1.0f / (3.0f * inflatable.numTriangles);
-
-		float4* PX_RESTRICT normals = shParticleSystem.mNormalArray;
-
-		const PxU32 vertStartIndex = inflatable.startVertexIndex + offset;
-		for (int i = threadIdx.x + vertStartIndex,
-			endIndex = vertStartIndex + inflatable.numVertices; i < endIndex; i += blockDim.x)
-		{
-			normals[i] = make_float4(0.f);
-		}
-
-		__syncthreads(); //Writes visible
-
-
-		for (int pass = 0; pass < numPasses; ++pass)
-		{
-			const int blockStart = pass * numThreadsPerBlock;
-			const int tid = blockStart + threadIdx.x;
-
-			{
-				
-				const int tri = inflatable.startTriangleIndex + (tid * 3);
-
-				PxVec3 tc = PxVec3(0.0f);
-				if (tid < inflatable.numTriangles)
-				{
-					int unsortedA = indices[tri + 0] + offset;
-					int unsortedB = indices[tri + 1] + offset;
-					int unsortedC = indices[tri + 2] + offset;
-
-					int a = reverseLookup[unsortedA];
-					int b = reverseLookup[unsortedB];
-					int c = reverseLookup[unsortedC];
-
-					PxVec3 va = PxLoad3(fetch(&positions[a]));
-					PxVec3 vb = PxLoad3(fetch(&positions[b]));
-					PxVec3 vc = PxLoad3(fetch(&positions[c]));
-
-					tc = (va + vb + vc) * comScale;
-				}
-
-				PxVec3 blockCom;
-				blockCom.x = blockReduction<AddOpPxReal, PxReal, numThreadsPerBlock>(FULL_MASK, tc.x, 0.0f);
-				blockCom.y = blockReduction<AddOpPxReal, PxReal, numThreadsPerBlock>(FULL_MASK, tc.y, 0.0f);
-				blockCom.z = blockReduction<AddOpPxReal, PxReal, numThreadsPerBlock>(FULL_MASK, tc.z, 0.0f);
-
-				if (!threadIdx.x)
-				{
-					com[0] += blockCom.x;
-					com[1] += blockCom.y;
-					com[2] += blockCom.z;
-				}
-			}
-			__syncthreads();
-		}
-
-		//__syncthreads();
-
-
-		for (int pass = 0; pass < numPasses; ++pass)
-		{
-			const int tid = pass * blockDim.x + threadIdx.x;
-
-			{
-				const int tri = inflatable.startTriangleIndex + (tid * 3);
-
-				float signedVolume = 0.0f;
-				if (tid < inflatable.numTriangles)
-				{
-					int unsortedA = indices[tri + 0] + offset;
-					int unsortedB = indices[tri + 1] + offset;
-					int unsortedC = indices[tri + 2] + offset;
-
-					int a = reverseLookup[unsortedA];
-					int b = reverseLookup[unsortedB];
-					int c = reverseLookup[unsortedC];
-
-					PxVec3 va = PxLoad3(fetch(&positions[a])) - PxVec3(com[0], com[1], com[2]);
-					PxVec3 vb = PxLoad3(fetch(&positions[b])) - PxVec3(com[0], com[1], com[2]);
-					PxVec3 vc = PxLoad3(fetch(&positions[c])) - PxVec3(com[0], com[1], com[2]);
-
-					PxVec3 nor = (vb - va).cross(vc - va);
-
-					signedVolume = va.dot(nor);
-
-					nor.normalize();
-
-					AtomicAdd(normals, unsortedA, nor);
-					AtomicAdd(normals, unsortedB, nor);
-					AtomicAdd(normals, unsortedC, nor);
-				}
-
-				// the sum of all signed tetrahedra volumes in this block
-				PxReal blockVolume = blockReduction<AddOpPxReal, PxReal, numThreadsPerBlock>(FULL_MASK, signedVolume, 0.0f);
-
-				if (!threadIdx.x)
-					volume += blockVolume;
-			}
-			__syncthreads();
-		}
-
-		if (!threadIdx.x)
-		{
-			const PxReal constraintScale = 1.f / inflatable.numVertices;
-
-			const float lambda = cbrtf(PxMax(0.f, (inflatable.restVolume*inflatable.pressure - volume))) * constraintScale * 0.25f;
-
-			const PxReal maxDelta = shParticleSystem.mCommonData.mParticleContactDistance * 0.1f;
-
-			// constraint lambda
-			lambdas[inflatableIdx] = PxMin(lambda, maxDelta);
-
-			//printf("vertIndex %i triangleIndex %i inflatableIdx %i volume %f lambda %f \n", inflatable.startVertexIndex, inflatable.startTriangleIndex, inflatableIdx, volume, lambda);
-	
-		}
-	}
-}
-#endif
-
-// applies position deltas to inflatable constraints
-extern "C" __global__ void ps_solveInflatableVolume(PxgParticleSystem* particleSystems, const PxU32* activeParticleSystems,
-	PxReal dt, PxReal coefficient)
-{
-	__shared__ __align__(16) PxU8 particleSystemMemory[sizeof(PxgParticleSystem)];
-	PxgParticleSystem& shParticleSystem = *(reinterpret_cast<PxgParticleSystem*>(particleSystemMemory));
-
-	const PxU32 particleId = activeParticleSystems[blockIdx.z];
-	const PxgParticleSystem& particleSystem = particleSystems[particleId];
-
-	const uint2* sParticleSystem = reinterpret_cast<const uint2*>(&particleSystem);
-	uint2* dParticleSystem = reinterpret_cast<uint2*>(&shParticleSystem);
-
-	blockCopy<uint2>(dParticleSystem, sParticleSystem, sizeof(PxgParticleSystem));
-
-	__syncthreads();
-
-	const PxU32 bufferIndex = blockIdx.y;
-
-	if (bufferIndex < shParticleSystem.mNumClothBuffers)
-	{
-		PxgParticleClothSimBuffer& clothBuffer = particleSystem.mClothSimBuffers[bufferIndex];
-
-		const PxU32 numInflatables = clothBuffer.mNumCloths;
-		const PxU32 inflatableIdx = blockIdx.x;
-
-		if (inflatableIdx >= numInflatables)
-			return;
-
-		PxParticleCloth* inflatables = clothBuffer.mCloths;
-
-		// load inflatable to shared memory
-		__shared__ PxParticleCloth inflatable;
-		float* dIterData = reinterpret_cast<float*>(&inflatable);
-		const float* sIterData = reinterpret_cast<const float*>(&inflatables[blockIdx.x]);
-		blockCopy<float>(dIterData, sIterData, sizeof(PxParticleCloth));
-		__syncthreads();
-
-		const PxReal* PX_RESTRICT lambdas = clothBuffer.mInflatableLambda;
-
-		const PxReal lambda = lambdas[inflatableIdx];
-
-		
-		//skip inflatables with zero pressure (which marks inflatables that should be solved as cloth)
-		if (inflatable.pressure == 0.0f || lambda == 0.f)
-			return;
-
-
-		const PxU32 particleBufferIndex = clothBuffer.mParticleBufferIndex;
-		PxU32 offset = particleSystem.mParticleBufferRunsum[particleBufferIndex]; //offset to UnsortedPositions_InvMass
-
-		const PxU32* PX_RESTRICT reverseLookup = shParticleSystem.mUnsortedToSortedMapping;
-
-	
-		float4* PX_RESTRICT accumDeltaP = reinterpret_cast<float4*>(shParticleSystem.mAccumDeltaP);
-
-		const float4* PX_RESTRICT normals = shParticleSystem.mNormalArray;
-
-
-		for (int tid = threadIdx.x; tid < inflatable.numVertices; tid += blockDim.x)
-		{
-			int vertId = tid + (inflatable.startVertexIndex + offset);
-
-			float4 nor = normals[vertId];
-
-			PxVec3 normal(nor.x, nor.y, nor.z);
-			normal.normalize();
-
-			int ind = reverseLookup[vertId];
-
-			PxVec3 delta = normal * lambda * coefficient;
-
-			accumDeltaP[ind] += make_float4(delta.x, delta.y, delta.z, 1.f);
-		}
-
-		//const PxReal maxDelta = shParticleSystem.mCommonData.mParticleContactDistance*0.5f;
-
-		//for (int tid = threadIdx.x; tid < inflatable.numTris; tid += blockDim.x)
-		//{
-		//	const int tri = inflatable.triIndicesStart + (tid * 3);
-
-		//	int a = reverseLookup[indices[tri + 0]];
-		//	int b = reverseLookup[indices[tri + 1]];
-		//	int c = reverseLookup[indices[tri + 2]];
-
-		//	PxVec3 va = PxLoad3(fetch(&positions[a]));
-		//	PxVec3 vb = PxLoad3(fetch(&positions[b]));
-		//	PxVec3 vc = PxLoad3(fetch(&positions[c]));
-
-		//	PxVec3 normal = (vb - va).cross(vc - va).getNormalized();
-
-		//	PxVec3 n = lambda*coefficient*normal;
-
-		//	// clamp position delta to avoid instability when triangles become 
-		//	// very distorted and our constraint scale assumptions are invalid
-		//	//n = ClampLength(n, maxDelta);
-
-		//	AtomicAdd(accumDeltaP, a, n, 0.f);
-		//	AtomicAdd(accumDeltaP, b, n, 0.f);
-		//	AtomicAdd(accumDeltaP, c, n, 0.f);
-		//}
-	}
-
-}
-
-#define ENABLE_PLASTIC_DEFORMATION 0
-
-__device__ inline PxVec3 Rotate(const PxQuat& q, const PxVec3& x)
-{
-	return x * (2.0f * q.w * q.w - 1.0f) + PxVec3(q.x, q.y, q.z).cross(x) * q.w * 2.0f + PxVec3(q.x, q.y, q.z) * PxVec3(q.x, q.y, q.z).dot(x) * 2.0f;
-}
-
-extern "C" __global__ void ps_solveShapes(PxgParticleSystem* particleSystems, const PxU32* activeParticleSystems, const PxReal dt,
-	const PxReal biasCoefficient
-#if ENABLE_PLASTIC_DEFORMATION
-	, bool plasticDeformation
-#endif
-)
-{
-	__shared__ __align__(16) PxU8 particleSystemMemory[sizeof(PxgParticleSystem)];
-	PxgParticleSystem& sParticleSystem = *(reinterpret_cast<PxgParticleSystem*>(particleSystemMemory));
-
-	const PxU32 particleId = activeParticleSystems[blockIdx.z];
-	const float* sIterData = reinterpret_cast<float*>(&particleSystems[particleId]);
-	float* dIterData = reinterpret_cast<float*>(&sParticleSystem);
-
-	blockCopy<float>(dIterData, sIterData, sizeof(PxgParticleSystem));
-	__syncthreads();
-
-	const PxU32 bufferIndex = blockIdx.y;
-
-	if (bufferIndex >= sParticleSystem.mNumRigidBuffers)
-		return;
-	
-	PxgParticleRigidSimBuffer& rigidBuffer = sParticleSystem.mRigidSimBuffers[bufferIndex];
-
-	const PxU32 numRigids = rigidBuffer.mNumRigids;
-
-	const PxU32 rigidId = blockIdx.x;
-	
-	if (rigidId > numRigids)
-		return;
-
-	const PxU32 particleBufferIndex = rigidBuffer.mParticleBufferIndex;
-	PxU32* particleBufferRunsum = sParticleSystem.mParticleBufferRunsum;
-
-	const float4* PX_RESTRICT newPositions = reinterpret_cast<float4*>(sParticleSystem.mSortedPositions_InvMass);
-	const PxU32* PX_RESTRICT reverseLookup = sParticleSystem.mUnsortedToSortedMapping;
-
-	const PxU32* PX_RESTRICT rigidOffsets = rigidBuffer.mRigidOffsets;
-	//const PxU32* PX_RESTRICT rigidIndices = rigidBuffer.mRigidIndices;
-	const PxReal* PX_RESTRICT rigidCoefficients = rigidBuffer.mRigidCoefficients;
-	const float4* PX_RESTRICT localPositions = rigidBuffer.mRigidLocalPositions;
-	const float4* PX_RESTRICT localNormals = rigidBuffer.mRigidLocalNormals;
-
-#if ENABLE_PLASTIC_DEFORMATION
-	const PxReal* PX_RESTRICT rigidPlasticThresholds;
-	const PxReal* PX_RESTRICT rigidPlasticCreeps;
-#endif
-
-	const PxU32 bufferOffset = particleBufferRunsum[particleBufferIndex];
-	float4* PX_RESTRICT deltas = sParticleSystem.mDelta; //shParticleSystem.mAccumDeltaV;
-	float4* PX_RESTRICT translations = rigidBuffer.mRigidTranslations;
-	float4* PX_RESTRICT rotations = rigidBuffer.mRigidRotations;
-	float4* PX_RESTRICT normals = sParticleSystem.mNormalArray;
-
-	const PxU32 threadsPerBlock = PxgParticleSystemKernelBlockDim::PS_SOLVE_SHAPE;
-
-	const PxU32 startIndex = rigidOffsets[rigidId];
-	const PxU32 endIndex = rigidOffsets[rigidId + 1];
-	const PxU32 n = endIndex - startIndex;
-
-	// break large shapes into multiple passes
-	const PxU32 passes = (n + threadsPerBlock - 1) / threadsPerBlock;
-
-	// use builtin types to avoid warnings about non-POD types in shared mem
-	__shared__ float3 newComData;
-	__shared__ float3 oldComData;
-	__shared__ float4 newRotData;
-	__shared__ float3 newQRData[3];
-
-#if ENABLE_PLASTIC_DEFORMATION
-	__shared__ bool plasticDeform;
-	__shared__ PxReal plasticCreep;
-#endif
-
-	// alias memory to avoid non-POD warnings
-	PxVec3& newCom = (PxVec3&)newComData;
-	PxVec3& oldCom = (PxVec3&)oldComData;
-	PxQuat& newRot = (PxQuat&)newRotData;
-	PxMat33& newQR = (PxMat33&)newQRData;
-
-
-
-	if (threadIdx.x == 0)
-	{
-		const float4 tTranslation = translations[rigidId];
-		newCom = PxVec3(0.0f);
-		oldCom = PxLoad3(tTranslation);
-		newQR = PxMat33(PxVec3(0.0f), PxVec3(0.0f), PxVec3(0.0f));
-
-#if ENABLE_PLASTIC_DEFORMATION
-		if (plasticDeformation)
-		{
-			plasticDeform = false;
-		}
-#endif
-	}
-	__syncthreads();
-
-	//if (!threadIdx.x) printf("index = %d, n = %d oldCom = %f, %f, %f\n", r, n, oldCom.x, oldCom.y, oldCom.z);
-
-	// temp memory for vec3 reductions
-	//typedef cub::BlockReduce<Vec3, threadsPerBlock> BlockReduceVec3;
-	//__shared__ typename BlockReduceVec3::TempStorage temp1;
-
-	// calculate center of mass
-	for (PxU32 i = 0; i < passes; ++i)
-	{
-		//const PxU32 valid = min(n - i * threadsPerBlock, threadsPerBlock);
-		const PxU32 offset = i * threadsPerBlock + threadIdx.x;
-
-		PxVec3 newPos = PxVec3(0.0f);
-
-		if (offset < n)
-		{
-			const PxU32 index = bufferOffset + startIndex + offset;// rigidIndices[startIndex + offset];
-			const PxU32 sortedIndex = reverseLookup[index];
-			newPos = PxLoad3(newPositions[sortedIndex]);
-		}
-
-		//Vec3 com = BlockReduceVec3(temp1).Sum(newPos, valid);
-		PxVec3 com;
-		com.x = blockReduction<AddOpPxReal, PxReal, threadsPerBlock>(FULL_MASK, newPos.x, 0.0f);
-		com.y = blockReduction<AddOpPxReal, PxReal, threadsPerBlock>(FULL_MASK, newPos.y, 0.0f);
-		com.z = blockReduction<AddOpPxReal, PxReal, threadsPerBlock>(FULL_MASK, newPos.z, 0.0f);
-
-		if (threadIdx.x == 0)
-			newCom += com;
-
-		__syncthreads();
-	}
-
-	//if (!threadIdx.x) printf("index = %d, n = %d newCom = %f, %f, %f\n", r, n, newCom.x, newCom.y, newCom.z);
-
-	if (threadIdx.x == 0)
-	{
-		newCom /= n;
-
-		// stop numerical drift by clamping translation to threshold
-		// unfortunately even small drift causes a change in momentum
-		// todo: use a world size dependent scale?
-		const PxReal eps = 0.00001f;
-
-		if (fabsf(newCom.x - oldCom.x) < eps)
-			newCom.x = oldCom.x;
-		if (fabsf(newCom.y - oldCom.y) < eps)
-			newCom.y = oldCom.y;
-		if (fabsf(newCom.z - oldCom.z) < eps)
-			newCom.z = oldCom.z;
-	}
-	__syncthreads();
-
-	//if (!threadIdx.x) printf("index = %d, n = %d newCom = %f, %f, %f\n", r, n, newCom.x, newCom.y, newCom.z);
-
-#if ENABLE_PLASTIC_DEFORMATION
-	PxReal creep;
-
-	if (plasticDeformation)
-	{
-		creep = rigidPlasticCreeps[r];
-	}
-#endif
-
-	// calculate moment matrix
-	for (PxU32 i = 0; i < passes; ++i)
-	{
-		//const PxU32 valid = min(n - i * threadsPerBlock, threadsPerBlock);
-		const PxU32 offset = i * threadsPerBlock + threadIdx.x;
-
-		PxMat33 moment = PxMat33(PxVec3(0.0f), PxVec3(0.0f), PxVec3(0.0f));
-
-		if (offset < n)
-		{
-			const PxU32 index = bufferOffset + startIndex + offset;// rigidIndices[startIndex + offset];
-
-			const int sortedIndex = reverseLookup[index];
-			PxVec3 newPos = PxLoad3(newPositions[sortedIndex]);
-
-			PxVec3 delta = newPos - newCom;
-			moment = PxMat33::outer(delta, PxLoad3(localPositions[startIndex + offset]));
-
-#if ENABLE_PLASTIC_DEFORMATION
-			if (plasticDeformation)
-			{
-				// condition for plastic deformation is some magnitude of position change during solve
-				if (creep)
-				{
-					Vec3 oldPos = oldPositions[sortedIndex];
-					float deformation = LengthSq(newPos - oldPos);
-
-					if (deformation > rigidPlasticThresholds[r])
-						plasticDeform = true;
-				}
-			}
-#endif
-		}
-
-		// perform block reduction for each column of the moment matrix,
-		// note we need to sync between each reduction to ensure
-		// temp memory is finished being used
-		//Vec3 c0 = BlockReduceVec3(temp1).Sum(moment.cols[0], valid);
-		PxVec3 c0;
-		c0.x = blockReduction<AddOpPxReal, PxReal, threadsPerBlock>(FULL_MASK, moment.column0.x, 0.0f);
-		c0.y = blockReduction<AddOpPxReal, PxReal, threadsPerBlock>(FULL_MASK, moment.column0.y, 0.0f);
-		c0.z = blockReduction<AddOpPxReal, PxReal, threadsPerBlock>(FULL_MASK, moment.column0.z, 0.0f);
-		__syncthreads();
-		//Vec3 c1 = BlockReduceVec3(temp1).Sum(moment.cols[1], valid);
-		PxVec3 c1;
-		c1.x = blockReduction<AddOpPxReal, PxReal, threadsPerBlock>(FULL_MASK, moment.column1.x, 0.0f);
-		c1.y = blockReduction<AddOpPxReal, PxReal, threadsPerBlock>(FULL_MASK, moment.column1.y, 0.0f);
-		c1.z = blockReduction<AddOpPxReal, PxReal, threadsPerBlock>(FULL_MASK, moment.column1.z, 0.0f);
-		__syncthreads();
-		//Vec3 c2 = BlockReduceVec3(temp1).Sum(moment.cols[2], valid);
-		PxVec3 c2;
-		c2.x = blockReduction<AddOpPxReal, PxReal, threadsPerBlock>(FULL_MASK, moment.column2.x, 0.0f);
-		c2.y = blockReduction<AddOpPxReal, PxReal, threadsPerBlock>(FULL_MASK, moment.column2.y, 0.0f);
-		c2.z = blockReduction<AddOpPxReal, PxReal, threadsPerBlock>(FULL_MASK, moment.column2.z, 0.0f);
-
-		if (threadIdx.x == 0)
-		{
-			newQR.column0 += c0;
-			newQR.column1 += c1;
-			newQR.column2 += c2;
-		}
-		__syncthreads();
-	}
-
-	if (threadIdx.x == 0)
-	{
-#if ENABLE_PLASTIC_DEFORMATION
-		if (plasticDeformation)
-		{
-			if (plasticDeform)
-				plasticCreep = creep;
-			else
-				plasticCreep = 0.0f;
-		}
-#endif
-
-		const PxU32 kMaxIters = 4;
-
-		// polar decomposition, extract rotation from moment matrix
-		
-		PxQuat q = reinterpret_cast<PxQuat&>(rotations[rigidId]);
-		extractRotation(newQR, q, kMaxIters);
-
-		// update global memory copy of transform
-		rotations[rigidId] = make_float4(q.x, q.y, q.z, q.w);
-		translations[rigidId] = make_float4(newCom.x, newCom.y, newCom.z, 0.0f);
-
-		// new rotation (shared memory for next phase)
-		newRot = q;
-	}
-	__syncthreads();
-
-	//if (!threadIdx.x) printf("index = %d, n = %d translations = %f, %f, %f\n", r, n, newCom.x, newCom.y, newCom.z);
-	//if (!threadIdx.x) printf("index = %d, n = %d newRot = %f, %f, %f %f\n", r, n, newRot.x, newRot.y, newRot.z, newRot.w);
-
-	const PxReal stiffness = rigidCoefficients[rigidId] * biasCoefficient;
-
-	// transform particles based on best fit
-	for (PxU32 i = 0; i < passes; ++i)
-	{
-		const PxU32 offset = i * threadsPerBlock + threadIdx.x;
-
-		if (offset < n)
-		{
-			const PxU32 localOffset = startIndex + offset;
-
-			const PxU32 index = bufferOffset + localOffset;// rigidIndices[startIndex + offset];
-
-			const PxU32 sortedIndex = reverseLookup[index];
-
-			const PxVec3 elasticPos = PxLoad3(newPositions[sortedIndex]);
-			PxVec3 rigidPos = Rotate(newRot, PxLoad3(localPositions[localOffset])) + newCom;
-
-			//if (threadIdx.x < n) printf("index = %d, sortedIndex = %d elasticPos = %f, %f, %f %f\n", threadIdx.x, sortedIndex, elasticPos.x, elasticPos.y, elasticPos.z);
-			//if (threadIdx.x < n) printf("index = %d, localOffset = %d rigidPos = %f, %f, %f %f\n", threadIdx.x, localOffset, rigidPos.x, rigidPos.y, rigidPos.z);
-
-			PxVec3 delta = elasticPos - rigidPos;
-			PxReal dSq = delta.magnitudeSquared();
-
-			PxVec3 newPos;
-#if ENABLE_PLASTIC_DEFORMATION
-			if (plasticDeformation)
-				newPos = Lerp(elasticPos, rigidPos, stiffness*(1.0f - plasticCreep));
-			else
-#endif
-			newPos = Lerp(elasticPos, rigidPos, stiffness);
-
-			PxU32 originalIndex = bufferIndex + localOffset;// rigidIndices[localOffset] + bufferIndex;
-
-#if ENABLE_PLASTIC_DEFORMATION
-			if (plasticDeformation)
-			{
-				if (plasticCreep)
-				{
-					PxVec3 localPos = RotateInv(newRot, newPos - newCom);
-					localPositions[localOffset] = localPos;
-				}
-			}
-#endif
-
-			const PxVec3& normalRot = Rotate(newRot, PxLoad3(localNormals[localOffset]));
-
-			normals[originalIndex] = make_float4(normalRot.x, normalRot.y, normalRot.z, localNormals[localOffset].w);
-			
-			//if (threadIdx.x < n) printf("index = %d, sortedIndex = %d delta = %f, %f, %f %f\n", threadIdx.x, sortedIndex, delta.x, delta.y, delta.z);
-
-			//deltas.AtomicAdd(sortedIndex, -delta * stiffness, 1.0f);
-			AtomicAdd(deltas, sortedIndex, -delta * stiffness, 1.0f);
-
-			//if (threadIdx.x < n) printf("index = %d, sortedIndex = %d deltas = %f, %f, %f %f\n", threadIdx.x, sortedIndex, deltas[sortedIndex].x, deltas[sortedIndex].y, deltas[sortedIndex].z, deltas[sortedIndex].w);
-		}
-	}
-}
-
-extern "C" __global__ void ps_rigidAttachmentPrepareLaunch(
-	PxgParticleSystem*				particleSystems,
-	PxU64*							rigidAttachmentIds,
-	PxgParticleRigidConstraint*		rigidConstraints,
-	PxgPrePrepDesc*					preDesc,
-	PxgConstraintPrepareDesc*		prepareDesc,
-	const PxReal					dt,
-	bool							isTGS,
-	PxU32*							activeParticlesystems
-)
-{
-
-	PxAlignedTransform* bodyFrames = prepareDesc->body2WorldPool;
-
-	PxU32* solverBodyIndices = preDesc->solverBodyIndices;
-	PxgSolverBodyData* solverBodyData = prepareDesc->solverBodyDataPool;
-	PxgSolverTxIData* solverDataTxIPool = prepareDesc->solverBodyTxIDataPool;
-
-	PxU32 particleSystemId = activeParticlesystems[blockIdx.y];
-
-	PxgParticleSystem& particleSystem = particleSystems[particleSystemId];
-
-	const PxU32 attachmentIdx = threadIdx.x + blockIdx.x*blockDim.x;
-
-	//for (PxU32 i = 0; i < nbIterationsPerBlock; ++i)
-
-	if(attachmentIdx < particleSystem.mNumRigidAttachments)
-	{
-
-		PxU32 constraintIdx = attachmentIdx + particleSystem.mRigidAttachmentOffset;
-
-		float4* position_invmass = reinterpret_cast<float4*>(particleSystem.mSortedPositions_InvMass);
-
-		const PxU32 index = constraintIdx /32;
-		const PxU32 offset = constraintIdx &31;
-
-		
-
-		PxU32 bufferIndex = binarySearch(particleSystem.mAttachmentRunsum, particleSystem.mCommonData.mNumParticleBuffers, attachmentIdx);
-		PxU32 attachmentOffset = bufferIndex == 0 ? 0 : particleSystem.mAttachmentRunsum[bufferIndex];
-
-		PxgParticleSimBuffer& buffer = particleSystem.mParticleSimBuffers[bufferIndex];
-
-		PxParticleRigidAttachment& attachment = buffer.mRigidAttachments[attachmentIdx - attachmentOffset];
-
-		PxgParticleRigidConstraint& constraint = rigidConstraints[index];
-
-		//const PxU32 particleSystemId = PxGetParticleSystemId(attachment.index1);
-
-		PxU32 particleId = attachment.mID1 + particleSystem.mParticleBufferRunsum[bufferIndex];
-
-		//PxU32 particleId = getParticleIdFromCombinedId(attachment.index1) + particleIdOffset;
-
-		const PxU32* PX_RESTRICT reverseLookup = particleSystem.mUnsortedToSortedMapping;
-		PxU32 sortedParticleId = reverseLookup[particleId];
-		
-		float4 pointInvM = position_invmass[sortedParticleId];
-		float invMass1 = pointInvM.w;
-
-		const float4 low_high_limits = *reinterpret_cast<float4*>(&attachment.mConeLimitParams.lowHighLimits);
-		const float4 axis_angle = *reinterpret_cast<float4*>(&attachment.mConeLimitParams.axisAngle);
-
-		const PxVec3 point(pointInvM.x, pointInvM.y, pointInvM.z);
-
-		float4 ra4 = *reinterpret_cast<float4*>(&attachment.mLocalPose0);
-		const PxVec3 axis(axis_angle.x, axis_angle.y, axis_angle.z);
-
-		//nodeIndex
-		const PxNodeIndex rigidId = reinterpret_cast<PxNodeIndex&>(attachment.mID0);
-		PxU32 idx = 0;
-		if (!rigidId.isStaticBody())
-		{
-			idx = solverBodyIndices[rigidId.index()];
-		}
-
-		rigidAttachmentIds[constraintIdx] = rigidId.getInd();
-
-		PxMat33 invSqrtInertia0 = solverDataTxIPool[idx].sqrtInvInertia;
-		const float4 linVel_invMass0 = solverBodyData[idx].initialLinVelXYZ_invMassW;
-		const PxReal invMass0 = linVel_invMass0.w;
-
-		PxAlignedTransform bodyFrame0 = bodyFrames[idx];
-		const PxVec3 bodyFrame0p(bodyFrame0.p.x, bodyFrame0.p.y, bodyFrame0.p.z);
-
-		const PxVec3 worldAxis = (bodyFrame0.rotate(axis)).getNormalized();
-
-		PxVec3 ra(ra4.x, ra4.y, ra4.z);
-		ra = bodyFrame0.rotate(ra);
-		PxVec3 error = ra + PxVec3(bodyFrame0.p.x, bodyFrame0.p.y, bodyFrame0.p.z) - point;
-
-		const PxVec3 normal0(1.f, 0.f, 0.f);
-		const PxVec3 normal1(0.f, 1.f, 0.f);
-		const PxVec3 normal2(0.f, 0.f, 1.f);
-
-		const PxVec3 raXn0 = ra.cross(normal0);
-		const PxVec3 raXn1 = ra.cross(normal1);
-		const PxVec3 raXn2 = ra.cross(normal2);
-
-		const PxVec3 raXnSqrtInertia0 = invSqrtInertia0 * raXn0;
-		const PxVec3 raXnSqrtInertia1 = invSqrtInertia0 * raXn1;
-		const PxVec3 raXnSqrtInertia2 = invSqrtInertia0 * raXn2;
-		const float resp0 = (raXnSqrtInertia0.dot(raXnSqrtInertia0)) + invMass0 + invMass1;
-		const float resp1 = (raXnSqrtInertia1.dot(raXnSqrtInertia1)) + invMass0 + invMass1;
-		const float resp2 = (raXnSqrtInertia2.dot(raXnSqrtInertia2)) + invMass0 + invMass1;
-
-		const float velMultiplier0 = (resp0 > 0.f) ? (1.f / resp0) : 0.f;
-		const float velMultiplier1 = (resp1 > 0.f) ? (1.f / resp1) : 0.f;
-		const float velMultiplier2 = (resp2 > 0.f) ? (1.f / resp2) : 0.f;
-
-		const PxReal biasedErr0 = error.dot(normal0);
-		const PxReal biasedErr1 = error.dot(normal1);
-		const PxReal biasedErr2 = error.dot(normal2);
-
-		constraint.raXn0_biasW[offset] = make_float4(raXnSqrtInertia0.x, raXnSqrtInertia0.y, raXnSqrtInertia0.z, biasedErr0);
-		constraint.raXn1_biasW[offset] = make_float4(raXnSqrtInertia1.x, raXnSqrtInertia1.y, raXnSqrtInertia1.z, biasedErr1);
-		constraint.raXn2_biasW[offset] = make_float4(raXnSqrtInertia2.x, raXnSqrtInertia2.y, raXnSqrtInertia2.z, biasedErr2);
-		constraint.velMultiplierXYZ_invMassW[offset] = make_float4(velMultiplier0, velMultiplier1, velMultiplier2, invMass0);
-		constraint.particleId[offset] = PxEncodeParticleIndex(particleSystemId, sortedParticleId);
-		constraint.rigidId[offset] = attachment.mID0;
-		constraint.low_high_limits[offset] = low_high_limits;
-		//constraint.axis_angle[offset] = make_float4(-worldAxis.x, -worldAxis.y, -worldAxis.z, axis_angle.w);
-		constraint.axis_angle[offset] = make_float4(worldAxis.x, worldAxis.y, worldAxis.z, axis_angle.w);
-
-		//printf("limits[%f, %f]\n", low_high_limits.x, low_high_limits.y, 0.f, 0.f);
-		//printf("axis(%f, %f, %f, %f)\n", worldAxis.x, worldAxis.y, worldAxis.z, axis_angle.w);
-		
-	}
-
-}
-
-extern "C" __global__ void ps_solveRigidAttachmentsLaunch(
-	PxgParticleSystem * particleSystems,
-	PxgParticleRigidConstraint * attachments,
-	const PxU32									numAttachments,
-	PxgPrePrepDesc * prePrepDesc,
-	PxgSolverCoreDesc * solverCoreDesc,
-	PxgSolverSharedDesc<IterativeSolveData>*sharedDesc,
-	float4 * deltaVel, //Output for rigid bodies. Need to write-then-accum
-	PxReal										dt
-)
-{
-	float4* solverBodyDeltaVel = sharedDesc->iterativeData.solverBodyVelPool + solverCoreDesc->accumulatedBodyDeltaVOffset;
-	float4* initialVel = solverCoreDesc->outSolverVelocity;
-	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
-	const PxU32 nbBlocksRequired = (numAttachments + blockDim.x - 1) / blockDim.x;
-	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
-	const PxU32 idx = threadIdx.x;
-
-	for (PxU32 i = 0; i < nbIterationsPerBlock; ++i)
-	{
-		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
-		if (workIndex >= numAttachments)
-			return;
-
-		const PxU32 index = workIndex / 32;
-		const PxU32 offset = workIndex & 31;
-
-		const PxgParticleRigidConstraint& constraint = attachments[index];
-		const PxU64 compressedId = constraint.particleId[offset];
-		const PxU32 particleSystemId = PxGetParticleSystemId(compressedId);
-		const PxU32 particleId = PxGetParticleIndex(compressedId);
-
-		PxgParticleSystem& particleSystem = particleSystems[particleSystemId];
-		float4* sortedPos = reinterpret_cast<float4*>(particleSystem.mSortedPositions_InvMass);
-		float4* sortedVel = reinterpret_cast<float4*>(particleSystem.mSortedVelocities);
-
-		//Output for the particle system - just do atomics on this for now...
-		float4* PX_RESTRICT accumDeltaP = reinterpret_cast<float4*>(particleSystem.mAccumDeltaP);
-
-		float4 vel = sortedVel[particleId];
-		float4 pos_invmass = sortedPos[particleId];
-		PxVec3 linVel1(vel.x, vel.y, vel.z);
-		const PxReal invMass1 = pos_invmass.w;
-
-		//If the particle has infinite mass, the particle need not respond to the collision
-
-		//nodeIndex
-		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(constraint.rigidId[offset]);
-
-		//TODO - need to figure out how to make this work for articulation links!
-		PxU32 solverBodyIndex = 0;
-
-		if (!rigidId.isStaticBody())
-		{
-			solverBodyIndex = prePrepDesc->solverBodyIndices[rigidId.index()];
-		}
-		else if (invMass1 == 0.f)
-			continue; //Constrainint an infinte mass particle to an infinite mass rigid body. Won't work so skip!
-
-		float4 linearVelocity = initialVel[solverBodyIndex] + solverBodyDeltaVel[solverBodyIndex];
-		float4 angularVelocity = initialVel[solverBodyIndex + numSolverBodies] + solverBodyDeltaVel[solverBodyIndex + numSolverBodies];
-		
-		PxgVelocityPackPGS vel0;
-		vel0.linVel = PxVec3(linearVelocity.x, linearVelocity.y, linearVelocity.z);
-		vel0.angVel = PxVec3(angularVelocity.x, angularVelocity.y, angularVelocity.z);
-		
-		PxVec3 deltaLinVel, deltaAngVel;
-		const PxVec3 deltaImpulse = calculateAttachmentDeltaImpulsePGS(offset, constraint, vel0, linVel1, 1.f / dt, 0.5f, deltaLinVel, deltaAngVel);
-		
-		if (!deltaImpulse.isZero())
-		{
-			const PxVec3 deltaParticle = (-deltaImpulse) * invMass1 * dt;
-
-			AtomicAdd(accumDeltaP, particleId, deltaParticle, 0.f);
-
-			deltaVel[workIndex] = make_float4(deltaLinVel.x, deltaLinVel.y, deltaLinVel.z, 1.f);
-			deltaVel[workIndex + numAttachments] = make_float4(deltaAngVel.x, deltaAngVel.y, deltaAngVel.z, 0.f);
-		}
-	}
-}
-
-extern "C" __global__ void ps_solveRigidAttachmentsTGSLaunch(
-	PxgParticleSystem*							particleSystems,
-	PxgParticleRigidConstraint*					attachments,
-	const PxU32									numAttachments,
-	PxgPrePrepDesc*								prePrepDesc,
-	PxgSolverCoreDesc*							solverCoreDesc,
-	PxgSolverSharedDesc<IterativeSolveData>*	sharedDesc,
-	float4*										deltaVel, //Output for rigid bodies. Need to write-then-accum
-	PxReal										dt,
-	const PxReal								biasCoefficient,
-	const bool									isVelocityIteration
-)
-{
-	float4* solverBodyVel = sharedDesc->iterativeData.solverBodyVelPool + solverCoreDesc->accumulatedBodyDeltaVOffset;
-	const PxU32 numSolverBodies = solverCoreDesc->numSolverBodies;
-	const PxU32 nbBlocksRequired = (numAttachments + blockDim.x - 1) / blockDim.x;
-	const PxU32 nbIterationsPerBlock = (nbBlocksRequired + gridDim.x - 1) / gridDim.x;
-	const PxU32 idx = threadIdx.x;
-
-	for (PxU32 i = 0; i < nbIterationsPerBlock; ++i)
-	{
-		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
-		if (workIndex >= numAttachments)
-			return;
-
-		const PxU32 index = workIndex / 32;
-		const PxU32 offset = workIndex & 31;
-
-		const PxgParticleRigidConstraint& constraint = attachments[index];
-		const PxU64 compressedId = constraint.particleId[offset];
-		const PxU32 particleSystemId = PxGetParticleSystemId(compressedId);
-		const PxU32 particleId = PxGetParticleIndex(compressedId);
-
-		PxgParticleSystem& particleSystem = particleSystems[particleSystemId];
-		float4* sortedDeltaPInvMassW = reinterpret_cast<float4*>(particleSystem.mSortedDeltaP);
-
-		//Output for the particle system - just do atomics on this for now...
-		float4* PX_RESTRICT accumDeltaP = reinterpret_cast<float4*>(particleSystem.mAccumDeltaP);
-
-		float4 deltaP_invMassW = sortedDeltaPInvMassW[particleId];
-		const PxReal invMass1 = deltaP_invMassW.w;
-
-		//If the particle has infinite mass, the particle need not respond to the collision
-		const PxVec3 deltaP(deltaP_invMassW.x, deltaP_invMassW.y, deltaP_invMassW.z);
-
-		//nodeIndex
-		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(constraint.rigidId[offset]);
-
-		//TODO - need to figure out how to make this work for articulation links!
-		PxU32 solverBodyIndex = 0;
-
-		if (!rigidId.isStaticBody())
-		{
-			solverBodyIndex = prePrepDesc->solverBodyIndices[rigidId.index()];
-		}
-		else if (invMass1 == 0.f)
-			continue; //Constrainint an infinte mass particle to an infinite mass rigid body. Won't work so skip!
-
-		float4 v0 = solverBodyVel[solverBodyIndex];
-		float4 v1 = solverBodyVel[solverBodyIndex + numSolverBodies];
-		float4 v2 = solverBodyVel[solverBodyIndex + numSolverBodies + numSolverBodies];
-
-		PxgVelocityPackTGS vel0;
-		vel0.linVel = PxVec3(v0.x, v0.y, v0.z);
-		vel0.angVel = PxVec3(v0.w, v1.x, v1.y);
-		vel0.linDelta = PxVec3(v1.z, v1.w, v2.x);
-		vel0.angDelta = PxVec3(v2.y, v2.z, v2.w);
-
-		PxVec3 deltaLinVel, deltaAngVel;
-		PxVec3 deltaImpulse = calculateAttachmentDeltaImpulseTGS(offset, constraint, vel0, deltaP, dt, biasCoefficient, isVelocityIteration, deltaLinVel, deltaAngVel);
-		
-		if (!deltaImpulse.isZero())
-		{
-			const PxVec3 deltaParticle = (-deltaImpulse)*invMass1;
-
-			AtomicAdd(accumDeltaP, particleId, deltaParticle, 0.f);
-
-			deltaVel[workIndex] = make_float4(deltaLinVel.x, deltaLinVel.y, deltaLinVel.z, 1.f);
-			deltaVel[workIndex + numAttachments] = make_float4(deltaAngVel.x, deltaAngVel.y, deltaAngVel.z, 0.f);
-		}
-	}
-}
-
 extern "C" __global__ void ps_finalizeParticlesLaunch(const PxgParticleSystem* PX_RESTRICT particleSystems,
 	const PxU32 id, const PxReal invTotalDt, PxReal velocityScale)
 {
@@ -5820,47 +3840,3 @@ extern "C" __global__ void ps_updateMaterials(
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-//// Direct-GPU API
-///////////////////////////////////////////////////////////////////////////////
-
-// very similar to ps_updateUnsortedArrayLaunch - but using unique indices.
-// the values in index map into indexPairs + dirtyFlags.
-
-// deprecated.
-extern "C" __global__ void applyParticleBufferDataDEPRECATED(const PxgParticleSystem * PX_RESTRICT particleSystems,
-	const PxU32* indices,
-	const PxGpuParticleBufferIndexPair* indexPairs,
-	const PxParticleBufferFlag* dirtyFlags)
-{
-	const PxU32 index = indices[blockIdx.y];
-	const PxGpuParticleBufferIndexPair indexPair = indexPairs[index];
-	const PxgParticleSystem& particleSystem = particleSystems[indexPair.systemIndex];
-
-	float4* PX_RESTRICT unsortedPositions = reinterpret_cast<float4*>(particleSystem.mUnsortedPositions_InvMass);
-	float4* PX_RESTRICT unsortedVels = reinterpret_cast<float4*>(particleSystem.mUnsortedVelocities);
-
-	// find buffer id
-	PxU32 bufferId = findBufferIndexFromUniqueId(particleSystem, indexPair.bufferIndex);
-
-	PxgParticleSimBuffer& buffer = particleSystem.mParticleSimBuffers[bufferId];
-	const PxU32 offset = particleSystem.mParticleBufferRunsum[bufferId];
-
-	const float4* particles = buffer.mPositionInvMasses;
-	const float4* velocities = buffer.mVelocities;
-	
-	const PxU32 globalThreadIndex = threadIdx.x + blockDim.x * blockIdx.x;
-
-	const PxU32* flagsPtr = reinterpret_cast<const PxU32*>(dirtyFlags);
-	const PxU32 flags = flagsPtr[index];
-
-	if (globalThreadIndex < buffer.mNumActiveParticles)
-	{
-		const PxU32 ind = offset + globalThreadIndex;
-		if (flags & PxParticleBufferFlag::eUPDATE_POSITION)
-			unsortedPositions[ind] = particles[globalThreadIndex];
-
-		if (flags & PxParticleBufferFlag::eUPDATE_VELOCITY)
-			unsortedVels[ind] = velocities[globalThreadIndex];
-	}
-}

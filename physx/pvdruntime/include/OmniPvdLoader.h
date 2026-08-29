@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef OMNI_PVD_LOADER_H
 #define OMNI_PVD_LOADER_H
@@ -64,6 +64,13 @@ public:
 
 	createOmniPvdMemoryStreamFp mCreateOmniPvdMemoryStream;
 	destroyOmniPvdMemoryStreamFp mDestroyOmniPvdMemoryStream;
+
+	// Socket streams (live TCP transport).
+	createOmniPvdSocketWriteStreamFp mCreateOmniPvdSocketWriteStream;
+	destroyOmniPvdSocketWriteStreamFp mDestroyOmniPvdSocketWriteStream;
+
+	createOmniPvdSocketReadStreamFp mCreateOmniPvdSocketReadStream;
+	destroyOmniPvdSocketReadStreamFp mDestroyOmniPvdSocketReadStream;
 };
 
 inline OmniPvdLoader::OmniPvdLoader()
@@ -84,6 +91,12 @@ inline OmniPvdLoader::OmniPvdLoader()
 
 	mCreateOmniPvdMemoryStream = 0;
 	mDestroyOmniPvdMemoryStream = 0;
+
+	mCreateOmniPvdSocketWriteStream = 0;
+	mDestroyOmniPvdSocketWriteStream = 0;
+
+	mCreateOmniPvdSocketReadStream = 0;
+	mDestroyOmniPvdSocketReadStream = 0;
 }
 
 inline OmniPvdLoader::~OmniPvdLoader()
@@ -117,6 +130,11 @@ inline bool OmniPvdLoader::loadOmniPvd(const char *libFile)
 
 		mCreateOmniPvdMemoryStream = (createOmniPvdMemoryStreamFp)GetProcAddress((HINSTANCE)mLibraryHandle, "createOmniPvdMemoryStream");
 		mDestroyOmniPvdMemoryStream = (destroyOmniPvdMemoryStreamFp)GetProcAddress((HINSTANCE)mLibraryHandle, "destroyOmniPvdMemoryStream");
+
+		mCreateOmniPvdSocketWriteStream = (createOmniPvdSocketWriteStreamFp)GetProcAddress((HINSTANCE)mLibraryHandle, "createOmniPvdSocketWriteStream");
+		mDestroyOmniPvdSocketWriteStream = (destroyOmniPvdSocketWriteStreamFp)GetProcAddress((HINSTANCE)mLibraryHandle, "destroyOmniPvdSocketWriteStream");
+		mCreateOmniPvdSocketReadStream = (createOmniPvdSocketReadStreamFp)GetProcAddress((HINSTANCE)mLibraryHandle, "createOmniPvdSocketReadStream");
+		mDestroyOmniPvdSocketReadStream = (destroyOmniPvdSocketReadStreamFp)GetProcAddress((HINSTANCE)mLibraryHandle, "destroyOmniPvdSocketReadStream");
 #elif defined(__linux__)
 		mCreateOmniPvdWriter = (createOmniPvdWriterFp)dlsym(mLibraryHandle, "createOmniPvdWriter");
 		mDestroyOmniPvdWriter = (destroyOmniPvdWriterFp)dlsym(mLibraryHandle, "destroyOmniPvdWriter");
@@ -133,18 +151,27 @@ inline bool OmniPvdLoader::loadOmniPvd(const char *libFile)
 		mCreateOmniPvdMemoryStream = (createOmniPvdMemoryStreamFp)dlsym(mLibraryHandle, "createOmniPvdMemoryStream");
 		mDestroyOmniPvdMemoryStream = (destroyOmniPvdMemoryStreamFp)dlsym(mLibraryHandle, "destroyOmniPvdMemoryStream");
 
+		mCreateOmniPvdSocketWriteStream = (createOmniPvdSocketWriteStreamFp)dlsym(mLibraryHandle, "createOmniPvdSocketWriteStream");
+		mDestroyOmniPvdSocketWriteStream = (destroyOmniPvdSocketWriteStreamFp)dlsym(mLibraryHandle, "destroyOmniPvdSocketWriteStream");
+		mCreateOmniPvdSocketReadStream = (createOmniPvdSocketReadStreamFp)dlsym(mLibraryHandle, "createOmniPvdSocketReadStream");
+		mDestroyOmniPvdSocketReadStream = (destroyOmniPvdSocketReadStreamFp)dlsym(mLibraryHandle, "destroyOmniPvdSocketReadStream");
+
 #endif
 
-		if ((!mCreateOmniPvdWriter)           ||
-			(!mDestroyOmniPvdWriter)          ||
-			(!mCreateOmniPvdReader)           ||
-			(!mDestroyOmniPvdReader)          ||
-			(!mCreateOmniPvdFileReadStream)   ||
-			(!mDestroyOmniPvdFileReadStream)  ||
-			(!mCreateOmniPvdFileWriteStream)  ||
-			(!mDestroyOmniPvdFileWriteStream) ||
-			(!mCreateOmniPvdMemoryStream)     ||
-			(!mDestroyOmniPvdMemoryStream)
+		if ((!mCreateOmniPvdWriter)              ||
+			(!mDestroyOmniPvdWriter)             ||
+			(!mCreateOmniPvdReader)              ||
+			(!mDestroyOmniPvdReader)             ||
+			(!mCreateOmniPvdFileReadStream)      ||
+			(!mDestroyOmniPvdFileReadStream)     ||
+			(!mCreateOmniPvdFileWriteStream)     ||
+			(!mDestroyOmniPvdFileWriteStream)    ||
+			(!mCreateOmniPvdMemoryStream)        ||
+			(!mDestroyOmniPvdMemoryStream)       ||
+			(!mCreateOmniPvdSocketReadStream)    ||
+			(!mDestroyOmniPvdSocketReadStream)   ||
+			(!mCreateOmniPvdSocketWriteStream)   ||
+			(!mDestroyOmniPvdSocketWriteStream)
 			)
 		{
 #ifdef OMNI_PVD_WIN

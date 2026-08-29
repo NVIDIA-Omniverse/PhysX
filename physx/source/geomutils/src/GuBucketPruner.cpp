@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -1913,7 +1913,7 @@ struct BucketPrunerAABBAABBTest
 	PX_FORCE_INLINE BucketPrunerAABBAABBTest(const PxBounds3& queryBox) : mBox(queryBox)	{}
 
 	PX_FORCE_INLINE PxIntBool operator()(const BucketBox& box) const
-	{	
+	{
 		// PT: we don't use PxBounds3::intersects() because isValid() asserts on our empty boxes!
 		const PxVec3 bucketMin = box.getMin();
 		const PxVec3 bucketMax = box.getMax();
@@ -1923,7 +1923,7 @@ struct BucketPrunerAABBAABBTest
 	}
 
 	PX_FORCE_INLINE PxIntBool operator()(const PxBounds3& bounds) const
-	{	
+	{
 		// PT: we don't use PxBounds3::intersects() because isValid() asserts on our empty boxes!
 		const PxVec3& bucketMin = bounds.minimum;
 		const PxVec3& bucketMax = bounds.maximum;
@@ -1944,7 +1944,7 @@ private:
 	{}
 
 	PX_FORCE_INLINE PxIntBool operator()(const BucketBox& box) const
-	{	
+	{
 		return V3AllGrtrOrEq(V3Add(mExtents, AlignedLoad(&box.mExtents.x)), V3Abs(V3Sub(AlignedLoad(&box.mCenter.x), mCenter)));
 	}
 private:
@@ -1980,7 +1980,7 @@ struct OBBAABBTest_SIMD
 	}
 
 	PX_FORCE_INLINE PxIntBool operator()(const BucketBox& box) const	
-	{	
+	{
 		const Vec3V extentsV = V3LoadU(box.mExtents);
 
 		const Vec3V t = V3Sub(mT, V3LoadU(box.mCenter));
@@ -2025,7 +2025,7 @@ struct OBBAABBTest_SIMD
 	}
 
 	PX_FORCE_INLINE PxIntBool operator()(const PxBounds3& bounds) const	
-	{	
+	{
 		BucketBox tmp;
 		tmp.mCenter = bounds.getCenter();
 		tmp.mExtents = bounds.getExtents();
@@ -2129,7 +2129,7 @@ bool BucketPrunerCore::overlap(const ShapeData& queryVolume, PrunerOverlapCallba
 		case PxGeometryType::eBOX:
 		{
 			if(queryVolume.isOBB())
-			{	
+			{
 				const BucketPrunerOverlapTraversal<BucketPrunerOBBAABBTest, false> overlap;
 				again = overlap(*this,
 							BucketPrunerOBBAABBTest(
@@ -2275,7 +2275,7 @@ static void visualize(PxRenderOutput& out, const BucketBox& bounds)
 
 void BucketPrunerCore::visualize(PxRenderOutput& out, PxU32 color) const
 {
-	const PxTransform idt = PxTransform(PxIdentity);
+	const PxTransform idt(PxIdentity);
 	out << idt;
 	out << color;
 

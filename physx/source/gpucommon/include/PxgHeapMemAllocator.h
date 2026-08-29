@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -35,7 +35,9 @@
 #include "foundation/PxArray.h"
 #include "foundation/PxPool.h"
 #include "foundation/PxMutex.h"
+#include "CmVirtualAllocatorCallback.h"
 #include "PxsHeapMemoryAllocator.h"
+#include "PxgAllocatorDesc.h"
 #include "common/PxPhysXCommonConfig.h"
 
 #if PX_DEBUG
@@ -44,7 +46,8 @@
 
 namespace physx
 {
-	class PxsMemoryManager;
+	class PxgMemoryManager;
+	class PxgCudaAllocatorCallbackBase;
 
 	class BlockHeader
 	{
@@ -107,21 +110,21 @@ namespace physx
 		size_t size;
 	};
 
-	class PxgHeapMemoryAllocator : public PxsHeapMemoryAllocator
+	class PxgHeapMemoryAllocator : public Cm::VirtualAllocatorCallback, public PxUserAllocated
 	{
 	public:
 
-		PxgHeapMemoryAllocator(const PxU32 byteSize, PxVirtualAllocatorCallback* allocator);
+		PxgHeapMemoryAllocator(const PxU32 byteSize, PxgCudaAllocatorCallbackBase& allocator);
 		~PxgHeapMemoryAllocator();
 	
 		void initializeBlocks(const PxU32 rootIndex);
 		//return a free block index
 		PxU32 getNextFreeBlock(const PxU32 blockIndex, const PxU32 allocationSize, const char* file, const int line);
 	
-		// PxVirtualAllocatorCallback
+		// Cm::VirtualAllocatorCallback
 		virtual	void* allocate(const size_t byteSize, const int group, const char* file, const int line)	PX_OVERRIDE;
 		virtual	void deallocate(void* ptr)																	PX_OVERRIDE;
-		//~PxVirtualAllocatorCallback
+		//~Cm::VirtualAllocatorCallback
 
 		void deallocateDeferred(void* ptr);
 
@@ -130,15 +133,16 @@ namespace physx
 		PxU64 getTotalSize();
 		PxsHeapStats& getHeapStats() { return mHeapStats; }
 
+		//Used for memcheck support
 #if PX_DEBUG || PX_STOMP_ALLOCATED_MEMORY
-		PxVirtualAllocatorCallback* getAllocator() { return mAllocator; } //Used for memcheck support
+		PxgCudaAllocatorCallbackBase* getAllocator() { return mAllocator; }
 #endif
 
 	private:
 
 		PxHashMap<void*, AllocationValue> mHashMap;//this is used to look up where the block is
 		PxArray<Block> mBlocks; //this is used to store fix size slots 
-		PxVirtualAllocatorCallback* mAllocator;
+		PxgCudaAllocatorCallbackBase* mAllocator;
 		PxArray<void*> mRoots;
 		PxArray<ExceptionalAlloc> mExceptionalAllocs;
 		PxArray<void*> deferredDeallocs;
@@ -154,14 +158,13 @@ namespace physx
 #if PX_DEBUG
 		MemTracker mMemTracker;
 #endif
-
 		PX_NOCOPY(PxgHeapMemoryAllocator)
 	};
 
 	class PxgHeapMemoryAllocatorManager : public PxsHeapMemoryAllocatorManager
 	{ 
 	public:
-		PxgHeapMemoryAllocatorManager(PxU32 heapCapacity, PxsMemoryManager* memoryManager);
+		PxgHeapMemoryAllocatorManager(PxU32 heapCapacity, PxgMemoryManager& memoryManager);
 
 		virtual ~PxgHeapMemoryAllocatorManager();
 
@@ -171,8 +174,17 @@ namespace physx
 		virtual void			flushDeferredDeallocs()			PX_OVERRIDE PX_FINAL;
 		//~PxsHeapMemoryAllocatorManager
 
-		PxgHeapMemoryAllocator*	mDeviceMemoryAllocators;
+		PxgHeapMemoryAllocator*	mDeviceMemoryAllocator;
 	};
+
+	// Create helper to pass around allocators from PxgHeapMemoryAllocatorManager
+	PX_INLINE PxgAllocatorDesc PxgCreateAllocatorDesc(PxgHeapMemoryAllocatorManager& heapMemoryAllocatorManager)
+	{
+		return PxgAllocatorDesc(*heapMemoryAllocatorManager.mDeviceMemoryAllocator,
+								*heapMemoryAllocatorManager.mPinnedHostMemoryAllocator,
+								*heapMemoryAllocatorManager.mPinnedHostMappedMemoryAllocator);
+	}
+
 }
 
 #endif

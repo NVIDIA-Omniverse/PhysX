@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -113,18 +113,15 @@ namespace physx
 		virtual	void					packJointData(const PxReal* maximum, PxReal* reduced) const	PX_OVERRIDE	PX_FINAL;
 		virtual	void					unpackJointData(const PxReal* reduced, PxReal* maximum) const	PX_OVERRIDE	PX_FINAL;
 		virtual	void					commonInit() const	PX_OVERRIDE	PX_FINAL;
-		PX_DEPRECATED	virtual	void	computeGeneralizedGravityForce(PxArticulationCache& cache) const	PX_OVERRIDE	PX_FINAL;
 		virtual	void					computeGravityCompensation(PxArticulationCache& cache) const	PX_OVERRIDE	PX_FINAL;
-		PX_DEPRECATED	virtual	void	computeCoriolisAndCentrifugalForce(PxArticulationCache& cache) const	PX_OVERRIDE	PX_FINAL;
 		virtual	void					computeCoriolisCompensation(PxArticulationCache& cache) const	PX_OVERRIDE	PX_FINAL;
 		virtual	void					computeGeneralizedExternalForce(PxArticulationCache& cache) const	PX_OVERRIDE	PX_FINAL;
 		virtual	void					computeJointAcceleration(PxArticulationCache& cache) const	PX_OVERRIDE	PX_FINAL;
 		virtual	void					computeJointForce(PxArticulationCache& cache) const	PX_OVERRIDE	PX_FINAL;
 		virtual	void					computeDenseJacobian(PxArticulationCache& cache, PxU32& nRows, PxU32& nCols) const	PX_OVERRIDE	PX_FINAL;
-		virtual	void					computeCoefficientMatrix(PxArticulationCache& cache) const	PX_OVERRIDE	PX_FINAL;
-		virtual	bool					computeLambda(PxArticulationCache& cache, PxArticulationCache& rollBackCache, const PxReal* const jointTorque, const PxU32 maxIter) const	PX_OVERRIDE	PX_FINAL;
+		PX_DEPRECATED virtual	void	computeCoefficientMatrix(PxArticulationCache& cache) const	PX_OVERRIDE	PX_FINAL;
+		PX_DEPRECATED virtual	bool	computeLambda(PxArticulationCache& cache, PxArticulationCache& rollBackCache, const PxReal* const jointTorque, const PxU32 maxIter) const	PX_OVERRIDE	PX_FINAL;
 		virtual	void					computeMassMatrix(PxArticulationCache& cache) const	PX_OVERRIDE	PX_FINAL;
-		PX_DEPRECATED	virtual	void	computeGeneralizedMassMatrix(PxArticulationCache& cache) const	PX_OVERRIDE	PX_FINAL;
 		virtual	void					computeCentroidalMomentumMatrix(PxArticulationCache& cache) const	PX_OVERRIDE	PX_FINAL;
 		PX_DEPRECATED	virtual	void	addLoopJoint(PxConstraint* joint)	PX_OVERRIDE	PX_FINAL;
 		PX_DEPRECATED	virtual	void	removeLoopJoint(PxConstraint* constraint)	PX_OVERRIDE	PX_FINAL;
@@ -149,7 +146,6 @@ namespace physx
 		virtual	PxU32					getMimicJoints(PxArticulationMimicJoint** userBuffer, PxU32 bufferSize, PxU32 startIndex) const	PX_OVERRIDE	PX_FINAL;
 		virtual	PxU32					getNbMimicJoints() const	PX_OVERRIDE	PX_FINAL;
 		virtual	void					updateKinematic(PxArticulationKinematicFlags flags) PX_OVERRIDE PX_FINAL;
-		virtual PxArticulationResidual	getSolverResidual() const	PX_OVERRIDE PX_FINAL;
 		//~PxArticulationReducedCoordinate
 
 		NpArticulationSpatialTendon*					getSpatialTendon(const PxU32 index) const;

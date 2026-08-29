@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,7 +30,7 @@
 #define DY_SOLVER_CONSTRAINT_1D_H
 
 #include "foundation/PxVec3.h"
-#include "PxvConfig.h"
+#include "PxPhysXConfig.h"
 #include "DySolverConstraintTypes.h"
 #include "DySolverBody.h"
 #include "PxConstraintDesc.h"
@@ -83,18 +83,12 @@ public:
 	PxReal		impulseMultiplier;		//!< constraint impulse multiplier
 
 	PxVec3		ang0Writeback;			//!< unscaled angular velocity projection (body 0)
-	PxReal		residualVelIter;
+	PxU32		pad;
 
 	PxReal		minImpulse;				//!< Lower bound on impulse magnitude	 
 	PxReal		maxImpulse;				//!< Upper bound on impulse magnitude
 	PxReal		appliedForce;			//!< applied force to correct velocity+bias
-private:
-	union 
-	{		
-		PxU32		flags; //Use only the most significant bit (which corresponds to the float's sign bit)
-		PxReal		residualPosIter;
-	};
-public:	
+	PxU32		flags;
 
 	void setSolverConstants(const Constraint1dSolverConstantsPGS& solverConstants)
 	{
@@ -103,42 +97,6 @@ public:
 		velMultiplier = solverConstants.velMultiplier;
 		impulseMultiplier = solverConstants.impulseMultiplier;
 	}
-
-	PX_FORCE_INLINE PxU32 setBit(PxU32 value, PxU32 bitLocation, bool bitState)
-	{
-		if (bitState)
-			return value | (1 << bitLocation);
-		else
-			return value & (~(1 << bitLocation));
-	}
-
-	PX_FORCE_INLINE void setOutputForceFlag(bool outputForce)
-	{
-		flags = setBit(flags, 31, outputForce);
-	}
-	
-	PX_FORCE_INLINE bool getOutputForceFlag() const
-	{
-		return flags & 0x80000000;
-	}
-
-	PX_FORCE_INLINE void setPositionIterationResidual(PxReal residual)
-	{
-		bool flag = getOutputForceFlag();
-		residualPosIter = residual;
-		setOutputForceFlag(flag);
-	}
-	
-	PX_FORCE_INLINE PxReal getPositionIterationResidual() const
-	{
-		return PxAbs(residualPosIter);
-	}
-
-	PX_FORCE_INLINE void setVelocityIterationResidual(PxReal r)
-	{
-		residualVelIter = r;
-	}
-
 } PX_ALIGN_SUFFIX(16); 	
 
 PX_COMPILE_TIME_ASSERT(sizeof(SolverConstraint1D) == 96);
@@ -147,11 +105,11 @@ PX_COMPILE_TIME_ASSERT(sizeof(SolverConstraint1D) == 96);
 struct SolverConstraint1DExt : public SolverConstraint1D
 {
 public:
-	Cm::SpatialVectorV deltaVA;
-	Cm::SpatialVectorV deltaVB;
+	Cm::SpatialVector deltaVA_;
+	Cm::SpatialVector deltaVB_;
 };
 
-//PX_COMPILE_TIME_ASSERT(sizeof(SolverConstraint1DExt) == 160);
+PX_COMPILE_TIME_ASSERT(sizeof(SolverConstraint1DExt) == 160);
 
 
 PX_FORCE_INLINE void init(SolverConstraint1DHeader& h, 
@@ -181,10 +139,8 @@ PX_FORCE_INLINE void init(SolverConstraint1D& c,
 	c.ang1					= _angular1;
 	c.minImpulse			= _minImpulse;
 	c.maxImpulse			= _maxImpulse;
-	c.setOutputForceFlag(false);
+	c.flags					= 0;
 	c.appliedForce			= 0;
-	c.residualVelIter		= 0;
-	c.setPositionIterationResidual(0.0f);
 }
 
 PX_FORCE_INLINE bool needsNormalVel(const Px1DConstraint &c)

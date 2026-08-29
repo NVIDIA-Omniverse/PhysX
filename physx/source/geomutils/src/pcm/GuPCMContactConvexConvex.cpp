@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -118,12 +118,12 @@ static bool generateOrProcessContactsConvexConvex(	const GjkConvex* relativeConv
 		manifold.drawManifold(*renderOutput, transf0, transf1);
 #endif
 		//ML: after we refresh the contacts(newContacts) and generate a GJK/EPA contacts(we will store that in the manifold), if the number of contacts is still less than the original contacts,
-		//which means we lose too mang contacts and we should regenerate all the contacts in the current configuration
+		//which means we lose too many contacts and we should regenerate all the contacts in the current configuration
 		//Also, we need to look at the existing contacts, if the existing contacts has very different normal than the GJK/EPA contacts,
 		//which means we should throw away the existing contacts and do full contact gen
 		const bool fullContactGen = FAllGrtr(FLoad(0.707106781f), V3Dot(localNor, output.normal)) || (manifold.mNumContacts < initialContacts);
 
-		if(fullContactGen || doOverlapTest)
+		if(fullContactGen || doOverlapTest || initialContacts > 1)
 		{
 			return fullContactsGenerationConvexConvex(relativeConvex, localConvex, transf0, transf1, idtScale0, idtScale1, manifoldContacts, contactBuffer,
 				manifold, output.normal, output.closestA, output.closestB, contactDist, doOverlapTest, renderOutput, toleranceLength);

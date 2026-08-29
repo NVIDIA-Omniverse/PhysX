@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -30,6 +30,9 @@
 #define __CU_SPARSE_REMOVE_CUH__
 
 #include "reduction.cuh"
+
+namespace physx
+{
 
 /**
 This function initializes a keep-drop buffer. Assuming an array of size N is having K elements removed, it initializes the first (N-K) elements to 0 and the next (K) elements to 1.
@@ -101,5 +104,7 @@ static __device__ void getSwapIndices(const PxU32* PX_RESTRICT globalRunSumBuffe
 	destIndex = binarySearch(globalRunSumBuffer, totalSize, indexToFind);
 	srcIndex = binarySearch(globalRunSumBuffer, totalSize, indexToFind+totalSwapsRequired);
 }
+
+} // namespace physx
 
 #endif

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,11 +30,12 @@
 #include "ScBodySim.h"
 #include "ScShapeSim.h"
 #include "ScArticulationSim.h"
-#include "ScScene.h"
+#include "ScArticulationCore.h"
 #include "DyIslandManager.h"
 
 using namespace physx;
 using namespace Sc;
+using namespace Cm;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -95,11 +96,12 @@ void BodySim::updateContactDistance(PxReal* contactDistance, PxReal dt, const Bp
 	}
 }
 
-void Sc::ArticulationSim::updateContactDistance(PxReal* contactDistance, PxReal dt, const Bp::BoundsArray& boundsArray)
+static void updateLinksContactDistances(Sc::ArticulationSim* articulation, PxReal* contactDistance, PxReal dt, const Bp::BoundsArray& boundsArray)
 {
-	const PxU32 size = mBodies.size();
+	BodySim** bodies = articulation->getBodies();
+	const PxU32 size = articulation->getNbBodies();
 	for(PxU32 i=0; i<size; i++)
-		mBodies[i]->updateContactDistance(contactDistance, dt, boundsArray);
+		bodies[i]->updateContactDistance(contactDistance, dt, boundsArray);
 }
 
 namespace
@@ -132,14 +134,14 @@ public:
 		mNbBodies				(0)
 	{}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		const PxU32 nb = mNbBodies;
 		for(PxU32 i=0; i<nb; i++)
 			mBodySims[i]->updateContactDistance(mContactDistances, mDt, mBoundsArray);
 	}
 
-	virtual const char* getName() const { return "SpeculativeCCDContactDistanceUpdateTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "SpeculativeCCDContactDistanceUpdateTask"; }
 
 private:
 	PX_NOCOPY(SpeculativeCCDContactDistanceUpdateTask)
@@ -155,12 +157,12 @@ public:
 		mArticulation			(sim)
 	{}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
-		mArticulation->updateContactDistance(mContactDistances, mDt, mBoundsArray);
+		updateLinksContactDistances(mArticulation, mContactDistances, mDt, mBoundsArray);
 	}
 
-	virtual const char* getName() const { return "SpeculativeCCDContactDistanceArticulationUpdateTask"; }
+	virtual const char* getName() const PX_OVERRIDE { return "SpeculativeCCDContactDistanceArticulationUpdateTask"; }
 
 private:
 	PX_NOCOPY(SpeculativeCCDContactDistanceArticulationUpdateTask)
@@ -182,11 +184,16 @@ void Sc::Scene::updateContactDistances(PxBaseTask* continuation)
 
 	// PT: TODO: it is quite unfortunate that we cannot shortcut parsing the bitmaps. Consider switching to arrays.
 	// We remove sleeping bodies from the map but we never shrink it....
+	// We use a bitmap because we remove sleeping bodies from the structure in BodySim::deactivate(), i.e. the lookup
+	// must be fast (we cannot just use an O(n) search on PxArray). We could use an intrusive index in BodySim though.
+
+	// PT: why do we do that on sleeping bodies? Why don't we use mActiveBodies?
+	// PxArray<BodyCore*>			mActiveBodies;				// Sorted: kinematic before dynamic
+	// ===> because that array contains all bodies, even the ones that do not have CCD enabled.
+	// That array is already sorted though, so we could organize it in 3 parts instead of 2 (like we did with the old
+	// "pruning sections" from SQ in ~PhysX2). But it is unclear whether this is worth the extra complexity.
 
 	// PT: TODO: why do we need to involve the island manager here?
-	// PT: TODO: why do we do that on sleeping bodies? Why don't we use mActiveBodies?
-	// PxArray<BodyCore*>			mActiveBodies;				// Sorted: kinematic before dynamic
-	// ===> because we remove bodies from the bitmap in BodySim::deactivate()
 
 	//calculate contact distance for speculative CCD shapes
 	if(1)
@@ -195,7 +202,7 @@ void Sc::Scene::updateContactDistances(PxBaseTask* continuation)
 
 		SpeculativeCCDContactDistanceUpdateTask* ccdTask = createCCDTask(pool, mContextId, mContactDistance->begin(), mDt, *mBoundsArray);
 
-		PxBitMapPinned& changedMap = mAABBManager->getChangedAABBMgActorHandleMap();
+		PinnableBitMap& changedMap = mAABBManager->getChangedAABBMgActorHandleMap();
 
 		const size_t bodyOffset = PX_OFFSET_OF_RT(BodySim, getLowLevelBody());
 
@@ -217,10 +224,13 @@ void Sc::Scene::updateContactDistances(PxBaseTask* continuation)
 				ccdTask->mBodySims[nbBodies++] = bodySim;
 
 				// PT: ### changedMap pattern #1
-				// PT: TODO: isn't there a problem here? The task function will only touch the shapes whose body has the
-				// speculative flag and isn't frozen, but here we mark all shapes as changed no matter what.
-				//
-				// Also we test some bodySim data and one bit of each ShapeSim here, not great.
+				// PT: The task function will only touch the shapes whose body has the speculative flag and
+				// isn't frozen, but here we mark all shapes as changed no matter what. It is most likely fine
+				// because the map only contains objects that have the speculative flag enabled, and we remove
+				// sleeping objects from it (which should include frozen objects).
+
+				// PT: we test some bodySim data and one bit of each ShapeSim here, not great.
+				// PT: TODO: consider doing this in the tasks with atomic ORs
 				PxU32 nbElems = bodySim->getNbElements();
 				ElementSim** elems = bodySim->getElements();
 				while(nbElems--)
@@ -286,7 +296,7 @@ void Sc::Scene::updateContactDistances(PxBaseTask* continuation)
 				}
 				else
 				{
-					articulationSim->updateContactDistance(mContactDistance->begin(), mDt, *mBoundsArray);
+					updateLinksContactDistances(articulationSim, mContactDistance->begin(), mDt, *mBoundsArray);
 				}
 			}
 		}
@@ -439,7 +449,7 @@ public:
 	{
 	}
 
-	virtual const char* getName() const { return "UpdateCCDBoundsTask";}
+	virtual const char* getName() const PX_OVERRIDE { return "UpdateCCDBoundsTask";}
 
 	PxIntBool	updateSweptBounds(ShapeSim* sim, BodySim* body)
 	{
@@ -489,7 +499,7 @@ public:
 		return isFastMoving;
 	}
 
-	virtual void runInternal()
+	virtual void runInternal() PX_OVERRIDE
 	{
 		PxU32 activeShapes = 0;
 		const PxU32 nb = mNbToProcess;
@@ -609,7 +619,7 @@ void Sc::Scene::updateCCDSinglePass(PxBaseTask* continuation)
 	const PxU32 currentPass = mCCDContext->getCurrentCCDPass() + 1;  // 0 is reserved for discrete collision phase
 	if(currentPass == 1)		// reset the handle map so we only update CCD objects from here on
 	{
-		PxBitMapPinned& changedAABBMgrActorHandles = mAABBManager->getChangedAABBMgActorHandleMap();
+		PinnableBitMap& changedAABBMgrActorHandles = mAABBManager->getChangedAABBMgActorHandleMap();
 		//changedAABBMgrActorHandles.clear();
 		for(PxU32 i = 0; i < mCcdBodies.size();i++)
 		{
@@ -660,20 +670,42 @@ void Sc::Scene::postCCDPass(PxBaseTask* /*continuation*/)
 	PxU32 currentPass = mCCDContext->getCurrentCCDPass();
 	PX_ASSERT(currentPass > 0); // to make sure changes to the CCD pass counting get noticed. For contact reports, 0 means discrete collision phase.
 
+	// Local array that uses a stack buffer for small counts, avoiding heap allocation in the common case.
+	// Falls back to heap allocation if the array grows beyond the inline capacity.
+	struct LocalArray : public PxArray<PxvContactManagerTouchEvent>
+	{
+		LocalArray()
+		{
+			mSize		= 0;
+			mCapacity	= 64|PX_SIGN_BITMASK;
+			mData		= mBuffer;
+		}
+
+		PxvContactManagerTouchEvent	mBuffer[64];
+	};
+
 	PxU32 newTouchCount, lostTouchCount, ccdTouchCount;
 	mLLContext->getManagerTouchEventCount(&newTouchCount, &lostTouchCount, &ccdTouchCount);
-	PX_ALLOCA(newTouches, PxvContactManagerTouchEvent, newTouchCount);
-	PX_ALLOCA(lostTouches, PxvContactManagerTouchEvent, lostTouchCount);
-	PX_ALLOCA(ccdTouches, PxvContactManagerTouchEvent, ccdTouchCount);
+
+	LocalArray newTouchEvents;
+	LocalArray lostTouchEvents;
+	LocalArray ccdTouchEvents;
+
+	if(newTouchCount > 64)
+		newTouchEvents.reserve(newTouchCount);
+	if(lostTouchCount > 64)
+		lostTouchEvents.reserve(lostTouchCount);
+	if(ccdTouchCount > 64)
+		ccdTouchEvents.reserve(ccdTouchCount);
 
 	PxsContactManagerOutputIterator outputs = mLLContext->getNphaseImplementationContext()->getContactManagerOutputs();
 
 	// Note: For contact notifications it is important that the new touch pairs get processed before the lost touch pairs.
 	//       This allows to know for sure if a pair of actors lost all touch (see eACTOR_PAIR_LOST_TOUCH).
-	mLLContext->fillManagerTouchEvents(newTouches, newTouchCount, lostTouches, lostTouchCount, ccdTouches, ccdTouchCount);
-	for(PxU32 i=0; i<newTouchCount; ++i)
+	mLLContext->fillManagerTouchEvents(newTouchEvents, lostTouchEvents, &ccdTouchEvents);
+	for(PxU32 i=0; i<newTouchEvents.size(); ++i)
 	{
-		ShapeInteraction* si = getSI(newTouches[i]);
+		ShapeInteraction* si = getSI(newTouchEvents[i]);
 		PX_ASSERT(si);
 		mNPhaseCore->managerNewTouch(*si);
 		si->managerNewTouch(currentPass, outputs);
@@ -682,24 +714,26 @@ void Sc::Scene::postCCDPass(PxBaseTask* /*continuation*/)
 			mSimpleIslandManager->setEdgeConnected(si->getEdgeIndex(), IG::Edge::eCONTACT_MANAGER);
 		}
 	}
-	for(PxU32 i=0; i<lostTouchCount; ++i)
+	for(PxU32 i=0; i<lostTouchEvents.size(); ++i)
 	{
-		ShapeInteraction* si = getSI(lostTouches[i]);
+		ShapeInteraction* si = getSI(lostTouchEvents[i]);
 		PX_ASSERT(si);
 		if (si->managerLostTouch(currentPass, outputs) && !si->readFlag(ShapeInteraction::CONTACTS_RESPONSE_DISABLED))
 			addToLostTouchList(si->getActor0(), si->getActor1());
 
 		mSimpleIslandManager->setEdgeDisconnected(si->getEdgeIndex());
 	}
-	for(PxU32 i=0; i<ccdTouchCount; ++i)
+	for(PxU32 i=0; i<ccdTouchEvents.size(); ++i)
 	{
-		ShapeInteraction* si = getSI(ccdTouches[i]);
+		ShapeInteraction* si = getSI(ccdTouchEvents[i]);
 		PX_ASSERT(si);
 		si->sendCCDRetouch(currentPass, outputs);
 	}
 	checkForceThresholdContactEvents(currentPass);
 	{
-		PxBitMapPinned& changedAABBMgrActorHandles = mAABBManager->getChangedAABBMgActorHandleMap();
+		PinnableBitMap& changedAABBMgrActorHandles = mAABBManager->getChangedAABBMgActorHandleMap();
+
+		const UpdateCachedParams params(mLLContext->getTransformCache(), getBoundsArray());
 
 		for (PxU32 i = 0, s = mCcdBodies.size(); i < s; i++)
 		{
@@ -710,11 +744,23 @@ void Sc::Scene::postCCDPass(PxBaseTask* /*continuation*/)
 			PX_ASSERT(body->getBody2World().p.isFinite());
 			PX_ASSERT(body->getBody2World().q.isFinite());
 
-			body->updateCached(&changedAABBMgrActorHandles);
+			body->updateCached_NotThreadSafe(params, &changedAABBMgrActorHandles, false, false);
 		}
 
 		ArticulationCore* const* articList = mArticulations.getEntries();
 		for(PxU32 i=0;i<mArticulations.size();i++)
-			articList[i]->getSim()->updateCached(&changedAABBMgrActorHandles);
+			articList[i]->getSim()->updateCached_NotThreadSafe(params, &changedAABBMgrActorHandles, false, false);
+	}
+}
+
+void updateCCDLinks(Sc::ArticulationSim& artic, PxArray<BodySim*>& sims)
+{
+	const PxU32 nbBodies = artic.getNbBodies();
+	BodySim** bodies = artic.getBodies();
+
+	for(PxU32 i=0; i<nbBodies; i++)
+	{
+		if(bodies[i]->getLowLevelBody().getCore().mFlags & PxRigidBodyFlag::eENABLE_CCD)
+			sims.pushBack(bodies[i]);
 	}
 }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -40,7 +40,7 @@ namespace physx
 {
 	static inline PxU32 strLenght( const char* inStr )
 	{
-		return inStr ? PxU32(strlen(inStr)) : 0;
+		return inStr ? PxU32(strnlen(inStr, UINT32_MAX - 1)) : 0;
 	}
 }
 
@@ -50,7 +50,7 @@ namespace physx // ADL requires we put the operators in the same namespace as th
 	{
 		if ( inString && *inString )
 		{
-			ioStream.write( inString, PxU32(strlen(inString)) );
+			ioStream.write( inString, strLenght(inString) );
 		}
 		return ioStream;
 	}
@@ -78,8 +78,8 @@ namespace physx // ADL requires we put the operators in the same namespace as th
 	inline PxOutputStream& operator << ( PxOutputStream& ioStream, PxF32 inData ) { return toStream( ioStream, "%g", PxF64(inData) ); }
 	inline PxOutputStream& operator << ( PxOutputStream& ioStream, PxF64 inData ) { return toStream( ioStream, "%g", inData ); }
 	inline PxOutputStream& operator << ( PxOutputStream& ioStream, endl_obj) { return ioStream << "\n"; }
-	inline PxOutputStream& operator << ( PxOutputStream& ioStream, const PxVec3& inData ) 
-	{ 
+	inline PxOutputStream& operator << ( PxOutputStream& ioStream, const PxVec3& inData )
+	{
 		ioStream << inData[0];
 		ioStream << " ";
 		ioStream << inData[1];
@@ -88,7 +88,7 @@ namespace physx // ADL requires we put the operators in the same namespace as th
 		return ioStream;
 	}
 
-	inline PxOutputStream& operator << ( PxOutputStream& ioStream, const PxQuat& inData ) 
+	inline PxOutputStream& operator << ( PxOutputStream& ioStream, const PxQuat& inData )
 	{
 		ioStream << inData.x;
 		ioStream << " ";
@@ -100,7 +100,7 @@ namespace physx // ADL requires we put the operators in the same namespace as th
 		return ioStream;
 	}
 
-	inline PxOutputStream& operator << ( PxOutputStream& ioStream, const PxTransform& inData ) 
+	inline PxOutputStream& operator << ( PxOutputStream& ioStream, const PxTransform& inData )
 	{
 		ioStream << inData.q;
 		ioStream << " ";

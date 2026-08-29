@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -192,7 +192,7 @@ namespace physx
 
 		\see PxArticulationSpatialTendon::createAttachment()
 		*/
-		virtual		void							release() = 0;
+		virtual		void							release() PX_OVERRIDE = 0;
 
 					void*							userData;	//!< user can assign this to whatever, usually to create a 1:1 relationship with a user object.	
 
@@ -205,7 +205,7 @@ namespace physx
 
 	protected:
 
-		PX_INLINE	PxArticulationAttachment(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags) {}
+		PX_INLINE	PxArticulationAttachment(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags), userData(NULL)   {}
 		PX_INLINE	PxArticulationAttachment(PxBaseFlags baseFlags) : PxBase(baseFlags) {}
 	};
 
@@ -280,7 +280,7 @@ namespace physx
 
 		\see PxArticulationFixedTendon::createTendonJoint()
 		*/
-		virtual		void							release() = 0;
+		virtual		void							release() PX_OVERRIDE = 0;
 
 					void*							userData;	//!< user can assign this to whatever, usually to create a 1:1 relationship with a user object.
 
@@ -293,7 +293,7 @@ namespace physx
 
 	protected:
 
-		PX_INLINE	PxArticulationTendonJoint(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags) {}
+		PX_INLINE	PxArticulationTendonJoint(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags), userData(NULL)   {}
 		PX_INLINE	PxArticulationTendonJoint(PxBaseFlags baseFlags) : PxBase(baseFlags) {}
 	};
 
@@ -422,14 +422,14 @@ namespace physx
 		release the tendon, remove and then re-add the articulation to the scene.
 		*/
 
-		virtual		void							release() = 0;
+		virtual		void							release() PX_OVERRIDE = 0;
 
 		virtual										~PxArticulationTendon() {}
 
 					void*							userData;	//!< user can assign this to whatever, usually to create a 1:1 relationship with a user object.
 
 	protected:
-		PX_INLINE	PxArticulationTendon(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags) {}
+		PX_INLINE	PxArticulationTendon(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags), userData(NULL)   {}
 		PX_INLINE	PxArticulationTendon(PxBaseFlags baseFlags) : PxBase(baseFlags) {}
 	};
 

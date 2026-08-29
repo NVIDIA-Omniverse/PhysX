@@ -22,20 +22,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PXG_SMOOTHING_H
 #define PXG_SMOOTHING_H
 
-#include "foundation/PxSimpleTypes.h"
-#include "foundation/PxVec4.h"
-
-#include "foundation/PxArray.h"
-
+#include "foundation/PxUserAllocated.h"
 #include "PxSmoothing.h"
-#include "PxgKernelWrangler.h"
 #include "PxgAnisotropyData.h"
 #include "PxgKernelLauncher.h"
 
@@ -67,23 +62,23 @@ namespace physx
 
 		virtual ~PxgSmoothedPositionGenerator() { }
 
-		virtual void setSmoothing(float smoothingStrenght)
+		virtual void setSmoothing(float smoothingStrenght) PX_OVERRIDE
 		{
 			mPositionSmoothingDataHost.mSmoothing = smoothingStrenght;
 			mDirty = true;
 		}
 
-		virtual void release();
+		virtual void release() PX_OVERRIDE;
 
 		//Replaces the former readData method
-		virtual void setResultBufferHost(PxVec4* smoothedPositions)
+		virtual void setResultBufferHost(PxVec4* smoothedPositions) PX_OVERRIDE
 		{
 			mSmoothedPositions = smoothedPositions;
 			allocateGPUSmoothedPositionBuffers();
 			mDirty = true;
 		}
 
-		virtual void setResultBufferDevice(PxVec4* smoothedPositions)
+		virtual void setResultBufferDevice(PxVec4* smoothedPositions) PX_OVERRIDE
 		{
 			if (mOwnsSmoothedPositionGPUBuffers)
 				releaseGPUSmoothedPositionBuffers();
@@ -92,28 +87,28 @@ namespace physx
 			mSmoothedPositions = NULL;
 		}
 
-		virtual void generateSmoothedPositions(PxGpuParticleSystem* gpuParticleSystem, PxU32 numParticles, CUstream stream);
+		virtual void generateSmoothedPositions(PxGpuParticleSystem* gpuParticleSystem, PxU32 numParticles, CUstream stream) PX_OVERRIDE;
 
-		virtual void generateSmoothedPositions(PxVec4* particlePositionsGpu, PxParticleNeighborhoodProvider& neighborhoodProvider, PxU32 numParticles, PxReal particleContactOffset, CUstream stream);
+		virtual void generateSmoothedPositions(PxVec4* particlePositionsGpu, PxParticleNeighborhoodProvider& neighborhoodProvider, PxU32 numParticles, PxReal particleContactOffset, CUstream stream) PX_OVERRIDE;
 
-		virtual PxU32 getMaxParticles() const
+		virtual PxU32 getMaxParticles() const PX_OVERRIDE
 		{
 			return mNumParticles;
 		}
 
-		virtual void setMaxParticles(PxU32 maxParticles);
+		virtual void setMaxParticles(PxU32 maxParticles) PX_OVERRIDE;
 
-		virtual PxVec4* getSmoothedPositionsDevicePointer() const
+		virtual PxVec4* getSmoothedPositionsDevicePointer() const PX_OVERRIDE
 		{
 			return mPositionSmoothingDataHost.mPositions;
 		}
 
-		virtual void setEnabled(bool enabled)
+		virtual void setEnabled(bool enabled) PX_OVERRIDE
 		{
 			mEnabled = enabled;
 		}
 
-		virtual bool isEnabled() const
+		virtual bool isEnabled() const PX_OVERRIDE
 		{
 			return mEnabled;
 		}

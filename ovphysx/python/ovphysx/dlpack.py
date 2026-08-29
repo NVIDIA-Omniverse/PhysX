@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-#
 
 """DLPack tensor structures for zero-copy data interchange.
 
@@ -14,6 +13,7 @@ is updated, this file must be updated to match.
 """
 
 import ctypes
+from numbers import Integral
 from typing import Any, Callable, Optional
 
 __all__ = [
@@ -104,6 +104,24 @@ class DLDataTypeCode(ctypes.c_uint8):
     kDLFloat6_e3m2fn = 16
     # FP4 types
     kDLFloat4_e2m1fn = 17
+
+    def __int__(self):
+        return self.value
+
+    def __eq__(self, other):
+        other_value = getattr(other, "value", other)
+        if not isinstance(other_value, Integral):
+            return NotImplemented
+        return self.value == int(other_value)
+
+    def __ne__(self, other):
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return not result
+
+    def __hash__(self):
+        return hash(self.value)
 
     def __str__(self):
         return {
@@ -225,12 +243,13 @@ PyCapsule_GetPointer.argtypes = [ctypes.py_object, ctypes.c_char_p]
 PyCapsule_GetPointer.restype = ctypes.c_void_p
 
 
-def _to_dlpack_capsule(dl_tensor: DLTensor, manager_ctx: Any, deleter_callback: Optional[Callable]) -> Any:
+def _to_dlpack_capsule(dl_tensor: DLTensor, owner: "ManagedDLTensor") -> Any:
     """Create DLPack capsule from DLTensor (CPU-only, copies shape metadata).
 
     Per DLPack spec: Capsule named "dltensor", consumer (NumPy) renames to
     "used_dltensor" after extraction. Capsule destructor checks name and calls
-    deleter only if unconsumed (prevents double-free).
+    deleter only if unconsumed. Each capsule keeps the producer alive until its
+    managed tensor is released, so the producer owns the only cleanup callback.
     """
 
     # Handle multi-lane types (e.g. RGBA with lanes=4) by expanding to extra dimension
@@ -245,69 +264,68 @@ def _to_dlpack_capsule(dl_tensor: DLTensor, manager_ctx: Any, deleter_callback: 
     if not mem_ptr:
         raise MemoryError("Failed to allocate DLManagedTensor")
 
-    managed_tensor = DLManagedTensor.from_address(mem_ptr)
+    owner_ref_added = False
+    try:
+        managed_tensor = DLManagedTensor.from_address(mem_ptr)
 
-    # Copy DLTensor fields (shallow copy - pointers reference C memory)
-    managed_tensor.dl_tensor.data = dl_tensor.data
-    managed_tensor.dl_tensor.device = dl_tensor.device
-    managed_tensor.dl_tensor.ndim = actual_ndim
-    managed_tensor.dl_tensor.byte_offset = dl_tensor.byte_offset
+        # Copy DLTensor fields (shallow copy - pointers reference C memory)
+        managed_tensor.dl_tensor.data = dl_tensor.data
+        managed_tensor.dl_tensor.device = dl_tensor.device
+        managed_tensor.dl_tensor.ndim = actual_ndim
+        managed_tensor.dl_tensor.byte_offset = dl_tensor.byte_offset
 
-    # Copy dtype, adjusting lanes if expanded
-    managed_tensor.dl_tensor.dtype.code = dl_tensor.dtype.code
-    managed_tensor.dl_tensor.dtype.bits = dl_tensor.dtype.bits
-    managed_tensor.dl_tensor.dtype.lanes = 1 if dl_tensor.dtype.lanes > 1 else dl_tensor.dtype.lanes
+        # Copy dtype, adjusting lanes if expanded
+        managed_tensor.dl_tensor.dtype.code = dl_tensor.dtype.code
+        managed_tensor.dl_tensor.dtype.bits = dl_tensor.dtype.bits
+        managed_tensor.dl_tensor.dtype.lanes = 1 if dl_tensor.dtype.lanes > 1 else dl_tensor.dtype.lanes
 
-    # Copy shape array for safety
-    shape_ptr = ctypes.cast(mem_ptr + managed_size, ctypes.POINTER(ctypes.c_int64))
-    for i in range(dl_tensor.ndim):
-        shape_ptr[i] = dl_tensor.shape[i]
+        # Copy shape array for safety
+        shape_ptr = ctypes.cast(mem_ptr + managed_size, ctypes.POINTER(ctypes.c_int64))
+        for i in range(dl_tensor.ndim):
+            shape_ptr[i] = dl_tensor.shape[i]
 
-    # Add lanes as extra dimension if multi-lane
-    if dl_tensor.dtype.lanes > 1:
-        shape_ptr[dl_tensor.ndim] = dl_tensor.dtype.lanes
+        # Add lanes as extra dimension if multi-lane
+        if dl_tensor.dtype.lanes > 1:
+            shape_ptr[dl_tensor.ndim] = dl_tensor.dtype.lanes
 
-    managed_tensor.dl_tensor.shape = shape_ptr
+        managed_tensor.dl_tensor.shape = shape_ptr
 
-    # CPU tensors are typically contiguous
-    managed_tensor.dl_tensor.strides = None
+        # CPU tensors are typically contiguous
+        managed_tensor.dl_tensor.strides = None
 
-    # Keep Python context alive
-    managed_tensor.manager_ctx = id(manager_ctx)
-    Py_IncRef(manager_ctx)
+        # Keep the shared owner and its callback references alive.
+        managed_tensor.manager_ctx = id(owner)
+        Py_IncRef(owner)
+        owner_ref_added = True
 
-    # C deleter callback (keep reference to prevent GC)
-    @ctypes.CFUNCTYPE(None, ctypes.c_void_p)
-    def c_deleter(managed_ptr):
-        mt = DLManagedTensor.from_address(managed_ptr)
-        ctx = ctypes.cast(mt.manager_ctx, ctypes.py_object).value
-
-        if deleter_callback is not None:
-            deleter_callback(ctx)
-
-        Py_DecRef(ctx)
-        PyMem_RawFree(managed_ptr)
-
-    managed_tensor.deleter = c_deleter
-
-    # Capsule destructor (keep reference to prevent GC)
-    @PyCapsule_Destructor
-    def capsule_destructor(capsule_ptr):
-        capsule = ctypes.cast(capsule_ptr, ctypes.py_object)
-        if PyCapsule_IsValid(capsule, _c_str_dltensor):
-            managed_ptr = PyCapsule_GetPointer(capsule, _c_str_dltensor)
+        @ctypes.CFUNCTYPE(None, ctypes.c_void_p)
+        def c_deleter(managed_ptr):
             mt = DLManagedTensor.from_address(managed_ptr)
-            if mt.deleter:
-                mt.deleter(managed_ptr)
+            managed_owner = ctypes.cast(mt.manager_ctx, ctypes.py_object).value
+            # Retain both ctypes callbacks until this native callback returns.
+            _callback_refs = managed_owner._dlpack_callbacks.pop(managed_ptr, None)
+            Py_DecRef(managed_owner)
+            PyMem_RawFree(managed_ptr)
 
-    capsule = PyCapsule_New(mem_ptr, _c_str_dltensor, capsule_destructor)
+        managed_tensor.deleter = c_deleter
 
-    # Keep callback references alive by attaching to manager_ctx
-    if not hasattr(manager_ctx, "_dlpack_callbacks"):
-        manager_ctx._dlpack_callbacks = []
-    manager_ctx._dlpack_callbacks.append((c_deleter, capsule_destructor))
+        @PyCapsule_Destructor
+        def capsule_destructor(capsule_ptr):
+            capsule = ctypes.cast(capsule_ptr, ctypes.py_object)
+            if PyCapsule_IsValid(capsule, _c_str_dltensor):
+                managed_ptr = PyCapsule_GetPointer(capsule, _c_str_dltensor)
+                mt = DLManagedTensor.from_address(managed_ptr)
+                if mt.deleter:
+                    mt.deleter(managed_ptr)
 
-    return capsule
+        owner._dlpack_callbacks[mem_ptr] = (c_deleter, capsule_destructor)
+        return PyCapsule_New(mem_ptr, _c_str_dltensor, capsule_destructor)
+    except Exception:
+        owner._dlpack_callbacks.pop(mem_ptr, None)
+        if owner_ref_added:
+            Py_DecRef(owner)
+        PyMem_RawFree(mem_ptr)
+        raise
 
 
 class ManagedDLTensor:
@@ -318,6 +336,7 @@ class ManagedDLTensor:
         self._manager_ctx = manager_ctx
         self._deleter_callback = deleter_callback
         self._cleanup_done = False
+        self._dlpack_callbacks = {}
 
     @property
     def shape(self) -> tuple[int, ...]:
@@ -369,14 +388,19 @@ class ManagedDLTensor:
 
     def __dlpack__(self, stream=None) -> Any:
         """Create DLPack capsule for NumPy interop."""
-        return _to_dlpack_capsule(self._dl_tensor, self._manager_ctx, self._deleter_callback)
+        return _to_dlpack_capsule(self._dl_tensor, self)
 
     def __del__(self):
         """Call cleanup callback on destruction."""
-        if not self._cleanup_done and self._deleter_callback is not None:
+        if not getattr(self, "_cleanup_done", True):
+            self._cleanup_done = True
+            manager_ctx = self._manager_ctx
+            deleter_callback = self._deleter_callback
+            self._manager_ctx = None
+            self._deleter_callback = None
             try:
-                self._deleter_callback(self._manager_ctx)
-                self._cleanup_done = True
+                if deleter_callback is not None:
+                    deleter_callback(manager_ctx)
             except Exception:
                 pass
 

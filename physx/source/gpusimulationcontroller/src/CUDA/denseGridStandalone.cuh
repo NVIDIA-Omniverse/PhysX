@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -33,7 +33,8 @@
 //Should have the same value as the same define in sparseGrid.cuh
 #define EMPTY_SUBGRID 0xffffffff 
 
-using namespace physx;
+namespace physx
+{
 
 PX_FORCE_INLINE __device__ __host__ int getCellNr(int numCellsX, int numCellsY, int xi, int yi, int zi)
 {
@@ -129,3 +130,5 @@ PX_FORCE_INLINE __device__ int4 getCellIndexFromParticleAndTransformToLocalCoord
 	PxI32 czi = (int)PxFloor(p.z * invDx);
 	return make_int4(cxi, cyi, czi, -1);
 }
+
+} // namespace physx

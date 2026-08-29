@@ -22,9 +22,9 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 
 # PROJECT(CUDA) will enable building CUDA files ( .cu )
 PROJECT(PhysX C CXX CUDA)
@@ -36,6 +36,15 @@ ENDIF()
 
 OPTION(PX_GENERATE_GPU_STATIC_LIBRARIES "Generate PhysXGPU static libraries" OFF)
 OPTION(PX_GENERATE_GPU_REDUCED_ARCHITECTURES "Generate only a reduced number of GPU architectures for faster compilation" OFF)
+OPTION(PX_CUDA_DEVICE_DEBUG "Build debug-config CUDA device code with -G for single line GPU device debugging; default OFF uses -lineinfo (optimized kernels, asserts still fire)" OFF)
+
+# Device-debug flags for the debug config, consumed by the platform CMakeLists below.
+# Asserts stay live either way: they are gated by NDEBUG (absent in debug), not by -G.
+IF(PX_CUDA_DEVICE_DEBUG)
+	SET(PX_CUDA_DEBUG_DEVICE_FLAGS "-G -g" CACHE INTERNAL "CUDA device debug flags for the debug config")
+ELSE()
+	SET(PX_CUDA_DEBUG_DEVICE_FLAGS "-lineinfo -g" CACHE INTERNAL "CUDA device debug flags for the debug config")
+ENDIF()
 
 CMAKE_POLICY(SET CMP0057 NEW) # Enable IN_LIST
 

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_CUDA_CONTEXT_MANAGER_H
 #define PX_CUDA_CONTEXT_MANAGER_H
@@ -65,21 +65,48 @@ public:
 
 	/**
 	\brief Allocated device memory.
-	\param[in] ptr Pointer to store the allocated address
-	\param[in] size The amount of memory required
-	\return A boolean indicates the operation succeed or fail
+	\param[out] ptr Output pointer to the allocated memory. The returned address must be 256 bytes aligned.
+	\param[in] size The amount of memory to be allocated.
+	\return A boolean indicating whether the allocation succeeded or not.
 	*/
 	virtual bool memAlloc(void** ptr, size_t size) = 0;
 
 	/**
 	\brief Frees device memory.
-	\param[in] ptr The memory to free
-	\return A boolean indicates the operation succeed or fail
+	\param[in] ptr The memory to free.
+	\return A boolean indicating whether the deallocation succeeded or not.
 	*/
 	virtual bool memFree(void* ptr) = 0;
 
 protected:
 	virtual ~PxDeviceAllocatorCallback() {}
+};
+
+/**
+\brief An interface class that the user can implement in order for PhysX to use a user-defined host pinned memory allocator.
+*/
+class PxPinnedHostAllocatorCallback
+{
+public:
+
+	/**
+	\brief Allocates host pinned memory.
+	\param[in] ptr Output pointer to the allocated memory. The returned address must be 256 bytes aligned.
+	\param[in] size The amount of memory to be allocated.
+	\param[in] flags CUDA allocation flags (e.g., CU_MEMHOSTALLOC_DEVICEMAP, CU_MEMHOSTALLOC_PORTABLE)
+	\return A boolean indicating whether the allocation succeeded or not.
+	*/
+	virtual bool memAlloc(void** ptr, size_t size, PxU32 flags) = 0;
+
+	/**
+	\brief Frees host pinned memory.
+	\param[in] ptr The memory to free.
+	\return A boolean indicating whether the deallocation succeeded or not.
+	*/
+	virtual bool memFree(void* ptr) = 0;
+
+protected:
+	virtual ~PxPinnedHostAllocatorCallback() {}
 };
 /**
 \brief collection of set bits defined in NxCudaInteropRegisterFlag.
@@ -141,20 +168,30 @@ public:
 	const char*	appGUID;
 
 	/**
-	  * \brief Application-specific device memory allocator
+	  * \brief The application-specific device memory allocator
 	  *
-	  * the application can implement an device memory allocator, which inherites PxDeviceAllocatorCallback, and 
-	  * pass that to the PxCudaContextManagerDesc. The SDK will use that allocator to allocate device memory instead of
-	  * using the defaul CUDA device memory allocator.
+	  * The application can implement a device memory allocator, which inherits from PxDeviceAllocatorCallback, and
+	  * pass it to the SDK via PxCudaContextManagerDesc. The SDK will use that allocator to allocate device memory instead of
+	  * using the default CUDA device memory allocator.
 	  */
-	PxDeviceAllocatorCallback*	deviceAllocator;
+	PxDeviceAllocatorCallback*		deviceAllocator;
+
+	/**
+	  * \brief The application-specific host pinned memory allocator
+	  *
+	  * The application can implement a host pinned memory allocator, which inherits from PxPinnedHostAllocatorCallback, and
+	  * pass it to the SDK via PxCudaContextManagerDesc. The SDK will use that allocator to allocate host pinned memory instead of
+	  * using the default CUDA pinned host memory allocator.
+	  */
+	PxPinnedHostAllocatorCallback*	pinnedHostAllocator;
 
 	PX_INLINE PxCudaContextManagerDesc() :
-		ctx				(NULL),
-		graphicsDevice	(NULL),
-		deviceOrdinal	(-1),
-		appGUID			(NULL),
-		deviceAllocator	(NULL)
+		ctx					(NULL),
+		graphicsDevice		(NULL),
+		deviceOrdinal		(-1),
+		appGUID				(NULL),
+		deviceAllocator		(NULL),
+		pinnedHostAllocator	(NULL)
 	{
 	}
 };

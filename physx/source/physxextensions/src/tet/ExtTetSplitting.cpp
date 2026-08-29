@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 
 #include "ExtTetSplitting.h"
 #include "ExtUtilities.h"
@@ -323,7 +323,7 @@ static void getCornerAccessCounter(TetEdge edges[6], PxI32 edgesLength, PxI32 co
 			else if (indexer == 1)
 				result.second = tet[i];
 			++indexer;
-		}			
+		}
 	}
 	return result;
 }*/
@@ -331,7 +331,7 @@ static void getCornerAccessCounter(TetEdge edges[6], PxI32 edgesLength, PxI32 co
 static PX_FORCE_INLINE TetCorner getOtherCorner(TetEdge edge, TetCorner corner)
 {
 	return edge ^ corner;
-}	
+}
 
 static PX_FORCE_INLINE Tetrahedron flip(bool doFlip, Tetrahedron t)
 {

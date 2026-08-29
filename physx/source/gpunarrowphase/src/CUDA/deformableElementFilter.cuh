@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -34,35 +34,8 @@
 #include "PxgSimulationCoreDesc.h"
 #include "PxgParticleSystem.h"
 
-using namespace physx;
-
-static __device__ bool find(PxParticleRigidFilterPair* pairs, const PxU32 nbPairs, PxParticleRigidFilterPair& pair)
+namespace physx
 {
-	//Binary search...
-	PxU32 l = 0, r = nbPairs;
-
-	while (l < r)
-	{
-		PxU32 mid = (l + r) / 2;
-		const PxParticleRigidFilterPair& p = pairs[mid];
-
-		if (pair == p)
-			return true;
-		else if (pair < p)
-			r = mid;
-		else
-			l = mid + 1;
-	}
-	return false;
-}
-
-static __device__ bool find(PxParticleRigidFilterPair* pairs, const PxU32 nbPairs, PxU64 rigidId, PxU32 particleId)
-{
-	PxParticleRigidFilterPair pair;
-	pair.mID0 = rigidId;
-	pair.mID1 = particleId;
-	return find(pairs, nbPairs, pair);
-}
 
 static __device__ bool find(const PxgRigidFilterPair* pairs, const PxU32 nbPairs, PxgRigidFilterPair& pair, bool ignoreIndex2)
 {
@@ -115,17 +88,6 @@ static __device__ PxU32 findRange(PxU32 value, PxU32* values, PxU32 length)
 	return r-1;
 }
 
-static __device__ bool find(PxgParticleSystem& particleSystem, PxU64 rigidId, PxU64 compressedParticleId)
-{
-	// this is the ID into the flat uber buffer
-	PxU32 particleId = PxGetParticleIndex(compressedParticleId);
-
-	PxU32 id = findRange(particleId, particleSystem.mParticleBufferRunsum, particleSystem.mCommonData.mNumParticleBuffers);
-	
-	PxgParticleSimBuffer& particleBuffer = particleSystem.mParticleSimBuffers[id];	
-	return find(particleBuffer.mFilterPairs, particleBuffer.mNumFilterPairs, rigidId, particleId - particleSystem.mParticleBufferRunsum[id]);
-}
-
 static __device__ bool find(const PxgNonRigidFilterPair* pairs, const PxU32 nbPairs, PxgNonRigidFilterPair& pair, bool ignoreIndex2)
 {
 	//Binary search...
@@ -176,5 +138,7 @@ static __device__ bool find(const PxgParticleSystem& particleSystem, const PxgNo
 	PxgParticleSimBuffer& particleBuffer = particleSystem.mParticleSimBuffers[id];
 	return find(pairs, nbPairs, compressedParticleId, compressedId1, particleBuffer.mUniqueId);
 }
+
+} // namespace physx
 
 #endif // __DEFORMABLE_ELEMENT_FILTER_CUH__

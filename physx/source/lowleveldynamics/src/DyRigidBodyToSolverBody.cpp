@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,7 +30,6 @@
 #include "DySolverBody.h"
 #include "PxsRigidBody.h"
 #include "PxvDynamics.h"
-#include "foundation/PxSIMDHelpers.h"
 
 using namespace physx;
 
@@ -41,21 +40,16 @@ void Dy::copyToSolverBodyData(const PxVec3& linearVelocity, const PxVec3& angula
 {
 	data.nodeIndex = nodeIndex;
 
-	const PxVec3 safeSqrtInvInertia = computeSafeSqrtInertia(invInertia);
+	const PxVec3p safeSqrtInvInertia = computeSafeSqrtInertia(invInertia);
 
-	const PxMat33Padded rotation(globalPose.q);
-
-	Cm::transformInertiaTensor(safeSqrtInvInertia, rotation, data.sqrtInvInertia);
+	Cm::transformInertiaTensor(safeSqrtInvInertia, globalPose.q, data.sqrtInvInertia);
 
 	PxVec3 ang = angularVelocity;
 	PxVec3 lin = linearVelocity;
 
 	if (gyroscopicForces)
 	{
-		const PxVec3 localInertia(
-			invInertia.x == 0.f ? 0.f : 1.f / invInertia.x,
-			invInertia.y == 0.f ? 0.f : 1.f / invInertia.y,
-			invInertia.z == 0.f ? 0.f : 1.f / invInertia.z);
+		const PxVec3 localInertia = Cm::safeRecip<PxVec3>(invInertia);
 
 		const PxVec3 localAngVel = globalPose.q.rotateInv(ang);
 		const PxVec3 origMom = localInertia.multiply(localAngVel);
@@ -67,7 +61,7 @@ void Dy::copyToSolverBodyData(const PxVec3& linearVelocity, const PxVec3& angula
 		const PxVec3 newDeltaAngVel = globalPose.q.rotate(invInertia.multiply(newMom) - localAngVel);
 
 		ang += newDeltaAngVel;
-	}	
+	}
 	
 	if (lockFlags)
 	{

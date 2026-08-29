@@ -1,0 +1,50 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Minimal volume deformable scene for ovphysx tensor binding tests"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+        bool physxScene:enableGpuDynamics = 1
+        token physxScene:broadPhaseType = "GPU"
+    }
+
+    def Material "DeformableMaterial" (
+        prepend apiSchemas = ["PhysicsMaterialAPI", "OmniPhysicsDeformableMaterialAPI", "PhysxDeformableMaterialAPI"]
+    )
+    {
+        float omniphysics:dynamicFriction = 0.5
+        float omniphysics:poissonsRatio = 0.3
+        float omniphysics:youngsModulus = 1000
+        float physxDeformableMaterial:elasticityDamping = 0.01
+    }
+
+    def TetMesh "DeformableBody" (
+        prepend apiSchemas = ["OmniPhysicsDeformableBodyAPI", "OmniPhysicsVolumeDeformableSimAPI", "OmniPhysicsDeformablePoseAPI:default", "PhysicsCollisionAPI", "MaterialBindingAPI"]
+    )
+    {
+        bool omniphysics:deformableBodyEnabled = true
+        point3f[] deformablePose:default:omniphysics:points = [(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 1)]
+        uniform token[] deformablePose:default:omniphysics:purposes = ["bindPose"]
+        point3f[] omniphysics:restShapePoints = [(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 1)]
+        int4[] omniphysics:restTetVtxIndices = [(0, 1, 2, 3), (1, 2, 3, 4)]
+        rel material:binding:physics = </World/DeformableMaterial> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        point3f[] points = [(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 1)]
+        int3[] surfaceFaceVertexIndices = [(0, 2, 1), (0, 1, 3), (0, 3, 2), (1, 2, 4), (2, 3, 4), (3, 1, 4)]
+        int4[] tetVertexIndices = [(0, 1, 2, 3), (1, 2, 3, 4)]
+        vector3f[] velocities = [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)]
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1, 1, 1)
+        float3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+}

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -231,7 +231,7 @@ struct NpOverflowBuffer : PxHitBuffer<HitType>
 	{
 	}
 
-	virtual PxAgain processTouches(const HitType* /*hits*/, PxU32 /*count*/)
+	virtual PxAgain processTouches(const HitType* /*hits*/, PxU32 /*count*/) PX_OVERRIDE
 	{
 		if (processCalled)
 			return false;
@@ -240,7 +240,7 @@ struct NpOverflowBuffer : PxHitBuffer<HitType>
 		return true;
 	}
 
-	virtual void finalizeQuery()
+	virtual void finalizeQuery() PX_OVERRIDE
 	{
 		if (processCalled)
 		{
@@ -265,27 +265,27 @@ public:
 
 	~ExtBatchQuery() {}
 
-	virtual void release();
+	virtual void release() PX_OVERRIDE;
 
 	virtual PxRaycastBuffer* raycast(
 		const PxVec3& origin, const PxVec3& unitDir, const PxReal distance, const PxU16 maxNbTouches,
 		PxHitFlags hitFlags = PxHitFlags(PxHitFlag::eDEFAULT),
 		const PxQueryFilterData& filterData = PxQueryFilterData(),
-		const PxQueryCache* cache = NULL);
+		const PxQueryCache* cache = NULL) PX_OVERRIDE;
 
 	virtual PxSweepBuffer* sweep(
 		const PxGeometry& geometry, const PxTransform& pose, const PxVec3& unitDir, const PxReal distance, const PxU16 maxNbTouches,
 		PxHitFlags hitFlags = PxHitFlags(PxHitFlag::eDEFAULT),
 		const PxQueryFilterData& filterData = PxQueryFilterData(),
 		const PxQueryCache* cache = NULL,
-		const PxReal inflation = 0.f);
+		const PxReal inflation = 0.f) PX_OVERRIDE;
 
 	virtual PxOverlapBuffer* overlap(
 		const PxGeometry& geometry, const PxTransform& pose, PxU16 maxNbTouches = 0,
 		const PxQueryFilterData& filterData = PxQueryFilterData(),
-		const PxQueryCache* cache = NULL);
+		const PxQueryCache* cache = NULL) PX_OVERRIDE;
 
-	virtual void execute();
+	virtual void execute() PX_OVERRIDE;
 
 private:
 

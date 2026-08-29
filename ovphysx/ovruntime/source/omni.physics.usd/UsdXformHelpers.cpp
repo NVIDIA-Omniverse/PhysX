@@ -1,0 +1,332 @@
+// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
+/**
+ * @implements REQ-WRITE-TRANSFORM-001
+ * @covers AC-4
+ */
+
+#include "UsdXformHelpers.h"
+
+#include <pxr/usd/usd/stage.h>
+#include <pxr/usd/usdGeom/xformOp.h>
+#include <pxr/usd/usdGeom/tokens.h>
+#include <pxr/usd/sdf/path.h>
+#include <pxr/usd/sdf/layer.h>
+#include <pxr/usd/sdf/primSpec.h>
+#include <pxr/usd/sdf/attributeSpec.h>
+#include <pxr/usd/sdf/valueTypeName.h>
+#include <pxr/base/gf/transform.h>
+#include <pxr/base/gf/quatf.h>
+#include <pxr/base/gf/quatd.h>
+#include <pxr/base/gf/quath.h>
+#include <pxr/base/gf/vec3f.h>
+#include <pxr/base/gf/vec3d.h>
+#include <pxr/base/gf/vec3h.h>
+#include <pxr/base/vt/value.h>
+#include <pxr/base/vt/array.h>
+
+#include <carb/logging/Log.h>
+
+#include <vector>
+
+using namespace PXR_NS;
+
+namespace omni::physics::usd
+{
+
+// This setup code makes sure that the prim's transform is defined ONLY by the three default
+// xFormOps scale, orient (i.e. quat), and translate, in that order (reverse in the op stack std::vector).
+// All other xFormOps are removed from the stack, but their authored attributes are retained.
+// If any of the three default ops are already present, their precision is retained.
+// A reset xform stack flag will also be retained.
+bool setupTransformOpsAsScaleOrientTranslate(const PXR_NS::UsdPrim& prim, PXR_NS::GfMatrix4d* preMatrix, bool* preMatrixValid, PXR_NS::GfMatrix4d* postMatrix, bool* postMatrixValid)
+{
+    static const PXR_NS::TfToken scaleOpAttributeName = UsdGeomXformOp::GetOpName(UsdGeomXformOp::TypeScale);
+    static const PXR_NS::TfToken metricsAssemblerSuffixName("unitsResolve");
+
+    // default op list: Translate, Orient quat rotation, Scale
+    constexpr UsdGeomXformOp::Type defaultOpList[3] = { UsdGeomXformOp::TypeTranslate, UsdGeomXformOp::TypeOrient,
+                                                        UsdGeomXformOp::TypeScale };
+    PXR_NS::UsdGeomXformable primXform(prim);
+
+    bool resetXfromStack = false;
+    const std::vector<UsdGeomXformOp> xformOps = primXform.GetOrderedXformOps(&resetXfromStack);
+
+    bool hasScale = false;
+    UsdGeomXformOp::Precision scalePrecision = UsdGeomXformOp::Precision::PrecisionFloat;
+    UsdGeomXformOp::Precision translatePrecision = UsdGeomXformOp::Precision::PrecisionFloat;
+    UsdGeomXformOp::Precision orientPrecision = UsdGeomXformOp::Precision::PrecisionFloat;
+
+    // check stack and get precisions
+    bool isStackDefault = xformOps.size() == 3u; // must have exactly three ops defined
+    bool preOp = false;
+    GfMatrix4d extraTr(1.0);
+    std::vector<UsdGeomXformOp> extraOps;
+    for (size_t i = 0; i < xformOps.size(); ++i)
+    {
+        const UsdGeomXformOp& op = xformOps[i];
+        isStackDefault &= op.GetOpType() == defaultOpList[i];
+
+        if (op.HasSuffix(metricsAssemblerSuffixName))
+        {
+            if (i == 0)
+                preOp = true;
+            extraOps.push_back(op);
+        }
+        else
+        {
+            if (op.GetOpType() == UsdGeomXformOp::TypeScale)
+            {
+                scalePrecision = op.GetPrecision();
+                hasScale = true;
+            }
+            else if (op.GetOpType() == UsdGeomXformOp::TypeTransform)
+            {
+                scalePrecision = op.GetPrecision();
+                hasScale = true;
+            }
+            else if (op.GetOpType() == UsdGeomXformOp::TypeOrient)
+            {
+                orientPrecision = op.GetPrecision();
+            }
+            else if (op.GetOpType() == UsdGeomXformOp::TypeTranslate && !op.HasSuffix(PXR_NS::UsdGeomTokens->pivot))
+            {
+                translatePrecision = op.GetPrecision();
+            }
+        }
+
+    }
+
+    if (!extraOps.empty())
+    {
+        for (size_t i = 0; i < extraOps.size(); ++i)
+        {
+            const UsdGeomXformOp& op = extraOps[i];
+            extraTr *= op.GetOpTransform(UsdTimeCode::Default());
+        }
+        if (preOp)
+        {
+            if (preMatrixValid)
+                *preMatrixValid = true;
+            if (postMatrixValid)
+                *postMatrixValid = false;
+            if (preMatrix)
+                *preMatrix = extraTr;
+        }
+        else
+        {
+            if (preMatrixValid)
+                *preMatrixValid = false;
+            if (postMatrixValid)
+                *postMatrixValid = true;
+            if (postMatrix)
+                *postMatrix = extraTr;
+        }
+    }
+
+    if (!isStackDefault)
+    {
+        bool resetStack;
+        PXR_NS::GfMatrix4d localToParent;
+        primXform.GetLocalTransformation(&localToParent, &resetStack, xformOps, PXR_NS::UsdTimeCode::Default());
+
+        // Test if rotation matrix part is pure scaling and rotation - returns true also if rows are scaled
+        if (!localToParent.HasOrthogonalRows3())
+            CARB_LOG_WARN("Skew detected on prim %s that will be removed resulting in altered transform.",
+                          prim.GetPath().GetString().c_str());
+
+        // extra transform
+        if (!extraOps.empty())
+        {
+            const GfMatrix4d extraTrInv = extraTr.GetInverse();
+            if (preOp)
+            {
+                localToParent = localToParent * extraTrInv;
+            }
+            else
+            {
+                localToParent = extraTrInv * localToParent;
+            }
+        }
+
+        PXR_NS::GfTransform localToParentTransform(localToParent);
+
+        // Sdf Code path is needed here
+        const SdfPath primKey = prim.GetPrimPath();
+        PXR_NS::SdfPrimSpecHandle primSpec =
+            PXR_NS::SdfCreatePrimInLayer(prim.GetStage()->GetEditTarget().GetLayer(), primKey);
+
+        if (!primSpec)
+            return false;
+
+        static TfToken gTranslate("xformOp:translate");
+        PXR_NS::SdfPath attributePath = primKey.AppendProperty(gTranslate);
+        SdfAttributeSpecHandle posAttr = primSpec->GetAttributeAtPath(attributePath);
+        if (!posAttr)
+        {
+            if (translatePrecision == UsdGeomXformOp::Precision::PrecisionFloat)
+                posAttr = PXR_NS::SdfAttributeSpec::New(primSpec, gTranslate.GetString(), PXR_NS::SdfValueTypeNames->Float3);
+            else if (translatePrecision == UsdGeomXformOp::Precision::PrecisionDouble)
+                posAttr = PXR_NS::SdfAttributeSpec::New(primSpec, gTranslate.GetString(), PXR_NS::SdfValueTypeNames->Double3);
+            else if (translatePrecision == UsdGeomXformOp::Precision::PrecisionHalf)
+                posAttr = PXR_NS::SdfAttributeSpec::New(primSpec, gTranslate.GetString(), PXR_NS::SdfValueTypeNames->Half3);
+            else
+            {
+                CARB_LOG_WARN("Unsupported precision for translate xformOp on prim %s", prim.GetPath().GetString().c_str());
+                return false;
+            }
+        }
+
+        static TfToken gOrient("xformOp:orient");
+        attributePath = primKey.AppendProperty(gOrient);
+        SdfAttributeSpecHandle orAttr = primSpec->GetAttributeAtPath(attributePath);
+        if (!orAttr)
+        {
+            if (orientPrecision == UsdGeomXformOp::Precision::PrecisionFloat)
+                orAttr = PXR_NS::SdfAttributeSpec::New(primSpec, gOrient.GetString(), PXR_NS::SdfValueTypeNames->Quatf);
+            else if (orientPrecision == UsdGeomXformOp::Precision::PrecisionDouble)
+                orAttr = PXR_NS::SdfAttributeSpec::New(primSpec, gOrient.GetString(), PXR_NS::SdfValueTypeNames->Quatd);
+            else if (orientPrecision == UsdGeomXformOp::Precision::PrecisionHalf)
+                orAttr = PXR_NS::SdfAttributeSpec::New(primSpec, gOrient.GetString(), PXR_NS::SdfValueTypeNames->Quath);
+            else
+            {
+                CARB_LOG_WARN("Unsupported precision for orient xformOp on prim %s", prim.GetPath().GetString().c_str());
+                return false;
+            }
+        }
+
+        static TfToken gScale("xformOp:scale");
+        attributePath = primKey.AppendProperty(gScale);
+        SdfAttributeSpecHandle scaleAttr = primSpec->GetAttributeAtPath(attributePath);
+        if (!scaleAttr)
+        {
+            if (scalePrecision == UsdGeomXformOp::Precision::PrecisionFloat)
+                scaleAttr = PXR_NS::SdfAttributeSpec::New(primSpec, gScale.GetString(), PXR_NS::SdfValueTypeNames->Float3);
+            else if (scalePrecision == UsdGeomXformOp::Precision::PrecisionDouble)
+                scaleAttr = PXR_NS::SdfAttributeSpec::New(primSpec, gScale.GetString(), PXR_NS::SdfValueTypeNames->Double3);
+            else if (scalePrecision == UsdGeomXformOp::Precision::PrecisionHalf)
+                scaleAttr = PXR_NS::SdfAttributeSpec::New(primSpec, gScale.GetString(), PXR_NS::SdfValueTypeNames->Half3);
+            else
+            {
+                CARB_LOG_WARN("Unsupported precision for scale xformOp on prim %s", prim.GetPath().GetString().c_str());
+                return false;
+            }
+        }
+
+        VtTokenArray xformOpOrder;
+
+        if (resetXfromStack)
+            xformOpOrder.push_back(UsdGeomXformOpTypes->resetXformStack);
+
+        if (!extraOps.empty() && preOp)
+        {
+            for (size_t i = 0; i < extraOps.size(); i++)
+            {
+                xformOpOrder.push_back(extraOps[i].GetOpName());
+            }
+        }
+
+        xformOpOrder.push_back(gTranslate);
+        xformOpOrder.push_back(gOrient);
+        xformOpOrder.push_back(gScale);
+
+        if (translatePrecision == UsdGeomXformOp::Precision::PrecisionFloat)
+            posAttr->SetDefaultValue(PXR_NS::VtValue(GfVec3f(localToParentTransform.GetTranslation())));
+        else if (translatePrecision == UsdGeomXformOp::Precision::PrecisionHalf)
+            posAttr->SetDefaultValue(PXR_NS::VtValue(GfVec3h(localToParentTransform.GetTranslation())));
+        else
+            posAttr->SetDefaultValue(PXR_NS::VtValue(localToParentTransform.GetTranslation()));
+
+        if (orientPrecision == UsdGeomXformOp::Precision::PrecisionFloat)
+        {
+            orAttr->SetDefaultValue(PXR_NS::VtValue(GfQuatf(localToParentTransform.GetRotation().GetQuat())));
+        }
+        else if (orientPrecision == UsdGeomXformOp::Precision::PrecisionHalf)
+        {
+            const GfQuatf qf(localToParentTransform.GetRotation().GetQuat());
+            orAttr->SetDefaultValue(PXR_NS::VtValue(GfQuath(
+                GfHalf(qf.GetReal()),
+                GfVec3h(GfHalf(qf.GetImaginary()[0]), GfHalf(qf.GetImaginary()[1]), GfHalf(qf.GetImaginary()[2])))));
+        }
+        else
+        {
+            orAttr->SetDefaultValue(PXR_NS::VtValue(localToParentTransform.GetRotation().GetQuat()));
+        }
+
+        if (hasScale)
+        {
+            if (scalePrecision == UsdGeomXformOp::Precision::PrecisionFloat)
+                scaleAttr->SetDefaultValue(PXR_NS::VtValue(GfVec3f(localToParentTransform.GetScale())));
+            else if (scalePrecision == UsdGeomXformOp::Precision::PrecisionDouble)
+                scaleAttr->SetDefaultValue(PXR_NS::VtValue(localToParentTransform.GetScale()));
+            else if (scalePrecision == UsdGeomXformOp::Precision::PrecisionHalf)
+                scaleAttr->SetDefaultValue(PXR_NS::VtValue(GfVec3h(localToParentTransform.GetScale())));
+        }
+        else
+        {
+            if (scalePrecision == UsdGeomXformOp::Precision::PrecisionFloat)
+                scaleAttr->SetDefaultValue(PXR_NS::VtValue(GfVec3f(1.0f)));
+            else if (scalePrecision == UsdGeomXformOp::Precision::PrecisionDouble)
+                scaleAttr->SetDefaultValue(PXR_NS::VtValue(GfVec3d(1.0)));
+            else if (scalePrecision == UsdGeomXformOp::Precision::PrecisionHalf)
+                scaleAttr->SetDefaultValue(PXR_NS::VtValue(GfVec3h(1.0)));
+        }
+
+        if (!extraOps.empty() && !preOp)
+        {
+            for (size_t i = 0; i < extraOps.size(); i++)
+            {
+                xformOpOrder.push_back(extraOps[i].GetOpName());
+            }
+        }
+
+        // write new xformOpOrder
+        attributePath = primKey.AppendProperty(UsdGeomTokens->xformOpOrder);
+        SdfAttributeSpecHandle xformOpAttr = primSpec->GetAttributeAtPath(attributePath);
+        if (!xformOpAttr)
+        {
+            xformOpAttr = PXR_NS::SdfAttributeSpec::New(
+                primSpec, UsdGeomTokens->xformOpOrder.GetString(), PXR_NS::SdfValueTypeNames->TokenArray);
+        }
+
+        xformOpAttr->SetDefaultValue(VtValue(xformOpOrder));
+
+        // Any xformOp attribute that isn't orient/scale/translate is no longer part of
+        // xformOpOrder, so purge it from the prim rather than leave it lingering.
+
+        std::vector<UsdAttribute> attribs = prim.GetAttributes();
+        const size_t nbrAttribs = attribs.size();
+        for (int i = 0; i < nbrAttribs; i++)
+        {
+            if (UsdGeomXformOp::IsXformOp(attribs[i]))
+            {
+                const UsdGeomXformOp testOp(attribs[i]);
+                const UsdGeomXformOp::Type opType = testOp.GetOpType();
+                bool isValidOp = false;
+                switch (opType)
+                {
+                case UsdGeomXformOp::Type::TypeOrient:
+                case UsdGeomXformOp::Type::TypeScale:
+                case UsdGeomXformOp::Type::TypeTranslate:
+                    isValidOp = true;
+                    break;
+                default:
+                    break;
+                }
+                if (!isValidOp && !testOp.HasSuffix(metricsAssemblerSuffixName))
+                {
+                    const TfToken name = attribs[i].GetName();
+                    // TODO : this means that the function is not const for the Prim! Fix.
+                    // This ugly hack casts the Prim to non-const. Ay ay ay. Tried to fix it
+                    // but creates an avalanche of problems backwards that all rely on const.
+                    ((PXR_NS::UsdPrim&)prim).RemoveProperty(name);
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+} // namespace omni::physics::usd

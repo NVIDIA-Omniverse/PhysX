@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -35,32 +35,22 @@ namespace physx
 {
 
 #define FEMCLOTH_MAX_NUM_PARTITIONS 32
-
-	namespace Dy
-	{
-		struct DeformableSurfaceCore;
-		class DeformableSurface;
-	}
-
+	
 	// this is needed to force PhysXSimulationControllerGpu linkage as Static Library!
 	void createPxgFEMCloth();
 
-	struct PxGpuDynamicsMemoryConfig;
-
-	class PxgCudaBroadPhaseSap;
-	class PxgGpuNarrowphaseCore;
-	class PxgFEMCloth;
-	struct PxgFEMClothData;
-
-	class PxRenderBuffer;
+	namespace Dy
+	{
+		class DeformableSurface;
+	}
 
 	class PxRenderOutput;
-
-	struct PxgSolverCoreDesc;
-	struct PxgArticulationCoreDesc;
-
 	class PxPostSolveCallback;
 
+	class PxgFEMCloth;
+	struct PxgFEMClothData;
+	struct PxgSolverCoreDesc;
+	struct PxgArticulationCoreDesc;
 	struct PxgPrePrepDesc;
 	struct PxgConstraintPrepareDesc;
 	struct PxgSolverSharedDescBase;
@@ -69,8 +59,9 @@ namespace physx
 	{
 	  public:
 		PxgFEMClothCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaContextManager* cudaContextManager,
-						PxgHeapMemoryAllocatorManager* heapMemoryManager, PxgSimulationController* simController, PxgGpuContext* context,
+						PxgAllocatorDesc& allocDesc, PxgSimulationController* simController, PxgGpuContext* context,
 						PxU32 maxContacts, const PxU32 collisionStackSize, bool isTGS);
+
 		~PxgFEMClothCore();
 
 		void preIteration();
@@ -92,15 +83,17 @@ namespace physx
 
 		void clampContactCounts();
 
-		void sortContacts(PxU32 nbActiveFemClothes);
+		void sortContacts(PxU32 nbActiveFemCloths);
 
 		void solve(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
-				   PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
-				   PxReal dt, CUstream solverStream, PxU32 iter, PxU32 maxIter, bool isVelocityIteration, const PxVec3& gravity);
+				   PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
+				   PxReal dt, CUstream solverStream, PxU32 iter, PxU32 maxIter, bool isVelocityIteration, const PxVec3& gravity,
+				   PxReal rigidAttachmentBiasCoefficient);
 
 		void solve_position(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
-							PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
-							PxReal dt, CUstream solverStream, PxU32 iter, PxU32 maxIter, const PxVec3& gravity);
+							PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
+							PxReal dt, CUstream solverStream, PxU32 iter, PxU32 maxIter, const PxVec3& gravity,
+							PxReal rigidAttachmentBiasCoefficient);
 
 		void solve_velocity(PxU32 iter, PxU32 maxIter, PxReal dt);
 
@@ -112,26 +105,26 @@ namespace physx
 							PxReal invDt, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, CUstream solverStream,
 							PxU32 nbSolverBodies, PxU32 nbArticulations);
 
-		bool updateUserData(PxPinnedArray<PxgFEMCloth>& femClothPool, PxArray<PxU32>& femClothNodeIndexPool, const PxU32* activeFEMCloths,
+		bool updateUserData(Cm::PinnableArray<PxgFEMCloth>& femClothPool, PxArray<PxU32>& femClothNodeIndexPool, const PxU32* activeFEMCloths,
 							PxU32 nbActiveFEMCloths, void** bodySimsLL);
 
 		CUstream getStream() { return mStream; }
 
 		void partitionTriangleSimData(PxgFEMCloth& femCloth, PxgFEMClothData& clothData, PxArray<PxU32>& orderedTriangles,
-									  const PxArray<PxU32>& activeTriangles, PxsHeapMemoryAllocator* alloc);
+									  const PxArray<PxU32>& activeTriangles);
+
 		void partitionTrianglePairSimData(PxgFEMCloth& femCloth, PxgFEMClothData& clothData, PxU32 maximumPartitions,
 										  PxArray<PxU32>& orderedTrianglePairs, const PxArray<PxU32>& activeTrianglePairs,
-										  const PxArray<uint4>& trianglePairVertexIndices, bool isSharedTrianglePair,
-										  PxsHeapMemoryAllocator* alloc);
+										  const PxArray<uint4>& trianglePairVertexIndices, bool isSharedTrianglePair);
 
-		PxgCudaPagedLinearAllocator<PxgHeapMemoryAllocator>& getStackAllocator() { return mIntermStackAlloc; }
+		PxgCudaPagedLinearAllocator& getStackAllocator() { return mIntermStackAlloc; }
 
 		PX_FORCE_INLINE PxU32 getMaxContacts() { return mMaxContacts; }
 
-		void applyDamping(PxU32 nbActiveFemClothes, PxReal dt, CUstream stream);
+		void applyDamping(PxU32 nbActiveFemCloths, PxReal dt, CUstream stream);
 
 		// Apply position delta change original triangle mesh
-		void applyExternalDelta(PxU32 nbActiveFemClothes, PxReal dt, CUstream stream);
+		void applyExternalDelta(PxU32 nbActiveFemCloths, PxReal dt, CUstream stream);
 
 		void drawContacts(PxRenderOutput& out);
 
@@ -139,24 +132,26 @@ namespace physx
 
 		void createActivatedDeactivatedLists();
 
+		void onClothRemoved();
+
 	  private:
 		void preIntegrateSystem(PxgFEMCloth* femClothsd, PxU32* activeFemCloths, PxU32 nbActiveFemCloths, PxU32 maxVertices,
 								const PxVec3& gravity, PxReal dt, CUstream bpStream);
 
-		void prepRigidContactConstraint(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgConstraintPrepareDesc> prepDescd,
+		void prepRigidContactBlocks(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgConstraintPrepareDesc> prepDescd,
 										PxReal invDt, PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, CUstream solverStream,
 										PxU32 numSolverBodies, PxU32 numArticulations);
 
-		void prepRigidAttachmentConstraints(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
-											PxgDevicePointer<PxgConstraintPrepareDesc> prepDescd, PxReal /*invDt*/,
-											PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, CUstream stream);
+		void prepRigidAttachmentBlocks(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
+										PxgDevicePointer<PxgConstraintPrepareDesc> prepDescd, PxReal /*invDt*/,
+										PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd, CUstream stream);
 
-		void prepClothAttachmentConstraints(CUstream stream);
+		void prepClothAttachmentBlocks(CUstream stream);
 
-		void prepClothParticleConstraint();
+		void prepClothParticleBlocks();
 
 		// These method are running at the cloth stream
-		void prepClothContactConstraint(bool isVT);
+		void prepClothContactBlocks(bool isVT);
 
 		void solveShellEnergy(PxgFEMCloth* femClothsd, PxgDevicePointer<PxU32> activeFEMClothsd, PxU32 nbActiveFEMCloths, PxReal dt);
 		void solveNonSharedTriangles(PxgFEMCloth* femClothsd, PxgDevicePointer<PxU32> activeFEMClothsd, PxU32 nbActiveFEMCloths, PxReal dt);
@@ -165,20 +160,22 @@ namespace physx
 
 		void queryRigidContactReferenceCount(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
 											 PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
-											 PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd,
 											 PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt);
+
+		void queryRigidAttachmentReferenceCount(CUstream solverStream);
 
 		// Solve cloth vs rigid body contact
 		void solveClothRigidContacts(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
-									 PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd,
 									 PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt);
 
 		// Solve cloth vs rigid body attachment
 		void solveClothRigidAttachment(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
-									   PxgDevicePointer<PxgSolverSharedDescBase> sharedDescd,
-									   PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt);
+									   PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt,
+									   PxReal biasCoefficient);
 
 		void solveClothAttachmentDelta();
+
+		void queryClothClothAttachmentReferenceCount();
 
 		void prepareClothClothCollision(bool forceUpdateClothContactPairs, bool adaptiveCollisionPairUpdate, PxReal dt);
 
@@ -188,18 +185,17 @@ namespace physx
 		void solveClothContactsOutputClothDelta(PxReal dt, bool isVT);
 
 		// Solve cloth vs particle contact and output to cloth delta buffer
-		void solveParticleContactsOutputClothDelta(CUstream particleStream);
+		void solveParticleContactsOutputClothDelta(CUstream particleStream, PxReal dt);
 
 		// Solve cloth vs particle contact and output to particle delta buffer
-		void solveParticleContactsOutputParticleDelta(CUstream particleStream);
+		void solveParticleContactsOutputParticleDelta(CUstream particleStream, PxReal dt);
+
+		void queryParticleContactReferenceCount(PxReal dt);
 
 		//--------------------------------------------------------------------------------------
 
 		PxgTypedCudaBuffer<PxU8> mUpdateClothContactPairs; // When set to 1, updates the cloth-cloth contact pairs.
 
-		CUevent mBoundUpdateEvent;			  // This event is used to synchronize the broad phase stream(updateBound is running on
-											  // broad phase stream) and mStream
-											  
 		CUevent mSolveRigidEvent;			  // This event is recorded at the solver stream and the cloth stream need to wait for
 											  // that event finish before it processes
 		CUevent mConstraintPrepParticleEvent; // This event is used to synchronize constraint prep(cloth stream) and

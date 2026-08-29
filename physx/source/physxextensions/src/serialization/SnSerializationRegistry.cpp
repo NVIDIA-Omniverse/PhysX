@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -72,14 +72,14 @@ namespace
 		}
 
 		void sort()
-		{		
+		{
 			Element element;		
 			PxU32 i;
 
 			PxU32 nbObject = mCollection.internalGetNbObjects();
 			const Cm::Collection::ObjectToIdMap::Entry* objectdatas = mCollection.internalGetObjects();
 			for( i = 0; i < nbObject; ++i )
-			{				
+			{
 				element.object.first = objectdatas[i].first;
 				element.object.second = objectdatas[i].second;
 				mObjToIdMap.insert(objectdatas[i].first, mElements.size());
@@ -104,7 +104,7 @@ namespace
 
 			mCollection.mObjects.clear();
 			for(PxArray<Object>::Iterator o = mSorted.begin(); o != mSorted.end(); ++o )
-			{				
+			{
 				mCollection.internalAdd(o->first, o->second);
 			}
 		}
@@ -116,7 +116,7 @@ namespace
 				for( PxArray<PxU32>::Iterator child = e.children.begin(); child != e.children.end(); ++child )
 				{
 					AddElement(mElements[*child]);
-				}				
+				}
 				mSorted.pushBack(e.object);
 				e.isFinished = true;
 			}
@@ -146,7 +146,7 @@ namespace physx { namespace Sn {
 
 SerializationRegistry::SerializationRegistry(PxPhysics& physics)
 	: mPhysics(physics)
-{	
+{
 	PxRegisterPhysicsSerializers(*this);
 	Ext::RegisterExtensionsSerializers(*this);
 }

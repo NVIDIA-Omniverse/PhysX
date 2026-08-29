@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -100,7 +100,7 @@ size_t Pxstrlcat(char* dst, size_t dstSize, const char* src)
 	size_t i = 0, s = 0;
 	if(dst && dstSize)
 	{
-		s = strlen(dst);
+		s = strnlen(dst, dstSize);
 		for(; i + s + 1 < dstSize && src[i]; i++) // copy until total is at most dstSize-1
 			dst[i + s] = src[i];
 		dst[i + s] = 0; // always null-terminate

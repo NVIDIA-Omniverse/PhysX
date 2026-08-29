@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,6 +35,7 @@
 #include "foundation/PxTransform.h"
 #include "foundation/PxVec3.h"
 
+#include "geometry/PxConvexCoreGeometry.h"
 #include "geometry/PxGeometry.h"
 #include "geometry/PxHeightFieldSample.h"
 #include "geometry/PxMeshScale.h"
@@ -50,7 +51,6 @@
 #include "PxgContactManager.h"
 #include "PxgConvexConvexShape.h"
 #include "PxgParticleSystem.h"
-#include "PxgParticleSystemCore.h"
 #include "PxgParticleSystemCoreKernelIndices.h"
 #include "PxgSimulationCoreDesc.h"
 #include "PxgSolverBody.h"
@@ -58,8 +58,9 @@
 
 #include "PxsContactManagerState.h"
 #include "PxsMaterialCore.h"
-#include "PxsTransformCache.h"
+#include "PxsCachedTransform.h"
 
+#include "cudaNpCommon.h"
 #include "PxgCommonDefines.h"
 #include "copy.cuh"
 #include "cuda.h"
@@ -145,7 +146,7 @@ extern "C" __global__ void __launch_bounds__(PxgParticleSystemKernelBlockDim::BO
 
 		PxU32 cellNumCount = 0;
 		if (workIndex < numTests)
-		{			
+		{
 			PxgShape particleShape, rigidShape;
 			PxU32 particleCacheRef, rigidCacheRef;
 			LoadShapePair<PxGeometryType::ePARTICLESYSTEM>(cmInputs, workIndex, shapes,
@@ -165,13 +166,16 @@ extern "C" __global__ void __launch_bounds__(PxgParticleSystemKernelBlockDim::BO
 			PxBounds3 bound1 = bounds[particleCacheRef];
 
 			PxBounds3 overlapBound = combine(bound0, bound1);
-			overlapBound.fattenFast(cDistance);
+			if (overlapBound.isValid())
+			{
+				overlapBound.fattenFast(cDistance);
 
-			int3 gridPosMin, gridPosMax;
-			calcGridRange(gridPosMin, gridPosMax, overlapBound, cellWidth);
+				int3 gridPosMin, gridPosMax;
+				calcGridRange(gridPosMin, gridPosMax, overlapBound, cellWidth);
 
-			uint3 rangeSize = calcWrappedGridRangeSize(gridPosMin, gridPosMax, wrappedGridSize);
-			cellNumCount = rangeSize.x * rangeSize.y * rangeSize.z;
+				uint3 rangeSize = calcWrappedGridRangeSize(gridPosMin, gridPosMax, wrappedGridSize);
+				cellNumCount = rangeSize.x * rangeSize.y * rangeSize.z;
+			}
 		}
 
 		PxU32 offset = warpScan<AddOpPxU32, PxU32>(FULL_MASK, cellNumCount) - cellNumCount;
@@ -405,8 +409,6 @@ __device__ void psPrimitivesCollision(
 	PxTransform transform0;
 	PxNodeIndex rigidId;
 
-	const PxU32* PX_RESTRICT gridParticleIndex = NULL;
-
 	if (workIndex < totalComparision)
 	{
 		transform0 = transformCache[transformCacheRef0].transform;
@@ -415,8 +417,6 @@ __device__ void psPrimitivesCollision(
 
 		const PxU32* cellStart = particleSystem.mCellStart;
 		const PxU32* cellEnd = particleSystem.mCellEnd;
-		gridParticleIndex = particleSystem.mSortedToUnsortedMapping;
-
 		currentPositions = reinterpret_cast<float4*>(particleSystem.mSortedOriginPos_InvMass);
 		predictedPositions = reinterpret_cast<float4*>(particleSystem.mSortedPositions_InvMass);
 		enableCCD = (particleSystem.mData.mFlags & PxParticleFlag::eENABLE_SPECULATIVE_CCD) > 0;
@@ -470,12 +470,7 @@ __device__ void psPrimitivesCollision(
 				}
 
 				compressedParticleIndex = PxEncodeParticleIndex(particleSystemId, particleIndex);
-				const PxU64 particleMask = PxEncodeParticleIndex(particleSystemId, gridParticleIndex[particleIndex]);
-
-				if (!find(particleSystem, rigidId.getInd(), particleMask))
-				{
-					intersect = particlePrimitiveCollision(currentPos, cVolumePos, cVolumeRadius, transform0, type0, scale0, shape0, enableCCD, normal, distance);
-				}
+				intersect = particlePrimitiveCollision(currentPos, cVolumePos, cVolumeRadius, transform0, type0, scale0, shape0, enableCCD, normal, distance);
 			}
 		}
 
@@ -880,8 +875,6 @@ __device__ void psConvexCollision(
 	const float4* currentPositions = reinterpret_cast<float4*>(ss_particleSystem.mSortedOriginPos_InvMass);
 	const float4* predictedPositions = reinterpret_cast<float4*>(ss_particleSystem.mSortedPositions_InvMass);
 	const bool enableCCD = (ss_particleSystem.mData.mFlags & PxParticleFlag::eENABLE_SPECULATIVE_CCD) > 0;
-	const PxU32* PX_RESTRICT gridParticleIndex = ss_particleSystem.mSortedToUnsortedMapping;
-	
 	// get the start of bucket for this cell
 	const PxU32 startIndex = cellStart[gridHash]; // startIndex might be EMPTY_CELL
 
@@ -896,12 +889,6 @@ __device__ void psConvexCollision(
 			const PxU32 particleIndex = startIndex + ind;
 			const PxNodeIndex rigidId = shapeToRigidRemapTable[transformCacheRef0];
 			
-			const PxU64 particleMask = PxEncodeParticleIndex(particleSystemId, gridParticleIndex[particleIndex]);
-
-			if(find(ss_particleSystem,rigidId.getInd(), particleMask))
-				continue;
-
-
 			PxVec3 currentPos = PxLoad3(currentPositions[particleIndex]);
 
 			PxVec3 cVolumePos;
@@ -1239,7 +1226,7 @@ extern "C" __global__ void ps_primitivesCollisionLaunch(
 				PxU32 cellEndIndex = cellEnd[gridHash];
 
 				range = cellEndIndex - cellStartIndex;
-			}			
+			}
 		}
 
 		//Now we have "range", which tells us if this workIndex is interesting...

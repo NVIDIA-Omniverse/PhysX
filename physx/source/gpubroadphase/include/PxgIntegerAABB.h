@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -61,7 +61,6 @@ public:
 	*/
 	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32	getMax(PxU32 i)	const	{	return (mMinMax)[MAX_X+i];	}
 
-
 	/*
 	\brief Encode float bounds so they are stored as integer bounds
 	\param[in] bounds is the bounds to be encoded 
@@ -74,7 +73,6 @@ public:
 	*/
 	PX_FORCE_INLINE	void encode(const PxBounds3& bounds)
 	{
-
 		const PxU32* PX_RESTRICT min = reinterpret_cast<const PxU32*>(&bounds.minimum.x);
 		const PxU32* PX_RESTRICT max = reinterpret_cast<const PxU32*>(&bounds.maximum.x);
 		//Avoid min=max by enforcing the rule that mins are even and maxs are odd.

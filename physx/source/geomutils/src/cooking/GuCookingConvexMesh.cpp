@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -131,9 +131,9 @@ static bool cookConvexMeshInternal(const PxCookingParams& params, const PxConvex
 }
 
 static ConvexHullLib* createHullLib(PxConvexMeshDesc& desc, const PxCookingParams& params)
-{	
+{
 	if(desc.flags & PxConvexFlag::eCOMPUTE_CONVEX)
-	{			
+	{
 		const PxU16 gpuMaxVertsLimit = 64;
 		const PxU16 gpuMaxFacesLimit = 64;
 
@@ -150,7 +150,7 @@ static ConvexHullLib* createHullLib(PxConvexMeshDesc& desc, const PxCookingParam
 }
 
 bool immediateCooking::cookConvexMesh(const PxCookingParams& params, const PxConvexMeshDesc& desc_, PxOutputStream& stream, PxConvexMeshCookingResult::Enum* condition)
-{	
+{
 	PX_FPU_GUARD;
 
 	// choose cooking library if needed
@@ -166,7 +166,7 @@ bool immediateCooking::cookConvexMesh(const PxCookingParams& params, const PxCon
 
 	// save the cooked results into stream
 	if(!meshBuilder.save(stream, platformMismatch()))
-	{		
+	{
 		if(condition)
 			*condition = PxConvexMeshCookingResult::eFAILURE;
 

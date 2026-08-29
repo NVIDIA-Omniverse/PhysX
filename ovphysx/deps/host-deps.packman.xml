@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project toolsVersion="5.0">
+  <dependency name="vswhere" linkPath="../_build/host-deps/vswhere">
+    <package name="VsWhere" version="2.7.3111.17308_1.0" platforms="windows-x86_64" />
+  </dependency>
+  <dependency name="ninja" linkPath="../_build/host-deps/ninja">
+    <package name="ninja" version="1.10.2+pipeline2996563-windows-x86_64" platforms="windows-x86_64" />
+    <package name="ninja" version="1.10.2+pipeline2996563-linux-x86_64" platforms="linux-x86_64" />
+    <package name="ninja" version="1.10.2+pipeline2996563-linux-aarch64" platforms="linux-aarch64" />
+  </dependency>
+</project>

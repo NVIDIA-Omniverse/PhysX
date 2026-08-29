@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -135,13 +135,13 @@ namespace Gu
 
 		// Pruner
 												DECLARE_PRUNER_API_COMMON
-		virtual			bool					isDynamic()			const		{ return mIncrementalRebuild;	}
+		virtual			bool					isDynamic()			const PX_OVERRIDE { return mIncrementalRebuild;	}
 		//~Pruner
 
 		// DynamicPruner
-		virtual			void					setRebuildRateHint(PxU32 nbStepsForRebuild);	// Besides the actual rebuild steps, 3 additional steps are needed.
-		virtual			bool					buildStep(bool synchronousCall = true);	// returns true if finished
-		virtual			bool					prepareBuild();	// returns true if new tree is needed
+		virtual			void					setRebuildRateHint(PxU32 nbStepsForRebuild) PX_OVERRIDE;	// Besides the actual rebuild steps, 3 additional steps are needed.
+		virtual			bool					buildStep(bool synchronousCall = true) PX_OVERRIDE;	// returns true if finished
+		virtual			bool					prepareBuild() PX_OVERRIDE;	// returns true if new tree is needed
 		//~DynamicPruner
 
 		// direct access for test code

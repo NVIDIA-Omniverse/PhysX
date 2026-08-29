@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,7 +35,8 @@
 #include "GuDistancePointTriangle.h"
 #include "foundation/PxMath.h"
 
-using namespace physx;
+namespace physx
+{
 
 PX_FORCE_INLINE __device__ PxU32 part1by2(PxU32 n)
 {
@@ -275,7 +276,7 @@ PX_FORCE_INLINE __device__ void buildHierarchy(PxI32 n, PxI32* root, PxU32* maxT
 
 
 __device__ inline bool intersectRayAABBFast(const PxVec3& pos, const PxVec3& rcp_dir, const PxVec3& min, const PxVec3& max, PxReal& lmin, PxReal& lmax)
-{	
+{
 	PxReal l1 = (min.x - pos.x) * rcp_dir.x;
 	PxReal l2 = (max.x - pos.x) * rcp_dir.x;
 	lmin = PxMin(l1, l2);
@@ -759,5 +760,6 @@ public:
 	}
 };
 
+} // namespace physx
 
 #endif

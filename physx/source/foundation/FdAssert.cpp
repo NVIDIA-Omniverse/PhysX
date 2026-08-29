@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -41,11 +41,7 @@ void physx::PxAssert(const char* expr, const char* file, int line, bool& ignore)
 {
 	PX_UNUSED(ignore); // is used only in debug windows config
 	char buffer[1024];
-#if PX_WINDOWS_FAMILY
-	sprintf_s(buffer, "%s(%d) : Assertion failed: %s\n", file, line, expr);
-#else
-	sprintf(buffer, "%s(%d) : Assertion failed: %s\n", file, line, expr);
-#endif
+	Pxsnprintf(buffer, sizeof(buffer), "%s(%d) : Assertion failed: %s\n", file, line, expr);
 	physx::PxPrintString(buffer);
 #if PX_WINDOWS_FAMILY&& PX_DEBUG && PX_DEBUG_CRT
 	// _CrtDbgReport returns -1 on error, 1 on 'retry', 0 otherwise including 'ignore'.

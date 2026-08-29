@@ -22,12 +22,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "ScGpuActorSim.h"
 #include "ScNPhaseCore.h"
+
+#if PX_SUPPORT_GPU_PHYSX
+#include "cudamanager/PxCudaContextManager.h"
+#include "cudamanager/PxCudaContext.h"
+#endif
 
 using namespace physx;
 using namespace Sc;
@@ -52,9 +57,20 @@ void Sc::GPUActorSim::addToAABBMgr(Bp::FilterType::Enum type)
 	mScene.updateContactDistance(index, contactOffset);
 
 	PxsTransformCache& cache = mScene.getLowLevelContext()->getTransformCache();
+#if PX_SUPPORT_GPU_PHYSX
+	if(cache.initEntry(index))
+	{
+		cache.setTransformCache(PxTransform(PxIdentity), 0, index);
+	}
+	else
+	{
+		PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL,
+								"Sc::GPUActorSim::addToAABBMgr: failed to allocate pinned memory transform cache");
+		mScene.getCudaContextManager()->getCudaContext()->setAbortMode(true);
+	}
+#else
 	cache.initEntry(index);
-
-	cache.setTransformCache(PxTransform(PxIdentity), 0, index, index);
+#endif
 }
 
 void Sc::GPUActorSim::destroyLowLevelVolume()

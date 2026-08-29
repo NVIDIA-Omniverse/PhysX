@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -40,6 +40,8 @@
 
 #include "denseGridStandalone.cuh"
 #include "sparseGridStandalone.cuh"
+
+using namespace physx;
 
 #define ENABLE_KERNEL_LAUNCH_ERROR_CHECK 0
 
@@ -880,7 +882,13 @@ extern "C" __global__ void iso_CreateTriIdsDCSparse(PxSparseIsosurfaceExtraction
 	createTriIdsDC(data, flipTriangleOrientation);
 }
 
-//https://stackoverflow.com/questions/3380628/fast-arc-cos-algorithm
+// Cubic approximation of acos on [-1, 1]:
+//   acos(x) ~= -(2*pi/9) * x^3 - (5*pi/18) * x + pi/2
+// The coefficients below are exactly 2*pi/9, 5*pi/18 and pi/2, so the
+// polynomial is exact at x = -1, 0 and +1; max absolute error ~0.18 rad.
+// Classic polynomial approximation of the inverse trigonometric functions
+// (cf. Abramowitz & Stegun 4.4.45, Hastings "Approximations for Digital
+// Computers", 1955).
 PX_FORCE_INLINE __device__ PxReal approxAcos(PxReal x)
 {
 	return PxMax(0.0f, (-0.69813170079773212f * x * x - 0.87266462599716477f) * x + 1.5707963267948966f);

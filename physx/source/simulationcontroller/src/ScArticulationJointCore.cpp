@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -57,10 +57,7 @@ void Sc::ArticulationJointCore::setSimDirty()
 
 	ArticulationSim* artiSim = mArticulation->getSim();
 	if (artiSim && artiSim->isLLArticulationInitialized())
-	{
-		Dy::FeatherstoneArticulation* llarticulation = artiSim->getLowLevelArticulation();
-		llarticulation->mJcalcDirty = true;
-	}
+		artiSim->mJcalcDirty = true;
 }
 
 void Sc::ArticulationJointCore::setParentPose(const PxTransform& t)
@@ -96,10 +93,9 @@ void Sc::ArticulationJointCore::setTargetP(PxArticulationAxis::Enum axis, PxReal
 	ArticulationSim* artiSim = mArticulation->getSim();
 	if (artiSim && artiSim->isLLArticulationInitialized())
 	{
-		Dy::FeatherstoneArticulation* llarticulation = artiSim->getLowLevelArticulation();
-		Dy::ArticulationData& data = llarticulation->getArticulationData();
-		Dy::ArticulationJointCoreData* jointData = data.getJointData();
-		Dy::ArticulationJointCoreData& jointDatum = jointData[mLLLinkIndex];
+		Dy::ArticulationData& data = artiSim->getArticulationData();
+		const Dy::ArticulationJointCoreData* jointData = data.getJointData();
+		const Dy::ArticulationJointCoreData& jointDatum = jointData[mLLLinkIndex];
 
 		PxReal* jointTargetPositions = data.getJointTargetPositions();
 		PxReal* jTargetPosition = &jointTargetPositions[jointDatum.jointOffset];
@@ -128,10 +124,9 @@ void Sc::ArticulationJointCore::setTargetV(PxArticulationAxis::Enum axis, PxReal
 	ArticulationSim* artiSim = mArticulation->getSim();
 	if (artiSim && artiSim->isLLArticulationInitialized())
 	{
-		Dy::FeatherstoneArticulation* llarticulation = artiSim->getLowLevelArticulation();
-		Dy::ArticulationData& data = llarticulation->getArticulationData();
-		Dy::ArticulationJointCoreData* jointData = data.getJointData();
-		Dy::ArticulationJointCoreData& jointDatum = jointData[mLLLinkIndex];
+		Dy::ArticulationData& data = artiSim->getArticulationData();
+		const Dy::ArticulationJointCoreData* jointData = data.getJointData();
+		const Dy::ArticulationJointCoreData& jointDatum = jointData[mLLLinkIndex];
 
 		PxReal* jointTargetVelocities = data.getJointTargetVelocities();
 		PxReal* jTargetVelocity = &jointTargetVelocities[jointDatum.jointOffset];
@@ -170,10 +165,9 @@ void Sc::ArticulationJointCore::setJointPosition(PxArticulationAxis::Enum axis, 
 	ArticulationSim* artiSim = mArticulation->getSim();
 	if (artiSim && artiSim->isLLArticulationInitialized())
 	{
-		Dy::FeatherstoneArticulation* llarticulation = artiSim->getLowLevelArticulation();
-		Dy::ArticulationData& data = llarticulation->getArticulationData();
-		Dy::ArticulationJointCoreData* jointData = data.getJointData();
-		Dy::ArticulationJointCoreData& jointDatum = jointData[mLLLinkIndex];
+		Dy::ArticulationData& data = artiSim->getArticulationData();
+		const Dy::ArticulationJointCoreData* jointData = data.getJointData();
+		const Dy::ArticulationJointCoreData& jointDatum = jointData[mLLLinkIndex];
 
 		PxReal* jointPositions = data.getJointPositions();
 		PxReal* jPosition = &jointPositions[jointDatum.jointOffset];
@@ -197,8 +191,7 @@ PxReal Sc::ArticulationJointCore::getJointPosition(PxArticulationAxis::Enum axis
 	ArticulationSim* artiSim = mArticulation->getSim();
 	if (artiSim && artiSim->isLLArticulationInitialized())
 	{
-		const Dy::FeatherstoneArticulation* llarticulation = artiSim->getLowLevelArticulation();
-		const Dy::ArticulationData& data = llarticulation->getArticulationData();
+		const Dy::ArticulationData& data = artiSim->getArticulationData();
 		const Dy::ArticulationJointCoreData* jointData = data.getJointData();
 		const Dy::ArticulationJointCoreData& jointDatum = jointData[mLLLinkIndex];
 
@@ -221,10 +214,9 @@ void Sc::ArticulationJointCore::setJointVelocity(PxArticulationAxis::Enum axis, 
 	ArticulationSim* artiSim = mArticulation->getSim();
 	if (artiSim && artiSim->isLLArticulationInitialized())
 	{
-		Dy::FeatherstoneArticulation* llarticulation = artiSim->getLowLevelArticulation();
-		Dy::ArticulationData& data = llarticulation->getArticulationData();
-		Dy::ArticulationJointCoreData* jointData = data.getJointData();
-		Dy::ArticulationJointCoreData& jointDatum = jointData[mLLLinkIndex];
+		Dy::ArticulationData& data = artiSim->getArticulationData();
+		const Dy::ArticulationJointCoreData* jointData = data.getJointData();
+		const Dy::ArticulationJointCoreData& jointDatum = jointData[mLLLinkIndex];
 
 		PxReal* jointVelocities = data.getJointVelocities();
 		PxReal* jVelocity = &jointVelocities[jointDatum.jointOffset];
@@ -247,8 +239,7 @@ PxReal Sc::ArticulationJointCore::getJointVelocity(PxArticulationAxis::Enum axis
 	ArticulationSim* artiSim = mArticulation->getSim();
 	if (artiSim && artiSim->isLLArticulationInitialized())
 	{
-		const Dy::FeatherstoneArticulation* llarticulation = artiSim->getLowLevelArticulation();
-		const Dy::ArticulationData& data = llarticulation->getArticulationData();
+		const Dy::ArticulationData& data = artiSim->getArticulationData();
 		const Dy::ArticulationJointCoreData* jointData = data.getJointData();
 		const Dy::ArticulationJointCoreData& jointDatum = jointData[mLLLinkIndex];
 

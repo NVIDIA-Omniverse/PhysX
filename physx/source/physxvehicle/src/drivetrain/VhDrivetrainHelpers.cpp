@@ -22,23 +22,21 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "vehicle2/PxVehicleParams.h"
-#include "vehicle2/PxVehicleFunctions.h"
-#include "vehicle2/PxVehicleMaths.h"
+#include "vehicle/PxVehicleParams.h"
+#include "vehicle/PxVehicleFunctions.h"
+#include "vehicle/PxVehicleMaths.h"
 
-#include "vehicle2/drivetrain/PxVehicleDrivetrainHelpers.h"
-#include "vehicle2/drivetrain/PxVehicleDrivetrainParams.h"
+#include "vehicle/drivetrain/PxVehicleDrivetrainHelpers.h"
+#include "vehicle/drivetrain/PxVehicleDrivetrainParams.h"
 
-#include "vehicle2/wheel/PxVehicleWheelStates.h"
+#include "vehicle/wheel/PxVehicleWheelStates.h"
 
 
 namespace physx
-{
-namespace vehicle2
 {
 
 void PxVehicleMatrixNNLUSolver::decomposeLU(const PxVehicleMatrixNN& A)
@@ -434,6 +432,5 @@ void PxVehicleLegacyDifferentialTorqueRatiosCompute
 }
 
 
-} //namespace vehicle2
 } //namespace physx
 

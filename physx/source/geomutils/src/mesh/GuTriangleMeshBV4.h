@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -45,23 +45,20 @@ class MeshFactory;
 class BV4TriangleMesh : public TriangleMesh
 {
 	public:
-						virtual const char*				getConcreteTypeName()	const	{ return "PxBVH34TriangleMesh"; }
+						virtual const char*				getConcreteTypeName()	const PX_OVERRIDE { return "PxBVH34TriangleMesh"; }
 // PX_SERIALIZATION
 														BV4TriangleMesh(PxBaseFlags baseFlags) : TriangleMesh(baseFlags), mMeshInterface(PxEmpty), mBV4Tree(PxEmpty)	{}
-	PX_PHYSX_COMMON_API	virtual void					exportExtraData(PxSerializationContext& ctx);
+	PX_PHYSX_COMMON_API	virtual void					exportExtraData(PxSerializationContext& ctx)	PX_OVERRIDE;
 								void					importExtraData(PxDeserializationContext&);
 	PX_PHYSX_COMMON_API	static	TriangleMesh*			createObject(PxU8*& address, PxDeserializationContext& context);
 //~PX_SERIALIZATION
 														BV4TriangleMesh(MeshFactory* factory, TriangleMeshData& data);
 						virtual							~BV4TriangleMesh(){}
 
-						virtual	PxMeshMidPhase::Enum	getMidphaseID()			const	{ return PxMeshMidPhase::eBVH34;	}
+						virtual	PxMeshMidPhase::Enum	getMidphaseID()			const PX_OVERRIDE { return PxMeshMidPhase::eBVH34;	}
 
-						virtual PxVec3*					getVerticesForModification();
-						virtual PxBounds3				refitBVH();
-
-	PX_PHYSX_COMMON_API									BV4TriangleMesh(const PxTriangleMeshInternalData& data);
-						virtual	bool					getInternalData(PxTriangleMeshInternalData&, bool)	const;
+						virtual PxVec3*					getVerticesForModification() PX_OVERRIDE;
+						virtual PxBounds3				refitBVH() PX_OVERRIDE;
 
 	PX_FORCE_INLINE				const Gu::BV4Tree&		getBV4Tree()			const	{ return mBV4Tree;				}
 	private:

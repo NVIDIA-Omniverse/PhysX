@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -52,105 +52,104 @@
 
 namespace physx
 {
-	struct ConvexScratch
+struct ConvexScratch
+{
+	const PxU8* PX_RESTRICT convexPtrA;                     //8
+	PxU32 nbEdgesNbHullVerticesNbPolygons;                  //12
+
+	PxVec3 convexScale;                                     //24
+	PxQuat convexScaleRot;                                  //40
+
+	PxVec3 convexCenterOfMass; //shape space                //52
+
+	PxReal contactDist;                                     //56
+	PxReal restDist;                                        //60
+
+	PxVec3 triangleLocNormal;                               //72
+	PxVec3 triLocVerts[3];                                  //108
+
+	PxU8 threadIds[32];                                     //140
+
+	//we need to assign the adjacent triangles indices to the edge buffer so 
+	//we can do post processing
+	uint triAdjTrisIdx[3];                                  //152
+
+	PxVec3 convexPlaneN[CONVEX_MAX_VERTICES_POLYGONS];      //920
+	PxReal convexPlaneD[CONVEX_MAX_VERTICES_POLYGONS];      //1176
+
+	PxVec3 convexScaledVerts[CONVEX_MAX_VERTICES_POLYGONS]; //1944
+
+	__device__ const float4 * PX_RESTRICT getVertices() const
 	{
-		const PxU8* PX_RESTRICT convexPtrA;                     //8
-		PxU32 nbEdgesNbHullVerticesNbPolygons;                  //12
-	
-		PxVec3 convexScale;                                     //24
-		PxQuat convexScaleRot;                                  //40
+		return (const float4*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4));
+	}
 
-		PxVec3 convexCenterOfMass; //shape space                //52
-
-		PxReal contactDist;                                     //56
-		PxReal restDist;                                        //60
-
-		PxVec3 triangleLocNormal;                               //72
-		PxVec3 triLocVerts[3];                                  //108
-
-		PxU8 threadIds[32];                                     //140
-
-		//we need to assign the adjacent triangles indices to the edge buffer so 
-		//we can do post processing
-		uint triAdjTrisIdx[3];                                  //152
-
-		PxVec3 convexPlaneN[CONVEX_MAX_VERTICES_POLYGONS];      //920
-		PxReal convexPlaneD[CONVEX_MAX_VERTICES_POLYGONS];      //1176
-
-		PxVec3 convexScaledVerts[CONVEX_MAX_VERTICES_POLYGONS]; //1944
-
-		__device__ const float4 * PX_RESTRICT getVertices() const
-		{
-			return (const float4*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4));
-		}
-
-		__device__ const float4 * PX_RESTRICT getPlanes() const
-		{
-			PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
-			return (const float4*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
-				+ sizeof(float4)* getNbVerts(hullDesc));
-		}
-
-		__device__ const PxU32 * PX_RESTRICT getPolyDescs() const //vRef8NbVertsMinIndex
-		{
-			PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
-			return (const PxU32*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
-				+ sizeof(float4)* getNbVerts(hullDesc)
-				+ sizeof(float4)* getNbPolygons(hullDesc));
-		}
-
-		__device__ const PxU16 * PX_RESTRICT getVerticesByEdges16() const
-		{
-			PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
-			return (const PxU16*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
-				+ sizeof(float4)* getNbVerts(hullDesc)
-				+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc));
-		}
-
-		__device__ const PxU8 * PX_RESTRICT getFacesByEdges8() const
-		{
-			PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
-			return (const PxU8*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
-				+ sizeof(float4)* getNbVerts(hullDesc)
-				+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc)
-				+ sizeof(PxU16) * 2 * getNbEdges(hullDesc));
-		}
-
-		__device__ const PxU8 * PX_RESTRICT getFacesByVertices8() const
-		{
-			PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
-			return (const PxU8*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
-				+ sizeof(float4)* getNbVerts(hullDesc)
-				+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc)
-				+ (sizeof(PxU16) + sizeof(PxU8)) * 2 * getNbEdges(hullDesc));
-		}
-
-		__device__ const PxU8 * PX_RESTRICT getVertexData8() const
-		{
-			PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
-			return (const PxU8*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
-				+ sizeof(float4)* getNbVerts(hullDesc)
-				+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc)
-				+ (sizeof(PxU16) + sizeof(PxU8)) * 2 * getNbEdges(hullDesc)
-				+ sizeof(PxU8) * 3 * getNbVerts(hullDesc));
-		}
-	};
-
-	//PX_ALIGN_PREFIX(16)
-	struct ConvexMeshScratch : public ConvexScratch
+	__device__ const float4 * PX_RESTRICT getPlanes() const
 	{
-		PxTransform trimeshToConvexTransform;
+		PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
+		return (const float4*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
+			+ sizeof(float4)* getNbVerts(hullDesc));
+	}
 
-		const float4* PX_RESTRICT trimeshVerts;
-		const uint4* PX_RESTRICT trimeshTriIndices;
+	__device__ const PxU32 * PX_RESTRICT getPolyDescs() const //vRef8NbVertsMinIndex
+	{
+		PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
+		return (const PxU32*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
+			+ sizeof(float4)* getNbVerts(hullDesc)
+			+ sizeof(float4)* getNbPolygons(hullDesc));
+	}
 
-		//this is just valid for mesh contact gen to map the cpu triangle index to the gpu triangle index
-		//height field don't have remap table
-		const PxU32* PX_RESTRICT trimeshFaceRemap;
+	__device__ const PxU16 * PX_RESTRICT getVerticesByEdges16() const
+	{
+		PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
+		return (const PxU16*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
+			+ sizeof(float4)* getNbVerts(hullDesc)
+			+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc));
+	}
 
-	};// PX_ALIGN_SUFFIX(16);
-	PX_COMPILE_TIME_ASSERT(sizeof(ConvexMeshScratch) <= WARP_SIZE * 16 * sizeof(PxU32));
-}
+	__device__ const PxU8 * PX_RESTRICT getFacesByEdges8() const
+	{
+		PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
+		return (const PxU8*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
+			+ sizeof(float4)* getNbVerts(hullDesc)
+			+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc)
+			+ sizeof(PxU16) * 2 * getNbEdges(hullDesc));
+	}
+
+	__device__ const PxU8 * PX_RESTRICT getFacesByVertices8() const
+	{
+		PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
+		return (const PxU8*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
+			+ sizeof(float4)* getNbVerts(hullDesc)
+			+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc)
+			+ (sizeof(PxU16) + sizeof(PxU8)) * 2 * getNbEdges(hullDesc));
+	}
+
+	__device__ const PxU8 * PX_RESTRICT getVertexData8() const
+	{
+		PxU32 hullDesc = nbEdgesNbHullVerticesNbPolygons;
+		return (const PxU8*)(convexPtrA + sizeof(float4) + sizeof(uint4) + sizeof(float4)
+			+ sizeof(float4)* getNbVerts(hullDesc)
+			+ (sizeof(float4) + sizeof(PxU32)) * getNbPolygons(hullDesc)
+			+ (sizeof(PxU16) + sizeof(PxU8)) * 2 * getNbEdges(hullDesc)
+			+ sizeof(PxU8) * 3 * getNbVerts(hullDesc));
+	}
+};
+
+//PX_ALIGN_PREFIX(16)
+struct ConvexMeshScratch : public ConvexScratch
+{
+	PxTransform trimeshToConvexTransform;
+
+	const float4* PX_RESTRICT trimeshVerts;
+	const uint4* PX_RESTRICT trimeshTriIndices;
+
+	//this is just valid for mesh contact gen to map the cpu triangle index to the gpu triangle index
+	//height field don't have remap table
+	const PxU32* PX_RESTRICT trimeshFaceRemap;
+
+};// PX_ALIGN_SUFFIX(16);
+PX_COMPILE_TIME_ASSERT(sizeof(ConvexMeshScratch) <= WARP_SIZE * 16 * sizeof(PxU32));
 
 //__device__ inline static PxVec3 getAdjacentTriangleNormal( PxU32 adjIdx, const PxVec3 triangleLocNormal, const PxTransform & meshToConvex, const PxVec3 & trimeshScale,
 //	const PxQuat & trimeshRot, const float4 * trimeshVerts, const uint4 * trimeshTriIndices
@@ -1045,11 +1044,89 @@ __device__ static int polyClip(const PxPlane plane0, PxVec3 v0, PxU32 nbVerts0, 
 		PxReal lambda = (triVert0 - v0).dot(m) / denom;
 		const PxVec3 p = v0 + lambda*e0;
 		//calculate the projection point to the triangle
-		const PxReal t = -(p - triVert0).dot(plane1.n);
-	
-		//ML: if the distance is over the other poly plane and is large than contact dist, we need to get rid of that contact. Otherwise, we will have phantom contacts 
-		//dnom0 = plane1.n.dot(axis)
-		const PxReal sep = ((denom == 0.f || dnom0 == 0.f)) ? PX_MAX_F32 : t / dnom0;
+		// Let d (= p - triVert0) be the vector from triVert0 (v1) to the intersection point
+		// p (that lies on edge e0). p also lies in the plane defined by e1 and "axis".
+		// We want to decompose d into a part along e1 and a part along "axis":
+		//
+		// d = (alpha * e1) + (beta * axis)  (1)
+		//
+		// with unknown scalars alpha and beta. We want to compute beta which will
+		// be the separation distance along "axis". Note that (1) is three equations
+		// (x, y, z coordinates) and two unknowns. In theory, any two of the three
+		// equations could be picked to solve for alpha and beta (the CPU code picks
+		// the two that result in the largest determinant, see closestAxis()). The
+		// reasons for the GPU code being different are unclear. The PxVec3 indexing
+		// that the CPU code does, might trigger more spills to local memory on GPU
+		// or turn into selection operations that cause serial chains. Having PxVec3
+		// in register triples and expecting some of the operations to be scheduled
+		// in parallel might have been seen as more efficient.
+		// The following derivation avoids the PxVec3 indexing but is still similar
+		// in spirit:
+		// 
+		// 2x2 Gram system in the basis {e1, axis}. A dot product is applied to both
+		// sides of (1), once with e1, once with "axis". This results in two equations
+		// with the two unknowns alpha and beta.
+		// 
+		// | dot(e1, e1)       dot(axis, e1)   |     | alpha |   | dot(d, e1)   | 
+		// |                                   |  *  |       | = |              |
+		// | dot(e1, axis)     dot(axis, axis) |     | beta  |   | dot(d, axis) |
+		//
+		// Cramer's rule gives:
+		// 
+		// beta = ((dot(e1, e1) * dot(d, axis)) - (dot(axis, e1) * dot(d, e1))) /
+		//        ((dot(e1, e1) * dot(axis, axis)) - (dot(axis, e1) * dot(axis, e1)))
+		// 
+		// The denominator is the same as: dot(cross(axis, e1), cross(axis, e1)), which is
+		// dot(e1planeN, e1planeN) in the code (or dot(m, m))
+		// 
+		// beta = ((dot(e1, e1) * dot(d, axis)) - (dot(axis, e1) * dot(d, e1))) / dot(m, m)  (2)
+		// 
+		// (2) will be a fallback for the simpler formula that can be derived by applying
+		// a dot product with plane1.n on both sides of (1):
+		// 
+		// dot(d, plane1.n) = (alpha * dot(e1, plane1.n)) + (beta * dot(axis, plane1.n))
+		// 
+		// dot(e1, plane1.n) is zero since e1 is a triangle edge and plane1.n is the triangle normal
+		// 
+		// => dot(d, plane1.n) = (beta * dot(axis, plane1.n)) = beta * dnom0
+		// => beta = dot(d, plane1.n) / dnom0  (3)
+		// 
+		// (3) becomes problematic when dnom0 goes towards zero ("axis" and plane1.n being
+		// perpendicular) and can result in heavily distorted separation distance values.
+		// Pretty simple scenarios can be constructed that trigger such a failure. (2) can
+		// run into similar issues as well when e1 and "axis" are almost parallel but it's
+		// a smaller subset of the failure cases of (3). e1 and "axis" being parallel implies
+		// "axis" and plane1.n being perpendicular (because plane1.n is perpendicular to e1),
+		// so the failure cases of (2) are also failure cases of (3) (but not necessarily
+		// the opposite).
+		//
+
+		const PxVec3 d = p - triVert0;
+
+		PxReal sep;
+		if (PxAbs(dnom0) > 1.0e-4f)  // significant distortions were observed for values slightly
+		                             // above 1e-6, thus adding a "wide" safety margin for the epsilon
+		{
+			const PxReal t = -d.dot(plane1.n);
+
+			//ML: if the distance is over the other poly plane and is large than contact dist, we need to get rid of that contact. Otherwise, we will have phantom contacts 
+			sep = (denom == 0.f) ? PX_MAX_F32 : t / dnom0;
+		}
+		else
+		{
+			PxVec3 e1FromShuffle = shuffle(FULL_MASK, e1, index);
+			// note: doing the shuffle in this else-branch is fine since all threads of a warp will take the
+			//       same path (the value of dnom0 used in the if-statement will be the same)
+
+			const PxReal e1MagnSqr = e1FromShuffle.magnitudeSquared();
+			const PxReal mMagnSqr = m.magnitudeSquared();
+			const PxReal sepTmp = -((e1MagnSqr * d.dot(axis)) - (axis.dot(e1FromShuffle) * d.dot(e1FromShuffle))) / mMagnSqr;
+
+			// discard the contact for ill-defined configurations
+			sep = ((denom == 0.f) || ((mMagnSqr / e1MagnSqr) < 1.0e-12f)) ? PX_MAX_F32 : sepTmp;
+			// note: the epsilon is a comparison against sin(angle_e1_axis)^2.
+			//       No need to test e1MagnSqr for zero because we should not get such a degenerate edge.
+		}
 		
 		addContacts(__ballot_sync(FULL_MASK, c & lowestSetBit(a)),p, sep, maxSep, s_contactsTransposed, nbContacts);
 	}
@@ -1880,5 +1957,7 @@ static __device__ void convexTriangleContactGen(
 	normalIndex.index = delayContactMask + (nbOutputContacts << ConvexTriNormalAndIndex::NbContactsShift) + remapCpuTriangleIdx;
 	ConvexTriNormalAndIndex_WriteWarp(cvxTriNI + convexTriPairOffset, normalIndex);
 }
+
+} // namespace physx
 
 #endif

@@ -5,8 +5,10 @@
     <cmakeSwitch name="PX_BUILDSNIPPETS" value="True" comment="Generate the snippets" />
     <cmakeSwitch name="PX_BUILDPVDRUNTIME" value="True" comment="Generate the OmniPVD project" />
     <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="False" comment="Generate static libraries" />
-    <cmakeSwitch name="NV_USE_STATIC_WINCRT" value="True" comment="Use the statically linked windows CRT" />
-    <cmakeSwitch name="NV_USE_DEBUG_WINCRT" value="True" comment="Use the debug version of the CRT" />
+    <cmakeSwitch name="PX_CMAKE_SUPPRESS_REGENERATION" value="True" comment="Disable zero_check projects (avoids a parallel-MSBuild race where multiple snippet vcxprojs concurrently regenerate include/PxConfig.h.tmp and trip a Windows file lock)" />
+    <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="False" comment="CPU-only preset: no CUDA/GPU" />
+    <cmakeSwitch name="NV_USE_STATIC_WINCRT" value="False" comment="False=/MD (dynamic CRT, when building into own application), True=/MT (static CRT, when creating binary packages for redistribution)" />
+    <cmakeSwitch name="NV_USE_DEBUG_WINCRT" value="True" comment="True=/MDd or /MTd (debug runtime in debug builds), False=/MD or /MT (release runtime in debug builds)" />
     <cmakeSwitch name="PX_FLOAT_POINT_PRECISE_MATH" value="False" comment="Float point precise math" />
   </CMakeSwitches>
   <CMakeParams>

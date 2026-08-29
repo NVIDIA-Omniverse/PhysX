@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -46,15 +46,19 @@
 #include "NpOmniPvd.h"
 
 
-#define OMNI_PVD_ACTIVE (::OmniPvdPxSampler::getInstance() != NULL)
+// "Active" means a recording is in progress: OVD is set up AND sampling. No PhysX operation should
+// write OVD data when not sampling (before startSampling() or after stopSampling()).
+#define OMNI_PVD_ACTIVE (physx::NpOmniPvdSampling())
 
 
 //
 // Define the macros needed in CmOmniPvdAutoGenSetData.h
 //
+// The write scope yields a NULL writer when not sampling, so attribute setters and other per-object
+// hooks do not write between stopSampling() and the next startSampling().
 #undef OMNI_PVD_GET_WRITER
 #define OMNI_PVD_GET_WRITER(writer) \
-physx::PxOmniPvd::ScopedExclusiveWriter writeLock(NpOmniPvdGetInstance()); \
+physx::PxOmniPvd::ScopedExclusiveWriter writeLock(physx::NpOmniPvdSampling() ? NpOmniPvdGetInstance() : NULL); \
 OmniPvdWriter* writer = writeLock.getWriter();
 
 

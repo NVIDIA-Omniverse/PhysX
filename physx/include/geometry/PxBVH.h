@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -136,6 +136,22 @@ public:
 	\return false if query has been aborted
 	*/
 	virtual	bool				overlap(const PxGeometry& geom, const PxTransform& pose, OverlapCallback& cb, PxGeometryQueryFlags queryFlags = PxGeometryQueryFlag::eDEFAULT) const = 0;
+
+	/**
+	\brief Overlap test against a BVH.
+
+	This specialized version operates on a PxBounds3 (AABB), as opposed to the more generic overlap function operating on PxGeometry objects.
+	The generic function suffers from 2 issues that can give undesirable results in some scenarios:
+	- asymmetric query inflation: the BVH node bounds are potentially inflated at BVH build times, and the input bounds are unconditionally inflated
+	by a small margin at query time, but in a different way compared to the BVH node bounds.
+	- the internal min/max <=> center/extents conversions can create up to a 1 ULP difference per component compared to the source data.
+
+	\param[in] bounds		The query volume
+	\param[in] cb			Overlap callback, called once per hit
+	\param[in] queryFlags	Optional flags controlling the query.
+	\return false if query has been aborted
+	*/
+	virtual	bool				overlap(const PxBounds3& bounds, OverlapCallback& cb, PxGeometryQueryFlags queryFlags = PxGeometryQueryFlag::eDEFAULT) const = 0;
 
 	/**
 	\brief Frustum culling test against a BVH.
@@ -256,7 +272,7 @@ protected:
 	PX_INLINE					PxBVH(PxBaseFlags baseFlags) : PxBase(baseFlags)									{}
 	virtual						~PxBVH()																			{}
 
-	virtual	bool				isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxBVH", PxBase); }
+	virtual	bool				isKindOf(const char* name) const PX_OVERRIDE { PX_IS_KIND_OF(name, "PxBVH", PxBase); }
 };
 
 	struct PxGeomIndexPair;

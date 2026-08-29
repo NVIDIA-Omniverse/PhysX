@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,18 +35,17 @@
 #include "PxgSolverConstraintDesc.h"
 #include "PxgConstraint.h"
 #include "PxgConstraintBlock.h"
-#include "PxgSolverContext.h"
 #include "PxgSolverCoreDesc.h"
 #include "PxgCommonDefines.h"
 #include "PxgIntrinsics.h"
-#include "PxgArticulation.h"
-#include "solverResidual.cuh"
+#include "PxgArticulationBlockData.h"
 #include "constraintPrepShared.cuh"
 
 #include <stdio.h>
 #include <assert.h>
 
-using namespace physx;
+namespace physx
+{
 
 // This function is for contacts involving articulations.
 // To apply mass-splitting, different data is stored and used when computing impulses.
@@ -55,7 +54,7 @@ static __device__ void solveExtContactsBlock(const PxgBlockConstraintBatch& batc
 	Cm::UnAlignedSpatialVector& vel1, const bool doFriction, PxgBlockSolverContactHeader* contactHeaders,
 	PxgBlockSolverFrictionHeader* frictionHeaders, PxgBlockSolverContactPoint* contactPoints,
 	PxgBlockSolverContactFriction* frictionPoints, const PxgArticulationBlockResponse* const PX_RESTRICT responses, Cm::UnAlignedSpatialVector& impulse0,
-	Cm::UnAlignedSpatialVector& impulse1, const PxU32 threadIndexInWarp, PxgErrorAccumulator* error, 
+	Cm::UnAlignedSpatialVector& impulse1, const PxU32 threadIndexInWarp, const PxReal biasCoefficient,
 	PxReal ref0 = 1.f, PxReal ref1 = 1.f)
 {
 	Cm::UnAlignedSpatialVector imp0(PxVec3(0.f), PxVec3(0.f));
@@ -72,7 +71,6 @@ static __device__ void solveExtContactsBlock(const PxgBlockConstraintBatch& batc
 	const uint	numFrictionConstr = Pxldcg(frictionHeader.numFrictionConstr[threadIndexInWarp]);
 
 	const float restitution = contactHeader.restitution[threadIndexInWarp];
-	const float p8 = 0.8f;
 	const float cfm = contactHeader.cfm[threadIndexInWarp];
 	const PxU8 flags = contactHeader.flags[threadIndexInWarp];
 
@@ -165,11 +163,10 @@ static __device__ void solveExtContactsBlock(const PxgBlockConstraintBatch& batc
 		float recipResponse = (unitResponse > 0.0f) ? 1.0f / (unitResponse + cfm) : 0.0f;
 		float velMultiplier = recipResponse;
 		float impulseMul = 1.0f;
-		float unbiasedError;
 		float biasedErr;
 
 		computeContactCoefficients(flags, restitution, unitResponse, recipResponse, targetVelocity, coeff0, coeff1,
-			velMultiplier, impulseMul, unbiasedError, biasedErr);
+			velMultiplier, impulseMul, biasedErr);
 
 		const Cm::UnAlignedSpatialVector deltaVA(ref0 * PxVec3(deltaRAAng.x, deltaRAAng.y, deltaRAAng.z),
 												 ref0 * PxVec3(deltaRALin.x, deltaRALin.y, deltaRALin.z));
@@ -188,8 +185,6 @@ static __device__ void solveExtContactsBlock(const PxgBlockConstraintBatch& batc
 		const float newForce = fminf(_newForce, maxImpulse);//FMin(_newForce, maxImpulse);
 		const float deltaF = newForce - appliedForce;
 
-		if(error)
-			error->accumulateErrorLocal(deltaF, velMultiplier);
 		Pxstcg(&c.appliedForce[threadIndexInWarp], newForce);
 
 		imp0.bottom -= raXn * deltaF;
@@ -260,7 +255,7 @@ static __device__ void solveExtContactsBlock(const PxgBlockConstraintBatch& batc
 			const PxVec3 rbXn = PxVec3(rbXn_targetVelW.x, rbXn_targetVelW.y, rbXn_targetVelW.z);
 
 			const float resp = ref0 * resp0 + ref1 * resp1;
-			const float velMultiplier = (resp > PX_EPS_REAL) ? (p8 / resp) : 0.f;
+			const float velMultiplier = (resp > PX_EPS_REAL) ? (biasCoefficient / resp) : 0.f;
 			const float bias = raXn_extraCoeff.w;
 			const float targetVel = rbXn_targetVelW.w;
 
@@ -287,9 +282,6 @@ static __device__ void solveExtContactsBlock(const PxgBlockConstraintBatch& batc
 			const float newAppliedForce = clamp ? totalClamped : totalImpulse;
 
 			float deltaF = newAppliedForce - appliedForce;//FSub(newAppliedForce, appliedForce);
-
-			if (error)
-				error->accumulateErrorLocal(deltaF, velMultiplier);
 
 			//printf("v0 = (%f, %f, %f, %f, %f, %f), v1 = (%f, %f, %f, %f, %f, %f)\n", v0.top.x, v0.top.y, v0.top.z, v0.bottom.x, v0.bottom.y, v0.bottom.z,
 			//	v1.top.x, v1.top.y, v1.top.z, v1.bottom.x, v1.bottom.y, v1.bottom.z);
@@ -398,11 +390,10 @@ static __device__ bool checkExtActiveContactBlock(const PxgBlockConstraintBatch&
 		float recipResponse = (unitResponse > 0.f) ? 1.f / (unitResponse + cfm) : 0.f;
 		float velMultiplier = recipResponse;
 		float impulseMul = 1.f;
-		float unbiasedError;
 		float biasedErr;
 
 		computeContactCoefficients(flags, restitution, unitResponse, recipResponse, targetVelocity, coeff0, coeff1,
-			velMultiplier, impulseMul, unbiasedError, biasedErr);
+			velMultiplier, impulseMul, biasedErr);
 
 		const float v0_ = v0.bottom.dot(normal) + v0.top.dot(raXn);//V3MulAdd(linVel0, normal, V3Mul(angVel0, raXn));
 		const float v1_ = v1.bottom.dot(normal) + v1.top.dot(rbXn);//V3MulAdd(linVel1, normal, V3Mul(angVel1, rbXn));
@@ -430,7 +421,7 @@ static __device__ bool checkExtActiveContactBlock(const PxgBlockConstraintBatch&
 static __device__ PX_FORCE_INLINE void solveExtContactBlockTGS(const PxgBlockConstraintBatch& batch, Cm::UnAlignedSpatialVector& vel0, Cm::UnAlignedSpatialVector& vel1, const Cm::UnAlignedSpatialVector& delta0, const Cm::UnAlignedSpatialVector& delta1,
 	const PxU32 threadIndex, PxgTGSBlockSolverContactHeader* PX_RESTRICT contactHeaders, PxgTGSBlockSolverFrictionHeader* PX_RESTRICT frictionHeaders, PxgTGSBlockSolverContactPoint* PX_RESTRICT contactPoints, PxgTGSBlockSolverContactFriction* PX_RESTRICT frictionPoints,
 	PxgArticulationBlockResponse* PX_RESTRICT responses, const PxReal elapsedTime, const PxReal minPen,
-	Cm::UnAlignedSpatialVector& impulse0, Cm::UnAlignedSpatialVector& impulse1, PxgErrorAccumulator* error,
+	Cm::UnAlignedSpatialVector& impulse0, Cm::UnAlignedSpatialVector& impulse1,
 	PxReal ref0 = 1.f, PxReal ref1 = 1.f)
 {
 	PxVec3 linVel0 = vel0.bottom;
@@ -460,7 +451,7 @@ static __device__ PX_FORCE_INLINE void solveExtContactBlockTGS(const PxgBlockCon
 		const float4 normal_staticFriction = contactHeader->normal_staticFriction[threadIndex];
 
 		const float restitutionXdt = contactHeader->restitutionXdt[threadIndex];
-		const float p8 = contactHeader->p8[threadIndex];
+		const float contactHeaderBiasCoefficient = contactHeader->biasCoefficient[threadIndex];
 		const float cfm = contactHeader->cfm[threadIndex];
 		const PxU8 flags = (PxU8)contactHeader->flags[threadIndex];
 
@@ -544,9 +535,6 @@ static __device__ PX_FORCE_INLINE void solveExtContactBlockTGS(const PxgBlockCon
 				imp1.top += normal * deltaF;
 				imp1.bottom += rbXn * deltaF;
 
-				if(error)
-					error->accumulateErrorLocal(deltaF, velMultiplier);
-
 				c.appliedForce[threadIndex] = newForce;
 
 				accumulatedNormalImpulse = accumulatedNormalImpulse + newForce;
@@ -604,12 +592,12 @@ static __device__ PX_FORCE_INLINE void solveExtContactBlockTGS(const PxgBlockCon
 				const float resp0_0 = ref0 * f0.resp0[threadIndex];
 				const float resp0_1 = ref1 * f0.resp1[threadIndex];
 				const float resp0 = resp0_0 + resp0_1;
-				const float velMultiplier0 = (resp0 > PX_EPS_REAL) ? (p8 / (resp0 + cfm)) : 0.f;
+				const float velMultiplier0 = (resp0 > PX_EPS_REAL) ? (contactHeaderBiasCoefficient / (resp0 + cfm)) : 0.f;
 
 				const float resp1_0 = ref0 * f1.resp0[threadIndex];
 				const float resp1_1 = ref1 * f1.resp1[threadIndex];
 				const float resp1 = resp1_0 + resp1_1;
-				const float velMultiplier1 = (resp1 > PX_EPS_REAL) ? (p8 / (resp1 + cfm)) : 0.f;
+				const float velMultiplier1 = (resp1 > PX_EPS_REAL) ? (contactHeaderBiasCoefficient / (resp1 + cfm)) : 0.f;
 
 				const PxReal v00 = angVel0.dot(raXn0) + linVel0.dot(normal0);//V3MulAdd(linVel0, normal, V3Mul(angVel0, raXn));
 				const PxReal v10 = angVel1.dot(rbXn0) + linVel1.dot(normal0);//V3MulAdd(linVel1, normal, V3Mul(angVel1, rbXn));
@@ -640,9 +628,6 @@ static __device__ PX_FORCE_INLINE void solveExtContactBlockTGS(const PxgBlockCon
 
 				float deltaF0 = newAppliedForce0 - appliedForce0;
 				float deltaF1 = newAppliedForce1 - appliedForce1;
-
-				if (error)
-					error->accumulateErrorLocal(deltaF0, deltaF1, velMultiplier0, velMultiplier1);
 
 				linVel0 += ref0 * PxVec3(r0.deltaRALin_x[threadIndex], r0.deltaRALin_y[threadIndex], r0.deltaRALin_z[threadIndex]) * deltaF0;
 				linVel1 += ref1 * PxVec3(r0.deltaRBLin_x[threadIndex], r0.deltaRBLin_y[threadIndex], r0.deltaRBLin_z[threadIndex]) * deltaF0;
@@ -690,7 +675,7 @@ static __device__ PX_FORCE_INLINE void solveExtContactBlockTGS(const PxgBlockCon
 				const float resp0_0 = ref0 * f0.resp0[threadIndex];
 				const float resp0_1 = ref1 * f0.resp1[threadIndex];
 				const float resp0 = resp0_0 + resp0_1;
-				const float velMultiplier0 = (resp0 > 0.f) ? (p8 / (resp0 + cfm)) : 0.f;
+				const float velMultiplier0 = (resp0 > 0.f) ? (contactHeaderBiasCoefficient / (resp0 + cfm)) : 0.f;
 
 				const PxReal v00 = angVel0.dot(raXn0);
 				const PxReal v10 = angVel1.dot(rbXn0);
@@ -706,8 +691,6 @@ static __device__ PX_FORCE_INLINE void solveExtContactBlockTGS(const PxgBlockCon
 				const PxReal newAppliedForce = clamp ? totalClamped : totalImpulse;
 
 				const PxReal deltaF0 = newAppliedForce - appliedForce0;
-				if (error)
-					error->accumulateErrorLocal(deltaF0, velMultiplier0);
 
 				linVel0 += ref0 * PxVec3(r0.deltaRALin_x[threadIndex], r0.deltaRALin_y[threadIndex], r0.deltaRALin_z[threadIndex]) * deltaF0;
 				linVel1 += ref1 * PxVec3(r0.deltaRBLin_x[threadIndex], r0.deltaRBLin_y[threadIndex], r0.deltaRBLin_z[threadIndex]) * deltaF0;
@@ -830,5 +813,7 @@ static __device__ PX_FORCE_INLINE bool checkExtActiveContactBlockTGS(const PxgBl
 	return false;
 }
 
+
+} // namespace physx
 
 #endif

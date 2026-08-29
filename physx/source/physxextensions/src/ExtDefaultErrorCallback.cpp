@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -86,13 +86,13 @@ void PxDefaultErrorCallback::reportError(PxErrorCode::Enum e, const char* messag
 	if(errorCode)
 	{
 		char buffer[1024];
-		sprintf(buffer, "%s (%d) : %s : %s\n", file, line, errorCode, message);
+		Pxsnprintf(buffer, sizeof(buffer), "%s (%d) : %s : %s\n", file, line, errorCode, message);
 
 		PxPrintString(buffer);
 
 		PX_ASSERT(e != PxErrorCode::eABORT);
 
 		if (e == PxErrorCode::eABORT)
-			PxThread::sleep(1000);	// make sure that the error message is flushed  
-	}	
+			PxThread::sleep(1000);	// make sure that the error message is flushed
+	}
 }

@@ -1,0 +1,8 @@
+<project toolsVersion="5.0">
+  <!-- Static Carbonite does not require exact version matching with separately
+       published runtime bundles. Keep the blessed public selection here so
+       Physics repository consumers can reuse it. -->
+  <dependency name="carb_sdk_plugins">
+    <package name="carb_sdk+plugins.${platform_target_abi}" version="213.0.2+release.14134.6a000408.gl" />
+  </dependency>
+</project>

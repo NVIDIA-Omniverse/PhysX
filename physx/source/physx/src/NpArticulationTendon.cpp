@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2025 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -283,7 +283,7 @@ void NpArticulationSpatialTendon::importExtraData(PxDeserializationContext& cont
 }
 
 void NpArticulationSpatialTendon::resolveReferences(PxDeserializationContext& context)
-{	
+{
 	const PxU32 nbAttachments = mAttachments.size();
 	for (PxU32 i = 0; i < nbAttachments; i++)
 	{
@@ -432,7 +432,7 @@ PxReal NpArticulationSpatialTendon::getDamping() const
 	return mCore.getDamping();
 }
 
-void  NpArticulationSpatialTendon::setLimitStiffness(const PxReal stiffness)
+void NpArticulationSpatialTendon::setLimitStiffness(const PxReal stiffness)
 {
 	PX_CHECK_AND_RETURN(PxIsFinite(stiffness) && stiffness >= 0.0f, "PxArticulationTendon::setLimitStiffness: stiffness must be >= 0!");
 
@@ -671,7 +671,7 @@ void NpArticulationFixedTendon::importExtraData(PxDeserializationContext& contex
 }
 
 void NpArticulationFixedTendon::resolveReferences(PxDeserializationContext& context)
-{	
+{
 	const PxU32 nbTendonJoints = mTendonJoints.size();
 	for (PxU32 i = 0; i < nbTendonJoints; i++)
 	{
@@ -926,7 +926,7 @@ PxU32 NpArticulationFixedTendon::getNbTendonJoints() const
 	return mTendonJoints.size();
 }
 
-void  NpArticulationFixedTendon::setOffset(const PxReal offset, bool autowake)
+void NpArticulationFixedTendon::setOffset(const PxReal offset, bool autowake)
 {
 	PX_CHECK_AND_RETURN(PxIsFinite(offset), "PxArticulationTendon::setOffset(): invalid value provided!");
 
