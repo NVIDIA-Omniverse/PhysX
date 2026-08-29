@@ -468,34 +468,55 @@ __device__ PxU32 sphereHeightfieldNarrowphaseCore(
 		{
 		case ConvexTriIntermediateData::eE01:
 		{
-			PxVec3 triLocV0Adj, triLocV1Adj, triLocV2Adj;
-			getTriangle(triLocV0Adj, triLocV1Adj, triLocV2Adj, NULL, triAdjTriIndices.x, heightfieldShape.scale, rows, columns, samples);
-			const PxVec3 triNormalAdj = ((triLocV1Adj - triLocV0Adj).cross(triLocV2Adj - triLocV0Adj)).getNormalized();
+			if (triAdjTriIndices.x != BOUNDARY)
+			{
+				PxVec3 triLocV0Adj, triLocV1Adj, triLocV2Adj;
+				getTriangle(triLocV0Adj, triLocV1Adj, triLocV2Adj, NULL, triAdjTriIndices.x, heightfieldShape.scale, rows, columns, samples);
+				const PxVec3 triNormalAdj = ((triLocV1Adj - triLocV0Adj).cross(triLocV2Adj - triLocV0Adj)).getNormalized();
 
-			generateContact = ((triNormalAdj.dot(triLocV2 - triLocV0Adj)) < 0.f);
+				generateContact = ((triNormalAdj.dot(triLocV2 - triLocV0Adj)) < 0.f);
+			}
+			else
+			{
+				generateContact = true;
+			}
 
 			break;
 		}
 		case ConvexTriIntermediateData::eE12:
 		{
-			PxVec3 triLocV0Adj, triLocV1Adj, triLocV2Adj;
-			getTriangle(triLocV0Adj, triLocV1Adj, triLocV2Adj, NULL, triAdjTriIndices.y, heightfieldShape.scale, rows, columns, samples);
-			const PxVec3 triNormalAdj = ((triLocV1Adj - triLocV0Adj).cross(triLocV2Adj - triLocV0Adj)).getNormalized();
+			if (triAdjTriIndices.y != BOUNDARY)
+			{
+				PxVec3 triLocV0Adj, triLocV1Adj, triLocV2Adj;
+				getTriangle(triLocV0Adj, triLocV1Adj, triLocV2Adj, NULL, triAdjTriIndices.y, heightfieldShape.scale, rows, columns, samples);
+				const PxVec3 triNormalAdj = ((triLocV1Adj - triLocV0Adj).cross(triLocV2Adj - triLocV0Adj)).getNormalized();
 
-			/*printf("%x: triNormalAdj = (%f, %f, %f), triNormal = (%f, %f, %f)\n", triangleIdx, triNormalAdj.x, triNormalAdj.y, triNormalAdj.z, 
-				triNormal.x, triNormal.y, triNormal.z);*/
+				/*printf("%x: triNormalAdj = (%f, %f, %f), triNormal = (%f, %f, %f)\n", triangleIdx, triNormalAdj.x, triNormalAdj.y, triNormalAdj.z,
+					triNormal.x, triNormal.y, triNormal.z);*/
 
-			generateContact = (triNormalAdj.dot(triLocV0 - triLocV0Adj) < 0.f);
+				generateContact = (triNormalAdj.dot(triLocV0 - triLocV0Adj) < 0.f);
+			}
+			else
+			{
+				generateContact = true;
+			}
 			
 			break;
 		}
 		case ConvexTriIntermediateData::eE02:
 		{
-			PxVec3 triLocV0Adj, triLocV1Adj, triLocV2Adj;
-			getTriangle(triLocV0Adj, triLocV1Adj, triLocV2Adj, NULL, triAdjTriIndices.z, heightfieldShape.scale, rows, columns, samples);
-			const PxVec3 triNormalAdj = ((triLocV1Adj - triLocV0Adj).cross(triLocV2Adj - triLocV0Adj)).getNormalized();
+			if (triAdjTriIndices.z != BOUNDARY)
+			{
+				PxVec3 triLocV0Adj, triLocV1Adj, triLocV2Adj;
+				getTriangle(triLocV0Adj, triLocV1Adj, triLocV2Adj, NULL, triAdjTriIndices.z, heightfieldShape.scale, rows, columns, samples);
+				const PxVec3 triNormalAdj = ((triLocV1Adj - triLocV0Adj).cross(triLocV2Adj - triLocV0Adj)).getNormalized();
 
-			generateContact = ((triNormalAdj.dot(triLocV1 - triLocV0Adj)) < 0.f);
+				generateContact = ((triNormalAdj.dot(triLocV1 - triLocV0Adj)) < 0.f);
+			}
+			else
+			{
+				generateContact = true;
+			}
 			break;
 		}
 		
