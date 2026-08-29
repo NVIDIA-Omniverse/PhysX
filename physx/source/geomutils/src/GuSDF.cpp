@@ -2131,7 +2131,7 @@ namespace Gu
 	// PIMPL for LazySDFEvaluator: keeps PxArray<BVHNode> and the cluster hash
 	// map out of GuSDF.h, so consumers of that header don't need to pull in
 	// the BVH / winding-number cluster headers.
-	struct LazySDFEvaluator::Impl
+	struct LazySDFEvaluator::Impl : public PxUserAllocated
 	{
 		PxArray<PxVec3>		mVertices;
 		PxArray<PxU32>		mIndices;
