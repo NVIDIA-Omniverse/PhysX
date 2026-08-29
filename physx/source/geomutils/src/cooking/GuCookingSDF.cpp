@@ -299,8 +299,10 @@ static void computeSDFGridDimensions(const PxVec3& meshLowerIn, const PxVec3& me
 	PxVec3 edges = meshUpperIn - meshLowerIn;
 
 	// tweak spacing to avoid edge cases for vertices laying on the boundary
+	// just covers the case where an edge is a whole multiple of the spacing.
 	PxReal spacingEps = spacing * (1.0f - 1e-4f);
 
+	// make sure to have at least one particle in each dimension
 	dx = spacing > edges.x ? 1 : PxI32(edges.x / spacingEps);
 	dy = spacing > edges.y ? 1 : PxI32(edges.y / spacingEps);
 	dz = spacing > edges.z ? 1 : PxI32(edges.z / spacingEps);
@@ -309,7 +311,10 @@ static void computeSDFGridDimensions(const PxVec3& meshLowerIn, const PxVec3& me
 	dy += 4;
 	dz += 4;
 
-	// Shift voxelization bounds so that voxel centers lie symmetrically to the center of the object
+	// we shift the voxelization bounds so that the voxel centers
+	// lie symmetrically to the center of the object. this reduces the
+	// chance of missing features, and also better aligns the particles
+	// with the mesh
 	PxVec3 meshOffset;
 	meshOffset.x = 0.5f * (spacing - (edges.x - (dx - 1)*spacing));
 	meshOffset.y = 0.5f * (spacing - (edges.y - (dy - 1)*spacing));
@@ -375,35 +380,12 @@ static bool createSDF(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArray<PxRe
 		meshUpper = sdfDesc.sdfBounds.maximum;
 	}
 
-	PxVec3 edges = meshUpper - meshLower;
-
 	const PxReal spacing = sdfDesc.spacing;
 
-	// tweak spacing to avoid edge cases for vertices laying on the boundary
-	// just covers the case where an edge is a whole multiple of the spacing.
-	PxReal spacingEps = spacing * (1.0f - 1e-4f);
-
-	// make sure to have at least one particle in each dimension
 	PxI32 dx, dy, dz;
-	dx = spacing > edges.x ? 1 : PxI32(edges.x / spacingEps);
-	dy = spacing > edges.y ? 1 : PxI32(edges.y / spacingEps);
-	dz = spacing > edges.z ? 1 : PxI32(edges.z / spacingEps);
-
-	dx += 4;
-	dy += 4;
-	dz += 4;
+	computeSDFGridDimensions(meshLower, meshUpper, spacing, meshLower, dx, dy, dz);
 
 	const PxU32 numVoxels = dx * dy * dz;
-
-	// we shift the voxelization bounds so that the voxel centers
-	// lie symmetrically to the center of the object. this reduces the
-	// chance of missing features, and also better aligns the particles
-	// with the mesh
-	PxVec3 meshOffset;
-	meshOffset.x = 0.5f * (spacing - (edges.x - (dx - 1)*spacing));
-	meshOffset.y = 0.5f * (spacing - (edges.y - (dy - 1)*spacing));
-	meshOffset.z = 0.5f * (spacing - (edges.z - (dz - 1)*spacing));
-	meshLower -= meshOffset;
 
 	sdfDesc.meshLower = meshLower;
 

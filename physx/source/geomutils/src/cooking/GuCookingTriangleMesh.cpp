@@ -939,6 +939,9 @@ bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc, PxTriangleM
 
 		if (sdfDesc.lazyEvaluation)
 		{
+			if (mParams.buildGPUData)
+				outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Lazy SDF values are only computed by the CPU collision pipeline. The GPU narrowphase reads the raw SDF grid, which stays unbaked in lazy mode, so meshes cooked with buildGPUData must not use lazyEvaluation.");
+
 			// Lazy SDF: initialize with NaN grid and create the lazy evaluator
 			// that will compute SDF values on-demand during collision detection.
 			// By this point in the cooking pipeline, indices are always 32-bit.
@@ -961,6 +964,8 @@ bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc, PxTriangleM
 				if (mMeshData.mMass < 0.0f)
 					buildInertiaTensor(true);
 			}
+			else
+				outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Lazy SDF evaluation: mesh is not watertight, no SDF-derived inertia tensor was computed. Mass and inertia must be provided externally for dynamic bodies using this mesh.");
 		}
 		else
 		{

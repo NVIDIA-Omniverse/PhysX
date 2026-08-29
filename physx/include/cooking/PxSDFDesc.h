@@ -158,8 +158,15 @@ namespace physx
 		\brief When true, skip upfront SDF baking. Instead, the SDF grid is allocated filled with NaN
 		sentinels and individual grid values are lazily computed on first access during collision
 		detection. This amortizes the SDF construction cost over time, avoiding the upfront baking
-		latency (~100ms) at the expense of slightly higher per-query cost for the first few frames.
-		Only supported for dense SDFs (subgridSize must be 0).
+		latency at the expense of slightly higher per-query cost for the first few frames.
+
+		Restrictions: only supported for dense SDFs (subgridSize must be 0), pre-supplied SDF data
+		(sdf.data) and a custom baseMesh are not allowed, and a configured sdfBuilder is ignored.
+		Lazy values are only computed by the CPU collision pipeline: meshes cooked with
+		PxCookingParams::buildGPUData for GPU simulation must not use lazy evaluation, and APIs that
+		read the raw grid directly (PxTriangleMesh::getSDF(), PxExtractIsosurfaceFromSDF(), SDF debug
+		visualization) may observe not-yet-evaluated NaN cells. Serializing the mesh bakes all
+		remaining cells first.
 		*/
 		bool lazyEvaluation;
 
@@ -207,12 +214,14 @@ namespace physx
 				return false;
 		}
 
-		// Lazy evaluation excludes pre-supplied data and sparse subgrid SDFs.
+		// Lazy evaluation excludes pre-supplied data, sparse subgrid SDFs and custom base meshes.
 		if (lazyEvaluation)
 		{
 			if (sdf.data)
 				return false;
 			if (subgridSize != 0)
+				return false;
+			if (baseMesh.points.data || baseMesh.triangles.data)
 				return false;
 		}
 
