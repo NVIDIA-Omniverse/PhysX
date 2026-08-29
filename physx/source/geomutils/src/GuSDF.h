@@ -45,6 +45,38 @@ namespace physx
 	namespace Gu
 	{
 		/**
+		\brief Holds mesh data and acceleration structures for on-demand SDF evaluation.
+
+		Instead of precomputing all SDF grid values upfront (baking), this allows individual
+		grid point values to be computed lazily when first sampled during collision detection.
+		The BVH and winding number clusters are built once at construction time (cheap), while
+		the per-voxel signed distance computation is deferred to query time.
+
+		Implementation is hidden via PIMPL so that this header does not need to expose the
+		BVH and winding-number cluster types.
+		*/
+		class PX_PHYSX_COMMON_API LazySDFEvaluator : public PxUserAllocated
+		{
+		public:
+			LazySDFEvaluator(const PxVec3* vertices, PxU32 numVertices,
+							 const PxU32* indices, PxU32 numTriangleIndices);
+			~LazySDFEvaluator();
+
+			/**
+			\brief Compute the signed distance from a world-space point to the mesh surface.
+			Negative values indicate the point is inside the mesh.
+			Thread-safe for concurrent reads (all internal state is read-only after construction).
+			*/
+			PxReal computeSDFValue(const PxVec3& worldPoint) const;
+
+		private:
+			struct Impl;
+			Impl* mImpl;
+
+			PX_NOCOPY(LazySDFEvaluator)
+		};
+
+		/**
 		\brief Represents dimensions of signed distance field
 		*/
 		class Dim3
@@ -115,14 +147,14 @@ namespace physx
 		public:
 
 // PX_SERIALIZATION
-			SDF(const PxEMPTY) : mOwnsMemory(false) {}
+			SDF(const PxEMPTY) : mOwnsMemory(false), mLazyEvaluator(NULL) {}
 			void exportExtraData(PxSerializationContext& context);
 			void importExtraData(PxDeserializationContext& context);
 //~PX_SERIALIZATION
 			/**
 			\brief Constructor
 			*/
-	        SDF() : mSdf(NULL), mSubgridStartSlots(NULL), mSubgridSdf(NULL), mOwnsMemory(true)
+	        SDF() : mSdf(NULL), mSubgridStartSlots(NULL), mSubgridSdf(NULL), mOwnsMemory(true), mLazyEvaluator(NULL)
 			{
 			}
 
@@ -132,7 +164,7 @@ namespace physx
 			SDF(PxZERO s)
 				: mMeshLower(PxZero), mSpacing(0.0f), mDims(PxZero), mNumSdfs(0), mSdf(NULL),
 				mSubgridSize(PxZero), mNumStartSlots(0), mSubgridStartSlots(NULL), mNumSubgridSdfs(0), mSubgridSdf(NULL), mSdfSubgrids3DTexBlockDim(PxZero),
-				mSubgridsMinSdfValue(0.0f), mSubgridsMaxSdfValue(0.0f), mBytesPerSparsePixel(0), mOwnsMemory(true)
+				mSubgridsMinSdfValue(0.0f), mSubgridsMaxSdfValue(0.0f), mBytesPerSparsePixel(0), mOwnsMemory(true), mLazyEvaluator(NULL)
 			{
 				PX_UNUSED(s);
 			}
@@ -140,11 +172,11 @@ namespace physx
 			/**
 			\brief Copy constructor
 			*/
-			SDF(const SDF& sdf) 
+			SDF(const SDF& sdf)
 				: mMeshLower(sdf.mMeshLower), mSpacing(sdf.mSpacing), mDims(sdf.mDims), mNumSdfs(sdf.mNumSdfs), mSdf(sdf.mSdf),
 				mSubgridSize(sdf.mSubgridSize), mNumStartSlots(sdf.mNumStartSlots), mSubgridStartSlots(sdf.mSubgridStartSlots), mNumSubgridSdfs(sdf.mNumSubgridSdfs), mSubgridSdf(sdf.mSubgridSdf), mSdfSubgrids3DTexBlockDim(sdf.mSdfSubgrids3DTexBlockDim),
 				mSubgridsMinSdfValue(sdf.mSubgridsMinSdfValue), mSubgridsMaxSdfValue(sdf.mSubgridsMaxSdfValue), mBytesPerSparsePixel(sdf.mBytesPerSparsePixel),
-				mOwnsMemory(true)
+				mOwnsMemory(true), mLazyEvaluator(NULL)
 			{
 			}
 
@@ -242,6 +274,41 @@ namespace physx
 			PxReal					mSubgridsMaxSdfValue;		//!< The maximum value over all subgrid blocks. Used if normalized textures are used which is the case for 8 and 16bit formats
 			PxU32					mBytesPerSparsePixel;		//!< The number of bytes per subgrid pixel
 			bool					mOwnsMemory;				//!< Only false for binary deserialized data
+
+			// Lazy SDF evaluation support
+			LazySDFEvaluator*		mLazyEvaluator;				//!< Non-NULL when lazy evaluation is active (skips baking)
+
+			/**
+			\brief Initialize for lazy SDF evaluation. Allocates a dense SDF grid filled with NaN
+			sentinel values and creates a LazySDFEvaluator from the given mesh data. Grid values
+			are computed on-demand when first sampled during collision detection.
+
+			\param[in] meshLower Lower bound of the SDF grid in world space
+			\param[in] spacing Grid cell size
+			\param[in] dimX Number of grid points in X
+			\param[in] dimY Number of grid points in Y
+			\param[in] dimZ Number of grid points in Z
+			\param[in] vertices Mesh vertex positions (copied internally)
+			\param[in] numVertices Number of vertices
+			\param[in] indices Mesh triangle indices (copied internally)
+			\param[in] numTriangleIndices Number of triangle indices (3 per triangle)
+			*/
+			PX_PHYSX_COMMON_API void initLazy(const PxVec3& meshLower, PxReal spacing,
+				PxU32 dimX, PxU32 dimY, PxU32 dimZ,
+				const PxVec3* vertices, PxU32 numVertices,
+				const PxU32* indices, PxU32 numTriangleIndices);
+
+			/**
+			\brief Returns true if this SDF uses lazy evaluation
+			*/
+			PX_FORCE_INLINE bool isLazy() const { return mLazyEvaluator != NULL; }
+
+			/**
+			\brief Ensure that the SDF value at grid index (x, y, z) is computed.
+			If the value is NaN (not yet computed), lazily evaluates it using the mesh.
+			Thread-safe: concurrent evaluations of the same cell produce identical results.
+			*/
+			PX_PHYSX_COMMON_API void ensureGridPointComputed(PxU32 x, PxU32 y, PxU32 z) const;
 		};
 
 		/**
