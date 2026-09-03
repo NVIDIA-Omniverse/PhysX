@@ -189,6 +189,24 @@ void CUDARTAPI __cudaRegisterFunction(void** fatCubinHandle, const char*,
 
 /* These functions are implemented just to resolve link dependencies */
 
+extern "C" 
+cudaError_t CUDARTAPI __cudaLaunchKernel(
+    const void*,
+    dim3,
+    dim3,
+    void**,
+    size_t,
+    cudaStream_t)
+{
+    return cudaSuccess;
+}
+
+extern "C" 
+const void* CUDARTAPI __cudaGetKernel(const void* func)
+{
+    return func;
+}
+
 extern "C"
 cudaError_t CUDARTAPI cudaLaunch(const char* entry)
 {
