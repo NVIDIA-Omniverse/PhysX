@@ -1,0 +1,1607 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Kinematic Support Geometry &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=fda8593d"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=fc986d73"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'simulation_setup/kinematic_support';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.3';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Joints" href="joints.html" />
+    <link rel="prev" title="Rigid Bodies" href="rigid_bodies.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Sep 11, 2026"/>
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovstage_integration.html">ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="collision.html">Colliders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Kinematic Support Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../population/index.html">ovstage Physics Population Domain</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../population/Capsule.html">Capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cone.html">Cone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cube.html">Cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cylinder.html">Cylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Material.html">Material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsCollisionGroup.html">PhysicsCollisionGroup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsDistanceJoint.html">PhysicsDistanceJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsFixedJoint.html">PhysicsFixedJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsJoint.html">PhysicsJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsPrismaticJoint.html">PhysicsPrismaticJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsRevoluteJoint.html">PhysicsRevoluteJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsScene.html">PhysicsScene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsSphericalJoint.html">PhysicsSphericalJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsGearJoint.html">PhysxPhysicsGearJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsRackAndPinionJoint.html">PhysxPhysicsRackAndPinionJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Plane.html">Plane</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Sphere.html">Sphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Xform.html">Xform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/MaterialBindingAPI.html">MaterialBindingAPI (physics purpose)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsArticulationRootAPI.html">PhysicsArticulationRootAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsCollisionAPI.html">PhysicsCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsDriveAPI.html">PhysicsDriveAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsFilteredPairsAPI.html">PhysicsFilteredPairsAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsJointStateAPI.html">PhysicsJointStateAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsLimitAPI.html">PhysicsLimitAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMassAPI.html">PhysicsMassAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMaterialAPI.html">PhysicsMaterialAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMeshCollisionAPI.html">PhysicsMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsRigidBodyAPI.html">PhysicsRigidBodyAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxArticulationAPI.html">PhysxArticulationAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxCollisionAPI.html">PhysxCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxContactReportAPI.html">PhysxContactReportAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsDistanceJointAPI.html">PhysxPhysicsDistanceJointAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxRigidBodyAPI.html">PhysxRigidBodyAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSDFMeshCollisionAPI.html">PhysxSDFMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSceneAPI.html">PhysxSceneAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSphereFillCollisionAPI.html">PhysxSphereFillCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSplinesSurfaceVelocityAPI.html">PhysxSplinesSurfaceVelocityAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSurfaceVelocityAPI.html">PhysxSurfaceVelocityAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriangleMeshCollisionAPI.html">PhysxTriangleMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriangleMeshSimplificationCollisionAPI.html">PhysxTriangleMeshSimplificationCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriggerAPI.html">PhysxTriggerAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/prim.html">Prim identity and transform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/stage_units.html">Stage units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-articulation_fixed_base.html">Fixed-base two-link articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-articulation_floating.html">Floating-base two-link articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-conveyor_cube.html">Kinematic conveyor Cube with a surface velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-d6_joint_pair.html">Two rigid-body Cubes on a D6 joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-distance_joint_pair.html">Two rigid-body Cubes on a distance joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-fixed_joint_pair.html">Two rigid-body Cubes on a fixed joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-gear_joint_pair.html">Two hinged rigid-body Cubes coupled by a gear joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-material_bound_cube.html">Rigid-body Cube bound to a physics Material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-physics_scene.html">Physics scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-prismatic_joint_pair.html">Two rigid-body Cubes on a prismatic joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rack_and_pinion_joint_pair.html">A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-revolute_joint_pair.html">Two rigid-body Cubes on a revolute joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_capsule.html">Dynamic rigid body on a Capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cone.html">Dynamic rigid body on a Cone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cube.html">Dynamic rigid body on a Cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cube_pair.html">Two dynamic rigid-body Cubes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cylinder.html">Dynamic rigid body on a Cylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_sphere.html">Dynamic rigid body on a Sphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-spherical_joint_pair.html">Two rigid-body Cubes on a spherical joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-static_plane_collider.html">Static Plane collider</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/findings.html">Recorded findings</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Read/Write Data Contract</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../read_write/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/data_model.html">Data model and semantics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/hello_world.html">Hello World – Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/cloning.html">Cloning – Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Kinematic Support Geometry</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<section id="kinematic-support-geometry">
+<h1>Kinematic Support Geometry<a class="headerlink" href="#kinematic-support-geometry" title="Link to this heading">#</a></h1>
+<p>Kinematic support geometry is moved by an external controller while dynamic
+bodies respond to it through contact. Pallets, fixtures, end-effector-held
+supports, and conveyors all fit this description, but they use two different
+motion mechanisms.</p>
+<section id="translating-supports-and-kinematic-targets">
+<h2>Translating Supports and Kinematic Targets<a class="headerlink" href="#translating-supports-and-kinematic-targets" title="Link to this heading">#</a></h2>
+<p>Use a kinematic rigid body when the support itself moves through space.</p>
+<p>Before you begin, confirm the following:</p>
+<ul class="simple">
+<li><p>The stage authors a <code class="docutils literal notranslate"><span class="pre">PhysicsScene</span></code> prim, the support body, and a dynamic rider
+body resting on the support (refer to <a class="reference internal" href="physics_scene.html"><span class="std std-doc">Physics Scene</span></a>).</p></li>
+<li><p>DirectGPU (<code class="docutils literal notranslate"><span class="pre">eENABLE_DIRECT_GPU_API</span></code>) is disabled. The ovstage transform-update
+path that drives a kinematic target is not applied to rigid actors under
+DirectGPU.</p></li>
+<li><p>The producer that publishes transforms can write both the local and the
+resolved world transform of the support at the same ovstage ordinal.</p></li>
+</ul>
+<p>Author and drive the support as follows:</p>
+<ol class="arabic simple">
+<li><p>Apply <code class="docutils literal notranslate"><span class="pre">PhysicsRigidBodyAPI</span></code> and <code class="docutils literal notranslate"><span class="pre">PhysicsCollisionAPI</span></code> to the body.</p></li>
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">physics:kinematicEnabled</span> <span class="pre">=</span> <span class="pre">true</span></code>.</p></li>
+<li><p>Bind a physics material with enough static and dynamic friction for the load.</p></li>
+<li><p>Write a new target pose before each step.</p></li>
+</ol>
+<p>The support is driven correctly when a read of <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_POSE</span></code> places the
+support at the pose you wrote for that step, and the rider’s position along the
+motion axis has advanced with it over successive steps. A rider displacement near
+zero while the support moves means the support was teleported rather than driven
+to a kinematic target, which is the failure the shipped samples check for.</p>
+<p>Publish the body’s local <code class="docutils literal notranslate"><span class="pre">omni:xform</span></code> and resolved
+<code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code> attributes through ovstage at a new control ordinal,
+seal the ordinal, and pass it to <code class="docutils literal notranslate"><span class="pre">update_from_ovstage()</span></code> before stepping. For a
+kinematic body, the runtime converts that transform update to
+<code class="docutils literal notranslate"><span class="pre">PxRigidDynamic::setKinematicTarget()</span></code>. Preserve the body’s authored scale in
+both matrices; changing scale is structural and reconstructs the PhysX actor
+instead of updating its target.</p>
+<p>The local and world matrices are equal only when the body’s parent has an
+identity world transform, as in the shipped samples. Under a transformed
+parent, compose <code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code> from the local transform and the
+parent’s resolved world transform. If a producer moves a parent, it must also
+republish the affected descendants’ resolved world matrices. A gRPC or other
+transport should express the same operation as consistent local and world
+ovstage writes, seal the control ordinal, and drain it before stepping.</p>
+<p>This transform-update path is not applied to rigid actors after DirectGPU
+(<code class="docutils literal notranslate"><span class="pre">eENABLE_DIRECT_GPU_API</span></code>) is enabled. Leave DirectGPU disabled when controlling
+kinematic supports through ovstage. GPU dynamics without DirectGPU can still be
+used.</p>
+<p>Do not substitute a legacy <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_POSE</span></code> tensor write. That path calls
+<code class="docutils literal notranslate"><span class="pre">setGlobalPose</span></code> and teleports the body; it does not provide the contact velocity
+needed to carry a rider. The tensor-binding write surface is deprecated (superseded by the
+session write API, <code class="docutils literal notranslate"><span class="pre">ovphysx_write</span></code> / <code class="docutils literal notranslate"><span class="pre">PhysX.write</span></code>) and does not expose a separate
+kinematic-target tensor.</p>
+<p>C++ applications can also use <code class="docutils literal notranslate"><span class="pre">ovphysx_get_physx_ptr()</span></code> and call
+<code class="docutils literal notranslate"><span class="pre">PxRigidDynamic::setKinematicTarget()</span></code> directly. Refer to
+<a class="reference internal" href="../tutorials/physx_interop.html"><span class="std std-doc">PhysX Interop</span></a>.</p>
+</section>
+<section id="stationary-conveyors-and-surface-velocity">
+<h2>Stationary Conveyors and Surface Velocity<a class="headerlink" href="#stationary-conveyors-and-surface-velocity" title="Link to this heading">#</a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">PhysxSurfaceVelocityAPI</span></code> when the support stays in place but its contact
+surface moves:</p>
+<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="k k-Tokens">def</span><span class="w"> </span>Cube<span class="w"> </span><span class="s">&quot;Conveyor&quot;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s">&quot;PhysicsCollisionAPI&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s">&quot;PhysicsRigidBodyAPI&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s">&quot;PhysxSurfaceVelocityAPI&quot;</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="na">physics:kinematicEnabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>true
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="na">physxSurfaceVelocity:surfaceVelocityEnabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>true
+<span class="w">    </span><span class="kt">vector3f</span><span class="w"> </span><span class="na">physxSurfaceVelocity:surfaceVelocity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="m">0</span><span class="p">)</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="na">physxSurfaceVelocity:surfaceVelocityLocalSpace</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>false
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Apply the surface-velocity API to the rigid-body prim, not only to a child
+collider. Runtime changes use the same <code class="docutils literal notranslate"><span class="pre">physxSurfaceVelocity:*</span></code> attributes
+through the ovstage control-ordinal path. Nonzero <code class="docutils literal notranslate"><span class="pre">physics:velocity</span></code> and
+<code class="docutils literal notranslate"><span class="pre">physics:angularVelocity</span></code> on a kinematic body are retained as a legacy
+surface-velocity shortcut, but new code should use
+<code class="docutils literal notranslate"><span class="pre">PhysxSurfaceVelocityAPI</span></code>.</p>
+<p>Surface velocity uses contact modification. Leave DirectGPU disabled for scenes
+that need it. GPU dynamics without DirectGPU can still be used.</p>
+</section>
+<section id="combining-target-motion-and-surface-velocity">
+<h2>Combining Target Motion and Surface Velocity<a class="headerlink" href="#combining-target-motion-and-surface-velocity" title="Link to this heading">#</a></h2>
+<p>The two mechanisms are additive. A kinematic target contributes the support’s
+physical step velocity; <code class="docutils literal notranslate"><span class="pre">PhysxSurfaceVelocityAPI</span></code> contributes an additional
+contact-target velocity. Use both only when the intended surface motion is
+relative to an already-moving support. Adding surface velocity to compensate
+for a teleported pallet is not equivalent to driving a kinematic target and can
+double-drive cargo after the target path is corrected.</p>
+<p>The C and Python samples in <a class="reference internal" href="#runnable-samples">Runnable Samples</a> exercise three
+isolated lanes in one scene:</p>
+<ul class="simple">
+<li><p>a translating platform driven by ovstage transform updates;</p></li>
+<li><p>a stationary platform driven only by surface velocity;</p></li>
+<li><p>a translating platform with additional surface velocity.</p></li>
+</ul>
+<p>Each lane checks rider displacement, and the combined lane checks that its
+motion is observably greater than either independent lane.</p>
+</section>
+<section id="sleep-friction-and-ordering">
+<h2>Sleep, Friction, and Ordering<a class="headerlink" href="#sleep-friction-and-ordering" title="Link to this heading">#</a></h2>
+<p>A surface-velocity change does not wake a body that has settled to sleep.
+Disable sleeping for continuously controlled loads by setting
+<code class="docutils literal notranslate"><span class="pre">physxRigidBody:sleepThreshold</span> <span class="pre">=</span> <span class="pre">0</span></code>, or call
+<code class="docutils literal notranslate"><span class="pre">ovphysx_rigid_body_view_wake_up()</span></code> (<code class="docutils literal notranslate"><span class="pre">TensorBinding.wake_up()</span></code> in Python)
+immediately before motion begins. Kinematic support motion and surface velocity
+also require sufficient friction to transmit tangential motion; bind an
+explicit physics material instead of relying on defaults.</p>
+<p>Before you enter the control loop, confirm the following:</p>
+<ul class="simple">
+<li><p>The stage is attached, and the first ordinal the loop writes is above the
+ordinal that <code class="docutils literal notranslate"><span class="pre">attach_ovstage()</span></code> consumed.</p></li>
+<li><p>Sleeping is disabled on the controlled loads, or the loop wakes them before
+motion begins.</p></li>
+<li><p>DirectGPU is disabled, as required by both mechanisms on this page.</p></li>
+</ul>
+<p>Then, for each frame:</p>
+<ol class="arabic simple">
+<li><p>Publish and seal ovstage transform and surface-velocity control edits.</p></li>
+<li><p>Call <code class="docutils literal notranslate"><span class="pre">update_from_ovstage()</span></code> for exactly those control ordinals.</p></li>
+<li><p>Step and wait for completion.</p></li>
+<li><p>Read poses and velocities.</p></li>
+</ol>
+<p>The loop is correct when each read pose matches the edit published for that
+ordinal, and the rider’s displacement grows monotonically across frames instead
+of stalling after the first one. A rider that stops advancing while edits keep
+arriving indicates a sleeping load or insufficient friction.</p>
+</section>
+<section id="reset-and-readback">
+<h2>Reset and Readback<a class="headerlink" href="#reset-and-readback" title="Link to this heading">#</a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">reset_stage()</span></code> and reload or reattach the baseline scene for deterministic
+reruns. Replaying only poses and velocities from an in-contact mid-run state
+does not restore PhysX contact caches and is not a deterministic reset.</p>
+<p>Read resolved runtime state with <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_POSE</span></code> and
+<code class="docutils literal notranslate"><span class="pre">RIGID_BODY_VELOCITY</span></code>, or use the ovstage output-read API. Reading the source
+USD only shows authored values; it does not prove that the live PhysX actor
+received a target or that contact carried the rider.</p>
+</section>
+<section id="runnable-samples">
+<h2>Runnable Samples<a class="headerlink" href="#runnable-samples" title="Link to this heading">#</a></h2>
+<p>Python:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION &amp; AFFILIATES. All rights reserved.</span>
+<span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
+
+<span class="c1"># @implements REQ-USD-KINEMATIC-SUPPORT-001</span>
+<span class="c1"># @covers AC-1 AC-3</span>
+
+<span class="sd">&quot;&quot;&quot;Kinematic support sample: transform motion, surface velocity, and both.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TensorType</span>
+
+
+<span class="n">_physx_schemas_registered</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">attach_scene</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">usd_path</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">available</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;ovstage population bridge is unavailable&quot;</span><span class="p">)</span>
+    <span class="c1"># ovphysx ships its PhysX USD schemas as codeless resources and does not register</span>
+    <span class="c1"># them itself. Register them with ovstage once, before the first population</span>
+    <span class="c1"># call in the process. The Newton USD schema (pip package newton-usd-schemas)</span>
+    <span class="c1"># is registered alongside so authored newton:* attributes reach the parser.</span>
+    <span class="k">global</span> <span class="n">_physx_schemas_registered</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_physx_schemas_registered</span><span class="p">:</span>
+        <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">(</span>
+            <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_root</span><span class="p">()),</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
+        <span class="p">)</span>
+        <span class="n">_physx_schemas_registered</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="s2">&quot;ovphysx-kinematic-support-sample&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span>
+            <span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">PHYSICS</span>
+        <span class="p">)</span>
+        <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">stage</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">raise</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_binding</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">tensor_type</span><span class="p">):</span>
+    <span class="n">binding</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">create_tensor_binding</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">tensor_type</span><span class="o">=</span><span class="n">tensor_type</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">binding</span><span class="o">.</span><span class="n">count</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">binding</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected one rigid body at </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">, found </span><span class="si">{</span><span class="n">binding</span><span class="o">.</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">binding</span>
+
+
+<span class="c1"># NOTE: this sample uses the deprecated tensor-binding API. New code should use the session</span>
+<span class="c1"># read/write API (PhysX.read / PhysX.write).</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_x</span><span class="p">(</span><span class="n">binding</span><span class="p">):</span>
+    <span class="n">poses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">binding</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">binding</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">poses</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">poses</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TransformWriter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Publish world transforms for one prim through an ovstage query.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stage</span> <span class="o">=</span> <span class="n">stage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_paths</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">PathDictionary</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path_list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_query</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_paths</span><span class="o">.</span><span class="n">create_path_list_from_strings</span><span class="p">([</span><span class="n">path</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_query</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">query_from_path_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_list</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_paths</span><span class="o">.</span><span class="n">destroy_path_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_list</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_paths</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+            <span class="k">raise</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stage</span><span class="o">.</span><span class="n">write_attribute</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">,</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">is_array</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">):</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">target</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">6.0</span>
+        <span class="n">target</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">6.0</span>
+        <span class="n">target</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">make_dltensor</span><span class="p">(</span>
+            <span class="n">target</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">DLDataType</span><span class="p">(</span><span class="n">ovstage</span><span class="o">.</span><span class="n">DLDataTypeCode</span><span class="o">.</span><span class="n">kDLFloat</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
+            <span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;omni:xform&quot;</span><span class="p">,</span> <span class="s2">&quot;omni:fabric:worldMatrix&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_attribute</span><span class="p">(</span><span class="n">attribute</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">destroy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stage</span><span class="o">.</span><span class="n">release_query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_query</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_paths</span><span class="o">.</span><span class="n">destroy_path_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_list</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path_list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_paths</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">PhysX</span><span class="o">.</span><span class="n">set_cpu_mode</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">()</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">bindings</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">writers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">usd_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;..&quot;</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;kinematic_support.usda&quot;</span>
+        <span class="n">stage</span> <span class="o">=</span> <span class="n">attach_scene</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">usd_path</span><span class="p">)</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">wait_all</span><span class="p">()</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">add_binding</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">tensor_type</span><span class="p">):</span>
+            <span class="n">binding</span> <span class="o">=</span> <span class="n">make_binding</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">tensor_type</span><span class="p">)</span>
+            <span class="n">bindings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">binding</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">binding</span>
+
+        <span class="n">target_platform</span> <span class="o">=</span> <span class="n">TransformWriter</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/TargetPlatform&quot;</span><span class="p">)</span>
+        <span class="n">writers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">target_platform</span><span class="p">)</span>
+        <span class="n">combined_platform</span> <span class="o">=</span> <span class="n">TransformWriter</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/CombinedPlatform&quot;</span><span class="p">)</span>
+        <span class="n">writers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">combined_platform</span><span class="p">)</span>
+        <span class="n">target_rider</span> <span class="o">=</span> <span class="n">add_binding</span><span class="p">(</span><span class="s2">&quot;/World/TargetRider&quot;</span><span class="p">,</span> <span class="n">TensorType</span><span class="o">.</span><span class="n">RIGID_BODY_POSE</span><span class="p">)</span>
+        <span class="n">conveyor_rider</span> <span class="o">=</span> <span class="n">add_binding</span><span class="p">(</span><span class="s2">&quot;/World/ConveyorRider&quot;</span><span class="p">,</span> <span class="n">TensorType</span><span class="o">.</span><span class="n">RIGID_BODY_POSE</span><span class="p">)</span>
+        <span class="n">combined_rider</span> <span class="o">=</span> <span class="n">add_binding</span><span class="p">(</span><span class="s2">&quot;/World/CombinedRider&quot;</span><span class="p">,</span> <span class="n">TensorType</span><span class="o">.</span><span class="n">RIGID_BODY_POSE</span><span class="p">)</span>
+
+        <span class="n">dt</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">60.0</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">step_sync</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">read_x</span><span class="p">(</span><span class="n">target_rider</span><span class="p">),</span> <span class="n">read_x</span><span class="p">(</span><span class="n">conveyor_rider</span><span class="p">),</span> <span class="n">read_x</span><span class="p">(</span><span class="n">combined_rider</span><span class="p">)]</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">121</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">frame</span> <span class="o">*</span> <span class="n">dt</span>
+            <span class="n">ordinal</span> <span class="o">=</span> <span class="n">frame</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">target_platform</span><span class="o">.</span><span class="n">write_pose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">)</span>
+            <span class="n">combined_platform</span><span class="o">.</span><span class="n">write_pose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">16.0</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">)</span>
+            <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">update_from_ovstage</span><span class="p">(</span><span class="n">ordinal</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">)</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">step_sync</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="n">displacement</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">read_x</span><span class="p">(</span><span class="n">target_rider</span><span class="p">),</span> <span class="n">read_x</span><span class="p">(</span><span class="n">conveyor_rider</span><span class="p">),</span> <span class="n">read_x</span><span class="p">(</span><span class="n">combined_rider</span><span class="p">)])</span>
+            <span class="o">-</span> <span class="n">start</span>
+        <span class="p">)</span>
+        <span class="n">target_dx</span><span class="p">,</span> <span class="n">conveyor_dx</span><span class="p">,</span> <span class="n">combined_dx</span> <span class="o">=</span> <span class="n">displacement</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="s2">&quot;Rider displacement: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;transform=</span><span class="si">{</span><span class="n">target_dx</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, surface=</span><span class="si">{</span><span class="n">conveyor_dx</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, combined=</span><span class="si">{</span><span class="n">combined_dx</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">target_dx</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;ovstage transform did not carry its rider&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">conveyor_dx</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Surface velocity did not carry its rider&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">combined_dx</span> <span class="o">&lt;=</span> <span class="nb">max</span><span class="p">(</span><span class="n">target_dx</span><span class="p">,</span> <span class="n">conveyor_dx</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Combined transform and surface velocity were not observably additive&quot;</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">writer</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">writers</span><span class="p">):</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">binding</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">bindings</span><span class="p">):</span>
+            <span class="n">binding</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">stage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">()</span>
+            <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>C:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION &amp; AFFILIATES. All rights reserved.</span>
+<span class="c1">// SPDX-License-Identifier: Apache-2.0</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * @implements REQ-USD-KINEMATIC-SUPPORT-001</span>
+<span class="cm"> * @covers AC-1 AC-3</span>
+<span class="cm"> */</span>
+
+<span class="c1">// Kinematic support sample: transform motion, surface velocity, and both.</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx_types.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovx/path_dictionary/path_dictionary.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ovstage_sample.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdbool.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string.h&gt;</span>
+
+<span class="cp">#ifdef _WIN32</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;windows.h&gt;</span>
+<span class="cp">#else</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdatomic.h&gt;</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#ifdef __cplusplus</span>
+<span class="cp">#error &quot;This file must be compiled as C, not C++&quot;</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#ifdef _WIN32</span>
+<span class="k">typedef</span><span class="w"> </span><span class="k">volatile</span><span class="w"> </span><span class="n">LONG</span><span class="w"> </span><span class="n">object_change_counter_t</span><span class="p">;</span>
+<span class="cp">#else</span>
+<span class="k">typedef</span><span class="w"> </span><span class="kt">atomic_uint</span><span class="w"> </span><span class="n">object_change_counter_t</span><span class="p">;</span>
+<span class="cp">#endif</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">object_change_counter_init</span><span class="p">(</span><span class="n">object_change_counter_t</span><span class="o">*</span><span class="w"> </span><span class="n">counter</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="cp">#ifdef _WIN32</span>
+<span class="w">    </span><span class="n">InterlockedExchange</span><span class="p">(</span><span class="n">counter</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="n">atomic_init</span><span class="p">(</span><span class="n">counter</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="cp">#endif</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">object_change_counter_increment</span><span class="p">(</span><span class="n">object_change_counter_t</span><span class="o">*</span><span class="w"> </span><span class="n">counter</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="cp">#ifdef _WIN32</span>
+<span class="w">    </span><span class="n">InterlockedIncrement</span><span class="p">(</span><span class="n">counter</span><span class="p">);</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="n">atomic_fetch_add_explicit</span><span class="p">(</span><span class="n">counter</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">memory_order_relaxed</span><span class="p">);</span>
+<span class="cp">#endif</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">object_change_counter_load</span><span class="p">(</span><span class="n">object_change_counter_t</span><span class="o">*</span><span class="w"> </span><span class="n">counter</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="cp">#ifdef _WIN32</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="p">)</span><span class="n">InterlockedCompareExchange</span><span class="p">(</span><span class="n">counter</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">atomic_load_explicit</span><span class="p">(</span><span class="n">counter</span><span class="p">,</span><span class="w"> </span><span class="n">memory_order_relaxed</span><span class="p">);</span>
+<span class="cp">#endif</span>
+<span class="p">}</span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">path_query_t</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">ovstage_query_handle_t</span><span class="w"> </span><span class="n">query</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovx_primpath_list_t</span><span class="w"> </span><span class="n">path_list</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="n">path_query_t</span><span class="p">;</span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">object_change_counts_t</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">object_change_counter_t</span><span class="w"> </span><span class="n">created</span><span class="p">;</span>
+<span class="w">    </span><span class="n">object_change_counter_t</span><span class="w"> </span><span class="n">destroyed</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="n">object_change_counts_t</span><span class="p">;</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">on_object_created</span><span class="p">(</span>
+<span class="w">    </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">prim_path</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovphysx_physx_type_t</span><span class="w"> </span><span class="n">type</span><span class="p">,</span>
+<span class="w">    </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">user_data</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">prim_path</span><span class="p">;</span>
+<span class="w">    </span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">type</span><span class="p">;</span>
+<span class="w">    </span><span class="n">object_change_counts_t</span><span class="o">*</span><span class="w"> </span><span class="n">counts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">object_change_counts_t</span><span class="o">*</span><span class="p">)</span><span class="n">user_data</span><span class="p">;</span>
+<span class="w">    </span><span class="n">object_change_counter_increment</span><span class="p">(</span><span class="o">&amp;</span><span class="n">counts</span><span class="o">-&gt;</span><span class="n">created</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">on_object_destroyed</span><span class="p">(</span>
+<span class="w">    </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">prim_path</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovphysx_physx_type_t</span><span class="w"> </span><span class="n">type</span><span class="p">,</span>
+<span class="w">    </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">user_data</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">prim_path</span><span class="p">;</span>
+<span class="w">    </span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">type</span><span class="p">;</span>
+<span class="w">    </span><span class="n">object_change_counts_t</span><span class="o">*</span><span class="w"> </span><span class="n">counts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">object_change_counts_t</span><span class="o">*</span><span class="p">)</span><span class="n">user_data</span><span class="p">;</span>
+<span class="w">    </span><span class="n">object_change_counter_increment</span><span class="p">(</span><span class="o">&amp;</span><span class="n">counts</span><span class="o">-&gt;</span><span class="n">destroyed</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">check_result</span><span class="p">(</span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">operation</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
+<span class="w">    </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;%s failed: %.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">operation</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">error</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">wait_step</span><span class="p">(</span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">dt</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_step</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">dt</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">step</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ovphysx_op_wait_result_t</span><span class="w"> </span><span class="n">wait_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">waited</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="n">ovphysx_wait_op</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">step</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">wait_result</span><span class="p">.</span><span class="n">num_errors</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_destroy_wait_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ok</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">wait_ovstage</span><span class="p">(</span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_enqueue_result_t</span><span class="w"> </span><span class="n">op</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ovstage enqueue failed: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_get_error_string</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">op</span><span class="p">.</span><span class="n">status</span><span class="p">));</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="p">.</span><span class="n">op_index</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_INVALID_OP_ID</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ovstage_op_wait_result_t</span><span class="w"> </span><span class="n">wait_result</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">wait_result</span><span class="p">));</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_api_status_t</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="n">ovstage_wait_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">op</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="n">OVSTAGE_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">wait_result</span><span class="p">.</span><span class="n">error_op_id_count</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ok</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ovstage operation failed: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_get_error_string</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">status</span><span class="p">));</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">wait_result</span><span class="p">.</span><span class="n">error_op_id_count</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">ovx_string_t</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span>
+<span class="w">                </span><span class="n">ovstage_get_last_op_error</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">wait_result</span><span class="p">.</span><span class="n">error_op_ids</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="w">            </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;  %.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">error</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ovstage_release_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">op</span><span class="p">.</span><span class="n">op_index</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">ok</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="n">ovx_string_or_token_t</span><span class="w"> </span><span class="nf">attribute_name</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">name</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">ovx_string_or_token_t</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">result</span><span class="p">));</span>
+<span class="w">    </span><span class="n">result</span><span class="p">.</span><span class="n">string</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">name</span><span class="p">;</span>
+<span class="w">    </span><span class="n">result</span><span class="p">.</span><span class="n">string</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">strnlen</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">write_matrix</span><span class="p">(</span>
+<span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovstage_query_handle_t</span><span class="w"> </span><span class="n">query</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">attribute</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovstage_ordinal_t</span><span class="w"> </span><span class="n">ordinal</span><span class="p">,</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">matrix</span><span class="p">[</span><span class="mi">16</span><span class="p">])</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="n">DLTensor</span><span class="w"> </span><span class="n">tensor</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tensor</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">tensor</span><span class="p">));</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matrix</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">device</span><span class="p">.</span><span class="n">device_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kDLCPU</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kDLFloat</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">bits</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">64</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">lanes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">16</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">ndim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shape</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ovstage_write_data_t</span><span class="w"> </span><span class="n">write</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">write</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">write</span><span class="p">));</span>
+<span class="w">    </span><span class="n">write</span><span class="p">.</span><span class="n">tensors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">tensor</span><span class="p">;</span>
+<span class="w">    </span><span class="n">write</span><span class="p">.</span><span class="n">tensor_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">wait_ovstage</span><span class="p">(</span>
+<span class="w">        </span><span class="n">stage</span><span class="p">,</span>
+<span class="w">        </span><span class="n">ovstage_write_attribute</span><span class="p">(</span>
+<span class="w">            </span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="n">attribute_name</span><span class="p">(</span><span class="n">attribute</span><span class="p">),</span><span class="w"> </span><span class="n">ordinal</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="p">,</span><span class="w"> </span><span class="n">OVSTAGE_PRIM_MODE_UPSERT</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">write_transform</span><span class="p">(</span>
+<span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovstage_query_handle_t</span><span class="w"> </span><span class="n">query</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovstage_ordinal_t</span><span class="w"> </span><span class="n">ordinal</span><span class="p">,</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">x</span><span class="p">,</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">z</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">matrix</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="mf">6.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
+<span class="w">        </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
+<span class="w">        </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">6.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
+<span class="w">        </span><span class="n">x</span><span class="p">,</span><span class="w">   </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">z</span><span class="p">,</span><span class="w">   </span><span class="mf">1.0</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">write_matrix</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;omni:xform&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ordinal</span><span class="p">,</span><span class="w"> </span><span class="n">matrix</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">           </span><span class="n">write_matrix</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;omni:fabric:worldMatrix&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ordinal</span><span class="p">,</span><span class="w"> </span><span class="n">matrix</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">create_path_query</span><span class="p">(</span>
+<span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">path</span><span class="p">,</span>
+<span class="w">    </span><span class="n">path_query_t</span><span class="o">*</span><span class="w"> </span><span class="n">path_query</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">path_dictionary_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">dictionary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovstage_get_path_dictionary</span><span class="p">(</span><span class="n">stage</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">dictionary</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ovx_string_t</span><span class="w"> </span><span class="n">path_string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="n">strnlen</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="p">)</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="n">ovx_api_result_t</span><span class="w"> </span><span class="n">created</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="n">dictionary</span><span class="o">-&gt;</span><span class="n">vtable</span><span class="o">-&gt;</span><span class="n">create_path_list_from_strings</span><span class="p">(</span>
+<span class="w">            </span><span class="n">dictionary</span><span class="o">-&gt;</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">path_string</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">path_query</span><span class="o">-&gt;</span><span class="n">path_list</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">created</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVX_API_SUCCESS</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="n">path_query</span><span class="o">-&gt;</span><span class="n">path_list</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVX_INVALID_PRIMPATH_LIST</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">created</span><span class="p">.</span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="p">)</span>
+<span class="w">            </span><span class="n">dictionary</span><span class="o">-&gt;</span><span class="n">vtable</span><span class="o">-&gt;</span><span class="n">release_error</span><span class="p">(</span><span class="n">dictionary</span><span class="o">-&gt;</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">created</span><span class="p">.</span><span class="n">error</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_api_status_t</span><span class="w"> </span><span class="n">queried</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="n">ovstage_query_from_path_list</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">path_query</span><span class="o">-&gt;</span><span class="n">path_list</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">path_query</span><span class="o">-&gt;</span><span class="n">query</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">queried</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">path_query</span><span class="o">-&gt;</span><span class="n">query</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVSTAGE_INVALID_QUERY_HANDLE</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">destroy_path_query</span><span class="p">(</span>
+<span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span>
+<span class="w">    </span><span class="n">path_query_t</span><span class="o">*</span><span class="w"> </span><span class="n">path_query</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">path_query</span><span class="o">-&gt;</span><span class="n">query</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVSTAGE_INVALID_QUERY_HANDLE</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">wait_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_release_query</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">path_query</span><span class="o">-&gt;</span><span class="n">query</span><span class="p">));</span>
+<span class="w">        </span><span class="n">path_query</span><span class="o">-&gt;</span><span class="n">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVSTAGE_INVALID_QUERY_HANDLE</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">path_query</span><span class="o">-&gt;</span><span class="n">path_list</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVX_INVALID_PRIMPATH_LIST</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">path_dictionary_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">dictionary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovstage_get_path_dictionary</span><span class="p">(</span><span class="n">stage</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">dictionary</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="n">ovx_api_result_t</span><span class="w"> </span><span class="n">released</span><span class="w"> </span><span class="o">=</span>
+<span class="w">            </span><span class="n">dictionary</span><span class="o">-&gt;</span><span class="n">vtable</span><span class="o">-&gt;</span><span class="n">release_path_list_reference</span><span class="p">(</span>
+<span class="w">                </span><span class="n">dictionary</span><span class="o">-&gt;</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">path_query</span><span class="o">-&gt;</span><span class="n">path_list</span><span class="p">);</span>
+<span class="w">        </span><span class="n">path_query</span><span class="o">-&gt;</span><span class="n">path_list</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVX_INVALID_PRIMPATH_LIST</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">released</span><span class="p">.</span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="p">)</span>
+<span class="w">            </span><span class="n">dictionary</span><span class="o">-&gt;</span><span class="n">vtable</span><span class="o">-&gt;</span><span class="n">release_error</span><span class="p">(</span><span class="n">dictionary</span><span class="o">-&gt;</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">released</span><span class="p">.</span><span class="n">error</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">released</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVX_API_SUCCESS</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">ok</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ok</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">publish_control_ordinal</span><span class="p">(</span>
+<span class="w">    </span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovstage_ordinal_t</span><span class="w"> </span><span class="n">ordinal</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">ovstage_write_floor_desc_t</span><span class="w"> </span><span class="n">floor</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">floor</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">floor</span><span class="p">));</span>
+<span class="w">    </span><span class="n">floor</span><span class="p">.</span><span class="n">ordinal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ordinal</span><span class="p">;</span>
+<span class="w">    </span><span class="n">floor</span><span class="p">.</span><span class="n">scope</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVSTAGE_SCOPE_ALL</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">wait_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_advance_write_floor</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">floor</span><span class="p">)))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_ordinal_range_t</span><span class="w"> </span><span class="n">range</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">ordinal</span><span class="p">,</span><span class="w"> </span><span class="n">ordinal</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">check_result</span><span class="p">(</span>
+<span class="w">        </span><span class="n">ovphysx_update_from_ovstage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">range</span><span class="p">),</span>
+<span class="w">        </span><span class="s">&quot;update from ovstage&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">create_binding</span><span class="p">(</span>
+<span class="w">    </span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">path</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovphysx_tensor_type_t</span><span class="w"> </span><span class="n">type</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovphysx_tensor_binding_handle_t</span><span class="o">*</span><span class="w"> </span><span class="n">binding</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">ovphysx_tensor_binding_desc_t</span><span class="w"> </span><span class="n">desc</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">desc</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">desc</span><span class="p">));</span>
+<span class="w">    </span><span class="n">desc</span><span class="p">.</span><span class="n">pattern</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">path</span><span class="p">;</span>
+<span class="w">    </span><span class="n">desc</span><span class="p">.</span><span class="n">pattern</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">strnlen</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="p">);</span>
+<span class="w">    </span><span class="n">desc</span><span class="p">.</span><span class="n">tensor_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">type</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_create_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">desc</span><span class="p">,</span><span class="w"> </span><span class="n">binding</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;create tensor binding&quot;</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ovphysx_tensor_spec_t</span><span class="w"> </span><span class="n">spec</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">spec</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">spec</span><span class="p">));</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_get_tensor_binding_spec</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">binding</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">spec</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;get tensor binding spec&quot;</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">spec</span><span class="p">.</span><span class="n">ndim</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">7</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Unexpected binding shape for %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="n">DLTensor</span><span class="w"> </span><span class="nf">make_pose_tensor</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">data</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">DLTensor</span><span class="w"> </span><span class="n">tensor</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tensor</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">tensor</span><span class="p">));</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">device</span><span class="p">.</span><span class="n">device_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kDLCPU</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">ndim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kDLFloat</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">bits</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">32</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">lanes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shape</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">tensor</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// NOTE: this sample uses the deprecated tensor-binding API. New code should use the session</span>
+<span class="c1">// read/write API (ovphysx_read / ovphysx_write).</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">read_x</span><span class="p">(</span>
+<span class="w">    </span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovphysx_tensor_binding_handle_t</span><span class="w"> </span><span class="n">binding</span><span class="p">,</span>
+<span class="w">    </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">data</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="n">DLTensor</span><span class="w"> </span><span class="n">tensor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">make_pose_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="n">shape</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_read_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">binding</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">tensor</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;read rider pose&quot;</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="o">*</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">exit_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_sample_stage_attachment_t</span><span class="w"> </span><span class="n">attachment</span><span class="p">;</span>
+<span class="w">    </span><span class="n">path_query_t</span><span class="w"> </span><span class="n">target_platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">OVSTAGE_INVALID_QUERY_HANDLE</span><span class="p">,</span><span class="w"> </span><span class="n">OVX_INVALID_PRIMPATH_LIST</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="n">path_query_t</span><span class="w"> </span><span class="n">combined_platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">OVSTAGE_INVALID_QUERY_HANDLE</span><span class="p">,</span><span class="w"> </span><span class="n">OVX_INVALID_PRIMPATH_LIST</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="n">object_change_counts_t</span><span class="w"> </span><span class="n">object_changes</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_subscription_id_t</span><span class="w"> </span><span class="n">object_change_subscription</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="n">OVPHYSX_INVALID_SUBSCRIPTION_ID</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_tensor_binding_handle_t</span><span class="w"> </span><span class="n">target_rider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_tensor_binding_handle_t</span><span class="w"> </span><span class="n">conveyor_rider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_tensor_binding_handle_t</span><span class="w"> </span><span class="n">combined_rider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attachment</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">attachment</span><span class="p">));</span>
+<span class="w">    </span><span class="n">object_change_counter_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">object_changes</span><span class="p">.</span><span class="n">created</span><span class="p">);</span>
+<span class="w">    </span><span class="n">object_change_counter_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">object_changes</span><span class="p">.</span><span class="n">destroyed</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">ovphysx_set_cpu_mode</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_initialize</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;initialize&quot;</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">exit_code</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ovphysx_create_args</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_CREATE_ARGS_DEFAULT</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">args</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">handle</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;create instance&quot;</span><span class="p">))</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ovphysx_sample_attach_usd_with_ovstage</span><span class="p">(</span>
+<span class="w">            </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TEST_DATA</span><span class="w"> </span><span class="s">&quot;/kinematic_support.usda&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">attachment</span><span class="p">))</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ovphysx_object_change_callbacks_t</span><span class="w"> </span><span class="n">callbacks</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">callbacks</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">callbacks</span><span class="p">));</span>
+<span class="w">    </span><span class="n">callbacks</span><span class="p">.</span><span class="n">on_object_created</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">on_object_created</span><span class="p">;</span>
+<span class="w">    </span><span class="n">callbacks</span><span class="p">.</span><span class="n">on_object_destroyed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">on_object_destroyed</span><span class="p">;</span>
+<span class="w">    </span><span class="n">callbacks</span><span class="p">.</span><span class="n">user_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">object_changes</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span>
+<span class="w">            </span><span class="n">ovphysx_subscribe_object_changes</span><span class="p">(</span>
+<span class="w">                </span><span class="o">&amp;</span><span class="n">callbacks</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">object_change_subscription</span><span class="p">),</span>
+<span class="w">            </span><span class="s">&quot;subscribe to object changes&quot;</span><span class="p">))</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">create_path_query</span><span class="p">(</span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/TargetPlatform&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">target_platform</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">create_path_query</span><span class="p">(</span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/CombinedPlatform&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">combined_platform</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">create_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/TargetRider&quot;</span><span class="p">,</span>
+<span class="w">                        </span><span class="n">OVPHYSX_TENSOR_RIGID_BODY_POSE_F32</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">target_rider</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">create_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/ConveyorRider&quot;</span><span class="p">,</span>
+<span class="w">                        </span><span class="n">OVPHYSX_TENSOR_RIGID_BODY_POSE_F32</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">conveyor_rider</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">create_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/CombinedRider&quot;</span><span class="p">,</span>
+<span class="w">                        </span><span class="n">OVPHYSX_TENSOR_RIGID_BODY_POSE_F32</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">combined_rider</span><span class="p">))</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">dt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">;</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">frame</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">frame</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">frame</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">wait_step</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">dt</span><span class="p">))</span>
+<span class="w">            </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">target_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">conveyor_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">combined_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">target_rider</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">target_start</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">conveyor_rider</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">conveyor_start</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">combined_rider</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">combined_start</span><span class="p">))</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">frame</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">frame</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">120</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">frame</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">frame</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dt</span><span class="p">;</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_ordinal_t</span><span class="w"> </span><span class="n">ordinal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">ovstage_ordinal_t</span><span class="p">)</span><span class="n">frame</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">attachment</span><span class="p">.</span><span class="n">ordinal</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">write_transform</span><span class="p">(</span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">target_platform</span><span class="p">.</span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="n">ordinal</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">            </span><span class="o">!</span><span class="n">write_transform</span><span class="p">(</span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">combined_platform</span><span class="p">.</span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="n">ordinal</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="mf">16.0</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">            </span><span class="o">!</span><span class="n">publish_control_ordinal</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">ordinal</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">            </span><span class="o">!</span><span class="n">wait_step</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">dt</span><span class="p">))</span>
+<span class="w">            </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">target_end</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">conveyor_end</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">combined_end</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">target_rider</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">target_end</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">conveyor_rider</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">conveyor_end</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">combined_rider</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">combined_end</span><span class="p">))</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">target_dx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">target_end</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">target_start</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">conveyor_dx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">conveyor_end</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">conveyor_start</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">combined_dx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">combined_end</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">combined_start</span><span class="p">;</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Rider displacement: transform=%.3f, surface=%.3f, combined=%.3f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">           </span><span class="n">target_dx</span><span class="p">,</span><span class="w"> </span><span class="n">conveyor_dx</span><span class="p">,</span><span class="w"> </span><span class="n">combined_dx</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">independent_max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">target_dx</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">conveyor_dx</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">target_dx</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">conveyor_dx</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">created</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">object_change_counter_load</span><span class="p">(</span><span class="o">&amp;</span><span class="n">object_changes</span><span class="p">.</span><span class="n">created</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">destroyed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">object_change_counter_load</span><span class="p">(</span><span class="o">&amp;</span><span class="n">object_changes</span><span class="p">.</span><span class="n">destroyed</span><span class="p">);</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Physics object changes: created=%u, destroyed=%u</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">created</span><span class="p">,</span><span class="w"> </span><span class="n">destroyed</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">created</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">destroyed</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span>
+<span class="w">                </span><span class="s">&quot;Transform updates reconstructed physics objects &quot;</span>
+<span class="w">                </span><span class="s">&quot;(created=%u, destroyed=%u)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="n">created</span><span class="p">,</span><span class="w"> </span><span class="n">destroyed</span><span class="p">);</span>
+<span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">target_dx</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">)</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ovstage transform did not carry its rider</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">conveyor_dx</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">)</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Surface velocity did not carry its rider</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">combined_dx</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">independent_max</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.2f</span><span class="p">)</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Combined transform and surface velocity were not observably additive</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">else</span>
+<span class="w">        </span><span class="n">exit_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="nl">cleanup</span><span class="p">:</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">object_change_subscription</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_INVALID_SUBSCRIPTION_ID</span><span class="p">)</span>
+<span class="w">        </span><span class="n">check_result</span><span class="p">(</span>
+<span class="w">            </span><span class="n">ovphysx_unsubscribe_object_changes</span><span class="p">(</span><span class="n">object_change_subscription</span><span class="p">),</span>
+<span class="w">            </span><span class="s">&quot;unsubscribe from object changes&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">destroy_path_query</span><span class="p">(</span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">target_platform</span><span class="p">);</span>
+<span class="w">        </span><span class="n">destroy_path_query</span><span class="p">(</span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">combined_platform</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">target_rider</span><span class="p">)</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">target_rider</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">conveyor_rider</span><span class="p">)</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">conveyor_rider</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">combined_rider</span><span class="p">)</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">combined_rider</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">attachment</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">exit_code</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="rigid_bodies.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Rigid Bodies</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="joints.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Joints</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#translating-supports-and-kinematic-targets">Translating Supports and Kinematic Targets</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stationary-conveyors-and-surface-velocity">Stationary Conveyors and Surface Velocity</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#combining-target-motion-and-surface-velocity">Combining Target Motion and Surface Velocity</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sleep-friction-and-ordering">Sleep, Friction, and Ordering</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reset-and-readback">Reset and Readback</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#runnable-samples">Runnable Samples</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Sep 11, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

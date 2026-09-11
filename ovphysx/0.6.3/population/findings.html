@@ -1,0 +1,1250 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Recorded findings &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=fda8593d"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=fc986d73"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'population/findings';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.3';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Overview" href="../read_write/index.html" />
+    <link rel="prev" title="Static Plane collider" href="composition-static_plane_collider.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Sep 11, 2026"/>
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovstage_integration.html">ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/collision.html">Colliders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/kinematic_support.html">Kinematic Support Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">ovstage Physics Population Domain</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Capsule.html">Capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Cone.html">Cone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Cube.html">Cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Cylinder.html">Cylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Material.html">Material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsCollisionGroup.html">PhysicsCollisionGroup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsDistanceJoint.html">PhysicsDistanceJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsFixedJoint.html">PhysicsFixedJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsJoint.html">PhysicsJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsPrismaticJoint.html">PhysicsPrismaticJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsRevoluteJoint.html">PhysicsRevoluteJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsScene.html">PhysicsScene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsSphericalJoint.html">PhysicsSphericalJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxPhysicsGearJoint.html">PhysxPhysicsGearJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxPhysicsRackAndPinionJoint.html">PhysxPhysicsRackAndPinionJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Plane.html">Plane</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sphere.html">Sphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Xform.html">Xform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MaterialBindingAPI.html">MaterialBindingAPI (physics purpose)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsArticulationRootAPI.html">PhysicsArticulationRootAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsCollisionAPI.html">PhysicsCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsDriveAPI.html">PhysicsDriveAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsFilteredPairsAPI.html">PhysicsFilteredPairsAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsJointStateAPI.html">PhysicsJointStateAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsLimitAPI.html">PhysicsLimitAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsMassAPI.html">PhysicsMassAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsMaterialAPI.html">PhysicsMaterialAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsMeshCollisionAPI.html">PhysicsMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysicsRigidBodyAPI.html">PhysicsRigidBodyAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxArticulationAPI.html">PhysxArticulationAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxCollisionAPI.html">PhysxCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxContactReportAPI.html">PhysxContactReportAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxJointAPI.html">PhysxJointAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxLimitAPI.html">PhysxLimitAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxPhysicsDistanceJointAPI.html">PhysxPhysicsDistanceJointAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxRigidBodyAPI.html">PhysxRigidBodyAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxSDFMeshCollisionAPI.html">PhysxSDFMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxSceneAPI.html">PhysxSceneAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxSphereFillCollisionAPI.html">PhysxSphereFillCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxSplinesSurfaceVelocityAPI.html">PhysxSplinesSurfaceVelocityAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxSurfaceVelocityAPI.html">PhysxSurfaceVelocityAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxTriangleMeshCollisionAPI.html">PhysxTriangleMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxTriangleMeshSimplificationCollisionAPI.html">PhysxTriangleMeshSimplificationCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhysxTriggerAPI.html">PhysxTriggerAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="prim.html">Prim identity and transform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stage_units.html">Stage units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-articulation_fixed_base.html">Fixed-base two-link articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-articulation_floating.html">Floating-base two-link articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-conveyor_cube.html">Kinematic conveyor Cube with a surface velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-d6_joint_pair.html">Two rigid-body Cubes on a D6 joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-distance_joint_pair.html">Two rigid-body Cubes on a distance joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-fixed_joint_pair.html">Two rigid-body Cubes on a fixed joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-gear_joint_pair.html">Two hinged rigid-body Cubes coupled by a gear joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-material_bound_cube.html">Rigid-body Cube bound to a physics Material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-physics_scene.html">Physics scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-prismatic_joint_pair.html">Two rigid-body Cubes on a prismatic joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-rack_and_pinion_joint_pair.html">A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-revolute_joint_pair.html">Two rigid-body Cubes on a revolute joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-rigid_body_capsule.html">Dynamic rigid body on a Capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-rigid_body_cone.html">Dynamic rigid body on a Cone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-rigid_body_cube.html">Dynamic rigid body on a Cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-rigid_body_cube_pair.html">Two dynamic rigid-body Cubes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-rigid_body_cylinder.html">Dynamic rigid body on a Cylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-rigid_body_sphere.html">Dynamic rigid body on a Sphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-spherical_joint_pair.html">Two rigid-body Cubes on a spherical joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition-static_plane_collider.html">Static Plane collider</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Recorded findings</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Read/Write Data Contract</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../read_write/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/data_model.html">Data model and semantics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/hello_world.html">Hello World – Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/cloning.html">Cloning – Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">ovstage Physics Population Domain</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Recorded findings</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Generated by physics_population_domain/tools/gen_contract.py from the JSON contract. Do not edit; edit the contract and regenerate (see physics_population_domain/README.md). -->
+<section id="recorded-findings">
+<h1>Recorded findings<a class="headerlink" href="#recorded-findings" title="Link to this heading">#</a></h1>
+<p>Every divergence the contract records between the USD schema, ovstage population (the producer)
+and the ovphysx parser (the consumer). A <strong>defect</strong> is asserted as a canary when a composition’s
+absent-column parity case observes the column and would fail the day the consumer is fixed
+without the contract being updated; a defect no composition observes is documentation only.
+Fragile spots and notes are never asserted.</p>
+<section id="defects-11">
+<h2>Defects (11)<a class="headerlink" href="#defects-11" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Component</p></th>
+<th class="head"><p>Column</p></th>
+<th class="head"><p>Side</p></th>
+<th class="head"><p>Summary</p></th>
+<th class="head"><p>Asserted by</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="Cube.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">Cube</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">size</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Absent size resolves to 1.0 on the consumer but USD population always publishes the resolved fallback 2.0. Capsule, Cylinder and Cone seed the USD fallbacks in the consumer; Cube does not. Only a hand-populated stage that omits the column is affected.</p></td>
+<td><p><a class="reference internal" href="composition-rigid_body_cube.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">rigid_body_cube</span></code></span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysicsPrismaticJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsPrismaticJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:lowerLimit</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Absent lowerLimit/upperLimit columns leave the bounds at 0 and the OR-form enable rule activates a [0, 0] limit, locking the slider. Masked on producer-populated stages, which publish -inf/inf. The active limit also overwrites the PhysX default bounceThreshold of the untouched limit (0.5 for angular and cone limits, 2 * tolerances length for linear limits) with the PhysxLimitAPI value or 0, so physxLimit:<inst>:bounceThreshold diverges too (observed: 0 vs 0.5 / 200).</p></td>
+<td><p><a class="reference internal" href="composition-prismatic_joint_pair.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">prismatic_joint_pair</span></code></span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsRevoluteJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsRevoluteJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:lowerLimit</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>An absent lowerLimit/upperLimit column leaves the JointInfo bound at 0, and the OR-form enable rule then activates the limit at [0, 0], locking the hinge. USD population always publishes the resolved -inf/inf so the defect is masked there; only a hand-populated stage that omits the columns is affected. The active limit also overwrites the PhysX default bounceThreshold of the untouched limit (0.5 for angular and cone limits, 2 * tolerances length for linear limits) with the PhysxLimitAPI value or 0, so physxLimit:<inst>:bounceThreshold diverges too (observed: 0 vs 0.5 / 200).</p></td>
+<td><p><a class="reference internal" href="composition-revolute_joint_pair.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">revolute_joint_pair</span></code></span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysicsScene.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsScene</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:gravityMagnitude</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>An authored PhysicsScene with no gravity columns gets the consumer’s unscaled SI defaults (9.81 along -Z) instead of the units- and up-axis-aware values both the producer and the consumer’s synthetic default scene produce. The scene walker copies the columns into a default-constructed SceneInfo and the parser overwrites the units-aware overlay with it. The raw fallbacks (0,0,0) and -inf are also not resolved on the consumer. Masked on producer-populated stages because the producer always resolves them.</p></td>
+<td><p><a class="reference internal" href="composition-physics_scene.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">physics_scene</span></code></span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsSphericalJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsSphericalJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:coneAngle0Limit</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Absent coneAngle0Limit/coneAngle1Limit columns leave both half-angles at 0, which satisfies the non-negative AND rule and activates a zero cone. PhysX rejects it: PxJointLimitCone::isValid requires 0 &lt; angle &lt; pi, so PxD6Joint::setSwingLimit reports ‘limit invalid’ through the error callback and the swing limit is not applied (the contract test bootstrap treats the error as fatal, which is why spherical_joint_pair authors both angles in every variant). Masked on producer-populated stages, which publish -1 and leave the swing axes free with the PhysX default cone (bounceThreshold 0.5).</p></td>
+<td><p>documentation only</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxPhysicsGearJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxPhysicsGearJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:gearRatio</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The descriptor default for gearRatio is 0 while the schema fallback is 1; an unpublished column yields a zero ratio instead of the identity coupling USD population produces. Only a hand-populated stage that omits the column is affected.</p></td>
+<td><p><a class="reference internal" href="composition-gear_joint_pair.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">gear_joint_pair</span></code></span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxPhysicsRackAndPinionJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxPhysicsRackAndPinionJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:ratio</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The descriptor default for ratio is 0 while the schema fallback is 1; an unpublished column yields a zero ratio instead of the identity coupling USD population produces. Only a hand-populated stage that omits the column is affected.</p></td>
+<td><p><a class="reference internal" href="composition-rack_and_pinion_joint_pair.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">rack_and_pinion_joint_pair</span></code></span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysicsLimitAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsLimitAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">limit:&lt;inst&gt;:physics:low</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>With an instance applied but its low/high columns absent, both bounds stay 0 and the OR-form enable rule activates a [0, 0] limit that locks the axis, whereas USD population publishes -inf/inf and leaves the axis free. Only a hand-populated stage that omits the columns is affected. The active limit also overwrites the PhysX default bounceThreshold of the untouched limit (0.5 for angular and cone limits, 2 * tolerances length for linear limits) with the PhysxLimitAPI value or 0, so physxLimit:<inst>:bounceThreshold diverges too (observed: 0 vs 0.5 / 200).</p></td>
+<td><p><a class="reference internal" href="composition-d6_joint_pair.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">d6_joint_pair</span></code></span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsMaterialAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsMaterialAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:staticFriction</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The consumer default 0.5 for both frictions disagrees with the schema fallback 0.0 that the producer publishes: a producer-populated Material simulates with friction 0, a hand-populated stage that omits the columns with 0.5. Observed in the material_bound_cube parity test (PxMaterial::getStaticFriction 0.5 vs 0). Same for physics:dynamicFriction.</p></td>
+<td><p><a class="reference internal" href="composition-material_bound_cube.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">material_bound_cube</span></code></span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxArticulationAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxArticulationAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxArticulation:stabilizationThreshold</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The parser’s units-scaled default uses coefficient 1e-2 while the schema documents and falls back to 1e-5 (and PhysxRigidBodyAPI uses 1e-5): a 1000x divergence beyond the units factor, frozen in by TestParseArticulation. sleepThreshold’s 5e-5 matches the schema.</p></td>
+<td><p><a class="reference internal" href="composition-articulation_fixed_base.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">articulation_fixed_base</span></code></span></a>, <a class="reference internal" href="composition-articulation_floating.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">articulation_floating</span></code></span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxArticulationAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxArticulationAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxArticulation:sleepThreshold</span></code></p></td>
+<td><p>both</p></td>
+<td><p>The producer performs no units-scaled rewrite for articulations (it does for rigid bodies) and the consumer has no authored gate, so a producer-populated stage with PhysxArticulationAPI applied and unauthored thresholds simulates with the raw 5e-5 / 1e-5 while a stage that omits the columns gets 5e-3 / 1.0 on a meter stage. The two population paths disagree on every stage; the gap grows with 1/metersPerUnit^2.</p></td>
+<td><p><a class="reference internal" href="composition-articulation_fixed_base.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">articulation_fixed_base</span></code></span></a>, <a class="reference internal" href="composition-articulation_floating.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">articulation_floating</span></code></span></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="fragile-16">
+<h2>Fragile (16)<a class="headerlink" href="#fragile-16" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Component</p></th>
+<th class="head"><p>Column</p></th>
+<th class="head"><p>Side</p></th>
+<th class="head"><p>Summary</p></th>
+<th class="head"><p>Asserted by</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsDistanceJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsDistanceJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The PhysxJointDesc constructor default for localPose0Orientation/localPose1Orientation is {1, 0, 0, 0} in the (x, y, z, w) layout, a 180 degree rotation about X rather than identity. Masked today because copyBaseFields always overwrites it from JointInfo, whose default {0, 0, 0, 1} is identity. Any future path that builds a joint descriptor without copyBaseFields inherits a flipped frame.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysicsFixedJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsFixedJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The PhysxJointDesc constructor default for localPose0Orientation/localPose1Orientation is {1, 0, 0, 0} in the (x, y, z, w) layout, a 180 degree rotation about X rather than identity. Masked today because copyBaseFields always overwrites it from JointInfo, whose default {0, 0, 0, 1} is identity. Any future path that builds a joint descriptor without copyBaseFields inherits a flipped frame.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The PhysxJointDesc constructor default for localPose0Orientation/localPose1Orientation is {1, 0, 0, 0} in the (x, y, z, w) layout, a 180 degree rotation about X rather than identity. Masked today because copyBaseFields always overwrites it from JointInfo, whose default {0, 0, 0, 1} is identity. Any future path that builds a joint descriptor without copyBaseFields inherits a flipped frame.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysicsPrismaticJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsPrismaticJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The PhysxJointDesc constructor default for localPose0Orientation/localPose1Orientation is {1, 0, 0, 0} in the (x, y, z, w) layout, a 180 degree rotation about X rather than identity. Masked today because copyBaseFields always overwrites it from JointInfo, whose default {0, 0, 0, 1} is identity. Any future path that builds a joint descriptor without copyBaseFields inherits a flipped frame.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsRevoluteJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsRevoluteJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The PhysxJointDesc constructor default for localPose0Orientation/localPose1Orientation is {1, 0, 0, 0} in the (x, y, z, w) layout, a 180 degree rotation about X rather than identity. Masked today because copyBaseFields always overwrites it from JointInfo, whose default {0, 0, 0, 1} is identity. Any future path that builds a joint descriptor without copyBaseFields inherits a flipped frame.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysicsRevoluteJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsRevoluteJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:lowerLimit</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Limit enable differs between backends for revolute joints: the ovstage walker enables the limit when EITHER bound is finite and inside +-0.5e38 (OR), the USD walker requires BOTH (AND). A revolute with lowerLimit -30 and upperLimit inf is limited on ovstage and free on USD. Prismatic and D6 use OR on both backends.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsSphericalJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsSphericalJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The PhysxJointDesc constructor default for localPose0Orientation/localPose1Orientation is {1, 0, 0, 0} in the (x, y, z, w) layout, a 180 degree rotation about X rather than identity. Masked today because copyBaseFields always overwrites it from JointInfo, whose default {0, 0, 0, 1} is identity. Any future path that builds a joint descriptor without copyBaseFields inherits a flipped frame.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxPhysicsGearJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxPhysicsGearJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The PhysxJointDesc constructor default for localPose0Orientation/localPose1Orientation is {1, 0, 0, 0} in the (x, y, z, w) layout, a 180 degree rotation about X rather than identity. Masked today because copyBaseFields always overwrites it from JointInfo, whose default {0, 0, 0, 1} is identity. Any future path that builds a joint descriptor without copyBaseFields inherits a flipped frame.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxPhysicsRackAndPinionJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxPhysicsRackAndPinionJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The PhysxJointDesc constructor default for localPose0Orientation/localPose1Orientation is {1, 0, 0, 0} in the (x, y, z, w) layout, a 180 degree rotation about X rather than identity. Masked today because copyBaseFields always overwrites it from JointInfo, whose default {0, 0, 0, 1} is identity. Any future path that builds a joint descriptor without copyBaseFields inherits a flipped frame.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxContactReportAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxContactReport:threshold</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Because ovstage reports every column as authored, the consumer distinguishes authored from unauthored by comparing against the raw schema fallback 1.0; an authored 1.0 collapses to the units-scaled default (1 / metersPerUnit). Same shape as the character controller contactOffset/stepOffset case.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxJointAxisAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxJointAxisAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxJointAxis:&lt;inst&gt;:armature</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Only a strictly positive per-axis armature displaces the joint-level seed, because 0 is both the fallback and a legal authored value and the authored bit is unavailable on ovstage. Consequence: an explicit per-axis armature of 0 cannot override a non-zero physxJoint:armature. Documented and accepted (ADR-0002 invariant 1).</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxLimitAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxLimitAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxLimit:&lt;inst&gt;:restitution</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Restitution is clamped to [0, FLT_MAX] although the schema documents [0, 1] and PxJointLimitParameters::isValid requires restitution &lt;= 1; a value above 1 produces an invalid PhysX limit instead of being clamped.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxRigidBodyAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxRigidBodyAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxRigidBody:sleepThreshold</span></code></p></td>
+<td><p></p></td>
+<td><p>The authored-bit gate that protects units-scaled defaults is a no-op on ovstage (hasAuthoredAttribute is always true), so the default is passed through the clamp. Every current default lies inside its clamp range; a future default outside it would be clipped on ovstage only. Same for stabilizationThreshold and maxDepenetrationVelocity.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSceneAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxScene:bounceThreshold</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The consumer default 1e-6 is not units-scaled while every neighbouring length default is, and the raw schema fallback 0 is clamped up to it. A centimeter stage therefore bounces on contacts 100 times slower (relative to its units) than a meter stage would.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxSceneAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxScene:timeStepsPerSecond</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The authored-bit gates (readClampedIfAuthored, readBoolIfAuthored) are no-ops on ovstage where every column reads as authored, so the resolved value always wins and a value equal to the raw fallback is indistinguishable from unauthored. This is what makes the newton:timeStepsPerSecond fallback unreachable on a producer-populated stage: the published 60 counts as authored.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSceneAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxScene:maxBiasCoefficient</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Whether the authored value takes effect depends on the solver configuration, not on the stage: PhysX applies PxSceneDesc::maxBiasCoefficient in the PGS and GPU dynamics contexts but the CPU TGS context constructs with PX_MAX_F32 (physx DyTGSDynamics.cpp), so with solverType TGS and enableGPUDynamics false the column is silently ignored and PxScene::getMaxBiasCoefficient returns FLT_MAX. Observed in the population contract test (authored 10, read FLT_MAX).</p></td>
+<td><p>not asserted</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="notes-36">
+<h2>Notes (36)<a class="headerlink" href="#notes-36" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Component</p></th>
+<th class="head"><p>Column</p></th>
+<th class="head"><p>Side</p></th>
+<th class="head"><p>Summary</p></th>
+<th class="head"><p>Asserted by</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsCollisionGroup.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsCollisionGroup</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:invertFilteredGroups</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Declared by the schema, prefetched by the walker and used as the enumeration probe column, but never read into any descriptor: authoring it has no effect. Only the scene-level physxScene:invertCollisionGroupFilter changes the filtering sense. Not a column of this contract for that reason.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysicsDistanceJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsDistanceJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:breakForce</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The ovstage walker seeds breakForce/breakTorque with FLT_MAX while the USD walker leaves the schema fallback inf, so the descriptor differs bit-for-bit between backends when the columns are unauthored. No simulation difference: the runtime maps any non-finite value to FLT_MAX before calling PxJoint::setBreakForce.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsDistanceJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsDistanceJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>producer</p></td>
+<td><p>Quaternion lanes are published (x, y, z, w) although USD authors (w, x, y, z); the consumer reads the lanes verbatim. A hand populator that copies the USD tuple order produces a wrong frame with no diagnostic. Also applies to physics:localRot1.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysicsFixedJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsFixedJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:breakForce</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The ovstage walker seeds breakForce/breakTorque with FLT_MAX while the USD walker leaves the schema fallback inf, so the descriptor differs bit-for-bit between backends when the columns are unauthored. No simulation difference: the runtime maps any non-finite value to FLT_MAX before calling PxJoint::setBreakForce.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsFixedJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsFixedJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>producer</p></td>
+<td><p>Quaternion lanes are published (x, y, z, w) although USD authors (w, x, y, z); the consumer reads the lanes verbatim. A hand populator that copies the USD tuple order produces a wrong frame with no diagnostic. Also applies to physics:localRot1.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysicsJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:breakForce</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The ovstage walker seeds breakForce/breakTorque with FLT_MAX while the USD walker leaves the schema fallback inf, so the descriptor differs bit-for-bit between backends when the columns are unauthored. No simulation difference: the runtime maps any non-finite value to FLT_MAX before calling PxJoint::setBreakForce.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>producer</p></td>
+<td><p>Quaternion lanes are published (x, y, z, w) although USD authors (w, x, y, z); the consumer reads the lanes verbatim. A hand populator that copies the USD tuple order produces a wrong frame with no diagnostic. Also applies to physics:localRot1.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysicsPrismaticJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsPrismaticJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:breakForce</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The ovstage walker seeds breakForce/breakTorque with FLT_MAX while the USD walker leaves the schema fallback inf, so the descriptor differs bit-for-bit between backends when the columns are unauthored. No simulation difference: the runtime maps any non-finite value to FLT_MAX before calling PxJoint::setBreakForce.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsPrismaticJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsPrismaticJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>producer</p></td>
+<td><p>Quaternion lanes are published (x, y, z, w) although USD authors (w, x, y, z); the consumer reads the lanes verbatim. A hand populator that copies the USD tuple order produces a wrong frame with no diagnostic. Also applies to physics:localRot1.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysicsRevoluteJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsRevoluteJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:breakForce</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The ovstage walker seeds breakForce/breakTorque with FLT_MAX while the USD walker leaves the schema fallback inf, so the descriptor differs bit-for-bit between backends when the columns are unauthored. No simulation difference: the runtime maps any non-finite value to FLT_MAX before calling PxJoint::setBreakForce.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsRevoluteJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsRevoluteJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>producer</p></td>
+<td><p>Quaternion lanes are published (x, y, z, w) although USD authors (w, x, y, z); the consumer reads the lanes verbatim. A hand populator that copies the USD tuple order produces a wrong frame with no diagnostic. Also applies to physics:localRot1.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysicsScene.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsScene</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:gravityDirection</span></code></p></td>
+<td><p>producer</p></td>
+<td><p>The producer requirements describe replacing a ZERO direction with negative up axis; the code replaces an UNAUTHORED direction and keeps an authored zero. Documented here as the code behaves.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsSphericalJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsSphericalJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:breakForce</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The ovstage walker seeds breakForce/breakTorque with FLT_MAX while the USD walker leaves the schema fallback inf, so the descriptor differs bit-for-bit between backends when the columns are unauthored. No simulation difference: the runtime maps any non-finite value to FLT_MAX before calling PxJoint::setBreakForce.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysicsSphericalJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsSphericalJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>producer</p></td>
+<td><p>Quaternion lanes are published (x, y, z, w) although USD authors (w, x, y, z); the consumer reads the lanes verbatim. A hand populator that copies the USD tuple order produces a wrong frame with no diagnostic. Also applies to physics:localRot1.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxPhysicsGearJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxPhysicsGearJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:breakForce</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The ovstage walker seeds breakForce/breakTorque with FLT_MAX while the USD walker leaves the schema fallback inf, so the descriptor differs bit-for-bit between backends when the columns are unauthored. No simulation difference: the runtime maps any non-finite value to FLT_MAX before calling PxJoint::setBreakForce.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxPhysicsGearJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxPhysicsGearJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>producer</p></td>
+<td><p>Quaternion lanes are published (x, y, z, w) although USD authors (w, x, y, z); the consumer reads the lanes verbatim. A hand populator that copies the USD tuple order produces a wrong frame with no diagnostic. Also applies to physics:localRot1.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxPhysicsGearJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxPhysicsGearJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localPos0</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Authored local frames (physics:localPos0/1, physics:localRot0/1) are ignored: the runtime replaces the gear joint’s local frames with the referenced hinge joints’ frames. The frames are therefore unobservable on this type in the contract tests.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxPhysicsRackAndPinionJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxPhysicsRackAndPinionJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:breakForce</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The ovstage walker seeds breakForce/breakTorque with FLT_MAX while the USD walker leaves the schema fallback inf, so the descriptor differs bit-for-bit between backends when the columns are unauthored. No simulation difference: the runtime maps any non-finite value to FLT_MAX before calling PxJoint::setBreakForce.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxPhysicsRackAndPinionJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxPhysicsRackAndPinionJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localRot0</span></code></p></td>
+<td><p>producer</p></td>
+<td><p>Quaternion lanes are published (x, y, z, w) although USD authors (w, x, y, z); the consumer reads the lanes verbatim. A hand populator that copies the USD tuple order produces a wrong frame with no diagnostic. Also applies to physics:localRot1.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxPhysicsRackAndPinionJoint.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxPhysicsRackAndPinionJoint</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physics:localPos0</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Authored local frames (physics:localPos0/1, physics:localRot0/1) are ignored: the runtime replaces the rack-and-pinion joint’s local frames with the referenced hinge and prismatic joints’ frames. The frames are therefore unobservable on this type in the contract tests.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysicsArticulationRootAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsArticulationRootAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">usd-schemas</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Nested articulation roots (a root prim inside another root’s subtree) are rejected with an error and skipped. A root with nothing aggregable still emits one default articulation descriptor anchored on the root prim.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxConvexDecompositionCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxConvexDecompositionCollisionAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxConvexDecompositionCollision:maxConvexHulls</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Absent column seeds 16 (PhysxCookingParams.h defaultCookedMaxHullCount) while the USD schema fallback published by the producer is 32. Only a hand-populated stage that omits the column is affected; it is a cooking input, not a PhysX default, so the divergence changes the cooked hull count rather than a PhysX object field.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxConvexDecompositionCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxConvexDecompositionCollisionAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxConvexDecompositionCollision:voxelResolution</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Absent column seeds 100000 (defaultCookedVoxelResolution) while the USD schema fallback published by the producer is 500000. Same class as maxConvexHulls.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxDrivePerformanceEnvelopeAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxDrivePerformanceEnvelopeAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxDrivePerformanceEnvelope:&lt;inst&gt;:maxActuatorVelocity</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The rotational branch is instance != linear, so angular, rotX, rotY, rotZ and any unrecognised instance name receive the degrees-to-radians conversions. Unlike PhysxJointAxisAPI, whose conversions are selected explicitly per joint type, an unknown instance here is silently treated as rotational.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxJointAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxJointAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxJoint:maxJointVelocity</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Authored-ness is decided by the value (v &lt; FLT_MAX), because the authored bit is unavailable on ovstage. An explicitly authored inf therefore behaves as unauthored and yields to newton:velocityLimit when that is present.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxLimitAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxLimitAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxLimit:&lt;inst&gt;:bounceThreshold</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Angular instances declare deg/s but no conversion is applied; PhysX reads the value as rad/s. Same on both backends, so parity is unaffected.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxLimitAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxLimitAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxLimit:&lt;inst&gt;:restitution</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>physxLimit:<inst>:contactDistance is declared by the schema but is neither in the walker’s column bucket nor in readPhysxLimitApi; it is never read.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxPhysicsDistanceJointAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxPhysicsDistanceJointAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxPhysicsDistanceJoint:springEnabled</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The stage-wide presence flag present.physxDistanceJoint is computed by the walker but never consulted by the parser, which goes straight to the per-prim hasSchema probe. Dead performance gate, no correctness effect.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxSDFMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxSDFMeshCollision:sdfNarrowBandThickness</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Absent column yields 0.0 instead of the header default 0.01 because the parser re-seeds a local to 0.0 and assigns it back unconditionally. USD population publishes the schema fallback 0.01, so only a hand-populated stage that omits the column is affected. Cooking input, not a PhysX default.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSDFMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxSDFMeshCollision:sdfMargin</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Absent column yields 0.0 instead of the header default 0.01, same pattern as sdfNarrowBandThickness. Cooking input, not a PhysX default.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxSDFMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxSDFMeshCollision:sdfTriangleCountReductionFactor</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Absent column yields 0.0 instead of the header default 1.0, same pattern. Cooking input, not a PhysX default.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSDFMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxSDFMeshCollision:sdfResolution</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Absent column yields 0 and disables the SDF entirely (the field falls back to triangle-mesh cooking) instead of the header default 256. USD population publishes 256. Deliberate validity probe in the parser; recorded so a hand populator knows the column is effectively mandatory.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxSceneAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxScene:minPositionIterationCount</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Raw schema fallback 1 versus consumer absent default 0: only bodies authored with 0 position iterations observe the difference. When min exceeds max (either pair) min is silently clamped down to max; the diagnostic is emitted by the USD schema parser only, so an ovstage-populated stage gets no warning.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSceneAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxScene:enableExternalForcesEveryIteration</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Silently cleared when solverType is PGS; the warning exists only on the USD path.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxSceneAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxScene:gpuMaxNumPartitions</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>A value in [1, 32] that is not a power of two is silently replaced by 8 rather than rounded.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSphereFillCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSphereFillCollisionAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxSphereFillCollision:voxelResolution</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Absent column seeds 100000 (PhysxCookingParams.h defaultCookedVoxelResolution, shared with convex decomposition) while the USD schema fallback published by the producer is 50000. Only a hand-populated stage that omits the column is affected. Cooking input, not a PhysX default.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="composition-static_plane_collider.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Static Plane collider</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../read_write/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Overview</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#defects-11">Defects (11)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragile-16">Fragile (16)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#notes-36">Notes (36)</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Sep 11, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

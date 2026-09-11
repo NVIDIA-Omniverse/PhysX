@@ -1,0 +1,1492 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Writable data &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=fda8593d"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=fc986d73"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'read_write/writable';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.3';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Known limitations and gaps" href="limitations.html" />
+    <link rel="prev" title="Readable data" href="readable.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Sep 11, 2026"/>
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovstage_integration.html">ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/collision.html">Colliders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/kinematic_support.html">Kinematic Support Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../population/index.html">ovstage Physics Population Domain</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../population/Capsule.html">Capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cone.html">Cone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cube.html">Cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cylinder.html">Cylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Material.html">Material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsCollisionGroup.html">PhysicsCollisionGroup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsDistanceJoint.html">PhysicsDistanceJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsFixedJoint.html">PhysicsFixedJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsJoint.html">PhysicsJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsPrismaticJoint.html">PhysicsPrismaticJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsRevoluteJoint.html">PhysicsRevoluteJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsScene.html">PhysicsScene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsSphericalJoint.html">PhysicsSphericalJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsGearJoint.html">PhysxPhysicsGearJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsRackAndPinionJoint.html">PhysxPhysicsRackAndPinionJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Plane.html">Plane</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Sphere.html">Sphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Xform.html">Xform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/MaterialBindingAPI.html">MaterialBindingAPI (physics purpose)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsArticulationRootAPI.html">PhysicsArticulationRootAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsCollisionAPI.html">PhysicsCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsDriveAPI.html">PhysicsDriveAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsFilteredPairsAPI.html">PhysicsFilteredPairsAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsJointStateAPI.html">PhysicsJointStateAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsLimitAPI.html">PhysicsLimitAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMassAPI.html">PhysicsMassAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMaterialAPI.html">PhysicsMaterialAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMeshCollisionAPI.html">PhysicsMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsRigidBodyAPI.html">PhysicsRigidBodyAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxArticulationAPI.html">PhysxArticulationAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxCollisionAPI.html">PhysxCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxContactReportAPI.html">PhysxContactReportAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsDistanceJointAPI.html">PhysxPhysicsDistanceJointAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxRigidBodyAPI.html">PhysxRigidBodyAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSDFMeshCollisionAPI.html">PhysxSDFMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSceneAPI.html">PhysxSceneAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSphereFillCollisionAPI.html">PhysxSphereFillCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSplinesSurfaceVelocityAPI.html">PhysxSplinesSurfaceVelocityAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSurfaceVelocityAPI.html">PhysxSurfaceVelocityAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriangleMeshCollisionAPI.html">PhysxTriangleMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriangleMeshSimplificationCollisionAPI.html">PhysxTriangleMeshSimplificationCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriggerAPI.html">PhysxTriggerAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/prim.html">Prim identity and transform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/stage_units.html">Stage units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-articulation_fixed_base.html">Fixed-base two-link articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-articulation_floating.html">Floating-base two-link articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-conveyor_cube.html">Kinematic conveyor Cube with a surface velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-d6_joint_pair.html">Two rigid-body Cubes on a D6 joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-distance_joint_pair.html">Two rigid-body Cubes on a distance joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-fixed_joint_pair.html">Two rigid-body Cubes on a fixed joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-gear_joint_pair.html">Two hinged rigid-body Cubes coupled by a gear joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-material_bound_cube.html">Rigid-body Cube bound to a physics Material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-physics_scene.html">Physics scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-prismatic_joint_pair.html">Two rigid-body Cubes on a prismatic joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rack_and_pinion_joint_pair.html">A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-revolute_joint_pair.html">Two rigid-body Cubes on a revolute joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_capsule.html">Dynamic rigid body on a Capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cone.html">Dynamic rigid body on a Cone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cube.html">Dynamic rigid body on a Cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cube_pair.html">Two dynamic rigid-body Cubes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cylinder.html">Dynamic rigid body on a Cylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_sphere.html">Dynamic rigid body on a Sphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-spherical_joint_pair.html">Two rigid-body Cubes on a spherical joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-static_plane_collider.html">Static Plane collider</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/findings.html">Recorded findings</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Read/Write Data Contract</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_model.html">Data model and semantics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="device.html">Device residency and interop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readable.html">Readable data</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="limitations.html">Known limitations and gaps</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/hello_world.html">Hello World – Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/cloning.html">Cloning – Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Writable data</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<section id="writable-data">
+<h1>Writable data<a class="headerlink" href="#writable-data" title="Link to this heading">#</a></h1>
+<p>The inventory of every quantity writable through the write API, per object type. Read-only quantities
+are covered in <a class="reference internal" href="readable.html"><span class="std std-doc">Readable data</span></a>; this page lists only what a write accepts.</p>
+<p>Every table gives, per attribute, its <strong>Meaning</strong>, <strong>dtype × lanes</strong> (element type and tuple width),
+and — where it applies — <strong>Frame</strong> and <strong>Units</strong>. Quaternions are xyzw. A <code class="docutils literal notranslate"><span class="pre">(write-only)</span></code> tag marks a
+control the solver consumes then clears each step (not readable). Column residency follows the read:
+device on DirectGPU, host on CPU — <strong>except</strong> joint DOF properties and particle <code class="docutils literal notranslate"><span class="pre">points</span></code>/<code class="docutils literal notranslate"><span class="pre">velocities</span></code>,
+which are host-staged on <strong>every</strong> scene.</p>
+<section id="writability-classes">
+<h2>Writability classes<a class="headerlink" href="#writability-classes" title="Link to this heading">#</a></h2>
+<p>To ask programmatically whether an <code class="docutils literal notranslate"><span class="pre">(object</span> <span class="pre">type,</span> <span class="pre">attribute)</span></code> pair is accepted:</p>
+<ul class="simple">
+<li><p>In C: <code class="docutils literal notranslate"><span class="pre">ovphysx_writability(object_type,</span> <span class="pre">attribute,</span> <span class="pre">&amp;out)</span></code></p></li>
+<li><p>In Python: <code class="docutils literal notranslate"><span class="pre">writability(object_type,</span> <span class="pre">attribute)</span></code></p></li>
+</ul>
+<p>It reports one of five classes — <code class="docutils literal notranslate"><span class="pre">OVPHYSX_WRITABILITY_&lt;NAME&gt;</span></code> in C (<code class="docutils literal notranslate"><span class="pre">ovphysx_writability_t</span></code>), the
+matching integer in Python:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Value</p></th>
+<th class="head"><p>Class</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">UNCLASSIFIED</span></code></p></td>
+<td><p>the type does not accept this name; a write rejects it</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">WRITABLE</span></code></p></td>
+<td><p>writable, no precondition beyond the object existing</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CONDITIONAL</span></code></p></td>
+<td><p>writable only under a stated condition; if unmet the write reports it and writes <strong>nothing</strong> (does not partially apply)</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">WRITE_ONLY</span></code></p></td>
+<td><p>a control the solver consumes then clears each step; not readable</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">READ_ONLY</span></code></p></td>
+<td><p>readable only; writing is an error naming the type, not a silent no-op</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The query is scene-independent (a hand-maintained snapshot of the runtime tables; string keys only;
+the object type is bounds-checked). It classifies the <em>attribute</em>, not the object’s current state.</p>
+</section>
+<section id="write-timing-ordering-and-persistence">
+<h2>Write timing, ordering, and persistence<a class="headerlink" href="#write-timing-ordering-and-persistence" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>A first step is required.</strong> A write before the scene’s first step is refused (not auto-warmed).</p></li>
+<li><p><strong>Applied at commit, into live PhysX</strong> — not deferred to the next step. A written value is
+observable through a read (or the raw PhysX pointer, <code class="docutils literal notranslate"><span class="pre">ovphysx_get_physx_ptr</span></code> / <code class="docutils literal notranslate"><span class="pre">get_physx_ptr</span></code>)
+before the next step. Commit orders the write against an in-flight step and honours the CUDA sync
+you pass it — the <code class="docutils literal notranslate"><span class="pre">write_done_sync</span></code> argument in C, the <code class="docutils literal notranslate"><span class="pre">cuda_stream=</span></code> keyword in Python.</p></li>
+<li><p><strong>Read-modify-write for split poses.</strong> Writing <code class="docutils literal notranslate"><span class="pre">position</span></code> pre-reads and preserves <code class="docutils literal notranslate"><span class="pre">orientation</span></code>
+(and vice versa), because they are two slices of one atomic transform. Linear and angular velocity
+are independent (no pre-read). Particle/deformable point writes preserve the <code class="docutils literal notranslate"><span class="pre">.w</span></code> inverse-mass
+lane.</p></li>
+<li><p><strong>What the sim overwrites.</strong> <em>State</em> (poses, velocities, root state, joint DOF state, point sets)
+is recomputed by the next solver step. <em>Inputs, targets, and properties</em> (drive targets, all joint
+and tendon properties, materials, mass/inertia/COM, flags, wheel controls) persist across steps
+until re-written. <em>Write-only controls</em> (<code class="docutils literal notranslate"><span class="pre">force</span></code>, <code class="docutils literal notranslate"><span class="pre">wrench</span></code>, <code class="docutils literal notranslate"><span class="pre">driveTorque</span></code>, <code class="docutils literal notranslate"><span class="pre">brakeTorque</span></code>,
+<code class="docutils literal notranslate"><span class="pre">steerAngle</span></code>) are consumed and cleared each step.</p></li>
+<li><p><strong>Persistence is runtime-only.</strong> Every write publishes into live PhysX simulation state. <strong>No
+write is authored back into the ovstage / USD source representation.</strong> (A read gathers from the
+same live state, which is why a written value round-trips through a read.) Propagating results back
+into ovstage is a separate output-drain direction, not this write path — and its coverage differs
+from the writability query (see the last item in <a class="reference internal" href="limitations.html"><span class="std std-doc">Known limitations</span></a>).</p></li>
+<li><p><strong>No fill mask; one attribute per session.</strong> A commit publishes the whole mapped group — every
+object of the queried type in scope. There is currently <strong>no way to write a subset of prims</strong>:
+a query cannot pick individual prims (per-prim selection is a planned extension).
+Rows are re-resolved at every commit, never cached across sessions or steps.</p></li>
+<li><p><strong>Commit consumes the group.</strong> After a commit — <code class="docutils literal notranslate"><span class="pre">ovphysx_commit_group</span></code> in C, <code class="docutils literal notranslate"><span class="pre">session.commit(group)</span></code>
+in Python — the mapped buffers belong to physics (dereferencing the C pointers, or touching the
+Python tensor views, is undefined) and commit is not idempotent. A group left uncommitted when the
+session is released (or the Python <code class="docutils literal notranslate"><span class="pre">with</span></code> block exits) is discarded, not published.</p></li>
+</ul>
+</section>
+<section id="rigid-bodies">
+<h2>Rigid bodies<a class="headerlink" href="#rigid-bodies" title="Link to this heading">#</a></h2>
+<p>Rigid bodies (<code class="docutils literal notranslate"><span class="pre">RIGID_BODY</span></code>): all rigid <strong>state</strong> and <strong>authored inputs</strong> are writable; derived
+quantities (<code class="docutils literal notranslate"><span class="pre">linearAcceleration</span></code>, <code class="docutils literal notranslate"><span class="pre">angularAcceleration</span></code>, <code class="docutils literal notranslate"><span class="pre">inverseMass</span></code>, <code class="docutils literal notranslate"><span class="pre">inverseInertia</span></code>,
+<code class="docutils literal notranslate"><span class="pre">shapeCount</span></code>) are read-only.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">position</span></code></p></td>
+<td><p>body position</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">orientation</span></code></p></td>
+<td><p>rotation</p></td>
+<td><p>f32 × 4</p></td>
+<td><p>world</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">linearVelocity</span></code></p></td>
+<td><p>COM linear velocity</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>length/s</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">angularVelocity</span></code></p></td>
+<td><p>angular velocity</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>rad/s</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">mass</span></code></p></td>
+<td><p>body mass</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>—</p></td>
+<td><p>mass</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">inertia</span></code></p></td>
+<td><p>inertia tensor</p></td>
+<td><p>f32 × 9</p></td>
+<td><p>COM</p></td>
+<td><p>mass·length²</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">centerOfMassPosition</span></code></p></td>
+<td><p>COM offset</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>body</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">centerOfMassOrientation</span></code></p></td>
+<td><p>COM frame rotation</p></td>
+<td><p>f32 × 4</p></td>
+<td><p>body</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">disableGravity</span></code></p></td>
+<td><p>gravity-off flag</p></td>
+<td><p>u8 × 1</p></td>
+<td><p>—</p></td>
+<td><p>bool</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code></p></td>
+<td><p>excluded-from-sim flag</p></td>
+<td><p>u8 × 1</p></td>
+<td><p>—</p></td>
+<td><p>bool</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">staticFriction</span></code></p></td>
+<td><p>per-shape static friction</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dynamicFriction</span></code></p></td>
+<td><p>per-shape dynamic friction</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">restitution</span></code></p></td>
+<td><p>per-shape restitution</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contactOffset</span></code></p></td>
+<td><p>per-shape contact offset</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">restOffset</span></code></p></td>
+<td><p>per-shape rest offset</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">force</span></code></p></td>
+<td><p>external force at COM (write-only)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>force</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">wrench</span></code></p></td>
+<td><p>external force xyz + torque xyz + world application point (write-only)</p></td>
+<td><p>f32 × 9</p></td>
+<td><p>world</p></td>
+<td><p>force / torque</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Point-instancer instances are written in the same session as array groups (<code class="docutils literal notranslate"><span class="pre">position</span></code> / <code class="docutils literal notranslate"><span class="pre">orientation</span></code>
+local, velocities world). On DirectGPU an instancer group holding a disabled instance is refused as a
+whole (writes nothing) — asymmetric with standalone bodies, whose disabled rows are silently filtered.</p>
+<p>Writing <code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code> retains disabled rows in the group, so writing <code class="docutils literal notranslate"><span class="pre">0</span></code> re-enables a body.
+This disables a <strong>standalone</strong> body only — a point-instancer <strong>instance</strong> cannot be disabled
+individually (<code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code> is not an instancer-writable column and there is no per-instance
+route), which is unsupported in this release. <strong>Do not toggle <code class="docutils literal notranslate"><span class="pre">eDISABLE_SIMULATION</span></code> directly on a
+<code class="docutils literal notranslate"><span class="pre">PxRigidDynamic*</span></code> obtained from <code class="docutils literal notranslate"><span class="pre">ovphysx_get_physx_ptr</span></code></strong> — ovphysx does not observe the change, and
+on a DirectGPU scene the next read or write may resolve a stale GPU index to the wrong body without
+error. Write <code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code> through the write API instead.</p>
+</section>
+<section id="articulation-links">
+<h2>Articulation links<a class="headerlink" href="#articulation-links" title="Link to this heading">#</a></h2>
+<p>Articulation links (<code class="docutils literal notranslate"><span class="pre">ARTICULATION_LINK</span></code>) share the rigid body’s writable <strong>properties</strong>, with two
+exceptions: pose and velocity are read-only (a link moves through its articulation’s root pose plus
+joint state), and so is <code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code> (a link cannot be excluded from its articulation’s
+simulation individually). The table below is exactly the writable set.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">mass</span></code></p></td>
+<td><p>link mass</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>—</p></td>
+<td><p>mass</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">inertia</span></code></p></td>
+<td><p>inertia tensor</p></td>
+<td><p>f32 × 9</p></td>
+<td><p>COM</p></td>
+<td><p>mass·length²</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">centerOfMassPosition</span></code></p></td>
+<td><p>COM offset</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>body</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">centerOfMassOrientation</span></code></p></td>
+<td><p>COM frame rotation</p></td>
+<td><p>f32 × 4</p></td>
+<td><p>body</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">disableGravity</span></code></p></td>
+<td><p>gravity-off flag</p></td>
+<td><p>u8 × 1</p></td>
+<td><p>—</p></td>
+<td><p>bool</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">staticFriction</span></code></p></td>
+<td><p>per-shape static friction</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dynamicFriction</span></code></p></td>
+<td><p>per-shape dynamic friction</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">restitution</span></code></p></td>
+<td><p>per-shape restitution</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contactOffset</span></code></p></td>
+<td><p>per-shape contact offset</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">restOffset</span></code></p></td>
+<td><p>per-shape rest offset</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">force</span></code></p></td>
+<td><p>external force at COM (write-only)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>force</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">wrench</span></code></p></td>
+<td><p>external force xyz + torque xyz + world application point (write-only)</p></td>
+<td><p>f32 × 9</p></td>
+<td><p>world</p></td>
+<td><p>force / torque</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="articulation-joints-dofs">
+<h2>Articulation joints — DOFs<a class="headerlink" href="#articulation-joints-dofs" title="Link to this heading">#</a></h2>
+<p>Articulation joints (<code class="docutils literal notranslate"><span class="pre">ARTICULATION_JOINT</span></code>) write an array group, one value per enabled axis; the unit
+fold is applied once by the setter. Rotational axes are in <strong>degrees</strong> (as USD-authored).</p>
+<p>State and control:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointPosition</span></code></p></td>
+<td><p>generalized position</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>deg / length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointVelocity</span></code></p></td>
+<td><p>generalized velocity</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>deg/s / length/s</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointPositionTarget</span></code></p></td>
+<td><p>drive position target</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>deg / length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointVelocityTarget</span></code></p></td>
+<td><p>drive velocity target</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>deg/s / length/s</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointActuationForce</span></code></p></td>
+<td><p>applied actuation effort</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>force / torque</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Properties (authoring inputs; persist across steps):</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointStiffness</span></code></p></td>
+<td><p>drive effort per unit position error</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>effort/coord</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointDamping</span></code></p></td>
+<td><p>drive effort per unit rate error</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>effort/rate</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointLimit</span></code></p></td>
+<td><p>(low, high) motion limit</p></td>
+<td><p>f32 × 2 per axis</p></td>
+<td><p>degrees / length; <code class="docutils literal notranslate"><span class="pre">FLT_MAX</span></code> = free</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointMaxVelocity</span></code></p></td>
+<td><p>joint rate bound</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>USD rate</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointMaxForce</span></code></p></td>
+<td><p>drive effort bound</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>force</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointArmature</span></code></p></td>
+<td><p>added rotor inertia</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>inertia</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointStaticFriction</span></code></p></td>
+<td><p>break-away effort</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>effort</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointDynamicFriction</span></code></p></td>
+<td><p>sliding effort</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>effort</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointViscousFriction</span></code></p></td>
+<td><p>effort per unit rate</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>effort/rate</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointSpeedEffortGradient</span></code></p></td>
+<td><p>drive-envelope rate per effort</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>USD</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointMaxActuatorVelocity</span></code></p></td>
+<td><p>actuator rate bound</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>USD rate</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointVelocityDependentResistance</span></code></p></td>
+<td><p>envelope resistance per rate</p></td>
+<td><p>f32 × per-axis</p></td>
+<td><p>effort/rate</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointDriveType</span></code></p></td>
+<td><p>0 none / 1 force / 2 accel</p></td>
+<td><p>u8 × per-axis</p></td>
+<td><p>enum</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">jointLimit</span></code> is <strong>conditional</strong>: writing a <em>finite</em> limit onto a non-limited axis is refused and
+writes nothing (PhysX forbids making an axis limited while its articulation is in a scene); a
+<code class="docutils literal notranslate"><span class="pre">±FLT_MAX</span></code> (free) sentinel is a legal no-op. After writing <code class="docutils literal notranslate"><span class="pre">jointPosition</span></code>, call
+<code class="docutils literal notranslate"><span class="pre">ovphysx_update_articulations_kinematic</span></code> (C) / <code class="docutils literal notranslate"><span class="pre">update_articulations_kinematic()</span></code> (Python) to refresh
+dependent link transforms (a no-op on CPU — see <a class="reference internal" href="limitations.html"><span class="std std-doc">Known limitations</span></a>).</p>
+</section>
+<section id="whole-articulations">
+<h2>Whole articulations<a class="headerlink" href="#whole-articulations" title="Link to this heading">#</a></h2>
+<p>Whole articulations (<code class="docutils literal notranslate"><span class="pre">ARTICULATION</span></code>) accept root state only; COM, the inverse dynamics matrices, and per-shape
+properties are read-only.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rootPosition</span></code></p></td>
+<td><p>root-link position</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rootOrientation</span></code></p></td>
+<td><p>root-link rotation</p></td>
+<td><p>f32 × 4</p></td>
+<td><p>world</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rootLinearVelocity</span></code></p></td>
+<td><p>root linear velocity</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>length/s</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rootAngularVelocity</span></code></p></td>
+<td><p>root angular velocity</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>rad/s</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The rigid <code class="docutils literal notranslate"><span class="pre">position</span></code> / <code class="docutils literal notranslate"><span class="pre">velocity</span></code> names are refused on this type — use the <code class="docutils literal notranslate"><span class="pre">root*</span></code> names.</p>
+</section>
+<section id="vehicle-wheels">
+<h2>Vehicle wheels<a class="headerlink" href="#vehicle-wheels" title="Link to this heading">#</a></h2>
+<p>Vehicle wheels (<code class="docutils literal notranslate"><span class="pre">VEHICLE_WHEEL</span></code>) are <strong>CPU-only</strong>, and require a prior vehicle <em>read</em> on
+the scene to cache the wheel enumeration. All three writable controls are write-only. The composed
+wheel pose (<code class="docutils literal notranslate"><span class="pre">position</span></code> / <code class="docutils literal notranslate"><span class="pre">orientation</span></code>) is read-only.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">driveTorque</span></code></p></td>
+<td><p>drive torque (write-only)</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>torque</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">brakeTorque</span></code></p></td>
+<td><p>brake torque (write-only)</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>torque</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">steerAngle</span></code></p></td>
+<td><p>steer angle (write-only)</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>radians</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="deformable-volumes-surfaces">
+<h2>Deformable volumes / surfaces<a class="headerlink" href="#deformable-volumes-surfaces" title="Link to this heading">#</a></h2>
+<p>Deformable volumes / surfaces (<code class="docutils literal notranslate"><span class="pre">DEFORMABLE_VOLUME</span></code>, <code class="docutils literal notranslate"><span class="pre">DEFORMABLE_SURFACE</span></code>) are <strong>GPU-only,
+device-resident</strong>. <code class="docutils literal notranslate"><span class="pre">restPoints</span></code> and the connectivity indices are read-only; <code class="docutils literal notranslate"><span class="pre">kinematicTarget</span></code> is not
+accepted by name (its buffer must outlive the call, and a write session’s column is freed at release).</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">points</span></code></p></td>
+<td><p>current nodal positions (scale-corrected; <code class="docutils literal notranslate"><span class="pre">.w</span></code> inverse-mass lane preserved)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>sim-mesh-local</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">velocities</span></code></p></td>
+<td><p>nodal velocities</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="particle-sets">
+<h2>Particle sets<a class="headerlink" href="#particle-sets" title="Link to this heading">#</a></h2>
+<p>Particle sets (<code class="docutils literal notranslate"><span class="pre">PARTICLE_SET</span></code>) are <strong>host-staged on every scene</strong>, uploaded to the device at the next
+step; readable before then.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">points</span></code></p></td>
+<td><p>particle positions (scale-corrected; <code class="docutils literal notranslate"><span class="pre">.w</span></code> inverse-mass lane preserved)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>particle-set-prim-local</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">velocities</span></code></p></td>
+<td><p>particle velocities</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="fixed-spatial-tendons">
+<h2>Fixed / spatial tendons<a class="headerlink" href="#fixed-spatial-tendons" title="Link to this heading">#</a></h2>
+<p>Fixed / spatial tendons (<code class="docutils literal notranslate"><span class="pre">FIXED_TENDON</span></code>, <code class="docutils literal notranslate"><span class="pre">SPATIAL_TENDON</span></code>) are device-resident on DirectGPU, host
+otherwise; all persist. <code class="docutils literal notranslate"><span class="pre">tendonLimit</span></code> and <code class="docutils literal notranslate"><span class="pre">tendonRestLength</span></code> are refused by name on a spatial tendon
+(they live on the leaf attachment).</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Fixed</p></th>
+<th class="head"><p>Spatial</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tendonStiffness</span></code></p></td>
+<td><p>stiffness</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tendonDamping</span></code></p></td>
+<td><p>damping</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tendonLimitStiffness</span></code></p></td>
+<td><p>limit-region stiffness</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tendonOffset</span></code></p></td>
+<td><p>offset</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tendonLimit</span></code></p></td>
+<td><p>(low, high) length limit</p></td>
+<td><p>f32 × 2</p></td>
+<td><p>yes</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tendonRestLength</span></code></p></td>
+<td><p>rest length</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>yes</p></td>
+<td><p>—</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="deformable-materials">
+<h2>Deformable materials<a class="headerlink" href="#deformable-materials" title="Link to this heading">#</a></h2>
+<p>Deformable materials (<code class="docutils literal notranslate"><span class="pre">DEFORMABLE_MATERIAL</span></code>) are host-resident, scene-less; all persist.
+Bending/thickness fields apply to surface materials only (a volume material takes no row).</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Applies to</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">deformableDynamicFriction</span></code></p></td>
+<td><p>dynamic friction</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>volume + surface</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">deformableYoungsModulus</span></code></p></td>
+<td><p>Young’s modulus</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>volume + surface</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">deformablePoissonsRatio</span></code></p></td>
+<td><p>Poisson’s ratio</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>volume + surface</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">deformableElasticityDamping</span></code></p></td>
+<td><p>elasticity damping</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>volume + surface</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">deformableBendingStiffness</span></code></p></td>
+<td><p>bending stiffness</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>surface only</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">deformableThickness</span></code></p></td>
+<td><p>shell thickness</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>surface only</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">deformableBendingDamping</span></code></p></td>
+<td><p>bending damping</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>surface only</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="readable.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Readable data</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="limitations.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Known limitations and gaps</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#writability-classes">Writability classes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#write-timing-ordering-and-persistence">Write timing, ordering, and persistence</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rigid-bodies">Rigid bodies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulation-links">Articulation links</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulation-joints-dofs">Articulation joints — DOFs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#whole-articulations">Whole articulations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#vehicle-wheels">Vehicle wheels</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#deformable-volumes-surfaces">Deformable volumes / surfaces</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#particle-sets">Particle sets</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed-spatial-tendons">Fixed / spatial tendons</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#deformable-materials">Deformable materials</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Sep 11, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

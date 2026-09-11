@@ -1,0 +1,1011 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Data model and semantics &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=fda8593d"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=fc986d73"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'read_write/data_model';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.3';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Device residency and interop" href="device.html" />
+    <link rel="prev" title="Overview" href="index.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Sep 11, 2026"/>
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovstage_integration.html">ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/collision.html">Colliders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/kinematic_support.html">Kinematic Support Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../population/index.html">ovstage Physics Population Domain</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../population/Capsule.html">Capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cone.html">Cone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cube.html">Cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cylinder.html">Cylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Material.html">Material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsCollisionGroup.html">PhysicsCollisionGroup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsDistanceJoint.html">PhysicsDistanceJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsFixedJoint.html">PhysicsFixedJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsJoint.html">PhysicsJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsPrismaticJoint.html">PhysicsPrismaticJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsRevoluteJoint.html">PhysicsRevoluteJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsScene.html">PhysicsScene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsSphericalJoint.html">PhysicsSphericalJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsGearJoint.html">PhysxPhysicsGearJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsRackAndPinionJoint.html">PhysxPhysicsRackAndPinionJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Plane.html">Plane</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Sphere.html">Sphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Xform.html">Xform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/MaterialBindingAPI.html">MaterialBindingAPI (physics purpose)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsArticulationRootAPI.html">PhysicsArticulationRootAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsCollisionAPI.html">PhysicsCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsDriveAPI.html">PhysicsDriveAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsFilteredPairsAPI.html">PhysicsFilteredPairsAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsJointStateAPI.html">PhysicsJointStateAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsLimitAPI.html">PhysicsLimitAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMassAPI.html">PhysicsMassAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMaterialAPI.html">PhysicsMaterialAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMeshCollisionAPI.html">PhysicsMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsRigidBodyAPI.html">PhysicsRigidBodyAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxArticulationAPI.html">PhysxArticulationAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxCollisionAPI.html">PhysxCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxContactReportAPI.html">PhysxContactReportAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsDistanceJointAPI.html">PhysxPhysicsDistanceJointAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxRigidBodyAPI.html">PhysxRigidBodyAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSDFMeshCollisionAPI.html">PhysxSDFMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSceneAPI.html">PhysxSceneAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSphereFillCollisionAPI.html">PhysxSphereFillCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSplinesSurfaceVelocityAPI.html">PhysxSplinesSurfaceVelocityAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSurfaceVelocityAPI.html">PhysxSurfaceVelocityAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriangleMeshCollisionAPI.html">PhysxTriangleMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriangleMeshSimplificationCollisionAPI.html">PhysxTriangleMeshSimplificationCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriggerAPI.html">PhysxTriggerAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/prim.html">Prim identity and transform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/stage_units.html">Stage units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-articulation_fixed_base.html">Fixed-base two-link articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-articulation_floating.html">Floating-base two-link articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-conveyor_cube.html">Kinematic conveyor Cube with a surface velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-d6_joint_pair.html">Two rigid-body Cubes on a D6 joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-distance_joint_pair.html">Two rigid-body Cubes on a distance joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-fixed_joint_pair.html">Two rigid-body Cubes on a fixed joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-gear_joint_pair.html">Two hinged rigid-body Cubes coupled by a gear joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-material_bound_cube.html">Rigid-body Cube bound to a physics Material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-physics_scene.html">Physics scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-prismatic_joint_pair.html">Two rigid-body Cubes on a prismatic joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rack_and_pinion_joint_pair.html">A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-revolute_joint_pair.html">Two rigid-body Cubes on a revolute joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_capsule.html">Dynamic rigid body on a Capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cone.html">Dynamic rigid body on a Cone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cube.html">Dynamic rigid body on a Cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cube_pair.html">Two dynamic rigid-body Cubes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cylinder.html">Dynamic rigid body on a Cylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_sphere.html">Dynamic rigid body on a Sphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-spherical_joint_pair.html">Two rigid-body Cubes on a spherical joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-static_plane_collider.html">Static Plane collider</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/findings.html">Recorded findings</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Read/Write Data Contract</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Data model and semantics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="device.html">Device residency and interop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readable.html">Readable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="limitations.html">Known limitations and gaps</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/hello_world.html">Hello World – Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/cloning.html">Cloning – Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Data model and semantics</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<section id="data-model-and-semantics">
+<h1>Data model and semantics<a class="headerlink" href="#data-model-and-semantics" title="Link to this heading">#</a></h1>
+<p>This page explains the important notions of the read and write API and provides all the information
+required to <em>interpret</em> the values a read or write exchanges.</p>
+<section id="groups-and-shape">
+<h2>Groups and shape<a class="headerlink" href="#groups-and-shape" title="Link to this heading">#</a></h2>
+<p>A read or write returns its data as <strong>groups</strong>, one per attribute. A group is a struct holding four
+things:</p>
+<ul class="simple">
+<li><p><strong>column</strong>: the values (<code class="docutils literal notranslate"><span class="pre">tensors</span></code>).</p></li>
+<li><p><strong>prims</strong>: the objects associated with the API call (<code class="docutils literal notranslate"><span class="pre">prim_list</span></code>), row <em>i</em> ↔ prim <em>i</em>.</p></li>
+<li><p><strong>attribute</strong>: the corresponding <code class="docutils literal notranslate"><span class="pre">attribute</span></code>.</p></li>
+<li><p><strong>role</strong>: the USD geometric <code class="docutils literal notranslate"><span class="pre">semantic</span></code> (see below).</p></li>
+</ul>
+<p>The column has one row per object, in one of two shapes:</p>
+<ul class="simple">
+<li><p><strong>Fixed group</strong> — rectangular: <code class="docutils literal notranslate"><span class="pre">N</span></code> objects give <code class="docutils literal notranslate"><span class="pre">N</span></code> rows, each row the value (a position is 3
+numbers, an orientation 4).</p></li>
+<li><p><strong>Array group</strong> — each object’s value is a list, and the lengths differ (e.g. a joint’s number of
+DOFs), so it can’t be rectangular: you get <strong>one array per object</strong>.</p></li>
+</ul>
+<p>The shape is indicated by <code class="docutils literal notranslate"><span class="pre">is_array</span></code>.</p>
+<p>The role is used mainly by ovstage to round-trip the data as the right type on a
+write. The read/write path uses five roles:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Role</p></th>
+<th class="head"><p>Width</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>Attributes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POINT</span></code></p></td>
+<td><p>vec3 (3 × f32)</p></td>
+<td><p>a position</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">position</span></code>, <code class="docutils literal notranslate"><span class="pre">points</span></code>, <code class="docutils literal notranslate"><span class="pre">positions</span></code>, <code class="docutils literal notranslate"><span class="pre">restPoints</span></code>, <code class="docutils literal notranslate"><span class="pre">rootPosition</span></code>, <code class="docutils literal notranslate"><span class="pre">centerOfMassPosition</span></code>, <code class="docutils literal notranslate"><span class="pre">centerOfMassWorld</span></code>, <code class="docutils literal notranslate"><span class="pre">centerOfMassLocal</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">QUATERNION</span></code></p></td>
+<td><p>quat (4 × f32, <strong>xyzw</strong>)</p></td>
+<td><p>a rotation</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">orientation</span></code>, <code class="docutils literal notranslate"><span class="pre">orientations</span></code>, <code class="docutils literal notranslate"><span class="pre">rootOrientation</span></code>, <code class="docutils literal notranslate"><span class="pre">centerOfMassOrientation</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">VECTOR</span></code></p></td>
+<td><p>vec3 (3 × f32)</p></td>
+<td><p>a free vector (no origin)</p></td>
+<td><p>all linear/angular velocities and accelerations</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">MATRIX</span></code></p></td>
+<td><p>9 × f32 (3×3, column-major)</p></td>
+<td><p>a matrix</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">inertia</span></code>, <code class="docutils literal notranslate"><span class="pre">inverseInertia</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">NONE</span></code></p></td>
+<td><p>scalar / flag / count / any width</p></td>
+<td><p>no USD role</p></td>
+<td><p>masses, per-shape and per-axis scalars, flags, counts, inverse dynamics matrices, indices</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Two things to watch for:</p>
+<ul class="simple">
+<li><p><strong>The frame is not part of the role.</strong> A <code class="docutils literal notranslate"><span class="pre">POINT</span></code> may be world (<code class="docutils literal notranslate"><span class="pre">position</span></code>), body-local
+(<code class="docutils literal notranslate"><span class="pre">centerOfMassPosition</span></code>), or mesh-local (deformable <code class="docutils literal notranslate"><span class="pre">points</span></code>). Read the per-attribute tables for
+the frame.</p></li>
+<li><p><strong>A pose is two columns, never one.</strong> There is no fused transform role: a body pose is a <code class="docutils literal notranslate"><span class="pre">POINT</span></code>
+<code class="docutils literal notranslate"><span class="pre">position</span></code> plus a <code class="docutils literal notranslate"><span class="pre">QUATERNION</span></code> <code class="docutils literal notranslate"><span class="pre">orientation</span></code>; a root pose is <code class="docutils literal notranslate"><span class="pre">rootPosition</span></code> + <code class="docutils literal notranslate"><span class="pre">rootOrientation</span></code>.
+Writing one half <a class="reference internal" href="writable.html#write-timing-ordering-and-persistence"><span class="std std-ref">pre-reads the other</span></a> to
+preserve it.</p></li>
+</ul>
+</section>
+<section id="articulation-inverse-dynamics-cohorts">
+<h2>Articulation inverse dynamics cohorts<a class="headerlink" href="#articulation-inverse-dynamics-cohorts" title="Link to this heading">#</a></h2>
+<p>The whole-articulation inverse dynamics columns (<code class="docutils literal notranslate"><span class="pre">jacobian</span></code>,
+<code class="docutils literal notranslate"><span class="pre">jacobianShape</span></code>, <code class="docutils literal notranslate"><span class="pre">massMatrix</span></code>, <code class="docutils literal notranslate"><span class="pre">coriolisForce</span></code>, <code class="docutils literal notranslate"><span class="pre">gravityForce</span></code>, <code class="docutils literal notranslate"><span class="pre">centroidalMomentum</span></code>) are a special case
+as their size can be quite large. In order to be memory efficient, the notion of <strong>cohort</strong> has
+been introduced. A <strong>cohort</strong> is a set of structurally identical articulations, that is, same joint types and names, DOF
+parentage, and link leaf names.</p>
+<p>For a homogeneous scene, only one cohort is present, while for a heterogeneous scene,
+the results are <strong>cohort-partitioned</strong> with one group per cohort.
+The cohort can be identified by its prim list; the
+group <em>index</em> is not promised stable across reads. Every other column has one fixed shape for the
+whole read, so it needs no cohorts.</p>
+<p><strong>Layout.</strong> Matrices are row-major flattened. <code class="docutils literal notranslate"><span class="pre">massMatrix</span></code> is square (<code class="docutils literal notranslate"><span class="pre">M</span> <span class="pre">=</span> <span class="pre">numDofs</span> <span class="pre">+</span> <span class="pre">(fixedBase</span> <span class="pre">?</span> <span class="pre">0</span> <span class="pre">:</span> <span class="pre">6)</span></code>), so <code class="docutils literal notranslate"><span class="pre">M</span></code> is the square root of the lane count; <code class="docutils literal notranslate"><span class="pre">coriolisForce</span></code> and <code class="docutils literal notranslate"><span class="pre">gravityForce</span></code> are length <code class="docutils literal notranslate"><span class="pre">M</span></code>;
+<code class="docutils literal notranslate"><span class="pre">centroidalMomentum</span></code> has six rows, so its column count is <code class="docutils literal notranslate"><span class="pre">lanes</span> <span class="pre">/</span> <span class="pre">6</span></code>, and its last column is the
+bias rather than a coordinate. <code class="docutils literal notranslate"><span class="pre">jacobian</span></code>’s two dimensions both vary, so they are published in
+<code class="docutils literal notranslate"><span class="pre">jacobianShape</span></code> as <code class="docutils literal notranslate"><span class="pre">(rows,</span> <span class="pre">cols)</span></code>.</p>
+<p><strong>Sign convention.</strong> Generalized coordinates follow each USD joint’s authored direction: positive when
+<code class="docutils literal notranslate"><span class="pre">body0</span></code> is the articulation parent, negative when <code class="docutils literal notranslate"><span class="pre">body1</span></code> is. With <code class="docutils literal notranslate"><span class="pre">S_dof</span></code> the diagonal matrix of
+those signs and <code class="docutils literal notranslate"><span class="pre">T</span> <span class="pre">=</span> <span class="pre">S_dof</span></code> (fixed base) or <code class="docutils literal notranslate"><span class="pre">T</span> <span class="pre">=</span> <span class="pre">diag(I₆,</span> <span class="pre">S_dof)</span></code> (floating base), the values returned
+are <code class="docutils literal notranslate"><span class="pre">J</span> <span class="pre">=</span> <span class="pre">J_physx·T</span></code>, <code class="docutils literal notranslate"><span class="pre">M</span> <span class="pre">=</span> <span class="pre">T·M_physx·T</span></code>, <code class="docutils literal notranslate"><span class="pre">c</span> <span class="pre">=</span> <span class="pre">T·c_physx</span></code>, <code class="docutils literal notranslate"><span class="pre">g</span> <span class="pre">=</span> <span class="pre">T·g_physx</span></code>, and <code class="docutils literal notranslate"><span class="pre">[A|b]</span> <span class="pre">=</span> <span class="pre">[A_physx·T</span> <span class="pre">|</span> <span class="pre">b_physx]</span></code> — so centroidal’s six root columns and bias column are unchanged.</p>
+</section>
+<section id="units">
+<h2>Units<a class="headerlink" href="#units" title="Link to this heading">#</a></h2>
+<p>ovphysx follows one rule at the boundary: <strong>the parse/population layer converts to engine-native
+units at the boundary, and consumers never re-convert.</strong> Positions are in the scene’s length unit,
+which is the USD stage unit — see <a class="reference internal" href="../population/stage_units.html"><span class="std std-doc">Stage units</span></a> for <code class="docutils literal notranslate"><span class="pre">metersPerUnit</span></code> /
+<code class="docutils literal notranslate"><span class="pre">kilogramsPerUnit</span></code>.</p>
+<p>Within the session API the angular convention is <strong>not uniform</strong> — it depends on the quantity:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Quantity</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>positions, poses (<code class="docutils literal notranslate"><span class="pre">position</span></code>, <code class="docutils literal notranslate"><span class="pre">rootPosition</span></code>, COM)</p></td>
+<td><p>scene length units</p></td>
+<td><p>world unless the table says local</p></td>
+</tr>
+<tr class="row-odd"><td><p>rigid/link <code class="docutils literal notranslate"><span class="pre">linearVelocity</span></code></p></td>
+<td><p>length / s</p></td>
+<td><p>engine-native</p></td>
+</tr>
+<tr class="row-even"><td><p>rigid/link <code class="docutils literal notranslate"><span class="pre">angularVelocity</span></code></p></td>
+<td><p><strong>radians / s</strong></p></td>
+<td><p>engine-native — <strong>no</strong> degree fold</p></td>
+</tr>
+<tr class="row-odd"><td><p>rigid/link <code class="docutils literal notranslate"><span class="pre">linearAcceleration</span></code> / <code class="docutils literal notranslate"><span class="pre">angularAcceleration</span></code></p></td>
+<td><p>length/s² · rad/s²</p></td>
+<td><p>read-only</p></td>
+</tr>
+<tr class="row-even"><td><p>joint DOF <code class="docutils literal notranslate"><span class="pre">jointPosition</span></code> / <code class="docutils literal notranslate"><span class="pre">jointVelocity</span></code> / targets</p></td>
+<td><p><strong>degrees</strong> (rotational axes)</p></td>
+<td><p>as USD-authored; linear axes in length</p></td>
+</tr>
+<tr class="row-odd"><td><p>joint DOF efforts (<code class="docutils literal notranslate"><span class="pre">jointActuationForce</span></code>, <code class="docutils literal notranslate"><span class="pre">jointMaxForce</span></code>)</p></td>
+<td><p>force / torque</p></td>
+<td><p>no angular fold</p></td>
+</tr>
+<tr class="row-even"><td><p>whole-articulation inverse dynamics (<code class="docutils literal notranslate"><span class="pre">jacobian</span></code>, <code class="docutils literal notranslate"><span class="pre">massMatrix</span></code>, …)</p></td>
+<td><p><strong>radians</strong> for angular generalized coordinates</p></td>
+<td><p>no degree fold; linear dimensions keep their units</p></td>
+</tr>
+<tr class="row-odd"><td><p>vehicle <code class="docutils literal notranslate"><span class="pre">steerAngle</span></code></p></td>
+<td><p><strong>radians</strong></p></td>
+<td><p>write-only control</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">mass</span></code>, <code class="docutils literal notranslate"><span class="pre">inertia</span></code></p></td>
+<td><p>mass, mass·length²</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<div><p><strong>Note.</strong> The asymmetry is deliberate to call out: a rigid body’s <code class="docutils literal notranslate"><span class="pre">angularVelocity</span></code> is <strong>rad/s</strong>,
+but an articulation joint’s <code class="docutils literal notranslate"><span class="pre">jointVelocity</span></code> is in <strong>degrees/s</strong> (USD-authored). Read/write of the
+same quantity share one fold, so a read and a write on the same object never disagree — but two
+<em>different</em> object types do not share a convention.</p>
+</div></blockquote>
+</section>
+<section id="availability-and-fallback">
+<h2>Availability and fallback<a class="headerlink" href="#availability-and-fallback" title="Link to this heading">#</a></h2>
+<section id="step-first-precondition-directgpu">
+<h3>Step-first precondition (DirectGPU)<a class="headerlink" href="#step-first-precondition-directgpu" title="Link to this heading">#</a></h3>
+<p>On a DirectGPU scene (<code class="docutils literal notranslate"><span class="pre">eENABLE_DIRECT_GPU_API</span></code>) PhysX sizes its GPU structures during the <strong>first
+step</strong> and rejects direct-GPU access until it has run. Therefore, before the first step:</p>
+<ul class="simple">
+<li><p>a <strong>read</strong> emits <strong>no groups</strong> for device-sourced types (it reports end-of-iteration immediately —
+not an error, and currently indistinguishable from a genuinely empty match), and</p></li>
+<li><p>a <strong>write</strong> is <strong>refused</strong> (it is not auto-warmed).</p></li>
+</ul>
+<p>You control the first step with <code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx_step_sync</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx_warmup</span></code>. A <strong>CPU
+scene</strong> <em>does</em> report authored initial state before the first step. Readiness is per-scene: a
+multi-scene read returns ready partitions while omitting an unready DirectGPU scene.</p>
+</section>
+<section id="missing-and-partial-data">
+<h3>Missing and partial data<a class="headerlink" href="#missing-and-partial-data" title="Link to this heading">#</a></h3>
+<p>Reads are <strong>dense</strong> — an unavailable quantity is <em>omitted</em>, never NaN- or zero-filled to a full row:</p>
+<ul class="simple">
+<li><p><strong>Unknown or inapplicable attribute for the type</strong> → no group is emitted for it; the drain ends
+with end-of-iteration (not an error). Name dispatch is exhaustive — a name never falls through to a
+neighbouring attribute.</p></li>
+<li><p><strong>Attribute inapplicable to a particular object</strong> (e.g. <code class="docutils literal notranslate"><span class="pre">mass</span></code> on an instanced body, a surface-only
+material field on a volume material, <code class="docutils literal notranslate"><span class="pre">collisionElementIndices</span></code> on a surface) → that object
+contributes no row/column; a group’s prim set can be a <strong>subset</strong> of discovery. Always pair values
+to prims via the group’s own <code class="docutils literal notranslate"><span class="pre">prims.list</span></code>.</p></li>
+<li><p><strong>Disabled rigid body</strong> → on a <strong>DirectGPU</strong> scene it has no device state, so it is dropped from
+the group (fewer rows than discovery reports); on a <strong>CPU</strong> scene it stays in. A disabled
+point-instancer instance leaves its zero-filled slot.</p></li>
+<li><p><strong>Per-shape padding</strong> past <code class="docutils literal notranslate"><span class="pre">shapeCount</span></code> is deterministic zero-fill, but <code class="docutils literal notranslate"><span class="pre">0.0</span></code> is a legal value —
+use <code class="docutils literal notranslate"><span class="pre">shapeCount</span></code> (not the zeros) as the terminator.</p></li>
+<li><p>There is <strong>no per-object “pending vs current” fallback</strong> in the read (that concept belongs to the
+write/kinematic path). Derived read-only columns (<code class="docutils literal notranslate"><span class="pre">jointProjectedForce</span></code>, <code class="docutils literal notranslate"><span class="pre">linkIncomingJointForce</span></code>)
+are recomputed each read, never stale.</p></li>
+</ul>
+<p>A short set is distinguishable from a complete one by the <strong>terminal status</strong>: a failed backend
+build/gather ends with an error, a complete drain ends with end-of-iteration.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Overview</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="device.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Device residency and interop</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#groups-and-shape">Groups and shape</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulation-inverse-dynamics-cohorts">Articulation inverse dynamics cohorts</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#units">Units</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#availability-and-fallback">Availability and fallback</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-first-precondition-directgpu">Step-first precondition (DirectGPU)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#missing-and-partial-data">Missing and partial data</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Sep 11, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
