@@ -84,6 +84,12 @@ namespace physx
 
 						nbDof++;
 					}
+					else
+					{
+						// a locked axis owns no dof slot; re-arm the marker the constructor set so the
+						// 0xff checks in ScArticulationJointCore.cpp still hold after a reconfiguration
+						joint->invDofIds[i] = 0xff;
+					}
 				}
 			
 				return nbDof;
