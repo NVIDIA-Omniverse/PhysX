@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-SIM-MULTISCENE-001
+ * @covers AC-2
+ */
 
 #pragma once
 
@@ -144,6 +149,37 @@ private:
     ::physx::PxSync& mSync;
 };
 
+class SimulationCompletionTask : public ::physx::PxLightCpuTask
+{
+public:
+    void initialize(carb::tasking::ITasking* tasking, carb::tasking::TaskContext taskContext)
+    {
+        mTasking = tasking;
+        mTaskContext = taskContext;
+    }
+
+    virtual void run()
+    {
+    }
+
+    virtual void release()
+    {
+        carb::tasking::ITasking* const tasking = mTasking;
+        const carb::tasking::TaskContext taskContext = mTaskContext;
+        ::physx::PxLightCpuTask::release();
+        tasking->wakeTask(taskContext);
+    }
+
+    virtual const char* getName() const
+    {
+        return "PhysXSimulationCompletion";
+    }
+
+private:
+    carb::tasking::ITasking* mTasking{ nullptr };
+    carb::tasking::TaskContext mTaskContext{ carb::tasking::kInvalidTaskContext };
+};
+
 class PhysXStepper : public ::physx::PxLightCpuTask
 {
 public:
@@ -206,11 +242,15 @@ private:
     bool mSubsteppingEnabled;
     bool mSkipSimulation;
     ::physx::PxSceneQueryUpdateMode::Enum mSceneQueryUpdateMode;
+    SimulationCompletionTask mSimulationCompletionTask;
 
     // vehicle update
     std::vector<VehicleUpdateTask*> mVehicleUpdateTasks;
-    VehicleUpdateSyncTask mVehicleUpdateSyncTask;
+    // mVehicleSync must be declared (and therefore constructed) before
+    // mVehicleUpdateSyncTask, which binds a reference to it in its
+    // constructor -- member init order follows declaration order.
     ::physx::PxSync mVehicleSync;
+    VehicleUpdateSyncTask mVehicleUpdateSyncTask;
     std::atomic<int32_t> mVehicleProcessingIndex;
 };
 
@@ -228,7 +268,7 @@ public:
         return mInternalScene;
     }
 
-    const PXR_NS::SdfPath& getSceneSdfPath() const
+    omni::physics::parse::ObjectKey getSceneSdfPath() const
     {
         return mSceneSdfPath;
     }
@@ -242,8 +282,8 @@ public:
     {
         return mMaterial;
     }
-    void resetDefaultMaterial();        
-    const PXR_NS::SdfPath& getDefaultMaterialPath() const
+    void resetDefaultMaterial();
+    omni::physics::parse::ObjectKey getDefaultMaterialPath() const
     {
         return mMaterialPath;
     }
@@ -252,7 +292,7 @@ public:
     {
         return mVolumeDeformableMaterial;
     }
-    const PXR_NS::SdfPath& getDefaultVolumeDeformableMaterialPath() const
+    omni::physics::parse::ObjectKey getDefaultVolumeDeformableMaterialPath() const
     {
         return mVolumeDeformableMaterialPath;
     }
@@ -261,7 +301,7 @@ public:
     {
         return mSurfaceDeformableMaterial;
     }
-    const PXR_NS::SdfPath& getDefaultSurfaceDeformableMaterialPath() const
+    omni::physics::parse::ObjectKey getDefaultSurfaceDeformableMaterialPath() const
     {
         return mSurfaceDeformableMaterialPath;
     }
@@ -270,7 +310,7 @@ public:
     {
         return mPBDMaterial;
     }
-    const PXR_NS::SdfPath& getDefaultPBDMaterialPath() const
+    omni::physics::parse::ObjectKey getDefaultPBDMaterialPath() const
     {
         return mPBDMaterialPath;
     }
@@ -416,17 +456,17 @@ private:
     usdparser::SceneUpdateType mSceneUpdateType;
     bool mInvertedCollisionGroupFilter;
     bool mSupportSceneQuery;
-    PXR_NS::SdfPath mSceneSdfPath;
+    omni::physics::parse::ObjectKey mSceneSdfPath;
 
     // default materials
     ::physx::PxMaterial* mMaterial;
-    PXR_NS::SdfPath mMaterialPath;
+    omni::physics::parse::ObjectKey mMaterialPath;
     ::physx::PxDeformableVolumeMaterial* mVolumeDeformableMaterial;
-    PXR_NS::SdfPath mVolumeDeformableMaterialPath;
+    omni::physics::parse::ObjectKey mVolumeDeformableMaterialPath;
     ::physx::PxDeformableSurfaceMaterial* mSurfaceDeformableMaterial;
-    PXR_NS::SdfPath mSurfaceDeformableMaterialPath;
+    omni::physics::parse::ObjectKey mSurfaceDeformableMaterialPath;
     ::physx::PxPBDMaterial* mPBDMaterial;
-    PXR_NS::SdfPath mPBDMaterialPath;
+    omni::physics::parse::ObjectKey mPBDMaterialPath;
 
     OmniFilterCallback mFilterCallback;
     OmniContactReportCallback mContactReportCallback;

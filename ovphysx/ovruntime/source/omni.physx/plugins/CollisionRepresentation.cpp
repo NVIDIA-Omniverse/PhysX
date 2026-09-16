@@ -1,7 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-#include "UsdPCH.h"
+// SPDX-License-Identifier: Apache-2.0
 
 #include "CollisionRepresentation.h"
 
@@ -11,9 +9,9 @@
 
 #include "common/utilities/MemoryUtilities.h"
 #include "common/utilities/Defer.h"
-#include "common/utilities/Utilities.h"
 #include "usdLoad/LoadUsd.h"
 #include "usdLoad/Collision.h"
+#include "usdBridge/StageBridge.h"
 #include <PxPhysicsAPI.h>
 
 using namespace ::physx;
@@ -183,13 +181,72 @@ PhysxCollisionRepresentationTask requestCollisionRepresentation(const PhysxColli
     //----------------------------------------------------------------------------------
     // 1. Parse the collision API
     //----------------------------------------------------------------------------------
-    PXR_NS::SdfPath collisionPath = intToPath(request.collisionPrimId);
-    PXR_NS::SdfPath geometryPath = collisionPath;
-    AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(request.stageId);
+    // The attach lookup names an attach, so it goes through the handle (ADR-0016 Decision 8). The
+    // stage id is kept for the two things below that genuinely need a USD stage, not for this.
+    // kNoAttach keeps the historical stage-id route so a caller that has not migrated still works;
+    // the stageless case is exactly what it never handled, and only a handle can express it.
+    AttachedStage* attachedStage = nullptr;
+    if (request.attachHandle != omni::physx::kNoAttach)
+    {
+        attachedStage = UsdLoad::getUsdLoad()->resolveAttach(request.attachHandle);
+        if (!attachedStage)
+        {
+            // A handle that was supplied and did not resolve is a caller error, and saying so is
+            // the point of taking a handle at all (ADR-0016 Decision 3). The stage-id path below
+            // still runs, so behaviour is unchanged for a stage-backed request -- but on a
+            // stageless attach it is the difference between a diagnosed failure and none.
+            CARB_LOG_ERROR("requestConvexCollisionRepresentation could not resolve attach handle %llu: it is a "
+                           "handle whose attach has since been detached (a handle is minted per attach and never "
+                           "reused). Falling back to stageId %llu. Pass IPhysxSimulation::getAttachHandle(), or "
+                           "kActiveAttach for the lone active attach.",
+                           static_cast<unsigned long long>(request.attachHandle),
+                           static_cast<unsigned long long>(request.stageId));
+        }
+    }
+    else
+    {
+        attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(request.stageId);
+        if (!attachedStage)
+            attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    }
+
+    omni::physics::parse::ObjectKey collisionKey;
+    PhysxShapeDesc* collisionDesc = nullptr;
+    // The common case: an attach (USD or ovstage) is already live, so the collision prim is
+    // resolved straight through it.
+    //
+    // collisionPrimId is `ObjectKey::handle` directly for THIS arm (ADR-0018, a breaking
+    // change), not the legacy asInt()-encoded-SdfPath-bits format. See IPhysxCooking.h.
+    //
+    // Generation-tag caveat (ADR-0021), this arm only: a handle only resolves against the
+    // Source that minted it. Safe here because attachedStage is the same live attach the
+    // caller resolved the handle against. A stale handle simply fails to resolve rather than
+    // silently naming the wrong prim.
+    if (attachedStage)
+    {
+        collisionKey = omni::physics::parse::ObjectKey{ request.collisionPrimId };
+        collisionDesc = parseCollision(*attachedStage, collisionKey, collisionKey);
+    }
+    // Fallback arm: a "foreign" stage, named by stage id and never attached through the
+    // attach/backend registry (see TestOvstageStagelessForeignStageParse.cpp). The storage
+    // has to stay alive for the rest of this function, not just for the parse -- ObjectKey is
+    // per-AttachedStage-instance state, so collisionDesc's meshPrimKey would not resolve
+    // against a second, independently-built AttachedStage when the later mesh-view read
+    // (below) needs it. Needs the reparse seam (a live UsdStageCache); without it the bridge
+    // logs and returns null.
+    //
+    // Deliberately NOT the direct-construction pattern above: this arm identifies a prim on
+    // a stage nobody has ever attached, so no live Source could have minted an ObjectKey for
+    // it. collisionPrimId keeps its legacy SdfPath-bit meaning here (a carve-out in
+    // IPhysxCooking.h).
+    AttachedStage foreignStageStorage;
     if (!attachedStage)
-        attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    PhysxShapeDesc* collisionDesc = attachedStage ? parseCollision(*attachedStage, collisionPath, geometryPath)
-                                                  : parseCollision(request.stageId, collisionPath, geometryPath);
+    {
+        collisionDesc = bridgeParseForeignStageCollision(
+            request.stageId, request.collisionPrimId, foreignStageStorage, collisionKey);
+        if (collisionDesc)
+            attachedStage = &foreignStageStorage;
+    }
     if (collisionDesc == nullptr)
     {
         onResult(PhysxCollisionRepresentationResult::eRESULT_ERROR_INVALID_PARSING, result);
@@ -205,9 +262,15 @@ PhysxCollisionRepresentationTask requestCollisionRepresentation(const PhysxColli
 
     // Setup the cooking request with shared parameters between
     PhysxCookingComputeRequest cookingRequest;
-    cookingRequest.dataInputMode = PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID;
     cookingRequest.primId = request.collisionPrimId;
+    // primStageId/primId are correlation keys for the onFinished continuation and debug logging
+    // (ADR-0016 Decision 6), not an input source -- the geometry comes from IPhysicsSource below.
+    // In the attachedStage arm above, request.collisionPrimId is already ObjectKey.handle,
+    // matching what CookingDataAsync.cpp's keyToLegacyPathInt produces. In the foreign-stage
+    // arm it keeps its legacy SdfPath-bit meaning, so this correlation id differs there --
+    // harmless, since correlation/logging is its only documented use.
     cookingRequest.primStageId = request.stageId;
+    cookingRequest.attachHandle = attachedStage ? attachedStage->getAttachHandle() : request.attachHandle;
     const bool async = request.options.hasFlag(PhysxCollisionRepresentationRequest::Options::kComputeAsynchronously);
     cookingRequest.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kComputeGPUCookingData, true);
 
@@ -217,7 +280,6 @@ PhysxCollisionRepresentationTask requestCollisionRepresentation(const PhysxColli
     cookingRequest.options.setFlag(PhysxCookingComputeRequest::Options::kComputeAsynchronously, false);
 
     SourceMeshGeometryScope sourceGeomScope;
-    if (attachedStage)
     {
         omni::physics::parse::ObjectKey meshKey;
         switch (collisionDesc->type)
@@ -229,10 +291,24 @@ PhysxCollisionRepresentationTask requestCollisionRepresentation(const PhysxColli
             meshKey = static_cast<ConvexMeshDecompositionPhysxShapeDesc*>(collisionDesc)->meshPrimKey;
             break;
         default:
+            // Not a mesh-backed approximation type -- the switch below reports
+            // eRESULT_ERROR_UNSUPPORTED_APPROXIMATION for it; nothing to read here.
             break;
         }
-        if (meshKey.valid())
-            fillCookingMeshViewFromSource(cookingRequest, sourceGeomScope, *attachedStage, meshKey);
+        // Unreadable input fails loudly, before any submission, rather than falling back to the
+        // cooking service resolving primStageId/primId itself (that mechanism no longer exists --
+        // see REQ-COOK-SOURCE-001). `attachedStage` is non-null here whenever `collisionDesc` is
+        // (the foreign-stage arm above populates it too), so this only guards a stage that
+        // disappeared from the cache between the parse above and this read.
+        if (meshKey.valid() &&
+            (!attachedStage || !fillCookingMeshViewFromSource(cookingRequest, sourceGeomScope, *attachedStage, meshKey)))
+        {
+            // textFor() never needs an SdfPath (unlike the collisionPath.GetText() this replaced).
+            CARB_LOG_ERROR("requestConvexCollisionRepresentation: could not read source geometry for prim %s",
+                           attachedStage ? attachedStage->textFor(collisionKey) : "<unknown>");
+            onResult(PhysxCollisionRepresentationResult::eRESULT_ERROR_COOKING_FAILED, result);
+            return { nullptr };
+        }
     }
 
     MeshKey cookedDataCRC;

@@ -1,16 +1,15 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// This include must come first
-// clang-format off
-#include "UsdPCH.h"
-// clang-format on
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-27 AC-29
+ */
 
 #include <carb/Types.h>
 #include <carb/Numeric.h>
 #include <carb/logging/Log.h>
 #include <common/foundation/Allocator.h>
-#include <common/utilities/UsdMaterialParsing.h>
 
 #include "LoadTools.h"
 #include "LoadUsd.h"
@@ -21,172 +20,12 @@
 #include "Mass.h"
 #include <propertiesUpdate/PhysXPropertiesUpdate.h>
 #include <PhysXDefines.h>
-#include "AttributeHelpers.h"
-#include "PhysXTools.h"
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
 #include <omni/physics/parse/ParseContext.h>
-#include "UsdSource.h"
 
-using namespace PXR_NS;
 using namespace carb;
-
-static const TfToken physxParticleInflatableVolumeToken{ "physxParticle:inflatableVolume" };
-static const TfToken physxParticleWeldedTriangleIndicesToken{ "physxParticle:weldedTriangleIndices" };
-static const TfToken physxParticleWeldedVerticesRemapToWeldToken{ "physxParticle:weldedVerticesRemapToWeld" };
-static const TfToken physxParticleWeldedVerticesRemapToOrigToken{ "physxParticle:weldedVerticesRemapToOrig" };
-static const TfToken physxParticleFluidBoundaryDensityScaleToken{ "physxParticle:fluidBoundaryDensityScale" };
-static const TfToken lockedAxisToken{ "lockedAxis" };
-
-namespace
-{
-    template <typename T>
-    bool SafeGetAttributeP(T* out, UsdAttribute const& attribute)
-    {
-        if (attribute.HasValue())
-        {
-            attribute.Get(out);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    template <typename T>
-    bool SafeGetAttributeP(T* out, UsdAttribute const& attribute, T defaultValue)
-    {
-        if (attribute.HasValue())
-        {
-            attribute.Get(out);
-        }
-        else
-        {
-            *out = defaultValue;
-        }
-
-        return true;
-    }
-
-    template <>
-    bool SafeGetAttributeP<carb::Float3>(carb::Float3* out, UsdAttribute const& attribute)
-    {
-        if (attribute.HasValue())
-        {
-            GfVec3f v;
-            attribute.Get(&v);
-            out->x = v[0];
-            out->y = v[1];
-            out->z = v[2];
-
-            return true;
-        }
-
-        return false;
-    }
-
-    void convert(std::vector<carb::Uint4>& out, VtArray<GfVec4i> const& in)
-    {
-        out.resize(in.size());
-        for (size_t i = 0; i < out.size(); i++)
-        {
-            out[i].x = in[i][0];
-            out[i].y = in[i][1];
-            out[i].z = in[i][2];
-            out[i].w = in[i][3];
-        }
-    }
-
-    void convert(std::vector<carb::Float3>& out, VtArray<GfVec3f> const& in)
-    {
-        out.resize(in.size());
-        for (size_t i = 0; i < out.size(); i++)
-        {
-            out[i].x = in[i][0];
-            out[i].y = in[i][1];
-            out[i].z = in[i][2];
-        }
-    }
-
-    void convert(std::vector<carb::Int2>& out, VtArray<GfVec2i> const& in)
-    {
-        out.resize(in.size());
-        for (size_t i = 0; i < out.size(); i++)
-        {
-            out[i].x = in[i][0];
-            out[i].y = in[i][1];
-        }
-    }
-
-    void convert(std::vector<float>& out, VtArray<float> const& in)
-    {
-        out.resize(in.size());
-        for (size_t i = 0; i < out.size(); i++)
-        {
-            out[i] = in[i];
-        }
-    }
-
-    void convert(std::vector<uint32_t>& out, VtArray<int> const& in)
-    {
-        out.resize(in.size());
-        for (size_t i = 0; i < out.size(); i++)
-        {
-            out[i] = in[i];
-        }
-    }
-
-    void convert(std::vector<uint32_t>& out, VtArray<uint32_t> const& in)
-    {
-        out.resize(in.size());
-        for (size_t i = 0; i < out.size(); i++)
-        {
-            out[i] = in[i];
-        }
-    }
-
-    template <typename SrcT, typename DstT>
-    bool convertIndexBuffer(DstT* out, const SrcT* in, size_t size, uint32_t multiple, SrcT range, SrcT* ignore = nullptr)
-    {
-        if (size % multiple != 0)
-        {
-            return false;
-        }
-
-        if (ignore)
-        {
-            for (size_t i = 0; i < size; ++i)
-            {
-                if (in[i] >= range && in[i] != *ignore)
-                {
-                    return false;
-                }
-                out[i] = in[i];
-            }
-        }
-        else
-        {
-            for (size_t i = 0; i < size; ++i)
-            {
-                if (in[i] >= range)
-                {
-                    return false;
-                }
-                out[i] = in[i];
-            }
-        }
-        return true;
-    }
-
-    template <typename SrcT, typename DstT>
-    bool convertIndexBuffer(std::vector<DstT>& out, const VtArray<SrcT>& in, uint32_t multiple, SrcT range, SrcT* ignore = nullptr)
-    {
-        out.resize(in.size());
-        return convertIndexBuffer(out.data(), in.data(), out.size(), multiple, range, ignore);
-    }
-
-}
 
 namespace omni
 {
@@ -196,13 +35,17 @@ namespace usdparser
 {
 
 ParticleSystemDesc* buildParticleSystemDesc(AttachedStage& attachedStage,
-    const omni::physics::usd::ScannedStage& scanned, const omni::physics::parse::ParticleSystemDesc& s)
+    const omni::physics::parse::ScannedStage& scanned, const omni::physics::parse::ParticleSystemDesc& s)
 {
     ParticleSystemDesc* d = ICE_PLACEMENT_NEW(ParticleSystemDesc)();
 
-    // systemPath comes from the parse-time intern table (scanned.pathFor),
-    // never the persistent attachedStage table (ADR-0004 key-space invariant).
-    d->systemPath = scanned.pathFor(s.systemKey);
+    // systemKey is minted by the SCAN's own source and must be re-keyed into
+    // attachedStage's (persistent) namespace via a source-string round trip (ADR-0019
+    // increment 7; mirrors the tire-friction-table / articulation `rekey`
+    // pattern elsewhere in this file) -- never resolved through the
+    // parse-time table directly (ADR-0004 key-space invariant).
+    const omni::physics::parse::IPhysicsSource& scanSrc = scanned.source();
+    d->systemKey = attachedStage.keyFor(scanSrc.sourceKeyToString(s.systemKey));
 
     // Scalar / vector data: the parse library already applied the
     // metersPerUnit-aware offset autocompletion + schema lower limits.
@@ -226,34 +69,39 @@ ParticleSystemDesc* buildParticleSystemDesc(AttachedStage& attachedStage,
     d->lockedAxis = s.lockedAxis;
 
     // Cross-refs: simulation owner (scene) + filtered collisions are scanned
-    // ObjectKeys; map them through the parse-time table to prim paths.
-    d->scenePath = s.sceneKey.valid() ? scanned.pathFor(s.sceneKey).GetPrimPath() : SdfPath();
+    // ObjectKeys; re-key them into attachedStage's namespace the same way.
+    // A dropped/mis-sourced/ObjectKey{} re-key here fails silently (Setup.h's
+    // getPhysXScene falls back to the default scene) -- see TestParticles.cpp
+    // "Particle System Scene Ownership Resolves Second Scene".
+    d->sceneKey = s.sceneKey.valid() ? attachedStage.keyFor(scanSrc.sourceKeyToString(s.sceneKey)) : omni::physics::parse::ObjectKey{};
     d->filteredCollisions.clear();
     for (const omni::physics::parse::ObjectKey& k : s.filteredCollisions)
-        d->filteredCollisions.push_back(scanned.pathFor(k));
+        d->filteredCollisions.push_back(attachedStage.keyFor(scanSrc.sourceKeyToString(k)));
 
     // Runtime ObjectId resolution + change-tracking registration: these need
     // the engine ObjectDb / time-sampled callback, so they stay consumer-side.
     // Reads go through the source (no direct USD).
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-    const omni::physics::parse::ObjectKey pkey = attachedStage.keyFor(d->systemPath);
+    const omni::physics::parse::ObjectKey pkey = d->systemKey;
 
     d->material = kInvalidObjectId;
     if (src)
     {
         const omni::physics::parse::ObjectKey matKey = src->getMaterialBinding(pkey);
         if (matKey.valid())
-            d->material = getMaterial(attachedStage, attachedStage.pathFor(matKey), ePBDMaterial);
+            d->material = getMaterial(attachedStage, matKey, ePBDMaterial);
     }
 
-    d->collisionGroup = getCollisionGroup(attachedStage, d->systemPath);
+    d->collisionGroup = getCollisionGroup(attachedStage, d->systemKey);
 
     // Re-register the time-sampled wind callback (engine reader used
-    // GetNumTimeSamples() > 1, i.e. isAttributeTimeSampled).
-    if (src && src->isAttributeTimeSampled(pkey, src->internToken("wind")))
+    // GetNumTimeSamples() > 1, i.e. isAttributeTimeSampled). ObjectKey/TokenId-native
+    // overload (AttachedStage::registerTimeSampledAttribute) -- no SdfPath needed.
+    if (src)
     {
-        static const TfToken windToken("wind");
-        attachedStage.registerTimeSampledAttribute(d->systemPath.AppendProperty(windToken), updateParticleSystemAttribute);
+        const omni::physics::parse::TokenId windToken = src->internToken("wind");
+        if (src->isAttributeTimeSampled(pkey, windToken))
+            attachedStage.registerTimeSampledAttribute(pkey, windToken, updateParticleSystemAttribute);
     }
 
     return d;
@@ -308,19 +156,26 @@ static bool particleSetDataIsValid(const ParticleSetDesc& d)
 }
 
 ParticleSetDesc* buildParticleSetDesc(AttachedStage& attachedStage,
-    const omni::physics::usd::ScannedStage& scanned, const omni::physics::parse::ParticleSetDesc& s)
+    const omni::physics::parse::ScannedStage& scanned, const omni::physics::parse::ParticleSetDesc& s)
 {
     ParticleSetDesc* d = ICE_PLACEMENT_NEW(ParticleSetDesc)();
 
-    d->primPath = scanned.pathFor(s.primKey);
-    d->particleSystemPath = s.particleSystemKey.valid() ? scanned.pathFor(s.particleSystemKey) : SdfPath();
-    d->scenePath = s.sceneKey.valid() ? scanned.pathFor(s.sceneKey).GetPrimPath() : SdfPath();
+    // Keys are minted by the SCAN's own source; re-key into attachedStage's (persistent)
+    // namespace via a source-string round trip (ADR-0019 increment 7).
+    const omni::physics::parse::IPhysicsSource& scanSrc = scanned.source();
+    d->primKey = attachedStage.keyFor(scanSrc.sourceKeyToString(s.primKey));
+    d->particleSystemKey = s.particleSystemKey.valid() ? attachedStage.keyFor(scanSrc.sourceKeyToString(s.particleSystemKey)) : omni::physics::parse::ObjectKey{};
+    // Same re-key hazard as buildParticleSystemDesc's sceneKey above, though
+    // this field's only current consumer (createParticleSet's CUDA-context
+    // check + InternalParticleSet::mPhysXScene, both scene-observable but not
+    // asserted anywhere) means no test in this tree isolates a regression here.
+    d->sceneKey = s.sceneKey.valid() ? attachedStage.keyFor(scanSrc.sourceKeyToString(s.sceneKey)) : omni::physics::parse::ObjectKey{};
 
     copyParticleSetData(*d, s);
 
     if (!particleSetDataIsValid(*d))
     {
-        CARB_LOG_WARN("PhysxSchemaPhysxParticleSetAPI parsing failed: %s", d->primPath.GetText());
+        CARB_LOG_WARN("PhysxSchemaPhysxParticleSetAPI parsing failed: %s", attachedStage.textFor(d->primKey));
         ICE_FREE(d);
         return nullptr;
     }
@@ -331,12 +186,16 @@ ParticleSetDesc* buildParticleSetDesc(AttachedStage& attachedStage,
 ParticleSetDesc* buildParticleSetDescRuntime(AttachedStage& attachedStage,
     const omni::physics::parse::ParticleSetDesc& s)
 {
-    // Runtime re-read: keys come from the persistent source table, so paths
-    // resolve through attachedStage (not a parse-time ScannedStage).
+    // Runtime re-read: keys already come from the persistent source table
+    // (attachedStage's own namespace), so no re-keying round-trip is needed
+    // here -- a straight copy.
     ParticleSetDesc* d = ICE_PLACEMENT_NEW(ParticleSetDesc)();
-    d->primPath = s.primKey.valid() ? attachedStage.pathFor(s.primKey) : SdfPath();
-    d->particleSystemPath = s.particleSystemKey.valid() ? attachedStage.pathFor(s.particleSystemKey) : SdfPath();
-    d->scenePath = s.sceneKey.valid() ? attachedStage.pathFor(s.sceneKey).GetPrimPath() : SdfPath();
+    d->primKey = s.primKey;
+    d->particleSystemKey = s.particleSystemKey;
+    // sceneKey is minted by IPhysicsSource::getRelationshipTargets, which only ever
+    // resolves prim-level ObjectKeys, so it needs no path round-trip either -- same
+    // straight copy as primKey/particleSystemKey above.
+    d->sceneKey = s.sceneKey;
     copyParticleSetData(*d, s);
     return d;
 }
@@ -375,73 +234,6 @@ void ParseGridFilteringPasses(const std::string& gridFilteringPassesStr, std::ve
         gridFilteringPasses.push_back({ParticleIsosurfaceDesc::GridFilteringPass::eSmooth});
     }
 }
-
-PBDMaterialDesc* ParsePBDParticleMaterial(AttachedStage& attachedStage,
-                                          const omni::physics::parse::ObjectKey& materialKey)
-{
-    if (!materialKey.valid())
-        return nullptr;
-
-    omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
-    if (!source)
-        return nullptr;
-
-    omni::physics::parse::ParseContext ctx(*source, omni::physx::usdparser::iceDescriptorAllocator());
-    omni::physics::parse::DescPtr<PBDMaterialDesc> parsed =
-        omni::physics::parse::parsePBDMaterial(ctx, materialKey);
-    if (!parsed)
-    {
-        CARB_LOG_WARN("ParsePBDParticleMaterial: prim doesn't have a PhysxSchemaPhysxPBDMaterialAPI\n");
-        return nullptr;
-    }
-
-    PBDMaterialDesc* out = ICE_PLACEMENT_NEW(PBDMaterialDesc)();
-    *out = *parsed;
-    return out;
-}
-
-PBDMaterialDesc* ParsePBDParticleMaterial(const UsdStageWeakPtr stage, const SdfPath& materialPath)
-{
-    if (materialPath == SdfPath())
-        return nullptr;
-
-    const long stageId = stage ? PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt() : 0;
-    AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
-    if (attachedStage)
-        return ParsePBDParticleMaterial(*attachedStage, attachedStage->keyFor(materialPath));
-
-    omni::physics::usd::UsdSource source(stage);
-    omni::physics::parse::ParseContext ctx(source, omni::physx::usdparser::iceDescriptorAllocator());
-    omni::physics::parse::DescPtr<PBDMaterialDesc> parsed =
-        omni::physics::parse::parsePBDMaterial(ctx, source.keyFor(materialPath));
-    if (!parsed)
-    {
-        CARB_LOG_WARN("ParsePBDParticleMaterial: prim doesn't have a PhysxSchemaPhysxPBDMaterialAPI\n");
-        return nullptr;
-    }
-
-    PBDMaterialDesc* out = ICE_PLACEMENT_NEW(PBDMaterialDesc)();
-    *out = *parsed;
-    out->materialKey = omni::physics::parse::ObjectKey{};
-    return out;
-}
-
-SdfPath GetParticleSystemPath(const PhysxSchemaPhysxParticleAPI& particleAPI)
-{
-    SdfPath particleSystemPath;
-    UsdRelationship particleRel = particleAPI.GetParticleSystemRel();
-    if (particleRel)
-    {
-        SdfPathVector paths;
-        if (particleRel.GetTargets(&paths) && paths.size() > 0)
-        {
-            particleSystemPath = paths[0];
-        }
-    }
-    return particleSystemPath;
-}
-
-
 
 /*
 The following functions complete the particle system *offset USD attributes, and return autocomputed fallback values if the

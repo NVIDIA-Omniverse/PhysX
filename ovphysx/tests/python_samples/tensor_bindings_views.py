@@ -1,8 +1,15 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# DEPRECATED (tensor-binding-deprecation): a tensor-binding sample. It is removed with the binding.
 
 """
 Sample: lightweight view wrappers built on TensorBindingsAPI (ctypes).
+
+.. deprecated:: 0.6.0
+    Built on the deprecated tensor-binding API. The view-wrapper pattern will be
+    re-provided on the session read/write API (``PhysX.read`` / ``PhysX.write``).
+    Until then this remains as the deprecated-API showcase.
 
 Purpose
 -------
@@ -11,8 +18,8 @@ who want convenient SimulationView/ArticulationView-style helpers on top of the
 official TensorBindingsAPI, without depending on any CPython-minor-specific
 pybind11 bindings.
 
-This is *not* an ovphysx-maintained library module; it is a sample that shows
-how easy it is to build these helpers on top of the official TensorBindingsAPI.
+This is *not* an ovphysx-maintained library module. It is a sample that shows
+how to build these helpers on top of the official TensorBindingsAPI.
 """
 
 from __future__ import annotations
@@ -22,6 +29,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+import ovphysx
 from ovphysx import PhysX
 from ovphysx.types import TensorType
 
@@ -39,18 +47,26 @@ def _find_usd_path() -> str:
     raise RuntimeError(f"Test data not found. Tried: {candidates}")
 
 
+_physx_schemas_registered = False
+
+
 def attach_scene(physx: PhysX, usd_path: str, stage_name: str):
     import ovstage
 
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
 
+    # ovphysx ships its PhysX USD schemas as codeless resources and does not register
+    # them itself. Register them with ovstage once, before the first population
+    # call in the process.
+    global _physx_schemas_registered
+    if not _physx_schemas_registered:
+        ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+        _physx_schemas_registered = True
     stage = ovstage.Stage(stage_name)
     ordinal = 1
     try:
         ovstage.population.open_usd(stage, usd_path, ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
-        # Population does not seal: the caller owns ordinal lifecycle, and
-        # attach_ovstage() reads at a sealed ordinal.
         stage.advance_write_floor(ordinal=ordinal).wait()
         physx.attach_ovstage(stage, read_ordinal=ordinal)
         return stage
@@ -151,5 +167,5 @@ if __name__ == "__main__":
         if stage is not None:
             physx.detach_ovstage()
             stage.destroy()
-        physx.release()
+        physx.destroy()
         print("Cleanup complete")

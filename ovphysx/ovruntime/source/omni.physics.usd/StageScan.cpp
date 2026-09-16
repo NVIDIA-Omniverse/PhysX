@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * Whole-stage scan implementation — see ADR-0002 for the architecture
@@ -9,7 +9,7 @@
  * live in `NativeWalker.cpp`.
  *
  * @implements REQ-PARSE-SCAN-001
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9 AC-11 AC-12 AC-13
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9 AC-12 AC-13 AC-16
  *
  * @implements REQ-PARSE-ART-002
  * @covers AC-1 AC-2 AC-3 AC-5 AC-6
@@ -31,11 +31,16 @@
 #include <physxSchema/physxSceneAPI.h>
 
 #include <omni/physics/usd/StageScan.h>
+#include <omni/physics/usd/UsdScanBackend.h>
 
 #include "NativeWalker.h"
 #include "UsdSource.h" // asUsdSource — USD-source fast resolver path
 
 #include <omni/physics/usd/PrimIterator.h>
+
+#include <carb/logging/Log.h>
+
+#include <exception>
 
 namespace omni::physics::usd
 {
@@ -175,6 +180,14 @@ PXR_NS::SdfPath createDefaultPhysicsScene(PXR_NS::UsdStageWeakPtr stage, const P
     return scenePath;
 }
 
+void removeDefaultPhysicsScene(PXR_NS::UsdStageWeakPtr stage, const PXR_NS::SdfPath& scenePath)
+{
+    if (!stage || scenePath.IsEmpty() || !stage->GetPrimAtPath(scenePath))
+        return;
+    PXR_NS::UsdEditContext editContext(stage, stage->GetSessionLayer());
+    stage->RemovePrim(scenePath);
+}
+
 SubtreeTraversal traversalForScope(parse::DescendantScope scope)
 {
     switch (scope)
@@ -229,6 +242,25 @@ ScannedStage scanStage(PXR_NS::UsdStageWeakPtr stage,
     return scanStage(stage, primIterator, allocator);
 }
 
+// The native USD walk over a backend-opaque AttachTarget: reinterprets
+// `target.nativeStage` as the live UsdStageWeakPtr and dispatches to the
+// SdfPath-typed scanStage() above. Shared by the backend-less fallback below
+// and by UsdScanBackend::scan() (this file's bottom), which is the same walk
+// wrapped as a registerable IScanBackend (ADR-0018 scanStage
+// backend-registration gap) so AttachTarget-based callers can go through
+// `parse::scanStage()` unconditionally instead of forking on whether a
+// backend happens to be registered.
+ScannedStage scanTargetNative(const parse::AttachTarget& target,
+                              const std::vector<PXR_NS::SdfPath>& scanRoots,
+                              const std::unordered_set<PXR_NS::SdfPath, PXR_NS::SdfPath::Hash>& excludePaths,
+                              parse::IDescriptorAllocator& allocator,
+                              const parse::ScanOptions& options)
+{
+    const PXR_NS::UsdStageWeakPtr stage =
+        target.nativeStage ? *static_cast<const PXR_NS::UsdStageWeakPtr*>(target.nativeStage) : PXR_NS::UsdStageWeakPtr{};
+    return scanStage(stage, scanRoots, excludePaths, allocator, traversalForScope(options.descendantScope));
+}
+
 // Backend-dispatched whole-stage scan (ADR-0002 M2c) — the single switch point.
 ScannedStage scanStage(const parse::AttachTarget& target,
                        const std::vector<PXR_NS::SdfPath>& scanRoots,
@@ -248,13 +280,64 @@ ScannedStage scanStage(const parse::AttachTarget& target,
         for (const PXR_NS::SdfPath& path : excludePaths)
             excludeStrings.push_back(path.GetString());
 
-        return backend->scan(target, rootStrings, excludeStrings, options, allocator);
+        try
+        {
+            return backend->scan(target, rootStrings, excludeStrings, options, allocator);
+        }
+        catch (const std::exception& error)
+        {
+            CARB_LOG_ERROR("Physics scan backend failed: %s", error.what());
+        }
+        catch (...)
+        {
+            CARB_LOG_ERROR("Physics scan backend failed with an unknown exception");
+        }
+
+        return {};
     }
 
     // Default: the native USD walk over the live stage handle.
-    const PXR_NS::UsdStageWeakPtr stage =
-        target.nativeStage ? *static_cast<const PXR_NS::UsdStageWeakPtr*>(target.nativeStage) : PXR_NS::UsdStageWeakPtr{};
-    return scanStage(stage, scanRoots, excludePaths, allocator, traversalForScope(options.descendantScope));
+    return scanTargetNative(target, scanRoots, excludePaths, allocator, options);
+}
+
+namespace
+{
+// Stateless native-USD IScanBackend (ADR-0018 scanStage backend-registration
+// gap). Wraps scanTargetNative() above verbatim -- the same native-USD-walk
+// fallback the backend-less scanStage(AttachTarget, ...) overload already
+// runs -- so `parse::scanStage()` callers get an unconditional, correct scan
+// once this is registered, without depending on which backend (if any)
+// happens to be installed. Unlike OvstageScanBackend, no per-attach payload
+// or identity check: `target.nativeStage` is a stage-id-keyed live
+// UsdStageWeakPtr*, valid for any USD attach target, not one attach's opaque
+// payload, so any target this backend receives is one it understands.
+class UsdScanBackend final : public parse::IScanBackend
+{
+public:
+    parse::ScannedStage scan(const parse::AttachTarget& target,
+                             const std::vector<std::string>& scanRoots,
+                             const std::vector<std::string>& excludePaths,
+                             const parse::ScanOptions& options,
+                             parse::IDescriptorAllocator& allocator) override
+    {
+        std::vector<PXR_NS::SdfPath> roots;
+        roots.reserve(scanRoots.size());
+        for (const std::string& root : scanRoots)
+            roots.emplace_back(root);
+
+        std::unordered_set<PXR_NS::SdfPath, PXR_NS::SdfPath::Hash> excludes;
+        excludes.reserve(excludePaths.size());
+        for (const std::string& path : excludePaths)
+            excludes.emplace(path);
+
+        return scanTargetNative(target, roots, excludes, allocator, options);
+    }
+};
+} // namespace
+
+std::unique_ptr<parse::IScanBackend> makeUsdScanBackend()
+{
+    return std::make_unique<UsdScanBackend>();
 }
 
 } // namespace omni::physics::usd

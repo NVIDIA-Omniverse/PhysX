@@ -1,20 +1,43 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PARSE-CONSUMER-001
+ * @covers AC-24
+ *
+ * @implements REQ-COOK-SOURCE-001
+ * @covers AC-5
+ */
+
+/**
+ * @implements REQ-MATH-001
+ * @covers AC-7
+ */
+
+/**
+ * @implements REQ-PARSE-INSTANCER-002
+ * @covers AC-1
+ */
+
+/**
+ * @implements REQ-PARSE-CORE-003
+ * @covers AC-14
+ */
 
 #pragma once
-
-#include "UsdPCH.h"
 
 #include "OmniPhysX.h"
 #include "PhysXDefines.h"
 #include "internal/InternalScene.h"
 
 #include "ObjectDataQuery.h"
+#include "PhysXToolsCore.h"
 
 #include "usdLoad/AttachedStage.h"
 #include "usdLoad/PrimUpdate.h"
 
 #include <omni/physics/parse/IPhysicsSource.h>
+#include <omni/physics/parse/KnownTokens.h>
 
 #include "utils/Pair.h"
 
@@ -28,41 +51,23 @@
 #include <cudamanager/PxCudaContext.h>
 
 #include <common/utilities/Utilities.h>
-#include <common/foundation/TypeCast.h>
+#include <common/foundation/CarbPhysXCast.h>
 #include <common/foundation/Algorithms.h>
+#include <common/foundation/MatrixTools.h>
 
+#include <cstdint>
 #include <cstring>
 #include <set>
+#include <string>
+#include <unordered_set>
+#include <vector>
 
 namespace omni
 {
 namespace physx
 {
 
-inline float degToRad(const float a)
-{
-    return 0.01745329251994329547f * a;
-}
-
-inline float radToDeg(const float a)
-{
-    return 57.29577951308232286465f * a;
-}
-
-inline PXR_NS::GfVec3f degToRad(const PXR_NS::GfVec3f& a)
-{
-    return PXR_NS::GfVec3f(0.01745329251994329547f * a);
-}
-
-inline PXR_NS::GfVec3f radToDeg(const PXR_NS::GfVec3f& a)
-{
-    return PXR_NS::GfVec3f(57.29577951308232286465f * a);
-}
-
-inline ::physx::PxVec3 radToDeg(const ::physx::PxVec3& a)
-{
-    return ::physx::PxVec3(57.29577951308232286465f * a);
-}
+// pxr-free degToRad/radToDeg overloads (float, PxVec3, carb::Float3) live in PhysXToolsCore.h.
 
 template <class Type>
 inline Type* getPtr(PhysXType type, omni::physx::usdparser::ObjectId id)
@@ -87,172 +92,8 @@ inline Type* getInternalPtr(PhysXType type, omni::physx::usdparser::ObjectId id)
 namespace internal
 {
 
-template <typename T>
-inline void removeFilteredObject(T ptr, std::unordered_map<Pair<T>, uint32_t, PairHash>& pairSet)
-{
-    typedef typename std::unordered_map<Pair<T>, uint32_t, PairHash>::iterator iterator;
-
-    iterator it = pairSet.begin();
-    while (it != pairSet.end())
-    {
-        if (it->first.contains(ptr))
-        {
-            it = pairSet.erase(it);
-        }
-        else
-        {
-            it++;
-        }
-    }
-}
-
-template <typename T>
-inline void removeFilteredObject(T ptr, std::unordered_set<Pair<T>, PairHash>& pairSet)
-{
-    typedef typename std::unordered_set<Pair<T>, PairHash>::iterator iterator;
-
-    iterator it = pairSet.begin();
-    while (it != pairSet.end())
-    {
-        if ((*it).contains(ptr))
-        {
-            it = pairSet.erase(it);
-        }
-        else
-        {
-            it++;
-        }
-    }
-}
-
-template <typename T>
-inline void swapFilteredObject(T oldPtr, T newPtr, std::unordered_set<Pair<T>, PairHash>& pairSet)
-{
-    typedef typename std::unordered_set<Pair<T>, PairHash>::iterator iterator;
-
-    iterator it = pairSet.begin();
-    while (it != pairSet.end())
-    {
-        (*it).swap(oldPtr, newPtr);
-        it++;
-    }
-}
-
-inline uint32_t convertToCollisionGroup(const usdparser::ObjectId collisionGroupId)
-{
-    const uint32_t collisionGroup =
-        (collisionGroupId == usdparser::kInvalidObjectId) ? 0 : uint32_t(size_t(collisionGroupId));
-    return collisionGroup;
-}
-
-inline void convertCollisionGroupToPxFilterData(const uint32_t collisionGroup, ::physx::PxFilterData& filterData)
-{
-    filterData.word2 = collisionGroup;
-    // in word1 we store pair filtering information
-    // in word3 we store contact modify information
-}
-
-inline uint32_t convertCollisionGroupFromPxFilterData(const ::physx::PxFilterData& fd)
-{
-    return fd.word2;
-}
-
-inline void convertFilterPairToPxFilterData(const uint32_t filterPair, ::physx::PxFilterData& filterData)
-{
-    filterData.word1 = filterPair;
-    // in word2 we store collision group
-    // in word3 we store contact modify information
-}
-
-inline uint32_t convertFilterPairFromPxFilterData(const ::physx::PxFilterData& fd)
-{
-    return fd.word1;
-}
-
-
-template <typename... ValuesT>
-void sendErrorEvent(carb::events::IEventStreamPtr eventStream, ErrorEvent type, ValuesT... values)
-{
-    ::sendErrorEvent(eventStream, static_cast<carb::events::EventType>(type), values...);
-}
-
-// Forward declaration of the ObjectKey-keyed, source-backed getValue (defined below). The
-// SdfPath form resolves the path to an ObjectKey and forwards, so path-keyed reads also
-// route through IPhysicsSource rather than reaching into USD directly.
-template <typename T>
-bool getValue(const usdparser::AttachedStage& attachedStage,
-              omni::physics::parse::ObjectKey key,
-              const PXR_NS::TfToken& attributeName,
-              const PXR_NS::UsdTimeCode& timeCode,
-              T& retVal);
-
-template <typename T>
-bool getValue(const usdparser::AttachedStage& attachedStage,
-              const PXR_NS::SdfPath& path,
-              const PXR_NS::TfToken& attributeName,
-              const PXR_NS::UsdTimeCode& timeCode,
-              T& retVal)
-{
-    // pathFor(keyFor(path)) == path, so this is an exact identity vs the prior
-    // direct GetPrimAtPath(path) read — it works for any prim, parsed or not.
-    return getValue<T>(attachedStage, attachedStage.keyFor(path), attributeName, timeCode, retVal);
-}
-
-// Forward declaration of the ObjectKey-keyed, source-backed getArrayValue
-// (defined below). The SdfPath form resolves the path to an ObjectKey and
-// forwards, so path-keyed array reads also route through IPhysicsSource.
-template <typename T>
-bool getArrayValue(const usdparser::AttachedStage& attachedStage,
-                   omni::physics::parse::ObjectKey key,
-                   const PXR_NS::TfToken& attributeName,
-                   const PXR_NS::UsdTimeCode& timeCode,
-                   T& retVal);
-
-template <typename T>
-bool getArrayValue(const usdparser::AttachedStage& attachedStage,
-                   const PXR_NS::SdfPath& path,
-                   const PXR_NS::TfToken& attributeName,
-                   const PXR_NS::UsdTimeCode& timeCode,
-                   T& retVal)
-{
-    return getArrayValue<T>(attachedStage, attachedStage.keyFor(path), attributeName, timeCode, retVal);
-}
-
-inline bool getRelationshipValue(const usdparser::AttachedStage& attachedStage,
-                                 omni::physics::parse::ObjectKey key,
-                                 const PXR_NS::TfToken& relName,
-                                 PXR_NS::SdfPathVector& retVal);
-
-inline bool getRelationshipValue(const usdparser::AttachedStage& attachedStage,
-                                 const PXR_NS::SdfPath& path,
-                                 const PXR_NS::TfToken& relName,
-                                 PXR_NS::SdfPathVector& retVal)
-{
-    return getRelationshipValue(attachedStage, attachedStage.keyFor(path), relName, retVal);
-}
-
-inline bool getFloatBounded(const usdparser::AttachedStage& attachedStage,
-                            const PXR_NS::SdfPath& path,
-                            const PXR_NS::TfToken attributeName,
-                            const PXR_NS::UsdTimeCode timeCode,
-                            float& outFloat,
-                            const float lowBound,
-                            const float upBound)
-{
-    float data = 0.0f;
-    const bool result = getValue<float>(attachedStage, path, attributeName, timeCode, data);
-
-    if (data > upBound)
-    {
-        data = upBound;
-    }
-    else if (data < lowBound)
-    {
-        data = lowBound;
-    }
-    outFloat = data;
-    return result;
-}
+// removeFilteredObject/swapFilteredObject, the collision-group/filter-pair <-> PxFilterData
+// conversions, and sendErrorEvent are pxr-free and live in PhysXToolsCore.h (included above).
 
 // ---------------------------------------------------------------------------
 // ObjectKey-keyed overloads. InternalDatabase::Record stores an ObjectKey
@@ -266,222 +107,227 @@ inline bool getFloatBounded(const usdparser::AttachedStage& attachedStage,
 // ---------------------------------------------------------------------------
 namespace physxtools_detail
 {
-inline omni::physics::parse::ReadTime toReadTime(const PXR_NS::UsdTimeCode& timeCode)
-{
-    return timeCode.IsDefault() ? omni::physics::parse::ReadTime::defaultTime() :
-                                  omni::physics::parse::ReadTime::at(timeCode.GetValue());
-}
+// The VtArray fillArray/elemTypeOf/arrayElemData ladders below stay fenced: no pxr-free
+// equivalent exists, and every production caller reaches them only by instantiating the
+// TokenId+ReadTime getArrayValue/setCookedArrayValue below with a VtArray<T>.
 
 // Unpack an AttrValue into a USD-typed `out`, matching the kind a USD attribute of that
 // type resolves to (see UsdSource::vtValueToAttrValue). Mirrors UsdAttribute::Get: each
 // returns false and leaves `out` untouched on a kind mismatch or absent attribute.
 using AttrValue = omni::physics::parse::AttrValue;
 
-inline bool fromAttr(const omni::physics::parse::IPhysicsSource&, const AttrValue& v, bool& out)
+// The carb-typed / plain-scalar fromAttr(bool/float/double/int/uint32_t/carb::Float2/
+// carb::Float3/carb::Float4/std::string) overloads are pxr-free and live in
+// PhysXToolsCore.h (included above).
+
+// ---------------------------------------------------------------------------
+// Gf-free array reads (ADR-0001 s8) -- std::vector<carb::*> mirrors of the VtArray ladder
+// above. fillVector, the static_asserts backing the layout equivalences the memcpys rely on,
+// and the fillArray(std::vector<float/int32_t/uint32_t/uint8_t/carb::Float2/carb::Float3/
+// carb::Int3/carb::Int4>) overloads are pxr-free and live in PhysXToolsCore.h (included above).
+//
+// The carb::Float4 overload stays here (not PhysXToolsCore.h): it covers both eVec4, a plain
+// memcpy via the PhysXToolsCore.h fillVector, and eQuath, a half->float widen.
+// ---------------------------------------------------------------------------
+inline float halfBitsToFloat(uint16_t bits)
 {
-    if (v.kind == AttrValue::Kind::eBool) { out = v.b; return true; }
-    return false;
-}
-inline bool fromAttr(const omni::physics::parse::IPhysicsSource&, const AttrValue& v, float& out)
-{
-    // Mirrors USD's implicit float-family coercion (UsdAttribute::Get): float, double, or
-    // half values all read as float, else getValue<float> would silently keep the caller's
-    // default. eHalf stores its value in the float slot (see AttrValue::makeHalf).
-    if (v.kind == AttrValue::Kind::eFloat || v.kind == AttrValue::Kind::eHalf) { out = v.f; return true; }
-    if (v.kind == AttrValue::Kind::eDouble) { out = static_cast<float>(v.d); return true; }
-    return false;
-}
-inline bool fromAttr(const omni::physics::parse::IPhysicsSource&, const AttrValue& v, double& out)
-{
-    if (v.kind == AttrValue::Kind::eDouble) { out = v.d; return true; }
-    if (v.kind == AttrValue::Kind::eFloat || v.kind == AttrValue::Kind::eHalf) { out = static_cast<double>(v.f); return true; }
-    return false;
-}
-inline bool fromAttr(const omni::physics::parse::IPhysicsSource&, const AttrValue& v, int& out)
-{
-    if (v.kind == AttrValue::Kind::eInt) { out = static_cast<int>(v.i); return true; }
-    return false;
-}
-inline bool fromAttr(const omni::physics::parse::IPhysicsSource&, const AttrValue& v, uint32_t& out)
-{
-    if (v.kind == AttrValue::Kind::eInt) { out = static_cast<uint32_t>(v.i); return true; }
-    return false;
-}
-inline bool fromAttr(const omni::physics::parse::IPhysicsSource&, const AttrValue& v, PXR_NS::GfVec2f& out)
-{
-    if (v.kind == AttrValue::Kind::eFloat2) { out = PXR_NS::GfVec2f(v.f2.x, v.f2.y); return true; }
-    return false;
-}
-inline bool fromAttr(const omni::physics::parse::IPhysicsSource&, const AttrValue& v, PXR_NS::GfVec3f& out)
-{
-    if (v.kind == AttrValue::Kind::eFloat3) { out = PXR_NS::GfVec3f(v.f3.x, v.f3.y, v.f3.z); return true; }
-    return false;
-}
-inline bool fromAttr(const omni::physics::parse::IPhysicsSource&, const AttrValue& v, PXR_NS::GfQuatf& out)
-{
-    // UsdSource packs GfQuatf as Float4{x, y, z, w} (imaginary then real).
-    if (v.kind == AttrValue::Kind::eFloat4) { out = PXR_NS::GfQuatf(v.f4.w, v.f4.x, v.f4.y, v.f4.z); return true; }
-    return false;
-}
-inline bool fromAttr(const omni::physics::parse::IPhysicsSource& src, const AttrValue& v, PXR_NS::TfToken& out)
-{
-    if (v.kind == AttrValue::Kind::eToken) { out = PXR_NS::TfToken(std::string(src.tokenToString(v.tok))); return true; }
-    return false;
-}
-inline bool fromAttr(const omni::physics::parse::IPhysicsSource&, const AttrValue& v, std::string& out)
-{
-    if (v.kind == AttrValue::Kind::eString) { out = v.str; return true; }
-    return false;
+    const uint32_t sign = uint32_t(bits & 0x8000u) << 16;
+    uint32_t exponent = (bits >> 10) & 0x1fu;
+    uint32_t mantissa = bits & 0x3ffu;
+    uint32_t out;
+    if (exponent == 0)
+    {
+        if (mantissa == 0)
+        {
+            out = sign; // signed zero
+        }
+        else
+        {
+            // Subnormal half: normalize the mantissa into a normal single-precision float.
+            exponent = 127 - 15 + 1;
+            while ((mantissa & 0x400u) == 0)
+            {
+                mantissa <<= 1;
+                --exponent;
+            }
+            mantissa &= 0x3ffu;
+            out = sign | (exponent << 23) | (mantissa << 13);
+        }
+    }
+    else if (exponent == 0x1fu)
+    {
+        out = sign | 0x7f800000u | (mantissa << 13); // inf / nan
+    }
+    else
+    {
+        out = sign | ((exponent - 15 + 127) << 23) | (mantissa << 13);
+    }
+    float result;
+    std::memcpy(&result, &out, sizeof(result));
+    return result;
 }
 
-// Copy a resolved array buffer into a USD VtArray `out`. Element type must
-// match the buffer's; `out` is resized and filled from the raw bytes.
-inline bool fillArray(PXR_NS::VtFloatArray& out, const void* data, size_t byteCount,
+inline bool fillArray(std::vector<carb::Float4>& out, const void* d, size_t n,
                       const omni::physics::parse::BufferHandle& h)
 {
-    if (h.type != omni::physics::parse::BufferElemType::eFloat || !data)
-        return false;
-    out.resize(h.elemCount);
-    std::memcpy(out.data(), data, byteCount);
-    return true;
+    if (h.type == omni::physics::parse::BufferElemType::eQuath)
+    {
+        if (!d)
+            return false;
+        // Same header/payload agreement fillVector enforces, for the 4-half-lane element the
+        // widen reads: without it the loop indexes src[elemCount*4-1] on a buffer that may be
+        // shorter than the header claims. Checked before the resize; fail closed, don't truncate.
+        if (uint64_t(n) != uint64_t(h.elemCount) * 4 * sizeof(uint16_t))
+            return false;
+        out.resize(h.elemCount);
+        const uint16_t* src = static_cast<const uint16_t*>(d);
+        for (size_t i = 0; i < h.elemCount; ++i)
+        {
+            out[i] = carb::Float4{ halfBitsToFloat(src[i * 4 + 0]), halfBitsToFloat(src[i * 4 + 1]),
+                                   halfBitsToFloat(src[i * 4 + 2]), halfBitsToFloat(src[i * 4 + 3]) };
+        }
+        return true;
+    }
+    return fillVector(out, d, n, h, omni::physics::parse::BufferElemType::eVec4);
 }
-inline bool fillArray(PXR_NS::VtVec2fArray& out, const void* data, size_t byteCount,
-                      const omni::physics::parse::BufferHandle& h)
+// fillArray(std::vector<carb::Int3/carb::Int4>&, ...) are pxr-free and live in
+// PhysXToolsCore.h (included above).
+
+// Gf-free mirrors, so setCookedArrayValue accepts a std::vector<carb::*> payload. All of
+// elemTypeOf(std::vector<float/int32_t/uint32_t/uint8_t/carb::Float2/carb::Float3/carb::Float4/
+// carb::Int3/carb::Int4>) are pxr-free and live in PhysXToolsCore.h (included above).
+
+// Raw element pointer of an array payload. VtArray spells it `cdata()` (the
+// const form, which does not detach the copy-on-write buffer), std::vector
+// spells it `data()`; setCookedArrayValue below takes either. The std::vector<ElemT> overload
+// is pxr-free and lives in PhysXToolsCore.h (included above).
+
+// ---------------------------------------------------------------------------
+// Cooked-geometry carrier (ADR-0022) — the shared attribute allowlist.
+//
+// The carrier is only ever populated by the deformable cooking write-back, so
+// in principle map membership alone bounds it. The allowlist makes that a
+// matter of code rather than of trust: the write-back refuses to record an
+// attribute outside this set (loudly), and the read hook refuses to serve one.
+// A token that drifts out of step with
+// CookingDataAsync.cpp::store{Volume,Surface}DeformableBodyDataToUsd therefore
+// shows up as an error at cook time instead of as a silent read miss.
+//
+// The `physx*` markers are spelled as literals because CookingDataAsync.cpp's
+// matching TfTokens are file-static; the `omniphysics:*` ones mirror
+// OmniUsdPhysicsDeformableSchemaTokens, whose header is not on this file's
+// include path.
+// ---------------------------------------------------------------------------
+// isCookedGeometryAttribute(std::string_view) is pxr-free and lives in PhysXToolsCore.h.
+
+// Carrier entry for (`key`, `attr`), or null when the carrier must not answer.
+//
+// Three gates, cheapest first:
+//   1. nothing was ever cooked on this attach (the common case, one branch);
+//   2. THE LOAD-BEARING ONE — a live write sink exists, so the scene
+//      description is authoritative and the carrier must stay inert. `points`
+//      and `velocities` are not cook-time-immutable: simulation rewrites them
+//      every frame through that same sink and InternalScene reads them back, so
+//      an ungated carrier would serve the cook's bind-pose points forever and
+//      break save/restore on a USD attach. This gate is also what makes the
+//      whole hook a provable no-op on the USD backend;
+//   3. the attribute is not one the cooking write-back authors.
+inline const usdparser::CookedArray* findCookedArray(const usdparser::AttachedStage& attachedStage,
+                                                     omni::physics::parse::ObjectKey key,
+                                                     omni::physics::parse::TokenId attr,
+                                                     const omni::physics::parse::IPhysicsSource& source)
 {
-    // eVec2 is 2 packed floats per element, layout-compatible with GfVec2f.
-    if (h.type != omni::physics::parse::BufferElemType::eVec2 || !data)
-        return false;
-    out.resize(h.elemCount);
-    std::memcpy(out.data(), data, byteCount);
-    return true;
+    if (!attachedStage.hasCookedGeometry())
+        return nullptr;
+    if (attachedStage.getDataWrite() != nullptr)
+        return nullptr;
+    // An unresolvable path yields the invalid sentinel key, and every such prim
+    // would share one carrier slot. Never record or serve under it.
+    if (!key.valid())
+        return nullptr;
+    if (!isCookedGeometryAttribute(source.tokenToString(attr)))
+        return nullptr;
+    return attachedStage.getCookedArray(key, attr);
 }
-inline bool fillArray(PXR_NS::VtVec3fArray& out, const void* data, size_t byteCount,
-                      const omni::physics::parse::BufferHandle& h)
+
+// Rebuild a BufferHandle over carrier bytes so the fillArray ladder above can
+// be reused unchanged — it reads only `type` and `elemCount` off the handle.
+// A non-zero `id` only marks the handle valid(); it is never resolved.
+inline omni::physics::parse::BufferHandle cookedBufferHandle(const usdparser::CookedArray& cooked)
 {
-    // eVec3 is 3 packed floats per element, layout-compatible with GfVec3f.
-    if (h.type != omni::physics::parse::BufferElemType::eVec3 || !data)
-        return false;
-    out.resize(h.elemCount);
-    std::memcpy(out.data(), data, byteCount);
-    return true;
-}
-inline bool fillArray(PXR_NS::VtVec4fArray& out, const void* data, size_t byteCount,
-                      const omni::physics::parse::BufferHandle& h)
-{
-    // eVec4 is 4 packed floats per element, layout-compatible with GfVec4f.
-    if (h.type != omni::physics::parse::BufferElemType::eVec4 || !data)
-        return false;
-    out.resize(h.elemCount);
-    std::memcpy(out.data(), data, byteCount);
-    return true;
-}
-inline bool fillArray(PXR_NS::VtIntArray& out, const void* data, size_t byteCount,
-                      const omni::physics::parse::BufferHandle& h)
-{
-    // Flat int32 array (e.g. UsdGeomMesh faceVertexIndices).
-    if (h.type != omni::physics::parse::BufferElemType::eInt32 || !data)
-        return false;
-    out.resize(h.elemCount);
-    std::memcpy(out.data(), data, byteCount);
-    return true;
-}
-inline bool fillArray(PXR_NS::VtUIntArray& out, const void* data, size_t byteCount,
-                      const omni::physics::parse::BufferHandle& h)
-{
-    // Flat uint32 array (e.g. deformable collision-filter groupElemCounts/Indices).
-    if (h.type != omni::physics::parse::BufferElemType::eUInt32 || !data)
-        return false;
-    out.resize(h.elemCount);
-    std::memcpy(out.data(), data, byteCount);
-    return true;
-}
-inline bool fillArray(PXR_NS::VtVec3iArray& out, const void* data, size_t byteCount,
-                      const omni::physics::parse::BufferHandle& h)
-{
-    // eInt3 is 3 packed int32 per element, layout-compatible with GfVec3i.
-    if (h.type != omni::physics::parse::BufferElemType::eInt3 || !data)
-        return false;
-    out.resize(h.elemCount);
-    std::memcpy(out.data(), data, byteCount);
-    return true;
-}
-inline bool fillArray(PXR_NS::VtVec4iArray& out, const void* data, size_t byteCount,
-                      const omni::physics::parse::BufferHandle& h)
-{
-    // eInt4 is 4 packed int32 per element, layout-compatible with GfVec4i.
-    if (h.type != omni::physics::parse::BufferElemType::eInt4 || !data)
-        return false;
-    out.resize(h.elemCount);
-    std::memcpy(out.data(), data, byteCount);
-    return true;
-}
-inline bool fillArray(PXR_NS::VtUCharArray& out, const void* data, size_t byteCount,
-                      const omni::physics::parse::BufferHandle& h)
-{
-    // Flat byte array (e.g. cooking mesh-key marker blobs stored as UCharArray).
-    if (h.type != omni::physics::parse::BufferElemType::eUInt8 || !data)
-        return false;
-    out.resize(h.elemCount);
-    std::memcpy(out.data(), data, byteCount);
-    return true;
-}
-inline bool fillArray(PXR_NS::VtQuathArray& out, const void* data, size_t byteCount,
-                      const omni::physics::parse::BufferHandle& h)
-{
-    // eQuath is 4 packed 16-bit half per element, layout-compatible with GfQuath
-    // (instancer orientations / joint-instancer local rotations).
-    if (h.type != omni::physics::parse::BufferElemType::eQuath || !data)
-        return false;
-    out.resize(h.elemCount);
-    std::memcpy(out.data(), data, byteCount);
-    return true;
+    omni::physics::parse::BufferHandle h;
+    h.id = 1;
+    h.type = cooked.type;
+    h.elemCount = cooked.elemCount;
+    return h;
 }
 } // namespace physxtools_detail
 
 template <typename T>
 bool getValue(const usdparser::AttachedStage& attachedStage,
               omni::physics::parse::ObjectKey key,
-              const PXR_NS::TfToken& attributeName,
-              const PXR_NS::UsdTimeCode& timeCode,
+              omni::physics::parse::TokenId attributeName,
+              omni::physics::parse::ReadTime time,
               T& retVal)
 {
     const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
     if (!source)
         return false;
-    const omni::physics::parse::TokenId attr = source->internToken(attributeName.GetString());
-    if constexpr (std::is_same_v<T, PXR_NS::TfToken>)
+    if constexpr (std::is_same_v<T, uint32_t>)
     {
-        // Read token attributes through the typed TokenId overload so sources that
-        // store tokens as an int-encoded token-id column (ovstage) resolve them; the
-        // raw AttrValue surfaces such a column as eInt, which fromAttr<TfToken> (eToken
-        // only) would reject. USD's token attrs resolve identically through this path.
-        omni::physics::parse::TokenId tokVal;
-        if (!source->getAttribute(key, attr, tokVal))
-            return false;
-        retVal = PXR_NS::TfToken(std::string(source->tokenToString(tokVal)));
-        return true;
+        // Cooked-geometry carrier (ADR-0014).
+        if (const usdparser::CookedArray* cooked =
+                physxtools_detail::findCookedArray(attachedStage, key, attributeName, *source))
+        {
+            if (cooked->type == omni::physics::parse::BufferElemType::eUInt32 && cooked->elemCount == 1 &&
+                cooked->bytes.size() == sizeof(uint32_t))
+            {
+                std::memcpy(&retVal, cooked->bytes.data(), sizeof(uint32_t));
+                return true;
+            }
+        }
+    }
+    if constexpr (std::is_same_v<T, omni::physics::parse::TokenId>)
+    {
+        // Read token-valued attributes (enum/mode strings) through the typed TokenId
+        // getter, not getAttributeAtTime+fromAttr: sources that store tokens as an
+        // int-encoded token-id column (ovstage) surface the raw AttrValue as eInt, which
+        // has no fromAttr<TokenId> match, so the generic path below would silently drop
+        // the value. USD's token attrs resolve identically through this path too.
+        return source->getAttribute(key, attributeName, retVal);
     }
     else
     {
-        const omni::physics::parse::AttrValue value =
-            source->getAttributeAtTime(key, attr, physxtools_detail::toReadTime(timeCode));
+        const omni::physics::parse::AttrValue value = source->getAttributeAtTime(key, attributeName, time);
         return physxtools_detail::fromAttr(*source, value, retVal);
     }
 }
 
+// Known gap: a *recorded but empty* carrier entry falls through to the source here rather
+// than being served as an explicit empty result. No production call site distinguishes the
+// two today.
 template <typename T>
 bool getArrayValue(const usdparser::AttachedStage& attachedStage,
                    omni::physics::parse::ObjectKey key,
-                   const PXR_NS::TfToken& attributeName,
-                   const PXR_NS::UsdTimeCode& timeCode,
+                   omni::physics::parse::TokenId attributeName,
+                   omni::physics::parse::ReadTime time,
                    T& retVal)
 {
     const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
     if (!source)
         return false;
-    const omni::physics::parse::TokenId attr = source->internToken(attributeName.GetString());
-    const omni::physics::parse::BufferHandle handle =
-        source->getArrayAttribute(key, attr, physxtools_detail::toReadTime(timeCode));
+    // Cooked-geometry carrier (ADR-0014/ADR-0022).
+    if (const usdparser::CookedArray* cooked =
+            physxtools_detail::findCookedArray(attachedStage, key, attributeName, *source))
+    {
+        if (!cooked->bytes.empty() &&
+            physxtools_detail::fillArray(retVal, cooked->bytes.data(), cooked->bytes.size(),
+                                         physxtools_detail::cookedBufferHandle(*cooked)))
+        {
+            return true;
+        }
+    }
+    const omni::physics::parse::BufferHandle handle = source->getArrayAttribute(key, attributeName, time);
     if (!handle.valid())
         return false;
     size_t byteCount = 0;
@@ -492,37 +338,101 @@ bool getArrayValue(const usdparser::AttachedStage& attachedStage,
     return ok;
 }
 
-// Local-to-world transform of `key` at `timeCode`, read through the physics
-// source (no direct USD prim access). Returns identity when the source is
-// unavailable or the key does not resolve.
-inline PXR_NS::GfMatrix4d getWorldTransform(const usdparser::AttachedStage& attachedStage,
+// ---------------------------------------------------------------------------
+// Cooked-geometry carrier — write side (ADR-0022).
+//
+// The deformable cooking write-back calls these next to (not instead of) its
+// IPhysicsDataWrite calls: record always, publish to the sink when there is
+// one. Recording unconditionally keeps the write path's behaviour independent
+// of the backend; the READ side is where the no-sink gate lives.
+// ---------------------------------------------------------------------------
+
+// Gated by the allowlist (physxtools_detail::isCookedGeometryAttribute, via
+// source->tokenToString) and following the unconditional-record-then-publish
+// contract (ADR-0014).
+inline void setCookedRawValue(usdparser::AttachedStage& attachedStage,
+                              omni::physics::parse::ObjectKey key,
+                              omni::physics::parse::TokenId attributeName,
+                              const void* bytes,
+                              size_t byteCount,
+                              omni::physics::parse::BufferElemType type,
+                              uint32_t elemCount)
+{
+    omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+    if (!source || !key.valid())
+        return;
+    if (!physxtools_detail::isCookedGeometryAttribute(source->tokenToString(attributeName)))
+    {
+        // Loud on purpose: see the TfToken overload above.
+        CARB_LOG_ERROR("setCookedRawValue: %s is not in the cooked-geometry allowlist (PhysXTools.h); "
+                       "it will not be recorded and cannot be read back on a sink-less backend.",
+                       std::string(source->tokenToString(attributeName)).c_str());
+        return;
+    }
+    attachedStage.setCookedArray(key, attributeName, bytes, byteCount, type, elemCount);
+}
+
+template <typename T>
+void setCookedArrayValue(usdparser::AttachedStage& attachedStage,
+                         omni::physics::parse::ObjectKey key,
+                         omni::physics::parse::TokenId attributeName,
+                         const T& array)
+{
+    setCookedRawValue(attachedStage, key, attributeName,
+                      array.empty() ? nullptr : physxtools_detail::arrayElemData(array),
+                      array.size() * sizeof(typename T::value_type), physxtools_detail::elemTypeOf(array),
+                      static_cast<uint32_t>(array.size()));
+}
+
+inline void setCookedUIntValue(usdparser::AttachedStage& attachedStage,
+                               omni::physics::parse::ObjectKey key,
+                               omni::physics::parse::TokenId attributeName,
+                               uint32_t value)
+{
+    setCookedRawValue(attachedStage, key, attributeName, &value, sizeof(value),
+                      omni::physics::parse::BufferElemType::eUInt32, 1);
+}
+
+inline void setCookedBlobValue(usdparser::AttachedStage& attachedStage,
+                               omni::physics::parse::ObjectKey key,
+                               omni::physics::parse::TokenId attributeName,
+                               const void* bytes,
+                               size_t byteCount)
+{
+    setCookedRawValue(attachedStage, key, attributeName, bytes, byteCount,
+                      omni::physics::parse::BufferElemType::eUInt8, static_cast<uint32_t>(byteCount));
+}
+
+inline void clearCookedValue(usdparser::AttachedStage& attachedStage,
+                             omni::physics::parse::ObjectKey key,
+                             omni::physics::parse::TokenId attributeName)
+{
+    attachedStage.clearCookedArray(key, attributeName);
+}
+
+// toPxMat44d/toParseMatrix4d (the PhysX <-> parse-lib Matrix4d conversion) are pxr-free and
+// live in PhysXToolsCore.h (included above).
+
+inline ::physx::PxMat44d getWorldTransform(const usdparser::AttachedStage& attachedStage,
                                             omni::physics::parse::ObjectKey key,
-                                            const PXR_NS::UsdTimeCode& timeCode)
+                                            omni::physics::parse::ReadTime time)
 {
     omni::physics::parse::Matrix4d m;
     if (const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource())
-        source->getLocalToWorldTransform(key, physxtools_detail::toReadTime(timeCode), m);
-    // parse-lib Matrix4d is row-major, matching GfMatrix4d's layout.
-    return PXR_NS::GfMatrix4d(m.data[0], m.data[1], m.data[2], m.data[3],
-                              m.data[4], m.data[5], m.data[6], m.data[7],
-                              m.data[8], m.data[9], m.data[10], m.data[11],
-                              m.data[12], m.data[13], m.data[14], m.data[15]);
+        source->getLocalToWorldTransform(key, time, m);
+    return toPxMat44d(m);
 }
 
 // Local-to-world transform via the source's cached, time-independent overload
 // (pinned to EarliestTime). Use for load-time reads that previously went
 // through an EarliestTime UsdGeomXformCache — same result, shared cache.
-inline PXR_NS::GfMatrix4d getWorldTransform(const usdparser::AttachedStage& attachedStage,
+inline ::physx::PxMat44d getWorldTransform(const usdparser::AttachedStage& attachedStage,
                                             omni::physics::parse::ObjectKey key)
 {
     omni::physics::parse::Matrix4d m;
     if (const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource())
         source->getLocalToWorldTransform(key, m);
-    // parse-lib Matrix4d is row-major, matching GfMatrix4d's layout.
-    return PXR_NS::GfMatrix4d(m.data[0], m.data[1], m.data[2], m.data[3],
-                              m.data[4], m.data[5], m.data[6], m.data[7],
-                              m.data[8], m.data[9], m.data[10], m.data[11],
-                              m.data[12], m.data[13], m.data[14], m.data[15]);
+    return toPxMat44d(m);
 }
 
 // Object-local transform of `key` at `timeCode` (the transform from the
@@ -530,134 +440,80 @@ inline PXR_NS::GfMatrix4d getWorldTransform(const usdparser::AttachedStage& atta
 // (no direct USD prim access). `outResetsXformStack` receives whether the
 // object resets the inherited parent transform. Returns identity when the
 // source is unavailable or the key does not resolve.
-inline PXR_NS::GfMatrix4d getLocalTransform(const usdparser::AttachedStage& attachedStage,
+inline ::physx::PxMat44d getLocalTransform(const usdparser::AttachedStage& attachedStage,
                                             omni::physics::parse::ObjectKey key,
-                                            const PXR_NS::UsdTimeCode& timeCode,
+                                            omni::physics::parse::ReadTime time,
                                             bool& outResetsXformStack)
 {
     omni::physics::parse::Matrix4d m;
     outResetsXformStack = false;
     if (const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource())
-        source->getLocalTransform(key, physxtools_detail::toReadTime(timeCode), m, outResetsXformStack);
-    // parse-lib Matrix4d is row-major, matching GfMatrix4d's layout.
-    return PXR_NS::GfMatrix4d(m.data[0], m.data[1], m.data[2], m.data[3],
-                              m.data[4], m.data[5], m.data[6], m.data[7],
-                              m.data[8], m.data[9], m.data[10], m.data[11],
-                              m.data[12], m.data[13], m.data[14], m.data[15]);
+        source->getLocalTransform(key, time, m, outResetsXformStack);
+    return toPxMat44d(m);
 }
 
-// Source token for a C++ USD schema type, for isA/hasSchema gating. This is the single
-// boundary point that translates a compile-time USD schema type into the backend's token
-// vocabulary: it round-trips the schema's registered type name (USD schema *metadata* --
-// not a per-object USD data read) through internToken so any IPhysicsSource backend can
-// resolve it. Cached per schema type.
-template <typename SchemaT>
-omni::physics::parse::TokenId schemaTypeToken(const omni::physics::parse::IPhysicsSource& src)
+// A tet mesh is identified by its TET DATA, not only by its concrete prim type.
+//
+// isA() resolves against the source's prim-type vocabulary, and ovstage reports a
+// UsdGeomTetMesh as plain "Mesh" -- its populator has no TetMesh mapping -- so requiring the
+// concrete type rejects every volume deformable loaded from a non-USD source. This is the same
+// limitation the ovstage walker's `usd-prim-type` query has, and the same remedy applied there
+// (OvstageWalker.cpp::hasTetConnectivity): fall back to the presence of readable, non-empty
+// tetVertexIndices, which is what the consumers of these gates actually need. The isA() fast
+// path stays first, so behaviour is unchanged on every backend.
+//
+// The fast path checks KnownTokens' tetMeshType TokenId, interned from the literal "TetMesh".
+// On the USD backend that resolves through the same UsdSchemaRegistry::
+// GetTypeFromSchemaTypeName()+UsdPrim::IsA() path a C++ isAType<UsdGeomTetMesh>() would.
+inline bool isTetMeshLike(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key)
 {
-    static const std::string name =
-        PXR_NS::UsdSchemaRegistry::GetSchemaTypeName(PXR_NS::TfType::Find<SchemaT>()).GetString();
-    return src.internToken(name);
-}
-
-// Source-routed applied-API check, keyed by ObjectKey (no UsdPrim, no direct-USD
-// fallback). Normalises `schemaTypeName` (accepted by GetAPITypeFromSchemaTypeName,
-// e.g. OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsDeformableBodyAPI) to the registered
-// applied-schema name and queries IPhysicsSource::hasSchema. Returns false when
-// the name does not resolve to an applied API schema.
-inline bool hasAppliedSchema(const omni::physics::parse::IPhysicsSource& src,
-                             omni::physics::parse::ObjectKey key,
-                             const PXR_NS::TfToken& schemaTypeName)
-{
-    const PXR_NS::TfType type = PXR_NS::UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(schemaTypeName);
-    const PXR_NS::TfToken applied = PXR_NS::UsdSchemaRegistry::GetAPISchemaTypeName(type);
-    if (applied.IsEmpty())
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    if (!src)
         return false;
-    return src.hasSchema(key, src.internToken(applied.GetString()));
+    const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
+    if (src->isA(key, tok.tetMeshType))
+        return true;
+    // eInt4 payload; carb::Int4 and GfVec4i are the same four packed int32, so this is the
+    // same read the VtArray<GfVec4i> form performed.
+    std::vector<carb::Int4> tets;
+    return getArrayValue(attachedStage, key, tok.tetVertexIndices, omni::physics::parse::ReadTime::defaultTime(),
+                         tets) &&
+           !tets.empty();
 }
 
-// Type-parameterised form of hasAppliedSchema for a C++ applied-API schema class.
-template <typename SchemaT>
-bool hasAppliedSchema(const omni::physics::parse::IPhysicsSource& src, omni::physics::parse::ObjectKey key)
-{
-    static const std::string applied =
-        PXR_NS::UsdSchemaRegistry::GetAPISchemaTypeName(PXR_NS::TfType::Find<SchemaT>()).GetString();
-    return !applied.empty() && src.hasSchema(key, src.internToken(applied));
-}
-
-// Source-routed IsA check (the schema's registered type name), keyed by ObjectKey.
-template <typename SchemaT>
-bool isAType(const omni::physics::parse::IPhysicsSource& src, omni::physics::parse::ObjectKey key)
-{
-    return src.isA(key, schemaTypeToken<SchemaT>(src));
-}
-
+// Returns the relationship's targets as ObjectKeys directly.
 inline bool getRelationshipValue(const usdparser::AttachedStage& attachedStage,
                                  omni::physics::parse::ObjectKey key,
-                                 const PXR_NS::TfToken& relName,
-                                 PXR_NS::SdfPathVector& retVal)
+                                 omni::physics::parse::TokenId relName,
+                                 std::vector<omni::physics::parse::ObjectKey>& retVal)
 {
     const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
     if (!source)
         return false;
-    const omni::physics::parse::TokenId rel = source->internToken(relName.GetString());
-    std::vector<omni::physics::parse::ObjectKey> targets;
-    source->getRelationshipTargets(key, rel, targets);
     retVal.clear();
-    retVal.reserve(targets.size());
-    for (const omni::physics::parse::ObjectKey target : targets)
-        retVal.push_back(attachedStage.pathFor(target));
+    source->getRelationshipTargets(key, relName, retVal);
     return true;
 }
 
-// True iff the named relationship is defined on `key` (independent of whether
-// it has targets), read through the source. Use to distinguish an absent
-// relationship from a defined-but-empty one (getRelationshipValue reports empty
-// for both).
 inline bool hasRelationship(const usdparser::AttachedStage& attachedStage,
                             omni::physics::parse::ObjectKey key,
-                            const PXR_NS::TfToken& relName)
+                            omni::physics::parse::TokenId relName)
 {
     const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
-    return source && source->hasRelationship(key, source->internToken(relName.GetString()));
+    return source && source->hasRelationship(key, relName);
 }
 
-// True iff multi-apply schema `schemaName` is applied to `key` at `instance`,
-// read through the source. `schemaName` is the registered applied-schema base
-// name (e.g. "PhysxJointAxisAPI"); the source-side equivalent of
-// prim.HasAPI(schemaName, instance) for a specific instance.
 inline bool hasMultiApplyInstance(const usdparser::AttachedStage& attachedStage,
                                   omni::physics::parse::ObjectKey key,
-                                  const PXR_NS::TfToken& schemaName,
-                                  const PXR_NS::TfToken& instance)
+                                  omni::physics::parse::TokenId schemaName,
+                                  omni::physics::parse::TokenId instance)
 {
     const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
     if (!source)
         return false;
-    const std::string appliedSchema = schemaName.GetString() + ":" + instance.GetString();
+    const std::string appliedSchema =
+        std::string(source->tokenToString(schemaName)) + ":" + std::string(source->tokenToString(instance));
     return source->hasSchema(key, source->internToken(appliedSchema));
-}
-
-inline bool getFloatBounded(const usdparser::AttachedStage& attachedStage,
-                            omni::physics::parse::ObjectKey key,
-                            const PXR_NS::TfToken attributeName,
-                            const PXR_NS::UsdTimeCode timeCode,
-                            float& outFloat,
-                            const float lowBound,
-                            const float upBound)
-{
-    float data = 0.0f;
-    const bool result = getValue<float>(attachedStage, key, attributeName, timeCode, data);
-
-    if (data > upBound)
-    {
-        data = upBound;
-    }
-    else if (data < lowBound)
-    {
-        data = lowBound;
-    }
-    outFloat = data;
-    return result;
 }
 
 inline ::physx::PxQuat fixupCapsuleQuat(omni::physx::usdparser::Axis axis)
@@ -675,21 +531,6 @@ inline ::physx::PxQuat fixupCapsuleQuat(omni::physx::usdparser::Axis axis)
     return fixupQ;
 }
 
-inline ::physx::PxQuat fixupCapsuleQuat(const PXR_NS::TfToken& axis)
-{
-    ::physx::PxQuat fixupQ(::physx::PxIdentity);
-    const float hRt2 = sqrt(2.0f) / 2.0f;
-    if (axis == PXR_NS::UsdPhysicsTokens.Get()->z)
-    {
-        fixupQ = ::physx::PxQuat(hRt2, 0.0f, -hRt2, 0.0f);
-    }
-    else if (axis == PXR_NS::UsdPhysicsTokens.Get()->y)
-    {
-        fixupQ = ::physx::PxQuat(hRt2, -hRt2, 0.0f, 0.0f);
-    }
-    return fixupQ;
-}
-
 inline ::physx::PxQuat fixupConeAndCylinderQuat(omni::physx::usdparser::Axis axis)
 {
     ::physx::PxQuat fixupQ(::physx::PxIdentity);
@@ -701,8 +542,12 @@ inline ::physx::PxQuat fixupConeAndCylinderQuat(omni::physx::usdparser::Axis axi
     return fixupQ;
 }
 
+// pxr-free sibling of the SdfPath overload below: identical body, keyed by
+// ObjectKey (ADR-0019) via the getObjectDataOrID ObjectKey overload in
+// ObjectDataQuery.h, so ADR-0018 callers can look up the joint's PhysX
+// pointer without constructing an SdfPath.
 inline bool getJointAndLocalPose(const omni::physx::usdparser::AttachedStage& attachedStage,
-                                 const PXR_NS::SdfPath& jointKey,
+                                 omni::physics::parse::ObjectKey jointKey,
                                  const ::physx::PxRigidActor* jointActor,
                                  ::physx::PxBase*& jointOut,
                                  ::physx::PxTransform& localFrame)

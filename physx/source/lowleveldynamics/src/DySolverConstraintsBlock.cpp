@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "foundation/PxPreprocessor.h"
 #include "DySolverBody.h"
@@ -314,7 +291,8 @@ static void solveContact4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, 
 				angState0T2 = V4MulAdd(f.raXnZ, angDetaF0, angState0T2);
 				angState1T2 = V4NegMulSub(f.rbXnZ, angDetaF1, angState1T2);
 			}
-			fd->broken = broken;
+			if(cache.writeBackIteration)
+				fd->broken = broken;
 		}
 	}
 
@@ -611,7 +589,8 @@ static void solveContact4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT 
 #endif
 			}
 
-			fd->broken = broken;
+			if(cache.writeBackIteration)
+				fd->broken = broken;
 		}
 	}
 
@@ -706,9 +685,12 @@ void computeFrictionImpulseBlock(
 	Vec4V& impulse0, Vec4V& impulse1, Vec4V& impulse2, Vec4V& impulse3
 	)
 {
-	Vec4V col0 = V4Mul(appliedForce0, axis0X);
-	Vec4V col1 = V4Mul(appliedForce0, axis0Y);
-	Vec4V col2 = V4Mul(appliedForce0, axis0Z);
+	// PT: V4Transpose is linear, so transpose(A) + transpose(B) == transpose(A + B). Summing the two
+	// contributions column-wise first lets us do ONE transpose instead of two, and keeps only four values
+	// live so the compiler no longer has to spill callee-saved xmm registers.
+	Vec4V col0 = V4Add(V4Mul(appliedForce0, axis0X), V4Mul(appliedForce1, axis1X));
+	Vec4V col1 = V4Add(V4Mul(appliedForce0, axis0Y), V4Mul(appliedForce1, axis1Y));
+	Vec4V col2 = V4Add(V4Mul(appliedForce0, axis0Z), V4Mul(appliedForce1, axis1Z));
 	Vec4V col3 = V4Zero();
 	V4Transpose(col0, col1, col2, col3);
 
@@ -716,17 +698,6 @@ void computeFrictionImpulseBlock(
 	impulse1 = col1;
 	impulse2 = col2;
 	impulse3 = col3;
-
-	col0 = V4Mul(appliedForce1, axis1X);
-	col1 = V4Mul(appliedForce1, axis1Y);
-	col2 = V4Mul(appliedForce1, axis1Z);
-	col3 = V4Zero();
-	V4Transpose(col0, col1, col2, col3);
-
-	impulse0 = V4Add(impulse0, col0);
-	impulse1 = V4Add(impulse1, col1);
-	impulse2 = V4Add(impulse2, col2);
-	impulse3 = V4Add(impulse3, col3);
 }
 
 static void writeBackContact4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, SolverContext& cache,
@@ -791,24 +762,24 @@ static void writeBackContact4_Block(const PxSolverConstraintDesc* PX_RESTRICT de
 		writeBackThresholds[2] = hdr->flags[2] & SolverContactHeader::eHAS_FORCE_THRESHOLDS;
 		writeBackThresholds[3] = hdr->flags[3] & SolverContactHeader::eHAS_FORCE_THRESHOLDS;
 
+		// PT: see the TGS version of this loop in DyTGSContactPrepBlock.cpp. Counts and pointer null-ness are
+		// loop-invariant, and the four V4GetX/Y/Z/W were shuffling lanes out of a memory buffer only to store
+		// them back as single floats. Unlike TGS we keep the 16-byte load here, because normalForce is live
+		// (force thresholds do work on PGS/CPU) - the scalar reads below alias the same line.
+		const PxU32 c0 = vForceWriteback0 ? hdr->numNormalConstr0 : 0;
+		const PxU32 c1 = vForceWriteback1 ? hdr->numNormalConstr1 : 0;
+		const PxU32 c2 = vForceWriteback2 ? hdr->numNormalConstr2 : 0;
+		const PxU32 c3 = vForceWriteback3 ? hdr->numNormalConstr3 : 0;
+
 		for(PxU32 i=0;i<numNormalConstr;i++)
 		{
-			//contacts = (SolverContactBatchPointBase4*)(((PxU8*)contacts) + contactSize);
-			const FloatV appliedForce0 = V4GetX(appliedForces[i]);
-			const FloatV appliedForce1 = V4GetY(appliedForces[i]);
-			const FloatV appliedForce2 = V4GetZ(appliedForces[i]);
-			const FloatV appliedForce3 = V4GetW(appliedForces[i]);
-
 			normalForce = V4Add(normalForce, appliedForces[i]);
 
-			if(vForceWriteback0 && i < hdr->numNormalConstr0)
-				FStore(appliedForce0, vForceWriteback0++);
-			if(vForceWriteback1 && i < hdr->numNormalConstr1)
-				FStore(appliedForce1, vForceWriteback1++);
-			if(vForceWriteback2 && i < hdr->numNormalConstr2)
-				FStore(appliedForce2, vForceWriteback2++);
-			if(vForceWriteback3 && i < hdr->numNormalConstr3)
-				FStore(appliedForce3, vForceWriteback3++);
+			const PxF32* PX_RESTRICT af = reinterpret_cast<const PxF32*>(appliedForces + i);
+			if(i < c0)	*vForceWriteback0++ = af[0];
+			if(i < c1)	*vForceWriteback1++ = af[1];
+			if(i < c2)	*vForceWriteback2++ = af[2];
+			if(i < c3)	*vForceWriteback3++ = af[3];
 		}
 
 		// Writeback friction impulses
@@ -818,16 +789,19 @@ static void writeBackContact4_Block(const PxSolverConstraintDesc* PX_RESTRICT de
 			//With torsional friction, we may have 3 (a single friction anchor + twist).
 			const PxU32 numFrictionPairs = (numFrictionConstr & 6);
 
+			// PT: SolverFrictionSharedData4 is per-manifold, and normalX/Y/Z each hold the 2 friction
+			// directions shared by every pair below - so these six loads do not depend on i. (The solve
+			// loops index the same data as [i&1] because they step per constraint rather than per pair.)
+			const Vec4V axis0X = fd->normalX[0];
+			const Vec4V axis0Y = fd->normalY[0];
+			const Vec4V axis0Z = fd->normalZ[0];
+
+			const Vec4V axis1X = fd->normalX[1];
+			const Vec4V axis1Y = fd->normalY[1];
+			const Vec4V axis1Z = fd->normalZ[1];
+
 			for (PxU32 i = 0; i < numFrictionPairs; i += 2)
 			{
-				const Vec4V axis0X = fd->normalX[0];
-				const Vec4V axis0Y = fd->normalY[0];
-				const Vec4V axis0Z = fd->normalZ[0];
-
-				const Vec4V axis1X = fd->normalX[1];
-				const Vec4V axis1Y = fd->normalY[1];
-				const Vec4V axis1Z = fd->normalZ[1];
-
 				const Vec4V appliedForce0 = frictionAppliedForce[i + 0];
 				const Vec4V appliedForce1 = frictionAppliedForce[i + 1];
 

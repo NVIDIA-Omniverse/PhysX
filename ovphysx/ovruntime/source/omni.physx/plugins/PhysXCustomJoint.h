@@ -1,7 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-9 AC-11 AC-12 AC-27
+ */
 
 #pragma once
+
+#include <string>
+#include <unordered_map>
+
+#include <carb/logging/Log.h>
 
 #include <PxPhysicsAPI.h>
 #include <omni/physx/IPhysxCustomJoint.h>
@@ -14,9 +24,17 @@ namespace omni
 {
 namespace physx
 {
+namespace usdparser
+{
+class AttachedStage;
+}
+
 struct CustomJointInfo
 {
-    PXR_NS::TfToken jointPrimType;
+    // Not a source-interned schema token: registerCustomJoint takes a bare
+    // `const char*` with no IPhysicsSource to intern against, so this is a
+    // plain string identifier incidentally shaped like a token.
+    std::string jointPrimType;
     ICustomJointCallback customJointCb;
     ::physx::PxConstraintSolverPrep solverPrepFn;
     size_t jointDataSize;
@@ -26,7 +44,7 @@ struct CustomJointInfo
 class CustomPhysXJoint : public ::physx::PxConstraintConnector, public Allocateable
 {
 public:
-    CustomPhysXJoint(const PXR_NS::SdfPath& path,
+    CustomPhysXJoint(omni::physics::parse::ObjectKey key,
                      const usdparser::CustomPhysxJointDesc& jointDesc,
                      ::physx::PxPhysics& physics,
                      const CustomJointInfo& jointInfo,
@@ -70,13 +88,13 @@ public:
 private:
     ::physx::PxConstraint* mConstraint;
 
-    PXR_NS::SdfPath mJointPath;
+    omni::physics::parse::ObjectKey mJointKey;
     CustomJointInfo mCustomJointInfo;
 };
 
 using CustomJointRegistryMap = std::unordered_map<size_t, CustomJointInfo>;
-using CustomJointTypeMap = std::unordered_map<PXR_NS::TfToken, CustomJointInfo, PXR_NS::TfToken::HashFunctor>;
-using CustomJointMap = std::unordered_map<PXR_NS::SdfPath, CustomPhysXJoint*, PXR_NS::SdfPath::Hash>;
+using CustomJointTypeMap = std::unordered_map<std::string, CustomJointInfo>;
+using CustomJointMap = std::unordered_map<omni::physics::parse::ObjectKey, CustomPhysXJoint*, omni::physics::parse::ObjectKey::Hash>;
 
 class PhysXCustomJointManager
 {
@@ -84,14 +102,14 @@ public:
     PhysXCustomJointManager();
     ~PhysXCustomJointManager();
 
-    size_t registerCustomJoint(const PXR_NS::TfToken& jointPrimType,
+    size_t registerCustomJoint(const char* jointPrimType,
                                ICustomJointCallback& jointCallback,
                                ::physx::PxConstraintSolverPrep jointPrepFn,
                                size_t jointDataSize);
     void unregisterCustomJoint(size_t id);
-    void markJointDirty(const PXR_NS::SdfPath& primKey);
-    void setJointFlags(const PXR_NS::SdfPath& primKey, CustomJointFlag::Enum flags);
-    CustomJointFlag::Enum getJointFlags(const PXR_NS::SdfPath& primKey);
+    void markJointDirty(omni::physics::parse::ObjectKey key);
+    void setJointFlags(omni::physics::parse::ObjectKey key, CustomJointFlag::Enum flags);
+    CustomJointFlag::Enum getJointFlags(omni::physics::parse::ObjectKey key);
 
     void clear()
     {
@@ -102,14 +120,15 @@ public:
         mCustomJointMap.clear();
     }
 
-    CustomPhysXJoint* createCustomJoint(const PXR_NS::SdfPath& primKey,
+    CustomPhysXJoint* createCustomJoint(const usdparser::AttachedStage& attachedStage,
+                                        omni::physics::parse::ObjectKey primKey,
                                         const usdparser::CustomPhysxJointDesc& jointDesc,
                                         ::physx::PxRigidActor* actor0,
                                         const ::physx::PxTransform& localFrame0,
                                         ::physx::PxRigidActor* actor1,
                                         const ::physx::PxTransform& localFrame1);
 
-    void removeCustomJoint(const PXR_NS::SdfPath& primKey);
+    void removeCustomJoint(omni::physics::parse::ObjectKey primKey);
 
     const CustomJointTypeMap& getCustomJointTypeMap() const
     {

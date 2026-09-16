@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Collision Behavior Guide
 
@@ -39,15 +39,31 @@ roughly in order:
 
 ## Worked Example
 
-A scene of SDF cones falling on a ground plane, tuned for contact quality. It
-uses core `UsdPhysics` plus codeless PhysX attributes (register the codeless
-schemas first — refer to [Physics Schemas](../physics_schemas.md)):
+This runnable authoring script writes the physics half of a scene of SDF cones
+falling on a ground plane, tuned for contact quality. It uses core `UsdPhysics`
+plus codeless PhysX attributes. The cone mesh data and the ground plane are left
+for you to supply; everything the tuning discussion refers to is here.
+
+Two things have to be true before you run it. Install stock `usd-core` in the
+authoring environment (`python -m pip install usd-core`), and let
+`RegisterPlugins()` be the first thing in the process that touches USD -- USD
+builds its schema registry once, on first access, so a later registration
+cannot be repaired. Refer to [Physics Schemas](../physics_schemas.md) for both
+constraints.
+
+Save the following as `author_sdf_cones.py`, then run
+`python author_sdf_cones.py`. It creates its own stage rather than extending an
+existing one, so nothing outside the script is required:
 
 ```python
 import ovphysx
-from pxr import Plug, Sdf, UsdGeom, UsdPhysics, Gf
+from pxr import Gf, Plug, Sdf, Usd, UsdGeom, UsdPhysics
 
 Plug.Registry().RegisterPlugins([str(p) for p in ovphysx.codeless_schema_paths()])
+
+stage = Usd.Stage.CreateInMemory()
+UsdGeom.Xform.Define(stage, "/World")
+stage.SetDefaultPrim(stage.GetPrimAtPath("/World"))
 
 UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
 UsdGeom.SetStageMetersPerUnit(stage, 1.0)
@@ -77,7 +93,19 @@ cone_prim.ApplyAPI("PhysxRigidBodyAPI")
 cone_prim.CreateAttribute("physxRigidBody:solverPositionIterationCount", Sdf.ValueTypeNames.Int).Set(30)
 cone_prim.CreateAttribute("physxRigidBody:maxDepenetrationVelocity", Sdf.ValueTypeNames.Float).Set(100.0)
 cone_prim.CreateAttribute("physxRigidBody:enableSpeculativeCCD", Sdf.ValueTypeNames.Bool).Set(True)
+
+stage.GetRootLayer().Export("sdf_cones.usda")
 ```
+
+The script succeeds when it writes `sdf_cones.usda` and no
+`Tf.ErrorException: ApplyAPI: Cannot find a valid schema ...` is raised. That
+exception means the codeless schemas were registered too late, not that an
+attribute name is wrong.
+
+`/World/Cone` is defined as an empty `Mesh`, so supply its point and face data
+(or replace it with the cone mesh from your own asset) before the scene has
+anything to simulate. Ground-plane authoring is covered in
+[Static Colliders](../simulation_setup/collision.md#static-colliders).
 
 ## Improving SDF Collision Behavior
 

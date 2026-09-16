@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Boundary condition tests for step/step_n_sync and wait_op semantics.
 
@@ -153,7 +153,7 @@ def test_wait_op_defensively_rejects_competing_simulation_waiter():
             assert "op_index not found" in errors[0], outcomes
         finally:
             destroy_ovstage_test_attachments(sdk)
-            sdk.release()
+            sdk.destroy()
         """)
 
     result = subprocess.run(

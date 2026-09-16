@@ -1,28 +1,5 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved. 
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #define USE_GJK_VIRTUAL
 
@@ -52,8 +29,7 @@
 using namespace physx;
 using namespace Gu;
 using namespace Cm;
-
-using namespace physx;
+using namespace aos;
 
 #define SB_PARTITION_LIMIT 8 // max # partitions allowed. This value SHOULD NOT change. See also PxgSoftBody.h.
 
@@ -1657,11 +1633,10 @@ static bool gOverlapCallback(const AABBTreeNode* current, PxU32 /*depth*/, void*
 
 		const PxVec3 center0 = (a0 + a1 + a2 + a3) * 0.25f;
 
-		TetrahedronV tetV(aos::V3LoadU(a0), aos::V3LoadU(a1), aos::V3LoadU(a2),
-			aos::V3LoadU(a3));
+		TetrahedronV tetV(V3LoadU(a0), V3LoadU(a1), V3LoadU(a2), V3LoadU(a3));
 		const LocalConvex<TetrahedronV> convexA(tetV);
 
-		aos::FloatV contactDist = aos::FLoad(1e-4f);
+		FloatV contactDist = FLoad(1e-4f);
 
 		const PxVec3* verts = Data->mSimMeshVerts;
 
@@ -1679,18 +1654,17 @@ static bool gOverlapCallback(const AABBTreeNode* current, PxU32 /*depth*/, void*
 
 			const PxVec3 dir = center1 - center0;
 
-			TetrahedronV tetV2(aos::V3LoadU(b0), aos::V3LoadU(b1), aos::V3LoadU(b2),
-				aos::V3LoadU(b3));
-			tetV2.setMinMargin(aos::FEps());
+			TetrahedronV tetV2(V3LoadU(b0), V3LoadU(b1), V3LoadU(b2), V3LoadU(b3));
+			tetV2.setMinMargin(FEps());
 			const LocalConvex<TetrahedronV> convexB(tetV2);
 				
 			GjkOutput output;
 				
 #ifdef USE_GJK_VIRTUAL
-			GjkStatus status = testGjk(convexA, convexB, aos::V3LoadU(dir), contactDist, output.closestA,
+			GjkStatus status = testGjk(convexA, convexB, V3LoadU(dir), contactDist, output.closestA,
 				output.closestB, output.normal, output.penDep);
 #else
-			GjkStatus status = gjk(convexA, convexB, aos::V3LoadU(dir), contactDist, output.closestA,
+			GjkStatus status = gjk(convexA, convexB, V3LoadU(dir), contactDist, output.closestA,
 				output.closestB, output.normal, output.penDep);
 #endif
 			if (status == GjkStatus::GJK_CLOSE || status == GjkStatus::GJK_CONTACT)
@@ -2263,6 +2237,43 @@ void TetrahedronMeshBuilder::computeTetData(const PxTetrahedronMeshDesc& desc, T
 	mesh.mTetrahedrons = PX_ALLOC(tetMeshNbTets * sizeof(TetrahedronT<PxU32>), "mTetrahedrons");
 		
 	mesh.mFlags = desc.flags; //TODO: flags are not of same type...
+
+	// Copy the caller's data into the buffers allocated above, compacting away the input strides,
+	// the same way importMesh() does. Without this the buffers stay uninitialized: the bounds below
+	// are then computed over garbage (which can make them invalid) and the mesh handed back to the
+	// caller holds heap noise instead of its vertices and tetrahedra.
+	immediateCooking::gatherStrided(desc.points.data, mesh.mVertices, tetMeshNbPoints, sizeof(PxVec3), desc.points.stride);
+
+	TetrahedronT<PxU32>* dest = reinterpret_cast<TetrahedronT<PxU32>*>(mesh.mTetrahedrons);
+	const TetrahedronT<PxU32>* pastLastDest = dest + tetMeshNbTets;
+	const PxU8* source = reinterpret_cast<const PxU8*>(desc.tetrahedrons.data);
+	PX_ASSERT(source);
+	if(desc.flags & PxMeshFlag::e16_BIT_INDICES)
+	{
+		while(dest < pastLastDest)
+		{
+			const PxU16* tet16 = reinterpret_cast<const PxU16*>(source);
+			dest->v[0] = tet16[0];
+			dest->v[1] = tet16[1];
+			dest->v[2] = tet16[2];
+			dest->v[3] = tet16[3];
+			dest++;
+			source += desc.tetrahedrons.stride;
+		}
+	}
+	else
+	{
+		while(dest < pastLastDest)
+		{
+			const PxU32* tet32 = reinterpret_cast<const PxU32*>(source);
+			dest->v[0] = tet32[0];
+			dest->v[1] = tet32[1];
+			dest->v[2] = tet32[2];
+			dest->v[3] = tet32[3];
+			dest++;
+			source += desc.tetrahedrons.stride;
+		}
+	}
 
 	computeLocalBoundsAndGeomEpsilon(mesh.mVertices, tetMeshNbPoints, mesh.mAABB, mesh.mGeomEpsilon);
 }

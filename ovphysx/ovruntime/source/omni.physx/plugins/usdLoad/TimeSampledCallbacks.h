@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * Time-sampled attribute callback collection for consumers migrating
@@ -40,8 +40,6 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>  // IPhysicsSource, ObjectKey
 
-#include <pxr/base/tf/token.h>
-
 #include <vector>
 
 namespace omni::physx::usdparser
@@ -52,13 +50,13 @@ class AttachedStage;
 namespace omni::physx::usdparser::callbacks
 {
 
-// A collected callback: the object key + attribute-name token to register a
+// A collected callback: the object key + attribute TokenId to register a
 // time-sampled change callback for. Resolved against the physics source rather
 // than holding a UsdAttribute, so collection no longer needs a UsdPrim.
 struct TimeSampledCallback
 {
     omni::physics::parse::ObjectKey key;
-    PXR_NS::TfToken                 attr;
+    omni::physics::parse::TokenId   attr;
     OnUpdateObjectFn                updateFn;
 };
 
@@ -71,7 +69,7 @@ using TimeSampledCallbackList = std::vector<TimeSampledCallback>;
 void maybeCollect(TimeSampledCallbackList& out,
                   const omni::physics::parse::IPhysicsSource& src,
                   omni::physics::parse::ObjectKey key,
-                  const PXR_NS::TfToken& attr,
+                  omni::physics::parse::TokenId attr,
                   OnUpdateObjectFn updateFn);
 
 // Stricter gate.  Append only when the attribute is authored AND has
@@ -86,7 +84,7 @@ void maybeCollect(TimeSampledCallbackList& out,
 void maybeCollectIfMultiSample(TimeSampledCallbackList& out,
                                const omni::physics::parse::IPhysicsSource& src,
                                omni::physics::parse::ObjectKey key,
-                               const PXR_NS::TfToken& attr,
+                               omni::physics::parse::TokenId attr,
                                OnUpdateObjectFn updateFn);
 
 // Per-type collectors.  Each walks the prim's relevant API schemas and

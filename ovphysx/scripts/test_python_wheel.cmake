@@ -1,7 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
-# ovphysx Python Wheel Smoke Tests
+# @implements REQ-PACKAGING-DOCS-001
+# @covers AC-1 AC-2
+
+# ovphysx Python wheel smoke tests.
 # Validates the installed wheel via `python -m ovphysx` across Python versions.
 # Usage: cmake -P scripts/test_python_wheel.cmake
 #
@@ -16,7 +19,6 @@ include("${SCRIPT_DIR}/build_common.cmake")
 message(STATUS "")
 message(STATUS "=== Python Wheel Smoke Tests ===")
 
-# Verify uv is available
 execute_process(
     COMMAND "${OVPHYSX_UV_COMMAND}" --version
     OUTPUT_VARIABLE UV_VERSION
@@ -44,13 +46,12 @@ set(UV_ENV
     "UV_SKIP_WHEEL_FILENAME_CHECK=1"
 )
 
-# Clean environment - wheel tests should be self-contained
+# The wheel tests must be self-contained, so any runtime hints from the environment are dropped.
 unset(ENV{LD_LIBRARY_PATH})
 unset(ENV{OVPHYSX_LIB})
 unset(ENV{OVSTAGE_LIBRARY_PATH_HINT})
 unset(ENV{VIRTUAL_ENV})
 
-# Check if SDK wheel exists
 file(GLOB WHEEL_FILES "${PROJECT_ROOT}/_dist/ovphysx-*.whl")
 if(NOT WHEEL_FILES)
     message(FATAL_ERROR
@@ -70,6 +71,11 @@ set(BUNDLED_OVERRIDE_SMOKE
     "${PROJECT_ROOT}/tests/python_tests/wheel_bundled_override_smoke.py")
 if(NOT EXISTS "${BUNDLED_OVERRIDE_SMOKE}")
     message(FATAL_ERROR "Bundled override smoke test not found: ${BUNDLED_OVERRIDE_SMOKE}")
+endif()
+set(DOCUMENTATION_SMOKE
+    "${PROJECT_ROOT}/tests/python_tests/wheel_documentation_smoke.py")
+if(NOT EXISTS "${DOCUMENTATION_SMOKE}")
+    message(FATAL_ERROR "Documentation smoke test not found: ${DOCUMENTATION_SMOKE}")
 endif()
 
 set(PYTHON_VERSIONS
@@ -112,7 +118,6 @@ foreach(PY_VER ${PYTHON_VERSIONS})
         message(FATAL_ERROR "Failed to install SDK wheel for Python ${PY_VER}")
     endif()
 
-    # Verify `python -m ovphysx` entrypoint works
     message(STATUS "Running python -m ovphysx...")
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV}
@@ -129,6 +134,50 @@ foreach(PY_VER ${PYTHON_VERSIONS})
         message(FATAL_ERROR "python -m ovphysx failed for Python ${PY_VER} (exit code: ${_MODULE_RESULT})")
     else()
         message(STATUS "  [PASS] python -m ovphysx (Python ${PY_VER})")
+    endif()
+
+    message(STATUS "Running portable documentation smoke test...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV}
+            "${OVPHYSX_UV_COMMAND}" run --python ${_VENV_DIR} --no-sync --
+            python "${DOCUMENTATION_SMOKE}" --allow-unbundled-header-links
+        RESULT_VARIABLE _DOCUMENTATION_RESULT
+        OUTPUT_VARIABLE _DOCUMENTATION_OUTPUT
+        ERROR_VARIABLE _DOCUMENTATION_OUTPUT
+        ECHO_OUTPUT_VARIABLE
+        ECHO_ERROR_VARIABLE
+    )
+
+    if(NOT _DOCUMENTATION_RESULT STREQUAL "0")
+        message(STATUS "Documentation smoke output: ${_DOCUMENTATION_OUTPUT}")
+        message(FATAL_ERROR
+            "Portable documentation smoke test failed for Python ${PY_VER} "
+            "(exit code: ${_DOCUMENTATION_RESULT})")
+    else()
+        message(STATUS "  [PASS] portable documentation (Python ${PY_VER})")
+    endif()
+
+    message(STATUS "Running SDK portable documentation smoke test...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV}
+            "${OVPHYSX_UV_COMMAND}" run --python ${_VENV_DIR} --no-sync --
+            python "${DOCUMENTATION_SMOKE}"
+            --package-root "${PROJECT_ROOT}/_install"
+            --source-docs "${PROJECT_ROOT}/docs"
+        RESULT_VARIABLE _SDK_DOCUMENTATION_RESULT
+        OUTPUT_VARIABLE _SDK_DOCUMENTATION_OUTPUT
+        ERROR_VARIABLE _SDK_DOCUMENTATION_OUTPUT
+        ECHO_OUTPUT_VARIABLE
+        ECHO_ERROR_VARIABLE
+    )
+
+    if(NOT _SDK_DOCUMENTATION_RESULT STREQUAL "0")
+        message(STATUS "SDK documentation smoke output: ${_SDK_DOCUMENTATION_OUTPUT}")
+        message(FATAL_ERROR
+            "SDK portable documentation smoke test failed for Python ${PY_VER} "
+            "(exit code: ${_SDK_DOCUMENTATION_RESULT})")
+    else()
+        message(STATUS "  [PASS] SDK portable documentation (Python ${PY_VER})")
     endif()
 
     message(STATUS "Running bundled OVPHYSX_LIB override smoke test...")

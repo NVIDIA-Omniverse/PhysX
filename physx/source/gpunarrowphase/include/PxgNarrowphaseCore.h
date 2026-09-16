@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef PXG_NARROWPHASE_CORE_H
 #define PXG_NARROWPHASE_CORE_H
@@ -623,6 +600,8 @@ namespace physx
 		void updateShapeMaterial(const PxsShapeCore& shapeCore);
 		PxU32 getShapeIndex(const PxsShapeCore& shapeCore);
 		void unregisterShape(const PxsShapeCore& shapeCore, const PxU32 transformCacheID, const bool isFemCloth);
+		// Drops one reference to a registered geometry, removing it once the count reaches zero.
+		void releaseGeometryReference(size_t geometryKey);
 
 	
 		void registerAggregate(const PxU32 transformCacheID);
@@ -688,9 +667,13 @@ namespace physx
 
 		void registerContactManagerInternal(PxsContactManager* cm, const Sc::ShapeInteraction* shapeInteraction, PxgContactManagerInput* input, PxsContactManagerOutput& output, PxgNewContactManagers& newContactManagers);
 
-		void unregisterContactManagerInternal(PxsContactManager* cm, Cm::PinnableArray<PxU32>& removedIndices, PxgNewContactManagers& newContactManagers);
+		//PT: nbShapeInteractions is the number of live entries in the bucket's main pair list, needed to
+		//bounds-check the decoded id (NvBug 6163965) - same parameter as refreshContactManagerInternal below.
+		void unregisterContactManagerInternal(PxsContactManager* cm, PxU32 nbShapeInteractions, Cm::PinnableArray<PxU32>& removedIndices, PxgNewContactManagers& newContactManagers);
 	
-		void refreshContactManagerInternal(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs, const Sc::ShapeInteraction** shapeInteractions, PxgContactManagerInput& input, PxgNewContactManagers& newContactManagers,
+		//PT: nbShapeInteractions is the number of live entries in cmOutputs/shapeInteractions - they are parallel
+		//arrays indexed by the same decoded id, and the count is needed to bounds-check it (NvBug 6163965).
+		void refreshContactManagerInternal(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs, const Sc::ShapeInteraction** shapeInteractions, PxU32 nbShapeInteractions, PxgContactManagerInput& input, PxgNewContactManagers& newContactManagers,
 			Cm::PinnableArray<PxU32>& removedIndices);
 
 		template <typename Manifold> 

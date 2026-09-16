@@ -1,0 +1,14 @@
+<project toolsVersion="5.6">
+  <!-- USD pin for ovruntime: the py-less namespaced monolith the runtime links.
+       Pinned here rather than read out of the ovruntime_deps package so the USD
+       version is chosen by this repository. Single source of truth: ovphysx
+       (python-test USD) and schemas/physx (stock USD) parse the version out of
+       this file, so keep the package element on one line.
+       Note: do not mention the package name in comments; the parsers match on
+       it and would pick up the comment line.
+       Deliberate: the pinned ovruntime_deps payload is built against a later USD
+       than this, so its prebuilt plugins and this build differ by one kit rev. -->
+  <dependency name="usd-${config}" linkPath="../_build/target-deps/usd/${config}">
+    <package name="usd.nopy.${platform_target_abi}.ov-full-monolithic.${config}" version="0.25.11.kit.4-gl.21081" />
+  </dependency>
+</project>

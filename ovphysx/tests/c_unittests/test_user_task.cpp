@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-CAPI-STRING-001
+ * @covers AC-2
+ */
 
 #include <gtest/gtest.h>
 
@@ -61,6 +66,16 @@ TEST_F(PhysXTestFixture, AddUserTaskSuccess)
     ovphysx_op_wait_result_t wait_result{};
     ovphysx_result_t wait_status = ovphysx_wait_op(m_handle, enqueue_result.op_index, 1000000000ULL, &wait_result);
     EXPECT_EQ(wait_status.status, OVPHYSX_API_SUCCESS);
+
+    const ovphysx_string_t emptyError = ovphysx_get_last_error();
+    ASSERT_NE(emptyError.ptr, nullptr);
+    EXPECT_EQ(emptyError.length, 0u);
+    EXPECT_EQ(emptyError.ptr[emptyError.length], '\0');
+
+    const ovphysx_string_t emptyOpError = ovphysx_get_last_op_error(UINT64_MAX);
+    ASSERT_NE(emptyOpError.ptr, nullptr);
+    EXPECT_EQ(emptyOpError.length, 0u);
+    EXPECT_EQ(emptyOpError.ptr[emptyOpError.length], '\0');
     ovphysx_destroy_wait_result(&wait_result);
 }
 
@@ -83,6 +98,7 @@ TEST_F(PhysXTestFixture, AddUserTaskFailurePropagatesWaitErrorText)
         ovphysx_string_t err = ovphysx_get_last_error();
         EXPECT_NE(err.ptr, nullptr);
         EXPECT_GT(err.length, 0u);
+        EXPECT_EQ(err.ptr[err.length], '\0');
     }
 
     ovphysx_op_wait_result_t wait_result{};
@@ -93,6 +109,7 @@ TEST_F(PhysXTestFixture, AddUserTaskFailurePropagatesWaitErrorText)
     ovphysx_string_t op_err = ovphysx_get_last_op_error(wait_result.error_op_indices[0]);
     EXPECT_NE(op_err.ptr, nullptr);
     EXPECT_GT(op_err.length, 0u);
+    EXPECT_EQ(op_err.ptr[op_err.length], '\0');
     ovphysx_destroy_wait_result(&wait_result);
 }
 

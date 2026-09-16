@@ -1,16 +1,15 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """GPU-mode scene query tests: raycast, sweep, and overlap.
 
-No scene query tests exist for GPU mode. This file mirrors the structure of
-cpu_tests/test_scene_query.py and cpu_tests/test_scene_query_advanced.py but
-verifies that queries work correctly when the PhysX instance is running in
-GPU / DirectGPU mode.
+This file mirrors the structure of cpu_tests/test_scene_query.py and
+cpu_tests/test_scene_query_advanced.py but verifies that queries work correctly
+when the PhysX instance is running in GPU / DirectGPU mode.
 
 Scene: simple_physics_scene.usda
-  - Ground plane (Cube collider scaled 100×1×100) at Y=0
-  - Dynamic Cube1 at (0, 5, 0) — falls under gravity
+  - Ground plane (Cube collider scaled 100x1x100) at Y=0
+  - Dynamic Cube1 at (0, 5, 0), falling under gravity
 """
 
 import pytest
@@ -75,7 +74,7 @@ def test_raycast_miss_gpu(physx_sdk):
     _load_and_step(physx_sdk)
     hits = physx_sdk.raycast(
         origin=[0.0, 100.0, 0.0],
-        direction=[0.0, 1.0, 0.0],  # upward — away from ground
+        direction=[0.0, 1.0, 0.0],  # upward, away from the ground
         distance=10.0,
         mode=SceneQueryMode.CLOSEST,
     )
@@ -85,7 +84,7 @@ def test_raycast_miss_gpu(physx_sdk):
 def test_raycast_both_sides_false_kwarg_is_accepted_gpu(physx_sdk):
     """raycast() with both_sides=False is accepted on the GPU path and returns a list.
 
-    The scene's ground is a flattened Cube — and backface behaviour for cube
+    The scene's ground is a flattened Cube, and backface behaviour for cube
     geometry under the both_sides=False flag is implementation-defined, so this
     test only verifies that the kwarg is honoured at the API surface (no raise,
     returns a list). See test_raycast_both_sides_true_gpu for the behavioural
@@ -200,7 +199,7 @@ def test_hit_dict_field_types_gpu(physx_sdk):
     assert isinstance(h["collision"], int)
     assert isinstance(h["rigid_body"], int)
     assert isinstance(h["proto_index"], int)
-    # The API returns 3-element sequences; accept both list and tuple.
+    # The API returns 3-element sequences. Both list and tuple are accepted.
     assert isinstance(h["normal"], (list, tuple)) and len(h["normal"]) == 3
     assert isinstance(h["position"], (list, tuple)) and len(h["position"]) == 3
     assert isinstance(h["distance"], float)

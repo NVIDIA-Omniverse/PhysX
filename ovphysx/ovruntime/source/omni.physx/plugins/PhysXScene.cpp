@@ -1,7 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-SIM-MULTISCENE-001
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-SIM-ACTIVEACTOR-001
+ * @covers AC-2 AC-3
+ *
+ * @implements REQ-SIM-DIAGNOSTICS-001
+ * @covers AC-1
+ */
+
 #include "PhysXSettings.h"
 #include "PhysXScene.h"
 #include "PhysXDefines.h"
@@ -33,7 +43,6 @@
 
 #include <deformables/PhysXDeformablePost.h>
 
-using namespace PXR_NS;
 using namespace carb;
 using namespace ::physx;
 using namespace omni::physx::usdparser;
@@ -257,6 +266,28 @@ void OmniContactReportCallback::onAdvance(const PxRigidBody* const* bodyBuffer, 
 {
 }
 
+static const PxMaterial* resolveContactMaterial(PxShape* shape, PxU32 internalFaceIndex)
+{
+    // GPU mesh-mesh contact reduction does not preserve triangle provenance, so
+    // extractContacts() reports an unknown face index for both shapes. Avoid
+    // asking an ordinary triangle mesh to resolve that sentinel: the SDK warns
+    // and returns null. A single-material mesh is unambiguous, but selecting a
+    // material for a multi-material mesh would be incorrect.
+    if (internalFaceIndex == UNKNOWN_FACE_ID &&
+        shape->getGeometry().getType() == PxGeometryType::eTRIANGLEMESH)
+    {
+        if (shape->getNbMaterials() != 1)
+            return nullptr;
+
+        PxMaterial* material = nullptr;
+        return shape->getMaterials(&material, 1) == 1 ? material : nullptr;
+    }
+
+    PxBaseMaterial* baseMaterial = shape->getMaterialFromInternalFaceIndex(internalFaceIndex);
+    PX_ASSERT(!baseMaterial || baseMaterial->getConcreteType() == PxConcreteType::eMATERIAL);
+    return baseMaterial ? baseMaterial->is<PxMaterial>() : nullptr;
+}
+
 void OmniContactReportCallback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairsIn, PxU32 countIn)
 {
     if (mOmniPhysX->getCachedSettings().disableContactProcessing)
@@ -357,13 +388,10 @@ void OmniContactReportCallback::onContact(const PxContactPairHeader& pairHeader,
                 const uint32_t faceIndex0 = indexResolve0.resolveFaceIndex(contactPoints[j].internalFaceIndex0);
                 const uint32_t faceIndex1 = indexResolve1.resolveFaceIndex(contactPoints[j].internalFaceIndex1);
 
-                PxBaseMaterial* baseMaterial0 = current.shapes[0]->getMaterialFromInternalFaceIndex(contactPoints[j].internalFaceIndex0);
-                PX_ASSERT(!baseMaterial0 || baseMaterial0->getConcreteType() == PxConcreteType::eMATERIAL);
-                const PxMaterial* material0 = (baseMaterial0 != nullptr) ? baseMaterial0->is<PxMaterial>() : nullptr;
-
-                PxBaseMaterial* baseMaterial1 = current.shapes[1]->getMaterialFromInternalFaceIndex(contactPoints[j].internalFaceIndex1);
-                PX_ASSERT(!baseMaterial1 || baseMaterial1->getConcreteType() == PxConcreteType::eMATERIAL);
-                const PxMaterial* material1 = (baseMaterial1 != nullptr) ? baseMaterial1->is<PxMaterial>() : nullptr;
+                const PxMaterial* material0 =
+                    resolveContactMaterial(current.shapes[0], contactPoints[j].internalFaceIndex0);
+                const PxMaterial* material1 =
+                    resolveContactMaterial(current.shapes[1], contactPoints[j].internalFaceIndex1);
 
                 mContactReport->reportContactPoint(mPhysXScene, contactPoints[j].position, contactPoints[j].normal, contactPoints[j].impulse, contactPoints[j].separation, faceIndex0, faceIndex1, material0, material1);
             }
@@ -399,23 +427,23 @@ bool getSurfaceVelocities(internal::InternalPhysXDatabase& db,
                 const PxVec3 contactPoint = contacts.getPoint(PxU32(index));
                 const PxVec3 localPoint = splineWorldPose.transformInv(contactPoint);
 
-                GfVec3f pointOnCurve;
-                GfVec3f tangent;
-                GfVec3f curvaturePoint;
+                PxVec3 pointOnCurve;
+                PxVec3 tangent;
+                PxVec3 curvaturePoint;
                 const bool retVal =
-                    intActor->mSplinesCurve->getClosestPoint(toVec3f(localPoint), pointOnCurve, tangent, curvaturePoint);
+                    intActor->mSplinesCurve->getClosestPoint(localPoint, pointOnCurve, tangent, curvaturePoint);
 
                 if (retVal)
                 {
                     // Check if we have valid curvature (not a straight line)
-                    const bool hasCurvature = (curvaturePoint[0] != FLT_MAX);
+                    const bool hasCurvature = (curvaturePoint.x != FLT_MAX);
 
                     float radiusScale = 1.0f;
 
                     if (hasCurvature)
                     {
-                        const PxVec3 worldPointOnCurve = splineWorldPose.transform(toPhysX(pointOnCurve));
-                        const PxVec3 worldCurvaturePoint = splineWorldPose.transform(toPhysX(curvaturePoint));
+                        const PxVec3 worldPointOnCurve = splineWorldPose.transform(pointOnCurve);
+                        const PxVec3 worldCurvaturePoint = splineWorldPose.transform(curvaturePoint);
 
 
                         const PxVec3 contactNormal = contacts.getNormal(PxU32(index));
@@ -446,7 +474,7 @@ bool getSurfaceVelocities(internal::InternalPhysXDatabase& db,
                     }
 
                     {
-                        linearVelocities[index] = splineWorldPose.rotate(toPhysX(tangent));
+                        linearVelocities[index] = splineWorldPose.rotate(tangent);
                         linearVelocities[index].normalize();
                         linearVelocities[index] *= intActor->mSplinesSurfaceVelocityMagnitude * radiusScale;
                     }
@@ -761,15 +789,7 @@ void PhysXStepper::launch(int nbSubsteps, float stepSize, PhysXScene* scene, PxT
     const uint32_t wc = taskManager->getCpuDispatcher()->getWorkerCount();
     if (wc > 0)
     {
-        if (!omniPhysX.getPhysXSetup().isPhysXCpuDispatcher())
-        {
-            omniPhysX.getITasking()->addTask(carb::tasking::Priority::eHigh, {}, [this] { run(); });
-        }
-        else
-        {
-            setContinuation(*taskManager, NULL);
-            removeReference();
-        }
+        omniPhysX.getITasking()->addTask(carb::tasking::Priority::eHigh, {}, [this] { run(); });
     }
     else
     {
@@ -804,11 +824,15 @@ void clearVelocities(PxActor& pxActor)
 
 void PhysXStepper::updateQuasistaticActors(const PxU32 nbActors, PxActor** activeActors)
 {
-    if (mPhysXScene->getInternalScene()->getSceneDesc().quasistaticActors.empty())
+    InternalScene* internalScene = mPhysXScene->getInternalScene();
+    const bool hasReleasedActors = internalScene->hasReleasedActiveActors();
+    if (internalScene->getSceneDesc().quasistaticActors.empty())
     {
         for (PxU32 i = 0; i < nbActors; i++)
         {
             PxActor* pxActor = activeActors[i];
+            if (!pxActor || (hasReleasedActors && internalScene->isReleasedActiveActor(pxActor)))
+                continue;
             clearVelocities(*pxActor);
         }
     }
@@ -818,8 +842,11 @@ void PhysXStepper::updateQuasistaticActors(const PxU32 nbActors, PxActor** activ
         for (PxU32 i = 0; i < nbActors; i++)
         {
             PxActor* pxActor = activeActors[i];
+            if (!pxActor || (hasReleasedActors && internalScene->isReleasedActiveActor(pxActor)))
+                continue;
+
             const size_t recordsIndex = (size_t)pxActor->userData;
-            if (!pxActor || recordsIndex >= db.getRecords().size())
+            if (recordsIndex >= db.getRecords().size())
                 continue;
 
             const InternalDatabase::Record& record = db.getRecords()[recordsIndex];
@@ -1210,8 +1237,35 @@ void PhysXStepper::run()
                     omniPhysX.fireOnStepEventSubscriptions(mStepSize, true);
                 }
 
-                mPhysXScene->getScene()->simulate(mStepSize);
-                mPhysXScene->getScene()->fetchResults(true);
+                // The next simulation replaces the preceding active-actor
+                // array, so its release tombstones are no longer needed.
+                mPhysXScene->getInternalScene()->clearReleasedActiveActors();
+                PxScene* scene = mPhysXScene->getScene();
+                carb::tasking::ITasking* tasking = omniPhysX.getITasking();
+                carb::tasking::TaskContext taskContext = carb::tasking::kInvalidTaskContext;
+                if (tasking)
+                {
+                    taskContext = tasking->getTaskContext();
+                }
+
+                if (taskContext == carb::tasking::kInvalidTaskContext)
+                {
+                    scene->simulate(mStepSize);
+                    scene->fetchResults(true);
+                }
+                else
+                {
+                    mSimulationCompletionTask.initialize(tasking, taskContext);
+                    mSimulationCompletionTask.setContinuation(*scene->getTaskManager(), nullptr);
+                    scene->simulate(mStepSize, &mSimulationCompletionTask);
+                    mSimulationCompletionTask.removeReference();
+                    const bool taskResumed = tasking->suspendTask();
+                    CARB_ASSERT(taskResumed);
+                    CARB_UNUSED(taskResumed);
+                    const bool resultsFetched = scene->fetchResults(false);
+                    CARB_ASSERT(resultsFetched);
+                    CARB_UNUSED(resultsFetched);
+                }
             }
             // A.B. This might not be actually correct, we might need this per scene in the end
             OmniPhysX::getInstance().increateSimulationTimestamp();
@@ -1549,7 +1603,9 @@ static PxScene* createPhysicsScene(PhysXSetup& physxSetup, double metersPerUnit,
     // Without a CUDA context manager, GPU broadphase cannot run — fall back.
     if (!sceneDesc.cudaContextManager && sceneDesc.broadPhaseType == PxBroadPhaseType::eGPU)
     {
-        CARB_LOG_WARN("GPU broadphase requires a CUDA context manager; falling back to ePABP.");
+        CARB_LOG_WARN_ONCE(
+            OMNI_LOG_DEFAULT_CHANNEL,
+            "GPU broadphase requires a CUDA context manager; falling back to ePABP.");
         sceneDesc.broadPhaseType = PxBroadPhaseType::ePABP;
     }
 
@@ -1670,13 +1726,13 @@ PhysXScene::~PhysXScene()
     SAFE_RELEASE(mInternalScene);
 
     SAFE_RELEASE(mMaterial)
-    mMaterialPath = SdfPath();
+    mMaterialPath = omni::physics::parse::ObjectKey();
     SAFE_RELEASE(mVolumeDeformableMaterial);
-    mVolumeDeformableMaterialPath = SdfPath();
+    mVolumeDeformableMaterialPath = omni::physics::parse::ObjectKey();
     SAFE_RELEASE(mSurfaceDeformableMaterial);
-    mSurfaceDeformableMaterialPath = SdfPath();
+    mSurfaceDeformableMaterialPath = omni::physics::parse::ObjectKey();
     SAFE_RELEASE(mPBDMaterial);
-    mPBDMaterialPath = SdfPath();
+    mPBDMaterialPath = omni::physics::parse::ObjectKey();
 
     SAFE_RELEASE(mControllerManager);
     SAFE_RELEASE(mScene);
@@ -1748,7 +1804,7 @@ PhysXScene* PhysXScene::createPhysXScene(const usdparser::AttachedStage& attache
     PhysXScene* scene = new PhysXScene(attachedStage);
 
     scene->mContactReport = new ContactReport();
-    scene->mSceneSdfPath = attachedStage.pathFor(db.getRecords()[sceneId].mKey);
+    scene->mSceneSdfPath = db.getRecords()[sceneId].mKey;
     scene->mSupportSceneQuery = sceneDesc.supportSceneQueries;
 
     // setup callbacks
@@ -1786,8 +1842,10 @@ PhysXScene* PhysXScene::createPhysXScene(const usdparser::AttachedStage& attache
 
         if (!scene->mMaterial)
         {
+            // ObjectKey-native diagnostic text (ADR-0019): textFor() is the pxr-free sibling of
+            // pathFor(key).GetText() for exactly this "%s log formatting" use case.
             CARB_LOG_ERROR("Failed to create default material: %s\n",
-                attachedStage.pathFor(sceneDesc.defaultMaterialDesc.materialKey).GetText());
+                attachedStage.textFor(sceneDesc.defaultMaterialDesc.materialKey));
             scene->mMaterial = physxSetup.getPhysics()->createMaterial(0.5f, 0.5f, 0.5f);
         }
 
@@ -1799,7 +1857,7 @@ PhysXScene* PhysXScene::createPhysXScene(const usdparser::AttachedStage& attache
                 (PxCombineMode::Enum)sceneDesc.defaultMaterialDesc.restitutionCombineMode);
             scene->mMaterial->setDampingCombineMode((PxCombineMode::Enum)sceneDesc.defaultMaterialDesc.dampingCombineMode);
         }
-        scene->mMaterialPath = attachedStage.pathFor(sceneDesc.defaultMaterialDesc.materialKey);
+        scene->mMaterialPath = sceneDesc.defaultMaterialDesc.materialKey;
     }
 
 #if USE_PHYSX_GPU
@@ -1809,7 +1867,7 @@ PhysXScene* PhysXScene::createPhysXScene(const usdparser::AttachedStage& attache
         scene->mVolumeDeformableMaterial = physxSetup.getPhysics()->createDeformableVolumeMaterial(
             defaultMat.youngsModulus, defaultMat.poissonsRatio, defaultMat.dynamicFriction, defaultMat.elasticityDamping);
 
-        scene->mVolumeDeformableMaterialPath = attachedStage.pathFor(defaultMat.materialKey);
+        scene->mVolumeDeformableMaterialPath = defaultMat.materialKey;
     }
     {
         // no conversion here, we expect the descriptor's parameter to be in the correct units
@@ -1818,7 +1876,7 @@ PhysXScene* PhysXScene::createPhysXScene(const usdparser::AttachedStage& attache
             defaultMat.youngsModulus, defaultMat.poissonsRatio, defaultMat.dynamicFriction, defaultMat.surfaceThickness,
             defaultMat.surfaceBendStiffness, defaultMat.elasticityDamping, defaultMat.bendDamping);
 
-        scene->mSurfaceDeformableMaterialPath = attachedStage.pathFor(defaultMat.materialKey);
+        scene->mSurfaceDeformableMaterialPath = defaultMat.materialKey;
     }
     {
         scene->mPBDMaterial = physxSetup.getPhysics()->createPBDMaterial(sceneDesc.defaultPBDMaterialDesc.friction,
@@ -1834,7 +1892,7 @@ PhysXScene* PhysXScene::createPhysXScene(const usdparser::AttachedStage& attache
             scene->mPBDMaterial->setAdhesionRadiusScale(sceneDesc.defaultPBDMaterialDesc.adhesionOffsetScale);
         }
 
-        scene->mPBDMaterialPath = attachedStage.pathFor(sceneDesc.defaultPBDMaterialDesc.materialKey);
+        scene->mPBDMaterialPath = sceneDesc.defaultPBDMaterialDesc.materialKey;
     }
 #endif // USE_PHYSX_GPU
 
@@ -1851,7 +1909,7 @@ void PhysXScene::resetDefaultMaterial()
     mMaterial = OmniPhysX::getInstance().getPhysXSetup().getPhysics()->createMaterial(
         defaultMaterialDesc.staticFriction, defaultMaterialDesc.dynamicFriction,
         defaultMaterialDesc.restitution);
-    mMaterialPath = SdfPath();
+    mMaterialPath = omni::physics::parse::ObjectKey();
 }
 
 bool isRigidBodyDynamic(omni::physx::usdparser::ObjectId id)

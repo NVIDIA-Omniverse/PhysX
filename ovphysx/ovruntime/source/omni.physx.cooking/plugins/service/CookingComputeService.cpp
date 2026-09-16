@@ -1,9 +1,19 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-COOK-CRC-001
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-COOK-CUDACTX-001
+ * @covers AC-1 AC-2 AC-4 AC-5
+ */
 
 #include "CookingComputeService.h"
+
+#include <list>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <omni/physx/MeshKey.h>
 #include <private/omni/physx/PhysxUsd.h> // ErrorCode
@@ -12,13 +22,11 @@
 #include <carb/tasking/TaskingUtils.h>
 #include <carb/extras/Timer.h>
 
-#include <common/utilities/Utilities.h> // asInt
 #include <common/utilities/MemoryMacros.h>
 #include <common/utilities/PhysXErrorCallback.h>
 
 #include "CookingHashing.h"
 #include "CookingTask.h"
-#include "../utility/TriangulateUsdMeshPrim.h"
 
 #include <omni/convexdecomposition/ConvexDecomposition.h>
 #include <omni/physx/IPhysxFoundation.h>
@@ -30,7 +38,6 @@
 
 // Scoped mutex lock
 using lock_guard = std::lock_guard<carb::tasking::MutexWrapper>;
-using namespace PXR_NS;
 using namespace physx;
 namespace omni
 {
@@ -42,15 +49,16 @@ using MeshHashSet = std::unordered_set<omni::physx::usdparser::MeshKey, omni::ph
 // Queue of outstanding cooking tasks
 using CookingTaskQueue = std::list<cookingtask::CookingTask*>;
 
-// Map from prim path to its active CookingTask. Only one active task per UsdPrim; a task can also hold a single
-// 'pending' task representing the next one to run once the current one completes.
-using CookingTaskMap = std::unordered_map<PXR_NS::SdfPath, cookingtask::CookingTask*, PXR_NS::SdfPath::Hash>;
+// Map from a task's opaque identity key (cookingtask::computeCookingTaskKey) to its active
+// CookingTask. Only one active task per key; a task can also hold a single 'pending' task
+// representing the next one to run once the current one completes.
+using CookingTaskMap = std::unordered_map<std::string, cookingtask::CookingTask*>;
 
 struct CookingComputeService : public ICookingComputeService
 {
     explicit CookingComputeService(::physx::PxFoundation& foundation,
-                                   SharedCudaContextManagerFn sharedCudaContextManagerFn)
-        : mPxFoundation(&foundation), mSharedCudaContextManagerFn(sharedCudaContextManagerFn)
+                                   AcquireSharedCudaContextManagerFn acquireSharedCudaContextManagerFn)
+        : mPxFoundation(&foundation), mAcquireSharedCudaContextManagerFn(acquireSharedCudaContextManagerFn)
     {
         mPhysxFoundation = &omni::physx::foundation::getInterface();
         mTasking = carb::getCachedInterface<carb::tasking::ITasking>();
@@ -63,9 +71,24 @@ struct CookingComputeService : public ICookingComputeService
         // - Allow passing maxMaterialIndex inside PhysxCookingMeshView when doing input from
         // eINPUT_MODE_FROM_PRIM_MESH_VIEW
 
-        // If any of these fails, you probably have been breaking the ABI
+        // If any of these fails, you probably have been breaking the ABI. The two platforms are
+        // pinned to different PhysxCookingComputeRequest sizes on purpose, not by oversight: this
+        // struct embeds an omni::function (the onFinished callback), whose internal FunctionBuffer
+        // is alignas(alignof(std::max_align_t)) (see omni/detail/FunctionImpl.h). alignof(max_align_t)
+        // is itself platform-dependent -- 16 on GCC/Linux (it has to fit long double / __int128),
+        // 8 on MSVC/Windows (whose long double is just double) -- so the compiler inserts 8 extra
+        // bytes of padding before onFinished on Linux that Windows never needs. A binary never
+        // crosses this boundary (a Windows client only ever links a Windows-built cooking service),
+        // so per-platform constants here are correct ABI enforcement, not a workaround.
+        //
+        // 384/376 -> 360/368: removing DataInputMode dataInputMode and double primTimeCode (16
+        // bytes, both ahead of the onFinished padding boundary) when eINPUT_MODE_FROM_PRIM_ID was
+        // deleted (REQ-COOK-SOURCE-001). Linux value (368) measured directly; Windows value (360)
+        // is the same -16 delta applied to the prior 376, not compiler-verified (no Windows
+        // toolchain in this sandbox) -- the 8-byte Linux/Windows padding gap is isolated to the
+        // onFinished boundary, untouched by these two members, which sit earlier in the struct.
 #if CARB_PLATFORM_WINDOWS
-        static_assert(sizeof(PhysxCookingComputeRequest) == 368, "sizeof(PhysxCookingComputeRequest)");
+        static_assert(sizeof(PhysxCookingComputeRequest) == 360, "sizeof(PhysxCookingComputeRequest)");
         static_assert(sizeof(PhysxCookingComputeResult) == 152, "sizeof(PhysxCookingComputeResult)");
 #else
         static_assert(sizeof(PhysxCookingComputeRequest) == 368, "sizeof(PhysxCookingComputeRequest)");
@@ -85,12 +108,12 @@ struct CookingComputeService : public ICookingComputeService
             finalizeAllTasks(asyncContext);
         }
 
-        // If we did not create the context internally, do not attempt to release it
-        if (mPxCudaContextManager && !mUsingSharedContextManager)
-        {
-            mPxCudaContextManager->release();
-            mPxCudaContextManager = nullptr;
-        }
+        // mPxCudaContextManager is always a reference we own -- one we created ourselves, or one
+        // the provider handed us pre-acquired. Releasing it unconditionally is therefore correct
+        // for both: the provider-owned manager survives this because the provider holds its own
+        // reference. Tasks that outlived us are impossible (they were cancelled and deleted
+        // above), and any that did would hold their own reference anyway.
+        SAFE_RELEASE(mPxCudaContextManager);
         mPxFoundation = nullptr;
     }
     struct AsyncContext
@@ -207,27 +230,19 @@ struct CookingComputeService : public ICookingComputeService
         AsyncContext* asyncContext = reinterpret_cast<AsyncContext*>(context);
 
         // Compute Mesh Key and CRC
-        CookingStageAndPrim stageAndPrim;
         if (!skipMeshProcessing)
         {
-            if (!computeMeshKeyIfNeeded(result, requestCopy, stageAndPrim))
+            if (!computeMeshKeyIfNeeded(result, requestCopy))
                 return nullptr;
-        }
-        else if (DataType == PhysxCookingDataType::eDEFORMABLE_VOLUME_MESH &&
-                 requestCopy.dataInputMode == PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID &&
-                 requestCopy.deformablePathInfo.bodyPrimId != 0)
-        {
-            if (!getStageAndPrim(result, requestCopy, stageAndPrim))
-                return nullptr;
-            if (!fillMeshView(result, requestCopy, stageAndPrim))
-            {
-                result.result = PhysxCookingResult::eERROR_INVALID_PRIM;
-                requestCopy.onFinished(result);
-                return nullptr;
-            }
         }
 
         result.cookedDataCRC = deriveCRCFunction(result);
+
+        // The unit scale reaches the cooker as a PxTolerancesScale and changes the cooked
+        // geometry, so it belongs in the key that identifies that geometry. See
+        // MeshCRCComputation::foldMetersPerUnit for why it is folded here and not per data type,
+        // and for the one-time cache invalidation this costs.
+        MeshCRCComputation::foldMetersPerUnit(result.cookedDataCRC, requestCopy.primMeshMetersPerUnit);
 
         if (!result.request->options.hasFlag(PhysxCookingComputeRequest::Options::kComputeGPUCookingData))
             result.cookedDataCRC.setComputeGPUData(false);
@@ -242,8 +257,8 @@ struct CookingComputeService : public ICookingComputeService
         if (haveCookedDataCRC(asyncContext, result.cookedDataCRC))
         {
             // A task already exists with same CRC so no need to spawn a new one.
-            const SdfPath meshPath = intToPath(result.request->primId);
-            cookingtask::CookingTask* task = findOpenTask(asyncContext, meshPath, result.cookedDataCRC, true);
+            const std::string taskKey = cookingtask::computeCookingTaskKey(result.request->primId, std::string());
+            cookingtask::CookingTask* task = findOpenTask(asyncContext, taskKey, result.cookedDataCRC, true);
             if (task)
             {
                 if (result.request->options.hasFlag(PhysxCookingComputeRequest::Options::kComputeAsynchronously))
@@ -267,11 +282,10 @@ struct CookingComputeService : public ICookingComputeService
         }
 
         cookingtask::CookingTask* task = createTaskFunction(result);
-        return tryQueueingOrRunningTask(task->getResultObject(), requestCopy, task, stageAndPrim, asyncContext,
-                                        skipMeshProcessing);
+        return tryQueueingOrRunningTask(task->getResultObject(), requestCopy, task, asyncContext, skipMeshProcessing);
     }
 
-    virtual bool lazyGetCudaContextManager(PhysxCookingDataType::Enum dataType,
+    virtual bool acquireCudaContextManager(PhysxCookingDataType::Enum dataType,
                                            const PhysxCookingComputeRequest& request,
                                            ::physx::PxCudaContextManager*& cudaContextManager,
                                            ::physx::PxPhysicsGpu*& physicsGPU) override final
@@ -283,36 +297,78 @@ struct CookingComputeService : public ICookingComputeService
                 false;
         if (executeCookingOnGPU)
         {
-            if (cudaContextManager == nullptr)
+            if (cudaContextManager)
+            {
+                // Caller-supplied manager: it guarantees the pointer is live for this call, so
+                // taking our own reference here is safe and makes the handoff to the task
+                // symmetric with the resolved path below.
+                cudaContextManager->acquireReference();
+            }
+            else
             {
                 lock_guard globalLock(mGlobalMutex);
-                omni::physx::PhysxFoundationDeviceOrdinal ordinal;
-                mPhysxFoundation->getSingleCudaContextManagerOrdinal(ordinal);
 
-                mUsingSharedContextManager = false;
-                if (mSharedCudaContextManagerFn)
+                if (mAcquireSharedCudaContextManagerFn)
                 {
-                    mPxCudaContextManager = mSharedCudaContextManagerFn();
-                    if (mPxCudaContextManager)
+                    // The provider hands back a manager with a reference already taken (see
+                    // AcquireSharedCudaContextManagerFn), so mPxCudaContextManager below always
+                    // holds a reference we own, whatever its origin.
+                    if (::physx::PxCudaContextManager* shared = mAcquireSharedCudaContextManagerFn())
                     {
+                        if (mPxCudaContextManager == shared)
+                        {
+                            // Already tracking this one; we do not need a second reference.
+                            shared->release();
+                        }
+                        else
+                        {
+                            // Drop the one we were tracking. It stays alive for as long as any
+                            // in-flight task still holds its own reference, so replacing it here
+                            // can no longer strand a cooking job on a destroyed manager.
+                            SAFE_RELEASE(mPxCudaContextManager);
+                            mPxCudaContextManager = shared;
+                        }
                         mUsingSharedContextManager = true;
+                    }
+                    else if (mUsingSharedContextManager)
+                    {
+                        // The provider no longer has a manager: drop ours and fall through to
+                        // creating our own on the next request.
+                        SAFE_RELEASE(mPxCudaContextManager);
+                        mUsingSharedContextManager = false;
                     }
                 }
 
-                if (mPhysxFoundation->createOrRefreshPxCudaContextManager(ordinal, mPxFoundation, mPxCudaContextManager, false))
+                if (!mUsingSharedContextManager)
                 {
-                    cudaContextManager = mPxCudaContextManager;
+                    // Only a manager we created ourselves may be refreshed here:
+                    // createOrRefreshPxCudaContextManager() consumes the reference it is handed
+                    // and may release+replace it, which would leave the provider pointing at a
+                    // manager it no longer owns.
+                    omni::physx::PhysxFoundationDeviceOrdinal ordinal;
+                    mPhysxFoundation->getSingleCudaContextManagerOrdinal(ordinal);
+
+                    if (!mPhysxFoundation->createOrRefreshPxCudaContextManager(ordinal, mPxFoundation, mPxCudaContextManager, false))
+                    {
+                        PhysxCookingComputeResult result;
+                        PhysxCookingComputeRequest requestCopy = request;
+                        result.request = &requestCopy;
+                        requestCopy.dataType = dataType;
+                        CARB_LOG_ERROR("Cannot create PxCudaContextManager");
+                        result.result = PhysxCookingResult::eERROR_CUDA_CONTEXT_MANAGER;
+                        result.request->onFinished(result);
+                        return false;
+                    }
                 }
-                else
+
+                cudaContextManager = mPxCudaContextManager;
+
+                // Hand the caller its own reference, taken while we still hold mGlobalMutex and
+                // while our own reference guarantees the manager is alive. This is the reference
+                // the caller owes a release() for.
+                if (cudaContextManager)
                 {
-                    PhysxCookingComputeResult result;
-                    PhysxCookingComputeRequest requestCopy = request;
-                    result.request = &requestCopy;
-                    requestCopy.dataType = dataType;
-                    CARB_LOG_ERROR("Cannot create PxCudaContextManager");
-                    result.result = PhysxCookingResult::eERROR_CUDA_CONTEXT_MANAGER;
-                    result.request->onFinished(result);
-                    return false;
+                    cudaContextManager->acquireReference();
                 }
             }
         }
@@ -320,6 +376,11 @@ struct CookingComputeService : public ICookingComputeService
         {
             cudaContextManager = nullptr;
         }
+#else
+        // No GPU support compiled in: report "no manager" rather than echoing a caller-supplied
+        // pointer back out, so the ownership contract ("non-null out means you owe a release()")
+        // holds identically in both build configurations.
+        cudaContextManager = nullptr;
 #endif
         physicsGPU = cudaContextManager ? PxGetPhysicsGpu() : nullptr;
         return true;
@@ -337,9 +398,10 @@ struct CookingComputeService : public ICookingComputeService
                                                   PhysxCookingDataType::eSDF_TRIANGLE_MESH :
                                                   PhysxCookingDataType::eTRIANGLE_MESH;
         ::physx::PxPhysicsGpu* physicsGPU = nullptr;
-        if (!lazyGetCudaContextManager(dataType, request, cudaContextManager, physicsGPU))
+        if (!acquireCudaContextManager(dataType, request, cudaContextManager, physicsGPU))
             return nullptr;
-        return requestCookedData(
+
+        const PhysxCookingOperationHandle handle = requestCookedData(
             dataType, context, request,
             [&](const PhysxCookingComputeResult& result) {
                 auto meshKeyWithOrientation = result.meshKey;
@@ -350,9 +412,17 @@ struct CookingComputeService : public ICookingComputeService
             [&](PhysxCookingComputeResult& result) {
                 cookingtask::CookingTask* task = cookingtask::createTriangleMeshCookingTask(
                     triangleMeshCookingParams, sdfMeshCookingParams, result);
+                // Takes its own reference and holds it until the task is destroyed, which is what
+                // keeps the manager alive for a queued task running later on a worker thread.
                 task->setPxCudaAndGPUPointers(cudaContextManager, physicsGPU);
                 return task;
             });
+
+        // Drop the reference acquireCudaContextManager() handed us. This also covers the paths
+        // where the task-creating lambda never ran (cache hit, early-out), which would otherwise
+        // leak a reference and keep the manager - and its CUDA context - alive forever.
+        SAFE_RELEASE(cudaContextManager);
+        return handle;
     }
 
     virtual PhysxCookingOperationHandle requestConvexMeshCookedData(
@@ -478,10 +548,10 @@ struct CookingComputeService : public ICookingComputeService
     {
         t->getResultObject().isSynchronousResult = false;
         t->setAsyncContext(&asyncContext);
-        CookingTaskMap::iterator found = asyncContext.mTaskMap.find(t->getPrimPath());
+        CookingTaskMap::iterator found = asyncContext.mTaskMap.find(t->getTaskKey());
         if (found == asyncContext.mTaskMap.end())
         {
-            asyncContext.mTaskMap[t->getPrimPath()] = t;
+            asyncContext.mTaskMap[t->getTaskKey()] = t;
             asyncContext.mTasks.push_back(t);
             omni::physx::usdparser::MeshKey crc;
             t->getCRC(crc);
@@ -500,6 +570,18 @@ struct CookingComputeService : public ICookingComputeService
             {
                 p->getCRC(crc);
                 removeCookedDataCRC(asyncContext, crc);
+                // getPendingTask() extracts rather than peeks - it clears ct->m_pending - so the
+                // cancel+delete inside addPendingTask() below never sees this task. Nothing else
+                // owns it either: a pending task is in neither mTasks nor mTaskMap. It has to be
+                // dropped here, or ~CookingTaskImpl() never runs and the PxCudaContextManager
+                // reference the task holds (REQ-COOK-CUDACTX-001) is never released, pinning the
+                // CUDA context, GPU kernel modules and device memory for the process lifetime.
+                // cancel(false) first: without it ~TriangleMeshCookingTask() -> finalize() reports
+                // eERROR_COOKING_FAILED to onFinished for a task we are deliberately discarding.
+                // fireFinishedCallback() stays silent only for eERROR_CANCELED with
+                // invokeCallbackAnyway false, which is exactly what cancel(false) sets up.
+                p->cancel(false);
+                delete p;
             }
             ct->addPendingTask(t);
             t->getCRC(crc);
@@ -511,7 +593,7 @@ struct CookingComputeService : public ICookingComputeService
     {
         AsyncContext& asyncContext = *reinterpret_cast<AsyncContext*>(t->getAsyncContext());
 
-        CookingTaskMap::iterator found = asyncContext.mTaskMap.find(t->getPrimPath());
+        CookingTaskMap::iterator found = asyncContext.mTaskMap.find(t->getTaskKey());
         if (found != asyncContext.mTaskMap.end())
         {
             omni::physx::usdparser::MeshKey crc;
@@ -673,26 +755,26 @@ struct CookingComputeService : public ICookingComputeService
     }
 
     /**
-     * Find an open task with matching UsdPrim and MeshKey which hasn't been cancelled.
+     * Find an open task with matching task key and MeshKey which hasn't been cancelled.
      *
-     * @param usdPrim : UsdPrim identifying the task.
+     * @param taskKey : opaque task identity (cookingtask::computeCookingTaskKey) identifying the task.
      * @param crc : MeshKey identifying the task.
      * @return : pending task if found, nullptr otherwise.
      */
     cookingtask::CookingTask* findOpenTask(AsyncContext* asyncContext,
-                                           const PXR_NS::SdfPath& primPath,
+                                           const std::string& taskKey,
                                            const omni::physx::usdparser::MeshKey& crc,
                                            bool crcOnly = false)
     {
         if (asyncContext != nullptr)
         {
-            return findOpenTaskInContext(*asyncContext, primPath, crc, crcOnly);
+            return findOpenTaskInContext(*asyncContext, taskKey, crc, crcOnly);
         }
         else
         {
             for (auto& context : mAsyncContext)
             {
-                cookingtask::CookingTask* task = findOpenTaskInContext(*context.second.get(), primPath, crc, crcOnly);
+                cookingtask::CookingTask* task = findOpenTaskInContext(*context.second.get(), taskKey, crc, crcOnly);
                 if (task)
                 {
                     return task;
@@ -703,12 +785,12 @@ struct CookingComputeService : public ICookingComputeService
     }
 
     cookingtask::CookingTask* findOpenTaskInContext(AsyncContext& asyncContext,
-                                                    const PXR_NS::SdfPath& primPath,
+                                                    const std::string& taskKey,
                                                     const omni::physx::usdparser::MeshKey& crc,
                                                     bool crcOnly)
     {
 
-        CookingTaskMap::iterator found = asyncContext.mTaskMap.find(primPath);
+        CookingTaskMap::iterator found = asyncContext.mTaskMap.find(taskKey);
         if (found == asyncContext.mTaskMap.end())
         {
             // Deformables and other "not 100% aligned" cooking approximation have
@@ -716,7 +798,7 @@ struct CookingComputeService : public ICookingComputeService
             if (crcOnly)
             {
                 // Let's try to find another in flight task with the same CRC,
-                // but having a different Usd Path
+                // but having a different task key
                 for (const auto& it : asyncContext.mTaskMap)
                 {
                     cookingtask::CookingTask* ct = it.second;
@@ -774,42 +856,17 @@ struct CookingComputeService : public ICookingComputeService
         task.finalize();
     }
 
-    static bool isRightHandedOrientation(const UsdGeomMesh& usdMesh)
-    {
-        PXR_NS::TfToken windingOrient = PXR_NS::UsdGeomTokens->rightHanded;
-        usdMesh.GetOrientationAttr().Get(&windingOrient);
-        return windingOrient != PXR_NS::UsdGeomTokens->leftHanded;
-    }
-
-
     PhysxCookingOperationHandle tryQueueingOrRunningTask(PhysxCookingComputeResult& result,
                                                          PhysxCookingComputeRequest& request,
                                                          cookingtask::CookingTask* task,
-                                                         CookingStageAndPrim& stageAndPrim,
                                                          AsyncContext* asyncContext,
                                                          bool skipMeshProcessing)
     {
         CARB_PROFILE_ZONE(0, "ICookingComputeService::tryQueueingOrRunningTask");
         if (!skipMeshProcessing)
         {
-            switch (request.dataInputMode)
-            {
-            case PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID:
-                if (request.primMeshView.isEmpty()) // If user supplied meshKey then meshView will be empty
-                {
-                    if (!getStageAndPrim(result, request, stageAndPrim) || !fillMeshView(result, request, stageAndPrim))
-                    {
-                        result.result = PhysxCookingResult::eERROR_INVALID_PRIM;
-                        request.onFinished(result);
-                        return nullptr;
-                    }
-                }
-                break;
-            case PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW: // primMeshView is already filled by
-                                                                              // caller
-                result.triangulationMaxMaterialIndex = CookingComputeService::getMaxMaterialIndex(request.primMeshView);
-                break;
-            }
+            // primMeshView is already filled by the caller (eINPUT_MODE_FROM_PRIM_ID removed).
+            result.triangulationMaxMaterialIndex = CookingComputeService::getMaxMaterialIndex(request.primMeshView);
         }
 
         if (task->setupTaskFromRequest(request, skipMeshProcessing))
@@ -839,374 +896,6 @@ struct CookingComputeService : public ICookingComputeService
         request.volumeDeformableBodyView = PhysxCookingDeformableBodyView();
         request.surfaceDeformableBodyView = PhysxCookingDeformableBodyView();
         return task;
-    }
-
-    static bool fillUSDMeshView(const omni::physx::PhysxCookingComputeRequest& request,
-                                omni::physx::PhysxCookingMeshView& meshView,
-                                CookingStageAndPrim& stageAndPrim,
-                                uint16_t& outMaxMaterialIndex)
-    {
-        CARB_PROFILE_ZONE(0, "ICookingComputeService::fillUSDMeshView");
-        UsdGeomMesh usdMesh(stageAndPrim.usdPrim);
-        UsdTimeCode time = request.primTimeCode;
-        usdMesh.GetPointsAttr().Get(&stageAndPrim.rigidMesh.pointsValue);
-        if (!stageAndPrim.rigidMesh.pointsValue.size())
-        {
-            time = UsdTimeCode::EarliestTime();
-            usdMesh.GetPointsAttr().Get(&stageAndPrim.rigidMesh.pointsValue, time);
-            CARB_LOG_ERROR(
-                "omni.physx.cooking does not support time sampled points. Ignoring all but first sample. Mesh path: %s",
-                usdMesh.GetPrim().GetPrimPath().GetText());
-        }
-        usdMesh.GetFaceVertexIndicesAttr().Get(&stageAndPrim.rigidMesh.indicesValue, time);
-        usdMesh.GetFaceVertexCountsAttr().Get(&stageAndPrim.rigidMesh.facesValue, time);
-        usdMesh.GetHoleIndicesAttr().Get(&stageAndPrim.rigidMesh.holesValue, time);
-        uint32_t pointCount = uint32_t(stageAndPrim.rigidMesh.pointsValue.size());
-        uint32_t indicesCount = uint32_t(stageAndPrim.rigidMesh.indicesValue.size());
-        uint32_t facesCount = uint32_t(stageAndPrim.rigidMesh.facesValue.size());
-        if (pointCount && indicesCount && facesCount)
-        {
-            const carb::Float3* points = reinterpret_cast<const carb::Float3*>(&stageAndPrim.rigidMesh.pointsValue[0]);
-            const int32_t* indices = stageAndPrim.rigidMesh.indicesValue.data();
-            const int32_t* faces = stageAndPrim.rigidMesh.facesValue.data();
-            meshView.points = { points, pointCount };
-            meshView.indices = { indices, indicesCount };
-            meshView.faces = { faces, facesCount };
-            if (!stageAndPrim.rigidMesh.holesValue.empty())
-            {
-                const int32_t* holes = stageAndPrim.rigidMesh.holesValue.data();
-                uint32_t holesCount = uint32_t(stageAndPrim.rigidMesh.holesValue.size());
-                meshView.holeIndices = { holes, holesCount };
-            }
-            stageAndPrim.rigidMesh.faceMaterials.resize(facesCount);
-            omni::span<uint16_t> faceMaterials = { stageAndPrim.rigidMesh.faceMaterials.data(), facesCount };
-            if (triangulateusd::TriangulateUSDPrim::fillFaceMaterials(
-                    stageAndPrim.usdPrim, faceMaterials, time, outMaxMaterialIndex))
-            {
-                meshView.faceMaterials = faceMaterials;
-            }
-            else
-            {
-                stageAndPrim.rigidMesh.faceMaterials.clear();
-            }
-            TfToken orientation;
-            usdMesh.GetOrientationAttr().Get(&orientation);
-            meshView.rightHandedOrientation = (orientation == UsdGeomTokens->rightHanded);
-            return true;
-        }
-        return false;
-    }
-
-    static UsdAttribute getPosePointsAttr(UsdPrim posePrim, const TfType& poseType, TfToken instanceName)
-    {
-        if (instanceName.IsEmpty())
-            return UsdAttribute();
-
-        if (!posePrim.HasAPI(poseType, instanceName))
-        {
-            CARB_LOG_ERROR("Expected UsdPhysicsDeformablePoseAPI instance %s on %s, but not found.",
-                instanceName.GetText(), posePrim.GetPath().GetText());
-            return UsdAttribute();
-        }
-
-        TfToken attrName = UsdSchemaRegistry::MakeMultipleApplyNameInstance(
-            OmniUsdPhysicsDeformableSchemaTokens->deformablePose_MultipleApplyTemplate_OmniphysicsPoints, instanceName);
-        return posePrim.GetAttribute(attrName);
-    }
-
-    static UsdAttribute getPosePointsOrPointsAttr(UsdPrim posePrim, const TfType& poseType, TfToken instanceName)
-    {
-        if (!instanceName.IsEmpty())
-        {
-            return getPosePointsAttr(posePrim, poseType, instanceName);
-        }
-        return UsdGeomPointBased(posePrim).GetPointsAttr();
-    }
-
-    static UsdAttribute getPosePurposesAttr(UsdPrim posePrim, TfToken instanceName)
-    {
-        TfToken attrName = UsdSchemaRegistry::MakeMultipleApplyNameInstance(
-            OmniUsdPhysicsDeformableSchemaTokens->deformablePose_MultipleApplyTemplate_OmniphysicsPurposes, instanceName);
-        return posePrim.GetAttribute(attrName);
-    }
-
-    static TfToken getPoseNameFromPurpose(const UsdPrim prim, const TfToken posePurposeToken)
-    {
-        TfTokenVector allAPIs = prim.GetAppliedSchemas();
-
-        TfType poseType = UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsDeformablePoseAPI);
-        TfToken poseTypeName = UsdSchemaRegistry::GetAPISchemaTypeName(poseType);
-
-        for (const auto& api : allAPIs)
-        {
-            std::pair<TfToken, TfToken> typeNameAndInstance = UsdSchemaRegistry::GetTypeNameAndInstance(api);
-            if (typeNameAndInstance.first == poseTypeName)
-            {
-                VtArray<TfToken> candTokens;
-                getPosePurposesAttr(prim, typeNameAndInstance.second).Get(&candTokens);
-                for (const TfToken candToken : candTokens)
-                {
-                    if (candToken == posePurposeToken)
-                    {
-                        return typeNameAndInstance.second;
-                    }
-                }
-            }
-        }
-
-        return TfToken();
-    }
-
-    static bool fillUSDVolumeDeformableBodyMeshView(const omni::physx::PhysxCookingComputeRequest& request,
-        omni::physx::PhysxCookingDeformableBodyView& view,
-        CookingStageAndPrim& stageAndPrim)
-    {
-        CARB_PROFILE_ZONE(0, "ICookingComputeService::fillUSDVolumeDeformableBodyMeshView");
-
-        if (!stageAndPrim.stage)
-            return false;
-
-        UsdGeomMesh srcMesh(stageAndPrim.usdPrim);
-
-        TfType simType = UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsVolumeDeformableSimAPI);
-        const SdfPath simMeshPath = intToPath(request.deformablePathInfo.simMeshPrimId);
-        UsdPrim simMeshPrim = stageAndPrim.stage->GetPrimAtPath(simMeshPath);
-        if (!simMeshPrim || !simMeshPrim.IsA<PXR_NS::UsdGeomTetMesh>() || !simMeshPrim.HasAPI(simType))
-        {
-            return false;
-        }
-
-        VtArray<GfVec3f>& srcPointsInSim = stageAndPrim.volumeDeformableBodyMesh.srcPointsInSim;
-        TfType poseType = UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsDeformablePoseAPI);
-        TfToken srcMeshBindPoseToken = getPoseNameFromPurpose(srcMesh.GetPrim(), OmniUsdPhysicsDeformableSchemaTokens->bindPose);
-        UsdAttribute simBindPointsAttr = getPosePointsOrPointsAttr(srcMesh.GetPrim(), poseType, srcMeshBindPoseToken);
-        if (simBindPointsAttr)
-        {
-            simBindPointsAttr.Get(&srcPointsInSim);
-        }
-
-        // Transform skin points to sim mesh space
-        PXR_NS::GfMatrix4d srcToWorld = srcMesh.ComputeLocalToWorldTransform(PXR_NS::UsdTimeCode::Default());
-        PXR_NS::GfMatrix4d simToWorld =
-            PXR_NS::UsdGeomXformable(simMeshPrim).ComputeLocalToWorldTransform(PXR_NS::UsdTimeCode::Default());
-        PXR_NS::GfMatrix4d worldToSim = simToWorld.GetInverse();
-        PXR_NS::GfMatrix4d srcToSim = srcToWorld * worldToSim;
-        for (size_t i = 0; i < srcPointsInSim.size(); ++i)
-        {
-            PXR_NS::GfVec3f& srcPoint = srcPointsInSim[i];
-            srcPoint = PXR_NS::GfVec3f(srcToSim.Transform(srcPoint));
-        }
-
-        uint32_t srcPointCount = uint32_t(srcPointsInSim.size());
-        if (srcPointCount)
-        {
-            const carb::Float3* srcPoints = reinterpret_cast<const carb::Float3*>(&srcPointsInSim[0]);
-            view.srcPointsInSim = { srcPoints, srcPointCount };
-            return true;
-        }   
-
-        return false;
-    }
-
-    static bool fillUSDDeformableVolumeMeshView(const omni::physx::PhysxCookingComputeRequest& request,
-        omni::physx::PhysxCookingDeformableVolumeMeshView& view,
-        CookingStageAndPrim& stageAndPrim)
-    {
-        CARB_PROFILE_ZONE(0, "ICookingComputeService::fillUSDDeformableVolumeMeshView");
-
-        if (!stageAndPrim.stage)
-            return false;
-
-        const SdfPath bodyPrimPath = intToPath(request.deformablePathInfo.bodyPrimId);
-        const SdfPath simMeshPath = intToPath(request.deformablePathInfo.simMeshPrimId);
-        const SdfPath collMeshPath = intToPath(request.deformablePathInfo.collMeshPrimId);
-        UsdPrim bodyPrim = stageAndPrim.stage->GetPrimAtPath(bodyPrimPath);
-        UsdPrim simMeshPrim = stageAndPrim.stage->GetPrimAtPath(simMeshPath);
-        UsdPrim collMeshPrim = stageAndPrim.stage->GetPrimAtPath(collMeshPath);
-        if (!bodyPrim || !simMeshPrim || !collMeshPrim)
-        {
-            return false;
-        }
-
-        GfMatrix4d simToWorld = UsdGeomXformable(simMeshPrim).ComputeLocalToWorldTransform(UsdTimeCode::Default());
-        GfMatrix4d worldToSim = simToWorld.GetInverse();
-
-        VtArray<GfVec3f>& simPoints = stageAndPrim.deformableVolumeMesh.simPoints;
-        VtArray<GfVec4i>& simIndices = stageAndPrim.deformableVolumeMesh.simIndices;
-        VtArray<GfVec3f>& simBindPoints = stageAndPrim.deformableVolumeMesh.simBindPoints;
-        VtArray<GfVec3f>& collBindPointsInSim = stageAndPrim.deformableVolumeMesh.collBindPointsInSim;
-        VtArray<GfVec4i>& collIndices = stageAndPrim.deformableVolumeMesh.collIndices;
-        VtArray<GfVec3i>& collSurfaceIndices = stageAndPrim.deformableVolumeMesh.collSurfaceIndices;
-
-        // read simulation mesh rest shape for cooking (until the SDK supports a proper rest shape)
-        // need to make sure the rest shape is compatible with the tetmesh topology
-        {
-            VtArray<GfVec3f> simPointsTmp;
-            VtArray<GfVec4i> simTetVertexIndices;
-            VtArray<GfVec3f> simRestShapePoints;
-            VtArray<GfVec4i> simRestTetVtxIndices;
-
-            UsdGeomPointBased(simMeshPrim).GetPointsAttr().Get(&simPointsTmp);
-            UsdGeomTetMesh(simMeshPrim).GetTetVertexIndicesAttr().Get(&simTetVertexIndices);
-            simMeshPrim.GetAttribute(OmniUsdPhysicsDeformableSchemaTokens->omniphysicsRestShapePoints).Get(&simRestShapePoints);
-            simMeshPrim.GetAttribute(OmniUsdPhysicsDeformableSchemaTokens->omniphysicsRestTetVtxIndices).Get(&simRestTetVtxIndices);
-
-            bool mismatch = simPointsTmp.size() != simRestShapePoints.size() ||
-                simTetVertexIndices.size() != simRestTetVtxIndices.size() ||
-                std::memcmp(simTetVertexIndices.data(), simRestTetVtxIndices.data(),
-                    sizeof(GfVec4i) * simTetVertexIndices.size()) != 0;
-
-            if (mismatch)
-            {
-                CARB_LOG_WARN(
-                    "ICookingComputeService::fillUSDDeformableVolumeMeshView failed, UsdGeomTetMesh not compatible with rest attributes in DeformableVolumeSimAPI, %s",
-                    bodyPrim.GetPath().GetText());
-                return false;
-            }
-
-            simPoints.swap(simRestShapePoints);
-            simIndices.swap(simTetVertexIndices);
-        }
-        
-        uint32_t simPointsCount = uint32_t(simPoints.size());
-        uint32_t simIndicesCount = uint32_t(simIndices.size());
-        if (!simPointsCount || !simIndicesCount)
-        {
-            return false;
-        }
-
-        const carb::Float3* simPointsPtr = reinterpret_cast<const carb::Float3*>(&stageAndPrim.deformableVolumeMesh.simPoints[0]);
-        view.simPoints = { simPointsPtr, simPointsCount };      
-
-        const carb::Int4* simIndicesPtr = reinterpret_cast<const carb::Int4*>(&stageAndPrim.deformableVolumeMesh.simIndices[0]);
-        view.simIndices = { simIndicesPtr, simIndicesCount };
-
-        if (collMeshPrim != simMeshPrim)
-        {
-            // Need to construct embedding for collision mesh:
-            // (simulation bind pose, sim mesh indices == rest shape indices, collision bind pose) -> embedding
-            // (embedding, sim rest shape points, rest shape topo> -> collision rest shape
-            VtArray<GfVec3f> simMeshBindPoints;
-            VtArray<GfVec3f> collMeshBindPoints;
-            {
-                TfType poseType = UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsDeformablePoseAPI);
-                TfToken simMeshBindPoseToken = getPoseNameFromPurpose(simMeshPrim, OmniUsdPhysicsDeformableSchemaTokens->bindPose);
-                TfToken collisionMeshBindPoseToken = getPoseNameFromPurpose(collMeshPrim, OmniUsdPhysicsDeformableSchemaTokens->bindPose);
-                UsdAttribute simBindPointsAttr = getPosePointsOrPointsAttr(simMeshPrim, poseType, simMeshBindPoseToken);             
-                UsdAttribute collBindPointsAttr = getPosePointsOrPointsAttr(collMeshPrim, poseType, collisionMeshBindPoseToken);
-                if (!simBindPointsAttr || !collBindPointsAttr)
-                {
-                    return false;
-                }
-                simBindPointsAttr.Get(&simMeshBindPoints);
-                collBindPointsAttr.Get(&collMeshBindPoints);
-            }
-
-            // Transform collision points to sim space
-            GfMatrix4d collToWorld = UsdGeomImageable(collMeshPrim).ComputeLocalToWorldTransform(UsdTimeCode::Default());
-            GfMatrix4d collToSim = collToWorld * worldToSim;
-            for (size_t i = 0; i < collMeshBindPoints.size(); ++i)
-            {
-                collMeshBindPoints[i] = PXR_NS::GfVec3f(collToSim.Transform(collMeshBindPoints[i]));
-            }
-            collBindPointsInSim.swap(collMeshBindPoints);
-            simBindPoints.swap(simMeshBindPoints);
-            UsdGeomTetMesh(collMeshPrim).GetTetVertexIndicesAttr().Get(&collIndices);
-
-            uint32_t simBindPointsCount = uint32_t(simBindPoints.size());
-            uint32_t collBindPointsInSimCount = uint32_t(collBindPointsInSim.size());
-            uint32_t collIndicesCount = uint32_t(collIndices.size());
-            if (!simBindPointsCount || !collBindPointsInSimCount || !collIndicesCount)
-            {
-                return false;
-            }
-
-            if (simBindPoints.size() != simPoints.size())
-            {
-                CARB_LOG_ERROR("ICookingComputeService::fillUSDDeformableVolumeMeshView failed, sim mesh bind pose points incompatible with points: %s", bodyPrim.GetPath().GetText());
-                return false;
-            }
-
-            const carb::Float3* simBindPointsPtr = reinterpret_cast<const carb::Float3*>(&stageAndPrim.deformableVolumeMesh.simBindPoints[0]);
-            view.simBindPoints = { simBindPointsPtr, simBindPointsCount };
-
-            const carb::Float3* collBindPointsInSimPtr = reinterpret_cast<const carb::Float3*>(&stageAndPrim.deformableVolumeMesh.collBindPointsInSim[0]);
-            view.collBindPointsInSim = { collBindPointsInSimPtr, collBindPointsInSimCount };
-
-            const carb::Int4* collIndicesPtr = reinterpret_cast<const carb::Int4*>(&stageAndPrim.deformableVolumeMesh.collIndices[0]);
-            view.collIndices = { collIndicesPtr, collIndicesCount };
-        }
-        else
-        {
-            view.simBindPoints = {};
-            view.collBindPointsInSim = {};
-            view.collIndices = {};
-        }
-
-        // read surface face vertices be from the collsion mesh, even if sim and coll mesh alias
-        PXR_NS::UsdGeomTetMesh(collMeshPrim).GetSurfaceFaceVertexIndicesAttr().Get(&collSurfaceIndices);
-        uint32_t collSurfaceIndicesCount = uint32_t(collSurfaceIndices.size());
-        if (!collSurfaceIndicesCount)
-        {
-            CARB_LOG_WARN("ICookingComputeService::fillUSDDeformableVolumeMeshView failed, collision mesh UsdGeomTetMesh needs to have "
-                "surfaceFaceVertexIndices set, %s.", collMeshPrim.GetPath().GetText());
-            return false;
-        }
-        const carb::Int3* collSurfaceIndicesPtr = reinterpret_cast<const carb::Int3*>(&stageAndPrim.deformableVolumeMesh.collSurfaceIndices[0]);
-        view.collSurfaceIndices = { collSurfaceIndicesPtr, collSurfaceIndicesCount };
-
-        return true;
-    }
-
-    static bool fillUSDSurfaceDeformableBodyMeshView(const omni::physx::PhysxCookingComputeRequest& request,
-        omni::physx::PhysxCookingDeformableBodyView& view,
-        CookingStageAndPrim& stageAndPrim)
-    {
-        CARB_PROFILE_ZONE(0, "ICookingComputeService::fillUSDSurfaceDeformableBodyMeshView");
-
-        if (!stageAndPrim.stage)
-            return false;
-
-        UsdGeomMesh srcMesh(stageAndPrim.usdPrim);
-
-        const SdfPath simMeshPath = intToPath(request.deformablePathInfo.simMeshPrimId);
-        UsdPrim simMeshPrim = stageAndPrim.stage->GetPrimAtPath(simMeshPath);
-        GfMatrix4d simToWorld = UsdGeomXformable(simMeshPrim).ComputeLocalToWorldTransform(UsdTimeCode::Default());
-        GfMatrix4d worldToSim = simToWorld.GetInverse();
-
-        VtArray<GfVec3f>& srcPointsInSim = stageAndPrim.surfaceDeformableBodyMesh.srcPointsInSim;
-        TfToken srcMeshBindPoseToken = getPoseNameFromPurpose(srcMesh.GetPrim(), OmniUsdPhysicsDeformableSchemaTokens->bindPose);
-        TfType dpType = UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsDeformablePoseAPI);
-        bool hasBindPoseAPI = !srcMeshBindPoseToken.IsEmpty() && srcMesh.GetPrim().HasAPI(dpType, srcMeshBindPoseToken);
-        if (hasBindPoseAPI)
-        {
-            TfToken pointsAttrName = UsdSchemaRegistry::MakeMultipleApplyNameInstance(
-                OmniUsdPhysicsDeformableSchemaTokens->deformablePose_MultipleApplyTemplate_OmniphysicsPoints, srcMeshBindPoseToken);
-            srcMesh.GetPrim().GetAttribute(pointsAttrName).Get(&srcPointsInSim);
-        }
-        else
-        {
-            srcMesh.GetPointsAttr().Get(&srcPointsInSim);
-        }
-
-        // Transform src points to sim mesh space
-        GfMatrix4d srcToWorld = srcMesh.ComputeLocalToWorldTransform(UsdTimeCode::Default());
-        GfMatrix4d srcToSim = srcToWorld * worldToSim;
-        for (size_t i = 0; i < srcPointsInSim.size(); ++i)
-        {
-            GfVec3f& srcPoint = srcPointsInSim[i];
-            srcPoint = GfVec3f(srcToSim.Transform(srcPoint));
-        }
-
-        uint32_t srcPointCount = uint32_t(srcPointsInSim.size());
-        if (srcPointCount)
-        {
-            const carb::Float3* srcPoints = reinterpret_cast<const carb::Float3*>(&srcPointsInSim[0]);
-            view.srcPointsInSim = { srcPoints, srcPointCount };
-            return true;
-        }
-
-        return false;
     }
 
     virtual PhysxCookingAsyncContext createAsyncContext(PhysxCookingAsyncContextParameters& parameters) override
@@ -1306,13 +995,19 @@ struct CookingComputeService : public ICookingComputeService
 
 private:
     std::unordered_map<std::string, std::unique_ptr<AsyncContext>> mAsyncContext;
+    // A reference we own, whatever its origin: self-created, or handed over pre-acquired by
+    // mAcquireSharedCudaContextManagerFn. Replacing it only drops our own reference - a manager
+    // an in-flight task still uses stays alive on that task's reference, which is why no
+    // "retired managers" deferral list is needed here.
     ::physx::PxCudaContextManager* mPxCudaContextManager = nullptr;
+    // True while mPxCudaContextManager came from the provider. Not a lifetime flag (we hold a
+    // reference either way) - it gates whether we may refresh/replace the manager in place.
     bool mUsingSharedContextManager = false;
     ::physx::PxFoundation* mPxFoundation = nullptr;
 
     carb::tasking::ITasking* mTasking = nullptr;
     omni::physx::IPhysxFoundation* mPhysxFoundation = nullptr;
-    SharedCudaContextManagerFn mSharedCudaContextManagerFn = nullptr;
+    AcquireSharedCudaContextManagerFn mAcquireSharedCudaContextManagerFn = nullptr;
     std::atomic_uint32_t mFinishedCookingTasksCount = { 0 };
     carb::tasking::MutexWrapper mGlobalMutex;
     omni::convexdecomposition::ConvexDecomposition mConvexDecomposition;
@@ -1321,9 +1016,9 @@ private:
 };
 
 ICookingComputeService* createCookingComputingService(::physx::PxFoundation& foundation,
-                                                      SharedCudaContextManagerFn sharedCudaContextManagerFn)
+                                                      AcquireSharedCudaContextManagerFn acquireSharedCudaContextManagerFn)
 {
-    return new CookingComputeService(foundation, sharedCudaContextManagerFn);
+    return new CookingComputeService(foundation, acquireSharedCudaContextManagerFn);
 }
 
 void releaseCookingComputingService(ICookingComputeService* service)
@@ -1331,100 +1026,14 @@ void releaseCookingComputingService(ICookingComputeService* service)
     service->release();
 }
 
-bool ICookingComputeService::getStageAndPrim(PhysxCookingComputeResult& result,
-                                             PhysxCookingComputeRequest& request,
-                                             CookingStageAndPrim& stageAndPrim)
-{
-    CARB_PROFILE_ZONE(0, "ICookingComputeService::getStageAndPrim");
-    if (!stageAndPrim.stage)
-    { // I hope this is safe to do even on a non-main thread, as well as PXR_NS::UsdGeomGetStageMetersPerUnit
-        stageAndPrim.stage = UsdUtilsStageCache::Get().Find(UsdStageCache::Id::FromLongInt(long(request.primStageId)));
-    }
-    if (!stageAndPrim.stage)
-    {
-        CARB_LOG_ERROR("PhysX could not find USD stage");
-        result.result = PhysxCookingResult::eERROR_INVALID_STAGE;
-        request.onFinished(result);
-        return false;
-    }
-
-    const SdfPath meshPath = intToPath(request.primId);
-    const UsdPrim usdPrimSource = stageAndPrim.stage->GetPrimAtPath(meshPath);
-
-    if (!stageAndPrim.usdPrim.IsValid()) // resolve the input mesh prim from USD
-    {
-        if (request.primId == 0)
-            return true; // Workaround for requests without input source
-        stageAndPrim.usdPrim = usdPrimSource;
-        if (!stageAndPrim.usdPrim || !stageAndPrim.usdPrim.IsValid() || !stageAndPrim.usdPrim.IsA<UsdGeomMesh>())
-        {
-            CARB_LOG_ERROR("PhysX could not find USD prim or prim is not UsdGeomMesh!");
-            result.result = PhysxCookingResult::eERROR_INVALID_PRIM;
-            request.onFinished(result);
-            return false;
-        }
-        const char* primPathText = stageAndPrim.usdPrim.GetPrimPath().GetText();
-        request.primMeshText = { primPathText, strlen(primPathText) };
-        result.requestSource = request.dataInputMode == PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID ?
-                                   PhysxCookingComputeResult::eREQUEST_SOURCE_USD :
-                                   PhysxCookingComputeResult::eREQUEST_SOURCE_MESHVIEW;
-    }
-    return true;
-}
-
-bool ICookingComputeService::fillMeshView(omni::physx::PhysxCookingComputeResult& result,
-                                          omni::physx::PhysxCookingComputeRequest& request,
-                                          CookingStageAndPrim& stageAndPrim)
-{
-    bool ret1 = true;
-    if (request.primId != 0)
-    {
-        ret1 = CookingComputeService::fillUSDMeshView(
-            request, request.primMeshView, stageAndPrim, result.triangulationMaxMaterialIndex);
-    }
-
-    bool ret2 = true;
-    if (request.dataType == PhysxCookingDataType::eVOLUME_DEFORMABLE_BODY)
-    {
-        ret2 = CookingComputeService::fillUSDVolumeDeformableBodyMeshView(request, request.volumeDeformableBodyView, stageAndPrim);
-    }
-    else if (request.dataType == PhysxCookingDataType::eDEFORMABLE_VOLUME_MESH)
-    {
-        ret2 = CookingComputeService::fillUSDDeformableVolumeMeshView(request, request.volumeMeshView, stageAndPrim);
-    }
-    else if (request.dataType == PhysxCookingDataType::eSURFACE_DEFORMABLE_BODY)
-    {
-        ret2 = CookingComputeService::fillUSDSurfaceDeformableBodyMeshView(request, request.surfaceDeformableBodyView, stageAndPrim);
-    }
-
-    return ret1 && ret2;
-}
-
 bool ICookingComputeService::computeMeshKeyIfNeeded(PhysxCookingComputeResult& result,
-                                                    PhysxCookingComputeRequest& request,
-                                                    CookingStageAndPrim& stageAndPrim)
+                                                    PhysxCookingComputeRequest& request)
 {
     CARB_PROFILE_ZONE(0, "ICookingComputeService::computeMeshKeyIfNeeded");
-    switch (request.dataInputMode)
-    {
-    case PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID:
-        if (!getStageAndPrim(result, request, stageAndPrim))
-        {
-            result.result = PhysxCookingResult::eERROR_INVALID_PRIM;
-            request.onFinished(result);
-            return false;
-        }
-        request.primMeshMetersPerUnit = PXR_NS::UsdGeomGetStageMetersPerUnit(stageAndPrim.stage);
-        if (stageAndPrim.usdPrim) // Workaround for requests without input source
-        {
-            request.primMeshView.rightHandedOrientation =
-                CookingComputeService::isRightHandedOrientation(UsdGeomMesh(stageAndPrim.usdPrim));
-        }
-        break;
-    case PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW:
-        result.requestSource = PhysxCookingComputeResult::eREQUEST_SOURCE_MESHVIEW;
-        break;
-    }
+    // Every request is mesh-view mode now (eINPUT_MODE_FROM_PRIM_ID removed, REQ-COOK-SOURCE-001):
+    // the caller reads geometry through IPhysicsSource before submitting, so there is no USD stage
+    // for the service itself to resolve.
+    result.requestSource = PhysxCookingComputeResult::eREQUEST_SOURCE_MESHVIEW;
 
     if (request.meshKey != omni::physx::usdparser::MeshKey())
     {
@@ -1432,32 +1041,22 @@ bool ICookingComputeService::computeMeshKeyIfNeeded(PhysxCookingComputeResult& r
         return true;
     }
 
-    switch (request.dataInputMode)
+    // A deformable volume mesh cook has no source triangle mesh: its input is the tet geometry
+    // in volumeMeshView, and the mesh processor explicitly skips triangulation for this data
+    // type. Demanding a primMeshView here would reject every caller-supplied volume mesh.
+    // Every other data type still requires one.
+    const bool needsPrimMeshView = request.dataType != PhysxCookingDataType::eDEFORMABLE_VOLUME_MESH;
+    if ((needsPrimMeshView && request.primMeshView.isEmpty())
+        || ((request.dataType == PhysxCookingDataType::eDEFORMABLE_VOLUME_MESH) && request.volumeMeshView.isEmpty())
+        || ((request.dataType == PhysxCookingDataType::eVOLUME_DEFORMABLE_BODY) && request.volumeDeformableBodyView.isEmpty())
+        || ((request.dataType == PhysxCookingDataType::eSURFACE_DEFORMABLE_BODY) && request.surfaceDeformableBodyView.isEmpty()))
     {
-    case PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID:
-        if (!fillMeshView(result, request, stageAndPrim))
-        {
-            result.result = PhysxCookingResult::eERROR_INVALID_PRIM;
-            request.onFinished(result);
-            return false;
-        }
-        break;
-    case PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW:
-        if (request.primMeshView.isEmpty()
-            || ((request.dataType == PhysxCookingDataType::eDEFORMABLE_VOLUME_MESH) && request.volumeMeshView.isEmpty())
-            || ((request.dataType == PhysxCookingDataType::eVOLUME_DEFORMABLE_BODY) && request.volumeDeformableBodyView.isEmpty())
-            || ((request.dataType == PhysxCookingDataType::eSURFACE_DEFORMABLE_BODY) && request.surfaceDeformableBodyView.isEmpty()))
-        {
-            result.result = PhysxCookingResult::eERROR_INVALID_PRIM;
-            request.onFinished(result);
-            return false;
-        }
-        result.triangulationMaxMaterialIndex = CookingComputeService::getMaxMaterialIndex(request.primMeshView);
-        break;
-    default:
+        result.result = PhysxCookingResult::eERROR_INVALID_PRIM;
         request.onFinished(result);
         return false;
     }
+    result.triangulationMaxMaterialIndex = CookingComputeService::getMaxMaterialIndex(request.primMeshView);
+
     result.meshKey = MeshKeyComputation::computeMeshKey(request.primMeshView);
     return true;
 }

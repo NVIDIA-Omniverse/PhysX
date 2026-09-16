@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-SHAPE-005
+ * @covers AC-3
+ *
  * @implements REQ-PARSE-COL-001
  * @covers AC-4
  *
@@ -16,27 +19,22 @@
  *
  * @implements REQ-PARSE-UNIFY-001
  * @covers AC-1 AC-3
+ *
+ * @implements REQ-COOK-SOURCE-001
+ * @covers AC-1 AC-3
  */
 
-// This include must come first
-// clang-format off
-#include "UsdPCH.h"
-// clang-format on
+#include <omni/physics/parse/KnownTokens.h>
 
 #include <carb/Types.h>
 #include <carb/logging/Log.h>
 #include <carb/settings/ISettings.h>
-#include <omni/physics/usd/PrimIterator.h>
 #include <private/omni/physx/CustomGeometryHash.h>
 #include <common/foundation/Allocator.h>
-#include <common/utilities/UsdMaterialParsing.h>
 #include <carb/profiler/Profile.h>
 
 #include <carb/tasking/TaskingTypes.h>
 #include <carb/tasking/TaskingUtils.h>
-
-
-#include <utils/Profile.h>
 
 #include "LoadUsd.h"
 #include "LoadTools.h"
@@ -46,20 +44,17 @@
 
 #include <OmniPhysX.h>
 #include <omni/physx/IPhysxSettings.h>
-#include <omni/physics/parse/ParseApi.h>
-#include <omni/physics/parse/ParseContext.h>
-#include "UsdSource.h"
+// pxr-free half of TypeCast.h: this file only ever names the carb <-> PhysX
+// overloads (toPhysX/fromPhysX/toFloat3/toFloat4), never a Gf type.
+#include <common/foundation/CarbPhysXCast.h>
 #include "Collision.h"
 #include "Material.h"
 #include "CollisionGroup.h"
 #include "AttributeHelpers.h"
-#include "NewtonCompat.h"
 
 #include <propertiesUpdate/PhysXPropertiesUpdate.h>
-#include <common/utilities/Utilities.h>
 #include <omni/physx/IPhysxCookingService.h>
 
-using namespace PXR_NS;
 using namespace carb;
 using namespace carb::tasking;
 using namespace omni::physics::schema;
@@ -71,21 +66,24 @@ namespace physx
 namespace usdparser
 {
 
-static TfToken oldConvexPrim("ConvexMesh");
-static TfToken obsoleteCustomGeometryAttribute("physxCollisionCustomGeometry");
-using MeshKeyMap = std::unordered_map< SdfPath, omni::physx::usdparser::MeshKey,SdfPath::Hash >;
+// ObjectKey-keyed rather than SdfPath-keyed: every caller (below) already has
+// the mesh's ObjectKey directly and previously materialized a PXR_NS::SdfPath
+// purely to key this cache, mirroring the CctMap retype in internal/
+// InternalScene.h (same ObjectKey-opaque-identity pattern, ADR-0019).
+using MeshKeyMap = std::unordered_map<omni::physics::parse::ObjectKey, omni::physx::usdparser::MeshKey,
+                                      omni::physics::parse::ObjectKey::Hash>;
 
 
 class MeshKeyCache
 {
 public:
 
-    void setMeshKey(const SdfPath &name,const MeshKey &key)
+    void setMeshKey(omni::physics::parse::ObjectKey name, const MeshKey &key)
     {
         mMeshKeys[name] = key;
     }
 
-    bool getMeshKey(const SdfPath &name,MeshKey &key) const
+    bool getMeshKey(omni::physics::parse::ObjectKey name, MeshKey &key) const
     {
         bool ret = false;
 
@@ -99,7 +97,7 @@ public:
         return ret;
     }
 
-    bool clearMeshKey(const SdfPath &name)
+    bool clearMeshKey(omni::physics::parse::ObjectKey name)
     {
         bool ret = false;
 
@@ -172,133 +170,13 @@ BoundingBoxPhysxShapeDesc* computeBoundingBoxShape(const std::vector<carb::Float
     return boxDesc;
 }
 
-// Helper method to initialize the maximum number of convex hull vertices and add it to the MeshKey CRC
-void initMaxHullVertices(const UsdAttribute& attr, uint32_t &maxHullVertices)
-{
-    int _maxHullVertices;
-    if (attr.Get(&_maxHullVertices))
-    {
-        maxHullVertices = uint32_t(_maxHullVertices);
-    }    
-}
-
-// Helper method to initialize the maximum number of convex hulls and add it to the MeshKey CRC
-void initMaxConvexHulls(const UsdAttribute& attr, uint32_t &maxConvexHulls)
-{
-    int _maxConvexHulls;
-    if (attr.Get(&_maxConvexHulls))
-    {
-        maxConvexHulls = uint32_t(_maxConvexHulls);
-    }    
-}
-
-// Helper method to initialize the maximum number of spheres and add it to the MeshKey CRC
-void initMaxSpheres(const UsdAttribute& attr, uint32_t &maxSpheres)
-{
-    int _maxSpheres;
-    if (attr.Get(&_maxSpheres))
-    {
-        maxSpheres = uint32_t(_maxSpheres);
-    }    
-}
-
-void initSeedCount(const UsdAttribute& attr, uint32_t &seedCount)
-{
-    int _seedCount;
-    if (attr.Get(&_seedCount))
-    {
-        seedCount = uint32_t(_seedCount);
-    }    
-}
-
-void initFillMode(const UsdAttribute& attr, SphereFillMode::Enum&fillMode)
-{
-    static TfToken flood("flood");
-    static TfToken raycast("raycast");
-    static TfToken surface("surface");
-    TfToken _fillMode;
-    if (attr.Get(&_fillMode))
-    {
-        if ( _fillMode == flood )
-        {
-            fillMode = SphereFillMode::eFLOOD;
-        }
-        else if ( _fillMode == raycast )
-        {
-            fillMode = SphereFillMode::eRAYCAST;
-        }
-        else if ( _fillMode == surface )
-        {
-            fillMode = SphereFillMode::eSURFACE;
-        }
-    }    
-}
-
-// Helper method to initialize the voxel resolution and add it to the MeshKey CRC
-void initVoxelResolution(const UsdAttribute& attr, uint32_t &voxelResolution)
-{
-    int _voxelResolution;
-    if (attr.Get(&_voxelResolution))
-    {
-        voxelResolution = uint32_t(_voxelResolution);
-    }    
-}
-
-// Helper method to initialize the mesh simplification metric value and add it to the MeshKey CRC
-void initUseShrinkwrap(const UsdAttribute& attr, bool &useShrinkWrap)
-{
-    attr.Get(&useShrinkWrap);    
-}
-
-// Helper method to initialize the volume error percentage threshold and add it to the MeshKey CRC
-void initErrorPercentage(const UsdAttribute& attr, float &errorPercentage)
-{
-    attr.Get(&errorPercentage);    
-}
-
-// Helper method to initialize the minimum collision thickness value and add it to the MeshKey CRC
-void initMinThickness(const UsdAttribute& attr, float &minThickness)
-{
-    attr.Get(&minThickness);    
-}
-
-// Helper method to initialize the mesh simplification metric value and add it to the MeshKey CRC
-void initSimplificationMetric(const UsdAttribute& attr, float &simplificationMetric)
-{
-    attr.Get(&simplificationMetric);    
-}
-
-// Helper method to initialize the mesh weld tolerance value and add it to the MeshKey CRC
-void initWeldToleranceMetric(const UsdAttribute& attr, float &weldTolerance)
-{
-    attr.Get(&weldTolerance);
-    if (isnan(weldTolerance))
-    {
-        weldTolerance = -FLT_MAX;
-    }    
-}
-
-void fillCookingRequest(omni::physx::PhysxCookingComputeRequest& request, const UsdPrim& prim, UsdTimeCode time)
-{
-    // If we have the meshKey in cache, we use it, saving omni.physx.cooking from recomputing it
-    gMeshKeyCache.getMeshKey(prim.GetPath(), request.meshKey);
-    request.primStageId = UsdUtilsStageCache::Get().GetId(prim.GetStage()).ToLongInt();
-    request.primId = asInt(prim.GetPath());
-    request.primTimeCode = time.GetValue();
-    request.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kComputeAsynchronously, false);
-    request.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kComputeGPUCookingData, true);
-    request.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kExecuteCookingOnGPU, false);
-    request.mode = omni::physx::PhysxCookingComputeRequest::eMODE_COMPUTE_CRC;
-}
-
-bool isCollisionShape(const UsdStageWeakPtr stage, const UsdPrim& prim)
-{
-    return prim.HasAPI<UsdPhysicsCollisionAPI>();
-}
-
-PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scale)
+PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const carb::Float3& scale)
 {
     PhysxShapeDesc* desc = nullptr;
+
+    // The incoming scale is source-neutral; everything below is internal math on
+    // descriptor fields, so convert once here (ADR-0001 section 8).
+    const ::physx::PxVec3 s = toPhysX(scale);
 
     switch (inDesc.type)
     {
@@ -307,7 +185,7 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scal
         desc = ICE_PLACEMENT_NEW(SpherePhysxShapeDesc)();
         SpherePhysxShapeDesc& sphereDesc = (SpherePhysxShapeDesc&)*desc;
         sphereDesc = (const SpherePhysxShapeDesc&)inDesc;
-        const float radiusScale = fmaxf(fmaxf(fabsf(float(scale[1])), fabsf(float(scale[0]))), fabsf(float(scale[2])));
+        const float radiusScale = fmaxf(fmaxf(fabsf(s.y), fabsf(s.x)), fabsf(s.z));
         sphereDesc.radius = sphereDesc.radius * radiusScale;
     }
     break;
@@ -317,7 +195,7 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scal
         BoxPhysxShapeDesc& boxDesc = (BoxPhysxShapeDesc&)*desc;
         boxDesc = (const BoxPhysxShapeDesc&)inDesc;
 
-        (GfVec3f&)boxDesc.halfExtents = GfCompMult((const GfVec3f&)boxDesc.halfExtents, scale);
+        boxDesc.halfExtents = fromPhysX(toPhysX(boxDesc.halfExtents).multiply(s));
     }
     break;
     case eCapsuleShape:
@@ -328,18 +206,18 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scal
 
         if (capsuleDesc.axis == Axis::eX)
         {
-            capsuleDesc.halfHeight *= scale[0];
-            capsuleDesc.radius *= fmaxf(fabsf(scale[1]), fabsf(scale[2]));
+            capsuleDesc.halfHeight *= s.x;
+            capsuleDesc.radius *= fmaxf(fabsf(s.y), fabsf(s.z));
         }
         else if (capsuleDesc.axis == Axis::eY)
         {
-            capsuleDesc.halfHeight *= scale[1];
-            capsuleDesc.radius *= fmaxf(fabsf(scale[0]), fabsf(scale[2]));
+            capsuleDesc.halfHeight *= s.y;
+            capsuleDesc.radius *= fmaxf(fabsf(s.x), fabsf(s.z));
         }
         else
         {
-            capsuleDesc.halfHeight *= scale[2];
-            capsuleDesc.radius *= fmaxf(fabsf(scale[1]), fabsf(scale[0]));
+            capsuleDesc.halfHeight *= s.z;
+            capsuleDesc.radius *= fmaxf(fabsf(s.y), fabsf(s.x));
         }
     }
     break;
@@ -351,18 +229,18 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scal
 
         if (cylinderDesc.axis == Axis::eX)
         {
-            cylinderDesc.halfHeight *= scale[0];
-            cylinderDesc.radius *= fmaxf(fabsf(scale[1]), fabsf(scale[2]));
+            cylinderDesc.halfHeight *= s.x;
+            cylinderDesc.radius *= fmaxf(fabsf(s.y), fabsf(s.z));
         }
         else if (cylinderDesc.axis == Axis::eY)
         {
-            cylinderDesc.halfHeight *= scale[1];
-            cylinderDesc.radius *= fmaxf(fabsf(scale[0]), fabsf(scale[2]));
+            cylinderDesc.halfHeight *= s.y;
+            cylinderDesc.radius *= fmaxf(fabsf(s.x), fabsf(s.z));
         }
         else
         {
-            cylinderDesc.halfHeight *= scale[2];
-            cylinderDesc.radius *= fmaxf(fabsf(scale[1]), fabsf(scale[0]));
+            cylinderDesc.halfHeight *= s.z;
+            cylinderDesc.radius *= fmaxf(fabsf(s.y), fabsf(s.x));
         }
     }
     break;
@@ -374,18 +252,18 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scal
 
         if (coneDesc.axis == Axis::eX)
         {
-            coneDesc.halfHeight *= scale[0];
-            coneDesc.radius *= fmaxf(fabsf(scale[1]), fabsf(scale[2]));
+            coneDesc.halfHeight *= s.x;
+            coneDesc.radius *= fmaxf(fabsf(s.y), fabsf(s.z));
         }
         else if (coneDesc.axis == Axis::eY)
         {
-            coneDesc.halfHeight *= scale[1];
-            coneDesc.radius *= fmaxf(fabsf(scale[0]), fabsf(scale[2]));
+            coneDesc.halfHeight *= s.y;
+            coneDesc.radius *= fmaxf(fabsf(s.x), fabsf(s.z));
         }
         else
         {
-            coneDesc.halfHeight *= scale[2];
-            coneDesc.radius *= fmaxf(fabsf(scale[1]), fabsf(scale[0]));
+            coneDesc.halfHeight *= s.z;
+            coneDesc.radius *= fmaxf(fabsf(s.y), fabsf(s.x));
         }
     }
     break;
@@ -395,7 +273,7 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scal
         ConvexMeshPhysxShapeDesc& convexDesc = (ConvexMeshPhysxShapeDesc&)*desc;
         convexDesc = (const ConvexMeshPhysxShapeDesc&)inDesc;
 
-        (GfVec3f&)convexDesc.meshScale = GfCompMult((const GfVec3f&)convexDesc.meshScale, scale);
+        convexDesc.meshScale = fromPhysX(toPhysX(convexDesc.meshScale).multiply(s));
         convexDesc.convexCookingParams.signScale = omni::physx::usdparser::scaleToSignScale(convexDesc.meshScale);
     }
     break;
@@ -405,7 +283,7 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scal
         ConvexMeshDecompositionPhysxShapeDesc& convexDecDesc = (ConvexMeshDecompositionPhysxShapeDesc&)*desc;
         convexDecDesc = (const ConvexMeshDecompositionPhysxShapeDesc&)inDesc;
 
-        (GfVec3f&)convexDecDesc.meshScale = GfCompMult((const GfVec3f&)convexDecDesc.meshScale, scale);
+        convexDecDesc.meshScale = fromPhysX(toPhysX(convexDecDesc.meshScale).multiply(s));
         convexDecDesc.convexDecompositionCookingParams.signScale = omni::physx::usdparser::scaleToSignScale(convexDecDesc.meshScale);
     }
     break;
@@ -415,7 +293,7 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scal
         TriangleMeshPhysxShapeDesc& meshDesc = (TriangleMeshPhysxShapeDesc&)*desc;
         meshDesc = (const TriangleMeshPhysxShapeDesc&)inDesc;
 
-        (GfVec3f&)meshDesc.meshScale = GfCompMult((const GfVec3f&)meshDesc.meshScale, scale);
+        meshDesc.meshScale = fromPhysX(toPhysX(meshDesc.meshScale).multiply(s));
     }
     break;
     case eBoundingSphereShape:
@@ -424,8 +302,8 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scal
         BoundingSpherePhysxShapeDesc& bsDesc = (BoundingSpherePhysxShapeDesc&)*desc;
         bsDesc = (const BoundingSpherePhysxShapeDesc&)inDesc;
 
-        (GfVec3f&)bsDesc.positionOffset = GfCompMult((const GfVec3f&)bsDesc.positionOffset, scale);
-        const float radiusScale = fmaxf(fmaxf(fabsf(float(scale[1])), fabsf(float(scale[0]))), fabsf(float(scale[2])));
+        bsDesc.positionOffset = fromPhysX(toPhysX(bsDesc.positionOffset).multiply(s));
+        const float radiusScale = fmaxf(fmaxf(fabsf(s.y), fabsf(s.x)), fabsf(s.z));
         bsDesc.radius = bsDesc.radius * radiusScale;
     }
     break;
@@ -435,8 +313,8 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scal
         BoundingBoxPhysxShapeDesc& bbDesc = (BoundingBoxPhysxShapeDesc&)*desc;
         bbDesc = (const BoundingBoxPhysxShapeDesc&)inDesc;
 
-        (GfVec3f&)bbDesc.positionOffset = GfCompMult((const GfVec3f&)bbDesc.positionOffset, scale);
-        (GfVec3f&)bbDesc.halfExtents = GfCompMult((const GfVec3f&)bbDesc.halfExtents, scale);
+        bbDesc.positionOffset = fromPhysX(toPhysX(bbDesc.positionOffset).multiply(s));
+        bbDesc.halfExtents = fromPhysX(toPhysX(bbDesc.halfExtents).multiply(s));
     }
     break;
     case ePlaneShape:
@@ -451,28 +329,29 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const GfVec3f& scal
 
     if (desc)
     {
-        (GfVec3f&)desc->localPos = GfCompMult((const GfVec3f&)desc->localPos, scale);
-        (GfVec3f&)desc->localScale = GfCompMult((const GfVec3f&)desc->localScale, scale);
+        desc->localPos = fromPhysX(toPhysX(desc->localPos).multiply(s));
+        desc->localScale = fromPhysX(toPhysX(desc->localScale).multiply(s));
     }
 
     return desc;
 }
 
-void finalizeShape(AttachedStage& attachedStage, PhysxShapeDesc* desc, const SdfPathVector& materials)
+void finalizeShape(AttachedStage& attachedStage, PhysxShapeDesc* desc, const std::vector<omni::physics::parse::ObjectKey>& materials)
 {
-    for (const SdfPath& materialKey : materials)
+    for (const omni::physics::parse::ObjectKey materialKey : materials)
     {
         desc->materials.push_back(getMaterial(attachedStage, materialKey));
     }
 
 }
 
-PhysxRigidBodyDesc* createShape(AttachedStage& attachedStage, const SdfPath& path, PhysxShapeDesc* shapeDesc, const ObjectInstance* objectInstance, ObjectId* instancedShapeId)
+PhysxRigidBodyDesc* createShape(AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, PhysxShapeDesc* shapeDesc, const ObjectInstance* objectInstance, ObjectId* instancedShapeId)
 {
     const bool hadNoRigidBody = !shapeDesc->rigidBody.valid();
 
-    // If we use shape for instanced create, we should not search for existing bodies
-    const ObjectId bodyId = instancedShapeId ? kInvalidObjectId : getRigidBody(attachedStage, path, *shapeDesc);
+    // If we use shape for instanced create, we should not search for existing bodies.
+    // getRigidBody is ObjectKey-native (ADR-0019).
+    const ObjectId bodyId = instancedShapeId ? kInvalidObjectId : getRigidBody(attachedStage, key, *shapeDesc);
     PhysxRigidBodyDesc* bodyDesc = nullptr;
     if (!shapeDesc->rigidBody.valid())
     {
@@ -482,7 +361,7 @@ PhysxRigidBodyDesc* createShape(AttachedStage& attachedStage, const SdfPath& pat
         bodyDesc->scale = shapeDesc->localScale;
         bodyDesc->sceneIds = shapeDesc->sceneIds;
 
-        if (shapeDesc->sourceGprim != attachedStage.keyFor(path))
+        if (shapeDesc->sourceGprim != key)
         {
             ((StaticPhysxRigidBodyDesc*)bodyDesc)->sourceGPrimKey = shapeDesc->sourceGprim;
         }
@@ -494,19 +373,30 @@ PhysxRigidBodyDesc* createShape(AttachedStage& attachedStage, const SdfPath& pat
     else if (hadNoRigidBody)
     {
         // Need to re-calculate the shape TM relative to the rigid body
-        GfVec3f localPos;
-        GfVec3f localScale;
-        GfQuatf localRot;
-        getCollisionShapeLocalTransform(attachedStage, attachedStage.keyFor(path), shapeDesc->rigidBody,
-            localPos, localRot, localScale);
-        GfVec3ToFloat3(localPos, shapeDesc->localPos);
-        GfQuatToFloat4(localRot, shapeDesc->localRot);
-        GfVec3ToFloat3(localScale, shapeDesc->localScale);
+        getCollisionShapeLocalTransform(attachedStage, key, shapeDesc->rigidBody,
+            shapeDesc->localPos, shapeDesc->localRot, shapeDesc->localScale);
     }
 
-    const ObjectId id = attachedStage.getPhysXPhysicsInterface()->createShape(path, *shapeDesc, bodyId, objectInstance);
+    const ObjectId id = attachedStage.getPhysXPhysicsInterface()->createShape(key, *shapeDesc, bodyId, objectInstance);
     if (id != kInvalidObjectId)
-        attachedStage.getObjectDatabase()->findOrCreateEntry(path, eShape, id);
+    {
+        // findOrCreateEntry(ObjectKey, pathText, ...) so this also feeds
+        // PrimHierarchyStorage (and, under a USD-backed source, mPathMap) --
+        // the bare ObjectKey overload only touches the Key-side maps. Mirrors
+        // the createBodies/createDeformableAttachments/
+        // createDeformableCollisionFilters fix in LoadStage.cpp. This one specific
+        // gap (a shape registered ObjectKey-only, so SdfPath-keyed lookups can no
+        // longer see it) was root-caused to a real regression the first time this
+        // function was retyped: PrimUpdate.cpp's handleRemovedPrim/live-property-
+        // update dispatch resolve shapes via getEntries(SdfPath)/removeEntries(SdfPath)
+        // (mPathMap), so a shape missing from mPathMap silently drops out of prim-
+        // removal cleanup (observed as a SIGSEGV via a dangling trigger-state
+        // reference, TestContactsAndTriggers.cpp "Overlapping body removal clears
+        // trigger state relationship") and out of live contactOffset/restOffset
+        // property-update dispatch (observed as getContactOffset()/getRestOffset()
+        // value mismatches). Do not drop this without re-verifying both symptoms.
+        attachedStage.getObjectDatabase()->findOrCreateEntry(key, attachedStage.textViewFor(key), eShape, id);
+    }
 
     if (instancedShapeId)
     {
@@ -515,7 +405,7 @@ PhysxRigidBodyDesc* createShape(AttachedStage& attachedStage, const SdfPath& pat
 
     if (bodyId != kInvalidObjectId)
     {
-        attachedStage.bufferRequestRigidBodyMassUpdate(attachedStage.pathFor(shapeDesc->rigidBody));
+        attachedStage.bufferRequestRigidBodyMassUpdate(shapeDesc->rigidBody);
     }
 
     if (bodyDesc && id != kInvalidObjectId)
@@ -545,13 +435,14 @@ SourceMeshGeometryScope::~SourceMeshGeometryScope()
 bool fillCookingMeshViewFromSource(omni::physx::PhysxCookingComputeRequest& request,
                                    SourceMeshGeometryScope& scope,
                                    const AttachedStage& attachedStage,
-                                   omni::physics::parse::ObjectKey meshKey)
+                                   omni::physics::parse::ObjectKey meshKey,
+                                   bool includeFaceMaterials)
 {
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return false;
     scope.src = src;
-    scope.geom = src->getMeshAttributes(meshKey);
+    scope.geom = src->getMeshAttributes(meshKey, includeFaceMaterials);
     const omni::physics::parse::MeshGeometry& g = scope.geom;
     if (!g.points.valid() || !g.indices.valid() || !g.faceCounts.valid())
         return false;  // not enough geometry — caller keeps the prim-id path
@@ -566,7 +457,12 @@ bool fillCookingMeshViewFromSource(omni::physx::PhysxCookingComputeRequest& requ
 
     // The resolved buffers stay valid until `scope` releases them (after the
     // synchronous submission below copies the view in setupTaskFromRequest).
-    request.dataInputMode = omni::physx::PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW;
+    // Every request is mesh-view mode now (eINPUT_MODE_FROM_PRIM_ID removed); the struct
+    // default for metersPerUnit is 1.0 unless it is set here. Every cooking tolerance
+    // derived from PxTolerancesScale would otherwise be wrong by 1/metersPerUnit on a
+    // stage that is not authored in metres (100x on a centimetre stage). Read from the
+    // source so it holds with or without a backing UsdStage.
+    request.primMeshMetersPerUnit = double(attachedStage.getSourceUnits().metersPerUnit);
     request.primMeshView.points = { points, pointsBytes / sizeof(carb::Float3) };
     request.primMeshView.indices = { indices, indicesBytes / sizeof(int32_t) };
     request.primMeshView.faces = { faces, facesBytes / sizeof(int32_t) };
@@ -588,28 +484,38 @@ bool fillCookingMeshViewFromSource(omni::physx::PhysxCookingComputeRequest& requ
 }
 
 
+// PhysxCookingComputeRequest's primId is correlation/logging-only (IPhysxCookingService.h's
+// own doc comment); it carries the legacy asInt(ObjectKey) encoding (key.handle), same as
+// CookingDataAsync.cpp's/ContactReport.cpp's keyToLegacyPathInt.
+static uint64_t keyToLegacyPathInt(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key)
+{
+    (void)attachedStage;
+    return key.handle;
+}
+
 static bool fillCookingRequestFromSourceMesh(omni::physx::PhysxCookingComputeRequest& request,
                                              SourceMeshGeometryScope& geomScope,
                                              AttachedStage* attachedStage,
                                              omni::physics::parse::ObjectKey meshKey,
-                                             UsdTimeCode time,
-                                             SdfPath& meshSdfPath)
+                                             omni::physics::parse::ReadTime time)
 {
     if (!attachedStage || !meshKey.valid())
         return false;
 
     const omni::physics::parse::IPhysicsSource* src = attachedStage->getSource();
-    if (!src || !src->exists(meshKey) || !internal::isAType<UsdGeomMesh>(*src, meshKey))
+    if (!src || !src->exists(meshKey))
+        return false;
+    if (!src->isA(meshKey, attachedStage->getKnownTokens().meshType))
         return false;
 
-    meshSdfPath = attachedStage->pathFor(meshKey);
-    if (meshSdfPath.IsEmpty())
-        return false;
-
-    gMeshKeyCache.getMeshKey(meshSdfPath, request.meshKey);
+    // ObjectKey-keyed (see MeshKeyMap above) -- every caller already has meshKey.
+    gMeshKeyCache.getMeshKey(meshKey, request.meshKey);
+    // primStageId/primId are correlation keys only (REQ-COOK-SOURCE-001 AC-1); attachHandle is
+    // the attach this request belongs to, and is what any completion-side attach lookup
+    // resolves (ADR-0016 Decision 6).
     request.primStageId = uint64_t(attachedStage->getStageId());
-    request.primId = asInt(meshSdfPath);
-    request.primTimeCode = time.GetValue();
+    request.attachHandle = attachedStage->getAttachHandle();
+    request.primId = keyToLegacyPathInt(*attachedStage, meshKey);
     request.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kComputeAsynchronously, false);
     request.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kComputeGPUCookingData, true);
     request.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kExecuteCookingOnGPU, false);
@@ -618,73 +524,37 @@ static bool fillCookingRequestFromSourceMesh(omni::physx::PhysxCookingComputeReq
     return fillCookingMeshViewFromSource(request, geomScope, *attachedStage, meshKey);
 }
 
-bool fillConvexMeshDesc(AttachedStage* attachedStage, const UsdGeomMesh& mesh, omni::physx::usdparser::ConvexMeshPhysxShapeDesc& desc, const omni::physx::ConvexMeshCookingParams& cookingParams)
-{
-    UsdTimeCode time = UsdTimeCode::Default();
-    const SdfPath meshSdfPath = mesh.GetPath();
-    desc.meshPrimKey = attachedStage ? attachedStage->keyFor(meshSdfPath) : omni::physics::parse::ObjectKey{};
-
-    Float3 scale = { 1.0f, 1.0f, 1.0f };
-    GfMatrix4d worldXf = attachedStage ? internal::getWorldTransform(*attachedStage, desc.meshPrimKey, time)
-                                       : mesh.ComputeLocalToWorldTransform(time);
-    const GfTransform tr(worldXf);
-    const GfVec3d sc = tr.GetScale();
-    GfVec3ToFloat3(sc, scale);
-    desc.meshScale = scale;
-    desc.convexCookingParams.signScale = omni::physx::usdparser::scaleToSignScale(desc.meshScale);
-
-    desc.convexCookingParams = cookingParams;
-    omni::physx::PhysxCookingComputeRequest request;
-    fillCookingRequest(request, mesh.GetPrim(), time);
-    // Provide the mesh geometry through IPhysicsSource so the cooking service
-    // computes the CRC over the source geometry rather than reading USD; same
-    // geometry feeds the cook (getConvexMesh), keeping the cache CRC consistent.
-    // The scope must outlive the synchronous submission below.
-    SourceMeshGeometryScope geomScope;
-    if (attachedStage)
-        fillCookingMeshViewFromSource(request, geomScope, *attachedStage, desc.meshPrimKey);
-    bool meshCRCComputedSuccessfully = false;
-    request.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
-        if (result.result != omni::physx::PhysxCookingResult::eVALID)
-            return;
-        meshCRCComputedSuccessfully = true;
-        desc.crc = result.cookedDataCRC;
-        desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshSdfPath, desc.meshKey);
-    };
-    IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
-    if (!cookingService)
-        return false;
-    cookingService->requestConvexMeshCookedData(nullptr, request, desc.convexCookingParams);
-    return meshCRCComputedSuccessfully;
-}
-
 bool fillConvexMeshDesc(AttachedStage* attachedStage, omni::physics::parse::ObjectKey meshKey, omni::physx::usdparser::ConvexMeshPhysxShapeDesc& desc, const omni::physx::ConvexMeshCookingParams& cookingParams)
 {
     if (!attachedStage || !meshKey.valid())
         return false;
 
-    const UsdTimeCode time = UsdTimeCode::Default();
-    const SdfPath meshSdfPath = attachedStage->pathFor(meshKey);
-    if (meshSdfPath.IsEmpty())
-        return false;
+    // Existence gate, backend-agnostic: equivalent to the once-USD-only
+    // pathFor(meshKey).IsEmpty() check (see fillCookingRequestFromSourceMesh above,
+    // which already relies on this same src->exists() form).
+    {
+        const omni::physics::parse::IPhysicsSource* src = attachedStage->getSource();
+        if (!src || !src->exists(meshKey))
+            return false;
+    }
 
+    const omni::physics::parse::ReadTime time = omni::physics::parse::ReadTime::defaultTime();
     desc.meshPrimKey = meshKey;
 
-    Float3 scale = { 1.0f, 1.0f, 1.0f };
-    const GfMatrix4d worldXf = internal::getWorldTransform(*attachedStage, desc.meshPrimKey, time);
-    const GfTransform tr(worldXf);
-    const GfVec3d sc = tr.GetScale();
-    GfVec3ToFloat3(sc, scale);
-    desc.meshScale = scale;
+    const ::physx::PxMat44d worldXf = internal::getWorldTransform(*attachedStage, desc.meshPrimKey, time);
+    // Signed per-axis scale, matching the GfTransform::GetScale() this replaced --
+    // scaleToSignScale() below depends on the sign for mirrored prims.
+    desc.meshScale = toFloat3(getScale(worldXf));
     desc.convexCookingParams.signScale = omni::physx::usdparser::scaleToSignScale(desc.meshScale);
 
     desc.convexCookingParams = cookingParams;
     omni::physx::PhysxCookingComputeRequest request;
-    gMeshKeyCache.getMeshKey(meshSdfPath, request.meshKey);
+    gMeshKeyCache.getMeshKey(meshKey, request.meshKey);
+    // primStageId/primId are correlation keys only (REQ-COOK-SOURCE-001 AC-1); attachHandle is
+    // the attach identity (ADR-0016 Decision 6).
     request.primStageId = uint64_t(attachedStage->getStageId());
-    request.primId = asInt(meshSdfPath);
-    request.primTimeCode = time.GetValue();
+    request.attachHandle = attachedStage->getAttachHandle();
+    request.primId = keyToLegacyPathInt(*attachedStage, meshKey);
     request.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kComputeAsynchronously, false);
     request.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kComputeGPUCookingData, true);
     request.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kExecuteCookingOnGPU, false);
@@ -701,157 +571,10 @@ bool fillConvexMeshDesc(AttachedStage* attachedStage, omni::physics::parse::Obje
         meshCRCComputedSuccessfully = true;
         desc.crc = result.cookedDataCRC;
         desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshSdfPath, desc.meshKey);
+        gMeshKeyCache.setMeshKey(meshKey, desc.meshKey);
     };
     IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
     cookingService->requestConvexMeshCookedData(nullptr, request, desc.convexCookingParams);
-    return meshCRCComputedSuccessfully;
-}
-
-bool fillConvexDecompositionDesc(AttachedStage* attachedStage, const UsdGeomMesh& mesh, omni::physx::usdparser::ConvexMeshDecompositionPhysxShapeDesc& desc, const omni::physx::ConvexDecompositionCookingParams& cookingParams)
-{
-    UsdTimeCode time = UsdTimeCode::Default();
-    const SdfPath meshSdfPath = mesh.GetPath();
-    desc.meshPrimKey = attachedStage ? attachedStage->keyFor(meshSdfPath) : omni::physics::parse::ObjectKey{};
-    desc.sdfMeshCookingParams.sdfResolution = 0;
-
-    Float3 scale = { 1.0f, 1.0f, 1.0f };
-    GfMatrix4d worldXf = attachedStage ? internal::getWorldTransform(*attachedStage, desc.meshPrimKey, time)
-                                       : mesh.ComputeLocalToWorldTransform(time);
-    const GfTransform tr(worldXf);
-    const GfVec3d sc = tr.GetScale();
-    GfVec3ToFloat3(sc, scale);
-    desc.meshScale = scale;
-    desc.convexDecompositionCookingParams.signScale = omni::physx::usdparser::scaleToSignScale(desc.meshScale);
-
-    desc.convexDecompositionCookingParams = cookingParams;
-
-    omni::physx::PhysxCookingComputeRequest request;
-    fillCookingRequest(request, mesh.GetPrim(), time);
-    // Feed the cooking service mesh geometry via IPhysicsSource so it does not
-    // read USD; same geometry as the cook keeps the cache CRC consistent.
-    // (Convex decomposition produces convex hulls — no per-face materials.)
-    SourceMeshGeometryScope geomScope;
-    if (attachedStage)
-        fillCookingMeshViewFromSource(request, geomScope, *attachedStage, desc.meshPrimKey);
-    bool meshCRCComputedSuccessfully = false;
-    request.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
-        if (result.result != omni::physx::PhysxCookingResult::eVALID)
-            return;
-        meshCRCComputedSuccessfully = true;
-        desc.crc = result.cookedDataCRC;
-        desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshSdfPath, desc.meshKey);
-    };
-    IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
-    if (!cookingService)
-        return false;
-    cookingService->requestConvexMeshDecompositionCookedData(nullptr, request, desc.convexDecompositionCookingParams);
-    return meshCRCComputedSuccessfully;
-}
-
-bool fillSphereFillDesc(AttachedStage* attachedStage, const UsdGeomMesh& mesh, omni::physx::usdparser::SpherePointsPhysxShapeDesc& desc, const omni::physx::SphereFillCookingParams& cookingParams)
-{
-    UsdTimeCode time = UsdTimeCode::Default();
-    const SdfPath meshSdfPath = mesh.GetPath();
-    desc.meshPrimKey = attachedStage ? attachedStage->keyFor(meshSdfPath) : omni::physics::parse::ObjectKey{};
-    desc.sdfMeshCookingParams.sdfResolution = 0;
-
-    Float3 scale = { 1.0f, 1.0f, 1.0f };
-    GfMatrix4d worldXf = attachedStage ? internal::getWorldTransform(*attachedStage, desc.meshPrimKey, time)
-                                       : mesh.ComputeLocalToWorldTransform(time);
-    const GfTransform tr(worldXf);
-    const GfVec3d sc = tr.GetScale();
-    GfVec3ToFloat3(sc, scale);
-    desc.meshScale = scale;
-    desc.sphereFillCookingParams.signScale = omni::physx::usdparser::scaleToSignScale(desc.meshScale);
-    desc.sphereFillCookingParams = cookingParams;
-
-    omni::physx::PhysxCookingComputeRequest request;
-    fillCookingRequest(request, mesh.GetPrim(), time);
-    // Feed the cooking service mesh geometry via IPhysicsSource so it does not
-    // read USD; same geometry as the cook keeps the cache CRC consistent.
-    // (Sphere fill produces spheres — no per-face materials.)
-    SourceMeshGeometryScope geomScope;
-    if (attachedStage)
-        fillCookingMeshViewFromSource(request, geomScope, *attachedStage, desc.meshPrimKey);
-    bool meshCRCComputedSuccessfully = false;
-    request.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
-        if (result.result != omni::physx::PhysxCookingResult::eVALID)
-            return;
-        meshCRCComputedSuccessfully = true;
-        desc.crc = result.cookedDataCRC;
-        desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshSdfPath, desc.meshKey);
-    };
-    IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
-    if (!cookingService)
-        return false;
-    cookingService->requestSphereFillCookedData(nullptr, request, desc.sphereFillCookingParams);
-    return meshCRCComputedSuccessfully;
-}
-
-bool fillTriangleMeshDesc(AttachedStage* attachedStage, const UsdGeomMesh& mesh, omni::physx::usdparser::TriangleMeshPhysxShapeDesc& desc, const omni::physx::TriangleMeshCookingParams& cookingParams)
-{
-    UsdTimeCode time = UsdTimeCode::Default();
-    const SdfPath meshSdfPath = mesh.GetPath();
-    desc.meshPrimKey = attachedStage ? attachedStage->keyFor(meshSdfPath) : omni::physics::parse::ObjectKey{};
-
-    desc.sdfMeshCookingParams.sdfResolution = 0;
-    desc.triangleMeshCookingParams = cookingParams;
-
-    omni::physx::PhysxCookingComputeRequest request;
-    fillCookingRequest(request, mesh.GetPrim(), time);
-    // Feed the cooking service mesh geometry (incl. per-face materials) via
-    // IPhysicsSource so it does not read USD; same geometry as the cook keeps
-    // the cache CRC consistent.
-    SourceMeshGeometryScope geomScope;
-    if (attachedStage)
-        fillCookingMeshViewFromSource(request, geomScope, *attachedStage, desc.meshPrimKey);
-    bool meshCRCComputedSuccessfully = false;
-    request.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
-        if (result.result != omni::physx::PhysxCookingResult::eVALID)
-            return;
-        meshCRCComputedSuccessfully = true;
-        desc.crc = result.cookedDataCRC;
-        desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshSdfPath, desc.meshKey);
-    };
-    IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
-    if (!cookingService)
-        return false;
-    cookingService->requestTriangleMeshCookedData(nullptr, request, desc.triangleMeshCookingParams);
-    return meshCRCComputedSuccessfully;
-}
-
-bool fillSdfTriangleMeshDesc(AttachedStage* attachedStage, const UsdGeomMesh& mesh, omni::physx::usdparser::TriangleMeshPhysxShapeDesc& desc, const omni::physx::SdfMeshCookingParams& cookingParams)
-{
-    UsdTimeCode time = UsdTimeCode::Default();
-    const SdfPath meshSdfPath = mesh.GetPath();
-    desc.meshPrimKey = attachedStage ? attachedStage->keyFor(meshSdfPath) : omni::physics::parse::ObjectKey{};
-
-    desc.sdfMeshCookingParams = cookingParams;
-    omni::physx::PhysxCookingComputeRequest request;
-    fillCookingRequest(request, mesh.GetPrim(), time);
-    // Feed the cooking service mesh geometry (incl. per-face materials) via
-    // IPhysicsSource so it does not read USD; same geometry as the cook keeps
-    // the cache CRC consistent.
-    SourceMeshGeometryScope geomScope;
-    if (attachedStage)
-        fillCookingMeshViewFromSource(request, geomScope, *attachedStage, desc.meshPrimKey);
-    bool meshCRCComputedSuccessfully = false;
-    request.onFinished = [&](const omni::physx::PhysxCookingComputeResult& result) {
-        if (result.result != omni::physx::PhysxCookingResult::eVALID)
-            return;
-        meshCRCComputedSuccessfully = true;
-        desc.crc = result.cookedDataCRC;
-        desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshSdfPath, desc.meshKey);
-    };
-    IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
-    if (!cookingService)
-        return false;
-    cookingService->requestSdfMeshCookedData(nullptr, request, desc.triangleMeshCookingParams, desc.sdfMeshCookingParams);
     return meshCRCComputedSuccessfully;
 }
 
@@ -860,24 +583,21 @@ bool fillConvexDecompositionDesc(AttachedStage* attachedStage, omni::physics::pa
     if (!attachedStage || !meshKey.valid())
         return false;
 
-    const UsdTimeCode time = UsdTimeCode::Default();
-    SdfPath meshSdfPath;
+    const omni::physics::parse::ReadTime time = omni::physics::parse::ReadTime::defaultTime();
     desc.meshPrimKey = meshKey;
     desc.sdfMeshCookingParams.sdfResolution = 0;
 
-    Float3 scale = { 1.0f, 1.0f, 1.0f };
-    const GfMatrix4d worldXf = internal::getWorldTransform(*attachedStage, desc.meshPrimKey, time);
-    const GfTransform tr(worldXf);
-    const GfVec3d sc = tr.GetScale();
-    GfVec3ToFloat3(sc, scale);
-    desc.meshScale = scale;
+    const ::physx::PxMat44d worldXf = internal::getWorldTransform(*attachedStage, desc.meshPrimKey, time);
+    // Signed per-axis scale, matching the GfTransform::GetScale() this replaced --
+    // scaleToSignScale() below depends on the sign for mirrored prims.
+    desc.meshScale = toFloat3(getScale(worldXf));
     desc.convexDecompositionCookingParams.signScale = omni::physx::usdparser::scaleToSignScale(desc.meshScale);
 
     desc.convexDecompositionCookingParams = cookingParams;
 
     omni::physx::PhysxCookingComputeRequest request;
     SourceMeshGeometryScope geomScope;
-    if (!fillCookingRequestFromSourceMesh(request, geomScope, attachedStage, meshKey, time, meshSdfPath))
+    if (!fillCookingRequestFromSourceMesh(request, geomScope, attachedStage, meshKey, time))
         return false;
 
     bool meshCRCComputedSuccessfully = false;
@@ -887,7 +607,7 @@ bool fillConvexDecompositionDesc(AttachedStage* attachedStage, omni::physics::pa
         meshCRCComputedSuccessfully = true;
         desc.crc = result.cookedDataCRC;
         desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshSdfPath, desc.meshKey);
+        gMeshKeyCache.setMeshKey(meshKey, desc.meshKey);
     };
     IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
     if (!cookingService)
@@ -901,23 +621,20 @@ bool fillSphereFillDesc(AttachedStage* attachedStage, omni::physics::parse::Obje
     if (!attachedStage || !meshKey.valid())
         return false;
 
-    const UsdTimeCode time = UsdTimeCode::Default();
-    SdfPath meshSdfPath;
+    const omni::physics::parse::ReadTime time = omni::physics::parse::ReadTime::defaultTime();
     desc.meshPrimKey = meshKey;
     desc.sdfMeshCookingParams.sdfResolution = 0;
 
-    Float3 scale = { 1.0f, 1.0f, 1.0f };
-    const GfMatrix4d worldXf = internal::getWorldTransform(*attachedStage, desc.meshPrimKey, time);
-    const GfTransform tr(worldXf);
-    const GfVec3d sc = tr.GetScale();
-    GfVec3ToFloat3(sc, scale);
-    desc.meshScale = scale;
+    const ::physx::PxMat44d worldXf = internal::getWorldTransform(*attachedStage, desc.meshPrimKey, time);
+    // Signed per-axis scale, matching the GfTransform::GetScale() this replaced --
+    // scaleToSignScale() below depends on the sign for mirrored prims.
+    desc.meshScale = toFloat3(getScale(worldXf));
     desc.sphereFillCookingParams.signScale = omni::physx::usdparser::scaleToSignScale(desc.meshScale);
     desc.sphereFillCookingParams = cookingParams;
 
     omni::physx::PhysxCookingComputeRequest request;
     SourceMeshGeometryScope geomScope;
-    if (!fillCookingRequestFromSourceMesh(request, geomScope, attachedStage, meshKey, time, meshSdfPath))
+    if (!fillCookingRequestFromSourceMesh(request, geomScope, attachedStage, meshKey, time))
         return false;
 
     bool meshCRCComputedSuccessfully = false;
@@ -927,7 +644,7 @@ bool fillSphereFillDesc(AttachedStage* attachedStage, omni::physics::parse::Obje
         meshCRCComputedSuccessfully = true;
         desc.crc = result.cookedDataCRC;
         desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshSdfPath, desc.meshKey);
+        gMeshKeyCache.setMeshKey(meshKey, desc.meshKey);
     };
     IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
     if (!cookingService)
@@ -941,15 +658,14 @@ bool fillTriangleMeshDesc(AttachedStage* attachedStage, omni::physics::parse::Ob
     if (!attachedStage || !meshKey.valid())
         return false;
 
-    const UsdTimeCode time = UsdTimeCode::Default();
-    SdfPath meshSdfPath;
+    const omni::physics::parse::ReadTime time = omni::physics::parse::ReadTime::defaultTime();
     desc.meshPrimKey = meshKey;
     desc.sdfMeshCookingParams.sdfResolution = 0;
     desc.triangleMeshCookingParams = cookingParams;
 
     omni::physx::PhysxCookingComputeRequest request;
     SourceMeshGeometryScope geomScope;
-    if (!fillCookingRequestFromSourceMesh(request, geomScope, attachedStage, meshKey, time, meshSdfPath))
+    if (!fillCookingRequestFromSourceMesh(request, geomScope, attachedStage, meshKey, time))
         return false;
 
     bool meshCRCComputedSuccessfully = false;
@@ -959,7 +675,7 @@ bool fillTriangleMeshDesc(AttachedStage* attachedStage, omni::physics::parse::Ob
         meshCRCComputedSuccessfully = true;
         desc.crc = result.cookedDataCRC;
         desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshSdfPath, desc.meshKey);
+        gMeshKeyCache.setMeshKey(meshKey, desc.meshKey);
     };
     IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
     if (!cookingService)
@@ -973,14 +689,13 @@ bool fillSdfTriangleMeshDesc(AttachedStage* attachedStage, omni::physics::parse:
     if (!attachedStage || !meshKey.valid())
         return false;
 
-    const UsdTimeCode time = UsdTimeCode::Default();
-    SdfPath meshSdfPath;
+    const omni::physics::parse::ReadTime time = omni::physics::parse::ReadTime::defaultTime();
     desc.meshPrimKey = meshKey;
     desc.sdfMeshCookingParams = cookingParams;
 
     omni::physx::PhysxCookingComputeRequest request;
     SourceMeshGeometryScope geomScope;
-    if (!fillCookingRequestFromSourceMesh(request, geomScope, attachedStage, meshKey, time, meshSdfPath))
+    if (!fillCookingRequestFromSourceMesh(request, geomScope, attachedStage, meshKey, time))
         return false;
 
     bool meshCRCComputedSuccessfully = false;
@@ -990,7 +705,7 @@ bool fillSdfTriangleMeshDesc(AttachedStage* attachedStage, omni::physics::parse:
         meshCRCComputedSuccessfully = true;
         desc.crc = result.cookedDataCRC;
         desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshSdfPath, desc.meshKey);
+        gMeshKeyCache.setMeshKey(meshKey, desc.meshKey);
     };
     IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
     if (!cookingService)
@@ -1004,9 +719,9 @@ void notifyStageReset(void)
     gMeshKeyCache.reset();
 }
 
-void invalidateMeshKeyCache(const SdfPath& path)
+void invalidateMeshKeyCache(omni::physics::parse::ObjectKey key)
 {
-    gMeshKeyCache.clearMeshKey(path);
+    gMeshKeyCache.clearMeshKey(key);
 }
 
 } // namespace usdparser

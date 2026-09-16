@@ -1,7 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
-# ovphysx SDK Installation Script (Cross-Platform)
+# @implements REQ-PACKAGING-DOCS-001
+# @covers AC-1
+# @implements REQ-PACKAGING-USDFREE-001
+# @covers AC-7
+
+# ovphysx SDK installation script (cross-platform).
 # Usage: cmake [options] -P scripts/install.cmake
 #
 # Prerequisites: Run scripts/build.cmake first to build the SDK
@@ -15,16 +20,15 @@
 #   cmake -DSKIP_GLIBC_CHECK=ON -P scripts/install.cmake
 #
 # What this does:
-#   - Performs CMake install (copies libraries, headers, config files to _install/)
+#   - Performs the CMake install (copies libraries, headers, config files to _install/)
 #   - Packages filtered native dependencies using deps_manifest.toml
-#   - Strips debug symbols on Linux (smart stripping: only new/modified files)
-#   - Verifies glibc/libstdc++ baseline
+#   - Strips debug symbols on Linux (only files that are still unstripped)
+#   - Verifies the glibc/libstdc++ baseline
 #   - Required for: C++ sample tests (validates find_package() integration)
-#   - Typical use: CI, pre-release validation, or when testing CMake package config
+#   - Typical use: CI, pre-release validation, or when testing the CMake package config
 
 cmake_minimum_required(VERSION 3.16)
 
-# Get script directory and project root
 get_filename_component(SCRIPT_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 get_filename_component(PROJECT_ROOT "${SCRIPT_DIR}/.." ABSOLUTE)
 
@@ -34,10 +38,9 @@ if(DEFINED OVPHYSX_USE_RELEASE_RUNTIME_DEPS
     set(_OVPHYSX_INSTALL_RUNTIME_DEPS_EXPLICIT TRUE)
 endif()
 
-# Include common build configuration
 include("${SCRIPT_DIR}/build_common.cmake")
 include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
-# Use target-deps Python (3.12) for scripts that need tomllib
+# The target-deps Python (3.12) provides tomllib for the packaging scripts.
 if(WIN32)
     set(TARGET_PYTHON "${PROJECT_ROOT}/_build/target-deps/python/python.exe")
     if(DEFINED ENV{SystemRoot})
@@ -60,7 +63,6 @@ if(NOT EXISTS "${TARGET_PYTHON}")
                         "Run scripts/fetch_deps.bat (Windows) or scripts/fetch_deps.sh (Linux) first.")
 endif()
 
-# Default values
 if(NOT DEFINED BUILD_DIR)
     set(BUILD_DIR "_build")
 endif()
@@ -103,8 +105,8 @@ if(BUILD_TYPE_LOWER STREQUAL "debug" AND NOT OVPHYSX_USE_RELEASE_RUNTIME_DEPS)
 endif()
 
 # Preserve the schema source selected by build.cmake when install.cmake is run
-# later as a separate step. A stamp means package the local schemas/physx build;
-# no stamp means package the prebuilt namespaced usd_ext_physics package.
+# later as a separate step. A stamp means package the local schemas/physx build.
+# No stamp means package the prebuilt namespaced usd_ext_physics package.
 if(NOT DEFINED OVPHYSX_DEV_SCHEMA)
     set(_DEV_SCHEMA_STAMP "${BUILD_PATH}/ovphysx_dev_schema.stamp")
     if(EXISTS "${_DEV_SCHEMA_STAMP}")
@@ -120,7 +122,6 @@ if(NOT "${OVPHYSX_DEV_SCHEMA}" MATCHES "^(ON|OFF|TRUE|FALSE|YES|NO|1|0)$")
     )
 endif()
 
-# Verify build exists
 if(NOT EXISTS "${BUILD_PATH}")
     message(FATAL_ERROR "Build directory not found: ${BUILD_PATH}\nPlease run: cmake -P scripts/build.cmake")
 endif()
@@ -131,13 +132,13 @@ message(STATUS "Project root: ${PROJECT_ROOT}")
 message(STATUS "Build type: ${BUILD_TYPE}")
 message(STATUS "Build directory: ${BUILD_DIR}")
 message(STATUS "Platform: ${CMAKE_HOST_SYSTEM_NAME}")
-message(STATUS "USD mode: namespaced")
+message(STATUS "USD: none shipped (ovstage brings its own runtime; codeless schemas staged as data)")
 message(STATUS "Static Carbonite: ON")
 message(STATUS "")
 
 # repo_licensing is internal-only (no public package exists) and is removed
 # from the public source drop's repo-deps manifest. Open-source builds skip
-# license gathering and produce no ovphysx-LICENSES.zip; official artifacts
+# license gathering and produce no ovphysx-LICENSES.zip. Official artifacts
 # with bundled third-party licenses come from internal builds.
 file(READ "${PROJECT_ROOT}/deps/repo-deps.packman.xml" _OVPHYSX_REPO_DEPS_CONTENT)
 if(_OVPHYSX_REPO_DEPS_CONTENT MATCHES "repo_licensing")
@@ -149,36 +150,33 @@ unset(_OVPHYSX_REPO_DEPS_CONTENT)
 
 if(OVPHYSX_LICENSING_AVAILABLE)
 
-# repo licensing evaluates ovruntime's packman imports relative to ovruntime/_build.
-# The ovphysx build fetches config-aware Kit SDK content into ovphysx/_build only,
-# so mirror the selected kit_sdk_<config>/dev metadata when ovruntime lacks it.
-set(OVPHYSX_KIT_SDK_DEV_DIR "${PROJECT_ROOT}/_build/target-deps/kit_sdk_${OVPHYSX_RUNTIME_DEPS_CONFIG}/dev")
-set(OVRUNTIME_KIT_SDK_DEV_DIR "${PROJECT_ROOT}/ovruntime/_build/target-deps/kit_sdk_${OVPHYSX_RUNTIME_DEPS_CONFIG}/dev")
-if(EXISTS "${OVPHYSX_KIT_SDK_DEV_DIR}/all-deps.packman.xml"
-   AND NOT EXISTS "${OVRUNTIME_KIT_SDK_DEV_DIR}/all-deps.packman.xml")
-    message(STATUS "Mirroring kit_sdk_${OVPHYSX_RUNTIME_DEPS_CONFIG} metadata into ovruntime target-deps for licensing...")
-    copy_tree_if_different("${OVPHYSX_KIT_SDK_DEV_DIR}" "${OVRUNTIME_KIT_SDK_DEV_DIR}")
-endif()
-
 message(STATUS "License gathering")
-set(OVPHYSX_LICENSE_IMPORT "deps/kit-deps-import.packman.xml")
+set(OVPHYSX_OVRUNTIME_LICENSE_IMPORT "deps/ovruntime-deps-import.packman.xml")
+set(OVPHYSX_CARB_LICENSE_IMPORT "deps/carb-sdk-deps-import.packman.xml")
 set(OVRUNTIME_DEPS_LICENSE_IMPORT "ovruntime/deps/ovruntime-deps.packman.xml")
 set(OVRUNTIME_LICENSE_IMPORT "ovruntime/deps/ovruntime-deps-import.packman.xml")
+set(OVRUNTIME_USD_LICENSE_IMPORT "ovruntime/deps/usd-deps.packman.xml")
+set(OVRUNTIME_CARB_LICENSE_IMPORT "ovruntime/deps/carb-sdk-deps-import.packman.xml")
 set(OVRUNTIME_SCHEMA_LICENSE_IMPORT "ovruntime/deps/schema-deps.packman.xml")
 execute_process(
     COMMAND "${PROJECT_ROOT}/repo${SCRIPT_SUFFIX}"
             --set-token abi:2_35
+            # usd_ver is a placeholder. It only builds the version string of a
+            # filtered-out ovruntime_deps entry that is never resolved, and does not track USD.
+            --set-token usd_ver:unused
             licensing gather -d . --fail
             --platform ${PLATFORM_NAME}
             --config ${OVPHYSX_RUNTIME_DEPS_CONFIG}
-            -p deps/kit-sdk-deps.packman.xml
-               ${OVPHYSX_LICENSE_IMPORT}
+            -p ${OVPHYSX_OVRUNTIME_LICENSE_IMPORT}
+               ${OVPHYSX_CARB_LICENSE_IMPORT}
                deps/carb-sdk-static.packman.xml
                deps/repo-deps.packman.xml
                ovruntime/deps/repo-deps.packman.xml
                ovruntime/deps/target-deps.packman.xml
                ${OVRUNTIME_DEPS_LICENSE_IMPORT}
                ${OVRUNTIME_LICENSE_IMPORT}
+               ${OVRUNTIME_USD_LICENSE_IMPORT}
+               ${OVRUNTIME_CARB_LICENSE_IMPORT}
                ${OVRUNTIME_SCHEMA_LICENSE_IMPORT}
     WORKING_DIRECTORY "${PROJECT_ROOT}"
     RESULT_VARIABLE LICENSE_GATHER_RESULT
@@ -186,7 +184,6 @@ execute_process(
 if(NOT LICENSE_GATHER_RESULT STREQUAL "0")
     message(FATAL_ERROR "Failed to gather licenses (exit code: ${LICENSE_GATHER_RESULT})")
 endif()
-# Verify license output was actually created
 set(LICENSE_OUTPUT "${PROJECT_ROOT}/_build/PACKAGE-LICENSES/ovphysx-LICENSES.zip")
 if(NOT EXISTS "${LICENSE_OUTPUT}")
     message(FATAL_ERROR "License gathering did not produce expected output: ${LICENSE_OUTPUT}")
@@ -203,7 +200,6 @@ endif()
 
 message(STATUS "Performing full installation with CMake packaging")
 
-# Local installation for testing and packaging
 message(STATUS "Placing a local installation of the package in ${PROJECT_ROOT}/_install")
 # CMake install is additive. Start from a clean generated tree so files from an
 # older SDK that bundled OVStage cannot survive into this package.
@@ -223,7 +219,7 @@ if(NOT EXISTS "${_OVSTAGE_NOTICES}")
 endif()
 
 
-# Preprocess and copy public Markdown docs, excluding internal docs.
+# Preprocess and copy public portable docs, excluding internal docs.
 # Docs land at _install/docs/ (same relative structure as source) so that
 # SDK_README.md links (docs/...) resolve correctly from _install/.
 include("${SCRIPT_DIR}/preprocess_docs.cmake")
@@ -232,8 +228,8 @@ preprocess_public_docs(
     "${PROJECT_ROOT}/docs" "${PROJECT_ROOT}/_install/docs"
 )
 
-# Copy SDK_README.md to _install/README.md (consumer-facing entry point).
-# Links use docs/ prefix, matching the installed layout.
+# SDK_README.md becomes _install/README.md, the consumer-facing entry point.
+# Its links use the docs/ prefix, matching the installed layout.
 execute_process(
     COMMAND "${TARGET_PYTHON}" "${SCRIPT_DIR}/preprocess_markdown.py"
         "${PROJECT_ROOT}/SDK_README.md" "${PROJECT_ROOT}/_install/README.md"
@@ -245,8 +241,8 @@ if(NOT _SDK_README_RESULT EQUAL 0)
     message(FATAL_ERROR "Failed to preprocess SDK_README.md")
 endif()
 
-# Copy skills index and skills for SDK consumers
-# (AGENTS.md is a monorepo developer doc and is intentionally NOT shipped.)
+# The skills index and skills ship with the SDK. AGENTS.md is a monorepo
+# developer doc and is intentionally not shipped.
 if(EXISTS "${PROJECT_ROOT}/SKILLS.md")
     copy_file_if_different("${PROJECT_ROOT}/SKILLS.md" "${PROJECT_ROOT}/_install/SKILLS.md")
     message(STATUS "  Copied SKILLS.md to _install/")
@@ -260,12 +256,12 @@ else()
     message(FATAL_ERROR "skills/ directory not found at ${PROJECT_ROOT}/skills")
 endif()
 
-# Copy public sample source code and data for SDK consumers
-# (This avoids duplicating sample code under skills/; ship what CI already tests.)
+# Public sample source code and data ship with the SDK. This avoids duplicating
+# sample code under skills/ and ships what CI already tests.
 set(SAMPLES_DST "${PROJECT_ROOT}/_install/samples")
 file(MAKE_DIRECTORY "${SAMPLES_DST}")
-# Do not ship Python samples in the C/C++ SDK artifact.
-# Remove any stale directory from previous installs to avoid confusing SDK consumers.
+# Python samples do not ship in the C/C++ SDK artifact. A stale directory from
+# a previous install would confuse SDK consumers.
 if(EXISTS "${SAMPLES_DST}/python_samples")
     file(REMOVE_RECURSE "${SAMPLES_DST}/python_samples")
 endif()
@@ -285,13 +281,13 @@ else()
 endif()
 
 # Package dependencies into flat _install/plugins/ structure.
-# Sources: ovruntime install, ovphysx target-deps, kit_sdk_<config>, ovruntime_deps via omni_physics.
+# Sources: ovruntime install, ovphysx target-deps, ovruntime_deps via omni_physics.
 message(STATUS "Packaging dependencies...")
 
-# ovruntime output follows NvidiaBuildOptions convention: PX_OUTPUT_LIB_DIR/<config_lower>
+# ovruntime output follows the NvidiaBuildOptions convention PX_OUTPUT_LIB_DIR/<config_lower>.
 set(OVRUNTIME_INSTALL_DIR "${BUILD_PATH}/${BUILD_TYPE_LOWER}")
 if(NOT EXISTS "${OVRUNTIME_INSTALL_DIR}" AND BUILD_TYPE_LOWER STREQUAL "release")
-    # devphysx remaps Release->checked
+    # devphysx remaps Release to checked.
     set(OVRUNTIME_INSTALL_DIR "${BUILD_PATH}/checked")
 endif()
 if(NOT EXISTS "${OVRUNTIME_INSTALL_DIR}")
@@ -300,8 +296,8 @@ if(NOT EXISTS "${OVRUNTIME_INSTALL_DIR}")
 endif()
 
 # package_deps must use the exact OVStage root selected by the configured build.
-# Never guess a sibling target-deps path here: an explicit OVSTAGE_DIR override
-# must remain the provider for every packaged runtime file and notice.
+# A sibling target-deps path is never guessed here, because an explicit OVSTAGE_DIR
+# override must remain the provider for every packaged runtime file and notice.
 file(STRINGS "${BUILD_PATH}/CMakeCache.txt" _OVPHYSX_OVSTAGE_DIR_CACHE_LINE
     REGEX "^_OVPHYSX_OVSTAGE_DIR:INTERNAL=")
 if(NOT _OVPHYSX_OVSTAGE_DIR_CACHE_LINE)
@@ -350,8 +346,8 @@ if(OVPHYSX_DEV_SCHEMA)
     list(APPEND _PACKAGE_DEPS_ARGS --devschema)
 endif()
 if(NOT OVPHYSX_LICENSING_AVAILABLE)
-    # Public source drop: license gathering was skipped above, so there is no
-    # ovphysx-LICENSES.zip for package_deps to merge OVStage notices into.
+    # In the public source drop license gathering was skipped above, so there is
+    # no ovphysx-LICENSES.zip for package_deps to merge OVStage notices into.
     list(APPEND _PACKAGE_DEPS_ARGS --no-license-archive)
 endif()
 
@@ -365,94 +361,16 @@ if(NOT PACKAGE_DEPS_RESULT EQUAL 0)
     message(FATAL_ERROR "Failed to package dependencies (exit code: ${PACKAGE_DEPS_RESULT})")
 endif()
 
-# Expose codeless PhysX USD schemas for external authoring/validation (OMPE-86833).
-# Derive them from the just-staged runtime schema under _install/plugins/usd so the
-# exposed codeless artifacts always match the schema revision ovphysx packages
-# against (packman usd_ext_physics by default, or a local build under --devschema),
-# and so new schema modules are picked up automatically. The exposed tree is laid
-# out as schemas/physx/<module>/resources/ (plugInfo.json normalized to a codeless
-# Type=resource plugin + generatedSchema.usda) so a stock usd-core can register it
-# via Plug.Registry().RegisterPlugins(). See ovphysx.codeless_schema_paths().
-execute_process(
-    COMMAND "${TARGET_PYTHON}" "${SCRIPT_DIR}/export_codeless_schema.py"
-        --plugins-usd-dir "${PROJECT_ROOT}/_install/plugins/usd"
-        --out-dir "${PROJECT_ROOT}/_install/schemas/physx"
-    WORKING_DIRECTORY "${PROJECT_ROOT}"
-    RESULT_VARIABLE EXPORT_CODELESS_RESULT
-)
-if(NOT EXPORT_CODELESS_RESULT EQUAL 0)
-    message(FATAL_ERROR "Failed to export codeless USD schemas (exit code: ${EXPORT_CODELESS_RESULT})")
-endif()
-
-# Remove hdStorm (Hydra Storm renderer) from _install/.
-# ovphysx ships headless simulation only -- no Hydra rendering. hdStorm is
-# pulled in transitively by USD target-deps but is not needed at runtime.
-# Removing it here (rather than excluding it in package_deps.py) keeps the
-# dep manifest simple and makes the pruning visible in install output.
-# Safe to remove: no ovphysx code imports or dlopen's hdStorm.
-file(GLOB _STORM_LIBS "${PROJECT_ROOT}/_install/plugins/hdStorm.*")
-foreach(_f IN LISTS _STORM_LIBS)
-    file(REMOVE "${_f}")
-    get_filename_component(_fname "${_f}" NAME)
-    message(STATUS "  Removed ${_fname} (not needed for simulation)")
-endforeach()
-set(_STORM_DIR "${PROJECT_ROOT}/_install/plugins/usd/hdStorm")
-if(IS_DIRECTORY "${_STORM_DIR}")
-    file(REMOVE_RECURSE "${_STORM_DIR}")
-    message(STATUS "  Removed usd/hdStorm/ registry (not needed for simulation)")
-endif()
-
-# Isolate GPU-only plugins into a separate subdirectory.
-# On Windows, nvcuda64.dll may be present system-wide even on machines without a GPU.
-# Plugins that call CUDA during carbOnPluginStartupEx (cubric, gpucompute-cuda) will
-# crash with 0xc0000409 (FAST_FAIL_INVALID_ARG) when the driver has no device context.
-# Carb's lazy plugin discovery (tryAcquireInterface) will find and LoadLibrary any DLL
-# on its search paths, so we must move GPU-only plugins out of the main plugins/ dir.
-# CarboniteLoader only adds plugins/gpu/ to its search paths when GPU is enabled.
-set(_GPU_PLUGIN_DIR "${PROJECT_ROOT}/_install/plugins/gpu")
-file(MAKE_DIRECTORY "${_GPU_PLUGIN_DIR}")
-# Leading '*' matches the Linux 'lib' prefix (libomni.*.plugin.so) as well as the
-# bare Windows name (omni.*.plugin.dll); without it the Linux GPU plugins were
-# never isolated into plugins/gpu/, so CarboniteLoader could not load the CUDA
-# compute backend and Fabric fell back to CPU-only (eRequireCuda).
-set(_GPU_PLUGIN_PATTERNS
-    "${PROJECT_ROOT}/_install/plugins/*omni.gpucompute-cuda.plugin*"
-    "${PROJECT_ROOT}/_install/plugins/*omni.cubric.plugin*"
-)
-file(GLOB _GPU_PLUGINS ${_GPU_PLUGIN_PATTERNS})
-foreach(_f IN LISTS _GPU_PLUGINS)
-    get_filename_component(_fname "${_f}" NAME)
-    file(RENAME "${_f}" "${_GPU_PLUGIN_DIR}/${_fname}")
-    message(STATUS "  Isolated GPU plugin: ${_fname} -> plugins/gpu/")
-endforeach()
-
-# Ensure the libtbb soname symlink the loader resolves (e.g. libtbb.so.12) exists in
-# _install/plugins next to its versioned real file (libtbb.so.12.13). c_unittests'
-# DT_RPATH (see --disable-new-dtags in tests/c_unittests/CMakeLists.txt) includes
-# _install/plugins, so with the soname symlink present the transitive libtbb dependency
-# of libovstage resolves at load time; without it the loader aborts with
-# "libtbb.so.12: cannot open shared object file" (seen on aarch64).
-if(NOT WIN32)
-    file(GLOB _TBB_DIAG_PRE "${PROJECT_ROOT}/_install/plugins/libtbb*")
-    message(STATUS "  [diag] _install/plugins libtbb (pre-fix): ${_TBB_DIAG_PRE}")
-    file(GLOB _TBB_VERSIONED "${PROJECT_ROOT}/_install/plugins/libtbb*.so.*.*")
-    foreach(_real IN LISTS _TBB_VERSIONED)
-        get_filename_component(_rn "${_real}" NAME)                                    # libtbb.so.12.13
-        string(REGEX REPLACE "^(.*\\.so\\.[0-9]+)\\.[0-9]+$" "\\1" _soname "${_rn}")    # libtbb.so.12
-        if(NOT "${_soname}" STREQUAL "${_rn}")
-            set(_link "${PROJECT_ROOT}/_install/plugins/${_soname}")
-            if(NOT EXISTS "${_link}")
-                file(CREATE_LINK "${_rn}" "${_link}" SYMBOLIC)
-                message(STATUS "  Created tbb soname symlink: plugins/${_soname} -> ${_rn}")
-            endif()
-        endif()
-    endforeach()
-endif()
+# The codeless PhysX USD schemas (schemas/physx/, OMPE-86833) are staged by
+# package_deps.py from the selected schema package (packman usd_ext_physics by
+# default, or a local build under --devschema). They are data only. The
+# application registers them with the USD runtime it owns. See
+# ovphysx_get_codeless_schema_root() and ovphysx.codeless_schema_root().
 
 # Copy PDB debug symbol files for Debug builds on Windows.
 # CMake install already handles ovphysx.pdb and ovphysx_internal.pdb (via CMakeLists.txt).
-# Here we also copy PDBs from the ovruntime output and plugins directory so that
-# dependency libraries are debuggable too.
+# The PDBs from the ovruntime output are copied as well so the dependency
+# libraries are debuggable too.
 if(WIN32 AND BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Copying debug symbol files (PDBs) for Debug build...")
     file(GLOB _OVRUNTIME_PDBS "${OVRUNTIME_INSTALL_DIR}/*.pdb")
@@ -463,7 +381,7 @@ if(WIN32 AND BUILD_TYPE STREQUAL "Debug")
     endforeach()
 endif()
 
-# Strip any ELF binaries that are currently unstripped (skip for Debug to preserve symbols)
+# Strip any ELF binaries that are still unstripped. Debug builds keep their symbols.
 if(NOT WIN32)
     if(BUILD_TYPE STREQUAL "Debug")
         message(STATUS "Skipping stripping for Debug build (preserving debug symbols)")
@@ -476,15 +394,15 @@ endif()
 verify_glibc_baseline("${PROJECT_ROOT}/_install" "_install tree")
 
 # Some shipped plugin libraries can carry stale build-tree RPATH/RUNPATH entries
-# from copied prebuilt plugins (for example:
+# from copied prebuilt plugins (for example
 # $ORIGIN:/.../ovphysx/ovruntime/_build/target-deps/usd/release/lib). The packaged
-# SDK is flat under _install/plugins, so remove target-deps entries before the
-# final verifier runs.
+# SDK is flat under _install/plugins, so target-deps entries are removed before
+# the final verifier runs.
 #
-# We detect the exact OLD_RPATH from `readelf -d` first, then rewrite only
-# libraries that actually contain target-deps. This works for explicit
-# --devschema builds, the prebuilt packman schema package, and the prebuilt
-# ovruntime_deps plugin payload.
+# The exact OLD_RPATH is read from `readelf -d` first, and only libraries that
+# contain target-deps are rewritten. This works for explicit --devschema builds,
+# the prebuilt packman schema package, and the prebuilt ovruntime_deps plugin
+# payload.
 if(NOT WIN32)
     # RPATH_CHANGE needs the literal "$ORIGIN" token, not CMake variable expansion.
     set(_PLUGIN_ORIGIN_RPATH "\$ORIGIN")
@@ -561,10 +479,10 @@ if(NOT WIN32)
     endforeach()
 endif()
 
-# Generate SDK packaging lock files (always, for CI artifacts).
+# Generate the SDK packaging lock files for CI artifacts.
 # generate_packaging_lock.py is an internal CI-only artifact-drift tracker and
-# is excluded from the open-source copy along with packaging_lock/. When it's
-# absent, the entire lock mechanism is skipped (the OSS build does not need it).
+# is excluded from the open-source copy along with packaging_lock/. When it is
+# absent, the entire lock mechanism is skipped. The OSS build does not need it.
 set(SDK_LOCK_SENTINEL "${PROJECT_ROOT}/_build/.sdk_lock_failed")
 if(EXISTS "${SDK_LOCK_SENTINEL}")
     file(REMOVE "${SDK_LOCK_SENTINEL}")
@@ -584,31 +502,31 @@ if(EXISTS "${SCRIPT_DIR}/generate_packaging_lock.py")
         message(FATAL_ERROR "Failed to generate SDK packaging lock files (exit code: ${LOCK_GEN_RESULT})")
     endif()
 
-    # Honor SKIP_LOCK_CHECK from either the -D form or the environment.  The env
-    # form lets validate_all.cmake forward the flag through its subprocess chain;
-    # see verify_glibc_baseline() in build_common.cmake for the same pattern.
+    # Honor SKIP_LOCK_CHECK from either the -D form or the environment. The env
+    # form lets validate_all.cmake forward the flag through its subprocess chain.
+    # See verify_glibc_baseline() in build_common.cmake for the same pattern.
     set(_OVPHYSX_SKIP_LOCK_CHECK FALSE)
     if(SKIP_LOCK_CHECK)
         set(_OVPHYSX_SKIP_LOCK_CHECK TRUE)
     elseif(DEFINED ENV{SKIP_LOCK_CHECK} AND "$ENV{SKIP_LOCK_CHECK}")
         set(_OVPHYSX_SKIP_LOCK_CHECK TRUE)
-        # Distinct message so a stale shell env doesn't silently skip the check
+        # Distinct message so a stale shell env does not silently skip the check
         # on a direct cmake -P invocation.
         message(STATUS "SKIP_LOCK_CHECK picked up from environment (not -D)")
     endif()
 
-    # Verify SDK against committed lock files
-    # On mismatch we write a sentinel and continue (WARNING, not FATAL_ERROR) so that
-    # build_wheel.cmake can still run and generate the wheel _new.json.  The deferred
-    # FATAL_ERROR is emitted by build_wheel.cmake after both _new.json files exist.
+    # Verify the SDK against the committed lock files. A mismatch writes a sentinel
+    # and continues (WARNING, not FATAL_ERROR) so that build_wheel.cmake can still
+    # run and generate the wheel _new.json. build_wheel.cmake emits the deferred
+    # FATAL_ERROR after both _new.json files exist.
     if(NOT _OVPHYSX_SKIP_LOCK_CHECK AND NOT BUILD_TYPE STREQUAL "Debug")
         message(STATUS "Checking SDK packaging lock...")
         # devphysx/from-source builds produce checked, locally built libraries that are
-        # legitimately larger than the prebuilt-release size baseline, so in that mode skip
-        # ONLY the size-delta check (the library set/layout is still enforced). The normal
-        # prebuilt-release path keeps the size check strict. BUILD_DEVPHYSX is the CI variable
-        # that drives ./build.sh --devphysx; it is empty on prebuilt-release builds and is
-        # visible to this cmake -P step as an environment variable (like SKIP_LOCK_CHECK).
+        # legitimately larger than the prebuilt-release size baseline, so that mode skips
+        # ONLY the size-delta check. The library set/layout is still enforced, and the
+        # normal prebuilt-release path keeps the size check strict. BUILD_DEVPHYSX is the
+        # CI variable that drives ./build.sh --devphysx. It is empty on prebuilt-release
+        # builds and reaches this cmake -P step as an environment variable (like SKIP_LOCK_CHECK).
         set(_OVPHYSX_LOCK_SIZE_ARGS)
         if(DEFINED ENV{BUILD_DEVPHYSX} AND NOT "$ENV{BUILD_DEVPHYSX}" STREQUAL "")
             list(APPEND _OVPHYSX_LOCK_SIZE_ARGS "--ignore-size-deltas")
@@ -640,26 +558,28 @@ else()
     message(STATUS "SDK packaging lock skipped (generate_packaging_lock.py not present)")
 endif()
 
-# Verify the shipped package is py-less and USD-isolated: no bundled libpython,
-# no libusd_python, no Python schema bindings, no classic modular USD, and no
-# build-tree Python RPATHs.
-message(STATUS "Verifying py-less package contents...")
+# Verify the shipped package is py-less and USD-free: no bundled libpython, no
+# OpenUSD library or USD dependency closure, no USD plugin registry, no Python
+# schema bindings, no build-tree Python RPATHs, and a complete codeless schema
+# tree under schemas/physx.
+message(STATUS "Verifying py-less, USD-free package contents...")
 execute_process(
     COMMAND "${TARGET_PYTHON}" "${SCRIPT_DIR}/verify_pyless_closure.py"
-            "--dir=${PROJECT_ROOT}/_install"
+            "--dir=${PROJECT_ROOT}/_install" --require-schemas
     WORKING_DIRECTORY "${PROJECT_ROOT}"
     RESULT_VARIABLE PYLESS_CHECK_RESULT
 )
 if(NOT PYLESS_CHECK_RESULT EQUAL 0)
     message(FATAL_ERROR
-        "Py-less package content verification failed for _install/.\n"
-        "The namespaced native package must not contain libpython, libusd_python,\n"
-        "Python schema bindings, classic USD libraries, or build-tree Python RPATH entries.\n"
+        "Package content verification failed for _install/.\n"
+        "The native package must not contain libpython, any OpenUSD library or its\n"
+        "dependency closure, a USD plugin registry, Python schema bindings, or\n"
+        "build-tree Python RPATH entries, and must ship schemas/physx.\n"
         "See verify_pyless_closure.py output above for details."
     )
 endif()
 
-# Copy binary license to install directory (Omniverse License for binary distributions)
+# The binary license is the Omniverse License for binary distributions.
 set(BINARY_LICENSE "${PROJECT_ROOT}/licenses/LICENSE-binary.txt")
 set(LICENSES_ZIP "${BUILD_PATH}/PACKAGE-LICENSES/ovphysx-LICENSES.zip")
 if(NOT EXISTS "${BINARY_LICENSE}")

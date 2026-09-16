@@ -1,16 +1,40 @@
-# ovphysx Source-Link Sample Test
-# Configures, builds, and runs the hello_world_source_link sample which uses
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# ovphysx source-link sample test.
+# Configures, builds, and runs the hello_world_source_link sample, which uses
 # add_subdirectory() to build against the ovphysx source tree.
 #
 # The build verifies that add_subdirectory() integration works (configure,
-# compile, link). For runtime execution, OVPHYSX_LIB points discovery at the
-# installed SDK layout since it has the complete flattened plugin tree.
+# compile, link). At runtime, OVPHYSX_LIB points discovery at the installed
+# SDK layout, which has the complete flattened plugin tree.
 #
-# Usage: cmake [-DBUILD_TYPE=Release] -P scripts/test_source_link.cmake
+# Usage: cmake [-DBUILD_TYPE=Release] [-DOVPHYSX_DEV_PHYSX=ON|OFF]
+#              [-DSOURCE_LINK_CONTEXT_FILE=<generated-context>]
+#              [-DSOURCE_LINK_GENERATOR=<manual-generator>]
+#              -P scripts/test_source_link.cmake
 
 cmake_minimum_required(VERSION 3.16)
 
 get_filename_component(SCRIPT_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
+include("${SCRIPT_DIR}/../cmake/SourceLinkContext.cmake")
+
+# CTest/custom-target processes may start without the Packman environment.
+# Restore it before build_common.cmake performs any find_program() calls.
+if(DEFINED SOURCE_LINK_CONTEXT_FILE AND NOT SOURCE_LINK_CONTEXT_FILE STREQUAL "")
+    if(NOT IS_ABSOLUTE "${SOURCE_LINK_CONTEXT_FILE}")
+        get_filename_component(SOURCE_LINK_CONTEXT_FILE
+            "${SOURCE_LINK_CONTEXT_FILE}" ABSOLUTE
+            BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+    endif()
+    if(NOT EXISTS "${SOURCE_LINK_CONTEXT_FILE}")
+        message(FATAL_ERROR
+            "Source-link context file not found: ${SOURCE_LINK_CONTEXT_FILE}")
+    endif()
+    include("${SOURCE_LINK_CONTEXT_FILE}")
+    ovphysx_apply_source_link_environment()
+endif()
+
 include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
 include("${SCRIPT_DIR}/build_common.cmake")
 
@@ -19,14 +43,19 @@ set(SAMPLE_BUILD_DIR "${PROJECT_ROOT}/_build/sample_tests/c_samples/hello_world_
 set(SAMPLE_NAME "hello_world_source_link")
 set(INSTALL_PATH "${PROJECT_ROOT}/_install")
 set(INSTALL_LIB_PATH "${INSTALL_PATH}/${INSTALL_RUNTIME_SUBDIR}/${SHARED_LIB_PREFIX}ovphysx${SHARED_LIB_SUFFIX}")
+if(NOT DEFINED OVPHYSX_DEV_PHYSX)
+    set(OVPHYSX_DEV_PHYSX OFF)
+endif()
 
 message(STATUS "")
 message(STATUS "=== Source-Link Sample Test (testing add_subdirectory workflow) ===")
 message(STATUS "Sample: ${SAMPLE_DIR}")
 message(STATUS "Build dir: ${SAMPLE_BUILD_DIR}")
 message(STATUS "Config: ${BUILD_TYPE}")
+message(STATUS "Development PhysX: ${OVPHYSX_DEV_PHYSX}")
+message(STATUS "Context: ${SOURCE_LINK_CONTEXT_FILE}")
 
-# Verify the installed SDK exists (needed for runtime plugins)
+# The installed SDK provides the runtime plugins.
 if(NOT EXISTS "${INSTALL_PATH}/plugins")
     message(FATAL_ERROR "Installed SDK not found at ${INSTALL_PATH}.\n"
                         "Run: cmake -P scripts/install.cmake")
@@ -50,46 +79,55 @@ elseif(EXISTS "${PROJECT_ROOT}/_build/CMakeCache.txt")
     endif()
 endif()
 
-# Clean and recreate build directory
 file(REMOVE_RECURSE "${SAMPLE_BUILD_DIR}")
 file(MAKE_DIRECTORY "${SAMPLE_BUILD_DIR}")
 
-# Build with the packaged toolchain the SDK was built with, not whatever Visual
-# Studio the machine has.
-set(_SOURCE_LINK_TOOLCHAIN_ARGS "")
-ovphysx_pin_packaged_host_toolchain(_SOURCE_LINK_TOOLCHAIN_ARGS)
+# Toolchain values that may contain CMake list separators are transported in an
+# initial-cache file instead of command-line -D arguments. Generator selection
+# remains separate so unsupported generators never receive -A or -T.
+set(_SOURCE_LINK_INITIAL_CACHE
+    "${SAMPLE_BUILD_DIR}/source_link_initial_cache.cmake")
+ovphysx_write_source_link_initial_cache("${_SOURCE_LINK_INITIAL_CACHE}")
+set(SOURCE_LINK_CUDA_TOOLSET_DIR
+    "${PROJECT_ROOT}/ovruntime/_build/target-deps/cuda")
+ovphysx_get_source_link_generator_args(
+    _SAMPLE_GENERATOR_ARGS _SAMPLE_GENERATOR
+    "${_SOURCE_LINK_INITIAL_CACHE}")
+message(STATUS "Generator: ${_SAMPLE_GENERATOR}")
 
-# Configure — deps should already be fetched by the main build, so skip auto-fetch
+# The main build has already fetched the deps, so auto-fetch is skipped.
 message(STATUS "Configuring ${SAMPLE_NAME}...")
 execute_process(
     COMMAND ${CMAKE_COMMAND}
-        "${SAMPLE_DIR}"
-        -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+        ${_SAMPLE_GENERATOR_ARGS}
+        -S "${SAMPLE_DIR}"
+        -B "${SAMPLE_BUILD_DIR}"
+        "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
         -DOVPHYSX_FETCH_DEPS=OFF
+        "-DOVPHYSX_DEV_PHYSX=${OVPHYSX_DEV_PHYSX}"
         ${_SOURCE_LINK_OVSTAGE_ARGS}
-        ${_SOURCE_LINK_TOOLCHAIN_ARGS}
-    WORKING_DIRECTORY "${SAMPLE_BUILD_DIR}"
+    WORKING_DIRECTORY "${PROJECT_ROOT}"
     RESULT_VARIABLE CONFIG_RESULT
 )
 if(NOT CONFIG_RESULT STREQUAL "0")
     message(FATAL_ERROR "${SAMPLE_NAME} configuration failed (exit code: ${CONFIG_RESULT})")
 endif()
 
-# Build (default target — includes ovphysx, ovruntime plugins, and the sample).
-# Bound parallelism: this rebuilds the full ovruntime/PhysX stack from source,
-# so an unbounded `--parallel` (== make -j) exhausts RAM and thrashes the box.
+# Build the default target, which includes ovphysx, the ovruntime plugins, and the sample.
+# Parallelism is bounded because this rebuilds the full ovruntime/PhysX stack from source,
+# and an unbounded `--parallel` (equivalent to make -j) exhausts RAM.
 ovphysx_compute_build_jobs(_SAMPLE_JOBS)
 message(STATUS "Building ${SAMPLE_NAME} (parallel ${_SAMPLE_JOBS})...")
 execute_process(
-    COMMAND ${CMAKE_COMMAND} --build . --parallel ${_SAMPLE_JOBS} --config ${BUILD_TYPE}
-    WORKING_DIRECTORY "${SAMPLE_BUILD_DIR}"
+    COMMAND ${CMAKE_COMMAND} --build "${SAMPLE_BUILD_DIR}"
+        --parallel ${_SAMPLE_JOBS} --config ${BUILD_TYPE}
+    WORKING_DIRECTORY "${PROJECT_ROOT}"
     RESULT_VARIABLE BUILD_RESULT
 )
 if(NOT BUILD_RESULT STREQUAL "0")
     message(FATAL_ERROR "${SAMPLE_NAME} build failed (exit code: ${BUILD_RESULT})")
 endif()
 
-# Find the executable
 file(GLOB_RECURSE SAMPLE_EXECUTABLE_LIST "${SAMPLE_BUILD_DIR}/*${SAMPLE_NAME}${EXE_SUFFIX}")
 if(NOT SAMPLE_EXECUTABLE_LIST)
     message(FATAL_ERROR "${SAMPLE_NAME} executable not found in ${SAMPLE_BUILD_DIR}")
@@ -98,10 +136,10 @@ list(GET SAMPLE_EXECUTABLE_LIST 0 SAMPLE_EXECUTABLE)
 message(STATUS "Found executable: ${SAMPLE_EXECUTABLE}")
 
 # Run using the installed SDK layout for runtime config/schema/plugin discovery.
-# The executable still finds its linked build-tree libraries via RPATH/DLL copy;
+# The executable still finds its linked build-tree libraries via RPATH/DLL copy.
 # OVPHYSX_LIB only anchors ovphysx runtime discovery at the installed SDK.
 if(WIN32)
-    # ovstage is not installed; use the external runtime on PATH.
+    # ovstage is not installed, so the external runtime is put on PATH.
     ovphysx_resolve_ovstage_paths()
     get_filename_component(SAMPLE_EXECUTABLE_DIR "${SAMPLE_EXECUTABLE}" DIRECTORY)
     set(_WINDOWS_PATH_SEGMENTS
@@ -110,6 +148,11 @@ if(WIN32)
         "${INSTALL_PATH}/plugins"
         "${INSTALL_PATH}/plugins/bin/deps"
         "${OVPHYSX_OVSTAGE_RUNTIME_DIR}"
+        # ovstage.dll statically imports the USD monolith, which lives in
+        # OVStage's plugins/ dir and which the SDK does not ship
+        # (REQ-PACKAGING-USDFREE-001 AC-4). Linux resolves it via ovstage's
+        # RUNPATH ($ORIGIN/plugins). Windows needs it on PATH.
+        "${OVPHYSX_OVSTAGE_RUNTIME_DIR}/plugins"
         "$ENV{SystemRoot}\\System32"
         "$ENV{SystemRoot}"
     )
@@ -129,7 +172,7 @@ if(WIN32)
         "OVPHYSX_LIB=${INSTALL_LIB_PATH}"
     )
 else()
-    # Clear LD_LIBRARY_PATH to verify the executable finds libs via RPATH alone.
+    # LD_LIBRARY_PATH is cleared to verify the executable finds its libraries via RPATH alone.
     set(_ENV_OVERRIDES "LD_LIBRARY_PATH=" "OVPHYSX_LIB=${INSTALL_LIB_PATH}")
 endif()
 

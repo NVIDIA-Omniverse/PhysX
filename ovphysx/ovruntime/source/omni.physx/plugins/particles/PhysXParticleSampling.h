@@ -1,14 +1,43 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-MATH-001
+ * @covers AC-8 AC-9
+ */
 
 #pragma once
 
-#include "UsdPCH.h"
+// PhysxParticleFactory/PhysxParticleSampler and the create/update/removeParticleSampler
+// free functions implement the mesh-sampling particle-emission workflow. Split per the
+// IPhysicsDataWrite pattern (ADR-0004/ADR-0005): everything here reads through
+// IPhysicsSource and writes through IPhysicsDataWrite, keyed by ObjectKey -- no pxr
+// dependency. A handful of genuinely USD-only cosmetic
+// side effects (hydra "skip" hint, sampler-mesh visibility, CRC-property removal, the
+// instancer prototype sphere radius) have no ovstage-native equivalent yet and stay
+// narrowly fenced at their call sites in the .cpp (matching CookingDataAsync.cpp's
+// storeVolumeDeformableBodyDataToUsd precedent), not declared here.
+// decomposeSamplerTransform is pure PxMat44d/PxMat33d math with no pxr dependency, and
+// TestMatrixTools.cpp pins its exact output bytes directly.
 
-#include <private/omni/physx/IPhysxParticlesPrivate.h>
+#include <private/omni/physx/ParticlePostFlag.h>
 #include <common/foundation/Allocator.h>
 
+#include <omni/physics/parse/Handles.h>
+
+#include <carb/Types.h>
 #include <PxPhysicsAPI.h>
+
+#include <unordered_map>
+
+// Convention for the sampler transforms below: they are element copies of the Gf
+// matrices they replaced (same doubles, same linear order), so each holds the
+// TRANSPOSE linear map of its Gf original - the tree-wide PhysX convention under
+// which Gf `A*B` becomes PhysX `B*A`. `shearScaleTransform`'s nine doubles are
+// memcpy'd verbatim into ParticlePoissonSamplingCookingParams::shearScale, which
+// is CRC'd into the cooking cache key and reinterpret_cast back to a PxMat33d by
+// omni.physx.cooking; the element-copy convention is exactly what keeps those
+// bytes unchanged.
 
 namespace omni
 {
@@ -18,7 +47,8 @@ namespace particles
 {
 
 class PhysxParticleSampler;
-typedef std::map<PXR_NS::SdfPath, PhysxParticleSampler*> PathToSamplerMap;
+typedef std::unordered_map<omni::physics::parse::ObjectKey, PhysxParticleSampler*, omni::physics::parse::ObjectKey::Hash>
+    PathToSamplerMap;
 
 /*
  *  Particle Factory: object that holds a ref and coordinates all the samplers going into the same
@@ -27,39 +57,39 @@ typedef std::map<PXR_NS::SdfPath, PhysxParticleSampler*> PathToSamplerMap;
 class PhysxParticleFactory : public Allocateable
 {
 public:
-    PhysxParticleFactory(PXR_NS::SdfPath particlePath);
+    PhysxParticleFactory(omni::physics::parse::ObjectKey particleKey);
     ~PhysxParticleFactory();
 
-    void addSampler(PXR_NS::SdfPath samplerPath);
-    bool updateSampler(PXR_NS::SdfPath samplerPath, bool forceResampling);
-    void removeSampler(PXR_NS::SdfPath samplerPath);
-    void processParticleSamplingResults(PXR_NS::SdfPath samplerPath,
-                                        const PXR_NS::GfVec3f* positions,
+    void addSampler(omni::physics::parse::ObjectKey samplerKey);
+    bool updateSampler(omni::physics::parse::ObjectKey samplerKey, bool forceResampling);
+    void removeSampler(omni::physics::parse::ObjectKey samplerKey);
+    void processParticleSamplingResults(omni::physics::parse::ObjectKey samplerKey,
+                                        const carb::Float3* positions,
                                         size_t numPoints,
                                         float pointWidth,
-                                        const PXR_NS::GfMatrix4d& rigidTransform,
-                                        const PXR_NS::GfMatrix3d& shearScaleTransform,
+                                        const ::physx::PxMat44d& rigidTransform,
+                                        const ::physx::PxMat33d& shearScaleTransform,
                                         bool registerOriginalCount);
     bool empty()
     {
         return mSamplers.empty();
     }
-    PhysxParticleSampler* getParticleSampler(PXR_NS::SdfPath samplerPath);
+    PhysxParticleSampler* getParticleSampler(omni::physics::parse::ObjectKey samplerKey);
 
     // static - callback for samplingResults
-    static void processSamplingResults(PXR_NS::SdfPath samplerPath,
-                                       PXR_NS::SdfPath particleSetPath,
-                                       const PXR_NS::GfVec3f* positions,
+    static void processSamplingResults(omni::physics::parse::ObjectKey samplerKey,
+                                       omni::physics::parse::ObjectKey particleSetKey,
+                                       const carb::Float3* positions,
                                        size_t numPoints,
                                        float pointWidth,
-                                       const PXR_NS::GfMatrix4d& rigidTransform,
-                                       const PXR_NS::GfMatrix3d& shearScaleTransform,
+                                       const ::physx::PxMat44d& rigidTransform,
+                                       const ::physx::PxMat33d& shearScaleTransform,
                                        bool registerOriginalCount);
 
-    static bool getDecomposedTransform(PXR_NS::SdfPath samplerPath,
-                                       PXR_NS::SdfPath particleSetPath,
-                                       PXR_NS::GfMatrix4d& rigidTransform,
-                                       PXR_NS::GfMatrix3d& shearScaleTransform);
+    static bool getDecomposedTransform(omni::physics::parse::ObjectKey samplerKey,
+                                       omni::physics::parse::ObjectKey particleSetKey,
+                                       ::physx::PxMat44d& rigidTransform,
+                                       ::physx::PxMat33d& shearScaleTransform);
 
 private:
     void moveStartIndices(int firstChangedIndex, int correction);
@@ -69,7 +99,7 @@ private:
     void resetStartAndCountForAllSamplers();
     void saveTotalCount();
 
-    PXR_NS::SdfPath mPath;
+    omni::physics::parse::ObjectKey mParticleKey;
     PathToSamplerMap mSamplers;
     bool mInitialized;
     bool mHasAuthoredSamplingResults;
@@ -89,18 +119,18 @@ private:
 class PhysxParticleSampler : public Allocateable
 {
 public:
-    PhysxParticleSampler(PXR_NS::SdfPath path, PXR_NS::SdfPath target);
+    PhysxParticleSampler(omni::physics::parse::ObjectKey key, omni::physics::parse::ObjectKey target);
     ~PhysxParticleSampler();
 
     bool update(bool forceResampling);
-    bool getDecomposedTransform(PXR_NS::GfMatrix4d& rigidTransform, PXR_NS::GfMatrix3d& shearScaleTransform) const;
-    bool checkTransforms(bool& resample, PXR_NS::GfMatrix4d& newRigidTransform);
+    bool getDecomposedTransform(::physx::PxMat44d& rigidTransform, ::physx::PxMat33d& shearScaleTransform) const;
+    bool checkTransforms(bool& resample, ::physx::PxMat44d& newRigidTransform);
 
-    bool processSamplingResults(const PXR_NS::GfVec3f* positions,
+    bool processSamplingResults(const carb::Float3* positions,
                                 size_t numPoints,
                                 float pointWidth,
-                                const PXR_NS::GfMatrix4d& rigidTransform,
-                                const PXR_NS::GfMatrix3d& shearScaleTransform,
+                                const ::physx::PxMat44d& rigidTransform,
+                                const ::physx::PxMat33d& shearScaleTransform,
                                 bool factoryInitialized,
                                 bool recreate,
                                 int& firstChangedIndex,
@@ -109,8 +139,8 @@ public:
 
     bool processSamplingRegistration(size_t numPoints,
                                      size_t totalRegisteredPoints,
-                                     const PXR_NS::GfMatrix4d& rigidTransform,
-                                     const PXR_NS::GfMatrix3d& shearScaleTransform);
+                                     const ::physx::PxMat44d& rigidTransform,
+                                     const ::physx::PxMat33d& shearScaleTransform);
 
     void moveStartIndex(int firstChangedIndex, int correction);
     uint32_t getStartIndex()
@@ -129,26 +159,36 @@ public:
     {
         mParticleCount = count;
     }
-    PXR_NS::SdfPath getTarget()
+    omni::physics::parse::ObjectKey getTarget()
     {
-        return mTarget;
+        return mTargetKey;
     }
 
 private:
-    void transformPoints(PXR_NS::GfMatrix4d& newRigidTransform);
+    void transformPoints(::physx::PxMat44d& newRigidTransform);
 
-    PXR_NS::SdfPath mSamplerPath;
-    PXR_NS::SdfPath mTarget;
+    omni::physics::parse::ObjectKey mSamplerKey;
+    omni::physics::parse::ObjectKey mTargetKey;
     uint32_t mStartIndex;
     uint32_t mParticleCount;
-    PXR_NS::GfMatrix4d mRigidTransform;
-    PXR_NS::GfMatrix3d mShearScaleTransform;
+    ::physx::PxMat44d mRigidTransform;
+    ::physx::PxMat33d mShearScaleTransform;
 };
 
-// IPhysxParticlesPrivate API
-void createParticleSampler(PXR_NS::SdfPath path, PXR_NS::SdfPath particlePrimPath);
-void updateParticleSampler(PXR_NS::SdfPath path, PXR_NS::SdfPath particlePrimPath, bool forceResampling);
-void removeParticleSampler(PXR_NS::SdfPath path, PXR_NS::SdfPath particlePrimPath);
+// Split the sampler's local-to-world into the rigid part the sampled points are
+// placed with and the shear/scale remainder that is hashed into the poisson
+// sampling cache key. Exposed (rather than file-local) so the exact-bits parity
+// pin in TestMatrixTools.cpp can compare the production bytes against Gf.
+bool decomposeSamplerTransform(const ::physx::PxMat44d& l2w,
+                               ::physx::PxMat44d& rigidTransform,
+                               ::physx::PxMat33d& shearScaleTransform);
+
+// Particle-sampler entry points (internal, ObjectKey-keyed)
+void createParticleSampler(omni::physics::parse::ObjectKey samplerKey, omni::physics::parse::ObjectKey particlePrimKey);
+void updateParticleSampler(omni::physics::parse::ObjectKey samplerKey,
+                           omni::physics::parse::ObjectKey particlePrimKey,
+                           bool forceResampling);
+void removeParticleSampler(omni::physics::parse::ObjectKey samplerKey, omni::physics::parse::ObjectKey particlePrimKey);
 
 } // namespace particles
 } // namespace physx

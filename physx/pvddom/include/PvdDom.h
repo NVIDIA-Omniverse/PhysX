@@ -1,35 +1,8 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
-
-// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-//
 
 #pragma once
 
@@ -43,7 +16,8 @@
 #include <cstring>
 #include <stdint.h>
 
-#define PX_PHYSICS_OVD_INTEGRATION_VERSION_MAJOR 1
+// Highest supported PhysX OVD integration major.
+#define PVDDOM_ACCEPTED_OVD_INTEG_VERSION_MAJOR 3
 
 enum OmniPvdPhysXClassEnum
 {
@@ -79,6 +53,7 @@ enum OmniPvdPhysXClassEnum
     ePxGeomTetMesh,
     ePxTetrahedronMesh,
     ePxDeformableVolumeMesh,
+    ePxPhysics,
     ePxUndefined
 };
 
@@ -237,6 +212,8 @@ public:
     bool mIsBitFieldEnum; // if (mIsEnumClass==true) { if (mIsBitFieldEnum==true) {is a bitField} else {holds a single
                           // enum value}
     bool mIsDefaultParsed;
+    // Marks each registered PxScene class generation.
+    bool mIsSceneClass;
 
     // Full inheritance chain from root ancestor to this class:
     //   [0]    = root base class (e.g. PxActor)
@@ -294,7 +271,6 @@ public:
     void insertChildFirst(OmniPvdObject* child);
     void removeChild(OmniPvdObject* child);
     OmniPvdObject* getChild(const std::string& name);
-    OmniPvdObject* findAncestorWithClass(OmniPvdClass* omniPvdClass);
 
     OmniPvdObjectHandle mOmniObjectHandle;
     OmniPvdObjectHandle mOmniAPIHandle; // PhysX pointer value in most cases
@@ -318,9 +294,17 @@ public:
     uint8_t mIsStaticVisibility;
     uint8_t mIsStaticVisible;
     uint32_t mActortype;
+    // True when an ancestor removal closed this object.
+    bool mReopenable;
+    // True after the actor type attribute is set.
+    bool mActortypeSet;
     OmniPvdObject* mReferenceObject;
     std::vector<OmniPvdObjectLifeSpan> mLifeSpans;
     bool mWasSDFCreated;
+    // True when a later recording segment recreates this handle.
+    bool mIsSupersedeRecreate;
+    // Recording segment that created this object.
+    uint64_t mRecordingSegmentId;
 
     OmniPvdObject* mAncestor;
     OmniPvdObject* mFirstChild;
@@ -441,6 +425,13 @@ public:
 
     uint64_t mMinFrame;
     uint64_t mMaxFrame;
+    // Frame ID of the most recent eSTART_FRAME.
+    uint64_t mLatestStartedFrame;
+    uint64_t mCurrentRecordingSegmentId;
+    std::vector<uint64_t> mRecordingSegmentMaxFrames;
+    bool mSawRecordingSegmentMetadata;
+    // Recreated objects still receiving their frame-zero snapshot.
+    std::vector<OmniPvdObject*> mSupersedeSnapshotObjects;
 
     // Instantiated by OmniPvdObjects in scenes
     OmniPvdClass* mSceneRootClass;
@@ -480,6 +471,8 @@ public:
 
     // These OmniPvdObjects live in the scenes layer
     OmniPvdObject* mSceneRoot; // path = /scenes
+    // Parent newly created scenes under this object.
+    OmniPvdObject* mLastPhysics;
 
     // These OmniPvdObjects live in the shared layer
     // Prim paths on the right
@@ -512,9 +505,11 @@ public:
 
     uint32_t mStreamOvdIntegVersionMajor;
     uint32_t mStreamOvdIntegVersionMinor;
+    // Track stream objects separately for metadata validation.
+    OmniPvdObject* mFirstStreamObject;
+    uint32_t mNbStreamObjectCreations;
 
     // PhysX specific
-    OmniPvdClass* mPxSceneClass;
     OmniPvdClass* mPxArticulationReducedCoordinateClass;
     OmniPvdClass* mPxArticulationLinkClass;
 };

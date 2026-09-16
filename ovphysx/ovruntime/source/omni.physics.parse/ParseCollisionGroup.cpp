@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-COLGROUP-001
@@ -24,8 +24,7 @@ CollisionGroupInfo parseCollisionGroup(ParseContext& ctx, ObjectKey key)
 {
     CollisionGroupInfo info;
 
-    KnownTokens tok;
-    tok.intern(ctx.source());
+    const KnownTokens& tok = ctx.knownTokens();
 
     // Filtered groups (other collision-group prims to filter against).
     ctx.source().getRelationshipTargets(key, tok.physicsFilteredGroups, info.filteredGroups);

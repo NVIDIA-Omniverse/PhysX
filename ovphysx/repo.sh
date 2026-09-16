@@ -13,20 +13,22 @@ export OMNI_REPO_ROOT="$( cd "$(dirname "$0")" ; pwd -P )"
 # can be non-UTF-8 on hosts with non-UTF-8 system locales and raises
 # UnicodeDecodeError on TOML/JSON/config files containing bytes that aren't valid
 # in that codepage. This env var is exported only for the duration of this script's
-# child processes (the `exec` below); the parent shell is not affected.
+# child processes (the `exec` below). The parent shell is not affected.
 export PYTHONUTF8=1
 
 # By default custom caching is disabled in repo_man. But if a repo-cache.json
-# caching configuration file is generated via the `repo cache` command, it's
+# caching configuration file is generated via the `repo cache` command, its
 # presence will trigger the configuration of custom caching.
 if [[ -f "${OMNI_REPO_ROOT}/repo-cache.json" ]]; then
     PM_PACKAGES_ROOT=$(grep '"PM_PACKAGES_ROOT"' "${OMNI_REPO_ROOT}/repo-cache.json" | sed 's/.*"PM_PACKAGES_ROOT": "\(.*\)".*/\1/')
 
-    # PM_PACKAGES_ROOT is present in the config file. We set this early
-    # so Packman will reference our cached package repository.
+    # PM_PACKAGES_ROOT is present in the config file. It is set early
+    # so Packman will reference the cached package repository.
     if [[ -n "${PM_PACKAGES_ROOT}" ]]; then
-        # Use eval to resolve ~ and perform parameter expansion
-        RESOLVED_PACKAGES_ROOT=$(eval echo "$PM_PACKAGES_ROOT")
+        # Expand a leading ~ to $HOME without `eval`. PM_PACKAGES_ROOT comes
+        # from repo-cache.json, and running it through the shell would let a
+        # crafted cache file execute arbitrary commands.
+        RESOLVED_PACKAGES_ROOT="${PM_PACKAGES_ROOT/#\~/$HOME}"
 
         if [[ "${RESOLVED_PACKAGES_ROOT}" != /* ]]; then
             # PM_PACKAGES_ROOT is not an abs path, assumption is then

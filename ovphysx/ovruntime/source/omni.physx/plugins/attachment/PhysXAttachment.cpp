@@ -1,17 +1,49 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-PARSE-CONSUMER-001
+ * @covers AC-24
+ *
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-23 AC-27 AC-30
+ *
+ * @implements REQ-WRITE-AUTHORING-001
+ * @covers AC-5
+ *
+ * @implements REQ-SIM-AUTOATTACH-001
+ * @covers AC-1 AC-3 AC-5
+ */
+
+// Auto-attachment sub prims exist in one of two forms (ADR-0028):
+//  * authored USD prims, created through usdBridge/AttachmentAuthoringBridge.h when the attach
+//    has a live USD stage (canAuthor()); the stage's change notices then create the objects;
+//  * an in-memory GeneratedAutoAttachmentLayout on the AttachedStage otherwise (ovstage), with
+//    the runtime objects created directly from it. Nothing is pushed back into the source.
+//
+// The payloads are authored through AttachedStage::getAuthoringDataWrite()
+// (REQ-WRITE-AUTHORING-001), never getDataWrite(): the ovstage sink is null by design, and the
+// authoring accessor falls back to a sink over the resident backing USD stage that resolves
+// ObjectKeys/TokenIds through the active (ovstage) source. That fallback is what keeps the
+// create gate -- canAuthor(), which asks about the live stage -- and the publish gate
+// agreeing, so an ovstage attach with a backing stage cannot end up with created-but-empty
+// attachment/filter prims. Without any stage the payload lives in the generated-data cache only.
 
 #include "PhysXAttachment.h"
 #include "PhysXTetFinder.h"
 #include "PhysXTriFinder.h"
 
+#include <omni/physics/parse/KnownTokens.h>
+
+#include <common/foundation/MatrixTools.h>
+
 #include <usdLoad/LoadUsd.h>
 #include <usdLoad/IceDescriptorAllocator.h>
 #include <usdLoad/ScannedShapeCookingDispatch.h>
 
-#include <internal/InternalTools.h>
+#include <omni/physics/parse/ScanBackend.h>
+#include <omni/physics/parse/ScannedStage.h>
+
 #include <usdInterface/UsdInterface.h>
 
 #include <PhysXScene.h>
@@ -19,11 +51,15 @@
 #include <ConeCylinderConvexMesh.h>
 #include <CookingDataAsync.h>
 
-#include <omni/physics/usd/StageScan.h>
-#include <omni/physics/usd/UsdDeformableAttachmentWrite.h>
-#include <UsdPhysicsDataWrite.h>
+// Every toPhysX()/toPhysXQuat() math-conversion call in this file (as opposed to the
+// GfVec3f/VtArray USD write-sink helpers above) takes a carb::Float2/3/4, never a Gf type --
+// despite this TU also pulling in PhysXTools.h, which brings the Gf-typed TypeCast.h overloads
+// too. Include the pxr-free half directly (same swap SplinesCurve.h made) so this file's own
+// math conversions do not rely on TypeCast.h/PhysXTools.h happening to supply them.
+#include <common/foundation/CarbPhysXCast.h>
 
-using namespace PXR_NS;
+#include <usdBridge/AttachmentAuthoringBridge.h>
+
 using namespace ::physx;
 using namespace omni::physx::usdparser;
 using namespace cookingdataasync;
@@ -32,8 +68,12 @@ using namespace cookingdataasync;
 #define sprintf_s snprintf
 #endif
 
-static const TfToken autoDeformableAttachmentInputCrcToken{ "physxAutoDeformableAttachment:inputCrc" };
-static const TfToken deformableBodyDataCrcToken("physxDeformableBody:deformableBodyDataCrc");
+// Plain names, interned to a TokenId per-call via IPhysicsSource::internToken (see
+// loadMeshKey/storeMeshKey below) rather than materialized as a TfToken once here --
+// these two CRC attributes are not part of KnownTokens' standard vocabulary, and this
+// keeps loadMeshKey/storeMeshKey pxr-free.
+static constexpr std::string_view autoDeformableAttachmentInputCrcToken{ "physxAutoDeformableAttachment:inputCrc" };
+static constexpr std::string_view deformableBodyDataCrcToken{ "physxDeformableBody:deformableBodyDataCrc" };
 
 namespace carb
 {
@@ -60,9 +100,6 @@ namespace physx
 {
 namespace
 {
-
-// schemaTypeToken lives in PhysXTools.h (single boundary translation).
-using omni::physx::internal::schemaTypeToken;
 
 struct PhysxAutoAttachmentDesc
 {
@@ -105,11 +142,11 @@ struct DeformableMeshInfo
     DeformableMeshInfo() : type(AttachmentActorType::eINVALID) { }
 
     AttachmentActorType::Enum type;
-    PXR_NS::SdfPath simMeshPath;
+    omni::physics::parse::ObjectKey simMeshKey;
     std::vector<uint32_t> simIndices;
     std::vector<carb::Float3> simPositions;
 
-    PXR_NS::SdfPath collMeshPath;
+    omni::physics::parse::ObjectKey collMeshKey;
     std::vector<uint32_t> collIndices;
     std::vector<uint32_t> collSurfaceTriIndices;
     std::vector<uint32_t> collSurfaceTriToTetMap;
@@ -172,55 +209,65 @@ void parsePhysxAutoAttachment(usdparser::AttachedStage& attachedStage,
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return;
-    const auto read = [&](const TfToken& attr, auto& out) {
-        src->getAttribute(autoAttachmentKey, src->internToken(attr.GetString()), out);
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    const auto read = [&](omni::physics::parse::TokenId attr, auto& out) {
+        src->getAttribute(autoAttachmentKey, attr, out);
     };
-    read(PhysxSchemaTokens->physxAutoDeformableAttachmentEnableDeformableVertexAttachments, autoAttachmentDesc.enableDeformableVertexAttachments);
-    read(PhysxSchemaTokens->physxAutoDeformableAttachmentDeformableVertexOverlapOffset, autoAttachmentDesc.deformableVertexOverlapOffset);
-    read(PhysxSchemaTokens->physxAutoDeformableAttachmentEnableRigidSurfaceAttachments, autoAttachmentDesc.enableRigidSurfaceAttachments);
-    read(PhysxSchemaTokens->physxAutoDeformableAttachmentRigidSurfaceSamplingDistance, autoAttachmentDesc.rigidSurfaceSamplingDistance);
-    read(PhysxSchemaTokens->physxAutoDeformableAttachmentEnableCollisionFiltering, autoAttachmentDesc.enableCollisionFiltering);
-    read(PhysxSchemaTokens->physxAutoDeformableAttachmentCollisionFilteringOffset, autoAttachmentDesc.collisionFilteringOffset);
-    read(PhysxSchemaTokens->physxAutoDeformableAttachmentEnableDeformableFilteringPairs, autoAttachmentDesc.enableDeformableFilteringPairs);
+    read(tok.physxAutoDeformableAttachmentEnableDeformableVertexAttachments, autoAttachmentDesc.enableDeformableVertexAttachments);
+    read(tok.physxAutoDeformableAttachmentDeformableVertexOverlapOffset, autoAttachmentDesc.deformableVertexOverlapOffset);
+    read(tok.physxAutoDeformableAttachmentEnableRigidSurfaceAttachments, autoAttachmentDesc.enableRigidSurfaceAttachments);
+    read(tok.physxAutoDeformableAttachmentRigidSurfaceSamplingDistance, autoAttachmentDesc.rigidSurfaceSamplingDistance);
+    read(tok.physxAutoDeformableAttachmentEnableCollisionFiltering, autoAttachmentDesc.enableCollisionFiltering);
+    read(tok.physxAutoDeformableAttachmentCollisionFilteringOffset, autoAttachmentDesc.collisionFilteringOffset);
+    read(tok.physxAutoDeformableAttachmentEnableDeformableFilteringPairs, autoAttachmentDesc.enableDeformableFilteringPairs);
 }
 
-void parseSingleTargetPathPair(usdparser::AttachedStage& attachedStage, SdfPath(&targetPaths)[2],
-                               omni::physics::parse::ObjectKey key, const TfToken relName0, const TfToken relName1)
+void parseSingleTargetKeyPair(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey(&targetKeys)[2],
+                              omni::physics::parse::ObjectKey key,
+                              omni::physics::parse::TokenId rel0, omni::physics::parse::TokenId rel1)
 {
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return;
-    const omni::physics::parse::TokenId rel0 = src->internToken(relName0.GetString());
-    const omni::physics::parse::TokenId rel1 = src->internToken(relName1.GetString());
     // Both targets are resolved only when both relationships are present;
-    // a single-valued target resolves to its path, anything else to empty.
+    // a single-valued target resolves to its key, anything else to invalid.
     if (src->hasRelationship(key, rel0) && src->hasRelationship(key, rel1))
     {
-        const auto resolveOne = [&](omni::physics::parse::TokenId rel) -> SdfPath {
+        const auto resolveOne = [&](omni::physics::parse::TokenId rel) -> omni::physics::parse::ObjectKey {
             std::vector<omni::physics::parse::ObjectKey> targets;
             src->getRelationshipTargets(key, rel, targets);
-            return targets.size() == 1 ? attachedStage.pathFor(targets[0]) : SdfPath();
+            return targets.size() == 1 ? targets[0] : omni::physics::parse::ObjectKey{};
         };
-        targetPaths[0] = resolveOne(rel0);
-        targetPaths[1] = resolveOne(rel1);
+        targetKeys[0] = resolveOne(rel0);
+        targetKeys[1] = resolveOne(rel1);
     }
 }
 
-void parseAttachablePaths(usdparser::AttachedStage& attachedStage, SdfPath(&attachablePaths)[2],
-                          omni::physics::parse::ObjectKey autoAttachmentKey)
+void parseAttachableKeys(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey(&attachableKeys)[2],
+                         omni::physics::parse::ObjectKey autoAttachmentKey)
 {
-    parseSingleTargetPathPair(attachedStage, attachablePaths, autoAttachmentKey,
-        PhysxSchemaTokens->physxAutoDeformableAttachmentAttachable0,
-        PhysxSchemaTokens->physxAutoDeformableAttachmentAttachable1);
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    if (!src)
+        return;
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    parseSingleTargetKeyPair(attachedStage, attachableKeys, autoAttachmentKey,
+        tok.physxAutoDeformableAttachmentAttachable0,
+        tok.physxAutoDeformableAttachmentAttachable1);
 }
 
 omni::physx::usdparser::MeshKey loadMeshKey(usdparser::AttachedStage& attachedStage,
                                             omni::physics::parse::ObjectKey key,
-                                            const TfToken& crcToken)
+                                            std::string_view crcTokenName)
 {
     omni::physx::usdparser::MeshKey meshKey;
-    VtArray<uchar> bytes;
-    if (internal::getArrayValue(attachedStage, key, crcToken, UsdTimeCode::Default(), bytes) &&
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    if (!src)
+        return meshKey;
+    const omni::physics::parse::TokenId crcToken = src->internToken(crcTokenName);
+    std::vector<uint8_t> bytes;
+    if (internal::getArrayValue(attachedStage, key, crcToken, omni::physics::parse::ReadTime::defaultTime(), bytes) &&
         bytes.size() == sizeof(meshKey))
     {
         std::memcpy(&meshKey, bytes.data(), sizeof(meshKey));
@@ -228,23 +275,34 @@ omni::physx::usdparser::MeshKey loadMeshKey(usdparser::AttachedStage& attachedSt
     return meshKey;
 }
 
+// Writes the input CRC through IPhysicsDataWrite::writeByteArrayAttribute on the *authoring*
+// sink (REQ-WRITE-AUTHORING-001), the same sink the generated payloads below go to: the CRC
+// is the cache key for those payloads, so storing it anywhere they are not stored would
+// declare a payload fresh that was never written. A null authoring sink (no backing stage at
+// all) is a no-op, so the next updateAutoDeformableAttachment call always recomputes
+// (inputCrc never matches a stored value), which is correct, just not cached.
 void storeMeshKey(usdparser::AttachedStage& attachedStage,
                   omni::physics::parse::ObjectKey key,
-                  const TfToken& crcToken,
+                  std::string_view crcTokenName,
                   const omni::physx::usdparser::MeshKey& meshKey)
 {
-    if (auto* usdDataWrite = omni::physics::usd::asUsdDataWrite(attachedStage.getDataWrite()))
+    if (omni::physics::parse::IPhysicsDataWrite* write = attachedStage.getAuthoringDataWrite())
     {
-        usdDataWrite->writeUCharArrayAttribute(key, crcToken,
-            reinterpret_cast<const uint8_t*>(&meshKey), sizeof(meshKey));
+        write->writeByteArrayAttribute(
+            key, crcTokenName, reinterpret_cast<const uint8_t*>(&meshKey), sizeof(meshKey));
     }
 }
 
+// Publishes the generated attachment point payloads through
+// IPhysicsDataWrite::writeVtx*Attachment/writeElementCollisionFilter on the *authoring* sink
+// (REQ-WRITE-AUTHORING-001), so an ovstage attach with a resident backing stage still authors
+// into it -- the attachment sub-prims were created on that same stage. Only a build with no
+// backing stage at all no-ops here; the generated data stays cached on the AttachedStage.
 void publishVtxTetAttachment(usdparser::AttachedStage& attachedStage,
                              omni::physics::parse::ObjectKey attachmentKey,
-                             const VtArray<int32_t>& vtxIndicesSrc0,
-                             const VtArray<int32_t>& tetIndicesSrc1,
-                             const VtArray<GfVec3f>& tetCoordsSrc1,
+                             const std::vector<int32_t>& vtxIndicesSrc0,
+                             const std::vector<int32_t>& tetIndicesSrc1,
+                             const std::vector<carb::Float3>& tetCoordsSrc1,
                              bool enabled)
 {
     GeneratedDeformableAttachmentData data;
@@ -255,15 +313,14 @@ void publishVtxTetAttachment(usdparser::AttachedStage& attachedStage,
     data.tetCoordsSrc1 = tetCoordsSrc1;
     attachedStage.setGeneratedDeformableAttachmentData(attachmentKey, data);
 
-    const SdfPath path = attachedStage.pathFor(attachmentKey);
-    omni::physics::usd::writeVtxTetAttachment(attachedStage.getStage(), path,
-        vtxIndicesSrc0, tetIndicesSrc1, tetCoordsSrc1, enabled);
+    if (omni::physics::parse::IPhysicsDataWrite* write = attachedStage.getAuthoringDataWrite())
+        write->writeVtxTetAttachment(attachmentKey, vtxIndicesSrc0, tetIndicesSrc1, tetCoordsSrc1, enabled);
 }
 
 void publishVtxXformAttachment(usdparser::AttachedStage& attachedStage,
                                omni::physics::parse::ObjectKey attachmentKey,
-                               const VtArray<int32_t>& vtxIndicesSrc0,
-                               const VtArray<GfVec3f>& localPositionsSrc1,
+                               const std::vector<int32_t>& vtxIndicesSrc0,
+                               const std::vector<carb::Float3>& localPositionsSrc1,
                                bool enabled)
 {
     GeneratedDeformableAttachmentData data;
@@ -273,17 +330,16 @@ void publishVtxXformAttachment(usdparser::AttachedStage& attachedStage,
     data.localPositionsSrc1 = localPositionsSrc1;
     attachedStage.setGeneratedDeformableAttachmentData(attachmentKey, data);
 
-    const SdfPath path = attachedStage.pathFor(attachmentKey);
-    omni::physics::usd::writeVtxXformAttachment(attachedStage.getStage(), path,
-        vtxIndicesSrc0, localPositionsSrc1, enabled);
+    if (omni::physics::parse::IPhysicsDataWrite* write = attachedStage.getAuthoringDataWrite())
+        write->writeVtxXformAttachment(attachmentKey, vtxIndicesSrc0, localPositionsSrc1, enabled);
 }
 
 void publishElementCollisionFilter(usdparser::AttachedStage& attachedStage,
                                    omni::physics::parse::ObjectKey filterKey,
-                                   const VtArray<uint32_t>& groupElemCounts0,
-                                   const VtArray<uint32_t>& groupElemIndices0,
-                                   const VtArray<uint32_t>& groupElemCounts1,
-                                   const VtArray<uint32_t>& groupElemIndices1,
+                                   const std::vector<uint32_t>& groupElemCounts0,
+                                   const std::vector<uint32_t>& groupElemIndices0,
+                                   const std::vector<uint32_t>& groupElemCounts1,
+                                   const std::vector<uint32_t>& groupElemIndices1,
                                    bool enabled)
 {
     GeneratedDeformableCollisionFilterData data;
@@ -294,19 +350,21 @@ void publishElementCollisionFilter(usdparser::AttachedStage& attachedStage,
     data.groupElemIndices1 = groupElemIndices1;
     attachedStage.setGeneratedDeformableCollisionFilterData(filterKey, data);
 
-    const SdfPath path = attachedStage.pathFor(filterKey);
-    omni::physics::usd::writeElementCollisionFilter(attachedStage.getStage(), path,
-        groupElemCounts0, groupElemIndices0, groupElemCounts1, groupElemIndices1, enabled);
+    if (omni::physics::parse::IPhysicsDataWrite* write = attachedStage.getAuthoringDataWrite())
+        write->writeElementCollisionFilter(
+            filterKey, groupElemCounts0, groupElemIndices0, groupElemCounts1, groupElemIndices1, enabled);
 }
 
 PhysxShapeDesc* prepareScannedShapeForAttachment(usdparser::AttachedStage& attachedStage,
-                                                 omni::physics::usd::ScannedStage& scanned,
-                                                 const SdfPath& shapePath)
+                                                 omni::physics::parse::ScannedStage& scanned,
+                                                 std::string_view shapePathText)
 {
+    const omni::physics::parse::IPhysicsSource& scanSrc = scanned.source();
     PhysxShapeDesc* scanDesc = nullptr;
     for (auto& shape : scanned.shapes)
     {
-        if (scanned.pathFor(shape->primKey) == shapePath || scanned.pathFor(shape->sourceGprim) == shapePath)
+        if (scanSrc.sourceKeyToString(shape->primKey) == shapePathText ||
+            scanSrc.sourceKeyToString(shape->sourceGprim) == shapePathText)
         {
             scanDesc = shape.get();
             break;
@@ -318,14 +376,14 @@ PhysxShapeDesc* prepareScannedShapeForAttachment(usdparser::AttachedStage& attac
     usdparser::scan::dispatchScannedShapeCooking(attachedStage, scanned, scanDesc);
 
     if (scanDesc->rigidBody.valid())
-        scanDesc->rigidBody = attachedStage.keyFor(scanned.pathFor(scanDesc->rigidBody));
+        scanDesc->rigidBody = attachedStage.keyFor(scanSrc.sourceKeyToString(scanDesc->rigidBody));
     if (scanDesc->sourceGprim.valid())
-        scanDesc->sourceGprim = attachedStage.keyFor(scanned.pathFor(scanDesc->sourceGprim));
+        scanDesc->sourceGprim = attachedStage.keyFor(scanSrc.sourceKeyToString(scanDesc->sourceGprim));
     if (scanDesc->type == eConvexMeshShape)
     {
         auto* d = static_cast<ConvexMeshPhysxShapeDesc*>(scanDesc);
         if (d->meshPrimKey.valid())
-            d->meshPrimKey = attachedStage.keyFor(scanned.pathFor(d->meshPrimKey));
+            d->meshPrimKey = attachedStage.keyFor(scanSrc.sourceKeyToString(d->meshPrimKey));
     }
     else if (scanDesc->type == eTriangleMeshShape ||
              scanDesc->type == eConvexMeshDecompositionShape ||
@@ -333,7 +391,7 @@ PhysxShapeDesc* prepareScannedShapeForAttachment(usdparser::AttachedStage& attac
     {
         auto* d = static_cast<TriangleMeshPhysxShapeDesc*>(scanDesc);
         if (d->meshPrimKey.valid())
-            d->meshPrimKey = attachedStage.keyFor(scanned.pathFor(d->meshPrimKey));
+            d->meshPrimKey = attachedStage.keyFor(scanSrc.sourceKeyToString(d->meshPrimKey));
     }
     return scanDesc;
 }
@@ -432,17 +490,23 @@ bool mapSurfaceTrisToTets(uint32_t* surfaceTriToTetMap, const uint32_t* surfaceT
     return true;
 }
 
-bool parseTetMeshSurface(usdparser::AttachedStage& attachedStage, const PXR_NS::SdfPath& tetMeshPath,
+bool parseTetMeshSurface(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey tetMeshKey,
                          std::vector<uint32_t>& surfaceTriVtxIndices, std::vector<uint32_t>& surfaceTriToTetMap)
 {
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    if (!src)
+        return false;
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+
     // need to query USD surfaceFaceVertexIndices, for consistency.
-    VtArray<GfVec3i> surfaceFaceVertexIndices;
-    internal::getArrayValue(attachedStage, tetMeshPath, UsdGeomTokens->surfaceFaceVertexIndices,
-                            UsdTimeCode::Default(), surfaceFaceVertexIndices);
+    std::vector<carb::Int3> surfaceFaceVertexIndices;
+    internal::getArrayValue(attachedStage, tetMeshKey, tok.surfaceFaceVertexIndices,
+                            omni::physics::parse::ReadTime::defaultTime(), surfaceFaceVertexIndices);
 
     if (surfaceFaceVertexIndices.size() == 0)
     {
-        CARB_LOG_WARN("UsdGeomTetMesh is missing surface face vertex indices, %s.", tetMeshPath.GetText());
+        CARB_LOG_WARN("UsdGeomTetMesh is missing surface face vertex indices, %s.", attachedStage.textFor(tetMeshKey));
         return false;
     }
 
@@ -450,9 +514,9 @@ bool parseTetMeshSurface(usdparser::AttachedStage& attachedStage, const PXR_NS::
     std::memcpy(surfaceTriVtxIndices.data(), surfaceFaceVertexIndices.data(), surfaceTriVtxIndices.size()*sizeof(uint32_t));
 
     // generate surface to tet map
-    VtArray<GfVec4i> tetVertexIndices;
-    internal::getArrayValue(attachedStage, tetMeshPath, UsdGeomTokens->tetVertexIndices,
-                            UsdTimeCode::Default(), tetVertexIndices);
+    std::vector<carb::Int4> tetVertexIndices;
+    internal::getArrayValue(attachedStage, tetMeshKey, tok.tetVertexIndices,
+                            omni::physics::parse::ReadTime::defaultTime(), tetVertexIndices);
 
     surfaceTriToTetMap.resize(surfaceFaceVertexIndices.size());
     bool success = mapSurfaceTrisToTets(surfaceTriToTetMap.data(),
@@ -463,21 +527,22 @@ bool parseTetMeshSurface(usdparser::AttachedStage& attachedStage, const PXR_NS::
 
     if (!success)
     {
-        CARB_LOG_WARN("UsdGeomTetMesh, failed to map surface faces to tets, %s.", tetMeshPath.GetText());
+        CARB_LOG_WARN("UsdGeomTetMesh, failed to map surface faces to tets, %s.", attachedStage.textFor(tetMeshKey));
         return false;
     }
 
     return true;
 }
 
-void getColliders(usdparser::AttachedStage& attachedStage, std::vector<SdfPath>& colliders, omni::physics::parse::ObjectKey rootKey)
+void getColliders(usdparser::AttachedStage& attachedStage, std::vector<omni::physics::parse::ObjectKey>& colliders, omni::physics::parse::ObjectKey rootKey)
 {
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src || !src->exists(rootKey))
         return;
-    const omni::physics::parse::TokenId deformableBodyTok =
-        src->internToken(OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsDeformableBodyAPI.GetString());
-    const omni::physics::parse::TokenId collisionTok = schemaTypeToken<UsdPhysicsCollisionAPI>(*src);
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    const omni::physics::parse::TokenId deformableBodyTok = tok.omniphysicsDeformableBodyAPI;
+    const omni::physics::parse::TokenId collisionTok = tok.physicsCollisionAPI;
 
     // Active subtree, descending through instance proxies (matches the
     // legacy UsdTraverseInstanceProxies walk). Returning true prunes.
@@ -488,7 +553,7 @@ void getColliders(usdparser::AttachedStage& attachedStage, std::vector<SdfPath>&
             {
                 if (src->hasSchema(key, collisionTok))
                 {
-                    colliders.push_back(attachedStage.pathFor(key));
+                    colliders.push_back(key);
                     return true;
                 }
                 return false; // descend into children
@@ -504,7 +569,7 @@ void getColliders(usdparser::AttachedStage& attachedStage, std::vector<SdfPath>&
                 return true;
             if (src->hasSchema(key, collisionTok))
             {
-                colliders.push_back(attachedStage.pathFor(key));
+                colliders.push_back(key);
                 return true;
             }
             return false;
@@ -512,29 +577,63 @@ void getColliders(usdparser::AttachedStage& attachedStage, std::vector<SdfPath>&
         omni::physics::parse::DescendantScope::eActiveInstanced);
 }
 
+// Visits the Attachment / ElementCollisionFilter children of `type` under an auto-attachment
+// prim with (childKey, src0, src1). An in-memory layout (attach that cannot author sub-prims)
+// takes precedence over the source's children, which is what lets the update path below run
+// unchanged on both.
+template <typename Fn>
+void forEachAutoAttachmentChild(usdparser::AttachedStage& attachedStage,
+                                omni::physics::parse::ObjectKey autoAttachmentKey,
+                                omni::physics::parse::ObjectType type,
+                                omni::physics::parse::TokenId typeToken,
+                                Fn&& fn)
+{
+    if (const GeneratedAutoAttachmentLayout* layout = attachedStage.getGeneratedAutoAttachmentLayout(autoAttachmentKey))
+    {
+        for (const GeneratedAutoAttachmentChild& child : layout->children)
+        {
+            if (child.type == type)
+                fn(child.key, child.src0, child.src1);
+        }
+        return;
+    }
+
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    if (!src)
+        return;
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    src->forEachChild(autoAttachmentKey,
+        [&](omni::physics::parse::ObjectKey childKey)
+        {
+            if (!src->isA(childKey, typeToken))
+                return;
+            omni::physics::parse::ObjectKey srcKeys[2];
+            parseSingleTargetKeyPair(attachedStage, srcKeys, childKey, tok.omniphysicsSrc0, tok.omniphysicsSrc1);
+            fn(childKey, srcKeys[0], srcKeys[1]);
+        });
+}
+
 bool getVtxXformAttachment(usdparser::AttachedStage& attachedStage,
     omni::physics::parse::ObjectKey& attachmentKey,
     omni::physics::parse::ObjectKey autoAttachmentKey,
-    const SdfPath& simMeshPath, const SdfPath& xformablePath)
+    omni::physics::parse::ObjectKey simMeshKey, omni::physics::parse::ObjectKey xformableKey)
 {
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return false;
-    const omni::physics::parse::TokenId vtxXformTok =
-        src->internToken(OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsVtxXformAttachment.GetString());
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
     // Only the FIRST VtxXformAttachment child is considered (match or not).
     bool done = false, result = false;
-    src->forEachChild(autoAttachmentKey,
-        [&](omni::physics::parse::ObjectKey childKey)
+    forEachAutoAttachmentChild(attachedStage, autoAttachmentKey, eAttachmentVtxXform, tok.OmniPhysicsVtxXformAttachment,
+        [&](omni::physics::parse::ObjectKey childKey, omni::physics::parse::ObjectKey src0, omni::physics::parse::ObjectKey src1)
         {
-            if (done || !src->isA(childKey, vtxXformTok))
+            if (done)
                 return;
             done = true;
             attachmentKey = childKey;
-            SdfPath srcPaths[2];
-            parseSingleTargetPathPair(attachedStage, srcPaths, childKey,
-                OmniUsdPhysicsDeformableSchemaTokens->omniphysicsSrc0, OmniUsdPhysicsDeformableSchemaTokens->omniphysicsSrc1);
-            result = srcPaths[0] == simMeshPath && srcPaths[1] == xformablePath;
+            result = src0 == simMeshKey && src1 == xformableKey;
         });
     return result;
 }
@@ -542,26 +641,23 @@ bool getVtxXformAttachment(usdparser::AttachedStage& attachedStage,
 bool getVtxTetAttachment(usdparser::AttachedStage& attachedStage,
     omni::physics::parse::ObjectKey& attachmentKey,
     omni::physics::parse::ObjectKey autoAttachmentKey,
-    const SdfPath& vtxSimMeshPath, const SdfPath& tetSimMeshPath)
+    omni::physics::parse::ObjectKey vtxSimMeshKey, omni::physics::parse::ObjectKey tetSimMeshKey)
 {
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return false;
-    const omni::physics::parse::TokenId vtxTetTok =
-        src->internToken(OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsVtxTetAttachment.GetString());
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
     // All VtxTetAttachment children are scanned, updating attachmentKey
     // each time; returns true on the first whose targets match.
     bool result = false;
-    src->forEachChild(autoAttachmentKey,
-        [&](omni::physics::parse::ObjectKey childKey)
+    forEachAutoAttachmentChild(attachedStage, autoAttachmentKey, eAttachmentVtxTet, tok.OmniPhysicsVtxTetAttachment,
+        [&](omni::physics::parse::ObjectKey childKey, omni::physics::parse::ObjectKey src0, omni::physics::parse::ObjectKey src1)
         {
-            if (result || !src->isA(childKey, vtxTetTok))
+            if (result)
                 return;
             attachmentKey = childKey;
-            SdfPath srcPaths[2];
-            parseSingleTargetPathPair(attachedStage, srcPaths, childKey,
-                OmniUsdPhysicsDeformableSchemaTokens->omniphysicsSrc0, OmniUsdPhysicsDeformableSchemaTokens->omniphysicsSrc1);
-            if (srcPaths[0] == vtxSimMeshPath && srcPaths[1] == tetSimMeshPath)
+            if (src0 == vtxSimMeshKey && src1 == tetSimMeshKey)
                 result = true;
         });
     return result;
@@ -570,18 +666,20 @@ bool getVtxTetAttachment(usdparser::AttachedStage& attachedStage,
 bool getElementCollisionFilters(usdparser::AttachedStage& attachedStage,
     std::vector<omni::physics::parse::ObjectKey>& filterKeys,
     omni::physics::parse::ObjectKey autoAttachmentKey,
-    std::vector<SdfPath>& rigidColliders, const SdfPath& deformableColliderPath)
+    std::vector<omni::physics::parse::ObjectKey>& rigidColliders, omni::physics::parse::ObjectKey deformableColliderKey)
 {
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return false;
-    const omni::physics::parse::TokenId filterTok =
-        src->internToken(OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsElementCollisionFilter.GetString());
-    src->forEachChild(autoAttachmentKey,
-        [&](omni::physics::parse::ObjectKey childKey)
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    std::vector<omni::physics::parse::ObjectKey> srcKeys0, srcKeys1;
+    forEachAutoAttachmentChild(attachedStage, autoAttachmentKey, eDeformableCollisionFilter, tok.OmniPhysicsElementCollisionFilter,
+        [&](omni::physics::parse::ObjectKey childKey, omni::physics::parse::ObjectKey src0, omni::physics::parse::ObjectKey src1)
         {
-            if (src->isA(childKey, filterTok))
-                filterKeys.push_back(childKey);
+            filterKeys.push_back(childKey);
+            srcKeys0.push_back(src0);
+            srcKeys1.push_back(src1);
         });
 
     if (filterKeys.size() != rigidColliders.size())
@@ -590,10 +688,7 @@ bool getElementCollisionFilters(usdparser::AttachedStage& attachedStage,
     }
     for (size_t f = 0; f < filterKeys.size(); ++f)
     {
-        SdfPath srcPaths[2];
-        parseSingleTargetPathPair(attachedStage, srcPaths, filterKeys[f],
-            OmniUsdPhysicsDeformableSchemaTokens->omniphysicsSrc0, OmniUsdPhysicsDeformableSchemaTokens->omniphysicsSrc1);
-        if (srcPaths[0] != deformableColliderPath || srcPaths[1] != rigidColliders[f])
+        if (srcKeys0[f] != deformableColliderKey || srcKeys1[f] != rigidColliders[f])
         {
             return false;
         }
@@ -604,39 +699,30 @@ bool getElementCollisionFilters(usdparser::AttachedStage& attachedStage,
 bool getElementCollisionFilter(usdparser::AttachedStage& attachedStage,
     omni::physics::parse::ObjectKey& filterKey,
     omni::physics::parse::ObjectKey autoAttachmentKey,
-    const SdfPath& deformableCollider0Path, const SdfPath& deformableCollider1Path)
+    omni::physics::parse::ObjectKey deformableCollider0Key, omni::physics::parse::ObjectKey deformableCollider1Key)
 {
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return false;
-    const omni::physics::parse::TokenId filterTok =
-        src->internToken(OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsElementCollisionFilter.GetString());
-    bool done = false;
-    src->forEachChild(autoAttachmentKey,
-        [&](omni::physics::parse::ObjectKey childKey)
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    // Only the FIRST filter child is considered; no child at all is not a mismatch.
+    bool done = false, result = true;
+    forEachAutoAttachmentChild(attachedStage, autoAttachmentKey, eDeformableCollisionFilter, tok.OmniPhysicsElementCollisionFilter,
+        [&](omni::physics::parse::ObjectKey childKey, omni::physics::parse::ObjectKey src0, omni::physics::parse::ObjectKey src1)
         {
-            if (done || !src->isA(childKey, filterTok))
+            if (done)
                 return;
             done = true;
             filterKey = childKey;
+            result = src0 == deformableCollider0Key && src1 == deformableCollider1Key;
         });
-
-    if (filterKey.valid())
-    {
-        SdfPath srcPaths[2];
-        parseSingleTargetPathPair(attachedStage, srcPaths, filterKey,
-            OmniUsdPhysicsDeformableSchemaTokens->omniphysicsSrc0, OmniUsdPhysicsDeformableSchemaTokens->omniphysicsSrc1);
-        if (srcPaths[0] != deformableCollider0Path || srcPaths[1] != deformableCollider1Path)
-        {
-            return false;
-        }
-    }
-    return true;
+    return result;
 }
 
-PXR_NS::GfVec3f convertBary(carb::Float4& bary)
+carb::Float3 convertBary(carb::Float4& bary)
 {
-    return GfVec3f(bary.x, bary.y, bary.z);
+    return carb::Float3{ bary.x, bary.y, bary.z };
 }
 
 // Average non-degenerate edge length of the world-space AABB of a point set.
@@ -697,8 +783,8 @@ carb::Float4 computeDistancePointBarycentric(const carb::Float3* positions, cons
 /**
 * Sort indices in filter groups, and removes duplicates to make the groups deterministically comparable.
 */
-void sortFilterGroups(VtArray<uint32_t>& dstCounts, VtArray<uint32_t>& dstIndices,
-    VtArray<uint32_t>& srcCounts, VtArray<uint32_t>& srcIndices)
+void sortFilterGroups(std::vector<uint32_t>& dstCounts, std::vector<uint32_t>& dstIndices,
+    std::vector<uint32_t>& srcCounts, std::vector<uint32_t>& srcIndices)
 {
     dstCounts.clear();
     dstIndices.clear();
@@ -733,10 +819,10 @@ void sortFilterGroups(VtArray<uint32_t>& dstCounts, VtArray<uint32_t>& dstIndice
 * Assumes group indices are pre-sorted
 */
 void compressFilterGroupsSingleSided(
-    VtArray<uint32_t>& dstCountsA, VtArray<uint32_t>& dstIndicesA,
-    VtArray<uint32_t>& dstCountsB, VtArray<uint32_t>& dstIndicesB,
-    const VtArray<uint32_t>& srcCountsA, const VtArray<uint32_t>& srcIndicesA,
-    const VtArray<uint32_t>& srcCountsB, const VtArray<uint32_t>& srcIndicesB)
+    std::vector<uint32_t>& dstCountsA, std::vector<uint32_t>& dstIndicesA,
+    std::vector<uint32_t>& dstCountsB, std::vector<uint32_t>& dstIndicesB,
+    const std::vector<uint32_t>& srcCountsA, const std::vector<uint32_t>& srcIndicesA,
+    const std::vector<uint32_t>& srcCountsB, const std::vector<uint32_t>& srcIndicesB)
 {
     if (srcCountsA.size() == 0 || srcCountsA.size() != srcCountsB.size())
     {
@@ -825,8 +911,8 @@ void compressFilterGroupsSingleSided(
 }
 
 void compressFilterGroups(
-    VtArray<uint32_t>& filterGroupCountsA, VtArray<uint32_t>& filterGroupIndicesA,
-    VtArray<uint32_t>& filterGroupCountsB, VtArray<uint32_t>& filterGroupIndicesB)
+    std::vector<uint32_t>& filterGroupCountsA, std::vector<uint32_t>& filterGroupIndicesA,
+    std::vector<uint32_t>& filterGroupCountsB, std::vector<uint32_t>& filterGroupIndicesB)
 {
     if (filterGroupCountsA.size() == 0 || filterGroupCountsA.size() != filterGroupCountsB.size())
     {
@@ -837,8 +923,8 @@ void compressFilterGroups(
         return;
     }
 
-    VtArray<uint32_t> tmpFilterGroupCounts[2];
-    VtArray<uint32_t> tmpFilterGroupIndices[2];
+    std::vector<uint32_t> tmpFilterGroupCounts[2];
+    std::vector<uint32_t> tmpFilterGroupIndices[2];
     sortFilterGroups(tmpFilterGroupCounts[0], tmpFilterGroupIndices[0],
         filterGroupCountsA, filterGroupIndicesA);
 
@@ -873,9 +959,9 @@ void compressFilterGroups(
     filterGroupIndicesB.swap(tmpFilterGroupIndices[1]);
 }
 
-void convertTetGroupsToSurfaceTriGroups(VtArray<uint32_t>& triGroupCounts, VtArray<uint32_t>& triGroupIndices,
+void convertTetGroupsToSurfaceTriGroups(std::vector<uint32_t>& triGroupCounts, std::vector<uint32_t>& triGroupIndices,
         const std::vector<uint32_t>& tetVtxIndices, const std::vector<uint32_t>& surfaceTriToTetMap,
-        const VtArray<uint32_t>& tetGroupCounts, const VtArray<uint32_t>& tetGroupIndices)
+        const std::vector<uint32_t>& tetGroupCounts, const std::vector<uint32_t>& tetGroupIndices)
 {
     uint32_t numTets = uint32_t(tetVtxIndices.size() / 4);
     uint32_t numSurfaceTris = uint32_t(surfaceTriToTetMap.size());
@@ -920,9 +1006,9 @@ void convertTetGroupsToSurfaceTriGroups(VtArray<uint32_t>& triGroupCounts, VtArr
     }
 }
 
-void convertVtxGroupsToTriGroups(VtArray<uint32_t>& triGroupCounts, VtArray<uint32_t>& triGroupIndices,
+void convertVtxGroupsToTriGroups(std::vector<uint32_t>& triGroupCounts, std::vector<uint32_t>& triGroupIndices,
     const std::vector<carb::Float3>& points, const std::vector<uint32_t>& triVtxIndices,
-    const VtArray<uint32_t>& vtxGroupCounts, const VtArray<uint32_t>& vtxGroupIndices)
+    const std::vector<uint32_t>& vtxGroupCounts, const std::vector<uint32_t>& vtxGroupIndices)
 {
     std::vector<uint32_t> vtxTriCounts(vtxGroupIndices.size());
     ResultBuffer<uint32_t> vtxTriIndices;
@@ -961,8 +1047,8 @@ void convertVtxGroupsToTriGroups(VtArray<uint32_t>& triGroupCounts, VtArray<uint
 }
 
 void addPairsToFilterGroups(
-    VtArray<uint32_t>& groupCountsA, VtArray<uint32_t>& groupIndicesA,
-    VtArray<uint32_t>& groupCountsB, VtArray<uint32_t>& groupIndicesB,
+    std::vector<uint32_t>& groupCountsA, std::vector<uint32_t>& groupIndicesA,
+    std::vector<uint32_t>& groupCountsB, std::vector<uint32_t>& groupIndicesB,
     const carb::Int2* pairsAB, const uint32_t pairsABsize,
     const uint32_t* mapIndicesA, const uint32_t* mapIndicesB)
 {
@@ -979,8 +1065,8 @@ void addPairsToFilterGroups(
 }
 
 void addPairsToFilterGroups(
-    VtArray<uint32_t>& groupCountsA, VtArray<uint32_t>& groupIndicesA,
-    VtArray<uint32_t>& groupCountsB, VtArray<uint32_t>& groupIndicesB,
+    std::vector<uint32_t>& groupCountsA, std::vector<uint32_t>& groupIndicesA,
+    std::vector<uint32_t>& groupCountsB, std::vector<uint32_t>& groupIndicesB,
     const int32_t* indicesA, const uint32_t indicesAsize,
     const int32_t* indicesB, const uint32_t indicesBsize,
     const uint32_t* mapIndicesA, const uint32_t* mapIndicesB)
@@ -1017,9 +1103,9 @@ void addPairsToFilterGroups(
 }
 
 void computeVtxTetAttachments(
-    VtArray<int32_t>& attachmentVtxIndices,
-    VtArray<int32_t>& attachmentTetIndices,
-    VtArray<GfVec3f>& attachmentTetCoords,
+    std::vector<int32_t>& attachmentVtxIndices,
+    std::vector<int32_t>& attachmentTetIndices,
+    std::vector<carb::Float3>& attachmentTetCoords,
     const std::vector<carb::Float3>& srcPoints,
     const std::vector<uint32_t>& srcPointIndices,
     const std::vector<carb::Float3>& dstTetMeshPoints,
@@ -1061,12 +1147,13 @@ void computeVtxTetAttachments(
     }
 }
 
-void checkNonUniformScale(const GfVec3d& scale, const SdfPath& primKey)
+void checkNonUniformScale(const PxVec3& scale, const char* primPathText)
 {
-    const double tolerance = 1e-4;
-    if (abs(scale[0] - scale[1]) > tolerance || abs(scale[0] - scale[2]) > tolerance || abs(scale[2] - scale[1]) > tolerance)
+    const float tolerance = 1e-4f;
+    if (fabsf(scale[0] - scale[1]) > tolerance || fabsf(scale[0] - scale[2]) > tolerance ||
+        fabsf(scale[2] - scale[1]) > tolerance)
     {
-        CARB_LOG_WARN("Non-uniform scale may result in a non matching attachment shape representation: %s", primKey.GetText());
+        CARB_LOG_WARN("Non-uniform scale may result in a non matching attachment shape representation: %s", primPathText);
     }
 }
 
@@ -1201,11 +1288,11 @@ uint64_t cullTrisToMaskShapes(std::vector<uint32_t>& culledTriIds, const MaskSha
 
 struct UserDataInfo
 {
-    VtArray<int32_t>& attachmentVtxIndicesDeformable;
-    VtArray<GfVec3f>& attachmentVtxPointsXformable;
-    VtArray<uint32_t>& filterTriIndicesDeformable;
+    std::vector<int32_t>& attachmentVtxIndicesDeformable;
+    std::vector<carb::Float3>& attachmentVtxPointsXformable;
+    std::vector<uint32_t>& filterTriIndicesDeformable;
     const DeformableMeshInfo& deformableMeshInfo;
-    const GfMatrix4d& worldToRigid;
+    const PxMat44d& worldToRigid;
     const PhysxAutoAttachmentDesc& desc;
     const MaskShapes& maskShapes;
 };
@@ -1216,12 +1303,12 @@ void updateDeformableRigidColliderAttachments(const PxGeometry& geom, const PxTr
 {
     const UserDataInfo* info = (const UserDataInfo*)userData;
 
-    VtArray<int32_t>& attachmentVtxIndicesDeformable = info->attachmentVtxIndicesDeformable;
-    VtArray<GfVec3f>& attachmentVtxPointsXformable = info->attachmentVtxPointsXformable;
-    VtArray<uint32_t>& filterGroupIndices = info->filterTriIndicesDeformable;
+    std::vector<int32_t>& attachmentVtxIndicesDeformable = info->attachmentVtxIndicesDeformable;
+    std::vector<carb::Float3>& attachmentVtxPointsXformable = info->attachmentVtxPointsXformable;
+    std::vector<uint32_t>& filterGroupIndices = info->filterTriIndicesDeformable;
 
     const DeformableMeshInfo& deformableMeshInfo = info->deformableMeshInfo;
-    const GfMatrix4d& worldToRigid = info->worldToRigid;
+    const PxMat44d& worldToRigid = info->worldToRigid;
     const PhysxAutoAttachmentDesc& desc = info->desc;
 
     // Use the minimum average dimension
@@ -1316,10 +1403,10 @@ void updateDeformableRigidColliderAttachments(const PxGeometry& geom, const PxTr
             if (tetIds[i] >= 0)
             {
                 const carb::Float3& localSample = localSamples[i];
-                attachmentPointsDeformable.push_back(GfVec3f(localSample.x, localSample.y, localSample.z));
+                attachmentPointsDeformable.push_back(carb::Float3{ localSample.x, localSample.y, localSample.z });
 
                 const PxVec3 actorPos = transform.transformInv(toPhysX(culledSamples[i])).multiply(invScale);
-                attachmentPointsRigidBody.push_back(GfVec3f(actorPos.x, actorPos.y, actorPos.z));
+                attachmentPointsRigidBody.push_back(carb::Float3{ actorPos.x, actorPos.y, actorPos.z });
             }
         }
     }
@@ -1348,8 +1435,8 @@ void updateDeformableRigidColliderAttachments(const PxGeometry& geom, const PxTr
 
             attachmentVtxIndicesDeformable.push_back(int32_t(vertexIndex));
 
-            GfVec3f rigidPos = PXR_NS::GfVec3f(worldToRigid.Transform(GfVec3f(vertexPos.x, vertexPos.y, vertexPos.z)));
-            attachmentVtxPointsXformable.push_back(rigidPos);
+            const PxVec3d rigidPos = worldToRigid.transform(PxVec3d(vertexPos.x, vertexPos.y, vertexPos.z));
+            attachmentVtxPointsXformable.push_back(carb::Float3{ float(rigidPos.x), float(rigidPos.y), float(rigidPos.z) });
         }
     }
 
@@ -1361,8 +1448,8 @@ void updateDeformableRigidColliderAttachments(const PxGeometry& geom, const PxTr
         cullPointsToMaskShapes(culledVertices, culledVertexIndices, info->maskShapes, collisionFilteringOffset,
             deformableMeshInfo.collPositions.data(), uint32_t(deformableMeshInfo.collPositions.size()));
 
-        VtArray<uint32_t> vtxGroupIndices;
-        VtArray<uint32_t> vtxGroupCounts;
+        std::vector<uint32_t> vtxGroupIndices;
+        std::vector<uint32_t> vtxGroupCounts;
         for (PxU32 i = 0; i < culledVertices.size(); i++)
         {
             const PxVec3 particlePos = toPhysX(culledVertices[i]);
@@ -1393,13 +1480,13 @@ void updateDeformableRigidColliderAttachments(const PxGeometry& geom, const PxTr
             triVtxIndices = &deformableMeshInfo.collIndices;
         }
 
-        VtArray<uint32_t> filterGroupCounts;
+        std::vector<uint32_t> filterGroupCounts;
         convertVtxGroupsToTriGroups(filterGroupCounts, filterGroupIndices, *points, *triVtxIndices,
             vtxGroupCounts, vtxGroupIndices);
 
         CARB_ASSERT(filterGroupCounts.size() == 1);
-        VtArray<uint32_t> filterGroupCountsRigid = { 0 };
-        VtArray<uint32_t> filterGroupIndicesRigid;
+        std::vector<uint32_t> filterGroupCountsRigid = { 0 };
+        std::vector<uint32_t> filterGroupIndicesRigid;
         compressFilterGroups(filterGroupCounts, filterGroupIndices, filterGroupCountsRigid, filterGroupIndicesRigid);
     }
 
@@ -1408,22 +1495,28 @@ void updateDeformableRigidColliderAttachments(const PxGeometry& geom, const PxTr
 
 bool parseMaskShape(usdparser::AttachedStage& attachedStage, PxGeometryHolder& geometryHolder, PxTransform& transform, omni::physics::parse::ObjectKey key)
 {
-    UsdTimeCode timeCode = UsdTimeCode::Default();
-
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return false;
-    const bool isSphere  = src->isA(key, schemaTypeToken<UsdGeomSphere>(*src));
-    const bool isCapsule = src->isA(key, schemaTypeToken<UsdGeomCapsule>(*src));
-    const bool isCube    = src->isA(key, schemaTypeToken<UsdGeomCube>(*src));
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    const bool isSphere  = src->isA(key, tok.sphereType);
+    const bool isCapsule = src->isA(key, tok.capsuleType);
+    const bool isCube    = src->isA(key, tok.cubeType);
 
-    GfMatrix4d shapeMat = internal::getWorldTransform(attachedStage, key, timeCode);
-    const GfTransform tr(shapeMat);
-    const GfVec3d shapePos = tr.GetTranslation();
-    const GfQuatd shapeRot = tr.GetRotation().GetQuat();
-    const GfVec3d shapeScale = tr.GetScale();
-
-    transform = PxTransform(toPhysX(shapePos), toPhysX(shapeRot));
+    const PxMat44d shapeMat = internal::getWorldTransform(attachedStage, key, omni::physics::parse::ReadTime::defaultTime());
+    // Bit-exact Gf decomposition, not the PhysX-native decomposeMatrix: this
+    // feeds calculateAutoAttachmentCRC (transforms/radius/halfHeight hashed
+    // byte-for-byte into physxAutoDeformableAttachment:inputCrc), and a
+    // sheared mask-shape ancestor makes the two decompositions disagree (see
+    // MatrixTools.h) -- switching decompositions here would invalidate every
+    // persisted attachment CRC and regenerate different attachment data on
+    // sheared inputs. This keeps the pre-port CRC and attachment data intact.
+    const omni::physx::gfmath::PivotTransform shapeXf = omni::physx::gfmath::decomposeWithPivot(shapeMat);
+    const PxQuatd shapeRotD = omni::physx::gfmath::getQuat(shapeXf.rotation);
+    transform = PxTransform(PxVec3(float(shapeXf.translation.x), float(shapeXf.translation.y), float(shapeXf.translation.z)),
+                            PxQuat(float(shapeRotD.x), float(shapeRotD.y), float(shapeRotD.z), float(shapeRotD.w)));
+    PxVec3 shapeScale(float(shapeXf.scale.x), float(shapeXf.scale.y), float(shapeXf.scale.z));
 
     if (isSphere)
     {
@@ -1432,13 +1525,13 @@ bool parseMaskShape(usdparser::AttachedStage& attachedStage, PxGeometryHolder& g
         {
             // as we dont support scale in physics and scale can be non uniform
             // we pick the largest scale value as the sphere radius base
-            checkNonUniformScale(shapeScale, attachedStage.pathFor(key));
-            radius = fmaxf(fmaxf(fabsf(float(shapeScale[1])), fabsf(float(shapeScale[0]))), fabsf(float(shapeScale[2])));
+            checkNonUniformScale(shapeScale, attachedStage.textFor(key));
+            radius = fmaxf(fmaxf(fabsf(shapeScale[1]), fabsf(shapeScale[0])), fabsf(shapeScale[2]));
         }
 
         {
             double radiusAttr = 1.0;
-            internal::getValue<double>(attachedStage, key, UsdGeomTokens->radius, timeCode, radiusAttr);
+            internal::getValue<double>(attachedStage, key, tok.radius, omni::physics::parse::ReadTime::defaultTime(), radiusAttr);
             radius *= (float)radiusAttr;
         }
 
@@ -1450,36 +1543,36 @@ bool parseMaskShape(usdparser::AttachedStage& attachedStage, PxGeometryHolder& g
     {
         float radius = 1.0f;
         float halfHeight = 1.0f;
-        TfToken axis = UsdPhysicsTokens.Get()->x;
+        omni::physics::parse::TokenId axis = tok.x;
 
         {
             double radiusAttr = 0.5;
-            internal::getValue<double>(attachedStage, key, UsdGeomTokens->radius, timeCode, radiusAttr);
+            internal::getValue<double>(attachedStage, key, tok.radius, omni::physics::parse::ReadTime::defaultTime(), radiusAttr);
             double heightAttr = 2.0;
-            internal::getValue<double>(attachedStage, key, UsdGeomTokens->height, timeCode, heightAttr);
+            internal::getValue<double>(attachedStage, key, tok.height, omni::physics::parse::ReadTime::defaultTime(), heightAttr);
             radius = (float)radiusAttr;
             halfHeight = (float)heightAttr * 0.5f;
 
-            internal::getValue<TfToken>(attachedStage, key, UsdGeomTokens->axis, timeCode, axis);
+            internal::getValue(attachedStage, key, tok.axis, omni::physics::parse::ReadTime::defaultTime(), axis);
         }
 
         {
             // scale the radius and height based on the given axis token
-            checkNonUniformScale(shapeScale, attachedStage.pathFor(key));
-            if (axis == UsdPhysicsTokens.Get()->x)
+            checkNonUniformScale(shapeScale, attachedStage.textFor(key));
+            if (axis == tok.x)
             {
-                halfHeight *= float(shapeScale[0]);
-                radius *= fmaxf(fabsf(float(shapeScale[1])), fabsf(float(shapeScale[2])));
+                halfHeight *= shapeScale[0];
+                radius *= fmaxf(fabsf(shapeScale[1]), fabsf(shapeScale[2]));
             }
-            else if (axis == UsdPhysicsTokens.Get()->y)
+            else if (axis == tok.y)
             {
-                halfHeight *= float(shapeScale[1]);
-                radius *= fmaxf(fabsf(float(shapeScale[0])), fabsf(float(shapeScale[2])));
+                halfHeight *= shapeScale[1];
+                radius *= fmaxf(fabsf(shapeScale[0]), fabsf(shapeScale[2]));
             }
             else
             {
-                halfHeight *= float(shapeScale[2]);
-                radius *= fmaxf(fabsf(float(shapeScale[1])), fabsf(float(shapeScale[0])));
+                halfHeight *= shapeScale[2];
+                radius *= fmaxf(fabsf(shapeScale[1]), fabsf(shapeScale[0]));
             }
         }
 
@@ -1488,11 +1581,11 @@ bool parseMaskShape(usdparser::AttachedStage& attachedStage, PxGeometryHolder& g
         const float hRt2 = sqrt(2.0f) / 2.0f;
         PxQuat fixupQ(PxIdentity);
 
-        if (axis == UsdPhysicsTokens.Get()->y)
+        if (axis == tok.y)
         {
             fixupQ = PxQuat(hRt2, -hRt2, 0.0f, 0.0f);
         }
-        else if (axis == UsdPhysicsTokens.Get()->z)
+        else if (axis == tok.z)
         {
             fixupQ = PxQuat(hRt2, 0.0f, -hRt2, 0.0f);
         }
@@ -1503,21 +1596,21 @@ bool parseMaskShape(usdparser::AttachedStage& attachedStage, PxGeometryHolder& g
 
     if (isCube)
     {
-        GfVec3f halfExtents;
+        PxVec3 halfExtents;
 
         {
             // scale is taken, its a part of the cube size, as the physics does not support scale
-            halfExtents = GfVec3f(shapeScale);
+            halfExtents = shapeScale;
         }
 
         {
             double sizeAttr = 2.0;
-            internal::getValue<double>(attachedStage, key, UsdGeomTokens->size, timeCode, sizeAttr);
+            internal::getValue<double>(attachedStage, key, tok.size, omni::physics::parse::ReadTime::defaultTime(), sizeAttr);
             sizeAttr = abs(sizeAttr) * 0.5f; // convert cube edge length to half extend
             halfExtents *= (float)sizeAttr;
         }
 
-        geometryHolder = PxBoxGeometry(toPhysX(halfExtents));
+        geometryHolder = PxBoxGeometry(halfExtents);
         return true;
     }
 
@@ -1525,12 +1618,11 @@ bool parseMaskShape(usdparser::AttachedStage& attachedStage, PxGeometryHolder& g
 }
 
 void processRigidShapeGeometry(usdparser::AttachedStage& attachedStage,
-                               const SdfPath& rigidColliderPath,
+                               omni::physics::parse::ObjectKey rigidColliderKey,
                                const usdparser::PhysxShapeDesc* desc,
                                getGeometryInfoCallback callbackFn,
                                void* userData)
 {
-    const omni::physics::parse::ObjectKey rigidColliderKey = attachedStage.keyFor(rigidColliderPath);
     PxTransform transform = toPhysX(desc->localPos, desc->localRot);
     PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
     CookingDataAsync* cookingDataAsync = physxSetup.getCookingDataAsync();
@@ -1675,11 +1767,11 @@ void updateDeformableVolumeSurfaceAttachments(usdparser::AttachedStage& attached
     if (!isfinite(collisionFilteringOffset))
         collisionFilteringOffset = default_rad * 2;
 
-    VtArray<int32_t> attachmentVtxIndices;
-    VtArray<GfVec3f> attachmentTetCoords;
-    VtArray<int32_t> attachmentTetIndices;
-    VtArray<uint32_t> filterGroupCounts[2];
-    VtArray<uint32_t> filterGroupIndices[2];
+    std::vector<int32_t> attachmentVtxIndices;
+    std::vector<carb::Float3> attachmentTetCoords;
+    std::vector<int32_t> attachmentTetIndices;
+    std::vector<uint32_t> filterGroupCounts[2];
+    std::vector<uint32_t> filterGroupIndices[2];
 
     uint64_t tetFinderSim = omni::tetfinder::createTetFinder(
         &volumeMeshInfo.simPositions[0], uint32_t(volumeMeshInfo.simPositions.size()),
@@ -1704,17 +1796,17 @@ void updateDeformableVolumeSurfaceAttachments(usdparser::AttachedStage& attached
     if (desc.enableCollisionFiltering)
     {
         uint64_t tetFinderColl = tetFinderSim;
-        if (volumeMeshInfo.simMeshPath != volumeMeshInfo.collMeshPath)
+        if (volumeMeshInfo.simMeshKey != volumeMeshInfo.collMeshKey)
         {
             tetFinderColl = omni::tetfinder::createTetFinder(
                 volumeMeshInfo.collPositions.data(), uint32_t(volumeMeshInfo.collPositions.size()),
                 volumeMeshInfo.collIndices.data(), uint32_t(volumeMeshInfo.collIndices.size()));
         }
 
-        VtArray<uint32_t> tetFilterGroupCounts;
-        VtArray<uint32_t> tetFilterGroupIndices;
-        VtArray<uint32_t> triFilterGroupCounts;
-        VtArray<uint32_t> triFilterGroupIndices;
+        std::vector<uint32_t> tetFilterGroupCounts;
+        std::vector<uint32_t> tetFilterGroupIndices;
+        std::vector<uint32_t> triFilterGroupCounts;
+        std::vector<uint32_t> triFilterGroupIndices;
 
         if (maskShapes.geometries.empty())
         {
@@ -1858,11 +1950,11 @@ void updateDeformableVolumeVolumeAttachments(usdparser::AttachedStage& attachedS
     if (!isfinite(collisionFilteringOffset))
         collisionFilteringOffset = default_rad * 2;
 
-    VtArray<int32_t> attachmentVtxIndices[2];
-    VtArray<GfVec3f> attachmentTetCoords[2];
-    VtArray<int32_t> attachmentTetIndices[2];
-    VtArray<uint32_t> filterGroupCounts[2];
-    VtArray<uint32_t> filterGroupIndices[2];
+    std::vector<int32_t> attachmentVtxIndices[2];
+    std::vector<carb::Float3> attachmentTetCoords[2];
+    std::vector<int32_t> attachmentTetIndices[2];
+    std::vector<uint32_t> filterGroupCounts[2];
+    std::vector<uint32_t> filterGroupIndices[2];
 
     uint64_t tetFinderSim[2] = { 0, 0 };
     for (uint32_t s = 0; s < 2; ++s)
@@ -1900,7 +1992,7 @@ void updateDeformableVolumeVolumeAttachments(usdparser::AttachedStage& attachedS
         uint64_t tetFinderColl[2] = { tetFinderSim[0], tetFinderSim[1] };
         for (uint32_t s = 0; s < 2; ++s)
         {
-            if (deformableMeshInfo[s].simMeshPath != deformableMeshInfo[s].collMeshPath)
+            if (deformableMeshInfo[s].simMeshKey != deformableMeshInfo[s].collMeshKey)
             {
                 tetFinderColl[s] = omni::tetfinder::createTetFinder(
                     &deformableMeshInfo[s].collPositions[0], uint32_t(deformableMeshInfo[s].collPositions.size()),
@@ -1908,8 +2000,8 @@ void updateDeformableVolumeVolumeAttachments(usdparser::AttachedStage& attachedS
             }
         }
 
-        VtArray<uint32_t> tetFilterGroupCounts[2];
-        VtArray<uint32_t> tetFilterGroupIndices[2];
+        std::vector<uint32_t> tetFilterGroupCounts[2];
+        std::vector<uint32_t> tetFilterGroupIndices[2];
 
         if (maskShapes.geometries.empty())
         {
@@ -2010,19 +2102,19 @@ void updateDeformableXformableAttachments(
     std::vector<omni::physics::parse::ObjectKey>& filterKeys,
     const DeformableMeshInfo& deformableMeshInfo,
     const uint32_t deformableSlot,
-    const SdfPath& rigidRootPath,
-    const std::vector<SdfPath>& rigidColliders,
+    omni::physics::parse::ObjectKey rigidRootKey,
+    const std::vector<omni::physics::parse::ObjectKey>& rigidColliders,
     const PhysxAutoAttachmentDesc& desc, const MaskShapes& maskShapes)
 {
     //we need to define all attachment local positions relative to
     //the same frame, because we don't want to have an attachment per
     //collider. we assume all colliders move in the same frame if they move.
-    const GfMatrix4d rigidToWorld(internal::getWorldTransform(attachedStage, attachedStage.keyFor(rigidRootPath), UsdTimeCode::Default()));
-    GfMatrix4d worldToRigid = rigidToWorld.GetInverse();
+    const PxMat44d rigidToWorld(internal::getWorldTransform(attachedStage, rigidRootKey, omni::physics::parse::ReadTime::defaultTime()));
+    const PxMat44d worldToRigid = omni::physx::affineInverse(rigidToWorld);
 
-    VtArray<int32_t> attachmentVtxIndicesDeformable;
-    VtArray<GfVec3f> attachmentVtxPointsXformable;
-    VtArray<uint32_t> filterTriIndicesDeformable;
+    std::vector<int32_t> attachmentVtxIndicesDeformable;
+    std::vector<carb::Float3> attachmentVtxPointsXformable;
+    std::vector<uint32_t> filterTriIndicesDeformable;
 
     if (rigidColliders.size() == 0)
     {
@@ -2040,8 +2132,8 @@ void updateDeformableXformableAttachments(
 
                 attachmentVtxIndicesDeformable.push_back(int32_t(vertexIndex));
 
-                GfVec3f rigidPos = GfVec3f(worldToRigid.Transform(GfVec3d(vertexPos.x, vertexPos.y, vertexPos.z)));
-                attachmentVtxPointsXformable.push_back(rigidPos);
+                const PxVec3d rigidPos = worldToRigid.transform(PxVec3d(vertexPos.x, vertexPos.y, vertexPos.z));
+                attachmentVtxPointsXformable.push_back(carb::Float3{ float(rigidPos.x), float(rigidPos.y), float(rigidPos.z) });
             }
         }
     }
@@ -2049,7 +2141,7 @@ void updateDeformableXformableAttachments(
     {
         for (size_t i = 0; i < rigidColliders.size(); ++i)
         {
-            const SdfPath& rigidColliderPath = rigidColliders[i];
+            const omni::physics::parse::ObjectKey rigidColliderKey = rigidColliders[i];
 
             filterTriIndicesDeformable.clear();
 
@@ -2059,40 +2151,50 @@ void updateDeformableXformableAttachments(
                 deformableMeshInfo, worldToRigid, desc, maskShapes
             };
 
-            const omni::physics::parse::ObjectKey rigidColliderKey = attachedStage.keyFor(rigidColliderPath);
-            const GfMatrix4d mat = internal::getWorldTransform(attachedStage, rigidColliderKey, UsdTimeCode::Default());
-            const GfTransform tr(mat);
+            const PxMat44d mat = internal::getWorldTransform(attachedStage, rigidColliderKey, omni::physics::parse::ReadTime::defaultTime());
+            // Bit-exact Gf decomposition, not the PhysX-native decomposeMatrix:
+            // this feeds shapeDesc->localPos/localRot/localScale below, which
+            // drives rigid-surface attachment sampling in
+            // processRigidShapeGeometry. Not hashed into a CRC, but a sheared
+            // rigid-collider world transform would otherwise move the sampled
+            // attachment points silently -- keep it numerically unchanged from
+            // the pre-port behaviour, same as the CRC-hashed decomposition above.
+            const omni::physx::gfmath::PivotTransform poseXf = omni::physx::gfmath::decomposeWithPivot(mat);
+            const PxQuatd poseRotD = omni::physx::gfmath::getQuat(poseXf.rotation);
+            const PxTransform pose(PxVec3(float(poseXf.translation.x), float(poseXf.translation.y), float(poseXf.translation.z)),
+                                   PxQuat(float(poseRotD.x), float(poseRotD.y), float(poseRotD.z), float(poseRotD.w)));
+            const PxVec3 scale(float(poseXf.scale.x), float(poseXf.scale.y), float(poseXf.scale.z));
 
             const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-            if (!(src && src->isA(rigidColliderKey, schemaTypeToken<UsdGeomGprim>(*src))))
+            omni::physics::parse::KnownTokens tok;
+            if (src)
+                tok.intern(*src);
+            if (!(src && src->isA(rigidColliderKey, tok.gprimType)))
                 continue;
 
-            const std::vector<SdfPath> scanRoots{ rigidColliderPath };
-            static const std::unordered_set<SdfPath, SdfPath::Hash> kNoExclude;
+            const std::string rigidColliderPathText(attachedStage.textViewFor(rigidColliderKey));
+            static const std::vector<std::string> kNoExclude;
             omni::physics::parse::ScanOptions scanOptions;
             scanOptions.descendantScope = omni::physics::parse::DescendantScope::eActive;
-            omni::physics::usd::ScannedStage scanned = omni::physics::usd::scanStage(
-                attachedStage.attachTarget(), scanRoots, kNoExclude,
-                omni::physx::usdparser::iceDescriptorAllocator(), scanOptions);
-            usdparser::PhysxShapeDesc* shapeDesc = prepareScannedShapeForAttachment(attachedStage, scanned, rigidColliderPath);
+            const std::vector<std::string> scanRoots{ rigidColliderPathText };
+            omni::physics::parse::ScannedStage scanned = omni::physics::parse::scanStage(
+                attachedStage.attachTarget(), scanRoots, kNoExclude, scanOptions,
+                omni::physx::usdparser::iceDescriptorAllocator());
+            usdparser::PhysxShapeDesc* shapeDesc = prepareScannedShapeForAttachment(attachedStage, scanned, rigidColliderPathText);
             if (!shapeDesc)
                 continue;
 
-            const GfVec3d pos = tr.GetTranslation();
-            const GfQuatd rot = tr.GetRotation().GetQuat();
-            const GfVec3d scale = tr.GetScale();
+            shapeDesc->localPos = { pose.p.x, pose.p.y, pose.p.z };
+            shapeDesc->localRot = { pose.q.x, pose.q.y, pose.q.z, pose.q.w };
+            shapeDesc->localScale = { scale.x, scale.y, scale.z };
 
-            shapeDesc->localPos = { float(pos[0]), float(pos[1]), float(pos[2]) };
-            shapeDesc->localRot = { float(rot.GetImaginary()[0]), float(rot.GetImaginary()[1]), float(rot.GetImaginary()[2]), float(rot.GetReal()) };
-            shapeDesc->localScale = { float(scale[0]), float(scale[1]), float(scale[2]) };
-
-            processRigidShapeGeometry(attachedStage, rigidColliderPath, shapeDesc, updateDeformableRigidColliderAttachments, &userData);
+            processRigidShapeGeometry(attachedStage, rigidColliderKey, shapeDesc, updateDeformableRigidColliderAttachments, &userData);
 
             const omni::physics::parse::ObjectKey filterKey = filterKeys[i];
             if (filterKey.valid() && filterTriIndicesDeformable.size() > 0)
             {
-                const VtArray<uint32_t> filterCount({ uint32_t(filterTriIndicesDeformable.size()) });
-                const VtArray<uint32_t> empty;
+                const std::vector<uint32_t> filterCount({ uint32_t(filterTriIndicesDeformable.size()) });
+                const std::vector<uint32_t> empty;
                 if (deformableSlot == 0)
                     publishElementCollisionFilter(attachedStage, filterKey,
                         filterCount, filterTriIndicesDeformable, empty, empty, desc.enableCollisionFiltering);
@@ -2115,29 +2217,39 @@ bool getDeformableMeshInfo(usdparser::AttachedStage& attachedStage,
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return false;
-    const omni::physics::parse::ObjectKey simMeshKey = attachedStage.keyFor(deformableDesc.simMeshPath);
-    if (!src->isA(simMeshKey, schemaTypeToken<UsdGeomPointBased>(*src)))
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    // deformableDesc.simMeshKey/collisionMeshKey are ObjectKeys (ADR-0019 increment 7): used
+    // directly below wherever a key is accepted, including DeformableMeshInfo's own
+    // ObjectKey-typed simMeshKey/collMeshKey fields and parseTetMeshSurface (both retyped off
+    // SdfPath in the USD-removal pass that added this comment's follow-up).
+    const omni::physics::parse::ObjectKey simMeshKey = deformableDesc.simMeshKey;
+    if (!src->isA(simMeshKey, tok.pointBasedType))
     {
         return false;
     }
 
-    const GfMatrix4d simToWorld(internal::getWorldTransform(attachedStage, simMeshKey, UsdTimeCode::Default()));
+    const PxMat44d simToWorld(internal::getWorldTransform(attachedStage, simMeshKey, omni::physics::parse::ReadTime::defaultTime()));
 
-    VtArray<GfVec3f> simMeshPoints;
-    internal::getArrayValue(attachedStage, deformableDesc.simMeshPath, UsdGeomTokens->points, UsdTimeCode::Default(), simMeshPoints);
+    std::vector<carb::Float3> simMeshPoints;
+    internal::getArrayValue(attachedStage, simMeshKey, tok.points, omni::physics::parse::ReadTime::defaultTime(), simMeshPoints);
 
     std::vector<uint32_t> simIndices;
     if (deformableDesc.type == ObjectType::eVolumeDeformableBody)
     {
-        if (!src->isA(attachedStage.keyFor(deformableDesc.simMeshPath), schemaTypeToken<UsdGeomTetMesh>(*src)))
+        // isTetMeshLike, not isA(UsdGeomTetMesh): ovstage reports a UsdGeomTetMesh as plain "Mesh"
+        // (its populator has no TetMesh mapping), so the concrete-type gate made
+        // getDeformableMeshInfo() return false and silently stopped volume auto-attachment /
+        // filter computation for every non-USD source. See PhysXTools.h::isTetMeshLike.
+        if (!internal::isTetMeshLike(attachedStage, simMeshKey))
         {
             return false;
         }
 
-        VtArray<GfVec4i> tmpIndices;
-        internal::getArrayValue(attachedStage, deformableDesc.simMeshPath, UsdGeomTokens->tetVertexIndices, UsdTimeCode::Default(), tmpIndices);
+        std::vector<carb::Int4> tmpIndices;
+        internal::getArrayValue(attachedStage, simMeshKey, tok.tetVertexIndices, omni::physics::parse::ReadTime::defaultTime(), tmpIndices);
 
-        PX_COMPILE_TIME_ASSERT(sizeof(GfVec4i) == sizeof(uint32_t) * 4);
+        PX_COMPILE_TIME_ASSERT(sizeof(carb::Int4) == sizeof(uint32_t) * 4);
         simIndices.resize(tmpIndices.size() * 4);
         std::memcpy(simIndices.data(), tmpIndices.data(), simIndices.size() * sizeof(uint32_t));
 
@@ -2145,13 +2257,13 @@ bool getDeformableMeshInfo(usdparser::AttachedStage& attachedStage,
     }
     else if (deformableDesc.type == ObjectType::eSurfaceDeformableBody)
     {
-        if (!src->isA(attachedStage.keyFor(deformableDesc.simMeshPath), schemaTypeToken<UsdGeomMesh>(*src)))
+        if (!src->isA(simMeshKey, tok.meshType))
         {
             return false;
         }
 
-        VtArray<int32_t> tmpIndices;
-        internal::getArrayValue(attachedStage, deformableDesc.simMeshPath, UsdGeomTokens->faceVertexIndices, UsdTimeCode::Default(), tmpIndices);
+        std::vector<int32_t> tmpIndices;
+        internal::getArrayValue(attachedStage, simMeshKey, tok.faceVertexIndices, omni::physics::parse::ReadTime::defaultTime(), tmpIndices);
         simIndices.resize(tmpIndices.size());
         std::memcpy(simIndices.data(), tmpIndices.data(), simIndices.size() * sizeof(uint32_t));
 
@@ -2161,37 +2273,40 @@ bool getDeformableMeshInfo(usdparser::AttachedStage& attachedStage,
     deformableMeshInfo.simPositions.resize(simMeshPoints.size());
     for (size_t i = 0; i < deformableMeshInfo.simPositions.size(); ++i)
     {
-        GfVec3f position = PXR_NS::GfVec3f(simToWorld.Transform(simMeshPoints[i]));
-        deformableMeshInfo.simPositions[i] = { position[0], position[1], position[2] };
+        const carb::Float3& p = simMeshPoints[i];
+        const PxVec3d position = simToWorld.transform(PxVec3d(p.x, p.y, p.z));
+        deformableMeshInfo.simPositions[i] = { float(position.x), float(position.y), float(position.z) };
     }
 
     deformableMeshInfo.simIndices.swap(simIndices);
-    deformableMeshInfo.simMeshPath = deformableDesc.simMeshPath;
+    deformableMeshInfo.simMeshKey = simMeshKey;
 
     if (deformableDesc.type == ObjectType::eVolumeDeformableBody)
     {
         // could take some shortcuts here, if collision mesh equals simulation mesh.
         // however, since for filtering we use tet mesh surface triangles, as opposed to tets we
         // treat the collision mesh separately anyways.
-        if (!src->isA(attachedStage.keyFor(deformableDesc.collisionMeshPath), schemaTypeToken<UsdGeomTetMesh>(*src)))
+        // isTetMeshLike, not isA(UsdGeomTetMesh) — same reason as the sim-mesh gate above.
+        const omni::physics::parse::ObjectKey collisionMeshKey = deformableDesc.collisionMeshKey;
+        if (!internal::isTetMeshLike(attachedStage, collisionMeshKey))
         {
             return false;
         }
 
-        const GfMatrix4d collToWorld(internal::getWorldTransform(attachedStage, attachedStage.keyFor(deformableDesc.collisionMeshPath), UsdTimeCode::Default()));
+        const PxMat44d collToWorld(internal::getWorldTransform(attachedStage, collisionMeshKey, omni::physics::parse::ReadTime::defaultTime()));
 
-        VtArray<GfVec3f> collMeshPoints;
-        internal::getArrayValue(attachedStage, deformableDesc.collisionMeshPath, UsdGeomTokens->points, UsdTimeCode::Default(), collMeshPoints);
+        std::vector<carb::Float3> collMeshPoints;
+        internal::getArrayValue(attachedStage, collisionMeshKey, tok.points, omni::physics::parse::ReadTime::defaultTime(), collMeshPoints);
 
-        VtArray<GfVec4i> vtxTetIndices;
-        internal::getArrayValue(attachedStage, deformableDesc.collisionMeshPath, UsdGeomTokens->tetVertexIndices, UsdTimeCode::Default(), vtxTetIndices);
+        std::vector<carb::Int4> vtxTetIndices;
+        internal::getArrayValue(attachedStage, collisionMeshKey, tok.tetVertexIndices, omni::physics::parse::ReadTime::defaultTime(), vtxTetIndices);
         std::vector<uint32_t> collIndices(vtxTetIndices.size()*4);
         std::memcpy(collIndices.data(), vtxTetIndices.data(), sizeof(uint32_t) * collIndices.size());
 
         std::vector<uint32_t> collSurfaceTriToTetMap;
         std::vector<uint32_t> collSurfaceTriIndices;
         {
-            bool hasSurface = parseTetMeshSurface(attachedStage, deformableDesc.collisionMeshPath, collSurfaceTriIndices, collSurfaceTriToTetMap);
+            bool hasSurface = parseTetMeshSurface(attachedStage, collisionMeshKey, collSurfaceTriIndices, collSurfaceTriToTetMap);
             if (!hasSurface)
                 return false;
         }
@@ -2199,20 +2314,21 @@ bool getDeformableMeshInfo(usdparser::AttachedStage& attachedStage,
         deformableMeshInfo.collPositions.resize(collMeshPoints.size());
         for (size_t i = 0; i < deformableMeshInfo.collPositions.size(); ++i)
         {
-            GfVec3f position = PXR_NS::GfVec3f(collToWorld.Transform(collMeshPoints[i]));
-            deformableMeshInfo.collPositions[i] = { position[0], position[1], position[2] };
+            const carb::Float3& p = collMeshPoints[i];
+            const PxVec3d position = collToWorld.transform(PxVec3d(p.x, p.y, p.z));
+            deformableMeshInfo.collPositions[i] = { float(position.x), float(position.y), float(position.z) };
         }
 
         deformableMeshInfo.collIndices.swap(collIndices);
         deformableMeshInfo.collSurfaceTriIndices.swap(collSurfaceTriIndices);
         deformableMeshInfo.collSurfaceTriToTetMap.swap(collSurfaceTriToTetMap);
-        deformableMeshInfo.collMeshPath = deformableDesc.collisionMeshPath;
+        deformableMeshInfo.collMeshKey = collisionMeshKey;
     }
     else if (deformableDesc.type == ObjectType::eSurfaceDeformableBody)
     {
         deformableMeshInfo.collPositions.assign(deformableMeshInfo.simPositions.begin(), deformableMeshInfo.simPositions.end());
         deformableMeshInfo.collIndices.assign(deformableMeshInfo.simIndices.begin(), deformableMeshInfo.simIndices.end());
-        deformableMeshInfo.collMeshPath = deformableDesc.simMeshPath;
+        deformableMeshInfo.collMeshKey = simMeshKey;
     }
     else
     {
@@ -2281,27 +2397,27 @@ struct DeformableDescRef
 
 bool parseAttachables(usdparser::AttachedStage& attachedStage,
     AttachmentActorType::Enum(&types)[2],
-    SdfPath(&attachablePaths)[2],
     omni::physics::parse::ObjectKey(&attachableKeys)[2],
     DeformableDescRef(&deformableDescs)[2],
     uint32_t(&attachableSlots)[2],
     uint32_t& numDeformables,
     uint32_t& numXformables,
-    std::vector<SdfPath>& rigidColliders,
+    std::vector<omni::physics::parse::ObjectKey>& rigidColliders,
     omni::physics::parse::ObjectKey autoAttachmentKey,
     CookingDataAsync& cookingDataAsync)
 {
-    parseAttachablePaths(attachedStage, attachablePaths, autoAttachmentKey);
+    parseAttachableKeys(attachedStage, attachableKeys, autoAttachmentKey);
 
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    omni::physics::parse::KnownTokens tok;
+    if (src)
+        tok.intern(*src);
     const omni::physics::parse::TokenId deformableBodyTok =
-        src ? src->internToken(OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsDeformableBodyAPI.GetString())
-            : omni::physics::parse::TokenId{};
+        src ? tok.omniphysicsDeformableBodyAPI : omni::physics::parse::TokenId{};
     for (uint32_t t = 0; t < 2; ++t)
     {
-        if (!attachablePaths[t].IsEmpty())
+        if (attachableKeys[t].valid())
         {
-            attachableKeys[t] = attachedStage.keyFor(attachablePaths[t]);
             if (!(src && src->exists(attachableKeys[t])))
             {
                 return false;
@@ -2324,7 +2440,7 @@ bool parseAttachables(usdparser::AttachedStage& attachedStage,
                 }
                 deformableDescs[t] = desc;
             }
-            else if (src->isA(attachableKeys[t], schemaTypeToken<UsdGeomXformable>(*src)))
+            else if (src->isA(attachableKeys[t], tok.xformableType))
             {
                 getColliders(attachedStage, rigidColliders, attachableKeys[t]);
                 types[t] = AttachmentActorType::eXFORMABLE;
@@ -2365,7 +2481,6 @@ bool parseAttachables(usdparser::AttachedStage& attachedStage,
             }
         }
 
-        std::swap(attachablePaths[0], attachablePaths[1]);
         std::swap(attachableKeys[0], attachableKeys[1]);
         std::swap(deformableDescs[0].desc, deformableDescs[1].desc);
         std::swap(attachableSlots[0], attachableSlots[1]);
@@ -2375,125 +2490,379 @@ bool parseAttachables(usdparser::AttachedStage& attachedStage,
     return true;
 }
 
-/**
-* Initial setup of auto attachment. Creates all necessary sub prims depending on the attachable types.
-* Pre-existing sub prims just get removed.
-*/
-bool setupAutoDeformableAttachment(const SdfPath& autoAttachmentPath)
+namespace
 {
-    usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    if (!attachedStage)
-        return false;
-    UsdStageWeakPtr stage = attachedStage->getStage();
-    if (!stage)
-        return false;
 
-    const omni::physics::parse::ObjectKey autoAttachmentKey = attachedStage->keyFor(autoAttachmentPath);
-    const omni::physics::parse::IPhysicsSource* src = attachedStage->getSource();
-    if (!(src && src->hasSchema(autoAttachmentKey,
-                               src->internToken(PhysxSchemaTokens->PhysxAutoDeformableAttachmentAPI.GetString()))))
+// Everything setupAutoDeformableAttachment / the in-memory layout need to know about one
+// auto-attachment prim's attachables.
+struct AutoAttachmentInputs
+{
+    AttachmentActorType::Enum types[2] = { AttachmentActorType::eINVALID, AttachmentActorType::eINVALID };
+    omni::physics::parse::ObjectKey attachableKeys[2];
+    DeformableDescRef deformableDescs[2] = { nullptr, nullptr };
+    uint32_t attachableSlots[2] = { 0, 1 };
+    uint32_t numDeformables = 0;
+    uint32_t numXformables = 0;
+    std::vector<omni::physics::parse::ObjectKey> rigidColliders;
+};
+
+// Schema gate + attachable classification. False when the prim is not an auto attachment or the
+// attachables form no supported combination (at least one volume or surface deformable).
+bool parseAutoAttachmentInputs(usdparser::AttachedStage& attachedStage,
+                               omni::physics::parse::ObjectKey autoAttachmentKey,
+                               AutoAttachmentInputs& in,
+                               const char* caller)
+{
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    if (!src)
+        return false;
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    if (!src->hasSchema(autoAttachmentKey, tok.PhysxAutoDeformableAttachmentAPI))
         return false;
 
     CookingDataAsync* cookingDataAsync = omni::physx::OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
     if (!cookingDataAsync)
     {
-        CARB_LOG_WARN("setupAutoDeformableAttachment: failed - Cooking not available");
+        CARB_LOG_WARN("%s: failed - Cooking not available", caller);
         return false;
     }
 
-    SdfPath attachablePaths[2];
-    omni::physics::parse::ObjectKey attachableKeys[2];
-
-    AttachmentActorType::Enum types[2] = { AttachmentActorType::eINVALID, AttachmentActorType::eINVALID };
-    DeformableDescRef deformableDescs[2] = { nullptr, nullptr };
-    uint32_t attachableSlots[2] = { 0, 1 };
-    uint32_t numDeformables = 0;
-    uint32_t numXformables = 0;
-    std::vector<SdfPath> rigidColliders;
-
-    if (!parseAttachables(*attachedStage, types, attachablePaths, attachableKeys, deformableDescs, attachableSlots, numDeformables,
-        numXformables, rigidColliders, autoAttachmentKey, *cookingDataAsync))
+    if (!parseAttachables(attachedStage, in.types, in.attachableKeys, in.deformableDescs, in.attachableSlots,
+        in.numDeformables, in.numXformables, in.rigidColliders, autoAttachmentKey, *cookingDataAsync))
     {
-        CARB_LOG_WARN("setupAutoDeformableAttachment: parsing attachables failed");
+        CARB_LOG_WARN("%s: parsing attachables failed", caller);
         return false;
     }
 
-    // Early out because there is no valid attachment combination (at least 1 volume or surface deformable)
-    if (numDeformables == 0)
-        return false;
+    return in.numDeformables != 0;
+}
 
-    omni::physics::usd::removeAttachmentsAndFilters(stage, autoAttachmentPath);
-
-    // Add all possibly needed primitives, they can always be disabled, if not needed. This is according to the strategy
-    // to never create primitives asynchronously. We are adding the targets already, because parsing might already
-    // happen before authoring gets to generate the data.
-    if (numXformables == 1)
+omni::physics::parse::ObjectType toObjectType(attachmentauthoring::AttachmentPrimKind kind)
+{
+    switch (kind)
     {
-        const SdfPath simMeshPath = deformableDescs[0]->simMeshPath;
-        const SdfPath collMeshPath = deformableDescs[0]->collisionMeshPath;
-        const SdfPath xformablePath = attachablePaths[1];
+    case attachmentauthoring::AttachmentPrimKind::eVtxVtx:
+        return eAttachmentVtxVtx;
+    case attachmentauthoring::AttachmentPrimKind::eVtxTri:
+        return eAttachmentVtxTri;
+    case attachmentauthoring::AttachmentPrimKind::eVtxTet:
+        return eAttachmentVtxTet;
+    case attachmentauthoring::AttachmentPrimKind::eVtxXform:
+    default:
+        return eAttachmentVtxXform;
+    }
+}
+
+// Receives the sub-prim set an auto attachment needs, realized either as authored USD prims
+// or as in-memory generated children.
+struct AutoAttachmentSubPrimSink
+{
+    virtual ~AutoAttachmentSubPrimSink() = default;
+    virtual void attachment(const char* name, attachmentauthoring::AttachmentPrimKind kind,
+                            omni::physics::parse::ObjectKey body0, omni::physics::parse::ObjectKey body1) = 0;
+    virtual void filter(const char* name, omni::physics::parse::ObjectKey body0, omni::physics::parse::ObjectKey body1) = 0;
+};
+
+struct AuthoredSubPrimSink : AutoAttachmentSubPrimSink
+{
+    usdparser::AttachedStage& stage;
+    omni::physics::parse::ObjectKey autoKey;
+
+    AuthoredSubPrimSink(usdparser::AttachedStage& s, omni::physics::parse::ObjectKey k) : stage(s), autoKey(k) {}
+
+    void attachment(const char* name, attachmentauthoring::AttachmentPrimKind kind,
+                    omni::physics::parse::ObjectKey body0, omni::physics::parse::ObjectKey body1) override
+    {
+        attachmentauthoring::defineAttachmentPrim(stage, autoKey, name, kind, body0, body1);
+    }
+    void filter(const char* name, omni::physics::parse::ObjectKey body0, omni::physics::parse::ObjectKey body1) override
+    {
+        attachmentauthoring::defineElementCollisionFilterPrim(stage, autoKey, name, body0, body1);
+    }
+};
+
+struct GeneratedSubPrimSink : AutoAttachmentSubPrimSink
+{
+    usdparser::AttachedStage& stage;
+    std::string autoPathText;
+    GeneratedAutoAttachmentLayout layout;
+
+    GeneratedSubPrimSink(usdparser::AttachedStage& s, omni::physics::parse::ObjectKey autoKey)
+        : stage(s), autoPathText(s.textViewFor(autoKey)) {}
+
+    // Same child paths the USD arm authors, minted without a prim behind them.
+    omni::physics::parse::ObjectKey childKey(const char* name) const
+    {
+        return stage.keyFor(autoPathText + "/" + name);
+    }
+    void attachment(const char* name, attachmentauthoring::AttachmentPrimKind kind,
+                    omni::physics::parse::ObjectKey body0, omni::physics::parse::ObjectKey body1) override
+    {
+        layout.children.push_back({ childKey(name), toObjectType(kind), body0, body1 });
+    }
+    void filter(const char* name, omni::physics::parse::ObjectKey body0, omni::physics::parse::ObjectKey body1) override
+    {
+        layout.children.push_back({ childKey(name), eDeformableCollisionFilter, body0, body1 });
+    }
+};
+
+// Add all possibly needed primitives, they can always be disabled, if not needed. This is according to the strategy
+// to never create primitives asynchronously. We are adding the targets already, because parsing might already
+// happen before authoring gets to generate the data.
+void defineAutoAttachmentSubPrims(AutoAttachmentSubPrimSink& sink, AutoAttachmentInputs& in)
+{
+    if (in.numXformables == 1)
+    {
+        const omni::physics::parse::ObjectKey simMeshKey = in.deformableDescs[0]->simMeshKey;
+        const omni::physics::parse::ObjectKey collMeshKey = in.deformableDescs[0]->collisionMeshKey;
+        const omni::physics::parse::ObjectKey xformableKey = in.attachableKeys[1];
 
         // TODO extend UsdPhysics with TriXform and TetXform attachments ?
-        omni::physics::usd::defineAttachmentPrim(stage, autoAttachmentPath.AppendElementString("vtx_xform_attachment"),
-            OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsVtxXformAttachment, simMeshPath, xformablePath);
+        sink.attachment("vtx_xform_attachment", attachmentauthoring::AttachmentPrimKind::eVtxXform, simMeshKey, xformableKey);
 
-        for (uint32_t c = 0; c < uint32_t(rigidColliders.size()); ++c)
+        for (uint32_t c = 0; c < uint32_t(in.rigidColliders.size()); ++c)
         {
-            const SdfPath rigidColliderPath = rigidColliders[c];
+            const omni::physics::parse::ObjectKey rigidColliderKey = in.rigidColliders[c];
             char primName[64]; sprintf_s(primName, 64, "element_filter_%d", c);
-            omni::physics::usd::defineElementCollisionFilterPrim(stage, autoAttachmentPath.AppendElementString(primName),
-                attachableSlots[0] == 0 ? collMeshPath : rigidColliderPath,
-                attachableSlots[0] == 0 ? rigidColliderPath : collMeshPath);
+            sink.filter(primName,
+                in.attachableSlots[0] == 0 ? collMeshKey : rigidColliderKey,
+                in.attachableSlots[0] == 0 ? rigidColliderKey : collMeshKey);
         }
     }
-    else if (numDeformables == 2)
+    else if (in.numDeformables == 2)
     {
-        const SdfPath simMeshPaths[2] = { deformableDescs[0]->simMeshPath, deformableDescs[1]->simMeshPath };
-        const SdfPath collMeshPaths[2] = { deformableDescs[0]->collisionMeshPath, deformableDescs[1]->collisionMeshPath };
+        const omni::physics::parse::ObjectKey simMeshKeys[2] = { in.deformableDescs[0]->simMeshKey, in.deformableDescs[1]->simMeshKey };
+        const omni::physics::parse::ObjectKey collMeshKeys[2] = { in.deformableDescs[0]->collisionMeshKey, in.deformableDescs[1]->collisionMeshKey };
 
         // Create vtxVtx for snapping vertex to vertex attachments
-        omni::physics::usd::defineAttachmentPrim(stage, autoAttachmentPath.AppendElementString("vtx_vtx_attachment"),
-            OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsVtxVtxAttachment, simMeshPaths[attachableSlots[0]], simMeshPaths[attachableSlots[1]]);
+        sink.attachment("vtx_vtx_attachment", attachmentauthoring::AttachmentPrimKind::eVtxVtx,
+            simMeshKeys[in.attachableSlots[0]], simMeshKeys[in.attachableSlots[1]]);
 
         for (uint32_t t = 0; t < 2; ++t)
         {
             uint32_t other = 1 - t;
-            if (types[t] == AttachmentActorType::eSURFACE_DEFORMABLE)
+            if (in.types[t] == AttachmentActorType::eSURFACE_DEFORMABLE)
             {
                 // Create vtxTri for snapping vertex to triangle attachments, we don't support triangle offsets yet
-                char primName[64]; sprintf_s(primName, 64, "vtx%d_tri%d_attachment", attachableSlots[other], attachableSlots[t]);
-                omni::physics::usd::defineAttachmentPrim(stage, autoAttachmentPath.AppendElementString(primName),
-                    OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsVtxTriAttachment, simMeshPaths[other], simMeshPaths[t]);
+                char primName[64]; sprintf_s(primName, 64, "vtx%d_tri%d_attachment", in.attachableSlots[other], in.attachableSlots[t]);
+                sink.attachment(primName, attachmentauthoring::AttachmentPrimKind::eVtxTri, simMeshKeys[other], simMeshKeys[t]);
             }
-            else if (types[t] == AttachmentActorType::eVOLUME_DEFORMABLE)
+            else if (in.types[t] == AttachmentActorType::eVOLUME_DEFORMABLE)
             {
                 // Not supporting surface tri attachments yet
-                char primName[64]; sprintf_s(primName, 64, "vtx%d_tet%d_attachment", attachableSlots[other], attachableSlots[t]);
-                omni::physics::usd::defineAttachmentPrim(stage, autoAttachmentPath.AppendElementString(primName),
-                    OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsVtxTetAttachment, simMeshPaths[other], simMeshPaths[t]);
+                char primName[64]; sprintf_s(primName, 64, "vtx%d_tet%d_attachment", in.attachableSlots[other], in.attachableSlots[t]);
+                sink.attachment(primName, attachmentauthoring::AttachmentPrimKind::eVtxTet, simMeshKeys[other], simMeshKeys[t]);
             }
         }
 
-        omni::physics::usd::defineElementCollisionFilterPrim(stage, autoAttachmentPath.AppendElementString("element_filter"),
-            collMeshPaths[attachableSlots[0]], collMeshPaths[attachableSlots[1]]);
+        sink.filter("element_filter", collMeshKeys[in.attachableSlots[0]], collMeshKeys[in.attachableSlots[1]]);
     }
+}
 
+// False, with nothing stored, when a child key fails to mint: the source's mintKeyForPath
+// is existence-dependent, so no layout could be wired up without corrupting the reverse
+// index (every child would share the invalid key).
+bool buildGeneratedLayout(usdparser::AttachedStage& attachedStage,
+                          omni::physics::parse::ObjectKey autoAttachmentKey,
+                          AutoAttachmentInputs& in)
+{
+    GeneratedSubPrimSink sink(attachedStage, autoAttachmentKey);
+    defineAutoAttachmentSubPrims(sink, in);
+    for (const GeneratedAutoAttachmentChild& child : sink.layout.children)
+    {
+        if (!child.key.valid())
+        {
+            CARB_LOG_WARN("setupAutoDeformableAttachment: %s: the source cannot mint keys for unauthored sub prims, "
+                          "no in-memory attachment generated", attachedStage.textFor(autoAttachmentKey));
+            return false;
+        }
+    }
+    attachedStage.setGeneratedAutoAttachmentLayout(autoAttachmentKey, std::move(sink.layout));
     return true;
 }
 
-bool updateAutoDeformableAttachment(const SdfPath& autoAttachmentPath, bool& attachmentDataRecomputed)
+// Number of sub prims defineAutoAttachmentSubPrims produces for the prim; 0 when it is not a
+// usable auto attachment.
+struct CountingSubPrimSink : AutoAttachmentSubPrimSink
+{
+    uint32_t count = 0;
+    void attachment(const char*, attachmentauthoring::AttachmentPrimKind, omni::physics::parse::ObjectKey,
+                    omni::physics::parse::ObjectKey) override
+    {
+        ++count;
+    }
+    void filter(const char*, omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey) override
+    {
+        ++count;
+    }
+};
+
+// Releases the runtime objects of the current in-memory layout, the analog of
+// removeAttachmentsAndFilters for authored sub-prims (mirrors PrimUpdate.cpp's handleRemovedPrim).
+void releaseGeneratedAutoAttachmentObjects(usdparser::AttachedStage& attachedStage,
+                                           omni::physics::parse::ObjectKey autoAttachmentKey)
+{
+    const GeneratedAutoAttachmentLayout* layout = attachedStage.getGeneratedAutoAttachmentLayout(autoAttachmentKey);
+    if (!layout)
+        return;
+    ObjectDb* objectDb = attachedStage.getObjectDatabase();
+    PhysXUsdPhysicsInterface* physInt = attachedStage.getPhysXPhysicsInterface();
+    for (const GeneratedAutoAttachmentChild& child : layout->children)
+    {
+        const ObjectIdMap* entries = objectDb->getEntries(child.key);
+        if (!entries || entries->empty())
+            continue;
+        for (const auto& entry : *entries)
+            physInt->releaseObject(attachedStage, child.key, entry.second);
+        objectDb->removeEntries(child.key);
+    }
+}
+
+// Creates the runtime objects of the in-memory layout, attachments before filters like the load path.
+void createGeneratedAutoAttachmentObjects(usdparser::AttachedStage& attachedStage,
+                                          omni::physics::parse::ObjectKey autoAttachmentKey)
+{
+    const GeneratedAutoAttachmentLayout* layout = attachedStage.getGeneratedAutoAttachmentLayout(autoAttachmentKey);
+    if (!layout)
+        return;
+    ObjectDb* objectDb = attachedStage.getObjectDatabase();
+    PhysXUsdPhysicsInterface* physInt = attachedStage.getPhysXPhysicsInterface();
+    for (const bool filters : { false, true })
+    {
+        for (const GeneratedAutoAttachmentChild& child : layout->children)
+        {
+            const bool isFilter = child.type == eDeformableCollisionFilter;
+            if (isFilter != filters)
+                continue;
+            PhysxObjectDesc* desc = isFilter ? static_cast<PhysxObjectDesc*>(makeGeneratedDeformableCollisionFilterDesc(child))
+                                             : static_cast<PhysxObjectDesc*>(makeGeneratedDeformableAttachmentDesc(child));
+            const ObjectId id = physInt->createObject(attachedStage, child.key, *desc);
+            if (id != kInvalidObjectId)
+            {
+                objectDb->findOrCreateEntry(child.key, attachedStage.textViewFor(child.key), desc->type, id);
+            }
+            else
+            {
+                // No prim is left behind to inspect on this path, so the log is the only trace.
+                CARB_LOG_WARN("setupAutoDeformableAttachment: failed to create the generated %s %s",
+                    isFilter ? "collision filter" : "attachment", attachedStage.textFor(child.key));
+            }
+            ICE_FREE(desc);
+        }
+    }
+}
+
+} // namespace
+
+PhysxDeformableAttachmentDesc* makeGeneratedDeformableAttachmentDesc(const GeneratedAutoAttachmentChild& child)
+{
+    auto* desc = ICE_PLACEMENT_NEW(PhysxDeformableAttachmentDesc)();
+    desc->type = child.type;
+    desc->primKey = child.key;
+    // Like the authored sub-prim, disabled until the generated payload says otherwise.
+    desc->enabled = false;
+    desc->src0 = child.src0;
+    desc->src1 = child.src1;
+    return desc;
+}
+
+PhysxDeformableCollisionFilterDesc* makeGeneratedDeformableCollisionFilterDesc(const GeneratedAutoAttachmentChild& child)
+{
+    auto* desc = ICE_PLACEMENT_NEW(PhysxDeformableCollisionFilterDesc)();
+    desc->primKey = child.key;
+    desc->enabled = false;
+    desc->src0 = child.src0;
+    desc->src1 = child.src1;
+    return desc;
+}
+
+bool buildGeneratedAutoDeformableAttachmentLayout(usdparser::AttachedStage& attachedStage,
+                                                  omni::physics::parse::ObjectKey autoAttachmentKey)
+{
+    AutoAttachmentInputs in;
+    if (!parseAutoAttachmentInputs(attachedStage, autoAttachmentKey, in, "buildGeneratedAutoDeformableAttachmentLayout"))
+        return false;
+    return buildGeneratedLayout(attachedStage, autoAttachmentKey, in);
+}
+
+uint32_t expectedAutoDeformableAttachmentSubPrimCount(usdparser::AttachedStage& attachedStage,
+                                                      omni::physics::parse::ObjectKey autoAttachmentKey)
+{
+    AutoAttachmentInputs in;
+    if (!parseAutoAttachmentInputs(attachedStage, autoAttachmentKey, in, "expectedAutoDeformableAttachmentSubPrimCount"))
+        return 0;
+    CountingSubPrimSink sink;
+    defineAutoAttachmentSubPrims(sink, in);
+    return sink.count;
+}
+
+/**
+* Initial setup of auto attachment. Creates all necessary sub prims depending on the attachable types.
+* Pre-existing sub prims just get removed.
+*
+* With a live USD stage the sub prims are authored into it (Kit flow; the stage's change
+* notices then create the runtime objects). Without one -- an ovstage attach -- nothing is
+* pushed back to the source: the sub prims become an in-memory GeneratedAutoAttachmentLayout
+* on the AttachedStage, the payload is generated into its generated-data cache, and the runtime
+* objects are created here directly.
+*/
+bool setupAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachmentKey)
+{
+    usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    if (!attachedStage)
+        return false;
+
+    AutoAttachmentInputs in;
+    if (!parseAutoAttachmentInputs(*attachedStage, autoAttachmentKey, in, "setupAutoDeformableAttachment"))
+        return false;
+
+    // Whatever the previous setup produced for this prim goes first: the in-memory layout's
+    // objects and the layout itself, then (authoring branch) the authored sub prims. Clearing
+    // the layout on the authoring branch matters because the getters and the CRC store prefer
+    // a layout whenever one exists; a stale one would shadow the freshly authored prims.
+    releaseGeneratedAutoAttachmentObjects(*attachedStage, autoAttachmentKey);
+    attachedStage->clearGeneratedAutoAttachmentLayout(autoAttachmentKey);
+
+    if (!attachmentauthoring::canAuthor(*attachedStage))
+    {
+        if (!buildGeneratedLayout(*attachedStage, autoAttachmentKey, in))
+            return false;
+        bool attachmentDataRecomputed = false;
+        if (!updateAutoDeformableAttachment(autoAttachmentKey, attachmentDataRecomputed))
+        {
+            // No objects: a registered attachment with an empty payload would simulate as
+            // nothing while the caller was told setup succeeded.
+            CARB_LOG_WARN("setupAutoDeformableAttachment: generating attachment data failed for %s",
+                attachedStage->textFor(autoAttachmentKey));
+            attachedStage->clearGeneratedAutoAttachmentLayout(autoAttachmentKey);
+            return false;
+        }
+        createGeneratedAutoAttachmentObjects(*attachedStage, autoAttachmentKey);
+        return true;
+    }
+
+    attachmentauthoring::removeAttachmentsAndFilters(*attachedStage, autoAttachmentKey);
+
+    AuthoredSubPrimSink sink(*attachedStage, autoAttachmentKey);
+    defineAutoAttachmentSubPrims(sink, in);
+    return true;
+}
+
+bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachmentKey, bool& attachmentDataRecomputed)
 {
     attachmentDataRecomputed = false;
 
     usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
     if (!attachedStage)
         return false;
-    UsdStageWeakPtr stage = attachedStage->getStage();
 
-    const omni::physics::parse::ObjectKey autoAttachmentKey = attachedStage->keyFor(autoAttachmentPath);
     const omni::physics::parse::IPhysicsSource* src = attachedStage->getSource();
-    if (!(src && src->hasSchema(autoAttachmentKey,
-                               src->internToken(PhysxSchemaTokens->PhysxAutoDeformableAttachmentAPI.GetString()))))
+    if (!src)
+        return false;
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    if (!src->hasSchema(autoAttachmentKey, tok.PhysxAutoDeformableAttachmentAPI))
         return false;
 
     PhysxAutoAttachmentDesc autoAttachmentDesc;
@@ -2507,15 +2876,14 @@ bool updateAutoDeformableAttachment(const SdfPath& autoAttachmentPath, bool& att
     }
 
     AttachmentActorType::Enum types[2] = { AttachmentActorType::eINVALID, AttachmentActorType::eINVALID };
-    SdfPath attachablePaths[2];
     omni::physics::parse::ObjectKey attachableKeys[2];
     DeformableDescRef deformableDescs[2] = { nullptr, nullptr };
     uint32_t attachableSlots[2] = { 0, 1 };
     uint32_t numDeformables = 0;
     uint32_t numXformables = 0;
-    std::vector<SdfPath> rigidColliders;
+    std::vector<omni::physics::parse::ObjectKey> rigidColliders;
 
-    if (!parseAttachables(*attachedStage, types, attachablePaths, attachableKeys, deformableDescs, attachableSlots, numDeformables,
+    if (!parseAttachables(*attachedStage, types, attachableKeys, deformableDescs, attachableSlots, numDeformables,
         numXformables, rigidColliders, autoAttachmentKey, *cookingDataAsync))
     {
         CARB_LOG_WARN("updateAutoDeformableAttachment: parsing attachables failed");
@@ -2528,12 +2896,12 @@ bool updateAutoDeformableAttachment(const SdfPath& autoAttachmentPath, bool& att
 
     MaskShapes maskShapes;
     {
-        SdfPathVector targets;
-        internal::getRelationshipValue(*attachedStage, autoAttachmentKey, PhysxSchemaTokens->physxAutoDeformableAttachmentMaskShapes, targets);
+        std::vector<omni::physics::parse::ObjectKey> targets;
+        internal::getRelationshipValue(*attachedStage, autoAttachmentKey, tok.physxAutoDeformableAttachmentMaskShapes, targets);
 
         for (uint32_t i = 0; i < targets.size(); ++i)
         {
-            const omni::physics::parse::ObjectKey maskShapeKey = attachedStage->keyFor(targets[i]);
+            const omni::physics::parse::ObjectKey maskShapeKey = targets[i];
             if (src->exists(maskShapeKey))
             {
                 PxGeometryHolder holder;
@@ -2582,34 +2950,55 @@ bool updateAutoDeformableAttachment(const SdfPath& autoAttachmentPath, bool& att
         inputCrc.setMeshKey(deformableMeshInfo[d].deformableBodyDataCrc);
     }
 
-    // load attachment mesh key
-    omni::physx::usdparser::MeshKey usdInputCrc = loadMeshKey(*attachedStage, autoAttachmentKey, autoDeformableAttachmentInputCrcToken);
-    if (usdInputCrc == inputCrc)
+    // Cache key of the last generated payload: kept on the in-memory layout when the attach
+    // cannot author sub-prims, otherwise as the inputCrc attribute on the prim.
+    GeneratedAutoAttachmentLayout* layout = attachedStage->getGeneratedAutoAttachmentLayout(autoAttachmentKey);
+    omni::physx::usdparser::MeshKey storedInputCrc;
+    if (layout)
+    {
+        if (layout->inputCrc.size() == sizeof(storedInputCrc))
+            std::memcpy(&storedInputCrc, layout->inputCrc.data(), sizeof(storedInputCrc));
+    }
+    else
+    {
+        storedInputCrc = loadMeshKey(*attachedStage, autoAttachmentKey, autoDeformableAttachmentInputCrcToken);
+    }
+    if (storedInputCrc == inputCrc)
     {
         // nothing to compute
         return true;
     }
-    storeMeshKey(*attachedStage, autoAttachmentKey, autoDeformableAttachmentInputCrcToken, inputCrc);
+    if (layout)
+    {
+        const uint8_t* crcBytes = reinterpret_cast<const uint8_t*>(&inputCrc);
+        layout->inputCrc.assign(crcBytes, crcBytes + sizeof(inputCrc));
+    }
+    else
+    {
+        storeMeshKey(*attachedStage, autoAttachmentKey, autoDeformableAttachmentInputCrcToken, inputCrc);
+    }
     attachmentDataRecomputed = true;
 
-    attachedStage->clearGeneratedDeformableAttachmentDataUnderPath(autoAttachmentPath);
-    omni::physics::usd::disableAttachmentsAndFilters(stage, autoAttachmentPath);
+    attachedStage->clearGeneratedDeformableAttachmentDataUnderPath(autoAttachmentKey);
+    // USD-stage mirror of the reset above: disables the previous run's Attachment /
+    // ElementCollisionFilter prims on the live stage. No-op without one (in-memory layout).
+    attachmentauthoring::disableAttachmentsAndFilters(*attachedStage, autoAttachmentKey);
 
     if (numXformables == 1)
     {
         DeformableMeshInfo& deformableInfo = deformableMeshInfo[0];
-        const SdfPath& xformablePath = attachablePaths[1];
+        const omni::physics::parse::ObjectKey xformableKey = attachableKeys[1];
         omni::physics::parse::ObjectKey vtxXformKey;
         std::vector<omni::physics::parse::ObjectKey> filterKeys;
         bool validAttachment = getVtxXformAttachment(*attachedStage, vtxXformKey, autoAttachmentKey,
-            deformableInfo.simMeshPath, xformablePath);
+            deformableInfo.simMeshKey, xformableKey);
         bool validFilters = getElementCollisionFilters(*attachedStage, filterKeys, autoAttachmentKey,
-            rigidColliders, deformableInfo.collMeshPath);
+            rigidColliders, deformableInfo.collMeshKey);
 
         if (validAttachment && validFilters)
         {
             updateDeformableXformableAttachments(*attachedStage, vtxXformKey, filterKeys, deformableInfo,
-                attachableSlots[0], xformablePath, rigidColliders, autoAttachmentDesc, maskShapes);
+                attachableSlots[0], xformableKey, rigidColliders, autoAttachmentDesc, maskShapes);
         }
         else
         {
@@ -2627,12 +3016,12 @@ bool updateAutoDeformableAttachment(const SdfPath& autoAttachmentPath, bool& att
                 omni::physics::parse::ObjectKey vtxTetKeys[2];
                 omni::physics::parse::ObjectKey filterKey;
                 bool validAttachment0 = getVtxTetAttachment(*attachedStage, vtxTetKeys[0], autoAttachmentKey,
-                    deformableMeshInfo[0].simMeshPath, deformableMeshInfo[1].simMeshPath);
+                    deformableMeshInfo[0].simMeshKey, deformableMeshInfo[1].simMeshKey);
                 bool validAttachment1 = getVtxTetAttachment(*attachedStage, vtxTetKeys[1], autoAttachmentKey,
-                    deformableMeshInfo[1].simMeshPath, deformableMeshInfo[0].simMeshPath);
+                    deformableMeshInfo[1].simMeshKey, deformableMeshInfo[0].simMeshKey);
                 bool validFilter = getElementCollisionFilter(*attachedStage, filterKey, autoAttachmentKey,
-                    deformableMeshInfo[0].collMeshPath,
-                    deformableMeshInfo[1].collMeshPath);
+                    deformableMeshInfo[0].collMeshKey,
+                    deformableMeshInfo[1].collMeshKey);
 
                 if (validAttachment0 && validAttachment1 && validFilter)
                 {
@@ -2651,10 +3040,10 @@ bool updateAutoDeformableAttachment(const SdfPath& autoAttachmentPath, bool& att
                 omni::physics::parse::ObjectKey vtxTetKey;
                 omni::physics::parse::ObjectKey filterKey;
                 bool validAttachment = getVtxTetAttachment(*attachedStage, vtxTetKey, autoAttachmentKey,
-                    deformableMeshInfo[1].simMeshPath, deformableMeshInfo[0].simMeshPath);
+                    deformableMeshInfo[1].simMeshKey, deformableMeshInfo[0].simMeshKey);
                 bool validFilter = getElementCollisionFilter(*attachedStage, filterKey, autoAttachmentKey,
-                    deformableMeshInfo[attachableSlots[0]].collMeshPath,
-                    deformableMeshInfo[attachableSlots[1]].collMeshPath);
+                    deformableMeshInfo[attachableSlots[0]].collMeshKey,
+                    deformableMeshInfo[attachableSlots[1]].collMeshKey);
 
                 if (validAttachment && validFilter)
                 {

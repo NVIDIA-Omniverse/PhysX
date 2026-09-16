@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // SDK-side dynamic loader for the internal sidecar.
 //
@@ -14,9 +14,9 @@
 #include "internal/sidecar/ovphysxInternal.h"            // OVPHYSX_INTERNAL_INTERFACE_VERSION + ovphysx_plugin_version typedef
 #include "internal/sidecar/ovphysxInternalInterop.h"     // interop g_sidecar* declarations
 #include "internal/sidecar/ovphysxInternalObjectChange.h" // object-change g_sidecar* declarations
-#include "internal/sidecar/ovphysxInternalStage.h"       // stage g_sidecar* declarations
 #include <omni/physx/PhysXRuntime.h>
 #include <omni/physx/IOvxPhysicsRead.h>  // omni::physx::ovx* read entry points (injected into the sidecar)
+#include <omni/physx/IOvxPhysicsWrite.h> // omni::physx::ovx* write entry points (injected into the sidecar)
 
 #include <carb/Framework.h>
 #include <carb/logging/Log.h>
@@ -33,10 +33,13 @@
 #include <mutex>
 #include <string>
 
-// The g_sidecar* atomics themselves are defined in each subsystem's cpp file
-// (e.g. the stage-close entry point in ovphysxInternalStage.cpp), next to the
-// code that reads them. The loader writes through the externs declared in the
-// per-subsystem sidecar headers (#include'd above).
+// The sidecar header mirrors OvxCommitFailure so the C layer can read the out-param without
+// depending on ovruntime. This is the one translation unit that sees both, so it is where the copy
+// is held to the original.
+static_assert(static_cast<int32_t>(omni::physx::kOvxCommitFailureNotLive) == kOvphysxCommitFailureNotLive,
+              "OvxCommitFailure::NotLive and its sidecar mirror disagree");
+static_assert(static_cast<int32_t>(omni::physx::kOvxCommitFailurePublish) == kOvphysxCommitFailurePublish,
+              "OvxCommitFailure::Publish and its sidecar mirror disagree");
 
 namespace {
 
@@ -47,7 +50,7 @@ using SidecarHandle = void*;
 #endif
 
 // s_sidecarHandle is read by resolveSidecarSymbol() from outside the loader
-// mutex, so it's atomic too. Loaded path is only accessed under
+// mutex, so it is atomic. The loaded path is only accessed under
 // s_sidecarLoadMutex and doubles as the loader's idempotency gate:
 // `!s_sidecarLoadedPath.empty()` means the sidecar finished loading
 // successfully. unload() clears the path on any failure.
@@ -85,7 +88,6 @@ void logSidecarSource(const char* reason)
 bool loadInternalSidecar() {
     std::lock_guard<std::mutex> lock(s_sidecarLoadMutex);
 
-    // Already loaded?
     if (!s_sidecarLoadedPath.empty()) {
         logSidecarSource("already loaded");
         return true;
@@ -96,7 +98,7 @@ bool loadInternalSidecar() {
 
     // Add the directory where ovphysx.dll lives to PATH (once only).
     // This ensures Windows can find ovphysx_internal.dll which is in the same directory.
-    // CarboniteLoader adds dependency directories (USD libs, etc.) to PATH as well.
+    // CarboniteLoader adds the plugin directories to PATH as well.
     static bool s_pathUpdated = false;
     if (!s_pathUpdated)
     {
@@ -111,7 +113,6 @@ bool loadInternalSidecar() {
                 char* lastSlash = strrchr(ovphysxPath, '\\');
                 if (lastSlash) *lastSlash = '\0';
 
-                // Prepend to PATH
                 const char* currentPath = std::getenv("PATH");
                 std::string newPath = std::string(ovphysxPath);
                 if (currentPath && currentPath[0] != '\0')
@@ -156,8 +157,8 @@ bool loadInternalSidecar() {
 
     // Defer publishing s_sidecarHandle / s_sidecarLoadedPath until after the
     // full handshake + symbol resolution succeeds. A concurrent caller of
-    // resolveSidecarSymbol() must never observe the handle while we're still
-    // in the middle of resolving (or about to unload() on failure).
+    // resolveSidecarSymbol() must never observe the handle while resolution is
+    // still in progress (or about to unload() on failure).
     auto unload = [handle]() {
 #ifdef _WIN32
         FreeLibrary(handle);
@@ -165,17 +166,19 @@ bool loadInternalSidecar() {
         dlclose(handle);
 #endif
         s_sidecarHandle.store(nullptr, std::memory_order_release);
-        // Clear every resolved pointer so a partial-load failure can't leave
+        // Clear every resolved pointer so a partial-load failure cannot leave
         // stale function pointers visible to wrappers on the next call.
-        g_sidecarCloseUsdStage.store(nullptr, std::memory_order_release);
         g_sidecarGetPhysXPtr.store(nullptr, std::memory_order_release);
         g_sidecarUpdateKinematic.store(nullptr, std::memory_order_release);
-        g_sidecarEncodeSdfPath.store(nullptr, std::memory_order_release);
         g_sidecarOutputQuery.store(nullptr, std::memory_order_release);
         g_sidecarReadOutputs.store(nullptr, std::memory_order_release);
         g_sidecarFetchReadNext.store(nullptr, std::memory_order_release);
         g_sidecarReleaseRead.store(nullptr, std::memory_order_release);
         g_sidecarReleaseQuery.store(nullptr, std::memory_order_release);
+        g_sidecarWriteAttribute.store(nullptr, std::memory_order_release);
+        g_sidecarFetchWriteNext.store(nullptr, std::memory_order_release);
+        g_sidecarCommitGroup.store(nullptr, std::memory_order_release);
+        g_sidecarReleaseWrite.store(nullptr, std::memory_order_release);
         g_sidecarSubscribeObjectChanges.store(nullptr, std::memory_order_release);
         g_sidecarUnsubscribeObjectChanges.store(nullptr, std::memory_order_release);
         g_sidecarEnableVisualization.store(nullptr, std::memory_order_release);
@@ -187,10 +190,10 @@ bool loadInternalSidecar() {
         g_sidecarGetDebugPoints.store(nullptr, std::memory_order_release);
         g_sidecarGetDebugLines.store(nullptr, std::memory_order_release);
         g_sidecarGetDebugTriangles.store(nullptr, std::memory_order_release);
-        s_sidecarLoadedPath.clear();  // clearing this is what un-gates the "already loaded" check at the top of loadInternalSidecar()
+        s_sidecarLoadedPath.clear();  // re-opens the loaded gate at the top of loadInternalSidecar()
     };
 
-    // Version probe is only used here for the handshake; not stored as a global.
+    // The version probe is only used for the handshake and not stored as a global.
     using VersionFn = uint32_t (*)();
     VersionFn versionFn = (VersionFn)doSidecarSym(handle, "ovphysx_plugin_version");
     if (!versionFn) {
@@ -208,13 +211,12 @@ bool loadInternalSidecar() {
         return false;
     }
 
-    // Inject the main library's framework + OmniCore built-ins into the sidecar
+    // Inject the main library's framework and OmniCore built-ins into the sidecar
     // before resolving sidecar entry points. The sidecar is a peer DSO, not a
-    // Carbonite plugin; CARB_GLOBALS and OMNI_MODULE_DEFINE_OMNI_FUNCTIONS keep
+    // Carbonite plugin: CARB_GLOBALS and OMNI_MODULE_DEFINE_OMNI_FUNCTIONS keep
     // framework/log/type-factory state in module-local storage, so dlopen alone
-    // does not seed it. This setter handshake follows the ovrtx/rtx.hydra
-    // peer-DSO pattern and runs before any CARB_LOG_* or ObjectPtr<T> cleanup
-    // can observe null globals.
+    // does not seed it. The handshake runs before any CARB_LOG_* or ObjectPtr<T>
+    // cleanup in the sidecar can observe null globals.
     using SetFrameworkFn   = void (*)(carb::Framework*);
     using SetOmniBuiltInsFn = void (*)(omni::core::ITypeFactory*, omni::log::ILog*, omni::structuredlog::IStructuredLog*);
     using SetPhysxRuntimeAccessorsFn = void (*)(
@@ -232,7 +234,7 @@ bool loadInternalSidecar() {
         return false;
     }
 
-    // Owner-side preflight: fail fast if the main library hasn't completed its
+    // Owner-side preflight: fail fast if the main library has not completed its
     // own Carbonite bootstrap, instead of injecting nulls into the sidecar and
     // then deferring the failure to every sidecar entry point. Both must be
     // non-null because the sidecar relies on the framework for settings and runtime
@@ -291,16 +293,23 @@ bool loadInternalSidecar() {
                       "ovstage-native output read (ovphysx_query) will be unavailable.");
     }
 
-    auto closeUsdStage = (OvphysxSidecarCloseUsdStageFn)doSidecarSym(handle, "ovphysx_close_usd_stage");
-    if (!closeUsdStage) {
-        // Required: without close, every opened stage stays pinned in the
-        // sidecar's UsdUtilsStageCache for the process lifetime. Fail fast.
-        CARB_LOG_ERROR("Internal sidecar loaded but 'ovphysx_close_usd_stage' not found - "
-                       "stage cache cleanup would be unavailable. Sidecar may be outdated.");
-        unload();
-        return false;
+    // The write half (ADR-0012), injected the same way and for the same reason: the entry points
+    // live in the owner's statically-linked OvruntimePhysX and the sidecar has none of its own.
+    using SetOvxWriteAccessorsFn = void (*)(void*, void*, void*, void*);
+    SetOvxWriteAccessorsFn setOvxWriteAccessors =
+        (SetOvxWriteAccessorsFn)doSidecarSym(handle, "ovphysx_internal_set_ovx_write_accessors");
+    if (setOvxWriteAccessors)
+    {
+        setOvxWriteAccessors(reinterpret_cast<void*>(&omni::physx::ovxWriteAttribute),
+                             reinterpret_cast<void*>(&omni::physx::ovxFetchWriteNext),
+                             reinterpret_cast<void*>(&omni::physx::ovxCommitGroup),
+                             reinterpret_cast<void*>(&omni::physx::ovxReleaseWrite));
     }
-    g_sidecarCloseUsdStage.store(closeUsdStage, std::memory_order_release);
+    else
+    {
+        CARB_LOG_WARN("Internal sidecar: ovphysx_internal_set_ovx_write_accessors not found; "
+                      "the app-to-physics write (ovphysx_write) will be unavailable.");
+    }
 
     auto getPhysXPtr = (OvphysxSidecarGetPhysXPtrFn)doSidecarSym(handle, "ovphysx_internal_get_physx_ptr");
     if (!getPhysXPtr) {
@@ -308,13 +317,6 @@ bool loadInternalSidecar() {
                       "PhysX object pointer lookup will be unavailable");
     }
     g_sidecarGetPhysXPtr.store(getPhysXPtr, std::memory_order_release);
-
-    auto encodeSdfPath = (OvphysxSidecarEncodeSdfPathFn)doSidecarSym(handle, "ovphysx_encode_sdf_path");
-    if (!encodeSdfPath) {
-        CARB_LOG_WARN("Internal sidecar loaded but 'ovphysx_encode_sdf_path' not found - "
-                      "scene query path encoding will be unavailable");
-    }
-    g_sidecarEncodeSdfPath.store(encodeSdfPath, std::memory_order_release);
 
     auto updateKinematic = (OvphysxSidecarUpdateKinematicFn)doSidecarSym(handle, "ovphysx_internal_update_kinematic");
     if (!updateKinematic) {
@@ -331,7 +333,7 @@ bool loadInternalSidecar() {
     g_sidecarUpdateKinematic.store(updateKinematic, std::memory_order_release);
 
     // Physics output read (ADR-0007). Optional: warn-and-continue so an older
-    // sidecar still loads; the public read API reports "not loaded" if missing.
+    // sidecar still loads. The public read API reports "not loaded" if missing.
     {
         auto outputQuery = (OvphysxSidecarOutputQueryFn)doSidecarSym(handle, "ovphysx_internal_output_query");
         auto fetchQueryResult = (OvphysxSidecarFetchQueryResultFn)doSidecarSym(handle, "ovphysx_internal_fetch_query_result");
@@ -357,6 +359,21 @@ bool loadInternalSidecar() {
         g_sidecarReleaseGroup.store(releaseGroup, std::memory_order_release);
         g_sidecarReleaseRead.store(releaseRead, std::memory_order_release);
         g_sidecarReleaseQuery.store(releaseQuery, std::memory_order_release);
+
+        auto writeAttribute = (OvphysxSidecarWriteAttributeFn)doSidecarSym(handle, "ovphysx_internal_write_attribute");
+        auto fetchWriteNext = (OvphysxSidecarFetchWriteNextFn)doSidecarSym(handle, "ovphysx_internal_fetch_write_next");
+        auto commitGroup = (OvphysxSidecarCommitGroupFn)doSidecarSym(handle, "ovphysx_internal_commit_group");
+        auto releaseWrite = (OvphysxSidecarReleaseWriteFn)doSidecarSym(handle, "ovphysx_internal_release_write");
+        if (!writeAttribute || !fetchWriteNext || !commitGroup || !releaseWrite)
+        {
+            CARB_LOG_WARN("Internal sidecar loaded but the app-to-physics write entry points "
+                          "(ovphysx_internal_write_attribute/fetch_write_next/commit_group/release_write) "
+                          "were not all found - ovphysx_write will be unavailable. Sidecar may be outdated.");
+        }
+        g_sidecarWriteAttribute.store(writeAttribute, std::memory_order_release);
+        g_sidecarFetchWriteNext.store(fetchWriteNext, std::memory_order_release);
+        g_sidecarCommitGroup.store(commitGroup, std::memory_order_release);
+        g_sidecarReleaseWrite.store(releaseWrite, std::memory_order_release);
     }
 
     auto subscribeObjectChanges = (OvphysxSidecarSubscribeObjectChangesFn)doSidecarSym(handle, "ovphysx_internal_subscribe_object_changes");

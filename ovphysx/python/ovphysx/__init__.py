@@ -1,7 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
-"""ovphysx -- USD-based physics simulation with DLPack tensor interoperability.
+# @implements REQ-PYTHON-OMNIPVD-LATE-001
+# @covers AC-1
+# @implements REQ-CAPI-OVSTAGE-SCHEMA-001
+# @covers AC-3
+
+"""ovphysx: PhysX simulation of ovstage-populated scenes with Warp-array output.
 
 AI agent / LLM instructions:
     This package ships skills (step-by-step playbooks) and code samples.
@@ -14,46 +19,38 @@ AI agent / LLM instructions:
 
     Or call ``ovphysx.ai_skills_path()`` to get the same paths as a dict.
 
-    Key classes: PhysX, TensorBindingSpec, and ContactBinding.
+    Key classes: PhysX and ContactBinding. (TensorBindingSpec belongs to the deprecated
+    tensor-binding API; new code should use ``PhysX.read`` / ``PhysX.write``.)
     Full docs are in the ``docs/`` subdirectory of this package.
 
 Important notes for agents:
-    - The default ovphysx wheel uses the namespaced, py-less OpenUSD runtime
-      from its exact paired ``ovstage`` wheel, so it does not bundle a second
-      USD singleton. Do not add ``usd-core`` as an ovphysx dependency; install
-      it only if your application explicitly needs its own classic USD Python API.
-    - ovphysx exchanges tensor data via DLPack, so any framework that
-      understands DLPack can consume it. Common optional companions are
-      numpy (CPU tensors) and torch (GPU tensors), but they are not
-      dependencies of this package. Users should add whichever they need
-      to their own project requirements.
-    - ``import ovphysx`` appends to ``OV_PXR_PLUGINPATH_2511`` so ovphysx's
-      schema plugins are visible before the first USD stage open. No native
-      loading happens at import; that is still deferred until a native
+    - ovphysx ships no OpenUSD runtime and never loads one. Scenes are
+      populated through the ``ovstage`` package (an exact-version dependency)
+      and attached with ``PhysX.attach_ovstage()``. Any USD used to author
+      scenes (stock ``usd-core`` or another OpenUSD build) belongs to the
+      application, not to ovphysx.
+    - ovphysx ships its PhysX USD schemas as codeless resources and only tells
+      you where they are: ``ovphysx.codeless_schema_root()`` and
+      ``ovphysx.codeless_schema_paths()``. Register them yourself, with
+      ``ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])``
+      before the first ovstage population call, and/or with your own USD runtime.
+    - ``PhysX.read()`` and ``read_tokens()`` return ``warp.array`` on CPU and
+      CUDA. ``warp-lang`` is a package dependency and provides downstream
+      DLPack interoperability. The remaining DLTensor typing belongs to the
+      legacy compatibility APIs.
+    - ``import ovphysx`` has no side effects on the process environment and
+      loads no native library; native loading is deferred until a native
       attribute (``PhysX``, ``ContactBinding``, etc.) is first accessed.
 """
 
 # =============================================================================
-# Pure-Python exports (no native loading, no USD; one OS env var is appended)
+# Pure-Python exports (no native loading, no USD, no environment changes)
 # =============================================================================
 #
-# Importing ovphysx makes the IntEnum types, ``__version__``, and the
-# ``register_schema_paths`` / ``ai_skills_path`` / ``bootstrap`` helpers
-# available. Native library loading (USD version checks, _bindings,
-# api classes) is deferred to first access of a native-dependent attribute
-# via ``__getattr__``.
-#
-# Side effect on import: ``register_schema_paths()`` is called. It appends
-# ovphysx's namespaced USD plugin path to ``OV_PXR_PLUGINPATH_2511`` (no-op
-# if already present). This avoids a class of silent-schema-drop bugs in
-# mixed-process apps (e.g. ovphysx + ovrtx) where USD's ``PlugRegistry`` is
-# locked in by another subsystem before the user remembers to call
-# ``register_schema_paths()`` explicitly. The call is pure-Python and does
-# not trigger native loading. It is always-idempotent: re-reads the live
-# env (Python and native views), merges, dedupes, and writes back, so it is
-# safe to call repeatedly. Callers that need an env-var-pure import can pop
-# ``OV_PXR_PLUGINPATH_2511`` from ``os.environ`` after the import; a later
-# ``register_schema_paths()`` call will re-add ovphysx's path.
+# Importing ovphysx exposes the IntEnum types, ``__version__`` and the schema,
+# skills and bootstrap helpers. Native library loading (_bindings, api classes)
+# is deferred to the first access of a native-dependent attribute via
+# ``__getattr__``.
 
 import logging as _logging
 
@@ -73,42 +70,16 @@ from .types import (
     SceneQueryMode,
     TensorType,
 )
-from .config import PhysXConfig
+from .config import OmniPvdDestination, PhysXConfig
 from .schemas import codeless_schema_paths, codeless_schema_root
-from .usd_version_check import register_schema_paths
-
-# Auto-register ovphysx's USD schema/plugin paths at import time so that
-# applications sharing a process with another USD-aware subsystem (e.g.
-# ovrtx) do not have to remember to call register_schema_paths() manually
-# before the first stage open. USD's PlugRegistry is populated lazily on
-# first stage open and never re-scans; missing this window means ovphysx's
-# applied schemas are silently dropped from the registry and prim.HasAPI()
-# returns false thereafter.
-#
-# Pure-Python (env var append only) — no native loading is triggered.
-# Failures (e.g. no plugins/usd directory found in a partially-installed
-# checkout) are surfaced as a logged warning rather than raised so import
-# does not hard-fail; apps that need stronger guarantees can call
-# register_schema_paths() explicitly in a try/except (always-idempotent,
-# so the explicit call is a cheap no-op once the env var is in place).
-try:
-    register_schema_paths()
-except Exception as _exc:  # noqa: BLE001 -- swallow any failure to a logged warning
-    _logger.warning(
-        "ovphysx schema-path auto-registration failed: %s. Applications that "
-        "mix ovphysx with another USD-aware subsystem in the same process "
-        "must call ovphysx.register_schema_paths() explicitly before the "
-        "first USD stage open or schema-gated features will silently no-op.",
-        _exc,
-    )
 
 # Package version resolution (PEP 440), tried in order:
-#   1. _version.py -- generated by build_wheel.cmake during wheel staging.
+#   1. _version.py, generated by build_wheel.cmake during wheel staging.
 #      Present only in installed wheels, never checked into the source tree.
-#   2. Repo VERSION file -- three directories up from this file
-#      (python/ovphysx/__init__.py -> ovphysx/VERSION).
-#      Works for editable installs and `uv run pytest` from the source tree.
-#   3. "unknown" -- fallback if neither is available.
+#   2. The repo VERSION file three directories up from this file
+#      (python/ovphysx/__init__.py -> ovphysx/VERSION), for editable installs
+#      and `uv run pytest` from the source tree.
+#   3. "unknown" when neither is available.
 try:
     from ._version import __version__
 except Exception:  # noqa: BLE001
@@ -127,7 +98,7 @@ def ai_skills_path():
 
     In an installed wheel all paths exist. In the source repo before a build
     these files live at the project root (``ovphysx/``) instead of under
-    ``python/ovphysx/``; the function falls back to the project root when the
+    ``python/ovphysx/``. The function falls back to the project root when the
     wheel-side copies are absent.
     """
     from pathlib import Path
@@ -151,7 +122,7 @@ def ai_skills_path():
 
 
 # =============================================================================
-# Lazy native loading -- triggered on first access to PhysX, etc.
+# Lazy native loading, triggered on first access to PhysX and the other native names.
 # =============================================================================
 
 _native_bootstrapped = False
@@ -181,11 +152,10 @@ def _bootstrap_native_impl():
     """One-time native bootstrap. Loads libraries and populates module globals.
 
     Steps (in order):
-      - Run USD version compatibility check.
       - Import and inject all native-dependent names into module globals.
       - Drift guard: assert every __all__ entry is now resolvable.
 
-    Raises RuntimeError on any failure (missing library, USD version mismatch, etc.).
+    Raises RuntimeError on any failure (for example, a missing native library).
     """
     import os
     import importlib
@@ -199,8 +169,9 @@ def _bootstrap_native_impl():
     ovstage_bin_dir = module_dir.parent / "ovstage" / "bin"
     ovstage_plugins_dir = ovstage_bin_dir / "plugins"
 
-    # Wheel mode: libovphysx.so bundled in lib/ means we're running from an installed wheel.
-    # Wheel structure: lib/ (libovphysx.so, config.toml), plugins/ (carbonite/physx plugins, usd/).
+    # Wheel mode: a bundled libovphysx.so in lib/ indicates an installed wheel.
+    # Wheel structure: lib/ (libovphysx.so, libovphysx_internal.so), plugins/ (carbonite/physx
+    # plugins), schemas/physx/ (codeless PhysX USD schemas).
     lib_file = lib_dir / ("ovphysx.dll" if sys.platform == "win32" else "libovphysx.so")
     is_wheel_mode = lib_file.exists()
     uses_bundled_lib = is_wheel_mode and not os.environ.get("OVPHYSX_LIB")
@@ -235,21 +206,12 @@ def _bootstrap_native_impl():
         _warn_if_missing(plugins_dir, "plugins directory")
         _warn_if_missing(ovstage_bin_dir, "ovstage/bin directory")
         _warn_if_missing(ovstage_plugins_dir, "ovstage/bin/plugins directory")
-        _warn_if_missing(lib_dir / "config.toml", "config.toml")
         if sys.platform == "win32":
             _warn_if_missing(lib_dir / "ovphysx_internal.dll", "ovphysx_internal.dll")
         else:
             _warn_if_missing(lib_dir / "libovphysx_internal.so", "libovphysx_internal.so")
 
-    # USD version check must happen BEFORE importing any code that uses USD.
-    # Validates already-loaded USD; otherwise defers to C++ for USD loading.
-    try:
-        from .usd_version_check import check_usd_compatibility
-        check_usd_compatibility()
-    except Exception as e:
-        raise RuntimeError(f"USD version compatibility check failed: {e}") from e
-
-    # Import native-dependent modules and inject into our module globals
+    # Import native-dependent modules and inject their names into the module globals.
     g = globals()
 
     from ._bindings import OP_INDEX_ALL
@@ -266,6 +228,7 @@ def _bootstrap_native_impl():
         disable_python_logging,
         enable_default_log_output,
         enable_python_logging,
+        flush_log,
         get_log_level,
         set_log_level,
     )
@@ -277,6 +240,7 @@ def _bootstrap_native_impl():
     g["enable_default_log_output"] = enable_default_log_output
     g["enable_python_logging"] = enable_python_logging
     g["disable_python_logging"] = disable_python_logging
+    g["flush_log"] = flush_log
 
     from .dlpack import (
         DLPACK_VERSION,
@@ -286,7 +250,6 @@ def _bootstrap_native_impl():
         DLDeviceType,
         DLManagedTensor,
         DLTensor,
-        ManagedDLTensor,
     )
     g["DLPACK_VERSION"] = DLPACK_VERSION
     g["DLDataType"] = DLDataType
@@ -295,7 +258,6 @@ def _bootstrap_native_impl():
     g["DLDeviceType"] = DLDeviceType
     g["DLManagedTensor"] = DLManagedTensor
     g["DLTensor"] = DLTensor
-    g["ManagedDLTensor"] = ManagedDLTensor
 
     # Drift guard: every public name in __all__ must now be resolvable.
     missing = [name for name in __all__ if name not in g]
@@ -310,11 +272,11 @@ def bootstrap() -> None:
 
     Normally this happens automatically on first access to any native
     attribute (``PhysX``, ``ContactBinding``, etc.).  Call this
-    when you need to control the exact moment loading occurs -- for example,
+    when you need to control the exact moment loading occurs, for example
     to ensure it happens before other USD-aware code runs or before
     environment variables that affect USD plugin discovery are modified.
 
-    Idempotent: safe to call multiple times; loading happens at most once.
+    Idempotent: safe to call multiple times. Loading happens at most once.
 
     Raises:
         RuntimeError: If native library loading fails (e.g. missing shared
@@ -346,6 +308,7 @@ __all__ = [
     "SceneQueryMode",
     "SceneQueryGeometryType",
     # Config types (pure Python, always available)
+    "OmniPvdDestination",
     "PhysXConfig",
     "ConfigBool",
     "ConfigInt32",
@@ -353,7 +316,6 @@ __all__ = [
     "ConfigString",
     # Eager initialization (module-level, always available)
     "bootstrap",
-    "register_schema_paths",
     "codeless_schema_paths",
     "codeless_schema_root",
     "ai_skills_path",
@@ -367,6 +329,7 @@ __all__ = [
     "enable_default_log_output",
     "enable_python_logging",
     "disable_python_logging",
+    "flush_log",
     # Contact report structs (pure-Python ctypes mirrors of C ABI structs)
     "ContactEventHeader",
     "ContactPoint",
@@ -380,6 +343,5 @@ __all__ = [
     "DLDeviceType",
     "DLTensor",
     "DLManagedTensor",
-    "ManagedDLTensor",
     "DLPACK_VERSION",
 ]

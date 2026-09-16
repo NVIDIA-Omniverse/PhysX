@@ -1,10 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
 #include <carb/logging/Log.h>
 #include <PxPhysicsAPI.h>
-#include <common/foundation/TypeCast.h>
+#include <common/foundation/CarbPhysXCast.h>
 
 #include <extensions/PxTetMakerExt.h>
 #include <extensions/PxTetrahedronMeshExt.h>

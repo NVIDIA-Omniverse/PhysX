@@ -1,7 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-27
+ *
+ * @implements REQ-WRITE-AUTHORING-001
+ * @covers AC-5
+ */
+
+/**
+ * @implements REQ-MATH-001
+ * @covers AC-9
+ */
 
 #include "PhysXParticleSampling.h"
 
@@ -13,36 +24,48 @@
 
 #include <omni/physics/parse/ParseApi.h>
 #include <omni/physics/parse/ParseContext.h>
-#include <omni/physics/parse/IParseBackend.h>
 #include <omni/physics/parse/IPhysicsSource.h>
+#include <omni/physics/parse/IPhysicsDataWrite.h>
+#include <omni/physics/parse/KnownTokens.h>
 
-#include <common/utilities/MemoryMacros.h>
-
-#include <limits>
 
 // only for logging
 #include <carb/PluginUtils.h>
 
-using namespace PXR_NS;
-using namespace omni::physx::particles;
+#include <common/foundation/MatrixTools.h>
+#include <common/utilities/MemoryMacros.h>
 
-static const TfToken particleSamplingCrcToken = TfToken("physxParticleSampling:crc");
+#include <algorithm>
+#include <cstring>
+#include <limits>
+#include <string>
+#include <utility>
+#include <vector>
+
+using namespace omni::physx::particles;
 
 namespace
 {
 
-typedef std::map<SdfPath, PhysxParticleFactory*> PathToFactoryMap;
+typedef std::unordered_map<omni::physics::parse::ObjectKey, PhysxParticleFactory*, omni::physics::parse::ObjectKey::Hash>
+    PathToFactoryMap;
 PathToFactoryMap gParticlePrimsToFactoryMap;
 
-PhysxParticleFactory* getParticleFactory(const SdfPath& particlePrimPath)
+PhysxParticleFactory* getParticleFactory(const omni::physics::parse::ObjectKey particlePrimKey)
 {
-    auto it = gParticlePrimsToFactoryMap.find(particlePrimPath);
+    auto it = gParticlePrimsToFactoryMap.find(particlePrimKey);
     return (it != gParticlePrimsToFactoryMap.end()) ? it->second : nullptr;
 }
 
 using AttachedStage = omni::physx::usdparser::AttachedStage;
 using IPhysicsSource = omni::physics::parse::IPhysicsSource;
+using IPhysicsDataWrite = omni::physics::parse::IPhysicsDataWrite;
 using ObjectKey = omni::physics::parse::ObjectKey;
+
+// Ad hoc marker names, outside the standard token vocabulary (no getSourceParticleData /
+// KnownTokens entry): used only by the USD-only cosmetic islands below.
+constexpr const char* kOmniRtxSkipAttrName = "omni:rtx:skip";
+constexpr const char* kParticleSamplingCrcAttrName = "physxParticleSampling:crc";
 
 AttachedStage* getActiveAttachedStage()
 {
@@ -55,8 +78,7 @@ bool activeSourceUsesExternalPayload()
     if (!attachedStage)
         return false;
 
-    const omni::physics::parse::AttachTarget target = attachedStage->attachTarget();
-    return target.nativeStage && target.stageId == 0;
+    return attachedStage->hasExternalSource();
 }
 
 size_t getSourceArraySize(const IPhysicsSource& src, ObjectKey key, const char* attrName, size_t elementSize)
@@ -70,29 +92,33 @@ size_t getSourceArraySize(const IPhysicsSource& src, ObjectKey key, const char* 
     return count;
 }
 
-bool getSourceParticleData(AttachedStage& attachedStage, const SdfPath& particlePath, size_t& pointCount, bool& sizesMatch)
+bool getSourceParticleData(AttachedStage& attachedStage, ObjectKey particleKey, size_t& pointCount, bool& sizesMatch)
 {
     const IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return false;
 
-    const ObjectKey particleKey = attachedStage.keyFor(particlePath);
-    if (!src->exists(particleKey) ||
-        !omni::physx::internal::hasAppliedSchema<PhysxSchemaPhysxParticleSetAPI>(*src, particleKey))
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    if (!src->exists(particleKey) || !src->hasSchema(particleKey, tok.physxParticleSetAPI))
     {
         return false;
     }
 
-    const bool isPoints = omni::physx::internal::isAType<UsdGeomPoints>(*src, particleKey);
-    const bool isInstancer = omni::physx::internal::isAType<UsdGeomPointInstancer>(*src, particleKey);
+    const bool isPoints = src->isA(particleKey, tok.pointsType);
+    const bool isInstancer = src->isA(particleKey, tok.pointInstancerType);
     if (!isPoints && !isInstancer)
         return false;
 
-    pointCount = getSourceArraySize(*src, particleKey, isInstancer ? "positions" : "points", sizeof(GfVec3f));
-    sizesMatch = getSourceArraySize(*src, particleKey, "velocities", sizeof(GfVec3f)) == pointCount;
+    // Element sizes are wire sizes, not Gf types: a point is 3 packed floats
+    // (carb::Float3 == GfVec3f) and an instancer orientation is 4 packed halves
+    // (GfQuath - HALF precision, deliberately spelled as 4 x uint16_t rather
+    // than any carb/PhysX 4-float type, which would be twice as large).
+    pointCount = getSourceArraySize(*src, particleKey, isInstancer ? "positions" : "points", sizeof(carb::Float3));
+    sizesMatch = getSourceArraySize(*src, particleKey, "velocities", sizeof(carb::Float3)) == pointCount;
 
     if (src->hasAuthoredAttribute(particleKey, src->internToken("physxParticle:simulationPoints")))
-        sizesMatch &= getSourceArraySize(*src, particleKey, "physxParticle:simulationPoints", sizeof(GfVec3f)) == pointCount;
+        sizesMatch &= getSourceArraySize(*src, particleKey, "physxParticle:simulationPoints", sizeof(carb::Float3)) == pointCount;
 
     if (isPoints)
     {
@@ -101,24 +127,25 @@ bool getSourceParticleData(AttachedStage& attachedStage, const SdfPath& particle
     else
     {
         sizesMatch &= getSourceArraySize(*src, particleKey, "protoIndices", sizeof(int)) == pointCount;
-        sizesMatch &= getSourceArraySize(*src, particleKey, "scales", sizeof(GfVec3f)) == pointCount;
-        sizesMatch &= getSourceArraySize(*src, particleKey, "orientations", sizeof(GfQuath)) == pointCount;
+        sizesMatch &= getSourceArraySize(*src, particleKey, "scales", sizeof(carb::Float3)) == pointCount;
+        sizesMatch &= getSourceArraySize(*src, particleKey, "orientations", 4 * sizeof(uint16_t)) == pointCount;
     }
 
     return true;
 }
 
 bool parseSamplingDesc(AttachedStage& attachedStage,
-                       const SdfPath& samplerPath,
+                       const ObjectKey samplerKey,
                        omni::physx::usdparser::ParticleSamplingDesc& samplingDesc)
 {
     const IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return false;
 
-    const ObjectKey samplerKey = attachedStage.keyFor(samplerPath);
-    if (!src->exists(samplerKey) || !omni::physx::internal::isAType<UsdGeomMesh>(*src, samplerKey) ||
-        !omni::physx::internal::hasAppliedSchema<PhysxSchemaPhysxParticleSamplingAPI>(*src, samplerKey))
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    if (!src->exists(samplerKey) || !src->isA(samplerKey, tok.meshType) ||
+        !src->hasSchema(samplerKey, tok.physxParticleSamplingAPI))
     {
         return false;
     }
@@ -134,302 +161,334 @@ bool parseSamplingDesc(AttachedStage& attachedStage,
     samplingDesc.sampleVolume = desc->sampleVolume;
     samplingDesc.maxSamples = desc->maxSamples;
     samplingDesc.pointWidth = desc->pointWidth;
-    samplingDesc.particleSetPath = desc->particleSetKey.valid() ? attachedStage.pathFor(desc->particleSetKey) : SdfPath();
+    samplingDesc.particleSetKey = desc->particleSetKey;
+    return true;
+}
+
+// Mirrors GfIsClose(GfMatrix{3,4}d, ..., tol), which is elementwise
+// (|a-b| <= tol) and therefore invariant under the element-copy transpose.
+template <typename MatT>
+bool isCloseElementwise(const MatT& a, const MatT& b, double tolerance)
+{
+    const double* pa = &a.column0.x;
+    const double* pb = &b.column0.x;
+    constexpr size_t kCount = sizeof(MatT) / sizeof(double);
+    for (size_t i = 0; i < kCount; ++i)
+    {
+        if (!(std::fabs(pb[i] - pa[i]) <= tolerance))
+            return false;
+    }
     return true;
 }
 
 template <typename T>
-void move(VtArray<T>& vtArray, size_t dst, size_t src, size_t count)
+void moveRange(std::vector<T>& v, size_t dst, size_t src, size_t count)
 {
-    std::memmove(&vtArray[dst], &vtArray[src], count * sizeof(T));
+    if (count > 0)
+        std::memmove(&v[dst], &v[src], count * sizeof(T));
 }
 
 template <typename T>
-void copy(VtArray<T>& dstArray, const VtArray<T>& srcArray, size_t dst, size_t src, size_t count)
+void copyRange(std::vector<T>& dstV, const std::vector<T>& srcV, size_t dst, size_t src, size_t count)
 {
-    std::memcpy(&dstArray[dst], &srcArray[src], count * sizeof(T));
+    if (count > 0)
+        std::memcpy(&dstV[dst], &srcV[src], count * sizeof(T));
 }
 
-struct ParticleData
+// Per-channel particle arrays, read via IPhysicsSource and written via
+// IPhysicsDataWrite::writeArray. Orientations are xyzw float quaternions (PxQuat convention,
+// matching writeArray's documented layout); the wire format is 4 packed halves, but the
+// half<->float conversion on both sides is exact, so carrying floats here costs no precision.
+struct ParticleArrays
 {
-    ParticleData(UsdPrim particlePrim)
+    bool isPoints = false;
+    bool isInstancer = false;
+    bool hasSimPoints = false;
+
+    std::vector<carb::Float3> points;
+    std::vector<carb::Float3> velocities;
+    std::vector<carb::Float3> simPoints;
+    std::vector<float> widths; // geomPoints only
+    std::vector<int32_t> protoIndices; // instancer only
+    std::vector<carb::Float3> scales; // instancer only
+    std::vector<carb::Float4> orientations; // instancer only, xyzw (PxQuat convention)
+
+    size_t size() const
     {
-        geomPoints = UsdGeomPoints(particlePrim);
-        geomInstancer = UsdGeomPointInstancer(particlePrim);
-        PhysxSchemaPhysxParticleSetAPI tmpSetAPI(particlePrim);
-        if (tmpSetAPI.GetSimulationPointsAttr().HasAuthoredValue())
-        {
-            // particleAPI is only needed to read/write simulation points
-            particleAPI = tmpSetAPI;
-        }
-    }
-
-    void read()
-    {
-        if (particleAPI)
-        {
-            particleAPI.GetSimulationPointsAttr().Get(&simPoints);
-        }
-
-        if (geomPoints)
-        {
-            geomPoints.GetPointsAttr().Get(&points);
-            geomPoints.GetVelocitiesAttr().Get(&velocities);
-            geomPoints.GetWidthsAttr().Get(&pointsWidths);
-        }
-        else if (geomInstancer)
-        {
-            geomInstancer.GetPositionsAttr().Get(&points);
-            geomInstancer.GetVelocitiesAttr().Get(&velocities);
-            geomInstancer.GetProtoIndicesAttr().Get(&instancerProtoIndices);
-            geomInstancer.GetScalesAttr().Get(&instancerScales);
-            geomInstancer.GetOrientationsAttr().Get(&instancerOrientations);
-        }
-    }
-
-    void readPoints()
-    {
-        if (particleAPI)
-        {
-            particleAPI.GetSimulationPointsAttr().Get(&simPoints);
-        }
-
-        if (geomPoints)
-        {
-            geomPoints.GetPointsAttr().Get(&points);
-        }
-        else if (geomInstancer)
-        {
-            geomInstancer.GetPositionsAttr().Get(&points);
-        }
-    }
-
-    void write()
-    {
-        if (particleAPI)
-        {
-            particleAPI.GetSimulationPointsAttr().Set(simPoints);
-        }
-
-        if (geomPoints)
-        {
-            geomPoints.GetPointsAttr().Set(points);
-            geomPoints.GetVelocitiesAttr().Set(velocities);
-            geomPoints.GetWidthsAttr().Set(pointsWidths);
-        }
-        else if (geomInstancer)
-        {
-            geomInstancer.GetPositionsAttr().Set(points);
-            geomInstancer.GetVelocitiesAttr().Set(velocities);
-            geomInstancer.GetProtoIndicesAttr().Set(instancerProtoIndices);
-            geomInstancer.GetScalesAttr().Set(instancerScales);
-            geomInstancer.GetOrientationsAttr().Set(instancerOrientations);
-        }
-    }
-
-    void writePoints()
-    {
-        if (particleAPI)
-        {
-            particleAPI.GetSimulationPointsAttr().Set(simPoints);
-        }
-
-        if (geomPoints)
-        {
-            geomPoints.GetPointsAttr().Set(points);
-        }
-        else if (geomInstancer)
-        {
-            geomInstancer.GetPositionsAttr().Set(points);
-        }
-    }
-
-    void writeInstancerProtoRadius(float radius)
-    {
-        if (geomInstancer)
-        {
-            SdfPathVector targets;
-            geomInstancer.GetPrototypesRel().GetTargets(&targets);
-            if (targets.size() > 0)
-            {
-                SdfPath protoPath = targets[0];
-                UsdGeomSphere sphere = UsdGeomSphere::Get(geomInstancer.GetPrim().GetStage(), protoPath);
-                if (sphere)
-                {
-                    sphere.GetRadiusAttr().Set(double(radius));
-                }
-            }
-        }
+        return points.size();
     }
 
     void resize(size_t newSize)
     {
-        if (particleAPI)
-        {
+        if (hasSimPoints)
             simPoints.resize(newSize);
-        }
 
-        if (geomPoints)
+        if (isPoints)
         {
             points.resize(newSize);
             velocities.resize(newSize);
-            pointsWidths.resize(newSize);
+            widths.resize(newSize);
         }
-        else if (geomInstancer)
+        else if (isInstancer)
         {
             points.resize(newSize);
             velocities.resize(newSize);
-            instancerProtoIndices.resize(newSize);
-            instancerScales.resize(newSize);
-            instancerOrientations.resize(newSize);
+            protoIndices.resize(newSize);
+            scales.resize(newSize);
+
+            // VtArray<GfQuath>::resize() default-constructs new elements to GfQuath's
+            // identity, unlike a plain std::vector<carb::Float4> (which zero-inits) --
+            // reproduce that explicitly for the newly grown tail.
+            const size_t oldSize = orientations.size();
+            orientations.resize(newSize);
+            for (size_t i = oldSize; i < newSize; ++i)
+                orientations[i] = carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f };
         }
     }
 
     void move(size_t dst, size_t src, size_t count)
     {
-        if (count > 0)
-        {
-            if (particleAPI)
-            {
-                ::move(simPoints, dst, src, count);
-            }
+        if (count == 0)
+            return;
 
-            if (geomPoints)
-            {
-                ::move(points, dst, src, count);
-                ::move(velocities, dst, src, count);
-                ::move(pointsWidths, dst, src, count);
-            }
-            else if (geomInstancer)
-            {
-                ::move(points, dst, src, count);
-                ::move(velocities, dst, src, count);
-                ::move(instancerProtoIndices, dst, src, count);
-                ::move(instancerScales, dst, src, count);
-                ::move(instancerOrientations, dst, src, count);
-            }
+        if (hasSimPoints)
+            moveRange(simPoints, dst, src, count);
+
+        if (isPoints)
+        {
+            moveRange(points, dst, src, count);
+            moveRange(velocities, dst, src, count);
+            moveRange(widths, dst, src, count);
+        }
+        else if (isInstancer)
+        {
+            moveRange(points, dst, src, count);
+            moveRange(velocities, dst, src, count);
+            moveRange(protoIndices, dst, src, count);
+            moveRange(scales, dst, src, count);
+            moveRange(orientations, dst, src, count);
         }
     }
 
-    void copy(const ParticleData& pdSrc, size_t dst, size_t src, size_t count)
+    void copyFrom(const ParticleArrays& srcArrays, size_t dst, size_t src, size_t count)
     {
-        if (count > 0)
-        {
-            if (pdSrc.particleAPI && particleAPI)
-            {
-                ::copy(simPoints, pdSrc.simPoints, dst, src, count);
-            }
+        if (count == 0)
+            return;
 
-            if (pdSrc.geomPoints && geomPoints)
-            {
-                ::copy(points, pdSrc.points, dst, src, count);
-                ::copy(velocities, pdSrc.velocities, dst, src, count);
-                ::copy(pointsWidths, pdSrc.pointsWidths, dst, src, count);
-            }
-            else if (pdSrc.geomInstancer && geomInstancer)
-            {
-                ::copy(points, pdSrc.points, dst, src, count);
-                ::copy(velocities, pdSrc.velocities, dst, src, count);
-                ::copy(instancerProtoIndices, pdSrc.instancerProtoIndices, dst, src, count);
-                ::copy(instancerScales, pdSrc.instancerScales, dst, src, count);
-                ::copy(instancerOrientations, pdSrc.instancerOrientations, dst, src, count);
-            }
+        if (srcArrays.hasSimPoints && hasSimPoints)
+            copyRange(simPoints, srcArrays.simPoints, dst, src, count);
+
+        if (srcArrays.isPoints && isPoints)
+        {
+            copyRange(points, srcArrays.points, dst, src, count);
+            copyRange(velocities, srcArrays.velocities, dst, src, count);
+            copyRange(widths, srcArrays.widths, dst, src, count);
+        }
+        else if (srcArrays.isInstancer && isInstancer)
+        {
+            copyRange(points, srcArrays.points, dst, src, count);
+            copyRange(velocities, srcArrays.velocities, dst, src, count);
+            copyRange(protoIndices, srcArrays.protoIndices, dst, src, count);
+            copyRange(scales, srcArrays.scales, dst, src, count);
+            copyRange(orientations, srcArrays.orientations, dst, src, count);
         }
     }
 
-    void set(const GfVec3f* positions, size_t numPoints, const GfMatrix4d& rigidTransform, float pointWidth,
-             size_t dstIndex, size_t initializedEndIndex)
+    void set(const carb::Float3* positions, size_t numPoints, const ::physx::PxMat44d& rigidTransform,
+             float pointWidth, size_t dstIndex, size_t initializedEndIndex)
     {
         for (size_t p = 0; p < numPoints; ++p)
         {
-            GfVec3f position = PXR_NS::GfVec3f(rigidTransform.Transform(positions[p]));
-            points[dstIndex + p] = position;
+            // Same arithmetic as the previous GfMatrix4d::Transform(GfVec3f): widen
+            // to double, accumulate column-by-column in the same order, narrow back.
+            const carb::Float3& s = positions[p];
+            const ::physx::PxVec3d t =
+                rigidTransform.transform(::physx::PxVec3d(double(s.x), double(s.y), double(s.z)));
+            points[dstIndex + p] = carb::Float3{ float(t.x), float(t.y), float(t.z) };
         }
 
-        if (particleAPI)
-            ::copy(simPoints, points, dstIndex, dstIndex, numPoints);
+        if (hasSimPoints)
+            copyRange(simPoints, points, dstIndex, dstIndex, numPoints);
 
         for (size_t i = dstIndex; i < dstIndex + numPoints; ++i)
         {
-            velocities[i] = { 0.0, 0.0, 0.0 };
-            if (geomPoints)
+            velocities[i] = carb::Float3{ 0.0f, 0.0f, 0.0f };
+            if (isPoints)
             {
-                pointsWidths[i] = pointWidth;
+                widths[i] = pointWidth;
             }
-            else if (geomInstancer)
+            else if (isInstancer)
             {
-                instancerProtoIndices[i] = 0;
+                protoIndices[i] = 0;
                 if (i >= initializedEndIndex)
                 {
-                    instancerScales[i] = GfVec3f(1.0f);
-                    instancerOrientations[i] = GfQuath::GetIdentity();
+                    scales[i] = carb::Float3{ 1.0f, 1.0f, 1.0f };
+                    orientations[i] = carb::Float4{ 0.0f, 0.0f, 0.0f, 1.0f };
                 }
             }
         }
     }
 
-    void transformPoints(const GfMatrix4d& transform, size_t dstIndex, size_t count)
+    void transformPoints(const ::physx::PxMat44d& transform, size_t dstIndex, size_t count)
     {
+        auto xf = [&transform](const carb::Float3& v)
+        {
+            const ::physx::PxVec3d t = transform.transform(::physx::PxVec3d(double(v.x), double(v.y), double(v.z)));
+            return carb::Float3{ float(t.x), float(t.y), float(t.z) };
+        };
+
         if (dstIndex + count <= points.size())
         {
             for (size_t i = dstIndex; i < dstIndex + count; ++i)
-                points[i] = PXR_NS::GfVec3f(transform.Transform(points[i]));
+                points[i] = xf(points[i]);
 
-            if (particleAPI)
+            if (hasSimPoints)
             {
                 for (size_t i = dstIndex; i < dstIndex + count; ++i)
-                    simPoints[i] = PXR_NS::GfVec3f(transform.Transform(simPoints[i]));
+                    simPoints[i] = xf(simPoints[i]);
             }
         }
     }
-
-    bool checkSizes()
-    {
-        bool sizesMatch = true;
-        if (particleAPI)
-        {
-            sizesMatch &= (simPoints.size() == points.size());
-        }
-
-        if (geomPoints)
-        {
-            sizesMatch &= (velocities.size() == points.size());
-            sizesMatch &= (pointsWidths.size() == points.size());
-        }
-        else if (geomInstancer)
-        {
-            sizesMatch &= (velocities.size() == points.size());
-            sizesMatch &= (instancerProtoIndices.size() == points.size());
-            sizesMatch &= (instancerScales.size() == points.size());
-            sizesMatch &= (instancerOrientations.size() == points.size());
-        }
-        return sizesMatch;
-    }
-
-    UsdGeomPoints geomPoints;
-    UsdGeomPointInstancer geomInstancer;
-    PhysxSchemaPhysxParticleSetAPI particleAPI;
-
-    VtArray<GfVec3f> points;
-    VtArray<GfVec3f> velocities;
-    VtArray<GfVec3f> simPoints;
-    VtArray<float> pointsWidths;
-    VtArray<int> instancerProtoIndices;
-    VtArray<GfVec3f> instancerScales;
-    VtArray<GfQuath> instancerOrientations;
 };
+
+// Classify the particle target's concrete geometry type. Pure isA/authored-attribute
+// checks, no schema requirement.
+void classifyParticleTarget(const IPhysicsSource& src, ObjectKey key, ParticleArrays& out)
+{
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(src);
+    out.isPoints = src.isA(key, tok.pointsType);
+    out.isInstancer = src.isA(key, tok.pointInstancerType);
+    out.hasSimPoints = src.hasAuthoredAttribute(key, src.internToken("physxParticle:simulationPoints"));
+}
+
+// Populate every channel `out`'s classification calls for. `out.isPoints`/`isInstancer`/
+// `hasSimPoints` must already be set (via classifyParticleTarget).
+void readParticleArrayContents(AttachedStage& attachedStage, ObjectKey key, ParticleArrays& out)
+{
+    const IPhysicsSource* src = attachedStage.getSource();
+    if (!src)
+        return;
+
+    const omni::physics::parse::ReadTime t = omni::physics::parse::ReadTime::defaultTime();
+    omni::physx::internal::getArrayValue(attachedStage, key, src->internToken(out.isInstancer ? "positions" : "points"), t, out.points);
+    omni::physx::internal::getArrayValue(attachedStage, key, src->internToken("velocities"), t, out.velocities);
+
+    if (out.hasSimPoints)
+        omni::physx::internal::getArrayValue(attachedStage, key, src->internToken("physxParticle:simulationPoints"), t, out.simPoints);
+
+    if (out.isPoints)
+    {
+        omni::physx::internal::getArrayValue(attachedStage, key, src->internToken("widths"), t, out.widths);
+    }
+    else if (out.isInstancer)
+    {
+        omni::physx::internal::getArrayValue(attachedStage, key, src->internToken("protoIndices"), t, out.protoIndices);
+        omni::physx::internal::getArrayValue(attachedStage, key, src->internToken("scales"), t, out.scales);
+        omni::physx::internal::getArrayValue(attachedStage, key, src->internToken("orientations"), t, out.orientations);
+    }
+}
+
+// Classify + read in one call. Returns false when `key` is neither UsdGeomPoints- nor
+// UsdGeomPointInstancer-typed.
+bool readParticleArrays(AttachedStage& attachedStage, ObjectKey key, ParticleArrays& out)
+{
+    const IPhysicsSource* src = attachedStage.getSource();
+    if (!src || !src->exists(key))
+        return false;
+
+    classifyParticleTarget(*src, key, out);
+    if (!out.isPoints && !out.isInstancer)
+        return false;
+
+    readParticleArrayContents(attachedStage, key, out);
+    return true;
+}
+
+// Write every channel present in `arrays` back out through IPhysicsDataWrite::writeArray --
+// one call per attribute, full-array replace. Element shape/precision are inferred by the
+// sink from the destination attribute (see IPhysicsDataWrite.h).
+void writeParticleArrays(IPhysicsDataWrite& dataWrite, const IPhysicsSource& src, ObjectKey key, const ParticleArrays& arrays)
+{
+    using omni::physics::parse::DataWriteView;
+
+    const size_t n = arrays.size();
+
+    auto writeVec3 = [&](const char* attrName, const std::vector<carb::Float3>& data)
+    {
+        DataWriteView view;
+        view.data = data.empty() ? nullptr : data.data();
+        view.count = n;
+        dataWrite.writeArray(key, src.internToken(attrName), view);
+    };
+
+    writeVec3(arrays.isInstancer ? "positions" : "points", arrays.points);
+    writeVec3("velocities", arrays.velocities);
+
+    if (arrays.hasSimPoints)
+        writeVec3("physxParticle:simulationPoints", arrays.simPoints);
+
+    if (arrays.isPoints)
+    {
+        DataWriteView view;
+        view.data = arrays.widths.empty() ? nullptr : arrays.widths.data();
+        view.count = n;
+        dataWrite.writeArray(key, src.internToken("widths"), view);
+    }
+    else if (arrays.isInstancer)
+    {
+        DataWriteView protoView;
+        protoView.data = arrays.protoIndices.empty() ? nullptr : arrays.protoIndices.data();
+        protoView.count = n;
+        dataWrite.writeArray(key, src.internToken("protoIndices"), protoView);
+
+        writeVec3("scales", arrays.scales);
+
+        DataWriteView orientView;
+        orientView.data = arrays.orientations.empty() ? nullptr : arrays.orientations.data();
+        orientView.count = n;
+        dataWrite.writeArray(key, src.internToken("orientations"), orientView);
+    }
+}
+
+// The three genuinely USD-only cosmetic side effects this file needs, each behind one
+// pxr-free call. No-op whenever there is no active USD sink or the prim doesn't exist.
+void hideHydraDuringRewrite(IPhysicsDataWrite* dataWrite, ObjectKey key, bool hidden)
+{
+    if (dataWrite)
+        dataWrite->writeBoolAttribute(key, kOmniRtxSkipAttrName, hidden);
+}
+
+void setPrimVisible(IPhysicsDataWrite* dataWrite, ObjectKey key, bool visible)
+{
+    if (dataWrite)
+        dataWrite->writeVisibility(key, visible);
+}
+
+void removeSamplingCrc(IPhysicsDataWrite* dataWrite, ObjectKey key)
+{
+    if (dataWrite)
+        dataWrite->removeAttribute(key, kParticleSamplingCrcAttrName);
+}
+
+void setInstancerProtoRadius(IPhysicsDataWrite* dataWrite, ObjectKey key, bool isInstancer, float radius)
+{
+    if (!isInstancer || !dataWrite)
+        return;
+    dataWrite->writeInstancerProtoRadius(key, radius);
+}
 
 } // namespace
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PhysxParticleFactory::PhysxParticleFactory(SdfPath particlePath) :
-    mPath(particlePath),
+PhysxParticleFactory::PhysxParticleFactory(ObjectKey particleKey) :
+    mParticleKey(particleKey),
     mSamplers(PathToSamplerMap()),
     mInitialized(false),
     mHasAuthoredSamplingResults(false),
     mTotalParticleCount(0)
-{ 
+{
 
 }
 
@@ -442,15 +501,15 @@ PhysxParticleFactory::~PhysxParticleFactory()
     mSamplers.clear();
 }
 
-void PhysxParticleFactory::addSampler(SdfPath samplerPath)
+void PhysxParticleFactory::addSampler(ObjectKey samplerKey)
 {
-    PhysxParticleSampler* sampler = ICE_NEW(PhysxParticleSampler)(samplerPath, mPath);
-    mSamplers[samplerPath] = sampler;
+    PhysxParticleSampler* sampler = ICE_NEW(PhysxParticleSampler)(samplerKey, mParticleKey);
+    mSamplers[samplerKey] = sampler;
 }
 
-bool PhysxParticleFactory::updateSampler(SdfPath samplerPath, bool forceResampling)
+bool PhysxParticleFactory::updateSampler(ObjectKey samplerKey, bool forceResampling)
 {
-    PhysxParticleSampler* sampler = getParticleSampler(samplerPath);
+    PhysxParticleSampler* sampler = getParticleSampler(samplerKey);
     if (sampler)
     {
         return sampler->update(forceResampling);
@@ -458,91 +517,107 @@ bool PhysxParticleFactory::updateSampler(SdfPath samplerPath, bool forceResampli
     return false;
 }
 
-void PhysxParticleFactory::removeSampler(SdfPath samplerPath)
+void PhysxParticleFactory::removeSampler(ObjectKey samplerKey)
 {
     // we need to do this on the factory level to make sure the data stays consistent.
-    PathToSamplerMap::const_iterator samplerIterator = mSamplers.find(samplerPath);
+    PathToSamplerMap::const_iterator samplerIterator = mSamplers.find(samplerKey);
     if (samplerIterator != mSamplers.end())
     {
         PhysxParticleSampler* samplerPointer = samplerIterator->second;
-        UsdStageWeakPtr stage = omni::physx::usdparser::UsdLoad::getUsdLoad()->getActiveStage();
-        if (stage)
+        AttachedStage* attachedStage = getActiveAttachedStage();
+        if (attachedStage)
         {
-            UsdPrim particlePrim = stage->GetPrimAtPath(samplerIterator->second->getTarget());
+            const IPhysicsSource* src = attachedStage->getSource();
+            IPhysicsDataWrite* dataWrite = attachedStage->getAuthoringDataWrite();
 
-            if (particlePrim)
+            if (src && src->exists(mParticleKey))
             {
-                ParticleData particleData(particlePrim);
-                particleData.read();
+                ParticleArrays oldArrays;
+                readParticleArrays(*attachedStage, mParticleKey, oldArrays);
 
-                if (particleData.points.empty() || particleData.velocities.empty())
+                if (oldArrays.points.empty() || oldArrays.velocities.empty())
                     return;
 
-                ParticleData newParticleData(particlePrim);
+                ParticleArrays newArrays;
+                newArrays.isPoints = oldArrays.isPoints;
+                newArrays.isInstancer = oldArrays.isInstancer;
+                newArrays.hasSimPoints = oldArrays.hasSimPoints;
                 uint32_t copyDst = 0;
 
-                // recreate the particle prim from the remaining (non-removed) samplers
-                for (PathToSamplerMap::const_iterator otherSamplers = mSamplers.cbegin(); otherSamplers != mSamplers.cend(); otherSamplers++)
+                // recreate the particle prim from the remaining (non-removed) samplers.
+                // Deterministic order (previously a std::map<SdfPath,...>'s path order):
+                // sort the remaining samplers by their source path text. (Plain
+                // pair<ObjectKey,...>, not PathToSamplerMap::value_type: the map's own
+                // pair<const ObjectKey,...> is not assignable, so it can't be std::sort'ed.)
+                std::vector<std::pair<ObjectKey, PhysxParticleSampler*>> remaining;
+                remaining.reserve(mSamplers.size());
+                for (const PathToSamplerMap::value_type& entry : mSamplers)
                 {
-                    SdfPath path = otherSamplers->first;
+                    if (entry.first != samplerKey)
+                        remaining.push_back(entry);
+                }
+                std::sort(remaining.begin(), remaining.end(),
+                          [attachedStage](const std::pair<ObjectKey, PhysxParticleSampler*>& a,
+                                          const std::pair<ObjectKey, PhysxParticleSampler*>& b)
+                          { return attachedStage->textViewFor(a.first) < attachedStage->textViewFor(b.first); });
 
-                    if (path == samplerPath)
-                        continue;
+                for (const std::pair<ObjectKey, PhysxParticleSampler*>& entry : remaining)
+                {
+                    const uint32_t copySrc = entry.second->getStartIndex();
+                    const uint32_t copyCount = entry.second->getParticleCount();
 
-                    uint32_t copySrc = otherSamplers->second->getStartIndex();
-                    uint32_t copyCount = otherSamplers->second->getParticleCount();
+                    newArrays.resize(copyDst + copyCount);
+                    newArrays.copyFrom(oldArrays, copyDst, copySrc, copyCount);
 
-                    newParticleData.resize(copyDst + copyCount);
-                    newParticleData.copy(particleData, copyDst, copySrc, copyCount);
-
-                    otherSamplers->second->setStartIndex(copyDst);
+                    entry.second->setStartIndex(copyDst);
                     copyDst += copyCount;
                 }
 
-                // hack to make USD updates work and silence warnings about inconsistent primvars - remove from hydra db
-                particlePrim.CreateAttribute(TfToken("omni:rtx:skip"), SdfValueTypeNames->Bool).Set(true);
-
-                SdfChangeBlock changeBlock;
+                if (dataWrite)
                 {
-                    newParticleData.write();
-                } // changeblock.
+                    // hack to make USD updates work and silence warnings about inconsistent
+                    // primvars - remove from hydra db
+                    hideHydraDuringRewrite(dataWrite, mParticleKey, true);
 
-                mTotalParticleCount = newParticleData.points.size();
+                    dataWrite->beginWrite();
+                    writeParticleArrays(*dataWrite, *src, mParticleKey, newArrays);
+                    dataWrite->endWrite();
 
-                // hack to make usd updates appear and silence warnings about inconsistent primvars.
-                particlePrim.CreateAttribute(TfToken("omni:rtx:skip"), SdfValueTypeNames->Bool).Set(false);
+                    mTotalParticleCount = newArrays.size();
+
+                    // hack to make usd updates appear and silence warnings about inconsistent primvars.
+                    hideHydraDuringRewrite(dataWrite, mParticleKey, false);
+                }
             }
 
-            UsdPrim prim = stage->GetPrimAtPath(samplerPath);
-            if (prim)
+            if (src && src->exists(samplerKey))
             {
-                prim.RemoveProperty(particleSamplingCrcToken);
-                UsdGeomImageable img(prim);
-                img.MakeVisible();
+                removeSamplingCrc(dataWrite, samplerKey);
+                setPrimVisible(dataWrite, samplerKey, true);
             }
         }
 
         // cleanup the lists
         SAFE_DELETE_SINGLE(samplerPointer);
-        mSamplers.erase(samplerPath);
+        mSamplers.erase(samplerKey);
     }
 }
 
-PhysxParticleSampler* PhysxParticleFactory::getParticleSampler(SdfPath samplerPath)
+PhysxParticleSampler* PhysxParticleFactory::getParticleSampler(ObjectKey samplerKey)
 {
-    PathToSamplerMap::const_iterator it = mSamplers.find(samplerPath);
+    PathToSamplerMap::const_iterator it = mSamplers.find(samplerKey);
     return (it != mSamplers.end()) ? it->second : nullptr;
 }
 
-void PhysxParticleFactory::processParticleSamplingResults(SdfPath samplerPath,
-                                                          const GfVec3f* positions,
+void PhysxParticleFactory::processParticleSamplingResults(ObjectKey samplerKey,
+                                                          const carb::Float3* positions,
                                                           size_t numPoints,
                                                           float pointWidth,
-                                                          const GfMatrix4d& rigidTransform,
-                                                          const GfMatrix3d& shearScaleTransform,
+                                                          const ::physx::PxMat44d& rigidTransform,
+                                                          const ::physx::PxMat33d& shearScaleTransform,
                                                           bool registerOriginalCount)
 {
-    PhysxParticleSampler* sampler = getParticleSampler(samplerPath);
+    PhysxParticleSampler* sampler = getParticleSampler(samplerKey);
 
     if (!sampler)
         return;
@@ -554,7 +629,9 @@ void PhysxParticleFactory::processParticleSamplingResults(SdfPath samplerPath,
 
     if (!consistent)
     {
-        CARB_LOG_WARN("%s: Physx particle sampling - target particle prim has a different point count than expected! Trying to recover..", mPath.GetText());
+        AttachedStage* attachedStage = getActiveAttachedStage();
+        CARB_LOG_WARN("%s: Physx particle sampling - target particle prim has a different point count than expected! Trying to recover..",
+                     attachedStage ? attachedStage->textFor(mParticleKey) : "");
 
         // reset start/count for all samplers of this factory to force recreation; other samplers need to be resampled first
         resetStartAndCountForAllSamplers();
@@ -592,7 +669,7 @@ void PhysxParticleFactory::processParticleSamplingResults(SdfPath samplerPath,
             }
         }
     }
-    
+
     // hack for renaming - this tells us that there is at least 1 sampler that actually sampled particles into this set.
     mInitialized = true;
 }
@@ -626,7 +703,7 @@ bool PhysxParticleFactory::canRegisterOriginalCount(size_t numPoints)
 
     size_t pointCount = 0;
     bool sizesMatch = false;
-    if (!getSourceParticleData(*attachedStage, mPath, pointCount, sizesMatch) || !sizesMatch)
+    if (!getSourceParticleData(*attachedStage, mParticleKey, pointCount, sizesMatch) || !sizesMatch)
         return false;
 
     if (numPoints > std::numeric_limits<size_t>::max() - mTotalParticleCount)
@@ -651,7 +728,7 @@ bool PhysxParticleFactory::checkTargetCountsAndSizes(bool registerOriginalCount)
 
     size_t pointCount = 0;
     bool sizesMatch = false;
-    if (!getSourceParticleData(*attachedStage, mPath, pointCount, sizesMatch))
+    if (!getSourceParticleData(*attachedStage, mParticleKey, pointCount, sizesMatch))
         return false;
 
     if (activeSourceUsesExternalPayload() && mHasAuthoredSamplingResults)
@@ -680,7 +757,7 @@ void PhysxParticleFactory::saveTotalCount()
     {
         size_t pointCount = 0;
         bool sizesMatch = false;
-        if (getSourceParticleData(*attachedStage, mPath, pointCount, sizesMatch))
+        if (getSourceParticleData(*attachedStage, mParticleKey, pointCount, sizesMatch))
         {
             mTotalParticleCount = pointCount;
             return;
@@ -692,51 +769,46 @@ void PhysxParticleFactory::saveTotalCount()
 }
 
 // STATIC:
-void PhysxParticleFactory::processSamplingResults(SdfPath samplerPath,
-                                                  SdfPath particleSetPath,
-                                                  const GfVec3f* positions,
+void PhysxParticleFactory::processSamplingResults(ObjectKey samplerKey,
+                                                  ObjectKey particleSetKey,
+                                                  const carb::Float3* positions,
                                                   size_t numPoints,
                                                   float pointWidth,
-                                                  const GfMatrix4d& rigidTransform,
-                                                  const GfMatrix3d& shearScaleTransform,
+                                                  const ::physx::PxMat44d& rigidTransform,
+                                                  const ::physx::PxMat33d& shearScaleTransform,
                                                   bool registerOriginalCount)
 {
-    PhysxParticleFactory* factory = getParticleFactory(particleSetPath);
+    PhysxParticleFactory* factory = getParticleFactory(particleSetKey);
     if (factory)
     {
-        factory->processParticleSamplingResults(samplerPath, positions, numPoints, pointWidth,
+        factory->processParticleSamplingResults(samplerKey, positions, numPoints, pointWidth,
                                                 rigidTransform, shearScaleTransform, registerOriginalCount);
     }
     else
     {
         // factory doesn't exist - means API has been removed etc.
         // we remove the crc + reset the visibility.
-        UsdStageWeakPtr stage = omni::physx::usdparser::UsdLoad::getUsdLoad()->getActiveStage();
-        if (stage)
+        AttachedStage* attachedStage = getActiveAttachedStage();
+        if (attachedStage)
         {
-            UsdPrim prim = stage->GetPrimAtPath(samplerPath);
-            if (prim)
-            {
-                prim.RemoveProperty(particleSamplingCrcToken);
-                UsdGeomImageable img(prim);
-                if (img)
-                    img.MakeVisible();
-            }
+            IPhysicsDataWrite* dataWrite = attachedStage->getAuthoringDataWrite();
+            removeSamplingCrc(dataWrite, samplerKey);
+            setPrimVisible(dataWrite, samplerKey, true);
         }
     }
 }
 
 // STATIC:
-bool PhysxParticleFactory::getDecomposedTransform(SdfPath samplerPath,
-                                                  SdfPath particleSetPath,
-                                                  GfMatrix4d& rigidTransform,
-                                                  GfMatrix3d& shearScaleTransform)
+bool PhysxParticleFactory::getDecomposedTransform(ObjectKey samplerKey,
+                                                  ObjectKey particleSetKey,
+                                                  ::physx::PxMat44d& rigidTransform,
+                                                  ::physx::PxMat33d& shearScaleTransform)
 {
-    PhysxParticleFactory* factory = getParticleFactory(particleSetPath);
+    PhysxParticleFactory* factory = getParticleFactory(particleSetKey);
     if (!factory)
         return false;
 
-    PhysxParticleSampler* sampler = factory->getParticleSampler(samplerPath);
+    PhysxParticleSampler* sampler = factory->getParticleSampler(samplerKey);
     if (!sampler)
         return false;
 
@@ -746,16 +818,21 @@ bool PhysxParticleFactory::getDecomposedTransform(SdfPath samplerPath,
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PhysxParticleSampler::PhysxParticleSampler(SdfPath path, SdfPath target) :
-    mSamplerPath(path),
-    mTarget(target),
+PhysxParticleSampler::PhysxParticleSampler(ObjectKey key, ObjectKey target) :
+    mSamplerKey(key),
+    mTargetKey(target),
     mStartIndex(0),
     mParticleCount(0)
 {
+    // PxMat44d/PxMat33d default-construct UNINITIALIZED, unlike GfMatrix4d/GfMatrix3d
+    // (whose default ctor is the identity) - so seed both before the decompose attempt,
+    // not only on its failure path.
+    mRigidTransform = ::physx::PxMat44d(::physx::PxIdentity);
+    mShearScaleTransform = ::physx::PxMat33d(::physx::PxIdentity);
     if (!getDecomposedTransform(mRigidTransform, mShearScaleTransform))
     {
-        mRigidTransform.SetIdentity();
-        mShearScaleTransform.SetIdentity();
+        mRigidTransform = ::physx::PxMat44d(::physx::PxIdentity);
+        mShearScaleTransform = ::physx::PxMat33d(::physx::PxIdentity);
     }
 }
 
@@ -771,14 +848,14 @@ bool PhysxParticleSampler::update(bool forceResampling)
         return false;
 
     omni::physx::usdparser::ParticleSamplingDesc samplingDesc{};
-    if (!parseSamplingDesc(*attachedStage, mSamplerPath, samplingDesc))
+    if (!parseSamplingDesc(*attachedStage, mSamplerKey, samplingDesc))
         return false;
 
-    if (!samplingDesc.particleSetPath.IsEmpty() && samplingDesc.particleSetPath != mTarget)
+    if (samplingDesc.particleSetKey.valid() && samplingDesc.particleSetKey != mTargetKey)
         return false;
 
     bool needToResample;
-    GfMatrix4d newRigidTransform;
+    ::physx::PxMat44d newRigidTransform(::physx::PxIdentity);
     bool needToTransform = checkTransforms(needToResample, newRigidTransform);
 
     bool result = true;
@@ -787,8 +864,7 @@ bool PhysxParticleSampler::update(bool forceResampling)
         cookingdataasync::CookingDataAsync* cookingDataAsync = omni::physx::OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
         if (cookingDataAsync)
         {
-            cookingDataAsync->poissonSampleMesh(
-                attachedStage->keyFor(mSamplerPath), *attachedStage, samplingDesc, forceResampling, true);
+            cookingDataAsync->poissonSampleMesh(mSamplerKey, *attachedStage, samplingDesc, forceResampling, true);
         }
         else
         {
@@ -805,8 +881,8 @@ bool PhysxParticleSampler::update(bool forceResampling)
 
 bool PhysxParticleSampler::processSamplingRegistration(size_t numPoints,
                                                        size_t totalRegisteredPoints,
-                                                       const GfMatrix4d& rigidTransform,
-                                                       const GfMatrix3d& shearScaleTransform)
+                                                       const ::physx::PxMat44d& rigidTransform,
+                                                       const ::physx::PxMat33d& shearScaleTransform)
 {
     mStartIndex = (uint32_t)totalRegisteredPoints;
     mParticleCount = (uint32_t)numPoints;
@@ -814,46 +890,49 @@ bool PhysxParticleSampler::processSamplingRegistration(size_t numPoints,
     mShearScaleTransform = shearScaleTransform;
 
     // hide the source mesh when there is a USD authoring stage.
-    UsdStageWeakPtr stage = omni::physx::usdparser::UsdLoad::getUsdLoad()->getActiveStage();
-    const UsdPrim prim = stage ? stage->GetPrimAtPath(mSamplerPath) : UsdPrim();
-    UsdGeomImageable img(prim);
-    if (img)
-        img.MakeInvisible();
+    AttachedStage* attachedStage = getActiveAttachedStage();
+    if (attachedStage)
+    {
+        const IPhysicsSource* src = attachedStage->getSource();
+        if (src && src->exists(mSamplerKey))
+            setPrimVisible(attachedStage->getAuthoringDataWrite(), mSamplerKey, false);
+    }
 
     return true;
 }
 
-bool PhysxParticleSampler::processSamplingResults(const GfVec3f* positions,
+bool PhysxParticleSampler::processSamplingResults(const carb::Float3* positions,
                                                   size_t numPoints,
                                                   float pointWidth,
-                                                  const GfMatrix4d& rigidTransform,
-                                                  const GfMatrix3d& shearScaleTransform,
+                                                  const ::physx::PxMat44d& rigidTransform,
+                                                  const ::physx::PxMat33d& shearScaleTransform,
                                                   bool factoryInitialized,
                                                   bool recreate,
                                                   int& firstChangedIndex,
                                                   int& shiftValue,
                                                   bool& topologyChange)
 {
-    UsdStageWeakPtr stage = omni::physx::usdparser::UsdLoad::getUsdLoad()->getActiveStage();
-    const UsdPrim prim = stage ? stage->GetPrimAtPath(mSamplerPath) : UsdPrim();
-    const UsdPrim particlePrim = stage ? stage->GetPrimAtPath(mTarget) : UsdPrim();
+    AttachedStage* attachedStage = getActiveAttachedStage();
+    const IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
 
-    if (particlePrim)
+    if (src && src->exists(mTargetKey))
     {
-        // hack to make USD updates work and silence warnings about inconsistent primvars - remove from hydra db
-        particlePrim.CreateAttribute(TfToken("omni:rtx:skip"), SdfValueTypeNames->Bool).Set(true);
+        IPhysicsDataWrite* dataWrite = attachedStage->getAuthoringDataWrite();
 
-        ParticleData oldParticleData(particlePrim);
-        if (!oldParticleData.geomPoints && !oldParticleData.geomInstancer)
+        // hack to make USD updates work and silence warnings about inconsistent primvars - remove from hydra db
+        hideHydraDuringRewrite(dataWrite, mTargetKey, true);
+
+        ParticleArrays oldArrays;
+        if (!readParticleArrays(*attachedStage, mTargetKey, oldArrays))
         {
+            const std::string typeName(src->tokenToString(src->getTypeName(mTargetKey)));
             CARB_LOG_WARN("%s: Physx particle sampling - target particle prim is not UsdGeomPoints or UsdGeomPointInstancer (type=%s).",
-                          mTarget.GetText(), particlePrim.GetTypeName().GetText());
+                          attachedStage->textFor(mTargetKey), typeName.c_str());
             return false;
         }
-        oldParticleData.read();
 
         // counts are checked to match outside of this function.
-        size_t oldSize = oldParticleData.points.size();
+        size_t oldSize = oldArrays.size();
 
         // an inconsistent particle prim forces recreation.
         if (recreate)
@@ -865,17 +944,26 @@ bool PhysxParticleSampler::processSamplingResults(const GfVec3f* positions,
         // legacy: unclear if the first condition below is still needed; the second handles full recreate ops.
         if ((oldSize > 0 && !factoryInitialized) || recreate)
         {
-            ParticleData particleData(particlePrim);
+            ParticleArrays emptyArrays;
+            emptyArrays.isPoints = oldArrays.isPoints;
+            emptyArrays.isInstancer = oldArrays.isInstancer;
+            emptyArrays.hasSimPoints = oldArrays.hasSimPoints;
 
-            SdfChangeBlock changeBlock;
-            particleData.write();
+            if (dataWrite)
+            {
+                dataWrite->beginWrite();
+                writeParticleArrays(*dataWrite, *src, mTargetKey, emptyArrays);
+                dataWrite->endWrite();
+            }
+
+            oldArrays = emptyArrays;
             oldSize = 0;
         }
 
         // This is a means to figure out if the sampler is new and we should append.
         if (mStartIndex == 0 && mParticleCount == 0)
             start = (uint32_t)oldSize;
-        
+
         size_t newNumPoints = oldSize - currentPoints + numPoints;
 
         // resize and move elements of samplers after elements of this sampler
@@ -885,39 +973,41 @@ bool PhysxParticleSampler::processSamplingResults(const GfVec3f* positions,
         if (newNumPoints < oldSize)
         {
             //if we shrink, we need to move before resizing
-            oldParticleData.move(moveDst, moveSrc, moveCount);
-            oldParticleData.resize(newNumPoints);
+            oldArrays.move(moveDst, moveSrc, moveCount);
+            oldArrays.resize(newNumPoints);
         }
         else if (newNumPoints > oldSize)
         {
             //if we grow, we need to resize first
-            oldParticleData.resize(newNumPoints);
-            oldParticleData.move(moveDst, moveSrc, moveCount);
+            oldArrays.resize(newNumPoints);
+            oldArrays.move(moveDst, moveSrc, moveCount);
         }
 
-        const bool pointRangeValid = start <= oldParticleData.points.size() &&
-                                     numPoints <= oldParticleData.points.size() - start;
-        const bool velocityRangeValid = start <= oldParticleData.velocities.size() &&
-                                        numPoints <= oldParticleData.velocities.size() - start;
-        const bool widthRangeValid = !oldParticleData.geomPoints ||
-                                     (start <= oldParticleData.pointsWidths.size() &&
-                                      numPoints <= oldParticleData.pointsWidths.size() - start);
+        const bool pointRangeValid = start <= oldArrays.points.size() &&
+                                     numPoints <= oldArrays.points.size() - start;
+        const bool velocityRangeValid = start <= oldArrays.velocities.size() &&
+                                        numPoints <= oldArrays.velocities.size() - start;
+        const bool widthRangeValid = !oldArrays.isPoints ||
+                                     (start <= oldArrays.widths.size() &&
+                                      numPoints <= oldArrays.widths.size() - start);
         if (!pointRangeValid || !velocityRangeValid || !widthRangeValid)
         {
             CARB_LOG_WARN("%s: Physx particle sampling - target arrays are not large enough after resize (start=%u, samples=%zu, points=%zu, velocities=%zu, widths=%zu, new=%zu, old=%zu, current=%u).",
-                          mTarget.GetText(), start, numPoints, oldParticleData.points.size(),
-                          oldParticleData.velocities.size(), oldParticleData.pointsWidths.size(),
+                          attachedStage->textFor(mTargetKey), start, numPoints, oldArrays.points.size(),
+                          oldArrays.velocities.size(), oldArrays.widths.size(),
                           newNumPoints, oldSize, currentPoints);
             return false;
         }
 
-        oldParticleData.set(positions, numPoints, rigidTransform, pointWidth, start, oldSize);
+        oldArrays.set(positions, numPoints, rigidTransform, pointWidth, start, oldSize);
 
+        if (dataWrite)
         {
-            SdfChangeBlock changeBlock;
-            oldParticleData.write();
-            oldParticleData.writeInstancerProtoRadius(0.5f * pointWidth);
-        } // changeblock
+            dataWrite->beginWrite();
+            writeParticleArrays(*dataWrite, *src, mTargetKey, oldArrays);
+            dataWrite->endWrite();
+        }
+        setInstancerProtoRadius(dataWrite, mTargetKey, oldArrays.isInstancer, 0.5f * pointWidth);
 
         mStartIndex = (uint32_t)start;
         mParticleCount = (uint32_t)numPoints;
@@ -931,11 +1021,10 @@ bool PhysxParticleSampler::processSamplingResults(const GfVec3f* positions,
 
         CARB_LOG_INFO("%zu particles sampled\n", numPoints);
 
-        UsdGeomImageable img(prim);
-        img.MakeInvisible();
+        setPrimVisible(dataWrite, mSamplerKey, false);
 
         // hack to make usd updates appear and silence warnings about inconsistent primvars.
-        particlePrim.CreateAttribute(TfToken("omni:rtx:skip"), SdfValueTypeNames->Bool).Set(false);
+        hideHydraDuringRewrite(dataWrite, mTargetKey, false);
 
         topologyChange = (newNumPoints != oldSize);
         return true;
@@ -952,67 +1041,80 @@ void PhysxParticleSampler::moveStartIndex(int firstChangedIndex, int correction)
     }
 }
 
-bool PhysxParticleSampler::getDecomposedTransform(GfMatrix4d& rigidTransform, GfMatrix3d& shearScaleTransform) const
+bool PhysxParticleSampler::getDecomposedTransform(::physx::PxMat44d& rigidTransform,
+                                                  ::physx::PxMat33d& shearScaleTransform) const
 {
     const AttachedStage* attachedStage = getActiveAttachedStage();
     const IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
     if (!src)
         return false;
 
-    const ObjectKey samplerKey = attachedStage->keyFor(mSamplerPath);
-    if (!src->exists(samplerKey) || !omni::physx::internal::isAType<UsdGeomMesh>(*src, samplerKey))
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    if (!src->exists(mSamplerKey) || !src->isA(mSamplerKey, tok.meshType))
         return false;
 
-    // decompose local to world into rigid and shear/scale transforms
-    GfMatrix4d l2w = omni::physx::internal::getWorldTransform(*attachedStage, samplerKey, UsdTimeCode::Default());
-    GfMatrix4d l2w_r = l2w.RemoveScaleShear();
-    GfMatrix4d l2w_ss = l2w * l2w_r.GetInverse();
-
-    // compactify shear/scale transform and store
-    GfMatrix3d l2w_ss_compact(l2w_ss[0][0], l2w_ss[0][1], l2w_ss[0][2],
-                              l2w_ss[1][0], l2w_ss[1][1], l2w_ss[1][2],
-                              l2w_ss[2][0], l2w_ss[2][1], l2w_ss[2][2]);
-
-    rigidTransform = l2w_r;
-    shearScaleTransform = l2w_ss_compact;
-    return true;
+    const ::physx::PxMat44d l2w = omni::physx::internal::getWorldTransform(
+        *attachedStage, mSamplerKey, omni::physics::parse::ReadTime::defaultTime());
+    return decomposeSamplerTransform(l2w, rigidTransform, shearScaleTransform);
 }
 
-bool PhysxParticleSampler::checkTransforms(bool& resample, GfMatrix4d& newRigidTransform)
+bool PhysxParticleSampler::checkTransforms(bool& resample, ::physx::PxMat44d& newRigidTransform)
 {
-    GfMatrix3d newShearScaleTransform;
+    ::physx::PxMat33d newShearScaleTransform;
     if (!getDecomposedTransform(newRigidTransform, newShearScaleTransform))
     {
         return false;
     }
 
-    const bool rigidChange = !GfIsClose(mRigidTransform, newRigidTransform, 1e-5);
-    const bool shearScaleChange = !GfIsClose(mShearScaleTransform, newShearScaleTransform, 1e-5);
+    const bool rigidChange = !isCloseElementwise(mRigidTransform, newRigidTransform, 1e-5);
+    const bool shearScaleChange = !isCloseElementwise(mShearScaleTransform, newShearScaleTransform, 1e-5);
 
     resample = shearScaleChange;
     return rigidChange || shearScaleChange;
 }
 
-void PhysxParticleSampler::transformPoints(GfMatrix4d& newRigidTransform)
+void PhysxParticleSampler::transformPoints(::physx::PxMat44d& newRigidTransform)
 {
-    UsdStageWeakPtr stage = omni::physx::usdparser::UsdLoad::getUsdLoad()->getActiveStage();
-    const UsdPrim particlePrim = stage ? stage->GetPrimAtPath(mTarget) : UsdPrim();
-    if (particlePrim)
+    AttachedStage* attachedStage = getActiveAttachedStage();
+    const IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
+    if (!src || !src->exists(mTargetKey))
+        return;
+
+    ParticleArrays arrays;
+    if (!readParticleArrays(*attachedStage, mTargetKey, arrays))
+        return;
+
+    // Gf `oldRigidTransformInv * newRigidTransform` -- operands swap under the
+    // PhysX convention (the element-copy transpose).
+    const ::physx::PxMat44d oldRigidTransformInv = omni::physx::affineInverse(mRigidTransform);
+    const ::physx::PxMat44d transform = newRigidTransform * oldRigidTransformInv;
+    arrays.transformPoints(transform, mStartIndex, mParticleCount);
+
+    IPhysicsDataWrite* dataWrite = attachedStage->getAuthoringDataWrite();
+    if (dataWrite)
     {
-        ParticleData particleData(particlePrim);
-        particleData.readPoints();
-
-        GfMatrix4d oldRigidTransformInv = mRigidTransform.GetInverse();
-        GfMatrix4d transform = oldRigidTransformInv * newRigidTransform;
-        particleData.transformPoints(transform, mStartIndex, mParticleCount);
-        particleData.writePoints();
-
-        mRigidTransform = newRigidTransform;
+        using omni::physics::parse::DataWriteView;
+        dataWrite->beginWrite();
+        DataWriteView pointsView;
+        pointsView.data = arrays.points.empty() ? nullptr : arrays.points.data();
+        pointsView.count = arrays.points.size();
+        dataWrite->writeArray(mTargetKey, src->internToken(arrays.isInstancer ? "positions" : "points"), pointsView);
+        if (arrays.hasSimPoints)
+        {
+            DataWriteView simView;
+            simView.data = arrays.simPoints.empty() ? nullptr : arrays.simPoints.data();
+            simView.count = arrays.simPoints.size();
+            dataWrite->writeArray(mTargetKey, src->internToken("physxParticle:simulationPoints"), simView);
+        }
+        dataWrite->endWrite();
     }
+
+    mRigidTransform = newRigidTransform;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// IPhysxParticlesPrivate API
+// Particle-sampler entry points (internal, ObjectKey-keyed)
 namespace omni
 {
 namespace physx
@@ -1020,50 +1122,77 @@ namespace physx
 namespace particles
 {
 
-void createParticleSampler(const SdfPath samplerPath, const SdfPath particlePrimPath)
+// Formerly GF ISLAND #2. Both matrices are element copies of the Gf originals --
+// the same doubles in the same flat order -- so each holds the TRANSPOSE linear
+// map of its Gf counterpart, and the arithmetic is spelled in `gfmath`, the
+// bit-exact pxr transcriptions, rather than in the PhysX-semantics helpers
+// beside them. `gfmath::removeScaleShearGf` is NOT `omni::physx::removeScaleShear`
+// (that one is an orthonormalization and disagrees on sheared input) and
+// `gfmath::inverse` is NOT `affineInverse`; either substitution changes the
+// poisson-sampling cache key. See the gfmath banner in MatrixTools.h.
+bool decomposeSamplerTransform(const ::physx::PxMat44d& l2w,
+                               ::physx::PxMat44d& rigidTransform,
+                               ::physx::PxMat33d& shearScaleTransform)
 {
-    PhysxParticleFactory* factory = getParticleFactory(particlePrimPath);
-    if (!factory)
-    {
-        factory = ICE_NEW(PhysxParticleFactory)(particlePrimPath);
-        gParticlePrimsToFactoryMap.insert({particlePrimPath, factory});
-    }
+    // Gf's `l2w.RemoveScaleShear()` and `l2w * l2w_r.GetInverse()`.
+    rigidTransform = gfmath::removeScaleShearGf(l2w);
+    const ::physx::PxMat44d shearScale = gfmath::multiply(l2w, gfmath::inverse(rigidTransform));
 
-    if (!factory->getParticleSampler(samplerPath))
-        factory->addSampler(samplerPath);
+    // The nine wire bytes are Gf's ROW-MAJOR l2w_ss[i][j] for i,j in 0..2, which
+    // is STRIDE-4 in the flat sixteen. Reading column0/1/2 of a PxMat33d built
+    // from the 3x3 linear map instead would transpose three off-diagonal pairs
+    // and silently rekey every sheared sampler; omni.physx.cooking reinterprets
+    // these same bytes back as a PxMat33d, so neither side may move.
+    const double* d = shearScale.front();
+    const double ss[9] = { d[0], d[1], d[2], d[4], d[5], d[6], d[8], d[9], d[10] };
+    std::memcpy(&shearScaleTransform.column0.x, ss, sizeof(ss));
+    return true;
 }
 
-void updateParticleSampler(const SdfPath path, const SdfPath particlePrimPath, bool forceResampling)
+void createParticleSampler(const ObjectKey samplerKey, const ObjectKey particlePrimKey)
+{
+    PhysxParticleFactory* factory = getParticleFactory(particlePrimKey);
+    if (!factory)
+    {
+        factory = ICE_NEW(PhysxParticleFactory)(particlePrimKey);
+        gParticlePrimsToFactoryMap.insert({particlePrimKey, factory});
+    }
+
+    if (!factory->getParticleSampler(samplerKey))
+        factory->addSampler(samplerKey);
+}
+
+void updateParticleSampler(const ObjectKey samplerKey, const ObjectKey particlePrimKey, bool forceResampling)
 {
     // The tuple (particlePrim, sampler) is treated as a whole: if the particle path changes, the
     // sampler is destroyed and recreated in the new factory since state can't transfer between factories.
 
-    PhysxParticleFactory* factory = getParticleFactory(particlePrimPath);
+    PhysxParticleFactory* factory = getParticleFactory(particlePrimKey);
     if (factory)
     {
-        if (!factory->updateSampler(path, forceResampling))
-            removeParticleSampler(path, particlePrimPath);
+        if (!factory->updateSampler(samplerKey, forceResampling))
+            removeParticleSampler(samplerKey, particlePrimKey);
     }
 }
 
-void removeParticleSampler(const SdfPath path, SdfPath particlePrimPath)
+void removeParticleSampler(const ObjectKey samplerKey, ObjectKey particlePrimKey)
 {
     PhysxParticleFactory* factory = nullptr;
-    if (particlePrimPath != SdfPath())
+    if (particlePrimKey.valid())
     {
-        factory = getParticleFactory(particlePrimPath);
-    } 
+        factory = getParticleFactory(particlePrimKey);
+    }
     else
     {
-        // If the particles relationship was removed from a sampler, particlePrimPath is empty here,
+        // If the particles relationship was removed from a sampler, particlePrimKey is invalid here,
         // so search all factories for the sampler to still clean it up.
         for (auto it: gParticlePrimsToFactoryMap)
         {
-            PhysxParticleSampler* sampler = it.second->getParticleSampler(path);
+            PhysxParticleSampler* sampler = it.second->getParticleSampler(samplerKey);
             if (sampler)
             {
                 factory = it.second;
-                particlePrimPath = it.first;
+                particlePrimKey = it.first;
                 break;
             }
         }
@@ -1071,11 +1200,11 @@ void removeParticleSampler(const SdfPath path, SdfPath particlePrimPath)
 
     if (factory)
     {
-        factory->removeSampler(path);
+        factory->removeSampler(samplerKey);
 
         if (factory->empty())
         {
-            gParticlePrimsToFactoryMap.erase(particlePrimPath);
+            gParticlePrimsToFactoryMap.erase(particlePrimKey);
             SAFE_DELETE_SINGLE(factory);
         }
     }

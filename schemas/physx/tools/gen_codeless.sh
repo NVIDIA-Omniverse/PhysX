@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-#
+
 # Build step for the codeless schemas. Regenerates everything from schema.usda using only
 # this tooling + native OpenUSD usdGenSchema (NO repo_usd):
 #   1. generatedSchema.usda + plugInfo.json for each codeless schema (tools/gen_schema_data.py
@@ -13,6 +13,7 @@
 #
 # Result: a fully codeless schema with NO compiled schema libraries, no codefull generation,
 # and no repo_usd dependency.
+
 set -e
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)

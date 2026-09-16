@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef BP_BROADPHASE_SHARED_H
 #define BP_BROADPHASE_SHARED_H
@@ -166,6 +143,14 @@ namespace Bp
 						void			removePair(PxU32 id0, PxU32 id1, PxU32 hashValue, PxU32 pairIndex);
 	};
 
+	// PT: the box-pruning kernels terminate their X sweeps on the sentinel value below, which only works if
+	// the sentinel is strictly greater than any encoded coordinate of a real box. encodeFloat() maps the NaN
+	// whose bit pattern is 0x7fffffff onto exactly gBoxPruningSentinel, so a NaN bound would defeat that and
+	// the sweeps would run past the end of the box list. Clamping to gMaxEncodedCoord restores the invariant;
+	// it is a no-op for every other input, including all finite floats and both infinities.
+	static const PxU32	gBoxPruningSentinel	= 0xffffffff;
+	static const PxU32	gMaxEncodedCoord	= 0xfffffffe;
+
 	struct AABB_Xi	// PT: i for integer
 	{
 		PX_FORCE_INLINE	AABB_Xi()	{}
@@ -173,8 +158,8 @@ namespace Bp
 
 		PX_FORCE_INLINE	void	initFromFloats(const void* PX_RESTRICT minX, const void* PX_RESTRICT maxX)
 		{
-			mMinX = encodeFloat(*reinterpret_cast<const PxU32*>(minX));
-			mMaxX = encodeFloat(*reinterpret_cast<const PxU32*>(maxX));
+			mMinX = PxMin(encodeFloat(*reinterpret_cast<const PxU32*>(minX)), gMaxEncodedCoord);
+			mMaxX = PxMin(encodeFloat(*reinterpret_cast<const PxU32*>(maxX)), gMaxEncodedCoord);
 		}
 
 		PX_FORCE_INLINE	void	initFromPxVec4(const PxVec4& min, const PxVec4& max)
@@ -190,12 +175,12 @@ namespace Bp
 
 		PX_FORCE_INLINE	void	initSentinel()
 		{
-			mMinX = 0xffffffff;
+			mMinX = gBoxPruningSentinel;
 		}
 
 		PX_FORCE_INLINE bool	isSentinel()	const
 		{
-			return mMinX == 0xffffffff;
+			return mMinX == gBoxPruningSentinel;
 		}
 
 		PxU32 mMinX;

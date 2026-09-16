@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-COOK-CRC-001
+ * @covers AC-1 AC-2 AC-3
+ */
 #pragma once
 
 #include <omni/Span.h>
@@ -57,6 +61,38 @@ struct MeshKeyComputation
 struct MeshCRCComputation
 {
     using MeshKey = omni::physx::usdparser::MeshKey;
+
+    // The stage's unit scale is a cooking INPUT, not metadata: CookingTask::getDefaultCookingParams
+    // turns it into the PxTolerancesScale (`1/metersPerUnit`, `10/metersPerUnit`) that every cooking
+    // task derives its PxCookingParams from, and TriangleMeshCookingTask additionally scales its
+    // auto weld tolerance by `1/metersPerUnit`. Cooking the same mesh at two different unit scales
+    // therefore yields different cooked geometry, so the two results must not share a cache entry.
+    //
+    // This is folded here rather than inside the derive*CRC() functions below because the value
+    // lives on the request, not on the per-data-type cooking params. Both compute services (local
+    // and UJITSO) call this at the one point where the derived CRC is finalized, on exactly the
+    // `PhysxCookingComputeRequest::primMeshMetersPerUnit` that is later handed to
+    // CookingTask::setMetersPerUnit -- so the key covers precisely the value the cooker consumes,
+    // and the two backends agree by construction.
+    //
+    // The value is narrowed to float on purpose. The same nominal unit scale reaches the request as
+    // a double from `UsdGeomGetStageMetersPerUnit` (eINPUT_MODE_FROM_PRIM_ID) and as a widened
+    // `IPhysicsSource` float from `AttachedStage::getSourceUnits()` (eINPUT_MODE_FROM_PRIM_MESH_VIEW),
+    // and those two bit patterns differ. Hashing the raw double would split the cache between the
+    // two input modes for the same mesh and re-cook on every load; a unit scale that differs only
+    // below float precision cannot produce meaningfully different cooked geometry.
+    //
+    // CACHE INVALIDATION: folding a new field into the CRC changes every previously computed key.
+    // Cooked data already in the local mesh cache, in the UJITSO datastore, or persisted as a CRC
+    // token in a USD layer misses once and is re-cooked. That is a one-time cold-cache cost on
+    // first run after this change, not a regression -- and it is the cost of the fix, since the
+    // stale entries are exactly the ones that could be served at the wrong scale.
+    static void foldMetersPerUnit(MeshKey& cookedDataCRC, double metersPerUnit)
+    {
+        const float canonical = static_cast<float>(metersPerUnit);
+        cookedDataCRC.setMiscData(reinterpret_cast<const uint8_t*>(&canonical), sizeof(canonical));
+    }
+
     static MeshKey deriveConvexMeshCRC(MeshKey meshKey, const ConvexMeshCookingParams& params)
     {
         meshKey.setMinThickness(params.minThickness);

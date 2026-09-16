@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Regression coverage for NVBugs 6473884 (large clone batch use-after-free)."""
 
 import pytest
-from ovphysx.types import TensorType
+from ovphysx.types import ObjectScope, SimObjectType
 from test_utils import data_path, load_usd_with_ovstage
 
 
@@ -19,39 +19,28 @@ def test_large_clone_batch_survives_reset_cycle(physx_sdk, num_targets: int):
         targets = [f"/World/envs/env{i}" for i in range(1, num_targets + 1)]
         physx_sdk.clone("/World/envs/env0", targets)
         physx_sdk.wait_all()
-        physx_sdk.warmup_gpu()
+        physx_sdk.warmup()
         for _ in range(10):
             physx_sdk.step(1.0 / 60.0)
         physx_sdk.wait_all()
 
-        spot_paths = [
-            f"/World/envs/env{i}/table"
-            for i in (1, num_targets // 2, num_targets)
-        ]
-        binding = physx_sdk.create_tensor_binding(
-            prim_paths=spot_paths,
-            tensor_type=TensorType.RIGID_BODY_POSE,
+        # The tables (source + clones) are the scene's only rigid bodies, so a whole-set read
+        # must see all num_targets + 1. That verifies the whole batch survived the cycle without
+        # a use-after-free.
+        with physx_sdk.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+            body_count = sum(g.prim_count for g in result.groups)
+        assert body_count == num_targets + 1, (
+            f"{label}: expected {num_targets + 1} bodies, got {body_count}"
         )
-        try:
-            assert binding.count == len(spot_paths), (
-                f"{label}: expected {len(spot_paths)} spot-check bodies, got {binding.count}"
-            )
-        finally:
-            binding.destroy()
 
     run_cycle("first")
     physx_sdk.reset_stage()
     physx_sdk.wait_all()
     run_cycle("second")
 
-    wildcard = physx_sdk.create_tensor_binding(
-        pattern="/World/envs/env*/table",
-        tensor_type=TensorType.RIGID_BODY_POSE,
+    with physx_sdk.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+        body_count = sum(g.prim_count for g in result.groups)
+    expected = num_targets + 1
+    assert body_count == expected, (
+        f"second cycle: expected {expected} bodies, got {body_count}"
     )
-    try:
-        expected = num_targets + 1
-        assert wildcard.count == expected, (
-            f"second cycle: wildcard binding expected {expected} bodies, got {wildcard.count}"
-        )
-    finally:
-        wildcard.destroy()

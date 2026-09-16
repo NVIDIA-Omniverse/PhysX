@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# @implements REQ-PACKAGING-OVSTAGEDEP-001
 #
 # Resolve the ovstage dependency for the opt-in omni.physics.ovstage backend
 # (ADR-0002 Milestone 1). pull_dependencies links a local ovstage source
@@ -78,6 +80,18 @@ if(WIN32)
         "${OVSTAGE_DIR}/_build/windows-x86_64/release/ovstage.lib"
         "${OVSTAGE_DIR}/_build/*/release/ovstage.lib"
         "${OVSTAGE_DIR}/lib/ovstage.lib")
+    # ovstage 0.2.0.375783 dropped the plain import lib entirely, shipping
+    # only the static lib and a new "-dynamic" loader import lib that pairs
+    # with a colocated loader DLL (which opens the real ovstage.dll at
+    # first use). Fall back to it -- same rename ovstage's own CMake config
+    # (ovstageConfig.cmake) already made for the ovstage::ovstage target.
+    if(NOT _ovstage_lib_candidates)
+        file(GLOB _ovstage_lib_candidates
+            "${OVSTAGE_DIR}/ovstage/lib/ovstage-dynamic.lib"
+            "${OVSTAGE_DIR}/_build/windows-x86_64/release/ovstage-dynamic.lib"
+            "${OVSTAGE_DIR}/_build/*/release/ovstage-dynamic.lib"
+            "${OVSTAGE_DIR}/lib/ovstage-dynamic.lib")
+    endif()
 else()
     file(GLOB _ovstage_lib_candidates
         "${OVSTAGE_DIR}/bin/libovstage.so"
@@ -86,6 +100,18 @@ else()
         "${OVSTAGE_DIR}/_build/linux-x86_64/release/libovstage.so"
         "${OVSTAGE_DIR}/_build/*/release/libovstage.so"
         "${OVSTAGE_DIR}/lib/libovstage.so")
+    # Same fallback as the Windows arm above, in case a future ovstage
+    # release drops the plain libovstage.so the way 0.2.0.375783 dropped
+    # Windows's plain ovstage.lib.
+    if(NOT _ovstage_lib_candidates)
+        file(GLOB _ovstage_lib_candidates
+            "${OVSTAGE_DIR}/bin/libovstage-dynamic.so"
+            "${OVSTAGE_DIR}/ovstage/bin/libovstage-dynamic.so"
+            "${OVSTAGE_DIR}/ovstage/lib/libovstage-dynamic.so"
+            "${OVSTAGE_DIR}/_build/linux-x86_64/release/libovstage-dynamic.so"
+            "${OVSTAGE_DIR}/_build/*/release/libovstage-dynamic.so"
+            "${OVSTAGE_DIR}/lib/libovstage-dynamic.so")
+    endif()
 endif()
 list(LENGTH _ovstage_lib_candidates _ovstage_lib_candidate_count)
 if(_ovstage_lib_candidate_count GREATER 0)

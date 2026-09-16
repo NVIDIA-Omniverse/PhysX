@@ -1,43 +1,44 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
-
-#include "InternalTools.h"
-
-#include <UsdXformHelpers.h>
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-27
+ */
 
 #include <carb/logging/Log.h>
 #include <common/utilities/MemoryMacros.h>
+#include <omni/physics/parse/IPhysicsDataWrite.h>
 #include <PhysXDefines.h>
 #include <PhysXTools.h>
-#include <UsdPhysicsDataWrite.h>
 
 using namespace omni::physx::internal;
 using namespace omni::physx::usdparser;
-using namespace PXR_NS;
 using namespace carb;
 using namespace ::physx;
 
 namespace
 {
-// Vehicle controller restore still authors through USD schema APIs. It is kept
-// on the USD data-write side only; non-USD/ovstage outputs do not have these
-// USD controller attributes to restore here.
-PXR_NS::UsdPrim usdPrimOf(omni::physics::parse::ObjectKey key)
+// Local scale for `key` through the source, for the no-prim case in
+// WheelTransformManagementEntry::init -- pxr-free; it is the no-backing-stage fallback.
+carb::Float3 localScaleFromSource(omni::physics::parse::ObjectKey key)
 {
     AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    omni::physics::usd::UsdPhysicsDataWrite* dw =
-        as ? omni::physics::usd::asUsdDataWrite(as->getDataWrite()) : nullptr;
-    return dw ? dw->usdPrimForWrite(key) : PXR_NS::UsdPrim();
+    if (!as || !key.valid())
+        return { 1.0f, 1.0f, 1.0f };
+    bool resetsXformStack = false;
+    const ::physx::PxVec3 scale = omni::physx::getScale(omni::physx::internal::getLocalTransform(
+        *as, key, omni::physics::parse::ReadTime::defaultTime(), resetsXformStack));
+    return { scale.x, scale.y, scale.z };
 }
 
-// Intern a prim's path to its ObjectKey via the active stage (invalid key for
-// an invalid prim or no stage). Single-threaded on the vehicle-create/load path.
-omni::physics::parse::ObjectKey keyOf(const PXR_NS::UsdPrim& prim)
+// Diagnostic-only path text for a material key (never for identity/lookup) -- routes through
+// AttachedStage::textFor(), which works for every source
+// (InternalTireFrictionTable::create()'s "material not found" log below is not itself USD-only).
+const char* textOf(omni::physics::parse::ObjectKey key)
 {
     AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    return (as && prim) ? as->keyFor(prim.GetPath()) : omni::physics::parse::ObjectKey{};
+    return as ? as->textFor(key) : "";
 }
 } // namespace
 
@@ -150,9 +151,6 @@ InternalVehicle::~InternalVehicle()
 {
     if (mPhysXVehicle)
     {
-        OmniPvdWriter* pvdWriter;
-        ::physx::PxAllocatorCallback* allocatorForPvd;
-        
         if (mPhysXVehicle->getPvdObjectHandles())
         {
             OmniPhysX& omniPhysX = OmniPhysX::getInstance();
@@ -161,18 +159,16 @@ InternalVehicle::~InternalVehicle()
             // the following should hold when getPvdObjectHandles() is available
             CARB_ASSERT(physxSetup.getVehiclePvdRegistrationHandles());
             CARB_ASSERT(physxSetup.getOmniPvd());
-            CARB_ASSERT(physxSetup.getOmniPvd()->getWriter());
 
-            pvdWriter = physxSetup.getOmniPvd()->getWriter();
-            allocatorForPvd = &physxSetup.getAllocator();
+            ::physx::PxOmniPvd::ScopedExclusiveWriter writerScope(physxSetup.getOmniPvd());
+            OmniPvdWriter* pvdWriter = writerScope.getWriter();
+            CARB_ASSERT(pvdWriter);
+            mPhysXVehicle->release(pvdWriter, &physxSetup.getAllocator());
         }
         else
         {
-            pvdWriter = nullptr;
-            allocatorForPvd = nullptr;
+            mPhysXVehicle->release(nullptr, nullptr);
         }
-
-        mPhysXVehicle->release(pvdWriter, allocatorForPvd);
     }
 
     if (mEngineOrDriveBasic)
@@ -192,13 +188,17 @@ InternalVehicle::~InternalVehicle()
     }
 }
 
-void InternalVehicle::WheelTransformManagementEntry::init(PXR_NS::UsdPrim& wheelRootPrim_,
-                                                          PXR_NS::UsdPrim& shapePrim_,
+void InternalVehicle::WheelTransformManagementEntry::init(omni::physics::parse::ObjectKey wheelRootKey_,
+                                                          omni::physics::parse::ObjectKey shapeKey_,
                                                           const PxShape* shape_,
                                                           usdparser::ObjectId shapeId)
 {
-    wheelRootKey = keyOf(wheelRootPrim_);
-    shapeKey = keyOf(shapePrim_);
+    // Identity is the ObjectKey the caller resolved -- what names the wheel in the
+    // ovstage output read regardless of whether a backing UsdPrim exists. Below, USD
+    // xform-op authoring resolves its own prim (narrowly, only when reached) instead
+    // of taking one from the caller.
+    wheelRootKey = wheelRootKey_;
+    shapeKey = shapeKey_;
     shape = shape_;
     cylinderAxis = usdparser::eX;
 
@@ -218,50 +218,55 @@ void InternalVehicle::WheelTransformManagementEntry::init(PXR_NS::UsdPrim& wheel
         }
     }
 
-    // sanitize xform ops to scale orient translate
-    omni::physics::usd::setupTransformOpsAsScaleOrientTranslate(wheelRootPrim_);
-    PXR_NS::GfVec3f sc(0.f);
-    const bool success = getScaleFromXformOp<PXR_NS::GfVec3f>(sc, wheelRootPrim_);
-    if (success)
-    {
-        scale.x = sc[0];
-        scale.y = sc[1];
-        scale.z = sc[2];
-    }
-    else
-    {
-        scale.x = 1.0f;
-        scale.y = 1.0f;
-        scale.z = 1.0f;
+    // Normalize the destination's xform-op stack and read back its local scale
+    // through the write sink (no destination, e.g. an ovstage attach, just means an
+    // absent/null sink, same as eNoDestination below).
+    AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    omni::physics::parse::IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
 
-        CARB_LOG_ERROR("PhysX Vehicle: wheel attachment prim transform has no scale (\"%s\"). Make sure the transform is writable.\n",
-            wheelRootPrim_.GetPath().GetText());
-    }
-
-    PXR_NS::UsdPrim wheelRootParentXformPrim;
-    omni::physics::usd::getParentXform(wheelRootPrim_, wheelRootParentXformPrim);
-    wheelRootParentXformKey = keyOf(wheelRootParentXformPrim);
-
-    if (shape_ && (wheelRootPrim_ != shapePrim_))
+    bool wheelScaleFromPrim = false;
+    if (dw)
     {
-        // sanitize xform ops to scale orient translate
-        omni::physics::usd::setupTransformOpsAsScaleOrientTranslate(shapePrim_);
-        PXR_NS::GfVec3f shapeSc(0.f);
-        const bool success = getScaleFromXformOp<PXR_NS::GfVec3f>(shapeSc, shapePrim_);
-        if (success)
+        const auto result = dw->readWheelLocalScale(wheelRootKey, scale);
+        wheelScaleFromPrim = (result != omni::physics::parse::WheelScaleReadResult::eNoDestination);
+        if (result == omni::physics::parse::WheelScaleReadResult::eScaleMissing)
         {
-            shapeScale.x = shapeSc[0];
-            shapeScale.y = shapeSc[1];
-            shapeScale.z = shapeSc[2];
+            CARB_LOG_ERROR("PhysX Vehicle: wheel attachment prim transform has no scale (\"%s\"). Make sure the transform is writable.\n",
+                textOf(wheelRootKey));
         }
-        else
-        {
-            shapeScale.x = 1.0f;
-            shapeScale.y = 1.0f;
-            shapeScale.z = 1.0f;
+    }
+    // wheelRootParentXformKey is consumed only by InternalScene.cpp's per-frame
+    // USD transform write-back; resolveNearestXformableAncestor's own doc covers
+    // why it is safe to call here (attach-time, off the per-frame write path).
+    if (wheelScaleFromPrim)
+    {
+        wheelRootParentXformKey = dw->resolveNearestXformableAncestor(wheelRootKey);
+    }
+    if (!wheelScaleFromPrim)
+    {
+        // No destination to sanitize or author into; the scale still has to be right
+        // because it travels with the wheel pose.
+        scale = localScaleFromSource(wheelRootKey);
+    }
 
-            CARB_LOG_ERROR("PhysX Vehicle: wheel attachment collision prim transform has no scale (\"%s\"). Make sure the transform is writable.\n",
-                shapePrim_.GetPath().GetText());
+    if (shape_ && (wheelRootKey != shapeKey))
+    {
+        // Same sink-normalized scale read as the wheel-root block above, for the
+        // collision shape's own scale (no parent-xform-key concept applies here).
+        bool shapeScaleFromPrim = false;
+        if (dw)
+        {
+            const auto result = dw->readWheelLocalScale(shapeKey, shapeScale);
+            shapeScaleFromPrim = (result != omni::physics::parse::WheelScaleReadResult::eNoDestination);
+            if (result == omni::physics::parse::WheelScaleReadResult::eScaleMissing)
+            {
+                CARB_LOG_ERROR("PhysX Vehicle: wheel attachment collision prim transform has no scale (\"%s\"). Make sure the transform is writable.\n",
+                    textOf(shapeKey));
+            }
+        }
+        if (!shapeScaleFromPrim)
+        {
+            shapeScale = localScaleFromSource(shapeKey);
         }
     }
 }
@@ -275,45 +280,48 @@ void InternalVehicle::restoreInitialProperties()
 
         PhysXVehicleManagedWheelControl* mwcVehicle = static_cast<PhysXVehicleManagedWheelControl*>(mPhysXVehicle);
 
-        const PXR_NS::UsdPrim controllerPrim = usdPrimOf(mInitialControllerValues->key);
-        // Controller restore authors USD schema attrs back to the prim. A non-USD/
-        // ovstage source has no backing prim (usdPrimOf is invalid), so skip the
-        // restore — mirrors InternalVehicleWheelAttachment::restoreInitialProperties().
-        if (!controllerPrim.IsValid())
+        // Controller restore authors back through the write sink. A non-USD/ovstage
+        // attach (or one with no active source/write sink) has nothing to restore
+        // into, and every write*Attribute call below is a no-op in that case.
+        AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        omni::physics::parse::IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
+        if (!dw)
             return;
-        CARB_ASSERT(controllerPrim.HasAPI<PXR_NS::PhysxSchemaPhysxVehicleControllerAPI>());
-        PXR_NS::PhysxSchemaPhysxVehicleControllerAPI controllerAPI(controllerPrim);
-        const bool hasTankController = controllerPrim.HasAPI<PXR_NS::PhysxSchemaPhysxVehicleTankControllerAPI>();
-        controllerAPI.GetAcceleratorAttr().Set(mInitialControllerValues->accelerator);
+
+        const omni::physics::parse::ObjectKey key = mInitialControllerValues->key;
+        const omni::physics::parse::IPhysicsSource* src = as->getSource();
+        const bool hasTankController =
+            src && src->hasSchema(key, src->internToken("PhysxVehicleTankControllerAPI"));
+
+        dw->writeFloatAttribute(key, "physxVehicleController:accelerator", mInitialControllerValues->accelerator);
         if (!mwcVehicle->isUsingDeprecatedBrakesSetup())
         {
-            controllerAPI.GetBrake0Attr().Set(mInitialControllerValues->brake0);
-            controllerAPI.GetBrake1Attr().Set(mInitialControllerValues->brake1);
+            dw->writeFloatAttribute(key, "physxVehicleController:brake0", mInitialControllerValues->brake0);
+            dw->writeFloatAttribute(key, "physxVehicleController:brake1", mInitialControllerValues->brake1);
         }
         else
         {
-            controllerAPI.GetBrakeAttr().Set(mInitialControllerValues->brake);
-            controllerAPI.GetHandbrakeAttr().Set(mInitialControllerValues->handbrake);
+            dw->writeFloatAttribute(key, "physxVehicleController:brake", mInitialControllerValues->brake);
+            dw->writeFloatAttribute(key, "physxVehicleController:handbrake", mInitialControllerValues->handbrake);
         }
         if ((!mwcVehicle->isUsingDeprecatedSteerSetup()) || hasTankController)
         {
             // note: a tank might not have the steering API applied but still should not
             //       restore the deprecated steer values
 
-            controllerAPI.GetSteerAttr().Set(mInitialControllerValues->steer);
+            dw->writeFloatAttribute(key, "physxVehicleController:steer", mInitialControllerValues->steer);
         }
         else
         {
-            controllerAPI.GetSteerLeftAttr().Set(mInitialControllerValues->steerLeft);
-            controllerAPI.GetSteerRightAttr().Set(mInitialControllerValues->steerRight);
+            dw->writeFloatAttribute(key, "physxVehicleController:steerLeft", mInitialControllerValues->steerLeft);
+            dw->writeFloatAttribute(key, "physxVehicleController:steerRight", mInitialControllerValues->steerRight);
         }
-        controllerAPI.GetTargetGearAttr().Set(mInitialControllerValues->targetGear);
+        dw->writeIntAttribute(key, "physxVehicleController:targetGear", mInitialControllerValues->targetGear);
 
         if (hasTankController)
         {
-            PXR_NS::PhysxSchemaPhysxVehicleTankControllerAPI tankControllerAPI(controllerPrim);
-            tankControllerAPI.GetThrust0Attr().Set(mInitialControllerValues->thrust0);
-            tankControllerAPI.GetThrust1Attr().Set(mInitialControllerValues->thrust1);
+            dw->writeFloatAttribute(key, "physxVehicleTankController:thrust0", mInitialControllerValues->thrust0);
+            dw->writeFloatAttribute(key, "physxVehicleTankController:thrust1", mInitialControllerValues->thrust1);
         }
     }
     else
@@ -351,6 +359,8 @@ void InternalVehicle::removeWheelAttachment(const uint32_t wheelIndex, const boo
 {
     CARB_ASSERT(wheelIndex < mWheelAttachments.size());
     mWheelAttachments[wheelIndex] = nullptr;
+    // A wheel that is gone is a row that is gone, for anything enumerating wheels off this vehicle.
+    mInternalScene.mVehicleSetEpoch++;
 
     if (disableWheel)
     {
@@ -662,6 +672,11 @@ void InternalVehicle::setControllerParams(const uint32_t wheelIndex,
     setSteerAngle(wheelIndex, controllerDesc.steerAngle);
 }
 
+bool InternalVehicle::isRawWheelControl() const
+{
+    return mPhysXVehicle && mPhysXVehicle->getType() == PhysXVehicleType::eRAW_WHEEL_CONTROL;
+}
+
 void InternalVehicle::setDriveTorque(const uint32_t wheelIndex, const float driveTorque)
 {
     CARB_ASSERT(mPhysXVehicle->getType() == PhysXVehicleType::eRAW_WHEEL_CONTROL);
@@ -884,14 +899,14 @@ InternalTireFrictionTable* InternalTireFrictionTable::create(const TireFrictionT
                         {
                             CARB_LOG_ERROR(
                                 "PhysX Vehicle: tire friction table: referenced material \"%s\" could not be found (most likely it has not been created).\n",
-                                tireFrictionTableDesc.materialPaths[i].GetText());
+                                textOf(tireFrictionTableDesc.materialPaths[i]));
                         }
                     }
                     else
                     {
                         CARB_LOG_ERROR(
                             "PhysX Vehicle: tire friction table: referenced material \"%s\" could not be found (most likely it has not been created).\n",
-                            tireFrictionTableDesc.materialPaths[i].GetText());
+                            textOf(tireFrictionTableDesc.materialPaths[i]));
                     }
 
                     materialFrictionPairs[i].material = material;
@@ -940,7 +955,7 @@ void InternalTireFrictionTable::initDefault()
     sDefaultMaterialFrictionTable.defaultFriction = 1.0f;
 }
 
-void InternalTireFrictionTable::update(const PXR_NS::VtArray<float>& frictionValues)
+void InternalTireFrictionTable::update(const std::vector<float>& frictionValues)
 {
     ::physx::PxVehiclePhysXMaterialFriction* materialFrictionPairs = mMaterialFrictionTable.materialFrictions;
 
@@ -968,13 +983,16 @@ void InternalVehicleWheelAttachment::release(const bool disableWheel)
 
 void InternalVehicleWheelAttachment::restoreInitialProperties()
 {
-    const PXR_NS::UsdPrim controllerPrim = usdPrimOf(mInitialControllerValues.key);
-    if (controllerPrim.IsValid())
-    {
-        CARB_ASSERT(controllerPrim.HasAPI<PXR_NS::PhysxSchemaPhysxVehicleWheelControllerAPI>());
-        PXR_NS::PhysxSchemaPhysxVehicleWheelControllerAPI controllerAPI(controllerPrim);
-        controllerAPI.GetDriveTorqueAttr().Set(mInitialControllerValues.driveTorque);
-        controllerAPI.GetBrakeTorqueAttr().Set(mInitialControllerValues.brakeTorque);
-        controllerAPI.GetSteerAngleAttr().Set(mInitialControllerValues.steerAngle);
-    }
+    // Controller restore authors back through the write sink; a non-USD/ovstage attach
+    // (or one with no active write sink) has nothing to restore into, and every
+    // write*Attribute call below is a no-op in that case.
+    AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    omni::physics::parse::IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
+    if (!dw)
+        return;
+
+    const omni::physics::parse::ObjectKey key = mInitialControllerValues.key;
+    dw->writeFloatAttribute(key, "physxVehicleWheelController:driveTorque", mInitialControllerValues.driveTorque);
+    dw->writeFloatAttribute(key, "physxVehicleWheelController:brakeTorque", mInitialControllerValues.brakeTorque);
+    dw->writeFloatAttribute(key, "physxVehicleWheelController:steerAngle", mInitialControllerValues.steerAngle);
 }

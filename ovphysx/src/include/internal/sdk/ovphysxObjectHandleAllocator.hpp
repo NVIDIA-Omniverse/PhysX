@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -12,9 +12,9 @@ namespace ovphysx
 namespace internal
 {
 
-// Hand out the next serial of an opaque-object handle sequence. The counter is
+// Hands out the next serial of an opaque-object handle sequence. The counter is
 // taken by reference so this stays a pure function over caller-owned state and
-// stays unit-testable; the process-wide instance lives in ovphysx.cpp.
+// stays unit-testable. The process-wide instance lives in ovphysx.cpp.
 //
 // Invariants: values are strictly increasing and never reused, so a serial
 // identifies one object for the life of the sequence even after that object is

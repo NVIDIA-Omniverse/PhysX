@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
+
 """
 Generate a header-only PhysxAxisInstanceTokens table: the concrete per-axis instances of the
 physxJointAxis / physxDrivePerformanceEnvelope multiple-apply schemas (angular/linear/rotX/rotY/
@@ -66,7 +67,7 @@ def main():
     w = L.append
     w("// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.")
     w("// SPDX-License-Identifier: Apache-2.0")
-    w("//")
+    w("")
     w("// GENERATED (header-only) by tools/gen_axis_instance_tokens.py. DO NOT EDIT.")
     w("// Concrete per-axis instances of the physxJointAxis / physxDrivePerformanceEnvelope")
     w("// multiple-apply schemas, derived from PhysxSchemaTokens templates (no hand-authored")

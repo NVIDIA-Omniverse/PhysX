@@ -1,9 +1,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // This include must come first
 // clang-format off
-#include "UsdPCH.h"
 // clang-format on
 
 #include <carb/logging/Log.h>
@@ -18,7 +17,6 @@
 
 using namespace ::physx;
 using namespace omni::physx;
-using namespace PXR_NS;
 namespace cookingtask
 {
 
@@ -55,8 +53,15 @@ public:
         , m_sampleVolume(params.sampleVolume)
         , m_maxSamples(params.maxSamples)
     {
-        static_assert(sizeof(params.shearScale) == sizeof(GfMatrix3d));
-        m_shearScale = *reinterpret_cast<const GfMatrix3d*>(params.shearScale);
+        // params.shearScale is carb::Double3[3] holding the producer's GfMatrix3d
+        // row by row (CookingDataAsync memcpy's GfMatrix3d::data() into it). PxMat33d
+        // holds the same nine doubles column by column, and Gf row i is PhysX column
+        // i, so this is an element copy with no transpose -- see the mapping table in
+        // common/foundation/MatrixTools.h.
+        static_assert(sizeof(params.shearScale) == sizeof(::physx::PxMat33d));
+        const carb::Double3* ss = params.shearScale;
+        m_shearScale = PxMat33d(PxVec3d(ss[0].x, ss[0].y, ss[0].z), PxVec3d(ss[1].x, ss[1].y, ss[1].z),
+                                PxVec3d(ss[2].x, ss[2].y, ss[2].z));
     }
 
     virtual ~PoissonSamplingCookingTask(void)
@@ -83,10 +88,12 @@ public:
 
             for (uint32_t i = 0; i < vertexCount * 3; i += 3)
             {
-                GfVec3d point = GfVec3d(&vertices[i]) * m_shearScale;
-                scaledVertices[i] = point[0];
-                scaledVertices[i + 1] = point[1];
-                scaledVertices[i + 2] = point[2];
+                // Gf `v * M` (row-vector) is PhysX `M * v` -- the operands swap.
+                const PxVec3d point =
+                    m_shearScale.transform(PxVec3d(double(vertices[i]), double(vertices[i + 1]), double(vertices[i + 2])));
+                scaledVertices[i] = float(point.x);
+                scaledVertices[i + 1] = float(point.y);
+                scaledVertices[i + 2] = float(point.z);
             }
             vertices = scaledVertices.data();
 
@@ -168,7 +175,7 @@ public:
     }
 
     //input
-    GfMatrix3d m_shearScale;
+    PxMat33d m_shearScale;
     float m_samplingDistance;
     bool m_sampleVolume;
     uint32_t m_maxSamples;

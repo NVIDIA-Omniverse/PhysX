@@ -1,7 +1,9 @@
 @echo off
 REM SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-REM SPDX-License-Identifier: BSD-3-Clause
+REM SPDX-License-Identifier: Apache-2.0
 
+REM @implements REQ-BUILD-WINDOWS-001
+REM @covers AC-1
 REM Usage: pull_dependencies.bat [--config release|debug|all] [--devphysx] [--devschema]
 
 set "DO_DEV_PHYSX=0"
@@ -46,7 +48,7 @@ pushd "%~dp0"
 set PACKMAN=tools\packman\packman.cmd
 set PLATFORM=windows-x86_64
 
-REM Pull host deps (msvc)
+REM Pull host deps (MSVC, WinSDK, vswhere, Ninja, and platform tools)
 call %PACKMAN% pull deps\host-deps.packman.xml -p %PLATFORM%
 if %ERRORLEVEL% neq 0 (
     echo Failed to pull host dependencies!
@@ -54,7 +56,7 @@ if %ERRORLEVEL% neq 0 (
     exit /b %ERRORLEVEL%
 )
 
-REM Pull target deps (PhysX, onnx-mlir, physxdevice, leveldb, snappy, python311)
+REM Pull target deps (PhysX, onnx-mlir, physxdevice, leveldb, snappy, cmake)
 call %PACKMAN% pull deps\target-deps.packman.xml -p %PLATFORM%
 if %ERRORLEVEL% neq 0 (
     echo Failed to pull target dependencies!
@@ -62,19 +64,41 @@ if %ERRORLEVEL% neq 0 (
     exit /b %ERRORLEVEL%
 )
 
+REM ovruntime_deps (release variant, config-independent). The config-dependent
+REM import below reads a manifest inside it, so it comes first.
+call %PACKMAN% pull deps\ovruntime-deps.packman.xml -p %PLATFORM% -t platform_target_abi=%PLATFORM%
+if %ERRORLEVEL% neq 0 (
+    echo Failed to pull ovruntime_deps!
+    popd
+    exit /b %ERRORLEVEL%
+)
+
+REM carb_sdk_plugins, then python/cxxopts/doctest imported from it. Config-independent,
+REM and python must exist before the ovstage fetch below, which uses it as interpreter.
+call %PACKMAN% pull deps\carb-sdk-deps.packman.xml -p %PLATFORM% -t platform_target_abi=%PLATFORM%
+if %ERRORLEVEL% neq 0 (
+    echo Failed to pull carb_sdk_plugins!
+    popd
+    exit /b %ERRORLEVEL%
+)
+call %PACKMAN% pull deps\carb-sdk-deps-import.packman.xml -p %PLATFORM% -t platform_target_abi=%PLATFORM% -t platform_target=%PLATFORM% -t config=release
+if %ERRORLEVEL% neq 0 (
+    echo Failed to pull carb_sdk imports!
+    popd
+    exit /b %ERRORLEVEL%
+)
+
 set "PYTHON=_build\target-deps\python\python.exe"
-if not exist "%PYTHON%" set "PYTHON=_build\target-deps\python311\python.exe"
 if not exist "%PYTHON%" (
     echo Failed to find packman Python for ovstage dependency fetch!
     popd
     exit /b 1
 )
 
-REM ovstage backend (ADR-0002): fetch the released package per platform into
-REM _build\target-deps\ovstage (OVSTAGE_DIR). The packman <source> in
-REM deps\ovstage-deps.packman.xml is commented out; the fetch lives in
-REM ovphysx\scripts\fetch_ovstage_release.py (shipped in the open-source drop).
-REM A local <source> in ovstage-deps.packman.xml still uses packman when present.
+REM ovstage backend (ADR-0002) into _build\target-deps\ovstage. Two modes:
+REM   1. Local source checkout: if deps\ovstage-deps.packman.xml declares a <source>
+REM      path (opt-in, for ovstage development), packman links that local build.
+REM   2. Default: fetch the released package via fetch_ovstage_release.py.
 set "OVSTAGE_SRC="
 set "OVSTAGE_FETCH=..\scripts\fetch_ovstage_release.py"
 for /f "tokens=2 delims==" %%S in ('findstr /c:"<source path=" deps\ovstage-deps.packman.xml') do (
@@ -103,42 +127,29 @@ if defined OVSTAGE_SRC (
     )
 )
 
-REM Pull ovruntime_deps (always release variant, config-independent).
-call %PACKMAN% pull deps\ovruntime-deps.packman.xml -p %PLATFORM% -t platform_target_abi=%PLATFORM%
-if %ERRORLEVEL% neq 0 (
-    echo Failed to pull ovruntime_deps!
-    popd
-    exit /b %ERRORLEVEL%
-)
-
 REM Pull config-dependent deps
 for %%C in (%CONFIGS%) do (
-    REM Pull kit-kernel for dev headers not yet in ovruntime_deps (omni/timeline, omni/kit/renderer, etc.).
-    REM Namespaced import manifests also read kit_sdk_%%C\dev\all-deps.packman.xml,
-    REM so kit-kernel must exist before the config-dependent import runs.
-    call %PACKMAN% pull deps\kit-kernel-deps.packman.xml -p %PLATFORM% -t platform_target_abi=%PLATFORM% -t config=%%C
-    if %ERRORLEVEL% neq 0 (
-        echo Failed to pull kit-kernel [%%C]!
+    REM Import build inputs from the ovruntime_deps package (glm/imgui/cuda/gsl)
+    REM plus the locally pinned USD.
+    REM platform_target and usd_ver are placeholders: they only build version strings
+    REM for filtered-out entries (nvtx, omniusdresolver), never resolved.
+    REM Inside this parenthesized block %ERRORLEVEL% is expanded up front, so the
+    REM failure checks use "if errorlevel 1" and exit with a fixed nonzero code.
+    call %PACKMAN% pull deps\ovruntime-deps-import.packman.xml -p %PLATFORM% -t platform_target_abi=%PLATFORM% -t platform_target=%PLATFORM% -t usd_ver=unused -t config=%%C
+    if errorlevel 1 (
+        echo Failed to pull ovruntime_deps imports [%%C]!
         popd
-        exit /b %ERRORLEVEL%
-    )
-
-    REM Import the namespaced dependencies for this build config.
-    call %PACKMAN% pull deps\ovruntime-deps-import.packman.xml -p %PLATFORM% -t platform_target_abi=%PLATFORM% -t config=%%C
-    if %ERRORLEVEL% neq 0 (
-        echo Failed to pull config-dependent imports [%%C]!
-        popd
-        exit /b %ERRORLEVEL%
+        exit /b 1
     )
 
     REM Pull namespaced schema deps (physxSchema, physicsSchemaTools headers/libs).
     REM Skipped in --devschema mode: CMake will point at the local schema build instead.
     if %DO_DEV_SCHEMA%==0 (
         call %PACKMAN% pull deps\schema-deps.packman.xml -p %PLATFORM% -t platform_target_abi=%PLATFORM% -t config=%%C
-        if %ERRORLEVEL% neq 0 (
+        if errorlevel 1 (
             echo Failed to pull schema dependencies [%%C]!
             popd
-            exit /b %ERRORLEVEL%
+            exit /b 1
         )
     )
 )

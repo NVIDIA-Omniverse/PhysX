@@ -1,5 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+// PARTIALLY DEPRECATED (tensor-binding-deprecation): only TensorBindingNativeDeviceReportsCpuProperty
+// is binding-specific. It exercises createTensorBinding and TensorBinding::nativeDevice (the
+// CPU-property residency query, which has no session-API twin) and retires with the binding. The
+// rest of this suite (lifecycle/RAII, USD load, step, error handling, clone, typed PhysX lookup)
+// stays.
 
 /**
  * Comprehensive C++ Wrapper Test Suite
@@ -22,6 +28,10 @@
 #include <vector>
 #include <memory>
 #include <cstring>
+
+static_assert(
+    ovphysx::PhysXTypeFor<physx::PxPhysics>::value == OVPHYSX_PHYSX_TYPE_PHYSICS,
+    "PxPhysics must map to OVPHYSX_PHYSX_TYPE_PHYSICS");
 
 // Helper Functions
 namespace {
@@ -58,6 +68,37 @@ protected:
 
     std::unique_ptr<ovphysx::PhysX> m_sdk;
 };
+
+TEST_F(CppWrapperTest, TypedPxPhysicsLookup) {
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(
+        m_sdk->handle(), "tests/data/simple_physics_scene.usda"));
+
+    ovphysx_api_status_t status = m_sdk->step(1.0f / 60.0f);
+    ASSERT_EQ(status, OVPHYSX_API_SUCCESS);
+    ovphysx::physx::WaitResult wait_result = m_sdk->waitAll();
+    ASSERT_FALSE(wait_result.hasErrors());
+
+    physx::PxPhysics* physics = nullptr;
+    status = m_sdk->getPhysXPtr("", physics);
+    EXPECT_EQ(status, OVPHYSX_API_SUCCESS);
+    EXPECT_NE(physics, nullptr);
+}
+
+TEST_F(CppWrapperTest, TensorBindingNativeDeviceReportsCpuProperty) {
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(
+        m_sdk->handle(), "tests/data/boxes_falling_on_groundplane.usda"));
+
+    ovphysx::TensorBinding binding;
+    ASSERT_EQ(
+        m_sdk->createTensorBinding(
+            binding, "/World/Cube1", OVPHYSX_TENSOR_RIGID_BODY_CONTACT_OFFSET_F32),
+        OVPHYSX_API_SUCCESS);
+
+    DLDevice device{ kDLExtDev, -1 };
+    EXPECT_EQ(binding.nativeDevice(device), OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(device.device_type, kDLCPU);
+    EXPECT_EQ(device.device_id, 0);
+}
 
 //------------------------------------------------------------------------------------------------------------
 // SDK Construction and Destruction
@@ -119,11 +160,10 @@ TEST(CppWrapper, CreateArgsCreateCpu) {
     ASSERT_EQ(status, OVPHYSX_API_SUCCESS);
     EXPECT_TRUE(sdk);
 
-    // ovphysx_step() requires an attached stage (rejects stage-less handles --
-    // see NVBugs 6433668 MR review: a stage-less step() must never reach
-    // physxSim->simulate(), since IPhysxSimulation is a process-wide singleton
-    // and that call would silently advance whatever OTHER handle's stage is
-    // attached instead).
+    // ovphysx_step() rejects stage-less handles (NVBugs 6433668). IPhysxSimulation
+    // is a process-wide singleton, so a stage-less step() reaching
+    // physxSim->simulate() would silently advance whatever other handle's stage
+    // is attached.
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(sdk.handle(), "tests/data/simple_physics_scene.usda"));
 
     status = sdk.step(0.016f);
@@ -176,11 +216,10 @@ TEST(CppWrapperGpuTest, CreateArgsCreateAuto) {
     ASSERT_EQ(status, OVPHYSX_API_SUCCESS);
     EXPECT_TRUE(sdk);
 
-    // ovphysx_step() requires an attached stage (rejects stage-less handles --
-    // see NVBugs 6433668 MR review: a stage-less step() must never reach
-    // physxSim->simulate(), since IPhysxSimulation is a process-wide singleton
-    // and that call would silently advance whatever OTHER handle's stage is
-    // attached instead).
+    // ovphysx_step() rejects stage-less handles (NVBugs 6433668). IPhysxSimulation
+    // is a process-wide singleton, so a stage-less step() reaching
+    // physxSim->simulate() would silently advance whatever other handle's stage
+    // is attached.
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(sdk.handle(), "tests/data/simple_physics_scene.usda"));
 
     status = sdk.step(0.016f);
@@ -203,11 +242,10 @@ TEST(CppWrapperGpuTest, CreateArgsCreateGpu) {
     ASSERT_EQ(status, OVPHYSX_API_SUCCESS);
     EXPECT_TRUE(sdk);
 
-    // ovphysx_step() requires an attached stage (rejects stage-less handles --
-    // see NVBugs 6433668 MR review: a stage-less step() must never reach
-    // physxSim->simulate(), since IPhysxSimulation is a process-wide singleton
-    // and that call would silently advance whatever OTHER handle's stage is
-    // attached instead).
+    // ovphysx_step() rejects stage-less handles (NVBugs 6433668). IPhysxSimulation
+    // is a process-wide singleton, so a stage-less step() reaching
+    // physxSim->simulate() would silently advance whatever other handle's stage
+    // is attached.
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(sdk.handle(), "tests/data/simple_physics_scene.usda"));
 
     status = sdk.step(0.016f);
@@ -266,11 +304,10 @@ TEST_F(CppWrapperTest, SimulationStep) {
     ASSERT_NE(m_sdk, nullptr);
     ASSERT_TRUE(*m_sdk);
 
-    // ovphysx_step() requires an attached stage (rejects stage-less handles --
-    // see NVBugs 6433668 MR review: a stage-less step() must never reach
-    // physxSim->simulate(), since IPhysxSimulation is a process-wide singleton
-    // and that call would silently advance whatever OTHER handle's stage is
-    // attached instead).
+    // ovphysx_step() rejects stage-less handles (NVBugs 6433668). IPhysxSimulation
+    // is a process-wide singleton, so a stage-less step() reaching
+    // physxSim->simulate() would silently advance whatever other handle's stage
+    // is attached.
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_sdk->handle(), "tests/data/simple_physics_scene.usda"));
 
     float dt = 0.016f;
@@ -318,16 +355,15 @@ TEST_F(CppWrapperTest, ResourceManagement) {
 }
 
 //------------------------------------------------------------------------------------------------------------
-// Clone Tests - Focus on C++ wrapper-specific concerns
-// Comprehensive clone functionality is tested in the C layer (test_clone.cpp)
-// These tests verify the C++ wrapper correctly calls through and handles errors
+// Clone tests for the C++ wrapper-specific concerns. Clone functionality itself is
+// tested in the C layer (test_clone.cpp). These tests verify the C++ wrapper calls
+// through and passes errors on.
 //------------------------------------------------------------------------------------------------------------
 
 TEST_F(CppWrapperTest, CloneBasicFunctionality) {
-    // Smoke test: verify clone works through C++ wrapper
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_sdk->handle(), "tests/data/basic_simulation.usda"));
 
-    // Clone to multiple targets (proves vector<string> marshaling works)
+    // Multiple targets exercise the vector<string> marshaling.
     std::vector<std::string> targets = {
         "/World/envs/env1",
         "/World/envs/env2",
@@ -337,14 +373,14 @@ TEST_F(CppWrapperTest, CloneBasicFunctionality) {
     auto wait = m_sdk->waitAll();
     ASSERT_FALSE(wait.hasErrors());
 
-    // Verify simulation still works with clones
+    // The simulation must still step with the clones present.
     ASSERT_EQ(m_sdk->step(1.0f/60.0f), OVPHYSX_API_SUCCESS);
     wait = m_sdk->waitAll();
     ASSERT_FALSE(wait.hasErrors());
 }
 
 TEST_F(CppWrapperTest, CloneErrorHandling) {
-    // Verify C++ wrapper converts C errors to false return values correctly
+    // The C++ wrapper passes the C status codes through unchanged.
 
     // Empty source path
     std::vector<std::string> targets = {"/World/envs/env1"};

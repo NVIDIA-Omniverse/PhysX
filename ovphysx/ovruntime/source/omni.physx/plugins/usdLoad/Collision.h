@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -26,60 +26,44 @@ namespace usdparser
 
 class AttachedStage;
 
-bool isCollisionShape(const PXR_NS::UsdStageWeakPtr stage, const PXR_NS::UsdPrim& prim);
+// ObjectKey-native entry point: both real callers (usdLoad/LoadStage.cpp's
+// shape-finalization loop, usdLoad/PointInstancer.cpp's ScannedStage path)
+// already hold an ObjectKey list here; no SdfPath-taking overload is needed
+// (PointInstancer.cpp's was the last caller, retyped to ObjectKey -- ADR-0018).
+void finalizeShape(AttachedStage& attachedStage, PhysxShapeDesc* desc,
+                   const std::vector<omni::physics::parse::ObjectKey>& materials);
 
-void finalizeShape(AttachedStage& attachedStage, PhysxShapeDesc* desc, const PXR_NS::SdfPathVector& materials);
+// ObjectKey-native entry point (usdLoad/LoadStage.cpp's and usdLoad/
+// PointInstancer.cpp's callers already hold the ObjectKey directly -- see
+// createShape's definition for the ObjectDb registration note).
 PhysxRigidBodyDesc* createShape(AttachedStage& attachedStage,
-                                const PXR_NS::SdfPath& path,
+                                omni::physics::parse::ObjectKey key,
                                 PhysxShapeDesc* shapeDesc,
                                 const ObjectInstance* objectInstance,
                                 ObjectId* shapeId = nullptr);
 
-// Fills descs without USD annotation. `attachedStage` resolves the mesh
-// prim's SdfPath into the ObjectKey stored on `desc.meshPrimKey`; pass
-// `nullptr` for non-stage callers (the descriptor's `meshPrimKey` is then
-// left as the invalid ObjectKey sentinel).
-bool fillConvexMeshDesc(AttachedStage* attachedStage,
-                        const PXR_NS::UsdGeomMesh& mesh,
-                        omni::physx::usdparser::ConvexMeshPhysxShapeDesc& desc,
-                        const omni::physx::ConvexMeshCookingParams& cookingParams);
-// Key-based entry for source-only consumers (e.g. scene queries): resolves
-// `meshKey` to the mesh prim and delegates to the UsdGeomMesh form. The prim is
-// still materialized here because the cooking-input geometry read
-// (fillCookingRequest) reads mesh points/topology from USD — that read is the
-// tracked cooking-input de-USD workstream and stays encapsulated in this layer.
+// Key-based cooking-desc fills for source-backed consumers. `attachedStage`
+// resolves `meshKey` to the mesh prim path (stored on `desc.meshPrimKey`) and the
+// cooking-input geometry is read through IPhysicsSource
+// (fillCookingRequestFromSourceMesh / fillCookingMeshViewFromSource), so no
+// UsdPrim is materialized here. All of them return false for a null
+// `attachedStage` or an invalid `meshKey`.
 bool fillConvexMeshDesc(AttachedStage* attachedStage,
                         omni::physics::parse::ObjectKey meshKey,
                         omni::physx::usdparser::ConvexMeshPhysxShapeDesc& desc,
                         const omni::physx::ConvexMeshCookingParams& cookingParams);
 bool fillTriangleMeshDesc(AttachedStage* attachedStage,
-                          const PXR_NS::UsdGeomMesh& mesh,
-                          omni::physx::usdparser::TriangleMeshPhysxShapeDesc& desc,
-                          const omni::physx::TriangleMeshCookingParams& cookingParams);
-bool fillTriangleMeshDesc(AttachedStage* attachedStage,
                           omni::physics::parse::ObjectKey meshKey,
                           omni::physx::usdparser::TriangleMeshPhysxShapeDesc& desc,
                           const omni::physx::TriangleMeshCookingParams& cookingParams);
-bool fillSdfTriangleMeshDesc(AttachedStage* attachedStage,
-                             const PXR_NS::UsdGeomMesh& mesh,
-                             omni::physx::usdparser::TriangleMeshPhysxShapeDesc& desc,
-                             const omni::physx::SdfMeshCookingParams& cookingParams);
 bool fillSdfTriangleMeshDesc(AttachedStage* attachedStage,
                              omni::physics::parse::ObjectKey meshKey,
                              omni::physx::usdparser::TriangleMeshPhysxShapeDesc& desc,
                              const omni::physx::SdfMeshCookingParams& cookingParams);
 bool fillConvexDecompositionDesc(AttachedStage* attachedStage,
-                                 const PXR_NS::UsdGeomMesh& mesh,
-                                 omni::physx::usdparser::ConvexMeshDecompositionPhysxShapeDesc& desc,
-                                 const omni::physx::ConvexDecompositionCookingParams& cookingParams);
-bool fillConvexDecompositionDesc(AttachedStage* attachedStage,
                                  omni::physics::parse::ObjectKey meshKey,
                                  omni::physx::usdparser::ConvexMeshDecompositionPhysxShapeDesc& desc,
                                  const omni::physx::ConvexDecompositionCookingParams& cookingParams);
-bool fillSphereFillDesc(AttachedStage* attachedStage,
-                        const PXR_NS::UsdGeomMesh& mesh,
-                        omni::physx::usdparser::SpherePointsPhysxShapeDesc& desc,
-                        const omni::physx::SphereFillCookingParams& cookingParams);
 bool fillSphereFillDesc(AttachedStage* attachedStage,
                         omni::physics::parse::ObjectKey meshKey,
                         omni::physx::usdparser::SpherePointsPhysxShapeDesc& desc,
@@ -104,12 +88,15 @@ struct SourceMeshGeometryScope
 // `scope` must outlive the (synchronous) cooking submission. Returns false and
 // leaves `request` unchanged when the source/geometry is unavailable (caller then
 // falls back to the prim-id path).
+// includeFaceMaterials=false skips the per-mesh GeomSubset face-material walk
+// (single-material cooking: convex / decomposition / sphere-fill).
 bool fillCookingMeshViewFromSource(omni::physx::PhysxCookingComputeRequest& request,
                                    SourceMeshGeometryScope& scope,
                                    const AttachedStage& attachedStage,
-                                   omni::physics::parse::ObjectKey meshKey);
+                                   omni::physics::parse::ObjectKey meshKey,
+                                   bool includeFaceMaterials = true);
 
-PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const PXR_NS::GfVec3f& scale);
+PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const carb::Float3& scale);
 
 // Bounding-shape compute helpers — fit a sphere / OBB around `points`.
 // scanStage emits eBoundingSphereShape / eBoundingBoxShape descs with
@@ -123,7 +110,10 @@ BoundingBoxPhysxShapeDesc*    computeBoundingBoxShape(const std::vector<carb::Fl
 void releaseShapeDesc(PhysxShapeDesc* desc);
 
 void notifyStageReset(void);
-void invalidateMeshKeyCache(const PXR_NS::SdfPath& path);
+// ObjectKey-native entry point: the one external caller (CookingDataAsync.cpp's
+// addPrimRefreshSet) already holds the ObjectKey directly and previously
+// materialized a PXR_NS::SdfPath purely to call this.
+void invalidateMeshKeyCache(omni::physics::parse::ObjectKey key);
 } // namespace usdparser
 } // namespace physx
 } // namespace omni

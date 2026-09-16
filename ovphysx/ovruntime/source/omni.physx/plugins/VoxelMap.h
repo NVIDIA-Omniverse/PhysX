@@ -1,12 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-8
+ */
 
 #pragma once
 
-static PXR_NS::TfToken gInfiniteVoxelMapAPI("InfiniteVoxelMapAPI");
+#include <omni/physics/parse/Handles.h> // ObjectKey
 
 bool setVoxelRange(long int stageId,
-                   const PXR_NS::SdfPath& path,
+                   omni::physics::parse::ObjectKey key,
                    const int sx,
                    const int sy,
                    const int sz,

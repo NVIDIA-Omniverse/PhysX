@@ -1,9 +1,43 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-MATH-001
+ * @covers AC-10
+ *
+ * @implements REQ-ALGO-001
+ * @covers AC-1
+ */
 
 #pragma once
 
-#include "TypeCast.h"
+// PxVec2/PxVec3/PxVec4/PxQuat/PxTransform/PxMat44 etc. must come before
+// "TypeCast.h": both TypeCast.h and CarbPhysXCast.h are documented to rely on
+// the includer having already brought in PhysX's foundation/math headers
+// (neither includes PhysX itself). Every existing includer of this file
+// happened to satisfy that transitively; a TU that includes Algorithms.h
+// first (e.g. a test) will not.
+#include <foundation/PxAssert.h>
+#include <foundation/PxMat44.h>
+#include <foundation/PxQuat.h>
+#include <foundation/PxTransform.h>
+#include <foundation/PxVec2.h>
+#include <foundation/PxVec3.h>
+#include <foundation/PxVec4.h>
+
+// carb::Float3/Float4 and the toPhysX/toPhysXd carb<->PhysX conversions used
+// below arrive from these two. They used to come in transitively via TypeCast.h,
+// which was otherwise vestigial here (no PXR_NS:: type appears below). TypeCast.h
+// is the pxr-typed PhysX<->Gf bridge and now lives in source/omni.physics.usd/,
+// so it is gone from here rather than fenced; CarbPhysXCast.h is its pxr-free
+// half and stays. A TU that needs the Gf conversions includes <TypeCast.h>
+// directly.
+#include <carb/Types.h>
+
+#include "CarbPhysXCast.h"
+
+#include <cstring>
+#include <vector>
 
 
 #if defined(__SSE__) || defined(_M_AMD64) || defined(_M_X64)
@@ -12,6 +46,33 @@
 #    endif
 #endif
 
+#if OMNI_PHYSX_OPTIMIZE_SSE
+// __m128 and the _mm_* intrinsics used below. Previously left to whatever the
+// including translation unit happened to drag in transitively -- true for
+// every existing includer, but not guaranteed, and not true for a TU (this
+// file's own test) that includes Algorithms.h without also happening to
+// include something else that pulls in SSE intrinsics.
+#    include <xmmintrin.h> // __m128, _mm_load_ps/_mm_store_ps/_mm_shuffle_ps/...
+#    if defined(__AVX__) || defined(__SSE4_1__)
+#        include <smmintrin.h> // _mm_blendv_ps, _mm_insert_ps
+#    endif
+#endif
+
+// Buffer copy/scatter helpers. These are source-neutral: the element types are
+// carb::Float2/3/4, carb::Int2/3/4 and PhysX vectors, and the transform is a
+// ::physx::PxMat44d (ADR-0001 section 8 -- internal math is PhysX foundation
+// math, Gf* belongs only at the USD boundary).
+//
+// TRANSFORM CONVENTION. PxMat44d and GfMatrix4f/GfMatrix4d hold the same
+// sixteen values for the same transform; USD reads them row-major with a
+// row-vector convention (v' = v*M), PhysX column-major with a column-vector
+// convention (v' = M*v). So the Gf `transform.Transform(p)` these helpers used
+// to do is spelled `transform.transform(p)` here, with no transpose and no
+// element reordering -- see common/foundation/MatrixTools.h for the full
+// mapping table. (Note that GfMatrix4f::Transform also divides by the resulting
+// w; PxMat44::transform does not. Every matrix fed to these helpers is an
+// affine world/local transform whose last column is (0,0,0,1), so w == 1 and
+// the divide is a no-op.)
 
 namespace omni
 {
@@ -38,27 +99,17 @@ inline void copyBuffer(std::vector<carb::Float3>& dst, ::physx::PxVec4* src, uns
     }
 }
 
-inline void copyBuffer(std::vector<carb::Float3>& dst, const PXR_NS::GfVec3f* src, unsigned int numElements)
+inline void copyBuffer(std::vector<::physx::PxVec3>& dst, const carb::Float3* src, unsigned int numElements)
 {
     dst.resize(numElements);
     for (unsigned int i = 0; i < numElements; ++i)
     {
-        const PXR_NS::GfVec3f& srcValue = src[i];
-        dst[i] = { srcValue[0], srcValue[1], srcValue[2] };
+        const carb::Float3& srcValue = src[i];
+        dst[i] = ::physx::PxVec3(srcValue.x, srcValue.y, srcValue.z);
     }
 }
 
-inline void copyBuffer(std::vector<::physx::PxVec3>& dst, const PXR_NS::GfVec3f* src, unsigned int numElements)
-{
-    dst.resize(numElements);
-    for (unsigned int i = 0; i < numElements; ++i)
-    {
-        const PXR_NS::GfVec3f& srcValue = src[i];
-        dst[i] = ::physx::PxVec3(srcValue[0], srcValue[1], srcValue[2]);
-    }
-}
-
-inline void copyBuffer(std::vector<carb::Float4>& dst, const PXR_NS::GfVec3f* src, unsigned int numElements, ::physx::PxVec3 scale)
+inline void copyBuffer(std::vector<carb::Float4>& dst, const carb::Float3* src, unsigned int numElements, ::physx::PxVec3 scale)
 {
     dst.resize(numElements);
     for (unsigned int i = 0; i < numElements; ++i)
@@ -78,73 +129,75 @@ inline void copyBuffer(::physx::PxVec4* dst, const carb::Float3* src, unsigned i
     }
 }
 
-inline void copyBuffer(::physx::PxVec4* dst, const carb::Float3* src, unsigned int numElements, const PXR_NS::GfMatrix4f& transform)
+inline void copyBuffer(::physx::PxVec4* dst, const carb::Float3* src, unsigned int numElements, const ::physx::PxMat44d& transform)
 {
     for (unsigned int i = 0; i < numElements; ++i)
     {
         const carb::Float3& srcValue = src[i];
-        const PXR_NS::GfVec3f& srcValueTransformed = transform.Transform(PXR_NS::GfVec3f(srcValue.x, srcValue.y, srcValue.z));
+        const ::physx::PxVec3d srcValueTransformed = transform.transform(toPhysXd(srcValue));
         ::physx::PxVec4& dstValue = dst[i];
-        dstValue = { srcValueTransformed[0], srcValueTransformed[1], srcValueTransformed[2], dstValue.w };
+        dstValue = { float(srcValueTransformed.x), float(srcValueTransformed.y), float(srcValueTransformed.z), dstValue.w };
     }
 }
 
-inline void copyBuffer(::physx::PxVec3* dst, const carb::Float3* src, unsigned int numElements, const PXR_NS::GfMatrix4f& transform)
+inline void copyBuffer(::physx::PxVec3* dst, const carb::Float3* src, unsigned int numElements, const ::physx::PxMat44d& transform)
 {
     for (unsigned int i = 0; i < numElements; ++i)
     {
         const carb::Float3& srcValue = src[i];
-        const PXR_NS::GfVec3f& srcValueTransformed = transform.Transform(PXR_NS::GfVec3f(srcValue.x, srcValue.y, srcValue.z));
+        const ::physx::PxVec3d srcValueTransformed = transform.transform(toPhysXd(srcValue));
         ::physx::PxVec3& dstValue = dst[i];
-        dstValue = { srcValueTransformed[0], srcValueTransformed[1], srcValueTransformed[2] };
+        dstValue = { float(srcValueTransformed.x), float(srcValueTransformed.y), float(srcValueTransformed.z) };
     }
 }
 
 template<typename SrcVecT>
-void copyBuffer(PXR_NS::VtArray<PXR_NS::GfVec3f>& dst, const SrcVecT* src, unsigned int numElements)
+void copyBuffer(std::vector<carb::Float3>& dst, const SrcVecT* src, unsigned int numElements)
 {
     dst.resize(numElements);
     for (unsigned int i = 0; i < numElements; i++)
     {
         const SrcVecT& srcValue = src[i];
-        dst[i] = PXR_NS::GfVec3f(srcValue.x, srcValue.y, srcValue.z);
+        dst[i] = carb::Float3{ float(srcValue.x), float(srcValue.y), float(srcValue.z) };
     }
 }
 
 template<typename SrcVecT>
-void copyBuffer(PXR_NS::VtArray<PXR_NS::GfVec3f>& dst, const SrcVecT* src, unsigned int numElements, const PXR_NS::GfMatrix4f& transform)
+void copyBuffer(std::vector<carb::Float3>& dst, const SrcVecT* src, unsigned int numElements, const ::physx::PxMat44d& transform)
 {
     dst.resize(numElements);
     for (unsigned int i = 0; i < numElements; i++)
     {
         const SrcVecT& srcValue = src[i];
-        dst[i] = transform.Transform(PXR_NS::GfVec3f(srcValue.x, srcValue.y, srcValue.z));
+        const ::physx::PxVec3d p = transform.transform(::physx::PxVec3d(double(srcValue.x), double(srcValue.y), double(srcValue.z)));
+        dst[i] = carb::Float3{ float(p.x), float(p.y), float(p.z) };
     }
 }
 
 template<typename SrcVecT>
-void copyBuffer(PXR_NS::VtArray<PXR_NS::GfVec3f>& dst, const SrcVecT* src, unsigned int numElements, const std::vector<uint32_t>& mapping)
+void copyBuffer(std::vector<carb::Float3>& dst, const SrcVecT* src, unsigned int numElements, const std::vector<uint32_t>& mapping)
 {
     dst.resize(numElements);
     for (unsigned int i = 0; i < dst.size(); i++)
-        dst[i] = PXR_NS::GfVec3f(0.0f);
+        dst[i] = carb::Float3{ 0.0f, 0.0f, 0.0f };
     for (unsigned int i = 0; i < numElements; i++)
     {
         const SrcVecT& srcValue = src[mapping[i]];
-        dst[i] = PXR_NS::GfVec3f(srcValue.x, srcValue.y, srcValue.z);
+        dst[i] = carb::Float3{ float(srcValue.x), float(srcValue.y), float(srcValue.z) };
     }
 }
 
 template<typename SrcVecT>
-void copyBuffer(PXR_NS::VtArray<PXR_NS::GfVec3f>& dst, const SrcVecT* src, unsigned int numElements, const PXR_NS::GfMatrix4f& transform, const std::vector<uint32_t>& mapping)
+void copyBuffer(std::vector<carb::Float3>& dst, const SrcVecT* src, unsigned int numElements, const ::physx::PxMat44d& transform, const std::vector<uint32_t>& mapping)
 {
     dst.resize(numElements);
     for (unsigned int i = 0; i < dst.size(); i++)
-        dst[i] = PXR_NS::GfVec3f(0.0f);
+        dst[i] = carb::Float3{ 0.0f, 0.0f, 0.0f };
     for (unsigned int i = 0; i < numElements; i++)
     {
         const SrcVecT& srcValue = src[mapping[i]];
-        dst[i] = transform.Transform(PXR_NS::GfVec3f(srcValue.x, srcValue.y, srcValue.z));
+        const ::physx::PxVec3d p = transform.transform(::physx::PxVec3d(double(srcValue.x), double(srcValue.y), double(srcValue.z)));
+        dst[i] = carb::Float3{ float(p.x), float(p.y), float(p.z) };
     }
 }
 
@@ -155,24 +208,62 @@ inline bool isAligned16(const void* a)
 }
 
 template<>
-inline void copyBuffer<::physx::PxVec4>(PXR_NS::VtArray<PXR_NS::GfVec3f>& dst,
+inline void copyBuffer<::physx::PxVec4>(std::vector<carb::Float3>& dst,
                                         const ::physx::PxVec4* src,
                                         unsigned int numElements,
-                                        const PXR_NS::GfMatrix4f& transform)
+                                        const ::physx::PxMat44d& transform)
 {
-    if (!(isAligned16(dst.data()) && isAligned16(src) && isAligned16(transform.data())))
+    // The SSE kernel is a float kernel: source points and destination are float,
+    // so only the matrix is narrowed here. The sixteen values are laid out
+    // exactly as the GfMatrix4f version loaded them (Gf row i == PhysX column i),
+    // and the local is over-aligned so the matrix never forces the scalar path.
+    alignas(16) float mat[16];
     {
-        dst.resize(numElements);
+        const double* m = transform.front();
+        for (int i = 0; i < 16; ++i)
+            mat[i] = float(m[i]);
+    }
+
+    // The SSE kernel's "Normalize" step below divides by the transformed w, unlike
+    // PxMat44d::transform() (see the file-header TRANSFORM CONVENTION note), so the two
+    // branches of this function only agree when the last row of `mat` is exactly
+    // (0,0,0,1) -- every caller is documented to pass an affine world/local transform,
+    // never a projective one. Assert it here, once, on the narrowed matrix both branches
+    // share, rather than on every caller: this is a safety net for a future caller that
+    // violates the contract, not a functional change for any input that already upholds
+    // it.
+    PX_ASSERT(mat[3] == 0.0f && mat[7] == 0.0f && mat[11] == 0.0f && mat[15] == 1.0f);
+
+    // Resize before the gate: every caller passes a freshly-declared vector, whose
+    // data() is null until it allocates. Testing that null would pass the alignment
+    // check vacuously and let the SSE kernel _mm_store_ps into whatever the resize
+    // then hands back, unchecked.
+    //
+    // std::vector::resize value-initializes the new range, so this zeroes the
+    // whole buffer before every element below overwrites it -- unlike the old
+    // VtArray::resize(n, kNoInit) this replaced. std::vector has no no-init
+    // resize; avoiding it needs a custom allocator, which is out of scope for
+    // this call site alone. Accepted: one linear memset is small next to the
+    // per-element transform cost below, and every caller already owns a
+    // freshly-declared (small-buffer) vector rather than a reused large one.
+    dst.resize(numElements);
+
+    // Narrowed-to-float matrix shared by the unaligned scalar path, the SIMD
+    // main loop's remainder tail, and (via `mat`/l0..l3 above) the SIMD lanes
+    // themselves, so all three agree bit-for-bit on identical input.
+    const ::physx::PxMat44 matF(mat);
+
+    if (!(isAligned16(dst.data()) && isAligned16(src)))
+    {
         for (unsigned int i = 0; i < numElements; i++)
         {
             const ::physx::PxVec4& srcValue = src[i];
-            dst[i] = transform.Transform(PXR_NS::GfVec3f(srcValue.x, srcValue.y, srcValue.z));
+            const ::physx::PxVec3 p = matF.transform(::physx::PxVec3(srcValue.x, srcValue.y, srcValue.z));
+            dst[i] = carb::Float3{ p.x, p.y, p.z };
         }
         return;
     }
 
-    auto kNoInit = [](...) {};
-    dst.resize(numElements, kNoInit);
     auto Transform = [](__m128 const v, __m128 const l0, __m128 const l1, __m128 const l2, __m128 const l3) {
         __m128 r0 = _mm_mul_ps(_mm_shuffle_ps(v, v, _MM_SHUFFLE(0, 0, 0, 0)), l0);
         __m128 r1 = _mm_mul_ps(_mm_shuffle_ps(v, v, _MM_SHUFFLE(1, 1, 1, 1)), l1);
@@ -192,13 +283,12 @@ inline void copyBuffer<::physx::PxVec4>(PXR_NS::VtArray<PXR_NS::GfVec3f>& dst,
         return nrm;
     };
 
-    const float* mat = transform.data();
     const __m128 l0 = _mm_load_ps(mat + 0 * 4);
     const __m128 l1 = _mm_load_ps(mat + 1 * 4);
     const __m128 l2 = _mm_load_ps(mat + 2 * 4);
     const __m128 l3 = _mm_load_ps(mat + 3 * 4);
 
-    PXR_NS::GfVec3f* vdest = dst.data();
+    carb::Float3* vdest = dst.data();
     for (unsigned int i = numElements / 4; i != 0; --i)
     {
         auto s0 = Transform(_mm_load_ps(reinterpret_cast<const float*>(src + 0)), l0, l1, l2, l3);
@@ -227,107 +317,105 @@ inline void copyBuffer<::physx::PxVec4>(PXR_NS::VtArray<PXR_NS::GfVec3f>& dst,
     for (unsigned int i = numElements & 3; i != 0; i--)
     {
         const ::physx::PxVec4& srcValue = *src++;
-        *vdest++ = transform.Transform(PXR_NS::GfVec3f(srcValue.x, srcValue.y, srcValue.z));
+        const ::physx::PxVec3 p = matF.transform(::physx::PxVec3(srcValue.x, srcValue.y, srcValue.z));
+        *vdest++ = carb::Float3{ p.x, p.y, p.z };
     }
 }
 #endif // OMNI_PHYSX_OPTIMIZE_SSE
 
 
 template<typename SrcVecT>
-void copyBuffer(PXR_NS::VtArray<PXR_NS::GfVec4f>& dst, const SrcVecT* src, unsigned int numElements)
+void copyBuffer(std::vector<carb::Float4>& dst, const SrcVecT* src, unsigned int numElements)
 {
     dst.resize(numElements);
     for (unsigned int i = 0; i < numElements; i++)
     {
         const SrcVecT& srcValue = src[i];
-        dst[i] = PXR_NS::GfVec4f(srcValue.x, srcValue.y, srcValue.z, srcValue.w);
+        dst[i] = carb::Float4{ float(srcValue.x), float(srcValue.y), float(srcValue.z), float(srcValue.w) };
     }
 }
 
 template<typename SrcVecT>
-void copyBuffer(PXR_NS::VtArray<PXR_NS::GfVec2i>& dst, const SrcVecT* src, unsigned int numElements)
+void copyBuffer(std::vector<carb::Int2>& dst, const SrcVecT* src, unsigned int numElements)
 {
     dst.resize(numElements);
     for (unsigned int i = 0; i < numElements; i++)
     {
         const SrcVecT& srcValue = src[i];
-        dst[i] = PXR_NS::GfVec2i(srcValue.x, srcValue.y);
+        dst[i] = carb::Int2{ int32_t(srcValue.x), int32_t(srcValue.y) };
     }
 }
 
-inline void copyBuffer(PXR_NS::VtArray<PXR_NS::GfVec3f>& dst, ::physx::PxVec4* src, unsigned int numElements)
+inline void copyBuffer(std::vector<carb::Float3>& dst, ::physx::PxVec4* src, unsigned int numElements, const ::physx::PxMat44d& transform)
 {
     dst.resize(numElements);
     for (unsigned int i = 0; i < numElements; i++)
     {
         const ::physx::PxVec4& srcValue = src[i];
-        dst[i] = { srcValue.x, srcValue.y, srcValue.z };
-    }
-}
-
-inline void copyBuffer(PXR_NS::VtArray<PXR_NS::GfVec3f>& dst, ::physx::PxVec4* src, unsigned int numElements, const PXR_NS::GfMatrix4f& transform)
-{
-    dst.resize(numElements);
-    for (unsigned int i = 0; i < numElements; i++)
-    {
-        const ::physx::PxVec4& srcValue = src[i];
-        dst[i] = transform.Transform(PXR_NS::GfVec3f(srcValue.x, srcValue.y, srcValue.z));
+        const ::physx::PxVec3d p = transform.transform(::physx::PxVec3d(double(srcValue.x), double(srcValue.y), double(srcValue.z)));
+        dst[i] = carb::Float3{ float(p.x), float(p.y), float(p.z) };
     }
 }
 
 template <typename SrcIndexT>
-void copyBuffer(PXR_NS::VtArray<PXR_NS::GfVec3i>& dst, const SrcIndexT* src, unsigned int numSrcElements)
+void copyBuffer(std::vector<carb::Int3>& dst, const SrcIndexT* src, unsigned int numSrcElements)
 {
-    PX_COMPILE_TIME_ASSERT(3 * sizeof(SrcIndexT) == sizeof(PXR_NS::GfVec3i));
+    PX_COMPILE_TIME_ASSERT(3 * sizeof(SrcIndexT) == sizeof(carb::Int3));
     uint32_t numDstElements = numSrcElements / 3;
     dst.resize(numDstElements);
-    std::memcpy(dst.data(), src, numDstElements * sizeof(PXR_NS::GfVec3i));
+    std::memcpy(dst.data(), src, numDstElements * sizeof(carb::Int3));
 }
 
 template<typename SrcIndexT>
-void copyBuffer(PXR_NS::VtArray<PXR_NS::GfVec4i>& dst, const SrcIndexT* src, unsigned int numSrcElements)
+void copyBuffer(std::vector<carb::Int4>& dst, const SrcIndexT* src, unsigned int numSrcElements)
 {
-    PX_COMPILE_TIME_ASSERT(4 * sizeof(SrcIndexT) == sizeof(PXR_NS::GfVec4i));
+    PX_COMPILE_TIME_ASSERT(4 * sizeof(SrcIndexT) == sizeof(carb::Int4));
     uint32_t numDstElements = numSrcElements / 4;
     dst.resize(numDstElements);
-    std::memcpy(dst.data(), src, numDstElements * sizeof(PXR_NS::GfVec4i));
+    std::memcpy(dst.data(), src, numDstElements * sizeof(carb::Int4));
 }
 
 template<typename SrcVecT>
-void scatterBuffer(PXR_NS::VtArray<PXR_NS::GfVec3f>& dst, const SrcVecT* src, const PXR_NS::VtArray<uint32_t>& indexMap)
+void scatterBuffer(std::vector<carb::Float3>& dst, const SrcVecT* src, const std::vector<uint32_t>& indexMap)
 {
     for (size_t i = 0; i < indexMap.size(); i++)
     {
         const SrcVecT& p = src[i];
         uint32_t index = indexMap[i];
-        dst[index] = PXR_NS::GfVec3f(p.x, p.y, p.z);
+        dst[index] = carb::Float3{ float(p.x), float(p.y), float(p.z) };
+    }
+}
+
+// Orientations. The destination lanes are x,y,z,w with w == the real part, the
+// same convention as toFloat4(GfQuatf)/toFloat4(GfQuath) in TypeCast.h. Note
+// that the Gf version of this took a VtArray<GfQuath> -- half precision -- so a
+// caller that still has to publish halves must convert with toQuath() at its own
+// USD boundary; carb::Float4 is NOT layout-compatible with GfQuath.
+template<typename SrcQuatT>
+void scatterBuffer(std::vector<carb::Float4>& dst, const SrcQuatT* src, const std::vector<uint32_t>& indexMap)
+{
+    for (size_t i = 0; i < indexMap.size(); i++)
+    {
+        const SrcQuatT& p = src[i];
+        uint32_t index = indexMap[i];
+        dst[index] = carb::Float4{ float(p.x), float(p.y), float(p.z), float(p.w) };
     }
 }
 
 template<typename SrcVecT>
-void scatterBuffer(PXR_NS::VtArray<PXR_NS::GfQuath>& dst, const SrcVecT* src, const PXR_NS::VtArray<uint32_t>& indexMap)
+void scatterBuffer(std::vector<carb::Float3>& dst, const SrcVecT* src, const std::vector<uint32_t>& indexMap, const ::physx::PxMat44d& transform)
 {
     for (size_t i = 0; i < indexMap.size(); i++)
     {
         const SrcVecT& p = src[i];
         uint32_t index = indexMap[i];
-        dst[index] = p;
-    }
-}
-
-template<typename SrcVecT>
-void scatterBuffer(PXR_NS::VtArray<PXR_NS::GfVec3f>& dst, const SrcVecT* src, const PXR_NS::VtArray<uint32_t>& indexMap, const PXR_NS::GfMatrix4f& transform)
-{
-    for (size_t i = 0; i < indexMap.size(); i++)
-    {
-        const SrcVecT& p = src[i];
-        uint32_t index = indexMap[i];
-        dst[index] = transform.Transform(PXR_NS::GfVec3f(p.x, p.y, p.z));
+        const ::physx::PxVec3d t = transform.transform(::physx::PxVec3d(double(p.x), double(p.y), double(p.z)));
+        dst[index] = carb::Float3{ float(t.x), float(t.y), float(t.z) };
     }
 }
 
 template<typename DstT>
-void scatterBuffer(PXR_NS::VtArray<DstT>& dst, const DstT& src, const PXR_NS::VtArray<uint32_t>& indexMap)
+void scatterBuffer(std::vector<DstT>& dst, const DstT& src, const std::vector<uint32_t>& indexMap)
 {
     for (size_t i = 0; i < indexMap.size(); i++)
     {

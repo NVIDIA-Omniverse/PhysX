@@ -1,18 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
 #ifdef _MSC_VER
 #    pragma warning(push)
-#    define NOMINMAX // Make sure nobody #defines min or max
+#    ifndef NOMINMAX
+#        define NOMINMAX // Make sure nobody #defines min or max
+#    endif
 #endif
 
 #ifdef __linux__
 #    define __forceinline __attribute__((always_inline))
 #endif
-
-#include "UsdPCH.h"
 
 #include <PxPhysicsAPI.h>
 
@@ -73,7 +73,7 @@ public:
         omni::physics::parse::ObjectKey rootKey;
     };
 
-    InternalDeformableAttachment(PXR_NS::SdfPath path, const usdparser::PhysxDeformableAttachmentDesc& desc);
+    InternalDeformableAttachment(omni::physics::parse::ObjectKey key, const usdparser::PhysxDeformableAttachmentDesc& desc);
     virtual ~InternalDeformableAttachment();
 
     bool isValid();
@@ -85,7 +85,7 @@ public:
     void setRefreshAttachmentEvent(::physx::PxRigidActor* rigidActor);
     void setUpdateXformEvent(usdparser::ObjectId objId);
 
-    usdparser::ObjectId createXformActor(PXR_NS::SdfPath path);
+    usdparser::ObjectId createXformActor(omni::physics::parse::ObjectKey key);
     void setupXformAttachment();
 
     __forceinline bool hasRigidActor(const ::physx::PxRigidActor* rigidActor) const
@@ -140,7 +140,7 @@ public:
         usdparser::ObjectId rootObjId{ usdparser::kInvalidObjectId };
     };
 
-    InternalDeformableCollisionFilter(PXR_NS::SdfPath path, const usdparser::PhysxDeformableCollisionFilterDesc& desc);
+    InternalDeformableCollisionFilter(omni::physics::parse::ObjectKey key, const usdparser::PhysxDeformableCollisionFilterDesc& desc);
     virtual ~InternalDeformableCollisionFilter();
 
     bool isValid();

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-UNIFY-001
@@ -7,9 +7,10 @@
  *
  * @implements REQ-PARSE-SHAPE-002
  * @covers AC-4
+ *
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-10 AC-11 AC-12 AC-13
  */
-
-#include "UsdPCH.h"
 
 #include <carb/logging/Log.h>
 
@@ -17,7 +18,7 @@
 #include "OmniPhysX.h"
 #include "usdLoad/LoadUsd.h"
 
-#include <omni/physics/usd/CustomTokens.h>
+#include <omni/physics/parse/CustomTokens.h>
 
 using namespace ::physx;
 
@@ -27,9 +28,9 @@ namespace physx
 {
 
 
-CustomPhysXGeometryCallback::CustomPhysXGeometryCallback(const PXR_NS::SdfPath& path, const usdparser::CustomPhysxShapeDesc& shapeDesc, const CustomGeometryInfo& geometryInfo, void* userObject)
+CustomPhysXGeometryCallback::CustomPhysXGeometryCallback(omni::physics::parse::ObjectKey key, const usdparser::CustomPhysxShapeDesc& shapeDesc, const CustomGeometryInfo& geometryInfo, void* userObject)
 {
-    mCustomGeometryPath = path;
+    mCustomGeometryKey = key;
     mCustomGeometryInfo = geometryInfo;
     mUserObject = userObject;
 }
@@ -116,7 +117,7 @@ PhysXCustomGeometryManager::~PhysXCustomGeometryManager()
 {
 }
 
-CustomPhysXGeometryCallback* PhysXCustomGeometryManager::createCustomGeometry(const PXR_NS::SdfPath& primKey, const usdparser::CustomPhysxShapeDesc& customShapeDesc)
+CustomPhysXGeometryCallback* PhysXCustomGeometryManager::createCustomGeometry(omni::physics::parse::ObjectKey primKey, const usdparser::CustomPhysxShapeDesc& customShapeDesc)
 {
     CustomPhysXGeometryCallback* customGeom = nullptr;
     CustomGeometryTypeMap::const_iterator fit =
@@ -124,7 +125,12 @@ CustomPhysXGeometryCallback* PhysXCustomGeometryManager::createCustomGeometry(co
     if (fit != mCustomGeometryTypeMap.end())
     {
         const CustomGeometryInfo& geomInfo = fit->second;
-        void* userObject = geomInfo.customGeometryCb.createCustomGeometryFn(primKey, omni::physx::usdparser::UsdLoad::getUsdLoad()->getActiveStageId(), *geomInfo.typeId, geomInfo.customGeometryCb.userData);
+        // The consumer callback receives the attach the geometry belongs to, not a stage id (ADR-0016).
+        // No AttachedStage reaches this manager, so the handle comes from the active-attach accessor;
+        // it is kNoAttach when nothing (or more than one thing) is attached, matching what the stage
+        // id used to report in that case.
+        const AttachHandle attachHandle = omni::physx::usdparser::UsdLoad::getUsdLoad()->getActiveAttachHandle();
+        void* userObject = geomInfo.customGeometryCb.createCustomGeometryFn(primKey, attachHandle, *geomInfo.typeId, geomInfo.customGeometryCb.userData);
         if (userObject)
         {
             customGeom = ICE_NEW(CustomPhysXGeometryCallback)(primKey, customShapeDesc, geomInfo, userObject);
@@ -134,7 +140,7 @@ CustomPhysXGeometryCallback* PhysXCustomGeometryManager::createCustomGeometry(co
     return customGeom;
 }
 
-void PhysXCustomGeometryManager::removeCustomGeometry(const PXR_NS::SdfPath& primKey)
+void PhysXCustomGeometryManager::removeCustomGeometry(omni::physics::parse::ObjectKey primKey)
 {
     CustomGeometryMap::iterator fit = mCustomGeometryMap.find(primKey);
     if (fit != mCustomGeometryMap.end())
@@ -143,19 +149,19 @@ void PhysXCustomGeometryManager::removeCustomGeometry(const PXR_NS::SdfPath& pri
     }
 }
 
-size_t PhysXCustomGeometryManager::registerCustomGeometry(const PXR_NS::TfToken& customGeometryAPIToken, ICustomGeometryCallback& geometryCallback)
+size_t PhysXCustomGeometryManager::registerCustomGeometry(const char* customGeometryAPIToken, ICustomGeometryCallback& geometryCallback)
 {
     const size_t tokenHash = computeCustomGeometryHash(customGeometryAPIToken);
     if (mCustomGeometryTypeMap.find(tokenHash) != mCustomGeometryTypeMap.end())
     {
-        CARB_LOG_ERROR("Custom Geometry Type (%s) already registered.", customGeometryAPIToken.GetText());
+        CARB_LOG_ERROR("Custom Geometry Type (%s) already registered.", customGeometryAPIToken);
         return kInvalidCustomGeometryRegId;
     }
 
     if (!geometryCallback.createCustomGeometryFn|| !geometryCallback.computeCustomGeometryMassPropertiesFn || !geometryCallback.generateCustomGeometryContactsFn
         || !geometryCallback.releaseCustomGeometryFn || !geometryCallback.computeCustomGeometryLocalBoundsFn || !geometryCallback.useCustomGeometryPersistentContactManifoldFn)
     {
-        CARB_LOG_ERROR("Custom Geometry Type (%s) has invalid custom geometry callback, please provide all required functions.", customGeometryAPIToken.GetText());
+        CARB_LOG_ERROR("Custom Geometry Type (%s) has invalid custom geometry callback, please provide all required functions.", customGeometryAPIToken);
         return kInvalidCustomGeometryRegId;
     }
 
@@ -171,10 +177,11 @@ size_t PhysXCustomGeometryManager::registerCustomGeometry(const PXR_NS::TfToken&
     mCustomGeometryTypeMap[tokenHash] = info;
     mGeometryRegistryCounter++;
 
-    // Route the registration into the parse-lib's native USD walker
-    // custom-token registry; the schema parser's
+    // Route the registration into the USD-free parse-core custom-token registry so
+    // both the native USD walker and the ovstage walker recognize this custom
+    // geometry token (REQ-PARSE-CORE-005); the schema parser's
     // `IUsdPhysics::addCustomShapeToken` surface is retired.
-    omni::physics::usd::registerCustomShapeToken(customGeometryAPIToken);
+    omni::physics::parse::registerCustomToken(omni::physics::parse::CustomTokenKind::eShape, customGeometryAPIToken);
 
     return currentRegistryCounter;
 }
@@ -184,16 +191,16 @@ void PhysXCustomGeometryManager::unregisterCustomGeometry(size_t id)
     CustomGeometryRegistryMap::const_iterator fit = mCustomGeometryRegistryMap.find(id);
     if (fit != mCustomGeometryRegistryMap.end())
     {
-        const PXR_NS::TfToken& jt = fit->second.customGeomtryAPIToken;
+        const std::string& jt = fit->second.customGeomtryAPIToken;
         PxCustomGeometry::Type* id = fit->second.typeId;
         ICE_FREE(id);
         mCustomGeometryTypeMap.erase(computeCustomGeometryHash(jt));
-        omni::physics::usd::unregisterCustomShapeToken(jt);
+        omni::physics::parse::unregisterCustomToken(omni::physics::parse::CustomTokenKind::eShape, jt);
         mCustomGeometryRegistryMap.erase(fit);
     }
 }
 
-size_t registerCustomGeometry(const PXR_NS::TfToken& schemaAPIToken, ICustomGeometryCallback& geomCallback)
+size_t registerCustomGeometry(const char* schemaAPIToken, ICustomGeometryCallback& geomCallback)
 {
     return OmniPhysX::getInstance().getCustomGeometryManager().registerCustomGeometry(schemaAPIToken, geomCallback);
 }

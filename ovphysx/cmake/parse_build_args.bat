@@ -1,6 +1,6 @@
 @echo off
 REM SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-REM SPDX-License-Identifier: BSD-3-Clause
+REM SPDX-License-Identifier: Apache-2.0
 
 REM
 REM Shared argument parser for build scripts (ovphysx, ovruntime).
@@ -9,7 +9,7 @@ REM
 REM Usage: call path\to\parse_build_args.bat %*
 REM
 REM After calling, the following variables are set:
-REM   BUILD_CONFIG       "debug" or "release"; empty means caller defaults to release
+REM   BUILD_CONFIG       "debug" or "release". Empty means the caller defaults to release
 REM   DO_CLEAN           1 when -c/--clean (clean only, no build)
 REM   DO_REBUILD         1 when -x/--rebuild (clean then build)
 REM   DO_GENERATE_ONLY   1 when -g/--generate (configure only)
@@ -37,8 +37,6 @@ if /I "%~1"=="-g"          ( set "DO_GENERATE_ONLY=1"  & goto :next )
 if /I "%~1"=="--generate"  ( set "DO_GENERATE_ONLY=1"  & goto :next )
 if /I "%~1"=="-t"          ( if "%~2"=="" ( echo Error: --target requires an argument & exit /b 1 ) else ( set "BUILD_TARGET=%~2" & shift & goto :next ) )
 if /I "%~1"=="--target"    ( if "%~2"=="" ( echo Error: --target requires an argument & exit /b 1 ) else ( set "BUILD_TARGET=%~2" & shift & goto :next ) )
-if /I "%~1"=="-n"          ( goto :next )
-if /I "%~1"=="--no-docker" ( goto :next )
 REM Collect unrecognized args
 set "EXTRA_ARGS=%EXTRA_ARGS% %~1"
 :next

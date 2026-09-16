@@ -1,6 +1,9 @@
 @echo off
 REM SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-REM SPDX-License-Identifier: BSD-3-Clause
+REM SPDX-License-Identifier: Apache-2.0
+
+REM @implements REQ-CAPI-BENCHMARK-002
+REM @covers AC-4
 
 setlocal enableextensions enabledelayedexpansion
 
@@ -32,6 +35,7 @@ REM Process project-specific flags from EXTRA_ARGS
 set "DO_DEV_PHYSX=0"
 set "DO_DEV_SCHEMA=0"
 set "DO_BENCHMARKS=0"
+set "DO_REQUIRE_BENCHMARK_CUDA=0"
 set "DEFAULT_RELEASE_RUNTIME_DEPS=1"
 set "USER_SET_RELEASE_RUNTIME_DEPS=0"
 set "_REMAINING="
@@ -43,6 +47,8 @@ for %%a in (!EXTRA_ARGS!) do (
         set "DO_DEV_SCHEMA=1"
     ) else if /I "%%a"=="--benchmarks" (
         set "DO_BENCHMARKS=1"
+    ) else if /I "%%a"=="--require-benchmark-cuda" (
+        set "DO_REQUIRE_BENCHMARK_CUDA=1"
     ) else (
         set "_TMP_ARG=%%a"
         if /I "!_TMP_ARG:~0,35!"=="-DOVPHYSX_USE_RELEASE_RUNTIME_DEPS=" (
@@ -73,6 +79,7 @@ if not "!BUILD_TARGET!"=="" set "CMAKE_ARGS=!CMAKE_ARGS! -DBUILD_TARGET=!BUILD_T
 if "!DO_DEV_PHYSX!"=="1" set "CMAKE_ARGS=!CMAKE_ARGS! -DDEV_PHYSX=ON"
 if "!DO_DEV_SCHEMA!"=="1" set "CMAKE_ARGS=!CMAKE_ARGS! -DDEV_SCHEMA=ON"
 if "!DO_BENCHMARKS!"=="1" set "CMAKE_ARGS=!CMAKE_ARGS! -DBENCHMARKS=ON"
+if "!DO_REQUIRE_BENCHMARK_CUDA!"=="1" set "CMAKE_ARGS=!CMAKE_ARGS! -DOVPHYSX_REQUIRE_BENCHMARK_CUDA=ON"
 if "!USER_SET_RELEASE_RUNTIME_DEPS!"=="0" if "!DEFAULT_RELEASE_RUNTIME_DEPS!"=="1" set "CMAKE_ARGS=!CMAKE_ARGS! -DOVPHYSX_USE_RELEASE_RUNTIME_DEPS=ON"
 
 cmake !CMAKE_ARGS! !CMAKE_PASSTHROUGH! -P "%~dp0scripts\build.cmake"
@@ -98,6 +105,8 @@ echo Project-specific flags:
 echo   --devphysx         Build PhysX SDK from source
 echo   --devschema        Use locally-built physics schema
 echo   --benchmarks       Build the opt-in benchmark suite (tests/benchmarks/)
+echo   --require-benchmark-cuda
+echo                      Reject a CPU-only benchmark configuration
 echo   -DOVPHYSX_USE_RELEASE_RUNTIME_DEPS=ON  Use release runtime deps for Debug builds
 echo.
 echo Changing --devphysx or --devschema needs a clean rebuild:

@@ -1,9 +1,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
-#include "UsdPCH.h"
 #include "Internal.h"
 #include "VehicleGenerator.h"
 #include <PhysXDefines.h>
@@ -102,7 +101,7 @@ public:
         mMaterialFrictionTable.defaultFriction = defaultFrictionValue;
     }
 
-    void update(const PXR_NS::VtArray<float>& frictionValues);
+    void update(const std::vector<float>& frictionValues);
 
 private:
     ::physx::PxVehiclePhysXMaterialFrictionParams mMaterialFrictionTable;
@@ -155,10 +154,18 @@ public:
         {
         }
 
-        void init(PXR_NS::UsdPrim&, PXR_NS::UsdPrim&, const ::physx::PxShape*, usdparser::ObjectId shapeId);
+        // Keys carry identity (they resolve under any backend); the optional backing
+        // UsdPrims (USD xform-op authoring only) are resolved internally, narrowly
+        // fenced -- see InternalVehicle.cpp.
+        void init(omni::physics::parse::ObjectKey wheelRootKey_, omni::physics::parse::ObjectKey shapeKey_,
+                  const ::physx::PxShape*, usdparser::ObjectId shapeId);
 
-        PXR_NS::GfMatrix4d initialTransform;
-        PXR_NS::GfMatrix4d initialShapeTransform; // not used if there is no collision shape or if it is
+        // Object-local transforms captured at load through
+        // internal::getLocalTransform(), kept in the runtime's own double-precision
+        // matrix type; they are converted to Gf only where they are authored back
+        // into USD xform ops (InternalScene.cpp::restoreStartProperties).
+        ::physx::PxMat44d initialTransform;
+        ::physx::PxMat44d initialShapeTransform; // not used if there is no collision shape or if it is
                                                // the same as the wheel root
 
         carb::Float3 scale;
@@ -248,6 +255,15 @@ public:
 
     // the following block is for vehicles with DriveBasic
     void setPeakTorque(const float peakTorque);
+
+    // True when this vehicle is RAW WHEEL CONTROL, i.e. has no drive, so the per-wheel block below
+    // applies to it.
+    //
+    // Exposed because those setters CARB_ASSERT the type and then static_cast unconditionally: in a
+    // release build the assert is compiled out and the cast is undefined behaviour. A caller that
+    // cannot know the vehicle's kind -- the ovstage write, which is handed prims -- has to be able to
+    // ask before calling, rather than relying on a debug-only check.
+    bool isRawWheelControl() const;
 
     // the following block is for vehicles without drive
     void setControllerParams(const uint32_t wheelIndex, const usdparser::WheelControllerDesc&);

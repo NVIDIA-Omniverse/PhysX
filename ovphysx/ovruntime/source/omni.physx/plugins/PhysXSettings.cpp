@@ -1,8 +1,20 @@
 // SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-OMNIPVD-TRANSPORT-001
+ * @covers AC-1
+ *
+ * @implements REQ-OMNIPVD-LATE-001
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-SIM-NVTX-001
+ * @covers AC-1
+ *
+ * @implements REQ-READ-POOL-001
+ * @covers AC-2
+ */
 
-#include "UsdPCH.h"
 #include "PhysXSettings.h"
 #include "SceneMultiGPUMode.h"
 #include <carb/settings/ISettings.h>
@@ -44,8 +56,10 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingDisplaySimulationOutput, false },
         { kSettingSuppressReadback, false },
         { kSettingExposeProfilerData, true },
+        { kSettingNvtxEnabled, false },
         { kSettingExposePrimPathNames, true },
         { kOmniPvdOutputEnabled, false },
+        { kOmniPvdRecordingCapable, false },
         { kOmniPvdIsOVDStage, false },
         { kOmniPvdIsRecording, false },
         { kSettingPhysxDispatcher, false },
@@ -89,6 +103,9 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingAddMenuSubtreeLimit, 100000 },
         { kSettingUjitsoCookingMaxProcessCount, 16 },
         { kSettingSceneMultiGPUMode, int(SceneMultiGPUMode::eDisabled)},
+        { kSettingOvstageReadPoolMaxMB, 256 }, // per-context pool budget in MiB; <= 0 disables the pool; see IPhysxSettings.h
+        { kOmniPvdTcpPort, 0 },
+        { kOmniPvdTcpTimeoutMs, 0 },
     },
     // int64
     {
@@ -108,6 +125,8 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingPVDOutputDirectory, "" },
         { kSettingTestRunnerFilter, "" },
         { kOmniPvdOvdRecordingDirectory, "" },
+        { kOmniPvdTransport, "file" },
+        { kOmniPvdTcpAddress, "" },
         { kSettingDemoAssetsPath, "" },
         { kSettingTestsAssetsPath, "" },
         { kSettingDefaultSimulator, "PhysX" }

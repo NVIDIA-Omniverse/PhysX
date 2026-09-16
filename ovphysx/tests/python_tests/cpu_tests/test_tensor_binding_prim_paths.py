@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# DEPRECATED (tensor-binding-deprecation): a deprecated tensor-binding test. Removed with the binding.
 
 """Tests for TensorBinding.prim_paths property.
 

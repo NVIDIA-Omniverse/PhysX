@@ -1,9 +1,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // Implements the cooking task for single convex hulls
 
-#include "UsdPCH.h"
 
 #include <carb/logging/Log.h>
 #include <carb/profiler/Profile.h>

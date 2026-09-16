@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
+
+/**
+ * @implements REQ-TENSOR-PATH-001
+ * @covers AC-1
+ */
 
 #include "TensorDesc.h"
 
@@ -19,6 +24,7 @@ class IDeformableBodyView
 public:
     virtual uint32_t getCount() const = 0;
 
+    // Path accessors return nullptr for an out-of-range index.
     virtual const char* getUsdPrimPath(uint32_t dbIdx) const = 0;
 
     virtual const char* getUsdSimulationMeshPrimPath(uint32_t dbIdx) const = 0;

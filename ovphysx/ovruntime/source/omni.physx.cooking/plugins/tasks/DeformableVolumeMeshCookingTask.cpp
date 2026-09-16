@@ -1,21 +1,23 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-COOK-TASK-001
+ * @covers AC-1 AC-2
+ */
+
 #include <carb/logging/Log.h>
 #include <carb/profiler/Profile.h>
 
-#include <physxSchema/physxCookedDataAPI.h>
 #include <PxPhysicsAPI.h>
 #include <common/foundation/Allocator.h>
-#include <common/foundation/TypeCast.h>
+#include <common/foundation/CarbPhysXCast.h>
 
 #include "../service/CookingTask.h"
 #include "../service/CookingComputeService.h"
 
 using namespace ::physx;
 using namespace omni::physx;
-using namespace PXR_NS;
 
 namespace
 {
@@ -128,26 +130,35 @@ public:
                             omni::physx::PhysxCookingComputeResult& result)
         : CookingTask(result)
     {
+        static_assert(sizeof(PxVec3) == sizeof(carb::Float3));
+
         m_simPoints.resize(params.simPoints.size());
-        std::memcpy(m_simPoints.data(), params.simPoints.data(), sizeof(PXR_NS::GfVec3f) * m_simPoints.size());
+        std::memcpy(m_simPoints.data(), params.simPoints.data(), sizeof(PxVec3) * m_simPoints.size());
 
         m_simBindPoints.resize(params.simBindPoints.size());
-        std::memcpy(m_simBindPoints.data(), params.simBindPoints.data(), sizeof(PXR_NS::GfVec3f) * m_simBindPoints.size());
+        std::memcpy(m_simBindPoints.data(), params.simBindPoints.data(), sizeof(PxVec3) * m_simBindPoints.size());
 
         m_simIndices.resize(params.simIndices.size());
-        std::memcpy(m_simIndices.data(), params.simIndices.data(), sizeof(PXR_NS::GfVec4i) * m_simIndices.size());
+        std::memcpy(m_simIndices.data(), params.simIndices.data(), sizeof(carb::Int4) * m_simIndices.size());
 
         m_collBindPointsInSim.resize(params.collBindPointsInSim.size());
-        std::memcpy(m_collBindPointsInSim.data(), params.collBindPointsInSim.data(), sizeof(PXR_NS::GfVec3f) * m_collBindPointsInSim.size());
+        std::memcpy(m_collBindPointsInSim.data(), params.collBindPointsInSim.data(), sizeof(PxVec3) * m_collBindPointsInSim.size());
 
         m_collIndices.resize(params.collIndices.size());
-        std::memcpy(m_collIndices.data(), params.collIndices.data(), sizeof(PXR_NS::GfVec4i) * m_collIndices.size());
+        std::memcpy(m_collIndices.data(), params.collIndices.data(), sizeof(carb::Int4) * m_collIndices.size());
 
         m_collSurfaceIndices.resize(params.collSurfaceIndices.size());
-        std::memcpy(m_collSurfaceIndices.data(), params.collSurfaceIndices.data(), sizeof(GfVec3i) * m_collSurfaceIndices.size());
+        std::memcpy(m_collSurfaceIndices.data(), params.collSurfaceIndices.data(), sizeof(carb::Int3) * m_collSurfaceIndices.size());
 
+        // params.simToCookingTransform is carb::Double4[4] holding the producer's
+        // GfMatrix4d row by row. PxMat44d holds the same sixteen doubles column by
+        // column, and Gf row i is PhysX column i, so this is an element copy with no
+        // transpose -- see the mapping table in common/foundation/MatrixTools.h.
         static_assert(sizeof(m_simToCookingTransform) == sizeof(params.simToCookingTransform));
-        m_simToCookingTransform = *reinterpret_cast<const PXR_NS::GfMatrix4d*>(params.simToCookingTransform);
+        const carb::Double4* s2c = params.simToCookingTransform;
+        m_simToCookingTransform =
+            PxMat44d(PxVec4d(s2c[0].x, s2c[0].y, s2c[0].z, s2c[0].w), PxVec4d(s2c[1].x, s2c[1].y, s2c[1].z, s2c[1].w),
+                     PxVec4d(s2c[2].x, s2c[2].y, s2c[2].z, s2c[2].w), PxVec4d(s2c[3].x, s2c[3].y, s2c[3].z, s2c[3].w));
 
         m_numTetsPerElement = params.numTetsPerElement;
     }
@@ -163,19 +174,19 @@ public:
         }
     }
 
-    bool isValid(void) const
+    bool isValid(void) override
     {
         return true;
     }
 
     bool cookDeformableVolumeMeshData(const PxCookingParams& cookingParams,
-        const std::vector<PXR_NS::GfVec3f>& simPoints,
-        const std::vector<PXR_NS::GfVec3f>& simBindPoints,
-        const std::vector<PXR_NS::GfVec4i>& simIndices,
-        const std::vector<PXR_NS::GfVec3f>& collBindPointsInSim,
-        const std::vector<PXR_NS::GfVec4i>& collIndices,
-        const std::vector<PXR_NS::GfVec3i>& collSurfaceIndices,
-        const PXR_NS::GfMatrix4d& simToCookingTransform,
+        const std::vector<PxVec3>& simPoints,
+        const std::vector<PxVec3>& simBindPoints,
+        const std::vector<carb::Int4>& simIndices,
+        const std::vector<PxVec3>& collBindPointsInSim,
+        const std::vector<carb::Int4>& collIndices,
+        const std::vector<carb::Int3>& collSurfaceIndices,
+        const ::physx::PxMat44d& simToCookingTransform,
         uint32_t numTetsPerElement,
         const usdparser::MeshKey& crc)
     {
@@ -191,8 +202,7 @@ public:
             {
                 for (uint32_t i = 0; i < numSimPoints; ++i)
                 {
-                    PXR_NS::GfVec3f v = PXR_NS::GfVec3f(simToCookingTransform.Transform(simPoints[i]));
-                    simMeshVertices[i] = toPhysX(v);
+                    simMeshVertices[i] = toPhysXf(simToCookingTransform.transform(toPhysXd(simPoints[i])));
                 }
             }
         }
@@ -215,15 +225,13 @@ public:
                 // Transform coll bind points into cooking space
                 for (uint32_t i = 0; i < collMeshVertices.size(); ++i)
                 {
-                    PXR_NS::GfVec3f v = PXR_NS::GfVec3f(simToCookingTransform.Transform(collBindPointsInSim[i]));
-                    collMeshVertices[i] = toPhysX(v);
+                    collMeshVertices[i] = toPhysXf(simToCookingTransform.transform(toPhysXd(collBindPointsInSim[i])));
                 }
 
                 // Transform sim bind points into cooking space
                 for (uint32_t i = 0; i < simMeshBindVertices.size(); ++i)
                 {
-                    PXR_NS::GfVec3f v = PXR_NS::GfVec3f(simToCookingTransform.Transform(simBindPoints[i]));
-                    simMeshBindVertices[i] = toPhysX(v);
+                    simMeshBindVertices[i] = toPhysXf(simToCookingTransform.transform(toPhysXd(simBindPoints[i])));
                 }
 
                 // Need to construct embedding for collision mesh:
@@ -363,13 +371,13 @@ public:
     }
 
     //inputs
-    std::vector<PXR_NS::GfVec3f> m_simPoints;
-    std::vector<PXR_NS::GfVec3f> m_simBindPoints;
-    std::vector<PXR_NS::GfVec4i> m_simIndices;
-    std::vector<PXR_NS::GfVec3f> m_collBindPointsInSim;
-    std::vector<PXR_NS::GfVec4i> m_collIndices;
-    std::vector<PXR_NS::GfVec3i> m_collSurfaceIndices;
-    PXR_NS::GfMatrix4d m_simToCookingTransform;
+    std::vector<PxVec3> m_simPoints;
+    std::vector<PxVec3> m_simBindPoints;
+    std::vector<carb::Int4> m_simIndices;
+    std::vector<PxVec3> m_collBindPointsInSim;
+    std::vector<carb::Int4> m_collIndices;
+    std::vector<carb::Int3> m_collSurfaceIndices;
+    ::physx::PxMat44d m_simToCookingTransform;
     uint32_t m_numTetsPerElement{ 1 };
 };
 

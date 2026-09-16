@@ -1,10 +1,10 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Particles
 
 ovphysx can simulate GPU-accelerated position-based-dynamics (PBD) particles for
-fluids and granular media (sand, etc.). Particle sets interact with rigid bodies,
+fluids and granular media such as sand. Particle sets interact with rigid bodies,
 articulations, and deformables.
 
 > **What ovphysx supports for particles.** You author the particle system and
@@ -18,7 +18,7 @@ articulations, and deformables.
 > **Particles require GPU simulation.** Enable GPU dynamics on the physics scene
 > (`physxScene:enableGPUDynamics = true`, `physxScene:broadphaseType = "GPU"`) —
 > refer to [Physics Scene](physics_scene.md). CPU simulation of particles is not
-> supported. The particle schema is not finalized and may change.
+> supported. The particle schema is not finalized and can change.
 
 ## Simulation Components
 
@@ -30,12 +30,17 @@ A particle simulation has three parts:
    parameters shared by all its particle sets. Particle sets reference their
    system through the `physxParticle:particleSystem` relationship.
 3. **A PBD particle material** — bound to the particle system, provides
-   additional shared parameters (and density; refer to the section below).
+   additional shared parameters and density (refer to
+   [Mass and Density](#mass-and-density)).
 
 Multiple particle systems per stage are supported, but particles in different
 systems do not collide with each other.
 
 ## Authoring a Particle Set
+
+The following USDA example is a fragment, not a complete file. It shows the two
+prims to add inside the stage's `defaultPrim` hierarchy, alongside the
+`physicsScene` prim that `simulationOwner` targets:
 
 ```usda
 def PhysxParticleSystem "particleSystem"
@@ -57,8 +62,8 @@ def Points "particles" (
 ```
 
 Set `physxParticle:fluid = 1` for a fluid set, or `0` for solid/granular. You can
-populate the point positions programmatically (a grid, a sampled volume, etc.)
-and set them on the `Points` prim's `points` attribute.
+populate the point positions programmatically (for example, as a grid or a
+sampled volume) and set them on the `Points` prim's `points` attribute.
 
 ## Offsets
 
@@ -69,14 +74,16 @@ Offset*: two solid particles touch when their centers are `2 * solidRestOffset`
 apart. The *Fluid Rest Offset* is not a radius; combined with particle mass it
 sets the fluid's target (rest) density. Two particles are neighbors (and generate
 solver constraints) when within `2 * particleContactOffset`; the neighborhood
-size is capped by `maxNeighborhood` (default 96).
+size is capped by `maxNeighborhood` (default 96). The following figure shows the
+solid rest offset and the particle contact offset around two solid particles:
 
 ![Solid particle contact offsets](images/particles_offsets_solidParticles.png)
 
 **Particle-collider.** Contacts are generated when a particle center is closer to
 a collider than the sum of the particle system's and the collider's *Contact
 Offset*, and contact occurs at the sum of their *Rest Offsets* (the solid rest
-offset does not apply here).
+offset does not apply here). The following figure shows the same two distances
+between a particle and a collider surface:
 
 ![Particle-to-collider offsets](images/particles_offsets_collider.png)
 

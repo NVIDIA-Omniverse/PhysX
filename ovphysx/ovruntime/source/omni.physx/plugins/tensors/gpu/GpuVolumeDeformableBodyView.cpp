@@ -1,10 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-TENSOR-INDEX-001
+ * @covers AC-3
+ */
 #include <string>
 
 // clang-format off
-#include <UsdPCH.h>
 // clang-format on
 
 #include <PxPhysicsAPI.h>
@@ -228,7 +231,8 @@ bool GpuVolumeDeformableBodyView::submitData(const TensorDesc* srcTensor,
     if (indexTensor && indexTensor->data)
     {
         if (!checkTensorDevice(*indexTensor, mDevice, "index", __FUNCTION__) ||
-            !checkTensorInt32(*indexTensor, "index", __FUNCTION__))
+            !checkTensorInt32(*indexTensor, "index", __FUNCTION__) ||
+            !checkIndexTensorSize(*indexTensor, getCount(), __FUNCTION__))
         {
             return false;
         }

@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# DEPRECATED (tensor-binding-deprecation): a deprecated tensor-binding test. Removed with the binding.
 
 """GPU DirectGPU coverage for deformable tensor bindings."""
 
@@ -16,12 +18,11 @@ _MULTI_BODY_PATTERN = "/World/DeformableBody_*"
 _MULTI_MAT_PATTERN = "/World/DeformableMaterial_*"
 
 # ovstage population gap: the current ovpopulation build does not surface deformable
-# *material* prims (OmniPhysicsDeformableMaterialAPI family) — the ovstage schema
+# *material* prims (OmniPhysicsDeformableMaterialAPI family). The ovstage schema
 # enumerate returns 0, so no PxDeformableMaterial is created and the material tensor
-# views match 0 prims. Deformable *bodies* are surfaced and work. To be fixed in the
-# ovstage repo (add the deformable-material schema family to ovpopulation), after
-# which these unskip. ovphysx deliberately does NOT traverse the backing USD stage to
-# work around this.
+# views match 0 prims. Deformable *bodies* are surfaced and work. Once the ovstage
+# repo adds the deformable-material schema family to ovpopulation, these unskip.
+# ovphysx deliberately does NOT traverse the backing USD stage to work around this.
 _SKIP_DEFORMABLE_MATERIAL = pytest.mark.skip(
     reason="ovstage population does not yet surface deformable-material prims; fix in ovstage repo (ovpopulation)"
 )
@@ -30,7 +31,7 @@ _SKIP_DEFORMABLE_MATERIAL = pytest.mark.skip(
 def _load_deformable(sdk, name="volume_deformable_simple.usda"):
     load_usd_with_ovstage(sdk, data_path(name))
     sdk.wait_all()
-    sdk.warmup_gpu()
+    sdk.warmup()
 
 
 def _binding_np_dtype(binding):
@@ -276,11 +277,10 @@ def test_volume_deformable_collision_element_indices_read(physx_sdk):
         assert collision.count == 1
         assert collision.ndim == 3
         assert collision.shape[0] == 1
-        assert collision.shape[2] > 0  # K = getNumNodesPerElement(); 4 for volume tetmesh
+        assert collision.shape[2] > 0  # K = getNumNodesPerElement(), 4 for a volume tetmesh
         assert collision.dtype_name == "int32"
 
         indices = _read_gpu(collision, dtype=np.int32)
-        # All indices must be non-negative (valid node references)
         assert np.all(indices >= 0), f"Negative index in collision mesh: {indices}"
 
         with pytest.raises(RuntimeError, match="read-only"):
@@ -439,10 +439,10 @@ def test_surface_deformable_material_bending_properties_read_write(physx_sdk):
 # ---------------------------------------------------------------------------
 
 def test_sdf_view_cube_distance_signs_and_gradients(physx_sdk):
-    """SDF distances are negative inside the box and positive outside; gradients point outward."""
+    """SDF distances are negative inside the box and positive outside. Gradients point outward."""
     load_usd_with_ovstage(physx_sdk, data_path("sdf_cube.usda"))
     physx_sdk.wait_all()
-    physx_sdk.warmup_gpu()
+    physx_sdk.warmup()
 
     # 2 query points: one just inside the +x face, one just outside.
     max_q = 2

@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # Adds USD, TBB, and system library link dependencies to a target.
 # This keeps the historical helper name used by ovruntime targets, but the
@@ -181,13 +181,6 @@ function(ovruntime_link_usd_deps _target)
                 endif()
             endforeach()
         endif()
-    endif()
-
-    # Kit SDK omni.usd.core (provides omni.usd runtime library)
-    if(DEFINED OVRUNTIME_KIT_SDK_DIR AND EXISTS "${OVRUNTIME_KIT_SDK_DIR}/exts/omni.usd.core/bin")
-        target_link_directories(${_target} PRIVATE
-            ${OVRUNTIME_KIT_SDK_DIR}/exts/omni.usd.core/bin
-        )
     endif()
 
     # Link the namespaced USD monolith.

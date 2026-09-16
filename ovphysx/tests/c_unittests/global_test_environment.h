@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -17,7 +17,7 @@
 static inline bool ovphysxTestRequireCuda()
 {
     const char* v = std::getenv("OVPHYSX_TEST_REQUIRE_CUDA");
-    // Only treat "1" as enabled; "0" or empty means disabled.
+    // Only the exact value "1" enables the requirement.
     return v && v[0] == '1' && v[1] == '\0';
 }
 
@@ -109,11 +109,10 @@ inline void destroySharedCpuInstance()
     }
 }
 
-// Test fixture base class for tests that need a PhysX CPU instance.
-// Uses a process-global shared instance; resets simulation state between tests.
+// Fixture base class for tests that need a PhysX CPU instance. It uses the
+// process-global shared instance and resets simulation state between tests.
 //
-// NOTE: Uses CPU device. Tests that need GPU TensorBinding should use a
-// GPU-specific fixture instead.
+// NOTE: Tests that need GPU TensorBinding should use a GPU-specific fixture instead.
 class PhysXTestFixture : public ::testing::Test {
 protected:
     ovphysx_handle_t m_handle = 0;

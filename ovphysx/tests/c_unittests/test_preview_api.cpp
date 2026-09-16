@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // Tests for the preview (not-yet-implemented) APIs:
 //   ovphysx_find_prims     - must return OVPHYSX_API_NOT_IMPLEMENTED
@@ -64,8 +64,8 @@ TEST_F(PhysXTestFixture, FindPrimsNullOutPrimList)
 // ---------------------------------------------------------------------------
 
 // destroy_prim_list with a zero-initialized prim list must not crash.
-// The header comment says NOT_IMPLEMENTED, but the implementation returns
-// SUCCESS for an empty/zero-initialized list (safe no-op).  Accept either.
+// The header documents NOT_IMPLEMENTED, but the implementation returns
+// SUCCESS for an empty list as a safe no-op. Either is accepted.
 TEST_F(PhysXTestFixture, DestroyEmptyPrimListNoCrash)
 {
     ovphysx_prim_list_t prim_list{};

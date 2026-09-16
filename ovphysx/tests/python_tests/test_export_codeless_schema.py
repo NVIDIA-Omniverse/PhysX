@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Regression tests for scripts/export_codeless_schema.py (OMPE-86833).
 
@@ -117,6 +117,10 @@ def test_export_selects_physics_normalizes_and_skips_core(tmp_path):
 
     assert sorted(exported) == ["OmniUsdPhysicsDeformableSchema", "PhysxSchema"]
     assert not (out_dir / "usdPhysics").exists(), "core USD module must not be exposed"
+    # The root registry makes the tree registrable as a single path: USD follows
+    # Includes into every module, so the application registers only the root.
+    root = json.loads((out_dir / "plugInfo.json").read_text())
+    assert root == {"Includes": ["*/resources/"]}
     for module in exported:
         plug = json.loads((out_dir / module / "resources" / "plugInfo.json").read_text())
         plugin = plug["Plugins"][0]
@@ -147,7 +151,7 @@ def test_export_raises_on_unparseable_physics_module(tmp_path):
 def test_export_skips_unparseable_non_physics_module(tmp_path):
     plugins_usd = tmp_path / "plugins" / "usd"
     out_dir = tmp_path / "schemas" / "physx"
-    # A broken core-USD plugInfo we never expose must not fail the export.
+    # A broken core-USD plugInfo that is never exposed must not fail the export.
     bad = plugins_usd / "usdGeom" / "resources"
     bad.mkdir(parents=True)
     (bad / "plugInfo.json").write_text("{ broken")
@@ -170,3 +174,48 @@ def test_export_clears_stale_output_on_rerun(tmp_path):
     exported = ec.export_codeless_schemas(plugins_usd, out_dir)
     assert exported == ["PhysxSchema"]
     assert not (out_dir / "PhysxSchemaAddition").exists()
+
+
+# ---------------------------------------------------------------------------
+# Data-only export
+# ---------------------------------------------------------------------------
+
+# Pure-Python typed schema facades. The pinned usd_ext_physics package ships
+# these under lib/python/, beside the share/usd/plugins/ registration data the
+# export is derived from, so they are one copy step away from the wheel.
+SCHEMA_FACADE_MODULES = ("PhysxSchema", "OmniUsdPhysicsDeformableSchema", "PhysicsSchemaTools")
+
+
+def test_export_omits_python_schema_facades(tmp_path):
+    """The exported tree is registration data only -- no typed facade."""
+    plugins_usd = tmp_path / "plugins" / "usd"
+    out_dir = tmp_path / "schemas" / "physx"
+    _write_module(plugins_usd, "PhysxSchema", _plug_info(name="physxSchema"))
+    # Offer the facades in both places a future copy step would reach them from:
+    # a lib/python/ sibling of the plugin tree, and inside a module's resources/.
+    for parent in (tmp_path / "lib" / "python", plugins_usd / "PhysxSchema" / "resources"):
+        for facade in SCHEMA_FACADE_MODULES:
+            pkg = parent / facade
+            pkg.mkdir(parents=True, exist_ok=True)
+            (pkg / "__init__.py").write_text("")
+            (pkg / "codeless_api.py").write_text("")
+
+    ec.export_codeless_schemas(plugins_usd, out_dir)
+
+    emitted = sorted(
+        str(p.relative_to(out_dir))
+        for p in out_dir.rglob("*")
+        if p.is_file() and p.suffix in (".py", ".pyi")
+    )
+    assert not emitted, (
+        f"the codeless schema export emitted Python module(s) {emitted}; it must copy "
+        f"registration data only (plugInfo.json + generatedSchema.usda). The pinned "
+        f"usd_ext_physics package ships typed Python schema facades "
+        f"({', '.join(SCHEMA_FACADE_MODULES)}) beside that data, and shipping them in "
+        f"the wheel would make typed PhysxSchema.PhysxRigidBodyAPI.Apply(prim) calls "
+        f"importable. ovphysx ships the PhysX and Omni deformable schemas data-only and "
+        f"therefore reaches them codeless -- the position the whole ovphysx.utils "
+        f"authoring surface and its ovphysx.utils.codeless helper are built on, recorded "
+        f"in ovphysx/plc/requirements/python/REQ-PYTHON-UTILS-001.md. If the facades are "
+        f"now meant to ship, change that requirement first, then this test."
+    )

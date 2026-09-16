@@ -1,118 +1,116 @@
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions
-## are met:
-##  * Redistributions of source code must retain the above copyright
-##    notice, this list of conditions and the following disclaimer.
-##  * Redistributions in binary form must reproduce the above copyright
-##    notice, this list of conditions and the following disclaimer in the
-##    documentation and/or other materials provided with the distribution.
-##  * Neither the name of NVIDIA CORPORATION nor the names of its
-##    contributors may be used to endorse or promote products derived
-##    from this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-## EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-## PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-## CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-## EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-## PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-## PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-## OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##
-## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+## SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+## SPDX-License-Identifier: Apache-2.0
 
 #
 # Build Server Test template
 #
 # Include here after the directories are defined so that the platform specific file can use the variables.
 
-include(${PHYSX_ROOT_DIR}/pvdruntime/${PROJECT_CMAKE_FILES_DIR}/${TARGET_BUILD_PLATFORM}/PVDRuntime.cmake)
+if(DEFINED PVDRUNTIME_ROOT)
+  get_filename_component(_PVDRUNTIME_ROOT "${PVDRUNTIME_ROOT}" ABSOLUTE)
+else()
+  set(_PVDRUNTIME_ROOT "${PHYSX_ROOT_DIR}/pvdruntime")
+endif()
+
+include(${_PVDRUNTIME_ROOT}/${PROJECT_CMAKE_FILES_DIR}/${TARGET_BUILD_PLATFORM}/PVDRuntime.cmake)
 
 SET(PVDRUNTIME_HEADERS
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdLibraryFunctions.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdCommands.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdDefines.h  
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdReader.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdWriter.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdReadStream.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdWriteStream.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdFileReadStream.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdFileWriteStream.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdMemoryStream.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdSocketWriteStream.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdSocketReadStream.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdLibraryHelpers.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdLoader.h
+  ${_PVDRUNTIME_ROOT}/include/OmniPvdLibraryFunctions.h
+  ${_PVDRUNTIME_ROOT}/include/OmniPvdCommands.h
+  ${_PVDRUNTIME_ROOT}/include/OmniPvdDefines.h
+  ${_PVDRUNTIME_ROOT}/include/OmniPvdReader.h
+  ${_PVDRUNTIME_ROOT}/include/OmniPvdWriter.h
+  ${_PVDRUNTIME_ROOT}/include/OmniPvdReadStream.h
+  ${_PVDRUNTIME_ROOT}/include/OmniPvdWriteStream.h
+  ${_PVDRUNTIME_ROOT}/include/OmniPvdFileReadStream.h
+  ${_PVDRUNTIME_ROOT}/include/OmniPvdFileWriteStream.h
+  ${_PVDRUNTIME_ROOT}/include/OmniPvdMemoryStream.h
+  ${_PVDRUNTIME_ROOT}/include/OmniPvdSocketWriteStream.h
+  ${_PVDRUNTIME_ROOT}/include/OmniPvdSocketReadStream.h
 )
 SOURCE_GROUP(include FILES ${PVDRUNTIME_HEADERS})
 
-SET(PVDRUNTIME_HEADERS_USER
-  ${PHYSX_ROOT_DIR}/pvdruntime/include/OmniPvdLoader.h
-)
-
-INSTALL(FILES ${PVDRUNTIME_HEADERS} ${PVDRUNTIME_HEADERS_USER} DESTINATION pvdruntime/include)
+if(NOT DEFINED PX_ENABLE_INSTALL OR PX_ENABLE_INSTALL)
+  install(FILES ${PVDRUNTIME_HEADERS} DESTINATION pvdruntime/include)
+endif()
 
 SET(PVDRUNTIME_SOURCES
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdDefinesInternal.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdHelpers.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdHelpers.cpp
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdLibraryFunctionsImpl.cpp
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdLog.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdLog.cpp
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdReaderImpl.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdReaderImpl.cpp
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdWriterImpl.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdWriterImpl.cpp
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdFileReadStreamImpl.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdFileReadStreamImpl.cpp
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdFileWriteStreamImpl.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdFileWriteStreamImpl.cpp
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdMemoryStreamImpl.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdMemoryStreamImpl.cpp
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdMemoryReadStreamImpl.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdMemoryReadStreamImpl.cpp
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdMemoryWriteStreamImpl.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdMemoryWriteStreamImpl.cpp
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocket.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocket.cpp
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocketProtocol.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocketWriteStreamImpl.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocketWriteStreamImpl.cpp
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocketReadStreamImpl.h
-  ${PHYSX_ROOT_DIR}/pvdruntime/src/OmniPvdSocketReadStreamImpl.cpp
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdDefinesInternal.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdHelpers.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdHelpers.cpp
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdLibraryFunctionsImpl.cpp
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdLog.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdLog.cpp
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdReaderImpl.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdReaderImpl.cpp
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdWriterImpl.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdWriterImpl.cpp
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdFileReadStreamImpl.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdFileReadStreamImpl.cpp
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdFileWriteStreamImpl.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdFileWriteStreamImpl.cpp
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdMemoryStreamImpl.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdMemoryStreamImpl.cpp
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdMemoryReadStreamImpl.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdMemoryReadStreamImpl.cpp
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdMemoryWriteStreamImpl.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdMemoryWriteStreamImpl.cpp
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdSocket.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdSocket.cpp
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdSocketProtocol.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdSocketWriteStreamImpl.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdSocketWriteStreamImpl.cpp
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdSocketReadStreamImpl.h
+  ${_PVDRUNTIME_ROOT}/src/OmniPvdSocketReadStreamImpl.cpp
 )
 SOURCE_GROUP(src FILES ${PVDRUNTIME_SOURCES})
 
-add_library(PVDRuntime SHARED
+add_library(PVDRuntime STATIC
     ${PVDRUNTIME_HEADERS}
-		${PVDRUNTIME_SOURCES}
+	${PVDRUNTIME_SOURCES}
 )
 
-TARGET_INCLUDE_DIRECTORIES(PVDRuntime
-  PRIVATE ${PHYSX_ROOT_DIR}/pvdruntime/include
-  PRIVATE ${PHYSX_ROOT_DIR}/pvdruntime/src
+target_include_directories(PVDRuntime
+  PUBLIC
+    $<BUILD_INTERFACE:${_PVDRUNTIME_ROOT}/include>
+    $<INSTALL_INTERFACE:pvdruntime/include>
+  PRIVATE
+    ${_PVDRUNTIME_ROOT}/src
 )
 
-TARGET_COMPILE_DEFINITIONS(PVDRuntime
-	PRIVATE ${PVDRUNTME_COMPILE_DEFS}
+target_compile_definitions(PVDRuntime
+	PRIVATE ${PVDRUNTIME_COMPILE_DEFS}
 )
 
-SET_TARGET_PROPERTIES(PVDRuntime PROPERTIES 
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PX_EXE_OUTPUT_DIRECTORY_DEBUG}
-    RUNTIME_OUTPUT_DIRECTORY_PROFILE ${PX_EXE_OUTPUT_DIRECTORY_PROFILE}
-    RUNTIME_OUTPUT_DIRECTORY_CHECKED ${PX_EXE_OUTPUT_DIRECTORY_CHECKED}
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PX_EXE_OUTPUT_DIRECTORY_RELEASE}
-
-OUTPUT_NAME PVDRuntime
+set_target_properties(PVDRuntime PROPERTIES
+  POSITION_INDEPENDENT_CODE TRUE
+  CXX_VISIBILITY_PRESET hidden
+  VISIBILITY_INLINES_HIDDEN TRUE
+  OUTPUT_NAME PVDRuntime_static
 )
 
-TARGET_LINK_LIBRARIES(PVDRuntime 
-  PUBLIC ${PVDRUNTIME_PLATFORM_LINKED_LIBS})
+if(DEFINED PVDRUNTIME_COMPILE_PDB_NAME_DEBUG)
+  set_target_properties(PVDRuntime PROPERTIES
+    COMPILE_PDB_NAME_DEBUG "${PVDRUNTIME_COMPILE_PDB_NAME_DEBUG}"
+    COMPILE_PDB_NAME_CHECKED "${PVDRUNTIME_COMPILE_PDB_NAME_CHECKED}"
+    COMPILE_PDB_NAME_PROFILE "${PVDRUNTIME_COMPILE_PDB_NAME_PROFILE}"
+    COMPILE_PDB_NAME_RELEASE "${PVDRUNTIME_COMPILE_PDB_NAME_RELEASE}"
+  )
+  if(NOT DEFINED PX_ENABLE_INSTALL OR PX_ENABLE_INSTALL)
+    install(FILES "${PX_OUTPUT_LIB_DIR}/$<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile>/$<$<CONFIG:debug>:${PVDRUNTIME_COMPILE_PDB_NAME_DEBUG}>$<$<CONFIG:checked>:${PVDRUNTIME_COMPILE_PDB_NAME_CHECKED}>$<$<CONFIG:profile>:${PVDRUNTIME_COMPILE_PDB_NAME_PROFILE}>$<$<CONFIG:release>:${PVDRUNTIME_COMPILE_PDB_NAME_RELEASE}>.pdb"
+      DESTINATION "$<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile>"
+      OPTIONAL
+    )
+  endif()
+endif()
+
+target_link_libraries(PVDRuntime
+  PUBLIC ${PVDRUNTIME_PLATFORM_LINKED_LIBS}
+)
 
 IF(PX_GENERATE_SOURCE_DISTRO)
     LIST(APPEND SOURCE_DISTRO_FILE_LIST ${PVDRUNTIME_HEADERS})
     LIST(APPEND SOURCE_DISTRO_FILE_LIST ${PVDRUNTIME_SOURCES})
 ENDIF()
+
+unset(_PVDRUNTIME_ROOT)

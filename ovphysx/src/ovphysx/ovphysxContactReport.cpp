@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 
 // Pull-based contact report: exposes the Omni PhysX runtime's collected
@@ -13,10 +13,12 @@
 
 #include <cstddef>
 
-// Compile-time ABI guards: ovphysx defines its own C structs that must be
-// layout-identical to the internal omni::physx structs so we can reinterpret_cast
-// between them. Size checks catch added/removed fields; offset checks catch
-// reordering or type-width changes (e.g. the long -> int64_t stageId migration).
+// Compile-time ABI guards. The ovphysx C structs are reinterpret_cast to the
+// internal omni::physx structs, so the layouts have to match field for field.
+// Size checks catch added or removed fields and offset checks catch reordering
+// or width changes. A same-width change of meaning, such as attachHandle
+// occupying the slot of a former stageId (ADR-0016), is caught only by the
+// field name.
 static_assert(sizeof(ovphysx_contact_event_header_t) == sizeof(omni::physx::ContactEventHeader),
     "ovphysx_contact_event_header_t size mismatch -- update ovphysx_types.h to match ContactEvent.h");
 static_assert(sizeof(ovphysx_contact_point_t) == sizeof(omni::physx::ContactData),
@@ -24,8 +26,8 @@ static_assert(sizeof(ovphysx_contact_point_t) == sizeof(omni::physx::ContactData
 
 static_assert(offsetof(ovphysx_contact_event_header_t, type) == offsetof(omni::physx::ContactEventHeader, type),
     "ovphysx_contact_event_header_t::type offset mismatch");
-static_assert(offsetof(ovphysx_contact_event_header_t, stageId) == offsetof(omni::physx::ContactEventHeader, stageId),
-    "ovphysx_contact_event_header_t::stageId offset mismatch");
+static_assert(offsetof(ovphysx_contact_event_header_t, attachHandle) == offsetof(omni::physx::ContactEventHeader, attachHandle),
+    "ovphysx_contact_event_header_t::attachHandle offset mismatch");
 static_assert(offsetof(ovphysx_contact_event_header_t, actor0) == offsetof(omni::physx::ContactEventHeader, actor0),
     "ovphysx_contact_event_header_t::actor0 offset mismatch");
 static_assert(offsetof(ovphysx_contact_event_header_t, numContactData) == offsetof(omni::physx::ContactEventHeader, numContactData),
@@ -77,8 +79,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_contact_report(
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
-    if (!instance || instance->attachedStageId == 0)
-        return set_error(OVPHYSX_API_ERROR, "no USD stage loaded");
+    if (!instance || !instance->ovstage_attached)
+        return set_error(OVPHYSX_API_ERROR, "no physics stage attached");
 
     omni::physx::IPhysxSimulation* physxSim =
         instance->carbonite ? instance->carbonite->getPhysxSimulation() : nullptr;

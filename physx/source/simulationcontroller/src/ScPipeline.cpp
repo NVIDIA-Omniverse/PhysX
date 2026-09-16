@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 // PT: this file contains most Scene functions called during the simulate() call, i.e. the "pipeline" functions.
 // Ideally they should be listed in the order in which they are called in the single-threaded version, to help
@@ -391,7 +368,9 @@ void Sc::Scene::updateBroadPhase(PxBaseTask* continuation)
 
 	PxBaseTask* rigidBodyNPhaseUnlock = mCCDPass ? NULL : &mRigidBodyNPhaseUnlock;
 
-	mAABBManager->updateBPSecondPass(&mLLContext->getScratchAllocator(), continuation);
+	const PxU32 numCpuTasks = continuation->getTaskManager()->getCpuDispatcher()->getWorkerCount();
+
+	mAABBManager->updateBPSecondPass(numCpuTasks, mLLContext->getTaskPool(), &mLLContext->getScratchAllocator(), continuation);
 
 	// PT: decoupling: I moved this back from updateBPSecondPass
 	//if this is mCCDPass, narrowPhaseUnlockTask will be NULL
@@ -1964,11 +1943,11 @@ void Sc::Scene::beforeSolver(PxBaseTask* continuation)
 
 	mNumDeactivatingNodes[IG::Node::eRIGID_BODY_TYPE] = 0;//islandSim.getNbNodesToDeactivate(IG::Node::eRIGID_BODY_TYPE);
 	mNumDeactivatingNodes[IG::Node::eARTICULATION_TYPE] = 0;//islandSim.getNbNodesToDeactivate(IG::Node::eARTICULATION_TYPE);
-//#if PX_SUPPORT_GPU_PHYSX
+#if PX_SUPPORT_GPU_PHYSX
 	mNumDeactivatingNodes[IG::Node::eDEFORMABLE_SURFACE_TYPE] = 0;
 	mNumDeactivatingNodes[IG::Node::eDEFORMABLE_VOLUME_TYPE] = 0;
 	mNumDeactivatingNodes[IG::Node::ePARTICLESYSTEM_TYPE] = 0;
-//#endif
+#endif
 
 	const PxU32 MaxBodiesPerTask = ScBeforeSolverTask::MaxBodiesPerTask;
 

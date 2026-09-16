@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 set -e
 
@@ -17,8 +17,6 @@ set -e
 #   cmake -P scripts/install.cmake                     # just assemble _install/ (for manual testing)
 # Advanced (same validation as validate_all.cmake after a full build; run build.cmake first if needed):
 #   cmake --build _build --target validate_all         # install + wheel + all tests
-#
-# Entry point for building ovphysx from source.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

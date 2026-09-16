@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
-//
+
 // GENERATED (header-only) by tools/gen_tokens.py from schema.usda via usdGenSchema's
 // GatherTokens. DO NOT EDIT. Codeless tokens: PhysxSchemaTokens is defined inline (no lib).
 /// \file physxSchema/tokens.h

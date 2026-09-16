@@ -1,36 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 # ovphysx Internal Sidecar Library
-# Separates USD/omni.physx-dependent functionality into a loadable plugin.
-# This solves the Windows chicken-and-egg problem: main library loads without USD,
-# downloads extensions, then loads this sidecar with matching USD version.
+# Separates omni.physx-dependent functionality into a peer DSO that the main
+# library loads on demand. Neither library links OpenUSD.
+#
+# @implements REQ-PACKAGING-USDFREE-001
+# @covers AC-2 AC-3
 
 cmake_minimum_required(VERSION 3.16)
 
-# Create shared library for internal sidecar functionality
 add_library(ovphysx_internal SHARED
     ovphysxInternal.cpp
     ovphysxInternalBootstrap.cpp
     ovphysxInternalInterop.cpp
     ovphysxInternalObjectChange.cpp
-    ovphysxInternalStage.cpp
-    # Compiled directly into the sidecar (not linked from ovphysx, whose symbols
-    # are not exported) so ovphysxInternalStage.cpp can resolve the bundled USD
-    # plugin directory and register it with PlugRegistry before the first stage
-    # open. getLibraryDirectory() uses this module's address, which lives in the
-    # same directory as the plugins/ tree, so the resolved path is correct.
-    ${CMAKE_CURRENT_SOURCE_DIR}/../UsdSchemaPaths/UsdSchemaPaths.cpp
 )
 
-# Link USD and Carbonite (sidecar needs both)
-# Use USD_LINK_DIR set by parent CMakeLists.txt (either extensions or target-deps USD)
-if(USD_LINK_DIR)
-    target_link_directories(ovphysx_internal PRIVATE ${USD_LINK_DIR})
-    message(STATUS "Internal sidecar using USD from: ${USD_LINK_DIR}")
-endif()
-
-# The sidecar is a peer DSO (ovrtx pattern: owner uses
-# CARB_STATIC_BINARY_GLOBALS, peers use CARB_GLOBALS + setter injection).
-# It does NOT define CARB_STATIC_PLUGIN_BUILD and does NOT link carb.static;
-# the main library injects framework + OmniCore built-ins at load.
+# The sidecar is a peer DSO following the ovrtx pattern: the owner uses
+# CARB_STATIC_BINARY_GLOBALS, peers use CARB_GLOBALS plus setter injection.
+# It does not define CARB_STATIC_PLUGIN_BUILD and does not link carb.static.
+# The main library injects the framework and OmniCore built-ins at load.
 if(NOT DEFINED CARB_STATIC_INCLUDE_DIR OR CARB_STATIC_INCLUDE_DIR STREQUAL "")
     message(FATAL_ERROR "ovphysx_internal requires CARB_STATIC_INCLUDE_DIR for Carbonite headers")
 endif()
@@ -46,33 +36,21 @@ if(WIN32)
     target_compile_options(ovphysx_internal PRIVATE /wd4211)
 endif()
 
-# Link namespaced monolithic USD and the main library.
-target_link_libraries(ovphysx_internal PRIVATE
-    ${OVPHYSX_USD_MS_LIB}
-    ovphysx
-)
-if(WIN32)
-    target_link_libraries(ovphysx_internal PRIVATE "${OVPHYSX_TBB_LIBRARY}")
-endif()
-
-# Include directories: Carbonite, PhysX, and USD headers
-# PYTHON_INCLUDE_DIRS is set by the parent CMakeLists.txt via glob
+# Link the main library. The sidecar reuses its runtime and links no USD.
+target_link_libraries(ovphysx_internal PRIVATE ovphysx)
 
 target_include_directories(ovphysx_internal PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../src/include
 )
-# Third-party headers as SYSTEM to suppress warnings we don't control.
+# Third-party headers as SYSTEM to suppress warnings from code outside this project.
 target_include_directories(ovphysx_internal SYSTEM PRIVATE
     ${CARB_SDK_INCLUDE_DIR}
-    ${USD_TDEP_INCLUDE_DIR}
-    ${PYTHON_INCLUDE_DIRS}
     ${OMNI_PHYSICS_DIR}/include
-    ${KIT_SDK_DIR}/dev/include
     ${LOCAL_TARGET_DEPS}/gsl/include
-    # PhysX SDK headers -- needed by the kinematic-update entry point that calls
+    # PhysX SDK headers. The kinematic-update entry point calls
     # PxArticulationReducedCoordinate::updateKinematic directly. Other sidecar
-    # entry points only deal with omni::physx interfaces, not PhysX SDK types.
+    # entry points only use omni::physx interfaces, not PhysX SDK types.
     ${OVRUNTIME_DIR}/_build/target-deps/physx/include
     # ovstage headers (ovx/, ovstage/ovstage_api/, dlpack/) pulled in by
     # omni/physx/IOvxPhysicsRead.h for the physics output read entry points.
@@ -86,7 +64,7 @@ ovphysx_apply_compiler_defaults(ovphysx_internal
         $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-class-memaccess>
 )
 
-# Enable symbol export (defines OVPHYSX_INTERNAL_API_EXPORTS when building this DLL)
+# Export the sidecar entry points from this DLL.
 target_compile_definitions(ovphysx_internal PRIVATE
     OVPHYSX_INTERNAL_API_EXPORTS
 )
@@ -99,7 +77,6 @@ if(WIN32)
     )
 endif()
 
-# Platform-specific output configuration
 if(WIN32)
     set_target_properties(ovphysx_internal PROPERTIES
         OUTPUT_NAME "ovphysx_internal"
@@ -114,12 +91,12 @@ else()
     )
 endif()
 
-# On Linux, set RPATH so the sidecar can find Carbonite and USD at both
-# build time (via absolute paths) and install time (via $ORIGIN-relative paths).
+# On Linux, keep the sidecar relocatable beside the main library and the
+# runtime plugins at both build time and install time.
 if(NOT WIN32)
     set_target_properties(ovphysx_internal PROPERTIES
-        BUILD_RPATH "${USD_LINK_DIR}"
-        INSTALL_RPATH "\$ORIGIN:\$ORIGIN/../plugins:\$ORIGIN/../plugins/gpu"
+        BUILD_RPATH "\$ORIGIN"
+        INSTALL_RPATH "\$ORIGIN:\$ORIGIN/../plugins"
         BUILD_RPATH_USE_ORIGIN TRUE
         SKIP_BUILD_RPATH FALSE
         LINK_FLAGS "-Wl,--disable-new-dtags"

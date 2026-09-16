@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -32,7 +32,7 @@ public:
     void removeFilteredPairs();
 };
 
-void changeFilteredPairs(omni::physx::usdparser::AttachedStage& attachedStage, const PXR_NS::SdfPath& path, bool removed);
+void changeFilteredPairs(omni::physx::usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, bool removed);
 
 } // namespace internal
 } // namespace physx

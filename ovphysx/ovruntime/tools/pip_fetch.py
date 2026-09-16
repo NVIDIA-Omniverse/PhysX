@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Fetch pip packages defined in a TOML dependency file.
 
@@ -42,6 +42,7 @@ logger = logging.getLogger("pip_fetch")
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _get_platform_target() -> str:
     """Return a platform target string like ``linux-x86_64`` or ``windows-x86_64``."""
     machine = platform.machine().lower()
@@ -81,6 +82,7 @@ def _find_python_exe(python_dir: str) -> str | None:
 # ---------------------------------------------------------------------------
 # Core fetch logic
 # ---------------------------------------------------------------------------
+
 
 def fetch(
     config_file: str,
@@ -181,6 +183,7 @@ def fetch(
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Fetch pip packages from a TOML dependency file.")
     parser.add_argument("config", help="Path to the pip dependency TOML file")
@@ -195,7 +198,9 @@ def main() -> int:
         format="%(levelname)s: %(message)s",
     )
 
-    ok = fetch(args.config, platform_target=args.platform, python_override=args.python, target_deps_override=args.target_deps)
+    ok = fetch(
+        args.config, platform_target=args.platform, python_override=args.python, target_deps_override=args.target_deps
+    )
     return 0 if ok else 1
 
 

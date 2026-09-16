@@ -1,8 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
-# ovphysx Full Validation Pipeline
-# Single-command entry point: build, install, wheel, and test everything.
+# @implements REQ-PACKAGING-CLOSURE-001
+# @covers AC-4
+
+# ovphysx full validation pipeline.
+# Single-command entry point that builds, installs, packages the wheel, and runs every test.
 #   cmake -P scripts/validate_all.cmake
 #
 # Options (passed via -D flags):
@@ -20,11 +23,11 @@
 #   3. Build Python wheel         (validate_all -> build_wheel target)
 #   4. Run all tests              (C++, Python runtime, wheel smoke, samples)
 #
-# Same install + wheel + test phases as this script, after a full build (build.sh or
-# build.cmake), via the CMake target graph:
+# The same install + wheel + test phases are available after a full build (build.sh or
+# build.cmake) through the CMake target graph:
 #   cmake --build _build --target validate_all      # install + wheel + all tests
-# This file simply runs build.cmake first (Step 1), then that target—one command for
-# configure/build + validation. Scoped targets:
+# This script runs build.cmake first (Step 1) and then that target, so one command covers
+# configure/build and validation. Scoped targets:
 #   cmake --build _build --target validate_runtime  # runtime tests only
 #   cmake --build _build --target validate_wheel    # wheel tests only
 #
@@ -40,6 +43,11 @@ cmake_minimum_required(VERSION 3.16)
 get_filename_component(SCRIPT_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 get_filename_component(PROJECT_ROOT "${SCRIPT_DIR}/.." ABSOLUTE)
 
+# Checked directly because this script delegates rather than including
+# build_common.cmake, so the failure would otherwise surface stages deep.
+include("${PROJECT_ROOT}/cmake/RequireCMakeVersion.cmake")
+ovphysx_require_cmake_version()
+
 set(BUILD_PATH "${PROJECT_ROOT}/_build")
 
 message(STATUS "")
@@ -50,6 +58,7 @@ message(STATUS "Project root: ${PROJECT_ROOT}")
 message(STATUS "")
 message(STATUS "This will run the full pipeline:")
 message(STATUS "  1. Build C++ libraries (incremental)")
+message(STATUS "  1b. Python type stubs (pyright)")
 message(STATUS "  2. Install SDK into _install/")
 message(STATUS "  3. Build Python wheel into _dist/")
 message(STATUS "  4. C++ unit tests (GPU + CPU)")
@@ -59,13 +68,13 @@ message(STATUS "  7. Python wheel smoke tests (python -m ovphysx, 4 Python versi
 message(STATUS "  8. Python sample applications (4 Python versions)")
 message(STATUS "")
 
-# --- Preflight: uv must be discoverable before the (long) build starts ---
-# Every Python stage (wheel, runtime tests, samples) needs uv (Astral). Resolve
-# it here, in the user's shell, so a missing uv fails in seconds with an
-# actionable message instead of ~10+ minutes later inside a nested install/test
-# step. Hints mirror build_common.cmake's resolver so the nested steps -- which
-# may run under an MSBuild/CTest env that does not inherit the interactive PATH
-# -- find the same uv this preflight does.
+# --- Preflight: uv must be discoverable before the long build starts ---
+# Every Python stage (wheel, runtime tests, samples) needs uv. Resolving it here,
+# in the user's shell, makes a missing uv fail in seconds with an actionable
+# message instead of much later inside a nested install/test step. The hints
+# mirror build_common.cmake's resolver so the nested steps, which may run under
+# an MSBuild/CTest environment that does not inherit the interactive PATH, find
+# the same uv this preflight does.
 set(_UV_HINTS
     "$ENV{ProgramData}/chocolatey/bin"
     "$ENV{USERPROFILE}/.local/bin"
@@ -86,16 +95,16 @@ endif()
 message(STATUS "Preflight: found uv at ${_VALIDATE_UV}")
 message(STATUS "")
 
-# Forward known SKIP_* flags to nested subprocesses via the environment.  The
+# Forward known SKIP_* flags to nested subprocesses via the environment. The
 # Step 2-8 hop runs `cmake --build _build --target validate_all`, whose inner
 # install_sdk / build_wheel custom targets invoke `cmake -P` with hardcoded
-# argument lists -- they cannot pick up extra -D flags from this script.  An
-# env var passes through every layer.  Each script-mode tool (install.cmake,
+# argument lists and cannot pick up extra -D flags from this script. An env var
+# passes through every layer, and each script-mode tool (install.cmake,
 # build_wheel.cmake, build_common.cmake) reads these as either -D or ENV{}.
 #
-# Value is forwarded as-is; CMake if() handles ON/OFF/TRUE/FALSE at the
-# consumer.  This means -DSKIP_GLIBC_CHECK=OFF forwards the literal string
-# "OFF", which the receiving if() correctly evaluates as falsy.
+# The value is forwarded as-is. The consumer's if() handles ON/OFF/TRUE/FALSE,
+# so -DSKIP_GLIBC_CHECK=OFF forwards the literal string "OFF", which the
+# receiving if() evaluates as false.
 foreach(_OVPHYSX_FORWARD_FLAG SKIP_GLIBC_CHECK SKIP_LOCK_CHECK OVPHYSX_USE_RELEASE_RUNTIME_DEPS)
     if(DEFINED ${_OVPHYSX_FORWARD_FLAG} AND NOT "${${_OVPHYSX_FORWARD_FLAG}}" STREQUAL "")
         set(ENV{${_OVPHYSX_FORWARD_FLAG}} "${${_OVPHYSX_FORWARD_FLAG}}")
@@ -104,15 +113,14 @@ endforeach()
 
 # --- Generator default for the aggregate flow (Windows host only) ---
 # build.cmake auto-detects the Visual Studio generator on Windows when VS is
-# installed. That is fine for interactive build.sh/build.bat (devs get a .sln),
-# but this aggregate runs install_sdk/build_wheel as MSBuild custom targets
-# whose environment does not inherit the interactive shell PATH, so nested
-# `cmake -P` scripts fail to find tools (uv, powershell). Ninja has no such
-# custom-target env isolation. Default this entry point to Ninja on Windows
-# unless the caller set GENERATOR explicitly. If a build tree already exists,
-# match its cached generator instead, to avoid build.cmake's generator-mismatch
-# fatal. Linux is untouched: build.cmake's generator logic is WIN32-only and
-# ignores GENERATOR elsewhere.
+# installed. That suits interactive build.sh/build.bat, but this aggregate runs
+# install_sdk/build_wheel as MSBuild custom targets whose environment does not
+# inherit the interactive shell PATH, so nested `cmake -P` scripts fail to find
+# tools (uv, powershell). Ninja has no such custom-target env isolation, so this
+# entry point defaults to Ninja on Windows unless the caller set GENERATOR
+# explicitly. An existing build tree keeps its cached generator instead, which
+# avoids build.cmake's generator-mismatch fatal. Linux is unaffected because
+# build.cmake's generator logic is WIN32-only and ignores GENERATOR elsewhere.
 if(CMAKE_HOST_WIN32 AND (NOT DEFINED ENV{GENERATOR} OR "$ENV{GENERATOR}" STREQUAL ""))
     if(EXISTS "${BUILD_PATH}/CMakeCache.txt")
         file(STRINGS "${BUILD_PATH}/CMakeCache.txt" _CACHED_GEN_LINE
@@ -158,11 +166,22 @@ if(NOT BUILD_RESULT EQUAL 0)
     message(FATAL_ERROR "Build failed (exit code: ${BUILD_RESULT})")
 endif()
 
+message(STATUS "")
+message(STATUS "Step 1b: Python type stubs (pyright)")
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -P "${SCRIPT_DIR}/test_pyright.cmake"
+    WORKING_DIRECTORY "${PROJECT_ROOT}"
+    RESULT_VARIABLE PYRIGHT_RESULT
+)
+if(NOT PYRIGHT_RESULT EQUAL 0)
+    message(FATAL_ERROR "pyright failed (exit code: ${PYRIGHT_RESULT})")
+endif()
+
 # --- Steps 2-8: Install, wheel, and all tests via validate_all target ---
 
-# Resolve build configuration for multi-config generators.
-# On Visual Studio generators, omitting --config defaults to Debug and can
-# trigger an unintended full rebuild when the main build/install was Release.
+# Resolve the build configuration for multi-config generators. On Visual Studio
+# generators, omitting --config defaults to Debug and can trigger an unintended
+# full rebuild when the main build/install was Release.
 file(STRINGS "${BUILD_PATH}/CMakeCache.txt" _CACHE_CONFIG_TYPES_LINE
     REGEX "^CMAKE_CONFIGURATION_TYPES:.*=")
 if(NOT DEFINED BUILD_TYPE OR BUILD_TYPE STREQUAL "")

@@ -15,7 +15,7 @@ set OMNI_REPO_ROOT="%~dp0"
 :: (e.g. cp932 on Japanese Windows, cp936 on Simplified Chinese, cp1252 on most
 :: Western locales), which raises UnicodeDecodeError on any TOML/JSON/config file
 :: containing bytes that aren't valid in that codepage. SETLOCAL above scopes this
-:: to the lifetime of this batch invocation so we don't pollute the parent shell.
+:: to the lifetime of this batch invocation so the parent shell is not affected.
 set PYTHONUTF8=1
 
 :: Set Packman cache directory early if repo-cache.json is configured

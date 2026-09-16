@@ -1,5 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# TODO(tensor-binding-deprecation): the clone assertions count matches through binding.count
+# (a pattern / prim_paths -> match-count accessor). The session read has no equivalent (its query
+# is by object type + scope, not by path pattern), so the binding stays until read gains path
+# selection. Only the count probe needs it. The clone behaviour under test is API-independent.
 
 """Python tests for clone functionality.
 
@@ -12,7 +17,7 @@ import os
 
 import pytest
 from ovphysx.dlpack import DLDataTypeCode
-from ovphysx.types import TensorType
+from ovphysx.types import ObjectScope, SimObjectType, TensorType
 from test_utils import load_usd_with_ovstage
 
 
@@ -32,16 +37,13 @@ def test_clone_basic_functionality(physx_sdk):
 
     # The clones must actually materialize as addressable rigid bodies, not be a
     # silent no-op: env0/table is the source body, so each clone env must carry a
-    # replicated table body.
-    body_paths = [f"/World/envs/env{i}/table" for i in range(0, 4)]
-    pose_binding = sdk.create_tensor_binding(
-        prim_paths=body_paths,
-        tensor_type=TensorType.RIGID_BODY_POSE,
-    )
-    assert pose_binding.count == 4, (
-        f"expected 4 bodies (source + 3 clones), got {pose_binding.count}"
-    )
-    pose_binding.destroy()
+    # replicated table body. The tables are the scene's only rigid bodies, so a whole-set
+    # read must see exactly 4 (source + 3 clones). Warm up first, because a read needs the first step.
+    sdk.warmup()
+    sdk.wait_all()
+    with sdk.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+        body_count = sum(g.prim_count for g in result.groups)
+    assert body_count == 4, f"expected 4 bodies (source + 3 clones), got {body_count}"
 
     # Verify simulation still works with clones
     sdk.step(1.0 / 60.0)
@@ -57,42 +59,39 @@ def test_clone_error_handling(physx_sdk):
     load_usd_with_ovstage(sdk, usd_path)
     sdk.wait_all()
 
-    # Empty source path should raise ValueError
     with pytest.raises(ValueError, match="source_path must be a non-empty string"):
         sdk.clone("", ["/World/envs/env1"])
 
-    # Empty targets should raise ValueError
     with pytest.raises(ValueError, match="target_paths must be a non-empty list"):
         sdk.clone("/World/envs/env0", [])
 
-    # Target matching source should raise ValueError
     with pytest.raises(ValueError, match="cannot be the same as source path"):
         sdk.clone("/World/envs/env0", ["/World/envs/env0"])
 
 
 def test_clone_transform_tuple_length_validation(physx_sdk):
-    """Each parent_transforms entry must be exactly 7 finite floats.
+    """Each anchor_transforms entry must be exactly 7 finite floats.
 
-    A short tuple would make the native path read past the ctypes buffer; a
+    A short tuple would make the native path read past the ctypes buffer. A
     long one would shift every later target's pose. Both are rejected before
-    the C call. Regression for the MR-review out-of-bounds finding.
+    the C call.
     """
     sdk = physx_sdk
 
     # Short (6 values) -> reject.
     with pytest.raises(ValueError, match="exactly 7"):
         sdk.clone("/World/envs/env0", ["/World/envs/env1"],
-                  parent_transforms=[(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)])
+                  anchor_transforms=[(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)])
 
     # Long (8 values) -> reject.
     with pytest.raises(ValueError, match="exactly 7"):
         sdk.clone("/World/envs/env0", ["/World/envs/env1"],
-                  parent_transforms=[(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)])
+                  anchor_transforms=[(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)])
 
     # Non-finite value -> reject.
     with pytest.raises(ValueError, match="finite"):
         sdk.clone("/World/envs/env0", ["/World/envs/env1"],
-                  parent_transforms=[(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, float("inf"))])
+                  anchor_transforms=[(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, float("inf"))])
 
 
 def test_clone_env_ids_validation(physx_sdk):
@@ -100,8 +99,8 @@ def test_clone_env_ids_validation(physx_sdk):
 
     Wrong lengths would desync targets from ids in the native call. PhysX requires
     every environment id to be < 1<<24 (runtime id = env_ids[i] + 1), so the caller
-    id must be < 0x00FFFFFF; the boundary 0x00FFFFFF and the former too-wide sentinels
-    are all rejected before the C call.
+    id must be < 0x00FFFFFF. The boundary 0x00FFFFFF and too-wide values are all
+    rejected before the C call.
     """
     sdk = physx_sdk
 
@@ -109,7 +108,7 @@ def test_clone_env_ids_validation(physx_sdk):
     with pytest.raises(ValueError, match="env_ids length"):
         sdk.clone("/World/envs/env0", ["/World/envs/env1", "/World/envs/env2"], env_ids=[0])
 
-    # Out-of-range values (boundary + the former too-wide values) -> reject.
+    # Out-of-range values (the boundary and too-wide values) -> reject.
     for bad in (-1, 0x00FFFFFF, 0x01000000, 0xFFFFFFFE, 0xFFFFFFFF):
         with pytest.raises(ValueError, match="env_ids\\[0\\]"):
             sdk.clone("/World/envs/env0", ["/World/envs/env1"], env_ids=[bad])
@@ -131,7 +130,7 @@ def test_clone_with_env_ids(physx_sdk):
     """Caller-supplied logical env ids pass end-to-end through the Python wrapper.
 
     The CPU fixture never engages env-id filtering (GPU-only), so this validates
-    marshaling and that the clone succeeds and simulates; the id semantics
+    marshaling and that the clone succeeds and simulates. The id semantics
     (same id across calls -> same runtime environment) are covered by the
     GPU-side ovruntime doctest.
     """
@@ -141,10 +140,10 @@ def test_clone_with_env_ids(physx_sdk):
     load_usd_with_ovstage(sdk, usd_path)
     sdk.wait_all()
 
-    # Two calls sharing logical ids -- the heterogeneous ClonePlan shape.
+    # Two calls sharing logical ids, the heterogeneous ClonePlan shape.
     transforms = [(5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0), (10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0)]
     sdk.clone("/World/envs/env0", ["/World/envs/env1", "/World/envs/env2"],
-              parent_transforms=transforms, env_ids=[7, 3])
+              anchor_transforms=transforms, env_ids=[7, 3])
     sdk.wait_all()
 
     sdk.step(1.0 / 60.0)
@@ -160,11 +159,11 @@ def test_clone_error_no_usd_loaded(physx_sdk):
 
 
 def test_clone_preserves_source_scale(physx_sdk):
-    """Verify that cloning a source with xformOp:scale doesn't crash or error.
+    """Verify that cloning a source with xformOp:scale does not crash or error.
 
     Exercises the Python clone path end-to-end with a source that has
     non-trivial root transforms (translate + orient + scale), placing the
-    clone via an explicit parent transform and simulating a few steps.
+    clone via an explicit anchor transform and simulating a few steps.
     """
     sdk = physx_sdk
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -176,7 +175,7 @@ def test_clone_preserves_source_scale(physx_sdk):
     sdk.clone(
         "/World/envs/env0",
         ["/World/envs/env1"],
-        parent_transforms=[(5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0)],
+        anchor_transforms=[(5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0)],
     )
     sdk.wait_all()
 
@@ -211,7 +210,6 @@ def test_clone_multiple_targets_stress(physx_sdk):
     try:
         physx_sdk.clone("/World/envs/env0", target_paths)
         physx_sdk.wait_all()
-        # Success - SDK handled multiple clones
     except RuntimeError as e:
         # If clone fails, verify error indicates resource/limit issue, not a bug
         error_msg = str(e).lower()
@@ -220,16 +218,13 @@ def test_clone_multiple_targets_stress(physx_sdk):
         ), f"Stress test failure should indicate resource limits, not a bug. Got: {e}"
 
 
-def test_clone_after_warmup_gpu_raises_runtime_error(physx_sdk):
-    """Regression test for NVBug 6172717: cloning after GPU warmup must raise.
+def test_clone_after_warmup_raises_runtime_error(physx_sdk):
+    """Regression test for NVBug 6172717: cloning after warmup must raise.
 
-    Cloning after :meth:`warmup_gpu` reallocates GPU DirectGPU buffers and
-    silently corrupts already-initialised solver state. The C runtime now
-    rejects this ordering with ``OVPHYSX_API_INVALID_ARGUMENT``, which the
-    Python wrapper propagates as ``RuntimeError``.
-
-    This test only meaningfully exercises the guard on the GPU session
-    fixture (CPU mode never sets ``gpu_warmup_done`` so the guard is a no-op).
+    Cloning after :meth:`warmup` reallocates physics structures and corrupts
+    already-initialised solver state. The C runtime rejects this ordering with
+    ``OVPHYSX_API_INVALID_ARGUMENT``, which the Python wrapper propagates as
+    ``RuntimeError``. This guard applies in both CPU and GPU mode.
     """
     sdk = physx_sdk
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -237,19 +232,19 @@ def test_clone_after_warmup_gpu_raises_runtime_error(physx_sdk):
     load_usd_with_ovstage(sdk, usd_path)
     sdk.wait_all()
 
-    # Lock in GPU warmup. Idempotent and synchronous; subsequent clones must fail.
-    sdk.warmup_gpu()
+    # Lock in warmup. It is idempotent and synchronous, and subsequent clones must fail.
+    sdk.warmup()
 
-    with pytest.raises(RuntimeError, match="must be called before warmup_gpu"):
+    with pytest.raises(RuntimeError, match="clone\\(\\) must be called before warmup"):
         sdk.clone("/World/envs/env0", ["/World/envs/env_after_warmup"])
 
 
 def test_clone_after_reset_succeeds(physx_sdk):
-    """Clean-recovery: warmup_gpu() -> reset() -> ovstage attach/update -> clone() succeeds.
+    """Clean-recovery: warmup() -> reset() -> ovstage attach/update -> clone() succeeds.
 
-    Exercises the "I warmed up but never tried to clone after; let me reset
-    and start over" path. Regression for NVBug 6172717: proves reset() clears
-    the C-side ``gpu_warmup_done`` flag so subsequent clone() works.
+    Exercises the warmup-then-reset-and-start-over path with no failed clone in
+    between. Regression for NVBug 6172717: proves reset() clears
+    the C-side ``warmup_done`` flag so subsequent clone() works.
 
     Pair with ``test_clone_failed_after_warmup_then_reset_succeeds`` which
     covers the user-facing failure-recovery path (warmup -> failed clone ->
@@ -260,9 +255,9 @@ def test_clone_after_reset_succeeds(physx_sdk):
     usd_path = os.path.join(test_dir, "data", "basic_simulation.usda")
     load_usd_with_ovstage(sdk, usd_path)
     sdk.wait_all()
-    sdk.warmup_gpu()
+    sdk.warmup()
 
-    # reset() invalidates usd handles and clears the C-side gpu_warmup_done flag.
+    # reset() invalidates usd handles and clears the C-side warmup_done flag.
     sdk.reset_stage()
     sdk.wait_all()
     load_usd_with_ovstage(sdk, usd_path)
@@ -276,27 +271,26 @@ def test_clone_after_reset_succeeds(physx_sdk):
 def test_clone_failed_after_warmup_then_reset_succeeds(physx_sdk):
     """Documented recovery: warmup -> clone (raises) -> reset -> ovstage attach/update -> clone.
 
-    This is the exact user-facing path the new error message advises
-    ("Call reset() if you need to re-clone after warmup"). Regression for
-    NVBug 6172717 plus the orphan-async-op fix: the synchronous precondition
-    failure in ``ovphysx_clone`` now uses ``set_enqueue_error``
-    rather than ``fail_with_event``, so no failed op is registered for
-    ``ovphysx_reset_stage()``'s pending-op drain to trip over.
+    This is the exact user-facing path the error message advises (reset, then
+    reload or reattach the source stage). Regression for NVBug 6172717 and the
+    orphan async op: the synchronous precondition failure in ``ovphysx_clone``
+    uses ``set_enqueue_error`` rather than ``fail_with_event``, so no failed op
+    is registered for ``ovphysx_reset_stage()``'s pending-op drain to trip over.
     """
     sdk = physx_sdk
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     usd_path = os.path.join(test_dir, "data", "basic_simulation.usda")
     load_usd_with_ovstage(sdk, usd_path)
     sdk.wait_all()
-    sdk.warmup_gpu()
+    sdk.warmup()
 
-    # First: clone() must raise (the new error).
-    with pytest.raises(RuntimeError, match="must be called before warmup_gpu"):
+    # First: clone() must raise.
+    with pytest.raises(RuntimeError, match="clone\\(\\) must be called before warmup"):
         sdk.clone("/World/envs/env0", ["/World/envs/env_after_warmup"])
 
-    # Then: the documented recovery path must work end-to-end. reset() drains
-    # pending ops internally; if the failed clone had been registered as a
-    # failed async op, this call would fail. After the fix it succeeds.
+    # Then: the documented recovery path must work end-to-end. reset_stage() drains
+    # pending ops internally. If the failed clone were registered as a failed async
+    # op, this call would fail.
     sdk.reset_stage()
     sdk.wait_all()
     load_usd_with_ovstage(sdk, usd_path)
@@ -345,7 +339,7 @@ def test_clone_subtree_with_physics_scene(physx_sdk):
         "replication should materialize all 11 cloned bodies (explicit paths)"
     )
 
-    # ...and the wildcard over the clone root must resolve the same 11 bodies.
+    # The wildcard over the clone root must resolve the same 11 bodies.
     clone_wildcard = count(pattern="/World_clone0/*")
     assert clone_wildcard == 11, (
         f"wildcard /World_clone0/* should resolve 11 cloned bodies, got {clone_wildcard}"
@@ -390,8 +384,8 @@ def test_clone_nested_subtree_to_top_level_target(physx_sdk):
     Cloning ``/World/envs`` -> ``/EnvsClone`` places the body two levels below the
     clone root (``/EnvsClone/env0/table``). ``addPrimSubtree`` leaves the immediate
     child detached (empty parent) and never creates a root-prim clone root, so the
-    merge must materialize the root and re-home the intermediate node beneath it --
-    otherwise multi-segment and recursive wildcards cannot reach the nested body.
+    merge must materialize the root and re-home the intermediate node beneath it.
+    Otherwise multi-segment and recursive wildcards cannot reach the nested body.
     """
     sdk = physx_sdk
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

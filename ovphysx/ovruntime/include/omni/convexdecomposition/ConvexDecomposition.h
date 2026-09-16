@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -201,8 +201,6 @@ struct ConvexDecomposition
      */
     const SimpleSphere* computeSphereApproximation(
         VHACDHANDLE id, const Parameters& p, const SimpleMesh& sourceMesh, uint32_t& sphereCount, bool reducedResults);
-
-    bool applySphereApproximation(const char* primPath, uint32_t stageId);
 
 private:
     struct State;

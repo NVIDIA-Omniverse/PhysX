@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # omni.physics.ovstage — ovstage backend for the source-agnostic physics data
 # layer (static). Implements IPhysicsSource (read) + the walker over an ovstage
@@ -14,7 +14,7 @@ set(PARSE_OVSTAGE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/OvstageWalker.h
     ${OVRUNTIME_ROOT_DIR}/include/omni/physics/ovstage/OvstageScan.h
     ${OVRUNTIME_ROOT_DIR}/include/omni/physics/ovstage/OvstageParseBackend.h
-    ${OVRUNTIME_ROOT_DIR}/include/omni/physics/ovstage/OvstageOutput.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/OvstageOutput.h
 )
 source_group(include FILES ${PARSE_OVSTAGE_HEADERS})
 
@@ -43,6 +43,11 @@ target_include_directories(OvruntimePhysicsOvstage
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}     # <OvstageSource.h> for sibling code
         ${OVRUNTIME_ROOT_DIR}/include   # <omni/physics/ovstage/OvstageParseBackend.h>
+    PRIVATE
+        # <common/foundation/MatrixTools.h> — the PxMat44d toolkit the shared
+        # private headers (CollisionShapeTransform.h / JointFrameTransform.h)
+        # use instead of GfMatrix4d. MatrixTools itself is USD-free.
+        ${OVRUNTIME_ROOT_DIR}/source/common/include
 )
 
 # ovstage public headers (ovstage/*, ovx/*) as SYSTEM — they come from the
@@ -58,10 +63,14 @@ target_include_directories(OvruntimePhysicsOvstage SYSTEM PUBLIC ${OVSTAGE_INCLU
 # `omni::physics::usd::ScannedStage` on its own side for SdfPath resolution.)
 target_link_libraries(OvruntimePhysicsOvstage
     PUBLIC OvruntimePhysicsParse ${OVSTAGE_LIBRARY}
+    # Only for MatrixTools.o (decomposeMatrix / makeMatrix / affineInverse).
+    # OvruntimeCommon is a static archive, so nothing else is pulled in and no
+    # USD dependency is introduced by this edge.
+    PRIVATE OvruntimeCommon
 )
 
 # External dependencies — SYSTEM includes to suppress third-party warnings.
-ovruntime_add_external_system_includes(OvruntimePhysicsOvstage)
+ovruntime_add_external_system_includes(OvruntimePhysicsOvstage NO_USD)
 
 if(NOT WIN32)
     target_compile_options(OvruntimePhysicsOvstage PRIVATE -fexceptions -fPIC -Wno-deprecated)

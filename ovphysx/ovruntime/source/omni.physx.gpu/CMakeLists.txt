@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # --- Internal loader source ---
 set(PHYSXGPU_LOADER_HEADERS
@@ -36,7 +36,7 @@ target_include_directories(OvruntimePhysXGpu
 )
 
 # External dependencies — SYSTEM includes to suppress third-party warnings
-ovruntime_add_external_system_includes(OvruntimePhysXGpu)
+ovruntime_add_external_system_includes(OvruntimePhysXGpu NO_USD)
 
 # Link dependencies
 if(DEFINED CARB_SDK_DIR)

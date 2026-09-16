@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # omni.physics.parse — USD-free core parsing library (static)
 #
@@ -17,15 +17,22 @@ set(PARSE_HEADERS
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/ParseContext.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/ParseApi.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/KnownTokens.h
+    ${PARSE_INCLUDE_DIR}/omni/physics/parse/CustomTokens.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/Allocator.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/ScannedStage.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/ScanBackend.h
+    ${PARSE_INCLUDE_DIR}/omni/physics/parse/UsdReparse.h
+    ${PARSE_INCLUDE_DIR}/omni/physics/parse/UsdBackingAuthor.h
+    ${PARSE_INCLUDE_DIR}/omni/physics/parse/UsdAttachmentAuthor.h
+    ${PARSE_INCLUDE_DIR}/omni/physics/parse/UsdStageLifecycle.h
+    ${PARSE_INCLUDE_DIR}/omni/physics/parse/OpaquePxrHandleOps.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/ArticulationGraph.h
 )
 source_group(include FILES ${PARSE_HEADERS})
 
 set(PARSE_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/KnownTokens.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/CustomTokens.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ParseContext.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ParseMaterial.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ParseBody.cpp
@@ -66,6 +73,11 @@ set(PARSE_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/ParseBackend.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ScannedStage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ScanBackend.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/UsdReparse.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/UsdBackingAuthor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/UsdAttachmentAuthor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/UsdStageLifecycle.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/OpaquePxrHandleOps.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ArticulationGraph.cpp
 )
 source_group(source FILES ${PARSE_SOURCE})
@@ -89,7 +101,7 @@ target_include_directories(OvruntimePhysicsParse
 # External dependencies — SYSTEM includes to suppress third-party warnings.
 # Core parse headers use carb types (Float3, etc.) and PhysX-runtime types
 # (ObjectId, MeshKey, CookingParams) but never include pxr/ USD headers.
-ovruntime_add_external_system_includes(OvruntimePhysicsParse)
+ovruntime_add_external_system_includes(OvruntimePhysicsParse NO_USD)
 
 if(NOT WIN32)
     target_compile_options(OvruntimePhysicsParse PRIVATE -fexceptions -fPIC)
@@ -106,13 +118,15 @@ install(
     ARCHIVE DESTINATION lib
 )
 
-# CI grep gate: verify no USD includes leak into core parse headers.
+# CI grep gate: verify no USD includes leak into core parse headers or sources.
 # The `omni/physics/usd/` subdir is the USD backend's public surface
 # (StandaloneParser.h etc.) — it MAY reference USD types and is excluded.
+# tests/ is excluded too (tests may use pxr freely).
 add_custom_target(parse_usd_free_check ALL
-    COMMAND ${CMAKE_COMMAND} -E echo "Checking omni.physics.parse headers for USD includes..."
+    COMMAND ${CMAKE_COMMAND} -E echo "Checking omni.physics.parse headers and sources for USD includes..."
     COMMAND ${CMAKE_COMMAND}
         -DPARSE_INCLUDE_DIR=${PARSE_INCLUDE_DIR}/omni/physics/parse
+        -DPARSE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/parse_usd_free_check.cmake
     VERBATIM
 )

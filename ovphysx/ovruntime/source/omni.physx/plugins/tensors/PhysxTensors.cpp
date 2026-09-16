@@ -1,8 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-TENSOR-VIEW-001
+ * @covers AC-2 AC-5 AC-8
+ */
 
 // clang-format off
-#include <UsdPCH.h>
 // clang-format on
 
 #include <carb/events/IEvents.h>
@@ -58,19 +62,19 @@ bool g_tensorsStarted = false;
 ////////////////////////
 // Reset sim data for the currently attached stage, or full reset if none attached.
 //
-// Note: getAttachedStage() returns 0 when more than one stage is attached
-// (see IPhysxSimulation::getAttachedStage / getActiveStageId). In multi-stage
-// scenarios (e.g. concurrent ovphysx instances) this path falls back to full
-// reset(). For ovphysx usage, per-stage teardown is handled explicitly via
-// TensorApi::resetStage(stageId) called from ovphysx_destroy_instance; this
-// function serves the Kit single-stage path and is a safety net only.
+// Note: getAttachHandle() returns kNoAttach when more than one stage is attached
+// (it resolves the lone active attach). In multi-stage scenarios (e.g. concurrent
+// ovphysx instances) this path falls back to full reset(). For ovphysx usage,
+// per-attach teardown is handled explicitly via TensorApi::resetStage(handle)
+// called from ovphysx_detach_ovstage; this function serves the Kit single-stage
+// path and is a safety net only.
 void resetCurrentStage()
 {
     if (g_simBackend && g_physxSimulation)
     {
-        long stageId = g_physxSimulation->getAttachedStage();
-        if (stageId > 0)
-            g_simBackend->resetStage(stageId);
+        const omni::physics::tensors::AttachHandle attachHandle = g_physxSimulation->getAttachHandle();
+        if (attachHandle != omni::physics::tensors::kNoAttach)
+            g_simBackend->resetStage(attachHandle);
         else
             g_simBackend->reset();
     }
@@ -85,6 +89,17 @@ class SimulationEventListener : public carb::events::IEventListener
         if (eventType == omni::physx::SimulationEvent::eStopped)
         {
             resetCurrentStage();
+        }
+        else if (eventType == omni::physx::SimulationEvent::ePhysicsObjectsReleased)
+        {
+            // Scoped to the attach that was released -- resetStage(), never the
+            // whole-backend reset(). Must be keyed on the attach handle: the views
+            // are indexed per attach, so a raw USD stage id would match nothing and
+            // silently leave the views valid over freed actors (NvBugs 6583612).
+            const omni::physics::tensors::AttachHandle attachHandle =
+                g_physxSimulation ? g_physxSimulation->getAttachHandle() : omni::physics::tensors::kNoAttach;
+            if (g_simBackend && attachHandle != omni::physics::tensors::kNoAttach)
+                g_simBackend->resetStage(attachHandle);
         }
     }
 
@@ -229,6 +244,11 @@ void tensorsShutdown()
         g_physxPreStepSubscriptionId = omni::physx::kInvalidSubscriptionId;
     }
 
+    if (g_simBackend)
+    {
+        g_simBackend->shutdown();
+    }
+
     g_physx = nullptr;
     g_physxSimulation = nullptr;
     g_physxPrivate = nullptr;
@@ -261,10 +281,11 @@ void tensorsPluginStartup()
 // ---------------------------------------------------------------------------
 namespace
 {
-omni::physics::tensors::ISimulationView* CARB_ABI physxCreateSimulationView(long stageId)
+omni::physics::tensors::ISimulationView* CARB_ABI physxCreateSimulationView(
+    omni::physics::tensors::AttachHandle attachHandle)
 {
     omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend();
-    return backend ? backend->createSimulationView(stageId) : nullptr;
+    return backend ? backend->createSimulationView(attachHandle) : nullptr;
 }
 
 void CARB_ABI physxResetTensors()
@@ -275,11 +296,11 @@ void CARB_ABI physxResetTensors()
     }
 }
 
-void CARB_ABI physxResetTensorsStage(long stageId)
+void CARB_ABI physxResetTensorsStage(omni::physics::tensors::AttachHandle attachHandle)
 {
     if (omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend())
     {
-        backend->resetStage(stageId);
+        backend->resetStage(attachHandle);
     }
 }
 } // anonymous namespace

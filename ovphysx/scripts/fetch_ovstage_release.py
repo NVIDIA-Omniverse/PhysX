@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# @implements REQ-PACKAGING-TESTDEPS-001
+# @covers AC-6
 #
 # Fetch the released ovstage wheel for the current platform. The wheel is
 # self-contained: it carries the C++ package (ovstage/include,
 # ovstage/bin/libovstage.so + plugins, ovstage/lib/cmake) and the importable python
-# package. It is resolved from the PEP 503 simple index in INDEX_URL; switch that
-# index with scripts/sync_ovstage_version.py --source {internal,public}.
+# package. It is resolved from the PEP 503 simple index in INDEX_URL; an internal
+# maintainer tool switches that index between the internal and public ones.
 # --dest extracts the wheel's ovstage/ tree (OVSTAGE_DIR, resolved by
 # OvstageDependency.cmake) and mirrors the package notices to dest/. --wheel-dest
 # also places the wheel there for the python tests.
@@ -25,13 +28,13 @@ import urllib.request
 import zipfile
 
 # --- Release coordinates --------------------------------------------------------
-# The pinned ovstage version (a numeric pip/wheel version). Run
-# scripts/sync_ovstage_version.py to propagate it into python/pyproject.toml and
-# the python-test lockfile.
-OVSTAGE_VERSION = "0.1.1.355824"
+# The pinned ovstage version (a numeric pip/wheel version). An internal maintainer
+# tool propagates it into python/pyproject.toml and every checked-in uv lock that
+# records ovstage.
+OVSTAGE_VERSION = "0.2.0.377349"
 
-# The PEP 503 simple index the ovstage wheel is fetched from. Switch it with
-# scripts/sync_ovstage_version.py --source {internal,public}.
+# The PEP 503 simple index the ovstage wheel is fetched from. The same internal
+# tool switches it between the internal and public indexes.
 INDEX_URL = "https://pypi.org/simple/ovstage/"
 
 
@@ -51,6 +54,19 @@ def _numeric_version(version):
 # The numeric version is the wheel version, and what _canonical_wheel_name validates
 # a downloaded wheel against.
 EXPECTED_WHEEL_VERSION = _numeric_version(OVSTAGE_VERSION)
+
+
+def _expected_githash(version):
+    """The optional 5th component of OVSTAGE_VERSION (e.g. 'fe36605a').
+
+    Taken by position, matching _numeric_version's stripping rule, since a short
+    hash can occasionally be all digits. None if the pinned version carries no
+    githash suffix.
+    """
+    parts = version.split(".")
+    if len(parts) >= 5:
+        return parts[4]
+    return None
 
 
 def _wheel_plat(platform):
@@ -176,6 +192,31 @@ def _extract_wheel(whl_path, dest):
         shutil.copyfile(src_notice, os.path.join(dest, "THIRD-PARTY-NOTICES.txt"))
 
 
+def _check_githash(dest, expected_githash):
+    """Verify the extracted package was built from the commit OVSTAGE_VERSION pins.
+
+    The numeric version alone (checked by _canonical_wheel_name) does not guarantee
+    the index served the intended build: the same numeric version could in principle
+    be re-uploaded from a different commit. ovstage/_version.py records the git
+    commit the package was actually built from, so cross-check its githash against
+    the one embedded in OVSTAGE_VERSION.
+    """
+    if expected_githash is None:
+        return
+    version_file = os.path.join(dest, "ovstage", "_version.py")
+    if not os.path.isfile(version_file):
+        sys.exit("fetch_ovstage_release: %s missing; cannot verify githash %s"
+                 % (version_file, expected_githash))
+    with open(version_file, "r") as f:
+        contents = f.read()
+    m = re.search(r"""^githash\s*=\s*['"]([^'"]*)['"]""", contents, re.MULTILINE)
+    actual_githash = m.group(1) if m else None
+    if actual_githash != expected_githash:
+        sys.exit("fetch_ovstage_release: %s githash %r does not match pinned OVSTAGE_VERSION "
+                 "githash %r -- the index served a different build under the same numeric "
+                 "version" % (version_file, actual_githash, expected_githash))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--platform", required=True,
@@ -211,6 +252,7 @@ def main():
     canonical_name = _canonical_wheel_name(wheel_tmp, args.platform)
 
     _extract_wheel(wheel_tmp, dest)
+    _check_githash(dest, _expected_githash(OVSTAGE_VERSION))
     print("  ovstage: package extracted to %s" % dest)
 
     if args.wheel_dest:

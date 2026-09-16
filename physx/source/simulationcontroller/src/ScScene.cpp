@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "ScScene.h"
 #include "BpBroadPhase.h"
@@ -137,7 +114,7 @@ namespace
 		{
 		}
 
-		// PT: warning, this runs in parallel with updateArticulationAfterIntegration and updateKinematicCached, and all of these touching the getChangedAABBMgActorHandleMap() bitmap
+		// PT: warning, this runs in parallel with updateArticulationAfterIntegration and updateKinematicCached, and all of these touch the getChangedAABBMgActorHandleMap() bitmap
 		virtual void runInternal() PX_OVERRIDE
 		{
 			const PxU32 rigidBodyOffset = Sc::BodySim::getRigidBodyOffset();
@@ -714,6 +691,14 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 #endif
 {
 #if PX_SUPPORT_GPU_PHYSX
+	// OMPE-93952: hold a reference on the CUDA context manager for the scene's whole lifetime, so it can't be
+	// released out from under the scene (e.g. by shape add / GPU init reading getCudaContextManager()). Paired
+	// with release() at the end of Sc::Scene::release(). Replaces the OMPE-70739 fix that used to live in
+	// PxgSimulationController, via the virtual PxCudaContextManager::acquireReference() so that
+	// SimulationController (CPU) needs no link dependency on the GPU CudaManager.
+	if(mCudaContextManager)
+		mCudaContextManager->acquireReference();
+
 	mLLDeformableSurfacePool	= PX_NEW(LLDeformableSurfacePool);
 	mLLDeformableVolumePool		= PX_NEW(LLDeformableVolumePool);
 	mLLParticleSystemPool		= PX_NEW(LLParticleSystemPool);
@@ -1138,6 +1123,14 @@ void Sc::Scene::release()
 #endif
 
 	PX_DELETE(mMemoryManager);
+
+#if PX_SUPPORT_GPU_PHYSX
+	// OMPE-93952: release the scene's reference on the CUDA context manager, paired with the addRef in the ctor.
+	// Done last, after all GPU subsystems (which held their own references) have been torn down above, so the
+	// context manager stays valid throughout teardown.
+	if(mCudaContextManager)
+		mCudaContextManager->release();
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2825,7 +2818,7 @@ PX_INLINE void Sc::Scene::cleanUpSleepOrWokenBodies(PxCoalescedHashSet<BodyCore*
 	validMarker = true;
 }
 
-PxU32 Sc::Scene::createAggregate(void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint, PxU32 envID)
+Bp::AggregateHandle Sc::Scene::createAggregate(void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint, PxU32 envID)
 {
 	const Bp::BoundsIndex index = getElementIDPool().createID();
 #if PX_SUPPORT_GPU_PHYSX
@@ -3301,6 +3294,8 @@ void Sc::Scene::addDeformableSurface(DeformableSurfaceCore& deformableSurface)
 
 	mDeformableSurfaces.insert(&deformableSurface);
 	mStats->gpuMemSizeDeformableSurfaces += deformableSurface.getGpuMemStat();
+
+	mDynamicsContext->setStateDirty(true);
 }
 
 void Sc::Scene::removeDeformableSurface(DeformableSurfaceCore& deformableSurface)
@@ -3311,6 +3306,8 @@ void Sc::Scene::removeDeformableSurface(DeformableSurfaceCore& deformableSurface
 	PX_DELETE(a);
 	mDeformableSurfaces.erase(&deformableSurface);
 	mStats->gpuMemSizeDeformableSurfaces -= deformableSurface.getGpuMemStat();
+
+	mDynamicsContext->setStateDirty(true);
 }
 
 void Sc::Scene::addDeformableVolume(DeformableVolumeCore& deformableVolume)
@@ -3325,6 +3322,8 @@ void Sc::Scene::addDeformableVolume(DeformableVolumeCore& deformableVolume)
 
 	mDeformableVolumes.insert(&deformableVolume);
 	mStats->gpuMemSizeDeformableVolumes += deformableVolume.getGpuMemStat();
+
+	mDynamicsContext->setStateDirty(true);
 }
 
 void Sc::Scene::removeDeformableVolume(DeformableVolumeCore& deformableVolume)
@@ -3335,6 +3334,8 @@ void Sc::Scene::removeDeformableVolume(DeformableVolumeCore& deformableVolume)
 	PX_DELETE(a);
 	mDeformableVolumes.erase(&deformableVolume);
 	mStats->gpuMemSizeDeformableVolumes -= deformableVolume.getGpuMemStat();
+
+	mDynamicsContext->setStateDirty(true);
 }
 
 void Sc::Scene::addParticleSystem(ParticleSystemCore& particleSystem)
@@ -3351,6 +3352,8 @@ void Sc::Scene::addParticleSystem(ParticleSystemCore& particleSystem)
 
 	mParticleSystems.insert(&particleSystem);
 	mStats->gpuMemSizeParticles += particleSystem.getShapeCore().getGpuMemStat();
+
+	mDynamicsContext->setStateDirty(true);
 }
 
 void Sc::Scene::removeParticleSystem(ParticleSystemCore& particleSystem)
@@ -3361,6 +3364,8 @@ void Sc::Scene::removeParticleSystem(ParticleSystemCore& particleSystem)
 	PX_DELETE(a);
 	mParticleSystems.erase(&particleSystem);
 	mStats->gpuMemSizeParticles -= particleSystem.getShapeCore().getGpuMemStat();
+
+	mDynamicsContext->setStateDirty(true);
 }
 
 Dy::DeformableSurface* Sc::Scene::createLLDeformableSurface(Sc::DeformableSurfaceSim* sim)

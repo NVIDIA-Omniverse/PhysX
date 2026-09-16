@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # NOTE: This file is included verbatim in documentation via literalinclude (full file).
 
@@ -21,9 +21,56 @@ from urllib.parse import quote
 
 import numpy as np
 import rerun as rr
-from ovphysx.types import TensorType
+from ovphysx.types import ObjectScope, SimObjectType
 
+import ovphysx
 from ovphysx import PhysX
+
+
+_physx_schemas_registered = False
+
+
+def read_rigid_body_poses(sdk):
+    """Read every dynamic rigid body's pose as an ``[N, 7]`` array: xyz + quaternion (xyzw).
+
+    PhysX.read emits one group per scene partition per attribute (a position column arrives as
+    ``[N, 3]`` and an orientation column as ``[N, 4]``), but it does NOT guarantee the position and
+    orientation groups arrive in the same partition order. Pair the two columns per partition by the
+    interned ``group.prim_list`` handle before joining: concatenating each attribute independently and
+    then ``hstack``-ing would glue a body's position to another partition's quaternion on a multi-scene
+    or repartitioned read. Accumulate across partitions so a multi-scene stage renders all of them.
+    ``tensor.numpy()`` copies a CUDA column back to the host automatically, so this works on CPU or GPU.
+    """
+    # prim_list is the interned handle for a partition's prim set. The position and orientation
+    # groups of one partition share it, so it is the key that pairs them. dict insertion order keeps
+    # the partitions in first-seen order.
+    by_partition = {}
+    with sdk.read(SimObjectType.RIGID_BODY, ["position", "orientation"], scope=ObjectScope.ALL) as result:
+        for group in result.groups:
+            # This sample assumes each group's rows are already in prim order. index_map would
+            # permute them, and a multi-scene stage that used one would need it honoured per group.
+            assert group.index_map is None and group.prim_index_map is None, (
+                "read_rigid_body_poses does not handle index_map permutation"
+            )
+            slot = by_partition.setdefault(group.prim_list, {})
+            for tensor in group.tensors:
+                column = tensor.numpy()
+                if column.shape[1] == 3:  # the position attribute
+                    slot["position"] = column
+                elif column.shape[1] == 4:  # the orientation quaternion
+                    slot["orientation"] = column
+    # hstack within a partition pairs row i of position with row i of orientation (same body, same
+    # prim_list). Every partition must yield BOTH columns. A missing one is a read fault, so fail
+    # loudly rather than drop the partition. A silent drop would hide lost bodies from every caller.
+    rows = []
+    for slot in by_partition.values():
+        assert "position" in slot and "orientation" in slot, (
+            "read partition is missing its position or orientation column; cannot build a pose"
+        )
+        rows.append(np.hstack([slot["position"], slot["orientation"]]))
+    if not rows:
+        return np.zeros((0, 7), dtype=np.float32)
+    return np.concatenate(rows).astype(np.float32, copy=False)
 
 
 def attach_scene(physx, usd_path, stage_name):
@@ -32,12 +79,17 @@ def attach_scene(physx, usd_path, stage_name):
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
 
+    # ovphysx ships its PhysX USD schemas as codeless resources and does not register
+    # them itself. Register them with ovstage once, before the first population
+    # call in the process.
+    global _physx_schemas_registered
+    if not _physx_schemas_registered:
+        ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+        _physx_schemas_registered = True
     stage = ovstage.Stage(stage_name)
     ordinal = 1
     try:
         ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
-        # Population does not seal: the caller owns ordinal lifecycle, and
-        # attach_ovstage() reads at a sealed ordinal.
         stage.advance_write_floor(ordinal=ordinal).wait()
         physx.attach_ovstage(stage, read_ordinal=ordinal)
         return stage
@@ -81,16 +133,15 @@ def main():
     stage = attach_scene(sdk, usd_path, "ovphysx-rerun-sample")
     sdk.wait_all()
 
-    # Create tensor binding for rigid body poses: [N, 7] = [px, py, pz, qx, qy, qz, qw]
-    pose_binding = sdk.create_tensor_binding(
-        pattern="/World/Cube*",
-        tensor_type=TensorType.RIGID_BODY_POSE,
-    )
-    num_cubes = pose_binding.count
-    print(f"Bound {num_cubes} rigid bodies, shape={pose_binding.shape}")
+    # PhysX.read streams simulation output. The scene's only dynamic rigid bodies are the cubes
+    # (the ground plane and base are static), so reading RIGID_BODY covers exactly them. Warm up
+    # first. On a DirectGPU scene the read yields nothing until the first step.
+    sdk.warmup()
+    sdk.wait_all()
+    print(f"Streaming {len(read_rigid_body_poses(sdk))} rigid bodies via PhysX.read")
 
     # --- Log static geometry ---
-    # Rerun doesn't read USD, so we log colliders explicitly for visual context.
+    # Rerun does not read USD, so the colliders are logged explicitly for visual context.
     # Ground plane: collision plane at Z=0 with a 50x50 m mesh.
     # BigBase: static box collider the cubes land on (from the USD scene).
     rr.log(
@@ -113,7 +164,6 @@ def main():
     )
 
     # --- Simulate and stream ---
-    poses = np.zeros(pose_binding.shape, dtype=np.float32)
     dt = 1.0 / 60.0
     num_steps = 300  # 5 seconds at 60 Hz
 
@@ -123,7 +173,7 @@ def main():
         sdk.step(dt)
         sdk.wait_all()
 
-        pose_binding.read(poses)
+        poses = read_rigid_body_poses(sdk)
 
         rr.set_time("step", sequence=i)
         rr.set_time("sim_time", duration=i * dt)
@@ -139,7 +189,7 @@ def main():
             ),
         )
 
-        # In interactive mode, sleep so wall-clock time doesn't run ahead of sim time
+        # In interactive mode, sleep so wall-clock time does not run ahead of sim time
         if args.interactive:
             sim_time = (i + 1) * dt
             elapsed = time.monotonic() - wall_start
@@ -148,10 +198,9 @@ def main():
 
     print(f"Visualization sample completed successfully ({num_steps} steps)")
 
-    pose_binding.destroy()
     sdk.detach_ovstage()
     stage.destroy()
-    sdk.release()
+    sdk.destroy()
     print("Cleanup complete")
 
 

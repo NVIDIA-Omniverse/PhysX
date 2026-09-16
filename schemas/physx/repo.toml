@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [repo]
 logging = "warn"
 import_optional_configs = ["${root}/repo_tools.toml"]
@@ -5,4 +8,48 @@ import_optional_configs = ["${root}/repo_tools.toml"]
 [repo.folders]
 packages = "${root}/_builtpackages"
 version_file = "${root}/VERSION"
+
+########################################################################################################################
+# Code Formatter (used only for the legal text check in headers)
+#
+# The schema sources are Apache-2.0 -- the usdGenSchema-derived generators under
+# tools/ already stamp that identifier into everything they emit. This config
+# makes `repo format --legal-only` enforce it, so a hand-written addition cannot
+# drift to a different license.
+#
+# Only the C++ and Python trees are declared here. repo_format's own shipped
+# text_files types (sh/bat/md/rst/toml/yaml) still apply on top of this -- they
+# are always active, not opt-in -- which is what stamps the scripts under
+# scripts/ and tools/.
+########################################################################################################################
+[repo_format]
+use_current_year_as_end_year = true
+license_preamble = '''
+SPDX-FileCopyrightText: Copyright (c) {years} NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+'''
+license_text = ""  # we use two-line SPDX licenses
+
+[repo_format.cpp]
+files.include = [
+    "source/**",
+]
+files.extensions = [".h", ".h.in", ".hpp", ".inl", ".cpp", ".c"]
+files.exclude = [
+    "tools/packman/**",
+]
+
+[repo_format.python]
+maintain_legal_blurbs = true
+files.include = [
+    "python/**",
+    "scripts/**",
+    "source/**",
+    "tests/**",
+    "tools/**",
+]
+files.exclude = [
+    "tools/packman/**",
+    "tools/repoman/**",
+]
 

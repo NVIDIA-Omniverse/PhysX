@@ -1,23 +1,23 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // Tests for ovphysx_get_physx_ptr(handle, prim_path, physx_type, out_ptr).
 //
 // Coverage split:
 //   - ABI / argument-validation tests: null prim_path, null out_ptr,
-//     empty prim_path, invalid instance handle.
+//     empty prim_path, embedded NUL, invalid instance handle.
 //   - Happy-path lookups per ovphysx_physx_type_t:
-//       * CPU fixture: SCENE, ACTOR, ARTICULATION, LINK, LINK_JOINT,
-//         standalone JOINT.
+//       * CPU fixture: PHYSICS, SCENE, ACTOR, ARTICULATION, LINK,
+//         LINK_JOINT, standalone JOINT.
 //       * GPU fixture (compiled in iff OVPHYSX_ENABLE_GPU_TESTS, skipped at
 //         runtime if no CUDA): PARTICLE_SYSTEM, PARTICLE_SET. Particles are
 //         GPU-only in the omni.physx runtime.
 //   - Type-mismatch lookups: JOINT on an articulation joint, PARTICLE_*
-//     on a rigid-body scene -- both return NOT_FOUND, not crash.
+//     on a rigid-body scene. Both return NOT_FOUND rather than crash.
 //   - Pointer identity properties: stable across ovphysx_step(), distinct
 //     between distinct prims of the same type.
-//   - Lifecycle: pointers become unreachable after ovphysx_reset_stage(); out_ptr
-//     is not clobbered on failure.
+//   - Lifecycle: pointers become unreachable after ovphysx_reset_stage() or
+//     ovphysx_detach_ovstage(), and out_ptr is cleared on failure.
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
@@ -61,17 +61,56 @@ ovphysx_result_t get_ptr(ovphysx_handle_t handle, const char* path,
 // ============================================================================
 
 TEST_F(PhysXTestFixture, GetPhysxPtrNullPrimPath) {
-    void* ptr = nullptr;
+    int sentinel = 0;
+    void* ptr = &sentinel;
     ovphysx_result_t r = ovphysx_get_physx_ptr(
         m_handle, make_ovx_string(nullptr), OVPHYSX_PHYSX_TYPE_SCENE, &ptr);
     EXPECT_EQ(r.status, OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(ptr, nullptr);
 }
 
 TEST_F(PhysXTestFixture, GetPhysxPtrEmptyPrimPath) {
-    void* ptr = nullptr;
+    int sentinel = 0;
+    void* ptr = &sentinel;
     ovphysx_result_t r = ovphysx_get_physx_ptr(
         m_handle, make_ovx_string(""), OVPHYSX_PHYSX_TYPE_SCENE, &ptr);
     EXPECT_EQ(r.status, OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(ptr, nullptr);
+}
+
+TEST_F(PhysXTestFixture, GetPhysicsPtrEmptySelectorsRequireAttachedStage) {
+    const ovphysx_string_t selectors[] = {
+        { nullptr, 0 },
+        OVPHYSX_LITERAL(""),
+    };
+
+    for (const ovphysx_string_t& selector : selectors) {
+        int sentinel = 0;
+        void* ptr = &sentinel;
+        ovphysx_result_t r = ovphysx_get_physx_ptr(
+            m_handle, selector, OVPHYSX_PHYSX_TYPE_PHYSICS, &ptr);
+        EXPECT_EQ(r.status, OVPHYSX_API_ERROR);
+        EXPECT_EQ(ptr, nullptr);
+    }
+}
+
+TEST_F(PhysXTestFixture, GetPhysicsPtrRejectsMalformedNullSelector) {
+    int sentinel = 0;
+    void* ptr = &sentinel;
+    const ovphysx_string_t malformed = { nullptr, 1 };
+    ovphysx_result_t r = ovphysx_get_physx_ptr(
+        m_handle, malformed, OVPHYSX_PHYSX_TYPE_PHYSICS, &ptr);
+    EXPECT_EQ(r.status, OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(ptr, nullptr);
+}
+
+TEST_F(PhysXTestFixture, GetPhysicsPtrRejectsNonEmptySelector) {
+    int sentinel = 0;
+    void* ptr = &sentinel;
+    ovphysx_result_t r = ovphysx_get_physx_ptr(
+        m_handle, OVPHYSX_LITERAL("/World/physicsScene"), OVPHYSX_PHYSX_TYPE_PHYSICS, &ptr);
+    EXPECT_EQ(r.status, OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(ptr, nullptr);
 }
 
 // A prim path carrying an embedded NUL byte must be rejected outright, not
@@ -81,9 +120,22 @@ TEST_F(PhysXTestFixture, GetPhysxPtrEmbeddedNulPrimPath) {
     std::string storage;
     ovphysx_string_t path = make_ovx_string_bytes(
         std::string("/World/physicsScene") + '\0' + "GARBAGE", storage);
-    void* ptr = nullptr;
+    int sentinel = 0;
+    void* ptr = &sentinel;
     ovphysx_result_t r = ovphysx_get_physx_ptr(
         m_handle, path, OVPHYSX_PHYSX_TYPE_SCENE, &ptr);
+    EXPECT_EQ(r.status, OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(ptr, nullptr);
+}
+
+TEST_F(PhysXTestFixture, GetPhysicsPtrRejectsEmbeddedNulSelector) {
+    std::string storage;
+    ovphysx_string_t selector = make_ovx_string_bytes(
+        std::string("physics") + '\0' + "GARBAGE", storage);
+    int sentinel = 0;
+    void* ptr = &sentinel;
+    ovphysx_result_t r = ovphysx_get_physx_ptr(
+        m_handle, selector, OVPHYSX_PHYSX_TYPE_PHYSICS, &ptr);
     EXPECT_EQ(r.status, OVPHYSX_API_INVALID_ARGUMENT);
     EXPECT_EQ(ptr, nullptr);
 }
@@ -95,14 +147,16 @@ TEST_F(PhysXTestFixture, GetPhysxPtrNullOutPtr) {
 }
 
 TEST_F(PhysXTestFixture, GetPhysxPtrInvalidInstanceHandle) {
-    void* ptr = nullptr;
+    int sentinel = 0;
+    void* ptr = &sentinel;
     ovphysx_result_t r = ovphysx_get_physx_ptr(
         OVPHYSX_INVALID_HANDLE, make_ovx_string("/World/physicsScene"), OVPHYSX_PHYSX_TYPE_SCENE, &ptr);
     EXPECT_NE(r.status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ptr, nullptr);
 }
 
 // ============================================================================
-// Happy-path matrix — rigid-body scene
+// Happy-path matrix: rigid-body scene
 // ============================================================================
 
 class PhysxPtrRigidBodyTest : public PhysXTestFixture {
@@ -116,6 +170,38 @@ protected:
         ASSERT_TRUE(step_and_wait(m_handle, 1.0f / 60.0f));
     }
 };
+
+TEST_F(PhysxPtrRigidBodyTest, PhysicsEmptySelectorsReturnStablePointer) {
+    void* null_selector_ptr = nullptr;
+    ovphysx_result_t null_selector_result = ovphysx_get_physx_ptr(
+        m_handle, { nullptr, 0 }, OVPHYSX_PHYSX_TYPE_PHYSICS, &null_selector_ptr);
+    ASSERT_EQ(null_selector_result.status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(null_selector_ptr, nullptr);
+
+    void* empty_string_ptr = nullptr;
+    ovphysx_result_t empty_string_result = ovphysx_get_physx_ptr(
+        m_handle, OVPHYSX_LITERAL(""), OVPHYSX_PHYSX_TYPE_PHYSICS, &empty_string_ptr);
+    ASSERT_EQ(empty_string_result.status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(empty_string_ptr, null_selector_ptr);
+
+    ASSERT_TRUE(step_and_wait(m_handle, 1.0f / 60.0f));
+
+    void* after_step_ptr = nullptr;
+    ovphysx_result_t after_step_result = ovphysx_get_physx_ptr(
+        m_handle, ovphysx_cstr(nullptr), OVPHYSX_PHYSX_TYPE_PHYSICS, &after_step_ptr);
+    ASSERT_EQ(after_step_result.status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(after_step_ptr, null_selector_ptr);
+}
+
+TEST_F(PhysxPtrRigidBodyTest, PhysicsRejectsNonEmptySelectorOnInitializedStage) {
+    int sentinel = 0;
+    void* ptr = &sentinel;
+    ovphysx_result_t result = ovphysx_get_physx_ptr(
+        m_handle, OVPHYSX_LITERAL("/World/physicsScene"),
+        OVPHYSX_PHYSX_TYPE_PHYSICS, &ptr);
+    EXPECT_EQ(result.status, OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(ptr, nullptr);
+}
 
 TEST_F(PhysxPtrRigidBodyTest, SceneNonZero) {
     void* ptr = nullptr;
@@ -152,8 +238,7 @@ TEST_F(PhysxPtrRigidBodyTest, ActorNonZero) {
 }
 
 // Asking for a particle type on a non-particle scene must report NOT_FOUND
-// without crashing. The output pointer is left as the caller-initialized
-// value (nullptr here).
+// without crashing and leave the output pointer cleared to nullptr.
 TEST_F(PhysxPtrRigidBodyTest, ParticleSystemNotFoundOnRigidBodyScene) {
     void* ptr = nullptr;
     ovphysx_result_t r = get_ptr(m_handle, "/World/Cube1",
@@ -192,20 +277,43 @@ TEST_F(PhysxPtrRigidBodyTest, PointerInvalidAfterReset) {
     ASSERT_EQ(reset_res.status, OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(wait_op_success(m_handle, reset_res.op_index));
 
-    // out_ptr must NOT receive a stale pointer on failure. The C API contract
-    // is: on the "no USD stage loaded" error path, *out_ptr is left untouched
-    // (validateInteropArgs returns before any write). Initialize to nullptr and
-    // assert it stayed there — if the API ever leaked the prior pointer through
-    // the out param, this test would catch it.
-    void* after = nullptr;
+    // Neither path-bound nor process-global pointers may be reacquired through
+    // this instance after reset. Seed each output so the test proves the API
+    // clears it rather than returning a stale pointer.
+    int sentinel = 0;
+    void* after = &sentinel;
     ovphysx_result_t r = ovphysx_get_physx_ptr(
         m_handle, make_ovx_string("/World/Cube1"), OVPHYSX_PHYSX_TYPE_ACTOR, &after);
     EXPECT_NE(r.status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(after, nullptr);
+
+    void* physics_after = &sentinel;
+    r = ovphysx_get_physx_ptr(
+        m_handle, { nullptr, 0 }, OVPHYSX_PHYSX_TYPE_PHYSICS, &physics_after);
+    EXPECT_EQ(r.status, OVPHYSX_API_ERROR);
+    EXPECT_EQ(physics_after, nullptr);
+}
+
+TEST_F(PhysxPtrRigidBodyTest, PhysicsPointerUnavailableAfterDetach) {
+    void* before = nullptr;
+    ovphysx_result_t r = ovphysx_get_physx_ptr(
+        m_handle, { nullptr, 0 }, OVPHYSX_PHYSX_TYPE_PHYSICS, &before);
+    ASSERT_EQ(r.status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(before, nullptr);
+
+    ovphysx_result_t detach_result = ovphysx_detach_ovstage(m_handle);
+    ASSERT_EQ(detach_result.status, OVPHYSX_API_SUCCESS);
+
+    int sentinel = 0;
+    void* after = &sentinel;
+    r = ovphysx_get_physx_ptr(
+        m_handle, OVPHYSX_LITERAL(""), OVPHYSX_PHYSX_TYPE_PHYSICS, &after);
+    EXPECT_EQ(r.status, OVPHYSX_API_ERROR);
+    EXPECT_EQ(after, nullptr);
 }
 
 // ============================================================================
-// Happy-path matrix — articulation scene
+// Happy-path matrix: articulation scene
 // ============================================================================
 
 class PhysxPtrArticulationTest : public PhysXTestFixture {
@@ -277,7 +385,7 @@ TEST_F(PhysxPtrArticulationTest, DistinctLinksHaveDistinctPointers) {
     EXPECT_NE(a, b);
 }
 
-// Articulation joints are PxArticulationJointReducedCoordinate; querying
+// Articulation joints are PxArticulationJointReducedCoordinate, so querying
 // them via the plain JOINT (PxJoint) type returns NOT_FOUND.
 TEST_F(PhysxPtrArticulationTest, JointTypeOnArticulationJointReturnsNotFound) {
     void* ptr = nullptr;
@@ -300,7 +408,7 @@ TEST_F(PhysxPtrArticulationTest, LinkJointOnArticulationJointNonZero) {
 }
 
 // ============================================================================
-// Happy-path matrix — standalone (non-articulation) joint
+// Happy-path matrix: standalone (non-articulation) joint
 //
 // revolute_joint_scene.usda has /World/revoluteJoint, a PhysicsRevoluteJoint
 // outside any articulation. This is a PxJoint, so OVPHYSX_PHYSX_TYPE_JOINT
@@ -340,7 +448,7 @@ TEST_F(PhysxPtrStandaloneJointTest, JointStablePointer) {
 }
 
 // ============================================================================
-// Happy-path matrix — particle scene (GPU-only)
+// Happy-path matrix: particle scene (GPU-only)
 //
 // Particles are GPU-only on the omni.physx runtime side: the load path checks
 // `physxScene->isFullGpuPipelineAvailable()` and refuses to register particle
@@ -348,7 +456,7 @@ TEST_F(PhysxPtrStandaloneJointTest, JointStablePointer) {
 // so these tests get their own GPU instance.
 //
 // Builds compiled with -DOVPHYSX_ENABLE_GPU_TESTS=0 skip both tests at compile
-// time. At runtime, if GPU/CUDA isn't available the suite SetUp leaves the
+// time. At runtime, if GPU/CUDA is not available the suite SetUp leaves the
 // handle null and each test is skipped with a clear reason.
 // ============================================================================
 

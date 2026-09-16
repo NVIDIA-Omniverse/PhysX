@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
-//
+
 // GENERATED (header-only) by tools/gen_axis_instance_tokens.py. DO NOT EDIT.
 // Concrete per-axis instances of the physxJointAxis / physxDrivePerformanceEnvelope
 // multiple-apply schemas, derived from PhysxSchemaTokens templates (no hand-authored

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * `ScannedStage` — the source-agnostic snapshot of a scanned physics
@@ -20,6 +20,9 @@
  *
  * @implements REQ-PARSE-SCAN-001
  * @covers AC-1 AC-2 AC-3
+ *
+ * @implements REQ-PARSE-BACKEND-001
+ * @covers AC-12
  */
 
 #pragma once
@@ -47,6 +50,11 @@ class ScannedStage;
 // walker). USD-free in signature — that is the whole point: it lets a backend
 // build a scan without depending on the USD layer.
 ScannedStage makeScannedStageFromSource(std::unique_ptr<IPhysicsSource> source);
+
+// As above, over a source the caller keeps owning (an attach's live source). The
+// descriptors' TokenIds/ObjectKeys are minted by `source`, so it must outlive the
+// returned ScannedStage.
+ScannedStage makeScannedStageBorrowingSource(IPhysicsSource& source);
 
 // Snapshot of a scanned physics scene's parsed state. Owns the parse-lib
 // descriptors and the backend source used to mint their handles. Immutable
@@ -218,6 +226,7 @@ protected:
     std::unique_ptr<Impl> mImpl;
 
     friend ScannedStage makeScannedStageFromSource(std::unique_ptr<IPhysicsSource>);
+    friend ScannedStage makeScannedStageBorrowingSource(IPhysicsSource&);
 };
 
 } // namespace omni::physics::parse

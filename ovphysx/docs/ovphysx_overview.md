@@ -1,10 +1,12 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # ovphysx Overview
 
 ovphysx is a self-contained PhysX runtime exposed as a C API with Python bindings.
-It consumes application-owned ovstage data, runs simulation, and reads or writes data through DLPack with same-device zero-copy access and transparent CPU/CUDA staging.
+It consumes application-owned ovstage data, runs simulation, and returns same-device
+Warp arrays from the Python output-read API on CPU and CUDA. Native C transport and
+the deprecated tensor-binding surface retain DLTensor interoperability.
 It currently supports Windows (x86_64) and Linux (x86_64, aarch64) platforms.
 On x86_64, pre-built binaries require a CPU with **AVX** (Advanced Vector Extensions);
 refer to [System Requirements](#system-requirements).
@@ -22,7 +24,7 @@ This page explains how ovphysx fits into the stack, what workflows it supports, 
 
 - Consume caller-owned ovstage data and drain committed ordinal ranges into the simulation.
 - Replicate subtrees for large-scale parallel environments with `clone()` / `ovphysx_clone()` (PhysX-side replication in the internal representation only; USD untouched).
-- Write simulation inputs (positions, velocities, controls) through tensor bindings or, when paired with `ovstage`, through attribute writes drained with `update_from_ovstage()`.
+- Write simulation inputs (positions, velocities, controls) through the session write API (`PhysX.write` / `ovphysx_write`) or, when paired with `ovstage`, through attribute writes drained with `update_from_ovstage()`.
 - Step the simulation.
 - Read results (updated simulation state) back into your tensors. ovphysx does not write results back to the attached stage; the application owns writing state back to `ovstage`.
 
@@ -38,8 +40,8 @@ pages: [Physics Scene](simulation_setup/physics_scene.md),
 [Joints](simulation_setup/joints.md),
 [Articulations](simulation_setup/articulations.md),
 [Deformables](simulation_setup/deformables.md), and
-[Particles](simulation_setup/particles.md). Physics schema layers and how ovphysx
-registers the codeless PhysX schemas are covered in
+[Particles](simulation_setup/particles.md). Physics schema layers and how the
+application registers the codeless PhysX schemas that ovphysx ships are covered in
 [Physics Schemas](physics_schemas.md). For tuning, refer to the Guides:
 [Performance](guides/performance.md), [Collision Behavior](guides/collision_tuning.md),
 and [Articulation Stability](guides/articulation_stability.md).
@@ -52,21 +54,24 @@ Applications own scene population through ovstage. ovphysx consumes that stage t
 ## Core Concepts
 
 - Stream-ordered execution: calls run in submission order and see prior writes without extra sync.
-- Tensor bindings: synchronous read/write operations for physics data (rigid body poses, velocities, etc.). Includes path-pattern matching for authored USD physics objects and runtime-only clones (`/World/robot*`, `/World/env[N]/robot`).
+- Session read/write: `PhysX.read` / `PhysX.write` (C `ovphysx_read` / `ovphysx_write`) move physics data (rigid-body poses, velocities, joint state, and the other columns listed in [Readable data](read_write/readable.md)), selected by object type. The older path-pattern tensor-binding API is deprecated (refer to [Tensor Bindings](tutorials/tensor_bindings.md)).
 - Thread safety: instances share the underlying physics runtime; serialize simulation,
   stage mutation, and binding creation across instances. A single instance is not
   safe for concurrent calls.
-- DLPack interoperability: share memory with NumPy, PyTorch, and other DLPack consumers.
+- Warp output interoperability: `PhysX.read()` returns `warp.array`; use Warp's
+  DLPack support to share memory with NumPy, PyTorch, and other consumers.
 
 ## End-to-End Usage in Python
 
 Typical usage of ovphysx:
 
-- Create and release instances with `PhysX()` and `physx.release()`.
+- Create and destroy instances with `PhysX()` and `physx.destroy()`.
 - After population, seal the ordinal with `stage.advance_write_floor(ordinal).wait()`, then attach with `physx.attach_ovstage(stage, read_ordinal=ordinal)`. Apply later committed edits with `physx.update_from_ovstage(from_ordinal, to_ordinal)`.
-- Create tensor bindings with `physx.create_tensor_binding()` specifying a tensor type and a
-  physics-object path pattern or explicit object paths.
-- Write and read tensor data with `binding.write()` and `binding.read()` using NumPy arrays or dlpack-compatible buffers.
+- Write and read simulation state with the session API — `physx.write()` / `physx.read()` —
+  selecting an object type and attribute; each group exposes the mapped buffers as NumPy views
+  (host) or `warp.array` (device). (The deprecated `physx.create_tensor_binding()` path still
+  works; refer to
+  [Migrating to the Session Read/Write API](tutorials/tensor_bindings.md#migrating-to-the-session-readwrite-api).)
 - Step the simulation with `physx.step()` — it is **asynchronous** (returns an `op_index`); use `physx.step_sync()` to step and wait in one call, or `wait_op()` / `wait_all()` when consuming results outside the ovphysx stream. In-stream tensor reads wait automatically.
 
 Refer to the [Python API Reference](python_api.rst) for the full Python API surface.
@@ -79,9 +84,9 @@ The C API mirrors the Python flow:
 - Attach ovstage with `ovphysx_attach_ovstage()` and apply committed edits with
   `ovphysx_update_from_ovstage(handle, range)`, where `range` is an
   `ovstage_ordinal_range_t`.
-- Create tensor bindings with `ovphysx_create_tensor_binding()` specifying a tensor type and
-  physics-object paths.
-- Write and read tensor data with `ovphysx_write_tensor_binding()` and `ovphysx_read_tensor_binding()`.
+- Write and read simulation state with the session API — `ovphysx_write()` / `ovphysx_read()` —
+  selecting an object type and attribute through `ovphysx_query()`, then filling or reading the
+  mapped groups. (The deprecated `ovphysx_create_tensor_binding()` path still works.)
 - Step the simulation with `ovphysx_step()` — it is **asynchronous** (returns an `op_index`); use `ovphysx_step_sync()` to step and wait in one call, or `ovphysx_wait_op()` when consuming results outside the stream.
 
 
@@ -103,32 +108,31 @@ provide the complete runtime; no additional NVIDIA or USD package is required.
 - **ovphysx shared libraries** (`libovphysx.so` / `ovphysx.dll`)
 - **Carbonite runtime** (embedded static framework plus bootstrap plugins)
 - **PhysX runtime** (statically linked simulation and tensor implementation)
-- **OmniClient and `omniverse_connection`** (sourced from the exact matched
-  OVStage package for PhysX-first startup)
+- **Codeless PhysX USD schemas** (`ovphysx/schemas/physx/`, data only; the
+  application registers them)
 
-The exact matched `ovstage` wheel supplies OVStage, the USD resolver and its
-registry, and the namespaced USD runtime. The ovphysx wheel intentionally omits
-duplicate resolver and USD singleton binaries. Python dependencies are
-`packaging` and that exact `ovstage` wheel.
+The exact matched `ovstage` wheel supplies ovstage together with the USD
+resolver and the internal namespaced OpenUSD runtime ovstage uses to ingest USD
+scenes. The ovphysx wheel ships no OpenUSD library, USD plugin registry, or
+resolver of its own. Python dependencies are
+`packaging`, that exact `ovstage` wheel, and the bounded `warp-lang` feature line.
 
-### USD Coexistence and Version Checking
+### USD Coexistence and Schema Registration
 
-ovphysx includes runtime safeguards for processes where an OV namespaced USD runtime may already be loaded by another package, such as another NVIDIA Omniverse library. Classic host USD, including `usd-core`, is intentionally separate and is not reused as ovphysx's runtime.
+ovphysx ships no OpenUSD runtime and never loads, links, preloads, or version-checks one. ovstage ingests USD scenes through its own internal namespaced OpenUSD runtime; the application owns whatever USD it authors with, for example stock `usd-core` from PyPI. ovphysx does not inspect or validate the USD libraries present in the process.
 
-When ovphysx shares a process with another OV USD-aware subsystem such as ovrtx,
-call `ovphysx_register_schema_paths()` and the peer subsystem's equivalent
-before the first USD stage open so USD's schema registry sees all plugin roots.
-
-When ovphysx starts, it checks whether a namespaced USD runtime is already loaded in the process. ovphysx then takes one of three paths:
-- **No USD loaded**: ovphysx preloads the exact matched OVStage-provided USD
-  runtime automatically (from the native SDK or the `ovstage` wheel).
-- **Compatible OV namespaced USD loaded**: ovphysx uses the existing USD (skips preload).
-- **Incompatible OV namespaced USD loaded**: ovphysx fails with a detailed error message showing the required vs. found version and remediation steps.
-
-Detection uses `dlopen(RTLD_NOLOAD)` on Linux and `GetModuleHandle` on Windows to inspect process memory without side effects.
-The required USD version is specified in `config.toml` using PEP 440 version specifiers (for example, `==25.11`).
-
-You can control this behavior with `/ovphysx/skipUsdLibPreload` to bypass automatic USD preload.
+ovphysx ships its PhysX USD schemas (`PhysxSchema`, `OmniUsdPhysicsDeformableSchema`)
+as codeless USD plugins and never touches the environment. It reports where they
+are: `ovphysx_get_codeless_schema_root()` in C, `ovphysx.codeless_schema_root()`
+and `ovphysx.codeless_schema_paths()` in Python. The application registers them
+with the USD runtime it owns before the first ovstage population call in the
+process (`ovstage_population_register_usd_schemas()` /
+`ovstage.population.register_usd_schemas()`); USD assembles its schema registry
+once, and a late registration cannot be repaired. Attaching an ovstage that was
+populated without the registration fails with an error naming the missing call,
+because such a stage carries none of the asset's PhysX settings. Refer to
+[Physics Schemas](physics_schemas.md) for the ovstage and stock `usd-core`
+recipes.
 
 ## Versioning and Compatibility
 
@@ -163,7 +167,7 @@ Python bindings validate that the package version and native library version mat
 
 In addition to the platform list above:
 
-- **Python 3.10+** for the wheel; a C++17 toolchain for the SDK. For the tested compiler and CUDA Toolkit matrix, see the PhysX SDK [Linux platform readme](https://github.com/NVIDIA-Omniverse/PhysX/blob/main/physx/documentation/platformreadme/linux/README_LINUX.md); building the SDK/wheel on a newer-than-baseline glibc (> 2.35) requires `SKIP_GLIBC_CHECK=ON`.
+- **Python 3.10+** for the wheel; a C++17 toolchain for the SDK. For the tested compiler and CUDA Toolkit matrix, refer to the PhysX SDK [Linux platform readme](https://github.com/NVIDIA-Omniverse/PhysX/blob/main/physx/documentation/platformreadme/linux/README_LINUX.md); building the SDK/wheel on a newer-than-baseline glibc (> 2.35) requires `SKIP_GLIBC_CHECK=ON`.
 - **x86_64 (Linux and Windows): AVX required.** Shipped `libovphysx` / `ovphysx.dll`
   builds use AVX instructions unconditionally. There is no runtime CPU-feature
   dispatch and no non-AVX code path. Hosts without AVX (some older x86-64 CPUs,
@@ -174,7 +178,8 @@ In addition to the platform list above:
 - **GPU (optional):** NVIDIA GPU + CUDA-capable driver recommended for GPU dynamics;
   CPU-only simulation is supported on supported CPUs.
 
-**Verify AVX on Linux x86_64:**
+On Linux x86_64, this command reports whether the host CPU advertises AVX. Run it
+before you install the wheel or SDK:
 
 ```bash
 grep -qw avx /proc/cpuinfo && echo "AVX present" || echo "AVX missing"
@@ -185,9 +190,10 @@ x86_64 wheel or SDK.
 
 ## Runtime Warnings
 
-The native SDK bundles PhysX, Carbonite, and the matched OVStage-provided USD
-runtime components. The Python distribution provides the same runtime through
-the coordinated ovphysx and exact `ovstage` wheels. On startup and during
+The native SDK bundles PhysX and Carbonite; the separately downloaded ovstage
+package supplies ovstage, OmniClient, its connection library, and its internal
+USD runtime. The Python distribution provides
+the same runtime through the coordinated ovphysx and exact `ovstage` wheels. On startup and during
 simulation, you may see warnings from these downstream dependencies such as:
 
 - `[Warning] PhysXFoundation: Unable to create GPU Foundation` — appears on machines

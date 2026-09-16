@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # ovphysx — USD-native physics simulation library, no Omniverse Kit installation required
 
@@ -11,13 +11,13 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](https://pypi.org/project/ovphysx/)
 [![Linux | Windows](https://img.shields.io/badge/platform-linux%20%7C%20windows-lightgrey)](https://pypi.org/project/ovphysx/)
 
-ovphysx is a standalone library for USD-based physics simulation, offering a C API with Python bindings. It wraps NVIDIA PhysX, consumes caller-owned ovstage data, runs simulation, and exchanges data via DLPack tensors; no Omniverse installation is required.
+ovphysx is a standalone library for USD-based physics simulation, offering a C API with Python bindings. It wraps NVIDIA PhysX, consumes caller-owned ovstage data, runs simulation, and exposes simulation output as Warp arrays in Python and DLTensor descriptors in C; no Omniverse installation is required.
 
 ## 1. What is ovphysx?
 
-**ovphysx** is a standalone library for **USD-based physics simulation**, exposing a **C API with Python bindings**. It wraps NVIDIA PhysX SDK, consumes caller-owned ovstage data, runs the simulation, and exchanges state with your code via **DLPack tensors**, all with **no Omniverse Kit installation required**. It packages its own OV-namespaced OpenUSD runtime, so you get USD-native physics in Python or C/C++ applications without a Kit installation.
+**ovphysx** is a standalone library for **USD-based physics simulation**, exposing a **C API with Python bindings**. It wraps NVIDIA PhysX SDK, consumes caller-owned ovstage data, runs the simulation, and exposes state through **Warp arrays in Python** and **DLTensor descriptors in C**, all with **no Omniverse Kit installation required**. It ships, loads, and links no OpenUSD library of its own: ovstage ingests the USD scene, and the application owns whatever USD it authors with. The result is USD-native physics in Python or C/C++ applications without a Kit installation.
 
-**NVIDIA PhysX SDK** is the popular and stable **real-time physics simulation engine** underneath — the same GPU-accelerated rigid-body, articulation, and contact solver used across robotics, simulation, and interactive 3D for over a decade. PhysX is open source under BSD-3-Clause. ovphysx is the path that brings that engine to developers as a lightweight, USD-first, kitless library.
+**NVIDIA PhysX SDK** is the popular and stable **real-time physics simulation engine** underneath — the same GPU-accelerated rigid-body, articulation, and contact solver used across robotics, simulation, and interactive 3D for over a decade. PhysX is open source under Apache 2.0. ovphysx is the path that brings that engine to developers as a lightweight, USD-first, kitless library.
 
 ---
 
@@ -26,7 +26,7 @@ ovphysx is a standalone library for USD-based physics simulation, offering a C A
 **What you can do with it:**
 
 - **Load and simulate USD scenes through ovstage** -- populate an `ovstage.Stage`, attach and parse its initial ordinal, drain later changes with `update_from_ovstage(from_ordinal, to_ordinal)`, then `step(dt, ...)`.
-- **Tensor data exchange via DLPack** — read/write simulation state (e.g. rigid-body poses) with same-device zero-copy access and transparent CPU/CUDA staging for NumPy, PyTorch, and other ML frameworks.
+- **Device-neutral output through Warp** — `PhysX.read()` returns same-device `warp.array` values on CPU and CUDA; Warp provides downstream DLPack interoperability with NumPy, PyTorch, and other frameworks. The native C API retains device-neutral DLTensor descriptors.
 - **Tensor bindings** — bind to scene patterns (e.g. `RIGID_BODY_POSE`) to stream state in and out efficiently.
 - **Environment cloning for batched RL** — replicate environments for high-throughput reinforcement-learning workloads.
 - **CPU or GPU simulation** — run with an NVIDIA GPU for acceleration, or fall back to CPU-only.
@@ -66,14 +66,14 @@ ovphysx is a standalone library for USD-based physics simulation, offering a C A
 
 ## 5. Licensing
 
-- **Source code:** BSD-3-Clause License — permissive, free for commercial and non-commercial use.
+- **Source code:** Apache License 2.0 — permissive, free for commercial and non-commercial use.
 - **Pre-built binaries** (SDK packages and Python wheels): distributed under the **NVIDIA Omniverse License**.
 
-> **Note:** ovphysx is pre-release and not yet mature. When sharing a process with other OV USD-aware subsystems, register each subsystem's schema paths before the first USD stage or schema-registry access. Parts of the API may change before 1.0.
+> **Note:** ovphysx is pre-release and not yet mature. ovphysx ships its PhysX USD schemas as codeless plugins and never registers them itself; register them with the USD runtime your application owns (for ovstage, `ovstage.population.register_usd_schemas()`) before the first population call or schema-registry access. Parts of the API may change before 1.0.
 
 ---
 
-> **Note:** Pre-release notice: ovphysx is pre-release software and not yet mature. ovphysx packages an OV namespaced OpenUSD runtime; when sharing a process with other OV USD-aware subsystems, register each subsystem's schema paths before the first USD stage or schema-registry access. Parts of the API are still being completed and may change before 1.0.
+> **Note:** Pre-release notice: ovphysx is pre-release software and not yet mature. ovphysx ships no OpenUSD runtime of its own: ovstage ingests USD scenes through its own internal namespaced OpenUSD runtime, and the application owns whatever USD it authors with. ovphysx ships its PhysX USD schemas as codeless plugins and never registers them itself; register them with the USD runtime the application owns before the first population call or schema-registry access (refer to Physics Schemas in the documentation). Parts of the API are still being completed and may change before 1.0.
 
 ## Quick Start
 
@@ -82,21 +82,36 @@ pip install ovphysx
 ```
 
 ```python
+from pathlib import Path
+
+import ovphysx
 import ovstage
 from ovphysx import PhysX
 
+usd_path = (
+    Path(ovphysx.__file__).resolve().parent
+    / "samples"
+    / "data"
+    / "simple_physics_scene.usda"
+)
+if not usd_path.is_file():
+    raise FileNotFoundError(f"ovphysx sample data is missing: {usd_path}")
+
+# ovphysx ships its PhysX USD schemas as codeless resources and never registers
+# them itself; register them with ovstage before the first population call.
+ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
 stage = ovstage.Stage("scene")
 ovstage.population.open_usd(
-    stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
+    stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
 )
 # attach_ovstage() reads at a sealed ordinal.
 stage.advance_write_floor(ordinal=1).wait()
 
 physx = PhysX()
 physx.attach_ovstage(stage, read_ordinal=1)
-physx.step(1.0 / 60.0)
+physx.step_sync(1.0 / 60.0)
 physx.detach_ovstage()
-physx.release()
+physx.destroy()
 stage.destroy()
 ```
 
@@ -111,8 +126,8 @@ physx = PhysX()
 physx.attach_ovstage(stage, read_ordinal=initial_ordinal)
 # Drain only later application-authored edits.
 physx.update_from_ovstage(from_ordinal, to_ordinal)
-physx.step(1.0 / 60.0)
-physx.release()
+physx.step_sync(1.0 / 60.0)
+physx.destroy()
 ```
 
 ## Environment Cloning
@@ -120,23 +135,37 @@ physx.release()
 Clone environments for batched reinforcement-learning workloads:
 
 ```python
+from pathlib import Path
+
+import ovphysx
 from ovphysx import PhysX
 from ovphysx.types import TensorType
 import numpy as np
 import ovstage
 
+usd_path = (
+    Path(ovphysx.__file__).resolve().parent
+    / "samples"
+    / "data"
+    / "basic_simulation.usda"
+)
+if not usd_path.is_file():
+    raise FileNotFoundError(f"ovphysx sample data is missing: {usd_path}")
+
 PhysX.set_cpu_mode(True)
 physx = PhysX()
+# Register the codeless PhysX schemas before the first population call.
+ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
 stage = ovstage.Stage("scene")
 ovstage.population.open_usd(
-    stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
+    stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
 )
 # attach_ovstage() reads at a sealed ordinal.
 stage.advance_write_floor(ordinal=1).wait()
 physx.attach_ovstage(stage, read_ordinal=1)
 physx.wait_all()
 
-# Clone before GPU warmup or the first simulation step. clone() returns an
+# Clone before warmup or the first simulation step. clone() returns an
 # operation index, not the number of copies.
 targets = ["/World/envs/env1", "/World/envs/env2", "/World/envs/env3"]
 clone_op = physx.clone("/World/envs/env0", targets)
@@ -152,7 +181,7 @@ pose_binding.read(poses)
 
 pose_binding.destroy()
 physx.detach_ovstage()
-physx.release()
+physx.destroy()
 stage.destroy()
 ```
 
@@ -208,12 +237,14 @@ This section is for developers who build, test, or modify ovphysx from source.
 ### Prerequisites
 
 - A Windows (x86_64) or Linux (x86_64, aarch64) development environment
-- CMake 3.16+ on Linux, CMake 4.1+ on Windows
+- CMake 3.22+ on Linux, CMake 4.1+ on Windows
 - C++17 compatible compiler (GCC/Clang on Linux, MSVC 2019+ on Windows). On Linux, use a compiler from the tested matrix in the PhysX SDK [Linux platform readme](https://github.com/NVIDIA-Omniverse/PhysX/blob/main/physx/documentation/platformreadme/linux/README_LINUX.md) rather than the newest available — a too-new GCC can exceed the CUDA host-compiler ceiling.
 - **On Linux,** the `file` utility (the OS file-type tool, not CMake's `file()` command) and `binutils` (`strip`, `readelf`). The install and wheel steps use them to detect and strip unstripped ELF binaries and to verify the ABI baseline. `binutils` usually arrives with the compiler, but `file` is absent from minimal container images: `apt-get install file binutils`.
 - UV (https://docs.astral.sh/uv/getting-started/installation/) for Python management
 - CUDA Toolkit and a compatible NVIDIA driver for GPU simulation (CPU-only builds do not need CUDA). Match the version in the PhysX SDK [Linux platform readme](https://github.com/NVIDIA-Omniverse/PhysX/blob/main/physx/documentation/platformreadme/linux/README_LINUX.md); if `nvcc` is not on `PATH`, CMake fails with `No CMAKE_CUDA_COMPILER could be found`.
-- **Linux ABI baseline:** the SDK and wheel target a glibc 2.35 (`manylinux_2_35`) baseline, enforced by a readelf check during install/wheel/validate. On a newer distro (glibc > 2.35) that check fails fast; pass `SKIP_GLIBC_CHECK=ON` for local development, e.g. `cmake -DSKIP_GLIBC_CHECK=ON -P scripts/install.cmake`.
+- **Linux ABI baseline:** the SDK and wheel target a glibc 2.35 (`manylinux_2_35`) baseline, enforced by a readelf check during install/wheel/validate. On a newer distro (glibc > 2.35) that check fails fast; pass `SKIP_GLIBC_CHECK=ON` for local development, e.g. `cmake -DSKIP_GLIBC_CHECK=ON -P scripts/install.cmake`. Meeting that baseline is the build environment's job, and the source tree ships
+  no container image for it: on Linux the compile uses whatever toolchain it runs under, so an Ubuntu
+  22.04 (or equivalent glibc 2.35) environment has to be arranged.
 - On Windows, `build.bat` defaults to the Visual Studio generator; `set GENERATOR=ninja` to opt into Ninja.
 
 ### Build
@@ -250,8 +281,18 @@ cmake -P scripts/build_wheel.cmake
 | | `--devschema` | Use locally-built physics schema |
 | | `-DOVPHYSX_USE_RELEASE_RUNTIME_DEPS=ON` | Use release runtime dependencies for Debug compilation (default and required) |
 
-Source builds use namespaced monolithic USD. There is no classic USD build
-switch.
+Source builds still fetch a namespaced monolithic OpenUSD package as a build-time
+dependency: the ovruntime subproject resolves its own USD dependency. The Python
+tests get their python USD from stock pip `usd-core`: the only `pxr` user opens its
+stage in a clean subprocess, so a stock build is never resident next to ovstage; no
+internal USD monolith is fetched. ovphysx itself links, loads, and pins no USD, so
+nothing in the product constrains that choice.
+
+`libovphysx` and `libovphysx_internal` link no USD library, and neither the SDK
+nor the wheel ships one. ovstage ingests USD scenes through its own internal
+namespaced OpenUSD runtime, and the application owns whatever USD it authors
+with. There is no USD-linked variant; ovphysx attaches only through ovstage,
+and exactly one USD image is ever loaded in the process.
 
 **Changing `--devphysx` or `--devschema` requires a clean rebuild.** The flag
 combination selects a build flavor, and incremental builds across a flavor
@@ -348,28 +389,45 @@ uv run --no-sync python hello_world.py
 
 When developing locally, you can override runtime loading:
 
-- `OVPHYSX_LIB` to select an ovphysx shared library. Python loads that library directly; native/source-link runs use its directory to find `config.toml`, plugins, and USD schema paths.
+- `OVPHYSX_LIB` to select an ovphysx shared library. Python loads that library directly; native/source-link runs use its directory to find the plugins and the codeless schema root (`schemas/physx`).
 
-### Sharing USD schema discovery with ovrtx
+### Registering the PhysX USD schemas
 
-When ovphysx shares a process with another USD-aware OV subsystem such as ovrtx,
-publish both subsystems' schema paths before either subsystem opens a USD stage:
+ovphysx ships its PhysX USD schemas (`PhysxSchema`, `OmniUsdPhysicsDeformableSchema`)
+as codeless USD plugins under `schemas/physx/` and never registers them itself.
+The application registers them with the USD runtime it owns before the first
+ovstage population call in the process; USD assembles its schema registry once,
+so a late registration cannot be repaired:
 
 ```c
 #include <ovphysx/ovphysx.h>
-#include <ovrtx/ovrtx.h>
+#include <ovstage/ovstage.h>
+#include <ovstage/ovstage_population.h>
 
 int main(void)
 {
-    ovphysx_register_schema_paths();
-    ovrtx_register_schema_paths();
+    ovphysx_string_t root;
+    if (ovphysx_get_codeless_schema_root(&root).status != OVPHYSX_API_SUCCESS)
+    {
+        return 1;
+    }
+    ovx_string_t path;
+    path.ptr = root.ptr;
+    path.length = root.length;
+    if (ovstage_population_register_usd_schemas(&path, 1) != OVSTAGE_OK)
+    {
+        return 1;
+    }
     return 0;
 }
 ```
 
-Python applications can call `ovphysx.register_schema_paths()` before native
-ovphysx bootstrap. Standalone ovphysx applications do not need the explicit call;
-`ovphysx_create_instance()` registers the ovphysx path automatically.
+Python applications call
+`ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])`
+before the first population call. The bundled samples do this in their
+`attach_scene` helpers (Python) and in `tests/c_samples/common/ovstage_sample.h`
+(C). Refer to `docs/physics_schemas.md` for registering the same schemas with a
+stock `usd-core`.
 
 ### Development mode (`OVPHYSX_LIB`)
 
@@ -377,20 +435,21 @@ Development mode is intended for repository workflows and local iteration.
 `OVPHYSX_LIB` points at an ovphysx shared library. In Python wheel workflows,
 that is the library loaded by `ctypes`. In native/source-link workflows, the
 executable may already load `libovphysx` via RPATH or DLL copy; `OVPHYSX_LIB`
-still anchors runtime discovery. ovphysx loads `config.toml` beside that library
-and looks for plugins in `plugins/` next to the library directory or one level
-above it.
+still anchors runtime discovery. ovphysx looks for plugins in `plugins/` next to
+the library directory or one level above it, and for the codeless schema root in
+`schemas/physx` next to the library directory (copied runtime layout) or one
+level above it (SDK and wheel layouts).
 
 - For installed SDK layouts, use `_install/lib/libovphysx.so` on Linux or `_install/bin/ovphysx.dll` on Windows.
-- For raw build-tree layouts, ensure `config.toml` and a compatible `plugins/` layout are present relative to the selected library.
-- For source-link sample runs, prefer the installed SDK library so config/schema/plugin discovery uses the flattened `_install/plugins` layout.
+- For raw build-tree layouts, ensure a compatible `plugins/` layout and a `schemas/physx` tree are present relative to the selected library.
+- For source-link sample runs, prefer the installed SDK library so schema/plugin discovery uses the flattened `_install/plugins` and `_install/schemas/physx` layout.
 
 ### Dependency download
 
-Dependencies auto-download during build (kit-kernel, omni_physics_dev, USD, etc.) by invoking packman and building the required PhysX runtime extensions.
+Dependencies auto-download during build (carb_sdk_plugins, omni_physics_dev, USD, etc.) by invoking packman and building the required PhysX runtime extensions.
 
 Centralized extension cache in `_build/lib/deps/`, which is then installed into `_install/plugins/`.
-Wheel packaging mirrors the install layout under `ovphysx/lib/` and `ovphysx/plugins/`;
+Wheel packaging mirrors the install layout under `ovphysx/lib/`, `ovphysx/plugins/`, and `ovphysx/schemas/`;
 Python now exposes only TensorBindingsAPI and no longer ships the legacy `ovphysx.tensors`
 compatibility layer.
 

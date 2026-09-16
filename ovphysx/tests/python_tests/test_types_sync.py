@@ -1,5 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# PARTIALLY DEPRECATED (tensor-binding-deprecation): the TensorType-vs-C-header sync checks (and MAX_TENSOR_RANK) retire with the binding. The ApiStatus / LogLevel / config / debug-render-scope sync checks stay.
+
+# @implements REQ-CAPI-OMNIPVD-001
+# @covers AC-1
+# @implements REQ-PYTHON-OMNIPVD-001
+# @covers AC-1
 
 """Verify Python constants stay in sync with their C and C++ headers."""
 
@@ -92,6 +99,25 @@ def test_log_level_values_match_c_header():
 
     missing = c_vals - py_vals
     assert not missing, f"C header has log level values missing from LogLevel: {missing}"
+
+
+def _extract_c_config_enum(header_text: str, enum_name: str, prefix: str) -> dict[str, int]:
+    match = re.search(rf"typedef enum {enum_name}\s*\{{(.*?)\}}\s*{enum_name};", header_text, re.DOTALL)
+    assert match is not None, f"Missing C enum {enum_name}"
+    members = re.findall(rf"\b{prefix}([A-Z0-9_]+)\b", match.group(1))
+    return {name: value for value, name in enumerate(name for name in members if not name.endswith("_COUNT"))}
+
+
+def test_config_int32_and_string_values_match_c_header():
+    """Every C typed int/string config key must have the same Python member and value."""
+    from ovphysx.types import ConfigInt32, ConfigString
+
+    header = (_repo_root() / "include" / "ovphysx" / "ovphysx_types.h").read_text()
+    expected_int32 = _extract_c_config_enum(header, "ovphysx_config_int32_t", "OVPHYSX_CONFIG_")
+    expected_string = _extract_c_config_enum(header, "ovphysx_config_string_t", "OVPHYSX_CONFIG_")
+    assert {member.name: int(member) for member in ConfigInt32} == expected_int32
+    assert {member.name: int(member) for member in ConfigString} == expected_string
+
 
 
 def test_no_python_only_tensor_values():

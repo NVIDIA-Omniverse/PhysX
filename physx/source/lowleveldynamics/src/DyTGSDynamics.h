@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef DY_TGS_DYNAMICS_H
 #define DY_TGS_DYNAMICS_H
@@ -96,14 +73,19 @@ namespace physx
 			PxReal				mStepDt;
 			PxReal				mInvStepDt;
 			BiasCoefficientCollection mBiasCoefficients;
-			PxI32				mSharedSolverIndex;
-			PxI32				mSolvedCount;
-			PxI32				mSharedRigidBodyIndex;
-			PxI32				mRigidBodyIntegratedCount;
-			PxI32				mSharedArticulationIndex;
-			PxI32				mArticulationIntegratedCount;
-			PxI32				mSharedGravityIndex;
-			PxI32				mGravityIntegratedCount;
+			//PT: each counter is padded out to its own cache line: they are all incremented atomically
+			//and spin-read (WAIT_FOR_PROGRESS) by every solver thread, and previously shared cache lines
+			//both with each other and with the read-only island data above (false sharing). Explicit
+			//padding rather than PX_ALIGN because the struct is not allocated with 64-byte alignment.
+			PxU8				mPad0[64];
+			PxI32				mSharedSolverIndex;				PxU8 mPad1[60];
+			PxI32				mSolvedCount;					PxU8 mPad2[60];
+			PxI32				mSharedRigidBodyIndex;			PxU8 mPad3[60];
+			PxI32				mRigidBodyIntegratedCount;		PxU8 mPad4[60];
+			PxI32				mSharedArticulationIndex;		PxU8 mPad5[60];
+			PxI32				mArticulationIntegratedCount;	PxU8 mPad6[60];
+			PxI32				mSharedGravityIndex;			PxU8 mPad7[60];
+			PxI32				mGravityIntegratedCount;		PxU8 mPad8[60];
 		};
 
 		class SolverBodyVelDataPool : public PxArray<PxTGSSolverBodyVel, PxAlignedAllocator<128, PxReflectionAllocator<PxTGSSolverBodyVel> > >
@@ -207,9 +189,9 @@ protected:
 				PxsContactManagerOutputIterator& outputs, Dy::ThreadContext& islandThreadContext, Dy::ThreadContext& threadContext, PxReal stepDt, PxReal totalDt, 
 				PxReal invStepDt, PxReal rigidContactBiasCoefficient, PxReal jointBiasCoefficient);
 
-			void writebackConstraintsIteration(const PxConstraintBatchHeader* const hdrs, const PxSolverConstraintDesc* const contactDescPtr, PxU32 nbHeaders, SolverContext& cache);
+			void writebackConstraintsIteration(const PxConstraintBatchHeader* const hdrs, const PxSolverConstraintDesc* const contactDescPtr, PxU32 nbHeaders);
 
-			void parallelWritebackConstraintsIteration(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders, SolverContext& cache);
+			void parallelWritebackConstraintsIteration(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders);
 
 			void applySubstepGravity(PxsRigidBody** bodies, PxsExternalAccelerationProvider& externalAccelerations,
 				PxU32 count, PxTGSSolverBodyVel* vels, PxReal dt, PxTGSSolverBodyTxInertia* PX_RESTRICT txInertias, PxU32* nodeIndexArray);
@@ -238,7 +220,7 @@ protected:
 			void applyArticulationTgsSubstepForces(Dy::ThreadContext& threadContext, PxU32 numArticulations, PxReal stepDt);
 
 			void iterativeSolveIsland(const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, ThreadContext& mThreadContext,
-				PxReal stepDt, PxReal invStepDt, PxReal totalDt, PxU32 posIters, PxU32 velIters, PxReal articulationBiasCoefficient, SolverContext& cache);
+				PxReal stepDt, PxReal invStepDt, PxReal totalDt, PxU32 posIters, PxU32 velIters, PxReal articulationBiasCoefficient);
 
 			void iterativeSolveIslandParallel(const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, ThreadContext& mThreadContext,
 				PxReal stepDt, PxReal totalDt, PxU32 posIters, PxU32 velIters, PxReal articulationBiasCoefficient,

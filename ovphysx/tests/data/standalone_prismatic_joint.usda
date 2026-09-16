@@ -1,0 +1,48 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "physicsScene"
+    {
+        float3 physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 0
+    }
+
+    def Cube "Anchor" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 1
+        float physics:density = 1000
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cube "Slider" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        double size = 1
+        float physics:density = 1000
+        double3 xformOp:translate = (0, 0, 2)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def PhysicsPrismaticJoint "Anchor_Slide" (
+        prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+    )
+    {
+        rel physics:body0 = </World/Anchor>
+        rel physics:body1 = </World/Slider>
+        uniform token physics:axis = "Z"
+        float physics:lowerLimit = -1
+        float physics:upperLimit = 1
+        float drive:linear:physics:damping = 1000
+        float drive:linear:physics:stiffness = 0
+    }
+}

@@ -1,14 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-#include "UsdPCH.h"
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PhysXDeformablePost.h"
 #include "PhysXDefines.h"
 #include "gpu/PxPhysicsGpu.h"
 #include "extensions/PxCudaHelpersExt.h"
 
-using namespace PXR_NS;
 using namespace carb;
 using namespace ::physx;
 using namespace physx::Ext;
@@ -90,6 +87,12 @@ DeformablePostSolveCallback::DeformablePostSolveCallback(CUstream stream, PxCuda
 
 void DeformablePostSolveCallback::synchronize()
 {
+    if (!mCudaContextManager || !mCudaContextManager->getCudaContext())
+    {
+        CARB_LOG_WARN_ONCE("DeformablePostSolveCallback::synchronize: CUDA context unavailable, skipping.");
+        return;
+    }
+
     mCudaContextManager->getCudaContext()->streamSynchronize(mSkinningStream);
 }
 

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-VEH-COMPONENTS-001
@@ -50,12 +50,23 @@ bool readNonNegFloat(IPhysicsSource& src, ObjectKey key, const char* attrName,
     return true;
 }
 
+// Reads a deprecated half-pi angle. `false` means the attribute HAS a value and that value
+// is out of range -- the one condition that invalidates the wheel. A read that yields no
+// value leaves `out` at its default and is NOT an error: the callers gate on
+// hasAuthoredAttribute, and a backend that answers resolved columns cannot narrow that
+// question (ADR-0020), so "gate says authored" does not imply "there is a value here".
+// Treating the missing value as fatal dropped the entire WheelDesc, which then failed the
+// wheel attachment's required-reference check and invalidated the whole vehicle -- an
+// unauthored deprecated attribute silently deleting the vehicle that does not use it.
+// `outPresent` reports whether a value was actually read, so the caller only emits the
+// deprecation warning when the user really did author one.
 bool readAngleHalfPi(IPhysicsSource& src, ObjectKey key, const char* attrName,
-                     std::string_view ownerName, float& out)
+                     std::string_view ownerName, float& out, bool& outPresent)
 {
+    outPresent = false;
     float v;
     if (!src.getAttribute(key, src.internToken(attrName), v))
-        return false;
+        return true;
     const float lower = static_cast<float>(-M_PI_2) + FLT_MIN;
     const float upper = static_cast<float>(M_PI_2);
     if (!(v >= lower) || !(v < upper))
@@ -65,6 +76,7 @@ bool readAngleHalfPi(IPhysicsSource& src, ObjectKey key, const char* attrName,
         return false;
     }
     out = v;
+    outPresent = true;
     return true;
 }
 
@@ -124,17 +136,21 @@ DescPtr<WheelDesc> parseWheel(ParseContext& ctx, ObjectKey key)
     }
     if (src.hasAuthoredAttribute(key, src.internToken("physxVehicleWheel:maxSteerAngle")))
     {
-        CARB_LOG_WARN("Usd Physics: wheel \"%s\": attribute \"maxSteerAngle\" is deprecated. "
-                      "Please use PhysxVehicleSteeringAPI instead.", ownerName.c_str());
-        if (!readAngleHalfPi(src, key, "physxVehicleWheel:maxSteerAngle", ownerName, desc->maxSteerAngle))
+        bool present = false;
+        if (!readAngleHalfPi(src, key, "physxVehicleWheel:maxSteerAngle", ownerName, desc->maxSteerAngle, present))
             return {};
+        if (present)
+            CARB_LOG_WARN("Usd Physics: wheel \"%s\": attribute \"maxSteerAngle\" is deprecated. "
+                          "Please use PhysxVehicleSteeringAPI instead.", ownerName.c_str());
     }
     if (src.hasAuthoredAttribute(key, src.internToken("physxVehicleWheel:toeAngle")))
     {
-        CARB_LOG_WARN("Usd Physics: wheel \"%s\": attribute \"toeAngle\" is deprecated. "
-                      "Please use PhysxVehicleSuspensionComplianceAPI instead.", ownerName.c_str());
-        if (!readAngleHalfPi(src, key, "physxVehicleWheel:toeAngle", ownerName, desc->toeAngle))
+        bool present = false;
+        if (!readAngleHalfPi(src, key, "physxVehicleWheel:toeAngle", ownerName, desc->toeAngle, present))
             return {};
+        if (present)
+            CARB_LOG_WARN("Usd Physics: wheel \"%s\": attribute \"toeAngle\" is deprecated. "
+                          "Please use PhysxVehicleSuspensionComplianceAPI instead.", ownerName.c_str());
     }
 
     return desc;

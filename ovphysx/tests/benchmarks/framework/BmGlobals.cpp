@@ -1,14 +1,25 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-CAPI-BENCHMARK-001
+ * @covers AC-4
+ */
 
 // Adapted from omni.physx/tests/test.benchmarks/framework/BmGlobals.cpp.
 //
 // The registry / glob-filter / accumulator logic is preserved verbatim so
 // future updates from omni.physx merge cleanly. The BmGlobals constructor
 // is rewritten because ovphysx does not bootstrap through a
-// carb::AppScoped + manual plugin list — it goes through ovphysx::PhysX
-// (which handles Carbonite startup, plugin loading and GPU foundation
-// creation internally).
+// carb::AppScoped plus a manual plugin list. It goes through ovphysx::PhysX,
+// which handles Carbonite startup, plugin loading and GPU foundation
+// creation internally.
+//
+// Two things here matter for AC-4. The rewritten constructor can leave
+// getPhysX() null without throwing, which is the bootstrap failure the
+// harness has to turn into "no row runs, nothing is published, exit nonzero".
+// And bmGetDefaultResult() reduces an empty sample vector to avgTime 0, which
+// is the zero-valued record an unexecuted row must never publish.
 
 #include "BmGlobals.h"
 
@@ -28,6 +39,7 @@ namespace
 BmRegistrable** sRegistry = 0;
 uint32_t sSize = 0;
 uint32_t sCapacity = 0;
+
 } // namespace
 
 
@@ -112,15 +124,17 @@ void bmGetRegister(std::vector<BmRegistrable*>& a, const char* filterString, boo
 
 
 // ---------------------------------------------------------------------------
-// BmGlobals: ovphysx-flavored. Creates a single PhysX instance (CPU or GPU
-// depending on forceGpu). The unused omni.physx-specific parameters are
-// accepted but ignored to keep the constructor signature interchangeable.
+// BmGlobals, ovphysx version. Creates a single PhysX instance. Each fixture
+// selects CPU or GPU and forceGpu gates the matching benchmark pass. The
+// unused omni.physx-specific parameters are accepted but ignored to keep the
+// constructor signature interchangeable.
 // ---------------------------------------------------------------------------
 
 BmGlobals::BmGlobals(bool sanityCheck,
                      const char* dataFolder,
                      int32_t numThreads,
                      bool forceGpu,
+                     bool directGpu,
                      bool profile,
                      bool /*enableTracy*/,
                      const char** /*kitArguments*/,
@@ -128,6 +142,7 @@ BmGlobals::BmGlobals(bool sanityCheck,
     : mSanityCheck(sanityCheck),
       mNumThreads(numThreads),
       mForceGpu(forceGpu),
+      mDirectGpu(directGpu),
       mProfile(profile),
       mLifecycleInitialized(false),
       mCurrentTestName(""),
@@ -139,23 +154,50 @@ BmGlobals::BmGlobals(bool sanityCheck,
     mThis = this;
 
     ovphysx::CreateArgs args;
-    // Device (CPU vs GPU) is resolved per-stage during ovstage ingest from
-    // physxScene:enableGPUDynamics, not as a create-arg. The forceGpu() gate
-    // on each benchmark ensures only stages matching the current pass's
+    if (mDirectGpu)
+    {
+        args.setActiveCudaGpus("0");
+        if (mNumThreads < 0)
+        {
+            mNumThreads = 8;
+        }
+    }
+    // Device (CPU vs GPU) is resolved per stage during ovstage ingest from
+    // physxScene:enableGPUDynamics, not as a create argument. The forceGpu()
+    // gate on each benchmark ensures only stages matching the current pass's
     // device are loaded.
 
     // --threads=N on the CLI sets the Carbonite /physics/numThreads setting
-    // BEFORE PhysX bootstrap, so the dispatcher comes up with N workers
-    // (1 = single-threaded baseline; 0 = auto). N == -1 means "do not
-    // override" — leave the default in place. The PhysicsScene's USD attrs
-    // don't carry a thread-count knob; this is the only correct route.
-    // The entries array must outlive PhysX::create — make it a static/stack
-    // local that survives the call.
-    ovphysx_config_entry_t numThreadsEntry{};
-    if (numThreads >= 0)
+    // before PhysX bootstrap, so the dispatcher comes up with N workers
+    // (1 is the single-threaded baseline, 0 is auto). DirectGPU defaults to the
+    // eight workers used by IsaacLab unless the CLI overrides it. Otherwise,
+    // N == -1 leaves the runtime default in place. The PhysicsScene USD
+    // attributes carry no thread count, so this is the only route.
+    // The entries array must outlive PhysX::create.
+    ovphysx_config_entry_t configEntries[7]{};
+    uint32_t configEntryCount = 0;
+    if (mNumThreads >= 0)
     {
-        numThreadsEntry = ovphysx_config_entry_num_threads(numThreads);
-        args.setConfigEntries(&numThreadsEntry, 1);
+        configEntries[configEntryCount++] = ovphysx_config_entry_num_threads(mNumThreads);
+    }
+    if (mDirectGpu)
+    {
+        configEntries[configEntryCount++] = ovphysx_config_entry_carbonite(
+            OVPHYSX_LITERAL("/physics/physxDispatcher"), OVPHYSX_LITERAL("true"));
+        configEntries[configEntryCount++] = ovphysx_config_entry_carbonite(
+            OVPHYSX_LITERAL("/physics/suppressReadback"), OVPHYSX_LITERAL("true"));
+        configEntries[configEntryCount++] = ovphysx_config_entry_carbonite(
+            OVPHYSX_LITERAL("/physics/suppressFabricUpdate"), OVPHYSX_LITERAL("true"));
+        configEntries[configEntryCount++] = ovphysx_config_entry_carbonite(
+            OVPHYSX_LITERAL("/physics/updateToUsd"), OVPHYSX_LITERAL("false"));
+        configEntries[configEntryCount++] = ovphysx_config_entry_carbonite(
+            OVPHYSX_LITERAL("/physics/updateVelocitiesToUsd"), OVPHYSX_LITERAL("false"));
+        configEntries[configEntryCount++] = ovphysx_config_entry_carbonite(
+            OVPHYSX_LITERAL("/physics/updateParticlesToUsd"), OVPHYSX_LITERAL("false"));
+    }
+    if (configEntryCount > 0)
+    {
+        args.setConfigEntries(configEntries, configEntryCount);
     }
 
     ovphysx_result_t initResult = ovphysx_initialize();
@@ -178,16 +220,16 @@ BmGlobals::BmGlobals(bool sanityCheck,
         return;
     }
 
-    // Acquire carb framework + IFileSystem now that ovphysx::PhysX::create
+    // Acquire the carb framework and IFileSystem now that ovphysx::PhysX::create
     // has performed Carbonite bootstrap. BmOutput.cpp uses these to write
     // its report and baseline files.
     //
     // carb::getFramework() reads a module-local pointer. ovphysx initialized
-    // its own (inside libovphysx.so) but ours -- in the benchmark binary --
-    // is still null at this point. We use carb::acquireFramework() (rather
-    // than acquireFrameworkAndRegisterBuiltins) so we only set the local
-    // pointer without registering atexit handlers that would conflict with
-    // ovphysx's own teardown on process exit.
+    // its own inside libovphysx.so, but the one in the benchmark binary is
+    // still null at this point. carb::acquireFramework() rather than
+    // acquireFrameworkAndRegisterBuiltins only sets the local pointer, without
+    // registering atexit handlers that would conflict with ovphysx's own
+    // teardown on process exit.
     mFramework = carb::getFramework();
     if (!mFramework)
     {
@@ -195,6 +237,7 @@ BmGlobals::BmGlobals(bool sanityCheck,
         if (mFramework)
         {
             g_carbFramework = mFramework;
+            mOwnsCarbFramework = true;
         }
     }
     if (mFramework)
@@ -205,17 +248,29 @@ BmGlobals::BmGlobals(bool sanityCheck,
 
 BmGlobals::~BmGlobals()
 {
-    // Clear our local framework / IFileSystem references (they belong to
-    // ovphysx; we just observed them) before destroying the PhysX runtime.
+    // mFramework / mFileSystem are borrowed. ovphysx owns them, so dropping the
+    // copies here is free.
     mFileSystem = nullptr;
     mFramework = nullptr;
-    g_carbFramework = nullptr;
+
+    // g_carbFramework is not borrowed. CARB_GLOBALS gives this binary its own module-local
+    // pointer, and every CARB_LOG_* and carb::getFramework() in the process reads it. Both
+    // steps below log on their way down, so it has to outlive them. Clearing it first
+    // faults the teardown after the report file is already written and closed.
     delete mPhysX;
     mPhysX = nullptr;
     if (mLifecycleInitialized)
     {
         ovphysx_shutdown();
         mLifecycleInitialized = false;
+    }
+
+    // Only cleared when this object set it. When carb::getFramework() already had a
+    // pointer, clearing it would strand a framework another module still owns.
+    if (mOwnsCarbFramework)
+    {
+        g_carbFramework = nullptr;
+        mOwnsCarbFramework = false;
     }
 }
 
@@ -225,10 +280,10 @@ std::string BmGlobals::getDataFolder() const
         return mDataFolder;
     if (mFileSystem)
     {
-        // Match the omni.physx fallback: relative to the executable's directory.
-        // Note that the actual base path differs because ovphysx and omni.physx
-        // tree layouts are different; the --data CLI flag is the preferred way
-        // to point at fixtures and is what scripts/test_benchmarks_cpp.cmake uses.
+        // Matches the omni.physx fallback, relative to the executable's directory.
+        // The resolved base path differs because the ovphysx and omni.physx tree
+        // layouts differ. The --data CLI flag is the preferred way to point at
+        // fixtures and is what scripts/test_benchmarks_cpp.cmake uses.
         return std::string(mFileSystem->getAppDirectoryPath()) + "/../../../tests/data";
     }
     return "tests/data";
@@ -244,20 +299,33 @@ void bmCreateGlobals(bool sanityCheck,
                      const char* dataFolder,
                      int32_t numThreads,
                      bool forceGpu,
+                     bool directGpu,
                      bool profile,
                      bool enableTracy,
                      const char** kitArguments,
                      uint32_t kitArgumentCount)
 {
-    new BmGlobals(sanityCheck, dataFolder, numThreads, forceGpu, profile, enableTracy,
+    new BmGlobals(sanityCheck, dataFolder, numThreads, forceGpu, directGpu, profile, enableTracy,
         kitArguments, kitArgumentCount);
 }
 
+void BmGlobals::destroyInstance()
+{
+    if (!mThis)
+    {
+        return;
+    }
+    mThis->release();
+
+    delete mThis;
+    // getInstance() past this point is a null deref, not a use-after-free.
+    mThis = nullptr;
+}
+
+
 void bmDestroyGlobals()
 {
-    BmGlobals::getInstance().release();
-
-    delete &BmGlobals::getInstance();
+    BmGlobals::destroyInstance();
 }
 
 BmGlobals* BmGlobals::mThis;

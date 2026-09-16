@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "DyDynamics.h"
 
@@ -480,7 +457,7 @@ public:
 
 class PxsForceThresholdTask  : public Cm::Task
 {
-	DynamicsContext&		mDynamicsContext;
+	DynamicsContext&	mDynamicsContext;
 
 	PxsForceThresholdTask& operator=(const PxsForceThresholdTask&);
 public:
@@ -1699,7 +1676,7 @@ class UpdateContinuationTask : public Cm::Task
 	DynamicsContext& mContext;
 	IG::SimpleIslandManager& mSimpleIslandManager;
 	PxBaseTask* mLostTouchTask;
-	PxU32 mMaxArticulationLinks;
+	const PxU32 mMaxArticulationLinks;
 
 	PX_NOCOPY(UpdateContinuationTask)
 public:
@@ -1751,9 +1728,9 @@ public:
 		{
 			PxsRigidBody* rigidBody = getRigidBodyFromIG(mIslandSim, mKinematicIndices[i]);
 			const PxsBodyCore& core = rigidBody->getCore();
-			copyToSolverBodyData(core.linearVelocity, core.angularVelocity, core.inverseMass, core.inverseInertia, core.body2World, core.maxPenBias,
-				core.maxContactImpulse, mKinematicIndices[i].index(), core.contactReportThreshold, mBodyData[i + 1], core.lockFlags, 0.f,
-				core.mFlags & PxRigidBodyFlag::eENABLE_GYROSCOPIC_FORCES);
+			copyToSolverBodyData(	core.linearVelocity, core.angularVelocity, core.inverseMass, core.inverseInertia, core.body2World, core.maxPenBias,
+									core.maxContactImpulse, mKinematicIndices[i].index(), core.contactReportThreshold, mBodyData[i + 1], core.lockFlags, 0.f,
+									core.mFlags & PxRigidBodyFlag::eENABLE_GYROSCOPIC_FORCES);
 			rigidBody->saveLastCCDTransform();
 		}
 	}
@@ -1899,7 +1876,7 @@ void DynamicsContext::updatePostKinematic(IG::SimpleIslandManager& simpleIslandM
 		objectStarts.bodyRemapTable				= mSolverBodyRemapTable.begin();
 		objectStarts.nodeIndexArray				= mNodeIndexArray.begin() + currentBodyIndex;
 
-		PxU32 startIsland = currentIsland;
+		const PxU32 startIsland = currentIsland;
 		PxU32 constraintCount = 0;
 
 		PxU32 nbArticulations = 0;
@@ -2164,15 +2141,13 @@ static PxU32 createFinalizeContacts_Parallel(PxSolverBodyData* solverBodyData, T
 	ThreadContext* threadContextLocal = context.getThreadContext();
 	threadContextLocal->mConstraintBlockStream.reset(); //ensure there's no left-over memory that belonged to another island
 
-	threadContextLocal->mZVector.forceSize_Unsafe(0);
-	threadContextLocal->mZVector.reserve(threadContext.mMaxArticulationLinks);
-	threadContextLocal->mZVector.forceSize_Unsafe(threadContext.mMaxArticulationLinks);
+	//threadContextLocal->mZVector.forceSize_Unsafe(0);
+	//threadContextLocal->mZVector.reserve(threadContext.mMaxArticulationLinks);
+	//threadContextLocal->mZVector.forceSize_Unsafe(threadContext.mMaxArticulationLinks);
 
 	//threadContextLocal->mDeltaV.forceSize_Unsafe(0);
 	//threadContextLocal->mDeltaV.reserve(threadContext.mMaxArticulationLinks);
 	//threadContextLocal->mDeltaV.forceSize_Unsafe(threadContext.mMaxArticulationLinks);
-
-	Cm::SpatialVectorF* Z = threadContextLocal->mZVector.begin();
 
 	const PxTransform idt(PxIdentity);
 
@@ -2279,9 +2254,9 @@ static PxU32 createFinalizeContacts_Parallel(PxSolverBodyData* solverBodyData, T
 
 					createFinalizeSolverContacts(blockDescs[i], output, *threadContextLocal,
 						invDt, dt, bounceThreshold, frictionOffsetThreshold, correlationDist, rigidContactBiasCoefficient,
-						blockAllocator, Z);
+						blockAllocator);
 			
-					getContactManagerConstraintDesc(output,*cm,desc);
+					getContactManagerConstraintDesc(output, *cm, desc);
 				}
 			}
 
@@ -2451,9 +2426,9 @@ public:
 		ThreadContext* threadContext = mDynamicsContext.getThreadContext();
 		threadContext->mConstraintBlockStream.reset(); //ensure there's no left-over memory that belonged to another island
 
-		threadContext->mZVector.forceSize_Unsafe(0);
-		threadContext->mZVector.reserve(mThreadContext.mMaxArticulationLinks);
-		threadContext->mZVector.forceSize_Unsafe(mThreadContext.mMaxArticulationLinks);
+		//threadContext->mZVector.forceSize_Unsafe(0);
+		//threadContext->mZVector.reserve(mThreadContext.mMaxArticulationLinks);
+		//threadContext->mZVector.forceSize_Unsafe(mThreadContext.mMaxArticulationLinks);
 
 		for (PxU32 i = 0; i < mNbArticulations; ++i)
 		{

@@ -1,13 +1,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 import os
 
 from pxr import Plug
 
-pluginsRoot = os.path.join(os.path.dirname(__file__), '../../../plugins')
+pluginsRoot = os.path.join(os.path.dirname(__file__), "../../../plugins")
 
-physxSchemaPath = pluginsRoot + '/PhysxSchema/resources'
+physxSchemaPath = pluginsRoot + "/PhysxSchema/resources"
 Plug.Registry().RegisterPlugins(physxSchemaPath)
 
 physxSchemaAdditionPath = pluginsRoot + "/PhysxSchemaAddition/resources"

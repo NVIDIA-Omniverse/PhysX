@@ -1,10 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-CAPI-OVSTAGE-SCHEMA-001
+ * @covers AC-1 AC-2 AC-3
+ */
 
 #include <gtest/gtest.h>
 
 #include "ovphysx/ovphysx.h"
-#include "ovphysxTestHelpers.h"
 
 #include <cstdlib>
 #include <filesystem>
@@ -15,7 +19,7 @@
 
 namespace {
 
-constexpr const char* kPluginPathEnv = "OV_PXR_PLUGINPATH_2511";
+constexpr const char* kNamespacedPluginPathEnv = "OV_PXR_PLUGINPATH_2511";
 constexpr const char* kClassicPluginPathEnv = "PXR_PLUGINPATH_NAME";
 
 void setEnv(const char* name, const std::string& value)
@@ -42,84 +46,69 @@ std::string getEnvString(const char* name)
     return value ? value : "";
 }
 
-std::vector<std::string> splitPaths(const std::string& value)
+std::string toString(const ovphysx_string_t& value)
 {
-    std::vector<std::string> paths;
-    size_t start = 0;
-    while (start <= value.size())
-    {
-        size_t end = value.find(
-#ifdef _WIN32
-            ';',
-#else
-            ':',
-#endif
-            start);
-        if (end == std::string::npos)
-        {
-            end = value.size();
-        }
-        if (end > start)
-        {
-            paths.push_back(value.substr(start, end - start));
-        }
-        if (end == value.size())
-        {
-            break;
-        }
-        start = end + 1;
-    }
-    return paths;
+    return std::string(value.ptr ? value.ptr : "", value.ptr ? value.length : 0);
 }
 
+void writeEmptyFile(const std::filesystem::path& path)
+{
+    std::filesystem::create_directories(path.parent_path());
+    std::ofstream(path.string()).put('\0');
+}
+
+// <root>/lib/libovphysx.so next to <root>/schemas/physx/plugInfo.json: the SDK
+// and wheel layout.
 std::filesystem::path makeFakeSdk(const std::filesystem::path& base)
 {
     const std::filesystem::path root = base / "sdk";
-    std::filesystem::create_directories(root / "lib");
-    std::filesystem::create_directories(root / "plugins" / "usd");
 #ifdef _WIN32
     const std::filesystem::path libPath = root / "lib" / "ovphysx.dll";
 #else
     const std::filesystem::path libPath = root / "lib" / "libovphysx.so";
 #endif
-    std::ofstream(libPath.string()).put('\0');
+    writeEmptyFile(libPath);
+    writeEmptyFile(root / "schemas" / "physx" / "plugInfo.json");
     return libPath;
 }
 
+// <app>/libovphysx.so next to <app>/schemas/physx/plugInfo.json: a runtime copied
+// beside an application. An unrelated but complete schemas/physx registry one
+// level above the application must not win.
 std::filesystem::path makeFakeCopiedRuntime(const std::filesystem::path& base)
 {
     const std::filesystem::path root = base / "app";
-    std::filesystem::create_directories(base / "plugins");
-    std::filesystem::create_directories(root / "plugins" / "usd");
+    writeEmptyFile(base / "schemas" / "physx" / "plugInfo.json");
 #ifdef _WIN32
     const std::filesystem::path libPath = root / "ovphysx.dll";
 #else
     const std::filesystem::path libPath = root / "libovphysx.so";
 #endif
-    std::ofstream(libPath.string()).put('\0');
+    writeEmptyFile(libPath);
+    writeEmptyFile(root / "schemas" / "physx" / "plugInfo.json");
     return libPath;
 }
 
+// Restores OVPHYSX_LIB and the USD plugin-path variables after each test, so a
+// fake layout never leaks into the tests that run against the installed SDK.
 class ScopedSchemaPathEnv
 {
 public:
     ScopedSchemaPathEnv()
         : m_ovphysxLib(getEnvString("OVPHYSX_LIB"))
-        , m_pluginPath(getEnvString(kPluginPathEnv))
+        , m_namespacedPluginPath(getEnvString(kNamespacedPluginPathEnv))
         , m_classicPluginPath(getEnvString(kClassicPluginPathEnv))
         , m_hadOvphysxLib(std::getenv("OVPHYSX_LIB") != nullptr)
-        , m_hadPluginPath(std::getenv(kPluginPathEnv) != nullptr)
+        , m_hadNamespacedPluginPath(std::getenv(kNamespacedPluginPathEnv) != nullptr)
         , m_hadClassicPluginPath(std::getenv(kClassicPluginPathEnv) != nullptr)
     {
-        ovphysx_reset_schema_path_registration_internal();
     }
 
     ~ScopedSchemaPathEnv()
     {
         restore("OVPHYSX_LIB", m_hadOvphysxLib, m_ovphysxLib);
-        restore(kPluginPathEnv, m_hadPluginPath, m_pluginPath);
+        restore(kNamespacedPluginPathEnv, m_hadNamespacedPluginPath, m_namespacedPluginPath);
         restore(kClassicPluginPathEnv, m_hadClassicPluginPath, m_classicPluginPath);
-        ovphysx_reset_schema_path_registration_internal();
     }
 
 private:
@@ -136,113 +125,138 @@ private:
     }
 
     std::string m_ovphysxLib;
-    std::string m_pluginPath;
+    std::string m_namespacedPluginPath;
     std::string m_classicPluginPath;
     bool m_hadOvphysxLib;
-    bool m_hadPluginPath;
+    bool m_hadNamespacedPluginPath;
     bool m_hadClassicPluginPath;
 };
 
 } // namespace
 
-TEST(SchemaPaths, RegisterSchemaPathsAppendsOvphysxRoot)
+TEST(SchemaPaths, InstalledSdkShipsCodelessSchemaRoot)
 {
-    ScopedSchemaPathEnv env;
-    const std::filesystem::path libPath = makeFakeSdk(std::filesystem::temp_directory_path() / "ovphysx_schema_paths_append");
-    const std::filesystem::path usdPluginPath = libPath.parent_path().parent_path() / "plugins" / "usd";
+    // Against the real installed SDK the tests run from: the root exists, holds
+    // the include registry, and holds the shipped PhysX schema modules.
+    ovphysx_string_t root{};
+    const ovphysx_result_t result = ovphysx_get_codeless_schema_root(&root);
+    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS) << toString(ovphysx_get_last_error());
+    ASSERT_NE(root.ptr, nullptr);
+    ASSERT_GT(root.length, 0u);
+    EXPECT_EQ(root.ptr[root.length], '\0');
 
-    setEnv("OVPHYSX_LIB", libPath.string());
-    unsetEnv(kPluginPathEnv);
-    unsetEnv(kClassicPluginPathEnv);
-
-    ovphysx_result_t result = ovphysx_register_schema_paths();
-
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(getEnvString(kClassicPluginPathEnv), "");
-    EXPECT_EQ(splitPaths(getEnvString(kPluginPathEnv)), std::vector<std::string>{ std::filesystem::weakly_canonical(usdPluginPath).string() });
+    const std::filesystem::path rootPath(toString(root));
+    EXPECT_TRUE(std::filesystem::is_regular_file(rootPath / "plugInfo.json"));
+    EXPECT_TRUE(std::filesystem::is_regular_file(rootPath / "PhysxSchema" / "resources" / "plugInfo.json"));
+    EXPECT_TRUE(std::filesystem::is_regular_file(rootPath / "PhysxSchema" / "resources" / "generatedSchema.usda"));
+    EXPECT_TRUE(std::filesystem::is_regular_file(
+        rootPath / "OmniUsdPhysicsDeformableSchema" / "resources" / "plugInfo.json"));
 }
 
-TEST(SchemaPaths, RegisterSchemaPathsPreservesExistingPathsAndDedupes)
+TEST(SchemaPaths, QueryDoesNotTouchUsdEnvironment)
 {
+    // ovphysx tells the application where the schemas are and never registers
+    // them, so neither USD plugin-path variable may change.
     ScopedSchemaPathEnv env;
-    const std::filesystem::path base = std::filesystem::temp_directory_path() / "ovphysx_schema_paths_dedupe";
-    const std::filesystem::path libPath = makeFakeSdk(base);
-    const std::filesystem::path usdPluginPath = std::filesystem::weakly_canonical(libPath.parent_path().parent_path() / "plugins" / "usd");
-    const std::filesystem::path sentinel = base / "ovrtx_usd_plugins";
-    std::filesystem::create_directories(sentinel);
+    setEnv(kNamespacedPluginPathEnv, "sentinel-namespaced");
+    setEnv(kClassicPluginPathEnv, "sentinel-classic");
 
-    setEnv("OVPHYSX_LIB", libPath.string());
-    setEnv(kPluginPathEnv, sentinel.string());
+    ovphysx_string_t root{};
+    ASSERT_EQ(ovphysx_get_codeless_schema_root(&root).status, OVPHYSX_API_SUCCESS)
+        << toString(ovphysx_get_last_error());
 
-    ASSERT_EQ(ovphysx_register_schema_paths().status, OVPHYSX_API_SUCCESS);
-    ovphysx_reset_schema_path_registration_internal();
-    ASSERT_EQ(ovphysx_register_schema_paths().status, OVPHYSX_API_SUCCESS);
-
-    std::vector<std::string> paths = splitPaths(getEnvString(kPluginPathEnv));
-    ASSERT_EQ(paths.size(), 2u);
-    EXPECT_EQ(paths[0], sentinel.string());
-    EXPECT_EQ(paths[1], usdPluginPath.string());
+    EXPECT_EQ(getEnvString(kNamespacedPluginPathEnv), "sentinel-namespaced");
+    EXPECT_EQ(getEnvString(kClassicPluginPathEnv), "sentinel-classic");
 }
 
-TEST(SchemaPaths, RegisterSchemaPathsSupportsCopiedRuntimeLayout)
+TEST(SchemaPaths, ResolvesSdkLayoutFromOvphysxLib)
 {
     ScopedSchemaPathEnv env;
     const std::filesystem::path libPath =
-        makeFakeCopiedRuntime(std::filesystem::temp_directory_path() / "ovphysx_schema_paths_copied_runtime");
-    const std::filesystem::path usdPluginPath =
-        std::filesystem::weakly_canonical(libPath.parent_path() / "plugins" / "usd");
+        makeFakeSdk(std::filesystem::temp_directory_path() / "ovphysx_schema_paths_sdk");
+    const std::filesystem::path expected =
+        std::filesystem::weakly_canonical(libPath.parent_path().parent_path() / "schemas" / "physx");
 
     setEnv("OVPHYSX_LIB", libPath.string());
-    unsetEnv(kPluginPathEnv);
 
-    ovphysx_result_t result = ovphysx_register_schema_paths();
-
-    ovphysx_string_t error = ovphysx_get_last_error();
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS)
-        << std::string(error.ptr ? error.ptr : "", error.ptr ? error.length : 0);
-    EXPECT_EQ(splitPaths(getEnvString(kPluginPathEnv)), std::vector<std::string>{ usdPluginPath.string() });
+    ovphysx_string_t root{};
+    ASSERT_EQ(ovphysx_get_codeless_schema_root(&root).status, OVPHYSX_API_SUCCESS)
+        << toString(ovphysx_get_last_error());
+    EXPECT_EQ(toString(root), expected.string());
+    EXPECT_EQ(ovphysx_get_last_error().length, 0u);
 }
 
-TEST(SchemaPaths, RegisterSchemaPathsFailureDoesNotMutateEnvAndCanRetry)
+TEST(SchemaPaths, ResolvesCopiedRuntimeLayout)
 {
     ScopedSchemaPathEnv env;
-    const std::filesystem::path base = std::filesystem::temp_directory_path() / "ovphysx_schema_paths_retry";
+    const std::filesystem::path libPath =
+        makeFakeCopiedRuntime(std::filesystem::temp_directory_path() / "ovphysx_schema_paths_copied");
+    const std::filesystem::path expected =
+        std::filesystem::weakly_canonical(libPath.parent_path() / "schemas" / "physx");
+
+    setEnv("OVPHYSX_LIB", libPath.string());
+
+    ovphysx_string_t root{};
+    ASSERT_EQ(ovphysx_get_codeless_schema_root(&root).status, OVPHYSX_API_SUCCESS)
+        << toString(ovphysx_get_last_error());
+    EXPECT_EQ(toString(root), expected.string());
+}
+
+TEST(SchemaPaths, MissingSchemasFailWithActionableErrorAndRetry)
+{
+    ScopedSchemaPathEnv env;
+    const std::filesystem::path base = std::filesystem::temp_directory_path() / "ovphysx_schema_paths_missing";
+#ifdef _WIN32
+    const std::filesystem::path badLib = base / "bad" / "lib" / "ovphysx.dll";
+#else
     const std::filesystem::path badLib = base / "bad" / "lib" / "libovphysx.so";
-    std::filesystem::create_directories(badLib.parent_path());
-    std::ofstream(badLib.string()).put('\0');
-
+#endif
+    writeEmptyFile(badLib);
     setEnv("OVPHYSX_LIB", badLib.string());
-    setEnv(kPluginPathEnv, "sentinel");
 
-    ovphysx_result_t failed = ovphysx_register_schema_paths();
+    ovphysx_string_t root{ "stale", 5 };
+    const ovphysx_result_t failed = ovphysx_get_codeless_schema_root(&root);
     ASSERT_EQ(failed.status, OVPHYSX_API_ERROR);
-    EXPECT_EQ(getEnvString(kPluginPathEnv), "sentinel");
-    ovphysx_string_t error = ovphysx_get_last_error();
-    EXPECT_GT(error.length, 0u);
+    ASSERT_NE(root.ptr, nullptr);
+    EXPECT_EQ(root.length, 0u);
+    const std::string error = toString(ovphysx_get_last_error());
+    EXPECT_NE(error.find("schemas/physx/plugInfo.json"), std::string::npos) << error;
+    EXPECT_NE(error.find("OVPHYSX_LIB"), std::string::npos) << error;
 
+    // Nothing is memoized: pointing at a complete layout succeeds on the next call.
     const std::filesystem::path goodLib = makeFakeSdk(base / "good");
     setEnv("OVPHYSX_LIB", goodLib.string());
-
-    ovphysx_result_t retried = ovphysx_register_schema_paths();
-    ASSERT_EQ(retried.status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_get_codeless_schema_root(&root).status, OVPHYSX_API_SUCCESS)
+        << toString(ovphysx_get_last_error());
+    EXPECT_GT(root.length, 0u);
     EXPECT_EQ(ovphysx_get_last_error().length, 0u);
-    EXPECT_EQ(splitPaths(getEnvString(kPluginPathEnv)).size(), 2u);
 }
 
-TEST(SchemaPaths, RegisterSchemaPathsConcurrentCallsDeduped)
+TEST(SchemaPaths, NullOutputIsRejected)
+{
+    const ovphysx_result_t result = ovphysx_get_codeless_schema_root(nullptr);
+    EXPECT_EQ(result.status, OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_GT(ovphysx_get_last_error().length, 0u);
+}
+
+TEST(SchemaPaths, ConcurrentQueriesReturnTheSameRoot)
 {
     ScopedSchemaPathEnv env;
-    const std::filesystem::path libPath = makeFakeSdk(std::filesystem::temp_directory_path() / "ovphysx_schema_paths_concurrent");
-
+    const std::filesystem::path libPath =
+        makeFakeSdk(std::filesystem::temp_directory_path() / "ovphysx_schema_paths_concurrent");
+    const std::filesystem::path expected =
+        std::filesystem::weakly_canonical(libPath.parent_path().parent_path() / "schemas" / "physx");
     setEnv("OVPHYSX_LIB", libPath.string());
-    unsetEnv(kPluginPathEnv);
 
+    std::vector<std::string> roots(8);
     std::vector<ovphysx_api_status_t> statuses(8, OVPHYSX_API_ERROR);
     std::vector<std::thread> threads;
     for (size_t i = 0; i < statuses.size(); ++i)
     {
-        threads.emplace_back([&statuses, i]() {
-            statuses[i] = ovphysx_register_schema_paths().status;
+        threads.emplace_back([&roots, &statuses, i]() {
+            ovphysx_string_t root{};
+            statuses[i] = ovphysx_get_codeless_schema_root(&root).status;
+            roots[i] = toString(root);
         });
     }
     for (std::thread& thread : threads)
@@ -250,9 +264,9 @@ TEST(SchemaPaths, RegisterSchemaPathsConcurrentCallsDeduped)
         thread.join();
     }
 
-    for (ovphysx_api_status_t status : statuses)
+    for (size_t i = 0; i < statuses.size(); ++i)
     {
-        EXPECT_EQ(status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(statuses[i], OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(roots[i], expected.string());
     }
-    EXPECT_EQ(splitPaths(getEnvString(kPluginPathEnv)).size(), 1u);
 }

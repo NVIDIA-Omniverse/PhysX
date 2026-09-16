@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PxgFEMCloth.h"
 #include "vector_types.h"
@@ -63,7 +40,7 @@ extern "C" __global__ void cloth_rigidContactPrepareLaunch(
 	PxgDbRigidContactBlock*			contactBlocks,
 	PxgPrePrepDesc*					preDesc,
 	PxgConstraintPrepareDesc*		prepareDesc,
-	PxReal* 						rigidLambdaNs, 
+	float2* 						rigidLambdaNs,
 	const PxReal					invDt,
 	PxgSolverSharedDescBase*		sharedDesc,
 	bool							isTGS
@@ -83,7 +60,7 @@ extern "C" __global__ void cloth_rigidContactPrepareLaunch(
 		if(workIndex >= tNumContacts)
 			return;
 
-		rigidLambdaNs[workIndex] = 0.0f;
+		rigidLambdaNs[workIndex] = make_float2(0.f, 0.f);
 
 		PxgFemOtherContactInfo contactInfo = contactInfos[workIndex];
 		PxgDbRigidContactBlock& block = contactBlocks[workIndex / 32];
@@ -326,7 +303,9 @@ extern "C" __global__ void cloth_particleContactPrepareLaunch(
 
 		PxVec3 delta(delta1.x - deltaP_invMass.x, delta1.y - deltaP_invMass.y, delta1.z - deltaP_invMass.z);
 
-		const PxReal pen = normal_pen.w + normal.dot(delta) - cloth.mRestDistance;
+		// Computation of rest distance as the SS/SC contact prep functions do. The narrowphase writes a raw distance.
+		const PxReal restDistance = particleSystem.mData.mRestOffset + cloth.mRestOffset;
+		const PxReal pen = normal_pen.w + normal.dot(delta) - restDistance;
 
 		block.normal_pen[threadIndexInWarp] = make_float4(normal.x, normal.y, normal.z, pen);
 		block.barycentric[threadIndexInWarp] = barycentric;

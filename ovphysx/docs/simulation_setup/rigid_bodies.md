@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Rigid Bodies
 
@@ -12,6 +12,14 @@ of its descendants move as one rigid object.
 This page covers authoring rigid bodies for scenes that ovphysx loads and how
 their state is read and written at runtime. It builds on
 [Physics Scene](physics_scene.md) and [Colliders](collision.md).
+
+The code examples on this page are fragments, not complete files. Each USDA
+example shows a prim to add inside the stage's `defaultPrim` hierarchy. Each
+Python example extends a script that already created a `stage` and registered the
+codeless PhysX schemas, as shown in
+[Setting Up a USD Stage and a Physics Scene](physics_scene.md#setting-up-a-usd-stage-and-a-physics-scene);
+before using a fragment that refers to `prim`, `body`, `body_prim`, `scene_prim`,
+or `material_prim`, define that prim in the surrounding script.
 
 > `resetXformStack` on a rigid body prim decouples its transform from its parent.
 > This is what makes it valid to nest a rigid body inside another prim's
@@ -34,10 +42,11 @@ xform = UsdGeom.Xform.Define(stage, "/World/rigidBody")
 UsdPhysics.RigidBodyAPI.Apply(xform.GetPrim())
 ```
 
-On its own, a rigid body has no collider and will fall through everything. Add a
-collider (below) so it interacts.
+On its own, a rigid body has no collider and falls through everything. Add a
+collider, as described in [Colliders on a Rigid Body](#colliders-on-a-rigid-body),
+so it interacts.
 
-## Dynamic vs Kinematic
+## Dynamic Compared to Kinematic
 
 - **Dynamic** (default): the simulator moves the body under gravity,
   collisions, and constraints. The simulation **writes** its transform.
@@ -49,16 +58,20 @@ rb = UsdPhysics.RigidBodyAPI.Apply(prim)
 rb.CreateKinematicEnabledAttr(True)   # kinematic; omit or False for dynamic
 ```
 
-At runtime you drive a kinematic body's target pose through
-[tensor bindings](../tutorials/tensor_bindings.md) or, in C/C++, through the raw
-PhysX pointer (`PxRigidDynamic::setKinematicTarget()`) — refer to the
+At runtime, drive a kinematic body through an ovstage world-transform control
+edit or, in C/C++, through the raw PhysX pointer
+(`PxRigidDynamic::setKinematicTarget()`). The runtime converts an ovstage
+transform change on a kinematic body into a PhysX target. Do not use a legacy
+`RIGID_BODY_POSE` tensor write for contact-driving motion: it teleports the
+body. Refer to
+[Kinematic Support Geometry](kinematic_support.md) and the
 [PhysX Interop](../tutorials/physx_interop.md) tutorial.
 
 ## Disabling a Rigid Body
 
 Setting `physics:rigidBodyEnabled = False` cancels the `PhysicsRigidBodyAPI`:
 colliders in the sub-tree then behave as static geometry. For purely static
-geometry, prefer simply not applying `PhysicsRigidBodyAPI` at all.
+geometry, prefer not applying `PhysicsRigidBodyAPI` at all.
 
 ## Rigid Body Frames
 
@@ -139,7 +152,7 @@ prepared as an *acceleration* spring rather than a force spring.
 
 Shape friction and restitution can also be read/written in bulk at runtime through
 the `RIGID_BODY_SHAPE_FRICTION_AND_RESTITUTION` tensor type — refer to the
-[Tensor Bindings](../tutorials/tensor_bindings.md) reference.
+[Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md) reference.
 
 ## Mass Properties
 
@@ -161,7 +174,7 @@ mass_api.CreateCenterOfMassAttr(Gf.Vec3f(0.0, 3.0, 0.0))
 mass_api.CreatePrincipalAxesAttr(Gf.Quatf(Gf.Rotation(Gf.Vec3d(0, 0, 1), 90.0).GetQuat()))
 ```
 
-### Implicit (density x volume)
+### Implicit Mass from Density and Volume
 
 With no mass set, the simulator infers mass from collider volume and density.
 Density can come from `MassAPI` or from a bound `MaterialAPI`. Combination
@@ -179,7 +192,7 @@ defaults to 1.0.
 > When mass is not authored, it is not exposed as a plain USD attribute. To read
 > the computed mass/inertia (and center of mass), use the `RIGID_BODY_MASS`,
 > `RIGID_BODY_INERTIA`, and `RIGID_BODY_COM_POSE` tensor types — refer to
-> [Tensor Bindings](../tutorials/tensor_bindings.md). Those types are also
+> [Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md). Those types are also
 > writable to override mass at runtime; the `RIGID_BODY_INV_MASS` /
 > `RIGID_BODY_INV_INERTIA` variants are read-only.
 
@@ -249,16 +262,27 @@ By default an applied force lasts one step and is reset to zero; the
 reset. For RL-style loops, prefer writing forces in bulk through the
 **write-only** `RIGID_BODY_FORCE` (`[N,3]`, at COM) or `RIGID_BODY_WRENCH`
 (`[N,9]`, force + torque + position) tensor types — refer to
-[Tensor Bindings](../tutorials/tensor_bindings.md).
+[Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md).
 
 ## Surface Velocity (Conveyors)
 
 `PhysxSurfaceVelocityAPI` (codeless) simulates conveyor-like behavior by
 injecting a surface linear/angular velocity, and applies to both kinematic and
 dynamic bodies. Changing a surface velocity does not wake bodies resting on it,
-so if you will change it from zero, disable sleeping on those bodies. A spline
+so if you change it from zero, disable sleeping on those bodies. A spline
 variant (`PhysxSplinesSurfaceVelocityAPI`) drives motion along a `BasisCurves`
-path.
+path. Apply the API to the rigid-body prim, leave DirectGPU disabled, and refer to
+[Kinematic Support Geometry](kinematic_support.md) for authoring, runtime
+updates, and its additive interaction with kinematic target motion.
+
+The `surfaceVelocityCurve` relationship must target a `BasisCurves` prim that is
+a descendant of the rigid body. Both `linear` curves (a polyline through the
+authored points, with no curvature-based speed scaling across the belt width)
+and `cubic` curves (`bezier`, `bspline`, `catmullRom`) are supported. When a
+scene is populated into ovstage with the physics-only domain, the referenced
+curve prim must be part of the population; a target that is missing or not a
+`BasisCurves` is reported with an error naming the target, and the body then
+simulates without spline surface velocity.
 
 ## Instancing
 
@@ -266,7 +290,7 @@ USD supports two instancing mechanisms, both usable with rigid bodies (but not
 with articulation links):
 
 - **Scenegraph instancing** references shared **collision geometry** so many
-  bodies reuse one collision archetype. Rigid-body parameters (mass, etc.) are
+  bodies reuse one collision archetype. Rigid-body parameters such as mass are
   not shared — set them per body. Shared collider attributes cannot be modified;
   create individual instances if you need per-body colliders.
 - **Point instancing** (`UsdGeom.PointInstancer`) instances the **entire rigid

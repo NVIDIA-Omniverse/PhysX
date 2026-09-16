@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef PXG_PARTICLE_SYSTEM_CORE_H
 #define PXG_PARTICLE_SYSTEM_CORE_H
@@ -67,11 +44,10 @@ namespace physx
 
 		virtual void constraintPrep(CUdeviceptr prePrepDescd, CUdeviceptr prepDescd, CUdeviceptr solverCoreDescd, CUdeviceptr sharedDescd,
 			const PxReal dt, CUstream solverStream, bool isTGS, PxU32 numSolverBodies) = 0;
-		virtual void solve(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
-			CUdeviceptr artiCoreDescd, const PxReal dt, CUstream solverStream, PxReal biasCoefficient) = 0;
-		virtual void solveTGS(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
-			CUdeviceptr artiCoreDescd, const PxReal dt, const PxReal totalInvDt, CUstream solverStream,
-			const bool isVelocityIteration, PxI32 iterationIndex, PxI32 numTGSIterations, PxReal coefficient) = 0;
+		// Solve entry point for both PGS and TGS (branches on PxgContext::isTGS()).
+		virtual void solve(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd, CUdeviceptr artiCoreDescd,
+			const PxReal particleBiasCoefficient, const PxReal dt, const PxReal totalInvDt,
+			const bool isFirstIteration, const bool isVelocityIteration, CUstream solverStream) = 0;
 
 		virtual void integrateSystems(const PxReal dt, const PxReal epsilonSq) = 0;
 		virtual void onPostSolve() = 0;
@@ -97,7 +73,7 @@ namespace physx
 
 		PxgDevicePointer<float4> getDeltaVelParticle() { return mDeltaVelParticleBuf.getTypedDevicePtr(); }
 
-		virtual void updateParticles(const PxReal dt) = 0;
+		virtual void updateParticles(const PxReal dt, bool isVelocityIteration) = 0;
 
 		virtual void finalizeVelocities(const PxReal dt, const PxReal scale) = 0;
 
@@ -168,7 +144,7 @@ namespace physx
 			const PxU32 nbActiveParticleSystems, const PxReal dt, const bool isVelocityIteration);
 
 		void updateSortedVelocity(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemsd,
-			const PxU32 nbActiveParticleSystems, const PxReal dt, const bool skipNewPositionAdjustment = false);
+			const PxU32 nbActiveParticleSystems, const PxReal dt, const bool isVelocityIteration);
 
 		void stepParticleSystems(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemsd, const PxU32 nbActiveParticleSystems,
 			const PxReal dt, const PxReal totalInvDt, bool isParticleSystem);
@@ -181,11 +157,11 @@ namespace physx
 		//this is for solving contacts between particles and primitives based on sorted by rigid id
 		void solvePrimitiveCollisionForParticles(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
 			CUdeviceptr artiCoreDescd, const PxReal dt, bool isTGS,
-			bool isVelIteration);
+			bool isVelocityIteration);
 
 		void solvePrimitiveCollisionForRigids(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
 			CUdeviceptr artiCoreDescd, CUstream solverStream, const PxReal dt, bool isTGS,
-			bool isVelIteration);
+			bool isVelocityIteration);
 
 		void accumulateRigidDeltas(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
 			CUdeviceptr artiCoreDescd, CUdeviceptr rigidIdsd, CUdeviceptr numIdsd, CUstream stream,

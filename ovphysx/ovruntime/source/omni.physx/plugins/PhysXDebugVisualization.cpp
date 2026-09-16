@@ -1,7 +1,15 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-14
+ *
+ * @implements REQ-PUBLICAPI-003
+ * @covers AC-6
+ */
+
+#include <omni/physics/parse/KnownTokens.h>
 
 #include "PhysXDebugVisualization.h"
 
@@ -26,7 +34,8 @@
 #include <cstring>
 #include <unordered_set>
 
-#include <omni/physics/ovstage/OvstageOutput.h> // buildPathList (checks for the source dictionary)
+#include <OvstageOutput.h> // buildPathList (checks for the source dictionary); private to omni.physics.ovstage
+#include <OvstageSource.h> // OvstageSource::canonicalPath -- see vizScopeContains
 
 namespace
 {
@@ -46,7 +55,6 @@ VizParamValues g_vizParamValues;
 } // namespace
 
 
-using namespace PXR_NS;
 using namespace ::physx;
 using namespace carb;
 using namespace omni::physx;
@@ -68,7 +76,7 @@ static constexpr uint32_t gDynamicShapeColor = PxU32(PxDebugColor::eARGB_GREEN);
 static constexpr uint32_t gKinematicShapeColor = PxU32(PxDebugColor::eARGB_YELLOW);
 static constexpr uint32_t gDynamicTriMeshShapeColor = PxU32(PxDebugColor::eARGB_DARKRED);
 
-uint32_t omni::physx::getDebugDrawCollShapeColor(const PXR_NS::SdfPath& primKey)
+uint32_t omni::physx::getDebugDrawCollShapeColor(omni::physics::parse::ObjectKey key)
 {
     uint32_t collColor = gStaticShapeColor;
 
@@ -80,25 +88,26 @@ uint32_t omni::physx::getDebugDrawCollShapeColor(const PXR_NS::SdfPath& primKey)
     if (!src)
         return collColor;
 
-    const omni::physics::parse::ObjectKey key = attachedStage->keyFor(primKey);
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
 
     // Source-routed attribute read; getValue resolves the schema fallback, so
     // e.g. physicsRigidBodyEnabled correctly defaults to true when unauthored.
-    auto readBool = [&](omni::physics::parse::ObjectKey k, const TfToken& attr)
+    auto readBool = [&](omni::physics::parse::ObjectKey k, omni::physics::parse::TokenId attr)
     {
         bool v = false;
-        internal::getValue(*attachedStage, k, attr, UsdTimeCode::Default(), v);
+        internal::getValue(*attachedStage, k, attr, omni::physics::parse::ReadTime::defaultTime(), v);
         return v;
     };
 
     bool isTrimesh = false;
-    if (internal::isAType<UsdGeomMesh>(*src, key))
+    if (src->isA(key, tok.meshType))
     {
-        if (internal::hasAppliedSchema<UsdPhysicsMeshCollisionAPI>(*src, key))
+        if (src->hasSchema(key, tok.usdPhysicsMeshCollisionAPI))
         {
-            TfToken approx;
-            internal::getValue(*attachedStage, key, UsdPhysicsTokens->physicsApproximation, UsdTimeCode::Default(), approx);
-            if (approx == UsdPhysicsTokens.Get()->none)
+            omni::physics::parse::TokenId approx{};
+            src->getAttribute(key, tok.physicsApproximation, approx);
+            if (approx == tok.approximationNone)
             {
                 isTrimesh = true;
             }
@@ -115,13 +124,13 @@ uint32_t omni::physx::getDebugDrawCollShapeColor(const PXR_NS::SdfPath& primKey)
     omni::physics::parse::ObjectKey parent = key;
     while (parent.valid() && parent != root)
     {
-        if (internal::hasAppliedSchema<UsdPhysicsRigidBodyAPI>(*src, parent))
+        if (src->hasSchema(parent, tok.physicsRigidBodyAPI))
         {
-            if (readBool(parent, UsdPhysicsTokens->physicsRigidBodyEnabled))
+            if (readBool(parent, tok.physicsRigidBodyEnabled))
             {
                 collColor = isTrimesh ? gDynamicTriMeshShapeColor : gDynamicShapeColor;
 
-                if (readBool(parent, UsdPhysicsTokens->physicsKinematicEnabled))
+                if (readBool(parent, tok.physicsKinematicEnabled))
                 {
                     collColor = gKinematicShapeColor;
                 }
@@ -230,8 +239,18 @@ static bool vizScopeContains(const omni::physics::parse::IPhysicsSource* source,
         return true;
     if (!source || !primKey.valid())
         return false;
-    const omni::physics::parse::ObjectKey canonical = source->canonicalKey(primKey);
-    return canonical.valid() && g_vizScope.contains(static_cast<ovx_primpath_t>(canonical.handle));
+    // ADR-0021: ObjectKey.handle is no longer the raw ovx_primpath_t on this
+    // backend (OvstageSource now packs a generation into it, mirroring
+    // UsdSource's own private index). canonicalPath() is the one public,
+    // still-raw-returning translation point -- use it explicitly instead of
+    // reading canonicalKey(...).handle as if it were still the dictionary
+    // handle. vizOvstageSource() already gates this path to an OVStage-backed
+    // source, but guard defensively with a dynamic_cast rather than assuming.
+    const auto* ovstageSource = dynamic_cast<const omni::physics::ovstage::OvstageSource*>(source);
+    if (!ovstageSource)
+        return false;
+    const ovx_primpath_t canonical = ovstageSource->canonicalPath(primKey);
+    return canonical != OVX_INVALID_PRIMPATH && g_vizScope.contains(canonical);
 }
 
 static bool vizActorInScope(const omni::physics::parse::IPhysicsSource* source,
@@ -855,14 +874,14 @@ void drawTriMesh(debugrender::RenderOutput& out, const PxTriangleMesh* triMesh, 
     if ( !triMesh )
         return;
 
-    UsdStageWeakPtr stage = usdparser::UsdLoad::getUsdLoad()->getActiveStage();
-    if (!stage)
+    const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    if (!attachedStage)
     {
         return;
     }
 
     const bool renderNormals = OmniPhysX::getInstance().isNormalsVisualizationEnabled();
-    const float maxSize = 0.05f / usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage()->getSourceUnits().metersPerUnit;
+    const float maxSize = 0.05f / attachedStage->getSourceUnits().metersPerUnit;
     const float size = 0.05f;
 
     // JIRA OM-96841: Change SDF debug visualization back to just rendering the triangle mesh
@@ -1003,10 +1022,10 @@ void DebugVisualizationCache::release()
     mTriangleBuffer.clear();
 }
 
-void DebugVisualizationCache::releasePath(const PXR_NS::SdfPath& path)
+void DebugVisualizationCache::releaseKey(omni::physics::parse::ObjectKey key)
 {
     {
-        LineMap::iterator it = mLineMap.find(path);
+        LineMap::iterator it = mLineMap.find(key);
         if (it != mLineMap.end())
         {
             delete[] it->second.mDebugLines;
@@ -1015,7 +1034,7 @@ void DebugVisualizationCache::releasePath(const PXR_NS::SdfPath& path)
     }
 
     {
-        EdgeMap::iterator it = mEdgeMap.find(path);
+        EdgeMap::iterator it = mEdgeMap.find(key);
         if (it != mEdgeMap.end())
         {
             delete[] it->second.mDebugEdges;
@@ -1024,11 +1043,11 @@ void DebugVisualizationCache::releasePath(const PXR_NS::SdfPath& path)
     }
 }
 
-const DebugLine* DebugVisualizationCache::getLines(const PXR_NS::SdfPath& path,
+const DebugLine* DebugVisualizationCache::getLines(omni::physics::parse::ObjectKey key,
                                                    const PxTransform& transform,
                                                    uint32_t& numLines)
 {
-    LineMap::iterator it = mLineMap.find(path);
+    LineMap::iterator it = mLineMap.find(key);
     if (it != mLineMap.end())
     {
         CachedLines& lines = it->second;
@@ -1047,18 +1066,18 @@ const DebugLine* DebugVisualizationCache::getLines(const PXR_NS::SdfPath& path,
     return nullptr;
 }
 
-void DebugVisualizationCache::addLines(const PXR_NS::SdfPath& path,
+void DebugVisualizationCache::addLines(omni::physics::parse::ObjectKey key,
                                        const PxTransform& transform,
                                        DebugLine* debugLines,
                                        uint32_t numLines)
 {
     // TODO FIXME: release in case key exists (not an issue right now).
-    mLineMap[path] = { debugLines, transform, numLines };
+    mLineMap[key] = { debugLines, transform, numLines };
 }
 
-const DebugEdge* DebugVisualizationCache::getEdges(const PXR_NS::SdfPath& path, uint32_t& numEdges)
+const DebugEdge* DebugVisualizationCache::getEdges(omni::physics::parse::ObjectKey key, uint32_t& numEdges)
 {
-    EdgeMap::iterator it = mEdgeMap.find(path);
+    EdgeMap::iterator it = mEdgeMap.find(key);
     if (it != mEdgeMap.end())
     {
         CachedEdges& edges = it->second;
@@ -1068,9 +1087,9 @@ const DebugEdge* DebugVisualizationCache::getEdges(const PXR_NS::SdfPath& path, 
     return nullptr;
 }
 
-void DebugVisualizationCache::addEdges(const PXR_NS::SdfPath& path, DebugEdge* debugEdges, uint32_t numEdges)
+void DebugVisualizationCache::addEdges(omni::physics::parse::ObjectKey key, DebugEdge* debugEdges, uint32_t numEdges)
 {
-    mEdgeMap[path] = { debugEdges, numEdges };
+    mEdgeMap[key] = { debugEdges, numEdges };
 }
 
 namespace
@@ -1097,7 +1116,7 @@ namespace
     };
 }
 
-const DebugLine* omni::physx::getShapeDebugDraw(const PXR_NS::SdfPath& primKey,
+const DebugLine* omni::physx::getShapeDebugDraw(omni::physics::parse::ObjectKey key,
                                                 const usdparser::PhysxShapeDesc* desc,
                                                 uint32_t& numLines)
 {
@@ -1111,19 +1130,13 @@ const DebugLine* omni::physx::getShapeDebugDraw(const PXR_NS::SdfPath& primKey,
         return outLines;
     }
 
-    UsdStageWeakPtr stage = usdparser::UsdLoad::getUsdLoad()->getActiveStage();
-    if (!stage)
-    {
-        return outLines;
-    }
-
     usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
     if (!attachedStage)
     {
         return outLines;
     }
 
-    uint32_t collShapeColor = getDebugDrawCollShapeColor(primKey);
+    uint32_t collShapeColor = getDebugDrawCollShapeColor(key);
     PxTransform transform = toPhysX(desc->localPos, desc->localRot);
 
     switch (desc->type)
@@ -1135,7 +1148,7 @@ const DebugLine* omni::physx::getShapeDebugDraw(const PXR_NS::SdfPath& primKey,
         const SpherePointsPhysxShapeDesc* sphereDesc = (SpherePointsPhysxShapeDesc*)desc;
         if ( sphereDesc->spheres.empty() )
         {
-            const SpherePointsPhysxShapeDesc *sp = cookingDataAsync->getSpherePoints(*sphereDesc, attachedStage->keyFor(primKey), *attachedStage, true);
+            const SpherePointsPhysxShapeDesc *sp = cookingDataAsync->getSpherePoints(*sphereDesc, key, *attachedStage, true);
             if ( sp )
             {
                 sphereDesc = sp;
@@ -1441,7 +1454,7 @@ const DebugLine* omni::physx::getShapeDebugDraw(const PXR_NS::SdfPath& primKey,
         out << transform;
         out << debugrender::RenderOutput::LINES;
 
-        PxConvexMesh* convexMesh = cookingDataAsync->getConvexMesh(*convexDesc, attachedStage->keyFor(primKey), *attachedStage, true);
+        PxConvexMesh* convexMesh = cookingDataAsync->getConvexMesh(*convexDesc, key, *attachedStage, true);
         if ( convexMesh )
         {
             drawConvexMesh(
@@ -1463,7 +1476,7 @@ const DebugLine* omni::physx::getShapeDebugDraw(const PXR_NS::SdfPath& primKey,
         out << transform;
         out << debugrender::RenderOutput::LINES;
 
-        std::vector<PxConvexMesh*> convexMeshes = cookingDataAsync->getConvexMeshDecomposition(*convexDecompositionDesc, attachedStage->keyFor(primKey), *attachedStage, true);
+        std::vector<PxConvexMesh*> convexMeshes = cookingDataAsync->getConvexMeshDecomposition(*convexDecompositionDesc, key, *attachedStage, true);
         if ( !convexMeshes.empty() )
         {
             const PxVec3 scale( fabsf(convexDecompositionDesc->meshScale.x) * convexDecompositionDesc->convexDecompositionCookingParams.signScale.x,
@@ -1479,7 +1492,7 @@ const DebugLine* omni::physx::getShapeDebugDraw(const PXR_NS::SdfPath& primKey,
     break;
     case eTriangleMeshShape:
     {
-        outLines = gDebugVisualizationCache.getLines(primKey, transform, numLines);
+        outLines = gDebugVisualizationCache.getLines(key, transform, numLines);
         if (!outLines)
         {
             TriangleMeshPhysxShapeDesc* meshDesc = (TriangleMeshPhysxShapeDesc*)desc;
@@ -1490,7 +1503,7 @@ const DebugLine* omni::physx::getShapeDebugDraw(const PXR_NS::SdfPath& primKey,
             out << transform;
             out << debugrender::RenderOutput::LINES;
 
-            PxTriangleMesh* triMesh = cookingDataAsync->getTriangleMesh(*meshDesc, attachedStage->keyFor(primKey), *attachedStage, true);
+            PxTriangleMesh* triMesh = cookingDataAsync->getTriangleMesh(*meshDesc, key, *attachedStage, true);
             if ( triMesh )
             {
                 drawTriMesh(out, triMesh, toPhysX(meshDesc->meshScale));
@@ -1499,7 +1512,7 @@ const DebugLine* omni::physx::getShapeDebugDraw(const PXR_NS::SdfPath& primKey,
                     const size_t nLines = gRenderBuffer.getNbLines();
                     DebugLine* cachedLines = new DebugLine[nLines];
                     memcpy(cachedLines, gRenderBuffer.getLines(), sizeof(DebugLine) * nLines);
-                    gDebugVisualizationCache.addLines(primKey, transform, cachedLines, (uint32_t)nLines);
+                    gDebugVisualizationCache.addLines(key, transform, cachedLines, (uint32_t)nLines);
                 }
             }
         }
@@ -1559,14 +1572,14 @@ void omni::physx::clearDebugVisualizationData()
     gDebugVisualizationCache.release();
 }
 
-const omni::physx::CollisionRepresentation* omni::physx::getCollisionRepresentation(const PXR_NS::SdfPath& usdPath,const usdparser::PhysxShapeDesc* desc)
+const omni::physx::CollisionRepresentation* omni::physx::getCollisionRepresentation(omni::physics::parse::ObjectKey key,const usdparser::PhysxShapeDesc* desc)
 {
     const CollisionRepresentation *ret = nullptr;
 
     CookingDataAsync* cookingDataAsync = OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
     if (cookingDataAsync && desc)
     {
-        ret = cookingDataAsync->getCollisionRepresentation(usdPath,*desc);
+        ret = cookingDataAsync->getCollisionRepresentation(key,*desc);
     }
 
     return ret;

@@ -1,11 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-14
+ */
 
 #pragma once
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
 #include <ovx/types.h>  // ovx_primpath_t (interned prim-path handle for the token scope)
+
+#include <omni/physics/parse/Handles.h> // ObjectKey
 
 using namespace carb;
 
@@ -161,12 +168,12 @@ struct IPhysxVisualization
     uint32_t(CARB_ABI* getNbTriangles)();
     const DebugTriangle*(CARB_ABI* getTriangles)();
 
-    const DebugLine*(CARB_ABI* getShapeDebugDraw)(const PXR_NS::SdfPath& usdPath,
+    const DebugLine*(CARB_ABI* getShapeDebugDraw)(omni::physics::parse::ObjectKey key,
                                                   const usdparser::PhysxShapeDesc* desc,
                                                   uint32_t& numLines);
 
     // Get the visual mesh representation for the collision volumes relative to this prim
-    const CollisionRepresentation*(CARB_ABI* getCollisionRepresentation)(const PXR_NS::SdfPath& usdPath,
+    const CollisionRepresentation*(CARB_ABI* getCollisionRepresentation)(omni::physics::parse::ObjectKey key,
                                                                          const usdparser::PhysxShapeDesc* desc);
 
     // Release the collision representation
@@ -179,8 +186,8 @@ struct IPhysxVisualization
 
     /// returns debug draw color for the prim
     ///
-    /// \param[in] primPath             path to a prim
-    uint32_t(CARB_ABI* getDebugDrawCollShapeColor)(const PXR_NS::SdfPath& primPath);
+    /// \param[in] key                  ObjectKey identifying the prim
+    uint32_t(CARB_ABI* getDebugDrawCollShapeColor)(omni::physics::parse::ObjectKey key);
 
     // Set a visualization parameter's float value (a magnitude multiplied by eSCALE,
     // e.g. contact-normal length or axis size). Does not change the enabled state; the

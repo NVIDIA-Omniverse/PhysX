@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// NOTE: This file is included verbatim in documentation via literalinclude.
+// NOTE: this sample demonstrates the deprecated tensor-binding API. New code should use the
+// session read/write API (ovphysx_read / ovphysx_write).
+
+// NOTE: This file is included verbatim in the documentation via literalinclude.
 
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_types.h>
@@ -146,8 +149,8 @@ static int run(void) {
 
     printf("USD scene loaded.\n");
 
-    // 3. Create tensor bindings
-    // 3a. DOF velocity target binding (write control targets)
+    // 3. Create tensor bindings.
+    // 3a. DOF velocity target binding, used to write control targets.
     ovphysx_tensor_binding_handle_t dof_target_binding = 0;
     ovphysx_tensor_binding_desc_t dof_target_desc = {
         .pattern = OVPHYSX_LITERAL("/World/articulation"),
@@ -159,7 +162,7 @@ static int run(void) {
         return destroy_instance_and_shutdown(handle);
     }
 
-    // 3b. Articulation link pose binding
+    // 3b. Articulation link pose binding, used to read the simulated state.
     ovphysx_tensor_binding_handle_t link_pose_binding = 0;
     ovphysx_tensor_binding_desc_t link_pose_desc = {
         .pattern = OVPHYSX_LITERAL("/World/articulation"),
@@ -195,7 +198,7 @@ static int run(void) {
            (long long)link_pose_spec.shape[2],
            link_pose_spec.ndim);
 
-    // Allocate CPU tensors
+    // Allocate CPU tensors matching the reported specs.
     const size_t dof_count = (size_t)dof_spec.shape[0];
     const size_t dof_components = (size_t)dof_spec.shape[1];
     const size_t link_pose_batch = (size_t)link_pose_spec.shape[0];
@@ -208,7 +211,6 @@ static int run(void) {
     // 5. Set initial DOF velocity targets and simulate
     printf("\n=== Setting initial DOF velocity targets ===\n");
 
-    // Initialize all targets to 0.0
     float* dof_target_data = (float*)dof_target_tensor.data;
     for (size_t i = 0; i < dof_count * dof_components; i++) {
         dof_target_data[i] = 0.0f;
@@ -228,12 +230,11 @@ static int run(void) {
 
     printf("Running 120 simulation steps...\n");
     for (int step = 0; step < 120; ++step) {
-        // Update DOF targets every 50 steps
+        // Every 50 steps flip the target velocity sign, and alternate the
+        // direction per DOF so neighbouring joints drive against each other.
         if (step % 50 == 0) {
-            // Alternate between positive and negative target velocities
             float target_vel = ((step / 50) % 2 == 0) ? 50.0f : -50.0f;
             for (size_t i = 0; i < dof_count * dof_components; ++i) {
-                // Alternate direction for each DOF
                 dof_target_data[i] = (i % 2 == 0) ? target_vel : -target_vel;
             }
 
@@ -263,9 +264,8 @@ static int run(void) {
             return destroy_instance_and_shutdown(handle);
         }
 
-        // Read and print state every 30 steps
+        // Read and print the link poses every 30 steps.
         if (step % 30 == 0) {
-            // Read articulation link poses
             result = ovphysx_read_tensor_binding(handle, link_pose_binding, &link_pose_tensor.tensor);
             if (!check_result(result, "read articulation link poses")) {
                 destroy_tensor(&dof_target_tensor);

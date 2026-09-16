@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
 
 #include "UjitsoTriangulationContainer.h"
 
@@ -19,6 +18,12 @@ PhysicsTriangulationInputContainer::PhysicsTriangulationInputContainer(
     CARB_PROFILE_ZONE(0, "PhysicsTriangulationInputContainer::PhysicsTriangulationInputContainer");
 
     copyOrComputeHash();
+
+    if (shouldSnapshotInputNow())
+    {
+        copyInputViews();
+        m_inputSnapshotted = true;
+    }
 }
 
 // This is only called if ujitso decides that the derived data needs to be rebuilt
@@ -26,34 +31,27 @@ void PhysicsTriangulationInputContainer::fill()
 {
     CARB_PROFILE_ZONE(0, "PhysicsTriangulationInputContainer::fill");
 
-    // we may have to reload the prim data here based on the dataInputMode
-    CookingStageAndPrim stageAndPrim;
-    switch (m_request.dataInputMode)
-    {
-    case PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW:
-        // the data is already loaded, nothing needs to be done in this case
-        break;
+    if (m_inputSnapshotted)
+        return; // the constructor already copied the views, while the caller's memory was alive
 
-    case PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID:
-        // the data needs to be reloaded from the prim
-        if (!(ICookingComputeService::getStageAndPrim(m_result, m_request, stageAndPrim) &&
-              ICookingComputeService::fillMeshView(m_result, m_request, stageAndPrim)))
-        {
-            return;
-        }
-        break;
-
-    default:
-        CARB_LOG_ERROR("Unexpected data input mode: %u", m_request.dataInputMode);
-        return;
-    }
+    // Every request is mesh-view mode now (eINPUT_MODE_FROM_PRIM_ID removed, REQ-COOK-SOURCE-001).
+    // This only runs for a synchronous cook (an async one already snapshotted above and returned
+    // at the m_inputSnapshotted check), so the caller's buffers are still alive here -- the data
+    // is already loaded, nothing to reload.
 
     // data should be loaded at this point, copy it over to the buildData output
-    copyVtArrayData(m_buildData.points, m_request.primMeshView.points);
-    copyVtArrayData(m_buildData.indices, m_request.primMeshView.indices);
-    copyVtArrayData(m_buildData.faceCounts, m_request.primMeshView.faces);
-    copyVtArrayData(m_buildData.holeIndices, m_request.primMeshView.holeIndices);
-    copyVtArrayData(m_buildData.faceMaterials, m_request.primMeshView.faceMaterials);
+    copyInputViews();
+}
+
+void PhysicsTriangulationInputContainer::copyInputViews()
+{
+    CARB_PROFILE_ZONE(0, "PhysicsTriangulationInputContainer::copyInputViews");
+
+    copyVectorData(m_buildData.points, m_request.primMeshView.points);
+    copyVectorData(m_buildData.indices, m_request.primMeshView.indices);
+    copyVectorData(m_buildData.faceCounts, m_request.primMeshView.faces);
+    copyVectorData(m_buildData.holeIndices, m_request.primMeshView.holeIndices);
+    copyVectorData(m_buildData.faceMaterials, m_request.primMeshView.faceMaterials);
 
     // copy this across so build functions only need to deal with one struct
     m_buildData.rightHandedOrientation = m_request.primMeshView.rightHandedOrientation;
@@ -71,11 +69,11 @@ void PhysicsTriangulationInputContainer::serialize(SerializerT& serializer)
     serializer.serialize(readOnly, version);
 
     // serialize the heavy array data
-    serializeVtArray<readOnly>(m_buildData.points, serializer);
-    serializeVtArray<readOnly>(m_buildData.indices, serializer);
-    serializeVtArray<readOnly>(m_buildData.faceCounts, serializer);
-    serializeVtArray<readOnly>(m_buildData.holeIndices, serializer);
-    serializeVtArray<readOnly>(m_buildData.faceMaterials, serializer);
+    serializeVector<readOnly>(m_buildData.points, serializer);
+    serializeVector<readOnly>(m_buildData.indices, serializer);
+    serializeVector<readOnly>(m_buildData.faceCounts, serializer);
+    serializeVector<readOnly>(m_buildData.holeIndices, serializer);
+    serializeVector<readOnly>(m_buildData.faceMaterials, serializer);
 
     // serialize the POD pieces
     serializer.serialize(readOnly, m_buildData.rightHandedOrientation);

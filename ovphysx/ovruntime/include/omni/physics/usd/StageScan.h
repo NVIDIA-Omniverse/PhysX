@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * Whole-stage scan API — produces a `ScannedStage` snapshot of a USD
@@ -125,6 +125,10 @@ ScannedStage scanStage(const parse::AttachTarget& target,
 // lives here in the USD backend rather than in omni.physx.
 PXR_NS::SdfPath createDefaultPhysicsScene(PXR_NS::UsdStageWeakPtr stage, const PXR_NS::SdfPath& scenePath);
 
+// Remove a placeholder prim previously authored by `createDefaultPhysicsScene`. No-op when
+// `stage` is null, `scenePath` is empty, or nothing exists at `scenePath`.
+void removeDefaultPhysicsScene(PXR_NS::UsdStageWeakPtr stage, const PXR_NS::SdfPath& scenePath);
+
 // USD view of a scanned stage: the source-agnostic `parse::ScannedStage`
 // (descriptor lists + backend source) plus USD-typed handle resolvers.
 //
@@ -158,7 +162,10 @@ public:
     PXR_NS::SdfPath pathFor(parse::ObjectKey key) const;
 
     // Resolve a source path back to the `ObjectKey` minted for it during this
-    // scan. Returns the invalid sentinel when the path was not visited.
+    // scan. This *mints* — it interns the path and never consults the stage, so
+    // it returns a valid key for any non-empty path, visited or not, and is not
+    // an existence or visited test. The invalid sentinel comes back only for an
+    // empty path. Gate on `IPhysicsSource::exists` instead.
     parse::ObjectKey keyFor(const PXR_NS::SdfPath& path) const;
 
     // Resolve a `TokenId` minted by this scan back to its `TfToken`. Returns

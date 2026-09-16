@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Advanced ContactBinding tests: properties, unfiltered error paths, destroy
 idempotency, use-after-destroy, and context manager.
@@ -33,7 +33,7 @@ _FILTER_PATTERN = "/World/GroundPlane"
 
 
 def _load_scene(sdk):
-    """Load the rigid-body scene; contact bindings must be created BEFORE the first step."""
+    """Load the rigid-body scene. Contact bindings must be created BEFORE the first step."""
     load_usd_with_ovstage(sdk, data_path("boxes_falling_on_groundplane.usda"))
     sdk.wait_all()
     return sdk
@@ -123,7 +123,7 @@ def test_read_force_matrix_unfiltered_binding_raises(physx_sdk):
     The C API enforces dst.shape == (sensor_count, filter_count, 3). For an
     unfiltered binding that means filter_count=0, and any non-degenerate dst
     is rejected with a shape-mismatch error. Pin that rejection so accidental
-    shape mismatches don't silently succeed.
+    shape mismatches do not silently succeed.
     """
     _load_scene(physx_sdk)
     cb = physx_sdk.create_contact_binding(
@@ -176,8 +176,8 @@ def test_read_contact_data_unfiltered_binding_raises(physx_sdk):
 def test_contact_binding_destroy_idempotent(physx_sdk):
     """Calling destroy() twice must not raise.
 
-    ContactBinding.destroy() docstring (api.py:902) states "Safe to call
-    multiple times." This pins that contract.
+    ContactBinding.destroy() is documented as "Safe to call multiple times."
+    This pins that contract.
     """
     _load_scene(physx_sdk)
     cb = physx_sdk.create_contact_binding(
@@ -214,7 +214,7 @@ def test_contact_binding_read_after_destroy_raises(physx_sdk, method_name):
     _load_scene(physx_sdk)
     cb = _make_filtered_cb(physx_sdk)
     physx_sdk.step_sync(1.0 / 60.0)
-    # Cache sensor_count and filter_count BEFORE destroy — accessing them on a
+    # Cache sensor_count and filter_count BEFORE destroy. Accessing them on a
     # destroyed binding raises RuntimeError, which would mask the read failure
     # under test.
     sc = cb.sensor_count
@@ -239,8 +239,8 @@ def test_contact_binding_read_after_destroy_raises(physx_sdk, method_name):
 def test_contact_binding_context_manager(physx_sdk):
     """ContactBinding used as a context manager is auto-destroyed on exit.
 
-    ContactBinding implements __enter__/__exit__ (api.py:935-939); __exit__
-    calls destroy(). After the `with` block, any read must raise.
+    ContactBinding implements __enter__/__exit__, and __exit__ calls destroy().
+    After the `with` block, any read must raise.
     """
     _load_scene(physx_sdk)
     with physx_sdk.create_contact_binding(

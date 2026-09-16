@@ -1,14 +1,31 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-MATH-001
+ * @covers AC-9
+ *
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-14 AC-16 AC-27
+ *
+ * @implements REQ-PUBLICAPI-002
+ * @covers AC-10
+ */
 
 #pragma once
 
-#include "UsdPCH.h"
+#include <foundation/PxMat44.h>
 #include <vector>
 #include <carb/Types.h>
 #include <omni/physx/IPhysxCooking.h>
+#include <omni/physics/AttachHandle.h>
 #include <omni/physics/parse/Handles.h>
 #include <private/omni/physx/IPhysxCookingPrivate.h>
+// ParticleSamplingDesc / PhysxDeformableBodyDesc / PhysxVolumeDeformableBodyDesc /
+// PhysxSurfaceDeformableBodyDesc are `using` aliases of the parse-lib types
+// (PhysxUsd.h, ADR-0019 increment 7) -- a forward struct-declaration would
+// conflict with the alias, so the full header is included instead.
+#include <private/omni/physx/PhysxUsd.h>
 
 // Performs cooking operations asynchronously and non-blocking
 
@@ -36,10 +53,6 @@ namespace usdparser
 {
 class MeshKey;
 class AttachedStage;
-struct ParticleSamplingDesc;
-struct PhysxDeformableBodyDesc;
-struct PhysxVolumeDeformableBodyDesc;
-struct PhysxSurfaceDeformableBodyDesc;
 
 } // namespace usdparser
 } // namespace physx
@@ -187,12 +200,30 @@ public:
         omni::physics::parse::ObjectKey bodyKey,
         const omni::physx::usdparser::AttachedStage& attachedStage) = 0;
 
-    virtual void cookVolumeDeformableBody(const omni::physx::usdparser::PhysxVolumeDeformableBodyDesc& desc,
+    /**
+     * Runs the auto cook for a volume / surface deformable body and publishes the cooked sim and
+     * collision geometry back into the scene description.
+     *
+     * @param desc : The parsed deformable body descriptor.
+     * @param bodyKey : Source-side ObjectKey of the prim with UsdPhysicsDeformableBodyAPI.
+     * @param attachedStage : The attached stage owning the prim.
+     * @param asynchronous : Whether or not to cook asynchronously.
+     *
+     * @return : Returns true if the cooked data is available in the scene description once the call
+     * returns - either because this call published it, because it was already up to date (CRC
+     * match), because the body is already registered for simulation (the cook is a re-entrancy
+     * no-op), or because an asynchronous cook was submitted. Returns false when the cook could not
+     * run or its output could not be published - most notably when the parse backend vends no write
+     * sink, in which case every array write is dropped and nothing is produced. A false return is
+     * always accompanied by a diagnostic; the caller must not treat it as a completed cook.
+     */
+    virtual bool cookVolumeDeformableBody(const omni::physx::usdparser::PhysxVolumeDeformableBodyDesc& desc,
                                           omni::physics::parse::ObjectKey bodyKey,
                                           const omni::physx::usdparser::AttachedStage& attachedStage,
                                           bool asynchronous) = 0;
 
-    virtual void cookSurfaceDeformableBody(const omni::physx::usdparser::PhysxSurfaceDeformableBodyDesc& desc,
+    /** @see cookVolumeDeformableBody */
+    virtual bool cookSurfaceDeformableBody(const omni::physx::usdparser::PhysxSurfaceDeformableBodyDesc& desc,
                                            omni::physics::parse::ObjectKey bodyKey,
                                            const omni::physx::usdparser::AttachedStage& attachedStage,
                                            bool asynchronous) = 0;
@@ -228,14 +259,21 @@ public:
      * @param cookingToWorldScale : Pointer to store output cooking to world space scale or nullptr.
      * @param simToWorld : Input sim mesh to world transform.
      * @param boundsFitPoints : Points to compute uniform bounds fit. Expected to be in sim space.
+     * @param boundsFitPointCount : Number of points in `boundsFitPoints`.
+     *
+     * The matrices are the same sixteen doubles a GfMatrix4d holds, in the same
+     * flat order (omni.physics.usd/TypeCast.h), so the PxMat44d carries the
+     * transpose linear map and Gf's `A * B` is PhysX's `B * A`. Callers that keep
+     * Gf's accumulation order must go through omni::physx::gfmath.
      *
      * @return : Returns true if computation was successfull.
      */
-    virtual bool computeDeformableCookingTransform(PXR_NS::GfMatrix4d* simToCookingTransform,
-                                                   PXR_NS::GfMatrix4d* cookingToWorldTransform,
+    virtual bool computeDeformableCookingTransform(::physx::PxMat44d* simToCookingTransform,
+                                                   ::physx::PxMat44d* cookingToWorldTransform,
                                                    double* cookingToWorldScale,
-                                                   const PXR_NS::GfMatrix4d& simToWorld,
-                                                   const PXR_NS::VtArray<PXR_NS::GfVec3f>& boundsFitPoints) = 0;
+                                                   const ::physx::PxMat44d& simToWorld,
+                                                   const carb::Float3* boundsFitPoints,
+                                                   size_t boundsFitPointCount) = 0;
 
     /**
      *  Samples particles on a mesh using poisson sampling
@@ -301,9 +339,15 @@ public:
      * task is spawned. This is how the editor can keep recooking assets while people are
      * making changes in the property window.
      *
-     * @param path : The UsdPrim path to be re-evaluated.
+     * Named by an explicit AttachHandle rather than resolved against "the active attach"
+     * (ADR-0016 Decision 4): the caller names the attach `key` was resolved from, and an
+     * unresolvable handle is rejected with a diagnostic rather than silently dropping the
+     * request.
+     *
+     * @param key : ObjectKey of the object to be re-evaluated.
+     * @param attachHandle : the attach that key was resolved from.
      */
-    virtual void addPrimRefreshSet(const PXR_NS::SdfPath& path) = 0;
+    virtual void addPrimRefreshSet(omni::physics::parse::ObjectKey key, omni::physics::AttachHandle attachHandle) = 0;
 
     /**
      * Register this cooking driver's change-detection interest on the given attached
@@ -327,13 +371,13 @@ public:
      * Since a single UsdPrim can have (n) number of collision meshes (in the case of a
      * convex decomposition) it is possible to get more than just one for the source UsdPrim.
      *
-     * @param path : The path of the primitive we are referring to
+     * @param key : The ObjectKey of the primitive we are referring to
      * @param desc : The shape descriptor for this UsdPrim
      *
      * @return : If a graphics collision representation exists, it will return a pointer to it.
      */
     virtual const omni::physx::CollisionRepresentation* getCollisionRepresentation(
-        const PXR_NS::SdfPath& path, const omni::physx::usdparser::PhysxShapeDesc& desc) = 0;
+        omni::physics::parse::ObjectKey key, const omni::physx::usdparser::PhysxShapeDesc& desc) = 0;
 
     /**
      * Release a previously queried collision representation.

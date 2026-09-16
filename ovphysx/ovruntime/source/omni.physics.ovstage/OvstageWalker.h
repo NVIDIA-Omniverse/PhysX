@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-PARSE-BACKEND-001
+ * @covers AC-12
+ */
 #pragma once
 
 #include <omni/physics/parse/Allocator.h>
@@ -19,6 +23,8 @@
 namespace omni::physics::ovstage
 {
 using namespace omni::physics::parse;
+
+class OvstageSource;
 
 // ---------------------------------------------------------------------------
 // OvstageWalker (ADR-0002 Milestone 2, slice 1).
@@ -57,7 +63,9 @@ struct OvstageScanResult
 {
     // The exact source that mints descriptor handles. Declared first so it is
     // destroyed after every descriptor and moved into ScannedStage on attach.
+    // Null when the scan ran through a caller-owned source (`borrowedSource`).
     std::unique_ptr<IPhysicsSource> source;
+    OvstageSource* borrowedSource = nullptr;
     std::vector<DescPtr<PhysxSceneDesc>> scenes;
     std::vector<DescPtr<PhysxMaterialDesc>> materials;
     std::vector<DescPtr<PBDMaterialDesc>> pbdMaterials;
@@ -123,6 +131,7 @@ struct OvstageScanResult
     std::vector<DescPtr<ParticleSetDesc>> particleSets;
     std::vector<DescPtr<ParticleSamplingDesc>> particleSamplers;
     std::vector<ObjectKey> particleSamplerKeys;
+    std::vector<DescPtr<CapsuleCctDesc>> ccts;
     bool hasPointInstancerPrims = false;
 
     // Collision prims that matched but whose geometry type is not handled.
@@ -131,11 +140,17 @@ struct OvstageScanResult
     size_t skippedShapes = 0;
 };
 
+// With `attached` (an attach's live source over the same instance) the scan reads through it
+// instead of a fresh OvstageSource: its units, schema / type / hierarchy memos stay warm across
+// drains, and the change feed keeps them exact. `readOrdinal` / `usdStageId` are then the
+// attached source's own. A load-cache window or concept bucket the caller has open is preserved
+// across the scan; otherwise the scan's own are cleared when it returns.
 OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                               ovx_path_dictionary_t* dict,
                               IDescriptorAllocator& allocator,
                               ovstage_ordinal_t readOrdinal = 1,
                               const OvstageScanFilter* filter = nullptr,
-                              uint64_t usdStageId = 0);
+                              uint64_t usdStageId = 0,
+                              OvstageSource* attached = nullptr);
 
 } // namespace omni::physics::ovstage

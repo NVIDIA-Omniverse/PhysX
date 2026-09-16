@@ -1,10 +1,19 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-PUBLICAPI-002
+ * @covers AC-4
+ *
+ * @implements REQ-REPLICATE-002
+ * @covers AC-4
+ */
 #pragma once
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
+
+#include <omni/physics/AttachHandle.h>
 
 
 namespace omni
@@ -22,17 +31,25 @@ static constexpr char kScenePartitionPrimvar[] = "primvars:omni:scenePartition";
 /// (Example: when cloning environemnts that are in hierarchy /World/envs/env0, /World/envs/env1, /World/envs/env2...
 ///     its is expected that the envs are replicated, hence the exclude path would be /World/envs)
 ///
-/// \param[in] stageId USD stageId (can be retrieved from a stagePtr -
-/// PXR_NS::UsdUtilsStageCache::Get().GetId(stagePtr).ToLongInt()) \param[in] numExludePaths Number of exclude paths
-/// \param[in] excludePaths Exclude paths
+/// \param[in] attachHandle The attach being parsed, as reported to @ref
+/// IPhysxReplicator::registerReplicator (matches @ref IPhysxSimulation::getAttachHandle())
+/// \param[in] numExludePaths Number of exclude paths
+/// \param[in] excludePaths Exclude paths; each entry is an
+/// `omni::physics::parse::ObjectKey::handle` (obtainable via @ref IPhysx::resolveObjectKey), no
+/// longer an SdfPath-bit encoding -- an intentional, breaking ABI-contract change (ADR-0018),
+/// matching `replicate()`'s own \p path contract below.
 /// \param[in] userData User data
-typedef void (*ReplicationAttachFn)(uint64_t stageId, uint32_t& numExludePaths, uint64_t*& excludePaths, void* userData);
+typedef void (*ReplicationAttachFn)(AttachHandle attachHandle,
+                                    uint32_t& numExludePaths,
+                                    uint64_t*& excludePaths,
+                                    void* userData);
 
 /// Replication attach end function, called when a stage has been parsed and is ready for replications.
 ///
-/// \param[in] stageId USD stageId (can be retrieved from a stagePtr -
-/// PXR_NS::UsdUtilsStageCache::Get().GetId(stagePtr).ToLongInt()) \param[in] userData User data
-typedef void (*ReplicationAttachEndFn)(uint64_t stageId, void* userData);
+/// \param[in] attachHandle The attach that finished parsing, as reported to @ref
+/// IPhysxReplicator::registerReplicator (matches @ref IPhysxSimulation::getAttachHandle())
+/// \param[in] userData User data
+typedef void (*ReplicationAttachEndFn)(AttachHandle attachHandle, void* userData);
 
 /// Hierarchy rename function
 ///
@@ -43,10 +60,15 @@ typedef void (*ReplicationAttachEndFn)(uint64_t stageId, void* userData);
 ///     its is expected that if we clone /World/envs/env0, the replicate path is /World/envs/env0 and for index 0
 ///     the returned path would be expected /World/envs/env1)
 ///
-/// \param[in] replicatePath Base path that was replicated.
+/// \param[in] replicatePath The base object being replicated, as an `omni::physics::parse::ObjectKey::handle`
+/// (obtainable via @ref IPhysx::resolveObjectKey) -- no longer an SdfPath-bit encoding (breaking
+/// change, ADR-0018: a caller still computing an `sdfPathToInt()`-style encoding gets wrong
+/// results). Matches `replicate()`'s own \p path contract below.
 /// \param[in] index The current index of replication.
 /// \param[in] userData User data.
-/// \return New path to the hierarchy that replication should match.
+/// \return The new hierarchy's identity that replication should match, as an
+/// `omni::physics::parse::ObjectKey::handle` (same contract as \p replicatePath above; 0 is the
+/// invalid-key sentinel, unchanged from the legacy encoding).
 typedef uint64_t (*HierarchyRenameFn)(uint64_t replicatePath, uint32_t index, void* userData);
 
 /// Replicator callback structure holding function pointers for callbacks
@@ -67,39 +89,54 @@ struct IReplicatorCallback
 /// for the root transformation.
 struct IPhysxReplicator
 {
-    /// Register replicator to a given stage
+    /// Register replicator to a given attach
     ///
-    /// \param[in] id USD stageId (can be retrieved from a stagePtr -
-    /// PXR_NS::UsdUtilsStageCache::Get().GetId(stagePtr).ToLongInt())
+    /// \note Registering on an attach handle rather than a stage id is what removes the stage-id
+    /// hijack hazard: a lingering entry can no longer be picked up by a later re-attach that happens
+    /// to reuse the same stage id (ADR-0016).
+    ///
+    /// \note Lifetime: a registration is consumed by at most the next attach it applies to, and is
+    /// discarded once that attach detaches -- it does not survive a detach/reattach cycle even on the
+    /// same stage. A caller that wants the replicator active again after a Kit stop/play cycle, or
+    /// any other detachStage()+reattach, must call registerReplicator() again before/after each
+    /// attach. Registering again under the same key while an attach is still live replaces the
+    /// previously routed callback set; it does not stack or no-op.
+    ///
+    /// \param[in] attachHandle Attach to register on, from @ref IPhysxSimulation::getAttachHandle(),
+    /// or kActiveAttach for the lone active attach.
     /// \param[in] callback IReplicatorCallback structure
     /// with callback functions
     /// \return True if replicator was sucesfully registered.
-    bool(CARB_ABI* registerReplicator)(uint64_t stageId, const IReplicatorCallback& callback);
+    bool(CARB_ABI* registerReplicator)(AttachHandle attachHandle, const IReplicatorCallback& callback);
 
-    /// Unregister replicator from a given stage
+    /// Unregister replicator from a given attach
     ///
-    /// \param[in] id USD stageId (can be retrieved from a stagePtr -
-    /// PXR_NS::UsdUtilsStageCache::Get().GetId(stagePtr).ToLongInt())
-    void(CARB_ABI* unregisterReplicator)(uint64_t stageId);
+    /// \param[in] attachHandle Attach to unregister from, from @ref
+    /// IPhysxSimulation::getAttachHandle(), or kActiveAttach for the lone active attach.
+    void(CARB_ABI* unregisterReplicator)(AttachHandle attachHandle);
 
     /// Replicate given hierarchy.
     ///
-    /// \param[in] id USD stageId (can be retrieved from a stagePtr -
-    /// PXR_NS::UsdUtilsStageCache::Get().GetId(stagePtr).ToLongInt())
-    /// \param[in] path The hierarchy to clone.
+    /// \param[in] attachHandle Attach holding the hierarchy, from @ref
+    /// IPhysxSimulation::getAttachHandle(), or kActiveAttach for the lone active attach.
+    /// \param[in] path The hierarchy to clone, as an `omni::physics::parse::ObjectKey::handle`
+    /// (obtainable via @ref IPhysx::resolveObjectKey) -- no longer a bit-cast of `pxr::SdfPath`'s
+    /// private representation. This is an intentional, breaking ABI-contract change (ADR-0018): a
+    /// caller still computing the legacy `sdfPathToInt()`-style encoding will pass a value this
+    /// entry point no longer understands and get wrong (or no) results.
     /// \param[in] numReplications Number of times the hierarchy should be cloned.
     /// \param[in] setupEnvIds Setup EnvIds, this enables the possibility of co-location, envs are filtered out
     /// automatically.
     /// \return True replication was sucessful.
     bool(CARB_ABI* replicate)(
-        uint64_t stageId, uint64_t path, uint32_t numReplications, bool setupEnvIds);
+        AttachHandle attachHandle, uint64_t path, uint32_t numReplications, bool setupEnvIds);
 
-    /// Check if given stage was replicated
+    /// Check if given attach was replicated
     ///
-    /// \param[in] id USD stageId (can be retrieved from a stagePtr -
-    /// PXR_NS::UsdUtilsStageCache::Get().GetId(stagePtr).ToLongInt())
-    /// \param[out] replicated Sets true if stage is using replicator
-    void(CARB_ABI* isReplicatorStage)(uint64_t stageId, bool& replicated);
+    /// \param[in] attachHandle Attach to query, from @ref IPhysxSimulation::getAttachHandle(), or
+    /// kActiveAttach for the lone active attach.
+    /// \param[out] replicated Sets true if the attach is using replicator
+    void(CARB_ABI* isReplicatorStage)(AttachHandle attachHandle, bool& replicated);
 
 };
 

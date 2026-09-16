@@ -1,17 +1,22 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-27
+ *
+ * @implements REQ-LOAD-OBJECTDB-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ */
 #pragma once
 
 #include <private/omni/physx/PhysxUsd.h>
-#include <common/utilities/PrimHierarchyStorage.h>
 #include <omni/physics/parse/Handles.h>
 
-#include <pxr/base/gf/transform.h>
-#include <pxr/usd/usd/prim.h>
-#include <pxr/usd/usdGeom/xformCache.h>
+#include <common/utilities/PrimHierarchyStorage.h>
 
 #include <functional>
+#include <string_view>
 #include <utility>
 
 #if !CARB_PLATFORM_WINDOWS
@@ -36,16 +41,15 @@ class AttachedStage;
 void getCollisionShapeLocalTransform(const AttachedStage& attachedStage,
                                      omni::physics::parse::ObjectKey collisionKey,
                                      omni::physics::parse::ObjectKey bodyKey,
-                                     PXR_NS::GfVec3f& localPosOut,
-                                     PXR_NS::GfQuatf& localRotOut,
-                                     PXR_NS::GfVec3f& localScaleOut);
-
+                                     carb::Float3& localPosOut,
+                                     carb::Float4& localRotOut,
+                                     carb::Float3& localScaleOut);
 
 // PhysxRigidBodyDesc / PhysxMaterialDesc / PhysxArticulationDesc /
-// PhysxJointDesc are aliases to the parse-library types (defined in
-// PhysxUsd.h via `using`); a forward struct-declaration would conflict.
-// The other types are still defined in usdparser:: directly.
-struct PhysxDeformableAttachmentDesc;
+// PhysxJointDesc / PhysxDeformableAttachmentDesc / PhysxDeformableCollisionFilterDesc
+// are aliases to the parse-library types (defined in PhysxUsd.h via `using`,
+// already fully defined by the `#include <private/omni/physx/PhysxUsd.h>`
+// above) -- a forward struct-declaration would conflict with the alias.
 
 struct JointDescAndPath
 {
@@ -54,7 +58,7 @@ struct JointDescAndPath
         return index < jd.index ? true : false;
     }
 
-    PXR_NS::SdfPath path;
+    omni::physics::parse::ObjectKey path;
     PhysxJointDesc* desc;
     bool articulationJoint;
     uint32_t index;
@@ -62,76 +66,97 @@ struct JointDescAndPath
 
 struct DeformableAttachmentDescAndPath
 {
-    PXR_NS::SdfPath path;
+    omni::physics::parse::ObjectKey path;
     PhysxDeformableAttachmentDesc* desc;
 };
 
 struct DeformableCollisionFilterDescAndPath
 {
-    PXR_NS::SdfPath path;
+    omni::physics::parse::ObjectKey path;
     PhysxDeformableCollisionFilterDesc* desc;
 };
+
+// Set of ObjectKeys (unordered: ObjectKey has no operator<). Same shape as
+// omni.physics.parse/ArticulationGraph.cpp's KeySet.
+using KeySet = std::unordered_set<omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey::Hash>;
 
 struct BodyDescAndColliders
 {
     omni::physx::usdparser::PhysxRigidBodyDesc* desc;
-    std::set<PXR_NS::SdfPath> collisions;
+    KeySet collisions;
 };
 
 struct ShapeDescAndMaterials
 {
-    PXR_NS::SdfPath path;
+    omni::physics::parse::ObjectKey path;
     omni::physx::usdparser::PhysxShapeDesc* desc;
-    PXR_NS::SdfPathVector materials;
+    std::vector<omni::physics::parse::ObjectKey> materials;
 };
 
 struct DeformableDescAndMaterials
 {
-    PXR_NS::SdfPath path;
+    omni::physics::parse::ObjectKey path;
     omni::physx::usdparser::PhysxDeformableBodyDesc* desc;
-    PXR_NS::SdfPath simMeshMaterial;
+    omni::physics::parse::ObjectKey simMeshMaterial;
 };
 
 using ObjectIdMap = std::multimap<ObjectCategory, ObjectId>;
 using JointVector = std::vector<JointDescAndPath>;
-using JointPathIndexMap = std::unordered_map<PXR_NS::SdfPath, size_t, PXR_NS::SdfPath::Hash>;
+using JointPathIndexMap = std::unordered_map<omni::physics::parse::ObjectKey, size_t, omni::physics::parse::ObjectKey::Hash>;
 
-using ShapePathList = std::vector<PXR_NS::SdfPath>;
-using PathSet = std::unordered_set<PXR_NS::SdfPath, PXR_NS::SdfPath::Hash>;
-using BodyMap = std::map<PXR_NS::SdfPath, BodyDescAndColliders>;
-using BodyVector = std::vector<std::pair<PXR_NS::SdfPath, BodyDescAndColliders>>;
-using JointMap = std::map<PXR_NS::SdfPath, omni::physx::usdparser::PhysxJointDesc*>;
-using JointUnorderedMap = std::unordered_map<PXR_NS::SdfPath, omni::physx::usdparser::PhysxJointDesc*, PXR_NS::SdfPath::Hash>;
-using ArticulationMap = std::map<PXR_NS::SdfPath, std::vector<omni::physx::usdparser::PhysxArticulationDesc*>>;
-using CollisionBlockPair = std::pair<PXR_NS::SdfPath, PXR_NS::SdfPath>;
+// The `excludePaths` boundary type for loadFromStage()/PhysxUsdPhysicsListener. An exclude
+// set is just a KeySet used for membership tests.
+using PathSet = KeySet;
+using BodyMap = std::unordered_map<omni::physics::parse::ObjectKey, BodyDescAndColliders, omni::physics::parse::ObjectKey::Hash>;
+using BodyVector = std::vector<std::pair<omni::physics::parse::ObjectKey, BodyDescAndColliders>>;
+using JointMap = std::unordered_map<omni::physics::parse::ObjectKey, omni::physx::usdparser::PhysxJointDesc*, omni::physics::parse::ObjectKey::Hash>;
+using JointUnorderedMap =
+    std::unordered_map<omni::physics::parse::ObjectKey, omni::physx::usdparser::PhysxJointDesc*, omni::physics::parse::ObjectKey::Hash>;
+using ArticulationMap = std::unordered_map<omni::physics::parse::ObjectKey,
+                                           std::vector<omni::physx::usdparser::PhysxArticulationDesc*>,
+                                           omni::physics::parse::ObjectKey::Hash>;
+using CollisionBlockPair = std::pair<omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey>;
 using CollisionPairVector = std::vector<CollisionBlockPair>;
-using CollisionGroupsMap = std::unordered_map<PXR_NS::SdfPath, PXR_NS::SdfPathVector, PXR_NS::SdfPath::Hash>;
-using ObjectIdUsdPrimMap = std::map<usdparser::ObjectId, PXR_NS::UsdPrim>;
+using CollisionGroupsMap = std::unordered_map<omni::physics::parse::ObjectKey,
+                                              std::vector<omni::physics::parse::ObjectKey>,
+                                              omni::physics::parse::ObjectKey::Hash>;
 // Backend-agnostic shape map for the mass path (ADR-0002 M2c-D): the shape's
-// source path keyed by ObjectId, so mass works without live USD prims (ovstage).
-using ObjectIdPathMap = std::map<usdparser::ObjectId, PXR_NS::SdfPath>;
-using MaterialsVector = std::vector<std::pair<PXR_NS::SdfPath, usdparser::PhysxMaterialDesc*>>;
-using DeformableMaterialsVector = std::vector<std::pair<PXR_NS::SdfPath, usdparser::PhysxDeformableMaterialDesc*>>;
+// source-agnostic ObjectKey keyed by ObjectId, so mass works without live USD
+// prims (ovstage) or an SdfPath round trip. Was SdfPath-valued; retyped to
+// ObjectKey since every consumer (Mass.cpp) only ever needed the key.
+using ObjectIdPathMap = std::map<usdparser::ObjectId, omni::physics::parse::ObjectKey>;
+using MaterialsVector = std::vector<std::pair<omni::physics::parse::ObjectKey, usdparser::PhysxMaterialDesc*>>;
+using DeformableMaterialsVector =
+    std::vector<std::pair<omni::physics::parse::ObjectKey, usdparser::PhysxDeformableMaterialDesc*>>;
 using ShapeDescsVector = std::vector<ShapeDescAndMaterials>;
 using DeformableBodyDescsVector = std::vector<DeformableDescAndMaterials>;
 
 using FixedTendonVector = std::vector<std::shared_ptr<omni::physx::usdparser::PhysxTendonFixedDesc>>;
 // using FixedTendonMap = PXR_NS::TfHashMap<PXR_NS::TfToken, omni::physx::usdparser::PhysxTendonFixedDesc* ,
 // PXR_NS::TfToken::HashFunctor>;
-using TendonAxisMap =
-    PXR_NS::TfHashMap<PXR_NS::SdfPath, std::vector<std::shared_ptr<omni::physx::usdparser::PhysxTendonAxisDesc>>, PXR_NS::SdfPath::Hash>;
+// Was PXR_NS::TfHashMap<SdfPath, ...>: retyped to std::unordered_map, both to
+// key by ObjectKey and to drop the pxr container (TfHashMap is itself a pxr
+// type, unlike std::unordered_map which merely used to be keyed by a pxr type).
+using TendonAxisMap = std::unordered_map<omni::physics::parse::ObjectKey,
+                                         std::vector<std::shared_ptr<omni::physx::usdparser::PhysxTendonAxisDesc>>,
+                                         omni::physics::parse::ObjectKey::Hash>;
 using SpatialTendonVector = std::vector<std::shared_ptr<omni::physx::usdparser::PhysxTendonSpatialDesc>>;
 using TendonAttachmentMap =
-    PXR_NS::TfHashMap<PXR_NS::SdfPath, std::vector<std::shared_ptr<omni::physx::usdparser::PhysxTendonAttachmentDesc>>, PXR_NS::SdfPath::Hash>;
+    std::unordered_map<omni::physics::parse::ObjectKey,
+                       std::vector<std::shared_ptr<omni::physx::usdparser::PhysxTendonAttachmentDesc>>,
+                       omni::physics::parse::ObjectKey::Hash>;
 
 using MimicJointVector = std::vector<omni::physx::usdparser::MimicJointDesc>;
 
-using PathPhysXDescMap = std::unordered_map<PXR_NS::SdfPath, const PhysxObjectDesc*, PXR_NS::SdfPath::Hash>;
+using PathPhysXDescMap =
+    std::unordered_map<omni::physics::parse::ObjectKey, const PhysxObjectDesc*, omni::physics::parse::ObjectKey::Hash>;
 
 using DeformableAttachmentVector = std::vector<DeformableAttachmentDescAndPath>;
 using DeformableCollisionFilterVector = std::vector<DeformableCollisionFilterDescAndPath>;
-using DeformableAttachmentHistoryMap = std::unordered_multimap<PXR_NS::SdfPath, PXR_NS::SdfPath, PXR_NS::SdfPath::Hash>;
-using DeformableCollisionFilterHistoryMap = std::unordered_multimap<PXR_NS::SdfPath, PXR_NS::SdfPath, PXR_NS::SdfPath::Hash>;
+using DeformableAttachmentHistoryMap =
+    std::unordered_multimap<omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey::Hash>;
+using DeformableCollisionFilterHistoryMap =
+    std::unordered_multimap<omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey::Hash>;
 
 struct SchemaAPIFlag
 {
@@ -172,70 +197,129 @@ struct SchemaAPIFlag
     };
 };
 
+// ObjectDb is keyed entirely by ObjectKey. The one path-keyed index is the plain-string
+// mPrimHierarchyStorage, written by findOrCreateEntry(ObjectKey, pathText, ...) and read by
+// the tensor wildcard matcher (BaseSimulationView.cpp), PhysX.cpp's clone-target guard and
+// PrimUpdate.cpp's subtree walks.
 class ObjectDb
 {
 public:
-    using Map = std::unordered_map<PXR_NS::SdfPath, ObjectIdMap, PXR_NS::SdfPath::Hash>;
-    using SchemaApiMap = std::unordered_map<PXR_NS::SdfPath, uint64_t, PXR_NS::SdfPath::Hash>;
     using KeyMap = std::unordered_map<omni::physics::parse::ObjectKey,
                                       ObjectIdMap,
                                       omni::physics::parse::ObjectKey::Hash>;
     using KeySchemaApiMap = std::unordered_map<omni::physics::parse::ObjectKey,
                                                uint64_t,
                                                omni::physics::parse::ObjectKey::Hash>;
-    using PathKeyMap = std::unordered_map<PXR_NS::SdfPath,
-                                          omni::physics::parse::ObjectKey,
-                                          PXR_NS::SdfPath::Hash>;
-    using KeyResolver = std::function<omni::physics::parse::ObjectKey(const PXR_NS::SdfPath&)>;
+    // ObjectKey -> parent ObjectKey (the ADR-0019 decision-2 primitive,
+    // IPhysicsSource::canonicalKey(getParent(...))). Powers the ObjectKey-typed
+    // removeEntries below; unset on a bare-default-constructed ObjectDb (before
+    // setParentResolver runs), in which case that overload safely no-ops.
+    using ParentResolver = std::function<omni::physics::parse::ObjectKey(omni::physics::parse::ObjectKey)>;
+    // ObjectKey -> the path text the object was registered under. Written only by
+    // findOrCreateEntry(ObjectKey, pathText, ...) -- the one creation overload that also
+    // writes the path-keyed mPrimHierarchyStorage -- so every removal path can evict the
+    // hierarchy row that creation added by reverse lookup, with no path argument from the
+    // caller. See REQ-LOAD-OBJECTDB-001: keeping the eviction inside ObjectDb is what makes
+    // the create/remove symmetry a property of the container rather than of each call site.
+    using KeyPathMap = std::unordered_map<omni::physics::parse::ObjectKey,
+                                          std::string,
+                                          omni::physics::parse::ObjectKey::Hash>;
 
-    void setKeyResolver(KeyResolver resolver);
+    void setParentResolver(ParentResolver resolver);
 
     /*
      * Create a new entry at the given path.
      */
-    void findOrCreateEntry(const PXR_NS::SdfPath& path, ObjectCategory category, ObjectId newEntryId);
-    void findOrCreateEntryWithoutHierarchyStorage(const PXR_NS::SdfPath& path, ObjectCategory category, ObjectId newEntryId);
+    // ObjectKey-only sibling for a caller with no SdfPath (e.g. an ovstage
+    // walk). Creation via a bare key has nothing to feed
+    // PrimHierarchyStorage::addPrim, so this only ever touches the Key-side
+    // maps -- same shape as the shipped getEntries(ObjectKey)/
+    // findEntry(ObjectKey)/removeEntry(ObjectKey) overloads.
+    void findOrCreateEntry(omni::physics::parse::ObjectKey key, ObjectCategory category, ObjectId newEntryId);
+    // Unlike the bare-key overload above, this one DOES feed PrimHierarchyStorage::addPrim,
+    // giving hierarchy registration and cascade-delete. The registered path is remembered in
+    // mKeyPathText so removeEntry/removeEntries can undo the row (REQ-LOAD-OBJECTDB-001).
+    void findOrCreateEntry(omni::physics::parse::ObjectKey key, std::string_view pathText, ObjectCategory category, ObjectId newEntryId);
+    void findOrCreateEntryWithoutHierarchyStorage(omni::physics::parse::ObjectKey key, ObjectCategory category, ObjectId newEntryId);
 
     /*
      * Return the set of entries at the given path.  If the path has not had entries
      * created, returns nullptr.
      */
-    const ObjectIdMap* getEntries(const PXR_NS::SdfPath& path) const;
-    ObjectIdMap* getEntries(const PXR_NS::SdfPath& path);
     const ObjectIdMap* getEntries(omni::physics::parse::ObjectKey key) const;
     ObjectIdMap* getEntries(omni::physics::parse::ObjectKey key);
 
     /*
      * Utility function which returns first entry in the set at the given path if it exists
      */
-    ObjectId findEntry(const PXR_NS::SdfPath& path, ObjectCategory category /* = eAllCategories */) const;
     ObjectId findEntry(omni::physics::parse::ObjectKey key, ObjectCategory category) const;
 
     bool empty() const
     {
-        return mPathMap.empty();
+        // mKeyMap is the authoritative "what still exists" index: every
+        // findOrCreateEntry*/registerObjectId path writes it.
+        return mKeyMap.empty();
     }
 
     /*
      * Clears all paths at or below the given path, moving all of the entries in the subtree
      * to the remove list.
+     *
+     * Walks mKeyMap directly via isAncestorOrSelf (ADR-0019 decision 2) rather than
+     * PrimHierarchyStorage. Requires setParentResolver to have been called; a no-op
+     * (returns false) otherwise.
+     *
+     * Evicts each cleared key's own mPrimHierarchyStorage row too, same reverse lookup as
+     * removeEntry below (REQ-LOAD-OBJECTDB-001).
      */
-    bool removeEntries(const PXR_NS::SdfPath& path);
+    bool removeEntries(omni::physics::parse::ObjectKey key);
 
-    void removeEntry(const PXR_NS::SdfPath& path, ObjectCategory category, ObjectId entryId);
+    // Removes one (category, entryId) at `key`, and -- once that was the key's last entry --
+    // the path-keyed mPrimHierarchyStorage row creation added for it, found by reverse lookup
+    // through mKeyPathText. REQ-LOAD-OBJECTDB-001.
     void removeEntry(omni::physics::parse::ObjectKey key, ObjectCategory category, ObjectId entryId);
 
-    void addSchemaAPI(const PXR_NS::SdfPath& path, SchemaAPIFlag::Enum schemaAPI);
+    // Write side of the schema-API bits, mirroring getSchemaAPIs(ObjectKey) below.
+    void addSchemaAPI(omni::physics::parse::ObjectKey key, SchemaAPIFlag::Enum schemaAPI)
+    {
+        mKeySchemaAPIMap[key] |= schemaAPI;
+    }
 
-    void setSchemaAPI(const PXR_NS::SdfPath& path, uint64_t flags);
+    void setSchemaAPI(omni::physics::parse::ObjectKey key, uint64_t flags)
+    {
+        mKeySchemaAPIMap[key] = flags;
+    }
 
-    void removeSchemaAPIs(const PXR_NS::SdfPath& path);
+    void removeSchemaAPIs(omni::physics::parse::ObjectKey key)
+    {
+        mKeySchemaAPIMap.erase(key);
+    }
 
-    void removeSchemaAPI(const PXR_NS::SdfPath& path, SchemaAPIFlag::Enum schemaAPI);
+    void removeSchemaAPI(omni::physics::parse::ObjectKey key, SchemaAPIFlag::Enum schemaAPI)
+    {
+        KeySchemaApiMap::iterator it = mKeySchemaAPIMap.find(key);
+        if (it != mKeySchemaAPIMap.end())
+            it->second &= ~schemaAPI;
+    }
 
-    uint64_t getSchemaAPIs(const PXR_NS::SdfPath& path) const;
     uint64_t getSchemaAPIs(omni::physics::parse::ObjectKey key) const;
 
+
+    /*
+     * The source-agnostic index of what was actually created.
+     */
+    const KeyMap& getKeyMap() const
+    {
+        return mKeyMap;
+    }
+
+    // PrimHierarchyStorage is plain std::string-keyed and pxr-free, so this
+    // accessor (and the member it returns) is available in both builds. Only
+    // findOrCreateEntry(ObjectKey, pathText, ...) actually feeds it (unconditionally,
+    // via pathText); the bare ObjectKey overload below has no path to feed it with.
+    // Other consumers (e.g. PhysXReplicator.cpp's subtree enumeration / clone
+    // hierarchy merge) use this accessor directly with plain strings under either
+    // build.
     const PrimHierarchyStorage& getPrimHierarchyStorage() const
     {
         return mPrimHierarchyStorage;
@@ -247,108 +331,42 @@ public:
     }
 
 private:
-    omni::physics::parse::ObjectKey resolveKey(const PXR_NS::SdfPath& path);
-    void rebuildKeyMaps();
+    // `ancestor`-rooted ancestry test for removeEntries(ObjectKey): walks
+    // mParentResolver rather than converting to SdfPath and doing HasPrefix
+    // (ADR-0019 decision 2). Mirrors AttachedStage::isAncestorOrSelf. False
+    // when mParentResolver is unset.
+    bool isAncestorOrSelf(omni::physics::parse::ObjectKey ancestor, omni::physics::parse::ObjectKey node) const;
 
-    Map mPathMap;
-    SchemaApiMap mSchemaAPIMap;
-    PathKeyMap mPathKeyMap;
+    // Drops the mPrimHierarchyStorage row findOrCreateEntry(ObjectKey, pathText, ...)
+    // registered for `key`. Call only once the key holds no entries at all.
+    void dropHierarchyRow(omni::physics::parse::ObjectKey key);
+
+    // No conditionally-present members: OvruntimeUnitTests includes this header directly, so
+    // the layout must be identical in every TU.
     KeyMap mKeyMap;
     KeySchemaApiMap mKeySchemaAPIMap;
-    KeyResolver mKeyResolver;
+    ParentResolver mParentResolver;
     PrimHierarchyStorage mPrimHierarchyStorage;
+    KeyPathMap mKeyPathText;
 };
 
-inline void ObjectDb::setKeyResolver(KeyResolver resolver)
+inline void ObjectDb::setParentResolver(ParentResolver resolver)
 {
-    mKeyResolver = std::move(resolver);
-    rebuildKeyMaps();
+    mParentResolver = std::move(resolver);
 }
 
-inline omni::physics::parse::ObjectKey ObjectDb::resolveKey(const PXR_NS::SdfPath& path)
+inline bool ObjectDb::isAncestorOrSelf(omni::physics::parse::ObjectKey ancestor, omni::physics::parse::ObjectKey node) const
 {
-    PathKeyMap::const_iterator cached = mPathKeyMap.find(path);
-    if (cached != mPathKeyMap.end())
-        return cached->second;
-
-    if (!mKeyResolver)
-        return {};
-
-    const omni::physics::parse::ObjectKey key = mKeyResolver(path);
-    if (key.valid())
-        mPathKeyMap[path] = key;
-    return key;
-}
-
-inline void ObjectDb::rebuildKeyMaps()
-{
-    mPathKeyMap.clear();
-    mKeyMap.clear();
-    mKeySchemaAPIMap.clear();
-
-    if (!mKeyResolver)
-        return;
-
-    for (Map::const_iterator it = mPathMap.begin(); it != mPathMap.end(); ++it)
+    if (ancestor == node)
+        return true;
+    if (!mParentResolver)
+        return false;
+    for (omni::physics::parse::ObjectKey k = mParentResolver(node); k.valid(); k = mParentResolver(k))
     {
-        const omni::physics::parse::ObjectKey key = resolveKey(it->first);
-        if (key.valid())
-            mKeyMap[key] = it->second;
+        if (k == ancestor)
+            return true;
     }
-
-    for (SchemaApiMap::const_iterator it = mSchemaAPIMap.begin(); it != mSchemaAPIMap.end(); ++it)
-    {
-        const omni::physics::parse::ObjectKey key = resolveKey(it->first);
-        if (key.valid())
-            mKeySchemaAPIMap[key] = it->second;
-    }
-}
-
-inline void ObjectDb::addSchemaAPI(const PXR_NS::SdfPath& path, SchemaAPIFlag::Enum schemaAPI)
-{
-    mSchemaAPIMap[path] |= schemaAPI;
-    const omni::physics::parse::ObjectKey key = resolveKey(path);
-    if (key.valid())
-        mKeySchemaAPIMap[key] |= schemaAPI;
-}
-
-inline void ObjectDb::setSchemaAPI(const PXR_NS::SdfPath& path, uint64_t flags)
-{
-    mSchemaAPIMap[path] = flags;
-    const omni::physics::parse::ObjectKey key = resolveKey(path);
-    if (key.valid())
-        mKeySchemaAPIMap[key] = flags;
-}
-
-inline void ObjectDb::removeSchemaAPIs(const PXR_NS::SdfPath& path)
-{
-    const omni::physics::parse::ObjectKey key = resolveKey(path);
-    SchemaApiMap::iterator it = mSchemaAPIMap.find(path);
-    if (it != mSchemaAPIMap.end())
-        mSchemaAPIMap.erase(it);
-    if (key.valid())
-    {
-        KeySchemaApiMap::iterator kit = mKeySchemaAPIMap.find(key);
-        if (kit != mKeySchemaAPIMap.end())
-            mKeySchemaAPIMap.erase(kit);
-    }
-}
-
-inline void ObjectDb::removeSchemaAPI(const PXR_NS::SdfPath& path, SchemaAPIFlag::Enum schemaAPI)
-{
-    mSchemaAPIMap[path] &= ~schemaAPI;
-    const omni::physics::parse::ObjectKey key = resolveKey(path);
-    if (key.valid())
-        mKeySchemaAPIMap[key] &= ~schemaAPI;
-}
-
-inline uint64_t ObjectDb::getSchemaAPIs(const PXR_NS::SdfPath& path) const
-{
-    SchemaApiMap::const_iterator it = mSchemaAPIMap.find(path);
-    if (it != mSchemaAPIMap.end())
-        return it->second;
-
-    return 0;
+    return false;
 }
 
 inline uint64_t ObjectDb::getSchemaAPIs(omni::physics::parse::ObjectKey key) const
@@ -360,43 +378,29 @@ inline uint64_t ObjectDb::getSchemaAPIs(omni::physics::parse::ObjectKey key) con
     return 0;
 }
 
-inline void ObjectDb::findOrCreateEntry(const PXR_NS::SdfPath& path, ObjectCategory category, ObjectId newEntryId)
+inline void ObjectDb::findOrCreateEntry(omni::physics::parse::ObjectKey key, ObjectCategory category, ObjectId newEntryId)
 {
-    mPrimHierarchyStorage.addPrim(path);
-    mPathMap[path].insert(std::make_pair(category, newEntryId));
-    const omni::physics::parse::ObjectKey key = resolveKey(path);
-    if (key.valid())
-        mKeyMap[key].insert(std::make_pair(category, newEntryId));
+    // No path is available, so there is nothing to feed
+    // PrimHierarchyStorage::addPrim -- same as the WithoutHierarchyStorage
+    // sibling below (they are identical for a bare-key caller).
+    findOrCreateEntryWithoutHierarchyStorage(key, category, newEntryId);
 }
 
-inline void ObjectDb::findOrCreateEntryWithoutHierarchyStorage(const PXR_NS::SdfPath& path,
-                                                               ObjectCategory category,
-                                                               ObjectId newEntryId)
+inline void ObjectDb::findOrCreateEntry(omni::physics::parse::ObjectKey key, std::string_view pathText,
+                                        ObjectCategory category, ObjectId newEntryId)
 {
-    mPathMap[path].insert(std::make_pair(category, newEntryId));
-    const omni::physics::parse::ObjectKey key = resolveKey(path);
-    if (key.valid())
-        mKeyMap[key].insert(std::make_pair(category, newEntryId));
+    mPrimHierarchyStorage.addPrim(std::string(pathText));
+    mKeyPathText[key].assign(pathText.data(), pathText.size());
+    findOrCreateEntryWithoutHierarchyStorage(key, category, newEntryId);
 }
 
-
-inline const ObjectIdMap* ObjectDb::getEntries(const PXR_NS::SdfPath& path) const
+inline void ObjectDb::findOrCreateEntryWithoutHierarchyStorage(omni::physics::parse::ObjectKey key,
+                                                                ObjectCategory category,
+                                                                ObjectId newEntryId)
 {
-    Map::const_iterator it = mPathMap.find(path);
-    if (it != mPathMap.end())
-        return &it->second;
-    else
-        return nullptr;
+    mKeyMap[key].insert(std::make_pair(category, newEntryId));
 }
 
-inline ObjectIdMap* ObjectDb::getEntries(const PXR_NS::SdfPath& path)
-{
-    Map::iterator it = mPathMap.find(path);
-    if (it != mPathMap.end())
-        return &it->second;
-    else
-        return nullptr;
-}
 
 inline const ObjectIdMap* ObjectDb::getEntries(omni::physics::parse::ObjectKey key) const
 {
@@ -416,20 +420,6 @@ inline ObjectIdMap* ObjectDb::getEntries(omni::physics::parse::ObjectKey key)
         return nullptr;
 }
 
-inline ObjectId ObjectDb::findEntry(const PXR_NS::SdfPath& path, ObjectCategory category) const
-{
-    Map::const_iterator it = mPathMap.find(path);
-    if (it != mPathMap.end())
-    {
-        const ObjectIdMap& map = it->second;
-        ObjectIdMap::const_iterator mapit = map.find(category);
-        if (mapit != map.end())
-            return mapit->second;
-    }
-
-    return kInvalidObjectId;
-}
-
 inline ObjectId ObjectDb::findEntry(omni::physics::parse::ObjectKey key, ObjectCategory category) const
 {
     KeyMap::const_iterator it = mKeyMap.find(key);
@@ -443,118 +433,6 @@ inline ObjectId ObjectDb::findEntry(omni::physics::parse::ObjectKey key, ObjectC
 
     return kInvalidObjectId;
 }
-
-template <typename T>
-void getAttributeArray(PXR_NS::VtArray<T>& array, PXR_NS::UsdAttribute& attribute)
-{
-    PXR_NS::VtValue arrayDataValue;
-    attribute.Get(&arrayDataValue);
-    const size_t size = arrayDataValue.GetArraySize();
-    array.resize(size);
-    if (size)
-    {
-        const PXR_NS::VtArray<T>& arrayData = arrayDataValue.Get<PXR_NS::VtArray<T>>();
-        array.assign(arrayData.begin(), arrayData.end());
-    }
-}
-
-template <typename T>
-bool getAttributeArrayTimedFallback(PXR_NS::VtArray<T>& array,
-                                    const PXR_NS::UsdAttribute& attribute,
-                                    const PXR_NS::UsdTimeCode& timeCode)
-{
-    bool retVal = false;
-    PXR_NS::VtValue arrayDataValue;
-    if (attribute.Get(&arrayDataValue))
-    {
-        retVal = true;
-    }
-    else if (attribute.Get(&arrayDataValue, timeCode))
-    {
-        retVal = true;
-    }
-
-    if (retVal)
-    {
-        const size_t size = arrayDataValue.GetArraySize();
-        array.resize(size);
-        if (size)
-        {
-            const PXR_NS::VtArray<T>& arrayData = arrayDataValue.Get<PXR_NS::VtArray<T>>();
-            array.assign(arrayData.begin(), arrayData.end());
-        }
-    }
-    return retVal;
-}
-
-inline void GfVec3ToFloat3(const PXR_NS::GfVec3f& inVec, carb::Float3& outVec)
-{
-    outVec.x = inVec[0];
-    outVec.y = inVec[1];
-    outVec.z = inVec[2];
-}
-
-inline void GfVec3ToFloat3(const PXR_NS::GfVec3d& inVec, carb::Float3& outVec)
-{
-    outVec.x = float(inVec[0]);
-    outVec.y = float(inVec[1]);
-    outVec.z = float(inVec[2]);
-}
-
-inline void GfVec4ToFloat4(const PXR_NS::GfVec4d& inVec, carb::Float4& outVec)
-{
-    outVec.x = float(inVec[0]);
-    outVec.y = float(inVec[1]);
-    outVec.z = float(inVec[2]);
-    outVec.w = float(inVec[3]);
-}
-
-inline void GfQuatToFloat4(const PXR_NS::GfQuatd& inRot, carb::Float4& outVec)
-{
-    const PXR_NS::GfVec3d im = inRot.GetImaginary();
-
-    outVec.x = float(im[0]);
-    outVec.y = float(im[1]);
-    outVec.z = float(im[2]);
-    outVec.w = float(inRot.GetReal());
-}
-
-inline void GfQuatToFloat4(const PXR_NS::GfQuatf& inRot, carb::Float4& outVec)
-{
-    const PXR_NS::GfVec3f im = inRot.GetImaginary();
-
-    outVec.x = im[0];
-    outVec.y = im[1];
-    outVec.z = im[2];
-    outVec.w = inRot.GetReal();
-}
-
-inline void Float4ToGfQuat(const carb::Float4& inVec, PXR_NS::GfQuatd& outRot)
-{
-    PXR_NS::GfVec3d im;
-
-    im[0] = inVec.x;
-    im[1] = inVec.y;
-    im[2] = inVec.z;
-
-    outRot.SetReal(inVec.w);
-    outRot.SetImaginary(im);
-}
-
-inline void Float3ToGfVec3(const carb::Float3& inVec, PXR_NS::GfVec3f& outVec)
-{
-    outVec[0] = inVec.x;
-    outVec[1] = inVec.y;
-    outVec[2] = inVec.z;
-}
-
-inline void Float3ToGfVec3(const carb::Float3& inVec, PXR_NS::GfVec3d& outVec)
-{
-    outVec[0] = double(inVec.x);
-    outVec[1] = double(inVec.y);
-    outVec[2] = double(inVec.z);
-}
-
 
 inline bool isPowerOfTwo(uint32_t val)
 {
@@ -583,85 +461,6 @@ public:
         }
     }
 };
-
-template <typename T>
-bool SafeGetAttribute(T* out, PXR_NS::UsdAttribute const& attribute)
-{
-    if (attribute.HasValue())
-    {
-        attribute.Get(out);
-        return true;
-    }
-    else
-        return false;
-}
-
-template <>
-inline bool SafeGetAttribute<carb::Float3>(carb::Float3* out, PXR_NS::UsdAttribute const& attribute)
-{
-    if (attribute.HasValue())
-    {
-        PXR_NS::GfVec3f v;
-        attribute.Get(&v);
-        out->x = v[0];
-        out->y = v[1];
-        out->z = v[2];
-
-        return true;
-    }
-    else
-        return false;
-}
-
-template <>
-inline bool SafeGetAttribute<carb::Float2>(carb::Float2* out, PXR_NS::UsdAttribute const& attribute)
-{
-    if (attribute.HasValue())
-    {
-        PXR_NS::GfVec2f v;
-        attribute.Get(&v);
-        out->x = v[0];
-        out->y = v[1];
-
-        return true;
-    }
-    else
-        return false;
-}
-
-inline MeshKey loadMeshKey(const PXR_NS::UsdPrim prim, const PXR_NS::TfToken crcToken)
-{
-    MeshKey meshKey;
-    const size_t meshKeySize = sizeof(MeshKey);
-    const PXR_NS::UsdAttribute crcAttr = prim.GetAttribute(crcToken);
-    if (crcAttr.HasAuthoredValue())
-    {
-        PXR_NS::VtArray<PXR_NS::uchar> vtMeshKey(meshKeySize);
-        crcAttr.Get(&vtMeshKey);
-
-        if (vtMeshKey.size() == meshKeySize)
-            std::memcpy(&meshKey, vtMeshKey.data(), meshKeySize);
-    }
-    return meshKey;
-}
-
-inline void storeMeshKey(PXR_NS::UsdPrim prim, const PXR_NS::TfToken crcToken, const MeshKey& meshKey)
-{
-    PXR_NS::UsdAttribute crcAttr = prim.GetAttribute(crcToken);
-    if (!crcAttr.HasAuthoredValue())
-    {
-        crcAttr = prim.CreateAttribute(crcToken, PXR_NS::SdfValueTypeNames->UCharArray);
-    }
-    PXR_NS::VtArray<PXR_NS::uchar> vtData(sizeof(MeshKey));
-    std::memcpy(vtData.data(), &meshKey, sizeof(MeshKey));
-    crcAttr.Set(vtData);
-}
-
-// Resolves ref to a string path
-std::string GetBody(PXR_NS::UsdRelationship const ref, const PXR_NS::UsdPrim& jointPrim);
-
-
-bool ExtractTriangulatedFaces(std::vector<uint32_t>& triangles, PXR_NS::UsdGeomMesh const& usdMesh);
 
 #define REPORT_PHYSICS_ERROR(fmt, ...)                                                                                 \
     char errorMsg[4096];                                                                                               \

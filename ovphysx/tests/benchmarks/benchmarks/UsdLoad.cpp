@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // USD load benchmarks: time the cost of ovstage population plus attach/update across
-// representative scene fixtures. Each step performs one full load cycle;
-// the prior load is cleared in preStep() so the timed step measures only
+// representative scene fixtures. Each step performs one full load cycle.
+// The prior load is cleared in preStep() so the timed step measures only
 // ovstage population + sync, not the prior load's state.
 
 #include "framework/UsdPCH.h"
@@ -39,9 +39,7 @@ public:
 
     void preStep() override
     {
-        // Start each step from an empty stage. We use the C API directly
-        // because the C++ wrapper's two reset() overloads are ambiguous at
-        // the call site.
+        // Start each step from an empty stage.
         ovphysx::PhysX* physx = BmGlobals::getInstance().getPhysX();
         if (!physx) return;
         benchmarkClearOvstage(physx, mStageAttachment);
@@ -89,7 +87,7 @@ public:
         : UsdLoadBase("../benchmarks/data/warehouse.usda") {}
 };
 
-// Cubes20 — minimal overhead-probe fixture. 20 falling cubes + ground plane.
+// Cubes20: minimal overhead-probe fixture. 20 falling cubes + ground plane.
 class UsdLoad_Cubes20 : public UsdLoadBase
 {
 public:
@@ -97,21 +95,9 @@ public:
         : UsdLoadBase("../benchmarks/data/cubes20.usda") {}
 };
 
-// Cartpole — the single-env fixture used by Lab.cartpole_* (OMPE-94463).
-// Loading cost itself is small; this bench mostly serves as a sanity check
-// that the fixture parses correctly and to track parse-cost regressions.
-class UsdLoad_Cartpole : public UsdLoadBase
-{
-public:
-    UsdLoad_Cartpole()
-        : UsdLoadBase("../benchmarks/data/cartpole.usda") {}
-};
-
-
 Register<UsdLoad_BasicSimulation>    sUsdLoadBasicSimulation("UsdLoad.basic_simulation");
 Register<UsdLoad_ArticulationPileup> sUsdLoadArticulationPileup("UsdLoad.articulation_pileup");
 Register<UsdLoad_Warehouse>          sUsdLoadWarehouse("UsdLoad.warehouse");
-Register<UsdLoad_Cartpole>           sUsdLoadCartpole("UsdLoad.cartpole");
 Register<UsdLoad_Cubes20>            sUsdLoadCubes20("UsdLoad.cubes20");
 
 } // namespace

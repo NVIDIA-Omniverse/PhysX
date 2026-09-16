@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+// DEPRECATED (tensor-binding-deprecation): a deprecated tensor-binding test. It is removed with the binding.
 
 // Tensor binding I/O throughput across scaled scenes. CPU-only.
 //
@@ -93,7 +95,7 @@ public:
     {
         // Create is heavier per call (full bind/spec/destroy cycle).
         if (mOp == Op::Create) return 10;
-        // Read/Write at 8192 envs touch ~170k prims; cap steps so wall
+        // Read/Write at 8192 envs touch ~170k prims. Cap the steps so wall
         // time stays bounded.
         return mEnvCount >= 8192 ? 50 : 100;
     }
@@ -101,7 +103,7 @@ public:
 
     void startRun() override
     {
-        // Cache PhysX* + DLTensor view once so step() doesn't pay for a
+        // Cache the PhysX* and DLTensor view once so step() does not pay for a
         // global lookup or rebuild per measured iteration.
         mPhysX = BmGlobals::getInstance().getPhysX();
         if (!mPhysX) return;
@@ -166,7 +168,8 @@ public:
         std::vector<int64_t> shape(static_cast<size_t>(spec.ndim));
         for (int i = 0; i < spec.ndim; ++i) shape[i] = spec.shape[i];
         mTensor.resize(shape);
-        // Prime with the binding's current state — see read/write rationale.
+        // Prime with the binding's current state. Without it every write pushes
+        // zero quaternions, which PhysX rejects as an invalid pose.
         DLTensor t = mTensor.view();
         if (mBinding.read(t) != OVPHYSX_API_SUCCESS)
         {

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
@@ -19,7 +19,7 @@ static void bootstrap_test_environment()
 {
     const fs::path installDir(OVPHYSX_INSTALL_DIR);
 
-    // Verify install layout exists — relative paths require cwd = ovphysx/
+    // The install layout must exist. Relative paths require cwd = ovphysx/.
     if (!fs::is_directory(installDir))
     {
         std::cerr << "ERROR: Install directory not found: " << fs::absolute(installDir) << "\n"
@@ -48,13 +48,13 @@ static void bootstrap_test_environment()
     }
 #endif
 
-    // Windows note: link-time DLLs (ovphysx.dll and dependencies) must be on PATH before
-    // process launch — the OS loader resolves them before main(). test_cpp.cmake handles
-    // this. This bootstrap only covers env vars needed after the process is already running.
-    // For standalone Windows execution, the user must ensure DLLs are on PATH themselves.
+    // Windows: link-time DLLs (ovphysx.dll and dependencies) must be on PATH before
+    // process launch, because the OS loader resolves them before main(). test_cpp.cmake
+    // handles this. This bootstrap only covers env vars needed after the process is
+    // running. For standalone Windows execution the user has to put the DLLs on PATH.
     //
-    // Linux: no LD_LIBRARY_PATH needed — BUILD_RPATH in CMakeLists.txt already covers
-    // _install/lib, _install/plugins, _install/plugins/bin/deps, and Python lib dir.
+    // Linux: no LD_LIBRARY_PATH is needed. BUILD_RPATH in CMakeLists.txt covers
+    // _install/lib, _install/plugins, _install/plugins/bin/deps, and the Python lib dir.
 
     // Clear PYTHONPATH to avoid conflicts with installed Python packages.
     // Note: _putenv_s with "" removes the variable on MSVC (equivalent to unsetenv).
@@ -70,8 +70,8 @@ class PhysXShutdownEnvironment final : public ::testing::Environment
 public:
     void SetUp() override
     {
-        const std::string filter = GTEST_FLAG_GET(filter);
-        if (filter == "GlobalLifecycle.*")
+        const char* lifecycleOwnsInitialization = std::getenv("OVPHYSX_TEST_LIFECYCLE_OWNS_INIT");
+        if (lifecycleOwnsInitialization != nullptr && std::string(lifecycleOwnsInitialization) == "1")
         {
             return;
         }
@@ -90,8 +90,8 @@ public:
         destroySharedCpuInstance();
         if (m_initialized)
         {
-            // Balance ovphysx_initialize() and clear the process-lifecycle
-            // token. The static runtime stays resident until process exit.
+            // Balance ovphysx_initialize(), drain the direct runtime, and
+            // leave Carbonite resident for its process-exit hook.
             const ovphysx_result_t shutdownResult = ovphysx_shutdown();
             if (shutdownResult.status != OVPHYSX_API_SUCCESS)
             {

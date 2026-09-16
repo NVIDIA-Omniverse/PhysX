@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "DyFeatherstoneArticulation.h"
 #include "DyDynamics.h"
@@ -730,16 +707,18 @@ namespace Dy
 		const float dt = mArticulationData.getDt();
 		if(dt > 0.0f)
 		{
+			const Cm::SpatialVectorF* PX_RESTRICT motionAccelerations = mArticulationData.getMotionAccelerations();
+
 			if(isGpuSimEnabled)
 			{
-				const Cm::SpatialVectorF& linkAccel = mArticulationData.mMotionAccelerations[linkID];
+				const Cm::SpatialVectorF& linkAccel = motionAccelerations[linkID];
 				a = Cm::SpatialVector(linkAccel.bottom, linkAccel.top);
 			}
 			else
 			{
 				const PxReal invDt = 1.0f / dt;
 				const Cm::SpatialVectorF linkAccel = 
-					mArticulationData.mMotionAccelerations[linkID] + mArticulationData.mSolverLinkSpatialDeltaVels[linkID] * invDt;
+					motionAccelerations[linkID] + mArticulationData.getSolverLinkSpatialDeltaVels()[linkID] * invDt;
 				a = Cm::SpatialVector(linkAccel.bottom, linkAccel.top);
 			}
 		}
@@ -1163,7 +1142,7 @@ namespace Dy
 	}*/
 
 	//This is used in the solveExt1D, solveExtContact
-	void FeatherstoneArticulation::pxcFsApplyImpulse(PxU32 linkID, aos::Vec3V linkImpulseLinear, aos::Vec3V linkImpulseAngular, const PxReal* jointImpulse)
+	void FeatherstoneArticulation::pxcFsApplyImpulse(PxU32 linkID, Vec3V linkImpulseLinear, Vec3V linkImpulseAngular, const PxReal* jointImpulse)
 	{
 		const ArticulationLink* links = mArticulationData.mLinks;
 		ArticulationData& data = mArticulationData;
@@ -1203,8 +1182,8 @@ namespace Dy
 	}
 
 	void FeatherstoneArticulation::pxcFsApplyImpulses(
-		PxU32 linkID1, const aos::Vec3V& linear1, const aos::Vec3V& angular1, const PxReal* jointImpulse1,
-		PxU32 linkID2, const aos::Vec3V& linear2, const aos::Vec3V& angular2, const PxReal* jointImpulse2)
+		PxU32 linkID1, const Vec3V& linear1, const Vec3V& angular1, const PxReal* jointImpulse1,
+		PxU32 linkID2, const Vec3V& linear2, const Vec3V& angular2, const PxReal* jointImpulse2)
 	{
 		if (0)
 		{
@@ -2050,8 +2029,6 @@ namespace Dy
 
 		const PxTransform id(PxIdentity);
 
-		Cm::SpatialVectorF* Z = threadContext.mZVector.begin();
-
 		PxSort<PxSolverConstraintDesc, ArticulationStaticConstraintSortPredicate>(mStatic1DConstraints.begin(), mStatic1DConstraints.size(), ArticulationStaticConstraintSortPredicate());
 		PxSort<PxSolverConstraintDesc, ArticulationStaticConstraintSortPredicate>(mStaticContactConstraints.begin(), mStaticContactConstraints.size(), ArticulationStaticConstraintSortPredicate());
 
@@ -2157,7 +2134,7 @@ namespace Dy
 			blockDesc.offsetSlop = unit.mOffsetSlop;
 
 			createFinalizeSolverContacts(blockDesc, *cmOutput, threadContext, invDt, dt, bounceThreshold,
-				frictionOffsetThreshold, correlationDist, rigidContactBiasCoefficient, blockAllocator, Z);
+				frictionOffsetThreshold, correlationDist, rigidContactBiasCoefficient, blockAllocator);
 
 			getContactManagerConstraintDesc(*cmOutput, *cm, desc);
 
@@ -3272,8 +3249,7 @@ static PX_FORCE_INLINE void fillArticConstraint(ArticulationInternalConstraint* 
 		}
 	}
 
-	void FeatherstoneArticulation::computeZ(const ArticulationData& data, 
-		const PxVec3& gravity, ScratchData& scratchData)
+	void FeatherstoneArticulation::computeZ(const ArticulationData& data, const PxVec3& gravity, ScratchData& scratchData)
 	{
 		const Cm::SpatialVectorF* PX_RESTRICT motionVelocities = scratchData.motionVelocities;
 		Cm::SpatialVectorF* PX_RESTRICT spatialZAForces = scratchData.spatialZAVectors;
@@ -3694,8 +3670,7 @@ static PX_FORCE_INLINE void fillArticConstraint(ArticulationInternalConstraint* 
 		//Initialise motion velocity, motion acceleration and coriolis vector of root link.
 		Cm::SpatialVectorF rootLinkVel;
 		{
-			const Dy::ArticulationLink& baseLink = links[0];
-			const PxsBodyCore& core0 = *baseLink.bodyCore;
+			const PxsBodyCore& core0 = *links[0].bodyCore;
 			rootLinkVel = fixBase ? Cm::SpatialVectorF::Zero() : Cm::SpatialVectorF(core0.angularVelocity, core0.linearVelocity);
 			linkMotionVelocitiesW[0] = rootLinkVel;
 			linkMotionAccelerationsW[0] = fixBase ? Cm::SpatialVectorF::Zero() : linkMotionAccelerationsW[0];
@@ -4108,9 +4083,8 @@ static PX_FORCE_INLINE void fillArticConstraint(ArticulationInternalConstraint* 
 	}
 
 	// Forward declarations
-	void writeBackContact(const PxSolverConstraintDesc& desc, SolverContext& cache,
-			PxSolverBodyData& bd0, PxSolverBodyData& bd1);
-	void writeBackContact(const PxSolverConstraintDesc& desc, SolverContext* cache);
+	void writeBackContact(const PxSolverConstraintDesc& desc, SolverContext& cache, PxSolverBodyData& bd0, PxSolverBodyData& bd1);
+	void writeBackContact(const PxSolverConstraintDesc& desc);
 	void writeBack1D(const PxSolverConstraintDesc& desc);
 	void writeBack1DStep(const PxSolverConstraintDesc& desc);
 
@@ -4142,7 +4116,7 @@ static PX_FORCE_INLINE void fillArticConstraint(ArticulationInternalConstraint* 
 			PX_ASSERT(*desc.constraint == DY_SC_TYPE_EXT_CONTACT);
 			if (isTGS)
 			{
-				writeBackContact(static_cast<PxSolverConstraintDesc&>(desc), NULL);
+				writeBackContact(static_cast<PxSolverConstraintDesc&>(desc));
 			}
 			else
 			{

@@ -1,11 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-SHAPE-001
  * @covers AC-3 AC-4
  *
  * @implements REQ-PARSE-SHAPE-002
+ * @covers AC-1
+ *
+ * @implements REQ-PARSE-COL-005
  * @covers AC-1
  */
 
@@ -51,6 +54,7 @@ bool fillCommonShape(ParseContext& ctx, ObjectKey key, const ShapeInfo& info, Ph
     fields.minTorsionalPatchRadius = desc.minTorsionalPatchRadius;
     fields.isTrigger              = desc.isTrigger;
     fields.isTriggerUsdOutput     = desc.isTriggerUsdOutput;
+    fields.attributeFallback      = info.collisionAttributeFallback;
     parseCollisionExt(ctx, key, fields);
     desc.contactOffset            = fields.contactOffset;
     desc.restOffset               = fields.restOffset;
@@ -77,8 +81,7 @@ bool fillCommonShape(ParseContext& ctx, ObjectKey key, const ShapeInfo& info, Ph
 void readConvexGeometryMargin(ParseContext& ctx, ObjectKey key, float& margin)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
 
     if (!src.hasAuthoredAttribute(key, tok.physxConvexGeometryMargin))
         return;
@@ -184,8 +187,7 @@ DescPtr<CustomPhysxShapeDesc> parseCustomShape(ParseContext& ctx, ObjectKey key,
 MeshApproximation parseMeshApproximation(ParseContext& ctx, ObjectKey key)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
 
     //   - When PhysicsMeshCollisionAPI is not applied, default to "none".
     //   - When applied, read `physics:approximation` (schema fallback is

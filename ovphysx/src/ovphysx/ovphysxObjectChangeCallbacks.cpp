@@ -1,16 +1,21 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-CAPI-STRING-001
+ * @covers AC-4
+ */
 
 
 // PhysX object change notifications: forward subscribe/unsubscribe calls to
 // the omni::physx IPhysx singleton via the internal sidecar.
 //
-// The internal sidecar links USD/omni.physx; this file does not. The sidecar
-// loader resolves the subscribe/unsubscribe function pointers at instance
-// creation and publishes them via g_sidecarSubscribeObjectChanges and
-// g_sidecarUnsubscribeObjectChanges; this file just reads those.
-// Subscriptions are process-global (single IPhysx singleton); see the
-// docstring on ovphysx_subscribe_object_changes in ovphysx.h.
+// The sidecar loader resolves the subscribe/unsubscribe function pointers at
+// instance creation and publishes them through g_sidecarSubscribeObjectChanges
+// and g_sidecarUnsubscribeObjectChanges. This file only reads those, so it does
+// not include the PhysX SDK or omni.physx headers. Subscriptions are
+// process-global (single IPhysx singleton), see ovphysx_subscribe_object_changes
+// in ovphysx.h.
 
 #include "ovphysx/ovphysx.h"
 #include "internal/sdk/ovphysxSDK.hpp"
@@ -23,65 +28,62 @@
 #include <unordered_map>
 #include <utility>
 
-// Sidecar subscribe/unsubscribe atomics owned here next to their consumers;
-// loader writes them during loadInternalSidecar() via the externs in
+// Written by loadInternalSidecar() through the externs in
 // ovphysxInternalObjectChange.h.
 std::atomic<OvphysxSidecarSubscribeObjectChangesFn>   g_sidecarSubscribeObjectChanges{nullptr};
 std::atomic<OvphysxSidecarUnsubscribeObjectChangesFn> g_sidecarUnsubscribeObjectChanges{nullptr};
 
 namespace {
 
-// Trampolines: take the clone-plugin C signature (char*, size_t, int) and call
-// the user-facing C signature (ovphysx_string_t, ovphysx_physx_type_t).
-//
-// The internal sidecar holds the user_data and dispatches it back to us. We pack
-// (user fn, user user_data) into a heap-allocated TrampolineState and use that
-// as the clone-plugin user_data, so the static trampoline below can recover
-// the original callback + user_data without TLS or globals.
+// Trampolines adapt the clone-plugin C signature (char*, size_t, int) to the
+// user-facing one (ovphysx_string_t, ovphysx_physx_type_t). A heap-allocated
+// TrampolineState holding the user callbacks and user_data is registered as
+// the clone-plugin user_data, so the static trampolines recover the original
+// callback without TLS or globals.
 struct TrampolineState
 {
     ovphysx_object_created_fn        on_created;
     ovphysx_object_destroyed_fn      on_destroyed;
     ovphysx_all_objects_destroyed_fn on_all_destroyed;
     void*                            user_data;
-    // Guards against concurrent double-unsubscribe: the first caller flips
-    // this true under g_subMutex; competing callers see it and return
-    // NOT_FOUND without re-calling the plugin's unsubscribe. Reset to false
-    // by the unsubscribe path only on plugin-call failure so the caller can
-    // retry; on success the entire entry is erased.
+    // Set under g_subMutex by the first unsubscribe caller. Competing callers
+    // return NOT_FOUND instead of calling the plugin's unsubscribe again. Reset
+    // only when the plugin call fails, so the caller can retry.
     bool                             unsubscribe_in_progress = false;
 };
 
 void created_trampoline(const char* p, size_t n, int t, void* state_void)
 {
-    auto* state = static_cast<TrampolineState*>(state_void);
+    TrampolineState* state = static_cast<TrampolineState*>(state_void);
     if (state && state->on_created)
     {
-        ovphysx_string_t s = { p, n };
-        state->on_created(s, static_cast<ovphysx_physx_type_t>(t), state->user_data);
+        // The sidecar contract guarantees c_str() storage and ptr[n] == '\0'.
+        const ovphysx_string_t primPath = { p, n };
+        state->on_created(primPath, static_cast<ovphysx_physx_type_t>(t), state->user_data);
     }
 }
 
 void destroyed_trampoline(const char* p, size_t n, int t, void* state_void)
 {
-    auto* state = static_cast<TrampolineState*>(state_void);
+    TrampolineState* state = static_cast<TrampolineState*>(state_void);
     if (state && state->on_destroyed)
     {
-        ovphysx_string_t s = { p, n };
-        state->on_destroyed(s, static_cast<ovphysx_physx_type_t>(t), state->user_data);
+        // The sidecar contract guarantees c_str() storage and ptr[n] == '\0'.
+        const ovphysx_string_t primPath = { p, n };
+        state->on_destroyed(primPath, static_cast<ovphysx_physx_type_t>(t), state->user_data);
     }
 }
 
 void all_destroyed_trampoline(void* state_void)
 {
-    auto* state = static_cast<TrampolineState*>(state_void);
+    TrampolineState* state = static_cast<TrampolineState*>(state_void);
     if (state && state->on_all_destroyed)
         state->on_all_destroyed(state->user_data);
 }
 
-// We need to keep the TrampolineState alive for the lifetime of the
-// subscription so the IPhysx callbacks can dispatch through it. Map keyed by
-// our subscription ID (== underlying IPhysx subscription ID).
+// Keeps each TrampolineState alive for the lifetime of its subscription so
+// the IPhysx callbacks can dispatch through it. Keyed by the IPhysx
+// subscription ID.
 static std::mutex g_subMutex;
 static std::unordered_map<uint64_t, std::unique_ptr<TrampolineState>> g_subs;
 
@@ -101,8 +103,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_subscribe_object_changes(
     if (!callbacks)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "callbacks is NULL");
 
-    // At least one callback must be set; an all-NULL struct would subscribe
-    // to nothing and leak a subscription that can only be cleaned by unsubscribe.
+    // An all-NULL struct would subscribe to nothing and leak a subscription
+    // that only unsubscribe can clean up.
     if (!callbacks->on_object_created && !callbacks->on_object_destroyed &&
         !callbacks->on_all_objects_destroyed)
     {
@@ -153,11 +155,10 @@ OVPHYSX_API ovphysx_result_t ovphysx_unsubscribe_object_changes(
     if (subscription == kInvalidSub)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "subscription is OVPHYSX_INVALID_SUBSCRIPTION_ID");
 
-    // Validate existence and claim the unsubscribe (atomic via g_subMutex) so
-    // a concurrent caller racing on the same ID sees the in-progress flag and
-    // returns NOT_FOUND without double-calling the plugin's unsubscribe. The
-    // TrampolineState must outlive any in-flight callback, so we keep it in
-    // g_subs through the plugin call and only erase on success.
+    // Claim the unsubscribe under g_subMutex so a concurrent caller on the same
+    // ID returns NOT_FOUND instead of calling the plugin's unsubscribe twice.
+    // The TrampolineState must outlive any in-flight callback, so it stays in
+    // g_subs until the plugin call succeeds.
     {
         std::lock_guard<std::mutex> lk(g_subMutex);
         auto it = g_subs.find(subscription);
@@ -166,8 +167,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_unsubscribe_object_changes(
         it->second->unsubscribe_in_progress = true;
     }
 
-    // Helper to clear the in-progress flag on the error paths so the caller
-    // can retry. No-op if the entry has already been erased by another path.
+    // Clears the in-progress flag on the error paths so the caller can retry.
+    // No-op if the entry has already been erased by another path.
     auto clear_in_progress = [subscription]() {
         std::lock_guard<std::mutex> lk(g_subMutex);
         auto it = g_subs.find(subscription);
@@ -189,9 +190,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_unsubscribe_object_changes(
     int rc = unsubscribe(subscription);
     if (rc != 0)
     {
-        // C-side unsubscribe failed; the IPhysx subscription may still be
-        // active. Leave state in g_subs so any future callback finds valid
-        // user_data. The leak is permanent for this subscription.
+        // The IPhysx subscription may still be active, so the state stays in
+        // g_subs and any future callback finds valid user_data. The leak is
+        // permanent for this subscription.
         clear_in_progress();
         return set_error(OVPHYSX_API_ERROR, "internal sidecar failed to unsubscribe");
     }

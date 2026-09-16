@@ -1,6 +1,8 @@
-# Fetch IsaacLab ANYmal-C asset for the Lab.anymal_* benchmarks.
-# Wrapper around scripts/fetch_anymal_asset.py — invokes the platform-
-# agnostic Python helper via packman's bundled Python.
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Fetch the IsaacLab ANYmal-C asset for the Lab.anymal_* benchmarks.
+# Wrapper around scripts/fetch_anymal_asset.py, run with packman's bundled Python.
 #
 # Usage:
 #     cmake -P scripts/fetch_anymal_asset.cmake
@@ -18,8 +20,8 @@ else()
     set(_TARGET_PYTHON "${OVPHYSX_ROOT}/_build/target-deps/python/bin/python3")
 endif()
 
-# Fall back to system python3 if target-deps isn't fetched yet — the script
-# uses only stdlib so any Python 3.8+ works.
+# Fall back to system python3 if target-deps is not fetched yet. The script
+# uses only the stdlib, so any Python 3.8+ works.
 if(NOT EXISTS "${_TARGET_PYTHON}")
     find_program(_TARGET_PYTHON NAMES python3 python)
     if(NOT _TARGET_PYTHON)

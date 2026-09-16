@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// This include must come first
-// clang-format off
-#include "UsdPCH.h"
-// clang-format on
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-8
+ */
 
 #include <carb/logging/Log.h>
 
@@ -13,38 +13,17 @@
 
 #include "usdLoad/LoadUsd.h"
 
-using namespace PXR_NS;
 using namespace carb;
 using namespace omni::physx;
 using namespace omni::physx::internal;
 using namespace omni::physx::usdparser;
 
-bool setVoxelRange(long int stageId, const PXR_NS::SdfPath& path, const int sx, const int sy, const int sz, const int ex, const int ey, const int ez, const int type, const int subType, const int update)
+bool setVoxelRange(long int stageId, omni::physics::parse::ObjectKey key, const int sx, const int sy, const int sz, const int ex, const int ey, const int ez, const int type, const int subType, const int update)
 {
-    UsdStageRefPtr stage = UsdUtilsStageCache::Get().Find(UsdStageCache::Id::FromLongInt(stageId));
-    if (!stage)
-    {
-        CARB_LOG_ERROR("setVoxelRange was unable to find a USD stage.");
-        return false;
-    }
-
-    UsdPrim inputPrim = stage->GetPrimAtPath(path);
-    if (!inputPrim || !inputPrim.IsA<UsdGeomXform>())
-    {
-        CARB_LOG_ERROR("setVoxelRange input prim is not an Xform.");
-        return false;
-    }
-
-    // check for InfiniteVoxelMapAPI presence
-    const TfTokenVector& appliedSchemas = inputPrim.GetPrimTypeInfo().GetAppliedAPISchemas(); 
-    static auto isVoxelSchema = [](const TfToken& token) { return token == gInfiniteVoxelMapAPI; };
-    if (std::none_of(appliedSchemas.begin(), appliedSchemas.end(), isVoxelSchema))
-    {
-        CARB_LOG_ERROR("setVoxelRange input prim does not have an InfiniteVoxelMapAPI applied.");
-        return false;
-    }
-
-    // try to update voxels
+    // Source-backed type/schema dispatch keyed by ObjectKey: "Xform" is the registered USD
+    // prim-type name for UsdGeomXform, "InfiniteVoxelMapAPI" the applied-schema name -- same
+    // pattern as LoadStage.cpp's voxel-map scan. The argument checks still report the usual
+    // errors; a well-formed call then fails because the voxel map itself is unsupported.
     AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
     if (!attachedStage)
     {
@@ -52,17 +31,20 @@ bool setVoxelRange(long int stageId, const PXR_NS::SdfPath& path, const int sx, 
         return false;
     }
 
-    ObjectId id = attachedStage->getObjectDatabase()->findEntry(path, eInfiniteVoxelMap);
-    if (id == kInvalidObjectId)
+    const omni::physics::parse::IPhysicsSource* src = attachedStage->getSource();
+    if (!src || !src->exists(key) || !src->isA(key, src->internToken("Xform")))
     {
-        CARB_LOG_ERROR("setVoxelRange failed due to a parsing error.");
+        CARB_LOG_ERROR("setVoxelRange input prim is not an Xform.");
         return false;
     }
 
-    void* ptr = OmniPhysX::getInstance().getInternalPhysXDatabase().getInternalTypedRecord(ePTInfiniteVoxelMap, id);
-    CARB_ASSERT(ptr);
+    if (!src->hasSchema(key, src->internToken("InfiniteVoxelMapAPI")))
+    {
+        CARB_LOG_ERROR("setVoxelRange input prim does not have an InfiniteVoxelMapAPI applied.");
+        return false;
+    }
 
-    InternalInfiniteVoxelMap* infiniteVoxelMap = reinterpret_cast<InternalInfiniteVoxelMap*>(ptr);
-    infiniteVoxelMap->mInfiniteVoxelMap.setUpdateVoxel(sx, sy, sz, ex, ey, ez, type, subType, update);
-    return true;
+    CARB_UNUSED(sx, sy, sz, ex, ey, ez, type, subType, update);
+    CARB_LOG_ERROR("setVoxelRange: InfiniteVoxelMapAPI voxel maps are not supported by the USD-free runtime.");
+    return false;
 }

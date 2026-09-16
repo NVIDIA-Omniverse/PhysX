@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-COOK-CUDACTX-001
+ * @covers AC-3
+ */
 
 #include "UjitsoMeshProcessors.h"
 #include "UjitsoMeshUtils.inl"
@@ -13,17 +16,16 @@
 // TEMP: this can be removed once it is added to DataStoreUtils.inl on the rendering side
 #include <type_traits>
 
+#include <cudamanager/PxCudaContextManager.h> // release() of the per-build manager reference
 #include <omni/physx/MeshKey.h>
 #include <private/omni/physx/IPhysxCookingServicePrivate.h>
 #include <omni/convexdecomposition/ConvexDecomposition.h>
 #include <carb/tasking/ITasking.h>
-#include <common/utilities/Utilities.h>
 
 #include "../service/CookingTask.h"
 #include "../service/CookingComputeService.h"
 
 using namespace carb::ujitso;
-using namespace PXR_NS;
 using namespace physx;
 
 namespace omni
@@ -51,7 +53,11 @@ private:
 
     ICookingComputeService& m_cookingComputeService;
     omni::convexdecomposition::ConvexDecomposition m_convexDecomposition;
-    PxCudaContextManager* m_cudaContextManager;
+    // Deliberately no cached PxCudaContextManager* here. This processor is created once with the
+    // UJITSO cooking service and lives for the whole process, so a cached manager was never
+    // revalidated: acquireCudaContextManager() only resolves when it is handed a null pointer, so
+    // one stale entry pinned every later cook to a manager the host had already released
+    // (OMPE-106105). Resolve per build instead - see buildImpl().
 };
 
 
@@ -81,7 +87,7 @@ void releasePhysxMeshCookingProcessor(Processor* processor)
 // PhysxMeshCookingProcessor public methods
 
 PhysxMeshCookingProcessor::PhysxMeshCookingProcessor(ICookingComputeService& cookingComputeService) :
-    m_cookingComputeService(cookingComputeService), m_cudaContextManager(nullptr)
+    m_cookingComputeService(cookingComputeService)
 {
 }
 
@@ -235,10 +241,19 @@ OperationResult PhysxMeshCookingProcessor::buildImpl(BuildContext& context, Buil
 
     if (enableGpuCooking)
     {
+        // Resolved fresh for every build: this runs on a UJITSO worker while the host can release
+        // and recreate its manager from the main thread, so the pointer is only valid for as long
+        // as the reference we get back here.
+        PxCudaContextManager* cudaContextManager = nullptr;
         PxPhysicsGpu* physicsGPU = nullptr;
-        if (m_cookingComputeService.lazyGetCudaContextManager(dataType, cookingRequest, m_cudaContextManager, physicsGPU))
+        if (m_cookingComputeService.acquireCudaContextManager(dataType, cookingRequest, cudaContextManager, physicsGPU))
         {
-            task->setPxCudaAndGPUPointers(m_cudaContextManager, physicsGPU);
+            task->setPxCudaAndGPUPointers(cudaContextManager, physicsGPU);
+            // The task took its own reference and holds it across performTask() below; drop ours.
+            if (cudaContextManager)
+            {
+                cudaContextManager->release();
+            }
         }
         else
         {

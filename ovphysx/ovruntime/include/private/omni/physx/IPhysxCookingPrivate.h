@@ -1,5 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-16
+ *
+ * @implements REQ-PUBLICAPI-002
+ * @covers AC-10
+ */
 
 #pragma once
 #include <omni/physx/IPhysxCooking.h>
@@ -33,9 +41,13 @@ struct IPhysxCookingPrivate
     PhysxCookingStatistics(CARB_ABI* getCookingStatistics)();
 
 
-    /// Adds a primitive to the cooking refresh set, i.e. this prim might have to have its collision data refreshed
-    //\param[in] path prim's path
-    void(CARB_ABI* addPrimToCookingRefreshSet)(const PXR_NS::SdfPath& path);
+    /// Adds a primitive to the cooking refresh set, i.e. this prim might have to have its collision data refreshed.
+    /// Named by an explicit AttachHandle rather than resolved against "the active attach" (ADR-0016
+    /// Decision 4): an unresolvable handle is rejected with a diagnostic rather than silently
+    /// dropping the request.
+    //\param[in] key prim's ObjectKey
+    //\param[in] attachHandle the attach that key was resolved from
+    void(CARB_ABI* addPrimToCookingRefreshSetForAttach)(omni::physics::parse::ObjectKey key, omni::physics::AttachHandle attachHandle);
 
     /// Releases the runtime mesh cache
     void(CARB_ABI* releaseRuntimeMeshCache)();

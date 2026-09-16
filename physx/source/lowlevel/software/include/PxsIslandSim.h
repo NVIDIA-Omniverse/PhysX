@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef PXS_ISLAND_SIM_H
 #define PXS_ISLAND_SIM_H
@@ -115,12 +92,14 @@ struct Edge
 	{
 		eCONTACT_MANAGER,
 		eCONSTRAINT,
+#if PX_SUPPORT_GPU_PHYSX
 		eSOFT_BODY_CONTACT,
-		eFEM_CLOTH_CONTACT, 
+		eFEM_CLOTH_CONTACT,
 		ePARTICLE_SYSTEM_CONTACT,
+#endif
 		eEDGE_TYPE_COUNT
 	};
-	
+
 	enum EdgeState
 	{
 		eINSERTED			= 1<<0,
@@ -230,9 +209,11 @@ public:
 	{
 		eRIGID_BODY_TYPE,
 		eARTICULATION_TYPE,
+#if PX_SUPPORT_GPU_PHYSX
 		eDEFORMABLE_SURFACE_TYPE,
 		eDEFORMABLE_VOLUME_TYPE,
 		ePARTICLESYSTEM_TYPE,
+#endif
 		eTYPE_COUNT
 	};
 
@@ -275,11 +256,11 @@ public:
 		mStaticTouchCount = 0;
 	}
 
-	PX_FORCE_INLINE void setActive()			{ mFlags |= eACTIVE;			}
-	PX_FORCE_INLINE void clearActive()			{ mFlags &= ~eACTIVE;			}
+	PX_FORCE_INLINE void setActive()			{ mFlags |= eACTIVE;		}
+	PX_FORCE_INLINE void clearActive()			{ mFlags &= ~eACTIVE;		}
 
-	PX_FORCE_INLINE void setActivating()		{ mFlags |= eACTIVATING;		}
-	PX_FORCE_INLINE void clearActivating()		{ mFlags &= ~eACTIVATING;		}
+	PX_FORCE_INLINE void setActivating()		{ mFlags |= eACTIVATING;	}
+	PX_FORCE_INLINE void clearActivating()		{ mFlags &= ~eACTIVATING;	}
 
 	//Activates a body/node.
 	PX_FORCE_INLINE void setIsReadyForSleeping()	{ mFlags |= eREADY_FOR_SLEEPING;						}
@@ -361,7 +342,7 @@ struct IslandEdgesData_Island
 #else
 	EdgeIndex mFirstEdge[Edge::eEDGE_TYPE_COUNT], mLastEdge[Edge::eEDGE_TYPE_COUNT];
 	PxU32 mEdgeCount[Edge::eEDGE_TYPE_COUNT];
-	PX_FORCE_INLINE	PxU32	getCount(EdgeType type)	const	{ return mEdgeCount[type];		}
+	PX_FORCE_INLINE	PxU32	getCount(Edge::EdgeType type)	const	{ return mEdgeCount[type];		}
 #endif
 };
 
@@ -514,7 +495,7 @@ class IslandSim
 	//An array of active islands
 	PxArray<IslandId>								mActiveIslands;
 
-	PxU32											mInitialActiveNodeCount[Edge::eEDGE_TYPE_COUNT];
+	PxU32											mInitialActiveNodeCount[Node::eTYPE_COUNT];
 
 	PxArray<PxNodeIndex>							mNodesToPutToSleep[Node::eTYPE_COUNT];
 
@@ -589,10 +570,9 @@ public:
 	PX_FORCE_INLINE void clearDeactivations()
 	{
 		for (PxU32 i = 0; i < Node::eTYPE_COUNT; ++i)
-		{
 			mNodesToPutToSleep[i].forceSize_Unsafe(0);
+		for (PxU32 i = 0; i < Edge::eEDGE_TYPE_COUNT; ++i)
 			mDeactivatingEdges[i].forceSize_Unsafe(0);
-		}
 	}
 
 	PX_FORCE_INLINE const Island&				getIsland(IG::IslandId islandIndex)		const { return mIslands[islandIndex]; }

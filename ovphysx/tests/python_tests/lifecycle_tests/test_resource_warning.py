@@ -1,23 +1,27 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Regression test for NVBug 6172756: ResourceWarning on mid-run GC.
 
-Scope: this file covers the *mid-run* leg of the fix — a ``PhysX()`` created
-without a context manager and without an explicit ``release()`` whose
-references go away **before** interpreter shutdown. The ``del physx;
+Scope: this file covers the *mid-run* leg of the fix: a ``PhysX()`` created
+without an explicit ``destroy()`` whose references go away **before**
+interpreter shutdown. The ``del physx;
 gc.collect()`` below drops the refcount to zero and runs ``PhysX.__del__``
 synchronously inside the test body. ``__del__`` emits the ResourceWarning
-**and then calls ``self.release()`` itself**, so by the time the test
+**and then calls ``self.destroy()`` itself**, so by the time the test
 returns the native instance is fully torn down.
 
-The Python API does not register a process-exit cleanup hook. Applications
-should use ``with PhysX() as physx:`` or call ``release()`` explicitly;
-mid-run garbage collection remains a warning-and-release fallback.
+The Python process-exit registry uses weak references, so it does not keep
+this otherwise unreachable instance alive. Applications should still call
+``destroy()`` explicitly in a ``finally`` block; mid-run garbage collection
+remains a warning-and-destroy fallback.
 
 Each test file in ``lifecycle_tests/`` runs in its own subprocess (see
-test_python.cmake), so this file performs exactly one PhysX() construction.
+test_python_runtime.cmake), so this file performs exactly one PhysX() construction.
 """
+
+# @implements REQ-PYTHON-LIFECYCLE-001
+# @covers AC-5 AC-8
 
 import gc
 import warnings
@@ -31,16 +35,16 @@ def test_resource_warning_emitted_on_unreleased_gc():
         warnings.simplefilter("always", ResourceWarning)
         physx = PhysX()
         assert physx._released is False
-        # Do NOT call release(); do NOT use the context manager.
+        # Do NOT call destroy().
         del physx
         gc.collect()
 
     resource_warnings = [w for w in caught if issubclass(w.category, ResourceWarning)]
     assert resource_warnings, (
-        "Expected a ResourceWarning when PhysX is GC'd without release(); "
+        "Expected a ResourceWarning when PhysX is GC'd without destroy(); "
         f"got: {[(w.category.__name__, str(w.message)) for w in caught]}"
     )
     msg = str(resource_warnings[0].message).lower()
-    assert "release" in msg, (
-        f"ResourceWarning message must mention release(); got: {msg!r}"
+    assert "destroy" in msg, (
+        f"ResourceWarning message must mention destroy(); got: {msg!r}"
     )

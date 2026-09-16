@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # Host Path Helpers
 #
 # Windows toolchain roots are discovered as native paths (vswhere, ProgramFiles),
-# so they carry backslashes and usually spaces. Both trip up tools that receive a
+# so they carry backslashes and usually spaces. Both break tools that receive a
 # path on an unquoted command line.
 
 include_guard(GLOBAL)
@@ -18,15 +18,15 @@ endfunction()
 # Convert a path to the forward-slashed 8.3 short spelling Windows resolves for
 # it, which is what CMake emits for a path it has to pass on a command line.
 #
-# The contract is "the spelling CMake will use", not "no spaces": when only some
+# The contract is "the spelling CMake will use", not "no spaces". When only some
 # components have an 8.3 alias the result is mixed, and returning the long form
 # instead would disagree with CMake just as badly. A result that still contains a
 # space is therefore kept, with a warning.
 #
-# Falls back to the long form (also with a warning) when no short name resolves -
-# 8.3 generation can be disabled per volume. That fallback is best effort and
-# untested: a spaced path may still fail later, which is why the warning says how
-# to get out of the situation rather than claiming it is handled.
+# Falls back to the long form, also with a warning, when no short name resolves,
+# since 8.3 generation can be disabled per volume. That fallback is best effort
+# and untested. A spaced path may still fail later, so the warning says how to
+# get out of the situation rather than claiming it is handled.
 function(ovphysx_space_free_host_path _path _out_var)
     ovphysx_normalize_host_path("${_path}" _normalized)
 

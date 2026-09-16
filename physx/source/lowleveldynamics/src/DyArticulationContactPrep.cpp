@@ -1,48 +1,20 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
-#include "foundation/PxPreprocessor.h"
-#include "foundation/PxVecMath.h"
-#include "DyCorrelationBuffer.h"
-#include "DySolverConstraintExtShared.h"
-#include "DyCpuGpuArticulation.h"
 #include "DyFeatherstoneArticulation.h"
+#include "DyContactPrepShared.h"
 
 namespace physx
 {
-
 namespace Dy
 {
 
 // constraint-gen only, since these use getVelocity methods
 // which aren't valid during the solver phase
 
-//PX_INLINE void computeFrictionTangents(const aos::Vec3V& vrel,const aos::Vec3V& unitNormal, aos::Vec3V& t0, aos::Vec3V& t1)
+//PX_INLINE void computeFrictionTangents(const Vec3V& vrel,const Vec3V& unitNormal, Vec3V& t0, Vec3V& t1)
 //{
 //	using namespace aos;
 //	//PX_ASSERT(PxAbs(unitNormal.magnitude()-1)<1e-3f);
@@ -86,7 +58,7 @@ PxReal SolverExtBody::getCFM() const
 		mArticulation->getCfm(mLinkIndex);
 }
 
-aos::FloatV SolverExtBody::projectVelocity(const aos::Vec3V& linear, const aos::Vec3V& angular) const
+FloatV SolverExtBody::projectVelocity(const Vec3V& linear, const Vec3V& angular) const
 {
 	if (mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
 	{
@@ -122,7 +94,7 @@ Cm::SpatialVector createImpulseResponseVector(const PxVec3& linear, const PxVec3
 	return Cm::SpatialVector(linear, angular);
 }
 
-Cm::SpatialVectorV createImpulseResponseVector(const aos::Vec3V& linear, const aos::Vec3V& angular, const SolverExtBody& body)
+Cm::SpatialVectorV createImpulseResponseVector(const Vec3V& linear, const Vec3V& angular, const SolverExtBody& body)
 {
 	if (body.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
 	{
@@ -178,9 +150,8 @@ PxReal getImpulseResponse(	const SolverExtBody& b0, const Cm::SpatialVector& imp
 	return response;
 }
 
-FloatV getImpulseResponse(	const SolverExtBody& b0, const Cm::SpatialVectorV& impulse0, Cm::SpatialVectorV& deltaV0, const FloatV& dom0, const FloatV& angDom0,
-							const SolverExtBody& b1, const Cm::SpatialVectorV& impulse1, Cm::SpatialVectorV& deltaV1, const FloatV& dom1, const FloatV& angDom1,
-							bool /*allowSelfCollision*/)
+static FloatV getImpulseResponse_(	const SolverExtBody& b0, const Cm::SpatialVectorV& impulse0, Cm::SpatialVectorV& deltaV0, const FloatV& dom0, const FloatV& angDom0,
+									const SolverExtBody& b1, const Cm::SpatialVectorV& impulse1, Cm::SpatialVectorV& deltaV1, const FloatV& dom1, const FloatV& angDom1)
 {
 	Vec3V response;
 	{
@@ -210,37 +181,165 @@ FloatV getImpulseResponse(	const SolverExtBody& b0, const Cm::SpatialVectorV& im
 	return V3SumElems(response);
 }
 
+struct ExtSolverContactParams
+{
+	PxReal dtF32;
+	PxReal invDtF32;
+	PxReal bounceThresholdF32;
+};
 
+static FloatV setupExtSolverContact(
+	const ExtSolverContactParams& params,
+	const PxSolverContactDesc& contactDesc,
+	const SolverExtBody& b0,
+	const SolverExtBody& b1,
+	const Vec3V& bodyFrame0p,
+	const Vec3V& bodyFrame1p,
+	const Vec3VArg normal,
+	const FloatVArg invDtWithBiasCoefficient,
+	const FloatVArg maxPenBias,
+	const PxContactPoint* contactBase0,
+	const PxContactPoint& contact,
+	SolverContactPointExt& solverContact,
+	const Cm::SpatialVectorV& v0,
+	const Cm::SpatialVectorV& v1,
+	const FloatV& cfm,
+	const FloatVArg norVel0,
+	const FloatVArg norVel1)
+{
+	const FloatV zero = FZero();
+
+	const FloatV penetration = FLoad(contact.separation - contactDesc.restDistance);
+
+	const Vec3V point = V3LoadA(contact.point);
+
+	const Vec3V ra = V3Sub(point, bodyFrame0p);
+	const Vec3V rb = V3Sub(point, bodyFrame1p);
+
+	Vec3V raXn = V3Cross(ra, normal);
+	Vec3V rbXn = V3Cross(rb, normal);
+
+	FloatV aVel0 = V3Dot(v0.angular, raXn);
+	FloatV aVel1 = V3Dot(v1.angular, raXn);
+
+	FloatV relLinVel = FSub(norVel0, norVel1);
+	FloatV relAngVel = FSub(aVel0, aVel1);
+	
+	const Vec3V slop = V3Scale(V3Load(contactDesc.offsetSlop), FMax(FSel(FIsEq(relLinVel, zero), FMax(), FDiv(relAngVel, relLinVel)), FOne()));
+
+	raXn = V3Sel(V3IsGrtr(slop, V3Abs(raXn)), V3Zero(), raXn);
+	rbXn = V3Sel(V3IsGrtr(slop, V3Abs(rbXn)), V3Zero(), rbXn);
+
+	aVel0 = V3Dot(raXn, v0.angular);
+	aVel1 = V3Dot(rbXn, v1.angular);
+
+	relAngVel = FSub(aVel0, aVel1);
+
+	Cm::SpatialVectorV deltaV0, deltaV1;
+
+	const Cm::SpatialVectorV resp0 = createImpulseResponseVector(normal, raXn, b0);
+	const Cm::SpatialVectorV resp1 = createImpulseResponseVector(V3Neg(normal), V3Neg(rbXn), b1);
+
+	const FloatV d0 = FLoad(contactDesc.invMassScales.linear0);
+	const FloatV d1 = FLoad(contactDesc.invMassScales.linear1);
+	const FloatV angD0 = FLoad(contactDesc.invMassScales.angular0);
+	const FloatV angD1 = FLoad(contactDesc.invMassScales.angular1);
+
+	const FloatV unitResponse = getImpulseResponse_(b0, resp0, deltaV0, d0, angD0,
+													b1, resp1, deltaV1, d1, angD1);
+
+	const FloatV vrel = FAdd(relLinVel, relAngVel);
+
+	const FloatV invDt = FLoad(params.invDtF32);
+
+	const FloatV penetrationInvDt = FMul(penetration, invDt);
+	const BoolV isSeparated = FIsGrtrOrEq(penetration, zero);
+
+	const BoolV collidingWithVrel = FIsGrtr(FNeg(vrel), penetrationInvDt); // true if (pen + dt*vrel) < 0
+	const FloatV bounceThreshold = FLoad(params.bounceThresholdF32);
+
+	const FloatV restitution = FLoad(contactBase0->restitution);
+	const BoolV isGreater2 = BAnd(BAnd(FIsGrtr(restitution, zero), FIsGrtr(bounceThreshold, vrel)), collidingWithVrel);
+
+	const FloatV tVel = FSel(isGreater2, FMul(FNeg(vrel), restitution), zero);
+	FloatV targetVelocity = tVel;
+	//Get the rigid body's current velocity and embed into the constraint target velocities
+	if (b0.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
+		targetVelocity = FSub(targetVelocity, FAdd(norVel0, aVel0));
+	else if (b1.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
+		targetVelocity = FAdd(targetVelocity, FAdd(norVel1, aVel1));
+
+	targetVelocity = FAdd(targetVelocity, V3Dot(V3LoadA(contact.targetVel), normal));
+
+	// jcarius: the addition of the cfm term is not present in equivalent code for rigid bodies
+	const FloatV recipResponse = FSel(FIsGrtr(unitResponse, zero), FRecip(FAdd(unitResponse, cfm)), zero);
+
+	FloatV velMultiplier, impulseMultiplier;
+	FloatV biasedErr, unbiasedErr;
+
+	if (FAllGrtr(zero, restitution))
+	{
+		const FloatV dt = FLoad(params.dtF32);
+		const FloatV damping = FLoad(contactBase0->damping);
+		const BoolV accelerationSpring = BLoad(!!(contactBase0->materialFlags & PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING));
+		computeCompliantContactCoefficients(dt, restitution, damping, recipResponse, unitResponse, penetration,
+		                                    targetVelocity, accelerationSpring, isSeparated, collidingWithVrel,
+		                                    velMultiplier, impulseMultiplier, unbiasedErr, biasedErr);
+	}
+	else
+	{
+		const BoolV ccdSeparationCondition = FIsGrtrOrEq(FLoad(contactDesc.maxCCDSeparation), penetration);
+		velMultiplier = recipResponse;
+		const FloatV penetrationInvDtScaled = FSel(isSeparated, penetrationInvDt, FMul(penetration, invDtWithBiasCoefficient));
+		FloatV scaledBias = FMul(velMultiplier, FMax(maxPenBias, penetrationInvDtScaled));
+		scaledBias = FSel(BAnd(ccdSeparationCondition, isGreater2), zero, scaledBias);
+
+		biasedErr = FScaleAdd(targetVelocity, velMultiplier, FNeg(scaledBias));
+		unbiasedErr = FScaleAdd(targetVelocity, velMultiplier, FSel(isGreater2, zero, FNeg(FMax(scaledBias, zero))));
+		impulseMultiplier = FOne();
+	}
+
+	const FloatV deltaF = FMax(FMul(FSub(tVel, FAdd(vrel, FMax(penetrationInvDt, zero))), velMultiplier), zero);
+
+	FStore(biasedErr, &solverContact.biasedErr);
+	FStore(unbiasedErr, &solverContact.unbiasedErr);
+
+	solverContact.raXn_velMultiplierW = V4SetW(Vec4V_From_Vec3V(resp0.angular), velMultiplier);
+	solverContact.rbXn_maxImpulseW = V4SetW(Vec4V_From_Vec3V(V3Neg(resp1.angular)), FLoad(contact.maxImpulse));
+	solverContact.linDeltaVA = deltaV0.linear;
+	solverContact.angDeltaVA = deltaV0.angular;
+	solverContact.linDeltaVB = deltaV1.linear;
+	solverContact.angDeltaVB = deltaV1.angular;
+	FStore(impulseMultiplier, &solverContact.impulseMultiplier);
+
+	return deltaF;
+}
 
 void setupFinalizeExtSolverContacts(
-	const PxContactPoint* buffer,
+	const PxSolverContactDesc& contactDesc,
 	const CorrelationBuffer& c,
-	const PxTransform& bodyFrame0,
-	const PxTransform& bodyFrame1,
 	PxU8* workspace,
 	const SolverExtBody& b0,
 	const SolverExtBody& b1,
-	const PxReal invDtF32,
-	const PxReal dtF32,
+	PxReal invDtF32,
+	PxReal dtF32,
 	PxReal bounceThresholdF32,
-	const PxReal biasCoefficient,
-	PxReal invMassScale0, PxReal invInertiaScale0,
-	PxReal invMassScale1, PxReal invInertiaScale1,
-	const PxReal restDist,
-	PxU8* frictionDataPtr,
-	PxReal ccdMaxContactDist,
-	Cm::SpatialVectorF* Z,
-	const PxReal offsetSlop)
+	PxReal biasCoefficient,
+	PxU8* frictionDataPtr)
 {
+	const PxContactPoint* buffer = contactDesc.contacts;
+	const PxTransform& bodyFrame0 = contactDesc.bodyFrame0;
+	const PxTransform& bodyFrame1 = contactDesc.bodyFrame1;
+	const PxReal invMassScale0 = contactDesc.invMassScales.linear0;
+	const PxReal invInertiaScale0 = contactDesc.invMassScales.angular0;
+	const PxReal invMassScale1 = contactDesc.invMassScales.linear1;
+	const PxReal invInertiaScale1 = contactDesc.invMassScales.angular1;
+
 	// NOTE II: the friction patches are sparse (some of them have no contact patches, and
 	// therefore did not get written back to the cache) but the patch addresses are dense,
 	// corresponding to valid patches
 
 	/*const bool haveFriction = PX_IR(n.staticFriction) > 0 || PX_IR(n.dynamicFriction) > 0;*/
-
-	const FloatV ccdMaxSeparation = FLoad(ccdMaxContactDist);
-
-	const Vec3VArg solverOffsetSlop = V3Load(offsetSlop);
 
 	PxU8* PX_RESTRICT ptr = workspace;
 
@@ -265,8 +364,8 @@ void setupFinalizeExtSolverContacts(
 
 	const FloatV maxPenBias = FLoad(PxMax(maxPenBias0, maxPenBias1));
 
-	const Vec3V frame0p = V3LoadU(bodyFrame0.p);
-	const Vec3V frame1p = V3LoadU(bodyFrame1.p);
+	const Vec3V frame0p = V3LoadU_SafeReadW(bodyFrame0.p);
+	const Vec3V frame1p = V3LoadU_SafeReadW(bodyFrame1.p);
 
 	const Cm::SpatialVectorV vel0 = b0.getVelocity();
 	const Cm::SpatialVectorV vel1 = b1.getVelocity();
@@ -285,8 +384,6 @@ void setupFinalizeExtSolverContacts(
 	staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, d0);
 	staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, d1);
 
-	const FloatV restDistance = FLoad(restDist); 
-
 	PxU32 frictionPatchWritebackAddrIndex = 0;
 
 	PxPrefetchLine(c.contactID);
@@ -294,12 +391,16 @@ void setupFinalizeExtSolverContacts(
 
 	const FloatV invDt = FLoad(invDtF32);
 	const FloatV biasCoefficientV = FLoad(biasCoefficient);
-	const FloatV bounceThreshold = FLoad(bounceThresholdF32);
 
 	const FloatV invDtWithBiasCoefficient = FMul(invDt, biasCoefficientV);
-	const FloatV dt = FLoad(dtF32);
 
 	PxU8 flags = 0;
+
+	// PT: push these to the stack once, not once per call to setupExtSolverContact
+	ExtSolverContactParams params;
+	params.dtF32 = dtF32;
+	params.invDtF32 = invDtF32;
+	params.bounceThresholdF32 = bounceThresholdF32;
 
 	for(PxU32 i=0;i<c.frictionPatchCount;i++)
 	{
@@ -319,7 +420,6 @@ void setupFinalizeExtSolverContacts(
 		const bool disableStrongFriction = !!(contactBase0->materialFlags & PxMaterialFlag::eDISABLE_FRICTION);
 		staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, FLoad(staticFriction));
 		staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, FLoad(dynamicFriction));
-		const BoolV accelerationSpring = BLoad(!!(contactBase0->materialFlags & PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING));
 	
 		SolverContactHeader* PX_RESTRICT header = reinterpret_cast<SolverContactHeader*>(ptr);
 		ptr += sizeof(SolverContactHeader);		
@@ -332,13 +432,9 @@ void setupFinalizeExtSolverContacts(
 		header->numNormalConstr		= PxTo8(contactCount);
 		header->numFrictionConstr	= PxTo8(haveFriction ? frictionPatch.anchorCount*2 : 0);
 	
-		header->type				= PxTo8(DY_SC_TYPE_EXT_CONTACT);
+		header->type	= PxTo8(DY_SC_TYPE_EXT_CONTACT);
+		header->flags	= flags;
 
-		header->flags = flags;
-
-		const FloatV restitution = FLoad(contactBase0->restitution);
-		const FloatV damping = FLoad(contactBase0->damping);
-	
 		header->staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W;
 
 		header->angDom0 = invInertiaScale0;
@@ -347,7 +443,7 @@ void setupFinalizeExtSolverContacts(
 		const PxU32 pointStride = sizeof(SolverContactPointExt);
 		const PxU32 frictionStride = sizeof(SolverContactFrictionExt);
 
-		const Vec3V normal = V3LoadU(buffer[c.contactPatches[c.correlationListHeads[i]].start].normal);
+		const Vec3V normal = V3LoadA(buffer[c.contactPatches[c.correlationListHeads[i]].start].normal);
 		
 		FloatV accumImpulse = FZero();
 
@@ -370,9 +466,8 @@ void setupFinalizeExtSolverContacts(
 				SolverContactPointExt* PX_RESTRICT solverContact = reinterpret_cast<SolverContactPointExt*>(p);
 				p += pointStride;
 
-				accumImpulse = FAdd(accumImpulse, setupExtSolverContact(b0, b1, d0, d1, angD0, angD1, frame0p, frame1p, normal, invDt, invDtWithBiasCoefficient, dt, 
-					restDistance, maxPenBias, restitution,
-					bounceThreshold, contact, *solverContact, ccdMaxSeparation, Z, vel0, vel1, cfm, solverOffsetSlop, norVel0, norVel1, damping, accelerationSpring));
+				accumImpulse = FAdd(accumImpulse, setupExtSolverContact(params, contactDesc, b0, b1, frame0p, frame1p, normal, invDtWithBiasCoefficient, maxPenBias,
+					contactBase0, contact, *solverContact, vel0, vel1, cfm, norVel0, norVel1));
 			}
 
 			ptr = p;
@@ -444,6 +539,7 @@ void setupFinalizeExtSolverContacts(
 
 				const Vec3V error = V3Sub(V3Add(ra, frame0p), V3Add(rb, frame1p));
 
+				const Vec3VArg solverOffsetSlop = V3Load(contactDesc.offsetSlop);
 				{
 					Vec3V raXn = V3Cross(ra, t0Cross);
 					Vec3V rbXn = V3Cross(rb, t0Cross);
@@ -454,8 +550,8 @@ void setupFinalizeExtSolverContacts(
 
 					const Cm::SpatialVectorV resp0 = createImpulseResponseVector(t0, raXn, b0);
 					const Cm::SpatialVectorV resp1 = createImpulseResponseVector(V3Neg(t0), V3Neg(rbXn), b1);
-					FloatV resp = FAdd(cfm, getImpulseResponse(b0, resp0, deltaV0, d0, angD0,
-															 b1, resp1, deltaV1, d1, angD1, reinterpret_cast<Cm::SpatialVectorV*>(Z)));
+					FloatV resp = FAdd(cfm, getImpulseResponse_(b0, resp0, deltaV0, d0, angD0,
+																b1, resp1, deltaV1, d1, angD1));
 
 					const FloatV velMultiplier = FSel(FIsGrtr(resp, FLoad(DY_ARTICULATION_MIN_RESPONSE)), FDiv(biasCoefficientV, resp), zero);
 
@@ -488,8 +584,8 @@ void setupFinalizeExtSolverContacts(
 					const Cm::SpatialVectorV resp0 = createImpulseResponseVector(t1, raXn, b0);
 					const Cm::SpatialVectorV resp1 = createImpulseResponseVector(V3Neg(t1), V3Neg(rbXn), b1);
 
-					FloatV resp = FAdd(cfm, getImpulseResponse(b0, resp0, deltaV0, d0, angD0,
-														   b1, resp1, deltaV1, d1, angD1, reinterpret_cast<Cm::SpatialVectorV*>(Z)));
+					FloatV resp = FAdd(cfm, getImpulseResponse_(b0, resp0, deltaV0, d0, angD0,
+																b1, resp1, deltaV1, d1, angD1));
 
 					const FloatV velMultiplier = FSel(FIsGrtr(resp, FLoad(DY_ARTICULATION_MIN_RESPONSE)), FDiv(biasCoefficientV, resp), zero);
 

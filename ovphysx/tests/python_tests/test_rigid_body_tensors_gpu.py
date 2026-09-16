@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# DEPRECATED (tensor-binding-deprecation): a deprecated tensor-binding test. Removed with the binding.
 
 """GPU-mode tests for rigid-body and articulation-root tensor types that are
 covered by CPU tests but NOT by test_tensor_bindings_api_gpu.py.
@@ -35,7 +37,7 @@ _ARTI_PATTERN = "/World/articulation*"
 def _load_rb(sdk, n_steps=3):
     load_usd_with_ovstage(sdk, data_path("boxes_falling_on_groundplane.usda"))
     sdk.wait_all()
-    sdk.warmup_gpu()
+    sdk.warmup()
     for _ in range(n_steps):
         sdk.step_sync(1.0 / 60.0)
 
@@ -43,13 +45,13 @@ def _load_rb(sdk, n_steps=3):
 def _load_artic(sdk, n_steps=3):
     load_usd_with_ovstage(sdk, data_path("two_articulations.usda"))
     sdk.wait_all()
-    sdk.warmup_gpu()
+    sdk.warmup()
     for _ in range(n_steps):
         sdk.step_sync(1.0 / 60.0)
 
 
 # ---------------------------------------------------------------------------
-# Rigid body property tensors — GPU roundtrip
+# Rigid body property tensors: GPU roundtrip
 # ---------------------------------------------------------------------------
 
 
@@ -62,7 +64,7 @@ def test_rigid_body_mass_gpu_roundtrip(physx_sdk):
             pytest.skip("No rigid body prims found")
         N = binding.count
 
-        # Read baseline using numpy (CPU property tensor accepts CPU buffer in GPU mode)
+        # A CPU property tensor accepts a numpy buffer in GPU mode.
         baseline = np.zeros((N,), dtype=np.float32)
         binding.read(baseline)
         assert np.all(baseline > 0), "Mass should be positive"
@@ -89,7 +91,6 @@ def test_rigid_body_inertia_gpu_roundtrip(physx_sdk):
         baseline = np.zeros((N, 9), dtype=np.float32)
         binding.read(baseline)
 
-        # Scale diagonal elements
         new_inertia = baseline.copy()
         new_inertia[:, [0, 4, 8]] *= 2.0
         binding.write(new_inertia)
@@ -113,7 +114,6 @@ def test_rigid_body_com_pose_gpu_roundtrip(physx_sdk):
         baseline = np.zeros((N, 7), dtype=np.float32)
         binding.read(baseline)
 
-        # Set identity quaternion [0,0,0,1] for all COM poses
         new_com = np.zeros((N, 7), dtype=np.float32)
         new_com[:, 6] = 1.0  # qw = 1
         binding.write(new_com)
@@ -126,7 +126,7 @@ def test_rigid_body_com_pose_gpu_roundtrip(physx_sdk):
 
 
 # ---------------------------------------------------------------------------
-# Articulation root tensors — GPU roundtrip
+# Articulation root tensors: GPU roundtrip
 # ---------------------------------------------------------------------------
 
 
@@ -155,7 +155,6 @@ def test_articulation_root_pose_gpu_roundtrip(physx_sdk):
         binding.read(dst.dltensor)
         result = dst.numpy()
 
-        # pz should still be 1 (initial position) and qw close to 1
         assert result.shape == (N, 7)
     finally:
         binding.destroy()

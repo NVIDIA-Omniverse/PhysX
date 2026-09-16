@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -7,6 +7,7 @@
 #include <carb/settings/SettingsUtils.h>
 #include <carb/extras/Path.h>
 #include <carb/datastore/DataStoreConfigurator.h>
+#include <carb/filesystem/IFileSystem.h>
 #include <carb/tasking/TaskingUtils.h>
 #include <omni/Function.h>
 
@@ -21,14 +22,6 @@ namespace carb
 namespace dad
 {
 struct IDataGrid;
-}
-
-namespace filesystem
-{
-inline namespace v1
-{
-struct IFileSystem;
-}
 }
 } // namespace carb
 

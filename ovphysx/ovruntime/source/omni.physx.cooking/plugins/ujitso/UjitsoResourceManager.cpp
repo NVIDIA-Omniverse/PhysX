@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
 #include "UjitsoResourceManager.h"
 #include "UjitsoServiceUtils.h"
 #include "UjitsoHashUtils.inl"
@@ -14,8 +13,6 @@
 #include <carb/ujitso/IDefaultUjitso.h>
 
 #include <private/omni/physx/PhysxUsd.h>
-
-#include <pxr/usd/usdGeom/mesh.h>
 
 using namespace carb::ujitso;
 using namespace carb::settings;

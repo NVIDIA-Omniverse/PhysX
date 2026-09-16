@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -25,15 +25,12 @@ struct GlobalSimulationFlag
 };
 
 void physxSetSimulationCallback(const omni::physx::ISimulationCallback& cb);
-void physxSetSimulationFlags(uint32_t flags, const uint64_t* paths, uint32_t numPaths);
-void physxAddSimulationFlags(uint32_t flags, const uint64_t* paths, uint32_t numPaths);
-void physxRemoveSimulationFlags(uint32_t flags, const uint64_t* paths, uint32_t numPaths);
 
-void physxSetSimulationFlags(uint32_t outputType, uint32_t flags, const uint64_t* paths, uint32_t numPaths);
-void physxAddSimulationFlags(uint32_t outputType, uint32_t flags, const uint64_t* paths, uint32_t numPaths);
-void physxRemoveSimulationFlags(uint32_t outputType, uint32_t flags, const uint64_t* paths, uint32_t numPaths);
+void physxSetSimulationFlags(uint32_t outputType, uint32_t flags);
+void physxAddSimulationFlags(uint32_t outputType, uint32_t flags);
+void physxRemoveSimulationFlags(uint32_t outputType, uint32_t flags);
 
-SubscriptionId physxSubscribePhysicsTriggerReportEvents(uint64_t stageId,
+SubscriptionId physxSubscribePhysicsTriggerReportEvents(AttachHandle attachHandle,
                                                         uint64_t path,
                                                         OnTriggerEventReportEventFn onEvent,
                                                         void* userData);
@@ -52,8 +49,6 @@ uint32_t physxFullGetContactReport(const ContactEventHeader** contactEventBuffer
                                    uint32_t& numFrictionAnchorData);
 uint64_t physxGetSimulationTimestamp();
 uint64_t physxGetSimulationStepCount();
-
-using SimulationFlagsMap = PXR_NS::TfHashMap<PXR_NS::SdfPath, uint32_t, PXR_NS::SdfPath::Hash>;
 
 class SimulationCallbacks
 {
@@ -82,11 +77,6 @@ public:
         return (mGlobalSimulationFlags & flags) == flags;
     }
 
-    bool checkActorSimulationFlags(uint32_t flags) const
-    {
-        return (mActorSimulationFlags & flags) == flags;
-    }
-
     TransformUpdateNotificationFn getTransformationWriteFn() const
     {
         return mTransformationWriteFn;
@@ -100,21 +90,6 @@ public:
     TransformUpdateFn getTransformUpdateFn() const
     {
         return mTransformUpdateFn;
-    }
-
-    uint32_t getSimulationFlags(const PXR_NS::SdfPath& path) const
-    {
-        SimulationFlagsMap::const_iterator it = mSimulationFlagsMap.find(path);
-        if (it != mSimulationFlagsMap.end())
-            return it->second;
-
-        return 0;
-    }
-
-    void setSimulationFlags(const PXR_NS::SdfPath& path, uint32_t flags)
-    {
-        mSimulationFlagsMap[path] = flags;
-        mActorSimulationFlags |= flags;
     }
 
     void* getUserData() const
@@ -148,9 +123,6 @@ private:
     TransformUpdateFn mTransformUpdateFn;
     void* mUserData;
     uint32_t mGlobalSimulationFlags;
-    uint32_t mActorSimulationFlags; // store global actor flags, so that we recognize when to traverse actors
-
-    SimulationFlagsMap mSimulationFlagsMap;
 
     ContactReportEventSubscriptionRegistry mContactReportSubscriptions;
     FullContactReportEventSubscriptionRegistry mFullContactReportSubscriptions;

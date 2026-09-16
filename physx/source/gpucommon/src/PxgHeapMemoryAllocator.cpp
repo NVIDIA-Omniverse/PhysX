@@ -1,41 +1,42 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PxgHeapMemAllocator.h"
 #include "foundation/PxAllocator.h"
+#include "foundation/PxErrors.h"
 #include "foundation/PxMath.h"
 #include "common/PxProfileZone.h"
 #include "PxgMemoryManager.h"
+#include "cudamanager/PxCudaContext.h"
 #include "cudamanager/PxCudaTypes.h"
 
 using namespace physx;
 
 #define EXCEPTIONAL_ALLOC_FACTOR 2
+
+//### DEFENSIVE - OMPE-104415
+//PT: PxHashMap::insert() does not overwrite an existing key - it leaves the old value in place and returns
+//false. An address that is already live therefore cannot be recorded a second time, and handing it out anyway
+//would give two owners the same buffer: the first deallocate() releases it while the second is still reading
+//and writing it, and the second deallocate() then finds no entry at all - with PX_ASSERT compiled out in every
+//configuration except Debug, all it can do is report the block as unknown and abandon it (see deallocate()
+//below). So the allocation is refused instead, and reported here - the only point at which the offending block
+//is still known. blockIndex is PXG_INVALID_BLOCK for the exceptional-allocation path.
+//The context goes into abort mode with it, because that is what makes the returned NULL harmless: callers of
+//allocate() do not test it (PxgCudaBuffer::allocate stores it and reports the size it asked for), and abort
+//mode is what short-circuits every CUDA call that would then run on a device address of 0. This mirrors the
+//out-of-memory path in PxgCudaDeviceMemoryAllocate, until now the only source of NULL from this heap.
+static void reportDuplicateAllocation(PxgCudaAllocatorCallbackBase* allocator, const void* address, PxU32 blockIndex)
+{
+	PX_ASSERT(0);
+	PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+		"PxgHeapMemoryAllocator: block %u handed out address %p, which is already a live allocation. Heap bookkeeping is corrupt.",
+		blockIndex, address);
+
+	allocator->mCudaContext.setAbortMode(true);
+}
 
 bool Block::isValid()
 {
@@ -238,14 +239,24 @@ PxU32 PxgHeapMemoryAllocator::getNextFreeBlock(const PxU32 blockIndex, const PxU
 
 		mTotalMem += maxAllocationSize;
 
-		//if the allocationSize is bigger than the default allocation size(mAllocationSize), we need to increase
-		//the block slots
-		if (blockIndex >= mBlocks.size())
-		{
-			PxU32 oldSize = mBlocks.size();
-			mBlocks.resize(blockIndex + 1);
+		const PxU32 newBlockIndex = PxU32(PxMax(PxI32(PxHighestSetBit(maxAllocationSize)) - 7, 0));
 
-			for (PxU32 i = oldSize; i <= blockIndex; ++i)
+		//if the allocationSize is bigger than the default allocation size(mAllocationSize), we need to increase
+		//the block slots.
+		//PT: the new root goes into the slot for maxAllocationSize (newBlockIndex), which is not necessarily the
+		//slot the caller asked for (blockIndex): maxAllocationSize is PxMax(allocationSize, mAllocationSize), so
+		//newBlockIndex > blockIndex whenever allocationSize < mAllocationSize. We must therefore size the array
+		//for the slot we are about to touch, not just for the requested one. Sizing for blockIndex alone made
+		//mBlocks[newBlockIndex] below read past the end of the array whenever mBlocks had not been sized for
+		//mAllocationSize - which is the case when the initial allocation in the ctor failed and
+		//initializeBlocks() was skipped, leaving mBlocks empty (OMPE-100438).
+		const PxU32 requiredSize = PxMax(blockIndex, newBlockIndex) + 1;
+		if (requiredSize > mBlocks.size())
+		{
+			const PxU32 oldSize = mBlocks.size();
+			mBlocks.resize(requiredSize);
+
+			for (PxU32 i = oldSize; i < requiredSize; ++i)
 			{
 				//blockSize is power of two
 				mBlocks[i].mBlockSize = 1u << (i + 7u);
@@ -253,7 +264,6 @@ PxU32 PxgHeapMemoryAllocator::getNextFreeBlock(const PxU32 blockIndex, const PxU
 			}
 		}
 
-		const PxU32 newBlockIndex = PxU32(PxMax(PxI32(PxHighestSetBit(maxAllocationSize)) - 7, 0));
 		const PxU32 rootIndex = mRoots.size() - 1;
 		Block* block = &mBlocks[newBlockIndex];
 
@@ -297,7 +307,19 @@ void* PxgHeapMemoryAllocator::allocate(const size_t byteSize, const int group, c
 		alloc.size = byteSize;
 		mExceptionalAllocs.pushBack(alloc);
 
-		mHashMap.insert(memorys, AllocationValue(PXG_INVALID_BLOCK, index, byteSize, group));
+		if(!mHashMap.insert(memorys, AllocationValue(PXG_INVALID_BLOCK, index, byteSize, group)))
+		{
+			reportDuplicateAllocation(mAllocator, memorys, PXG_INVALID_BLOCK);
+
+			//PT: the entry pushed just above is unreachable from the map, which still names the first owner's
+			//slot, and mExceptionalAllocs is never compacted - so the destructor would free this address a
+			//second time. It is provably the last element, the array only ever being appended to under mMutex.
+			//The address itself must not be freed here: it may well still belong to that first owner.
+			mExceptionalAllocs.popBack();
+			mTotalMem -= byteSize;
+			mHeapStats.stats[group] -= byteSize;
+			return NULL;
+		}
 
 #if PX_DEBUG
 		mMemTracker.registerMemory(reinterpret_cast<void*>(memorys), true, byteSize, file, line);
@@ -349,7 +371,11 @@ void* PxgHeapMemoryAllocator::allocate(const size_t byteSize, const int group, c
 
 		mBitfield = mBitfield | (1u << blockIndex);
 
-		mHashMap.insert(freeAddress, AllocationValue(blockIndex, rootIndex, byteSize, group));
+		//PT: the address may already be live, which means the heap bookkeeping is corrupt. The allocation is
+		//refused, but only after the split below: that loop is what puts the rest of the block being carved up
+		//back into the free lists, and skipping it would strand everything above the buddy inserted just now -
+		//up to a whole heap page when this request is the one that allocated a fresh root.
+		const bool duplicateAddress = !mHashMap.insert(freeAddress, AllocationValue(blockIndex, rootIndex, byteSize, group));
 
 		//recursively split blocks
 		PxU32 cOffset = offset;
@@ -364,6 +390,16 @@ void* PxgHeapMemoryAllocator::allocate(const size_t byteSize, const int group, c
 			cBlockIndex = cBlockIndex - 1;
 			mBlocks[cBlockIndex].insertBlockHeader(rootIndex, cOffset, mBlockHeaderPool);
 			mBitfield = mBitfield | (1u << cBlockIndex);
+		}
+
+		if(duplicateAddress)
+		{
+			reportDuplicateAllocation(mAllocator, freeAddress, blockIndex);
+
+			//PT: this one slot has no free-list header left and is not worth stitching back, so it stays out of
+			//circulation. Leaking it is a far better outcome than handing the address to a second owner.
+			mHeapStats.stats[group] -= byteSize;
+			return NULL;
 		}
 
 #if PX_DEBUG
@@ -388,7 +424,15 @@ void* PxgHeapMemoryAllocator::allocate(const size_t byteSize, const int group, c
 		void* address = reinterpret_cast<void*>(reinterpret_cast<PxU8*>(mRoots[rootIndex]) + offset);
 		PX_ASSERT(!mHashMap.find(address));
 
-		mHashMap.insert(address, AllocationValue(blockIndex, rootIndex, byteSize, group));
+		if(!mHashMap.insert(address, AllocationValue(blockIndex, rootIndex, byteSize, group)))
+		{
+			reportDuplicateAllocation(mAllocator, address, blockIndex);
+
+			//PT: as above, the slot stays out of circulation rather than being handed to a second owner. Nothing
+			//was carved up on this path, so that single slot is all it abandons.
+			mHeapStats.stats[group] -= byteSize;
+			return NULL;
+		}
 
 #if PX_DEBUG
 		mMemTracker.registerMemory(reinterpret_cast<void*>(address), true, byteSize, file, line);
@@ -418,9 +462,29 @@ void PxgHeapMemoryAllocator::deallocate(void* ptr)
 
 	PxMutex::ScopedLock myLock(mMutex);
 
-	PX_ASSERT(mHashMap.find(ptr));
 	//found the block index
-	AllocationValue value = mHashMap.find(ptr)->second;
+	const PxHashMap<void*, AllocationValue>::Entry* entry = mHashMap.find(ptr);
+	if (!entry)
+	{
+		//This heap has no record of the block: the pointer was never handed out by it, or it has already been
+		//freed, or the heap's own bookkeeping is corrupt (the same address registered twice).
+		//deallocate() is only reachable from inside the SDK, so every one of those is a library fault rather
+		//than a caller one. Releasing the block again would corrupt the bookkeeping further, so report it and
+		//bail out instead of running into a null dereference.
+		//In the corrupt case this deliberately abandons the block: with no map entry its size and group are
+		//unknown, so it stays charged (surfacing as inflated PxSimulationStatistics::gpuMemHeap*) and never
+		//returns to the free list. Guessing either value would corrupt the heap further. The other two cases
+		//have nothing to release: a foreign block was never charged here, and an already-freed one was
+		//un-charged by its first release.
+		// ### DEFENSIVE (OMPE-104415/NvBugs 6558251)
+		PX_ASSERT(0);
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+			"PxgHeapMemoryAllocator::deallocate: %p is not a live allocation of this heap - foreign or "
+			"already-freed pointer, or corrupt heap bookkeeping; ignoring it.", ptr);
+		return;
+	}
+
+	const AllocationValue value = entry->second;
 
 	mHeapStats.stats[value.mGroup] -= value.mByteSize;
 

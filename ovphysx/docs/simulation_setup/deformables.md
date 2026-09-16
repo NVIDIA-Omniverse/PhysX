@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Deformable Bodies
 
@@ -16,6 +16,15 @@ Schema** (`OmniPhysics*`, staged for inclusion in `UsdPhysics`) and the
 **PhysX Schema** (`Physx*` extensions). Both ship as codeless schemas —
 refer to [Physics Schemas](../physics_schemas.md). This page shows the raw-USD
 (`ApplyAPI`) authoring route.
+
+The Python examples on this page are fragments, not complete files. Each one
+extends a script that already created a `stage` and registered the codeless PhysX
+schemas, as shown in
+[Setting Up a USD Stage and a Physics Scene](physics_scene.md#setting-up-a-usd-stage-and-a-physics-scene).
+Later volume-deformable examples reuse the volume example's `prim` variable.
+`tri_mesh`, `deformable_root_prim`, and `dim` refer to a triangle mesh, a
+deformable root prim, and a grid resolution that the surrounding script already
+defined.
 
 > **Deformables require GPU simulation.** Enable GPU dynamics on the physics
 > scene (`physxScene:enableGPUDynamics = true`, `physxScene:broadphaseType =
@@ -73,6 +82,8 @@ collision mesh is not supported for surface deformables). PhysX-specific
 attributes go on `PhysxSurfaceDeformableBodyAPI`.
 
 ```python
+prim = tri_mesh.GetPrim()
+
 prim.ApplyAPI("OmniPhysicsDeformableBodyAPI")
 prim.GetAttribute("omniphysics:mass").Set(0.5)
 
@@ -87,6 +98,8 @@ prim.GetAttribute("physxDeformableBody:disableGravity").Set(True)
 prim.GetAttribute("physxDeformableBody:selfCollision").Set(True)
 ```
 
+The following figure shows a tetrahedral simulation mesh in its rest shape:
+
 ![A deformable tetrahedral rest shape](images/deformable_tet_restshape.png)
 
 ## Hierarchies
@@ -97,6 +110,8 @@ separate collision `TetMesh` (volume only), and any number of render
 `PointBased` meshes. Register non-simulation meshes to the sim mesh with a bind
 pose (`OmniPhysicsDeformablePoseAPI`, instance name for example `custom`, purpose
 `bindPose`). Mark the simulation mesh purpose `guide` so it is not rendered.
+
+The following figure shows a render mesh embedded in a coarser simulation mesh:
 
 ![A deformable render mesh embedded in a simulation mesh](images/deformable_embedding.png)
 
@@ -145,7 +160,7 @@ binding.Bind(mat, UsdShade.Tokens.weakerThanDescendants, "physics")
 Deformable material properties (dynamic friction, Young's modulus, Poisson's
 ratio, elasticity damping, and — for surface — bending stiffness/thickness/
 damping) can also be read and written in bulk at runtime through the deformable
-material tensor types — refer to [Tensor Bindings](../tutorials/tensor_bindings.md).
+material tensor types — refer to [Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md).
 
 ## Attachments and Collision Filters
 
@@ -199,7 +214,7 @@ through tensor bindings:
 - Surface: `SURFACE_DEFORMABLE_SIM_POSITION` / `..._VELOCITY`, read-only rest
   positions and triangle connectivity.
 
-Refer to the [Tensor Bindings](../tutorials/tensor_bindings.md) reference. Simulated
+Refer to the [Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md) reference. Simulated
 mesh points and velocities are also available through the ovstage
 [output read](../ovstage_integration.md) API (object types
 `DEFORMABLE_VOLUME` and `DEFORMABLE_SURFACE`, attributes `points` / `velocities`).

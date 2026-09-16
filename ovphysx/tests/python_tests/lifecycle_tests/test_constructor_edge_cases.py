@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Constructor edge-case tests: active_cuda_gpus validation, handle property,
 and ignore_version_mismatch.
@@ -16,7 +16,7 @@ import pytest
 from ovphysx import PhysX
 
 # ---------------------------------------------------------------------------
-# One successful native instance — tests properties that require native init
+# One successful native instance: tests properties that require native init
 # ---------------------------------------------------------------------------
 
 
@@ -27,10 +27,10 @@ def test_constructor_valid_and_properties():
       - active_cuda_gpus=None does not raise
       - handle property returns a positive int
       - ignore_version_mismatch=True skips version check without error
-      - release() is idempotent
+      - destroy() is idempotent
 
     Note: only ONE PhysX instance is created because Carbonite cannot be
-    re-initialized after release.
+    re-initialized after destruction.
     """
     physx = PhysX(
         active_cuda_gpus=None,
@@ -41,13 +41,13 @@ def test_constructor_valid_and_properties():
         assert isinstance(h, int), f"handle must be int, got {type(h)}"
         assert h > 0, f"handle must be > 0, got {h}"
 
-        # Double-check that the instance is functional
+        # The instance must be functional.
         physx.wait_all()
 
     finally:
-        physx.release()
+        physx.destroy()
 
-    # After release, handle must raise
+    # After destruction, handle must raise.
     with pytest.raises(RuntimeError):
         _ = physx.handle
 
@@ -56,7 +56,7 @@ def test_active_cuda_gpus_variations_cpu_mode():
     """active_cuda_gpus variants that are valid in CPU mode must not raise a
     Python-level ValueError.  Each pattern is verified in its own subprocess to
     avoid Carbonite re-initialisation crashes (access violation on Windows when
-    PhysX is constructed more than once in the same process after a release).
+    PhysX is constructed more than once in the same process after destruction).
     """
     import subprocess
     import sys
@@ -69,7 +69,7 @@ def test_active_cuda_gpus_variations_cpu_mode():
             from ovphysx import PhysX
             try:
                 p = PhysX(active_cuda_gpus={arg_repr})
-                p.release()
+                p.destroy()
             except ValueError as exc:
                 raise SystemExit(f"VALUEERROR: {{exc}}")
             except Exception:

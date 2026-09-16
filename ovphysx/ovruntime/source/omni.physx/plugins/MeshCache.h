@@ -1,9 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
-
-#include "UsdPCH.h"
 
 #include <omni/physx/IPhysx.h>
 #include <PxPhysicsAPI.h>
@@ -106,7 +104,6 @@ public:
 
     void addTriangleMesh(const omni::physx::usdparser::MeshKey& crc,
                          ::physx::PxTriangleMesh* mesh,
-                         PXR_NS::UsdPrim* prim,
                          gsl::span<const uint32_t>* inputTrianglesFaceMapping,
                          bool computeRemapTable)
     {
@@ -121,8 +118,7 @@ public:
         }
         else
         {
-            CARB_ASSERT(!computeRemapTable || prim);
-            mTriMeshRemapTable[mesh] = (computeRemapTable ? getRemapTable(*prim) : nullptr);
+            mTriMeshRemapTable[mesh] = nullptr;
         }
     }
 
@@ -147,8 +143,6 @@ public:
     void addConvexDecomposition(const omni::physx::usdparser::MeshKey& crc, const ConvexMeshVector& meshes);
 
     void release();
-
-    static const uint32_t* getRemapTable(const PXR_NS::UsdPrim& prim);
 
     const SphereFillMap& getSphereFillMap() const
     {

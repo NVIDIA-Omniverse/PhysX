@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
 
 #include "UjitsoDeformableVolumeMeshInputContainer.h"
 
@@ -19,6 +18,12 @@ PhysicsDeformableVolumeMeshInputContainer::PhysicsDeformableVolumeMeshInputConta
     CARB_PROFILE_ZONE(0, "PhysicsDeformableVolumeMeshInputContainer::PhysicsDeformableVolumeMeshInputContainer");
 
     copyOrComputeHash();
+
+    if (shouldSnapshotInputNow())
+    {
+        copyInputViews();
+        m_inputSnapshotted = true;
+    }
 }
 
 // This is only called if ujitso decides that the derived data needs to be rebuilt
@@ -26,35 +31,28 @@ void PhysicsDeformableVolumeMeshInputContainer::fill()
 {
     CARB_PROFILE_ZONE(0, "PhysicsDeformableVolumeMeshInputContainer::fill");
 
-    // we may have to reload the prim data here based on the dataInputMode
-    CookingStageAndPrim stageAndPrim;
-    switch (m_request.dataInputMode)
-    {
-    case PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW:
-        // the data is already loaded, nothing needs to be done in this case
-        break;
+    if (m_inputSnapshotted)
+        return; // the constructor already copied the views, while the caller's memory was alive
 
-    case PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID:
-        // the data needs to be reloaded from the prim
-        if (!(ICookingComputeService::getStageAndPrim(m_result, m_request, stageAndPrim) &&
-              ICookingComputeService::fillMeshView(m_result, m_request, stageAndPrim)))
-        {
-            return;
-        }
-        break;
-
-    default:
-        CARB_LOG_ERROR("Unexpected data input mode: %u", m_request.dataInputMode);
-        return;
-    }
+    // Every request is mesh-view mode now (eINPUT_MODE_FROM_PRIM_ID removed, REQ-COOK-SOURCE-001).
+    // This only runs for a synchronous cook (an async one already snapshotted above and returned
+    // at the m_inputSnapshotted check), so the caller's buffers are still alive here -- the data
+    // is already loaded, nothing to reload.
 
     // data should be loaded at this point, copy it over to the buildData output
-    copyVtArrayData(m_buildData.simPoints, m_request.volumeMeshView.simPoints);
-    copyVtArrayData(m_buildData.simBindPoints, m_request.volumeMeshView.simBindPoints);
-    copyVtArrayData(m_buildData.simIndices, m_request.volumeMeshView.simIndices);
-    copyVtArrayData(m_buildData.collBindPointsInSim, m_request.volumeMeshView.collBindPointsInSim);
-    copyVtArrayData(m_buildData.collIndices, m_request.volumeMeshView.collIndices);
-    copyVtArrayData(m_buildData.collSurfaceIndices, m_request.volumeMeshView.collSurfaceIndices);
+    copyInputViews();
+}
+
+void PhysicsDeformableVolumeMeshInputContainer::copyInputViews()
+{
+    CARB_PROFILE_ZONE(0, "PhysicsDeformableVolumeMeshInputContainer::copyInputViews");
+
+    copyVectorData(m_buildData.simPoints, m_request.volumeMeshView.simPoints);
+    copyVectorData(m_buildData.simBindPoints, m_request.volumeMeshView.simBindPoints);
+    copyVectorData(m_buildData.simIndices, m_request.volumeMeshView.simIndices);
+    copyVectorData(m_buildData.collBindPointsInSim, m_request.volumeMeshView.collBindPointsInSim);
+    copyVectorData(m_buildData.collIndices, m_request.volumeMeshView.collIndices);
+    copyVectorData(m_buildData.collSurfaceIndices, m_request.volumeMeshView.collSurfaceIndices);
 }
 
 // For now, we simply serialize bytes over the wire, but there's potential for compression here
@@ -69,12 +67,12 @@ void PhysicsDeformableVolumeMeshInputContainer::serialize(SerializerT& serialize
     serializer.serialize(readOnly, version);
 
     // serialize the heavy array data
-    serializeVtArray<readOnly>(m_buildData.simPoints, serializer);
-    serializeVtArray<readOnly>(m_buildData.simBindPoints, serializer);
-    serializeVtArray<readOnly>(m_buildData.simIndices, serializer);
-    serializeVtArray<readOnly>(m_buildData.collBindPointsInSim, serializer);
-    serializeVtArray<readOnly>(m_buildData.collIndices, serializer);
-    serializeVtArray<readOnly>(m_buildData.collSurfaceIndices, serializer);
+    serializeVector<readOnly>(m_buildData.simPoints, serializer);
+    serializeVector<readOnly>(m_buildData.simBindPoints, serializer);
+    serializeVector<readOnly>(m_buildData.simIndices, serializer);
+    serializeVector<readOnly>(m_buildData.collBindPointsInSim, serializer);
+    serializeVector<readOnly>(m_buildData.collIndices, serializer);
+    serializeVector<readOnly>(m_buildData.collSurfaceIndices, serializer);
 }
 
 void PhysicsDeformableVolumeMeshInputContainer::read(carb::ujitso::IReader& reader)

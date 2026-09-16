@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "foundation/PxAlloca.h"
 #include "foundation/PxAtomic.h"
@@ -151,15 +128,12 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 
 				mat0 = pMaterial[a].mMaterialIndex0;
 				mat1 = pMaterial[a].mMaterialIndex1;
-				totalContactPoints = insertAveragePoint && (a - strideStart) > 1 ? totalContactPoints + 1 : totalContactPoints;
 				strideStart = a;
 				numStrideHeaders++;
 				if(root)
 					totalUniquePatches++;
 			}
 		}
-		totalContactPoints = insertAveragePoint &&(numContactPoints - strideStart) > 1 ? totalContactPoints + 1 : totalContactPoints;
-		contactForceByteSize = insertAveragePoint && contactForceByteSize != 0 ? contactForceByteSize + sizeof(PxF32) * (totalContactPoints - numContactPoints) : contactForceByteSize;
 	}
 	{
 		StridePatch& patch = stridePatches[numStrideHeaders-1];
@@ -170,6 +144,26 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 		patch.isRoot = root;
 		if(parentRootPatch)
 			parentRootPatch->totalCount += PxU8(numContactPoints - strideStart);
+	}
+
+	// PT: the average points must be counted once the stride graph is complete, and per *root* patch - which is what
+	// the write loops below emit. Counting them per contiguous stride instead disagrees with the writers as soon as
+	// strides get merged into a root: a normal/material sequence like A,B,A reserves no average point but writes one
+	// (overrunning the contact & force buffers), while A,A,B,A,A reserves two but writes one (leaving a trailing
+	// contact that is counted but never written).
+	if(insertAveragePoint)
+	{
+		PxU32 nbAveragePoints = 0;
+		for(PxU32 a = 0; a < numStrideHeaders; a++)
+		{
+			const StridePatch& patch = stridePatches[a];
+			if(patch.isRoot && patch.totalCount > 1)
+				nbAveragePoints++;
+		}
+
+		totalContactPoints += nbAveragePoints;
+		if(contactForceByteSize)
+			contactForceByteSize += sizeof(PxF32) * nbAveragePoints;
 	}
 
 	numPatches = PxU8(totalUniquePatches);
@@ -241,7 +235,7 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 			}
 			forceData = reinterpret_cast<PxReal*>(forceStreamPool->mDataStream + forceStreamPool->mDataStreamSize - contactIndex);
 			if (isMeshType)
-				triangleIndice = reinterpret_cast<PxU32*>(forceData + numContactPoints);
+				triangleIndice = reinterpret_cast<PxU32*>(forceData + totalContactPoints);
 		}
 
 		totalRequiredSize = requiredContactSize + requiredPatchSize;
@@ -271,7 +265,7 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 				forceData = reinterpret_cast<PxReal*>((data + alignedRequiredSize));
 
 				if (isMeshType)
-					triangleIndice = reinterpret_cast<PxU32*>(forceData + numContactPoints);
+					triangleIndice = reinterpret_cast<PxU32*>(forceData + totalContactPoints);
 
 				PxMemZero(forceData, contactForceByteSize);
 
@@ -408,8 +402,8 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 
 					if (faceIndice)
 					{
-						StridePatch& p = stridePatches[index];
-						*faceIndice = contactPoints[p.startIndex].internalFaceIndex1;
+						// PT: the average point inherits the face index of the patch's first contact.
+						*faceIndice = contactPoints[startIndex].internalFaceIndex1;
 						faceIndice++;
 					}
 
@@ -511,8 +505,8 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 
 						if (faceIndice)
 						{
-							StridePatch& p = stridePatches[index];
-							*faceIndice = contactPoints[p.startIndex].internalFaceIndex1;
+							// PT: the average point inherits the face index of the patch's first contact.
+							*faceIndice = contactPoints[startIndex].internalFaceIndex1;
 							faceIndice++;
 						}
 						point->contact = avgPt * recipCount;

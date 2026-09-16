@@ -1,16 +1,25 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-MASS-001
  * @covers AC-2 AC-3
+ *
+ * @implements REQ-PARSE-MASS-002
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-SIM-OBJECTDB-001
+ * @covers AC-3
+ *
+ * @implements REQ-PARSE-MASS-003
+ * @covers AC-1 AC-2 AC-3 AC-4
+ *
+ * @implements REQ-LOAD-TOKENS-001
+ * @covers AC-2
+ * computeRigidBodyMass and RequestParticleMassUpdate adopt the attach batch.
  */
 
-#include "UsdPCH.h"
-
 #include "Mass.h"
-
-#include "Collision.h"
 #include "LoadTools.h"
 #include "PhysXTools.h"
 #include "MassProperties.h"
@@ -24,16 +33,14 @@
 #include <omni/physics/parse/ParseContext.h>
 #include <omni/physics/parse/IPhysicsSource.h>
 #include "IceDescriptorAllocator.h"
-#include "UsdSource.h"
 
 #include <PhysXDefines.h>
-#include <common/utilities/UsdMaterialParsing.h>
 
 #include <carb/Types.h>
 #include <carb/logging/Log.h>
 
-using namespace PXR_NS;
 using namespace carb;
+using namespace ::physx;
 
 namespace omni
 {
@@ -60,168 +67,44 @@ float convertSiValueToStageUnits(const omni::physics::parse::SourceUnits& units,
     return static_cast<float>(val);
 }
 
-MassApiData parseMassApi(const UsdStageWeakPtr stage, const UsdPrim& usdPrim)
-{
-    MassApiData result;
-
-    if (usdPrim.HasAPI<UsdPhysicsMassAPI>())
-    {
-
-        const UsdPhysicsMassAPI massAPI = UsdPhysicsMassAPI::Get(stage, usdPrim.GetPath());
-        const UsdAttribute densityAttribute = massAPI.GetDensityAttr();
-        const UsdAttribute massAttribute = massAPI.GetMassAttr();
-        const UsdAttribute diagonalInertia = massAPI.GetDiagonalInertiaAttr();
-
-        {
-            float d;
-            densityAttribute.Get(&d);
-            if (d > 0.0f)
-                result.density = d;
-        }
-
-        {
-            float m;
-            massAttribute.Get(&m);
-            if (m > 0.0f)
-                result.mass = m;
-        }
-
-        {
-            GfVec3f dg;
-            diagonalInertia.Get(&dg);
-            if (dg[0] > 0.0f || dg[1] > 0.0f || dg[2] > 0.0f)
-            {
-                result.hasInertia = true;
-                result.diagonalInertia = dg;
-            }
-        }
-    }
-
-    return result;
-}
-
-bool getCoM(const UsdStageWeakPtr stage, const UsdPrim& usdPrim, carb::Float3& com)
-{
-    bool comSet = false;
-    if (usdPrim.HasAPI<UsdPhysicsMassAPI>())
-    {
-        const UsdPhysicsMassAPI massAPI = UsdPhysicsMassAPI::Get(stage, usdPrim.GetPath());
-        const UsdAttribute comAttribute = massAPI.GetCenterOfMassAttr();
-
-        GfVec3f v;
-        comAttribute.Get(&v);
-
-        // -inf -inf -inf is the sentinel value, though any inf works
-        if (isfinite(v[0]) && isfinite(v[1]) && isfinite(v[2]))
-        {
-            // World transform is resolved via the source when a stage is attached;
-            // falls back to direct USD compute otherwise.
-            const long stageId = stage ? UsdUtilsStageCache::Get().GetId(stage).ToLongInt() : 0;
-            omni::physx::usdparser::AttachedStage* as =
-                omni::physx::usdparser::UsdLoad::getUsdLoad()->getAttachedStage(stageId);
-            const GfMatrix4d mat = as
-                ? omni::physx::internal::getWorldTransform(*as, as->keyFor(usdPrim.GetPath()), UsdTimeCode::Default())
-                : UsdGeomXformable(usdPrim).ComputeLocalToWorldTransform(UsdTimeCode::Default());
-            const GfTransform tr(mat);
-            const GfVec3f sc = GfVec3f(tr.GetScale());
-
-            com.x = v[0] * sc[0];
-            com.y = v[1] * sc[1];
-            com.z = v[2] * sc[2];
-
-            comSet = true;
-        }
-    }
-    return comSet;
-}
-
-bool getPrincipalAxes(const UsdStageWeakPtr stage, const UsdPrim& usdPrim, carb::Float4& pa)
-{
-    bool comSet = false;
-    if (usdPrim.HasAPI<UsdPhysicsMassAPI>())
-    {
-        const UsdPhysicsMassAPI massAPI = UsdPhysicsMassAPI::Get(stage, usdPrim.GetPath());
-        const UsdAttribute paAttribute = massAPI.GetPrincipalAxesAttr();
-
-        // 0 0 0 0 is the sentinel value
-        GfQuatf v;
-        paAttribute.Get(&v);
-
-        if (!GfIsClose(v.GetImaginary(), GfVec3f(0.0f), kAlmostZero) || fabsf(v.GetReal()) > kAlmostZero)
-        {
-            pa.x = v.GetImaginary()[0];
-            pa.y = v.GetImaginary()[1];
-            pa.z = v.GetImaginary()[2];
-            pa.w = v.GetReal();
-
-            comSet = true;
-        }
-    }
-    return comSet;
-}
-
 struct InternalMassAccumulationData
 {
     bool accumulateMass; // if true it indicates we are summing up the mass from density/child mass calculations
     float mass = -1.0f; //-1.0 means it is not set yet
-    GfVec3f diagonalizedInertiaTensor = { 0.0f, 0.0f, 0.0f };
-    GfVec3f centerOfMass = { 0.0f, 0.0f, 0.0f };
-    GfQuatf principalAxes;
+    ::physx::PxVec3 diagonalizedInertiaTensor = { 0.0f, 0.0f, 0.0f };
+    ::physx::PxVec3 centerOfMass = { 0.0f, 0.0f, 0.0f };
+    ::physx::PxQuat principalAxes;
     float density = -1.0f;
 };
 
 // ---------------------------------------------------------------------------
-// Source-based MassAPI reads (ADR-0002 M2c-D). Backend-agnostic replacements for
-// the USD parseMassApi/getCoM/getPrincipalAxes above: they read UsdPhysicsMassAPI
-// through the parse library (works for USD and ovstage alike, no UsdPrim).
+// Source-based MassAPI reads (ADR-0002 M2c-D): UsdPhysicsMassAPI is read through
+// the parse library (works for USD and ovstage alike, no UsdPrim).
 // ---------------------------------------------------------------------------
 namespace
 {
-pp::MassApiData parseSourceMassApi(pp::IPhysicsSource& source, pp::ObjectKey key)
-{
-    pp::ParseContext ctx(source, iceDescriptorAllocator());
-    return pp::parseMassApi(ctx, key);
-}
-
 MassApiData toLocalMassApi(const pp::MassApiData& m)
 {
     MassApiData out;
     out.mass = m.mass;
     out.density = m.density;
     out.hasInertia = m.hasInertia;
-    out.diagonalInertia = GfVec3f(m.diagonalInertia.x, m.diagonalInertia.y, m.diagonalInertia.z);
+    out.diagonalInertia = toPhysX(m.diagonalInertia);
     out.hasCenterOfMass = m.hasCenterOfMass;
     out.centerOfMass = m.centerOfMass;
     out.hasPrincipalAxes = m.hasPrincipalAxes;
     out.principalAxes = m.principalAxes;
     return out;
 }
-
-// Center of mass. parse-lib parseMassApi already applies the prim's local-to-world
-// per-axis scale (matching the legacy getCoM), so use its value directly — do NOT
-// re-scale here (that was a double-scale bug).
-bool getCoMSource(pp::IPhysicsSource& source, pp::ObjectKey key, carb::Float3& com)
-{
-    const pp::MassApiData m = parseSourceMassApi(source, key);
-    if (!m.hasCenterOfMass)
-        return false;
-    com = m.centerOfMass;
-    return true;
-}
-
-bool getPrincipalAxesSource(pp::IPhysicsSource& source, pp::ObjectKey key, carb::Float4& pa)
-{
-    const pp::MassApiData m = parseSourceMassApi(source, key);
-    if (!m.hasPrincipalAxes)
-        return false;
-    pa = m.principalAxes;
-    return true;
-}
 } // namespace
 
-MassApiData getCollisionShapeMassAPIData(pp::IPhysicsSource& source, pp::ObjectKey shapeKey, float bodyDensity, float& density)
+MassApiData getCollisionShapeMassAPIData(pp::ParseContext& ctx,
+                                         pp::ObjectKey shapeKey,
+                                         float bodyDensity,
+                                         float& density)
 {
-    MassApiData shapeMassInfo = toLocalMassApi(parseSourceMassApi(source, shapeKey));
+    pp::IPhysicsSource& source = ctx.source();
+    MassApiData shapeMassInfo = toLocalMassApi(pp::parseMassApi(ctx, shapeKey));
 
     if (shapeMassInfo.density <= 0.0)
     {
@@ -235,7 +118,6 @@ MassApiData getCollisionShapeMassAPIData(pp::IPhysicsSource& source, pp::ObjectK
         const pp::ObjectKey materialKey = source.getMaterialBinding(shapeKey);
         if (materialKey.valid())
         {
-            pp::ParseContext ctx(source, iceDescriptorAllocator());
             if (pp::DescPtr<pp::PhysxMaterialDesc> mat = pp::parseMaterial(ctx, materialKey))
             {
                 if (mat->density > 0.0f)
@@ -248,26 +130,25 @@ MassApiData getCollisionShapeMassAPIData(pp::IPhysicsSource& source, pp::ObjectK
 }
 
 MassProperties parseCollisionShapeForMass(pp::IPhysicsSource& source,
-                                          const SdfPath& path, pp::ObjectKey shapeKey, ObjectId shapeObjectId,
+                                          pp::ObjectKey shapeKey, ObjectId shapeObjectId,
                                           const MassApiData& inShapeMassInfo, float density,
-                                          GfMatrix4f& transform,
+                                          PxTransform& transform,
                                           AbstractComputeRigidBodyMass* crbmInterface)
 {
     MassApiData shapeMassInfo = inShapeMassInfo;
-    GfMatrix3f inertia;
+    PxMat33 inertia(PxZero);
     PhysXUsdPhysicsInterface::MassInformation massInfo;
     if (shapeObjectId != kInvalidObjectId)
     {
-        massInfo = crbmInterface->getShapeMassInfo(path, shapeObjectId);
-        memcpy(inertia.data(), &massInfo.inertia[0], sizeof(float) * 9);
+        massInfo = crbmInterface->getShapeMassInfo(shapeObjectId);
+        // PxMat33 stores the same nine floats in the same order the Gf matrix did,
+        // so this raw copy lands identically whether or not the tensor is symmetric.
+        memcpy(&inertia.column0.x, &massInfo.inertia[0], sizeof(float) * 9);
     }
     else
     {
         massInfo.volume = 1.0f;
-        inertia = GfMatrix3f(0.0f);
-        inertia[0][0] = 1.0f;
-        inertia[1][1] = 1.0f;
-        inertia[2][2] = 1.0f;
+        inertia = PxMat33(PxIdentity);
         massInfo.centerOfMass.x = 0.0f;
         massInfo.centerOfMass.y = 0.0f;
         massInfo.centerOfMass.z = 0.0f;
@@ -298,15 +179,29 @@ MassProperties parseCollisionShapeForMass(pp::IPhysicsSource& source,
         inertia = inertia * density;
     }
 
+    // Authored center of mass and inertia axes are source-collider-local. If either is present,
+    // express both computed values in that frame before mixing authored and computed properties.
+    const bool usesSourceFrame = hasCoM || shapeMassInfo.hasInertia;
+    const PxTransform geometryToSource = toPhysX(massInfo.geometryToSourcePos, massInfo.geometryToSourceRot);
+    if (usesSourceFrame)
+    {
+        massInfo.centerOfMass = fromPhysX(geometryToSource.transform(toPhysX(massInfo.centerOfMass)));
+        if (!shapeMassInfo.hasInertia)
+            inertia = MassProperties::rotateInertia(inertia, geometryToSource.q);
+    }
+
     if (shapeMassInfo.hasInertia)
     {
-        const PXR_NS::GfQuatf pa(principalAxes.w, principalAxes.x, principalAxes.y, principalAxes.z);
-        const PXR_NS::GfMatrix3f rotMatr(pa);
-        PXR_NS::GfMatrix3f inMatr(0.0f);
+        const PxQuat pa = toPhysXQuat(principalAxes);
+        // PxMat33(pa) and GfMatrix3f(pa) hold the same nine floats, but PhysX
+        // multiplies column-vector style, so the operands swap to keep the
+        // product identical to the row-vector `inMatr * rotMatr`.
+        const PxMat33 rotMatr(pa);
+        PxMat33 inMatr(PxZero);
         inMatr[0][0] = shapeMassInfo.diagonalInertia[0];
         inMatr[1][1] = shapeMassInfo.diagonalInertia[1];
         inMatr[2][2] = shapeMassInfo.diagonalInertia[2];
-        inertia = inMatr * rotMatr;
+        inertia = rotMatr * inMatr;
     }
 
     if (hasCoM)
@@ -314,10 +209,8 @@ MassProperties parseCollisionShapeForMass(pp::IPhysicsSource& source,
         if (!shapeMassInfo.hasInertia)
         {
             // update inertia if we override the CoM but use the computed inertia
-            MassProperties massProps(
-                shapeMassInfo.mass, inertia,
-                GfVec3f(massInfo.centerOfMass.x, massInfo.centerOfMass.y, massInfo.centerOfMass.z));
-            const GfVec3f newCenterOfMass(centerOfMass.x, centerOfMass.y, centerOfMass.z);
+            MassProperties massProps(shapeMassInfo.mass, inertia, toPhysX(massInfo.centerOfMass));
+            const PxVec3 newCenterOfMass = toPhysX(centerOfMass);
             massProps.translate(newCenterOfMass - massProps.centerOfMass);
             inertia = massProps.inertiaTensor;
         }
@@ -326,12 +219,10 @@ MassProperties parseCollisionShapeForMass(pp::IPhysicsSource& source,
         massInfo.centerOfMass.z = centerOfMass.z;
     }
 
-    transform.SetTranslate(GfVec3f(massInfo.localPos.x, massInfo.localPos.y, massInfo.localPos.z));
-    transform.SetRotateOnly(
-        GfQuatd(massInfo.localRot.w, massInfo.localRot.x, massInfo.localRot.y, massInfo.localRot.z));
+    const PxTransform geometryToBody = toPhysX(massInfo.localPos, massInfo.localRot);
+    transform = usesSourceFrame ? geometryToBody * geometryToSource.getInverse() : geometryToBody;
 
-    return MassProperties(shapeMassInfo.mass, inertia,
-                            GfVec3f(massInfo.centerOfMass.x, massInfo.centerOfMass.y, massInfo.centerOfMass.z));
+    return MassProperties(shapeMassInfo.mass, inertia, toPhysX(massInfo.centerOfMass));
 }
 
 
@@ -347,9 +238,9 @@ struct UsdLoadRigidBodyMass : public AbstractComputeRigidBodyMass
         return mAttachedStage.getPhysXPhysicsInterface()->getRigidBodyShapes(mAttachedStage, rbId, shapes);
     }
 
-    virtual PhysXUsdPhysicsInterface::MassInformation getShapeMassInfo(const PXR_NS::SdfPath& path, usdparser::ObjectId objectId) override
+    virtual PhysXUsdPhysicsInterface::MassInformation getShapeMassInfo(usdparser::ObjectId objectId) override
     {
-        return mAttachedStage.getPhysXPhysicsInterface()->getShapeMassInfo(path, objectId);
+        return mAttachedStage.getPhysXPhysicsInterface()->getShapeMassInfo(objectId);
     }
 
 private:
@@ -361,38 +252,49 @@ void RequestRigidBodyMassUpdate(AttachedStage& attachedStage, pp::ObjectKey body
     pp::IPhysicsSource* source = attachedStage.getSource();
     if (!source)
         return;
-    const SdfPath primKey = attachedStage.pathFor(bodyKey);
-    const ObjectIdMap* entries = attachedStage.getObjectIds(primKey);
+    // bodyKey is already attachedStage's own ObjectKey -- look entries up
+    // directly rather than round-tripping through an SdfPath (updateMass's
+    // ObjectKey overload applies mass purely by ObjectId, no path needed).
+    const ObjectIdMap* entries = attachedStage.getObjectIds(bodyKey);
     UsdLoadRigidBodyMass crbmInterface(attachedStage);
     if (entries && !entries->empty())
     {
         auto it = entries->begin();
         while (it != entries->end())
         {
-            if (it->first == eBody || it->first == eArticulationLink)
+            // kInvalidObjectId would be used unchecked as an index into the internal record array
+            // (getRigidBodyShapes/getShapeMassInfo), reading far out of bounds in release builds.
+            if ((it->first == eBody || it->first == eArticulationLink) && it->second != kInvalidObjectId)
             {
                 // We assume that the body is dynamic. Caller's responsibility to check.
-                RigidBodyMass physicsMassInfo = computeRigidBodyMass(&crbmInterface, *source, bodyKey, it->second);
+                RigidBodyMass physicsMassInfo =
+                    computeRigidBodyMass(&crbmInterface, *source, bodyKey, it->second, &attachedStage.getKnownTokens());
                 attachedStage.getPhysXPhysicsInterface()->updateMass(
-                    primKey, it->second, physicsMassInfo.mass, physicsMassInfo.inertia, physicsMassInfo.centerOfMass, physicsMassInfo.principalAxes);
+                    bodyKey, it->second, physicsMassInfo.mass, physicsMassInfo.inertia, physicsMassInfo.centerOfMass, physicsMassInfo.principalAxes);
             }
         it++;
         }
     }
 }
 
-RigidBodyMass computeRigidBodyMass(AbstractComputeRigidBodyMass* crbmInterface, pp::IPhysicsSource& source, pp::ObjectKey bodyKey, usdparser::ObjectId rbId)
+// @implements REQ-LOAD-TOKENS-001
+RigidBodyMass computeRigidBodyMass(AbstractComputeRigidBodyMass* crbmInterface, pp::IPhysicsSource& source, pp::ObjectKey bodyKey, usdparser::ObjectId rbId,
+                                   const pp::KnownTokens* knownTokens)
 {
+    pp::ParseContext ctx(source, iceDescriptorAllocator());
+    // Runs once per dynamic body: adopt the attach's batch instead of re-interning per body.
+    if (knownTokens)
+        ctx.adoptKnownTokens(*knownTokens);
     // Triple indentation is here to minimize diff of existing code that has been extracted
     {
         {
             {
-                const SdfPath primKey(std::string(source.sourceKeyToString(bodyKey)));
+                const std::string primKey(source.sourceKeyToString(bodyKey));
                 InternalMassAccumulationData massDesc;
-                massDesc.principalAxes = GfQuatf(1.0f);
+                massDesc.principalAxes = PxQuat(PxIdentity);
 
                 // Parse dynamic body mass data via the source (backend-agnostic).
-                MassApiData massInfo = toLocalMassApi(parseSourceMassApi(source, bodyKey));
+                MassApiData massInfo = toLocalMassApi(pp::parseMassApi(ctx, bodyKey));
                 massDesc.density = massInfo.density;
                 massDesc.mass = massInfo.mass;
                 massDesc.diagonalizedInertiaTensor = massInfo.diagonalInertia;
@@ -411,7 +313,7 @@ RigidBodyMass computeRigidBodyMass(AbstractComputeRigidBodyMass* crbmInterface, 
                 if (massDesc.accumulateMass || !massInfo.hasInertia || !hasCoM)
                 {
                     std::vector<MassProperties> massProps;
-                    std::vector<GfMatrix4f> massTransf;
+                    std::vector<PxTransform> massTransf;
                     ObjectIdPathMap shapeIds;
 
                     const bool hasTriggers = crbmInterface->getRigidBodyShapes(rbId, shapeIds);
@@ -419,19 +321,19 @@ RigidBodyMass computeRigidBodyMass(AbstractComputeRigidBodyMass* crbmInterface, 
                     massProps.reserve(numShapes);
                     massTransf.reserve(numShapes);
 
-                    for (const std::pair<usdparser::ObjectId, PXR_NS::SdfPath>& shapePair : shapeIds)
+                    for (const std::pair<usdparser::ObjectId, pp::ObjectKey>& shapePair : shapeIds)
                     {
                         float shapeDensity = 0.0f;
-                        const SdfPath& shapePath = shapePair.second;
+                        const pp::ObjectKey shapeKey = shapePair.second;
 
-                        if (shapePath.IsEmpty())
+                        if (!shapeKey.valid())
                             continue;
 
-                        const pp::ObjectKey shapeKey = source.findByPath(shapePath.GetString());
-                        MassApiData massAPIdata = getCollisionShapeMassAPIData(source, shapeKey, massDesc.density, shapeDensity);
+                        MassApiData massAPIdata =
+                            getCollisionShapeMassAPIData(ctx, shapeKey, massDesc.density, shapeDensity);
 
-                        GfMatrix4f matrix;
-                        massProps.push_back(parseCollisionShapeForMass(source, shapePath, shapeKey, shapePair.first, massAPIdata, shapeDensity, matrix, crbmInterface));
+                        PxTransform matrix(PxIdentity);
+                        massProps.push_back(parseCollisionShapeForMass(source, shapeKey, shapePair.first, massAPIdata, shapeDensity, matrix, crbmInterface));
                         massTransf.push_back(matrix);
                     }
 
@@ -449,23 +351,21 @@ RigidBodyMass computeRigidBodyMass(AbstractComputeRigidBodyMass* crbmInterface, 
                         {
                             const double massDiff = massDesc.mass / accumulatedMassProps.mass;
                             accumulatedMassProps.mass = massDesc.mass;
-                            accumulatedMassProps.inertiaTensor = accumulatedMassProps.inertiaTensor * massDiff;
+                            accumulatedMassProps.inertiaTensor = accumulatedMassProps.inertiaTensor * float(massDiff);
                         }
 
                         if (!hasCoM)
                         {
-                            centerOfMass.x = accumulatedMassProps.centerOfMass[0];
-                            centerOfMass.y = accumulatedMassProps.centerOfMass[1];
-                            centerOfMass.z = accumulatedMassProps.centerOfMass[2];
+                            centerOfMass = toFloat3(accumulatedMassProps.centerOfMass);
                         }
                         else
                         {
-                            const GfVec3f newCenterOfMass(centerOfMass.x, centerOfMass.y, centerOfMass.z);
+                            const PxVec3 newCenterOfMass = toPhysX(centerOfMass);
                             accumulatedMassProps.translate(newCenterOfMass - accumulatedMassProps.centerOfMass);
                         }
 
-                        GfQuatf accPa;
-                        const GfVec3f accInertia = MassProperties::getMassSpaceInertia(accumulatedMassProps.inertiaTensor, accPa);
+                        PxQuat accPa;
+                        const PxVec3 accInertia = MassProperties::getMassSpaceInertia(accumulatedMassProps.inertiaTensor, accPa);
 
                         // check for inertia override
                         if (!massInfo.hasInertia)
@@ -475,10 +375,7 @@ RigidBodyMass computeRigidBodyMass(AbstractComputeRigidBodyMass* crbmInterface, 
 
                         if (!hasPa)
                         {
-                            principalAxes.x = accPa.GetImaginary()[0];
-                            principalAxes.y = accPa.GetImaginary()[1];
-                            principalAxes.z = accPa.GetImaginary()[2];
-                            principalAxes.w = accPa.GetReal();
+                            principalAxes = toFloat4(accPa);
                         }
                     }
                     else
@@ -503,7 +400,7 @@ RigidBodyMass computeRigidBodyMass(AbstractComputeRigidBodyMass* crbmInterface, 
                             {
                                 CARB_LOG_INFO(
                                     "The rigid body at %s has a possibly invalid inertia tensor of {1.0, 1.0, 1.0}, small sphere approximated inertia was used. %s",
-                                    primKey.GetString().c_str(),
+                                    primKey.c_str(),
                                     "Either specify correct values in the mass properties, or add collider(s) to any UsdGeom p(s) that you wish to automatically compute mass properties for.");
                             }
                             else
@@ -512,7 +409,7 @@ RigidBodyMass computeRigidBodyMass(AbstractComputeRigidBodyMass* crbmInterface, 
                                 {
                                     CARB_LOG_WARN(
                                         "The rigid body at %s has a possibly invalid inertia tensor of {1.0, 1.0, 1.0}%s, small sphere approximated inertia was used. %s",
-                                        primKey.GetString().c_str(), (massDesc.mass < 0.0f) ? " and a negative mass" : "",
+                                        primKey.c_str(), (massDesc.mass < 0.0f) ? " and a negative mass" : "",
                                         "Either specify correct values in the mass properties, or add collider(s) to any shape(s) that you wish to automatically compute mass properties for.");
                                 }
                             }
@@ -537,7 +434,7 @@ RigidBodyMass computeRigidBodyMass(AbstractComputeRigidBodyMass* crbmInterface, 
                     {
                         if (massDesc.diagonalizedInertiaTensor[i] < -tolerance)
                         {
-                            CARB_LOG_WARN("Physics mass: computed mass inertia tensor on a prim (%s) does have a negative diagonal value.", primKey.GetText());
+                            CARB_LOG_WARN("Physics mass: computed mass inertia tensor on a prim (%s) does have a negative diagonal value.", primKey.c_str());
                             massDesc.diagonalizedInertiaTensor[i] = fabsf(massDesc.diagonalizedInertiaTensor[i]);
                         }
                         else
@@ -547,8 +444,7 @@ RigidBodyMass computeRigidBodyMass(AbstractComputeRigidBodyMass* crbmInterface, 
                     }
                 }
 
-                const carb::Float3 diagInertia = { massDesc.diagonalizedInertiaTensor[0], massDesc.diagonalizedInertiaTensor[1],
-                                                   massDesc.diagonalizedInertiaTensor[2] };
+                const carb::Float3 diagInertia = toFloat3(massDesc.diagonalizedInertiaTensor);
 
                 RigidBodyMass physicsMassInfo;
                 physicsMassInfo.mass = massDesc.mass;
@@ -563,11 +459,13 @@ RigidBodyMass computeRigidBodyMass(AbstractComputeRigidBodyMass* crbmInterface, 
 
 void RequestParticleMassUpdate(AttachedStage& attachedStage, omni::physics::parse::ObjectKey particleKey)
 {
-    const SdfPath primKey = attachedStage.pathFor(particleKey);
-    if (primKey.IsEmpty())
+    if (!particleKey.valid())
         return;
 
-    const ObjectIdMap* entries = attachedStage.getObjectIds(primKey);
+    // particleKey is already attachedStage's own ObjectKey -- look entries up
+    // directly rather than round-tripping through an SdfPath (updateParticleMass's
+    // key parameter is already unused by the body -- mass is applied purely by ObjectId).
+    const ObjectIdMap* entries = attachedStage.getObjectIds(particleKey);
 
     if (entries && !entries->empty())
     {
@@ -582,11 +480,12 @@ void RequestParticleMassUpdate(AttachedStage& attachedStage, omni::physics::pars
                 if (src)
                 {
                     omni::physics::parse::ParseContext ctx(const_cast<omni::physics::parse::IPhysicsSource&>(*src), iceDescriptorAllocator());
+                    ctx.adoptKnownTokens(attachedStage.getKnownTokens());
                     if (omni::physics::parse::DescPtr<omni::physics::parse::ParticleSetDesc> scanDesc =
                             omni::physics::parse::parseParticleSet(ctx, particleKey))
                     {
                         ParticleSetDesc* desc = buildParticleSetDescRuntime(attachedStage, *scanDesc);
-                        attachedStage.getPhysXPhysicsInterface()->updateParticleMass(primKey, it->second, *desc);
+                        attachedStage.getPhysXPhysicsInterface()->updateParticleMass(particleKey, it->second, *desc);
                         omni::physx::usdparser::releaseDesc(desc);
                     }
                 }

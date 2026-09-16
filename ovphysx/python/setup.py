@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 from setuptools import setup
 from setuptools.dist import Distribution
@@ -7,7 +7,7 @@ from setuptools.dist import Distribution
 
 class BinaryDistribution(Distribution):
     """Force platform-specific wheel (Root-Is-Purelib: false) while keeping
-    the py3-none ABI tag (we bundle pre-built .so files, not cpython extensions)."""
+    the py3-none ABI tag (the wheel bundles pre-built .so files, not cpython extensions)."""
     def has_ext_modules(self):
         return True
 

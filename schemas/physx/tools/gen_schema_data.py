@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
+
 """
 Generate a codeless schema's DATA (generatedSchema.usda + plugInfo.json) using
 NATIVE OpenUSD `usdGenSchema` -- no repo_usd.

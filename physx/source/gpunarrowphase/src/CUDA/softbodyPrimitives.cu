@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "foundation/PxQuat.h"
 #include "foundation/PxSimpleTypes.h"
@@ -1954,7 +1931,6 @@ __device__ static inline void sbParticleCollision(
 	const uint4										curPair,
 	const PxsCachedTransform* PX_RESTRICT			transformCache,
 	const PxReal* PX_RESTRICT						contactDistance,
-	const PxReal* PX_RESTRICT						restDistances,
 	const PxgShape* PX_RESTRICT						gpuShapes,
 	const PxgParticleSystem* PX_RESTRICT			particleSystems,
 	const PxgSoftBody* PX_RESTRICT					softbodies,
@@ -1973,7 +1949,6 @@ __device__ static inline void sbParticleCollision(
 		particleShape, particleCacheRef, softbodyShape, softbodyCacheRef);
 
 	const PxReal cDistance = contactDistance[particleCacheRef] + contactDistance[softbodyCacheRef];
-	const PxReal restDistance = restDistances[cmIdx];
 
 	const PxU32 softbodyId = softbodyShape.particleOrSoftbodyId;
 	const PxgSoftBody& softbody = softbodies[softbodyId];
@@ -2027,7 +2002,7 @@ __device__ static inline void sbParticleCollision(
 	//this means the p is inside for the tetrahedron
 	if (result.x >= 0.f && result.y >= 0.f && result.z >= 0.f && result.w >= 0.f)
 	{
-		pen = n.dot(n2) - restDistance;
+		pen = n.dot(n2);
 		n = n2;
 	}
 	else
@@ -2044,8 +2019,6 @@ __device__ static inline void sbParticleCollision(
 		{
 			n = n2;
 		}
-
-		pen -= restDistance;
 	}
 
 	int32_t index = atomicAdd(writer.totalContactCount, 1);
@@ -2070,7 +2043,6 @@ void sb_psContactGenLaunch(
 	const PxgContactManagerInput* PX_RESTRICT	cmInputs,
 	const PxsCachedTransform* PX_RESTRICT		transformCache,
 	const PxReal* PX_RESTRICT					contactDistance,
-	const PxReal* PX_RESTRICT					restDistances,
 	const PxgShape* PX_RESTRICT					gpuShapes,
 	const PxgParticleSystem* PX_RESTRICT		particleSystems,
 	const PxgSoftBody* PX_RESTRICT				softbodies,
@@ -2095,7 +2067,7 @@ void sb_psContactGenLaunch(
 		const uint4 curPair = pairs[i];
 
 		sbParticleCollision(tolerenceLength, cmInputs,
-			curPair, transformCache, contactDistance, restDistances, gpuShapes,
+			curPair, transformCache, contactDistance, gpuShapes,
 			particleSystems, softbodies,
 			writer			
 		);

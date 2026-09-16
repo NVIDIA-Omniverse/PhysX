@@ -1,11 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-6 AC-7 AC-8
+ */
 
 #pragma once
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
 #include <carb/events/IEvents.h>
+#include <omni/physics/parse/Handles.h> // ObjectKey
 #include "EventSubscriptionRegistry.h"
 #include "ObjectId.h"
 
@@ -131,13 +137,13 @@ typedef void (*OnPhysicsSimulationEventFn)(SimulationStatusEvent eventStatus, vo
 ///
 /// \note The notification happens after the object has been created.
 ///
-/// \param[in] sdfPath SdfPath of the prim that triggered the object creation.
+/// \param[in] key ObjectKey of the object that triggered the object creation.
 /// \param[in] objectId The internal object ID that can be used to directly access PhysX objects.
 /// \param[in] type The type of the created object.
 /// \param[in] userData The user data provided by the user when registering the IPhysicsObjectChangeCallback
 ///            structure.
-using ObjectCreationNotificationFn =
-    std::function<void(const PXR_NS::SdfPath& sdfPath, usdparser::ObjectId objectId, PhysXType type, void* userData)>;
+using ObjectCreationNotificationFn = std::function<void(
+    omni::physics::parse::ObjectKey key, usdparser::ObjectId objectId, PhysXType type, void* userData)>;
 
 /// Notification when a physics object gets destroyed during simulation.
 ///
@@ -151,13 +157,13 @@ using ObjectCreationNotificationFn =
 ///
 /// \note The notification happens before the object gets destroyed.
 ///
-/// \param[in] sdfPath SdfPath of the prim that triggered the object destruction.
+/// \param[in] key ObjectKey of the object that triggered the object destruction.
 /// \param[in] objectId The internal object ID that can be used to directly access PhysX objects.
 /// \param[in] type The type of the object that is going to get destroyed.
 /// \param[in] userData The user data provided by the user when registering the IPhysicsObjectChangeCallback
 ///            structure.
-using ObjectDestructionNotificationFn =
-    std::function<void(const PXR_NS::SdfPath& sdfPath, usdparser::ObjectId objectId, PhysXType type, void* userData)>;
+using ObjectDestructionNotificationFn = std::function<void(
+    omni::physics::parse::ObjectKey key, usdparser::ObjectId objectId, PhysXType type, void* userData)>;
 
 /// Notification when all physics objects get destroyed during simulation.
 ///
@@ -382,21 +388,21 @@ struct IPhysx
     /// Get the internal objectId, this is index to an array of
     /// internal physics representation. This index can be used for direct access.
     ///
-    /// \param path Usd path where the physics object was created
-    /// \param type Physics type, note that there can be more than one object per path, so a type is required to return
+    /// \param key ObjectKey of the object the physics object was created for
+    /// \param type Physics type, note that there can be more than one object per key, so a type is required to return
     /// correct result
     ///
     /// \returns the index of the physics object in the internal array
-    usdparser::ObjectId(CARB_ABI* getObjectId)(const PXR_NS::SdfPath& path, PhysXType type);
+    usdparser::ObjectId(CARB_ABI* getObjectId)(omni::physics::parse::ObjectKey key, PhysXType type);
 
     /// Get the PhysX pointer
     ///
-    /// \param path Usd path where the physics object was created
-    /// \param type Physics type, note that there can be more than one object per path, so a type is required to return
+    /// \param key ObjectKey of the object the physics object was created for
+    /// \param type Physics type, note that there can be more than one object per key, so a type is required to return
     /// correct result
     ///
     /// \returns the pointer to a PhysX representation
-    void*(CARB_ABI* getPhysXPtr)(const PXR_NS::SdfPath& path, PhysXType type);
+    void*(CARB_ABI* getPhysXPtr)(omni::physics::parse::ObjectKey key, PhysXType type);
 
     /// Get the PhysX pointer
     ///
@@ -406,12 +412,47 @@ struct IPhysx
     ///          accessible object)
     void*(CARB_ABI* getPhysXPtrFast)(usdparser::ObjectId objectId);
 
-    /// Get the USD path for given objectId
+    /// Get the ObjectKey for given objectId
     ///
     /// \param objectId ObjectId, index to an array of physics objects in PhysX representation
     ///
-    /// \returns the USD path for given objectId index
-    PXR_NS::SdfPath(CARB_ABI* getPhysXObjectUsdPath)(usdparser::ObjectId objectId);
+    /// \returns the ObjectKey for given objectId index, or the invalid sentinel when objectId does
+    ///          not resolve to a live record
+    omni::physics::parse::ObjectKey(CARB_ABI* getObjectKeyForId)(usdparser::ObjectId objectId);
+
+    /// Resolves a source-native path string to this runtime's opaque object-identity handle,
+    /// for an object that already exists.
+    ///
+    /// This is one of the functions on the public API that may still cross a path string at
+    /// the boundary (ADR-0019 decision 3), alongside objectKeyToPath (the lookup-side
+    /// counterpart) and createD6JointAtPath (a narrower, create-shaped crossing that cannot
+    /// use this function's existence gate). Every other public function names an object via
+    /// ObjectKey alone.
+    ///
+    /// \param path Source-native path string naming an object in the currently attached source
+    ///        (USD: an SdfPath string; ovstage: the backend's own path vocabulary -- the source
+    ///        decides what it accepts).
+    ///
+    /// \returns the object's ObjectKey, or the invalid sentinel (ObjectKey{}, .valid() == false)
+    ///          when path does not resolve against the active attach, path is null, or there is
+    ///          no active attach
+    omni::physics::parse::ObjectKey(CARB_ABI* resolveObjectKey)(const char* path);
+
+    /// Renders the opaque object-identity handle back to a human-readable path string, for
+    /// display, logging, or lookup by name.
+    ///
+    /// This is the lookup-side counterpart of resolveObjectKey among the functions on the
+    /// public API that may still cross a path string at the boundary (ADR-0019 decision 3).
+    /// Every other public function names an object via ObjectKey alone.
+    ///
+    /// \param key ObjectKey to render.
+    ///
+    /// \returns a string owned by the currently attached IPhysicsSource, valid only until the
+    ///          next detach or source rebuild (AttachedStage::rebuildSource) -- callers that need
+    ///          it to outlive that must copy it. Empty when key is the invalid sentinel, key does
+    ///          not name a live source object, a live ObjectDb record, or a live
+    ///          InternalPhysXDatabase record, or there is no active attach or source.
+    const char*(CARB_ABI* objectKeyToPath)(omni::physics::parse::ObjectKey key);
 
     /// Forces load physics objects from USD into PhysX
     ///
@@ -421,10 +462,24 @@ struct IPhysx
     ///
     void(CARB_ABI* releasePhysicsObjects)();
 
-    /// create D6 joint (temp until we support D6 through schema)
-    const void*(CARB_ABI* createD6JointAtPath)(const PXR_NS::SdfPath& path,
-                                               const PXR_NS::SdfPath& body0,
-                                               const PXR_NS::SdfPath& body1);
+    /// Create a D6 joint at jointPath (temp until we support D6 through schema).
+    ///
+    /// jointPath crosses the public boundary as a string (ADR-0019 decision 3) rather than an
+    /// ObjectKey because this is a create, not a lookup: resolveObjectKey's existence gate (no
+    /// UsdPrim, no ObjectDb record yet for a joint this call is about to create) would always
+    /// report jointPath unreachable, leaving no way to obtain a key for it. jointPath is minted
+    /// existence-independently instead, the same way the runtime's own internal call sites do.
+    ///
+    /// \param jointPath Source-native path string naming the new joint (see resolveObjectKey's
+    ///        \p path for the per-backend vocabulary).
+    /// \param body0 ObjectKey of the first body (already-existing object; the invalid sentinel
+    ///        is a valid "no body" input).
+    /// \param body1 ObjectKey of the second body (same contract as body0).
+    ///
+    /// \returns the created joint (as an opaque PxJoint*), or nullptr on failure
+    const void*(CARB_ABI* createD6JointAtPath)(const char* jointPath,
+                                               omni::physics::parse::ObjectKey body0,
+                                               omni::physics::parse::ObjectKey body1);
 
     /// release D6 joint
     void(CARB_ABI* releaseD6Joint)(void* jointPtr);
@@ -470,7 +525,7 @@ struct IPhysx
     /// Set voxel range in voxelmap if possible
     ///
     /// \param[in] stageId    Stage ID
-    /// \param[in] path       VoxelMap USD sdf path.
+    /// \param[in] key        VoxelMap ObjectKey.
     /// \param[in] sx         Range start X
     /// \param[in] sy         Range start Y
     /// \param[in] sz         Range start Z
@@ -482,7 +537,7 @@ struct IPhysx
     /// \param[in] update Update flag. If zero, writing changes to USD is postponed, if non-zero, all accumulated
     /// changes are written to USD \return True if successful
     bool(CARB_ABI* setVoxelRange)(long int stageId,
-                                  const PXR_NS::SdfPath& path,
+                                  omni::physics::parse::ObjectKey key,
                                   const int sx,
                                   const int sy,
                                   const int sz,
@@ -496,9 +551,9 @@ struct IPhysx
     /// Get the index of a wheel given the wheel attachment USD path. Should only be called after the
     /// simulation has been started.
     ///
-    /// \param[in] wheelPath      Wheel attachment USD path.
-    /// \return Index of the wheel or -1 if there is no wheel matching the given path.
-    int(CARB_ABI* getWheelIndex)(const PXR_NS::SdfPath& wheelPath);
+    /// \param[in] wheelKey       Wheel attachment ObjectKey.
+    /// \return Index of the wheel or -1 if there is no wheel matching the given key.
+    int(CARB_ABI* getWheelIndex)(omni::physics::parse::ObjectKey wheelKey);
 
     /// Error event stream
     /// \return a pointer to the error event stream.
@@ -526,22 +581,27 @@ struct IPhysx
 
     /// Get rigid body transformation
     ///
-    /// \param[in] path Rigid body USD sdf path.
+    /// \param[in] key Rigid body ObjectKey.
     /// \param[out] pos Rigid body position.
     /// \param[out] rot Rigid body rotation in quaternion (x,y,z,w).
     /// \return True if rigid body was found.
-    bool(CARB_ABI* getRigidBodyTransformation)(const PXR_NS::SdfPath& path, carb::Float3& pos, carb::Float4& rot);
+    bool(CARB_ABI* getRigidBodyTransformation)(omni::physics::parse::ObjectKey key, carb::Float3& pos, carb::Float4& rot);
 
     /// Run backwards compatibility on currently attached USD stage
     /// DEPRECATED, use asset validator instead
     ///
-    void(CARB_ABI* runBackwardsCompatibility)(long int stageId);
+    /// \note Took a stage id that the implementation never read; it always operated on the
+    /// currently attached stage. Dropped rather than migrated to an attach handle (ADR-0016).
+    void(CARB_ABI* runBackwardsCompatibility)();
 
     /// Check backwards compatibility on currently attached USD stage
     /// DEPRECATED, use asset validator instead
     ///
+    /// \note Took a stage id that the implementation never read; it always operated on the
+    /// currently attached stage. Dropped rather than migrated to an attach handle (ADR-0016).
+    ///
     /// \return True if backwards compatibility needs to run.
-    bool(CARB_ABI* checkBackwardsCompatibility)(long int stageId);
+    bool(CARB_ABI* checkBackwardsCompatibility)();
 
     /// Get backwards compatibility log after it did checked the USD stage.
     /// DEPRECATED, use asset validator instead
@@ -549,11 +609,11 @@ struct IPhysx
     /// \return List of all required changes.
     const char*(CARB_ABI* getBackwardsCompatibilityCheckLog)();
 
-    /// Get collisionGroup path for a given Collider path
+    /// Get collisionGroup ObjectKey for a given Collider ObjectKey
     ///
-    /// \param[in] path Collider path.
-    /// \return Valid SdfPath if CollisionGroup was found
-    PXR_NS::SdfPath(CARB_ABI* getCollisionGroupFromCollider)(const PXR_NS::SdfPath& path);
+    /// \param[in] colliderKey Collider ObjectKey.
+    /// \return Valid ObjectKey if CollisionGroup was found
+    omni::physics::parse::ObjectKey(CARB_ABI* getCollisionGroupFromCollider)(omni::physics::parse::ObjectKey colliderKey);
 
     /// Check if simulation loop is running
     ///
@@ -663,18 +723,22 @@ struct IPhysx
 
     /// Update and step a specific scene in the physics simulation. The specific scene specified in scenePath
     /// is updated and stepped *even if marked as 'Disabled'*.
-    /// If scenePath is empty, it behaves like IPhysx::updateSimulation
+    /// If scenePath is 0, it behaves like IPhysx::updateSimulation
     ///
-    /// \param[in] scenePath              Scene USD path encoded as uint64_t
+    /// \param[in] scenePath              The scene, as an `omni::physics::parse::ObjectKey::handle` value (e.g.
+    ///            from @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29,
+    ///            ADR-0018: breaking change). A handle is only valid against the Source instance that minted it.
     /// \param[in] elapsedStep            Simulation time.
     /// \param[in] currentTime            Current time, might be used for time sampled transformations to apply.
     void(CARB_ABI* updateSimulationScene)(uint64_t scenePath, float elapsedStep, float currentTime);
 
     /// Update the transformations for a specific scene in the physics simulation. The specific scene specified in
-    /// scenePath has its transformations updated *even if it is marked as 'Disabled'*. If scenePath is empty, it
+    /// scenePath has its transformations updated *even if it is marked as 'Disabled'*. If scenePath is 0, it
     /// behaves like IPhysx::updateTransformations
     ///
-    /// \param[in] scenePath                    Scene USD path encoded as uint64_t
+    /// \param[in] scenePath                    The scene, as an `omni::physics::parse::ObjectKey::handle` value
+    ///            (e.g. from @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29,
+    ///            ADR-0018: breaking change). A handle is only valid against the Source instance that minted it.
     /// \param[in] updateToUsd                  Update transforms to USD.
     /// \param[in] updateVelocitiesToUsd        Update velocities to USD.
     void(CARB_ABI* updateTransformationsScene)(uint64_t scenePath, bool updateToUsd, bool updateVelocitiesToUsd);

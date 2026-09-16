@@ -1,19 +1,25 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// Sidecar interop: raw PhysX object pointer lookup and SdfPath encoding.
-// Bridges omni::physx / USD types into C-ABI values usable by the main lib.
+/**
+ * @implements REQ-CAPI-OBJECTKEY-001
+ * @covers AC-1 AC-2 AC-4
+ *
+ * @implements REQ-CAPI-PHYSXPTR-001
+ * @covers AC-1 AC-2
+ */
+
+// Sidecar interop: raw PhysX object lookup and ObjectKey resolution.
+// Bridges omni::physx types into C-ABI values usable by the main lib.
 
 #include "internal/sidecar/ovphysxInternalInterop.h"
-#include "internal/sidecar/ovphysxInternalUtil.hpp"
 #include "ovphysx/ovphysx_types.h"
 #include "ovphysxInternalPhysXAccess.hpp"
-
-#include <pxr/usd/sdf/path.h>  // must precede IPhysx.h: defines PXR_NS used by struct decls
 
 #include <carb/logging/Log.h>
 #include <omni/physx/IPhysx.h>
 #include <omni/physx/IOvxPhysicsRead.h> // ovstage-native output read symbols + types
+#include <omni/physx/IOvxPhysicsWrite.h> // ovstage-native write symbols + types (ADR-0012)
 #include <omni/physx/IPhysxVisualization.h>
 #include <PxArticulationReducedCoordinate.h>
 
@@ -48,11 +54,11 @@ static_assert(OVPHYSX_PHYSX_TYPE_PARTICLE_SET    == omni::physx::ePTParticleSet,
 static_assert(OVPHYSX_PHYSX_TYPE_PHYSICS         == omni::physx::ePTPhysics,        "ovphysx_physx_type_t / PhysXType drift: PHYSICS");
 
 // Compile-time guards: the ovphysx_debug_*_t C structs must stay byte-for-byte
-// layout-compatible with omni::physx::DebugPoint / DebugLine / DebugTriangle so the
-// debug-render getters hand back the omni.physx buffer via zero-copy reinterpret
-// (see ovphysxPhysXInterop.cpp). Size checks catch added/removed fields, offset checks
-// catch reordering, and the is_same guards below catch an equal-width type swap
-// (e.g. uint32 colour -> float) that sizeof/offsetof alone would miss.
+// layout-compatible with omni::physx::DebugPoint / DebugLine / DebugTriangle because
+// the debug-render getters reinterpret the omni.physx buffer without a copy
+// (see ovphysxPhysXInterop.cpp). Size checks catch added or removed fields, offset
+// checks catch reordering, and the is_same guards below catch an equal-width type
+// swap (e.g. uint32 colour -> float) that sizeof/offsetof alone would miss.
 static_assert(sizeof(ovphysx_debug_point_t) == sizeof(omni::physx::DebugPoint), "ovphysx_debug_point_t / DebugPoint size drift");
 static_assert(offsetof(ovphysx_debug_point_t, pos)   == offsetof(omni::physx::DebugPoint, mPos),   "debug_point pos offset drift");
 static_assert(offsetof(ovphysx_debug_point_t, color) == offsetof(omni::physx::DebugPoint, mColor), "debug_point color offset drift");
@@ -89,10 +95,10 @@ static_assert(std::is_same<decltype(omni::physx::DebugTriangle::mPos2), carb::Fl
 static_assert(std::is_same<decltype(omni::physx::DebugTriangle::mColor2), uint32_t>::value,   "DebugTriangle::mColor2 type drift");
 
 // The public ovphysx_debug_render_parameter_t enum must mirror the internal
-// omni::physx::PhysXVisualizationParameter values one-for-one: the forward in
+// omni::physx::PhysXVisualizationParameter values one-for-one. The forward in
 // internal_set_visualization_parameter is a raw static_cast<PhysXVisualizationParameter>
-// with no translation table, so EVERY enumerator is asserted (not just spot-checks) --
-// an intra-range reorder that preserved count and endpoints would otherwise mis-map.
+// with no translation table, so every enumerator is asserted. A reorder inside the
+// range that preserved count and endpoints would otherwise mis-map.
 static_assert((int)OVPHYSX_DEBUG_RENDER_PARAM_NONE                     == (int)omni::physx::eNone,                  "debug_render_parameter drift: NONE");
 static_assert((int)OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES               == (int)omni::physx::eWorldAxes,             "debug_render_parameter drift: WORLD_AXES");
 static_assert((int)OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES                == (int)omni::physx::eBodyAxes,              "debug_render_parameter drift: BODY_AXES");
@@ -123,23 +129,32 @@ static_assert((int)OVPHYSX_DEBUG_RENDER_PARAM_SIMULATION_MESH          == (int)o
 static_assert((int)OVPHYSX_DEBUG_RENDER_PARAM_SDF                      == (int)omni::physx::eSDF,                   "debug_render_parameter drift: SDF");
 static_assert((int)OVPHYSX_DEBUG_RENDER_PARAM_COUNT                    == (int)omni::physx::ePhysXNumValues,        "debug_render_parameter COUNT must equal ePhysXNumValues");
 
-// The public ovphysx output-read surface speaks ovstage's own types directly
+// The public ovphysx output-read surface uses ovstage's own types directly
 // (ovstage_read_group_t / ovstage_query_result_t / ovx_string_or_token_t), so there
 // is no ovphysx mirror enum to keep in lock-step.
 
-// Conformance check (#10): the runtime's OvxReadStatus must map cleanly onto the
-// 1 / 0 / -1 convention ovphysx_internal_fetch_read_next returns.
+// The runtime's OvxReadStatus must map cleanly onto the 1 / 0 / -1 convention
+// ovphysx_internal_fetch_read_next returns.
 static_assert((int)omni::physx::kOvxReadStatusOk != (int)omni::physx::kOvxReadStatusEndOfIteration, "OvxReadStatus ok/eof collision");
 static_assert((int)omni::physx::kOvxReadStatusError != (int)omni::physx::kOvxReadStatusOk, "OvxReadStatus ok/error collision");
 
-// try/catch guards the extern "C" boundary -- C++ exceptions must not escape into C callers.
-// physx_type is not validated here; PhysX internally returns nullptr for unknown types.
+// try/catch guards the extern "C" boundary so C++ exceptions do not escape into C callers.
+// The enum range is not validated here because PhysX returns nullptr for unknown types.
+// The selector/type relationship is validated below as defense in depth.
 OVPHYSX_INTERNAL_API void* ovphysx_internal_get_physx_ptr(
     const char* prim_path, int physx_type)
 {
-    if (!prim_path || prim_path[0] == '\0')
+    if (!prim_path)
     {
-        CARB_LOG_ERROR("Internal sidecar: ovphysx_internal_get_physx_ptr called with null or empty prim_path");
+        CARB_LOG_ERROR("Internal sidecar: ovphysx_internal_get_physx_ptr called with null prim_path");
+        return nullptr;
+    }
+
+    const bool physics_lookup = physx_type == static_cast<int>(OVPHYSX_PHYSX_TYPE_PHYSICS);
+    const bool empty_path = prim_path[0] == '\0';
+    if (physics_lookup != empty_path)
+    {
+        CARB_LOG_ERROR("Internal sidecar: ovphysx_internal_get_physx_ptr selector/type mismatch");
         return nullptr;
     }
 
@@ -152,14 +167,19 @@ OVPHYSX_INTERNAL_API void* ovphysx_internal_get_physx_ptr(
             return nullptr;
         }
 
-        PXR_NS::SdfPath path(prim_path);
-        if (path.IsEmpty())
+        // The runtime maps the invalid key to the empty path reserved for ePTPhysics.
+        omni::physics::parse::ObjectKey key{};
+        if (!physics_lookup)
         {
-            CARB_LOG_ERROR("Internal sidecar: ovphysx_internal_get_physx_ptr got invalid SdfPath from '%s'", prim_path);
-            return nullptr;
+            key = physx->resolveObjectKey(prim_path);
+            if (!key.valid())
+            {
+                CARB_LOG_ERROR("Internal sidecar: ovphysx_internal_get_physx_ptr could not resolve ObjectKey for '%s'", prim_path);
+                return nullptr;
+            }
         }
 
-        return physx->getPhysXPtr(path, static_cast<omni::physx::PhysXType>(physx_type));
+        return physx->getPhysXPtr(key, static_cast<omni::physx::PhysXType>(physx_type));
     }
     catch (const std::exception& e)
     {
@@ -179,11 +199,10 @@ OVPHYSX_INTERNAL_API void* ovphysx_internal_get_physx_ptr(
 // the interface is unavailable.
 
 // NOTE: the debug-viz master scale eSCALE = viewportGizmoScale * visualizationScale.
-// A non-positive (unset) viewport gizmo scale (the common case in headless / minimal
-// hosts) is treated as 1.0 inside omni::physx when computing eSCALE
-// (PhysXDebugVisualization.cpp), so this sidecar does not seed the persistent
-// /persistent/app/viewport/gizmo/scale setting -- a process-global side effect
-// ovphysx should not own.
+// omni::physx treats a non-positive (unset) viewport gizmo scale, the common case in
+// headless hosts, as 1.0 when computing eSCALE (PhysXDebugVisualization.cpp). This
+// sidecar therefore does not seed the persistent /persistent/app/viewport/gizmo/scale
+// setting, which is a process-global side effect ovphysx should not own.
 
 OVPHYSX_INTERNAL_API void ovphysx_internal_enable_visualization(bool enable)
 {
@@ -356,9 +375,8 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_get_debug_triangles(const void** out,
     }
 }
 
-// OMPE-94459 (_KINEMATIC_UPDATE_NOOP fix): call
-// PxArticulationReducedCoordinate::updateKinematic on the articulation at
-// the given prim path. The flags bitmask matches
+// OMPE-94459: calls PxArticulationReducedCoordinate::updateKinematic on the
+// articulation at the given prim path. The flags bitmask matches
 // ovphysx_articulation_kinematic_flag_t (POSITION=1, VELOCITY=2).
 OVPHYSX_INTERNAL_API bool ovphysx_internal_update_kinematic(
     const char* prim_path, uint32_t flags)
@@ -370,10 +388,10 @@ OVPHYSX_INTERNAL_API bool ovphysx_internal_update_kinematic(
         omni::physx::IPhysx* physx = ovphysx::internal::sidecar::tryGetInjectedPhysxInterface();
         if (!physx)
             return false;
-        PXR_NS::SdfPath path(prim_path);
-        if (path.IsEmpty())
+        omni::physics::parse::ObjectKey key = physx->resolveObjectKey(prim_path);
+        if (!key.valid())
             return false;
-        void* p = physx->getPhysXPtr(path, omni::physx::ePTArticulation);
+        void* p = physx->getPhysXPtr(key, omni::physx::ePTArticulation);
         if (!p)
             return false;
         auto* arti = static_cast<::physx::PxArticulationReducedCoordinate*>(p);
@@ -396,46 +414,19 @@ OVPHYSX_INTERNAL_API bool ovphysx_internal_update_kinematic(
     }
 }
 
-OVPHYSX_INTERNAL_API uint64_t ovphysx_encode_sdf_path(const char* prim_path)
-{
-    if (!prim_path || prim_path[0] == '\0')
-        return 0;
-
-    try
-    {
-        PXR_NS::SdfPath path(prim_path);
-        if (path.IsEmpty())
-        {
-            CARB_LOG_ERROR("Internal sidecar: ovphysx_encode_sdf_path got invalid SdfPath from '%s'", prim_path);
-            return 0;
-        }
-        return ovphysx::internal::sdfPathToInt(path);
-    }
-    catch (const std::exception& e)
-    {
-        CARB_LOG_ERROR("Internal sidecar: ovphysx_encode_sdf_path caught exception: %s", e.what());
-        return 0;
-    }
-    catch (...)
-    {
-        CARB_LOG_ERROR("Internal sidecar: ovphysx_encode_sdf_path caught unknown exception");
-        return 0;
-    }
-}
-
 // ============================================================================
 // Physics output read (ADR-0007)
 //
-// The runtime plugin exports the ovstage-native read entry points as standalone
-// (non-carb) symbols (omni::physx::ovx*). They are resolved here by name from the
-// already-loaded plugin module. The sidecar owns the read-session bookkeeping and
-// hands back each ovstage_read_group_t verbatim (the public surface IS ovstage's
-// type — no ovphysx mirror, no translation).
+// The runtime exports the ovstage-native read entry points as standalone
+// (non-carb) symbols (omni::physx::ovx*), injected here by the main library at
+// load. The sidecar owns the read-session bookkeeping and hands back each
+// ovstage_read_group_t verbatim. The public surface is ovstage's own type, with
+// no ovphysx mirror and no translation.
 // ============================================================================
 
 namespace
 {
-// Resolved plugin read symbols (lazy; retried until the plugin is loaded).
+// Read entry points injected by ovphysx_internal_set_ovx_read_accessors().
 struct OvxReadFns
 {
     decltype(&omni::physx::ovxQuery)            query = nullptr;
@@ -453,13 +444,11 @@ struct OvxReadFns
 };
 
 // Populated once by ovphysx_internal_set_ovx_read_accessors(), which the main
-// library's sidecar loader calls at startup with the addresses of ITS OWN
-// statically-linked omni::physx::ovx* read entry points. The sidecar cannot reach
-// them on its own: it has no OvruntimePhysX of its own to link, the owner library's
-// symbols are hidden (not exported on its dynamic table), and there is no separate
-// libomni.physx.plugin.so in the static layout -- dlopen("libomni.physx.plugin.so",
-// RTLD_NOLOAD)+dlsym would silently get a null handle, so injection from the owner
-// (same handshake as ovphysx_internal_set_physx_runtime_accessors) is used instead.
+// library's sidecar loader calls at startup with the addresses of its own
+// statically linked omni::physx::ovx* read entry points. The sidecar cannot resolve
+// them itself: the owner's symbols are hidden and the static layout has no separate
+// libomni.physx.plugin.so to dlopen, so the same handshake as
+// ovphysx_internal_set_physx_runtime_accessors is used.
 OvxReadFns g_ovxRead;
 
 OvxReadFns& ovxReadFns()
@@ -467,14 +456,26 @@ OvxReadFns& ovxReadFns()
     return g_ovxRead;
 }
 
-// Per-read-session storage: the live ovstage groups retained by read_group_id.
-// Retaining each fetched ovstage_read_group_t keeps its borrowed tensors /
-// index_map / prim_list valid until ovphysx_internal_release_group, AND gives us a
-// stable address to hand back as the producer-owned `const ovstage_read_group_t*`
-// (no ovphysx mirror struct anymore — the public surface IS ovstage's type). The
-// node-based map keeps &liveGroups[id] stable until release. (The ovstage read
-// contract makes each group independently valid until its own release — fetching
-// more does not invalidate earlier ones.)
+// The write half (ADR-0012), injected by the same handshake and for the same reason.
+struct OvxWriteFns
+{
+    decltype(&omni::physx::ovxWriteAttribute) write = nullptr;
+    decltype(&omni::physx::ovxFetchWriteNext) fetch = nullptr;
+    decltype(&omni::physx::ovxCommitGroup)    commit = nullptr;
+    decltype(&omni::physx::ovxReleaseWrite)   releaseWrite = nullptr;
+};
+
+OvxWriteFns g_ovxWrite;
+
+OvxWriteFns& ovxWriteFns()
+{
+    return g_ovxWrite;
+}
+
+// Per-read-session storage: live group descriptors retained by read_group_id. The
+// node-based map gives each producer-owned `const ovstage_read_group_t*` a stable
+// address until release_group. Numeric tensors, maps, mask, and completion event
+// point into the runtime read session and remain valid until release_read.
 struct ReadSession
 {
     std::unordered_map<uint64_t, ovstage_read_group_t> liveGroups; // read_group_id -> group
@@ -492,12 +493,12 @@ void registerReadSession(uint64_t read)
 }
 } // namespace
 
-// Owner-injected addresses of the statically-linked omni::physx::ovx* read entry
+// Owner-injected addresses of the statically linked omni::physx::ovx* read entry
 // points. Passed as void* so the shared sidecar header stays free of the ovx/ovstage
-// read types; cast back to the resolved decltype pointer types here. See g_ovxRead.
-// extern "C" so the loader can resolve it by its plain name via dlsym/GetProcAddress
-// (this .cpp includes ovphysxInternalInterop.h, not ovphysxInternal.h where the C
-// declaration lives, so the linkage must be stated here too).
+// read types, and cast back to the decltype pointer types here. See g_ovxRead.
+// Declared extern "C" so the loader can resolve it by plain name via dlsym/GetProcAddress.
+// This file includes ovphysxInternalInterop.h rather than ovphysxInternal.h, where the
+// C declaration lives, so the linkage has to be stated here too.
 extern "C" OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_read_accessors(
     void* query, void* fetchQueryResult, void* dict, void* read,
     void* fetch, void* releaseGroup, void* releaseRead, void* releaseQuery)
@@ -510,6 +511,95 @@ extern "C" OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_read_accessors(
     g_ovxRead.releaseGroup     = reinterpret_cast<decltype(g_ovxRead.releaseGroup)>(releaseGroup);
     g_ovxRead.releaseRead      = reinterpret_cast<decltype(g_ovxRead.releaseRead)>(releaseRead);
     g_ovxRead.releaseQuery     = reinterpret_cast<decltype(g_ovxRead.releaseQuery)>(releaseQuery);
+}
+
+extern "C" OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_write_accessors(
+    void* write, void* fetch, void* commit, void* releaseWrite)
+{
+    g_ovxWrite.write        = reinterpret_cast<decltype(g_ovxWrite.write)>(write);
+    g_ovxWrite.fetch        = reinterpret_cast<decltype(g_ovxWrite.fetch)>(fetch);
+    g_ovxWrite.commit       = reinterpret_cast<decltype(g_ovxWrite.commit)>(commit);
+    g_ovxWrite.releaseWrite = reinterpret_cast<decltype(g_ovxWrite.releaseWrite)>(releaseWrite);
+}
+
+OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_write_attribute(uint64_t query,
+                                                               const ovx_string_or_token_t* attribute)
+{
+    try
+    {
+        OvxWriteFns& f = ovxWriteFns();
+        if (!f.write)
+            return 0;
+        return f.write(query, attribute);
+    }
+    catch (...)
+    {
+        return 0;
+    }
+}
+
+OVPHYSX_INTERNAL_API int ovphysx_internal_fetch_write_next(uint64_t write, const ovstage_map_group_t** out_group)
+{
+    if (!out_group)
+        return -1;
+    *out_group = nullptr;
+    try
+    {
+        OvxWriteFns& f = ovxWriteFns();
+        if (!f.fetch)
+            return -1;
+        // The group pointer is handed back unchanged. A map group carries no id, so its address is
+        // the commit identity. Copying it into sidecar-side storage, as the read does with its
+        // groups, would hand the caller an address the runtime cannot recognise on commit.
+        const omni::physx::OvxWriteStatus st = f.fetch(write, out_group);
+        if (st == omni::physx::kOvxWriteStatusOk)
+            return 1;
+        if (st == omni::physx::kOvxWriteStatusEndOfIteration)
+            return 0;
+        return -1;
+    }
+    catch (...)
+    {
+        return -1;
+    }
+}
+
+OVPHYSX_INTERNAL_API int ovphysx_internal_commit_group(uint64_t write,
+                                                       const ovstage_map_group_t* group,
+                                                       ovstage_cuda_sync_t write_done_sync,
+                                                       int32_t* out_failure)
+{
+    // out_failure is left untouched on the paths below that never reach the runtime. A missing
+    // accessor or an escaping exception is neither "not live" nor "the publish failed", so the
+    // caller reports the absence of a reason rather than inventing one.
+    try
+    {
+        OvxWriteFns& f = ovxWriteFns();
+        if (!f.commit)
+            return 0;
+        omni::physx::OvxCommitFailure why = omni::physx::kOvxCommitFailureNone;
+        const bool ok = f.commit(write, group, write_done_sync, &why);
+        if (!ok && out_failure)
+            *out_failure = static_cast<int32_t>(why);
+        return ok ? 1 : 0;
+    }
+    catch (...)
+    {
+        return 0;
+    }
+}
+
+OVPHYSX_INTERNAL_API void ovphysx_internal_release_write(uint64_t write)
+{
+    try
+    {
+        OvxWriteFns& f = ovxWriteFns();
+        if (f.releaseWrite)
+            f.releaseWrite(write);
+    }
+    catch (...)
+    {
+    }
 }
 
 OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_output_query(uint32_t object_type, uint32_t scope)
@@ -536,8 +626,8 @@ OVPHYSX_INTERNAL_API int ovphysx_internal_fetch_query_result(uint64_t query, ovs
         OvxReadFns& f = ovxReadFns();
         if (!f.fetchQueryResult)
             return -1;
-        // ovxFetchQueryResult fills ovstage's own type; pass it straight through
-        // (the attributes array is owned by the query, valid until release_query).
+        // ovxFetchQueryResult fills ovstage's own type, so it is passed straight through.
+        // The attributes array is owned by the query and valid until release_query.
         *out_result = ovstage_query_result_t{};
         if (!f.fetchQueryResult(query, out_result))
             return 0;
@@ -573,7 +663,7 @@ OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_read_outputs(uint64_t query,
         OvxReadFns& f = ovxReadFns();
         if (!f.read)
             return 0;
-        // Attributes are already ovstage's ovx_string_or_token_t — forward verbatim.
+        // Attributes are already ovstage's ovx_string_or_token_t and are forwarded verbatim.
         const uint64_t r = f.read(query, attribute_count ? attributes : nullptr, attribute_count);
         registerReadSession(r);
         return r;
@@ -600,16 +690,15 @@ OVPHYSX_INTERNAL_API int ovphysx_internal_fetch_read_next(uint64_t read, const o
         if (st == omni::physx::kOvxReadStatusEndOfIteration)
             return 0; // end of iteration (not an error)
         if (st != omni::physx::kOvxReadStatusOk)
-            return -1; // genuine fetch error — distinct from EOF
+            return -1; // fetch error, distinct from end of iteration
 
         std::lock_guard<std::mutex> lk(g_readMutex);
         const auto it = g_readSessions.find(read);
         if (it == g_readSessions.end())
             return -1;
 
-        // Retain the ovstage group so its borrowed storage stays valid until
-        // ovphysx_internal_release_group, and hand back its stable address — the
-        // public surface IS ovstage_read_group_t, so there is nothing to translate.
+        // Retain the group descriptor and stage-derived prim list until release_group,
+        // and hand back a stable address. Numeric storage remains read-session-owned.
         ovstage_read_group_t& kept = (it->second.liveGroups[g.read_group_id] = g);
         *out_group = &kept;
         return 1;
@@ -632,7 +721,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_release_group(uint64_t read, ovstage_
         auto& live = it->second.liveGroups;
         const auto gi = live.find(group_id);
         if (gi == live.end())
-            return; // already released / unknown — idempotent
+            return; // already released or unknown, idempotent
         if (f.releaseGroup)
             f.releaseGroup(read, &gi->second);
         live.erase(gi);
@@ -648,7 +737,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_release_read(uint64_t read)
     {
         OvxReadFns& f = ovxReadFns();
         // ovxReleaseRead tears down the whole read session including any groups it
-        // still owns, so we do not need to release retained groups individually.
+        // still owns, so retained groups need no individual release.
         if (f.releaseRead)
             f.releaseRead(read);
         std::lock_guard<std::mutex> lk(g_readMutex);

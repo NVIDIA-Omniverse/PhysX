@@ -1,10 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-15 AC-42 AC-44
+ */
 
 #pragma once
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
+
+#include <omni/physics/AttachHandle.h>
+#include <omni/physics/parse/Handles.h> // ObjectKey
 
 #include "PhysxConvexMesh.h"
 #include "PhysxCookingParams.h"
@@ -19,11 +27,13 @@ namespace physx
 {
 
 /// Cooking finished callback
-/// \param[in] stageId Stage id of the processed stage
-/// \param[in] primPath USD prim path
+/// \param[in] attachHandle Attach the cooking request was issued for (matches @ref
+/// IPhysxSimulation::getAttachHandle()); kNoAttach when the request was not tied to an attach
+/// \param[in] primKey Handle of the cooked mesh object (@ref
+/// omni::physics::parse::ObjectKey::handle), not a USD path encoding (ADR-0019)
 /// \param[in] userData User data passed to IPhysxCookingCallback struct
-typedef void (*PhysxCookingFinishedCallback)(uint64_t stageId,
-                                             uint64_t primPath,
+typedef void (*PhysxCookingFinishedCallback)(AttachHandle attachHandle,
+                                             uint64_t primKey,
                                              PhysxCookingResult::Enum result,
                                              void* userData);
 
@@ -96,8 +106,27 @@ struct PhysxCollisionRepresentationRequest
     Options options; //!< Options for the request (async / no-async)
 
 
-    uint64_t stageId = 0; //!< Stage containing the prim for which to request the collision representation
-    uint64_t collisionPrimId = 0; //!< Prim path containing the Collision API
+    // stageId and attachHandle are two different facts, not a redundancy (ADR-0016 Decision 8).
+    // This request is genuinely mixed: the attach lookup names an attach, while the fallback path
+    // builds a throwaway AttachedStage straight from the USD stage cache and the stage id is also
+    // forwarded to the cooking request as PhysxCookingComputeRequest::primStageId.
+    uint64_t stageId = 0; //!< USD stage to read the prim's mesh data from, and the stage-cache
+                          //!< fallback when the attach lookup misses
+    AttachHandle attachHandle = kNoAttach; //!< Attach to resolve the collision representation
+                                           //!< against, from @ref IPhysxSimulation::getAttachHandle()
+                                           //!< or kActiveAttach; kNoAttach falls back to stageId
+    // 2026-08-29 (ADR-0018, breaking change): when attachHandle/stageId resolves to a live
+    // attach, this is now an `omni::physics::parse::ObjectKey::handle` value (e.g. from @ref
+    // IPhysx::resolveObjectKey()), NOT the legacy asInt(SdfPath)-bit encoding -- a handle is only
+    // valid against the Source instance that minted it (ADR-0021), so caching one across a
+    // detach/reattach and resubscribing afterwards fails closed rather than erroring. The
+    // stageId-only fallback (no live attach: a stage nobody has attached, resolved straight from
+    // the USD stage cache) is a deliberate exception and keeps the OLD legacy asInt(SdfPath)-bit
+    // encoding -- there is no live Source such a caller's handle could ever have been minted
+    // against.
+    uint64_t collisionPrimId = 0; //!< Prim containing the Collision API: an ObjectKey::handle
+                                  //!< when an attach is live, else a legacy asInt(SdfPath)-bit id
+                                  //!< (see the comment above)
 };
 
 /// Task object returned by IPhysxCooking::requestConvexCollisionRepresentation that can potentially be used to
@@ -112,11 +141,11 @@ struct IPhysxCooking
 {
     // Creates a convex mesh approximation of a given mesh. The mesh is not scaled by the USD mesh scale.
     //
-    //\param[in] path Mesh path
+    //\param[in] key Mesh's ObjectKey
     //\param[in] vertexLimit Convex mesh vertex limit in a range <4, 255>
     //\param[out] meshData Convex mesh data output
     //\return True if cooking succeeded
-    bool(CARB_ABI* createConvexMesh)(const PXR_NS::SdfPath& path, uint32_t vertexLimit, ConvexMeshData& meshData);
+    bool(CARB_ABI* createConvexMesh)(omni::physics::parse::ObjectKey key, uint32_t vertexLimit, ConvexMeshData& meshData);
 
     /// Empty the local mesh cache contents, that will force any mesh to be cooked again when requested 
     void(CARB_ABI* releaseLocalMeshCache)();
@@ -181,12 +210,13 @@ struct IPhysxCooking
                                                 void* (*allocateBytes)(size_t));
 
     /// Precook mesh with a given cooking parameters
-    //\param[in] stageId USD stageId
-    //\param[in] meshPath path to UsdGeomMesh prim
+    //\param[in] attachHandle Attach holding the mesh, from IPhysxSimulation::getAttachHandle(), or
+    //           kActiveAttach for the lone active attach
+    //\param[in] meshKey ObjectKey of the UsdGeomMesh prim
     //\param[in] cookingParams cooking parameters
     //\param[in] cb Optional cooking/result callback, if nullptr is passed then the call is a blocking call
-    bool(CARB_ABI* precookMesh)(uint64_t stageId,
-                                uint64_t meshPath,
+    bool(CARB_ABI* precookMesh)(AttachHandle attachHandle,
+                                omni::physics::parse::ObjectKey meshKey,
                                 const CookingParams& cookingParams,
                                 IPhysxCookingCallback* cb);
 
@@ -211,9 +241,9 @@ struct IPhysxCooking
         const PhysxCollisionRepresentationRequest& request,
         PhysxCollisionRepresentationConvexResult::CallbackType onResult);
 
-    // Cooks deformable body with PhysxSchemaPhysxAutoDeformableBodyAPI for given USD path
-    //\param[in] deformableBodyPath path to primitive with UsdPhysicsDeformableBodyAPI
-    bool(CARB_ABI* cookAutoDeformableBody)(const PXR_NS::SdfPath& deformableBodyPath);
+    // Cooks deformable body with PhysxSchemaPhysxAutoDeformableBodyAPI for given object
+    //\param[in] deformableBodyKey ObjectKey of the primitive with UsdPhysicsDeformableBodyAPI
+    bool(CARB_ABI* cookAutoDeformableBody)(omni::physics::parse::ObjectKey deformableBodyKey);
 
 };
 

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -10,10 +10,10 @@
 //
 // * Initialization : Called from the main thread (prepping any data needed for the cooking operation)
 // * Pump : Called from the main thread which will schedule the task when ready, and return the completion state
-// * Cooking : The actual cooking operation itself that runs in a background thread. USD is not thread safe, and
-// therefore no USD operations can occur in this step
-// * Finalization : Called from the main thread and stores the results of the cooking operation and updates USD prims as
-// needed.
+// * Cooking : The actual cooking operation itself that runs in a background thread. The caller-supplied mesh
+// view is copied into runtime-owned storage during initialization, so no scene-description access is needed
+// or safe from this step.
+// * Finalization : Called from the main thread and stores the results of the cooking operation.
 //
 
 
@@ -103,6 +103,15 @@ namespace cookingtask
 class CookingDataAsync;
 class CookingTaskImpl; // Forward reference the implementation class that implements the CookingTask methods
 
+// A stable identity for a cooking task, used to find/replace the active task cooking the same
+// source mesh (CookingComputeService's CookingTaskMap). Production callers always set a nonzero
+// primId (see IPhysxCookingService.h); the "id:" prefix keeps that numeric identity from ever
+// colliding with the primPathText fallback some tests rely on instead.
+inline std::string computeCookingTaskKey(uint64_t primId, const std::string& primPathText)
+{
+    return primId != 0 ? "id:" + std::to_string(primId) : primPathText;
+}
+
 // The base class for Cooking tasks, specific cooking implementations will inherit this
 // base class.
 class CookingTask
@@ -118,8 +127,8 @@ public:
 
     /**
      * Start performing the task from another thread. This will not be the
-     * main thread and USD operations are not safe to do here.
-     * Do work in the background thread and any results that need to be written in
+     * main thread, so only the runtime-owned mesh data copied in during initialization may be
+     * touched here. Do work in the background thread and any results that need to be written in
      * the main thread should be processed when 'finalize' is called
      */
     virtual void performTask(void) = 0;
@@ -141,10 +150,9 @@ public:
      * This method attempts to load the source triangle mesh associated with this meshKey
      * if it exists in the local cache.
      * If it does not exist, it returns false
-     * Most of the cooking methods operate on a UsdGeomMesh primitive. However, we cannot access USD from a
-     * background thread and, as well, the triangle meshes in a UsdGeomMesh are not stored in the same format
-     * we would want to use for geometric processing.
-     * As an optimization, once we compute the indexed triangle mesh associated with a UsdGeomMesh we can store
+     * The caller-supplied mesh view is polygon data, not stored in the same format we want to use
+     * for geometric processing, and it cannot be touched from a background thread.
+     * As an optimization, once we compute the indexed triangle mesh associated with a mesh we can store
      * that into the local-cache so that it doesn't have to be recomputed again each time in the main thread.
      *
      * @return : Returns true if the triangle mesh was successfully found and loaded from the local cache
@@ -152,20 +160,7 @@ public:
     bool loadTriangleMesh(void);
 
     /**
-     * If the triangle mesh couldn't be found in the local mesh cache, then we need to triangulate from
-     * the UsdGeomPrim itself.
-     *
-     * To avoid causing hangs or stalls in the main thread, we try to perform the triangulation process
-     * in the background thread. However, since we cannot access USD from a separate thread, we need to
-     * prepare the data which we intend to triangulate. Calling this method will stage the geometric data
-     * associated with this UsdGeomMesh primitive so that it can be processed by the background thread.
-     *
-     * @param usdPrim : The UsdGeomMesh that we are triangulating to get the source data we need to cook
-     */
-    void initTriangulation(const PXR_NS::UsdPrim& usdPrim, uint16_t& maxMaterialIndex);
-
-    /**
-     * This method is called from a background thread. It takes the polygon data from the source UsdGeomMesh
+     * This method is called from a background thread. It takes the polygon data from the source mesh view
      * (read in initTriangulation) and converts it into an indexed triangle mesh.
      */
     void performTriangulation(void);
@@ -255,17 +250,16 @@ public:
     void getCRC(omni::physx::usdparser::MeshKey& crc) const;
 
     /**
-     * Retrieve the fully qualified path name for the USD prim we are cooking
+     * Retrieve this task's opaque identity key, used to find/replace the active task for the
+     * same source mesh (see computeCookingTaskKey).
      *
-     * @return : Returns the SdfPath of the primitive we are operating against
+     * @return : Returns the task key of the primitive we are operating against
      */
-    PXR_NS::SdfPath getPrimPath(void) const;
+    const std::string& getTaskKey(void) const;
 
     const std::string& getPrimPathText(void) const;
 
     bool setPrimPathText(const char* primPathText);
-
-    PXR_NS::UsdStageWeakPtr getStage() const;
 
     void fireFinishedCallback(omni::physx::PhysxCookingResult::Enum result);
 
@@ -330,8 +324,23 @@ public:
      */
     bool isSucceeded(void) const;
 
+    /**
+     * Sets the CUDA context manager and GPU interface this task cooks with.
+     *
+     * The task takes its **own reference** on @p cudaContextManager and holds it until the task is
+     * destroyed, because a queued task runs on a worker thread long after this call and the host
+     * may release its manager in between. The caller therefore keeps ownership of whatever
+     * reference it had and should release it independently.
+     *
+     * @implements REQ-COOK-CUDACTX-001
+     * @covers AC-3
+     */
     void setPxCudaAndGPUPointers(::physx::PxCudaContextManager* cudaContextManager, ::physx::PxPhysicsGpu* physicsGPU);
 
+    /**
+     * @return : The manager set by setPxCudaAndGPUPointers(), still owned by this task - valid for
+     *           as long as the task is alive, and not to be released by the caller.
+     */
     ::physx::PxCudaContextManager* getPxCudaContextManager();
 
     ::physx::PxPhysicsGpu* getPxPhysicsGPU();
@@ -355,7 +364,7 @@ public:
      * set the new one as 'pending'. We only ever allow one 'pending' task at a time; as whatever the
      * most recent request coming in is considered valid. Older requests are thrown away.
      *
-     * @return : Returns the pointer to the current pending cooking task for this UsdPrim if there is one.
+     * @return : Returns the pointer to the current pending cooking task for this task key if there is one.
      */
     CookingTask* getPendingTask(void);
 

@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "GuCooking.h"
 #include "cooking/PxTriangleMeshDesc.h"
@@ -603,6 +580,45 @@ void TriangleMeshBuilder::buildInertiaTensorFromSDF()
 	mMeshData.mLocalCenterOfMass = integrals.COM;
 }
 
+// OMPE-93218: a mesh cooked as an SDF collider represents a closed solid. Its collision depends on the
+// triangle winding two ways: the SDF's inside/outside classification (winding numbers) and the contact
+// normals used against convexes and other primitives. Inverted winding therefore inverts the SDF and flips
+// those normals. For a watertight, single-component mesh there is exactly one valid interpretation, so
+// normalize the stored triangles to consistent, outward (positive signed volume) winding. Meshes without an
+// SDF keep their authored winding, which is meaningful for them (e.g. a closed mesh colliding from the inside).
+// flipNormalsRequested reports whether PxMeshFlag::eFLIPNORMALS was set on the mesh descriptor. The flag has
+// already been applied to the stored triangles by the time this runs, so normalizing here effectively ignores
+// it. Only the warning distinguishes the two cases, since for an SDF collider the winding is not a user-facing
+// choice either way.
+void TriangleMeshBuilder::normalizeSDFCollisionMeshWinding(bool flipNormalsRequested)
+{
+	Gu::Triangle* triangles = reinterpret_cast<Gu::Triangle*>(mMeshData.mTriangles);
+	const PxU32 numTriangles = mMeshData.mNbTriangles;
+
+	PxArray<bool> flipTriangle;
+	PxHashMap<PxU64, PxI32> edges;
+	PxArray<PxArray<PxU32>> connectedTriangleGroups;
+	if (!MeshAnalyzer::buildConsistentTriangleOrientationMap(triangles, numTriangles, flipTriangle, edges, connectedTriangleGroups))
+		return; // no consistent orientation exists (e.g. non-manifold) - keep the mesh as authored
+
+	if (connectedTriangleGroups.size() != 1)
+		return; // outward winding is only well-defined for a single component
+
+	for (PxHashMap<PxU64, PxI32>::Iterator iter = edges.getIterator(); !iter.done(); ++iter)
+	{
+		if (iter->second != -1)
+			return; // not watertight
+	}
+
+	if (MeshAnalyzer::orientTrianglesOutward(triangles, numTriangles, mMeshData.mVertices, flipTriangle))
+	{
+		const char* note = flipNormalsRequested ? "PxMeshFlag::eFLIPNORMALS was ignored because an SDF collider is always wound outward. " : "";
+		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL,
+			"Triangle mesh orientation was adjusted to align with the SDF. %s"
+			"Author SDF collision meshes with consistent, outward-facing triangle winding to avoid this.", note);
+	}
+}
+
 //
 // When suppressTriangleMeshRemapTable is true, the face remap table is not created.  This saves a significant amount of memory,
 // but the SDK will not be able to provide information about which mesh triangle is hit in collisions, sweeps or raycasts hits.
@@ -905,6 +921,12 @@ bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc, PxTriangleM
 		}
 	}
 
+	// A mesh with an SDF represents a closed solid: normalize its winding to outward before any
+	// winding-dependent data is derived from it (inertia, SDF, edge/adjacency and GPU data).
+	// See normalizeSDFCollisionMeshWinding. OMPE-93218.
+	if (desc.sdfDesc)
+		normalizeSDFCollisionMeshWinding(desc.flags.isSet(PxMeshFlag::eFLIPNORMALS));
+
 	const bool computeInertia = mParams.meshPreprocessParams & PxMeshPreprocessingFlag::eENABLE_INERTIA;
 	if (computeInertia)
 	{
@@ -921,6 +943,12 @@ bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc, PxTriangleM
 		PxArray<PxU8> sdfDataSubgrids;
 		PxArray<PxU32> sdfSubgridsStartSlots;
 
+		// buildSDF writes its results back through the descriptor it is given, and one of those
+		// results points into storage owned by this function. The cooking entry points take the
+		// mesh descriptor by const reference, so the caller's PxSDFDesc has to come back unchanged
+		// and stay usable for a later cook. Work on a copy.
+		PxSDFDesc sdfDesc = *desc.sdfDesc;
+
 		PxTriangleMeshDesc newDesc;
 		newDesc.points.count = mMeshData.mNbVertices;
 		newDesc.points.stride = sizeof(PxVec3);
@@ -929,13 +957,11 @@ bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc, PxTriangleM
 		newDesc.triangles.stride = sizeof(PxU32) * 3;
 		newDesc.triangles.data = mMeshData.mTriangles;
 		newDesc.flags &= (~PxMeshFlag::e16_BIT_INDICES);
-		newDesc.sdfDesc = desc.sdfDesc;
+		newDesc.sdfDesc = &sdfDesc;
 
 		// do we need to deallocate anything here?
 		if (!buildSDF(newDesc, sdfData, sdfDataSubgrids, sdfSubgridsStartSlots))
 			return false;
-
-		PxSDFDesc& sdfDesc = *desc.sdfDesc;
 
 		PxReal* sdf = mMeshData.mSdfData.allocateSdfs(sdfDesc.meshLower, sdfDesc.spacing, sdfDesc.dims.x, sdfDesc.dims.y, sdfDesc.dims.z, 
 			sdfDesc.subgridSize, sdfDesc.sdfSubgrids3DTexBlockDim.x, sdfDesc.sdfSubgrids3DTexBlockDim.y, sdfDesc.sdfSubgrids3DTexBlockDim.z,

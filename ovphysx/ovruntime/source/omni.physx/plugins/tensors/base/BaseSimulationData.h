@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -39,7 +39,8 @@ namespace tensors
 // data shared with child views that persist even if simulation view is deleted
 struct BaseSimulationData
 {
-    std::map<PXR_NS::SdfPath, Subspace> mSubspaces;
+    // Keyed by source-native path string (see CommonTypes.h's path fields).
+    std::map<std::string, Subspace> mSubspaces;
     std::set<ArticulationMetatype, ArticulationMetatypeLT> mUniqueTypes;
 
     // bi-directional map of

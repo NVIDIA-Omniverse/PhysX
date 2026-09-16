@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Unit tests for scripts/verify_schema_package.py.
 
@@ -55,8 +55,8 @@ def _make_tree(root: Path, *, module: str = "PhysxSchema", plugins=None,
                header: str = "") -> Path:
     """Stage a schema tree under root and return root.
 
-    `plugins` overrides the plugin list; `raw` writes the plugInfo body verbatim
-    (for malformed cases); `header` is prepended (e.g. a '#' or '//' comment).
+    `plugins` overrides the plugin list. `raw` writes the plugInfo body verbatim
+    (for malformed cases). `header` is prepended (e.g. a '#' or '//' comment).
     """
     resources = root / "share" / "usd" / "plugins" / module / "resources"
     resources.mkdir(parents=True)
@@ -82,7 +82,7 @@ def test_verify_tolerates_usd_hash_header(tmp_path):
 
 def test_verify_rejects_double_slash_comment(tmp_path):
     # PXR rejects '//' in plugInfo.json at RegisterPlugins() time, so the
-    # verifier must not normalize it into valid input -- it should fail parse.
+    # verifier must not normalize it into valid input. It must fail the parse.
     errors = vsp.verify_schema_package(_make_tree(tmp_path, header="// note\n"))
     assert any("could not parse" in e for e in errors)
 

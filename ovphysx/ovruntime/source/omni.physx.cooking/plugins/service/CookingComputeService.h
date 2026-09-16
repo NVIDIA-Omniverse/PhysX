@@ -1,9 +1,15 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
 #include <private/omni/physx/IPhysxCookingServicePrivate.h>
+
+#include <carb/Types.h>
+
+#include <cstdint>
+#include <vector>
+
 namespace physx
 {
 class PxFoundation;
@@ -25,41 +31,22 @@ namespace omni
 namespace physx
 {
 
-using SharedCudaContextManagerFn = ::physx::PxCudaContextManager* (*)();
-
-struct CookingInputUSDRigidMesh
-{
-    PXR_NS::VtArray<PXR_NS::GfVec3f> pointsValue;
-    PXR_NS::VtArray<int> indicesValue;
-    PXR_NS::VtArray<int> facesValue;
-    PXR_NS::VtArray<int> holesValue;
-    std::vector<uint16_t> faceMaterials;
-};
-
-struct CookingInputUSDDeformableBodyMesh
-{
-    PXR_NS::VtArray<PXR_NS::GfVec3f> srcPointsInSim;
-};
-
-struct CookingInputUSDDeformableVolumeMesh
-{
-    PXR_NS::VtArray<PXR_NS::GfVec3f> simPoints;
-    PXR_NS::VtArray<PXR_NS::GfVec3f> simBindPoints;
-    PXR_NS::VtArray<PXR_NS::GfVec4i> simIndices;
-    PXR_NS::VtArray<PXR_NS::GfVec3f> collBindPointsInSim;
-    PXR_NS::VtArray<PXR_NS::GfVec4i> collIndices;
-    PXR_NS::VtArray<PXR_NS::GfVec3i> collSurfaceIndices;
-};
-
-struct CookingStageAndPrim
-{
-    CookingInputUSDRigidMesh rigidMesh;
-    CookingInputUSDDeformableBodyMesh volumeDeformableBodyMesh;
-    CookingInputUSDDeformableBodyMesh surfaceDeformableBodyMesh;
-    CookingInputUSDDeformableVolumeMesh deformableVolumeMesh;
-    PXR_NS::UsdStageRefPtr stage;
-    PXR_NS::UsdPrim usdPrim;
-};
+/**
+ * Hands the cooking service the CUDA context manager owned by the host (omni.physx).
+ *
+ * The returned manager comes with a reference **already taken** on behalf of the caller, or is
+ * null when the host has none. This is deliberately an acquire and not a borrow: the provider
+ * releases its manager from the main thread while cooking runs on UJITSO/carb::tasking workers,
+ * so a plain getter leaves the consumer no race-free moment in which to call acquireReference()
+ * itself - the manager can be destroyed between the read and the acquire. The provider must
+ * therefore take the reference under whatever lock guards its own release path.
+ *
+ * Every consumer that stores the returned pointer owns that reference and must release() it.
+ *
+ * @implements REQ-COOK-CUDACTX-001
+ * @covers AC-1
+ */
+using AcquireSharedCudaContextManagerFn = ::physx::PxCudaContextManager* (*)();
 
 struct ICookingComputeService
 {
@@ -129,29 +116,39 @@ struct ICookingComputeService
 
     virtual void resetMeshCacheContents() = 0;
 
-    virtual bool lazyGetCudaContextManager(PhysxCookingDataType::Enum dataType,
+    /**
+     * Resolves the CUDA context manager to use for a GPU cooking request and hands the caller a
+     * reference to it.
+     *
+     * On success and when @p cudaContextManager comes back non-null, the caller **owns a
+     * reference** and must release() it once it no longer needs the manager - typically right
+     * after passing it to CookingTask::setPxCudaAndGPUPointers(), which takes its own.
+     *
+     * On entry a non-null @p cudaContextManager means "use this caller-supplied manager"; the
+     * caller must keep it alive for the duration of the call and this function takes its own
+     * reference on it. Pass null to let the service resolve one.
+     *
+     * @p cudaContextManager is set to null (and no reference is owed) whenever the request does
+     * not ask for GPU execution, or on a build/machine without GPU support.
+     *
+     * @implements REQ-COOK-CUDACTX-001
+     * @covers AC-2
+     */
+    virtual bool acquireCudaContextManager(PhysxCookingDataType::Enum dataType,
                                            const PhysxCookingComputeRequest& request,
-                                           ::physx::PxCudaContextManager*& customContextManager,
+                                           ::physx::PxCudaContextManager*& cudaContextManager,
                                            ::physx::PxPhysicsGpu*& physicsGPU) = 0;
 
-    static bool getStageAndPrim(PhysxCookingComputeResult& result,
-                                PhysxCookingComputeRequest& request,
-                                CookingStageAndPrim& stageAndPrim);
-    static bool fillMeshView(PhysxCookingComputeResult& result,
-                             PhysxCookingComputeRequest& request,
-                             CookingStageAndPrim& stageAndPrim);
-    static bool computeMeshKeyIfNeeded(PhysxCookingComputeResult& result,
-                                       PhysxCookingComputeRequest& request,
-                                       CookingStageAndPrim& stageAndPrim);
+    static bool computeMeshKeyIfNeeded(PhysxCookingComputeResult& result, PhysxCookingComputeRequest& request);
     static uint16_t getMaxMaterialIndex(const PhysxCookingMeshView& meshView);
 };
 
 ICookingComputeService* createCookingComputingService(
     ::physx::PxFoundation& foundation,
-    SharedCudaContextManagerFn sharedCudaContextManagerFn = nullptr);
+    AcquireSharedCudaContextManagerFn acquireSharedCudaContextManagerFn = nullptr);
 ICookingComputeService* createDefaultCookingComputingService(
     ::physx::PxFoundation& foundation,
-    SharedCudaContextManagerFn sharedCudaContextManagerFn = nullptr);
+    AcquireSharedCudaContextManagerFn acquireSharedCudaContextManagerFn = nullptr);
 void releaseCookingComputingService(ICookingComputeService*);
 
 } // namespace physx

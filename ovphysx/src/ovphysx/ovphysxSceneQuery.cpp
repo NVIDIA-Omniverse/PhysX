@@ -1,14 +1,19 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 
 // Scene query API: raycast, sweep, and overlap against the physics scene.
 // Results are stored in an internal hit buffer per instance.
 
+/**
+ * @implements REQ-CAPI-SCENEQUERY-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ */
+
 #include "ovphysx/ovphysx.h"
 #include "internal/sdk/ovphysxSDK.hpp"
-#include "internal/sidecar/ovphysxInternalInterop.h"  // g_sidecarEncodeSdfPath
 #include <omni/physx/PhysXRuntime.h>
+#include <omni/physx/IPhysx.h>
 
 #include <omni/physx/IPhysxSceneQuery.h>
 #include <carb/Framework.h>
@@ -27,29 +32,19 @@ static_assert(offsetof(ovphysx_scene_query_hit_t, distance) == 44, "distance off
 static_assert(offsetof(ovphysx_scene_query_hit_t, face_index) == 48, "face_index offset");
 static_assert(offsetof(ovphysx_scene_query_hit_t, material) == 56, "material offset");
 
-// Sidecar encode-sdf-path atomic owned here next to its consumer; loader
-// writes it during loadInternalSidecar() via the extern in
-// ovphysxInternalInterop.h. (g_sidecarGetPhysXPtr lives in ovphysxPhysXInterop.cpp.)
-std::atomic<OvphysxSidecarEncodeSdfPathFn> g_sidecarEncodeSdfPath{nullptr};
+// IPhysxSceneQuery's hit-result identity fields are opaque
+// omni::physics::parse::ObjectKey values (ADR-0019), so shape-geometry prim paths
+// are resolved via IPhysx::resolveObjectKey (see encodeShapePrimPath below).
 
 namespace {
-
-// SdfPath encoding is resolved in the internal sidecar (which links USD) and
-// published by the sidecar loader via g_sidecarEncodeSdfPath.
-
-uint64_t encodeSdfPath(const char* prim_path)
-{
-    auto fn = g_sidecarEncodeSdfPath.load(std::memory_order_acquire);
-    return fn ? fn(prim_path) : 0;
-}
 
 // ---- Hit conversion helpers ----
 
 ovphysx_scene_query_hit_t convertLocationHit(const omni::physx::SceneQueryHitLocation& src)
 {
     ovphysx_scene_query_hit_t h{};
-    h.collision   = src.collision;
-    h.rigid_body  = src.rigidBody;
+    h.collision   = src.collision.handle;
+    h.rigid_body  = src.rigidBody.handle;
     h.proto_index = src.protoIndex;
     h.normal[0]   = src.normal.x;
     h.normal[1]   = src.normal.y;
@@ -59,34 +54,37 @@ ovphysx_scene_query_hit_t convertLocationHit(const omni::physx::SceneQueryHitLoc
     h.position[2] = src.position.z;
     h.distance    = src.distance;
     h.face_index  = src.faceIndex;
-    h.material    = src.material;
+    h.material    = src.material.handle;
     return h;
 }
 
 ovphysx_scene_query_hit_t convertOverlapHit(const omni::physx::OverlapHit& src)
 {
     ovphysx_scene_query_hit_t h{};
-    h.collision   = src.collision;
-    h.rigid_body  = src.rigidBody;
+    h.collision   = src.collision.handle;
+    h.rigid_body  = src.rigidBody.handle;
     h.proto_index = src.protoIndex;
     return h;
 }
 
 // ---- Common validation ----
 
-// Validate a SHAPE geometry's prim_path and encode it via the sidecar.
-// Returns success() with out_encoded set on success, or a specific error result.
-ovphysx_result_t encodeShapePrimPath(const ovphysx_string_t& prim_path, uint64_t& out_encoded)
+// Validate a SHAPE geometry's prim_path and resolve it to an ObjectKey via IPhysx.
+ovphysx_result_t encodeShapePrimPath(const ovphysx_string_t& prim_path, omni::physics::parse::ObjectKey& out_key)
 {
     if (!isValid(prim_path))
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "shape prim_path is NULL or empty");
     if (hasEmbeddedNul(prim_path))
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "shape prim_path contains an embedded NUL byte");
 
+    omni::physx::IPhysx* physx = omni::physx::runtime::tryGetPhysxInterface();
+    if (!physx)
+        return set_error(OVPHYSX_API_ERROR, "IPhysx interface not available");
+
     const std::string prim_path_str = toStdString(prim_path);
-    out_encoded = encodeSdfPath(prim_path_str.c_str());
-    if (out_encoded == 0)
-        return set_error(OVPHYSX_API_ERROR, "failed to encode prim path (internal sidecar not loaded?)");
+    out_key = physx->resolveObjectKey(prim_path_str.c_str());
+    if (!out_key.valid())
+        return set_error(OVPHYSX_API_ERROR, "failed to resolve prim path to an object");
     return success();
 }
 
@@ -105,8 +103,8 @@ ovphysx_result_t validateSceneQueryArgs(
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
-    if (!instance || instance->attachedStageId == 0)
-        return set_error(OVPHYSX_API_ERROR, "no USD stage loaded");
+    if (!instance || !instance->ovstage_attached)
+        return set_error(OVPHYSX_API_ERROR, "no physics stage attached");
 
     *out_instance = instance;
     return success();
@@ -314,7 +312,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_sweep(
     }
     case OVPHYSX_SCENE_QUERY_GEOMETRY_SHAPE:
     {
-        uint64_t encoded = 0;
+        omni::physics::parse::ObjectKey encoded;
         auto shape_check = encodeShapePrimPath(geometry->shape.prim_path, encoded);
         if (shape_check.status != OVPHYSX_API_SUCCESS)
             return shape_check;
@@ -452,7 +450,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_overlap(
     }
     case OVPHYSX_SCENE_QUERY_GEOMETRY_SHAPE:
     {
-        uint64_t encoded = 0;
+        omni::physics::parse::ObjectKey encoded;
         auto shape_check = encodeShapePrimPath(geometry->shape.prim_path, encoded);
         if (shape_check.status != OVPHYSX_API_SUCCESS)
             return shape_check;
@@ -477,5 +475,52 @@ OVPHYSX_API ovphysx_result_t ovphysx_overlap(
 
     *out_hits = buf.data();
     *out_count = static_cast<uint32_t>(buf.size());
+    return success();
+}
+
+
+// ---- Hit identity resolution ----
+
+OVPHYSX_API ovphysx_result_t ovphysx_scene_query_get_paths_from_ids(
+    ovphysx_handle_t handle,
+    const uint64_t* ids,
+    uint32_t id_count,
+    ovphysx_string_t* out_paths,
+    uint32_t max_paths,
+    uint32_t* out_count)
+{
+    if (!out_count)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_count is NULL");
+    *out_count = 0;
+
+    if (!ids && id_count > 0)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "ids is NULL");
+    if (!out_paths && max_paths > 0)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_paths is NULL");
+
+    omni_sdk_physx_wait_all_pending_internal(handle);
+
+    std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
+    InstanceData* instance = get_instance_ptr(handle);
+    if (!instance)
+        return set_error(OVPHYSX_API_ERROR, "invalid handle");
+
+    omni::physx::IPhysx* physx = omni::physx::runtime::tryGetPhysxInterface();
+    if (!physx)
+        return set_error(OVPHYSX_API_ERROR, "IPhysx interface not available");
+
+    // objectKeyToPath returns a string owned by the currently attached source,
+    // empty when the key is invalid or no source is attached. The pointer stays
+    // valid until that source is torn down, so unlike
+    // ovphysx_contact_binding_get_other_actor_paths_from_ids no per-call cache
+    // is needed.
+    const uint32_t toWrite = (id_count < max_paths) ? id_count : max_paths;
+    for (uint32_t i = 0; i < toWrite; ++i)
+    {
+        const omni::physics::parse::ObjectKey key{ ids[i] };
+        out_paths[i] = ovphysx_cstr(physx->objectKeyToPath(key));
+    }
+
+    *out_count = id_count; // total needed, only toWrite entries are written
     return success();
 }

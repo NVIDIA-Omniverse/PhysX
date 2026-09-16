@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // Tests for ovphysx_subscribe_object_changes / ovphysx_unsubscribe_object_changes.
 //
@@ -7,20 +7,32 @@
 //   - ABI / argument-validation: NULL callbacks, NULL out_subscription,
 //     all-NULL callback functions, invalid subscription on unsubscribe,
 //     unknown subscription returns NOT_FOUND, subscribe/unsubscribe roundtrip.
-//   - Integration: all-destroyed callback fires on ovphysx_reset_stage();
-//     unsubscribe stops delivery of subsequent events; the initial stage
+//   - Integration: the all-destroyed callback fires on ovphysx_reset_stage(),
+//     unsubscribe stops delivery of subsequent events, and the initial stage
 //     population delivers no per-object created/destroyed callbacks
 //     (NVBugs 6473870).
 //   - C++ RAII wrapper: destructor auto-unsubscribes, move transfers
 //     ownership and leaves the source inactive.
 //
-// Subscriptions are process-global -- callbacks fire for any attached stage
+// Subscriptions are process-global, so callbacks fire for any attached stage
 // in the process. Tests use the shared CPU PhysXTestFixture and rely on
 // ovphysx_reset_stage() in fixture teardown to clean state between tests.
 //
-// Known gap: ovphysx_clone() does not currently emit object_created
-// notifications (upstream omni.physx replicator bypasses the notification
-// path). When that's wired up, add a regression test for it.
+// Known gap: ovphysx_clone() does not emit object_created notifications. The
+// clone path goes through IPhysxReplicator, which builds PhysX actors directly
+// rather than through PhysXUsdPhysicsInterface::createObject() where
+// sendObjectCreationNotification() lives. The ovphysx_subscribe_object_changes
+// documentation in ovphysx.h states this limitation. A regression test belongs
+// here once the replicator path sends notifications.
+
+/**
+ * @implements REQ-CAPI-OVSTAGE-UPDATE-001
+ * @covers AC-1
+ *
+ * AC-2 (overlapping range applies only its unread suffix) needs a post-attach
+ * ovstage edit, which this fixture cannot author. It is covered by the runtime
+ * case named in TEST-CAPI-OVSTAGE-UPDATE-001.
+ */
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
@@ -41,8 +53,8 @@ bool wait_op_success(ovphysx_handle_t handle, ovphysx_op_index_t op_index,
                      uint64_t timeout_ns = 10'000'000'000ULL) {
     ovphysx_op_wait_result_t wait_result{};
     ovphysx_result_t res = ovphysx_wait_op(handle, op_index, timeout_ns, &wait_result);
-    // The wait can return SUCCESS while individual ops failed; surface those
-    // before destroying the wait result so test failures aren't silent.
+    // The wait can return SUCCESS while individual ops failed. Those are printed
+    // before the wait result is destroyed so test failures are not silent.
     bool any_op_failed = wait_result.num_errors > 0;
     if (any_op_failed && wait_result.error_op_indices) {
         for (uint32_t i = 0; i < wait_result.num_errors; ++i) {
@@ -95,10 +107,10 @@ void recAllDestroyed(void* user_data) {
     static_cast<EventRecorder*>(user_data)->allDestroyedCount.fetch_add(1);
 }
 
-// RAII guard for a raw C subscription. Ensures unsubscribe is called even if
-// an ASSERT_* aborts the test scope -- otherwise the IPhysx subscription
-// would outlive the stack EventRecorder it captures, and fixture teardown
-// reset() would dispatch the all-destroyed callback into freed memory.
+// RAII guard for a raw C subscription. Unsubscribes even if an ASSERT_* aborts
+// the test scope. Otherwise the IPhysx subscription would outlive the stack
+// EventRecorder it captures, and the fixture teardown reset() would dispatch
+// the all-destroyed callback into freed memory.
 struct ScopedSubscription {
     ovphysx_subscription_id_t id = OVPHYSX_INVALID_SUBSCRIPTION_ID;
     ~ScopedSubscription() {
@@ -116,7 +128,7 @@ struct ScopedSubscription {
 // ============================================================================
 
 TEST_F(PhysXTestFixture, ObjectChangeSubscribeNullCallbacks) {
-    ovphysx_subscription_id_t sub = 12345;  // sentinel; must be overwritten to INVALID
+    ovphysx_subscription_id_t sub = 12345;  // sentinel that must be overwritten to INVALID
     ovphysx_result_t r = ovphysx_subscribe_object_changes(nullptr, &sub);
     EXPECT_EQ(r.status, OVPHYSX_API_INVALID_ARGUMENT);
     EXPECT_EQ(sub, OVPHYSX_INVALID_SUBSCRIPTION_ID);
@@ -186,19 +198,14 @@ protected:
         // First step attaches PhysX to the stage so that ovphysx_reset_stage() has
         // objects to tear down. The omni.physx "sim started" gate that
         // normally suppresses pre-simulation events is bypassed by the clone
-        // plugin setting stopCallbackWhenSimStopped=false on subscription;
-        // see ovphysxClone.cpp.
+        // plugin (ovphysxClone.cpp) setting stopCallbackWhenSimStopped=false
+        // on subscription.
         ASSERT_TRUE(step_and_wait(m_handle, 1.0f / 60.0f));
     }
 };
 
-// NOTE: ovphysx_clone() does NOT fire object_created notifications today.
-// The clone path goes through IPhysxReplicator, which builds PhysX actors
-// directly rather than re-entering PhysXUsdPhysicsInterface::createObject()
-// where sendObjectCreationNotification() lives. Tracked as a known limitation
-// of the omni.physx side; covered by the docstring on
-// ovphysx_subscribe_object_changes (in ovphysx.h). When/if upstream wires
-// notifications into the replicator path, add a regression test here.
+// NOTE: ovphysx_clone() does not fire object_created notifications. See the
+// known gap described at the top of this file.
 
 // ovphysx_reset_stage() tears everything down in bulk. Subscribers must receive
 // the all-destroyed notification rather than N per-object destructions.
@@ -220,11 +227,10 @@ TEST_F(ObjectChangeIntegrationTest, ResetTriggersAllDestroyedNotification) {
     // guard destructor unsubscribes.
 }
 
-// After unsubscribe, no further events are delivered. Use ovphysx_reset_stage() as
-// the stimulus -- ovphysx_clone() does NOT currently fire object-change
-// notifications (see ovphysx_subscribe_object_changes docstring), so a
-// post-unsubscribe clone is silent regardless and would make this assertion
-// vacuous.
+// After unsubscribe, no further events are delivered. ovphysx_reset_stage() is
+// the stimulus because ovphysx_clone() does not fire object-change
+// notifications, so a post-unsubscribe clone is silent regardless and would
+// make this assertion vacuous.
 TEST_F(ObjectChangeIntegrationTest, UnsubscribeStopsDelivery) {
     EventRecorder rec;
     ovphysx_object_change_callbacks_t cb{};
@@ -235,7 +241,7 @@ TEST_F(ObjectChangeIntegrationTest, UnsubscribeStopsDelivery) {
     ASSERT_EQ(ovphysx_subscribe_object_changes(&cb, &sub).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(ovphysx_unsubscribe_object_changes(sub).status, OVPHYSX_API_SUCCESS);
 
-    // reset() WOULD fire on_all_objects_destroyed if the subscription were
+    // reset() would fire on_all_objects_destroyed if the subscription were
     // still active. After unsubscribe the callback count must stay at zero.
     ovphysx_enqueue_result_t reset_res = ovphysx_reset_stage(m_handle);
     ASSERT_EQ(reset_res.status, OVPHYSX_API_SUCCESS);
@@ -245,15 +251,18 @@ TEST_F(ObjectChangeIntegrationTest, UnsubscribeStopsDelivery) {
         << "No callbacks should be delivered after unsubscribe";
 }
 
-// Regression for NVBugs 6473870 / OMPE-102206. Subscribing before the initial
-// stage population and then attaching a fresh scene must NOT deliver any
-// per-object created callbacks: ovphysx sets stopCallbackWhenSimStopped=false
-// (to receive reset/clone events while stopped), which used to bypass the
-// initial-population suppression and leak one created event per actor/shape.
-// The caller already has that state from setup, so the count must be zero.
+// Regression for NVBugs 6473870 / OMPE-102206 and NVBugs 6605420.
+// Subscribing before the initial stage population and then attaching a fresh
+// scene must not deliver any per-object created callbacks. ovphysx sets
+// stopCallbackWhenSimStopped=false to receive reset/clone events while stopped,
+// which must not bypass the initial-population suppression and leak one created
+// event per actor/shape. Replaying the ordinal already parsed by attach must
+// also be a no-op rather than delivering that initial population through
+// update_from_ovstage. The caller already has that state from setup, so the
+// count must be zero.
 //
-// This is the shipped C-API path QA exercised, on the base fixture (which does
-// not pre-attach), so the subscription is active before attach_ovstage().
+// Runs on the base fixture (which does not pre-attach), so the subscription is
+// active before attach_ovstage(), matching the shipped C-API path.
 TEST_F(PhysXTestFixture, InitialPopulationDeliversNoCreatedCallbacks) {
     EventRecorder rec;
     ovphysx_object_change_callbacks_t cb{};
@@ -269,7 +278,23 @@ TEST_F(PhysXTestFixture, InitialPopulationDeliversNoCreatedCallbacks) {
     ovphysx_usd_handle_t usd = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/basic_simulation.usda", usd))
         << "Failed to load scene";
-    // First step lets any deferred initial population run; it is still the
+
+    uint64_t attachOrdinal = 0;
+    {
+        std::lock_guard<std::mutex> lock(ovstage_test_attachments_mutex());
+        const auto attachmentIt = ovstage_test_attachments().find(m_handle);
+        ASSERT_NE(attachmentIt, ovstage_test_attachments().end());
+        ASSERT_FALSE(attachmentIt->second.empty());
+        attachOrdinal = attachmentIt->second.back().ordinal;
+    }
+    ovstage_ordinal_range_t replayRange{};
+    replayRange.start_ordinal = attachOrdinal;
+    replayRange.end_ordinal = attachOrdinal;
+    replayRange.has_start_ordinal = true;
+    ASSERT_EQ(ovphysx_update_from_ovstage(m_handle, replayRange).status, OVPHYSX_API_SUCCESS)
+        << "replaying the attach ordinal should be a successful no-op";
+
+    // The first step lets any deferred initial population run. It is still the
     // initial population and must remain silent.
     ASSERT_TRUE(step_and_wait(m_handle, 1.0f / 60.0f));
 
@@ -305,7 +330,7 @@ TEST_F(ObjectChangeIntegrationTest, CppSubscriptionAutoUnsubscribes) {
         auto sub = ovphysx::subscribeObjectChanges(std::move(cbs));
         ASSERT_TRUE(sub.isActive());
         leakedId = sub.id();
-        // sub goes out of scope here -> destructor unsubscribes
+        // sub goes out of scope here and its destructor unsubscribes.
     }
 
     // Verify the underlying subscription is gone: a second unsubscribe must

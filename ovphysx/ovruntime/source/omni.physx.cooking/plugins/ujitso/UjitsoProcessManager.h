@@ -1,11 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
 #include "UjitsoProcessContext.h"
 #include "UjitsoServiceUtils.h"
 #include <carb/tasking/TaskingUtils.h>
+
+#include <list>
 
 namespace omni
 {

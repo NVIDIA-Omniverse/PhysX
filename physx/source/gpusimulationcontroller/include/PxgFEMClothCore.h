@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef PXG_FEMCLOTH_CORE_H
 #define PXG_FEMCLOTH_CORE_H
@@ -86,16 +63,13 @@ namespace physx
 		void sortContacts(PxU32 nbActiveFemCloths);
 
 		void solve(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
-				   PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
-				   PxReal dt, CUstream solverStream, PxU32 iter, PxU32 maxIter, bool isVelocityIteration, const PxVec3& gravity,
-				   PxReal rigidAttachmentBiasCoefficient);
+				   PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, const PxReal rigidAttachmentBiasCoefficient, const PxVec3& gravity,
+				   const PxReal dt, const PxU32 iter, const PxU32 maxIter, const bool isVelocityIteration, CUstream solverStream);
 
-		void solve_position(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
-							PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd,
-							PxReal dt, CUstream solverStream, PxU32 iter, PxU32 maxIter, const PxVec3& gravity,
-							PxReal rigidAttachmentBiasCoefficient);
-
-		void solve_velocity(PxU32 iter, PxU32 maxIter, PxReal dt);
+		// Decides this iteration's cloth-cloth contact-pair refresh (in the out-params): whether to rebuild,
+		// based on the cadence (adaptive vs fixed). Under TGS in adaptive mode it also clears the per-pair
+		// state, which is rebuilt by step().
+		void prepareClothContactPairUpdate(PxU32 iter, PxU32 maxIter, bool& adaptiveCollisionPairUpdate, bool& forceUpdateClothContactPairs);
 
 		void step(PxReal dt, CUstream stream, PxU32 nbFEMCloths, const PxVec3& gravity, bool adaptiveCollisionPairUpdate, bool forceUpdateClothContactPairs);
 
@@ -124,7 +98,7 @@ namespace physx
 		void applyDamping(PxU32 nbActiveFemCloths, PxReal dt, CUstream stream);
 
 		// Apply position delta change original triangle mesh
-		void applyExternalDelta(PxU32 nbActiveFemCloths, PxReal dt, CUstream stream);
+		void applyExternalDelta(PxU32 nbActiveFemCloths, PxReal dt, CUstream stream, bool isVelocityIteration);
 
 		void drawContacts(PxRenderOutput& out);
 
@@ -160,37 +134,37 @@ namespace physx
 
 		void queryRigidContactReferenceCount(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd,
 											 PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
-											 PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt);
+											 PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt, bool isVelocityIteration);
 
 		void queryRigidAttachmentReferenceCount(CUstream solverStream);
 
 		// Solve cloth vs rigid body contact
 		void solveClothRigidContacts(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
-									 PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt);
+									 PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt, bool isVelocityIteration);
 
 		// Solve cloth vs rigid body attachment
 		void solveClothRigidAttachment(PxgDevicePointer<PxgPrePrepDesc> prePrepDescd, PxgDevicePointer<PxgSolverCoreDesc> solverCoreDescd,
 									   PxgDevicePointer<PxgArticulationCoreDesc> artiCoreDescd, CUstream solverStream, PxReal dt,
-									   PxReal biasCoefficient);
+									   PxReal biasCoefficient, bool isVelocityIteration);
 
-		void solveClothAttachmentDelta();
+		void solveClothAttachmentDelta(PxReal dt, bool isVelocityIteration);
 
 		void queryClothClothAttachmentReferenceCount();
 
 		void prepareClothClothCollision(bool forceUpdateClothContactPairs, bool adaptiveCollisionPairUpdate, PxReal dt);
 
-		void solveClothClothCollision(PxU32 nbActiveFEMCloths, PxReal dt);
+		void solveClothClothCollision(PxU32 nbActiveFEMCloths, PxReal dt, bool isVelocityIteration);
 
 		// Solve cloth vs cloth contact and output to cloth delta buffer
-		void solveClothContactsOutputClothDelta(PxReal dt, bool isVT);
+		void solveClothContactsOutputClothDelta(PxReal dt, bool isVT, bool isVelocityIteration);
 
 		// Solve cloth vs particle contact and output to cloth delta buffer
-		void solveParticleContactsOutputClothDelta(CUstream particleStream, PxReal dt);
+		void solveParticleContactsOutputClothDelta(CUstream particleStream, PxReal dt, bool isVelocityIteration);
 
 		// Solve cloth vs particle contact and output to particle delta buffer
-		void solveParticleContactsOutputParticleDelta(CUstream particleStream, PxReal dt);
+		void solveParticleContactsOutputParticleDelta(CUstream particleStream, PxReal dt, bool isVelocityIteration);
 
-		void queryParticleContactReferenceCount(PxReal dt);
+		void queryParticleContactReferenceCount(PxReal dt, bool isVelocityIteration);
 
 		//--------------------------------------------------------------------------------------
 

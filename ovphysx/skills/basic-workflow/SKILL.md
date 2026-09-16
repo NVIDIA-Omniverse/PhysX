@@ -1,10 +1,11 @@
 ---
 name: basic-workflow
 description: Create an ovphysx instance, attach an ovstage scene, step simulation, and clean up. Use when starting a new ovphysx project, testing basic integration, or learning the minimal workflow.
-compatibility: "ovphysx 0.4 wheel or SDK; Python examples require the ovphysx Python package, and C examples require the OVPhysX SDK plus the matching native OVStage package."
+license: Apache-2.0
+compatibility: "ovphysx >=0.6.0 wheel or SDK; Python examples require the ovphysx Python package, and C examples require the OVPhysX SDK plus the matching native OVStage package."
 allowed-tools: Read Shell
 metadata:
-  version: "0.1.1"
+  version: "0.1.3"
   author: NVIDIA Omniverse Physics
   tags: "ovphysx, physics, quickstart"
 ---
@@ -30,20 +31,35 @@ pip install ovphysx
 ```
 
 ```python
+from pathlib import Path
+
+import ovphysx
 from ovphysx import PhysX
 import ovstage
 
+usd_path = (
+    Path(ovphysx.__file__).resolve().parent
+    / "samples"
+    / "data"
+    / "simple_physics_scene.usda"
+)
+if not usd_path.is_file():
+    raise FileNotFoundError(f"ovphysx sample data is missing: {usd_path}")
+
 physx = PhysX()
+# ovphysx ships its PhysX USD schemas as codeless resources and never registers
+# them itself; register them with ovstage before the first population call.
+ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
 stage = ovstage.Stage("ovphysx-basic")
 try:
-    ovstage.population.open_usd(stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+    ovstage.population.open_usd(stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
     stage.advance_write_floor(ordinal=1).wait()
     physx.attach_ovstage(stage, read_ordinal=1)
     physx.step_sync(1.0 / 60.0)
 finally:
     physx.detach_ovstage()
     stage.destroy()
-    physx.release()
+    physx.destroy()
 ```
 
 `step_sync()` steps and waits in one call, so step errors surface immediately and
@@ -52,8 +68,9 @@ teardown cannot race the step. Use bare async `step()` + an explicit
 
 The physics-only `domains` mask above is fine for this skill's non-instanced
 sample USD. For arbitrary content prefer `ALL` (see
-`docs/ovstage_integration.md`, "Population domains") -- `PHYSICS` alone can
-silently omit colliders under native USD scene-graph instances.
+[Population domains](../../docs/ovstage_integration.md#population-domains)) —
+`PHYSICS` alone can silently omit colliders under native USD scene-graph
+instances.
 
 ### Later ovstage edits
 
@@ -86,15 +103,20 @@ The C workflow follows one ordering; keep it as-is:
 
 1. `ovphysx_initialize()` (process-wide; no Python analogue).
 2. `ovphysx_create_instance()` with `OVPHYSX_CREATE_ARGS_DEFAULT`.
-3. Populate an ovstage from USD, wait for the population op, advance and wait
+3. `ovphysx_get_codeless_schema_root()`, then
+   `ovstage_population_register_usd_schemas(&schema_path, 1)` before the first
+   population call in the process.
+4. Populate an ovstage from USD, wait for the population op, advance and wait
    for the write floor, then `ovphysx_attach_ovstage(handle, stage, read_ordinal)`.
-4. `ovphysx_step_sync()` — steps and waits in one call, so step errors are
+5. `ovphysx_step_sync()` -- steps and waits in one call, so step errors are
    reported and teardown cannot race the step.
-5. Detach and destroy the stage, then `ovphysx_destroy_instance()`.
-6. `ovphysx_shutdown()`.
+6. Detach and destroy the stage, then `ovphysx_destroy_instance()`.
+7. `ovphysx_shutdown()`.
 
 This program uses only public ovphysx / ovstage API, so it builds against the SDK
-as shown under "Build the C sample" below:
+as shown under "Build the C sample" below. Run it from the extracted SDK root so
+the bundled `samples/data/simple_physics_scene.usda` path resolves, or replace
+that relative path with its absolute location:
 
 ```c
 #include <ovphysx/ovphysx.h>
@@ -118,6 +140,26 @@ int main(void)
         return 1;
     }
 
+    // ovphysx ships its PhysX USD schemas as codeless resources and never
+    // registers them itself; register them with ovstage before the first
+    // population call in the process.
+    ovphysx_string_t schema_root;
+    if (ovphysx_get_codeless_schema_root(&schema_root).status != OVPHYSX_API_SUCCESS) {
+        fprintf(stderr, "Failed to locate the ovphysx schemas\n");
+        ovphysx_destroy_instance(handle);
+        ovphysx_shutdown();
+        return 1;
+    }
+    ovx_string_t schema_path;
+    schema_path.ptr = schema_root.ptr;
+    schema_path.length = schema_root.length;
+    if (ovstage_population_register_usd_schemas(&schema_path, 1) != OVSTAGE_OK) {
+        fprintf(stderr, "Failed to register the ovphysx schemas with ovstage\n");
+        ovphysx_destroy_instance(handle);
+        ovphysx_shutdown();
+        return 1;
+    }
+
     // Create an ovstage and populate it from USD (public ovstage API).
     ovstage_instance_desc_t stage_desc;
     memset(&stage_desc, 0, sizeof(stage_desc));
@@ -130,7 +172,7 @@ int main(void)
         return 1;
     }
 
-    const char* usd_path = "scene.usda";
+    const char* usd_path = "samples/data/simple_physics_scene.usda";
     ovx_string_t path;
     path.ptr = usd_path;
     path.length = strnlen(usd_path, 4096);
@@ -165,6 +207,13 @@ int main(void)
         ovphysx_shutdown();
         return 1;
     }
+    if (ovstage_release_op(stage, floor.op_index) != OVSTAGE_OK) {
+        fprintf(stderr, "Failed to release ovstage floor operation\n");
+        ovstage_destroy_instance(stage);
+        ovphysx_destroy_instance(handle);
+        ovphysx_shutdown();
+        return 1;
+    }
 
     if (ovphysx_attach_ovstage(handle, stage, ordinal).status != OVPHYSX_API_SUCCESS) {
         fprintf(stderr, "Failed to attach ovstage\n");
@@ -193,9 +242,9 @@ int main(void)
 ```
 
 If you step with the async `ovphysx_step()` instead of `ovphysx_step_sync()`,
-you must then call `ovphysx_wait_op(handle, step_result.op_index, ...)` and check
-`num_errors` before teardown — the enqueue status alone only means *accepted*,
-not *completed*.
+you must then call `ovphysx_wait_op()` with the returned operation index and a
+concrete timeout, and check `num_errors` before teardown — the enqueue status
+alone only means *accepted*, not *completed*.
 
 Full sample:
 - `samples/c_samples/hello_world_c/main.c` (SDK)
@@ -210,10 +259,13 @@ they wrap.
 Build the C sample with CMake:
 
 ```cmake
+cmake_minimum_required(VERSION 3.16)
+project(ovphysx_example LANGUAGES C)
+
 find_package(ovphysx REQUIRED)
 add_executable(my_app main.c)
 target_link_libraries(my_app PRIVATE ovphysx::ovphysx ovphysx::ovstage)
-if(WIN32) # optionally copy ovphysx dlls into bin folder
+if(WIN32) # copy the ovphysx DLLs, plugins and codeless schemas next to the executable
     ovphysx_copy_runtime_dlls(my_app)
 endif()
 ```
@@ -239,7 +291,7 @@ builds fetch OVStage automatically.
 | `physx.attach_ovstage(stage)` | `ovphysx_attach_ovstage()` |
 | `physx.step_sync(dt)` | `ovphysx_step_sync()` |
 | `physx.step(dt)` | `ovphysx_step()` |
-| `physx.release()` | `ovphysx_destroy_instance()` |
+| `physx.destroy()` | `ovphysx_destroy_instance()` |
 
 The C API brackets everything with `ovphysx_initialize()` / `ovphysx_shutdown()`;
 Python manages that lifecycle internally, so there is no Python analogue. Use

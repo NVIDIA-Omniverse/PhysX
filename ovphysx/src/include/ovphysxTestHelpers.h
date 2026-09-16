@@ -1,10 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
-// Internal test helper functions - NOT part of the public API
-// These are used by unit tests to validate internal behavior
+// Internal test helpers used by the unit tests. Not part of the public API.
 
 #include "ovphysx/ovphysx.h"
 
@@ -58,9 +57,12 @@ OVPHYSX_API void* ovphysx_get_tensor_api_internal(void);
 OVPHYSX_API bool ovphysx_get_attach_cuda_selector_for_test_internal(int32_t* out_value);
 
 /**
- * @brief Reset schema-path registration one-shot state for isolated unit tests.
+ * @brief Set an exact-length Carbonite string for configuration-boundary tests.
  */
-OVPHYSX_API void ovphysx_reset_schema_path_registration_internal(void);
+OVPHYSX_API bool ovphysx_set_raw_string_setting_for_test_internal(
+    const char* path,
+    const char* value,
+    size_t length);
 
 typedef bool (*ovphysx_test_set_viz_scope_tokens_fn)(const ovx_primpath_t*, uint32_t);
 
@@ -74,6 +76,19 @@ OVPHYSX_API bool ovphysx_set_ovstage_attachment_state_internal(
     ovphysx_handle_t handle,
     bool attached,
     int64_t stage_id);
+
+/**
+ * @brief Create live objects for every OmniPVD-producing PhysXExtensions family.
+ *
+ * The returned opaque fixture belongs to the caller and must be destroyed with
+ * @ref ovphysx_destroy_extensions_fixture_for_test_internal before the instance.
+ */
+OVPHYSX_API bool ovphysx_create_extensions_fixture_for_test_internal(
+    ovphysx_handle_t handle,
+    void** out_fixture);
+
+/** @brief Destroy a fixture created by ovphysx_create_extensions_fixture_for_test_internal. */
+OVPHYSX_API void ovphysx_destroy_extensions_fixture_for_test_internal(void* fixture);
 
 #ifdef __cplusplus
 }

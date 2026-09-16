@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-JOINT-001
@@ -8,8 +8,14 @@
  * @implements REQ-PARSE-JOINT-002
  * @covers AC-1 AC-2 AC-3 AC-4
  *
+ * @implements REQ-PARSE-JOINT-005
+ * @covers AC-1 AC-2 AC-5
+ *
  * @implements REQ-PARSE-UNIFY-001
  * @covers AC-1 AC-2
+ *
+ * @implements REQ-PARSE-CORE-003
+ * @covers AC-2
  */
 
 // parse::parseJoint — minimum-viable port that consumes the already-resolved
@@ -79,9 +85,10 @@ void copyBaseFields(const JointInfo& info, PhysxJointDesc& desc)
 // physxJointAPI.GetJointFrictionAttr(), 0.0f, FLT_MAX, ...)` clamps
 // to [0, FLT_MAX] which we mirror.
 void readPhysxJointApi(const IPhysicsSource& src, ObjectKey key,
-                       const KnownTokens& tok, PhysxJointDesc& desc)
+                       const KnownTokens& tok, const JointSchemaPresence& present,
+                       PhysxJointDesc& desc)
 {
-    if (!src.hasSchema(key, tok.physxJointAPI))
+    if (!present.physxJointApi || !src.hasSchema(key, tok.physxJointAPI))
         return;
     desc.jointFriction = readClampedScalar<float>(
         src, key, tok.physxJointJointFriction, desc.jointFriction, 0.0f, FLT_MAX);
@@ -98,15 +105,60 @@ void initLimitExtensions(PhysxJointLimit& l)
     l.damping = 0.0f;
 }
 
+// Gate token for a joint sub-schema instance from the pre-interned table; instances not
+// in it (D6 per-axis, off the hot path) fall back to a runtime intern.
+TokenId physxLimitApiToken(IPhysicsSource& src, const KnownTokens& tok, std::string_view inst)
+{
+    if (inst == "angular")  return tok.physxLimitAPIAngular;
+    if (inst == "linear")   return tok.physxLimitAPILinear;
+    if (inst == "cone")     return tok.physxLimitAPICone;
+    if (inst == "distance") return tok.physxLimitAPIDistance;
+    std::string n = "PhysxLimitAPI:";
+    n += inst;
+    return src.internToken(n);
+}
+
+TokenId physxJointAxisApiToken(IPhysicsSource& src, const KnownTokens& tok, std::string_view inst)
+{
+    if (inst == "angular") return tok.physxJointAxisAPIAngular;
+    if (inst == "linear")  return tok.physxJointAxisAPILinear;
+    if (inst == "rotX")    return tok.physxJointAxisAPIRotX;
+    if (inst == "rotY")    return tok.physxJointAxisAPIRotY;
+    if (inst == "rotZ")    return tok.physxJointAxisAPIRotZ;
+    std::string n = "PhysxJointAxisAPI:";
+    n += inst;
+    return src.internToken(n);
+}
+
+TokenId physxDrivePerfEnvelopeApiToken(IPhysicsSource& src, const KnownTokens& tok, std::string_view inst)
+{
+    if (inst == "angular") return tok.physxDrivePerformanceEnvelopeAPIAngular;
+    if (inst == "linear")  return tok.physxDrivePerformanceEnvelopeAPILinear;
+    if (inst == "rotX")    return tok.physxDrivePerformanceEnvelopeAPIRotX;
+    if (inst == "rotY")    return tok.physxDrivePerformanceEnvelopeAPIRotY;
+    if (inst == "rotZ")    return tok.physxDrivePerformanceEnvelopeAPIRotZ;
+    std::string n = "PhysxDrivePerformanceEnvelopeAPI:";
+    n += inst;
+    return src.internToken(n);
+}
+
+TokenId physicsJointStateApiToken(IPhysicsSource& src, const KnownTokens& tok, std::string_view inst)
+{
+    if (inst == "angular") return tok.physicsJointStateAPIAngular;
+    if (inst == "linear")  return tok.physicsJointStateAPILinear;
+    std::string n = "PhysicsJointStateAPI:";
+    n += inst;
+    return src.internToken(n);
+}
+
 // Read PhysxLimitAPI:<instance> overrides on top of `limit`. `instance`
 // is the multi-apply schema instance name (e.g. "rotX", "linear",
 // "cone", "distance"). Each field is clamped to a valid PhysX range.
-void readPhysxLimitApi(IPhysicsSource& src, ObjectKey key,
+void readPhysxLimitApi(IPhysicsSource& src, ObjectKey key, const KnownTokens& tok,
+                       const JointSchemaPresence& present,
                        std::string_view instance, PhysxJointLimit& limit)
 {
-    std::string apiName = "PhysxLimitAPI:";
-    apiName += instance;
-    if (!src.hasSchema(key, src.internToken(apiName)))
+    if (!present.physxLimit || !src.hasSchema(key, physxLimitApiToken(src, tok, instance)))
         return;
 
     auto readClamped = [&](std::string_view attr, float minV, float maxV, float def) {
@@ -203,16 +255,42 @@ void initAxisPropertiesDefaults(PhysxJointAxisProperties& p)
 // case.
 void readPhysxJointAxisApi(IPhysicsSource& src, ObjectKey key,
                            const KnownTokens& tok,
+                           const JointSchemaPresence& present,
                            std::string_view instance,
                            PhysxJointAxisProperties& properties)
 {
     initAxisPropertiesDefaults(properties);
 
-    std::string apiName = "PhysxJointAxisAPI:";
-    apiName += instance;
-    const TokenId apiToken = src.internToken(apiName);
+    // Newton fallback: newton:velocityLimit -> physxJoint:maxJointVelocity. Both are
+    // joint-level (broadcast to every DOF) and share units -- degrees/s for angular
+    // DOFs, distance/s for linear ones -- so this is a direct mapping, no conversion
+    // wrapper. Seeded before the PhysX reads below so the documented precedence falls
+    // out of the existing default-chaining: a per-axis PhysxJointAxisAPI value wins,
+    // then joint-level physxJoint:maxJointVelocity, then this, then FLT_MAX.
+    properties.maxJointVelocity = readClampedScalar<float>(
+        src, key, tok.newtonVelocityLimit, properties.maxJointVelocity, 0.0f, FLT_MAX);
 
-    if (src.hasSchema(key, apiToken))
+    // PhysxJointAPI joint-level fallback for `armature`/`maxJointVelocity`. This must
+    // run before the per-axis block below and unconditionally on whether
+    // PhysxJointAxisAPI is applied for this axis at all: applying the per-axis API to
+    // set an unrelated field (e.g. only staticFrictionEffort) must not take this axis'
+    // armature/maxJointVelocity out of joint-level scope, or the joint-level value
+    // silently gets dropped in favour of the Newton seed / 0.0f default.
+    if (present.physxJointApi && src.hasSchema(key, tok.physxJointAPI))
+    {
+        // An applied-but-unlimited physxJoint:maxJointVelocity is "no PhysX opinion"
+        // and must not shadow the Newton seed. hasAuthoredAttribute cannot say that on
+        // a resolved-value backend (ADR-0020), the sentinel can.
+        if (isPhysxMaxJointVelocityAuthored(src, key, tok.physxJointMaxJointVelocity))
+        {
+            properties.maxJointVelocity = readClampedScalar<float>(
+                src, key, tok.physxJointMaxJointVelocity, properties.maxJointVelocity, 0.0f, FLT_MAX);
+        }
+        properties.armature = readClampedScalar<float>(
+            src, key, tok.physxJointArmature, properties.armature, 0.0f, FLT_MAX);
+    }
+
+    if (present.physxJointAxis && src.hasSchema(key, physxJointAxisApiToken(src, tok, instance)))
     {
         auto readClamped = [&](std::string_view field, float minV, float maxV, float def) {
             std::string name = "physxJointAxis:";
@@ -235,23 +313,34 @@ void readPhysxJointAxisApi(IPhysicsSource& src, ObjectKey key,
             return r;
         };
 
-        properties.armature                  = readClamped("armature",                  0.0f, FLT_MAX, properties.armature);
-        properties.maxJointVelocity          = readClamped("maxJointVelocity",          0.0f, FLT_MAX, properties.maxJointVelocity);
+        // armature carries no sentinel usable to distinguish "resolved default"
+        // from "explicitly authored" the way maxJointVelocity's inf/FLT_MAX does
+        // (0.0 is both the schema default and a legitimate authored value), so
+        // `hasAuthoredAttribute` alone cannot tell an unrelated-field-only
+        // PhysxJointAxisAPI application (ovstage, ADR-0020: always-true) apart
+        // from a real per-axis override. Per ADR-0002 invariant 1, the ambiguous
+        // case collapses to "not authored": only a strictly positive per-axis
+        // value displaces the joint-level/default seed above. The accepted,
+        // uniform-across-backends cost is that USD can no longer use an
+        // explicit per-axis armature = 0.0 to override a nonzero joint-level
+        // armature -- that combination is indistinguishable, byte-for-byte,
+        // from ovstage's unauthored-0.0 case.
+        const float axisArmature = readClamped("armature", 0.0f, FLT_MAX, 0.0f);
+        if (axisArmature > 0.0f)
+            properties.armature = axisArmature;
+        // maxJointVelocity carries the "unlimited" sentinel, so authored-ness comes from
+        // the resolved value (isPhysxMaxJointVelocityAuthored) and not from
+        // hasAuthoredAttribute — see that helper for why, and note it is what keeps the
+        // Newton/joint-level seed above alive when the per-axis API is applied but its
+        // maxJointVelocity is left unauthored.
+        if (isPhysxMaxJointVelocityAuthored(src, key, src.internToken(
+                std::string("physxJointAxis:") + std::string(instance) + ":maxJointVelocity")))
+        {
+            properties.maxJointVelocity      = readClamped("maxJointVelocity",          0.0f, FLT_MAX, properties.maxJointVelocity);
+        }
         properties.staticFrictionEffort      = readClamped("staticFrictionEffort",      0.0f, FLT_MAX, properties.staticFrictionEffort);
         properties.dynamicFrictionEffort     = readClamped("dynamicFrictionEffort",     0.0f, FLT_MAX, properties.dynamicFrictionEffort);
         properties.viscousFrictionCoefficient = readClamped("viscousFrictionCoefficient", 0.0f, FLT_MAX, properties.viscousFrictionCoefficient);
-        return;
-    }
-
-    // PhysxJointAPI fallback: when the per-axis API isn't applied,
-    // populate `armature` and `maxJointVelocity` from PhysxJointAPI.
-    // The friction fields stay at their default.
-    if (src.hasSchema(key, tok.physxJointAPI))
-    {
-        properties.maxJointVelocity = readClampedScalar<float>(
-            src, key, tok.physxJointMaxJointVelocity, properties.maxJointVelocity, 0.0f, FLT_MAX);
-        properties.armature = readClampedScalar<float>(
-            src, key, tok.physxJointArmature, properties.armature, 0.0f, FLT_MAX);
     }
 }
 
@@ -298,12 +387,12 @@ PhysxJointDrive makePhysxDrive(const JointDriveInfo& info, bool convertToRad)
 // constructor defaults (isEnvelopeUsed=false, maxActuatorVelocity=FLT_MAX,
 // velocityDependentResistance=0, speedEffortGradient=0).
 void readPhysxDrivePerformanceEnvelopeApi(IPhysicsSource& src, ObjectKey key,
+                                          const KnownTokens& tok,
+                                          const JointSchemaPresence& present,
                                           std::string_view instance,
                                           PhysxJointDrive& drive)
 {
-    std::string apiName = "PhysxDrivePerformanceEnvelopeAPI:";
-    apiName += instance;
-    if (!src.hasSchema(key, src.internToken(apiName)))
+    if (!present.drivePerfEnvelope || !src.hasSchema(key, physxDrivePerfEnvelopeApiToken(src, tok, instance)))
         return;
 
     drive.isEnvelopeUsed = true;
@@ -352,13 +441,13 @@ void readPhysxDrivePerformanceEnvelopeApi(IPhysicsSource& src, ObjectKey key,
 // When the API is not applied, leaves `state` at its constructor default
 // (enabled=false, position=0, velocity=0).
 void readPhysicsJointStateApi(IPhysicsSource& src, ObjectKey key,
+                              const KnownTokens& tok,
+                              const JointSchemaPresence& present,
                               std::string_view instance,
                               PhysicsJointState& state,
                               bool applyDegToRad)
 {
-    std::string apiName = "PhysicsJointStateAPI:";
-    apiName += instance;
-    if (!src.hasSchema(key, src.internToken(apiName)))
+    if (!present.jointState || !src.hasSchema(key, physicsJointStateApiToken(src, tok, instance)))
         return;
 
     state.enabled = true;
@@ -396,8 +485,8 @@ bool isAxisRotational(JointAxis ax)
 DescPtr<PhysxJointDesc> parseJoint(ParseContext& ctx, ObjectKey key, const JointInfo& info)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
+    const JointSchemaPresence& present = ctx.jointSchemaPresence();
 
     DescPtr<PhysxJointDesc> base;
 
@@ -417,14 +506,14 @@ DescPtr<PhysxJointDesc> parseJoint(ParseContext& ctx, ObjectKey key, const Joint
         d->axis = info.axis;
         d->limit = makeAngularLimit(info.limit);
         // Spherical joint's limit uses the multi-apply instance "cone".
-        readPhysxLimitApi(src, key, "cone", d->limit);
+        readPhysxLimitApi(src, key, tok, present, "cone", d->limit);
         // PhysxJointAxisAPI per rotational axis (rotX, rotY, rotZ). Legacy
         // populates jointProperties for all three and applies the rotational
         // deg→rad / rad→deg conversion to each.
         for (JointAxis ax : { eRotX, eRotY, eRotZ })
         {
             PhysxJointAxisProperties props;
-            readPhysxJointAxisApi(src, key, tok, limitInstanceForAxis(ax), props);
+            readPhysxJointAxisApi(src, key, tok, present, limitInstanceForAxis(ax), props);
             applyRotationalAxisConversions(props);
             d->jointProperties.push_back(std::make_pair(ax, props));
         }
@@ -439,13 +528,13 @@ DescPtr<PhysxJointDesc> parseJoint(ParseContext& ctx, ObjectKey key, const Joint
         d->limit = makeAngularLimit(info.limit);
         d->drive = makePhysxDrive(info.drive, /*convertToRad=*/true);
         // Revolute joint uses the "angular" instance for limit + axis-properties.
-        readPhysxLimitApi(src, key, "angular", d->limit);
-        readPhysxJointAxisApi(src, key, tok, "angular", d->properties);
+        readPhysxLimitApi(src, key, tok, present, "angular", d->limit);
+        readPhysxJointAxisApi(src, key, tok, present, "angular", d->properties);
         applyRotationalAxisConversions(d->properties);
-        readPhysxDrivePerformanceEnvelopeApi(src, key, "angular", d->drive);
+        readPhysxDrivePerformanceEnvelopeApi(src, key, tok, present, "angular", d->drive);
         // Joint state for "angular" instance. Rotational → convert
         // schema-authored degrees to engine-native radians.
-        readPhysicsJointStateApi(src, key, "angular", d->state, /*applyDegToRad=*/true);
+        readPhysicsJointStateApi(src, key, tok, present, "angular", d->state, /*applyDegToRad=*/true);
         base = descPtrCast<PhysxJointDesc>(std::move(d));
         break;
     }
@@ -457,12 +546,12 @@ DescPtr<PhysxJointDesc> parseJoint(ParseContext& ctx, ObjectKey key, const Joint
         d->limit = makeLinearLimit(info.limit);
         d->drive = makePhysxDrive(info.drive, /*convertToRad=*/false);
         // Prismatic joint uses the "linear" instance.
-        readPhysxLimitApi(src, key, "linear", d->limit);
-        readPhysxJointAxisApi(src, key, tok, "linear", d->properties);
+        readPhysxLimitApi(src, key, tok, present, "linear", d->limit);
+        readPhysxJointAxisApi(src, key, tok, present, "linear", d->properties);
         // No rotational conversion for the linear axis.
-        readPhysxDrivePerformanceEnvelopeApi(src, key, "linear", d->drive);
+        readPhysxDrivePerformanceEnvelopeApi(src, key, tok, present, "linear", d->drive);
         // Joint state for "linear" instance, no conversion.
-        readPhysicsJointStateApi(src, key, "linear", d->state, /*applyDegToRad=*/false);
+        readPhysicsJointStateApi(src, key, tok, present, "linear", d->state, /*applyDegToRad=*/false);
         base = descPtrCast<PhysxJointDesc>(std::move(d));
         break;
     }
@@ -473,18 +562,16 @@ DescPtr<PhysxJointDesc> parseJoint(ParseContext& ctx, ObjectKey key, const Joint
         d->minEnabled = info.minEnabled;
         d->maxEnabled = info.maxEnabled;
         d->limit = makeLinearLimit(info.limit);
-        readPhysxLimitApi(src, key, "distance", d->limit);
-        // PhysxPhysicsDistanceJointAPI extension: spring enabled +
-        // stiffness + damping.
-        const TokenId distApiTok = src.internToken("PhysxPhysicsDistanceJointAPI");
-        if (src.hasSchema(key, distApiTok))
+        readPhysxLimitApi(src, key, tok, present, "distance", d->limit);
+        // PhysxPhysicsDistanceJointAPI extension: spring enabled + stiffness + damping.
+        if (src.hasSchema(key, tok.physxPhysicsDistanceJointAPI))
         {
-            src.getAttribute(key, src.internToken("physxPhysicsDistanceJoint:springEnabled"), d->springEnabled);
+            src.getAttribute(key, tok.physxPhysicsDistanceJointSpringEnabled, d->springEnabled);
             d->stiffness = readClampedScalar<float>(
-                src, key, src.internToken("physxPhysicsDistanceJoint:springStiffness"),
+                src, key, tok.physxPhysicsDistanceJointSpringStiffness,
                 d->stiffness, 0.0f, FLT_MAX);
             d->damping = readClampedScalar<float>(
-                src, key, src.internToken("physxPhysicsDistanceJoint:springDamping"),
+                src, key, tok.physxPhysicsDistanceJointSpringDamping,
                 d->damping, 0.0f, FLT_MAX);
         }
         base = descPtrCast<PhysxJointDesc>(std::move(d));
@@ -498,7 +585,7 @@ DescPtr<PhysxJointDesc> parseJoint(ParseContext& ctx, ObjectKey key, const Joint
         for (const auto& [ax, lim] : info.jointLimits)
         {
             PhysxJointLimit limit = makePhysxLimit(lim, ax);
-            readPhysxLimitApi(src, key, limitInstanceForAxis(ax), limit);
+            readPhysxLimitApi(src, key, tok, present, limitInstanceForAxis(ax), limit);
             d->jointLimits.push_back(std::make_pair(ax, limit));
         }
         d->jointDrives.reserve(info.jointDrives.size());
@@ -508,7 +595,7 @@ DescPtr<PhysxJointDesc> parseJoint(ParseContext& ctx, ObjectKey key, const Joint
             // Legacy reads PhysxDrivePerformanceEnvelopeAPI only for the
             // rotational D6 drives — translational drives skip envelope.
             if (isAxisRotational(ax))
-                readPhysxDrivePerformanceEnvelopeApi(src, key, limitInstanceForAxis(ax), physxDrive);
+                readPhysxDrivePerformanceEnvelopeApi(src, key, tok, present, limitInstanceForAxis(ax), physxDrive);
             d->jointDrives.push_back(std::make_pair(ax, physxDrive));
         }
         // PhysxJointAxisAPI per rotational axis (rotX, rotY, rotZ). Legacy
@@ -517,7 +604,7 @@ DescPtr<PhysxJointDesc> parseJoint(ParseContext& ctx, ObjectKey key, const Joint
         for (JointAxis ax : { eRotX, eRotY, eRotZ })
         {
             PhysxJointAxisProperties props;
-            readPhysxJointAxisApi(src, key, tok, limitInstanceForAxis(ax), props);
+            readPhysxJointAxisApi(src, key, tok, present, limitInstanceForAxis(ax), props);
             applyRotationalAxisConversions(props);
             d->jointProperties.push_back(std::make_pair(ax, props));
         }
@@ -528,7 +615,7 @@ DescPtr<PhysxJointDesc> parseJoint(ParseContext& ctx, ObjectKey key, const Joint
         {
             PhysicsJointState state;
             const bool isRot = isAxisRotational(ax);
-            readPhysicsJointStateApi(src, key, limitInstanceForAxis(ax), state, /*applyDegToRad=*/isRot);
+            readPhysicsJointStateApi(src, key, tok, present, limitInstanceForAxis(ax), state, /*applyDegToRad=*/isRot);
             if (state.enabled)
                 d->jointStates.push_back(std::make_pair(ax, state));
         }
@@ -593,7 +680,7 @@ DescPtr<PhysxJointDesc> parseJoint(ParseContext& ctx, ObjectKey key, const Joint
     }
 
     base->jointPrimKey = key;
-    readPhysxJointApi(src, key, tok, *base);
+    readPhysxJointApi(src, key, tok, present, *base);
     return base;
 }
 

@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# PARTIALLY DEPRECATED (tensor-binding-deprecation): the TensorType, BindingPrimMode, and TensorBindingSpec export/value checks retire with the binding. The ApiStatus / LogLevel / SceneQuery / PhysX / DLPack / version checks stay.
 
 from ovphysx.types import (
     ApiStatus,
@@ -20,6 +22,7 @@ def test_module_all_exports():
         "PhysX",
         "TensorType",
         "ApiStatus",
+        "OmniPvdDestination",
         "LogLevel",
         "BindingPrimMode",
         "SceneQueryMode",
@@ -51,7 +54,12 @@ def test_intenum_types_importable_without_native():
 
     assert TensorType.ARTICULATION_ROOT_POSE == 10
     assert ApiStatus.SUCCESS == 0
-    assert LogLevel.WARNING == 2
+    assert LogLevel.DEFAULT == 0
+    assert LogLevel.VERBOSE == 1
+    assert LogLevel.INFO == 2
+    assert LogLevel.WARNING == 3
+    assert LogLevel.ERROR == 4
+    assert LogLevel.NONE == 5
     assert BindingPrimMode.EXISTING_ONLY == 0
     assert SceneQueryMode.CLOSEST == 0
     assert SceneQueryGeometryType.SPHERE == 0
@@ -137,11 +145,9 @@ def test_dlpack_structures_importable():
         DLDevice,
         DLManagedTensor,
         DLTensor,
-        ManagedDLTensor,
     )
 
     assert DLDevice is not None
     assert DLDataType is not None
     assert DLTensor is not None
     assert DLManagedTensor is not None
-    assert ManagedDLTensor is not None

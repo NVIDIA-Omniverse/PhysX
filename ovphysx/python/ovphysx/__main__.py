@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Verify ovphysx installation: ``python -m ovphysx``."""
 
@@ -19,11 +19,10 @@ from ovphysx import PhysX
 print(f"ovphysx {ovphysx.__version__}")
 
 physx = PhysX()
-# step() requires an attached stage (rejects stage-less handles -- see NVBugs
-# 6433668), and this smoke test intentionally has none to load: constructing
-# and releasing PhysX() already verifies the native library loaded, linked,
-# and initialized correctly, which is all an installation check needs.
-physx.release()
+# step() rejects handles without an attached stage (NVBugs 6433668), and this
+# smoke test has no stage to load. Constructing and destroying PhysX() already
+# verifies that the native library loaded, linked and initialized.
+physx.destroy()
 
 print("OK")
 print("\nAI skills & samples:")

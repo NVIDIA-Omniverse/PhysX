@@ -1,12 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
 
 #include <carb/logging/Log.h>
 #include <carb/profiler/Profile.h>
 
-#include <physxSchema/physxCookedDataAPI.h>
 #include <PxPhysicsAPI.h>
 #include <common/foundation/Allocator.h>
 
@@ -15,8 +13,8 @@
 
 #include "../utility/MeshSimplifyInternal.h"
 
-#include <common/foundation/Algorithms.h>
-#include <common/utilities/PrimUtilities.h>
+#include <common/foundation/CarbPhysXCast.h>
+#include <common/foundation/MatrixTools.h>
 #include "extensions/PxTetMakerExt.h"
 
 using namespace ::physx;
@@ -24,6 +22,18 @@ using namespace omni::physx;
 
 namespace
 {
+    // The cooking-parameter transforms arrive as sixteen raw doubles (carb::Double4[4]).
+    // PxMat44d and GfMatrix4d hold that same element layout, so this is a copy, not a
+    // transpose -- only the multiplication order flips. See common/foundation/MatrixTools.h.
+    inline ::physx::PxMat44d toPxMat44d(const carb::Double4 (&m)[4])
+    {
+        double values[16];
+        std::memcpy(values, m, sizeof(values));
+        return ::physx::PxMat44d(values);
+    }
+
+    // toPxVec3d / toFloat3 for PxVec3d live in common/foundation/CarbPhysXCast.h.
+
     inline float length(const carb::Float3& a)
     {
         return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);
@@ -400,17 +410,15 @@ public:
         : CookingTask(result)
     {
         static_assert(sizeof(m_simToCookingTransform) == sizeof(params.simToCookingTransform));
-        m_simToCookingTransform = *reinterpret_cast<const PXR_NS::GfMatrix4d*>(params.simToCookingTransform);
+        m_simToCookingTransform = toPxMat44d(params.simToCookingTransform);
 
         static_assert(sizeof(m_simToCollTransform) == sizeof(params.simToCollTransform));
-        m_simToCollTransform = *reinterpret_cast<const PXR_NS::GfMatrix4d*>(params.simToCollTransform);
+        m_simToCollTransform = toPxMat44d(params.simToCollTransform);
 
         m_srcPoints.resize(params.srcPointsInSim.size());
         for (uint32_t p = 0; p < m_srcPoints.size(); ++p)
         {
-            const PXR_NS::GfVec3f& src = *reinterpret_cast<const PXR_NS::GfVec3f*>(&params.srcPointsInSim[p]);
-            PXR_NS::GfVec3f dst = PXR_NS::GfVec3f(m_simToCookingTransform.Transform(src));
-            m_srcPoints[p] = { dst[0], dst[1], dst[2] };
+            m_srcPoints[p] = toFloat3(m_simToCookingTransform.transform(toPhysXd(params.srcPointsInSim[p])));
         }
 
         m_isAutoMeshSimplificationEnabled = params.isAutoMeshSimplificationEnabled;
@@ -653,21 +661,23 @@ public:
                             m_collSurfaceIndices.size() * sizeof(uint32_t));
             }
 
-            PXR_NS::GfMatrix4d cookingToSimTransform(m_simToCookingTransform.GetInverse());
+            const ::physx::PxMat44d cookingToSimTransform = omni::physx::affineInverse(m_simToCookingTransform);
             for (uint32_t p = 0; p < m_simPoints.size(); ++p)
             {
-                PXR_NS::GfVec3f& v = reinterpret_cast<PXR_NS::GfVec3f&>(m_simPoints.ptr()[p]);
-                v = PXR_NS::GfVec3f(cookingToSimTransform.Transform(v));
+                carb::Float3& v = m_simPoints.ptr()[p];
+                v = toFloat3(cookingToSimTransform.transform(toPhysXd(v)));
             }
 
             const bool simIsColl = (m_collPoints.ptr() == m_simPoints.ptr());
             if (!simIsColl)
             {
-                PXR_NS::GfMatrix4d cookingToCollTransform = cookingToSimTransform * m_simToCollTransform;
+                // Gf `cookingToSimTransform * m_simToCollTransform` -- operands swap
+                // under the PhysX convention.
+                const ::physx::PxMat44d cookingToCollTransform = m_simToCollTransform * cookingToSimTransform;
                 for (uint32_t p = 0; p < m_collPoints.size(); ++p)
                 {
-                    PXR_NS::GfVec3f& v = reinterpret_cast<PXR_NS::GfVec3f&>(m_collPoints.ptr()[p]);
-                    v = PXR_NS::GfVec3f(cookingToCollTransform.Transform(v));
+                    carb::Float3& v = m_collPoints.ptr()[p];
+                    v = toFloat3(cookingToCollTransform.transform(toPhysXd(v)));
                 }
             }
 
@@ -735,8 +745,8 @@ public:
     }
 
     //in
-    PXR_NS::GfMatrix4d m_simToCookingTransform;
-    PXR_NS::GfMatrix4d m_simToCollTransform;
+    ::physx::PxMat44d m_simToCookingTransform;
+    ::physx::PxMat44d m_simToCollTransform;
     std::vector<carb::Float3> m_srcPoints;
     bool m_isAutoMeshSimplificationEnabled;
     bool m_isAutoRemeshingEnabled;

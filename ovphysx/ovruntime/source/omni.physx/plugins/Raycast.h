@@ -1,10 +1,16 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-SIM-SCENEQUERY-001
+ * @covers AC-1 AC-2
+ */
 
 #pragma once
 #include <carb/Types.h>
 #include "OmniPhysX.h"
 #include <common/utilities/LockingList.h>
+#include <omni/physics/parse/KnownTokens.h>
 
 namespace omni
 {
@@ -125,10 +131,16 @@ private:
 
 void handleRaycast(const float* orig, const float* dir, bool input);
 
+// KnownTokens is batch-interned once by the caller (see raycastSingle()) and
+// handed in by const reference -- preFilter() runs once per broad-phase
+// candidate shape, so re-interning the ~659-field vocabulary inside it would
+// turn a single query into hundreds of full batch-interns (see REQ-SIM-SCENEQUERY-001).
 class raycastFilterExcludeInvisible : ::physx::PxQueryFilterCallback
 {
 public:
-    raycastFilterExcludeInvisible(PXR_NS::UsdStageWeakPtr stage) : mStage(stage){};
+    raycastFilterExcludeInvisible(const omni::physics::parse::IPhysicsSource* source,
+                                  const omni::physics::parse::KnownTokens& tokens)
+        : mSource(source), mTokens(tokens){};
     ~raycastFilterExcludeInvisible(){};
 
     virtual ::physx::PxQueryHitType::Enum preFilter(const ::physx::PxFilterData& filterData0,
@@ -145,8 +157,17 @@ public:
     }
 
 private:
-    PXR_NS::UsdStageWeakPtr mStage;
+    const omni::physics::parse::IPhysicsSource* mSource;
+    const omni::physics::parse::KnownTokens& mTokens;
 };
+
+// Test-only observability for REQ-SIM-SCENEQUERY-001 (IPhysxUnitTests-exposed): counts the
+// exact preFilter() and per-query KnownTokens::intern() call sites AC-1/AC-2 constrain, so a
+// unit test can prove a query actually reached them instead of asserting
+// isInteractiveActorRaycast's timing-dependent return value.
+void resetRaycastQueryTestCounters();
+uint32_t getRaycastPreFilterCallCount();
+uint32_t getRaycastQueryInternCount();
 
 } // namespace physx
 } // namespace omni

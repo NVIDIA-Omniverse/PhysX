@@ -1,15 +1,23 @@
 ---
 name: tensor-bindings-cpu
-description: Create tensor bindings to read and write physics simulation data on CPU using numpy arrays. Use when you need to exchange simulation state (poses, velocities, joint targets) with your application via tensors.
-compatibility: "ovphysx >=0.5.1 wheel or SDK; Python examples require NumPy, and C examples require SDK headers and libraries."
+description: Exchange CPU simulation state — poses, velocities, joint targets — as caller-owned NumPy arrays through tensor bindings. The tensor-binding CODE API is deprecated in ovphysx 0.6 in favor of the session read/write API (Python PhysX.read / PhysX.write, C ovphysx_read / ovphysx_write); use the ovphysx-session-write skill to write control inputs and state, and the ovphysx-output-read skill (ovstage-native identity-preserving reads and write-back) to read output back. Tensor bindings are kept only for maintaining existing caller-owned bulk-NumPy binding code during the deprecation period.
+license: Apache-2.0
+compatibility: "ovphysx >=0.6.0 wheel or SDK; Python examples require NumPy, and C examples require SDK headers and libraries."
 allowed-tools: Read Shell
 metadata:
-  version: "0.1.0"
+  version: "0.1.4"
   author: NVIDIA Omniverse Physics
   tags: "ovphysx, physics, tensor-bindings, cpu"
 ---
 
 # Tensor Bindings: CPU Read and Write
+
+> **Tensor-binding code API deprecated (ovphysx 0.6).** The tensor-binding CODE API is deprecated in
+> favor of the session read/write API — Python `PhysX.read` / `PhysX.write`, C `ovphysx_read` /
+> `ovphysx_write`. Prefer the session API where it fits (`ovphysx-output-read` covers ovstage-native
+> identity-preserving reads and write-back). For writing control inputs and state, use the
+> `ovphysx-session-write` skill; tensor bindings are kept only for maintaining existing
+> caller-owned bulk-NumPy binding code.
 
 Tensor bindings map physics-object path patterns to typed tensor views, including
 authored USD objects and runtime-only clones. This enables bulk data exchange with
@@ -22,21 +30,25 @@ Use this skill when a caller needs bulk CPU tensor reads or writes for simulatio
 ## Instructions
 
 1. Read `docs/tutorials/tensor_bindings.md` and the sample for the caller's language before changing code.
-2. Populate an ovstage, attach it at that ordinal, create bindings once from stable
-   physics-object path patterns, then reuse them to read or write tensors with the
-   binding shape and dtype.
+2. Populate an ovstage, advance and wait for its write floor, attach it at that
+   ordinal, create bindings once from stable physics-object path patterns, then
+   reuse them to read or write tensors with the binding shape and dtype. Inspect
+   `binding.native_device` (or the C getter) before allocating when the process
+   is not forced to CPU mode.
 3. Use Shell to run the Python sample or compile the C sample after adapting the scene path and tensor type.
 
 ## Python
 
 ```python
-from ovphysx import PhysX
+from ovphysx import PhysX, codeless_schema_root
 from ovphysx.types import TensorType
 import numpy as np
 import ovstage
 
 PhysX.set_cpu_mode(True)
 physx = PhysX()
+# Register the codeless PhysX schemas before the first population call.
+ovstage.population.register_usd_schemas([str(codeless_schema_root())])
 stage = ovstage.Stage("ovphysx-tensors")
 ovstage.population.open_usd(stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
 # attach_ovstage() reads at a sealed ordinal.
@@ -72,7 +84,7 @@ velocity_target_binding.destroy()
 link_pose_binding.destroy()
 physx.detach_ovstage()
 stage.destroy()
-physx.release()
+physx.destroy()
 ```
 
 Read simulated results from a *state* binding (poses, positions), not from a
@@ -80,8 +92,8 @@ Read simulated results from a *state* binding (poses, positions), not from a
 wrote, not the physics outcome.
 
 The physics-only `domains` mask above is fine for this skill's non-instanced
-sample USD. For arbitrary content prefer `ALL` -- see
-`docs/ovstage_integration.md` ("Population domains").
+sample USD. For arbitrary content prefer `ALL` — see
+[Population domains](../../docs/ovstage_integration.md#population-domains).
 
 Full sample:
 - `samples/python_samples/tensor_bindings.py` (wheel)
@@ -111,6 +123,7 @@ the `OVPHYSX_TENSOR_*_F32` enum spelling (for example Python
 | Python | C |
 |--------|---|
 | `physx.create_tensor_binding(pattern, tensor_type)` | `ovphysx_create_tensor_binding()` |
+| `binding.native_device` | `ovphysx_get_tensor_binding_native_device()` |
 | `binding.read(output)` | `ovphysx_read_tensor_binding()` |
 | `binding.write(input)` | `ovphysx_write_tensor_binding()` |
 | `binding.destroy()` | `ovphysx_destroy_tensor_binding()` |

@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "VhPvdAttributeHandles.h"
 #include "VhPvdObjectHandles.h"
@@ -1331,19 +1308,35 @@ void PxVehiclePvdPhysXWheelAttachmentWrite
  const PxVehiclePvdAttributeHandles& ah,
  const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& ow)
 {
-	PX_UNUSED(physxMaterialFrictionParams);
 	PX_UNUSED(physxRoadGeomStates);
 	PX_UNUSED(physxConstraintStates);
 
 	const OmniPvdContextHandle ch = oh.contextHandle;
 
+	// Validate every wheel before emitting anything so a later invalid wheel cannot leave a partial frame.
 	for(PxU32 i = 0; i < axleDesc.nbWheels; i++)
 	{
 		const PxU32 wheelId = axleDesc.wheelIdsInAxleOrder[i];
+		if(wheelId >= oh.nbWheels)
+		{
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
+				"PxVehiclePvdPhysXWheelAttachmentWrite - axleDesc.axleToWheelIds[i] must be less than the value of the nbWheels argument in the function PxVehiclePvdObjectCreate()");
+			return;
+		}
+		if(!physxMaterialFrictionParams.isEmpty())
+		{
+			if(physxMaterialFrictionParams[wheelId].nbMaterialFrictions > oh.nbPhysXMaterialFrictions)
+			{
+				PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
+					"PxVehiclePvdPhysXWheelAttachmentWrite - material friction count exceeds PxVehiclePvdObjectCreate() capacity");
+				return;
+			}
+		}
+	}
 
-		PX_CHECK_AND_RETURN(
-			wheelId < oh.nbWheels,
-			"PxVehiclePvdPhysXWheelAttachmentRegister - axleDesc.axleToWheelIds[i] must be less than the value of the nbWheels argument in the function PxVehiclePvdObjectCreate()");
+	for(PxU32 i = 0; i < axleDesc.nbWheels; i++)
+	{
+		const PxU32 wheelId = axleDesc.wheelIdsInAxleOrder[i];
 
 		if(oh.physxConstraintParamOHs[wheelId] && !physxSuspLimitConstraintParams.isEmpty())
 		{

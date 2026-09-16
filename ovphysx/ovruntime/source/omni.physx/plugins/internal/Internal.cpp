@@ -1,15 +1,36 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-#include "UsdPCH.h"
+// SPDX-License-Identifier: Apache-2.0
 
 #include "Internal.h"
 
 #include "stdint.h"
 
+#include <atomic>
+
 using namespace omni::physx;
 using namespace omni::physx::internal;
 using namespace omni::physx::usdparser;
+
+namespace
+{
+// Relaxed ordering is enough: the value is only ever compared for equality against one a consumer
+// read earlier, never used to publish other memory. Readers hold the same locks the mutations do.
+std::atomic<uint64_t> gRecordLifetimeEpoch{ 1 };
+} // namespace
+
+namespace omni { namespace physx { namespace internal {
+
+uint64_t recordLifetimeEpoch()
+{
+    return gRecordLifetimeEpoch.load(std::memory_order_relaxed);
+}
+
+void bumpRecordLifetimeEpoch()
+{
+    gRecordLifetimeEpoch.fetch_add(1, std::memory_order_relaxed);
+}
+
+}}} // namespace omni::physx::internal
 
 InternalDatabase::InternalDatabase() = default;
 
@@ -19,12 +40,14 @@ ObjectId InternalDatabase::addRecord(PhysXType type, void* ptr, void* internalPt
 {
     const uint32_t index = uint32_t(mRecords.size());
     mRecords.push_back(Record(ptr, type, internalPtr, key));
+    bumpRecordLifetimeEpoch();
     return index;
 }
 
 ObjectId InternalDatabase::addRecordAtIndex(size_t index, PhysXType type, void* ptr, void* internalPtr, omni::physics::parse::ObjectKey key)
 {
     mRecords[index] = Record(ptr, type, internalPtr, key);
+    bumpRecordLifetimeEpoch();
     return index;
 }
 

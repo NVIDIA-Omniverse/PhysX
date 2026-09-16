@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef ASYNC_EVENT_MANAGER_H
 #define ASYNC_EVENT_MANAGER_H
@@ -13,10 +13,9 @@
 extern "C" {
 #endif
 
-// Primary async event types - this is the source of truth for async event types
+// Source of truth for the async event types. The C++ side aliases these.
 typedef uint64_t async_event_handle_t;
 
-// Async status type - explicitly int32_t
 typedef int32_t async_status_t;
 
 // Async status values
@@ -24,7 +23,7 @@ typedef int32_t async_status_t;
 #define ASYNC_STATUS_COMPLETED ((async_status_t)1)
 #define ASYNC_STATUS_FAILED    ((async_status_t)2)
 
-// This header provides the C interface functions for the shared async utility
+// C interface for the shared async event utility.
 
 /**
  * @brief Create an async event

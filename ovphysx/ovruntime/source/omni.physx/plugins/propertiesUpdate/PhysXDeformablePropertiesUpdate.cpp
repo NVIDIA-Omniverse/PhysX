@@ -1,10 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-PARSE-CORE-003
+ * @covers AC-2
+ */
 
 #include "PhysXPropertiesUpdate.h"
-#include "../usdLoad/NewtonCompat.h"
+
+#include <omni/physics/parse/KnownTokens.h>
 
 #include <internal/Internal.h>
 #include <internal/InternalScene.h>
@@ -17,12 +21,11 @@
 
 using namespace ::physx;
 using namespace carb;
-using namespace PXR_NS;
 using namespace omni::physx;
 using namespace omni::physx::usdparser;
 using namespace omni::physx::internal;
 
-bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -40,7 +43,12 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
         return false;
     }
 
-    if (property == OmniUsdPhysicsDeformableSchemaTokens->omniphysicsMass)
+    const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+    omni::physics::parse::KnownTokens tok;
+    if (source)
+        tok.intern(*source);
+
+    if (property == tok.omniphysicsMass)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -49,11 +57,11 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
         intDeformableBody->mBodyMass = data;
         attachedStage.getPhysXPhysicsInterface()->updateDeformableBodyMass(attachedStage, objectId);
     }
-    else if (property == UsdGeomTokens.Get()->points)
+    else if (property == tok.points)
     {
         attachedStage.getPhysXPhysicsInterface()->updateDeformableBodyPositions(attachedStage, objectId);
     }
-    else if (property == UsdGeomTokens.Get()->velocities)
+    else if (property == tok.velocities)
     {
         attachedStage.getPhysXPhysicsInterface()->updateDeformableBodyVelocities(attachedStage, objectId);
     }
@@ -75,7 +83,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
         return false;
     }
 
-    if (property == PhysxSchemaTokens->physxDeformableBodySolverPositionIterationCount)
+    if (property == tok.physxDeformableBodySolverPositionIterationCount)
     {
         //TOTO switch schema to int for consistency with rigid bodies.
         uint32_t data;
@@ -89,7 +97,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
 
         deformableBody->setSolverIterationCounts(data);
     }
-    else if (property == PhysxSchemaTokens->physxDeformableBodyLinearDamping)
+    else if (property == tok.physxDeformableBodyLinearDamping)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -97,7 +105,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
 
         deformableBody->setLinearDamping(data);
     }
-    else if (property == PhysxSchemaTokens->physxDeformableBodyMaxLinearVelocity)
+    else if (property == tok.physxDeformableBodyMaxLinearVelocity)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -105,7 +113,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
 
         deformableBody->setMaxLinearVelocity(data);
     }
-    else if (property == PhysxSchemaTokens->physxDeformableBodySettlingDamping)
+    else if (property == tok.physxDeformableBodySettlingDamping)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -113,7 +121,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
 
         deformableBody->setSettlingDamping(data);
     }
-    else if (property == PhysxSchemaTokens->physxDeformableBodySleepThreshold)
+    else if (property == tok.physxDeformableBodySleepThreshold)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -121,7 +129,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
 
         deformableBody->setSleepThreshold(data);
     }
-    else if (property == PhysxSchemaTokens->physxDeformableBodySettlingThreshold)
+    else if (property == tok.physxDeformableBodySettlingThreshold)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -129,7 +137,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
 
         deformableBody->setSettlingThreshold(data);
     }
-    else if (property == PhysxSchemaTokens->physxDeformableBodyMaxDepenetrationVelocity)
+    else if (property == tok.physxDeformableBodyMaxDepenetrationVelocity)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -137,7 +145,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
 
         deformableBody->setMaxDepenetrationVelocity(data);
     }
-    else if (property == PhysxSchemaTokens->physxDeformableBodySelfCollision)
+    else if (property == tok.physxDeformableBodySelfCollision)
     {
         bool data;
         if (!getValue<bool>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -145,7 +153,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
 
         deformableBody->setDeformableBodyFlag(PxDeformableBodyFlag::eDISABLE_SELF_COLLISION, !data);
     }
-    else if (property == PhysxSchemaTokens->physxDeformableBodySelfCollisionFilterDistance)
+    else if (property == tok.physxDeformableBodySelfCollisionFilterDistance)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -153,7 +161,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
 
         attachedStage.getPhysXPhysicsInterface()->updateDeformableSelfCollisionFilterDistance(attachedStage, objectId, data);
     }
-    else if (property == PhysxSchemaTokens->physxDeformableBodyEnableSpeculativeCCD)
+    else if (property == tok.physxDeformableBodyEnableSpeculativeCCD)
     {
         bool data;
         if (!getValue<bool>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -161,7 +169,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
 
         deformableBody->setDeformableBodyFlag(PxDeformableBodyFlag::eENABLE_SPECULATIVE_CCD, data);
     }
-    else if (property == PhysxSchemaTokens->physxDeformableBodyDisableGravity)
+    else if (property == tok.physxDeformableBodyDisableGravity)
     {
         bool data;
         if (!getValue<bool>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -169,7 +177,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
 
         deformableBody->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, data);
     }
-    else if (property == PhysxSchemaTokens->physxDeformableBodyCollisionPairUpdateFrequency)
+    else if (property == tok.physxDeformableBodyCollisionPairUpdateFrequency)
     {
         uint32_t data;
         if (!getValue<uint32_t>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -178,7 +186,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
         if (deformableSurface)
             deformableSurface->setNbCollisionPairUpdatesPerTimestep(data);
     }
-    else if (property == PhysxSchemaTokens->physxDeformableBodyCollisionIterationMultiplier)
+    else if (property == tok.physxDeformableBodyCollisionIterationMultiplier)
     {
         uint32_t data;
         if (!getValue<uint32_t>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -191,7 +199,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
     return true;
 }
 
-bool omni::physx::updateDeformableRestOffset(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDeformableRestOffset(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -214,7 +222,7 @@ bool omni::physx::updateDeformableRestOffset(AttachedStage& attachedStage, omni:
 }
 
 bool omni::physx::updateDeformableContactOffset(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -241,19 +249,21 @@ bool omni::physx::updateDeformableContactOffset(AttachedStage& attachedStage, om
 // Time-sampled attributes are read at the supplied timeCode.
 static float resolveDeformableRestOffset(const AttachedStage& attachedStage,
                                          omni::physics::parse::ObjectKey key,
-                                         const PXR_NS::UsdTimeCode& timeCode)
+                                         omni::physics::parse::ReadTime timeCode)
 {
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return 0.0f;
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
     float v = 0.0f;
-    if (src->hasAuthoredAttribute(key, src->internToken(PhysxSchemaTokens.Get()->physxCollisionRestOffset.GetString()))
-        && getValue<float>(attachedStage, key, PhysxSchemaTokens.Get()->physxCollisionRestOffset, timeCode, v))
+    if (isPhysxOffsetAuthored(attachedStage, key, tok.physxCollisionRestOffset)
+        && getValue<float>(attachedStage, key, tok.physxCollisionRestOffset, timeCode, v))
     {
         return v;
     }
-    if (src->hasAuthoredAttribute(key, src->internToken(NewtonSchemaTokens->newtonContactMargin.GetString()))
-        && getValue<float>(attachedStage, key, NewtonSchemaTokens->newtonContactMargin, timeCode, v))
+    if (src->hasAuthoredAttribute(key, tok.newtonContactMargin)
+        && getValue<float>(attachedStage, key, tok.newtonContactMargin, timeCode, v))
     {
         if (v >= 0.0f)
             return v;
@@ -265,7 +275,7 @@ static float resolveDeformableRestOffset(const AttachedStage& attachedStage,
 // When physxCollision:contactOffset is also fallback-driven, keep it = margin + gap
 // in sync so the parse-time invariant survives runtime edits.
 bool omni::physx::updateNewtonDeformableContactMargin(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
     PhysXType internalType = ePTRemoved;
@@ -279,7 +289,9 @@ bool omni::physx::updateNewtonDeformableContactMargin(AttachedStage& attachedSta
     const omni::physics::parse::ObjectKey key = objectRecord->mKey;
     if (!src || !src->exists(key))
         return true;
-    if (src->hasAuthoredAttribute(key, src->internToken(PhysxSchemaTokens.Get()->physxCollisionRestOffset.GetString())))
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    if (isPhysxOffsetAuthored(attachedStage, key, tok.physxCollisionRestOffset))
         return true;
 
     InternalDeformableBody* internalBody = (InternalDeformableBody*)objectRecord->mInternalPtr;
@@ -296,11 +308,11 @@ bool omni::physx::updateNewtonDeformableContactMargin(AttachedStage& attachedSta
     attachedStage.getPhysXPhysicsInterface()->updateDeformableRestOffset(attachedStage, objectId, newMargin);
 
     // Keep contact offset coupled when it is fallback-driven too.
-    if (src->hasAuthoredAttribute(key, src->internToken(PhysxSchemaTokens.Get()->physxCollisionContactOffset.GetString())))
+    if (isPhysxOffsetAuthored(attachedStage, key, tok.physxCollisionContactOffset))
         return true;
     float gap = 0.0f;
-    if (!src->hasAuthoredAttribute(key, src->internToken(NewtonSchemaTokens->newtonContactGap.GetString()))
-        || !getValue<float>(attachedStage, key, NewtonSchemaTokens->newtonContactGap, PXR_NS::UsdTimeCode(), gap))
+    if (!src->hasAuthoredAttribute(key, tok.newtonContactGap)
+        || !getValue<float>(attachedStage, key, tok.newtonContactGap, omni::physics::parse::ReadTime::defaultTime(), gap))
         return true;
     if (!isfinite(gap) || gap < 0.0f)
         return true;
@@ -312,7 +324,7 @@ bool omni::physx::updateNewtonDeformableContactMargin(AttachedStage& attachedSta
 // Newton fallback: newton:contactGap -> physxCollision:contactOffset (deformable),
 // where contactOffset = restOffset + gap.
 bool omni::physx::updateNewtonDeformableContactGap(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
     PhysXType internalType = ePTRemoved;
@@ -323,8 +335,10 @@ bool omni::physx::updateNewtonDeformableContactGap(AttachedStage& attachedStage,
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src || !src->exists(objectRecord->mKey))
         return true;
-    if (src->hasAuthoredAttribute(objectRecord->mKey,
-                                  src->internToken(PhysxSchemaTokens.Get()->physxCollisionContactOffset.GetString())))
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    if (isPhysxOffsetAuthored(attachedStage, objectRecord->mKey,
+                              tok.physxCollisionContactOffset))
         return true;
 
     InternalDeformableBody* internalBody = (InternalDeformableBody*)objectRecord->mInternalPtr;
@@ -343,7 +357,7 @@ bool omni::physx::updateNewtonDeformableContactGap(AttachedStage& attachedStage,
     return true;
 }
 
-bool omni::physx::updateDeformableMaterial(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDeformableMaterial(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -365,7 +379,12 @@ bool omni::physx::updateDeformableMaterial(AttachedStage& attachedStage, ObjectI
         surfaceMaterial = static_cast<PxDeformableSurfaceMaterial*>(material);
     }
 
-    if (property == OmniUsdPhysicsDeformableSchemaTokens->omniphysicsDensity)
+    const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+    omni::physics::parse::KnownTokens tok;
+    if (source)
+        tok.intern(*source);
+
+    if (property == tok.omniphysicsDensity)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -383,7 +402,7 @@ bool omni::physx::updateDeformableMaterial(AttachedStage& attachedStage, ObjectI
 
         return true;
     }
-    else if (property == OmniUsdPhysicsDeformableSchemaTokens->omniphysicsDynamicFriction)
+    else if (property == tok.omniphysicsDynamicFriction)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -392,11 +411,11 @@ bool omni::physx::updateDeformableMaterial(AttachedStage& attachedStage, ObjectI
         material->setDynamicFriction(data);
         return true;
     }
-    else if (property == OmniUsdPhysicsDeformableSchemaTokens->omniphysicsStaticFriction)
+    else if (property == tok.omniphysicsStaticFriction)
     {
         CARB_LOG_WARN("Static friction is not supported on deformable bodies, prim: %s", attachedStage.textFor(objectRecord->mKey));
     }
-    else if (property == OmniUsdPhysicsDeformableSchemaTokens->omniphysicsYoungsModulus)
+    else if (property == tok.omniphysicsYoungsModulus)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -405,7 +424,7 @@ bool omni::physx::updateDeformableMaterial(AttachedStage& attachedStage, ObjectI
         material->setYoungsModulus(data);
         return true;
     }
-    else if (property == OmniUsdPhysicsDeformableSchemaTokens->omniphysicsPoissonsRatio)
+    else if (property == tok.omniphysicsPoissonsRatio)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -414,7 +433,7 @@ bool omni::physx::updateDeformableMaterial(AttachedStage& attachedStage, ObjectI
         material->setPoissons(data);
         return true;
     }
-    else if (property == PhysxSchemaTokens->physxDeformableMaterialElasticityDamping)
+    else if (property == tok.physxDeformableMaterialElasticityDamping)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -423,7 +442,7 @@ bool omni::physx::updateDeformableMaterial(AttachedStage& attachedStage, ObjectI
         material->setElasticityDamping(data);
         return true;
     }
-    else if (property == OmniUsdPhysicsDeformableSchemaTokens->omniphysicsSurfaceThickness)
+    else if (property == tok.omniphysicsSurfaceThickness)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -444,17 +463,17 @@ bool omni::physx::updateDeformableMaterial(AttachedStage& attachedStage, ObjectI
         }
         return true;
     }
-    else if (property == OmniUsdPhysicsDeformableSchemaTokens->omniphysicsSurfaceStretchStiffness)
+    else if (property == tok.omniphysicsSurfaceStretchStiffness)
     {
         CARB_LOG_WARN("Surface Stretch Stiffness is currently not supported. Prim: %s",
             attachedStage.textFor(objectRecord->mKey));
     }
-    else if (property == OmniUsdPhysicsDeformableSchemaTokens->omniphysicsSurfaceShearStiffness)
+    else if (property == tok.omniphysicsSurfaceShearStiffness)
     {
         CARB_LOG_WARN("Surface Shear Stiffness is currently not supported. Prim: %s",
             attachedStage.textFor(objectRecord->mKey));
     }
-    else if (property == OmniUsdPhysicsDeformableSchemaTokens->omniphysicsSurfaceBendStiffness)
+    else if (property == tok.omniphysicsSurfaceBendStiffness)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -465,7 +484,7 @@ bool omni::physx::updateDeformableMaterial(AttachedStage& attachedStage, ObjectI
 
         return true;
     }
-    else if (property == PhysxSchemaTokens->physxDeformableMaterialBendDamping)
+    else if (property == tok.physxDeformableMaterialBendDamping)
     {
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))

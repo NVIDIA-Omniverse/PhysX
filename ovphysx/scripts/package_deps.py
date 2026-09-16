@@ -1,40 +1,50 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Package dependencies into FLAT plugins/ structure for ovphysx SDK.
 
-Sources (kitless -- no extsPhysics/exts trees):
+Sources (kitless, no extsPhysics/exts trees):
   - ovruntime _install/<cfg>/bin/     : PhysX runtime .plugin.so + PhysXGpu
-  - target-deps/usd/<config>/lib/     : USD core shared libraries
   - carb_sdk_static/_build/<cfg>/      : no-libcarb Carbonite plugin shims
-  - ovruntime_deps_<config>/.../plugins/ : datastore, UJITSO, blobkey, Cubric, GPU compute, and USD support
-  - usd_ext_physics/                  : codeless PhysX schema (data, headers, Python; config-neutral)
-  - exact OVSTAGE_DIR/bin/plugins/    : matched resolver, registry, OmniClient,
-                                        and omniverse_connection runtime set
+  - ovruntime_deps_<config>/.../plugins/ : datastore, UJITSO, blobkey, omni.usd
+  - usd_ext_physics/                  : codeless PhysX schema definitions (data only)
+  - exact OVSTAGE_DIR/bin/plugins/    : validates the application-owned USD resolver
+
+No OpenUSD library, USD plugin registry, or USD dependency closure (TBB,
+MaterialX, Alembic, Imath, OpenSubdiv, draco) is staged: ovstage brings its own
+namespaced USD runtime, the application owns any USD it authors with, and
+ovphysx neither loads nor links USD.
 
 Creates:
   _install/
       +-- lib/
       |   +-- libovphysx.so
       +-- plugins/           <- ALL .so files here (flat!)
-          +-- libomni.physx.*.so
-          +-- usd/           <- USD plugInfo.json registry
-          +-- bin/deps/      <- (currently unused, reserved)
+      |   +-- libomni.physx.*.so
+      |   +-- bin/deps/      <- (currently unused, reserved)
+      +-- schemas/physx/     <- codeless PhysX USD schemas (root plugInfo.json + <Module>/resources/)
 
 Usage:
     python scripts/package_deps.py --build-dir=_build --install-dir=_install \
         --ovruntime-install-dir=<path> --ovstage-dir=<resolved-root> \
         --ovstage-runtime-dir=<resolved-runtime> [--verbose]
+
+@implements REQ-PACKAGING-USDFREE-001
+@covers AC-4 AC-7
+@implements REQ-PACKAGING-OMNICLIENT-001
+@covers AC-1
+@implements REQ-PACKAGING-CLOSURE-001
+@covers AC-1
 """
 
 import argparse
-import ctypes
 import fnmatch
 import json
 import os
 import platform
+import re
 import shutil
 import sys
 import zipfile
@@ -162,7 +172,7 @@ def _load_json_like(path: Path) -> dict | None:
     to break out of its state machine early (see the `if end < 0: break`
     branches), and any trailing comma immediately before the unterminated
     comment is preserved rather than stripped. json.loads then raises
-    JSONDecodeError, which we swallow here -- so a malformed plugInfo file
+    JSONDecodeError, which is swallowed here, so a malformed plugInfo file
     silently disappears from packaging without a diagnostic. Callers that need
     to distinguish "absent" from "malformed" should inspect the file directly.
     """
@@ -211,44 +221,29 @@ def _resolve_platform_build(build_root: Path) -> str:
 def _resolve_ovstage_plugins_dir(ovstage_runtime_dir: Path) -> Path:
     """Validate the plugin tree beside CMake's exact resolved OVStage runtime."""
     plugins_dir = ovstage_runtime_dir / "plugins"
-    if not (plugins_dir / "omni.client.lib").is_dir() or not (plugins_dir / "omni.usd_resolver").is_dir():
+    if not (plugins_dir / "omni.usd_resolver").is_dir():
         raise RuntimeError(
             f"OVStage Release runtime plugin tree is missing beside the configured runtime: " f"{plugins_dir}"
         )
     return plugins_dir
 
 
-def _copy_required_files(source_dir: Path, dest_dir: Path, names: list[str], label: str) -> int:
-    missing = [name for name in names if not (source_dir / name).is_file()]
-    if missing:
-        raise RuntimeError(f"{label} payload is incomplete under {source_dir}; missing: {', '.join(missing)}")
+def _export_codeless_schemas(schema_share_dir: Path, out_dir: Path) -> list[str]:
+    """Stage the codeless PhysX schema tree. See scripts/export_codeless_schema.py."""
+    import importlib.util
 
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    for name in names:
-        shutil.copy2(source_dir / name, dest_dir / name)
-    return len(names)
-
-
-def _read_omniclient_version(client_library: Path) -> str:
-    """Read the provider's exported version for runtime provenance checks."""
-    try:
-        if PLATFORM_LINUX:
-            library = ctypes.CDLL(str(client_library))
-        else:
-            with os.add_dll_directory(str(client_library.parent)):
-                library = ctypes.WinDLL(str(client_library))
-        version_fn = library.omniClientGetVersionString
-        version_fn.argtypes = []
-        version_fn.restype = ctypes.c_char_p
-        version_bytes = version_fn()
-    except (AttributeError, OSError) as exc:
+    script_dir = Path(__file__).resolve().parent
+    spec = importlib.util.spec_from_file_location("export_codeless_schema", script_dir / "export_codeless_schema.py")
+    if spec is None or spec.loader is None:  # pragma: no cover - defensive
+        raise RuntimeError("Could not load export_codeless_schema.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    exported = module.export_codeless_schemas(schema_share_dir, out_dir)
+    if not exported:
         raise RuntimeError(
-            f"Cannot read omniClientGetVersionString from OVStage library {client_library}: {exc}"
-        ) from exc
-
-    if not version_bytes:
-        raise RuntimeError(f"OVStage library returned an empty OmniClient version: {client_library}")
-    return version_bytes.decode("utf-8", errors="strict")
+            f"No PhysX schema modules found under {schema_share_dir}; the codeless schema payload would be empty."
+        )
+    return exported
 
 
 def merge_ovstage_notices(
@@ -371,16 +366,16 @@ def _select_schema_package_dir(
 
     Defaults to the prebuilt codeless usd_ext_physics package pulled by
     ovruntime. --devschema is an explicit developer override that swaps in a
-    local schemas/physx build; either way the chosen tree is verified as a
+    local schemas/physx build. Either way the chosen tree is verified as a
     valid codeless schema before being accepted, failing fast otherwise.
     """
-    # omni_physics_dir is a symlink to ovruntime; resolve to get the real ovphysx/ parent.
+    # omni_physics_dir is a symlink to ovruntime. Resolve it to get the real ovphysx/ parent.
     ovruntime_real = omni_physics_dir.resolve()
 
     if prefer_local_schema:
         # Devschema path: accept a local schema tree only when it verifies as a
         # valid codeless schema. schemas/physx is codeless: build.sh stages a
-        # single flat, config- and platform-neutral tree at _build/schema.
+        # single flat, config- and platform-neutral tree at schema/_build/schema.
         local_schema_base = ovruntime_real.parent.parent / "schemas" / "physx" / "_build"
         local_schema_candidates: list[Path] = [local_schema_base / "schema"]
 
@@ -449,8 +444,8 @@ def _copy_shared_libs(
     dest_dir.mkdir(parents=True, exist_ok=True)
     copied = 0
 
-    # Separate real files from symlinks so we can copy real files first,
-    # then recreate symlinks pointing at their immediate targets.
+    # Separate real files from symlinks so real files are copied first,
+    # then symlinks are recreated pointing at their immediate targets.
     regular_files: list[Path] = []
     symlinks: list[Path] = []
 
@@ -538,8 +533,8 @@ def _copy_plugin_libs(
     dest_dir.mkdir(parents=True, exist_ok=True)
     copied = 0
 
-    # Collect all shared-lib entries (files + symlinks) first so we can
-    # handle symlinks after their targets have been copied.
+    # Collect all shared-lib entries (files + symlinks) first so symlinks
+    # are handled after their targets have been copied.
     regular_files: list[Path] = []
     symlinks: list[Path] = []
 
@@ -633,113 +628,6 @@ def copy_carbonite_plugins(
 
 
 # ---------------------------------------------------------------------------
-# USD plugInfo.json registry
-# ---------------------------------------------------------------------------
-
-
-def copy_usd_registry(
-    usd_lib_dir: Path,
-    usd_plugin_dir: Path,
-    schema_share_dir: Path | None,
-    plugins_dest: Path,
-    verbose: bool = False,
-) -> int:
-    """Merge USD plugInfo.json registry trees into plugins/usd/.
-
-    Sources:
-      - usd_lib_dir/usd/     (core USD modules -- ar, sdf, usd, usdGeom, ...)
-      - usd_plugin_dir/usd/  (USD plugin modules -- hdStorm, sdrGlslfx, usdAbc, ...)
-      - schema_share_dir/     (PhysxSchema, OmniUsdPhysicsDeformableSchema, ...)
-    """
-    usd_dest = plugins_dest / "usd"
-    if usd_dest.exists():
-        shutil.rmtree(usd_dest)
-    usd_dest.mkdir(parents=True, exist_ok=True)
-
-    def _merge_tree(src: Path, label: str) -> int:
-        if not src.exists():
-            return 0
-        count = 0
-        for root, _, files in os.walk(src, followlinks=True):
-            for fname in files:
-                src_path = Path(root) / fname
-                if src_path.suffix in (".so", ".dll"):
-                    continue
-                rel = src_path.relative_to(src)
-                dst_path = usd_dest / rel
-                dst_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src_path, dst_path)
-                if fname == "plugInfo.json":
-                    count += 1
-        if verbose and count:
-            print(f"  [merge] {count} plugInfo.json from {label}")
-        return count
-
-    total = 0
-    usd_lib_usd = usd_lib_dir / "usd"
-    if usd_lib_usd.exists():
-        total += _merge_tree(usd_lib_usd, "usd/release/lib/usd")
-
-    usd_plugin_usd = usd_plugin_dir / "usd"
-    if usd_plugin_usd.exists():
-        total += _merge_tree(usd_plugin_usd, "usd/release/plugin/usd")
-
-    if schema_share_dir and schema_share_dir.exists():
-        total += _merge_tree(schema_share_dir, "usd_ext_physics/share/usd/plugins")
-
-    fixed = fixup_usd_plugin_info_library_paths(plugins_dest, verbose)
-    if fixed and verbose:
-        print(f"  [fixup] Rewrote LibraryPath in {fixed} plugInfo.json file(s)")
-
-    return total
-
-
-def fixup_usd_plugin_info_library_paths(plugins_dest: Path, verbose: bool = False) -> int:
-    """Rewrite LibraryPath entries in plugins_dest/usd/**/plugInfo.json to point
-    at the flat plugins/ layout when the original relative path does not resolve.
-    """
-    usd_dest = plugins_dest / "usd"
-    if not usd_dest.exists():
-        return 0
-    fixed = 0
-    for plug_info in usd_dest.rglob("plugInfo.json"):
-        data = _load_json_like(plug_info)
-        if data is None:
-            continue
-
-        changed = False
-        for plugin in data.get("Plugins", []):
-            lib_path = plugin.get("LibraryPath", "")
-            if not lib_path:
-                continue
-
-            # USD resolves LibraryPath relative to Root (default ".."),
-            # not relative to the plugInfo.json file itself.
-            root_rel = plugin.get("Root", "..")
-            root_dir = (plug_info.parent / root_rel).resolve()
-
-            resolved = (root_dir / lib_path).resolve()
-            if resolved.exists():
-                continue
-
-            flat_candidate = plugins_dest / Path(lib_path).name
-            if not flat_candidate.exists():
-                print(f"  [warn] {plug_info.relative_to(usd_dest)}: " f"{lib_path} -> unresolved (no flat candidate)")
-                continue
-
-            new_path = os.path.relpath(flat_candidate, root_dir)
-            plugin["LibraryPath"] = new_path
-            changed = True
-            if verbose:
-                print(f"  [fixup] {plug_info.relative_to(usd_dest)}: " f"{lib_path} -> {new_path}")
-
-        if changed:
-            plug_info.write_text(json.dumps(data, indent=4) + "\n")
-            fixed += 1
-    return fixed
-
-
-# ---------------------------------------------------------------------------
 # Main packaging entry point
 # ---------------------------------------------------------------------------
 
@@ -770,7 +658,6 @@ def package_deps(
     print(f"[Config] ovruntime install: {ovruntime_install_dir}")
     print(f"[Config] OVStage root: {ovstage_dir}")
     print(f"[Config] OVStage runtime: {ovstage_runtime_dir}")
-    print("[Config] USD mode: namespaced")
     print("[Config] Static Carbonite: ON")
     print(f"[Config] Devschema override: {'ON' if devschema else 'OFF'}")
 
@@ -786,7 +673,7 @@ def package_deps(
     skip_lib_patterns = list(manifest.get("packaging", {}).get("skip_shared_libs", []))
     skip_lib_patterns.extend(["libcarb.so", "libcarb.so.*", "carb.dll", "carb.lib", "carb.pdb"])
 
-    # omni_physics symlink -> ovruntime; used to reach infrastructure plugins
+    # omni_physics symlink -> ovruntime. Used to reach infrastructure plugins
     # and usd_ext_physics.
     omni_physics_dir = target_deps / "omni_physics"
     omni_physics_tdeps = omni_physics_dir / "_build" / "target-deps"
@@ -811,8 +698,8 @@ def package_deps(
 
     print("\nCopying carbonite bootstrap plugins...")
     carb_plugins = manifest.get("carbonite_plugins", {}).get("include", [])
-    # These Carbonite plugins are already linked into libovphysx; do not ship
-    # their no-libcarb shim libraries as separate runtime plugins.
+    # These Carbonite plugins are already linked into libovphysx. Their
+    # no-libcarb shim libraries are not shipped as separate runtime plugins.
     statically_linked_plugins = {
         "carb.assets.plugin",
         "carb.datasource-file.plugin",
@@ -844,7 +731,7 @@ def package_deps(
     # ------------------------------------------------------------------
     print("\nCopying PhysX runtime plugins from ovruntime install...")
     # In CMake subproject mode, .so files land directly in the output dir (e.g. _build/release/).
-    # In standalone mode, they're under <install>/bin/. Accept both layouts.
+    # In standalone mode, they are under <install>/bin/. Accept both layouts.
     ovr_bin = ovruntime_install_dir / "bin"
     if not ovr_bin.exists():
         ovr_bin = ovruntime_install_dir
@@ -857,51 +744,11 @@ def package_deps(
     print(f"  [OK] Copied {count} physics plugin/binding files")
 
     # ------------------------------------------------------------------
-    # USD core libs: prefer ovruntime's namespaced USD over ovphysx's own
-    # kit-sdk-imported copy.
-    # ------------------------------------------------------------------
-    print("\nCopying USD core libs (full, unfiltered)...")
-    ovruntime_usd_dir = omni_physics_dir / "_build" / "target-deps" / "usd" / config / "lib"
-    local_usd_dir = target_deps / "usd" / config / "lib"
-    if ovruntime_usd_dir.exists():
-        usd_lib_dir = ovruntime_usd_dir
-        print(f"  Using ovruntime USD: {usd_lib_dir}")
-    else:
-        usd_lib_dir = local_usd_dir
-        print(f"  Using local USD: {usd_lib_dir}")
-    count = _copy_shared_libs(
-        usd_lib_dir, plugins_dest, skip_patterns=skip_lib_patterns, verbose=verbose, label=f"usd/{config}/lib"
-    )
-    usd_base_dir = usd_lib_dir.parent  # .../usd/release
-    usd_bin_dir = usd_base_dir / "bin"
-    count += _copy_shared_libs(
-        usd_bin_dir, plugins_dest, skip_patterns=skip_lib_patterns, verbose=verbose, label=f"usd/{config}/bin"
-    )
-    # USD plugin .so files (sdrGlslfx, usdAbc, usdDraco, usdShaders, hdStorm, etc.)
-    usd_plugin_dir = usd_base_dir / "plugin" / "usd"
-    if usd_plugin_dir.exists():
-        for so_file in sorted(usd_plugin_dir.glob("*.so")):
-            if so_file.is_file():
-                dest_file = plugins_dest / so_file.name
-                if not dest_file.exists():
-                    shutil.copy2(so_file, dest_file)
-                    count += 1
-                    if verbose:
-                        print(f"  [copy] {so_file.name} <- usd/{config}/plugin/usd")
-        for dll_file in sorted(usd_plugin_dir.glob("*.dll")):
-            if dll_file.is_file():
-                dest_file = plugins_dest / dll_file.name
-                if not dest_file.exists():
-                    shutil.copy2(dll_file, dest_file)
-                    count += 1
-    print(f"  [OK] Copied {count} USD lib files")
-
-    # ------------------------------------------------------------------
     # Infrastructure plugins
     # ------------------------------------------------------------------
-    # usd_ext_physics is codeless -- no native schema libs to stage here. Its USD
-    # plugin data (share/) is copied later by copy_usd_registry; ovphysx is
-    # py-less and does not ship the schema's Python.
+    # usd_ext_physics is codeless, so there are no native schema libs to stage
+    # here. Its schema definitions (share/) are exported to schemas/physx below.
+    # ovphysx is py-less and does not ship the schema's Python.
     print(f"\nCopying {infra_label} plugins...")
 
     # Infrastructure subdirectories still owned by ovphysx. Fabric, USDRT,
@@ -912,8 +759,6 @@ def package_deps(
         "omni.blobkey",
         "carb.ujitsoagent",
         "carb.ujitso.default",
-        "omni.cubric",
-        "gpucompute",
         "omni.usd",
     ]
     total_infra = 0
@@ -942,21 +787,6 @@ def package_deps(
         )
     print(f"  [OK] {infra_label} plugins: {total_infra}")
 
-    # Keep the resolver, OmniClient, and omniverse_connection as one matched
-    # OVStage-provided Release runtime set. The flat copies remain canonical for
-    # PhysX-first startup; OVStage-first reuses the already-loaded SONAME.
-    client_lib_dir = ovstage_plugins_dir / "omni.client.lib"
-    client_lib_names = (
-        ["libomniclient.so", "libomniverse_connection.so"]
-        if PLATFORM_LINUX
-        else ["omniclient.dll", "omniverse_connection.dll"]
-    )
-    c = _copy_required_files(client_lib_dir, plugins_dest, client_lib_names, "OVStage OmniClient")
-    client_version = _read_omniclient_version(client_lib_dir / client_lib_names[0])
-    (plugins_dest / "ovstage-omniclient.version").write_bytes((client_version + "\n").encode("utf-8"))
-    print(f"  [OK] OVStage OmniClient runtime: {c}")
-    print(f"  [OK] OVStage OmniClient version: {client_version}")
-
     # The resolver is NOT staged: it registers the OMNI_USD_RESOLVER TF debug symbol,
     # and a second copy beside the application's OVStage aborts the process. Its
     # plugInfo goes with it (an orphaned registry fails the plugin load). Same drop
@@ -971,20 +801,17 @@ def package_deps(
     print("  [OK] OVStage USD resolver: validated, not staged (provided by the application's OVStage)")
 
     # ------------------------------------------------------------------
-    # USD plugInfo.json registry
+    # Codeless PhysX USD schemas (data only, ovphysx never loads or registers them)
     # ------------------------------------------------------------------
-    print("\nCopying USD plugInfo registry...")
-    usd_plugin_base_dir = usd_base_dir / "plugin"
+    # ovphysx ships its PhysX schema definitions as codeless USD plugins under
+    # <install>/schemas/physx so the application can register them with the USD
+    # runtime it owns (ovstage_population_register_usd_schemas() for ovstage,
+    # PXR_PLUGINPATH_NAME / PlugRegistry for a stock OpenUSD). No USD library and
+    # no USD plugin registry is staged into plugins/.
+    print("\nExporting codeless PhysX USD schemas...")
     schema_share_dir = usd_ext_physics_dir / "share" / "usd" / "plugins"
-    count = copy_usd_registry(usd_lib_dir, usd_plugin_base_dir, schema_share_dir, plugins_dest, verbose)
-    print(f"  [OK] Merged {count} plugInfo.json files")
-
-    # Sweep an orphaned resolver registry left by a previous install.
-    stale_resolver_registry = plugins_dest / "usd" / "omni_usd_resolver"
-    if stale_resolver_registry.exists():
-        shutil.rmtree(stale_resolver_registry)
-        print("  [OK] Removed stale OVStage resolver registry from a previous install")
-    fixup_usd_plugin_info_library_paths(plugins_dest, verbose)
+    exported_modules = _export_codeless_schemas(schema_share_dir, install_dir / "schemas" / "physx")
+    print(f"  [OK] Exported {len(exported_modules)} codeless schema module(s): {', '.join(exported_modules)}")
 
     license_archive = build_dir / "PACKAGE-LICENSES" / "ovphysx-LICENSES.zip"
     notice_entries = merge_ovstage_notices(

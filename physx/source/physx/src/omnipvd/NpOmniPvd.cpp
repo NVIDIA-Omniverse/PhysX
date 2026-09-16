@@ -1,38 +1,13 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "NpOmniPvd.h"
 
 #if PX_SUPPORT_OMNI_PVD
 #include "OmniPvdPxSampler.h"
-#include "OmniPvdLoader.h"
-#include "OmniPvdFileWriteStream.h"
-#include "OmniPvdSocketWriteStream.h"
+#include "OmniPvdLibraryFunctions.h"
 #include "OmniPvdWriter.h"
 #endif
 #include "foundation/PxUserAllocated.h"
@@ -46,8 +21,6 @@ physx::NpOmniPvd* physx::NpOmniPvd::mInstance = NULL;
 namespace physx
 {
 	NpOmniPvd::NpOmniPvd() :
-		mLoader			(NULL),
-		mFileWriteStream(NULL),
 		mWriter			(NULL),
 		mPhysXSampler	(NULL)
 	{
@@ -56,22 +29,10 @@ namespace physx
 	NpOmniPvd::~NpOmniPvd()
 	{
 #if PX_SUPPORT_OMNI_PVD
-		if (mFileWriteStream)
-		{
-			mFileWriteStream->closeStream();
-			mLoader->mDestroyOmniPvdFileWriteStream(*mFileWriteStream);
-			mFileWriteStream = NULL;
-		}
 		if (mWriter)
 		{
-			mLoader->mDestroyOmniPvdWriter(*mWriter);
+			destroyOmniPvdWriter(*mWriter);
 			mWriter = NULL;
-		}
-		if (mLoader)
-		{
-			mLoader->~OmniPvdLoader();
-			PX_FREE(mLoader);
-			mLoader = NULL;
 		}
 #endif
 	}
@@ -110,33 +71,6 @@ namespace physx
 		NpOmniPvd::destroyInstance();
 	}
 
-	bool NpOmniPvd::initOmniPvd()
-	{
-#if PX_SUPPORT_OMNI_PVD
-		if (mLoader)
-		{
-			return true;
-		}
-
-		mLoader = PX_PLACEMENT_NEW(PX_ALLOC(sizeof(OmniPvdLoader), "OmniPvdLoader"), OmniPvdLoader)();
-
-		if (!mLoader)
-		{
-			return false;
-		}
-
-		bool success;
-#if PX_WIN64
-		success = mLoader->loadOmniPvd("PVDRuntime_64.dll");
-#else
-		success = mLoader->loadOmniPvd("libPVDRuntime_64.so");
-#endif
-		return success;
-#else
-		return true;
-#endif
-	}
-
 	OmniPvdWriter* NpOmniPvd::getWriter()
 	{
 		return blockingWriterLoad();
@@ -146,15 +80,8 @@ namespace physx
 	{
 #if PX_SUPPORT_OMNI_PVD
 		PxMutex::ScopedLock lock(mWriterLoadMutex);
-		if (mWriter)
-		{
-			return mWriter;
-		}
-		if (mLoader == NULL)
-		{
-			return NULL;
-		}
-		mWriter = mLoader->mCreateOmniPvdWriter();
+		if (!mWriter)
+			mWriter = createOmniPvdWriter();
 		return mWriter;
 #else
 		return NULL;
@@ -178,59 +105,6 @@ namespace physx
 #endif
 	}
 
-
-	OmniPvdFileWriteStream* NpOmniPvd::getFileWriteStream()
-	{
-#if PX_SUPPORT_OMNI_PVD
-		if (mFileWriteStream)
-		{
-			return mFileWriteStream;
-		}
-		if (mLoader == NULL)
-		{
-			return NULL;
-		}
-		mFileWriteStream = mLoader->mCreateOmniPvdFileWriteStream();
-		return mFileWriteStream;
-#else
-		return NULL;
-#endif
-	}
-
-	OmniPvdSocketWriteStream* NpOmniPvd::createSocketWriteStream(const char* address, PxU16 port, PxU32 sendTimeout)
-	{
-#if PX_SUPPORT_OMNI_PVD
-		if (mLoader == NULL || mLoader->mCreateOmniPvdSocketWriteStream == NULL)
-		{
-			return NULL;
-		}
-		return mLoader->mCreateOmniPvdSocketWriteStream(address, port, sendTimeout);
-#else
-		PX_UNUSED(address);
-		PX_UNUSED(port);
-		PX_UNUSED(sendTimeout);
-		return NULL;
-#endif
-	}
-
-	void NpOmniPvd::releaseSocketWriteStream(OmniPvdSocketWriteStream& stream)
-	{
-#if PX_SUPPORT_OMNI_PVD
-		// The caller owns the stream and its lifetime: keep the write stream alive (and bound)
-		// until PhysX is done writing to it. If a recording is still active at teardown, the
-		// NpScene / NpPhysics destructors emit object-remove commands to the bound stream, so
-		// release the PxScene / PxPhysics that drive the recording before releasing the stream,
-		// and keep the stream alive until PxOmniPvd is released. This call just frees the
-		// caller-owned stream.
-		if (mLoader && mLoader->mDestroyOmniPvdSocketWriteStream)
-		{
-			mLoader->mDestroyOmniPvdSocketWriteStream(stream);
-		}
-#else
-		PX_UNUSED(stream);
-#endif
-	}
-
 	bool NpOmniPvd::startSampling()
 	{
 #if PX_SUPPORT_OMNI_PVD
@@ -249,9 +123,9 @@ namespace physx
 		}
 		// startSampling() takes a full-state snapshot of the current world onto the bound write
 		// stream, then records ongoing changes. It can be called any number of times: bind (or
-		// re-bind) the destination stream with OmniPvdWriter::setWriteStream() first, which resets
-		// the writer for a self-contained recording, and the same stream may be re-bound to take a
-		// fresh snapshot. snapshotAll() turns recording on, registers the schema, then walks the
+		// re-bind) the destination stream with OmniPvdWriter::setWriteStream() first. Rebinding resets
+		// the writer session state and emits a new versioned segment without changing the transport
+		// position. snapshotAll() turns recording on, registers the schema, then walks the
 		// whole world (shared resources, shapes, actors, articulations, aggregates, deformables,
 		// particles, per-scene state), always recording an object before anything that refers to
 		// it, so objects created before this call are recorded too.
@@ -277,8 +151,10 @@ namespace physx
 	{
 #if PX_SUPPORT_OMNI_PVD
 		// Stop sampling only: does NOT flush or close the stream; the caller owns the stream.
-		// Stopping is optional. A later startSampling() takes a fresh snapshot regardless; this
-		// just suppresses further per-frame writes and object notifications until then.
+		// Stopping is required before another recording, but optional for final teardown: keeping
+		// sampling active through PxPhysics::release() captures final object-remove notifications.
+		// PxPhysics teardown destroys the sampler and clears mPhysXSampler, so isSampling() then
+		// returns false. A later startSampling() takes a fresh snapshot rather than resuming.
 		if (mPhysXSampler)
 		{
 			return mPhysXSampler->stopSampling();
@@ -345,24 +221,10 @@ physx::PxOmniPvd* PxCreateOmniPvd(physx::PxFoundation& foundation)
 	
 	if (physx::NpOmniPvd::mInstance)
 	{
-		if (physx::NpOmniPvd::mInstance->initOmniPvd())
-		{
-			physx::NpOmniPvd::mRefCount = 1; // Sets the reference counter to exactly 1
-			return physx::NpOmniPvd::mInstance;
-		}
-		else
-		{
-			physx::NpOmniPvd::mInstance->~NpOmniPvd();
-			PX_FREE(physx::NpOmniPvd::mInstance);
-			physx::NpOmniPvd::mInstance = NULL;
-			physx::NpOmniPvd::mRefCount = 0;
-			return NULL;
-		}
+		physx::NpOmniPvd::mRefCount = 1; // Sets the reference counter to exactly 1
+		return physx::NpOmniPvd::mInstance;
 	}
-	else
-	{
-		return NULL;
-	}
+	return NULL;
 #else
 	return NULL;
 #endif

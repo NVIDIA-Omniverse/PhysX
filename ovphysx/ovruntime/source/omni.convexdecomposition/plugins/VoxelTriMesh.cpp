@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 
 // This include must come first
 // clang-format off
-#include "UsdPCH.h"
 // clang-format on
 
 #include "VoxelTriMesh.h"
 #include <assert.h>
+#include <stdio.h>
 #ifdef _MSC_VER
 #pragma warning(disable:4100 4996)
 #endif

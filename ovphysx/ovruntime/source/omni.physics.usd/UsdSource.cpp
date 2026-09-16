@@ -1,10 +1,19 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-CORE-001
  * @implements REQ-PARSE-CORE-003
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-13
+ *
+ * @implements REQ-PARSE-SHAPE-005
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-PARSE-INSTANCER-001
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-PARSE-COL-004
+ * @covers AC-3
  *
  * USD-backed `IPhysicsSource` implementation: mints `ObjectKey` /
  * `TokenId` / `BufferHandle` for stage paths, tokens, mesh arrays;
@@ -21,6 +30,9 @@
 
 #include <pxr/usd/usd/schemaRegistry.h>
 
+#include <carb/logging/Log.h>
+
+#include <unordered_map>
 #include <unordered_set>
 
 #include <pxr/base/gf/half.h>
@@ -42,6 +54,7 @@
 #include <pxr/usd/usd/relationship.h>
 #include <pxr/usd/usdGeom/mesh.h>
 #include <pxr/usd/usdGeom/metrics.h>
+#include <pxr/usd/usdGeom/pointInstancer.h>
 #include <pxr/usd/usdPhysics/metrics.h> // UsdPhysicsGetStageKilogramsPerUnit
 #include <pxr/usd/usdGeom/subset.h>
 #include <pxr/usd/usdGeom/tokens.h>
@@ -49,6 +62,7 @@
 #include <pxr/usd/usdPhysics/materialAPI.h>
 #include <pxr/usd/usdShade/material.h>
 #include <pxr/usd/usdShade/materialBindingAPI.h>
+#include <pxr/usd/usdUtils/stageCache.h>
 #include <pxr/usd/sdf/listOp.h>
 #include <pxr/usd/sdf/schema.h>
 
@@ -59,8 +73,18 @@ namespace omni::physics::usd
 {
 using namespace omni::physics::parse;
 
+long usdStageCacheId(PXR_NS::UsdStageWeakPtr stage)
+{
+    // The null guard is load-bearing: UsdStageCache::Get().GetId() on a stage the
+    // cache does not hold returns an *invalid* Id whose ToLongInt() is not 0, so
+    // an unguarded call fabricates a plausible-looking id for a stageless attach
+    // (REQ-PARSE-BACKEND-001 AC-6).
+    return stage ? PXR_NS::UsdUtilsStageCache::Get().GetId(stage).ToLongInt() : 0;
+}
+
 UsdSource::UsdSource(PXR_NS::UsdStageWeakPtr stage)
-    : mStage(std::move(stage))
+    : mStage(std::move(stage)), mStageId(usdStageCacheId(mStage)),
+      mGeneration(omni::physics::parse::nextObjectKeyGeneration())
 {
     // Reserve slot 0 — handle 0 is the invalid sentinel
     mKeyToPath.emplace_back();
@@ -79,10 +103,15 @@ ObjectKey UsdSource::keyFor(const PXR_NS::SdfPath& path) const
     if (path.IsEmpty())
         return {};
 
+    // mPathToKey/mKeyToPath/mKeyStrings are a lazily-populated cache shared
+    // by every caller of this const method; take the lock for the whole
+    // lookup-or-insert so concurrent callers (e.g. invertCollisionGroupMembers's
+    // parallelFor batches) can't race on the first-time insert.
+    std::lock_guard<std::mutex> lock(mInternMutex);
     auto [it, inserted] = mPathToKey.try_emplace(path, ObjectKey{});
     if (inserted)
     {
-        it->second = ObjectKey{ static_cast<uint64_t>(mKeyToPath.size()) };
+        it->second = packKey(static_cast<uint32_t>(mKeyToPath.size()));
         mKeyToPath.push_back(path);
         mKeyStrings.push_back(path.GetString());
     }
@@ -91,16 +120,20 @@ ObjectKey UsdSource::keyFor(const PXR_NS::SdfPath& path) const
 
 PXR_NS::SdfPath UsdSource::pathFor(ObjectKey key) const
 {
-    if (key.handle == 0 || key.handle >= mKeyToPath.size())
+    const uint32_t localIndex = decodeLocalIndex(key);
+    std::lock_guard<std::mutex> lock(mInternMutex);
+    if (localIndex == 0 || localIndex >= mKeyToPath.size())
         return {};
-    return mKeyToPath[key.handle];
+    return mKeyToPath[localIndex];
 }
 
 std::string_view UsdSource::sourceKeyToString(ObjectKey key) const
 {
-    if (key.handle == 0 || key.handle >= mKeyStrings.size())
+    const uint32_t localIndex = decodeLocalIndex(key);
+    std::lock_guard<std::mutex> lock(mInternMutex);
+    if (localIndex == 0 || localIndex >= mKeyStrings.size())
         return {};
-    return mKeyStrings[key.handle];
+    return mKeyStrings[localIndex];
 }
 
 // ---------------------------------------------------------------------------
@@ -216,9 +249,13 @@ void UsdSource::forEachDescendantPruned(ObjectKey root, std::function<bool(Objec
     }
 }
 
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-46
+ */
 ObjectKey UsdSource::findByPath(std::string_view path) const
 {
-    if (!mStage)
+    if (!mStage || path.empty())
         return {};
     std::string pathStr{path};
     PXR_NS::SdfPath sdfPath{pathStr};
@@ -226,6 +263,16 @@ ObjectKey UsdSource::findByPath(std::string_view path) const
     if (!prim)
         return {};
     return keyFor(sdfPath);
+}
+
+ObjectKey UsdSource::mintKeyForPath(std::string_view path) const
+{
+    // Existence-independent: intern the path with no live-prim gate, so a runtime clone
+    // target (which authors no UsdPrim) still mints the same key a later keyFor(SdfPath)
+    // lookup returns. Matches the reference twin's usd->keyFor(path) mint.
+    if (path.empty())
+        return {};
+    return keyFor(PXR_NS::SdfPath(std::string(path)));
 }
 
 // ---------------------------------------------------------------------------
@@ -349,6 +396,17 @@ bool UsdSource::isInstance(ObjectKey key) const
         return false;
     const PXR_NS::UsdPrim prim = mStage->GetPrimAtPath(path);
     return prim && prim.IsInstance();
+}
+
+bool UsdSource::isInPrototype(ObjectKey key) const
+{
+    if (!mStage)
+        return false;
+    const PXR_NS::SdfPath path = pathFor(key);
+    if (path.IsEmpty())
+        return false;
+    const PXR_NS::UsdPrim prim = mStage->GetPrimAtPath(path);
+    return prim && prim.IsInPrototype();
 }
 
 TokenId UsdSource::getTypeName(ObjectKey key) const
@@ -654,16 +712,17 @@ void UsdSource::getLocalToWorldTransform(ObjectKey key, ReadTime time, Matrix4d&
     const PXR_NS::UsdTimeCode timeCode = time.mode == ReadTime::Mode::eAtTime ?
                                              PXR_NS::UsdTimeCode(time.timeCode) :
                                              PXR_NS::UsdTimeCode::Default();
-    // Compute directly via UsdGeomXformable instead of a UsdGeomXformCache. This
-    // overload serves runtime/animated reads where the stage may mutate between
-    // calls, so a cache risks stale transforms; a fresh-per-call cache buys nothing
-    // over a direct ancestor walk anyway. ComputeLocalToWorldTransform honors
-    // xformOpOrder and ancestor resetXformStack just like the cache did. The no-arg
-    // EarliestTime overload keeps the persistent mXformCache for the static path.
-    PXR_NS::UsdGeomXformable xformable(prim);
-    if (!xformable)
-        return; // non-transformable prim: leave identity
-    PXR_NS::GfMatrix4d m = xformable.ComputeLocalToWorldTransform(timeCode);
+    // Use a fresh-per-call UsdGeomXformCache rather than a direct UsdGeomXformable
+    // walk or the persistent mXformCache (pinned to EarliestTime). A fresh cache is
+    // safe against stage mutation between calls and honors xformOpOrder / ancestor
+    // resetXformStack -- but unlike UsdGeomXformable::ComputeLocalToWorldTransform,
+    // which is undefined for a non-xformable prim, it composes the ancestor CTM (with
+    // an identity local) for a typeless/Scope grouping prim instead of collapsing to
+    // identity and losing every ancestor transform. Callers pass arbitrary resolved
+    // keys here -- e.g. a point-instancer prototype root that is a Scope -- so the
+    // guard-and-return regressed those to wrong world transforms (issue #8).
+    PXR_NS::UsdGeomXformCache cache(timeCode);
+    PXR_NS::GfMatrix4d m = cache.GetLocalToWorldTransform(prim);
     const double* src = m.GetArray(); // pxr stores row-major; matches our convention
     for (int i = 0; i < 16; ++i)
         outMatrix.data[i] = src[i];
@@ -766,7 +825,12 @@ bool UsdSource::hasRelationship(ObjectKey key, TokenId rel) const
     PXR_NS::TfToken token = tfTokenFor(rel);
     if (token.IsEmpty())
         return false;
-    return prim.HasRelationship(token);
+    // Authored targets, not schema-level property existence: an applied API schema
+    // always declares its relationships, so a raw HasRelationship() check is true
+    // for every prim with the API applied, defeating every caller's "absent vs
+    // defined-but-empty" distinction (see e.g. ContactReport.cpp's reportPairs use).
+    PXR_NS::UsdRelationship usdRel = prim.GetRelationship(token);
+    return usdRel && usdRel.HasAuthoredTargets();
 }
 
 void UsdSource::getInactiveInstanceIds(ObjectKey key, std::vector<int64_t>& out) const
@@ -781,10 +845,44 @@ void UsdSource::getInactiveInstanceIds(ObjectKey key, std::vector<int64_t>& out)
     if (!prim)
         return;
     PXR_NS::SdfInt64ListOp listOp;
-    if (prim.GetMetadata(PXR_NS::UsdGeomTokens->inactiveIds, &listOp))
+    if (!prim.GetMetadata(PXR_NS::UsdGeomTokens->inactiveIds, &listOp))
+        return;
+    const std::vector<int64_t>& items = listOp.GetExplicitItems();
+
+    // `inactiveIds` names instances by their value in the optional `ids` attribute whenever that
+    // is authored, and positionally only when it is not. This interface hands back positions, so
+    // authored ids have to be translated here - ids = [100, 200] with inactiveIds = [200] means
+    // instance 1 is off, not instance 200.
+    PXR_NS::VtInt64Array instanceIds;
+    const PXR_NS::UsdGeomPointInstancer instancer(prim);
+    const bool hasIds = instancer && (instancer.GetIdsAttr().Get(&instanceIds, PXR_NS::UsdTimeCode::Default()) ||
+                                      instancer.GetIdsAttr().Get(&instanceIds, PXR_NS::UsdTimeCode::EarliestTime()));
+    if (!hasIds || instanceIds.empty())
     {
-        const std::vector<int64_t>& items = listOp.GetExplicitItems();
+        // without an authored `ids` array the id is the instance position
         out.assign(items.begin(), items.end());
+        return;
+    }
+
+    std::unordered_map<int64_t, size_t> idToInstance;
+    idToInstance.reserve(instanceIds.size());
+    for (size_t i = 0; i < instanceIds.size(); i++)
+    {
+        // duplicate ids are ill formed USD - keep the first, which is what UsdGeomPointInstancer does
+        idToInstance.insert({ instanceIds[i], i });
+    }
+
+    out.reserve(items.size());
+    for (int64_t id : items)
+    {
+        const auto found = idToInstance.find(id);
+        if (found == idToInstance.end())
+        {
+            CARB_LOG_WARN("Physics:PointInstancer: (%s) inactiveIds entry %lld does not match any authored id, ignoring",
+                          path.GetText(), (long long)id);
+            continue;
+        }
+        out.push_back(int64_t(found->second));
     }
 }
 
@@ -898,7 +996,7 @@ BufferHandle UsdSource::getArrayAttribute(ObjectKey key, TokenId attr, ReadTime 
     return {};
 }
 
-MeshGeometry UsdSource::getMeshAttributes(ObjectKey key) const
+MeshGeometry UsdSource::getMeshAttributes(ObjectKey key, bool includeFaceMaterials) const
 {
     MeshGeometry out;
     if (!key.valid())
@@ -954,6 +1052,8 @@ MeshGeometry UsdSource::getMeshAttributes(ObjectKey key) const
     // `materialCount` (one past the last), and each material-bound face subset
     // (in declaration order) stamps its faces with the next 0-based index. Left
     // invalid when the mesh has no material subsets (single-material).
+    // Skipped when includeFaceMaterials is false (single-material cooking ignores them).
+    if (includeFaceMaterials)
     {
         const std::vector<PXR_NS::UsdGeomSubset> subsets =
             PXR_NS::UsdGeomSubset::GetGeomSubsets(mesh, PXR_NS::UsdGeomTokens->face);
@@ -1016,6 +1116,8 @@ SourceUnits UsdSource::getSourceUnits() const
 
     PXR_NS::TfToken upAxis = PXR_NS::UsdGeomGetStageUpAxis(mStage);
     units.upAxis = (upAxis == PXR_NS::UsdGeomTokens->y) ? UpAxis::eY : UpAxis::eZ;
+
+    units.timeCodesPerSecond = mStage->GetTimeCodesPerSecond();
 
     return units;
 }

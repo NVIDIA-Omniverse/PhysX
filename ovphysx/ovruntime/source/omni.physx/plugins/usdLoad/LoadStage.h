@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -10,7 +10,8 @@
 #include "LoadTools.h"
 #include "Mass.h"
 
-#include <set>
+#include <string>
+#include <vector>
 
 namespace omni
 {
@@ -19,8 +20,11 @@ namespace physx
 namespace usdparser
 {
 
-void loadFromStage(AttachedStage& attachedStage, const PathSet* excludePaths = nullptr);
-void loadPhysicsFromPrimitive(AttachedStage& attachedStage, const std::set<PXR_NS::SdfPath>& updateRoots);
+// `scanRoots`/`updateRoots` are source-path strings (the vocabulary
+// omni::physics::parse::scanStage takes) and `excludePaths` is the ObjectKey-keyed
+// PathSet (LoadTools.h).
+bool loadFromStage(AttachedStage& attachedStage, const PathSet* excludePaths = nullptr);
+void loadPhysicsFromPrimitive(AttachedStage& attachedStage, const std::vector<std::string>& updateRoots);
 
 } // namespace usdparser
 } // namespace physx

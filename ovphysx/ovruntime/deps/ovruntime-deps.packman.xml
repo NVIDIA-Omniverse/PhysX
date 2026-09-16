@@ -3,6 +3,7 @@
        was built against USD 25.11 with PXR_NS=ov and Carbonite static-runtime
        globals support. Always uses the release variant. -->
   <dependency name="ovruntime_deps_release" linkPath="../_build/target-deps/ovruntime_deps_release">
-    <package name="ovruntime_deps.release" version="0.99.1+ovrtx-04-ovstage-01.345265.0f3b5c91.gl.${platform_target_abi}" />
+    <package name="ovruntime_deps.release" version="111.0.0+ovrtx-05-ovstage-02.377615.868bf616.gl.${platform_target_abi}" />
   </dependency>
 </project>
+

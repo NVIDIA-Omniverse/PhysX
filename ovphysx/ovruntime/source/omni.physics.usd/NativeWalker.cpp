@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * Native USD prim walker.
@@ -10,6 +10,9 @@
  *
  * @implements REQ-PARSE-SCAN-001
  * @covers AC-1 AC-2 AC-3
+ *
+ * @implements REQ-PARSE-SHAPE-004
+ * @covers AC-1
  */
 
 #include "NativeWalker.h"
@@ -22,6 +25,16 @@
 #include <private/omni/physics/CollisionShapeTransform.h>
 #include <private/omni/physics/JointFrameTransform.h>
 
+// The two private headers above are Gf-free (they are shared with the USD-free
+// ovstage walker), so this backend converts at the call boundary with
+// omni.physics.usd/TypeCast.h. TypeCast.h declares only the bridge functions
+// and relies on the includer for the PhysX and Gf types it names; these are the
+// ones NativeWalker.cpp did not already pull in.
+#include <foundation/PxMat33.h>
+#include <foundation/PxVec2.h>
+
+#include <pxr/base/gf/matrix4f.h>
+#include <pxr/base/gf/quath.h>
 #include <pxr/base/gf/quaternion.h>
 #include <pxr/base/gf/transform.h>
 #include <pxr/base/gf/vec3f.h>
@@ -86,6 +99,8 @@
 #include <pxr/usd/usdPhysics/scene.h>
 #include <pxr/usd/usdPhysics/sphericalJoint.h>
 #include <pxr/usd/usdPhysics/tokens.h>
+
+#include <TypeCast.h>
 
 #include <pxr/usd/usdShade/material.h>
 #include <pxr/usd/usdShade/materialBindingAPI.h>
@@ -2200,11 +2215,13 @@ parse::DescPtr<parse::PhysxShapeDesc> readMeshShapeDesc(
     {
         // Read the gprim's points into a mergedMesh buffer; the consumer
         // computes the bounding-sphere radius / bounding-box halfExtents
-        // from those points.
+        // from those points. The points must carry the gprim's world scale:
+        // unlike the cooked-mesh descs there is no meshScale field for the
+        // consumer to apply later, so an unscaled buffer yields a bounding
+        // shape in mesh-local units.
         parse::DescPtr<parse::MergeMeshDesc> mm = parse::allocateDesc<parse::MergeMeshDesc>(ctx.descriptorAllocator());
         const parse::MeshGeometry geom = parse::parseMeshGeometry(ctx, meshDataKey);
-        const parse::BufferSpan<carb::Float3> pointsView = ctx.getBuffer<carb::Float3>(geom.points);
-        mm->points.assign(pointsView.data, pointsView.data + pointsView.count);
+        parse::scaleMeshPoints(ctx, geom.points, meshScale, mm->points);
 
         parse::DescPtr<parse::MergeMeshPhysxShapeDesc> typed;
         if (approx == parse::MeshApproximation::eBoundingSphere)
@@ -3339,7 +3356,14 @@ PXR_NS::SdfPath computeJointLocalPose(PXR_NS::UsdStageWeakPtr stage,
     else
         bodyToWorld.SetIdentity();
 
-    omni::physics::transformJointFrameToBody(relationshipToWorld, bodyToWorld, relPrim == body, t, q);
+    carb::Float3 localPosition{ t[0], t[1], t[2] };
+    carb::Float4 localOrientation{ q.GetImaginary()[0], q.GetImaginary()[1], q.GetImaginary()[2], q.GetReal() };
+    omni::physics::transformJointFrameToBody(omni::physx::toPhysX(relationshipToWorld),
+                                             omni::physx::toPhysX(bodyToWorld), relPrim == body, localPosition,
+                                             localOrientation);
+    t.Set(localPosition.x, localPosition.y, localPosition.z);
+    q = PXR_NS::GfQuatf(localOrientation.w,
+                        PXR_NS::GfVec3f(localOrientation.x, localOrientation.y, localOrientation.z));
 
     return body ? body.GetPrimPath() : PXR_NS::SdfPath();
 }
@@ -3889,9 +3913,9 @@ void finalizeBodiesAndShapes(WalkState& walk, UsdWalkCtx& impl)
                 transformSrcPrim = gprimPrim;
         }
 
-        PXR_NS::GfVec3f localPos(0.0f);
-        PXR_NS::GfQuatf localRot(1.0f);
-        PXR_NS::GfVec3f localScale(1.0f);
+        carb::Float3 localPos{ 0.0f, 0.0f, 0.0f };
+        carb::Float4 localRot{ 0.0f, 0.0f, 0.0f, 1.0f };
+        carb::Float3 localScale{ 1.0f, 1.0f, 1.0f };
         PXR_NS::GfMatrix4d shapeToBody(1.0);
         if (transformSrcPrim != bodyPrim)
         {
@@ -3901,11 +3925,12 @@ void finalizeBodiesAndShapes(WalkState& walk, UsdWalkCtx& impl)
         }
         // Matrix sourcing remains specific to the native walker.
         omni::physics::decomposeCollisionShapeLocalTransform(
-            shapeToBody, walk.xfCache.GetLocalToWorldTransform(bodyPrim), localPos, localRot, localScale);
+            omni::physx::toPhysX(shapeToBody),
+            omni::physx::toPhysX(walk.xfCache.GetLocalToWorldTransform(bodyPrim)), localPos, localRot, localScale);
 
-        desc->localPos   = toFloat3(localPos);
-        desc->localRot   = toFloat4(localRot);
-        desc->localScale = toFloat3(localScale);
+        desc->localPos   = localPos;
+        desc->localRot   = localRot;
+        desc->localScale = localScale;
     }
 }
 

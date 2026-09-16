@@ -1,26 +1,23 @@
 # SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
+import omni.kit.actions.core
 import omni.kit.menu.utils
 from omni.kit.menu.utils import MenuItemDescription
-import omni.kit.actions.core
 
 """
 Helper to handle adding and removing a menu item.
 """
 
-class MenuItem():
+
+class MenuItem:
     def __init__(self, menu_path, menu_group, toggle_fn, is_ticked_fn, ticked_value=False):
         self._menu_group = menu_group
         ext_id = self.__class__.__module__
         action_name = f'WindowMenuItemAction_{menu_path.replace(" ", "").replace("/", "")}'
 
         omni.kit.actions.core.get_action_registry().register_action(
-            ext_id,
-            action_name,
-            toggle_fn,
-            display_name=action_name,
-            tag="MenuItem"
+            ext_id, action_name, toggle_fn, display_name=action_name, tag="MenuItem"
         )
 
         item_names = reversed(menu_path.split("/"))
@@ -30,16 +27,13 @@ class MenuItem():
             ticked=True,
             ticked_fn=is_ticked_fn,
             ticked_value=ticked_value,
-            onclick_action=(ext_id, action_name)
+            onclick_action=(ext_id, action_name),
         )
 
         curr_item = menu_item
 
         for item_name in item_names:
-            curr_item = MenuItemDescription(
-                name=item_name,
-                sub_menu=[curr_item]
-            )
+            curr_item = MenuItemDescription(name=item_name, sub_menu=[curr_item])
 
         self._items = [curr_item]
         omni.kit.menu.utils.add_menu_items(self._items, self._menu_group)
@@ -92,10 +86,12 @@ class PhysxDebugWindow(ui.Window):
 class WindowMenuItem(MenuItem):
     import omni.ui
 
-    def __init__(self, menu_path, spawn_window_fn, spawn_immediately=False, window_visibility_changed_fn=None, spawn_visible=True):
+    def __init__(
+        self, menu_path, spawn_window_fn, spawn_immediately=False, window_visibility_changed_fn=None, spawn_visible=True
+    ):
         menu_path = f"Physics/{menu_path}"
         self._window = None
-        
+
         super().__init__(menu_path, "Window", self.toggle_window, self.is_visible)
 
         self._spawn_window_fn = spawn_window_fn

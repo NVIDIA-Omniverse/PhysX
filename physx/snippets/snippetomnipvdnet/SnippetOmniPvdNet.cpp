@@ -1,37 +1,14 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 // ****************************************************************************
 // SnippetOmniPvdNet shows live OmniPVD streaming over a TCP socket, with both ends in one
 // process over loopback so it is a single runnable binary. A reader thread listens as the
 // TCP server and decodes the incoming OVD command stream; the main thread builds a small
 // simulation, runs it for a while with no recording, then connects a client socket write
-// stream (PxOmniPvd::createSocketWriteStream), binds it, and calls startSampling(). Because
+// stream (createOmniPvdSocketWriteStream), binds it, and calls startSampling(). Because
 // startSampling() records the current state of the already-built world before recording the
 // changes that follow, this "late attach" produces a recording that is complete on its own.
 // ****************************************************************************
@@ -46,7 +23,7 @@
 #include "../pvdruntime/include/OmniPvdWriter.h"
 #include "../pvdruntime/include/OmniPvdSocketWriteStream.h"
 // The reader side uses the pvdruntime API directly (no PhysX SDK), as a real ingester would.
-#include "../pvdruntime/include/OmniPvdLoader.h"
+#include "../pvdruntime/include/OmniPvdLibraryFunctions.h"
 #include "../pvdruntime/include/OmniPvdReader.h"
 #include "../pvdruntime/include/OmniPvdSocketReadStream.h"
 #include "../pvdruntime/include/OmniPvdCommands.h"
@@ -66,7 +43,8 @@ static PxDefaultCpuDispatcher*	gDispatcher = NULL;
 static PxScene*					gScene = NULL;
 static PxMaterial*				gMaterial = NULL;
 static PxOmniPvd*				gOmniPvd = NULL;
-static OmniPvdSocketWriteStream*	gWriteStream = NULL; // caller-owned (createSocketWriteStream)
+static OmniPvdSocketWriteStream*	gWriteStream = NULL; // caller-owned (createOmniPvdSocketWriteStream)
+static PxThread*				gReaderThread = NULL;
 
 // ---------------------------------------------------------------------------
 // Reader side (TCP server): listen, accept the producer, decode the OVD stream.
@@ -74,32 +52,14 @@ static OmniPvdSocketWriteStream*	gWriteStream = NULL; // caller-owned (createSoc
 // ---------------------------------------------------------------------------
 static void* readerThreadEntry(void* /*arg*/)
 {
-#if defined(_WIN64) || defined(_WIN32)
-	const char* pvdLib = "PVDRuntime_64.dll";
-#else
-	const char* pvdLib = "libPVDRuntime_64.so";
-#endif
-	OmniPvdLoader loader;
-	if (!loader.loadOmniPvd(pvdLib))
-	{
-		printf("[reader] Error : could not load %s\n", pvdLib);
-		return NULL;
-	}
-	if (!loader.mCreateOmniPvdSocketReadStream || !loader.mDestroyOmniPvdSocketReadStream ||
-		!loader.mCreateOmniPvdReader || !loader.mDestroyOmniPvdReader)
-	{
-		printf("[reader] Error : this PVDRuntime is missing the socket read stream and reader factories.\n");
-		return NULL;
-	}
-
-	OmniPvdReader* reader = loader.mCreateOmniPvdReader();
+	OmniPvdReader* reader = createOmniPvdReader();
 	// The read stream LISTENS as the TCP server on the given port; the producer is the client.
-	OmniPvdSocketReadStream* readStream = loader.mCreateOmniPvdSocketReadStream(gPort);
+	OmniPvdSocketReadStream* readStream = createOmniPvdSocketReadStream(gPort);
 	if (!reader || !readStream)
 	{
 		printf("[reader] Error : could not create the reader / socket read stream.\n");
-		if (reader) loader.mDestroyOmniPvdReader(*reader);
-		if (readStream) loader.mDestroyOmniPvdSocketReadStream(*readStream);
+		if (reader) destroyOmniPvdReader(*reader);
+		if (readStream) destroyOmniPvdSocketReadStream(*readStream);
 		return NULL;
 	}
 
@@ -110,8 +70,8 @@ static void* readerThreadEntry(void* /*arg*/)
 	if (!readStream->openStream())
 	{
 		printf("[reader] Error : could not listen / accept on port %u.\n", PxU32(gPort));
-		loader.mDestroyOmniPvdReader(*reader);
-		loader.mDestroyOmniPvdSocketReadStream(*readStream);
+		destroyOmniPvdReader(*reader);
+		destroyOmniPvdSocketReadStream(*readStream);
 		return NULL;
 	}
 	reader->setReadStream(*readStream);
@@ -120,9 +80,9 @@ static void* readerThreadEntry(void* /*arg*/)
 	if (!reader->startReading(major, minor, patch))
 	{
 		printf("[reader] Error : handshake / OVD version check failed (incompatible or no producer).\n");
-		loader.mDestroyOmniPvdReader(*reader);
+		destroyOmniPvdReader(*reader);
 		readStream->closeStream();
-		loader.mDestroyOmniPvdSocketReadStream(*readStream);
+		destroyOmniPvdSocketReadStream(*readStream);
 		return NULL;
 	}
 	printf("[reader] Connected. OVD stream version %u.%u.%u. Decoding the live stream ...\n",
@@ -151,9 +111,9 @@ static void* readerThreadEntry(void* /*arg*/)
 	fflush(stdout);
 
 	// Destroy the reader before the stream it points at, and close the connection symmetrically.
-	loader.mDestroyOmniPvdReader(*reader);
+	destroyOmniPvdReader(*reader);
 	readStream->closeStream();
-	loader.mDestroyOmniPvdSocketReadStream(*readStream);
+	destroyOmniPvdSocketReadStream(*readStream);
 	return NULL;
 }
 
@@ -198,7 +158,7 @@ static void stepPhysics()
 // startSampling() records the current state of the already-built world, then the changes after it.
 static bool attachAndStartSampling()
 {
-	gWriteStream = gOmniPvd->createSocketWriteStream("127.0.0.1", gPort);
+	gWriteStream = createOmniPvdSocketWriteStream("127.0.0.1", gPort, 3000);
 	if (!gWriteStream)
 	{
 		printf("[producer] Error : socket write stream creation failed.\n");
@@ -209,17 +169,12 @@ static bool attachAndStartSampling()
 	if (!gWriteStream->openStream())
 	{
 		printf("[producer] Error : could not connect to the reader on port %u.\n", PxU32(gPort));
-		gOmniPvd->releaseSocketWriteStream(*gWriteStream);
-		gWriteStream = NULL;
 		return false;
 	}
 	gOmniPvd->getWriter()->setWriteStream(*gWriteStream);
 	if (!gPhysics->getOmniPvd()->startSampling())
 	{
 		printf("[producer] Error : startSampling failed (stream error).\n");
-		gWriteStream->closeStream();
-		gOmniPvd->releaseSocketWriteStream(*gWriteStream);
-		gWriteStream = NULL;
 		return false;
 	}
 	return true;
@@ -243,34 +198,28 @@ static void cleanupPhysics()
 	// Release the scene and physics first: their teardown still emits OVD commands to the bound
 	// stream, including the deletes for every actor, so those are recorded too. We do not stop
 	// sampling beforehand (stopSampling is optional and would otherwise hide the teardown). Then
-	// release the caller-owned stream, then the OmniPvd. See releaseSocketWriteStream().
+	// destroy the OmniPvd (and its borrowing writer) before destroying the caller-owned stream.
 	PX_RELEASE(gScene);
 	PX_RELEASE(gDispatcher);
 	PX_RELEASE(gPhysics);
+	PX_RELEASE(gOmniPvd);
 	if (gWriteStream)
 	{
 		gWriteStream->closeStream();
-		gOmniPvd->releaseSocketWriteStream(*gWriteStream);
+		destroyOmniPvdSocketWriteStream(*gWriteStream);
 		gWriteStream = NULL;
 	}
-	PX_RELEASE(gOmniPvd);
-	PX_RELEASE(gFoundation);
-}
-
-// If the attach failed before the producer ever connected, the reader is still blocked in its
-// accept(). Make a throwaway connection (connect, then immediately close) so the reader's accept
-// returns and the thread finishes, letting waitForQuit() return instead of hanging. Safe to call when
-// the reader already connected or exited: the connect just retries briefly (the socket's bounded
-// ~2 second connect retry) and then fails, and the probe stream is released either way.
-static void unblockStrandedReader()
-{
-	OmniPvdSocketWriteStream* probe = gOmniPvd->createSocketWriteStream("127.0.0.1", gPort);
-	if (probe)
+	if (gReaderThread)
 	{
-		if (probe->openStream())
-			probe->closeStream();
-		gOmniPvd->releaseSocketWriteStream(*probe);
+		// Closing the connected producer stream above gives the reader EOF. A transport failure before
+		// the producer connects can leave the reader blocked in accept() here; a read-side timeout or
+		// cancellation mechanism is separate scope from this lifecycle example.
+		gReaderThread->waitForQuit();
+		PX_DELETE(gReaderThread);
+		gReaderThread = NULL;
 	}
+	// PxThread allocation/deallocation uses the foundation allocator, so release it after the thread.
+	PX_RELEASE(gFoundation);
 }
 #endif // PX_SUPPORT_OMNI_PVD
 
@@ -289,7 +238,7 @@ int snippetMain(int /*argc*/, const char* const* /*argv*/)
 	// Start the reader (TCP server) on a background thread so it is listening before the producer
 	// (this thread, the TCP client) connects to it over loopback. openStream() retries the
 	// connect internally, so a brief startup race with accept() is fine.
-	PxThread readerThread(readerThreadEntry, NULL, "OvdReader");
+	gReaderThread = PX_NEW(PxThread)(readerThreadEntry, NULL, "OvdReader");
 
 	// Build a small world and simulate it with NO recording, so the attach below is a late attach
 	// against an already-running simulation.
@@ -298,7 +247,9 @@ int snippetMain(int /*argc*/, const char* const* /*argv*/)
 		stepPhysics();
 
 	// Connect, bind, and start sampling: startSampling() sends the current state of the
-	// already-built world, then the changes that follow.
+	// already-built world, then the changes that follow. Carry the outcome as the process exit code
+	// so launchers and sample automation see a failed live-streaming run as a failure, not success.
+	int exitStatus = 0;
 	if (attachAndStartSampling())
 	{
 		printf("[producer] Late attach on port %u: current state sent, streaming %u frames.\n",
@@ -306,20 +257,22 @@ int snippetMain(int /*argc*/, const char* const* /*argv*/)
 		fflush(stdout);
 		for (PxU32 i = 0; i < gStreamFrames; ++i)
 			stepPhysics();
+		printf("[producer] Done streaming.\n");   // gated on a successful attach: only true if we streamed
+		fflush(stdout);
 	}
 	else
 	{
-		// The producer never established the stream, so the reader may still be blocked in accept().
-		// Unblock it before the join so waitForQuit() does not hang.
-		unblockStrandedReader();
+		// The attach failed, so nothing was ever recorded: the live-streaming feature this snippet
+		// demonstrates did not work. Report it as a failure. If the transport failed before connecting,
+		// cleanupPhysics() can remain blocked waiting for the reader's accept(); read-side timeout/cancel
+		// support is deliberately left as separate scope.
+		exitStatus = 1;
 	}
 
-	printf("[producer] Done streaming.\n");
-	fflush(stdout);
-	cleanupPhysics();             // closes the stream -> the reader sees EOF and finishes
-	readerThread.waitForQuit();   // join the reader thread
+	cleanupPhysics(); // closes the stream, joins the reader, then releases the foundation
+	return exitStatus;
 #else
 	printf("OmniPVD is not supported in this build configuration. Use a non-release configuration on Windows or Linux.\n");
-#endif
 	return 0;
+#endif
 }

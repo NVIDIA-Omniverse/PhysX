@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-TENSOR-INDEX-001
+ * @covers AC-1 AC-2 AC-3
+ */
 #pragma once
 
 #include "TensorDesc.h"
@@ -179,6 +183,29 @@ inline const char* getTensorDtypeCstr(const TensorDesc& tensor)
     }
 }
 
+// A gather's destination-slot -> record-index list; null means identity, in range whenever
+// numOutputs <= numRecords. Checked before use because the GPU backend indexes records[outRecordIdx[i]]
+// inside a kernel, where an out-of-range entry is a silent out-of-bounds device read.
+inline bool checkRecordIndices(const uint32_t* outRecordIdx,
+                               uint32_t numOutputs,
+                               size_t numRecords,
+                               const char* tensorName,
+                               const char* funcName)
+{
+    for (uint32_t i = 0; i < numOutputs; i++)
+    {
+        const uint32_t recIdx = outRecordIdx ? outRecordIdx[i] : i;
+        if (recIdx >= numRecords)
+        {
+            CARB_LOG_ERROR("Out-of-range record index for %s in function %s: slot %u maps to record %u, "
+                           "but the view holds %llu records",
+                           tensorName, funcName, i, recIdx, (unsigned long long)numRecords);
+            return false;
+        }
+    }
+    return true;
+}
+
 inline bool checkTensorDevice(const TensorDesc& tensor, int expectedDevice, const char* tensorName, const char* funcName)
 {
     if (tensor.device != expectedDevice)
@@ -223,6 +250,36 @@ inline bool checkTensorInt8(const TensorDesc& tensor, const char* tensorName, co
     return true;
 }
 
+// Type-as-value variant, for callers whose expected dtype comes from a table row rather than a fixed
+// expectation. Accepts the signed/unsigned pair for a given width, as checkTensorInt32 and
+// checkTensorInt8 do: a caller asking for int8 is asking about width and layout, not signedness.
+inline bool checkTensorDataType(const TensorDesc& tensor,
+                                TensorDataType expected,
+                                const char* tensorName,
+                                const char* funcName)
+{
+    switch (expected)
+    {
+    case TensorDataType::eFloat32:
+        return checkTensorFloat32(tensor, tensorName, funcName);
+    case TensorDataType::eInt32:
+    case TensorDataType::eUint32:
+        return checkTensorInt32(tensor, tensorName, funcName);
+    case TensorDataType::eInt8:
+    case TensorDataType::eUint8:
+        return checkTensorInt8(tensor, tensorName, funcName);
+    default:
+        break;
+    }
+    if (tensor.dtype != expected)
+    {
+        CARB_LOG_ERROR("Incompatible data type of %s tensor in function %s: received %s", tensorName, funcName,
+                       getTensorDtypeCstr(tensor));
+        return false;
+    }
+    return true;
+}
+
 inline bool checkTensorInt64(const TensorDesc& tensor, const char* tensorName, const char* funcName)
 {
     if (tensor.dtype != TensorDataType::eInt64 && tensor.dtype != TensorDataType::eUint64)
@@ -243,6 +300,21 @@ inline bool checkTensorSizeExact(const TensorDesc& tensor, size_t expectedSize, 
             "Incompatible size of %s tensor in function %s: expected total size %llu, received total size %llu with shape %s",
             tensorName, funcName, (unsigned long long)expectedSize, (unsigned long long)totalSize,
             getTensorShapeString(tensor).c_str());
+        return false;
+    }
+    return true;
+}
+
+// An index tensor selects view entries, so it can never hold more than the view has. Nothing else
+// bounds the loop: the count comes from the descriptor's shape, so an oversized shape walks off
+// the end of the caller's buffer.
+inline bool checkIndexTensorSize(const TensorDesc& tensor, size_t viewCount, const char* funcName)
+{
+    size_t numIndices = getTensorTotalSize(tensor);
+    if (numIndices > viewCount)
+    {
+        CARB_LOG_ERROR("Too many entries in index tensor in function %s: the view has %llu entries, received %llu",
+                       funcName, (unsigned long long)viewCount, (unsigned long long)numIndices);
         return false;
     }
     return true;

@@ -1,8 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
- * Process-wide custom-token registry implementation.
+ * `TfToken`-typed shim over the source-agnostic custom-token registry.
+ *
+ * The registry itself lives in the USD-free parse core
+ * (`omni/physics/parse/CustomTokens.h`) so both walkers can consult it. This
+ * translation unit exists only to keep the `omni::physics::usd` surface — the
+ * one the runtime's extension points and `NativeWalker.cpp` are written
+ * against — byte-identical in signature and behaviour.
  *
  * @implements REQ-PARSE-CORE-005
  * @covers AC-1 AC-2
@@ -10,117 +16,62 @@
 
 #include <omni/physics/usd/CustomTokens.h>
 
-#include <mutex>
-#include <unordered_set>
+#include <omni/physics/parse/CustomTokens.h>
 
 namespace omni::physics::usd
 {
 
 namespace
 {
-
-struct Registry
-{
-    std::mutex mutex;
-    std::unordered_set<PXR_NS::TfToken, PXR_NS::TfToken::HashFunctor> shapeTokens;
-    std::unordered_set<PXR_NS::TfToken, PXR_NS::TfToken::HashFunctor> jointTokens;
-    std::unordered_set<PXR_NS::TfToken, PXR_NS::TfToken::HashFunctor> instancerTokens;
-
-    Registry()
-    {
-        // Pre-register the well-known internal tokens, baked into the
-        // parse-lib so the walker recognizes them even before any
-        // consumer-side runtime is loaded (e.g. in unit tests that
-        // exercise `scanStage` without booting `omni.physx`).
-        //
-        // The runtime's `OmniPhysX::onStartup` still calls the
-        // `register*Token` API for these tokens; that's now an
-        // idempotent no-op on the second insert and continues to
-        // serve as the public registration surface for third-party
-        // plugin tokens.
-        shapeTokens.insert(PXR_NS::TfToken("PhysxMeshMergeCollisionAPI"));
-        shapeTokens.insert(PXR_NS::TfToken("ConvexMesh"));
-        shapeTokens.insert(PXR_NS::TfToken("Plane"));
-        jointTokens.insert(PXR_NS::TfToken("PhysxPhysicsGearJoint"));
-        jointTokens.insert(PXR_NS::TfToken("PhysxPhysicsRackAndPinionJoint"));
-        instancerTokens.insert(PXR_NS::TfToken("PhysxPhysicsJointInstancer"));
-    }
-};
-
-Registry& registry()
-{
-    static Registry r;
-    return r;
+using omni::physics::parse::CustomTokenKind;
 }
-
-} // namespace
 
 void registerCustomShapeToken(const PXR_NS::TfToken& token)
 {
-    Registry& r = registry();
-    std::lock_guard<std::mutex> lock(r.mutex);
-    r.shapeTokens.insert(token);
+    parse::registerCustomToken(CustomTokenKind::eShape, token.GetString());
 }
 
 void unregisterCustomShapeToken(const PXR_NS::TfToken& token)
 {
-    Registry& r = registry();
-    std::lock_guard<std::mutex> lock(r.mutex);
-    r.shapeTokens.erase(token);
+    parse::unregisterCustomToken(CustomTokenKind::eShape, token.GetString());
 }
 
 void registerCustomJointToken(const PXR_NS::TfToken& token)
 {
-    Registry& r = registry();
-    std::lock_guard<std::mutex> lock(r.mutex);
-    r.jointTokens.insert(token);
+    parse::registerCustomToken(CustomTokenKind::eJoint, token.GetString());
 }
 
 void unregisterCustomJointToken(const PXR_NS::TfToken& token)
 {
-    Registry& r = registry();
-    std::lock_guard<std::mutex> lock(r.mutex);
-    r.jointTokens.erase(token);
+    parse::unregisterCustomToken(CustomTokenKind::eJoint, token.GetString());
 }
 
 void registerCustomPhysicsInstancerToken(const PXR_NS::TfToken& token)
 {
-    Registry& r = registry();
-    std::lock_guard<std::mutex> lock(r.mutex);
-    r.instancerTokens.insert(token);
+    parse::registerCustomToken(CustomTokenKind::ePhysicsInstancer, token.GetString());
 }
 
 void unregisterCustomPhysicsInstancerToken(const PXR_NS::TfToken& token)
 {
-    Registry& r = registry();
-    std::lock_guard<std::mutex> lock(r.mutex);
-    r.instancerTokens.erase(token);
+    parse::unregisterCustomToken(CustomTokenKind::ePhysicsInstancer, token.GetString());
 }
 
-// Internal lookup helpers consumed by `NativeWalker.cpp`. Snapshot
-// semantics: each lookup acquires the mutex once, hashes against the
-// current set; concurrent register / unregister observes the
-// strongly-consistent state via the same mutex.
+// Internal lookup helpers consumed by `NativeWalker.cpp`, which forward-declares
+// them at this namespace's scope rather than including a header.
 
 bool isCustomShapeToken(const PXR_NS::TfToken& token)
 {
-    Registry& r = registry();
-    std::lock_guard<std::mutex> lock(r.mutex);
-    return r.shapeTokens.find(token) != r.shapeTokens.end();
+    return parse::isCustomToken(CustomTokenKind::eShape, token.GetString());
 }
 
 bool isCustomJointToken(const PXR_NS::TfToken& token)
 {
-    Registry& r = registry();
-    std::lock_guard<std::mutex> lock(r.mutex);
-    return r.jointTokens.find(token) != r.jointTokens.end();
+    return parse::isCustomToken(CustomTokenKind::eJoint, token.GetString());
 }
 
 bool isCustomPhysicsInstancerToken(const PXR_NS::TfToken& token)
 {
-    Registry& r = registry();
-    std::lock_guard<std::mutex> lock(r.mutex);
-    return r.instancerTokens.find(token) != r.instancerTokens.end();
+    return parse::isCustomToken(CustomTokenKind::ePhysicsInstancer, token.GetString());
 }
 
 } // namespace omni::physics::usd

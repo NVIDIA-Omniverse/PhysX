@@ -1,15 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
-#include <omni/physics/usd/PrimIterator.h>
+// PropertyChangeMap is TokenId-keyed (ADR-0019), interned per-source by
+// PrimChangeMap::internRegisteredChanges rather than at registration time: a TokenId is
+// only valid for one IPhysicsSource instance's lifetime, unlike the old TfToken key.
 #include <omni/physics/parse/Handles.h>
 
 #include <private/omni/physx/PhysxUsd.h>
 #include "ChangeParams.h"
 
 #include <unordered_set>
+#include <vector>
 
 namespace omni { namespace physics { namespace parse { struct ChangeBatch; class IPhysicsSource; } } }
 
@@ -23,17 +26,17 @@ class AttachedStage;
 
 struct PropertyChange
 {
-    OnPrimRequirementCheckFn onPrimCheck;
-    OnPrimRequirementCheckExtFn onPrimCheckExt;
     OnUpdateObjectFn onUpdate;
     OnPrimRequirementKeyCheckFn onPrimCheckKey;
+    OnPrimRequirementExtKeyCheckFn onPrimCheckExtKey;
 };
 
-
-using PropertyChangeMap = std::unordered_multimap<PXR_NS::TfToken, PropertyChange, PXR_NS::TfToken::HashFunctor>;
-using ChangeData = std::pair<OnUpdateObjectFn, PXR_NS::TfToken>;
-using ChangeMap = std::unordered_multimap<const PXR_NS::SdfPath, ChangeData, PXR_NS::SdfPath::Hash>; // could get slow with many changes: multimap means many allocations
-using PrimSet = std::unordered_map<PXR_NS::SdfPath, const PXR_NS::UsdPrim*, PXR_NS::SdfPath::Hash>;
+// TokenId-keyed (ADR-0019); see PrimChangeMap::internRegisteredChanges for why interning
+// is deferred to source-attach time.
+using PropertyChangeMap = std::unordered_multimap<omni::physics::parse::TokenId, PropertyChange, omni::physics::parse::TokenId::Hash>;
+using ChangeData = std::pair<OnUpdateObjectFn, omni::physics::parse::TokenId>;
+// Async-update deferral map, populated by PrimChangeMap::checkPrimChange.
+using KeyChangeMap = std::unordered_multimap<omni::physics::parse::ObjectKey, ChangeData, omni::physics::parse::ObjectKey::Hash>;
 using PrimKeySet = std::unordered_set<omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey::Hash>;
 
 class PrimUpdateMap
@@ -43,9 +46,9 @@ public:
     {
     }
 
-    void addPrim(const AttachedStage& attachedStage, const PXR_NS::SdfPath& primPath);
+    void addPrim(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key);
 
-    void removePrim(AttachedStage& attachedStage, const PXR_NS::SdfPath&);
+    void removePrim(AttachedStage& attachedStage, omni::physics::parse::ObjectKey key);
 
     void clearMap()
     {
@@ -56,9 +59,9 @@ public:
 
     bool isInPrimAddMap(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key) const;
 
-    // Set of subtree-root paths to re-parse. Stores paths (no UsdPrim); the prims
-    // are resolved at the USD-scan boundary (PrimIteratorMapRange ctor).
-    const std::set<PXR_NS::SdfPath>& getMap() const
+    // Set of subtree-roots (ObjectKeys) to re-parse, resolved at the source-scan boundary
+    // (loadPhysicsFromPrimitive's updateRoots).
+    const PrimKeySet& getMap() const
     {
         return m_primAddMap;
     }
@@ -72,11 +75,11 @@ public:
         m_isNewScene = val;
     }
 
-    bool needsSceneReset(const omni::physics::parse::IPhysicsSource& source, omni::physics::parse::ObjectKey key);
+    bool needsSceneReset(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key);
 
 private:
     bool m_isNewScene;
-    std::set<PXR_NS::SdfPath> m_primAddMap;
+    PrimKeySet m_primAddMap;
 };
 
 class PrimChangeMap
@@ -87,41 +90,32 @@ public:
 
     void clearMap();
 
-    const ChangeMap& getMap() const
-    {
-        return m_changeMap;
-    }
+    // Drops any pending m_keyChangeMap entry for this key.
+    void removePrim(omni::physics::parse::ObjectKey key);
 
-    void removePrim(const PXR_NS::SdfPath& primKey);
-
+    // registerPrimChange only stages the ChangeParams (source-independent);
+    // internRegisteredChanges does the actual TokenId interning once a source
+    // is available. Splitting these two steps is what lets registration run at
+    // AttachedStage construction time, before any source exists yet (see
+    // AttachedStage::rebuildSource's call to internRegisteredChanges).
     void registerPrimChange(const ChangeParams& changeParams);
+    void internRegisteredChanges(const omni::physics::parse::IPhysicsSource& source);
     void clearRegisteredChanges();
 
-    bool getPropertyChange(const PXR_NS::TfToken& token,
+    bool getPropertyChange(omni::physics::parse::TokenId token,
                            PropertyChangeMap::const_iterator& iterator,
                            PropertyChangeMap::const_iterator& itEnd) const;
 
-    void checkPrimChange(AttachedStage& attachedStage,
-                         const PXR_NS::SdfPath& primKey,
-                         const PXR_NS::TfToken& propertyName,
-                         const PXR_NS::UsdPrim* prim = nullptr);
-
+    // The sole dispatch path for every source, including USD (onSourceChange always
+    // converts to ObjectKey at the entry point).
     void checkPrimChange(AttachedStage& attachedStage,
                          omni::physics::parse::ObjectKey primKey,
-                         const PXR_NS::TfToken& propertyName);
+                         omni::physics::parse::TokenId propertyTokenId);
 
-    void handleTransformChange(AttachedStage& attachedStage,
-                               const PXR_NS::SdfPath& primKey,
-                               const PXR_NS::UsdPrim* prim);
     void handleTransformChange(AttachedStage& attachedStage,
                                omni::physics::parse::ObjectKey primKey);
 
     void processTransformUpdates(AttachedStage& attachedStage);
-
-    void addTransformChange(const PXR_NS::SdfPath& path, const PXR_NS::UsdPrim* prim)
-    {
-        m_usdTransformChangesSet[path] = prim;
-    }
 
     void addTransformChange(omni::physics::parse::ObjectKey key)
     {
@@ -130,7 +124,11 @@ public:
 
     void processTransformChanges(AttachedStage& attachedStage);
 
-    void registerStageSpecificChange(const ChangeParams& changeParam);
+    // registerStageSpecificChange interns immediately (the caller,
+    // AttachedStage::registerStageSpecificAttribute, always has a live source
+    // by the time it runs -- this registration happens mid-parse, long after
+    // attach, unlike registerPrimChange's ctor-time staging above).
+    void registerStageSpecificChange(omni::physics::parse::TokenId attributeId, const ChangeParams& changeParam);
     void clearStageSpecificChanges();
 
     const PropertyChangeMap& getPropertyChangeMap() const
@@ -143,12 +141,18 @@ public:
         return m_stageSpecificChanges;
     }
 
+    const KeyChangeMap& getKeyMap() const
+    {
+        return m_keyChangeMap;
+    }
+
 private:
-    ChangeMap m_changeMap;
+    KeyChangeMap m_keyChangeMap;
+    // Deferred transform-change queue for the async-update path.
+    std::vector<omni::physics::parse::ObjectKey> m_transformKeyUpdates;
     PropertyChangeMap m_propertyChanges; // persistent for all PhysX stages
     PropertyChangeMap m_stageSpecificChanges; // specific to a given stage
-    PXR_NS::SdfPathVector m_transformUpdates;
-    PrimSet m_usdTransformChangesSet;
+    std::vector<ChangeParams> m_registeredChanges; // staged, source-independent (see internRegisteredChanges)
     PrimKeySet m_keyTransformChangesSet;
 };
 
@@ -157,7 +161,11 @@ private:
 // on the IChangeFeed vended by its source. `onSourceChange` is the per-batch
 // OnChangeFn (one wildcard interest); `onSourceGroupComplete` is the per-group
 // finalization that flushes accumulated transform changes once at end-of-notice.
-void onSourceChange(AttachedStage& attachedStage, const omni::physics::parse::ChangeBatch& batch);
+//
+// `onSourceChange` returns false ONLY when the ovstage drain committed part of a value batch and a
+// later scatter failed: the feed's drainRange must then hold the cursor so the batch is retried and
+// the external read ordinal does not advance past it. Every other outcome returns true.
+bool onSourceChange(AttachedStage& attachedStage, const omni::physics::parse::ChangeBatch& batch);
 void onSourceGroupComplete(AttachedStage& attachedStage);
 
 void processUpdates(AttachedStage& attachedStage, float currentTime);

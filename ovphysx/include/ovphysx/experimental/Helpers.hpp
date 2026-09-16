@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef OVPHYSX_EXPERIMENTAL_HELPERS_HPP
 #define OVPHYSX_EXPERIMENTAL_HELPERS_HPP
 
 //
-// C++17 Helper utilities for ovphysx C API
-// Provides RAII wrappers and convenience functions for complex operations
+// C++17 helper utilities for the ovphysx C API.
+// Provides RAII wrappers and convenience functions for multi-step operations.
 //
 
 #include <string>
@@ -20,22 +20,31 @@ namespace physx {
 
 /**
  * @brief RAII wrapper for ovphysx_op_wait_result_t
- * 
+ *
  * Automatically calls ovphysx_destroy_wait_result when destroyed.
  * Use get() to pass to ovphysx_wait_op.
  *
- * Example:
- *   WaitResult wait;
- *   ovphysx_result_t r = ovphysx_wait_op(handle, op_index, timeout, wait.get());
+ * @code{.cpp}
+ * #include <ovphysx/experimental/Helpers.hpp>
+ * #include <iostream>
  *
- *   if (wait.hasErrors()) {
- *       for (size_t i = 0; i < wait.errorCount(); ++i) {
- *           ovphysx_string_t err = ovphysx_get_last_op_error(wait.errorOpIndexAt(i));
- *           std::cerr << "Op " << wait.errorOpIndexAt(i) << " failed: "
- *                     << std::string(err.ptr, err.length) << std::endl;
- *       }
- *   }
- *   // wait result freed automatically when wait goes out of scope
+ * static ovphysx_result_t wait_and_report_errors(
+ *     ovphysx_handle_t handle,
+ *     ovphysx_op_index_t op_index,
+ *     ovphysx_timeout_t timeout_ns)
+ * {
+ *     ovphysx::physx::WaitResult wait_result;
+ *     ovphysx_result_t result =
+ *         ovphysx_wait_op(handle, op_index, timeout_ns, wait_result.get());
+ *     for (size_t index = 0; index < wait_result.errorCount(); ++index) {
+ *         ovphysx_op_index_t failed_op = wait_result.errorOpIndexAt(index);
+ *         ovphysx_string_t error = ovphysx_get_last_op_error(failed_op);
+ *         std::cerr << "Op " << failed_op << " failed: "
+ *                   << std::string(error.ptr, error.length) << '\n';
+ *     }
+ *     return result;
+ * }
+ * @endcode
  */
 class WaitResult {
 public:

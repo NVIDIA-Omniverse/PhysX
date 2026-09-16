@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Pytest configuration for CPU-mode PhysX tests.
 
@@ -22,8 +22,8 @@ def _cpu_session_instance():
     be re-initialized after destroy, so one long-lived instance avoids the
     problematic destroy/recreate cycle.
 
-    We intentionally do NOT call release() at session end — Carbonite
-    shutdown can hang.  The OS reclaims all resources when the process exits.
+    destroy() is intentionally NOT called at session end, because Carbonite
+    shutdown can hang. The OS reclaims all resources when the process exits.
     """
     from ovphysx import PhysX
 

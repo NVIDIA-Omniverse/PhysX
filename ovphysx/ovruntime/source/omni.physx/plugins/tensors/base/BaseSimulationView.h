@@ -1,7 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
+
+/**
+ * @implements REQ-TENSOR-VIEW-001
+ * @covers AC-1
+ *
+ * @implements REQ-TENSOR-ATTACH-001
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-36 AC-37 AC-38 AC-40
+ */
 
 #include <private/omni/physx/PhysxUsd.h>
 #include <omni/physx/IPhysx.h>
@@ -18,6 +29,11 @@ namespace omni
 {
 namespace physx
 {
+namespace usdparser
+{
+class AttachedStage;
+}
+
 namespace tensors
 {
 class BaseArticulationView;
@@ -27,13 +43,25 @@ class BaseVolumeDeformableBodyView;
 class BaseSurfaceDeformableBodyView;
 class BaseDeformableMaterialView;
 class BaseRigidContactView;
+class BasePointInstancerView;
 
 using omni::physics::tensors::ObjectType;
 
 class BaseSimulationView : public omni::physics::tensors::ISimulationView
 {
 public:
-    explicit BaseSimulationView(PXR_NS::UsdStageRefPtr stage);
+    // `notifyWhenSimStopped` opts this view's destruction subscription out of the simulation-stopped
+    // gate in shouldDeliverObjectChangeNotification(). Default false, the delivery a user-created
+    // view gets: its owner rebuilds it around stage edits.
+    //
+    // A BACKEND-CACHED view must pass true. It outlives the call that built it and is handed to
+    // later reads without the consumer knowing it exists, so a destruction it never hears about
+    // leaves it holding freed actors -- and actors ARE destroyed while stopped, stage edits being
+    // when that happens. Only destructions that raise a notification are covered; stage teardown is
+    // handled separately by resetStage() dropping the attach's cache entries.
+    explicit BaseSimulationView(usdparser::AttachedStage* attachedStage,
+                                ::physx::PxScene* scene,
+                                bool notifyWhenSimStopped = false);
 
     virtual ~BaseSimulationView() override;
 
@@ -52,7 +80,18 @@ public:
 
     ObjectType getObjectType(const char* path) override;
 
-    void findMatchingPaths(const std::string& pattern, std::vector<PXR_NS::SdfPath>& pathsRet);
+    void findMatchingPaths(const std::string& pattern, std::vector<omni::physics::parse::ObjectKey>& keysRet);
+
+    // Batched form of findMatchingPaths: resolves every entry of `patterns` in one
+    // call, `keysRet[i]` holding `patterns[i]`'s matches. Same two-pass structure
+    // (source-routed, then internal-DB-routed) as findMatchingPaths, but the
+    // source-routed pass batches its literal-path existence checks across the
+    // whole list (PathPatternMatcher::findMatchingObjectKeysBatch) instead of
+    // paying one round trip per pattern -- for a caller holding a large per-index
+    // pattern list (e.g. contact-sensor filter paths) this is the difference
+    // between one round trip and thousands.
+    void findMatchingPathsBatch(const std::vector<std::string>& patterns,
+                                std::vector<std::vector<omni::physics::parse::ObjectKey>>& keysRet);
 
     void processArticulationEntries(const std::vector<std::string>& patterns, std::vector<ArticulationEntry>& entries);
     void findMatchingArticulations(const std::string& pattern,
@@ -89,40 +128,77 @@ public:
 
     void findMatchingRigidContactSensors(const std::string& pattern,
                                          const std::vector<std::string>& filterPatterns,
+                                         const std::vector<size_t>& filterPatternIndices,
+                                         const std::vector<std::vector<omni::physics::parse::ObjectKey>>& resolvedFilterKeys,
+                                         const std::vector<std::vector<std::string>>& resolvedFilterPaths,
+                                         const std::vector<std::vector<uint64_t>>& resolvedFilterLegacyIds,
+                                         const std::vector<std::vector<uint8_t>>& resolvedFilterLegacyIdValid,
                                          std::vector<RigidContactSensorEntry>& entriesRet,
-                                         std::unordered_set<PXR_NS::SdfPath, PXR_NS::SdfPath::Hash>& seenSensorPaths);
+                                         std::unordered_set<omni::physics::parse::ObjectKey,
+                                                            omni::physics::parse::ObjectKey::Hash>& seenSensorKeys);
 
     void findMatchingSDFShapes(const std::string& pattern,
                                std::vector<SdfShapeEntry>& entriesRet,
                                uint32_t numSamplePoints);
 
-    bool getArticulationAtPath(const PXR_NS::SdfPath& path, ArticulationEntry& entryRet);
+    bool getArticulationAtPath(omni::physics::parse::ObjectKey key, ArticulationEntry& entryRet);
 
-    bool getRigidBodyAtPath(const PXR_NS::SdfPath& path, RigidBodyEntry& entryRet);
+    // Build an ArticulationEntry directly from a PxArticulation (no path/pattern), so the ovstage
+    // read path can construct an articulation view with no backing USD stage. Shared with
+    // getArticulationAtPath (which resolves the key to the arti then delegates here).
+    // `fallbackKey` seeds entryRet.path only when the g_physx canonical path is empty.
+    bool buildArticulationEntry(::physx::PxArticulationReducedCoordinate* arti,
+                                omni::physics::parse::ObjectKey fallbackKey,
+                                ArticulationEntry& entryRet);
 
-    bool getVolumeDeformableBodyAtPath(const PXR_NS::SdfPath& path, DeformableBodyEntry& entryRet);
+    bool getRigidBodyAtPath(omni::physics::parse::ObjectKey key, RigidBodyEntry& entryRet);
 
-    bool getSurfaceDeformableBodyAtPath(const PXR_NS::SdfPath& path, DeformableBodyEntry& entryRet);
+    bool getVolumeDeformableBodyAtPath(omni::physics::parse::ObjectKey key, DeformableBodyEntry& entryRet);
 
-    bool getDeformableMaterialAtPath(const PXR_NS::SdfPath& path, DeformableMaterialEntry& entryRet);
+    bool getSurfaceDeformableBodyAtPath(omni::physics::parse::ObjectKey key, DeformableBodyEntry& entryRet);
 
-    bool getRigidContactSensorAtPath(const PXR_NS::SdfPath& path, RigidContactSensorEntry& entryRet);
+    bool getDeformableMaterialAtPath(omni::physics::parse::ObjectKey key, DeformableMaterialEntry& entryRet);
 
-    bool getSDFShapeAtPath(const PXR_NS::SdfPath& path, SdfShapeEntry& entryRet);
+    bool getRigidContactSensorAtPath(omni::physics::parse::ObjectKey key, RigidContactSensorEntry& entryRet);
+
+    bool getSDFShapeAtPath(omni::physics::parse::ObjectKey key, SdfShapeEntry& entryRet);
 
     const ArticulationMetatype* getUniqueArticulationMetatype(const ArticulationMetatype& metatype);
 
-    Subspace* findSubspaceForPath(const PXR_NS::SdfPath& path) const;
+    Subspace* findSubspaceForPath(const std::string& path) const;
 
     BaseSimulationDataPtr getBaseSimulationData() const
     {
         return mSimData;
     }
 
+    // Borrowed pointer, null once the attach goes away (see mAttachedStage). Lets sibling
+    // view classes that only hold a BaseSimulationView* (not derive from it) convert a
+    // path to an ObjectKey with the same keyFor bijection this class itself uses, rather
+    // than the existence-checked public resolveObjectKey boundary function.
+    usdparser::AttachedStage* getAttachedStage() const
+    {
+        return mAttachedStage;
+    }
+
+    // Resolves `key` to its live PhysX object pointer / internal ObjectId, scoped to
+    // `attachedStage` -- never the process-globally "active" attach IPhysx::getPhysXPtr /
+    // getObjectId use. A tensor view is bound to one attach for its lifetime (see
+    // mAttachedStage below); resolving a view's own key through whichever attach happens
+    // to be globally active instead can silently alias onto an unrelated object under a
+    // second concurrent attach, because an ObjectKey is a small per-attach index, not the
+    // globally-unique SdfPath string it replaced (ADR-0019). Static so callers that only
+    // hold a BaseSimulationView* (siblings) or a bare AttachedStage& (SimulationBackend)
+    // can use it without an instance.
+    static void* resolvePhysXPtr(const usdparser::AttachedStage* attachedStage,
+                                 omni::physics::parse::ObjectKey key, PhysXType type);
+    static usdparser::ObjectId resolveObjectId(const usdparser::AttachedStage* attachedStage,
+                                               omni::physics::parse::ObjectKey key, PhysXType type);
+
     bool check() const override;
 
     void release(bool recursive) override;
-    static void onPhysXObjectDeletedCallback(const PXR_NS::SdfPath& sdfPath,
+    static void onPhysXObjectDeletedCallback(omni::physics::parse::ObjectKey key,
                                              usdparser::ObjectId objectId,
                                              PhysXType type,
                                              void* userData);
@@ -135,6 +211,7 @@ public:
     void _onChildRelease(const BaseSdfShapeView* sdfView);
     void _onChildRelease(const BaseArticulationView* artiView);
     void _onChildRelease(const BaseRigidBodyView* rbView);
+    void _onChildRelease(const BasePointInstancerView* instancerView);
     void _onChildRelease(const BaseVolumeDeformableBodyView* deformableView);
     void _onChildRelease(const BaseSurfaceDeformableBodyView* deformableView);
     void _onChildRelease(const BaseDeformableMaterialView* deformableView);
@@ -175,6 +252,7 @@ public:
     bool hasLink(::physx::PxArticulationLink* link) const;
     bool hasShape(::physx::PxShape* shape) const;
     bool hasDeformableBody(::physx::PxDeformableBody* body) const;
+    bool hasScene(const ::physx::PxScene* scene) const;
     bool hasfixedTendon(::physx::PxArticulationFixedTendon* ft) const;
     bool hasSpatialTendon(::physx::PxArticulationSpatialTendon* st) const;
     std::unordered_map<std::string, ::physx::PxMaterial*> mMaterials;
@@ -196,7 +274,13 @@ public:
 
 protected:
     bool isValid = true;
-    PXR_NS::UsdStageWeakPtr mStage;
+    // The view's handle on the attach (ADR-0013). This is what says the view can
+    // resolve objects: it is answered by the internal DB and the parse source, so it
+    // works under a stageless attach. It is a borrowed pointer owned by UsdLoad and
+    // dies at detach -- invalidate() clears it, and SimulationBackend::reset() /
+    // resetStage() invalidate every view before the attach goes away.
+    usdparser::AttachedStage* mAttachedStage = nullptr;
+    ::physx::PxScene* mScene = nullptr;
     BaseSimulationDataPtr mSimData;
     bool mNoMatchLoggingQuiet = false;
 
@@ -207,6 +291,7 @@ protected:
     std::vector<BaseSurfaceDeformableBodyView*> mSurfaceDeformableBodyViews;
     std::vector<BaseDeformableMaterialView*> mDeformableMaterialViews;
     std::vector<BaseRigidContactView*> mRcViews;
+    std::vector<BasePointInstancerView*> mPointInstancerViews;
 
 private:
     omni::physx::SubscriptionId subscriptionObjId;

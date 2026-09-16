@@ -1,26 +1,29 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+// PARTIALLY DEPRECATED (tensor-binding-deprecation): only the ovphysx_read_tensor_binding
+// CUDA-tensor rejection arm is binding-specific (bindings take a user tensor, sessions do not)
+// and retires with the binding. The CPU-mode / no-CUDA-context contract (set/get_cpu_mode,
+// create_instance, the process_cpu_only log line) is the subject of this test and stays.
 
 // CpuNoCudaContextGpuTest: on a GPU-capable box, calling ovphysx_set_cpu_mode(true)
-// before creating an instance and stepping must NOT open a CUDA context. This is
-// the "process-wide CPU-only mode => no CUDA driver touch" contract.
+// before creating an instance and stepping must not open a CUDA context. Device
+// mode is process-wide, not a per-instance create-arg, so once it is set no
+// instance may touch the CUDA driver regardless of which USD stages are loaded.
 //
-// Device mode is process-wide and set via ovphysx_set_cpu_mode(true) (not a
-// per-instance create-arg). Once it is set, no instance may touch the CUDA driver
-// regardless of what USD stages are loaded.
-//
-// Measurement: CUDA driver primary-context active flag for device 0 via dlopen,
-// so the test requires no build-time CUDA dependency and skips on CPU-only
+// Measurement: the CUDA driver primary-context active flag for device 0, read via
+// dlopen so the test needs no build-time CUDA dependency and skips on CPU-only
 // runners. PxCreateCudaContextManager retains the primary context, so its
 // creation flips this flag 0 -> 1.
 //
 // Routing: runs in its own isolated gtest pass (scripts/test_cpp.cmake:
 // CpuNoCudaContextGpuTest.*) so no earlier GPU test has already activated the
-// context. Self-skips if the context is somehow already active.
+// context. Self-skips if the context is already active.
 
 #include <ovphysx/ovphysx.h>
 #include <gtest/gtest.h>
 
+#include "ovphysx_test_utils.h"
 #include "test_utilities.h"
 
 #if defined(_WIN32)
@@ -29,6 +32,7 @@
 #  include <dlfcn.h>
 #endif
 #include <cstring>
+#include <cstdlib>
 
 namespace {
 
@@ -89,9 +93,28 @@ TEST(CpuNoCudaContextGpuTest, CpuOnlyFlagCreatesNoCudaContextOnGpuBox)
         GTEST_SKIP() << "primary CUDA context already active (=" << activeBefore
                      << ") before the test; run CpuNoCudaContextGpuTest.* isolated";
 
+    // Fresh process (this pass does not set OVPHYSX_DISABLE_GPU): hard CPU-only
+    // must report false before set_cpu_mode (REQ-CAPI-CPU-001 AC-1 inactive case).
+    // test_main already called ovphysx_initialize(), which latched the unset env.
+    {
+        bool cpuOnlyBefore = true;
+        ASSERT_EQ(ovphysx_get_cpu_mode(&cpuOnlyBefore).status, OVPHYSX_API_SUCCESS);
+        if (std::getenv("OVPHYSX_DISABLE_GPU") == nullptr)
+        {
+            EXPECT_FALSE(cpuOnlyBefore)
+                << "get_cpu_mode must report false when neither set_cpu_mode nor "
+                   "OVPHYSX_DISABLE_GPU is active";
+        }
+    }
+
     // Set process-wide CPU-only mode before creating any instance.
     ASSERT_EQ(ovphysx_set_cpu_mode(true).status, OVPHYSX_API_SUCCESS)
         << "ovphysx_set_cpu_mode(true) failed";
+
+    bool cpuOnly = false;
+    ASSERT_EQ(ovphysx_get_cpu_mode(&cpuOnly).status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(cpuOnly)
+        << "ovphysx_get_cpu_mode must report true after set_cpu_mode(true)";
 
     // Verify that the explicit API activates the same TensorBinding policy as
     // OVPHYSX_DISABLE_GPU before any instance or CUDA interface is needed.
@@ -116,10 +139,43 @@ TEST(CpuNoCudaContextGpuTest, CpuOnlyFlagCreatesNoCudaContextOnGpuBox)
     ovphysx_handle_t h = 0;
     ASSERT_EQ(ovphysx_create_instance(&args, &h).status, OVPHYSX_API_SUCCESS)
         << "create_instance failed";
+    ASSERT_EQ(primaryActive(), 0)
+        << "create_instance under CPU-only mode activated the primary CUDA context";
 
-    // Load a GPU USD stage -- process-wide CPU-only mode was set before create,
-    // so the stage content is irrelevant. No CUDA context should be activated.
+    // Log capture needs Carbonite (initialized by the first create). Recreate once
+    // under INFO capture to assert the create-time process_cpu_only line (AC-3).
+    ASSERT_EQ(ovphysx_destroy_instance(h).status, OVPHYSX_API_SUCCESS);
+    h = 0;
+    {
+        struct ScopedLogCapture
+        {
+            ScopedLogCapture() : originalLevel(ovphysx_get_log_level())
+            {
+                ovphysx_set_log_level(OVPHYSX_LOG_INFO);
+            }
+
+            ~ScopedLogCapture()
+            {
+                ovphysx_log_capture_stop();
+                ovphysx_set_log_level(originalLevel);
+            }
+
+            uint32_t originalLevel;
+        };
+        ScopedLogCapture logCapture;
+        ASSERT_EQ(ovphysx_log_capture_start().status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_create_instance(&args, &h).status, OVPHYSX_API_SUCCESS)
+            << "recreate_instance failed";
+        EXPECT_TRUE(ovphysx_log_capture_find(OVPHYSX_LOG_INFO, "process_cpu_only=true"))
+            << "create INFO line must name hard CPU-only policy";
+    }
+    ASSERT_EQ(primaryActive(), 0)
+        << "recreate under CPU-only mode activated the primary CUDA context";
+
+    // Load a GPU USD stage. Process-wide CPU-only mode was set before create, so
+    // the stage content is irrelevant and no CUDA context may be activated.
     const char* assetPath = "tests/data/boxes_falling_on_groundplane_gpu.usda";
+    ASSERT_TRUE(test_utils::register_physx_schemas_with_ovstage());
     ovstage_instance_desc_t desc{};
     desc.name = "ovphysx-cpu-only-test-stage";
     ovstage_instance_t* stage = nullptr;
@@ -143,17 +199,17 @@ TEST(CpuNoCudaContextGpuTest, CpuOnlyFlagCreatesNoCudaContextOnGpuBox)
                   stage, enqueue.op_index, OVSTAGE_TIMEOUT_INFINITE, &populationWait),
               OVSTAGE_OK);
 
-    // Population does not seal: the caller owns ordinal lifecycle, and
-    // ovphysx_attach_ovstage() reads at a sealed ordinal.
-    ovstage_write_floor_desc_t writeFloor{};
-    writeFloor.ordinal = 1;
-    writeFloor.scope = OVSTAGE_SCOPE_ALL;
-    const ovstage_enqueue_result_t floorEnqueue = ovstage_advance_write_floor(stage, &writeFloor);
-    ASSERT_EQ(floorEnqueue.status, OVSTAGE_OK);
-
+    ovstage_write_floor_desc_t floorDesc{};
+    floorDesc.ordinal = 1;
+    floorDesc.scope = OVSTAGE_SCOPE_ALL;
+    const ovstage_enqueue_result_t floor = ovstage_advance_write_floor(stage, &floorDesc);
+    ASSERT_EQ(floor.status, OVSTAGE_OK);
     ovstage_op_wait_result_t floorWait{};
-    ASSERT_EQ(ovstage_wait_op(stage, floorEnqueue.op_index, OVSTAGE_TIMEOUT_INFINITE, &floorWait), OVSTAGE_OK);
-    (void)ovstage_release_op(stage, floorEnqueue.op_index);
+    ASSERT_EQ(
+        ovstage_wait_op(stage, floor.op_index, OVSTAGE_TIMEOUT_INFINITE, &floorWait),
+        OVSTAGE_OK);
+    ASSERT_EQ(floorWait.error_op_id_count, 0u);
+    ASSERT_EQ(ovstage_release_op(stage, floor.op_index), OVSTAGE_OK);
 
     ASSERT_EQ(ovphysx_attach_ovstage(h, stage, 1).status, OVPHYSX_API_SUCCESS);
 

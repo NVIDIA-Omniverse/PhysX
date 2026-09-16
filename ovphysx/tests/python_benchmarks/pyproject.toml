@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
@@ -34,6 +34,8 @@ python_files = ["bench_*.py", "test_*.py"]
 
 [tool.uv]
 index-url = "https://pypi.org/simple"
+# Match the Python test environment: ovstage is supplied by the build, not PyPI.
+find-links = ["../../_build/target-deps/ovstage_wheel"]
 
 [tool.uv.sources]
 "ovphysx" = { path = "../../python", editable = true }

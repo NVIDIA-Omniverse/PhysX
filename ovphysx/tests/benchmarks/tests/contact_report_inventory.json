@@ -1,0 +1,7 @@
+{
+    "_comment": "Separate two-row hidden ContactReport benchmark contract; the frozen Authoring/WriteScaling L1B inventory is unchanged.",
+    "rows": [
+        { "name": "ContactReport.persistent_pairs_512_step_read_cpu", "device": "cpu" },
+        { "name": "ContactReport.persistent_pairs_512_step_read_gpu", "device": "gpu" }
+    ]
+}

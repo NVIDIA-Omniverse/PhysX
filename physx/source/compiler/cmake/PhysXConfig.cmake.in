@@ -34,4 +34,8 @@ if(TARGET PhysX::PhysXGpu)
     list(APPEND PhysX_LIBRARIES PhysX::PhysXGpu)
 endif()
 
+if(TARGET PhysX::PVDRuntime)
+    list(APPEND PhysX_LIBRARIES PhysX::PVDRuntime)
+endif()
+
 check_required_components(PhysX)

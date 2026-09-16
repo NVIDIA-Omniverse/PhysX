@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "GuMTD.h"
 #include "GuDistancePointSegment.h"
@@ -553,8 +530,8 @@ static bool computeMTD_SphereConvex(PxVec3& mtd, PxF32& depth, const Sphere& sph
 ///////////////////////////////////////////////////////////////////////////////
 
 //ML : capsule will be in the local space of convexHullV
-static bool internalComputeMTD_CapsuleConvex(const CapsuleV& capsule, const bool idtScale, const ConvexHullV& convexHullV, const aos::PxTransformV& transf1,
-									   aos::FloatV& penetrationDepth, aos::Vec3V& normal)
+static bool internalComputeMTD_CapsuleConvex(const CapsuleV& capsule, const bool idtScale, const ConvexHullV& convexHullV, const PxTransformV& transf1,
+									   FloatV& penetrationDepth, Vec3V& normal)
 {
 	PolygonalData polyData;
 	getPCMConvexData(convexHullV, idtScale, polyData);
@@ -610,8 +587,8 @@ static bool computeMTD_CapsuleConvex(PxVec3& mtd, PxF32& depth, const Capsule& c
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static bool internalComputeMTD_BoxConvex(const PxVec3 halfExtents, const BoxV& box, const bool idtScale, const ConvexHullV& convexHullV, const aos::PxTransformV& transf0, const aos::PxTransformV& transf1,
-									   aos::FloatV& penetrationDepth, aos::Vec3V& normal)
+static bool internalComputeMTD_BoxConvex(const PxVec3 halfExtents, const BoxV& box, const bool idtScale, const ConvexHullV& convexHullV, const PxTransformV& transf0, const PxTransformV& transf1,
+									   FloatV& penetrationDepth, Vec3V& normal)
 {
 	PolygonalData polyData0;
 	PCMPolygonalBox polyBox0(halfExtents);
@@ -671,8 +648,8 @@ static bool computeMTD_BoxConvex(PxVec3& mtd, PxF32& depth, const Box& box, cons
 	return hasContacts;
 }
 
-static bool internalComputeMTD_ConvexConvex(const bool idtScale0, const bool idtScale1, const ConvexHullV& convexHullV0, const ConvexHullV& convexHullV1, const aos::PxTransformV& transf0, const aos::PxTransformV& transf1,
-									   aos::FloatV& penetrationDepth, aos::Vec3V& normal)
+static bool internalComputeMTD_ConvexConvex(const bool idtScale0, const bool idtScale1, const ConvexHullV& convexHullV0, const ConvexHullV& convexHullV1, const PxTransformV& transf0, const PxTransformV& transf1,
+									   FloatV& penetrationDepth, Vec3V& normal)
 {
 	PolygonalData polyData0, polyData1;
 	getPCMConvexData(convexHullV0, idtScale0, polyData0);

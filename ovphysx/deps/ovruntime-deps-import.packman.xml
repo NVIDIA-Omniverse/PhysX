@@ -1,0 +1,10 @@
+<project toolsVersion="5.0">
+  <!-- gsl from the ovruntime_deps package, the same source ovruntime uses;
+       requires it to be pulled first. ovphysx pulls no USD package: the shipped
+       product links no OpenUSD, and the Python tests get their USD from stock pip
+       usd-core. The target-deps import needs the platform_target and usd_ver
+       tokens, which only build version strings for filtered-out entries. -->
+  <import path="../ovruntime/_build/target-deps/ovruntime_deps_release/deps/target-deps.packman.xml">
+    <filter include="gsl" linkPath="../_build/target-deps/gsl" />
+  </import>
+</project>

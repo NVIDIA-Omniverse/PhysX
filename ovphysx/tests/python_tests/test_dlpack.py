@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 import ctypes
 import gc
@@ -12,7 +12,6 @@ from ovphysx import (
     DLDeviceType,
     DLManagedTensor,
     DLTensor,
-    ManagedDLTensor,
 )
 
 
@@ -38,7 +37,7 @@ def test_dlpack_structures_available():
     """Test DLPack structure classes are accessible.
 
     Covered APIs:
-        DLDevice, DLDataType, DLTensor, DLManagedTensor, ManagedDLTensor
+        DLDevice, DLDataType, DLTensor, DLManagedTensor
 
     Args:
         None
@@ -46,14 +45,11 @@ def test_dlpack_structures_available():
     Returns:
         None: Ensures DLPack structures are properly exported.
     """
-    # Verify classes are accessible
     assert DLDevice is not None, "DLDevice should be accessible"
     assert DLDataType is not None, "DLDataType should be accessible"
     assert DLTensor is not None, "DLTensor should be accessible"
     assert DLManagedTensor is not None, "DLManagedTensor should be accessible"
-    assert ManagedDLTensor is not None, "ManagedDLTensor should be accessible"
 
-    # Verify DLPACK_VERSION is accessible (API returns integer, not tuple)
     assert isinstance(DLPACK_VERSION, int), "DLPACK_VERSION should be an integer"
     assert DLPACK_VERSION > 0, "DLPACK_VERSION should be positive"
 
@@ -76,7 +72,7 @@ def test_dldevice_creation():
     device.device_type = DLDeviceType.kDLCPU
     device.device_id = 0
 
-    # Verify fields are accessible (device_type returns ctypes enum, use .value to get integer)
+    # device_type returns a ctypes enum, so .value gives the integer.
     assert device.device_type.value == DLDeviceType.kDLCPU, "Device type should be CPU"
     assert device.device_id == 0, "Device ID should be 0"
 
@@ -101,7 +97,7 @@ def test_dldatatype_creation():
     dtype.bits = 32
     dtype.lanes = 1
 
-    # Verify fields are accessible (code returns ctypes enum, use .value to get integer)
+    # code returns a ctypes enum, so .value gives the integer.
     assert dtype.code.value == DLDataTypeCode.kDLFloat, "Data type code should be float"
     assert dtype.bits == 32, "Bits should be 32"
     assert dtype.lanes == 1, "Lanes should be 1"
@@ -127,7 +123,6 @@ def test_dldevice_type_string_representation():
     Returns:
         None: Ensures DLDeviceType objects stringify correctly.
     """
-    # Test common device types
     device_tests = [
         (DLDeviceType.kDLCPU, "CPU"),
         (DLDeviceType.kDLCUDA, "CUDA"),
@@ -157,7 +152,6 @@ def test_dldatatype_code_string_representation():
     Returns:
         None: Ensures DLDataTypeCode objects stringify correctly.
     """
-    # Test all data type codes
     datatype_tests = [
         (DLDataTypeCode.kDLInt, "int"),
         (DLDataTypeCode.kDLUInt, "uint"),
@@ -185,7 +179,7 @@ def test_dldevice_string_representation():
     Returns:
         None: Ensures DLDevice objects have readable string representation.
     """
-    # Test device_id = 0: should return just the device type name
+    # device_id 0 stringifies to just the device type name.
     device = DLDevice()
     device.device_type = DLDeviceType.kDLCPU
     device.device_id = 0
@@ -193,7 +187,7 @@ def test_dldevice_string_representation():
     device_str = str(device)
     assert device_str == "CPU", f"Device with id 0 should stringify to 'CPU', got '{device_str}'"
 
-    # Test non-zero device_id: should return "TYPE:<id>"
+    # A non-zero device_id stringifies as "TYPE:<id>".
     device.device_id = 3
     device_str = str(device)
     assert device_str == "CPU:3", f"Device with id 3 should stringify to 'CPU:3', got '{device_str}'"
@@ -269,44 +263,29 @@ def test_dltensor_structure_fields():
     shape_array = (ctypes.c_int64 * 2)(3, 4)
     tensor.shape = ctypes.cast(shape_array, ctypes.POINTER(ctypes.c_int64))
 
-    # Validate fields are accessible (enum fields return ctypes enum, use .value)
+    # Enum fields return a ctypes enum, so .value gives the integer.
     assert tensor.device.device_type.value == DLDeviceType.kDLCPU, "Device type should match"
     assert tensor.dtype.code.value == DLDataTypeCode.kDLFloat, "Data type code should match"
     assert tensor.ndim == 2, "Dimensions should be 2"
 
 
 def test_managed_dltensor_structure():
-    """Test ManagedDLTensor structure and wrapper.
+    """Test the low-level DLManagedTensor Structure.
 
     Covered APIs:
         DLManagedTensor Structure (low-level)
-        ManagedDLTensor wrapper (high-level)
-        raw_dltensor() method
 
     Args:
         None
 
     Returns:
-        None: Ensures both low-level Structure and high-level wrapper work correctly.
+        None: Ensures the low-level Structure exposes the DLPack fields.
     """
-    # Test low-level DLManagedTensor Structure
     dl_managed = DLManagedTensor()
 
-    # Verify Structure exposes required fields
     assert hasattr(dl_managed, "dl_tensor"), "DLManagedTensor Structure should have dl_tensor field"
     assert hasattr(dl_managed, "manager_ctx"), "DLManagedTensor Structure should have manager_ctx field"
     assert hasattr(dl_managed, "deleter"), "DLManagedTensor Structure should have deleter field"
-
-    # Test high-level ManagedDLTensor wrapper
-    tensor = DLTensor()
-    tensor.ndim = 1
-
-    # manager_ctx is a required argument; None is fine for testing purposes
-    wrapper = ManagedDLTensor(tensor, manager_ctx=None)
-
-    # Verify raw_dltensor property returns the same tensor
-    raw_tensor = wrapper.raw_dltensor  # Property, not a method
-    assert raw_tensor is tensor, "raw_dltensor property should return the wrapped DLTensor instance"
 
 
 def test_dlpack_version_tuple():
@@ -325,11 +304,9 @@ def test_dlpack_version_tuple():
         The API returns DLPACK_VERSION as a packed integer (e.g., 128 for version 1.0),
         not as a tuple. This is the actual implementation behavior.
     """
-    # Verify DLPACK_VERSION structure (API returns integer, not tuple)
     assert isinstance(DLPACK_VERSION, int), "DLPACK_VERSION should be an integer"
     assert DLPACK_VERSION > 0, "DLPACK_VERSION should be positive"
 
-    # Verify it's a reasonable version number
     assert DLPACK_VERSION < 10000, "DLPACK_VERSION should be a reasonable packed version number"
 
 
@@ -370,13 +347,11 @@ def test_numpy_to_dltensor_float32():
     arr = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
     dl_tensor = numpy_to_dltensor(arr)
 
-    # Verify basic properties
     assert dl_tensor.ndim == 2, "Should have 2 dimensions"
     assert dl_tensor.dtype.code.value == DLDataTypeCode.kDLFloat, "Should be float type"
     assert dl_tensor.dtype.bits == 32, "Should be 32 bits"
     assert dl_tensor.device.device_type.value == DLDeviceType.kDLCPU, "Should be CPU device"
 
-    # Verify shape is accessible
     shape = [dl_tensor.shape[i] for i in range(dl_tensor.ndim)]
     assert shape == [2, 2], "Shape should be [2, 2]"
 
@@ -446,7 +421,6 @@ def test_numpy_to_dltensor_non_contiguous():
     import pytest
     from ovphysx._dlpack_utils import numpy_to_dltensor
 
-    # Create non-contiguous array (transposed)
     arr = np.array([[1, 2], [3, 4]], dtype=np.float32).T
     assert not arr.flags["C_CONTIGUOUS"], "Array should not be C-contiguous"
 
@@ -465,13 +439,12 @@ def test_numpy_to_dltensor_unsupported_dtype():
         None
 
     Returns:
-        None: Ensures ValueError is raised for unsupported dtypes like uint8.
+        None: Ensures ValueError is raised for unsupported dtypes like complex64.
     """
     import numpy as np
     import pytest
     from ovphysx._dlpack_utils import numpy_to_dltensor
 
-    # Try unsupported dtype (complex64)
     arr = np.array([1 + 2j, 3 + 4j], dtype=np.complex64)
 
     with pytest.raises(ValueError, match=r"Unsupported dtype"):
@@ -497,7 +470,6 @@ def test_numpy_to_dltensor_keepalive_attribute():
     arr = np.array([1.0, 2.0], dtype=np.float32)
     dl_tensor = numpy_to_dltensor(arr)
 
-    # Verify _keepalive attribute exists and contains references
     assert hasattr(dl_tensor, "_keepalive"), "Should have _keepalive attribute"
     assert isinstance(dl_tensor._keepalive, tuple), "_keepalive should be a tuple"
     assert len(dl_tensor._keepalive) == 3, "_keepalive should have 3 elements"
@@ -603,29 +575,6 @@ def test_copy_dltensor_owns_shape_and_strides():
     assert not copied_without_strides.strides
 
 
-def test_acquire_dltensor_releases_capsule_on_validation_error(monkeypatch):
-    """Validation failures must not leave a capsule in the retained traceback."""
-    import numpy as np
-    import ovphysx._dlpack_utils as dlpack_utils
-    import pytest
-
-    provider = ManagedDLTensor(
-        dlpack_utils.numpy_to_dltensor(np.zeros((1,), dtype=np.float32)),
-        None,
-    )
-
-    def fail_validation(_dl_tensor):
-        raise ValueError("forced validation failure")
-
-    monkeypatch.setattr(dlpack_utils, "_validate_c_contiguous_layout", fail_validation)
-
-    with pytest.raises(ValueError, match="forced validation failure") as exc_info:
-        dlpack_utils.acquire_dltensor(provider)
-
-    assert exc_info.traceback is not None
-    assert provider._dlpack_callbacks == {}
-
-
 def test_detect_data_ptr_uses_warp_public_ptr():
     """Warp cache validation must re-read the array's public ptr value."""
     from ovphysx.api import _detect_data_ptr
@@ -682,17 +631,15 @@ def test_acquire_dltensor_invalid_object():
     import pytest
     from ovphysx._dlpack_utils import acquire_dltensor
 
-    # Try with incompatible object (string)
     with pytest.raises(TypeError, match=r"Object of type .* is not DLPack-compatible"):
         acquire_dltensor("not a tensor")
 
-    # Try with incompatible object (dict)
     with pytest.raises(TypeError, match=r"Object of type .* is not DLPack-compatible"):
         acquire_dltensor({"not": "a tensor"})
 
 
 # ============================================================================
-# Enhanced DLPack Structure Tests (for coverage improvement)
+# Additional DLPack structure tests
 # ============================================================================
 
 
@@ -711,7 +658,6 @@ def test_dl_device_gpu_types():
     """
     from ovphysx import DLDevice, DLDeviceType
 
-    # Test CUDA device
     cuda_device = DLDevice()
     cuda_device.device_type = DLDeviceType.kDLCUDA
     cuda_device.device_id = 0
@@ -719,17 +665,14 @@ def test_dl_device_gpu_types():
     assert cuda_device.device_type.value == 2, "kDLCUDA should be 2"
     assert str(cuda_device) == "CUDA", "String representation should be 'CUDA'"
 
-    # Test CUDA device with ID
     cuda_device.device_id = 3
     assert str(cuda_device) == "CUDA:3", "Should include device ID in string"
 
-    # Test ROCM device
     rocm_device = DLDevice()
     rocm_device.device_type = DLDeviceType.kDLROCM
     rocm_device.device_id = 0
     assert rocm_device.device_type.value == 10, "kDLROCM should be 10"
 
-    # Test other device types exist
     assert hasattr(DLDeviceType, "kDLCUDAHost"), "Should have kDLCUDAHost"
     assert hasattr(DLDeviceType, "kDLVulkan"), "Should have kDLVulkan"
     assert hasattr(DLDeviceType, "kDLMetal"), "Should have kDLMetal"
@@ -751,7 +694,6 @@ def test_dl_datatype_all_codes():
     """
     from ovphysx import DLDataType, DLDataTypeCode
 
-    # Test kDLInt
     int_dtype = DLDataType()
     int_dtype.code = DLDataTypeCode.kDLInt
     int_dtype.bits = 32
@@ -759,28 +701,24 @@ def test_dl_datatype_all_codes():
     assert int_dtype.code.value == 0, "kDLInt should be 0"
     assert "int" in str(int_dtype).lower(), "String should contain 'int'"
 
-    # Test kDLUInt
     uint_dtype = DLDataType()
     uint_dtype.code = DLDataTypeCode.kDLUInt
     uint_dtype.bits = 8
     uint_dtype.lanes = 1
     assert uint_dtype.code.value == 1, "kDLUInt should be 1"
 
-    # Test kDLBfloat
     bfloat_dtype = DLDataType()
     bfloat_dtype.code = DLDataTypeCode.kDLBfloat
     bfloat_dtype.bits = 16
     bfloat_dtype.lanes = 1
     assert bfloat_dtype.code.value == 4, "kDLBfloat should be 4"
 
-    # Test kDLComplex
     complex_dtype = DLDataType()
     complex_dtype.code = DLDataTypeCode.kDLComplex
     complex_dtype.bits = 64
     complex_dtype.lanes = 1
     assert complex_dtype.code.value == 5, "kDLComplex should be 5"
 
-    # Test multi-lane types
     vec_dtype = DLDataType()
     vec_dtype.code = DLDataTypeCode.kDLFloat
     vec_dtype.bits = 32
@@ -837,7 +775,6 @@ def test_dldatatype_string_representation_all_types():
     """
     from ovphysx import DLDataType, DLDataTypeCode
 
-    # Test standard types from TYPE_MAP
     type_specs = [
         (DLDataTypeCode.kDLInt, 8, 1, "int8"),
         (DLDataTypeCode.kDLInt, 32, 1, "int32"),
@@ -857,37 +794,6 @@ def test_dldatatype_string_representation_all_types():
         dtype.lanes = lanes
         result = str(dtype)
         assert result == expected, f"Type {code}/{bits}bit/{lanes}lanes should be '{expected}', got '{result}'"
-
-
-def test_managed_dltensor_deleter():
-    """Test ManagedDLTensor structure and properties.
-
-    Covered APIs:
-        ManagedDLTensor constructor
-        ManagedDLTensor.raw_dltensor property
-        DLManagedTensor structure
-
-    Args:
-        None
-
-    Returns:
-        None: Ensures ManagedDLTensor can be created and accessed.
-    """
-    from ovphysx import DLTensor, ManagedDLTensor
-
-    # Create ManagedDLTensor with None manager_ctx
-    tensor = DLTensor()
-    tensor.ndim = 1
-    managed = ManagedDLTensor(tensor, manager_ctx=None)
-
-    # Verify the raw_dltensor property is accessible
-    raw = managed.raw_dltensor
-    assert isinstance(raw, DLTensor), "raw_dltensor should return DLTensor"
-    assert raw.ndim == 1, "Should preserve tensor properties"
-
-    # Verify other properties are accessible
-    assert managed.ndim == 1, "ndim property should be accessible"
-    assert managed.device is not None, "device property should be accessible"
 
 
 def test_dlpack_version_constant():
@@ -924,7 +830,6 @@ def test_dldatatype_type_map():
     """
     from ovphysx import DLDataType
 
-    # Verify TYPE_MAP exists and has expected keys
     assert hasattr(DLDataType, "TYPE_MAP"), "DLDataType should have TYPE_MAP"
     type_map = DLDataType.TYPE_MAP
 

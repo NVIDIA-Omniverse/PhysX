@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-#
+
 # Codeless PhysxSchema Python API. No compiled _physxSchema bindings: the schema
 # classes (PhysxSchema.PhysxFooAPI) and the token table (PhysxSchema.Tokens) are
 # pure-Python, generated from schema.usda by tools/gen_codeless_api.py / gen_tokens.py.
+
 from pathlib import Path
 
 from .codeless_api import *      # noqa: F401,F403  -- PhysxSchema.<Class> API

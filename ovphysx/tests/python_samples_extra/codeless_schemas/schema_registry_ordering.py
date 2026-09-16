@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Regression coverage for codeless schema registration ordering (NVBug 6530141).
 
@@ -7,13 +7,13 @@ USD builds its *schema* registry lazily on first access and never rebuilds it.
 ``Plug.Registry().RegisterPlugins()`` populates the *plugin* registry, a
 different structure, and nothing propagates from there into an already-built
 schema registry. So the ``register_codeless_schemas.py`` recipe only works in a
-process where nothing has touched USD yet -- which is not the case inside a DCC
+process where nothing has touched USD yet. That is not the case inside a DCC
 host, where any USD import/export or any other addon builds the registry first.
 
 The failure is silent: the registered-plugin count and ``Tf.Type.FindByName``
 both still report success, and the plugin reports ``isLoaded=True``. Only
 ``ApplyAPI`` fails. That is why ``register_codeless_schemas.py`` cannot catch
-this on its own -- it runs in a fresh process and only ever exercises the
+this on its own. It runs in a fresh process and only ever exercises the
 passing case.
 
 This script pins both halves of the documented contract, each arm in a fresh
@@ -56,7 +56,7 @@ def run_arm(pre_touch: str, register: bool) -> int:
     """
     from pxr import Plug, Tf, Usd
 
-    # Hold every stage alive; an expired prim would be a bug in this test
+    # Hold every stage alive. An expired prim would be a bug in this test
     # rather than the behavior under study.
     keep = []
     if pre_touch == "stage":
@@ -166,7 +166,7 @@ def main() -> int:
     # These pin OpenUSD's registry lifecycle, not an ovphysx defect: a late
     # RegisterPlugins() cannot repair an already-populated schema registry, and
     # it reports success while doing so. If an arm here ever starts applying,
-    # OpenUSD changed its lifecycle -- revisit the ordering warning in
+    # OpenUSD changed its lifecycle. Revisit the ordering warning in
     # docs/physics_schemas.md before relaxing the assert.
     for pre_touch in ("registry", "stage"):
         late = _arm(pre_touch, register=True, preset_plugin_path=False)

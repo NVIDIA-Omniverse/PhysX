@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 ---
 title: ADR-0001 — The cooked-collider cache location is application-provided
@@ -106,5 +106,5 @@ default location (see Open questions).
 - !7308 / `3746c9b20f` — original decision, review by Ales Borovicka
 - !7860 (release/ovphysx/0.5), !7867 (trunk) — NVBug 6504275 / OMPE-102840
 - NVBug 6262606 — why UJITSO is loaded in the kitless loader at all
-- `ovphysx/src/CarboniteLoader/CarboniteLoader.cpp` — `configureUjitsoLocalCache()`
-- `ovphysx/docs/developer_guide.md` — "Cooked-Collider Cache (UJITSO)"
+- `omni/ovphysx/src/CarboniteLoader/CarboniteLoader.cpp` — `configureUjitsoLocalCache()`
+- `omni/ovphysx/docs/developer_guide.md` — "Cooked-Collider Cache (UJITSO)"

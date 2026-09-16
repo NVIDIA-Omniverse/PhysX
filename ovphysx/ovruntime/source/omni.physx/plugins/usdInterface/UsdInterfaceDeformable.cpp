@@ -1,7 +1,22 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-PARSE-CONSUMER-001
+ * @covers AC-24
+ *
+ * @implements REQ-COOK-SOURCE-001
+ * @covers AC-5 AC-6
+ *
+ * @implements REQ-MATH-001
+ * @covers AC-9
+ *
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-27
+ */
+
+#include <omni/physics/parse/KnownTokens.h>
+
 #include "UsdInterface.h"
 
 #include <private/omni/physx/PhysxUsd.h>
@@ -11,7 +26,6 @@
 
 #include <internal/InternalScene.h>
 #include <internal/InternalDeformable.h>
-#include <internal/InternalTools.h>
 
 #include <PhysXTools.h>
 #include <CookingDataAsync.h>
@@ -27,7 +41,6 @@
 #include "extensions/PxDeformableSkinningExt.h"
 #include "extensions/PxCudaHelpersExt.h"
 
-using namespace PXR_NS;
 using namespace ::physx;
 using namespace physx::Ext;
 using namespace omni::physx;
@@ -56,21 +69,23 @@ float area(const carb::Float3& a, const carb::Float3& b, const carb::Float3& c)
     return 0.5f * length(cross);
 }
 
-void computePointExtent(const VtArray<GfVec3f>& points, VtVec3fArray& extent)
+void computePointExtent(const std::vector<carb::Float3>& points, std::vector<carb::Float3>& extent)
 {
     extent.clear();
     if (points.empty())
         return;
 
-    GfVec3f minPoint = points[0];
-    GfVec3f maxPoint = points[0];
-    for (const GfVec3f& p : points)
+    const carb::Float3* p3 = points.data();
+    carb::Float3 minPoint = p3[0];
+    carb::Float3 maxPoint = p3[0];
+    for (size_t i = 0; i < points.size(); ++i)
     {
-        for (int axis = 0; axis < 3; ++axis)
-        {
-            minPoint[axis] = std::min(minPoint[axis], p[axis]);
-            maxPoint[axis] = std::max(maxPoint[axis], p[axis]);
-        }
+        minPoint.x = std::min(minPoint.x, p3[i].x);
+        minPoint.y = std::min(minPoint.y, p3[i].y);
+        minPoint.z = std::min(minPoint.z, p3[i].z);
+        maxPoint.x = std::max(maxPoint.x, p3[i].x);
+        maxPoint.y = std::max(maxPoint.y, p3[i].y);
+        maxPoint.z = std::max(maxPoint.z, p3[i].z);
     }
     extent = { minPoint, maxPoint };
 }
@@ -173,9 +188,11 @@ bool setSurfaceDeformableMass(PxDeformableSurface& deformableSurface, PxVec4* si
     return true;
 }
 
+// reportPath is resolved text (AttachedStage::textFor), used only for diagnostic logging --
+// unconditional, no pxr dependency.
 void deriveCollisionOffsets(float& outRestOffset, float& outContactOffset,
     const omni::physx::PhysXScene& scene, const PxGeometry& geometry, const float geometryScale,
-    const float restOffset, const float contactOffset, const PXR_NS::SdfPath reportPath)
+    const float restOffset, const float contactOffset, const char* reportPath)
 {
     // TODO unify with UsdInterface.cpp, createShape()
     outRestOffset = restOffset;
@@ -185,7 +202,7 @@ void deriveCollisionOffsets(float& outRestOffset, float& outContactOffset,
     {
         if (contactOffset <= restOffset)
         {
-            CARB_LOG_ERROR("Collision contact offset must be positive and greater then restOffset, prim: %s", reportPath.GetText());
+            CARB_LOG_ERROR("Collision contact offset must be positive and greater then restOffset, prim: %s", reportPath);
             outContactOffset = contactOffset + restOffset + 1e-3f;
         }
     }
@@ -217,7 +234,7 @@ void deriveCollisionOffsets(float& outRestOffset, float& outContactOffset,
     {
         if (restOffset > outContactOffset)
         {
-            CARB_LOG_ERROR("Collision rest offset must be lesser then contact offset, prim: %s", reportPath.GetText());
+            CARB_LOG_ERROR("Collision rest offset must be lesser then contact offset, prim: %s", reportPath);
             outRestOffset = 0.0f;
         }
     }
@@ -243,116 +260,143 @@ float deriveSelfCollisionFilterDistance(const float usdSelfCollisionFilterDistan
 // Local-to-world transform of `key` via the physics source (no direct USD prim
 // access). Bind/creation transforms are static, so they read at the default
 // time code (see PhysXTools.h getWorldTransform).
-GfMatrix4d sourceLocalToWorld(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key)
+PxMat44d sourceLocalToWorld(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key)
 {
-    return getWorldTransform(attachedStage, key, UsdTimeCode());
+    return getWorldTransform(attachedStage, key, omni::physics::parse::ReadTime::defaultTime());
 }
 
 // Source-routed single-apply HasAPI check (no direct USD prim access).
-// `schemaTypeName` is a schema type name token as accepted by
-// GetAPITypeFromSchemaTypeName; it is normalised to the registered
-// applied-schema name so it matches what the source reports as applied.
+// `schemaToken` is the already-interned applied-API-schema name (e.g.
+// tok.OmniPhysicsSurfaceDeformableSimAPI) -- the same TokenId convention
+// IPhysicsSource::hasSchema is queried with everywhere else in the runtime.
 bool sourceHasAPI(const usdparser::AttachedStage& attachedStage,
                   omni::physics::parse::ObjectKey key,
-                  const TfToken& schemaTypeName)
+                  omni::physics::parse::TokenId schemaToken)
 {
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-    if (!src)
-        return false;
-    const TfType type = UsdSchemaRegistry::GetAPITypeFromSchemaTypeName(schemaTypeName);
-    const TfToken applied = UsdSchemaRegistry::GetAPISchemaTypeName(type);
-    if (applied.IsEmpty())
-        return false;
-    return src->hasSchema(key, src->internToken(applied.GetString()));
+    return src && src->hasSchema(key, schemaToken);
 }
 
-// schemaTypeToken lives in PhysXTools.h (single boundary translation).
-using omni::physx::internal::schemaTypeToken;
+// Source-agnostic equivalent of pxr's UsdSchemaRegistry::MakeMultipleApplyNameInstance:
+// substitutes the __INSTANCE_NAME__ placeholder in a multi-apply attribute-name
+// template (e.g. tok.deformablePose_MultipleApplyTemplate_OmniphysicsPoints) with the
+// given instance name, and interns the result. Returns an invalid TokenId when `src`
+// is null, matching the null-source behavior of the pxr-based path it replaces.
+omni::physics::parse::TokenId makeMultiApplyAttributeToken(const omni::physics::parse::IPhysicsSource* src,
+                                                            omni::physics::parse::TokenId nameTemplate,
+                                                            omni::physics::parse::TokenId instanceName)
+{
+    if (!src)
+        return omni::physics::parse::TokenId{};
+    static constexpr char kInstanceNamePlaceholder[] = "__INSTANCE_NAME__";
+    std::string result(src->tokenToString(nameTemplate));
+    const size_t pos = result.find(kInstanceNamePlaceholder);
+    if (pos != std::string::npos)
+        result.replace(pos, sizeof(kInstanceNamePlaceholder) - 1, src->tokenToString(instanceName));
+    return src->internToken(result);
+}
 
 size_t collectSkinMeshes(const usdparser::AttachedStage& attachedStage,
                          std::vector<omni::physics::parse::ObjectKey>& skinMeshKeys,
                          std::vector<carb::Uint2>& skinMeshRanges,
-                         std::vector<GfMatrix4f>& worldToSkinMeshTransforms,
-                         const SdfPathVector& skinGeomPaths)
+                         std::vector<::physx::PxMat44d>& worldToSkinMeshTransforms,
+                         const std::vector<omni::physics::parse::ObjectKey>& skinGeomKeys)
 {
     size_t numAllSkinMeshPoints = 0;
 
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    omni::physics::parse::KnownTokens tok;
+    if (src)
+        tok.intern(*src);
+
     // histogram, transforms + references
-    for (const SdfPath& skinGeomPath : skinGeomPaths)
+    for (const omni::physics::parse::ObjectKey key : skinGeomKeys)
     {
-        const omni::physics::parse::ObjectKey key = attachedStage.keyFor(skinGeomPath);
-        VtArray<GfVec3f> points;
-        getArrayValue(attachedStage, key, UsdGeomTokens->points, UsdTimeCode(), points);
+        std::vector<carb::Float3> points;
+        getArrayValue(attachedStage, key, tok.points, omni::physics::parse::ReadTime::defaultTime(), points);
         if (points.size())
         {
             carb::Uint2 range = { uint32_t(numAllSkinMeshPoints), uint32_t(points.size()) };
             numAllSkinMeshPoints += uint32_t(points.size());
 
-            const GfMatrix4d skinGeomToWorld = sourceLocalToWorld(attachedStage, key);
+            const PxMat44d skinGeomToWorld = sourceLocalToWorld(attachedStage, key);
             skinMeshKeys.push_back(key);
             skinMeshRanges.push_back(range);
-            worldToSkinMeshTransforms.push_back(GfMatrix4f(skinGeomToWorld.GetInverse()));
+            worldToSkinMeshTransforms.push_back(affineInverse(skinGeomToWorld));
         }
     }
     return numAllSkinMeshPoints;
 }
 
 void parseSkinBindPointsWorld(const usdparser::AttachedStage& attachedStage,
-                              VtArray<GfVec3f>& allSkinMeshBindPointsWorld,
-                              const SdfPathVector& skinGeomPaths,
-                              const TfTokenVector& skinGeomBindPoseTokens,
+                              std::vector<carb::Float3>& allSkinMeshBindPointsWorld,
+                              const std::vector<omni::physics::parse::ObjectKey>& skinGeomKeys,
+                              const std::vector<omni::physics::parse::TokenId>& skinGeomBindPoseTokens,
                               const size_t numAllSkinMeshPoints)
 {
     allSkinMeshBindPointsWorld.resize(numAllSkinMeshPoints);
 
-    size_t offsetSkinMeshPoints = 0;
-    for (size_t i = 0; i < skinGeomPaths.size(); ++i)
-    {
-        const omni::physics::parse::ObjectKey key = attachedStage.keyFor(skinGeomPaths[i]);
-        const TfToken& skinGeomBindPoseToken = skinGeomBindPoseTokens[i];
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    omni::physics::parse::KnownTokens tok;
+    if (src)
+        tok.intern(*src);
 
-        VtArray<GfVec3f> skinMeshBindPointsLocal;
-        // A non-empty bind-pose token guarantees the OmniPhysicsDeformablePoseAPI
+    size_t offsetSkinMeshPoints = 0;
+    for (size_t i = 0; i < skinGeomKeys.size(); ++i)
+    {
+        const omni::physics::parse::ObjectKey key = skinGeomKeys[i];
+        const omni::physics::parse::TokenId skinGeomBindPoseToken = skinGeomBindPoseTokens[i];
+
+        std::vector<carb::Float3> skinMeshBindPointsLocal;
+        // A valid bind-pose token guarantees the OmniPhysicsDeformablePoseAPI
         // instance is applied (the parser only emits it then), so reading the
         // instance's points attribute is sufficient — no HasAPI re-check needed.
-        if (!skinGeomBindPoseToken.IsEmpty())
+        if (skinGeomBindPoseToken.valid())
         {
-            const TfToken pointAttrName = UsdSchemaRegistry::MakeMultipleApplyNameInstance(
-                OmniUsdPhysicsDeformableSchemaTokens->deformablePose_MultipleApplyTemplate_OmniphysicsPoints, skinGeomBindPoseToken);
-            getArrayValue(attachedStage, key, pointAttrName, UsdTimeCode(), skinMeshBindPointsLocal);
+            const omni::physics::parse::TokenId pointAttrName = makeMultiApplyAttributeToken(
+                src, tok.deformablePose_MultipleApplyTemplate_OmniphysicsPoints, skinGeomBindPoseToken);
+            getArrayValue(attachedStage, key, pointAttrName, omni::physics::parse::ReadTime::defaultTime(), skinMeshBindPointsLocal);
         }
         else
         {
             // When there is no bind pose, use points instead
-            getArrayValue(attachedStage, key, UsdGeomTokens->points, UsdTimeCode(), skinMeshBindPointsLocal);
+            getArrayValue(attachedStage, key, tok.points, omni::physics::parse::ReadTime::defaultTime(), skinMeshBindPointsLocal);
         }
 
-        const GfMatrix4d skinGeomToWorld = sourceLocalToWorld(attachedStage, key);
+        const PxMat44d skinGeomToWorld = sourceLocalToWorld(attachedStage, key);
         if (offsetSkinMeshPoints + skinMeshBindPointsLocal.size() <= allSkinMeshBindPointsWorld.size())
         {
-            for (const GfVec3f& point : skinMeshBindPointsLocal)
+            for (const carb::Float3& point : skinMeshBindPointsLocal)
             {
-                allSkinMeshBindPointsWorld[offsetSkinMeshPoints++] = GfVec3f(skinGeomToWorld.Transform(point));
+                const PxVec3d world = skinGeomToWorld.transform(toPhysXd(point));
+                allSkinMeshBindPointsWorld[offsetSkinMeshPoints++] =
+                    carb::Float3{ float(world.x), float(world.y), float(world.z) };
             }
         }
     }
 }
 
 void parseSkinMeshPoints(const usdparser::AttachedStage& attachedStage,
-                         VtArray<GfVec3f>& allSkinMeshPoints,
+                         std::vector<carb::Float3>& allSkinMeshPoints,
                          const std::vector<omni::physics::parse::ObjectKey>& skinMeshKeys,
                          const size_t numAllSkinMeshPoints)
 {
     allSkinMeshPoints.resize(numAllSkinMeshPoints);
+
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    omni::physics::parse::KnownTokens tok;
+    if (src)
+        tok.intern(*src);
+
     size_t offsetSkinPoints = 0;
     for (const omni::physics::parse::ObjectKey key : skinMeshKeys)
     {
-        VtArray<GfVec3f> points;
-        getArrayValue(attachedStage, key, UsdGeomTokens->points, UsdTimeCode(), points);
+        std::vector<carb::Float3> points;
+        getArrayValue(attachedStage, key, tok.points, omni::physics::parse::ReadTime::defaultTime(), points);
 
         if (offsetSkinPoints + points.size() <= allSkinMeshPoints.size())
         {
-            for (const GfVec3f& point : points)
+            for (const carb::Float3& point : points)
             {
                 allSkinMeshPoints[offsetSkinPoints++] = point;
             }
@@ -361,19 +405,24 @@ void parseSkinMeshPoints(const usdparser::AttachedStage& attachedStage,
 }
 
 void parseSimBindPoints(const usdparser::AttachedStage& attachedStage,
-                        VtArray<GfVec3f>& simMeshBindPoints,
+                        std::vector<carb::Float3>& simMeshBindPoints,
                         omni::physics::parse::ObjectKey simMeshKey,
-                        const TfToken& simMeshBindPoseToken,
-                        const VtArray<GfVec3f>& simMeshPoints)
+                        omni::physics::parse::TokenId simMeshBindPoseTokenId,
+                        const std::vector<carb::Float3>& simMeshPoints)
 {
-    // A non-empty bind-pose token guarantees the OmniPhysicsDeformablePoseAPI
+    // A valid bind-pose token guarantees the OmniPhysicsDeformablePoseAPI
     // instance is applied (parser invariant), so reading its points attribute
     // needs no HasAPI re-check.
-    if (!simMeshBindPoseToken.IsEmpty())
+    if (simMeshBindPoseTokenId.valid())
     {
-        const TfToken pointAttrName = UsdSchemaRegistry::MakeMultipleApplyNameInstance(
-            OmniUsdPhysicsDeformableSchemaTokens->deformablePose_MultipleApplyTemplate_OmniphysicsPoints, simMeshBindPoseToken);
-        getArrayValue(attachedStage, simMeshKey, pointAttrName, UsdTimeCode(), simMeshBindPoints);
+        const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+        omni::physics::parse::KnownTokens tok;
+        if (src)
+            tok.intern(*src);
+
+        const omni::physics::parse::TokenId pointAttrName = makeMultiApplyAttributeToken(
+            src, tok.deformablePose_MultipleApplyTemplate_OmniphysicsPoints, simMeshBindPoseTokenId);
+        getArrayValue(attachedStage, simMeshKey, pointAttrName, omni::physics::parse::ReadTime::defaultTime(), simMeshBindPoints);
     }
     if (simMeshBindPoints.size() != simMeshPoints.size())
     {
@@ -484,7 +533,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyMass(const usdparser::Attache
     return true;
 }
 
-bool PhysXUsdPhysicsInterface::updateDeformableBodyPositions(const usdparser::AttachedStage& attachedStage, const ObjectId objectId)
+bool PhysXUsdPhysicsInterface::updateDeformableBodyPositions(usdparser::AttachedStage& attachedStage, const ObjectId objectId)
 {
     InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
 
@@ -496,10 +545,22 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyPositions(const usdparser::At
         return true;
     }
 
-    GfMatrix4d transform = sourceLocalToWorld(attachedStage, objectFullRecord->mKey);
+    const PxMat44d transform = sourceLocalToWorld(attachedStage, objectFullRecord->mKey);
 
-    VtArray<GfVec3f> points;
-    getArrayValue(attachedStage, objectFullRecord->mKey, PXR_NS::UsdGeomTokens->points, PXR_NS::UsdTimeCode(), points);
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    omni::physics::parse::KnownTokens tok;
+    if (src)
+        tok.intern(*src);
+
+    // This dispatch only fires in response to a live authored edit on `points` (see
+    // omni::physx::updateDeformableBody), so any cooked-geometry carrier entry for
+    // this key is a stale bind pose the edit has already superseded. Drop it before
+    // reading so a sink-less (ovstage) attach falls through to the fresh value
+    // instead of serving the cook's bind pose forever (ADR-0022).
+    attachedStage.clearCookedArray(objectFullRecord->mKey, tok.points);
+
+    std::vector<carb::Float3> points;
+    getArrayValue(attachedStage, objectFullRecord->mKey, tok.points, omni::physics::parse::ReadTime::defaultTime(), points);
 
     InternalDeformableBody* internalDeformableBody = (InternalDeformableBody*)objectFullRecord->mInternalPtr;
     if (internalDeformableBody)
@@ -513,10 +574,9 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyPositions(const usdparser::At
         PxVec4* simPositionInvMass = internalDeformableBody->mSimMeshPositionInvMassH;
         for (unsigned int i = 0; i < internalDeformableBody->mNumSimMeshVertices; ++i)
         {
-            GfVec3d localPoint = GfVec3d(points[i][0], points[i][1], points[i][2]);
-            GfVec3d worldPoint = transform.Transform(localPoint);
+            const PxVec3d worldPoint = transform.transform(toPhysXd(points[i]));
 
-            simPositionInvMass[i] = PxVec4((float)worldPoint[0], (float)worldPoint[1], (float)worldPoint[2], simPositionInvMass[i].w);
+            simPositionInvMass[i] = PxVec4(float(worldPoint.x), float(worldPoint.y), float(worldPoint.z), simPositionInvMass[i].w);
         }
     }
 
@@ -526,7 +586,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyPositions(const usdparser::At
 
         if (deformableSurface &&
             internalDeformableBody &&
-            sourceHasAPI(attachedStage, objectFullRecord->mKey, OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsSurfaceDeformableSimAPI))
+            sourceHasAPI(attachedStage, objectFullRecord->mKey, tok.OmniPhysicsSurfaceDeformableSimAPI))
         {
             PxDeformableSurfaceDataFlags flags = PxDeformableSurfaceDataFlags(0);
             flags.raise(PxDeformableSurfaceDataFlag::ePOSITION_INVMASS);
@@ -543,7 +603,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyPositions(const usdparser::At
 
         if (deformableVolume &&
             internalVolumeDeformableBody &&
-            sourceHasAPI(attachedStage, objectFullRecord->mKey, OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsVolumeDeformableSimAPI))
+            sourceHasAPI(attachedStage, objectFullRecord->mKey, tok.OmniPhysicsVolumeDeformableSimAPI))
         {
             PxDeformableVolumeDataFlags flags = PxDeformableVolumeDataFlags(0);
             flags.raise(PxDeformableVolumeDataFlag::eSIM_POSITION_INVMASS);
@@ -557,7 +617,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyPositions(const usdparser::At
     return true;
 }
 
-bool PhysXUsdPhysicsInterface::updateDeformableBodyVelocities(const usdparser::AttachedStage& attachedStage, const ObjectId objectId)
+bool PhysXUsdPhysicsInterface::updateDeformableBodyVelocities(usdparser::AttachedStage& attachedStage, const ObjectId objectId)
 {
     InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
 
@@ -569,8 +629,17 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyVelocities(const usdparser::A
         return true;
     }
 
-    VtArray<GfVec3f> velocities;
-    getArrayValue(attachedStage, objectFullRecord->mKey, PXR_NS::UsdGeomTokens->velocities, PXR_NS::UsdTimeCode(), velocities);
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    omni::physics::parse::KnownTokens tok;
+    if (src)
+        tok.intern(*src);
+
+    // See the position-update twin above: a live edit already landed, so any
+    // carrier entry for `velocities` on this key is stale and must not shadow it.
+    attachedStage.clearCookedArray(objectFullRecord->mKey, tok.velocities);
+
+    std::vector<carb::Float3> velocities;
+    getArrayValue(attachedStage, objectFullRecord->mKey, tok.velocities, omni::physics::parse::ReadTime::defaultTime(), velocities);
 
     InternalDeformableBody* internalDeformableBody = (InternalDeformableBody*)objectFullRecord->mInternalPtr;
     if (internalDeformableBody)
@@ -584,7 +653,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyVelocities(const usdparser::A
         PxVec4* simVelocity = internalDeformableBody->mSimMeshVelocityH;
         for (unsigned int i = 0; i < internalDeformableBody->mNumSimMeshVertices; ++i)
         {
-            simVelocity[i] = PxVec4(velocities[i][0], velocities[i][1], velocities[i][2], simVelocity[i].w);
+            simVelocity[i] = PxVec4(toPhysX(velocities[i]), simVelocity[i].w);
         }
     }
 
@@ -594,7 +663,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyVelocities(const usdparser::A
 
         if (deformableSurface &&
             internalDeformableBody &&
-            sourceHasAPI(attachedStage, objectFullRecord->mKey, OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsSurfaceDeformableSimAPI))
+            sourceHasAPI(attachedStage, objectFullRecord->mKey, tok.OmniPhysicsSurfaceDeformableSimAPI))
         {
             PxDeformableSurfaceDataFlags flags = PxDeformableSurfaceDataFlags(0);
             flags.raise(PxDeformableSurfaceDataFlag::eVELOCITY);
@@ -611,7 +680,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyVelocities(const usdparser::A
 
         if (deformableVolume &&
             internalVolumeDeformableBody &&
-            sourceHasAPI(attachedStage, objectFullRecord->mKey, OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsVolumeDeformableSimAPI))
+            sourceHasAPI(attachedStage, objectFullRecord->mKey, tok.OmniPhysicsVolumeDeformableSimAPI))
         {
             PxDeformableVolumeDataFlags flags = PxDeformableVolumeDataFlags(0);
             flags.raise(PxDeformableVolumeDataFlag::eSIM_VELOCITY);
@@ -796,7 +865,7 @@ PxDeformableSurfaceMaterial* getSurfaceDeformableBodyMaterial(InternalDeformable
 }
 
 ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::AttachedStage& attachedStage,
-    const SdfPath& path, PhysxVolumeDeformableBodyDesc const& desc)
+    omni::physics::parse::ObjectKey bodyKey, PhysxVolumeDeformableBodyDesc const& desc)
 {
     PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
     PhysXScene* scene = physxSetup.getPhysXScene(desc.sceneId);
@@ -835,26 +904,30 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
         return kInvalidObjectId;
     }
 
-    const omni::physics::parse::ObjectKey bodyKey = attachedStage.keyFor(path);
-    const omni::physics::parse::ObjectKey simMeshKey = attachedStage.keyFor(desc.simMeshPath);
-    const omni::physics::parse::ObjectKey collMeshKey = attachedStage.keyFor(desc.collisionMeshPath);
+    const omni::physics::parse::ObjectKey simMeshKey = desc.simMeshKey;
+    const omni::physics::parse::ObjectKey collMeshKey = desc.collisionMeshKey;
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-    if (!src || !src->exists(bodyKey) ||
-        !src->isA(simMeshKey, schemaTypeToken<UsdGeomTetMesh>(*src)) ||
-        !src->isA(collMeshKey, schemaTypeToken<UsdGeomTetMesh>(*src)))
+    // isTetMeshLike, not isA(UsdGeomTetMesh): ovstage reports a UsdGeomTetMesh as plain "Mesh"
+    // (its populator has no TetMesh mapping), so the concrete-type check rejected every volume
+    // deformable loaded from a non-USD source. See PhysXTools.h::isTetMeshLike.
+    if (!src || !src->exists(bodyKey) || !isTetMeshLike(attachedStage, simMeshKey) ||
+        !isTetMeshLike(attachedStage, collMeshKey))
     {
         CARB_LOG_WARN("PhysX Deformable Body creation failed due to invalid deformable prims.");
         return kInvalidObjectId;
     }
 
-    GfMatrix4d simMeshToWorld = sourceLocalToWorld(attachedStage, attachedStage.keyFor(desc.simMeshPath));
-    GfMatrix4d worldToSimMesh = simMeshToWorld.GetInverse();
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
 
-    GfMatrix4d worldToCollMesh = worldToSimMesh;
-    if (desc.collisionMeshPath != desc.simMeshPath)
+    const PxMat44d simMeshToWorld = sourceLocalToWorld(attachedStage, simMeshKey);
+    const PxMat44d worldToSimMesh = affineInverse(simMeshToWorld);
+
+    PxMat44d worldToCollMesh = worldToSimMesh;
+    if (desc.collisionMeshKey != desc.simMeshKey)
     {
-        GfMatrix4d collMeshToWorld = sourceLocalToWorld(attachedStage, attachedStage.keyFor(desc.collisionMeshPath));
-        worldToCollMesh = collMeshToWorld.GetInverse();
+        const PxMat44d collMeshToWorld = sourceLocalToWorld(attachedStage, collMeshKey);
+        worldToCollMesh = affineInverse(collMeshToWorld);
     }
 
     // sync tet mesh generation
@@ -870,17 +943,21 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
 
     if (!deformableVolumeMeshCooked)
     {
-        CARB_LOG_WARN("Failed to cook PxDeformableVolumeMesh! Prim(%s)\n", path.GetText());
+        CARB_LOG_WARN("Failed to cook PxDeformableVolumeMesh! Prim(%s)\n", attachedStage.textFor(bodyKey));
         return kInvalidObjectId;
     }
 
     // surface triangles are mandatory on the collision mesh, because we need to be able to deterministically
     // reference surface triangles for attachments, also useful for picking.
-    VtArray<GfVec3i> collMeshSurfaceTriangles;
-    getArrayValue(attachedStage, desc.collisionMeshPath, PXR_NS::UsdGeomTokens->surfaceFaceVertexIndices,
-                  PXR_NS::UsdTimeCode(), collMeshSurfaceTriangles);
+    std::vector<carb::Int3> collMeshSurfaceTriangles;
+    getArrayValue(attachedStage, collMeshKey, tok.surfaceFaceVertexIndices,
+                  omni::physics::parse::ReadTime::defaultTime(), collMeshSurfaceTriangles);
     if (collMeshSurfaceTriangles.size() == 0)
     {
+        CARB_LOG_WARN("PhysX Deformable Body creation failed, collision mesh %s has no surfaceFaceVertexIndices. "
+                      "For an auto-cooked body these are produced by the cook and read back from the scene "
+                      "description, so an empty array means the cooked data was never published. Prim(%s)\n",
+                      attachedStage.textFor(collMeshKey), attachedStage.textFor(bodyKey));
         return kInvalidObjectId;
     }
 
@@ -889,7 +966,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     PxDeformableVolumeMesh* deformableVolumeMesh = cookingDataAsync->createDeformableVolumeMesh(collMeshSurfaceTriToTetMap, inData);
     if (!deformableVolumeMesh || collMeshSurfaceTriangles.size() != collMeshSurfaceTriToTetMap.size())
     {
-        CARB_LOG_WARN("Failed to create PxDeformableVolumeMesh from cooked data! Prim(%s)\n", path.GetText());
+        CARB_LOG_WARN("Failed to create PxDeformableVolumeMesh from cooked data! Prim(%s)\n", attachedStage.textFor(bodyKey));
         return kInvalidObjectId;
     }
 
@@ -913,44 +990,48 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     internalBody->mBodyKey = bodyKey;
     internalBody->mSimMeshKey = simMeshKey;
     internalBody->mCollMeshKey = collMeshKey;
-    internalBody->mWorldToSimMesh = GfMatrix4f(worldToSimMesh);
-    internalBody->mWorldToCollMesh = GfMatrix4f(worldToCollMesh);
+    // Kept in double: mWorldTo* are PxMat44d, so the world inverses are stored
+    // without the float narrowing the Gf-typed fields used to force.
+    internalBody->mWorldToSimMesh = worldToSimMesh;
+    internalBody->mWorldToCollMesh = worldToCollMesh;
     internalBody->mIsKinematic = desc.kinematicBody;
     internalBody->mBodyMass = desc.mass;
 
     // parse mesh data
-    VtArray<GfVec3f> simMeshPoints;
-    VtArray<GfVec3f> simMeshBindPoints;
-    VtArray<GfVec3f> simMeshVelocities;
-    VtArray<GfVec3f> collMeshPoints;
-    VtArray<GfVec3f> allSkinMeshPoints;
-    VtArray<GfVec3f> allSkinMeshBindPointsWorld;
+    std::vector<carb::Float3> simMeshPoints;
+    std::vector<carb::Float3> simMeshBindPoints;
+    std::vector<carb::Float3> simMeshVelocities;
+    std::vector<carb::Float3> collMeshPoints;
+    std::vector<carb::Float3> allSkinMeshPoints;
+    std::vector<carb::Float3> allSkinMeshBindPointsWorld;
     size_t numAllSkinMeshPoints;
 
     {
-        getArrayValue(attachedStage, desc.simMeshPath, PXR_NS::UsdGeomTokens->points,
-                      PXR_NS::UsdTimeCode(), simMeshPoints);
-        getArrayValue(attachedStage, desc.simMeshPath, PXR_NS::UsdGeomTokens->velocities,
-                      PXR_NS::UsdTimeCode(), simMeshVelocities);
-        if (desc.simMeshPath != desc.collisionMeshPath)
+        getArrayValue(attachedStage, simMeshKey, tok.points,
+                      omni::physics::parse::ReadTime::defaultTime(), simMeshPoints);
+        getArrayValue(attachedStage, simMeshKey, tok.velocities,
+                      omni::physics::parse::ReadTime::defaultTime(), simMeshVelocities);
+        if (desc.simMeshKey != desc.collisionMeshKey)
         {
-            getArrayValue(attachedStage, desc.collisionMeshPath, PXR_NS::UsdGeomTokens->points,
-                          PXR_NS::UsdTimeCode(), collMeshPoints);
+            getArrayValue(attachedStage, collMeshKey, tok.points,
+                          omni::physics::parse::ReadTime::defaultTime(), collMeshPoints);
         }
     }
 
     parseSimBindPoints(attachedStage, simMeshBindPoints, internalBody->mSimMeshKey, desc.simMeshBindPoseToken, simMeshPoints);
 
-    PXR_NS::GfMatrix4d cookingToWorld;
-    PXR_NS::GfMatrix4d simMeshToCooking;
+    PxMat44d cookingToWorld;
+    PxMat44d simMeshToCooking;
     double cookingToWorldScale;
     cookingDataAsync->computeDeformableCookingTransform(&simMeshToCooking, &cookingToWorld, &cookingToWorldScale,
-                                                        simMeshToWorld, simMeshBindPoints);
+                                                        simMeshToWorld,
+                                                        simMeshBindPoints.data(),
+                                                        simMeshBindPoints.size());
     {
-        //simMeshToCooking output excludes world scale, so adding it here
-        GfMatrix4d s;
-        s.SetScale(cookingToWorldScale);
-        simMeshToCooking = simMeshToCooking * s;
+        // simMeshToCooking output excludes world scale, so adding it here.
+        // Gf's `simMeshToCooking * s` on the shared sixteen doubles, spelled
+        // through gfmath so the accumulation order does not move.
+        simMeshToCooking = gfmath::multiply(simMeshToCooking, gfmath::setScale(cookingToWorldScale));
     }
 
     // collectSkinMeshes fills the body's skin-mesh ObjectKeys (plus the
@@ -971,7 +1052,12 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
 
     PxTransform pxCookingToWorld;
     PxVec3 pxCookingToWorldScaleDir; //should be identity scale
-    toPhysX(pxCookingToWorld, pxCookingToWorldScaleDir, cookingToWorld);
+    // The PhysX-semantics decomposition, not a gfmath one, and deliberately so:
+    // cookingToWorld is rigid by construction and the result is narrowed to
+    // float here, so this is not a cache input and does not need exact bits.
+    // (It replaces toPhysX(PxTransform&, PxVec3&, GfMatrix4d), which factored
+    // through GfTransform; on a rigid matrix the two agree to ~4e-8.)
+    decomposeMatrix(pxCookingToWorld, pxCookingToWorldScaleDir, cookingToWorld);
     PxReal pxCookingToWorldScale = PxReal(cookingToWorldScale);
 
     internalBody->mNumSimMeshVertices = simulationTetMesh->getNbVertices();
@@ -982,16 +1068,14 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     std::memcpy(internalBody->mCollMeshSurfaceTriangles.data(), collMeshSurfaceTriangles.data(),
                 internalBody->mCollMeshSurfaceTriangles.size() * sizeof(carb::Uint3));
 
-    for (const GfVec3i& tri : collMeshSurfaceTriangles)
+    for (const carb::Int3& tri : collMeshSurfaceTriangles)
     {
-        for (uint32_t i = 0; i < 3; ++i)
+        if (tri.x >= (int)internalBody->mNumCollMeshVertices || tri.y >= (int)internalBody->mNumCollMeshVertices ||
+            tri.z >= (int)internalBody->mNumCollMeshVertices)
         {
-            if (tri[i] >= (int)internalBody->mNumCollMeshVertices)
-            {
-                CARB_LOG_WARN("createVolumeDeformableBody(): Each surface face vertex index of collision mesh should be smaller than mNumCollMeshVertices!");
-                ICE_FREE(internalBody);
-                return kInvalidObjectId;
-            }
+            CARB_LOG_WARN("createVolumeDeformableBody(): Each surface face vertex index of collision mesh should be smaller than mNumCollMeshVertices!");
+            ICE_FREE(internalBody);
+            return kInvalidObjectId;
         }
     }
 
@@ -1003,7 +1087,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     PxDeformableVolumeMaterial* material = getVolumeDeformableBodyMaterial(internalMaterial, *scene, materialId);
     if (!material)
     {
-        CARB_LOG_WARN("Failed to aquire material for volume deformable! Prim(%s)\n", path.GetText());
+        CARB_LOG_WARN("Failed to aquire material for volume deformable! Prim(%s)\n", attachedStage.textFor(bodyKey));
         ICE_FREE(internalBody);
         return kInvalidObjectId;
     }
@@ -1013,7 +1097,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     PxDeformableVolume* deformableVolume = physics->createDeformableVolume(*cudaContextManager);
     if (!deformableVolume)
     {
-        CARB_LOG_WARN("Failed to create PxDeformableVolume! Prim(%s)\n", path.GetText());
+        CARB_LOG_WARN("Failed to create PxDeformableVolume! Prim(%s)\n", attachedStage.textFor(bodyKey));
         ICE_FREE(internalBody);
         return kInvalidObjectId;
     }
@@ -1035,7 +1119,8 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
         PxReal restOffset;
         PxReal contactOffset;
         deriveCollisionOffsets(restOffset, contactOffset,
-            *scene, geometry, pxCookingToWorldScale, desc.restOffset, desc.contactOffset, path);
+            *scene, geometry, pxCookingToWorldScale, desc.restOffset, desc.contactOffset,
+            attachedStage.textFor(bodyKey));
         shape->setContactOffset(contactOffset);
         shape->setRestOffset(restOffset);
 
@@ -1046,7 +1131,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     deformableVolume->attachSimulationMesh(*simulationTetMesh, *deformableVolumeMesh->getDeformableVolumeAuxData());
     if (!scene->getScene()->addActor(*deformableVolume))
     {
-        CARB_LOG_WARN("Failed to add PxDeformableVolume to scene: %s\n", path.GetText());
+        CARB_LOG_WARN("Failed to add PxDeformableVolume to scene: %s\n", attachedStage.textFor(bodyKey));
         ICE_FREE(internalBody);
         deformableVolume->release();
         return kInvalidObjectId;
@@ -1099,7 +1184,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     if (!setVolumeDeformableMass(*deformableVolume, internalBody->mSimMeshPositionInvMassH,
         internalBody->mBodyMass, internalMaterial ? &internalMaterial->mDensity : nullptr))
     {
-        CARB_LOG_WARN("Failed to aquire mass/density for volume deformable body! Prim(%s)\n", path.GetText());
+        CARB_LOG_WARN("Failed to aquire mass/density for volume deformable body! Prim(%s)\n", attachedStage.textFor(bodyKey));
         ICE_FREE(internalBody);
         PX_PINNED_HOST_FREE(cudaContextManager, collMeshRestPositionH);
         return kInvalidObjectId;
@@ -1117,8 +1202,10 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
 
     for (PxU32 i = 0; i < internalBody->mNumSimMeshVertices; ++i)
     {
-        GfVec3f simPosition = GfVec3f(simMeshToWorld.Transform(simMeshPoints[i]));
-        internalBody->mSimMeshPositionInvMassH[i] = PxVec4(toPhysX(simPosition), internalBody->mSimMeshPositionInvMassH[i].w);
+        const carb::Float3& p = simMeshPoints[i];
+        const PxVec3d simPosition = simMeshToWorld.transform(toPhysXd(p));
+        internalBody->mSimMeshPositionInvMassH[i] = PxVec4(float(simPosition.x), float(simPosition.y),
+                                                          float(simPosition.z), internalBody->mSimMeshPositionInvMassH[i].w);
     }
 
     //TODO fix. Velocities should be applied before PxDeformableVolumeExt::transform, and treated correctly according to
@@ -1126,7 +1213,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     if (!desc.startsAsleep && simMeshVelocities.size() > 0 &&
         simMeshVelocities.size() == internalBody->mNumSimMeshVertices)
     {
-        copyBuffer(internalBody->mSimMeshVelocityH, reinterpret_cast<const carb::Float3*>(simMeshVelocities.data()),
+        copyBuffer(internalBody->mSimMeshVelocityH, simMeshVelocities.data(),
             internalBody->mNumSimMeshVertices);
     }
     else
@@ -1161,21 +1248,23 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
 
     deformableVolume->userData = (void*)objectId;
     if (mExposePrimNames)
-        deformableVolume->setName(path.GetText());
+        deformableVolume->setName(attachedStage.textFor(bodyKey));
 
     if (internalBody->mSimMeshKey != internalBody->mBodyKey)
     {
         //registering sub objects that need change handling 
         ObjectId simulationId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(
-            ePTDeformableVolume, deformableVolume, internalBody, attachedStage.keyFor(desc.simMeshPath));
-        attachedStage.getObjectDatabase()->findOrCreateEntry(desc.simMeshPath, eVolumeDeformableBody, simulationId);
+            ePTDeformableVolume, deformableVolume, internalBody, simMeshKey);
+        attachedStage.getObjectDatabase()->findOrCreateEntry(
+            simMeshKey, attachedStage.textFor(simMeshKey), eVolumeDeformableBody, simulationId);
     }
     if (internalBody->mCollMeshKey != internalBody->mSimMeshKey)
     {
-        //registering sub objects that need change handling 
+        //registering sub objects that need change handling
         ObjectId collisionId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(
-            ePTDeformableVolume, deformableVolume, internalBody, attachedStage.keyFor(desc.collisionMeshPath));
-        attachedStage.getObjectDatabase()->findOrCreateEntry(desc.collisionMeshPath, eVolumeDeformableBody, collisionId);
+            ePTDeformableVolume, deformableVolume, internalBody, collMeshKey);
+        attachedStage.getObjectDatabase()->findOrCreateEntry(
+            collMeshKey, attachedStage.textFor(collMeshKey), eVolumeDeformableBody, collisionId);
     }
 
     if (internalMaterial)
@@ -1229,16 +1318,15 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
         PxArray<PxVec3> guideVertices((uint32_t)simMeshBindPoints.size());
         for (uint32_t i = 0; i < guideVertices.size(); ++i)
         {
-            const GfVec3f point = GfVec3f(simMeshToCooking.Transform(simMeshBindPoints[i]));
-            guideVertices[i] = PxVec3(point[0], point[1], point[2]);
+            guideVertices[i] = toPhysXf(gfmath::transformPoint(simMeshToCooking, toPhysXd(simMeshBindPoints[i])));
         }
 
-        GfMatrix4d worldToCooking = cookingToWorld.GetInverse();
+        const PxMat44d worldToCooking = gfmath::inverse(cookingToWorld);
         PxArray<PxVec3> embeddedVertices((uint32_t)allSkinMeshBindPointsWorld.size());
         for (uint32_t i = 0; i < embeddedVertices.size(); ++i)
         {
-            const GfVec3f point = GfVec3f(worldToCooking.Transform(allSkinMeshBindPointsWorld[i]));
-            embeddedVertices[i] = PxVec3(point[0], point[1], point[2]);
+            embeddedVertices[i] =
+                toPhysXf(gfmath::transformPoint(worldToCooking, toPhysXd(allSkinMeshBindPointsWorld[i])));
         }
 
         PxDeformableSkinningExt::initializeInterpolatedVertices(
@@ -1267,7 +1355,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
 }
 
 ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::AttachedStage& attachedStage,
-    const SdfPath& path, PhysxSurfaceDeformableBodyDesc const& desc)
+    omni::physics::parse::ObjectKey bodyKey, PhysxSurfaceDeformableBodyDesc const& desc)
 {
     PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
     PhysXScene* scene = physxSetup.getPhysXScene(desc.sceneId);
@@ -1306,32 +1394,39 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         return kInvalidObjectId;
     }
 
-    const omni::physics::parse::ObjectKey bodyKey = attachedStage.keyFor(path);
-    const omni::physics::parse::ObjectKey simMeshKey = attachedStage.keyFor(desc.simMeshPath);
+    const omni::physics::parse::ObjectKey simMeshKey = desc.simMeshKey;
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-    if (desc.collisionMeshPath != desc.simMeshPath)
+    if (desc.collisionMeshKey != desc.simMeshKey)
     {
         CARB_LOG_WARN("No support for PhysX surface deformables with separate collision meshes. %s",
-            desc.collisionMeshPath.GetText());
+            attachedStage.textFor(desc.collisionMeshKey));
         return kInvalidObjectId;
     }
 
-    if (!src || !src->exists(bodyKey) || !src->isA(simMeshKey, schemaTypeToken<UsdGeomMesh>(*src)))
+    if (!src || !src->exists(bodyKey))
     {
         CARB_LOG_WARN("PhysX Deformable Body creation failed due to invalid deformable prims.");
         return kInvalidObjectId;
     }
 
-    if (!sourceHasAPI(attachedStage, attachedStage.keyFor(desc.simMeshPath),
-                      OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsSurfaceDeformableSimAPI))
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+
+    if (!src->isA(simMeshKey, tok.meshType))
     {
-        CARB_LOG_WARN("PhysX Deformable Body creation failed due to missing SurfaceDeformableSimAPI on simulation mesh, %s.",
-                      desc.simMeshPath.GetText());
+        CARB_LOG_WARN("PhysX Deformable Body creation failed due to invalid deformable prims.");
         return kInvalidObjectId;
     }
 
-    GfMatrix4d simMeshToWorld = sourceLocalToWorld(attachedStage, attachedStage.keyFor(desc.simMeshPath));
-    GfMatrix4d worldToSimMesh = simMeshToWorld.GetInverse();
+    if (!sourceHasAPI(attachedStage, simMeshKey, tok.OmniPhysicsSurfaceDeformableSimAPI))
+    {
+        CARB_LOG_WARN("PhysX Deformable Body creation failed due to missing SurfaceDeformableSimAPI on simulation mesh, %s.",
+                      attachedStage.textFor(simMeshKey));
+        return kInvalidObjectId;
+    }
+
+    const PxMat44d simMeshToWorld = sourceLocalToWorld(attachedStage, simMeshKey);
+    const PxMat44d worldToSimMesh = affineInverse(simMeshToWorld);
 
     // sync mesh generation
     if (desc.hasAutoAPI)
@@ -1361,40 +1456,41 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
 
     internalBody->mBodyKey = bodyKey;
     internalBody->mSimMeshKey = simMeshKey;
-    internalBody->mWorldToSimMesh = GfMatrix4f(worldToSimMesh);
+    // Kept in double -- see the volume-deformable equivalent.
+    internalBody->mWorldToSimMesh = worldToSimMesh;
     internalBody->mIsKinematic = desc.kinematicBody;
     internalBody->mBodyMass = desc.mass;
 
     // parse mesh data
-    VtArray<GfVec3f> simMeshPoints;
-    VtArray<GfVec3f> simMeshBindPoints;
-    VtArray<GfVec3f> simMeshVelocities;
-    VtArray<int32_t> simMeshIndices;
-    VtArray<GfVec3f> simMeshRestShapePoints;
-    VtArray<GfVec3i> simMeshRestTriVtxIndices;
+    std::vector<carb::Float3> simMeshPoints;
+    std::vector<carb::Float3> simMeshBindPoints;
+    std::vector<carb::Float3> simMeshVelocities;
+    std::vector<int32_t> simMeshIndices;
+    std::vector<carb::Float3> simMeshRestShapePoints;
+    std::vector<carb::Int3> simMeshRestTriVtxIndices;
 
-    VtArray<GfVec3f> allSkinMeshPoints;
-    VtArray<GfVec3f> allSkinMeshBindPointsWorld;
+    std::vector<carb::Float3> allSkinMeshPoints;
+    std::vector<carb::Float3> allSkinMeshBindPointsWorld;
     size_t numAllSkinMeshPoints;
 
     {
-        getArrayValue(attachedStage, desc.simMeshPath, PXR_NS::UsdGeomTokens->points,
-                      PXR_NS::UsdTimeCode(), simMeshPoints);
-        getArrayValue(attachedStage, desc.simMeshPath, PXR_NS::UsdGeomTokens->velocities,
-                      PXR_NS::UsdTimeCode(), simMeshVelocities);
+        getArrayValue(attachedStage, simMeshKey, tok.points,
+                      omni::physics::parse::ReadTime::defaultTime(), simMeshPoints);
+        getArrayValue(attachedStage, simMeshKey, tok.velocities,
+                      omni::physics::parse::ReadTime::defaultTime(), simMeshVelocities);
     }
 
     parseSimBindPoints(attachedStage, simMeshBindPoints, internalBody->mSimMeshKey, desc.simMeshBindPoseToken, simMeshPoints);
 
-    getArrayValue(attachedStage, desc.simMeshPath, PXR_NS::UsdGeomTokens->faceVertexIndices,
-                  PXR_NS::UsdTimeCode(), simMeshIndices);
+    getArrayValue(attachedStage, simMeshKey, tok.faceVertexIndices,
+                  omni::physics::parse::ReadTime::defaultTime(), simMeshIndices);
 
     // Read rest shape
     {
-        getArrayValue(attachedStage, desc.simMeshPath, OmniUsdPhysicsDeformableSchemaTokens->omniphysicsRestShapePoints,
-                      PXR_NS::UsdTimeCode(), simMeshRestShapePoints);
-        getArrayValue(attachedStage, desc.simMeshPath, OmniUsdPhysicsDeformableSchemaTokens->omniphysicsRestTriVtxIndices,
-                      PXR_NS::UsdTimeCode(), simMeshRestTriVtxIndices);
+        getArrayValue(attachedStage, simMeshKey, tok.omniphysicsRestShapePoints,
+                      omni::physics::parse::ReadTime::defaultTime(), simMeshRestShapePoints);
+        getArrayValue(attachedStage, simMeshKey, tok.omniphysicsRestTriVtxIndices,
+                      omni::physics::parse::ReadTime::defaultTime(), simMeshRestTriVtxIndices);
 
         bool mismatch = simMeshRestShapePoints.size() != simMeshPoints.size() ||
                         simMeshRestTriVtxIndices.size() * 3 != simMeshIndices.size() ||
@@ -1405,22 +1501,24 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         {
             CARB_LOG_WARN("Surface deformable body creation failed. Mismatch between OmniPhysicsSurfaceDeformableSimAPI "
                           "rest shape attributes and UsdGeomMesh topology detected, %s",
-                          desc.simMeshPath.GetText());
+                          attachedStage.textFor(simMeshKey));
             ICE_FREE(internalBody);
             return kInvalidObjectId;
         }
     }
 
-    PXR_NS::GfMatrix4d cookingToWorld;
-    PXR_NS::GfMatrix4d simMeshToCooking;
+    PxMat44d cookingToWorld;
+    PxMat44d simMeshToCooking;
     double cookingToWorldScale;
     cookingDataAsync->computeDeformableCookingTransform(&simMeshToCooking, &cookingToWorld, &cookingToWorldScale,
-                                                        simMeshToWorld, simMeshBindPoints);
+                                                        simMeshToWorld,
+                                                        simMeshBindPoints.data(),
+                                                        simMeshBindPoints.size());
     {
-        // simMeshToCooking output excludes world scale, so adding it here
-        GfMatrix4d s;
-        s.SetScale(cookingToWorldScale);
-        simMeshToCooking = simMeshToCooking * s;
+        // simMeshToCooking output excludes world scale, so adding it here.
+        // Gf's `simMeshToCooking * s` on the shared sixteen doubles, spelled
+        // through gfmath so the accumulation order does not move.
+        simMeshToCooking = gfmath::multiply(simMeshToCooking, gfmath::setScale(cookingToWorldScale));
     }
 
     // collectSkinMeshes fills the body's skin-mesh ObjectKeys (plus the
@@ -1440,7 +1538,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     PxDeformableSurfaceMaterial* material = getSurfaceDeformableBodyMaterial(internalMaterial, *scene, materialId);
     if (!material)
     {
-        CARB_LOG_WARN("Failed to aquire material for surface deformable body! Prim(%s)\n", path.GetText());
+        CARB_LOG_WARN("Failed to aquire material for surface deformable body! Prim(%s)\n", attachedStage.textFor(bodyKey));
         ICE_FREE(internalBody);
         return kInvalidObjectId;
     }
@@ -1465,12 +1563,12 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         ckParams.meshWeldTolerance = 0.0f;
 
         // transform to cooking space and scaling to world size
-        std::vector<PXR_NS::GfVec3f> positions;
+        std::vector<PxVec3> positions;
         positions.resize(simMeshRestShapePoints.size());
         for (PxU32 i = 0; i < positions.size(); ++i)
         {
-            const GfVec3f& simRestPos = simMeshRestShapePoints[i];
-            positions[i] = GfVec3f(simMeshToCooking.Transform(simRestPos));
+            const carb::Float3& simRestPos = simMeshRestShapePoints[i];
+            positions[i] = toPhysXf(gfmath::transformPoint(simMeshToCooking, toPhysXd(simRestPos)));
         }
 
         // cook triangle mesh
@@ -1486,7 +1584,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         // the simulation mesh in USD to be "clean" in terms of PhysX PxTriangleMesh standards.
         if (!PxValidateTriangleMesh(ckParams, meshDesc))
         {
-            CARB_LOG_WARN("PxValidateTriangleMesh for PxDeformableSurface failed, %s", desc.simMeshPath.GetText());
+            CARB_LOG_WARN("PxValidateTriangleMesh for PxDeformableSurface failed, %s", attachedStage.textFor(simMeshKey));
             ICE_FREE(internalBody);
             return kInvalidObjectId;
         }
@@ -1496,7 +1594,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         bool status = PxCookTriangleMesh(ckParams, meshDesc, writeBuffer);
         if (!status)
         {
-            CARB_LOG_WARN("PxCookTriangleMesh for PxDeformableSurface failed, %s", desc.simMeshPath.GetText());
+            CARB_LOG_WARN("PxCookTriangleMesh for PxDeformableSurface failed, %s", attachedStage.textFor(simMeshKey));
             ICE_FREE(internalBody);
             return kInvalidObjectId;
         }
@@ -1505,14 +1603,14 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         triangleMesh = physxSetup.getPhysics()->createTriangleMesh(readBuffer);
         if (!triangleMesh)
         {
-            CARB_LOG_WARN("PxTriangleMesh creation failed: %s\n", path.GetText());
+            CARB_LOG_WARN("PxTriangleMesh creation failed: %s\n", attachedStage.textFor(bodyKey));
             ICE_FREE(internalBody);
             return kInvalidObjectId;
         }
 
         if (triangleMesh->getNbVertices() != uint32_t(simMeshPoints.size()))
         {
-            CARB_LOG_WARN("PxTriangleMesh vertices don't align with simulation mesh vertices: %s\n", path.GetText());
+            CARB_LOG_WARN("PxTriangleMesh vertices don't align with simulation mesh vertices: %s\n", attachedStage.textFor(bodyKey));
             ICE_FREE(internalBody);
             triangleMesh->release();
             return kInvalidObjectId;
@@ -1521,7 +1619,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         deformableSurface = physxSetup.getPhysics()->createDeformableSurface(*cudaContextManager);
         if (!deformableSurface)
         {
-            CARB_LOG_WARN("Failed to create PxDeformableSurface: %s\n", path.GetText());
+            CARB_LOG_WARN("Failed to create PxDeformableSurface: %s\n", attachedStage.textFor(bodyKey));
             ICE_FREE(internalBody);
             triangleMesh->release();
             return kInvalidObjectId;
@@ -1554,7 +1652,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
                 contactOffset = 1.2f * restOffset;
 
             deriveCollisionOffsets(restOffset, contactOffset,
-                *scene, geometry, 1.0f, restOffset, contactOffset, path);
+                *scene, geometry, 1.0f, restOffset, contactOffset, attachedStage.textFor(bodyKey));
             shape->setContactOffset(contactOffset);
             shape->setRestOffset(restOffset);
 
@@ -1564,7 +1662,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
 
         if (!scene->getScene()->addActor(*deformableSurface))
         {
-            CARB_LOG_WARN("Failed to add PxDeformableSurface to scene: %s\n", path.GetText());
+            CARB_LOG_WARN("Failed to add PxDeformableSurface to scene: %s\n", attachedStage.textFor(bodyKey));
             ICE_FREE(internalBody);
             deformableSurface->release();  // also releases attached shape and triangleMesh
             return kInvalidObjectId;
@@ -1594,7 +1692,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     deformableSurface->setSolverIterationCounts(scene->getInternalScene()->clampPosIterationCount(desc.solverPositionIterationCount));
 
     // bending
-    bool enableFlattening = (desc.restBendAnglesDefault == OmniUsdPhysicsDeformableSchemaTokens->flatDefault);
+    bool enableFlattening = src && (desc.restBendAnglesDefault == tok.flatDefault);
     deformableSurface->setDeformableSurfaceFlag(PxDeformableSurfaceFlag::eENABLE_FLATTENING, enableFlattening);
 
     // collision substepping
@@ -1623,8 +1721,13 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
                           simMeshVelocities.size() != internalBody->mNumSimMeshVertices;
     for (uint32_t i = 0; i < internalBody->mNumSimMeshVertices; ++i)
     {
-        internalBody->mSimMeshPositionInvMassH[i] = PxVec4(toPhysX(simMeshToWorld.Transform(simMeshPoints[i])), 0.0f);
-        simMeshRestPositionH[i] = PxVec4(toPhysX(simMeshToWorld.Transform(simMeshRestShapePoints[i])), 0.0f);
+        const carb::Float3& p = simMeshPoints[i];
+        const carb::Float3& r = simMeshRestShapePoints[i];
+        const PxVec3d worldPos = simMeshToWorld.transform(toPhysXd(p));
+        const PxVec3d worldRest = simMeshToWorld.transform(toPhysXd(r));
+        internalBody->mSimMeshPositionInvMassH[i] =
+            PxVec4(float(worldPos.x), float(worldPos.y), float(worldPos.z), 0.0f);
+        simMeshRestPositionH[i] = PxVec4(float(worldRest.x), float(worldRest.y), float(worldRest.z), 0.0f);
         //TODO add rotation if feature enabled
         PxVec4 vel = zeroVelocities ? PxVec4(0.0f) : PxVec4(toPhysX(simMeshVelocities[i]), 0.0f);
         internalBody->mSimMeshVelocityH[i] = vel;
@@ -1639,7 +1742,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     if (!setSurfaceDeformableMass(*deformableSurface, internalBody->mSimMeshPositionInvMassH,
         internalBody->mBodyMass, internalMaterial ? &internalMaterial->mDensity : nullptr, material->getThickness()))
     {
-        CARB_LOG_WARN("Failed to aquire mass/density for surface deformable body! Prim(%s)\n", path.GetText());
+        CARB_LOG_WARN("Failed to aquire mass/density for surface deformable body! Prim(%s)\n", attachedStage.textFor(bodyKey));
         ICE_FREE(internalBody);
         deformableSurface->release();
         triangleMesh->release();
@@ -1678,18 +1781,19 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     computePointExtent(simMeshPoints, internalBody->mSimMeshExtentSaveRestoreBuf);
 
     ObjectId objectId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(
-        ePTDeformableSurface, deformableSurface, internalBody, attachedStage.keyFor(path));
+        ePTDeformableSurface, deformableSurface, internalBody, bodyKey);
 
     deformableSurface->userData = (void*)objectId;
     if (mExposePrimNames)
-        deformableSurface->setName(path.GetText());
+        deformableSurface->setName(attachedStage.textFor(bodyKey));
 
     if (internalBody->mSimMeshKey != internalBody->mBodyKey)
     {
-        //registering sub objects that need change handling 
+        //registering sub objects that need change handling
         ObjectId simulationId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(
-            ePTDeformableSurface, deformableSurface, internalBody, attachedStage.keyFor(desc.simMeshPath));
-        attachedStage.getObjectDatabase()->findOrCreateEntry(desc.simMeshPath, eSurfaceDeformableBody, simulationId);
+            ePTDeformableSurface, deformableSurface, internalBody, simMeshKey);
+        attachedStage.getObjectDatabase()->findOrCreateEntry(
+            simMeshKey, attachedStage.textFor(simMeshKey), eSurfaceDeformableBody, simulationId);
     }
 
     if (internalMaterial)
@@ -1746,16 +1850,15 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         PxArray<PxVec3> guideVertices((uint32_t)simMeshBindPoints.size());
         for (uint32_t i = 0; i < guideVertices.size(); ++i)
         {
-            const GfVec3f point = GfVec3f(simMeshToCooking.Transform(simMeshBindPoints[i]));
-            guideVertices[i] = PxVec3(point[0], point[1], point[2]);
+            guideVertices[i] = toPhysXf(gfmath::transformPoint(simMeshToCooking, toPhysXd(simMeshBindPoints[i])));
         }
 
-        GfMatrix4d worldToCooking = cookingToWorld.GetInverse();
+        const PxMat44d worldToCooking = gfmath::inverse(cookingToWorld);
         PxArray<PxVec3> embeddedVertices((uint32_t)allSkinMeshBindPointsWorld.size());
         for (uint32_t i = 0; i < embeddedVertices.size(); ++i)
         {
-            const GfVec3f point = GfVec3f(worldToCooking.Transform(allSkinMeshBindPointsWorld[i]));
-            embeddedVertices[i] = PxVec3(point[0], point[1], point[2]);
+            embeddedVertices[i] =
+                toPhysXf(gfmath::transformPoint(worldToCooking, toPhysXd(allSkinMeshBindPointsWorld[i])));
         }
 
         PxDeformableSkinningExt::initializeInterpolatedVertices(

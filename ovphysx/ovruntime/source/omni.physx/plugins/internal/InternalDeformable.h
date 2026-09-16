@@ -1,24 +1,23 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
 #ifdef _MSC_VER
 #    pragma warning(push)
-#    define NOMINMAX // Make sure nobody #defines min or max
+#    ifndef NOMINMAX
+#        define NOMINMAX // Make sure nobody #defines min or max
+#    endif
 #endif
 
 #ifdef __linux__
 #    define __forceinline __attribute__((always_inline))
 #endif
 
-#include "UsdPCH.h"
-
 #include <PxPhysicsAPI.h>
 
 #include "Internal.h"
 #include <PhysXDefines.h>
-#include <internal/InternalXformOpResetStorage.h>
 #include "PxDeformableSkinning.h"
 
 
@@ -78,9 +77,12 @@ public:
     // pathFor).
     omni::physics::parse::ObjectKey mBodyKey;
     omni::physics::parse::ObjectKey mSimMeshKey;
-    PXR_NS::GfMatrix4f mWorldToSimMesh;
+    // World-to-mesh-local inverses. Double precision: the source world
+    // transforms these are inverted from are double, so nothing is narrowed on
+    // the way in any more.
+    ::physx::PxMat44d mWorldToSimMesh;
     std::vector<omni::physics::parse::ObjectKey> mSkinMeshKeys;
-    std::vector<PXR_NS::GfMatrix4f> mWorldToSkinMeshTransforms;
+    std::vector<::physx::PxMat44d> mWorldToSkinMeshTransforms;
     std::vector<carb::Uint2> mSkinMeshRanges;
     uint32_t mNumSkinMeshVertices; // all skin mesh vertices
     uint32_t mNumSimMeshVertices; // physx sim mesh!
@@ -122,7 +124,7 @@ public:
     ::physx::PxDeformableElementFilter* addRigidFilters(::physx::PxActor* actor, std::vector<::physx::PxU32> indices);
 
     omni::physics::parse::ObjectKey mCollMeshKey;
-    PXR_NS::GfMatrix4f mWorldToCollMesh;
+    ::physx::PxMat44d mWorldToCollMesh;
     std::vector<carb::Uint3> mCollMeshSurfaceTriangles;
     std::vector<uint32_t> mCollMeshSurfaceTriToTetMap;
 
@@ -131,7 +133,7 @@ public:
     ::physx::PxVec4* mCollMeshPositionInvMassH; // physx coll mesh, pinned host memory
 
     std::vector<carb::Float3> mCollMeshPointsSaveRestoreBuf;
-    PXR_NS::VtVec3fArray mCollMeshExtentSaveRestoreBuf;
+    std::vector<carb::Float3> mCollMeshExtentSaveRestoreBuf;
 
     ::physx::PxDeformableVolume* mDeformableVolume;
     ::physx::PxDeformableVolumeMesh* mDeformableVolumeMesh;
@@ -162,7 +164,7 @@ public:
 
     std::vector<uint32_t> mSimToPhysxTriMap;
 
-    PXR_NS::VtVec3fArray mSimMeshExtentSaveRestoreBuf;
+    std::vector<carb::Float3> mSimMeshExtentSaveRestoreBuf;
 
     ::physx::PxDeformableSurface* mDeformableSurface;
     ::physx::PxTriangleMesh* mTriangleMesh;

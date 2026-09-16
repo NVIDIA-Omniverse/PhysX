@@ -1,10 +1,11 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # ovphysx SDK
 
-ovphysx is an SDK for USD-based physics simulation with DLPack tensor
-interoperability, available as a Python wheel and a C/C++ package.
+ovphysx is an SDK for USD-based physics simulation with Warp-array output in
+Python and DLTensor-based native interoperability, available as a Python wheel
+and a C/C++ package.
 
 - [Latest releases](https://github.com/NVIDIA-Omniverse/PhysX/releases)
 - [Getting started](docs/tutorials/quickstart.md)
@@ -16,7 +17,7 @@ The native OVPhysX package does not include OVStage. Download the matching
 native archive from the
 [OVStage GitHub Releases](https://github.com/NVIDIA-Omniverse/ovstage/releases)
 page and extract it beside OVPhysX, without overlaying the two trees. This
-release uses OVStage `0.1.0.346039`, published under the `v0.1.0` release. Then
+release uses OVStage `0.2.0.377349`, published under the `v0.2.0` release. Then
 build and run a bundled sample:
 
 ```bash
@@ -52,7 +53,13 @@ Key resources:
 Important notes:
 - OVStage is an application-supplied dependency. Keep its extracted native
   package separate from the OVPhysX package.
-- This SDK bundles its own OpenUSD libraries. It is not needed to install
-  OpenUSD separately.
-- ovphysx exchanges tensor data via DLPack, so any framework that understands
-  DLPack can consume simulation outputs.
+- This SDK ships no OpenUSD libraries. ovstage ingests USD scenes through its
+  own internal namespaced OpenUSD runtime; the application owns whatever USD it
+  authors with. The PhysX USD schemas ship as codeless plugins under
+  `schemas/physx/`; register them with
+  `ovstage_population_register_usd_schemas()` (path from
+  `ovphysx_get_codeless_schema_root()`) before the first population call, as
+  `samples/c_samples/common/ovstage_sample.h` does.
+- `PhysX.read()` and `read_tokens()` return `warp.array` values on CPU and CUDA.
+  Warp owns downstream DLPack interoperability with other frameworks; the native
+  C API and compatibility tensor-binding surface retain DLTensor descriptors.

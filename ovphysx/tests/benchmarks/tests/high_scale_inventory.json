@@ -1,0 +1,10 @@
+{
+    "_comment": "Hidden high-scale diagnostics contract: exactly five CPU rows, all registered outside the frozen L1B Authoring.*/WriteScaling.* selection. The four WriteScalingHighN.* rows reuse the WriteScaling fixture and operation at 8,192 and 16,384 bodies; RuntimeSpawnScaling.collider_heavy_1280_cpu drains one runtime-spawned body into 1,280 existing static colliders. See REQ-CAPI-BENCHMARK-005. Every row is a non-paging diagnostic.",
+    "rows": [
+        { "name": "WriteScalingHighN.velocity_ovstage_8192_cpu", "device": "cpu" },
+        { "name": "WriteScalingHighN.velocity_tensor_8192_cpu", "device": "cpu" },
+        { "name": "WriteScalingHighN.velocity_ovstage_16384_cpu", "device": "cpu" },
+        { "name": "WriteScalingHighN.velocity_tensor_16384_cpu", "device": "cpu" },
+        { "name": "RuntimeSpawnScaling.collider_heavy_1280_cpu", "device": "cpu" }
+    ]
+}

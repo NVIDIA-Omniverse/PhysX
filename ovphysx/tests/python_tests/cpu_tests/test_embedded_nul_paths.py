@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# PARTIALLY DEPRECATED (tensor-binding-deprecation): the two create_tensor_binding NUL-path tests retire with the binding. The session read/write API takes no path input, so there is nothing to convert them to. The other NUL-rejection tests here stay.
 
 """Regression coverage for NVBugs 6433621.
 
@@ -30,7 +32,7 @@ def test_get_object_type_rejects_embedded_nul(boxes_scene):
     with pytest.raises(RuntimeError, match="embedded NUL"):
         physx.get_object_type(_NUL_PATH)
 
-    # Control: nonexistent path without NUL is INVALID, not an error.
+    # A nonexistent path without a NUL is INVALID, not an error.
     assert physx.get_object_type("/World/NoSuchShape") == 0
 
 

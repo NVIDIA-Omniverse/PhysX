@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Verify that ERROR_MARKERS in conftest.py catch native C++ runtime warnings.
 
@@ -8,8 +8,8 @@ strings listed in ERROR_MARKERS.  This test emits a matching sentinel via
 stderr and verifies that the conftest hook causes the emitting test to fail.
 
 Because the error-marker mechanism fails the *emitting* test (not the test that
-checks for failure), we run the emitting test in a subprocess via pytest and
-assert that it exits with a failure status.
+checks for failure), the emitting test runs in a subprocess via pytest and the
+outer test asserts that it exits with a failure status.
 """
 
 import os
@@ -23,9 +23,9 @@ import pytest
 
 def test_error_markers_catch_native_warnings():
     """A test that emits an ERROR_MARKERS-matching string must fail."""
-    # "[ErrorMarkerSentinel]" is in ERROR_MARKERS in conftest.py.
-    # The inner test prints it to stderr, which the conftest makereport hook
-    # picks up via report.capstderr.
+    # "[ErrorMarkerSentinel]" is an ERROR_MARKERS entry in conftest.py. The inner
+    # test prints it to stderr, which the conftest makereport hook scans via
+    # report.capstderr.
     inner_test = textwrap.dedent("""\
         import sys
 
@@ -48,8 +48,8 @@ def test_error_markers_catch_native_warnings():
         tmp_test = f.name
 
     try:
-        # Use --capture=fd to capture C-level file descriptor output.
-        # Do NOT pass -s (which disables capture entirely).
+        # --capture=fd captures C-level file descriptor output. -s would disable
+        # capture entirely.
         result = subprocess.run(
             [sys.executable, "-m", "pytest", "--override-ini=addopts=", "--capture=fd", "-xv", tmp_test],
             capture_output=True,
@@ -59,7 +59,7 @@ def test_error_markers_catch_native_warnings():
         )
 
         combined = result.stdout + result.stderr
-        # The inner test should FAIL because it emits an ERROR_MARKERS match
+        # The inner test must fail because it emits an ERROR_MARKERS match.
         assert result.returncode != 0, (
             f"Expected subprocess pytest to fail (rc!=0) but got rc={result.returncode}.\n"
             f"output:\n{combined[-3000:]}"

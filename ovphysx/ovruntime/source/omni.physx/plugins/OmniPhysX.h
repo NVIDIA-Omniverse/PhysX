@@ -1,8 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
+/**
+ * @implements REQ-BUILD-BRIDGE-001
+ * @covers AC-1 AC-2
+ */
 
 #include <carb/dictionary/IDictionary.h>
 #include <carb/tasking/ITasking.h>
@@ -18,7 +22,9 @@
 #include "PhysXReplicator.h"
 #include "internal/InternalPhysXDatabase.h"
 #include "PhysXStageUpdate.h"
+#include "usdLoad/AttachedStage.h" // AttachedStageUsdHandle (AttachOvstageBackingStageHandle below)
 
+#include <cstddef>
 #include <vector>
 
 namespace omni
@@ -51,6 +57,60 @@ using ProfileStatsSubscriptionRegistry =
 
 using ProfileStatsVector = std::vector<PhysicsProfileStats>;
 using CrossThreadProfileMap = std::unordered_map<std::string, uint64_t>;
+
+// OmniPhysX::mSimulationLayer's handle type: an opaque, pointer-sized owner of an SdfLayer
+// reference. The real TfRefPtr<SdfLayer> lives inside that storage; the special members route
+// through the installed op table (omni::physics::parse::simulationLayerHandleOps(), ADR-0027
+// seam #3, RuntimeBridge.cpp) so this header and OvruntimePhysX name no pxr type.
+//
+// @implements REQ-BUILD-BRIDGE-001
+// @covers AC-4
+// Empty-is-normal contract (ADR-0027): a default-constructed handle holds no layer, which is the
+// only state an ovstage / USD-free attach ever produces. With no op table installed (production)
+// the handle is a zeroed POD; with the USD library's table installed it is refcount-correct over
+// a real SdfLayerRefPtr.
+class SimulationLayerHandle
+{
+public:
+    SimulationLayerHandle() noexcept;
+    SimulationLayerHandle(std::nullptr_t) noexcept;
+    SimulationLayerHandle(const SimulationLayerHandle& other) noexcept;
+    SimulationLayerHandle& operator=(const SimulationLayerHandle& other) noexcept;
+    ~SimulationLayerHandle();
+
+    explicit operator bool() const noexcept;
+
+    // Non-owning peek at the raw SdfLayer*, for the IPhysicsDataWrite hand-off
+    // (beginFrameWrite / prepareTransformWrite): this handle's own reference keeps the layer
+    // alive for the duration of the call, and a USD sink takes its own real reference from it.
+    void* rawLayer() const noexcept;
+
+    // Adopts `layer` (a raw SdfLayer*), taking a reference through the op table's adoptRaw
+    // hook. Only the stage-lifecycle seam produces such a pointer.
+    static SimulationLayerHandle fromRawLayer(void* layer) noexcept;
+
+    // Raw storage address; only the pxr-free bridge and the stage-lifecycle seam use it to
+    // construct an SdfLayerRefPtr into the opaque storage (ADR-0027), never naming a pxr type.
+    void* storage() noexcept
+    {
+        return mStorage;
+    }
+    const void* storage() const noexcept
+    {
+        return mStorage;
+    }
+
+private:
+    alignas(void*) unsigned char mStorage[sizeof(void*)];
+};
+static_assert(sizeof(SimulationLayerHandle) == sizeof(void*),
+              "SimulationLayerHandle must stay pointer-sized: TfRefPtr<SdfLayer> is one raw pointer");
+
+// physXAttachOvstage's backingStage parameter type is exactly usdLoad/AttachedStage.h's
+// AttachedStageUsdHandle -- the value is forwarded straight into UsdLoad::attachOvstage().
+// Reusing the one alias (rather than declaring a layout-identical twin) avoids needing a
+// conversion shim at the call site.
+using AttachOvstageBackingStageHandle = ::omni::physx::usdparser::AttachedStageUsdHandle;
 
 // OM-45822 caching these settings avoids slowing down performance of the runtime update loop (visible in OmniGym sim)
 struct OmniCachedSettings
@@ -115,21 +175,25 @@ public:
     void physXAttach(long int stageId, bool loadPhysics);
     // Stageless attach for a consumer-provided ovstage source (ADR-0002 M2c-E).
     // Returns false when the lower attach fails. The backing stage/id are
-    // classified before this method starts the session.
+    // classified before this method starts the session. `backingStage` (a Kit-
+    // hosted USD stage ovstage optionally co-attaches) is always empty without USD:
+    // there is no UsdUtilsStageCache to resolve one from, and
+    // physxSimulationAttachOvstage (PhysX.cpp) always passes
+    // `effectiveBackingStageId == 0` there.
     bool physXAttachOvstage(const void* ovstageAttachPayload,
                             uint64_t readOrdinal,
-                            PXR_NS::UsdStageWeakPtr backingStage,
+                            AttachOvstageBackingStageHandle backingStage,
                             uint64_t effectiveBackingStageId);
     // Pull + apply ovstage change deltas over an explicit ordinal range (ADR-0003 M3).
     bool physXUpdateFromOvStage(uint64_t fromOrdinal, uint64_t toOrdinal);
 
 private:
     // Shared session prologue for both attach paths (USD + ovstage): create the
-    // internal database, reset sim callbacks, ensure the PxPhysics singleton, and
-    // configure the parse interface. `stage` is the live USD stage, or an empty
-    // handle for a stageless (ovstage) attach (PhysX tolerances then fall back to
-    // defaults — a documented residual of the null-stage sweep).
-    void physXAttachSession(PXR_NS::UsdStageWeakPtr stage);
+    // internal database, reset sim callbacks, and configure the parse interface.
+    // Ensuring the PxPhysics singleton is not this method's job: physXAttach() does it
+    // itself, before calling in, since it is the only caller with a real stage to derive
+    // tolerances from.
+    void physXAttachSession();
 
 public:
 
@@ -243,12 +307,17 @@ public:
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////
-    // Return the current simulation layer, if set
-    PXR_NS::SdfLayerRefPtr getSimulationLayer() const
+    // Return the current simulation layer, if set. Kit/USD-authoring-only (an anonymous
+    // sublayer for scrubbing simulation-time overrides back out of the edited stage):
+    // confirmed zero real ovstage/ovphysx callers -- InternalScene.cpp's own comment
+    // already documents mSimulationLayer is always null under ovstage; not reachable from
+    // ovphysx's own attach path to begin with. See SimulationLayerHandle's comment above --
+    // with no op table installed this is dead storage, so a plain pass-through is enough.
+    SimulationLayerHandle getSimulationLayer() const
     {
         return mSimulationLayer;
     }
-    void setSimulationLayer(PXR_NS::SdfLayerRefPtr layer)
+    void setSimulationLayer(SimulationLayerHandle layer)
     {
         mSimulationLayer = layer;
     }
@@ -597,9 +666,22 @@ public:
     {
         mHasTempPhysicsScene = val;
     }
-    const PXR_NS::SdfPath& getTempPhysicsScenePath() const
+    // The synthetic default-scene placeholder's fixed literal identity
+    // ("/PhysicsScene_16e12ee3daea") is inlined at its two consumers
+    // (PhysXStageUpdate.cpp's physXReset(), usdLoad/LoadStage.cpp's stageless-default-scene
+    // fallback) rather than reached through an accessor here.
+    // ObjectKey identity of the same synthetic default-scene placeholder (ADR-0019 retype of
+    // the field this replaces): minted once per attach by usdLoad/LoadStage.cpp's
+    // stageless-default-scene fallback via AttachedStage::keyFor() on the same fixed literal
+    // and recorded here, so PhysXUsdPhysicsInterface::createObject's ObjectKey-taking overload
+    // can be used for the engine-side creation without a repeated SdfPath round trip.
+    omni::physics::parse::ObjectKey getTempPhysicsSceneKey() const
     {
         return mTempPhysicsScenePath;
+    }
+    void setTempPhysicsSceneKey(omni::physics::parse::ObjectKey key)
+    {
+        mTempPhysicsScenePath = key;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -709,18 +791,17 @@ public:
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////
-    // Replicator
-    bool registerReplicator(uint64_t stageId, const IReplicatorCallback& callback);
-    void unregisterReplicator(uint64_t stageId);
-    PhysXReplicator* getReplicator(uint64_t stageId)
-    {
-        ReplicatorMap::iterator fit = mReplicatorMap.find(stageId);
-        if (fit != mReplicatorMap.end())
-        {
-            return &fit->second;
-        }
-        return nullptr;
-    }
+    // Replicator. Registrations name an *attach*, not a stage (ADR-0016): either a real handle
+    // from IPhysxSimulation::getAttachHandle(), or kActiveAttach when the caller registers before
+    // the attach exists (the documented registerReplicator() -> attachStage() flow, where no
+    // handle has been minted yet).
+    bool registerReplicator(AttachHandle attachHandle, const IReplicatorCallback& callback);
+    void unregisterReplicator(AttachHandle attachHandle);
+    // kActiveAttach and the lone active attach's own handle name the same attach, and which of the
+    // two a caller holds depends only on whether it registered before or after the attach, so a
+    // registration made under either spelling resolves through the other. Out of line because that
+    // equivalence needs UsdLoad.
+    PhysXReplicator* getReplicator(AttachHandle attachHandle);
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // CUDA
@@ -754,7 +835,7 @@ private:
     carb::events::IEventStreamPtr mSimulationEventStreamV2;
     carb::events::IEventStreamPtr mErrorEventStream;
 
-    PXR_NS::SdfLayerRefPtr mSimulationLayer{ nullptr };
+    SimulationLayerHandle mSimulationLayer;
 
     // simulation overrides
     int32_t mGpuPipelineOverride{ -1 }; // -1: use setting from schema, 0: force CPU, 1: force GPU
@@ -794,9 +875,11 @@ private:
 
     bool mSimulationAttachStage{ false }; // whether IPhysxSimulation interface was used
 
-    // Temp physics scene
+    // Temp physics scene. ObjectKey identity (ADR-0019 retype from SdfPath); see
+    // getTempPhysicsSceneKey()/setTempPhysicsSceneKey() above -- default-constructed
+    // (invalid) until the stageless-default-scene fallback mints and records one.
     bool mHasTempPhysicsScene{ false };
-    PXR_NS::SdfPath mTempPhysicsScenePath{ "/PhysicsScene_16e12ee3daea" };
+    omni::physics::parse::ObjectKey mTempPhysicsScenePath;
 
     // ISettings subscriptions to remove ourselves from when exiting
     OmniCachedSettings mCachedSettings;
@@ -819,8 +902,13 @@ private:
     std::vector<::physx::PxU32> mTypeIds;
     std::vector<::physx::PxU32> mFreeTypeId;
 
-    // replicator
+    // replicator, keyed by attach handle
     ReplicatorMap mReplicatorMap;
+
+    // Shared by getReplicator() and unregisterReplicator(): resolves a registration through either
+    // spelling of the attach it was made under (see getReplicator()). Returns mReplicatorMap.end()
+    // when there is none.
+    ReplicatorMap::iterator findReplicatorEntry(AttachHandle attachHandle);
 
     // Function-table copies for the static runtime accessors that replaced
     // Carbonite acquire/publication for the internal PhysX runtime.

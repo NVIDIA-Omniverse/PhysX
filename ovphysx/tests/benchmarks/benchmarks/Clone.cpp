@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // Clone scaling benchmarks: replicate /World/envs/env0 from
 // basic_simulation.usda into N target paths. GPU-only.
@@ -50,14 +50,14 @@ public:
             return;
         }
 
-        // Pre-build the target paths and per-target parent transforms here
+        // Pre-build the target paths and per-target anchor transforms here
         // (untimed setup) so step() measures only the clone() call itself,
         // not the cost of constructing N strings and a 7N float array.
         mTargets.clear();
         mTargets.reserve(mN);
         for (uint32_t i = 0; i < mN; ++i)
         {
-            // env0 already exists in the fixture; clone into env1..envN.
+            // env0 already exists in the fixture, so clone into env1..envN.
             mTargets.emplace_back("/World/envs/env" + std::to_string(i + 1));
         }
 
@@ -66,12 +66,12 @@ public:
         // (px, py, pz, qx, qy, qz, qw), imaginary-first quaternion.
         constexpr float kSpacing = 4.0f;
         const uint32_t side = static_cast<uint32_t>(std::ceil(std::sqrt(static_cast<float>(mN))));
-        mParentTransforms.assign(static_cast<size_t>(mN) * 7, 0.0f);
+        mAnchorTransforms.assign(static_cast<size_t>(mN) * 7, 0.0f);
         for (uint32_t i = 0; i < mN; ++i)
         {
             const uint32_t row = i / side;
             const uint32_t col = i % side;
-            float* t = mParentTransforms.data() + static_cast<size_t>(i) * 7;
+            float* t = mAnchorTransforms.data() + static_cast<size_t>(i) * 7;
             t[0] = static_cast<float>(col) * kSpacing; // px
             t[1] = 0.0f;                                // py (ground plane)
             t[2] = static_cast<float>(row) * kSpacing; // pz
@@ -97,7 +97,7 @@ protected:
         ovphysx::PhysX* physx = BmGlobals::getInstance().getPhysX();
         if (!physx) return;
 
-        ovphysx_api_status_t st = physx->clone("/World/envs/env0", mTargets, mParentTransforms.data());
+        ovphysx_api_status_t st = physx->clone("/World/envs/env0", mTargets, mAnchorTransforms.data());
         if (st != OVPHYSX_API_SUCCESS)
         {
             printFormatted("Clone: clone(N=%u) failed: status=%d", mN, static_cast<int>(st));
@@ -109,7 +109,7 @@ protected:
 private:
     uint32_t mN;
     std::vector<std::string> mTargets;
-    std::vector<float> mParentTransforms;
+    std::vector<float> mAnchorTransforms;
     ovphysx_sample_stage_attachment_t mStageAttachment{};
 };
 

@@ -1,5 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# @implements REQ-CAPI-OVSTAGE-SCHEMA-001
+# @covers AC-1
 
 """Unit tests for the codeless USD schema exposure API (OMPE-86833).
 
@@ -35,6 +38,20 @@ def test_codeless_schema_root_is_dir():
     assert root.name == "physx"
 
 
+def test_codeless_schema_root_is_a_registrable_plugin_root():
+    """The root carries an include registry, so registering the root alone
+    (with ovstage or a stock USD PlugRegistry) registers every module."""
+    try:
+        root = ovphysx.codeless_schema_root()
+    except FileNotFoundError as exc:
+        pytest.skip(f"codeless schemas not staged in this layout: {exc}")
+    root_plug_info = json.loads((root / "plugInfo.json").read_text())
+    includes = root_plug_info.get("Includes", [])
+    assert includes, f"root plugInfo.json under {root} has no Includes"
+    assert any(entry.rstrip("/").endswith("resources") for entry in includes), includes
+    assert not root_plug_info.get("Plugins"), "the root registry must only include the module registries"
+
+
 def test_codeless_schema_paths_contain_expected_modules():
     paths = _schema_paths_or_skip()
     assert paths, "expected at least one codeless schema package"
@@ -68,6 +85,36 @@ def test_shipped_pluginfo_is_codeless():
             assert plugin.get("ResourcePath") == "resources", (path, plugin.get("ResourcePath"))
             assert not plugin.get("LibraryPath"), (path, plugin.get("LibraryPath"))
             assert plugin.get("Info", {}).get("Types"), f"no Info.Types in {path}"
+
+
+def _fake_layout(base, lib_dir, schema_parent):
+    lib = base / lib_dir / "libovphysx.so"
+    lib.parent.mkdir(parents=True, exist_ok=True)
+    lib.write_text("")
+    registry = base / schema_parent / "schemas" / "physx" / "plugInfo.json"
+    registry.parent.mkdir(parents=True, exist_ok=True)
+    registry.write_text('{"Includes": ["*/resources/"]}\n')
+    return lib, registry.parent
+
+
+def test_codeless_schema_root_honors_ovphysx_lib_in_sdk_layout(tmp_path, monkeypatch):
+    """OVPHYSX_LIB selects the native library. The schemas that match it win
+    over the wheel-local tree, whether the override names the file or its
+    directory (the same rule the native helper applies)."""
+    lib, expected = _fake_layout(tmp_path / "sdk", "lib", ".")
+    monkeypatch.setenv("OVPHYSX_LIB", str(lib))
+    assert ovphysx.codeless_schema_root().resolve() == expected.resolve()
+    monkeypatch.setenv("OVPHYSX_LIB", str(lib.parent))
+    assert ovphysx.codeless_schema_root().resolve() == expected.resolve()
+
+
+def test_codeless_schema_root_honors_ovphysx_lib_in_copied_runtime_layout(tmp_path, monkeypatch):
+    """A runtime copied beside an application keeps schemas next to the library.
+    An unrelated but complete schemas/physx tree one level up must not win."""
+    lib, expected = _fake_layout(tmp_path / "app", ".", ".")
+    _fake_layout(tmp_path, "unused", ".")
+    monkeypatch.setenv("OVPHYSX_LIB", str(lib))
+    assert ovphysx.codeless_schema_root().resolve() == expected.resolve()
 
 
 def test_codeless_schema_api_does_not_trigger_native_bootstrap():

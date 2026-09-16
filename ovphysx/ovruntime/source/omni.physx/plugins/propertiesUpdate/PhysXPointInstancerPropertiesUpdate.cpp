@@ -1,9 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-PARSE-INSTANCER-002
+ * @covers AC-2
+ *
+ * @implements REQ-PARSE-INSTANCER-003
+ * @covers AC-2 AC-3
+ */
 
 #include "PhysXPropertiesUpdate.h"
+
+#include <omni/physics/parse/KnownTokens.h>
 
 #include <PhysXTools.h>
 #include <Setup.h>
@@ -18,17 +26,13 @@
 
 using namespace ::physx;
 using namespace carb;
-using namespace PXR_NS;
 using namespace omni::physx;
 using namespace omni::physx::usdparser;
 using namespace omni::physx::internal;
 
-// Single boundary translation point for schema type tokens.
-using omni::physx::internal::schemaTypeToken;
-
 
 // point instancer
-bool updateBodyInstancedTransform(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode, bool positionUpdate)
+bool updateBodyInstancedTransform(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode, bool positionUpdate)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -41,20 +45,28 @@ bool updateBodyInstancedTransform(AttachedStage& attachedStage, ObjectId objectI
     if (internalType == ePTPointInstancer)
     {
         const omni::physics::parse::ObjectKey instancerKey = objectRecord->mKey;
-        const GfMatrix4d instancerMatrix = getWorldTransform(attachedStage, instancerKey, UsdTimeCode::Default());
+        const PxMat44d instancerMatrix = getWorldTransform(attachedStage, instancerKey, omni::physics::parse::ReadTime::defaultTime());
 
-        VtArray<GfVec3f> positions;
-        getArrayValue<VtVec3fArray>(attachedStage, instancerKey, UsdGeomTokens->positions, UsdTimeCode::Default(), positions);
-        VtArray<GfQuath> orientations;
-        getArrayValue<VtQuathArray>(attachedStage, instancerKey, UsdGeomTokens->orientations, UsdTimeCode::Default(), orientations);
-        SdfPathVector targets;
-        getRelationshipValue(attachedStage, instancerKey, UsdGeomTokens->prototypes, targets);
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        omni::physics::parse::KnownTokens tok;
+        if (source)
+            tok.intern(*source);
+
+        std::vector<carb::Float3> positions;
+        getArrayValue(attachedStage, instancerKey, tok.positions, omni::physics::parse::ReadTime::defaultTime(), positions);
+        // Orientations are authored as half-precision quaternions; the array read
+        // widens them to carb::Float4 lanes x,y,z,w with w == the real part
+        // (PhysXTools.h fillArray ladder's eQuath -> carb::Float4 overload).
+        std::vector<carb::Float4> orientations;
+        getArrayValue(attachedStage, instancerKey, tok.orientations, omni::physics::parse::ReadTime::defaultTime(), orientations);
+        std::vector<omni::physics::parse::ObjectKey> targets;
+        getRelationshipValue(attachedStage, instancerKey, tok.prototypes, targets);
 
         bool topBodyResolved = false;
-        GfMatrix4d topBodyMatrix(1.0);
-        GfTransform topBodyTransform;
+        PxMat44d topBodyMatrix(PxIdentity);
+        PxVec3 topBodyScale(1.0f);
 
-        const uint64_t instancerApis = attachedStage.getObjectDatabase()->getSchemaAPIs(attachedStage.pathFor(instancerKey));
+        const uint64_t instancerApis = attachedStage.getObjectDatabase()->getSchemaAPIs(instancerKey);
 
         for (size_t i = 0; i < targets.size(); i++)
         {
@@ -62,8 +74,8 @@ bool updateBodyInstancedTransform(AttachedStage& attachedStage, ObjectId objectI
                 if (entries && !entries->empty())
                 {
                     bool resetStack = false;
-                    const GfMatrix4d localProtoPrimMatrix = getLocalTransform(
-                        attachedStage, attachedStage.keyFor(targets[i]), UsdTimeCode::Default(), resetStack);
+                    const PxMat44d localProtoPrimMatrix = getLocalTransform(
+                        attachedStage, targets[i], omni::physics::parse::ReadTime::defaultTime(), resetStack);
 
                     auto it = entries->begin();
                     while (it != entries->end())
@@ -79,43 +91,56 @@ bool updateBodyInstancedTransform(AttachedStage& attachedStage, ObjectId objectI
                                 {
                                     PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
 
-                                    const GfVec3f instancePos = internalActor->mInstanceIndex < positions.size() ?
-                                                                    positions[internalActor->mInstanceIndex] :
-                                                                    GfVec3f(0.0f);
-                                    const GfQuatf instanceOrient = internalActor->mInstanceIndex < orientations.size() ?
-                                                                    GfQuatf(orientations[internalActor->mInstanceIndex]) :
-                                                                    GfQuatf(1.0f);
+                                    // toPhysXQuat(carb::Float4) is the same four floats the old
+                                    // toPhysX(GfQuatf(GfQuath)) produced (both via
+                                    // GetImaginary()/GetReal(); GfHalf->float is exact), and
+                                    // GfQuatf(1.0f) was the identity.
+                                    const PxVec3 instancePos = internalActor->mInstanceIndex < positions.size() ?
+                                                                    toPhysX(positions[internalActor->mInstanceIndex]) :
+                                                                    PxVec3(0.0f);
+                                    const PxQuat instanceOrient = internalActor->mInstanceIndex < orientations.size() ?
+                                                                    toPhysXQuat(orientations[internalActor->mInstanceIndex]) :
+                                                                    PxQuat(PxIdentity);
 
-                                    GfMatrix4d instanceMatrix;
-                                    instanceMatrix.SetTranslate(GfVec3d(instancePos));
-                                    instanceMatrix.SetRotateOnly(instanceOrient);
+                                    const PxMat44d instanceMatrix =
+                                        makeMatrix(PxTransform(instancePos, instanceOrient));
 
-                                    const GfMatrix4d bodyMatrix = localProtoPrimMatrix * instanceMatrix * instancerMatrix;
-                                    
+                                    // Gf order was localProtoPrimMatrix * instanceMatrix * instancerMatrix;
+                                    // Gf A * B is PhysX B * A, so the chain is written in reverse here.
+                                    const PxMat44d bodyMatrix = instancerMatrix * instanceMatrix * localProtoPrimMatrix;
+
+
                                     PxTransform globalPose = actor->getGlobalPose();
 
                                     const float tolerance = 1e-3f;
                                     bool updateTr = false;
                                     if (positionUpdate)
                                     {
-                                        const GfVec3f newPos(bodyMatrix.ExtractTranslation());
-                                        if ((fabsf(newPos[0] - globalPose.p.x) > tolerance) ||
-                                            (fabsf(newPos[1] - globalPose.p.y) > tolerance) || (fabsf(newPos[2] - globalPose.p.z) > tolerance))
+                                        const PxVec3d p = bodyMatrix.getPosition();
+                                        const PxVec3 newPos(float(p.x), float(p.y), float(p.z));
+                                        if ((fabsf(newPos.x - globalPose.p.x) > tolerance) ||
+                                            (fabsf(newPos.y - globalPose.p.y) > tolerance) || (fabsf(newPos.z - globalPose.p.z) > tolerance))
                                         {
-                                            globalPose.p = toPhysX(newPos);
+                                            globalPose.p = newPos;
                                             updateTr = true;
                                         }
                                     }
                                     else
                                     {
-                                        const GfQuatf newRot(bodyMatrix.RemoveScaleShear().ExtractRotationQuat());
+                                        // Bit-exact GfTransform::GetRotation() (gfmath::decomposeWithPivot), not
+                                        // the PhysX-native polar toTransform: bodyMatrix composes an instancer
+                                        // world transform with a prototype's local transform, so ancestor
+                                        // non-uniform scale plus rotation can shear it, and the two
+                                        // decompositions disagree on that input (see MatrixTools.h).
+                                        const gfmath::PivotTransform bodyXf = gfmath::decomposeWithPivot(bodyMatrix);
+                                        const PxQuatd bodyRotD = gfmath::getQuat(bodyXf.rotation);
+                                        const PxQuat newRot(
+                                            float(bodyRotD.x), float(bodyRotD.y), float(bodyRotD.z), float(bodyRotD.w));
 
-                                        const float dot = (newRot.GetImaginary()[0] * globalPose.q.x) +
-                                            (newRot.GetImaginary()[1] * globalPose.q.y) +
-                                            (newRot.GetImaginary()[2] * globalPose.q.z) + (newRot.GetReal() * globalPose.q.w);
+                                        const float dot = newRot.dot(globalPose.q);
                                         if (abs(dot) < (1.0f - tolerance))
                                         {
-                                            globalPose.q = toPhysX(newRot);
+                                            globalPose.q = newRot;
                                             updateTr = true;
                                         }
                                     }
@@ -161,58 +186,68 @@ bool updateBodyInstancedTransform(AttachedStage& attachedStage, ObjectId objectI
                                             objectRecord = db.getFullRecord(internalType, size_t(actor->userData));
                                             if (objectRecord && internalType == ePTActor)
                                             {
-                                                const GfMatrix4d topBodyPrimMatrix =
-                                                    getWorldTransform(attachedStage, instancerKey, UsdTimeCode::Default());
-                                                const GfMatrix4d topBodyPrimMatrixInv = topBodyPrimMatrix.GetInverse();
+                                                const PxMat44d topBodyPrimMatrix =
+                                                    getWorldTransform(attachedStage, instancerKey, omni::physics::parse::ReadTime::defaultTime());
+                                                const PxMat44d topBodyPrimMatrixInv = affineInverse(topBodyPrimMatrix);
 
-                                                topBodyMatrix = instancerMatrix * topBodyPrimMatrixInv;
-                                                topBodyTransform = GfTransform(topBodyMatrix);
+                                                // Gf order was instancerMatrix * topBodyPrimMatrixInv.
+                                                topBodyMatrix = topBodyPrimMatrixInv * instancerMatrix;
+                                                // Bit-exact GfTransform::GetScale() (gfmath::decomposeWithPivot),
+                                                // not the PhysX-native polar getScale: topBodyMatrix composes an
+                                                // instancer world transform with a prototype's local transform,
+                                                // so ancestor non-uniform scale plus rotation can shear it, and
+                                                // the two decompositions disagree on that input (see
+                                                // MatrixTools.h). Feeds the shape local position below.
+                                                const PxVec3d topBodyScaleD = gfmath::decomposeWithPivot(topBodyMatrix).scale;
+                                                topBodyScale = PxVec3(
+                                                    float(topBodyScaleD.x), float(topBodyScaleD.y), float(topBodyScaleD.z));
                                                 topBodyResolved = true;
                                             }
                                         }
                                     }
 
-                                    const GfVec3f instancePos = internalShape->mInstanceIndex < positions.size() ? positions[internalShape->mInstanceIndex] : GfVec3f(0.0f);
-                                    const GfQuatf instanceOrient = internalShape->mInstanceIndex < orientations.size() ? GfQuatf(orientations[internalShape->mInstanceIndex]) : GfQuatf(1.0f);
+                                    const PxVec3 instancePos = internalShape->mInstanceIndex < positions.size() ? toPhysX(positions[internalShape->mInstanceIndex]) : PxVec3(0.0f);
+                                    const PxQuat instanceOrient = internalShape->mInstanceIndex < orientations.size() ? toPhysXQuat(orientations[internalShape->mInstanceIndex]) : PxQuat(PxIdentity);
 
-                                    GfMatrix4d instanceMatrix;
-                                    instanceMatrix.SetTranslate(GfVec3d(instancePos));
-                                    instanceMatrix.SetRotateOnly(instanceOrient);
+                                    const PxMat44d instanceMatrix =
+                                        makeMatrix(PxTransform(instancePos, instanceOrient));
 
-                                    const GfMatrix4d shapeMatrix = localProtoPrimMatrix * instanceMatrix * topBodyMatrix;
+                                    // Gf order was localProtoPrimMatrix * instanceMatrix * topBodyMatrix.
+                                    const PxMat44d shapeMatrix = topBodyMatrix * instanceMatrix * localProtoPrimMatrix;
 
-                                    PXR_NS::GfVec3f localPos = PXR_NS::GfVec3f(shapeMatrix.ExtractTranslation());
-                                    PXR_NS::GfQuatf localRotOut = PXR_NS::GfQuatf(shapeMatrix.ExtractRotationQuat());
+                                    const PxVec3d sp = shapeMatrix.getPosition();
+                                    const PxVec3 localPos =
+                                        PxVec3(float(sp.x), float(sp.y), float(sp.z)).multiply(topBodyScale);
 
-                                    const PXR_NS::GfVec3d sc = topBodyTransform.GetScale();
-                                    for (int iA = 0; iA < 3; iA++)
-                                    {
-                                        localPos[iA] *= (float)sc[iA];
-                                    }                                    
                                     PxTransform localPose = shape->getLocalPose();
 
                                     const float tolerance = 1e-3f;
                                     bool updateTr = false;
                                     if (positionUpdate)
                                     {
-                                        const GfVec3f newPos(localPos);
-                                        if ((fabsf(newPos[0] - localPose.p.x) > tolerance) ||
-                                            (fabsf(newPos[1] - localPose.p.y) > tolerance) || (fabsf(newPos[2] - localPose.p.z) > tolerance))
+                                        if ((fabsf(localPos.x - localPose.p.x) > tolerance) ||
+                                            (fabsf(localPos.y - localPose.p.y) > tolerance) || (fabsf(localPos.z - localPose.p.z) > tolerance))
                                         {
-                                            localPose.p = toPhysX(newPos);
+                                            localPose.p = localPos;
                                             updateTr = true;
                                         }
                                     }
                                     else
                                     {
-                                        const GfQuatf newRot(shapeMatrix.ExtractRotationQuat());
+                                        // Bit-exact GfTransform::GetRotation() (gfmath::decomposeWithPivot), not
+                                        // the PhysX-native polar toTransform: shapeMatrix composes an instancer
+                                        // world transform with a prototype's local transform, so ancestor
+                                        // non-uniform scale plus rotation can shear it, and the two
+                                        // decompositions disagree on that input (see MatrixTools.h).
+                                        const gfmath::PivotTransform shapeXf = gfmath::decomposeWithPivot(shapeMatrix);
+                                        const PxQuatd shapeRotD = gfmath::getQuat(shapeXf.rotation);
+                                        const PxQuat newRot(
+                                            float(shapeRotD.x), float(shapeRotD.y), float(shapeRotD.z), float(shapeRotD.w));
 
-                                        const float dot = (newRot.GetImaginary()[0] * localPose.q.x) +
-                                            (newRot.GetImaginary()[1] * localPose.q.y) +
-                                            (newRot.GetImaginary()[2] * localPose.q.z) + (newRot.GetReal() * localPose.q.w);
+                                        const float dot = newRot.dot(localPose.q);
                                         if (abs(dot) < (1.0f - tolerance))
                                         {
-                                            localPose.q = toPhysX(newRot);
+                                            localPose.q = newRot;
                                             updateTr = true;
                                         }
                                     }
@@ -232,17 +267,17 @@ bool updateBodyInstancedTransform(AttachedStage& attachedStage, ObjectId objectI
     return true;
 }
 
-bool omni::physx::updateBodyInstancedPositions(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateBodyInstancedPositions(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    return updateBodyInstancedTransform(attachedStage, objectId, property, timeCode, true);    
+    return updateBodyInstancedTransform(attachedStage, objectId, property, timeCode, true);
 }
 
-bool omni::physx::updateBodyInstancedOrientations(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateBodyInstancedOrientations(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     return updateBodyInstancedTransform(attachedStage, objectId, property, timeCode, false);
 }
 
-bool updateBodyInstancedVelocitiesInternal(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode, bool linearVelocity)
+bool updateBodyInstancedVelocitiesInternal(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode, bool linearVelocity)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -256,17 +291,20 @@ bool updateBodyInstancedVelocitiesInternal(AttachedStage& attachedStage, ObjectI
     {
         const omni::physics::parse::ObjectKey instancerKey = objectRecord->mKey;
         const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+        omni::physics::parse::KnownTokens tok;
+        if (src)
+            tok.intern(*src);
 
-        if (src && src->isA(instancerKey, schemaTypeToken<UsdGeomPointInstancer>(*src)))
+        if (src && src->isA(instancerKey, tok.pointInstancerType))
         {
-            VtArray<GfVec3f> velocities;
+            std::vector<carb::Float3> velocities;
             if (linearVelocity)
-                getArrayValue<VtVec3fArray>(attachedStage, instancerKey, UsdGeomTokens->velocities, UsdTimeCode::Default(), velocities);
+                getArrayValue(attachedStage, instancerKey, tok.velocities, omni::physics::parse::ReadTime::defaultTime(), velocities);
             else
-                getArrayValue<VtVec3fArray>(attachedStage, instancerKey, UsdGeomTokens->angularVelocities, UsdTimeCode::Default(), velocities);
+                getArrayValue(attachedStage, instancerKey, tok.angularVelocities, omni::physics::parse::ReadTime::defaultTime(), velocities);
 
-            SdfPathVector targets;
-            getRelationshipValue(attachedStage, instancerKey, UsdGeomTokens->prototypes, targets);
+            std::vector<omni::physics::parse::ObjectKey> targets;
+            getRelationshipValue(attachedStage, instancerKey, tok.prototypes, targets);
 
             for (size_t i = 0; i < targets.size(); i++)
             {
@@ -293,7 +331,9 @@ bool updateBodyInstancedVelocitiesInternal(AttachedStage& attachedStage, ObjectI
                                         if (linearVelocity)
                                             dynamicActor->setLinearVelocity(toPhysX(velocities[internalActor->mInstanceIndex]));
                                         else
-                                            dynamicActor->setAngularVelocity(toPhysX(degToRad(velocities[internalActor->mInstanceIndex])));
+                                            // degToRad(PxVec3) applies the same float scalar
+                                            // as the GfVec3f overload it replaces.
+                                            dynamicActor->setAngularVelocity(degToRad(toPhysX(velocities[internalActor->mInstanceIndex])));
                                     }
                                 }
                             }
@@ -307,12 +347,12 @@ bool updateBodyInstancedVelocitiesInternal(AttachedStage& attachedStage, ObjectI
     return true;
 }
 
-bool omni::physx::updateBodyInstancedVelocities(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateBodyInstancedVelocities(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     return updateBodyInstancedVelocitiesInternal(attachedStage, objectId, property, timeCode, true);
 }
 
-bool omni::physx::updateBodyInstancedAngularVelocities(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateBodyInstancedAngularVelocities(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     return updateBodyInstancedVelocitiesInternal(attachedStage, objectId, property, timeCode, false);
 }

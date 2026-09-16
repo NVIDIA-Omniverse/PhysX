@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "vector_types.h"
 #include "foundation/PxVec3.h"
@@ -42,6 +19,7 @@
 #include "gridCal.cuh"
 #include "copy.cuh"
 #include "deformableUtils.cuh"
+#include "deformableAndParticleUtils.cuh"
 #include "particleSystem.cuh"
 #include "utils.cuh"
 
@@ -2002,8 +1980,9 @@ extern "C" __global__ void sb_queryRigidSoftAttachmentReferenceCountLaunch(
 }
 
 // Solves rigid-soft attachments. Serves both PGS and TGS dispatches via the
-// isTGS arg. PGS callers pass biasCoefficient = 0.5f and isVelocityIteration
-// = false; TGS callers thread the kernel-arg values through.
+// isTGS arg. Position iterations pass the attachment bias coefficient. Velocity
+// iterations pass isVelocityIteration = true and biasCoefficient = 0 for a
+// pure velocity projection.
 extern "C" __global__ void sb_solveRigidSoftAttachmentLaunch(
 	PxgSoftBody*								softbodies,
 	PxgDbRigidAttachmentBlock*					attachmentBlocks,
@@ -2051,7 +2030,7 @@ extern "C" __global__ void sb_solveRigidSoftAttachmentLaunch(
 		// mSimDeltaPos. vertexInvMasses come refCount-inflated;
 		// attachPointInvMass carries the raw bc^2*invM scalar for denomBias.
 		PxgDeformablePart<PxVec4> db;
-		db.readSoftBodyAttachment(softbody, elemIdx, baryOrType, elemIsVertex, isTGS);
+		db.readSoftBodyAttachment(softbody, elemIdx, baryOrType, elemIsVertex, isTGS, dt, isVelocityIteration);
 
 		// Both-static early exit: rigid static AND every contributing vertex
 		// kinematic => attachPointInvMass = 0.
@@ -2061,8 +2040,9 @@ extern "C" __global__ void sb_solveRigidSoftAttachmentLaunch(
 			continue;
 		}
 
-		// Rigid side. PGS: readVelocity zeros linDelta/angDelta; TGS: they carry
-		// the rigid's accumulated linear/angular delta.
+		// Rigid side. readVelocity zeros linDelta / angDelta on PGS. On TGS they
+		// carry the rigid's accumulated motion, which the solve zeros in velocity
+		// iterations.
 		PxgRigidPart rigid;
 		rigid.readAttachmentPrep(block, offset);
 		rigid.readVelocity(velocityReader, rigidId, isTGS);
@@ -2079,8 +2059,12 @@ extern "C" __global__ void sb_solveRigidSoftAttachmentLaunch(
 		// elemIsVertex (from PxGetIsVertexType) selects the vertex/tet scatter; bc unread for a vertex.
 		if(!deltaImpulse.isZero())
 		{
-			const PxVec3 deltaPos = -deltaImpulse * dt;
-			db.writeSoftBody(softbody, elemIdx, baryOrType, elemIsVertex, deltaPos);
+			// delta, the attachment impulse, is expressed as a position delta in position
+			// iterations and as velocity * dt in velocity iterations. It accumulates in
+			// mSimDelta and sb_gm_applyExternalDeltasLaunch writes it to the vertex state
+			// (velocity always, position only in position iterations).
+			const PxVec3 delta = -deltaImpulse * dt;
+			db.writeSoftBody(softbody, elemIdx, baryOrType, elemIsVertex, delta);
 		}
 	}
 }
@@ -2185,7 +2169,9 @@ extern "C" __global__ void sb_queryClothAttachmentReferenceCountLaunch(
 extern "C" __global__ void sb_solveOutputSoftBodyAttachmentDeltaVLaunch(
 	PxgSoftBody*								softbodies,
 	PxgDbDbAttachmentBlock*						attachmentBlocks,
-	const PxU32									numAttachments
+	const PxU32									numAttachments,
+	const PxReal								dt,
+	const bool									isVelocityIteration
 )
 {
 	const PxU32 nbBlocksRequired = (numAttachments + blockDim.x - 1) / blockDim.x;
@@ -2210,7 +2196,7 @@ extern "C" __global__ void sb_solveOutputSoftBodyAttachmentDeltaVLaunch(
 		PxgSoftBody& softbody0 = softbodies[softBodyId0];
 
 		PxgDeformablePart<PxVec4> db0;
-		const PxVec3 pos0 = db0.readSoftBodyAttachmentDbDb(softbody0, tetrahedronIdx0, bary0);
+		const PxVec3 pos0 = db0.readSoftBodyAttachmentDbDb(softbody0, tetrahedronIdx0, bary0, dt, isVelocityIteration);
 
 		const PxU32 elemId1 = block.elemId1[offset];
 		const PxU32 softBodyId1 = PxGetSoftBodyId(elemId1);
@@ -2219,23 +2205,13 @@ extern "C" __global__ void sb_solveOutputSoftBodyAttachmentDeltaVLaunch(
 		PxgSoftBody& softbody1 = softbodies[softBodyId1];
 
 		PxgDeformablePart<PxVec4> db1;
-		const PxVec3 pos1 = db1.readSoftBodyAttachmentDbDb(softbody1, tetrahedronIdx1, bary1);
+		const PxVec3 pos1 = db1.readSoftBodyAttachmentDbDb(softbody1, tetrahedronIdx1, bary1, dt, isVelocityIteration);
 
 		PxVec3 delta;
 		if(solveDbDbAttachment(db0, db1, pos0, pos1, delta))
 		{
-			// .xyz-only scatter: vertexInvMasses is refCount-inflated by
-			// readSoftBodyAttachmentDbDb, so b{0,1}w = bary * refCount *
-			// raw_invMass. Pre-count populated .w; finalize divides .xyz/.w
-			// cancelling the inflation.
-			const uint4 tetInd0 = softbody0.mSimTetIndices[tetrahedronIdx0];
-			const uint4 tetInd1 = softbody1.mSimTetIndices[tetrahedronIdx1];
-			const float4 b0w = make_float4(db0.bc.x*db0.vertexInvMasses.x, db0.bc.y*db0.vertexInvMasses.y,
-				db0.bc.z*db0.vertexInvMasses.z, db0.bc.w*db0.vertexInvMasses.w);
-			const float4 b1w = make_float4(db1.bc.x*db1.vertexInvMasses.x, db1.bc.y*db1.vertexInvMasses.y,
-				db1.bc.z*db1.vertexInvMasses.z, db1.bc.w*db1.vertexInvMasses.w);
-			updatePositionDeltaTet(softbody1.mSimDelta, tetInd1, -delta, b1w);
-			updatePositionDeltaTet(softbody0.mSimDelta, tetInd0,  delta, b0w);
+			db1.writeSoftBody(softbody1, tetrahedronIdx1, bary1, /*elemIsVertex*/ false, -delta);
+			db0.writeSoftBody(softbody0, tetrahedronIdx0, bary0, /*elemIsVertex*/ false, delta);
 		}
 	}
 
@@ -2246,7 +2222,9 @@ extern "C" __global__ void sb_solveOutputClothAttachmentDeltaVLaunch(
 	PxgSoftBody*								softbodies,
 	PxgFEMCloth*								clothes,
 	PxgDbDbAttachmentBlock*						attachmentBlocks,
-	const PxU32									numAttachments
+	const PxU32									numAttachments,
+	const PxReal								dt,
+	const bool									isVelocityIteration
 )
 {
 	const PxU32 nbBlocksRequired = (numAttachments + blockDim.x - 1) / blockDim.x;
@@ -2272,7 +2250,7 @@ extern "C" __global__ void sb_solveOutputClothAttachmentDeltaVLaunch(
 		PxgFEMCloth& cloth = clothes[clothId];
 
 		PxgDeformablePart<PxVec3> db0;
-		const PxVec3 pos0 = db0.readClothAttachmentDbDb(cloth, elementId, bary0);
+		const PxVec3 pos0 = db0.readClothAttachmentDbDb(cloth, elementId, bary0, dt, isVelocityIteration);
 
 		const PxU32 elemId1 = block.elemId1[offset];
 		const PxU32 softBodyId = PxGetSoftBodyId(elemId1);
@@ -2281,19 +2259,13 @@ extern "C" __global__ void sb_solveOutputClothAttachmentDeltaVLaunch(
 		PxgSoftBody& softbody = softbodies[softBodyId];
 
 		PxgDeformablePart<PxVec4> db1;
-		const PxVec3 pos1 = db1.readSoftBodyAttachmentDbDb(softbody, tetrahedronIdx, bary1);
+		const PxVec3 pos1 = db1.readSoftBodyAttachmentDbDb(softbody, tetrahedronIdx, bary1, dt, isVelocityIteration);
 
 		PxVec3 delta;
 		if(solveDbDbAttachment(db0, db1, pos0, pos1, delta))
 		{
-			const uint4 triInd  = cloth.mTriangleVertexIndices[elementId];
-			const uint4 tetInd  = softbody.mSimTetIndices[tetrahedronIdx];
-			const float4 b0w = make_float4(db0.bc.x*db0.vertexInvMasses.x, db0.bc.y*db0.vertexInvMasses.y,
-				db0.bc.z*db0.vertexInvMasses.z, 0.0f);
-			const float4 b1w = make_float4(db1.bc.x*db1.vertexInvMasses.x, db1.bc.y*db1.vertexInvMasses.y,
-				db1.bc.z*db1.vertexInvMasses.z, db1.bc.w*db1.vertexInvMasses.w);
-			updatePositionDeltaTet(softbody.mSimDelta, tetInd, -delta, b1w);
-			updatePositionDeltaTri(cloth.mDeltaPos,    triInd,  delta, b0w);
+			db1.writeSoftBody(softbody, tetrahedronIdx, bary1, /*elemIsVertex*/ false, -delta);
+			db0.writeCloth(cloth, elementId, bary0, /*elemIsVertex*/ false, delta);
 		}
 	}
 }
@@ -2302,7 +2274,8 @@ extern "C" __global__ void sb_solveOutputClothAttachmentDeltaVLaunch(
 extern "C" __global__ void sb_gm_applyExternalDeltasLaunch(
 	PxgSoftBody* gSoftbodies,
 	const PxU32* activeSoftbodies,
-	const PxReal invDt
+	const PxReal invDt,
+	bool isVelocityIteration
 )
 {
 	__shared__ __align__(16) char tSoftbody[sizeof(PxgSoftBody)];
@@ -2339,15 +2312,15 @@ extern "C" __global__ void sb_gm_applyExternalDeltasLaunch(
 		delta.x *= scale; delta.y *= scale, delta.z *= scale;
 		delta.w = 0.f;
 
-		const float4 newVel = vel + delta * invDt;
+		// Velocity iteration writes only the velocity correction, skipping the position
+		// and accumulated-delta updates (Muller SCA 2020 S3.6).
+		vels[vertIdx] = vel + delta * invDt;
 
-		//tempPos[vertIdx] = pos;
-		curPositions[vertIdx] = pos + delta;
-
-		vels[vertIdx] = newVel;
-
-		shSoftbody.mSimDeltaPos[vertIdx] += delta;
-
+		if(!isVelocityIteration)
+		{
+			curPositions[vertIdx] = pos + delta;
+			shSoftbody.mSimDeltaPos[vertIdx] += delta;
+		}
 
 		//clear delta
 		shSoftbody.mSimDelta[vertIdx] = make_float4(0.f, 0.f, 0.f, 0.f);

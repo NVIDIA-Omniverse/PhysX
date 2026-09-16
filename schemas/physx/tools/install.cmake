@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-#
+
 # cmake -P script: install codeless schema artifacts to _build/schema/.
 # Replaces the premake prebuild_copy steps in the old premake5.lua files.
 #

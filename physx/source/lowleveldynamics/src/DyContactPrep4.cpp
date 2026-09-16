@@ -1,30 +1,8 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
      
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxVecMath.h"
@@ -32,6 +10,7 @@
 #include "PxcNpContactPrepShared.h"
 #include "DyContactPrepShared.h"
 #include "DyAllocator.h"
+#include "PxvDynamics.h"	// PXV_NO_MAX_CONTACT_IMPULSE
 
 using namespace physx;
 using namespace aos;
@@ -1040,11 +1019,14 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 					}
 				}
 
-				frictionPatchWritebackAddrIndex0++;
-				frictionPatchWritebackAddrIndex1++;
-				frictionPatchWritebackAddrIndex2++;
-				frictionPatchWritebackAddrIndex3++;
 			}
+
+			//#2 the friction stream stores one FrictionPatch per non-empty patch regardless of anchor
+			// count, so the writeback indices must also advance for anchorless patches (like the scalar path)
+			frictionPatchWritebackAddrIndex0++;
+			frictionPatchWritebackAddrIndex1++;
+			frictionPatchWritebackAddrIndex2++;
+			frictionPatchWritebackAddrIndex3++;
 		}
 	}
 }
@@ -1228,7 +1210,7 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4(
 	const PxReal invDtF32,
 	const PxReal dtF32,
 	PxReal bounceThresholdF32,
-	PxReal	frictionOffsetThreshold,
+	PxReal frictionOffsetThreshold,
 	PxReal correlationDistance,
 	const PxReal biasCoefficient,
 	PxConstraintAllocator& constraintAllocator)
@@ -1273,20 +1255,8 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4(
 		growPatches(c, blockDesc.contacts, blockDesc.bodyFrame0, blockDesc.bodyFrame1, blockDesc.startFrictionPatchIndex,
 			frictionOffsetThreshold + blockDescs[a].restDistance);
 
-		//Remove the empty friction patches - do we actually need to do this?
-		for (PxU32 p = c.frictionPatchCount; p > blockDesc.startFrictionPatchIndex; --p)
-		{
-			if (c.correlationListHeads[p - 1] == 0xffff)
-			{
-				//We have an empty patch...need to bin this one...
-				for (PxU32 p2 = p; p2 < c.frictionPatchCount; ++p2)
-				{
-					c.correlationListHeads[p2 - 1] = c.correlationListHeads[p2];
-					c.frictionPatchContactCounts[p2 - 1] = c.frictionPatchContactCounts[p2];
-				}
-				c.frictionPatchCount--;
-			}
-		}
+		//#1 remove empty friction patches, compacting all per-patch arrays together (see removeEmptyFrictionPatches)
+		removeEmptyFrictionPatches(c, blockDesc.startFrictionPatchIndex);
 
 		PxU32 numFricPatches = c.frictionPatchCount - blockDesc.startFrictionPatchIndex;
 		blockDesc.numFrictionPatches = numFricPatches;
@@ -1441,7 +1411,11 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4(
 			return SolverConstraintPrepState::eUNBATCHABLE;
 
 		blockDesc.numContacts = contactCount;
-		blockDesc.hasMaxImpulse = hasMaxImpulse;
+		//#3 a body-level max contact impulse (min of both bodies) is baked into every extracted
+		// contact's maxImpulse above: when a cap is actually set (below the no-cap sentinel), emit
+		// the block max-impulse array too, so the batched solver clamps against it like the scalar
+		// path (which always stores per-contact maxImpulse) does.
+		blockDesc.hasMaxImpulse = hasMaxImpulse || defaultMaxImpulse < PXV_NO_MAX_CONTACT_IMPULSE;
 		blockDesc.disableStrongFriction = blockDesc.disableStrongFriction || hasTargetVelocity;
 
 		blockDesc.invMassScales.linear0 *= invMassScale0;

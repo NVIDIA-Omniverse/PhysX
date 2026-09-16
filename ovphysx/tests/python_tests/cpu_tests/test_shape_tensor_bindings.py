@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# PARTIALLY DEPRECATED (tensor-binding-deprecation): the shape tensor-binding tests here retire with the binding. The material-pool regression stays.
 
 """Tests for shape-level tensor bindings: material properties, contact offsets, rest offsets.
 
@@ -118,7 +120,7 @@ class TestRigidBodyShapeTensors:
         Drive the A -> B -> C -> A write sequence that reproduced the corruption:
         after B every shape is off tuple A (its material refcount hits 0 and is
         recycled), C repurposes that material, and re-requesting A must return A's
-        values -- not C's.
+        values, not C's.
         """
         b = self._make_binding(physx_sdk_cpu, TensorType.RIGID_BODY_SHAPE_FRICTION_AND_RESTITUTION)
 

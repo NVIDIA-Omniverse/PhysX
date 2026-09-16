@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -8,6 +8,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 namespace ovphysx
 {
@@ -27,6 +28,16 @@ inline bool cudaAvailable()
     return cuda && cuda->cudaAvailable();
 }
 
+// True when the calling thread has no CUDA context current. Inside a scope that
+// detached the stack, a call that pushes and pops symmetrically must leave it that
+// way. A stranded push is otherwise invisible, since restoring the stack simply
+// stacks the saved contexts on top of the leaked one and still succeeds.
+inline bool noCudaContextCurrent(omni::physx::IOptionalCuda* cuda)
+{
+    uintptr_t current = 0;
+    return cuda && cuda->ctxGetCurrent(&current, nullptr) && current == 0;
+}
+
 // Matches the CUDA driver error code for "not initialized" (used by IOptionalCuda shims).
 inline constexpr int kCudaErrorNotInitialized = 3;
 
@@ -43,8 +54,8 @@ public:
             return;
         }
 
-        // Only push if the desired context is not already current (avoid unnecessary
-        // CUDA context stack depth changes).
+        // Push only if the desired context is not already current, to keep the
+        // CUDA context stack depth unchanged.
         uintptr_t current = 0;
         if (!mCuda->ctxGetCurrent(&current, nullptr))
         {
@@ -89,6 +100,53 @@ private:
     bool mOk = false;
     bool mPushed = false;
     int mStatus = 0;
+};
+
+// Removes every CUDA context from the calling thread for the scope, then rebuilds the
+// stack. This is the test substitute for a caller context that is not the simulation's.
+// IOptionalCuda has no context creation, so a test cannot make a foreign context.
+class ScopedCudaContextDetach
+{
+public:
+    explicit ScopedCudaContextDetach(omni::physx::IOptionalCuda* cuda)
+        : mCuda(cuda)
+    {
+        if (!mCuda)
+            return;
+        for (;;)
+        {
+            uintptr_t current = 0;
+            if (!mCuda->ctxGetCurrent(&current, nullptr) || current == 0)
+                break;
+            uintptr_t popped = 0;
+            if (!mCuda->ctxPopCurrent(&popped, nullptr))
+                break;
+            mDetached.push_back(popped);
+        }
+    }
+
+    ~ScopedCudaContextDetach() { restore(); }
+
+    ScopedCudaContextDetach(const ScopedCudaContextDetach&) = delete;
+    ScopedCudaContextDetach& operator=(const ScopedCudaContextDetach&) = delete;
+
+    // Pushes the saved contexts back bottom-up. Returns false if any push failed, which
+    // a test should surface: a half-restored stack corrupts later cases.
+    bool restore()
+    {
+        bool ok = true;
+        while (!mDetached.empty())
+        {
+            if (!mCuda->ctxPushCurrent(mDetached.back(), nullptr))
+                ok = false;
+            mDetached.pop_back();
+        }
+        return ok;
+    }
+
+private:
+    omni::physx::IOptionalCuda* mCuda = nullptr;
+    std::vector<uintptr_t> mDetached;
 };
 
 // Small fixture-owned helper: holds the CUDA interface pointer and the PhysX CUDA context

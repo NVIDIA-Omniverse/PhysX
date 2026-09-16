@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-CAPI-OVSTAGE-SCHEMA-001
+ * @covers AC-4
+ */
 
 #pragma once
 
@@ -35,7 +40,8 @@ inline bool poll_event_blocking(async_event_handle_t evt, int timeout_ms = 10000
 }
 
 // Helper to build ovphysx_string_t without hand-maintaining lengths.
-// Preserves {nullptr, 0} for a null input — ovphysx APIs validate with !ptr checks.
+// Preserves {nullptr, 0} for a null input. APIs validate that representation
+// according to their own selector contracts.
 inline ovphysx_string_t make_ovx_string(const char* s)
 {
     if (!s)
@@ -75,19 +81,8 @@ inline std::string ovx_to_string(ovx_string_t s)
     return std::string(s.ptr, s.length);
 }
 
-inline bool destroy_ovstage_test_attachments(ovphysx_handle_t handle)
+inline void destroy_ovstage_test_stages(ovphysx_handle_t handle)
 {
-    if (handle == 0) return true;
-    const ovphysx_result_t detach = ovphysx_detach_ovstage(handle);
-    if (detach.status != OVPHYSX_API_SUCCESS)
-    {
-        const ovphysx_string_t err = ovphysx_get_last_error();
-        std::cerr << "ovphysx_detach_ovstage failed; retaining caller-owned Stage: "
-                  << static_cast<int>(detach.status) << " "
-                  << std::string(err.ptr ? err.ptr : "", err.length) << std::endl;
-        return false;
-    }
-
     std::vector<OvstageTestAttachment> attachments;
     {
         std::lock_guard<std::mutex> lock(ovstage_test_attachments_mutex());
@@ -102,10 +97,57 @@ inline bool destroy_ovstage_test_attachments(ovphysx_handle_t handle)
     for (OvstageTestAttachment& attachment : attachments)
     {
         if (attachment.stage)
-        {
             ovstage_destroy_instance(attachment.stage);
-        }
     }
+}
+
+inline bool destroy_ovstage_test_attachments(ovphysx_handle_t handle)
+{
+    if (handle == 0) return true;
+    const ovphysx_result_t detach = ovphysx_detach_ovstage(handle);
+    if (detach.status != OVPHYSX_API_SUCCESS)
+    {
+        const ovphysx_string_t err = ovphysx_get_last_error();
+        std::cerr << "ovphysx_detach_ovstage failed; retaining caller-owned Stage: "
+                  << static_cast<int>(detach.status) << " "
+                  << std::string(err.ptr ? err.ptr : "", err.length) << std::endl;
+        return false;
+    }
+
+    destroy_ovstage_test_stages(handle);
+    return true;
+}
+
+// ovphysx ships its PhysX USD schemas as codeless resources and never registers
+// them itself: the application owns the USD runtime. Register them with ovstage
+// once per process, before the first population call, exactly as a consumer
+// would. USD's schema registry is assembled once, so a late registration is not
+// recoverable and the first call must happen before any population.
+inline bool register_physx_schemas_with_ovstage()
+{
+    static bool s_registered = false;
+    if (s_registered)
+        return true;
+
+    ovphysx_string_t root{};
+    const ovphysx_result_t rootResult = ovphysx_get_codeless_schema_root(&root);
+    if (rootResult.status != OVPHYSX_API_SUCCESS)
+    {
+        const ovphysx_string_t err = ovphysx_get_last_error();
+        std::cerr << "ovphysx_get_codeless_schema_root failed: " << static_cast<int>(rootResult.status) << " "
+                  << std::string(err.ptr ? err.ptr : "", err.length) << std::endl;
+        return false;
+    }
+
+    const ovx_string_t schemaRoot{ root.ptr, root.length };
+    const ovstage_api_status_t status = ovstage_population_register_usd_schemas(&schemaRoot, 1);
+    if (status != OVSTAGE_OK)
+    {
+        std::cerr << "ovstage_population_register_usd_schemas failed: " << static_cast<int>(status) << " "
+                  << ovx_to_string(ovstage_population_get_last_error()) << std::endl;
+        return false;
+    }
+    s_registered = true;
     return true;
 }
 
@@ -115,6 +157,11 @@ inline bool attach_usd_with_ovstage(
     uint64_t ordinal = 1)
 {
     if (handle == 0 || !usd_path)
+    {
+        return false;
+    }
+
+    if (!register_physx_schemas_with_ovstage())
     {
         return false;
     }
@@ -164,38 +211,31 @@ inline bool attach_usd_with_ovstage(
         return false;
     }
 
-    // The population API never opens or commits an ordinal of its own: the caller
-    // owns ordinal lifecycle and hands population the current ordinal. Waiting on
-    // the population op only completes population, so seal what it authored before
-    // reading it back -- ovphysx_attach_ovstage() reads at a *sealed* ordinal.
-    // Canonical sequence (ovstage_population.h): open_usd_* -> wait_op ->
-    // advance_write_floor -> consumer attach/update.
-    ovstage_write_floor_desc_t write_floor{};
-    write_floor.ordinal = ordinal;
-    write_floor.scope = OVSTAGE_SCOPE_ALL;
-
-    ovstage_enqueue_result_t floor_enqueue = ovstage_advance_write_floor(stage, &write_floor);
-    if (floor_enqueue.status != OVSTAGE_OK)
+    ovstage_write_floor_desc_t floor_desc{};
+    floor_desc.ordinal = ordinal;
+    floor_desc.scope = OVSTAGE_SCOPE_ALL;
+    ovstage_enqueue_result_t floor = ovstage_advance_write_floor(stage, &floor_desc);
+    if (floor.status != OVSTAGE_OK)
     {
-        ovx_string_t err = ovstage_get_last_error();
         std::cerr << "ovstage_advance_write_floor failed: "
-                  << static_cast<int>(floor_enqueue.status) << " " << ovx_to_string(err) << std::endl;
+                  << static_cast<int>(floor.status) << std::endl;
         ovstage_destroy_instance(stage);
         return false;
     }
 
     ovstage_op_wait_result_t floor_wait{};
-    ovstage_api_status_t floor_status = ovstage_wait_op(
-        stage,
-        floor_enqueue.op_index,
-        OVSTAGE_TIMEOUT_INFINITE,
-        &floor_wait);
-    (void)ovstage_release_op(stage, floor_enqueue.op_index);
-    if (floor_status != OVSTAGE_OK)
+    ovstage_api_status_t floor_wait_status =
+        ovstage_wait_op(stage, floor.op_index, OVSTAGE_TIMEOUT_INFINITE, &floor_wait);
+    if (floor_wait_status != OVSTAGE_OK || floor_wait.error_op_id_count != 0)
     {
-        ovx_string_t err = ovstage_get_last_error();
-        std::cerr << "ovstage_wait_op(advance_write_floor) failed: "
-                  << static_cast<int>(floor_status) << " " << ovx_to_string(err) << std::endl;
+        std::cerr << "ovstage write-floor wait failed: "
+                  << static_cast<int>(floor_wait_status) << std::endl;
+        ovstage_destroy_instance(stage);
+        return false;
+    }
+    if (ovstage_release_op(stage, floor.op_index) != OVSTAGE_OK)
+    {
+        std::cerr << "ovstage floor operation release failed" << std::endl;
         ovstage_destroy_instance(stage);
         return false;
     }
@@ -330,7 +370,7 @@ inline DLTensor* make_int32_tensor(const std::vector<int32_t>& values, const std
     return t;
 }
 
-// Free tensor with support for multiple types
+// Frees a tensor allocated by the make_*_tensor helpers above.
 inline void free_tensor(DLTensor* t)
 {
     if (!t) return;

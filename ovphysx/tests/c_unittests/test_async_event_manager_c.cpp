@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
 #include <stdint.h>
@@ -10,16 +10,36 @@
 #include <atomic>
 #include "AsyncEventManager/AsyncEventManager.h"
 
-// Creates an event that auto-completes after delay_ms on a background thread.
-static async_event_handle_t async_create_event_with_delay(uint64_t delay_ms) {
-    uint64_t event_handle = async_create_event();
-    if (event_handle > 0 && delay_ms > 0) {
-        std::thread([event_handle, delay_ms]() {
-            std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
-            async_complete_event(event_handle, true, nullptr);
-        }).detach();
+// Poll to a steady-clock deadline instead of relying on a fixed sleep margin.
+// After a sleep expires, a worker is only eligible to run, so a single later
+// poll can still observe PENDING (NVBug 6550953).
+// Keep this local rather than using test_utils::poll_event_blocking(): its
+// header pulls in OVStage dependencies, and bool conflates failure with timeout.
+static async_status_t async_poll_event_until_terminal(async_event_handle_t event_handle, uint64_t timeout_ms)
+{
+    const std::chrono::steady_clock::time_point deadline =
+        std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms);
+    async_status_t status = async_poll_event(event_handle);
+    while (status == ASYNC_STATUS_PENDING && std::chrono::steady_clock::now() < deadline)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        status = async_poll_event(event_handle);
     }
-    return event_handle;
+    return status;
+}
+
+// Join the worker so it cannot outlive the event or process-global async state.
+// Capture the observed status before joining so a timeout still fails.
+static async_status_t async_complete_event_with_delay(
+    async_event_handle_t event_handle, uint64_t delay_ms, uint64_t timeout_ms)
+{
+    std::thread completion_thread([event_handle, delay_ms]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+        async_complete_event(event_handle, true, nullptr);
+    });
+    const async_status_t status = async_poll_event_until_terminal(event_handle, timeout_ms);
+    completion_thread.join();
+    return status;
 }
 
 TEST(AsyncEventManagerC, BasicEventLifecycle) {
@@ -41,14 +61,12 @@ TEST(AsyncEventManagerC, BasicEventLifecycle) {
 TEST(AsyncEventManagerC, EventWithDelay) {
     async_cleanup_all_events();
 
-    uint64_t handle = async_create_event_with_delay(50);
+    uint64_t handle = async_create_event();
     EXPECT_GT(handle, 0);
 
     EXPECT_EQ(async_poll_event(handle), ASYNC_STATUS_PENDING);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(60));
-
-    EXPECT_EQ(async_poll_event(handle), ASYNC_STATUS_COMPLETED);
+    EXPECT_EQ(async_complete_event_with_delay(handle, 50, 2000), ASYNC_STATUS_COMPLETED);
 
     async_cleanup_event(handle);
 }
@@ -156,14 +174,12 @@ TEST(AsyncEventManager, BasicEventLifecycle) {
 TEST(AsyncEventManager, EventWithDelay) {
     async_cleanup_all_events();
 
-    auto handle = async_create_event_with_delay(50);
+    async_event_handle_t handle = async_create_event();
     EXPECT_GT(handle, 0);
 
     EXPECT_EQ(async_poll_event(handle), ASYNC_STATUS_PENDING);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(60));
-
-    EXPECT_EQ(async_poll_event(handle), ASYNC_STATUS_COMPLETED);
+    EXPECT_EQ(async_complete_event_with_delay(handle, 50, 2000), ASYNC_STATUS_COMPLETED);
 
     async_cleanup_event(handle);
 }

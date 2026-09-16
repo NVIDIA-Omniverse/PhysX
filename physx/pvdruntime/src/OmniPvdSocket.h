@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef OMNI_PVD_SOCKET_H
 #define OMNI_PVD_SOCKET_H
@@ -35,7 +12,7 @@
 //
 // A tiny blocking TCP socket wrapper for the OmniPVD live stream. It has NO
 // dependency on PhysXFoundation / PxSocket on purpose, so it can live inside the
-// standalone pvdruntime shared library. It is pure byte transport and knows
+// standalone runtime implementation. It is pure byte transport and knows
 // nothing about the OmniPVD protocol or the live-stream handshake.
 //
 // The native socket handle is stored in a platform-neutral integer so this header
@@ -52,15 +29,10 @@ public:
 	// (all blocking). Returns true once a client is connected.
 	bool listenAndAccept(uint16_t port);
 
-	// Split, non-blocking-friendly server primitives: beginListen() does the bind+listen
-	// and returns immediately; acceptOne() does the blocking accept. Threading contract:
-	// close() from another thread is the ONLY sanctioned concurrent call -- it closes the
-	// listen socket so a thread blocked in acceptOne() is woken (the OS aborts the blocked
-	// accept) and acceptOne() then returns false. No other method may run concurrently on the
-	// same OmniPvdSocket; the handle members are not internally synchronized, so callers must
-	// not race acceptOne()/connect()/send()/recv() against each other. (The read stream
-	// layered on top runs acceptOne() on its own thread; that thread-creation aspect is
-	// documented in OmniPvdSocketReadStream.)
+	// Split server primitives: beginListen() does the bind+listen and returns immediately;
+	// acceptOne() does the blocking accept. This wrapper is not internally synchronized. The
+	// caller must serialize every operation on one OmniPvdSocket, including close(); close()
+	// cannot be used from another thread to cancel a blocked acceptOne().
 	bool beginListen(uint16_t port);
 	bool acceptOne();
 

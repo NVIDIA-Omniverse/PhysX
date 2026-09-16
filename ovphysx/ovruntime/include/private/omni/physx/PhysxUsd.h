@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-UNIFY-001
@@ -7,6 +7,9 @@
  *
  * @implements REQ-PARSE-SHAPE-002
  * @covers AC-2 AC-3
+ *
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-27 AC-28
  */
 
 #pragma once
@@ -18,6 +21,8 @@
 #include <omni/physx/PhysxCookingParams.h>
 #include <omni/physx/MeshKey.h>
 #include <omni/physx/ObjectId.h>
+
+#include <foundation/PxMat44.h>              // PxMat44d
 
 #include <omni/physics/parse/Handles.h>      // ObjectKey, TokenId, BufferHandle
 #include <omni/physics/parse/Math.h>         // Matrix4d
@@ -229,15 +234,10 @@ using ::omni::physics::parse::eMin;
 using ::omni::physics::parse::eMultiply;
 using ::omni::physics::parse::eMax;
 
-struct ObjectInstance
-{
-    PXR_NS::SdfPath instancerPath;
-    uint32_t index;
-    PXR_NS::SdfPath protoPath;
-    bool isExclusive;
-    ::omni::physics::parse::Matrix4d protoTransformInverse;
-    bool hasProtoTransformInverse = false;
-};
+// ObjectInstance: instancerKey/protoKey are ObjectKey (were instancerPath/
+// protoPath, SdfPath); runtime sites needing SdfPath go through
+// AttachedStage::pathFor().
+using ObjectInstance = ::omni::physics::parse::ObjectInstance;
 
 // PhysxObjectDesc is defined once in omni::physics::parse and re-exported here.
 // Other usdparser:: descriptor structs (Material, Scene, Joint, ...) inherit
@@ -271,16 +271,11 @@ struct FilteredPairDesc : PhysxObjectDesc
     ObjectIdPairVector pairs;
 };
 
-struct CollisionGroupDesc : PhysxObjectDesc
-{
-    CollisionGroupDesc()
-    {
-        type = eCollisionGroup;
-    }
-
-    ObjectId groupId;
-    std::vector<ObjectId> filteredGroups;
-};
+// CollisionGroupDesc: groupId/filteredGroups (ObjectId-typed) are unchanged;
+// the parse-lib twin additionally carries primKey/sourceFilteredGroups/
+// sourceMembers (ObjectKey, source-side provenance from scanStage) that this
+// consumer-side population path (setupCollisionGroups) does not populate.
+using CollisionGroupDesc = ::omni::physics::parse::CollisionGroupDesc;
 
 // Existing legacy code that derives from `PhysxShapeDesc`
 // (CustomPhysxShapeDesc, MergeMeshPhysxShapeDesc, etc.) inherits
@@ -313,15 +308,9 @@ using CylinderPhysxShapeDesc = ::omni::physics::parse::CylinderPhysxShapeDesc;
 using ConePhysxShapeDesc     = ::omni::physics::parse::ConePhysxShapeDesc;
 using BoxPhysxShapeDesc      = ::omni::physics::parse::BoxPhysxShapeDesc;
 
-struct InfiniteVoxelMapDesc : PhysxObjectDesc
-{
-    InfiniteVoxelMapDesc(const PXR_NS::SdfPath path) : PhysxObjectDesc(), rootPrim{ path }
-    {
-        type = eInfiniteVoxelMap;
-    };
-
-    const PXR_NS::SdfPath rootPrim;
-};
+// InfiniteVoxelMapDesc: rootPrim is ObjectKey (was SdfPath); construct
+// directly from the already-known ObjectKey at the scan-time call site.
+using InfiniteVoxelMapDesc = ::omni::physics::parse::InfiniteVoxelMapDesc;
 
 // meshPath is ObjectKey here (unlike the legacy shape descs above).
 using ConvexMeshPhysxShapeDesc              = ::omni::physics::parse::ConvexMeshPhysxShapeDesc;
@@ -383,128 +372,19 @@ using PhysicsJointState        = ::omni::physics::parse::PhysicsJointState;
 // AttachedStage::pathFor().
 using PhysxArticulationDesc = ::omni::physics::parse::PhysxArticulationDesc;
 
-struct PhysxTendonAxisDesc : PhysxObjectDesc
-{
-    PhysxTendonAxisDesc()
-        : gearings(1u), forceCoefficients(1u), axes(1u), parentAxisId(kInvalidObjectId), wasVisited(false)
-    {
-        type = eTendonAxis;
-        forceCoefficients[0] = 1.0f;
-    }
+// Tendon descriptor family: jointPath -> jointKey, link0/link1, parentPath ->
+// parentKey, linkPath -> linkKey (all ObjectKey); instanceToken/parentToken
+// are TokenId (were TfToken). Runtime sites needing SdfPath/TfToken go
+// through AttachedStage::pathFor()/tfTokenFor().
+using PhysxTendonAxisDesc           = ::omni::physics::parse::PhysxTendonAxisDesc;
+using PhysxTendonFixedDesc          = ::omni::physics::parse::PhysxTendonFixedDesc;
+using PhysxTendonAttachmentDesc     = ::omni::physics::parse::PhysxTendonAttachmentDesc;
+using PhysxTendonSpatialDesc        = ::omni::physics::parse::PhysxTendonSpatialDesc;
+using PhysxTendonAttachmentLeafDesc = ::omni::physics::parse::PhysxTendonAttachmentLeafDesc;
 
-    PXR_NS::TfToken instanceToken;
-    PXR_NS::SdfPath jointPath;
-
-    PXR_NS::SdfPath link0;
-    PXR_NS::SdfPath link1;
-
-    std::vector<float> gearings;
-    std::vector<float> forceCoefficients;
-    std::vector<JointAxis> axes;
-
-    ObjectId parentAxisId;
-
-    bool wasVisited;
-};
-
-struct PhysxTendonFixedDesc : PhysxObjectDesc
-{
-    PhysxTendonFixedDesc()
-        : stiffness(0.f),
-          damping(0.f),
-          restLength(0.f),
-          offset(0.f),
-          limitStiffness(0.f),
-          lowLimit(-FLT_MAX),
-          highLimit(FLT_MAX),
-          isEnabled(true),
-          rootAxis(nullptr)
-    {
-        type = eTendonFixed;
-    }
-
-    PXR_NS::TfToken instanceToken;
-    PXR_NS::SdfPath jointPath;
-
-    float stiffness;
-    float damping;
-    float restLength;
-    float offset;
-
-    float limitStiffness;
-    float lowLimit;
-    float highLimit;
-
-    bool isEnabled;
-    PhysxTendonAxisDesc* rootAxis;
-};
-
-struct PhysxTendonAttachmentDesc : PhysxObjectDesc
-{
-    PhysxTendonAttachmentDesc() : gearing(1.0f), localPos({ 0.f, 0.f, 0.f }), parentId(kInvalidObjectId)
-    {
-        type = eTendonAttachment;
-    }
-
-    float gearing;
-    carb::Float3 localPos;
-    PXR_NS::SdfPath parentPath;
-    PXR_NS::SdfPath linkPath;
-    PXR_NS::TfToken parentToken;
-    PXR_NS::TfToken instanceToken;
-    ObjectId parentId;
-};
-
-struct PhysxTendonSpatialDesc : PhysxTendonAttachmentDesc
-{
-    PhysxTendonSpatialDesc() : stiffness(0.f), damping(0.f), limitStiffness(0.f), offset(0.f), isEnabled(true)
-    {
-        type = eTendonAttachmentRoot;
-    }
-
-    float stiffness;
-    float damping;
-    float limitStiffness;
-    float offset;
-    bool isEnabled;
-};
-
-struct PhysxTendonAttachmentLeafDesc : PhysxTendonAttachmentDesc
-{
-    PhysxTendonAttachmentLeafDesc() : lowLimit(-FLT_MAX), highLimit(FLT_MAX), restLength(-FLT_MAX)
-    {
-        type = eTendonAttachmentLeaf;
-    }
-    float lowLimit;
-    float highLimit;
-    float restLength;
-};
-
-struct MimicJointDesc : PhysxObjectDesc
-{
-    MimicJointDesc()
-    {
-        type = eUndefined;
-        // the type depends on the axis it should operate on and that will only be known at parsing time.
-    }
-
-    // the joint that should mimic another joint
-    PXR_NS::SdfPath mimicJointPath;
-    ObjectId mimicJointId;
-    int mimicJointAxis; // eDEFAULT_AXIS for revolute or prismatic, else the enum JointAxis
-
-    // the joint that should get mimicked
-    PXR_NS::SdfPath referenceJointPath;
-    ObjectId referenceJointId;
-    int referenceJointAxis; // see mimicJointAxis
-
-    float gearing;
-    float offset;
-    float naturalFrequency;
-    float dampingRatio;
-
-    static const int eDEFAULT_AXIS = -1;
-};
+// MimicJointDesc: mimicJointPath/referenceJointPath -> mimicJointKey/
+// referenceJointKey (ObjectKey).
+using MimicJointDesc = ::omni::physics::parse::MimicJointDesc;
 
 typedef std::vector<std::pair<JointAxis, PhysxJointLimit>> JointLimits;
 // Joint descriptor family: path-typed members (jointPrimPath, rel0/1,
@@ -522,39 +402,13 @@ using SphericalPhysxJointDesc = ::omni::physics::parse::SphericalPhysxJointDesc;
 using RevolutePhysxJointDesc  = ::omni::physics::parse::RevolutePhysxJointDesc;
 using DistancePhysxJointDesc  = ::omni::physics::parse::DistancePhysxJointDesc;
 
-struct GearPhysxJointDesc : public PhysxJointDesc
-{
-    GearPhysxJointDesc() : gearRatio(0.0f)
-    {
-        type = eJointGear;
-    }
-
-    PXR_NS::SdfPath hingePrimPath0;
-    PXR_NS::SdfPath hingePrimPath1;
-    float gearRatio;
-};
-
-struct RackPhysxJointDesc : public PhysxJointDesc
-{
-    RackPhysxJointDesc() : ratio(0.0f)
-    {
-        type = eJointRackAndPinion;
-    }
-
-    PXR_NS::SdfPath hingePrimPath;
-    PXR_NS::SdfPath prismaticPrimPath;
-    float ratio;
-};
-
-struct CustomPhysxJointDesc : public PhysxJointDesc
-{
-    CustomPhysxJointDesc()
-    {
-        type = eJointCustom;
-    }
-
-    PXR_NS::TfToken customJointToken;
-};
+// GearPhysxJointDesc: hingePrimPath0/1 are ObjectKey. RackPhysxJointDesc:
+// hingePrimPath -> hingePrimKey, prismaticPrimPath -> prismaticPrimKey
+// (ObjectKey). CustomPhysxJointDesc: customJointToken is TokenId (was
+// TfToken).
+using GearPhysxJointDesc   = ::omni::physics::parse::GearPhysxJointDesc;
+using RackPhysxJointDesc   = ::omni::physics::parse::RackPhysxJointDesc;
+using CustomPhysxJointDesc = ::omni::physics::parse::CustomPhysxJointDesc;
 
 
 struct PhysxArticulationLinkDesc : DynamicPhysxRigidBodyDesc
@@ -575,285 +429,36 @@ struct PhysxArticulationLinkDesc : DynamicPhysxRigidBodyDesc
     const PhysxJointDesc* articulationJoint;
 };
 
-struct PhysxDeformableBodyDesc : public PhysxObjectDesc
-{
-    PhysxDeformableBodyDesc()
-        : bodyEnabled(false),
-          kinematicBody(false),
-          startsAsleep(false),
-          sceneId(kInvalidObjectId),
-          transform(1.0f),
-          mass(-1.0f),
-          simMeshMaterial(kInvalidObjectId)
-    {
-    }
+// PhysxDeformableBodyDesc: simMeshPath -> simMeshKey, collisionMeshPath ->
+// collisionMeshKey, skinGeomPaths (element type ObjectKey, same field name),
+// cookingSrcMeshPath -> cookingSrcMeshKey (all ObjectKey); the *BindPoseToken
+// fields and skinGeomBindPoseTokens are TokenId (were TfToken). Runtime sites
+// needing SdfPath/TfToken go through AttachedStage::pathFor()/tfTokenFor().
+using PhysxDeformableBodyDesc        = ::omni::physics::parse::PhysxDeformableBodyDesc;
+using PhysxVolumeDeformableBodyDesc  = ::omni::physics::parse::PhysxVolumeDeformableBodyDesc;
+using PhysxSurfaceDeformableBodyDesc = ::omni::physics::parse::PhysxSurfaceDeformableBodyDesc;
 
-    // as opposed to rigid bodies, we need to pass on the bodyEnabled flag
-    // so we can support live update. Rigid bodies have a dynamic and a static type instead.
-    bool bodyEnabled;
-    bool kinematicBody;
-    bool startsAsleep;
-    bool enableSpeculativeCCD;
-    bool selfCollision;
-    bool disableGravity;
-    float sleepThreshold;
-    float linearDamping;
-    float maxLinearVelocity;
-    float settlingThreshold;
-    float settlingDamping;
-    float maxDepenetrationVelocity;
-    float contactOffset;
-    float restOffset;
-    float selfCollisionFilterDistance;
-    uint32_t solverPositionIterationCount; // TODO switch schema to int for consistency with rigid bodies.
-    ObjectId sceneId;
+// TireFrictionTableDesc: path -> key, materialPaths element type is ObjectKey
+// (was SdfPath).
+using TireFrictionTableDesc = ::omni::physics::parse::TireFrictionTableDesc;
 
-    // mesh generation parameter
-    bool isAutoMeshSimplificationEnabled;
-    bool isAutoRemeshingEnabled;
-    bool hasAutoForceConforming;
-    uint32_t autoRemeshingResolution;
-    uint32_t autoTriangleTargetCount;
-
-    PXR_NS::GfMatrix4d transform;
-    float mass;
-
-    PXR_NS::SdfPath simMeshPath;
-    ObjectId simMeshMaterial;
-    PXR_NS::TfToken simMeshBindPoseToken;
-    bool simMeshLeftHandedOrientation;
-
-    PXR_NS::SdfPath collisionMeshPath;
-    PXR_NS::TfToken collisionMeshBindPoseToken;
-    bool collisionMeshLeftHandedOrientation;
-    ObjectId collisionGroup;
-
-    PXR_NS::SdfPathVector skinGeomPaths;
-    PXR_NS::TfTokenVector skinGeomBindPoseTokens; // same size as skinGeomPaths
-
-    PXR_NS::SdfPath cookingSrcMeshPath;
-    PXR_NS::TfToken cookingSrcMeshBindPoseToken;
-
-    bool hasAutoAPI;
-};
-
-struct PhysxVolumeDeformableBodyDesc : public PhysxDeformableBodyDesc
-{
-    PhysxVolumeDeformableBodyDesc()
-    {
-        type = eVolumeDeformableBody;
-    }
-
-    // mesh generation parameter
-    bool isAutoHexahedralMeshEnabled;
-    uint32_t autoHexahedralResolution;
-};
-
-struct PhysxSurfaceDeformableBodyDesc : public PhysxDeformableBodyDesc
-{
-    PhysxSurfaceDeformableBodyDesc()
-    {
-        type = eSurfaceDeformableBody;
-    }
-
-    // bending
-    PXR_NS::TfToken restBendAnglesDefault;
-
-    // collision substepping
-    uint32_t collisionPairUpdateFrequency;
-    uint32_t collisionIterationMultiplier;
-};
-
-struct TireFrictionTableDesc : public PhysxObjectDesc
-{
-    TireFrictionTableDesc()
-    {
-        type = eVehicleTireFrictionTable;
-    }
-
-    PXR_NS::SdfPath path;
-    std::vector<PXR_NS::SdfPath> materialPaths;
-    std::vector<ObjectId> materialIds;
-    std::vector<float> frictionValues;
-    float defaultFrictionValue;
-};
-
-struct WheelDesc : public PhysxObjectDesc
-{
-    WheelDesc()
-    {
-        type = eVehicleWheel;
-    }
-
-    PXR_NS::SdfPath path;
-
-    float radius;
-    float width;
-    float mass;
-    float moi;
-    float dampingRate;
-    float maxBrakeTorque; // deprecated
-    float maxHandBrakeTorque; // deprecated
-    float maxSteerAngle; // deprecated
-    float toeAngle; // deprecated
-};
-
-struct TireDesc : public PhysxObjectDesc
-{
-    TireDesc()
-    {
-        type = eVehicleTire;
-    }
-
-    PXR_NS::SdfPath path;
-
-    float latStiffX; // deprecated
-    float latStiffY; // deprecated
-    carb::Float2 lateralStiffnessGraph;
-    float longitudinalStiffnessPerUnitGravity; // deprecated
-    float longitudinalStiffness;
-    float camberStiffnessPerUnitGravity; // deprecated
-    float camberStiffness;
-    carb::Float2 frictionVsSlipGraph[3];
-    ObjectId frictionTableId;
-    PXR_NS::SdfPath frictionTablePath;
-    float restLoad;
-};
-
-struct SuspensionDesc : public PhysxObjectDesc
-{
-    SuspensionDesc()
-    {
-        type = eVehicleSuspension;
-    }
-
-    PXR_NS::SdfPath path;
-
-    float springStrength;
-    float springDamperRate;
-    float travelDistance;
-    float maxCompression; // deprecated
-    float maxDroop; // deprecated
-    float camberAtRest; // deprecated
-    float camberAtMaxCompression; // deprecated
-    float camberAtMaxDroop; // deprecated
-    float sprungMass;
-};
-
+// Vehicle descriptor family: `path` -> `key` throughout; WheelAttachmentDesc's
+// `collisionGroupPath`/`shapePath` -> `collisionGroupKey`/`shapeKey`;
+// TireDesc's `frictionTablePath` -> `frictionTableKey` (all ObjectKey). The
+// vehicle consumer's own bookkeeping (e.g. `Vehicle::mWheelAttachmentByPath`)
+// is updated in lockstep at its call sites. Fields tagged `// deprecated` on
+// the parse-lib twin refer to the corresponding USD attribute being
+// deprecated -- Vehicle.cpp's `parseWheelAttachment` logs a warning when the
+// deprecated attribute is authored; the field itself is still populated and
+// acted on for back-compat with older USD content (see the `eHAS_*` state
+// bits raised in Vehicle.cpp and read in VehicleGenerator.cpp).
+using WheelDesc            = ::omni::physics::parse::WheelDesc;
+using TireDesc              = ::omni::physics::parse::TireDesc;
+using SuspensionDesc        = ::omni::physics::parse::SuspensionDesc;
 using SuspensionComplianceDesc = ::omni::physics::parse::SuspensionComplianceDesc;
-
-// Consumer-side mirror of `omni::physics::parse::WheelAttachmentDesc`
-// (in `Descriptors.h`). Both structs carry the same fields in the same
-// order; the divergence is:
-//
-//   * `path`, `collisionGroupPath`, `shapePath` are `PXR_NS::SdfPath`
-//     here and correspond to `key`, `collisionGroupKey`, `shapeKey`
-//     (`parse::ObjectKey`) in the parse-lib version. The vehicle
-//     consumer's bookkeeping (e.g. `Vehicle::mWheelAttachmentByPath`)
-//     still keys by SdfPath; flipping it to ObjectKey so this struct
-//     can collapse into a `using` alias of the parse-lib version is
-//     tracked separately (ADR-0008 target).
-//
-//   * Fields tagged `// deprecated` refer to the corresponding USD
-//     attribute being deprecated — Vehicle.cpp's `parseWheelAttachment`
-//     logs a warning when the deprecated attribute is authored. The
-//     field itself is still populated and acted on for back-compat
-//     with older USD content (see the `eHAS_*` state bits raised in
-//     Vehicle.cpp and read in VehicleGenerator.cpp). The parse-lib
-//     mirror carries the same fields without the annotation so the
-//     layout stays in lockstep until both can be dropped together.
-struct WheelAttachmentDesc : public PhysxObjectDesc
-{
-    enum State
-    {
-        eMANAGE_TRANSFORMS = (1 << 0),
-        // if the wheel attachment is a UsdGeomXformable, the code will set the corresponding
-        // transforms based on the wheel simulation. The root transform to modify is defined by the
-        // prim pointed to in the member "path"
-
-        eHAS_SHAPE = (1 << 1),
-        eHAS_WHEEL_COM_OFFSET = (1 << 2),
-        eHAS_SUSP_FORCE_APP_POINT = (1 << 3),
-        eHAS_TIRE_FORCE_APP_POINT = (1 << 4),
-        eHAS_SUSPENSION_FRAME = (1 << 5)
-    };
-
-    WheelAttachmentDesc()
-    {
-        type = eVehicleWheelAttachment;
-    }
-
-    PXR_NS::SdfPath path;
-    ObjectId id;
-
-    WheelDesc* wheel;
-    ObjectId wheelId;
-
-    TireDesc* tire;
-    ObjectId tireId;
-
-    SuspensionDesc* suspension;
-    ObjectId suspensionId;
-
-    SuspensionComplianceDesc* suspensionCompliance;
-
-    carb::Float3 suspensionTravelDirection;
-    carb::Float3 suspensionForceAppPointOffset; // deprecated
-    carb::Float3 wheelCenterOfMassOffset; // deprecated
-    carb::Float3 tireForceAppPointOffset; // deprecated
-    carb::Float3 suspensionFramePosition;
-    carb::Float4 suspensionFrameOrientation;
-    carb::Float3 wheelFramePosition;
-    carb::Float4 wheelFrameOrientation;
-
-    int index;
-
-    bool driven; // deprecated
-
-    ObjectId collisionGroupId;
-    PXR_NS::SdfPath collisionGroupPath;
-
-    PXR_NS::SdfPath shapePath;
-    ObjectId shapeId;
-    uint8_t state;
-};
-
-struct WheelControllerDesc : public PhysxObjectDesc
-{
-    WheelControllerDesc()
-    {
-        type = eVehicleWheelController;
-    }
-
-    PXR_NS::SdfPath path;
-    ObjectId id;
-
-    float driveTorque;
-    float brakeTorque;
-    float steerAngle;
-};
-
-struct EngineDesc : public PhysxObjectDesc
-{
-    EngineDesc()
-    {
-        type = eVehicleEngine;
-    }
-
-    static constexpr uint32_t maxNumberOfTorqueCurvePoints = 8;
-
-    PXR_NS::SdfPath path;
-
-    float moi;
-    float peakTorque;
-    float maxRotationSpeed;
-    float idleRotationSpeed;
-    carb::Float2 torqueCurve[maxNumberOfTorqueCurvePoints];
-    unsigned int torqueCurvePointCount;
-    float dampingRateFullThrottle;
-    float dampingRateZeroThrottleClutchEngaged;
-    float dampingRateZeroThrottleClutchDisengaged;
-};
+using WheelAttachmentDesc   = ::omni::physics::parse::WheelAttachmentDesc;
+using WheelControllerDesc   = ::omni::physics::parse::WheelControllerDesc;
+using EngineDesc             = ::omni::physics::parse::EngineDesc;
 
 using GearsDesc = ::omni::physics::parse::GearsDesc;
 
@@ -863,24 +468,13 @@ using ClutchDesc = ::omni::physics::parse::ClutchDesc;
 
 using NonlinearCmdResponseDesc = ::omni::physics::parse::NonlinearCmdResponseDesc;
 
-struct DriveDesc : public PhysxObjectDesc
-{
-};
+// DriveDesc: collapsed alongside DriveBasicDesc so the inheritance chain
+// stays sound -- DriveStandardDesc (below, not itself retyped: it has no
+// path-typed fields) derives from this same name.
+using DriveDesc = ::omni::physics::parse::DriveDesc;
 
-struct DriveBasicDesc : public DriveDesc
-{
-    DriveBasicDesc()
-    {
-        type = eVehicleDriveBasic;
-    }
-
-    NonlinearCmdResponseDesc* nonlinearCmdResponse;
-
-    PXR_NS::SdfPath path;
-    ObjectId id;
-
-    float peakTorque;
-};
+// DriveBasicDesc: path -> key (ObjectKey).
+using DriveBasicDesc = ::omni::physics::parse::DriveBasicDesc;
 
 struct DriveStandardDesc : public DriveDesc
 {
@@ -948,46 +542,8 @@ struct SteeringAckermannDesc : SteeringDesc
     float strength;
 };
 
-struct VehicleContextDesc : public PhysxObjectDesc
-{
-    enum AxisDir
-    {
-        ePosX,
-        eNegX,
-        ePosY,
-        eNegY,
-        ePosZ,
-        eNegZ,
-        eUndefined
-    };
-
-    VehicleContextDesc()
-    {
-        type = eVehicleContext;
-    }
-
-    void setDefaultValues()
-    {
-        vehicleUpdateMode = VehicleUpdateMode::eVelocityChange;
-        upAxis.x = 0.0f;
-        upAxis.y = 1.0f;
-        upAxis.z = 0.0f;
-        forwardAxis.x = 0.0f;
-        forwardAxis.y = 0.0f;
-        forwardAxis.z = 1.0f;
-        verticalAxis = ePosY;
-        longitudinalAxis = ePosZ;
-    }
-
-    PXR_NS::SdfPath scenePath;
-
-    VehicleUpdateMode vehicleUpdateMode;
-
-    carb::Float3 upAxis; // deprecated
-    carb::Float3 forwardAxis; // deprecated
-    AxisDir verticalAxis;
-    AxisDir longitudinalAxis;
-};
+// VehicleContextDesc: scenePath -> sceneKey (ObjectKey).
+using VehicleContextDesc = ::omni::physics::parse::VehicleContextDesc;
 
 struct VehicleDesc : public PhysxObjectDesc
 {
@@ -1078,179 +634,24 @@ struct VehicleTankControllerDesc : public VehicleControllerDesc
     float thrust1;
 };
 
-struct ParticleSystemDesc : public PhysxObjectDesc
-{
-    ParticleSystemDesc()
-    {
-        type = eParticleSystem;
-    }
-    bool enableParticleSystem;
-    bool enableCCD;
-    float restOffset;
-    float contactOffset;
-    float particleContactOffset;
-    float solidRestOffset;
-    float fluidRestOffset;
-    float maxDepenetrationVelocity;
-    float maxVelocity;
-    float fluidBoundaryDensityScale;
+// Particle descriptor family: scenePath -> sceneKey, systemPath -> systemKey,
+// primPath -> primKey, particleSystemPath -> particleSystemKey,
+// particleSetPath -> particleSetKey, filteredCollisions element type is
+// ObjectKey (all were SdfPath). Runtime sites needing SdfPath go through
+// AttachedStage::pathFor().
+using ParticleSystemDesc    = ::omni::physics::parse::ParticleSystemDesc;
+using ParticleDesc          = ::omni::physics::parse::ParticleDesc;
+using ParticleSetDesc       = ::omni::physics::parse::ParticleSetDesc;
+using ParticleSamplingDesc  = ::omni::physics::parse::ParticleSamplingDesc;
+using ParticleIsosurfaceDesc = ::omni::physics::parse::ParticleIsosurfaceDesc;
+using ParticleSmoothingDesc  = ::omni::physics::parse::ParticleSmoothingDesc;
+using ParticleAnisotropyDesc = ::omni::physics::parse::ParticleAnisotropyDesc;
 
-    bool enableSmoothing;
-    bool enableAnisotropy;
-    bool enableIsosurface;
-    int solverPositionIterations;
-    carb::Float3 wind;
-    int maxNeighborhood;
-    float neighborhoodScale;
-    int lockedAxis;
-
-    ObjectId material;
-
-    ObjectId collisionGroup;
-    PXR_NS::SdfPathVector filteredCollisions;
-
-    PXR_NS::SdfPath scenePath;
-    PXR_NS::SdfPath systemPath;
-};
-
-struct ParticleDesc : public PhysxObjectDesc
-{
-    ParticleDesc()
-    {
-        type = eUndefined; // this should not be instantiated
-    }
-    int numParticles;
-
-    bool enabled;
-    bool selfCollision; // each set/cloth can set selfCollision flag independently
-    int particleGroup; // each set/cloth can set particleGroup flag independently
-
-    std::vector<carb::Float3> points; // Position for each particle
-    std::vector<carb::Float3> velocities; // Velocity for each particle
-
-    PXR_NS::SdfPath primPath;
-    PXR_NS::SdfPath particleSystemPath;
-    PXR_NS::SdfPath scenePath;
-
-    // mass properties.
-    float mass; // from massAPI, and overrides all
-    float density; // from massAPI, and overrides any material densities
-};
-
-// rigid or fluid particle set defined via a UsdGeomPointInstancer or UsdGeomPoints
-struct ParticleSetDesc : public ParticleDesc
-{
-    ParticleSetDesc()
-    {
-        type = eParticleSet;
-        mass = -1.0f; // default invalid mass value that triggers MassAPI density or material or default density use
-        density = -1.0f; // default invalid density that triggers material or default density use
-    }
-
-    bool fluid; // Are the particles in this prototype simulated as fluid or not
-    float solidRestOffset;
-    float fluidRestOffset;
-
-    bool enableDiffuseParticles;
-    float maxDiffuseParticleMultiplier;
-    float diffuseParticlesThreshold;
-    float diffuseParticlesLifetime;
-    float diffuseParticlesAirDrag;
-    float diffuseParticlesBubbleDrag;
-    float diffuseParticlesBuoyancy;
-    float diffuseParticlesKineticEnergyWeight;
-    float diffuseParticlesPressureWeight;
-    float diffuseParticlesDivergenceWeight;
-    float diffuseParticlesCollisionDecay;
-
-    std::vector<carb::Float3> simulationPoints; // Optional simulation positions, if positions are used for smoothed
-                                                // positions
-
-    int maxParticles;
-};
-
-struct ParticleSamplingDesc
-{
-    // sampling API
-    float samplingDistance;
-    bool sampleVolume;
-    PXR_NS::SdfPath particleSetPath;
-    int maxSamples;
-
-    // particles
-    float pointWidth;
-};
-
-struct ParticleIsosurfaceDesc : public PhysxObjectDesc
-{
-    struct GridFilteringPass
-    {
-        enum Enum
-        {
-            eSmooth,
-            eGrow,
-            eReduce,
-            eNone
-        };
-    };
-
-    bool enableIsosurface;
-
-    int maxIsosurfaceVertices;
-    int maxIsosurfaceTriangles;
-    int maxNumIsosurfaceSubgrids;
-    float gridSpacing;
-
-    float surfaceDistance;
-    std::vector<GridFilteringPass::Enum> gridFilteringPasses;
-    float gridSmoothingRadius;
-
-    int numMeshSmoothingPasses;
-    int numMeshNormalSmoothingPasses;
-
-    PXR_NS::SdfPath systemPath;
-};
-
-struct ParticleSmoothingDesc : public PhysxObjectDesc
-{
-    bool enableSmoothing;
-    float strength;
-    PXR_NS::SdfPath systemPath;
-};
-
-struct ParticleAnisotropyDesc : public PhysxObjectDesc
-{
-    bool enableAnisotropy;
-    float scale;
-    float min;
-    float max;
-    PXR_NS::SdfPath systemPath;
-};
-
-struct PhysxDeformableAttachmentDesc : public PhysxObjectDesc
-{
-    PhysxDeformableAttachmentDesc() : enabled(true)
-    {
-    }
-
-    bool enabled;
-    PXR_NS::SdfPath src0;
-    PXR_NS::SdfPath src1;
-    float stiffness;
-    float damping;
-};
-
-struct PhysxDeformableCollisionFilterDesc : public PhysxObjectDesc
-{
-    PhysxDeformableCollisionFilterDesc() : enabled(true)
-    {
-        type = eDeformableCollisionFilter;
-    }
-
-    bool enabled;
-    PXR_NS::SdfPath src0;
-    PXR_NS::SdfPath src1;
-};
+// PhysxDeformableAttachmentDesc / PhysxDeformableCollisionFilterDesc: src0/
+// src1 are ObjectKey (were SdfPath); the parse-lib twins additionally carry
+// primKey (the attachment/filter prim's own source-side identity).
+using PhysxDeformableAttachmentDesc      = ::omni::physics::parse::PhysxDeformableAttachmentDesc;
+using PhysxDeformableCollisionFilterDesc = ::omni::physics::parse::PhysxDeformableCollisionFilterDesc;
 
 // The CCT parser lives in omni.physics.parse / ScannedStage::ccts; the
 // engine integration in usdInterface/UsdInterface.cpp consumes the same

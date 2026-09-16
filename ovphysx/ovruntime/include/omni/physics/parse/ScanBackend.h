@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-BUILD-UNIBUILD-001
+ * @covers AC-6
+ */
 
 #pragma once
 
@@ -48,10 +53,25 @@ public:
 };
 
 // Install `backend` as the single active scan backend, replacing any previous
-// one. null restores the default (native USD walk).
+// one. null leaves the registry empty (scanStage then returns an empty scan).
 void setScanBackend(std::unique_ptr<IScanBackend> backend);
 
-// The active scan backend, or null when none is installed (use the native walk).
+// The active scan backend, or null when none is installed.
 IScanBackend* scanBackend();
+
+// Move the active scan backend out of the registry, transferring ownership to the
+// caller and leaving the registry empty. An ovstage attach stashes the previous
+// backend this way so detach reinstalls the exact same instance.
+std::unique_ptr<IScanBackend> takeScanBackend();
+
+// Dispatches to the registered scan backend with string-typed roots. Returns an
+// empty (source-less) scan when no backend is registered or the backend throws;
+// callers treat that as a clean fail-closed load. A plain USD attach installs the
+// USD scan backend through the reparse seam, so there is no native-walk fallback.
+ScannedStage scanStage(const parse::AttachTarget& target,
+                       const std::vector<std::string>& scanRoots,
+                       const std::vector<std::string>& excludePaths,
+                       const parse::ScanOptions& options,
+                       parse::IDescriptorAllocator& allocator);
 
 } // namespace omni::physics::parse

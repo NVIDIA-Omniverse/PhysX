@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // Low-load benchmarks measuring per-call overhead (dispatch, init, reset)
 // rather than steady-state simulation cost. Useful for catching regressions
@@ -24,16 +24,14 @@ void initLowLoad()
 namespace
 {
 
-// Shared base: caches the PhysX* once in startRun() so step() doesn't pay
-// for a global lookup + null check on every measured iteration -- defensive
-// coding has no place in the hot path.
+// Shared base: caches the PhysX* once in startRun() so step() does not pay
+// for a global lookup and null check on every measured iteration.
 class LowLoadBase : public BmBenchmark
 {
 public:
-    // Gate on PhysX bootstrap success — if BmGlobals' init failed, getPhysX()
-    // returns null and the cached mPhysX in startRun() would also be null;
-    // step() then dereferences it. Cleanest place to skip is here, called
-    // once before any step() runs.
+    // Gate on PhysX bootstrap success. If BmGlobals' init failed, getPhysX()
+    // returns null, the cached mPhysX would also be null, and step() would
+    // dereference it. isValid() is called once before any step() runs.
     bool isValid() const override
     {
         return BmGlobals::getInstance().getPhysX() != nullptr;
@@ -63,9 +61,9 @@ protected:
 // first_step_after_reload: time to step() once after re-loading the scene.
 // This is NOT a true process-restart cold start (the harness pays the
 // PhysX::create() cost once in bmCreateGlobals, then re-uses it across
-// runs). What we actually measure is: re-load the scene, reset it, then
-// time the first step. True process-restart cold-start lives on the Python
-// side via subprocess (see bench_process_cold_start.py).
+// runs). The row re-loads the scene, resets it, then times the first step.
+// True process-restart cold-start lives on the Python side via subprocess
+// (see bench_process_cold_start.py).
 class LowLoad_FirstStepAfterReload : public LowLoadBase
 {
 public:
@@ -93,9 +91,9 @@ public:
     }
 };
 
-// empty_step: per-step cost of a step() call against an empty scene that's
-// already loaded. Floors out per-call dispatch overhead — the cost that
-// every other Step.* benchmark pays before doing any simulation work.
+// empty_step: per-step cost of a step() call against an empty scene that is
+// already loaded. Floors out per-call dispatch overhead, the cost that every
+// other Step.* benchmark pays before doing any simulation work.
 class LowLoad_EmptyStep : public LowLoadBase
 {
 public:
@@ -120,17 +118,17 @@ public:
     void startRun() override
     {
         LowLoadBase::startRun();
-        // Cache the path string so step() doesn't pay for a heap-allocated
+        // Cache the path string so step() does not pay for a heap-allocated
         // std::string concat per measured iteration.
         mPath = BmGlobals::getInstance().getDataFolder() + "/basic_simulation.usda";
     }
 
     void step() override
     {
-        // Check the status so a regression in ovstage attach/update (e.g. reset doesn't
-        // fully clear stage between iterations) surfaces as a printed
-        // failure rather than as a silently-low "noop_ovstage_attach" measurement
-        // that looks like an improvement.
+        // Check the status so a regression in ovstage attach/update (for example
+        // a reset that does not fully clear the stage between iterations)
+        // surfaces as a printed failure rather than as a silently low
+        // measurement that looks like an improvement.
         if (!benchmarkLoadUsdWithOvstage(mPhysX, mPath, mStageAttachment))
             printFormatted("LowLoad.noop_ovstage_attach: ovstage load failed");
         // Per-step teardown so each step measures a clean ovstage attach.

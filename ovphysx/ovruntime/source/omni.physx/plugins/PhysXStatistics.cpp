@@ -1,7 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-#include "UsdPCH.h"
+// SPDX-License-Identifier: Apache-2.0
 
 #include <omni/physx/IPhysxStatistics.h>
 
@@ -18,16 +16,24 @@ namespace omni
 
 namespace physx
 {
-bool getPhysXSceneStatistics(uint64_t stageId, uint64_t path, PhysicsSceneStats& sceneStats)
+bool getPhysXSceneStatistics(AttachHandle attachHandle, uint64_t path, PhysicsSceneStats& sceneStats)
 {
-    const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getAttachedStage(stageId);
+    const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->resolveAttach(attachHandle);
     if (!attachedStage)
     {
-        CARB_LOG_ERROR("getPhysXSceneStatistics: stageId %llu not attached.", stageId);
+        CARB_LOG_ERROR("getPhysXSceneStatistics could not resolve attach handle %llu: it is either kNoAttach, or a "
+                       "handle whose attach has since been detached (a handle is minted per attach and never reused). "
+                       "Pass IPhysxSimulation::getAttachHandle(), or kActiveAttach for the lone active attach.",
+                       static_cast<unsigned long long>(attachHandle));
         return false;
     }
     
-    PxScene* scene = (PxScene*) getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(intToPath(path), ePTScene, OmniPhysX::getInstance().getInternalPhysXDatabase(), *attachedStage);
+    // `path` IS the scene's ObjectKey::handle
+    // directly (same coordinated fix as PhysXUpdate.cpp's resolveSceneKey, PhysX.cpp's
+    // updateTransformationsScene) -- no SdfPath decode, unconditional. attachedStage is still
+    // needed below, just not for this lookup.
+    const omni::physics::parse::ObjectKey sceneKey{ path };
+    PxScene* scene = (PxScene*) getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(sceneKey, ePTScene, OmniPhysX::getInstance().getInternalPhysXDatabase(), *attachedStage);
     if (!scene)
     {
         // This is valid we can have a simulation without PhysX scene, when PhysX is not the default simulator

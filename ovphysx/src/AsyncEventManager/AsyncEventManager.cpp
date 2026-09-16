@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #include "AsyncEventManager/AsyncEventManager.hpp"
 
@@ -165,8 +165,8 @@ async_event_handle_t get_event_for_op(ovphysx_handle_t handle, ovphysx_op_index_
     return 0;
 }
 
-// Get all pending operation indices up to and including the target op_index
-// If target_op_index is OVPHYSX_OP_INDEX_ALL, returns all registered operations
+// Returns all pending operation indices up to and including target_op_index,
+// or every registered operation when target_op_index is OVPHYSX_OP_INDEX_ALL.
 std::vector<ovphysx_op_index_t> get_pending_ops(ovphysx_handle_t handle, ovphysx_op_index_t target_op_index) {
     std::vector<ovphysx_op_index_t> pending_ops;
     
@@ -184,7 +184,7 @@ std::vector<ovphysx_op_index_t> get_pending_ops(ovphysx_handle_t handle, ovphysx
         }
     }
     
-    // Sort to ensure we wait in order
+    // Sorted so the caller waits in order.
     std::sort(pending_ops.begin(), pending_ops.end());
     
     return pending_ops;

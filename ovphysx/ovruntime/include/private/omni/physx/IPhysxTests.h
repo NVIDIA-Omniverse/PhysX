@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-25
+ */
 
 #pragma once
 
@@ -8,6 +13,11 @@
 #include <carb/events/IEvents.h>
 #include <omni/physx/IPhysx.h>
 
+// IPhysxUnitTests is a CARB ABI struct shared by OvruntimePhysX's fillInterface() and
+// OvruntimeUnitTests' call sites: every member is unconditional and TestPathArg is pinned to
+// plain std::string so the layout is identical in every TU. SdfPath
+// call sites convert with GetString().
+#include <string>
 #include <unordered_map>
 
 namespace omni
@@ -15,6 +25,10 @@ namespace omni
 
 namespace physx
 {
+
+using TestPathArg = std::string;
+// Regression tripwire: TestPathArg must stay a plain std::string.
+static_assert(sizeof(TestPathArg) == sizeof(std::string), "TestPathArg must stay ABI-identical to std::string");
 
 struct PhysicsStats
 {
@@ -69,7 +83,7 @@ struct IPhysxUnitTests
 
     float(CARB_ABI* getMassInformation)(const char* path, carb::Float3& inertia, carb::Float3& com);
 
-    void(CARB_ABI* getMaterialsPaths)(const PXR_NS::SdfPath& path, std::vector<PXR_NS::SdfPath>& materials);
+    void(CARB_ABI* getMaterialsPaths)(const TestPathArg& path, std::vector<TestPathArg>& materials);
 
     void(CARB_ABI* startLoggerCheck)(const char* message, bool expectedResult, bool partialStringMatch);
 
@@ -80,11 +94,28 @@ struct IPhysxUnitTests
 
     bool(CARB_ABI* endLoggerCheck)();
 
-    uint32_t(CARB_ABI* getPhysXPtrInstanced)(const PXR_NS::SdfPath& path, void** data, uint32_t dataSize, PhysXType type);
+    // Note: this is the same underlying implementer as IPhysxPrivate::getPhysXPtrInstanced (see
+    // ADR-0019); it is retyped here purely to keep both ABI declarations matching that single
+    // implementer's signature, not as a scope decision for IPhysxUnitTests/IPhysxBenchmarks (which
+    // stay SdfPath-typed -- test-only code is explicitly out of ADR-0019's scope).
+    uint32_t(CARB_ABI* getPhysXPtrInstanced)(omni::physics::parse::ObjectKey key, void** data, uint32_t dataSize, PhysXType type);
 
     void(CARB_ABI* updateCooking)();
 
     bool(CARB_ABI* isCudaLibPresent)();
+
+    // Number of InternalActor entries registered with the given physics scene. Exposed so tests can
+    // assert that the per-scene actor bookkeeping follows a simulation owner change; returns 0 if the
+    // path does not resolve to a scene.
+    size_t(CARB_ABI* getSceneInternalActorCount)(const TestPathArg& scenePath);
+
+    // REQ-SIM-SCENEQUERY-001 observability: raycastFilterExcludeInvisible::preFilter() and the
+    // per-query KnownTokens::intern() call site in raycastSingle() (Raycast.cpp) each increment a
+    // counter tests can read around a raycast to prove the call ran, without depending on
+    // isInteractiveActorRaycast's timing-dependent boolean return.
+    void(CARB_ABI* resetRaycastQueryTestCounters)();
+    uint32_t(CARB_ABI* getRaycastPreFilterCallCount)();
+    uint32_t(CARB_ABI* getRaycastQueryInternCount)();
 };
 
 struct PhysicsProfileStats

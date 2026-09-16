@@ -1,28 +1,5 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 // ****************************************************************************
 // This snippet records an OmniPvd capture containing one actor of every
@@ -35,11 +12,13 @@
 // Usage: SnippetOmniPvdMesh --omnipvdfile=<path/to/out.ovd>
 // ****************************************************************************
 
+#include <stdio.h>
 #include "PxPhysicsAPI.h"
 #include "../snippetutils/SnippetUtils.h"
 #include "omnipvd/PxOmniPvd.h"
 
 #if PX_SUPPORT_OMNI_PVD
+#include "../pvdruntime/include/OmniPvdLibraryFunctions.h"
 #include "../pvdruntime/include/OmniPvdWriter.h"
 #include "../pvdruntime/include/OmniPvdFileWriteStream.h"
 
@@ -54,6 +33,7 @@ static PxScene*                 gScene = NULL;
 static PxMaterial*              gMaterial = NULL;
 
 static PxOmniPvd*               gOmniPvd = NULL;
+static OmniPvdFileWriteStream*  gOmniPvdFileStream = NULL;
 static const char*              gOmniPvdPath = NULL;
 
 // Deterministic pseudo-random for reproducible captures.
@@ -220,39 +200,55 @@ static void buildMeshScene()
     }
 }
 
-static void initPhysicsWithOmniPvd()
+static bool initPhysicsWithOmniPvd()
 {
     gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
-    if (!gFoundation) { printf("Error: PxCreateFoundation\n"); return; }
+    if (!gFoundation) { printf("Error: PxCreateFoundation\n"); return false; }
 
     gOmniPvd = PxCreateOmniPvd(*gFoundation);
-    if (!gOmniPvd) { printf("Error: PxCreateOmniPvd\n"); return; }
+    if (!gOmniPvd) { printf("Error: PxCreateOmniPvd\n"); return false; }
 
     OmniPvdWriter* writer = gOmniPvd->getWriter();
-    OmniPvdFileWriteStream* fs = gOmniPvd->getFileWriteStream();
-    if (!writer || !fs) { printf("Error: OmniPvd writer/stream\n"); return; }
-    fs->setFileName(gOmniPvdPath);
-    writer->setWriteStream(static_cast<OmniPvdWriteStream&>(*fs));
+    if (!writer) { printf("Error: OmniPvd writer\n"); return false; }
+    gOmniPvdFileStream = createOmniPvdFileWriteStream();
+    if (!gOmniPvdFileStream) { printf("Error: OmniPvd file stream\n"); return false; }
+    gOmniPvdFileStream->setFileName(gOmniPvdPath);
+    // Validate the output path before binding; the writer's lazy open is idempotent.
+    if (!gOmniPvdFileStream->openStream())
+    {
+        printf("Error: could not open OmniPvd output file stream for '%s'\n", gOmniPvdPath);
+        return false;
+    }
+    writer->setWriteStream(*gOmniPvdFileStream);
 
     gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, NULL, gOmniPvd);
-    if (!gPhysics) { printf("Error: PxCreatePhysics\n"); return; }
+    if (!gPhysics) { printf("Error: PxCreatePhysics\n"); return false; }
 
     if (!gPhysics->getOmniPvd() || !gPhysics->getOmniPvd()->startSampling())
     {
         printf("Error: could not start OmniPvd sampling to file(%s)\n", gOmniPvdPath);
-        return;
+        return false;
     }
 
     buildMeshScene();
+    return true;
 }
 
-static void cleanupPhysics()
+static bool cleanupPhysics()
 {
+    bool streamClosed = true;
     PX_RELEASE(gScene);
     PX_RELEASE(gDispatcher);
     PX_RELEASE(gPhysics);
     PX_RELEASE(gOmniPvd);
+    if (gOmniPvdFileStream)
+    {
+        streamClosed = gOmniPvdFileStream->closeStream();
+        destroyOmniPvdFileWriteStream(*gOmniPvdFileStream);
+        gOmniPvdFileStream = NULL;
+    }
     PX_RELEASE(gFoundation);
+    return streamClosed;
 }
 
 static bool parseOmniPvdOutputFile(int argc, const char* const* argv)
@@ -282,11 +278,19 @@ int snippetMain(int argc, const char* const* argv)
     if (!parseOmniPvdOutputFile(argc, argv))
         return 1;
 
-    initPhysicsWithOmniPvd();
+    if (!initPhysicsWithOmniPvd())
+    {
+        cleanupPhysics();
+        return 1;
+    }
     const PxU32 frameCount = 60;
     for (PxU32 i = 0; i < frameCount; ++i)
         stepPhysics();
-    cleanupPhysics();
+    if (!cleanupPhysics())
+    {
+        fprintf(stderr, "Error: could not finalize OmniPvd output file '%s'\n", gOmniPvdPath);
+        return 1;
+    }
     printf("SnippetOmniPvdMesh wrote %u frames to %s\n", frameCount, gOmniPvdPath);
 #else
     PX_UNUSED(argc);

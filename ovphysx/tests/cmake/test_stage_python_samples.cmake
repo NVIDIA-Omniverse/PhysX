@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.16)
 
@@ -20,8 +20,8 @@ file(WRITE "${_src}/.venv/pyvenv.cfg" "home = /nowhere\n")
 file(WRITE "${_src}/__pycache__/hello_world.pyc" "junk")
 file(WRITE "${_src}/.pytest_cache/CACHEDIR.TAG" "Signature: 8a477f597d28d172\n")
 # The reported failure (NVBug 6543059): .venv/bin/python resolves outside the
-# repository, so copying it aborts the wheel build.  Symlink creation needs a
-# privilege Windows does not grant by default, so it is best-effort here; the
+# repository, so copying it aborts the wheel build. Symlink creation needs a
+# privilege Windows does not grant by default, so it is best-effort here. The
 # assertion below holds on every platform.
 file(CREATE_LINK "${TEST_ROOT}/no-such-interpreter" "${_src}/.venv/bin/python"
     SYMBOLIC RESULT _link_result)

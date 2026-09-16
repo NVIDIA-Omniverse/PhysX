@@ -1,8 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-READ-INVDYN-001
+ * @covers AC-10
+ */
 
 // clang-format off
-#include <UsdPCH.h>
 // clang-format on
 
 #include "tensors/ArticulationMetatype.h"
@@ -225,6 +229,7 @@ void ArticulationMetatype::addDof(const DofDesc& desc, bool body0IsParent)
     mDofNames.push_back(desc.name);
     mDofTypes.push_back(desc.type);
     mDofIsBody0Parent.push_back(body0IsParent);
+    mHasReversedDofBodyOrder = mHasReversedDofBodyOrder || !body0IsParent;
 
     if (mDofMap.find(desc.name) == mDofMap.end())
     {

@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
 #include <carb/logging/Log.h>
 
-#include <common/utilities/Utilities.h>
+#include <common/utilities/CoreUtilities.h> // sendErrorEvent
 
 #include <PxPhysicsAPI.h>
 #include <cudamanager/PxCudaContext.h>
@@ -133,7 +133,11 @@ private:
                 "omni.physx will ignore logging subsequent errors to user interface until simulation stop",
                 mMaxNumErrors);
         CARB_LOG_ERROR("PhysX error: %s", buffer);
-        sendErrorEvent(mEventStream, omni::physx::ePhysxTooManyErrors, std::make_pair("errorString", (const char*)buffer));
+        if (mEventStream)
+        {
+            sendErrorEvent(mEventStream, omni::physx::ePhysxTooManyErrors,
+                           std::make_pair("errorString", (const char*)buffer));
+        }
     }
 
     carb::events::IEventStreamPtr   mEventStream;

@@ -1,12 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-#include "UsdPCH.h"
+// SPDX-License-Identifier: Apache-2.0
 
 #include "InternalDeformable.h"
 #include "InternalDeformableAttachment.h"
 #include "InternalScene.h"
-#include "InternalTools.h"
 
 #include <PhysXScene.h>
 #include <OmniPhysX.h>
@@ -30,7 +27,6 @@
 using namespace omni::physx;
 using namespace omni::physx::internal;
 using namespace omni::physx::usdparser;
-using namespace PXR_NS;
 using namespace carb;
 using namespace ::physx;
 using namespace physx::Ext;

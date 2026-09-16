@@ -1,13 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
 #include <private/omni/physx/PhysxUsd.h>
 
 #include <common/foundation/Allocator.h>
+#include <omni/physics/parse/Handles.h>
 
 #include "LoadTools.h"
+
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace omni
 {
@@ -16,6 +21,9 @@ namespace physx
 namespace usdparser
 {
 
+// ObjectKey-keyed side-table structure (15+ unordered_map<ObjectKey, ...> members), the
+// vehicle-specific analogue of ObjectDb. Every map key is the ObjectKey the
+// walker/consumer already resolved.
 class VehicleComponentTracker
 {
 public:
@@ -23,19 +31,21 @@ public:
     ~VehicleComponentTracker();
 
     template <typename T>
-    static T* addComponent(const PXR_NS::SdfPath& path, std::map<PXR_NS::SdfPath, T*>& componentMap)
+    static T* addComponent(omni::physics::parse::ObjectKey key,
+        std::unordered_map<omni::physics::parse::ObjectKey, T*, omni::physics::parse::ObjectKey::Hash>& componentMap)
     {
         T* componentRef = ICE_PLACEMENT_NEW(T)();
         if (componentRef)
-            componentMap.insert({ path, componentRef });
+            componentMap.insert({ key, componentRef });
 
         return componentRef;
     }
 
     template <typename T>
-    static void removeComponent(const PXR_NS::SdfPath& path, std::map<PXR_NS::SdfPath, T*>& componentMap)
+    static void removeComponent(omni::physics::parse::ObjectKey key,
+        std::unordered_map<omni::physics::parse::ObjectKey, T*, omni::physics::parse::ObjectKey::Hash>& componentMap)
     {
-        typename std::map<PXR_NS::SdfPath, T*>::iterator iter = componentMap.find(path);
+        typename std::unordered_map<omni::physics::parse::ObjectKey, T*, omni::physics::parse::ObjectKey::Hash>::iterator iter = componentMap.find(key);
         if (iter != componentMap.end())
         {
             T* component = iter->second;
@@ -47,9 +57,10 @@ public:
     }
 
     template <typename T>
-    static T* findComponent(const PXR_NS::SdfPath& path, std::map<PXR_NS::SdfPath, T*>& componentMap)
+    static T* findComponent(omni::physics::parse::ObjectKey key,
+        std::unordered_map<omni::physics::parse::ObjectKey, T*, omni::physics::parse::ObjectKey::Hash>& componentMap)
     {
-        typename std::map<PXR_NS::SdfPath, T*>::iterator iter = componentMap.find(path);
+        typename std::unordered_map<omni::physics::parse::ObjectKey, T*, omni::physics::parse::ObjectKey::Hash>::iterator iter = componentMap.find(key);
         if (iter != componentMap.end())
         {
             return iter->second;
@@ -59,9 +70,10 @@ public:
     }
 
     template <typename T>
-    static void deleteComponents(std::map<PXR_NS::SdfPath, T*>& componentMap)
+    static void deleteComponents(
+        std::unordered_map<omni::physics::parse::ObjectKey, T*, omni::physics::parse::ObjectKey::Hash>& componentMap)
     {
-        typename std::map<PXR_NS::SdfPath, T*>::iterator iter = componentMap.begin();
+        typename std::unordered_map<omni::physics::parse::ObjectKey, T*, omni::physics::parse::ObjectKey::Hash>::iterator iter = componentMap.begin();
         while (iter != componentMap.end())
         {
             T* component = iter->second;
@@ -110,40 +122,46 @@ public:
 
 
 public:
-    std::map<PXR_NS::SdfPath, WheelDesc*> mWheels;
-    std::map<PXR_NS::SdfPath, TireDesc*> mTires;
-    std::map<PXR_NS::SdfPath, SuspensionDesc*> mSuspensions;
-    std::map<PXR_NS::SdfPath, EngineDesc*> mEngines;
-    std::map<PXR_NS::SdfPath, GearsDesc*> mGears;
-    std::map<PXR_NS::SdfPath, AutoGearBoxDesc*> mAutoGearBoxes;
-    std::map<PXR_NS::SdfPath, ClutchDesc*> mClutches;
-    std::map<PXR_NS::SdfPath, DriveBasicDesc*> mDrivesBasic;
-    std::map<PXR_NS::SdfPath, DriveStandardDesc*> mDrivesStandard;
+    std::unordered_map<omni::physics::parse::ObjectKey, WheelDesc*, omni::physics::parse::ObjectKey::Hash> mWheels;
+    std::unordered_map<omni::physics::parse::ObjectKey, TireDesc*, omni::physics::parse::ObjectKey::Hash> mTires;
+    std::unordered_map<omni::physics::parse::ObjectKey, SuspensionDesc*, omni::physics::parse::ObjectKey::Hash> mSuspensions;
+    std::unordered_map<omni::physics::parse::ObjectKey, EngineDesc*, omni::physics::parse::ObjectKey::Hash> mEngines;
+    std::unordered_map<omni::physics::parse::ObjectKey, GearsDesc*, omni::physics::parse::ObjectKey::Hash> mGears;
+    std::unordered_map<omni::physics::parse::ObjectKey, AutoGearBoxDesc*, omni::physics::parse::ObjectKey::Hash> mAutoGearBoxes;
+    std::unordered_map<omni::physics::parse::ObjectKey, ClutchDesc*, omni::physics::parse::ObjectKey::Hash> mClutches;
+    std::unordered_map<omni::physics::parse::ObjectKey, DriveBasicDesc*, omni::physics::parse::ObjectKey::Hash> mDrivesBasic;
+    std::unordered_map<omni::physics::parse::ObjectKey, DriveStandardDesc*, omni::physics::parse::ObjectKey::Hash> mDrivesStandard;
 
     std::vector<MultiWheelDifferentialDesc*> mMultiWheelDifferentials;
     std::vector<TankDifferentialDesc*> mTankDifferentials;
-    // SdfPath-keyed side-table for differentials so the consumer adapter
+    // ObjectKey-keyed side-table for differentials so the consumer adapter
     // can pre-populate, and legacy parseDifferential can short-circuit on
     // a lookup hit. Storage lifetime is the legacy vectors above; this
     // map only holds borrow pointers.
-    std::map<PXR_NS::SdfPath, MultiWheelDifferentialDesc*> mDifferentialsByPath;
-    // Side-tables for brakes (keyed by (path, brakesIndex)) and steering
+    std::unordered_map<omni::physics::parse::ObjectKey, MultiWheelDifferentialDesc*, omni::physics::parse::ObjectKey::Hash> mDifferentialsByPath;
+    // Side-tables for brakes (keyed by (key, brakesIndex)) and steering
     // (single-apply, variant chosen by the consumer). Same pattern as
     // mDifferentialsByPath -- borrow pointers only; storage lifetime is
     // the legacy mBrakes / mSteeringBasic / mSteeringAckermann vectors above.
-    std::map<std::pair<PXR_NS::SdfPath, uint8_t>, BrakesDesc*> mBrakesByPathIndex;
-    std::map<PXR_NS::SdfPath, SteeringDesc*> mSteeringByPath;
+    struct KeyIndexHash
+    {
+        size_t operator()(const std::pair<omni::physics::parse::ObjectKey, uint8_t>& p) const
+        {
+            return omni::physics::parse::ObjectKey::Hash{}(p.first) ^ (static_cast<size_t>(p.second) << 1);
+        }
+    };
+    std::unordered_map<std::pair<omni::physics::parse::ObjectKey, uint8_t>, BrakesDesc*, KeyIndexHash> mBrakesByPathIndex;
+    std::unordered_map<omni::physics::parse::ObjectKey, SteeringDesc*, omni::physics::parse::ObjectKey::Hash> mSteeringByPath;
     // Per-attachment-prim side-tables. WheelAttachmentDesc is per-vehicle
     // (consumer copies into VehicleDesc::wheelAttachments vector by-value).
     // SuspensionCompliance is owned by the legacy mSuspensionCompliances
     // vector for cleanup; this map is borrow-pointer only.
-    std::map<PXR_NS::SdfPath, WheelAttachmentDesc*>  mWheelAttachmentByPath;
-    // Vehicle prim path -> its wheel-attachment prim paths (in scan order),
-    // built from the walker-resolved WheelAttachmentInfo::vehicleKey. Lets
-    // parseVehicle enumerate a vehicle's attachments without a USD descendant
-    // walk.
-    std::map<PXR_NS::SdfPath, std::vector<PXR_NS::SdfPath>> mVehicleWheelAttachments;
-    std::map<PXR_NS::SdfPath, SuspensionComplianceDesc*> mSuspensionComplianceByPath;
+    std::unordered_map<omni::physics::parse::ObjectKey, WheelAttachmentDesc*, omni::physics::parse::ObjectKey::Hash>  mWheelAttachmentByPath;
+    // Vehicle key -> its wheel-attachment keys (in scan order), built from
+    // the walker-resolved WheelAttachmentInfo::vehicleKey. Lets parseVehicle
+    // enumerate a vehicle's attachments without a USD descendant walk.
+    std::unordered_map<omni::physics::parse::ObjectKey, std::vector<omni::physics::parse::ObjectKey>, omni::physics::parse::ObjectKey::Hash> mVehicleWheelAttachments;
+    std::unordered_map<omni::physics::parse::ObjectKey, SuspensionComplianceDesc*, omni::physics::parse::ObjectKey::Hash> mSuspensionComplianceByPath;
     // Storage for pre-populated WheelAttachmentDescs (legacy stores by-
     // value in VehicleDesc; we need lifetime management for the
     // pointers held in mWheelAttachmentByPath).
@@ -160,7 +178,7 @@ public:
     // short-circuited. Wheel attachments + cross-validation + controllers
     // still run in legacy. mVehiclesOwned holds lifetime for the
     // side-table entries (mVehicleByPath is borrow-only).
-    std::map<PXR_NS::SdfPath, VehicleDesc*> mVehicleByPath;
+    std::unordered_map<omni::physics::parse::ObjectKey, VehicleDesc*, omni::physics::parse::ObjectKey::Hash> mVehicleByPath;
     std::vector<VehicleDesc*> mVehiclesOwned;
 };
 

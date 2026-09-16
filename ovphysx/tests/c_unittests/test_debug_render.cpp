@@ -1,13 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // C-boundary tests for the PhysX debug-render API (ovphysx_debug_render_*).
 //
-// These cover the input-validation hardening + the cached getters added in review:
-// the argument checks all run BEFORE the stage/forward, and the getters
-// read an ovphysx-side cache, so a bare instance (no attached USD stage) is enough to
-// exercise every check here. (The actual draw-buffer population is covered end-to-end
-// by the BlokyNext consumer suite, which needs a stepped scene.)
+// The argument checks all run before the stage forward, and the getters read an
+// ovphysx-side cache, so a bare instance without an attached USD stage is enough to
+// exercise every check here. The draw-buffer population itself is covered end-to-end
+// by the BlokyNext consumer suite, which needs a stepped scene.
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
@@ -85,8 +84,8 @@ struct OvstageAttachmentStateGuard
     }
 };
 
-// Bare instance (no stage). The debug-render arg validation + cached getters do not
-// require an attached stage.
+// Bare instance without a stage. Argument validation and the cached getters do not
+// require one.
 struct DebugRenderTest : public ::testing::Test
 {
     ovphysx_handle_t h = 0;
@@ -111,8 +110,8 @@ constexpr float kNaN = std::numeric_limits<float>::quiet_NaN();
 constexpr float kInf = std::numeric_limits<float>::infinity();
 } // namespace
 
-// set_parameter must reject NONE (0) and out-of-range BEFORE forwarding -- omni.physx
-// does `visMask |= (1ull << param)` unchecked (param >= 64 is UB) and param 0 collides
+// set_parameter must reject NONE (0) and out-of-range values before forwarding. omni.physx
+// applies `visMask |= (1ull << param)` unchecked (param >= 64 is UB) and param 0 collides
 // with the eSCALE slot in the enable loop.
 TEST_F(DebugRenderTest, SetParameterRejectsNoneAndOutOfRange)
 {
@@ -155,8 +154,8 @@ TEST_F(DebugRenderTest, GetScaleRejectsNull)
     EXPECT_EQ(ovphysx_debug_render_get_scale(h, nullptr).status, OVPHYSX_API_INVALID_ARGUMENT);
 }
 
-// culling box: NULL, non-finite, or min > max on any axis -> INVALID_ARGUMENT (omni.physx
-// would silently drop an invalid box via bounds.isValid() and still return SUCCESS).
+// A NULL, non-finite, or inverted (min > max on any axis) culling box is INVALID_ARGUMENT.
+// omni.physx would silently drop an invalid box via bounds.isValid() and still return SUCCESS.
 TEST_F(DebugRenderTest, SetCullingBoxRejectsBadArgs)
 {
     const float mn[3] = { 0.f, 0.f, 0.f };
@@ -170,8 +169,7 @@ TEST_F(DebugRenderTest, SetCullingBoxRejectsBadArgs)
     EXPECT_EQ(ovphysx_debug_render_set_culling_box(h, inverted, mx).status, OVPHYSX_API_INVALID_ARGUMENT);
 }
 
-// The buffer getters must reject a NULL TYPED out-pointer (previously the shared check
-// guarded an internal local, so a NULL caller pointer slipped through as SUCCESS).
+// The buffer getters must reject a NULL typed out-pointer as well as a NULL count pointer.
 TEST_F(DebugRenderTest, GettersRejectNullOutPointers)
 {
     const ovphysx_debug_point_t* pts = nullptr;
@@ -188,7 +186,7 @@ TEST_F(DebugRenderTest, GettersRejectNullOutPointers)
 
 // The cached getters round-trip the last value requested through ovphysx (set/get
 // pairing). Each assertion sets the state it checks, so it is independent of the
-// process-global cache's prior contents / test ordering.
+// prior contents of the process-global cache and of test ordering.
 TEST_F(DebugRenderTest, ParameterAndScaleGettersRoundTrip)
 {
     float value = -1.0f;
@@ -204,7 +202,7 @@ TEST_F(DebugRenderTest, ParameterAndScaleGettersRoundTrip)
     ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_SDF, &value).status,
               OVPHYSX_API_SUCCESS);
     EXPECT_FLOAT_EQ(value, 0.0f);
-    // ... while BODY_AXES keeps its value (independent entries).
+    // BODY_AXES keeps its value. The entries are independent.
     ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, &value).status,
               OVPHYSX_API_SUCCESS);
     EXPECT_FLOAT_EQ(value, 2.5f);
@@ -226,12 +224,11 @@ TEST_F(DebugRenderTest, ParameterAndScaleGettersRoundTrip)
     EXPECT_FLOAT_EQ(scale, 0.0f);
 }
 
-// Stageless contract: with no USD stage attached, the validate-then-forward calls return
-// OVPHYSX_API_ERROR ("no USD stage loaded") AFTER their argument checks pass. This is the
-// other half of the doc contract the cached getters exercise: interface/fn-ptr unavailable
-// -> no-op SUCCESS, but no stage attached -> ERROR. (set_parameter/set_scale still write
-// the ovphysx-side cache before the stage check, which is why the round-trip getters above
-// read SUCCESS on the same bare instance.)
+// With no USD stage attached, the validate-then-forward calls return OVPHYSX_API_ERROR
+// ("no USD stage loaded") after their argument checks pass. An unavailable interface or
+// function pointer is a no-op SUCCESS, but a missing stage is an ERROR. set_parameter and
+// set_scale still write the ovphysx-side cache before the stage check, which is why the
+// round-trip getters above read SUCCESS on the same bare instance.
 TEST_F(DebugRenderTest, ValidCallsReturnErrorWithoutStage)
 {
     EXPECT_EQ(ovphysx_debug_render_enable(h, true).status, OVPHYSX_API_ERROR);
@@ -348,19 +345,17 @@ TEST_F(DebugRenderTest, DestroyClearsTokenScopeAfterPendingOperationFails)
     EXPECT_TRUE(g_lastScopeWasNull.load(std::memory_order_relaxed));
 }
 
-// Every visualization parameter must round-trip independently through the cached
-// values. ParameterAndScaleGettersRoundTrip only covers two entries, so exercise
-// the whole range PARAM_WORLD_AXES (1) .. COUNT-1 with a per-parameter distinct
-// value: set each and confirm it reads back without disturbing the others, then
-// clear each and confirm the not-yet-cleared parameters keep their values.
-// (set_parameter returns ERROR on this stageless instance but writes the cache
-// before the stage check, so the cached getter still round-trips.)
+// Every visualization parameter must round-trip independently through the cached values.
+// ParameterAndScaleGettersRoundTrip only covers two entries, so this exercises the whole
+// range PARAM_WORLD_AXES (1) .. COUNT-1 with a distinct value per parameter. set_parameter
+// returns ERROR on this stageless instance but writes the cache before the stage check,
+// so the cached getter still round-trips.
 TEST_F(DebugRenderTest, AllVisualizationParameterValuesRoundTripIndependently)
 {
     const uint32_t first = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES;
     const uint32_t last = OVPHYSX_DEBUG_RENDER_PARAM_COUNT - 1;
 
-    // Set every parameter to a distinct value; each must read back exactly.
+    // Each parameter must read back its own distinct value.
     for (uint32_t p = first; p <= last; ++p)
     {
         ovphysx_debug_render_set_parameter(h, (ovphysx_debug_render_parameter_t)p, float(p));
@@ -378,7 +373,7 @@ TEST_F(DebugRenderTest, AllVisualizationParameterValuesRoundTripIndependently)
         EXPECT_FLOAT_EQ(value, float(p)) << "parameter " << p << " was clobbered while setting another";
     }
 
-    // Clear each in ascending order; every not-yet-cleared (higher) parameter keeps its value.
+    // Clearing in ascending order must leave every higher parameter untouched.
     for (uint32_t p = first; p <= last; ++p)
     {
         ovphysx_debug_render_set_parameter(h, (ovphysx_debug_render_parameter_t)p, 0.0f);

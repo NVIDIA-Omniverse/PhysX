@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -22,7 +22,7 @@ namespace usdparser
 // and REQ-PARSE-MIMIC-001. Only the engine-side create/release helpers remain here.
 
 ObjectId createMimicJoint(AttachedStage&, MimicJointDesc&);
-void releaseMimicJoint(AttachedStage&, const PXR_NS::SdfPath& path, SchemaAPIFlag::Enum);
+void releaseMimicJoint(AttachedStage&, omni::physics::parse::ObjectKey mimicJointKey, SchemaAPIFlag::Enum);
 
 
 } // namespace usdparser

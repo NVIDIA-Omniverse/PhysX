@@ -1,11 +1,16 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
-# Common build configuration
+# Common build configuration shared by the script-mode entry points.
 
-# Get script directory and project root
 get_filename_component(SCRIPT_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 get_filename_component(PROJECT_ROOT "${SCRIPT_DIR}/.." ABSOLUTE)
+
+# Every script-mode entry point includes this file, so the Windows CMake floor is
+# enforced here for all of them (`cmake -P` never reads CMakeLists.txt).
+include("${PROJECT_ROOT}/cmake/RequireCMakeVersion.cmake")
+ovphysx_require_cmake_version()
+
 include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
 include("${SCRIPT_DIR}/host_toolchain.cmake")
 
@@ -47,15 +52,15 @@ unset(_OVPHYSX_RELEASE_RUNTIME_DEPS_VALUE)
 set(BUILD_PATH "${PROJECT_ROOT}/_build")
 
 # Compute a safe parallel-build job count, shared by every script that invokes
-# a compile (main build + the sample-test source builds). Building the
-# ovruntime/PhysX stack is RAM-bound, not core-bound: USD/PhysX/boost template
-# TUs hold ~1-2 GiB resident per cc1plus, so an unbounded `make -j` (e.g.
+# a compile (main build and the sample-test source builds). Building the
+# ovruntime/PhysX stack is RAM-bound, not core-bound. USD/PhysX/boost template
+# TUs hold 1-2 GiB resident per cc1plus, so an unbounded `make -j` (e.g.
 # `cmake --build --parallel` with no count) spawns enough workers to exhaust
-# RAM and thrash the machine into swap. Bound by BOTH cores and RAM.
+# RAM. The count is bounded by BOTH cores and RAM.
 #
-# -DJOBS=N overrides. CI/containers run under a cgroup CPU quota -- trust it
-# (capped at 16 for linker OOM). Bare-metal/dev: half the cores AND ~4 GiB of
-# RAM budget per job, whichever is smaller.
+# -DJOBS=N overrides. CI/containers run under a cgroup CPU quota, which is
+# trusted, capped at 16 for linker OOM. Bare-metal/dev uses half the cores or
+# 4 GiB of RAM budget per job, whichever is smaller.
 function(ovphysx_compute_build_jobs _out_var)
     if(DEFINED JOBS AND NOT "${JOBS}" STREQUAL "")
         set(${_out_var} "${JOBS}" PARENT_SCOPE)
@@ -93,7 +98,7 @@ function(ovphysx_compute_build_jobs _out_var)
     endif()
 
     if(_cgroup)
-        # Also clamp by the cgroup memory limit (4 GiB/job): a high CPU quota on
+        # Also clamp by the cgroup memory limit (4 GiB/job). A high CPU quota on
         # a memory-constrained runner would otherwise pick too many jobs and OOM.
         set(_cgroup_ram_jobs 0)
         if(EXISTS "/sys/fs/cgroup/memory.max")
@@ -122,7 +127,7 @@ function(ovphysx_compute_build_jobs _out_var)
         return()
     endif()
 
-    # Bare-metal / dev: min(cores/2, RAM_GiB/4).
+    # Bare-metal / dev uses min(cores/2, RAM_GiB/4).
     include(ProcessorCount)
     ProcessorCount(_ncores)
     if(_ncores LESS 1)
@@ -135,7 +140,7 @@ function(ovphysx_compute_build_jobs _out_var)
         file(STRINGS "/proc/meminfo" _memtotal_line REGEX "^MemTotal:")
         string(REGEX MATCH "[0-9]+" _mem_kb "${_memtotal_line}")
         if(_mem_kb)
-            # KiB / (4 GiB in KiB) == RAM_GiB / 4
+            # KiB divided by 4 GiB in KiB equals RAM_GiB / 4.
             math(EXPR _by_ram "${_mem_kb} / 4194304")
         endif()
     endif()
@@ -150,9 +155,9 @@ function(ovphysx_compute_build_jobs _out_var)
     set(${_out_var} ${_result} PARENT_SCOPE)
 endfunction()
 
-# Resolve uv executable once for all scripts.
+# Resolve the uv executable once for all scripts.
 # MSBuild/CTest environments on Windows may not inherit the same PATH as an
-# interactive shell, so we include common installation locations as hints.
+# interactive shell, so common installation locations are passed as hints.
 if(NOT DEFINED OVPHYSX_UV_COMMAND OR OVPHYSX_UV_COMMAND STREQUAL "")
     set(_UV_HINTS
         "$ENV{ProgramData}/chocolatey/bin"
@@ -175,7 +180,7 @@ if(NOT DEFINED OVPHYSX_UV_COMMAND OR OVPHYSX_UV_COMMAND STREQUAL "")
     endif()
 endif()
 
-# Standardized output directory: _build/<platform>/<config>/
+# Standardized output directory: _build/<platform>/<config>/.
 set(STANDARD_OUTPUT_DIR "${BUILD_PATH}/${PLATFORM_NAME}/${BUILD_TYPE_LOWER}")
 
 # Resolve the external ovstage package used by SDK tests.
@@ -216,22 +221,21 @@ function(ovphysx_resolve_ovstage_paths)
     set(OVPHYSX_OVSTAGE_PYTHON_DIR "${_python_dir}" PARENT_SCOPE)
 endfunction()
 
-# Generate Python _version.py from VERSION file into a specified directory.
-# Only used by the wheel staging step; editable installs resolve version from
-# the repo VERSION file via __init__.py fallback chain.
-# Uses PEP440 format for Python compatibility (X.Y.Z-suffix -> X.Y.Z.suffix).
+# Generate the Python _version.py from the VERSION file into OUTPUT_DIR.
+# Only the wheel staging step uses it. Editable installs resolve the version from
+# the repo VERSION file via the __init__.py fallback chain.
+# The version is written in PEP 440 format (X.Y.Z-suffix -> X.Y.Z.suffix).
 function(generate_python_version_file OUTPUT_DIR)
     set(_VERSION_PY_PATH "${OUTPUT_DIR}/_version.py")
     file(READ "${PROJECT_ROOT}/VERSION" _VERSION_CONTENT)
     string(STRIP "${_VERSION_CONTENT}" _VERSION_CONTENT)
-    # Convert to PEP 440 format for Python compatibility
     semver_to_pep440("${_VERSION_CONTENT}")
     append_branch_local_version("${PEP440_VERSION}" "${PROJECT_ROOT}" PEP440_WITH_LOCAL)
-    file(WRITE "${_VERSION_PY_PATH}" "# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.\n# SPDX-License-Identifier: BSD-3-Clause\n#\n# Auto-generated by cmake from VERSION file\n__version__ = \"${PEP440_WITH_LOCAL}\"\n")
+    file(WRITE "${_VERSION_PY_PATH}" "# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.\n# SPDX-License-Identifier: Apache-2.0\n#\n# Auto-generated by cmake from VERSION file\n__version__ = \"${PEP440_WITH_LOCAL}\"\n")
     message(STATUS "Generated ${_VERSION_PY_PATH} with version ${PEP440_WITH_LOCAL}")
 endfunction()
 
-# Ensure uv-managed Python is available and return its path.
+# Ensure a uv-managed Python is available and return its path.
 # Usage: ensure_uv_managed_python(<version> <out_var>)
 function(ensure_uv_managed_python PY_VER OUT_VAR)
     execute_process(
@@ -370,7 +374,7 @@ function(strip_unstripped_elf_binaries ROOT_DIR LABEL)
             "Install it: apt-get install file  (RPM distros: dnf install file)")
     endif()
 
-    # Probed here rather than at first use: a missing strip only surfaces as an
+    # Probed here rather than at first use. A missing strip only surfaces as an
     # empty per-file error further down, which says nothing about binutils.
     execute_process(
         COMMAND strip --version
@@ -464,13 +468,13 @@ endfunction()
 # ============================================================================
 # ABI baseline enforcement for shipped binaries (Linux only).
 # ============================================================================
-# We target Ubuntu 22.04 LTS (glibc 2.35, GCC 11 / GLIBCXX_3.4.30) as the
-# minimum supported platform.  This is the oldest Ubuntu LTS still in standard
-# support, and matches the CI Docker images used by both ovphysx and PhysX SDK.
-# Pinning to this baseline means the SDK tarball and wheel work out-of-the-box
-# on Ubuntu 22.04+ and any distro with glibc >= 2.35 (RHEL 9, Debian 12, etc.)
+# Ubuntu 22.04 LTS (glibc 2.35, GCC 11 / GLIBCXX_3.4.30) is the minimum
+# supported platform. It is the oldest Ubuntu LTS still in standard support and
+# matches the CI Docker images used by both ovphysx and the PhysX SDK. Pinning
+# to this baseline means the SDK tarball and wheel work out of the box on
+# Ubuntu 22.04+ and any distro with glibc >= 2.35 (RHEL 9, Debian 12, etc.)
 # without requiring users to upgrade system libraries.
-# All .so files in release artifacts must not require newer versions.
+# No .so file in a release artifact may require newer versions.
 set(GLIBC_BASELINE   "2.35")
 set(GLIBCXX_BASELINE "3.4.30")
 
@@ -478,15 +482,15 @@ set(GLIBCXX_BASELINE "3.4.30")
 # version above the configured baseline.
 #
 # Uses readelf --version-info to inspect the .gnu.version_r (required)
-# section.  Ignores the .gnu.version_d (defined/provided) section and
+# section. Ignores the .gnu.version_d (defined/provided) section and
 # GLIBC_PRIVATE entries.
 #
 # Usage:
 #   verify_glibc_baseline(<root_dir> <label>)
 #
 # Controlled by:
-#   SKIP_GLIBC_CHECK  -- set to ON to skip (useful for local dev on newer OS).
-#   May be passed as a -D variable or as an environment variable; the env-var
+#   SKIP_GLIBC_CHECK  Set to ON to skip (useful for local dev on a newer OS).
+#   May be passed as a -D variable or as an environment variable. The env-var
 #   form is what lets validate_all.cmake forward the flag through its
 #   subprocess chain (cmake -P build.cmake -> cmake --build --target
 #   validate_all -> install_sdk -> cmake -P install.cmake), since the inner
@@ -502,12 +506,11 @@ function(verify_glibc_baseline ROOT_DIR LABEL)
         return()
     elseif(DEFINED ENV{SKIP_GLIBC_CHECK} AND "$ENV{SKIP_GLIBC_CHECK}")
         # Distinct message so a stale shell env (e.g. left over from a previous
-        # debug session) doesn't silently skip the check on a direct cmake -P run.
+        # debug session) does not silently skip the check on a direct cmake -P run.
         message(STATUS "Skipping glibc baseline check for ${LABEL} (SKIP_GLIBC_CHECK from environment)")
         return()
     endif()
 
-    # Verify readelf is available (binutils)
     execute_process(
         COMMAND readelf --version
         OUTPUT_QUIET
@@ -530,9 +533,9 @@ function(verify_glibc_baseline ROOT_DIR LABEL)
             continue()
         endif()
 
-        # Use readelf -h as a quick ELF check: non-ELF files (e.g. text stubs)
-        # cause readelf to exit non-zero, so we skip them.  This also avoids a
-        # dependency on the 'file' command for the ELF-detection step.
+        # readelf -h is a quick ELF check. Non-ELF files (e.g. text stubs) make
+        # readelf exit non-zero and are skipped. This also avoids a dependency
+        # on the 'file' command for the ELF-detection step.
         execute_process(
             COMMAND readelf -h "${_FILE}"
             OUTPUT_QUIET
@@ -545,10 +548,9 @@ function(verify_glibc_baseline ROOT_DIR LABEL)
 
         math(EXPR _CHECKED "${_CHECKED} + 1")
 
-        # Extract required version tags from .gnu.version_r section.
         # readelf --version-info prints both .gnu.version_d (defined) and
-        # .gnu.version_r (required).  We only want the required section.
-        # Force LC_ALL=C so section headers are always in English.
+        # .gnu.version_r (required). Only the required section matters here.
+        # LC_ALL=C keeps the section headers in English.
         set(ENV{LC_ALL} "C")
         execute_process(
             COMMAND readelf --version-info "${_FILE}"
@@ -560,7 +562,7 @@ function(verify_glibc_baseline ROOT_DIR LABEL)
             continue()
         endif()
 
-        # Parse only the "Version needs" (required) section, not
+        # Only the "Version needs" (required) section is parsed, not
         # "Version definition" (provided) or "Version symbols".
         set(_IN_NEEDS FALSE)
         string(REPLACE "\n" ";" _VI_LINES "${_VI_OUTPUT}")

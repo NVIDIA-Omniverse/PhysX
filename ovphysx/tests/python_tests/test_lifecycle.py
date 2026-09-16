@@ -1,10 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# PARTIALLY DEPRECATED (tensor-binding-deprecation): the TensorBinding-lifecycle tests here retire with the binding. The attach-handle and ContactBinding tests stay.
 
 
 # Lifecycle tests that use the shared session-scoped PhysX instance.
-# Tests that require create/release cycles (e.g. use-after-release,
-# double-release, context manager exit) live in lifecycle_tests/ and
+# Tests that require create/destroy cycles (e.g. use-after-destroy,
+# repeated destruction and finalizer cleanup) live in lifecycle_tests/ and
 # run in a dedicated subprocess to avoid the Carbonite re-init limitation.
 
 import gc
@@ -13,7 +15,44 @@ from ctypes import byref, c_int32
 import pytest
 from ovphysx._bindings import ovphysx_tensor_spec_t
 from ovphysx.types import ApiStatus, TensorType
-from test_utils import load_usd_with_ovstage
+from test_utils import destroy_ovstage_test_attachments, load_usd_with_ovstage
+
+
+def test_get_attach_handle_reflects_current_attach(physx_sdk):
+    """Test PhysX.get_attach_handle() against attach/detach/reattach (ADR-0016).
+
+    Covered APIs:
+        PhysX.get_attach_handle
+        ovstage attach/detach helper
+
+    Args:
+        physx_sdk: PhysX SDK fixture
+
+    Returns:
+        None: Ensures the attach handle is nonzero while attached, zero once
+        detached, and never repeats across a detach/reattach pair on the same
+        instance.
+    """
+    import os
+
+    test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    usd_path = os.path.join(test_dir, "data", "basic_simulation.usda")
+
+    assert physx_sdk.get_attach_handle() == 0
+
+    load_usd_with_ovstage(physx_sdk, usd_path)
+    physx_sdk.wait_all()
+    first_handle = physx_sdk.get_attach_handle()
+    assert first_handle != 0
+
+    destroy_ovstage_test_attachments(physx_sdk)
+    assert physx_sdk.get_attach_handle() == 0
+
+    load_usd_with_ovstage(physx_sdk, usd_path)
+    physx_sdk.wait_all()
+    second_handle = physx_sdk.get_attach_handle()
+    assert second_handle != 0
+    assert second_handle != first_handle
 
 
 def test_operations_on_destroyed_binding(physx_sdk):
@@ -44,11 +83,11 @@ def test_operations_on_destroyed_binding(physx_sdk):
         prim_paths=["/World/envs/env0/table"],
         tensor_type=TensorType.RIGID_BODY_POSE,
     )
-    # Synchronous - no wait() needed
+    # Binding creation is synchronous, so no wait() is needed.
 
     binding.destroy()
 
-    # The binding should be invalidated after destroy()
+    # The binding must be invalidated after destroy().
     tensor = np.zeros((1, 7), dtype=np.float32)
     with pytest.raises(RuntimeError, match=r"(?i)(destroyed|invalid)"):
         binding.write(tensor)
@@ -79,9 +118,9 @@ def test_binding_double_destroy(physx_sdk):
         prim_paths=["/World/envs/env0/table"],
         tensor_type=TensorType.RIGID_BODY_POSE,
     )
-    # Synchronous - no wait() needed
+    # Binding creation is synchronous, so no wait() is needed.
     binding.destroy()
-    binding.destroy()  # Should be safe to call twice
+    binding.destroy()  # A second destroy() must be a no-op.
 
 
 def test_binding_context_manager_with_exception(physx_sdk):
@@ -113,10 +152,9 @@ def test_binding_context_manager_with_exception(physx_sdk):
         ) as binding:
             assert binding.handle > 0
             assert binding.shape == (1, 7)  # One table, 7 components (pose)
-            # Simulate error during usage
             raise ValueError("Intentional test error")
     except ValueError:
-        pass  # Expected - binding should still be destroyed
+        pass  # Expected. The binding must still be destroyed.
 
 
 def test_tensor_binding_resource_warning_without_explicit_destroy(physx_sdk):

@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.22)
 
@@ -52,8 +52,7 @@ set(PX_OUTPUT_BIN_DIR "${CMAKE_BINARY_DIR}" CACHE PATH "Base bin output director
 
 # Find the shared Carbonite SDK dependency pulled via Packman.
 # When included as a subdirectory, the parent project may set
-# OVRUNTIME_TARGET_DEPS, OVRUNTIME_KIT_SDK_DIR, and CARB_SDK_DIR
-# before add_subdirectory() — respect those values.
+# OVRUNTIME_TARGET_DEPS and CARB_SDK_DIR before add_subdirectory(); respect those.
 if(NOT DEFINED OVRUNTIME_TARGET_DEPS)
     set(OVRUNTIME_TARGET_DEPS "${CMAKE_CURRENT_SOURCE_DIR}/_build/target-deps")
 endif()
@@ -77,24 +76,6 @@ if(NOT OVRUNTIME_RUNTIME_DEPS_CONFIG MATCHES "^(release|debug|per-config)$")
 endif()
 message(STATUS "ovruntime runtime dependencies config: ${OVRUNTIME_RUNTIME_DEPS_CONFIG}")
 
-# Kit SDK directory: when built as an ovphysx subproject, ovphysx fetches
-# kit_sdk_<config> into its own target-deps; OVRUNTIME_KIT_SDK_DIR lets
-# ovruntime cmake modules resolve headers from the right kit SDK.
-# pull_dependencies fetches kit_sdk_${config} for the requested config(s);
-# try config-specific first, fall back to release.
-if(NOT DEFINED OVRUNTIME_KIT_SDK_DIR)
-    if(OVRUNTIME_RUNTIME_DEPS_CONFIG STREQUAL "per-config" AND CMAKE_BUILD_TYPE)
-        string(TOLOWER "${CMAKE_BUILD_TYPE}" _ovr_bt)
-    elseif(OVRUNTIME_RUNTIME_DEPS_CONFIG STREQUAL "per-config")
-        set(_ovr_bt "release")
-    else()
-        set(_ovr_bt "${OVRUNTIME_RUNTIME_DEPS_CONFIG}")
-    endif()
-    set(OVRUNTIME_KIT_SDK_DIR "${OVRUNTIME_TARGET_DEPS}/kit_sdk_${_ovr_bt}")
-    if(NOT EXISTS "${OVRUNTIME_KIT_SDK_DIR}")
-        set(OVRUNTIME_KIT_SDK_DIR "${OVRUNTIME_TARGET_DEPS}/kit_sdk_release")
-    endif()
-endif()
 if(NOT DEFINED CARB_SDK_DIR)
     if(EXISTS "${OVRUNTIME_TARGET_DEPS}/carb_sdk_plugins/include")
         set(CARB_SDK_DIR "${OVRUNTIME_TARGET_DEPS}/carb_sdk_plugins")
@@ -132,6 +113,18 @@ if(NOT DEFINED CUDA_DIR)
     else()
         message(WARNING "CUDA not found. Run pull_dependencies.bat (or .sh) first.")
     endif()
+endif()
+
+# NVTX 3 ships inside the CUDA package as header-only sources, at the same
+# <nvtx3/...> path the PhysX SDK uses. ovruntime_add_external_system_includes()
+# already puts ${CUDA_DIR}/include on every target, so the targets that emit
+# NVTX ranges only need the compile definition below.
+set(OVRUNTIME_NVTX_AVAILABLE FALSE)
+if(DEFINED CUDA_DIR AND EXISTS "${CUDA_DIR}/include/nvtx3/nvToolsExt.h")
+    set(OVRUNTIME_NVTX_AVAILABLE TRUE)
+    message(STATUS "Found NVTX 3: ${CUDA_DIR}/include/nvtx3")
+else()
+    message(STATUS "NVTX 3 headers not found; NVTX profiling will be compiled out")
 endif()
 
 # Find Python (pulled via packman). Allow override via -DPYTHON_DIR=...
@@ -266,6 +259,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-strict-aliasing>            #  117 — common in low-level physics code
         $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-sign-compare>               #   54 — mixed signed/unsigned comparisons
         $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-deprecated-declarations>    #   51 — deprecated USD/PhysX API usage
+        $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-cpp>                        # pxr/base/tf/hashset.h -> <ext/hash_set> triggers
+                                                                      # libstdc++'s #warning-as-error whenever __DEPRECATED
+                                                                      # is defined and no earlier TU-wide UsdPCH.h has
+                                                                      # already undef'd it (ADR-0018 decision 6 / PCH removal)
         $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-unused-but-set-variable>    #   38 — debug remnants
         $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-reorder>                    #   30 — member init order vs declaration
         $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-unused-function>            #   29 — unreferenced static/inline helpers
@@ -278,6 +275,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-maybe-uninitialized>        #   ~24 — GCC false positives in optimized code
         $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-delete-incomplete>          #    1 — void* deletion (needs design fix)
     )
+    # -Wno-array-bounds / -Wno-stringop-overread for GCC 13 false positives in vendored
+    # code are already suppressed above, scoped to GNU >= 12 only (they would otherwise
+    # disable first-party -Warray-bounds diagnostics on GCC 11/Clang, and the GCC-only
+    # -Wno-stringop-overread spelling is not a Clang flag).
 elseif(MSVC)
     # MSVC equivalents of the GCC/Clang suppressions above.
     # Guarded with COMPILE_LANGUAGE:C,CXX so nvcc does not receive these flags.
@@ -310,6 +311,10 @@ endif()
 # interface process-wide so all translation units share the same vtable layout.
 add_compile_definitions(
     $<$<COMPILE_LANGUAGE:CXX>:carb_dictionary_IDictionary=carb_dictionary_IDictionary_latest>
+    # carb 214 defaults IFileSystem to v1, which has no open()/ScopedFile/writeChunk; the ujitso
+    # headers in ovruntime_deps need v2. Set tree-wide, not per-target: v1 and v2 give File and
+    # ScopedFile different definitions, so mixing them across TUs is an ABI hazard.
+    $<$<COMPILE_LANGUAGE:CXX>:carb_filesystem_IFileSystem=carb_filesystem_IFileSystem_latest>
 )
 
 # Code coverage instrumentation (gcov)
@@ -320,6 +325,31 @@ if(OVRUNTIME_ENABLE_COVERAGE)
         add_link_options(--coverage)
     else()
         message(WARNING "Code coverage is only supported with GCC/Clang, ignoring OVRUNTIME_ENABLE_COVERAGE")
+    endif()
+endif()
+
+# AddressSanitizer instrumentation (-DOVRUNTIME_ENABLE_ASAN=ON) — dev tool for use-after-free and
+# out-of-bounds hunting. Some defects in the read path are invisible to assertions and only a
+# sanitizer sees them: an ACTIVE read that dereferences a released PxActor reads a garbage
+# `userData`, which ActiveActorSet::mark() bounds-checks away, so the published column is unchanged
+# and every black-box oracle passes. "An ACTIVE read after a runtime release does not dereference
+# the released actor" (TestOvstageOutputReadback.cpp) exists to open that window; ASan is what
+# closes it.
+#
+# Mutually exclusive with TSan, and the same caveat applies -- prebuilt deps (USD/PhysX/carb/ovstage)
+# are uninstrumented, so run with ASAN_OPTIONS=detect_leaks=0 unless you want their leaks too.
+if(OVRUNTIME_ENABLE_ASAN)
+    if(OVRUNTIME_ENABLE_TSAN)
+        message(FATAL_ERROR "OVRUNTIME_ENABLE_ASAN and OVRUNTIME_ENABLE_TSAN are mutually exclusive")
+    endif()
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        message(STATUS "AddressSanitizer enabled")
+        add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:-fsanitize=address>
+                            $<$<COMPILE_LANGUAGE:C,CXX>:-fno-omit-frame-pointer>
+                            $<$<COMPILE_LANGUAGE:C,CXX>:-g>)
+        add_link_options(-fsanitize=address)
+    else()
+        message(WARNING "ASan is only supported with GCC/Clang, ignoring OVRUNTIME_ENABLE_ASAN")
     endif()
 endif()
 
@@ -399,7 +429,6 @@ endfunction()
 
 add_subdirectory(source/common)
 add_subdirectory(source/omni.physics.parse)
-add_subdirectory(source/omni.physics.usd)
 include(OvstageDependency)                     # resolves OVSTAGE_INCLUDE_DIRS / OVSTAGE_LIBRARY
 add_subdirectory(source/omni.physics.ovstage)  # ovstage backend (ADR-0002) — always built on this branch
 add_subdirectory(source/omni.convexdecomposition)
@@ -418,26 +447,32 @@ if(OVRUNTIME_ENABLE_COVERAGE)
     foreach(_target IN LISTS _GCOV_FLUSH_TARGETS)
         if(TARGET ${_target})
             target_sources(${_target} PRIVATE "${_GCOV_FLUSH_SRC}")
-            set_source_files_properties("${_GCOV_FLUSH_SRC}"
-                TARGET_DIRECTORY ${_target}
-                PROPERTIES SKIP_PRECOMPILE_HEADERS ON
-            )
         endif()
     endforeach()
 endif()
 
 # Tests
 if(OVRUNTIME_ENABLE_TESTS)
+    # omni.physics.usd is a test-only library (ADR-0027): the USD parse/scan backends only the
+    # test executables link and install. It is never configured in a product build.
+    add_subdirectory(source/omni.physics.usd)
     enable_testing()
+    add_subdirectory(source/common/tests)
     add_subdirectory(source/omni.convexdecomposition/tests)
     add_subdirectory(source/omni.physics.parse/tests)
     add_subdirectory(source/omni.physx.gpu/tests)
     add_subdirectory(source/omni.physx.foundation/tests)
     add_subdirectory(source/omni.physx/tests)
+    # Generated population contract tests (ADR-0030); needs the omni.physx test tree
+    # above for its bootstrap sources and the runtime/ovstage/usd targets.
+    add_subdirectory(physics_population_domain/tests)
     add_subdirectory(source/omni.physx.cooking/tests)
 
     # Regenerate the TEST_SUMMARY.md catalogues once per build (into _build/generated).
     include(GenerateTestSummary)
+
+    # Regenerate the BENCHMARK_SUMMARY.md catalogue once per build (into _build/generated).
+    include(GenerateBenchmarkSummary)
 endif()
 
 # Per-project optimization overrides (see cmake/UserOverrides.cmake.default)

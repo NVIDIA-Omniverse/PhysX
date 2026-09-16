@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 #include <omni/physx/IPhysxCookingService.h>
@@ -147,7 +147,7 @@ struct SurfaceDeformableBodyCookingParams
 // clang-format off
 constexpr static int PhysxCookingDataVersion_MeshTriangulation = 5; // triangulation of the UsdGeomPrim source content
 constexpr static int PhysxCookingDataVersion_TriangleMesh = 7;
-constexpr static int PhysxCookingDataVersion_TriangleMeshSDF = 1; // signed distance fields
+constexpr static int PhysxCookingDataVersion_TriangleMeshSDF = 2; // signed distance fields
 constexpr static int PhysxCookingDataVersion_ConvexMesh = 9;
 constexpr static int PhysxCookingDataVersion_ConvexDecomposition = 9;
 constexpr static int PhysxCookingDataVersion_ParticlePoissonSampling = 2;

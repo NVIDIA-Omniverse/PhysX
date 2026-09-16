@@ -1,449 +1,1463 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Changelog
 
 All notable changes to `ovphysx` are documented in this file.
 
-## [0.5.11] - Date 2026-08-21
+## [0.6.3] - Date 2026-09-10
+
+### Added
+- **`ovphysx.utils` is now a USD authoring package.** It was a single module
+  holding `step_and_write_to_ovstage()`; it is now a package of USD authoring
+  helpers for shapes, meshes, joints, materials, planes, particles, deformables,
+  collision filtering, transforms, paths and codeless schema access. Names stay
+  flat, so `ovphysx.utils.add_rigid_box` and
+  `ovphysx.utils.shapes.add_rigid_box` are the same function, and
+  `step_and_write_to_ovstage` is still importable from `ovphysx.utils`. The
+  package needs only `pxr` and the standard library and loads no native
+  library. One deliberate behavior change: the six `add_rigid_*` helpers now
+  always author a rigid body, including at `density=0.0`; use the matching
+  `add_collider_*` helper for a static collider.
+- **`ovphysx_get_object_type()` classifies standalone and custom joints.** A
+  maximal-coordinate joint between plain rigid bodies, and a plugin-registered
+  custom joint, simulated correctly but reported
+  `OVPHYSX_OBJECT_TYPE_INVALID` -- the same value as a path with no object at
+  all -- which made the call useless for identity or existence checks. They now
+  report the new `OVPHYSX_OBJECT_TYPE_JOINT` / `ObjectType.JOINT` (6) and
+  `OVPHYSX_OBJECT_TYPE_CUSTOM_JOINT` / `ObjectType.CUSTOM_JOINT` (7).
+  Articulation joints keep reporting `ARTICULATION_JOINT` (5). `INVALID` now
+  means only that no classified simulation object lives at the path.
+- **A physics population contract, with generated builders and per-component
+  documentation.** The contract records, for every USD prim type and applied
+  API schema that physics reads, the exact ovstage encoding of each column, its
+  raw USD fallback, what population writes, what the parser assumes when the
+  column is absent, and how the column shows up in the PhysX objects the
+  runtime creates. It covers 19 prim types, 31 API schemas and 292 columns. A
+  Warp-based `ovphysx.population` Python module and a header-only C++17 builder
+  (`ovphysx/population/Population.hpp`) are generated from it, so an
+  application can build a populated stage without hand-encoding column names
+  and types. One documentation page per component ships under Physics Schemas.
+  No runtime behavior changes.
+- **Read and write data-contract documentation.** New pages describe the
+  `ovphysx_read()` / `ovphysx_write()` data model, the readable and writable
+  attribute sets, device placement, and the known limitations. The ovstage
+  integration guide now links to them instead of carrying its own partial copy.
+- **`OvStageOutputCache` reduces the cost of publishing output every frame.**
+  `step_and_write_to_ovstage()` reads the current transform and
+  point-instancer values on every call by default. Passing a cache
+  (`with OvStageOutputCache(physx) as cache:`, then
+  `step_and_write_to_ovstage(..., cache=cache)`) lets it own copies and reuse
+  its CPU and CUDA output buffers across calls. Call `cache.refresh()` after a
+  transform, point-instancer pose-array or topology change; the cache is bound
+  to one ovstage attachment and cannot survive a detach and reattach.
 
 ### Changed
+- **`step_and_write_to_ovstage()` publishes world transforms, not shadow pose
+  attributes.** Poses used to land on `sim:<name>` shadow attributes that scene
+  consumers did not read. For fixed rigid bodies, articulation links and
+  vehicle wheels the helper now reads the current `omni:fabric:worldMatrix`,
+  keeps its shear-free signed scale, and writes back a reconstructed world
+  matrix; PhysX pose output itself carries no scale, so scale stays ovstage
+  state. It never writes `omni:xform` and never changes
+  `omni:resetXformStack`. Rigid-body point instancers get their native
+  `positions` and `orientations` arrays written instead, preserving unsimulated
+  slots and authored trailing rows; `scales` and prototype indices are
+  untouched. Every other emitted attribute still goes to its `sim:<name>`
+  shadow attribute. The sampled world matrix must already be current, so
+  compute the hierarchy and advance its write floor before calling the helper.
+  This helper does not make its output the prim's new local transform, and does
+  not propagate to descendants.
+- **`ovphysx_attach_ovstage()` refuses a stage populated without the PhysX USD
+  schemas.** ovstage drops applied API schemas it cannot resolve, so a stage
+  populated before
+  `ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])`
+  silently lost every `Physx*` setting -- self-collision flags, joint velocity
+  limits and the rest. Simulation then diverged on configurations that depend
+  on them, which could crash the process inside the first step. Attach now
+  verifies the registration and fails with an error naming the missing call,
+  before the runtime is touched. The refusal is sticky for the process:
+  registering late fixes the plugin list but not USD's already-built schema
+  registry. Your application still owns the registration; ovphysx only checks
+  it. Flows that already register are unchanged.
+- **The wheel and SDK no longer contain OmniClient.** ovphysx stopped copying
+  OmniClient, the `omniverse_connection` library and their provenance file into
+  its payloads, and no longer preloads OmniClient or rejects a mismatched
+  version at `PhysX()` construction. OmniClient, the USD resolver and the USD
+  runtime belong to the ovstage distribution your application supplies. Local
+  USD population, attach and simulation are unaffected in either startup order.
+- **The retired Fabric GPU plugins are gone from the package.** The unused
+  `omni.cubric.plugin` and `omni.gpucompute-cuda.plugin` dependencies and the
+  `plugins/gpu` search path are removed. PhysX GPU simulation is unchanged and
+  still runs from `PhysXGpu_64` in the flat `plugins/` directory.
+- **The bundled PhysX SDK moves to a build from the 0.6 release line.** It
+  picks up solver batching fixes, better load balancing in the CPU-only
+  articulation code, and a bounds check on the contact-manager index during
+  narrowphase refresh that could otherwise fault.
+- **A path pattern component longer than 4096 characters is now rejected.**
+  Every entry point that takes a path pattern -- tensor binding `pattern` and
+  `prim_paths`, SDF view `pattern`, contact binding `sensor_patterns` and
+  `filter_patterns` -- returns `OVPHYSX_API_INVALID_ARGUMENT` (`RuntimeError`
+  in Python) instead of accepting the input. Components are delimited the way
+  the runtime tokenizes them, at `/` outside balanced parentheses. Real prim
+  names and alternation lists stay far below the bound; a caller with a very
+  long explicit list should pass literal paths.
+- **Source builds fetch the pinned ovstage wheel from public PyPI.** The pinned
+  version does not change, and the wheels are the same builds that were served
+  internally. This affects only how a source build resolves its dependency.
+- **A source build needs CMake 3.22 or newer.** The README, the local
+  development guide and the source-link tutorial said 3.16, but the runtime the
+  build pulls in has required 3.22 for some time. The `find_package(ovphysx)`
+  flows against an installed SDK are unaffected and still work at 3.16.
 
-- **OVStage-backed articulation link and DOF indices now use stable path-derived ordering.**
-  This fixes run-to-run tensor-column drift, but it may change which link or DOF
-  occupies a given tensor column compared with 0.5.10. OVStage ordering is not
-  guaranteed to match USD backend authoring order; consumers needing identity
-  across upgrades or backends should use reported paths or names.
-- **Windows source and SDK sample builds now require CMake 4.1 or newer.**
-  Linux is unchanged at CMake 3.16 or newer. The prerequisite lists in the
-  README, the quickstart, and the source-link build tutorial state the split.
+### Performance
+- **An incremental ovstage spawn costs a handful of round trips instead of
+  hundreds.** Creating and draining one rigid body used to rebuild the whole
+  scan context from cold on every drain -- whole-stage schema probes, a
+  per-family stage query, a live ancestor walk for material bindings, and a
+  re-intern of every well-known token -- so the cost was fixed per drain rather
+  than proportional to what changed. The incremental scan now runs on the warm
+  attached source, answers family and column probes from one cached stage
+  vocabulary, prefetches bodies, shapes and ancestors once per spawn and reuses
+  that window for the mass update and object creation. Simulation results are
+  unchanged.
+- **Repeated ovstage reads and writes no longer evict each other's row
+  uploads.** The rigid view's ovstage row-list device cache held one slot, so a
+  read/write loop whose row lists differ re-uploaded on every access. It is now
+  a small LRU, and a stable read keeps its upload while a changing list cycles
+  through the spare slots.
+- **Attaching a scene with render-only scene-graph instances no longer runs
+  reverse instancing queries during cooking.** The lookup is needed only
+  outside the cooking pass; keeping it out removes a query per prototype from
+  attach on scenes whose instances carry no physics.
 
 ### Fixed
+- **Instance-proxy colliders keep their authored collision settings.** ovstage
+  instance-proxy rows carry the logical collider path, but some collision
+  values live only on the prototype's backing row. The runtime read the logical
+  row alone, so an explicitly disabled collider came back enabled from the
+  default value and authored contact and rest offsets were lost -- self
+  collision then made colliders interact that were meant to be off. Collision
+  enablement, the scalar `PhysxCollisionAPI` values and the contact margin and
+  gap values now fall back to the nearest instance-root prototype backing when
+  the logical row has no value. Logical identity, transforms, material
+  bindings, relationships, instance overrides and value blocks stay
+  authoritative. This applies at initial population and attach; it does not add
+  live fan-out of prototype edits.
+- **A very long path-pattern component no longer kills the process.** On Linux,
+  a single `/`-separated component longer than roughly 58K characters
+  overflowed the thread stack inside the regular-expression compiler and the
+  process died with no exception and no log line. The matcher now bounds the
+  token it compiles and warns instead, and the public entry points reject the
+  input outright (see *Changed*). Windows was never affected.
+- **A read taken right after a write no longer returns another scene's prim
+  paths.** The rigid read cache is keyed by the scene pointer and shared with
+  the write path. A write refreshed the entry's keys but left its resolved path
+  handles in place, so when a new scene reused a destroyed scene's address with
+  the same body count, the following read served the old scene's paths. A write
+  that changes the key set now drops the stale handles; a steady-state write
+  over an unchanged key set keeps its warm ones.
+- **The public source drop configures with the documented CMake version.**
+  `CMakePresets.json` declared preset schema version 6, which only CMake 3.25
+  and newer parse, so the documented preset flow failed on stock CMake 3.22
+  with an `Unrecognized "version" field` error that named neither CMake nor a
+  version. The file uses nothing newer than schema 3 and now declares 3.
+- **The public source drop no longer advertises `-n` / `--no-docker`.** Nothing
+  in the drop read the variable behind that flag, so passing it did nothing and
+  omitting it started no container. A developer who trusted the help text built
+  against the host's glibc and was then rejected by the ABI check. The flag and
+  the Docker claim are gone from the public tree, and the README states plainly
+  that meeting the glibc 2.35 baseline is the build environment's job.
+- **The public source drop ships `python/uv.lock`.** Its own documented entry
+  point, `cmake -P scripts/validate_all.cmake`, needs that lock for the frozen
+  `uv sync` its type-check step runs; without it the step silently skipped, so
+  the stub tree was never type-checked outside this repository.
 
-- **OVStage attachment now honors explicit CUDA device selection.**
-  `active_cuda_gpus` applies on every attach path, so a CUDA context left
-  current by a renderer can no longer make PhysX pick a different device than
-  the one you asked for. A single explicit ordinal also disables stale
-  multi-GPU scene distribution for that attachment.
-- **GPU-selection documentation matches the runtime contract.**
-  Empty `active_cuda_gpus` means PhysX automatic selection, while GPU tensor
-  callers should pass an explicit ordinal and reuse it in their DLPack device
-  metadata. This is a documentation correction, not a runtime change, and
-  supersedes the older 0.4.1 note that grouped empty input with GPU 0.
-- **Wildcard tensor bindings now reach runtime clones through unauthored
-  intermediate target paths.** Cloning `/World/envs/env0/robot` directly to
-  `/World/envs/env1/robot` creates runtime physics without authoring
-  `/World/envs/env1` in USD. Patterns such as `/World/envs/env*/robot` now match
-  the source and every clone. Removing an authored ancestor also removes the
-  clones below it, instead of leaving orphaned physics behind. Exact-path
-  bindings work as before.
-- **Collider cooking no longer writes `[Error] [omni.datastore]` lines when
-  `cooked_collider_cache_dir` is unset.** The data store used to default to a
-  path next to the Python interpreter, which a normal Linux venv cannot write.
-  Simulation was correct, but every run printed errors. Cooking now uses a
-  private directory under the OS temp directory and deletes it at process exit,
-  so nothing is persisted. A configured directory that cannot be created or
-  written falls back the same way. The configured directory takes effect at the
-  first runtime bootstrap; changing it later in the same process does nothing.
+## [0.6.2] - Date 2026-09-05
 
-## [0.5.10] - Date 2026-08-05
+> **`ovphysx_read_raw_contact_data()` changes its tensor count from seven to
+> six.** The four per-contact value tensors (force, point, normal, separation)
+> are unchanged, but the `counts` / `start_indices` / `sensor_actor_ids` /
+> `other_actor_ids` tensors are replaced by two paired tensors: `sensor_layout`
+> (`[S, 2]`: contact count, start index) and `actor_ids` (`[C, 2]`: reporting
+> sensor's actor, other actor). Update call sites to the new signature; there is
+> no versioned alternate symbol.
+
+### Added
+- **Auto deformable attachments now work without a live USD stage.** A
+  `PhysxAutoDeformableAttachmentAPI` prim produced nothing on an ovstage attach
+  with no backing USD stage, because the runtime only generated its attachment
+  sub prims by authoring them into USD. The runtime now builds and keeps that
+  set in memory when it cannot author, so the attachment simulates on both the
+  USD and USD-free arms.
+
+### Changed
+- **The Python test run resolves USD from stock pip `usd-core`.** Source builds no
+  longer fetch an internal USD package for the Python tests; they install stock
+  `usd-core` from PyPI instead, the only supported source. ovphysx does not test
+  OmniClient or remote-USD loading (the application owns USD and its resolver). On
+  linux aarch64 (no PyPI `usd-core` wheel) the two mass-unit doc-contract checks
+  skip. This changes only the repo's own test/dev flow; the shipped SDK and wheel
+  carry no USD either way.
+- **The pinned ovstage runtime moves to `0.2.0.377349`.**
+- **ovphysx, including the bundled PhysX SDK, is now licensed under the Apache
+  License 2.0**, replacing BSD-3-Clause. There is no source, ABI, or behavior
+  change; the updated `LICENSE.txt` ships in the wheel and SDK package.
+- **`ovphysx_read_raw_contact_data()` reports which actor pair produced each
+  contact, in six tensors instead of seven.** See the breaking-change note
+  above for the new shape. Resolve an id with `get_other_actor_paths_from_ids()`;
+  a removed actor now resolves to an empty path instead of a stale one.
+
+### Performance
+- **ovstage change-feed drains scale with what changed, not with stage or scene
+  size.** Reading and applying value, velocity, and transform updates from
+  ovstage after a step, and the per-spawn/despawn cost as a scene grows, both
+  used to carry fixed per-drain costs that grew with scene size. Measured
+  scenarios show drain cost dropping roughly 3-5x, with the worst-case
+  teleport and velocity-update paths dropping by more than an order of
+  magnitude; population growth and shrink are also faster. No API or behavior
+  change.
+
+### Fixed
+- **A GPU write to ovstage no longer intermittently poisons the CUDA context.**
+  Writing rigid-body pose, velocity, or wrench data through DirectGPU could
+  race an internal index build against PhysX's read of that index, which
+  occasionally produced an illegal memory access that aborted the CUDA context
+  for the whole process. The write path now waits for the index build to
+  finish before PhysX reads it.
+- **A read of a GPU-resident tensor binding no longer faults when
+  `active_cuda_gpus` selects a non-default device.** The read staged through a
+  buffer allocated and freed on whatever CUDA context happened to be current on
+  the calling thread, which could be the wrong device once a non-zero ordinal
+  was selected. Reads and writes now stage in the binding's own CUDA context.
+- **Disabling one rigid body on DirectGPU no longer blinds ovstage reads and
+  writes for the whole scene.** The shared read view used to be invalidated
+  whenever any body was disabled, taking every other body's ovstage I/O down
+  with it. Disabled bodies are now tracked without dropping the shared view,
+  and `disableSimulation = 0` still re-enables normally.
+- **`update_from_ovstage()` now applies rigid body, vehicle wheel, and tendon
+  changes through the same write path as `ovphysx_write()`.** The previous
+  per-object update loop was inert for several of these properties on a
+  DirectGPU scene, so values written to ovstage did not reach physics. The
+  change also turns a drain into one vectorized publish instead of one call per
+  object.
+- **A cooking crash from a released CUDA context is fixed.** Cooking on the GPU
+  could crash with a pure-virtual call if the host released and recreated its
+  CUDA context while a cook was still using the old one. Cooking now holds its
+  own reference to the context for as long as it needs it.
+- **A process that never calls `PhysX.destroy()` no longer leaves
+  cooked-collider cache directories behind.** Exiting the interpreter without
+  an explicit `destroy()` skipped the shutdown path that removes the
+  process-private cache from the temp directory. A Python exit handler now
+  runs that cleanup on normal exit and most interrupted exits; abrupt
+  termination such as `SIGKILL` remains out of scope.
+- **Rigid-body and articulation tensor views no longer warn about their own
+  matches.** A path pattern that also matches a same-named object of a
+  different type still produces one aggregate "no match" diagnostic when
+  nothing valid is found; it no longer additionally warns once per wrong-type
+  candidate along the way. Valid matches are unchanged.
+- **The `clone.py`, `tensor_bindings.py`, and `omnipvd_recording.py` tutorial
+  snippets now find their bundled USD scenes when copied into another
+  project.** They resolved scenes relative to the running script's own
+  directory, which only worked inside the installed samples tree. They now
+  resolve relative to the installed `ovphysx` package.
+- **The cloning tutorial and samples now document and demonstrate CPU clone
+  collision isolation.** `PhysX.clone()` / `ovphysx_clone()` isolate cloned
+  environments from each other's collisions only under GPU dynamics with GPU
+  broadphase; on CPU, co-located clones share one collision space and can
+  shove each other apart. This is now documented at the API and in the
+  tutorial, and the shipped samples space clones apart instead of stacking
+  them.
+- **Docs and the `tensor-bindings-gpu` skill no longer claim GPU dynamics needs
+  authoring.** `physxScene:enableGPUDynamics` defaults to `true` in the PhysX
+  schema, so a scene that never authors it already runs GPU dynamics; two docs
+  said otherwise.
+
+## [0.6.1] - Date 2026-09-03
+
+### Added
+- **Writability is queryable.** `ovphysx_writability(object_type, attribute, &out)`
+  reports whether `ovphysx_write()` accepts a pair, as `WRITABLE`, `CONDITIONAL`,
+  `WRITE_ONLY`, `READ_ONLY` or `UNCLASSIFIED`. `CONDITIONAL` means writable only under a
+  condition: `jointLimit` is refused on a free axis. It needs no instance, scene or
+  step. An `object_type` outside `ovphysx_sim_object_type_t` returns
+  `INVALID_ARGUMENT`, not `UNCLASSIFIED`.
+- **`ovphysx_get_tensor_binding_native_device()` reports a binding's device.** A binding
+  exposed its dtype and shape but not whether its storage is on the CPU or a CUDA
+  device, so callers had to reproduce ovphysx's placement rules to allocate a tensor.
+  Experimental C++ and Python wrappers are included. The tensor-binding API is
+  deprecated (see *Deprecated*); prefer `ovphysx_read()` and `ovphysx_write()`.
+- **Five hidden benchmark rows.** The opt-in C++ suite gains
+  `WriteScalingHighN.velocity_{ovstage,tensor}_{8192,16384}_cpu` and
+  `RuntimeSpawnScaling.collider_heavy_1280_cpu`. They run only when selected explicitly
+  with `--hidden`, and are diagnostics with no pass/fail threshold.
+
+### Performance
+- **Attaching an ovstage scene is now faster than loading the same scene from USD.**
+  On a 132k-joint tracked-vehicle scene attach went from 68.6 s to about 7 s, and on a
+  512-environment instanced robot scene from 48.6 s to 4.3 s. USD load is not regressed
+  and the resulting physics is unchanged. One upgrade cost: a multi-material mesh cooked
+  as convex, decomposition or sphere fill gets a new cooking key, so it cooks once more
+  on first use.
+- **Attach cost no longer scales with scene content that physics does not use.** Attach
+  scanned the whole stage even when few prims carried physics. On a benchmark holding
+  five rigid bodies inside a large render-only scene it went from about 990 ms to about
+  220 ms. Scenes that are all physics are unaffected.
+- **The ovstage GPU output read reuses its device buffers.** On the DirectGPU path each
+  read allocated and freed its device and staging buffers, which dominated the per-read
+  cost of a loop that reads the same columns every step. Buffers are now pooled and
+  reused. `PhysXConfig(ovstage_read_pool_max_mb=...)` /
+  `ovphysx_config_entry_ovstage_read_pool_max_mb()` (carbonite
+  `/physics/ovstageReadPoolMaxMB`) caps what is retained; default 256 MiB, `0` or
+  negative disables pooling. It bounds retained memory, not a single read's peak.
+
+### Changed
+- **ovphysx has exactly one build, and it is USD-free.** The former USD-linked variant
+  and its `OVPHYSX_NO_USD` option are gone, so the shipped configuration is now the one
+  the unit tests exercise. Public APIs and physics behavior are unchanged, with one
+  exception: the experimental Mineways voxel map (`InfiniteVoxelMapAPI`) is no longer
+  supported. Prims applying it are ignored with a warning, and `IPhysx::setVoxelRange`
+  returns `false`.
+- **Every Python write tensor is a `warp.array`.** Host columns used to come back as
+  NumPy views; now every group tensor is a Warp array on its native CPU or CUDA device.
+  A non-empty tensor is still a mutable alias of runtime storage -- fill it in place,
+  then commit -- while an empty one is a Warp-owned empty array. Each write tensor also
+  reports its own residency, which can differ from the matching read when the write
+  stages through the host on a GPU scene. The C ABI and device placement are unchanged.
+- **Your application must register the PhysX USD schemas itself.** The pinned ovstage
+  runtime no longer bundles or self-registers them. Call
+  `ovstage_population_register_usd_schemas()` (Python:
+  `ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])`)
+  before the first population call, or the scene parses as if no physics schema had been
+  applied. Scenes in non-default units keep their scaling either way.
+- **The pinned ovstage runtime moves to `0.2.0.375783`.** ovphysx binds to one ovstage
+  release's ABI; the wheel installs that exact version.
+- **SDK packaging rejects a mismatched USD build.** The USD build ovphysx was linked
+  against is recorded in the installed `config.toml` as `build_package`, and packaging
+  now fails if the OVStage runtime supplies a different USD kit build. Two kit builds of
+  one USD version share a library name, so the old filename check could not tell them
+  apart.
+- **CPU-only tensor bindings require host buffers.** The documented contract was not
+  explicit: these bindings need `kDLCPU` or `kDLCUDAHost` source, destination, index and
+  mask buffers even on a GPU simulation, and reject `kDLCUDA` and `kDLCUDAManaged`
+  instead of staging them to the host. Documentation only; behavior is unchanged.
+
+### Fixed
+- **A `find_package(ovphysx)` consumer no longer fails to start with `libovstage.so:
+  cannot open shared object file`.** On Linux the installed target emitted its rpath as
+  `DT_RUNPATH`, which the loader does not apply to a dependency's own dependencies. It
+  now links with `--disable-new-dtags`, fixing every consumer, not only the samples.
+- **Linear BasisCurves work as surface-velocity curves.**
+  `PhysxSplinesSurfaceVelocityAPI` ignored the BasisCurves `type` and treated every
+  curve as cubic, so a `type = linear` conveyor path of three points was rejected for
+  too few control points and longer polylines were smoothed off the authored path.
+  Linear curves now follow the polyline exactly. Two-point curves of any basis are fixed
+  too. A rejected curve names the cause -- no target, target not in the attached stage,
+  or target not a BasisCurves -- instead of one generic message.
+- **A vehicle is no longer created without its brakes.** Under the ovstage backend a
+  sub-schema applied through an unqualified multi-apply name went undetected.
+  `OmniPhysicsDeformablePoseAPI` was missed the same way and now applies.
+- **A tendon whose attributes are all left at their defaults is no longer dropped.** The
+  scan looked for authored attributes instead of the applied schema. Vehicle context,
+  friction tables and shared components were skipped by the same kind of check.
+
+### Deprecated
+- **The tensor-binding API is deprecated in favor of read and write sessions.** The
+  seven C entry points, the C++ `ovphysx::TensorBinding` and `createTensorBinding`, and
+  the Python `TensorBinding` and `create_tensor_binding()` are marked deprecated, and
+  the Python ones raise `DeprecationWarning`. Use `ovphysx_read()` / `PhysX.read()` and
+  `ovphysx_write()` / `PhysX.write()`. Nothing is removed and behavior is unchanged;
+  removal is not scheduled for 0.6.
+
+### Removed
+- **The `OVPHYSX_NO_USD` build option and the USD-linked variant.** There is one ovphysx
+  build and it links no USD. Consumers that attached a native `UsdStage` must attach
+  through ovstage instead.
+
+## [0.6.0] - Date 2026-08-31
 
 > **C ABI break.** `ovphysx_debug_render_set_parameter()` changes its third
 > parameter from `bool` to `float`. A binary built against an earlier 0.5 header
 > must be recompiled and relinked; source callers should pass `1.0f` for enabled
 > and `0.0f` for disabled. This is independent of the `ovphysx_clone` ABI change
 > introduced in 0.5.4.
+>
+> **Python source breaks.** `PhysX.clone()` renames the `parent_transforms`
+> keyword to `anchor_transforms`. Positional callers, the C ABI, and runtime
+> placement behavior are unchanged. The former `PhysX.release()` method and
+> main-object context-manager protocol are removed. Replace `physx.release()`
+> with `physx.destroy()`, and replace `with PhysX()` with explicit construction
+> plus `destroy()` in a `finally` block.
+>
+> **C ABI break.** `ovphysx_contact_event_header_t.stageId` (`int64_t`) is
+> renamed and retyped to `.attachHandle` (`uint64_t`). A
+> stageless attach used to report `stageId == 0` indistinguishably from "no
+> attach"; `attachHandle` is nonzero for every live attach, stageless or not,
+> and never repeats across a detach/reattach pair. A binary built against an
+> earlier header reading `.stageId` must be recompiled and relinked — the
+> field keeps the same offset and the same 8-byte width, so a stale consumer
+> silently reinterprets a live attach handle as a USD stage id instead of
+> reading a mismatched-width neighbor field or plainly zero. Added
+> `ovphysx_get_attach_handle()` / `PhysX.get_attach_handle()` to read an
+> instance's current attach handle directly, without waiting for a contact
+> event to report one.
+>
+> **C++ source break.** Many public runtime entry points move from
+> `uint64_t stageId` to `AttachHandle`, and because
+> `AttachHandle` is itself a `uint64_t` alias, a stale out-of-repo source
+> caller can compile unchanged and get *wrong runtime behavior* rather than a
+> build failure. Affected: `IPhysxSimulation::addForceAtPos`, `addTorque`,
+> `wakeUp`, `putToSleep`, `isSleeping`, `subscribePhysicsTriggerReportEvents`,
+> and their `*Instanced` counterparts; `IPhysxReplicator::registerReplicator`,
+> `unregisterReplicator`, `replicate`, `isReplicatorStage`, and the
+> `ReplicationAttachFn`/`ReplicationAttachEndFn` callback typedefs;
+> `IPhysxCookingService`'s `PhysxCookingComputeRequest::attachHandle` field and
+> its completion callback; and `TriggerEvent.h`'s `TriggerEventData::stageId`,
+> renamed to `::attachHandle` in parallel with the ABI rename documented
+> above. Pass `kActiveAttach` where a caller used to pass stage id 0 meaning
+> "the current attach" — it resolves late, at the point of use, so a
+> pre-attach subscription still works, but it only resolves while exactly one
+> attach is live. Obtain a concrete handle for a specific attach from
+> `IPhysxSimulation::getAttachHandle()`. A stale or otherwise unresolvable
+> handle resolves to no attach rather than aliasing a different live one.
+> Diagnostics on that path are not uniform across this surface — for example
+> `registerReplicator()` emits `CARB_LOG_ERROR` for a stale or non-live handle,
+> while other entry points here resolve silently — so a caller must not rely
+> on a log appearing and should check return values/results to diagnose
+> staleness itself.
+> `subscribePhysicsTriggerReportEvents` no longer accepts `kNoAttach` (0) as
+> an "all attaches" wildcard the way the old stage-id spelling did; `kNoAttach`
+> is now rejected outright (returns `kInvalidSubscriptionId`). A consumer that
+> wants every attach must subscribe once per attach, using each attach's own
+> handle or `kActiveAttach`.
+>
+> **C++ source/binary break.** The runtime's public `IPhysx` interface no
+> longer names an object by USD path. `ObjectCreationNotificationFn`,
+> `ObjectDestructionNotificationFn`, `getObjectId()`, and `getPhysXPtr()` take
+> `omni::physics::parse::ObjectKey` where they previously took an `SdfPath`;
+> the two types are not layout-compatible, so a stale binary fails to compile
+> or link rather than silently misinterpreting the parameter. This is a hard
+> break with no compatibility shim — out-of-repo consumers of these entry
+> points must rebuild against the new signatures. Resolve a path string to an
+> `ObjectKey` (and back) only through the two boundary functions designated
+> for that; no other public function takes or returns a path.
+>
+> **C ABI break.** `ovphysx_scene_query_hit_t`'s `collision`, `rigid_body`,
+> and `material` fields (part of the same object-identity migration as the
+> `IPhysx` break above) no longer hold a uint64-encoded `SdfPath`; they hold an opaque
+> `omni::physics::parse::ObjectKey.handle` assigned by the runtime. The two
+> encodings are not comparable — a consumer that reproduced ovphysx's old
+> SdfPath bit-cast to match hit fields against known prim paths will silently
+> compare against the wrong values instead of failing loudly. Struct layout,
+> size, and field order are unchanged, so this is a behavioral break only, not
+> an ABI-layout break — no recompile is required, but any comparison logic
+> against the old encoding now silently misbehaves and must be removed. Use
+> the new `ovphysx_scene_query_get_paths_from_ids()` (see *Added* below) to
+> resolve these fields to a path instead.
+>
+> **C++ source/binary break.** `IPhysxSceneQuery.h`'s scene-query surface
+> (the C++ counterpart of the `ovphysx_scene_query_hit_t` break above, part
+> of the same object-identity migration) no longer names a shape, body, or material
+> by USD path. `SphereShapeReportFn`, `BoxShapeReportFn`,
+> `CapsuleShapeReportFn`, `ConeShapeReportFn`, `CylinderShapeReportFn`,
+> `ConvexMeshShapeReportFn`, and `TriangleMeshShapeReportFn`'s leading
+> identity parameter now take `omni::physics::parse::ObjectKey` in place of
+> a `uint64_t`-encoded `SdfPath`; `SceneQueryHitObject::collision`/
+> `rigidBody` and `SceneQueryHitLocation::material` retype the same way.
+> `overlapMesh`, `overlapMeshAny`, `reportCollisionShapes`, `overlapShape`,
+> `overlapShapeAny`, `sweepMeshClosest`, `sweepShapeClosest`, `sweepMeshAny`,
+> `sweepShapeAny`, `sweepMeshAll`, and `sweepShapeAll` take `ObjectKey` in
+> place of their mesh/gPrim/traversal-root path parameter. The primitive
+> queries (raycast, sphere/box sweep and overlap) are unaffected — they
+> never carried a path parameter. A stale binary fails to compile or link
+> rather than silently misinterpreting the parameter.
+>
+> **C++ source/binary break.** `IPhysxCooking::precookMesh`'s `meshPath`
+> parameter (part of the same object-identity migration) retypes and renames to
+> `meshKey` (`omni::physics::parse::ObjectKey`), matching this same header's
+> already-migrated `createConvexMesh`/`cookAutoDeformableBody`.
+>
+> **C++ source/binary break.** `TriggerEvent.h`'s
+> `TriggerEventData::triggerColliderPrimId`, `otherColliderPrimId`,
+> `triggerBodyPrimId`, and `otherBodyPrimId` (part of the same
+> object-identity migration) retype and rename to `triggerColliderPrimKey`,
+> `otherColliderPrimKey`, `triggerBodyPrimKey`, and `otherBodyPrimKey`
+> (`omni::physics::parse::ObjectKey`) in place of a `uint64_t`-encoded
+> `SdfPath`. Independent of this same struct's `stageId`→`attachHandle`
+> retype — `TriggerEventData` has no
+> public `ovphysx` C ABI mirror, so that retype is not separately called
+> out elsewhere in this changelog.
+>
+> **C ABI struct-layout break.** `PhysxCookingComputeRequest`
+> (`ovphysx/ovruntime/include/omni/physx/IPhysxCookingService.h`) drops its
+> `DataInputMode dataInputMode` field, the `DataInputMode` enum
+> (`eINPUT_MODE_FROM_PRIM_ID`, `eINPUT_MODE_FROM_PRIM_MESH_VIEW`), and `double
+> primTimeCode`, shrinking the struct by 16 bytes (4-byte enum, 4 bytes of
+> alignment padding, and the 8-byte `double`). The removed
+> `eINPUT_MODE_FROM_PRIM_ID` mode let the cooking service resolve a bare
+> `primStageId`/`primId` pair by reading USD directly; every request now
+> carries a `PhysxCookingMeshView` that the caller fills through the same
+> backend-agnostic `IPhysicsSource` path ovstage callers already used
+> exclusively. `primStageId` remains on the struct but is now a caller-owned
+> correlation key only, not a stage-lookup input. This is a public SDK API
+> break with no compatibility shim: a binary built against the earlier header
+> must be recompiled and relinked. A caller already submitting mesh-view
+> requests needs no change; a caller that relied on the removed bare
+> prim-id/stage-id default must build and populate a `PhysxCookingMeshView`
+> before submitting.
+>
+> **Source break.** `ConvexDecomposition::applySphereApproximation(const
+> char* primPath, uint32_t stageId)` is removed from the public
+> `omni/convexdecomposition/ConvexDecomposition.h` header. It had zero
+> callers anywhere in this repo; the retained
+> `ConvexDecomposition::computeSphereApproximation`, which takes a
+> caller-supplied `SimpleMesh` instead of a USD prim path and stage id,
+> remains available for sphere-approximation authoring. A caller relying on
+> the removed prim-path overload must read its own mesh data and call
+> `computeSphereApproximation` directly — there is no drop-in replacement.
+>
+> **C++ source break.** `IPhysx::createD6JointAtPath()` changes from
+> `(ObjectKey jointKey, ObjectKey body0, ObjectKey body1)` to
+> `(const char* jointPath, ObjectKey body0, ObjectKey body1)`. This is the
+> third narrow place a path string is allowed to cross the public API
+> boundary: the call is create-shaped, so
+> `resolveObjectKey`'s existence gate can never resolve `jointPath` before
+> the joint exists, and `jointPath` is instead minted into an `ObjectKey`
+> existence-independently via `AttachedStage::keyFor()`. A null `jointPath`,
+> or no attached stage, does not fail the call -- the joint is still created
+> and returned if the underlying `PxD6JointCreate` succeeds, but it is
+> silently skipped for `ObjectKey` registration and stays unresolvable by
+> key afterward.
+>
+> **C++ source/binary break.** `IPhysxSimulation::setSimulationOutputFlags()`,
+> `addSimulationOutputFlags()`, and `removeSimulationOutputFlags()` drop their
+> `paths`/`numPaths` parameters and become pure global on/off toggles for the
+> given `SimulationOutputType`. The per-path variant bit-cast `SdfPath` as
+> `uint64_t` instead of using the runtime's object-identity type and had no
+> callers anywhere in this repo, including the `ovphysx` SDK; it is removed
+> rather than migrated. The global mode — which gates real transform/velocity
+> write-back and replicator skip-write behavior — is unchanged in behavior; it
+> is simply the only mode now. A binary built against an earlier header must
+> be recompiled and relinked.
+>
+> Selected configuration arguments on `PhysX()`, `wait_op()`, `wait_all()`,
+> `attach_ovstage()`, `read()`, `read_tokens()`, `get_contact_report()`, and
+> `enable_python_logging()` are now keyword-only. Positional use of those
+> arguments raises `TypeError`; pass them by name. Primary operands remain
+> positional.
+>
+> **Logging C ABI break.** Log levels now use `DEFAULT=0`, `VERBOSE=1`,
+> `INFO=2`, `WARNING=3`, `ERROR=4`, `NONE=5`. The former multi-callback
+> `ovphysx_register_log_callback` / `ovphysx_unregister_log_callback` API is
+> replaced by the single-slot `ovphysx_set_log_callback`, whose callback also
+> receives channel and Unix-epoch timestamp metadata. `ovphysx_set_log_level()`
+> now changes only the named `omni_physx_sdk`, `omni.physx`, and
+> `ovphysx_internal` Carbonite source policies instead of Carbonite's
+> process-global threshold. Unnamed, host, and dependency sources remain
+> unchanged; the application callback still observes and filters the process
+> log stream. `OVPHYSX_LOG_NONE` is therefore not a whole-runtime or process
+> mute. Every successful
+> shutdown disables and drains the callback, including when live handles remain
+> solely for explicit destruction. Recompile C/C++ callers.
+>
+> **Logging Python source change.** `enable_python_logging()` now accepts a
+> minimum severity and channel filter and owns the sole native callback slot
+> while enabled, replacing any C-level callback. The callback's channel and
+> timestamp are exposed as `ovphysx_channel` and `ovphysx_timestamp` on each
+> Python `LogRecord`. Calling `PhysX()` or `PhysX.destroy()` from that callback
+> is rejected; retry after callback delivery returns. Concurrent construction
+> during process initialization waits; it shares a successful initialization or
+> retries after a known failure. Construction rejects during ambiguous rollback
+> and while final shutdown is draining so callback dependencies cannot deadlock
+> the drain. A callback must not synchronously wait for work that may
+> emit into the same serialized callback registration.
+> Successful final shutdown disables and drains the Python bridge and releases
+> its callback owners.
+>
+> **Returned-string source change.** Empty `ovphysx_get_last_error()` and
+> `ovphysx_get_last_op_error()` results now have a non-NULL pointer; test
+> `length`, not `ptr`, to distinguish an empty result.
+
+> **Python source break.** `ReadGroup` gains two trailing fields, `cuda_stream` and
+> `cuda_wait_event`, taking it from 14 to 16. It is a `NamedTuple`, so its arity is part
+> of its public shape: unpacking a whole group (`a, b, ... = group`), comparing one
+> against a 14-tuple, or unpickling one written by an earlier version now fails. Both
+> fields default to `0`, so keyword construction, attribute access, indexing and slicing
+> are unaffected. Read `group.cuda_wait_event` rather than positionally unpacking.
+>
+> **Python source break.** `PhysX.read()` and `PhysX.read_tokens()` now return
+> `warp.array`. Every non-empty tensor is a Warp array on the read's native CPU or
+> CUDA device; every non-empty index map is a CPU `warp.array` of `uint32` on both
+> backends. They no longer return CPU NumPy arrays or CUDA `ManagedDLTensor`
+> wrappers. A native lane count above 1 becomes a trailing Warp dimension. Use the
+> Warp array directly, or call `.numpy().copy()` when an independent host copy is
+> needed.
+>
+> **Behavior change — disabling a rigid body, and the unsupported raw-pointer path.**
+> On a DirectGPU scene, disabling one rigid body no longer invalidates the whole scene
+> view: bulk **reads and writes** omit the disabled body and keep serving its enabled
+> peers (query discovery still counts it; CPU output stays inclusive). Because that hard
+> invalidation is gone, toggling `PxActorFlag::eDISABLE_SIMULATION` on a `PxRigidDynamic*`
+> obtained from `ovphysx_get_physx_ptr()` is now **unsupported and undefined**: ovphysx does
+> not observe the change, so the next DirectGPU read or write silently resolves a stale index
+> to the wrong body — where a 0.5 build failed loudly with a whole-view invalidation. Disable a
+> **standalone** rigid body through the ovstage `disableSimulation` attribute via `ovphysx_write()`
+> instead. A point-instancer **instance** has no supported per-instance disable route in this
+> release — `disableSimulation` is not an instancer-writable column and there is no per-instance
+> tensor equivalent — so disabling an individual instance is unsupported.
 
 ### Added
-- Added `ovphysx_debug_render_set_scope_tokens` for exact OVStage path-handle
-  debug-visualization filtering. The scope API has no string-prefix or path-
+- **Output read: full attribute coverage.** `ovphysx_read()` / `PhysX.read()` now serve the same
+  attribute set as the tensor API.
+
+  | object type | attributes added |
+  |---|---|
+  | `RIGID_BODY`, `ARTICULATION_LINK` | linear/angular acceleration; `mass`, `inverseMass`, `inertia`, `inverseInertia`, `centerOfMassPosition`, `centerOfMassOrientation`, `disableSimulation`, `disableGravity`; `staticFriction`, `dynamicFriction`, `restitution`, `contactOffset`, `restOffset`, `shapeCount` |
+  | `ARTICULATION` *(new)* | `rootPosition`, `rootOrientation`, `rootLinearVelocity`, `rootAngularVelocity`, `centerOfMassWorld`, `centerOfMassLocal`, the per-shape properties, `shapeCount`, and `jacobian`, `massMatrix`, `coriolisForce`, `gravityForce`, `centroidalMomentum`, `jacobianShape` |
+  | `ARTICULATION_JOINT` | the full DOF set: position/velocity targets, actuation and projected force, stiffness, damping, limits, max velocity/force, armature, friction, drive model, `driveType` |
+  | `FIXED_TENDON`, `SPATIAL_TENDON` *(new)* | `tendonStiffness`, `tendonDamping`, `tendonLimitStiffness`, `tendonOffset`; plus `tendonLimit` and `tendonRestLength` on fixed tendons |
+  | `DEFORMABLE_VOLUME`, `DEFORMABLE_SURFACE` | `restPoints`, `simElementIndices`, and `collisionElementIndices` (volume only) |
+  | `DEFORMABLE_MATERIAL` *(new)* | `dynamicFriction`, `youngsModulus`, `poissonsRatio`, `elasticityDamping`, `bendingStiffness`, `thickness`, `bendingDamping` |
+
+- **App-to-physics write.** `ovphysx_write()` /
+  `ovphysx_fetch_write_next()` / `ovphysx_commit_group()` / `ovphysx_release_write()`,
+  and `PhysX.write()` in Python, open a session over a query and hand back writable
+  groups whose columns match what `ovphysx_read()` emits for the same query — same
+  prims, same order, same residency. A column can be read, edited and written back
+  with no repack, and on a GPU scene without leaving the device. Values are published
+  through the tensor backend, not through per-actor USD authoring.
+
+  A failed `ovphysx_commit_group()` says WHICH failure it was. A group that was never
+  live — unknown session, or unknown, foreign or already committed — is rejected before
+  any publish and reports that nothing was written. A live group whose publish failed
+  does not: the scatter ran, a device scatter can fail partway, and commit is not
+  retryable, so the error says the group is spent and that how much reached the solver
+  is not reported at this layer. The two previously shared one message that claimed
+  nothing was published.
+
+  In Python a group's columns are MUTABLE ALIASES of the runtime's storage, never
+  copies: fill them in place, then commit. Device columns come back as Warp arrays on
+  their own device, matching what `read()` returns, so torch/cupy can take them
+  zero-copy; host columns come back as NumPy views over the mapped pointer. Neither
+  outlives its session.
+
+  Coverage:
+  - `OVPHYSX_OBJECT_RIGID_BODY` — `position`, `orientation`, `linearVelocity`,
+    `angularVelocity`.
+  - `OVPHYSX_OBJECT_ARTICULATION_JOINT` — `jointPosition`, `jointVelocity`.
+
+  Contract notes:
+  - **One attribute per session.** The ovstage map group carries no attribute field,
+    so writing position and orientation over one prim set is two sessions.
+  - **A group commits once**, identified by its address. Committing an unknown,
+    foreign or already-committed group is refused rather than silently accepted.
+  - **Uncommitted groups are discarded** on release, so a caller that fails mid-fill
+    publishes nothing from the group it was filling.
+  - **`position` and `orientation` are two slices of one transform**, so writing
+    either preserves the other — at the cost of reading the current pose first. The
+    two velocities are independent and pay no such cost. The same applies to joint
+    DOFs: a write preserves the DOFs it does not address.
+  - **Articulation links refuse per ATTRIBUTE, not per type.** A `PxArticulationLink`
+    is a `PxRigidBody`, so `OVPHYSX_OBJECT_ARTICULATION_LINK` accepts `mass`,
+    `inertia`, `centerOfMassPosition` / `centerOfMassOrientation`, `disableGravity`
+    and the per-shape properties. It refuses `position`, `orientation`,
+    `linearVelocity` and `angularVelocity` — PhysX has no link write for them — and
+    refuses `disableSimulation`, which `PxActorFlag` supports on `PxRigidStatic` and
+    `PxRigidDynamic` only. Each refusal names the attribute and the alternative.
+  - **Articulation DOF properties and drive inputs are writable** on
+    `OVPHYSX_OBJECT_ARTICULATION_JOINT`: the thirteen properties the read publishes
+    — `jointStiffness`, `jointDamping`, `jointLimit`, `jointMaxVelocity`,
+    `jointMaxForce`, `jointArmature`, the friction triple, the drive-envelope
+    triple and `jointDriveType` — plus `jointPositionTarget`,
+    `jointVelocityTarget` and `jointActuationForce`. Names are shared with the
+    read, so the two cannot drift apart.
+
+    Each write applies the exact inverse of the read's unit fold, per attribute
+    rather than per object: on the same rotational axis the two targets carry the
+    rad→deg fold and the body-order sign, while `jointActuationForce` carries only
+    the sign — a joint effort is not an angular quantity.
+
+    `jointLimit` is one attribute of two lanes, not two attributes. It is
+    **refused** on an axis whose motion is not `eLIMITED`: PhysX does not allow an
+    axis to become limited while its articulation is in a scene, so the limit
+    would silently do nothing. The refusal names the condition and writes nothing
+    at all, so a limit never half-lands. Writing back the `±FLT_MAX` sentinel the
+    read reports for a free axis is not a finite limit and still succeeds, which
+    keeps read-modify-write over an articulation with a mix of limited and free
+    axes working.
+  - **Fixed: host-only rigid properties failed to commit on a DirectGPU
+    scene.** `mass`, `inertia`, `centerOfMassPosition` / `centerOfMassOrientation`,
+    `disableGravity` and `disableSimulation` publish a host column even on a
+    DirectGPU scene, and the commit was choosing which backend view to resolve
+    rows through from that column's residency — so it asked for the CPU
+    simulation view, which does not exist there, and the write failed while the
+    matching read worked. The view now follows the scene's pipeline. Affects
+    every DirectGPU scene, not only scenes with disabled bodies.
+  - **Fixed: disabling one rigid body no longer blocks DirectGPU bulk reads and
+    writes for its scene.** Device output and ordinary write groups omit disabled
+    bodies while continuing to serve enabled peers. Query discovery still counts
+    every matching prim, and `disableSimulation=0` becomes available for
+    re-enabling a disabled body. CPU reads remain inclusive because the host
+    actor state is still available.
+  - **Deformable simulation-mesh state is writable** on
+    `OVPHYSX_OBJECT_DEFORMABLE_VOLUME` and `OVPHYSX_OBJECT_DEFORMABLE_SURFACE`:
+    `points` and `velocities`, one array group per body. `points` is accepted in
+    the SIM-MESH local frame — the frame the read publishes it in — and
+    `velocities` in world, matching the read on both.
+
+    These columns are **device-resident**, unlike the particle and material
+    ones: PhysX exposes sim-mesh state only as device buffers, so the write is a
+    device scatter into PhysX's own memory followed by the `markDirty` its
+    header calls mandatory. Volume and surface bodies expose different getters
+    and different dirty-flag enums for the same two columns, and both are chosen
+    from the object's concrete PhysX type.
+
+    `restPoints` and `kinematicTarget` are refused by name. `restPoints` is
+    authored geometry the solver never rewrites. `kinematicTarget` is set by
+    handing PhysX a buffer it *keeps*, which a write session cannot supply
+    because its column is freed at release — serving it needs an owned per-body
+    buffer with a lifetime this API does not have.
+  - **Deformable material properties are writable** on
+    `OVPHYSX_OBJECT_DEFORMABLE_MATERIAL`: `deformableYoungsModulus`,
+    `deformablePoissonsRatio`, `deformableDynamicFriction`,
+    `deformableElasticityDamping`, plus the surface-only
+    `deformableBendingStiffness`, `deformableThickness` and
+    `deformableBendingDamping`. One fixed group stacking every material prim,
+    one f32 each, host-resident on every scene — these are authored inputs PhysX
+    never writes back, so there is no device copy to hand out.
+
+    The three surface-only names address the SURFACE materials only, which is
+    the subset the read publishes them over: PhysX puts them on
+    `PxDeformableSurfaceMaterial` alone, and the read omits the row on a volume
+    material rather than reporting `0.0`. Which kind a material is comes from
+    PhysX's own concrete type, not from the record that names it.
+  - **Particle points and velocities are writable** on
+    `OVPHYSX_OBJECT_PARTICLE_SET`, as one array group per set. `points` is
+    accepted in the set prim's LOCAL frame — the frame the read publishes it in
+    — and `velocities` in world, matching the read on both counts.
+
+    These columns are **host-resident even on a DirectGPU scene**, unlike the
+    read's, which are device-resident. The destination is the reason: a particle
+    write lands in the set's pinned host staging arrays and raises its upload
+    flag, and PhysX copies that to the device buffer at the next step. It is the
+    same mechanism USD authoring already publishes these two quantities through,
+    which is what keeps a written column readable *before* the next step — the
+    read serves the staging arrays exactly when that flag is raised.
+  - **Point-instancer instances are writable**, on both devices. A `position`,
+    `orientation`, `linearVelocity` or `angularVelocity` write on
+    `OVPHYSX_OBJECT_RIGID_BODY` emits the standalone group *and* one array group
+    per instancer, carrying that instancer's full instance array placed by index —
+    the same shape the read emits, so a column can be read and written straight
+    back. An index with no live instance is **skipped**: there is nothing to write
+    to, which mirrors the read leaving such a slot as the caller zero-filled it.
+    Note a **scaled** instancer round-trips only up to its scale: the local pair
+    carries position and orientation, and USD keeps `scales` as its own array.
+  - **Vehicle wheel controls are writable** on `OVPHYSX_OBJECT_VEHICLE_WHEEL`:
+    `driveTorque`, `brakeTorque` and `steerAngle`, for vehicles with no drive,
+    whose control surface is per wheel. `position` and `orientation` are refused
+    on that type by name and permanently — a wheel's transform is composed each
+    step from the chassis, its suspension and its steer angle, so a written value
+    is overwritten by the next step. Vehicles are CPU-only, so these have no
+    device path. Vehicles WITH a drive are accelerated and steered as a whole and
+    their commands are not yet reachable.
+  - **Force and wrench are writable**, and are the API's only **write-only** attributes.
+    `force` is a vec3 applied at the centre of mass; `wrench` is `[N,9]` —
+    force, torque, and the WORLD-space point the load applies at — deliberately
+    not split, because the split rule exists so each half can be read back and
+    preserved, and a control input the solver clears each step has no stored value
+    to preserve. Both are accepted on `OVPHYSX_OBJECT_RIGID_BODY` and
+    `OVPHYSX_OBJECT_ARTICULATION_LINK`. Neither is ever emitted by
+    `ovphysx_read`: reading a force back would report what the solver did with
+    it, not what was written. A force applies for one step and is then cleared,
+    so it must be written before each step it should act on. On a link, note that
+    a commit covers the articulation view as a whole: links the query did not
+    match have their force zeroed for that step, because a write-only input has no
+    stored value to preserve.
+  - **Tendon properties are writable**, on `OVPHYSX_OBJECT_FIXED_TENDON` and
+    `OVPHYSX_OBJECT_SPATIAL_TENDON`: `tendonStiffness`, `tendonDamping`,
+    `tendonLimitStiffness` and `tendonOffset` on both kinds, plus `tendonLimit`
+    (the `(low, high)` pair) and `tendonRestLength` on fixed tendons only. The two
+    fixed-only names are refused on a spatial tendon by name — not because PhysX
+    lacks a setter, but because the schema places both on the tendon's leaf
+    attachment, which is the same reason the read refuses them. No unit conversion
+    in either direction: the rad→deg fold lives in the gearing coefficient, so
+    everything downstream of it is passthrough.
+  - **The articulation itself is writable**, through the new
+    `OVPHYSX_OBJECT_ARTICULATION` (`SimObjectType.ARTICULATION`, enum value 9), whose
+    prims are the articulation root prims. It accepts `rootPosition`, `rootOrientation`,
+    `rootLinearVelocity` and `rootAngularVelocity` — the same names the read uses for
+    this type, not the bare rigid spellings — the articulation's ROOT state, and the
+    documented way to place an articulation now that link poses are refused. The
+    selector overlaps `OVPHYSX_OBJECT_ARTICULATION_LINK` on the root prim, which is
+    fine: these are queries, not a partition, and the two reach different state on it.
+  - **Link poses are not refreshed by a write.** After writing joint state or a root
+    pose, link poses read back at their last-stepped values until the next step,
+    matching the read's contract of reporting the most recently completed step. No
+    `eUPDATE_KINEMATIC` is issued.
+
+- **Articulation tendon output read.** Two new simulated object types,
+  `OVPHYSX_OBJECT_FIXED_TENDON` and `OVPHYSX_OBJECT_SPATIAL_TENDON`
+  (`SimObjectType.FIXED_TENDON` / `SPATIAL_TENDON` in Python), read through the
+  same `ovphysx_query` / `ovphysx_read` lifecycle as every other type. Both serve
+  `tendonStiffness`, `tendonDamping`, `tendonLimitStiffness` and `tendonOffset`; fixed tendons also serve
+  `tendonLimit` (a `(low, high)` pair, `dtype.lanes == 2`) and `tendonRestLength` — the
+  spatial tendon has neither, because the schema places them on its leaf
+  attachment. The prim reported for a tendon is the prim carrying its **root**
+  API: the joint with `PhysxTendonAxisRootAPI`, or the link with
+  `PhysxTendonAttachmentRootAPI`. A tendon's other axes and attachments do not
+  produce rows. Groups are fixed (one row per tendon, all tendons stacked), and
+  columns are device-resident on a DirectGPU scene like the other
+  backend-sourced reads. Tendon properties are authoring-time values, so
+  `OVPHYSX_SCOPE_ACTIVE` behaves as `OVPHYSX_SCOPE_ALL` for both types.
+- **Output-read acceleration attributes.** `ovphysx_read()` serves
+  `linearAcceleration` and `angularAcceleration` (`OVPHYSX_ATTR_LINEAR_ACCELERATION` /
+  `OVPHYSX_ATTR_ANGULAR_ACCELERATION`, `vec3 f32`) for `OVPHYSX_OBJECT_RIGID_BODY` and
+  `OVPHYSX_OBJECT_ARTICULATION_LINK`, on both devices, closing the gap against the tensor
+  binding's `RIGID_BODY_ACCELERATION_F32` and `ARTICULATION_LINK_ACCELERATION_F32`.
+  Point-instancer instances publish them as the array attributes `accelerations` and
+  `angularAccelerations`. Values come from the same DirectGPU scratch buffers velocity
+  uses, so a read asking for both pays one extra bulk read rather than a second gather
+  path.
+- **Output-read body properties.** `ovphysx_read()` serves `mass`, `inverseMass`, `inertia`,
+  `inverseInertia`, `centerOfMassPosition`, `centerOfMassOrientation`, `disableGravity` and
+  `disableSimulation` for `OVPHYSX_OBJECT_RIGID_BODY` and `OVPHYSX_OBJECT_ARTICULATION_LINK`,
+  closing the `RIGID_BODY_MASS/INERTIA/COM/…` and `ARTICULATION_BODY_*` tensor-binding gap.
+  Three things differ from the existing columns and a consumer must handle them:
+  `disableGravity` / `disableSimulation` are **`uint8`** (`{kDLUInt, 8}`), not f32 — read
+  `tensors[i].dtype`; all eight are **always host-resident** (`kDLCPU`), because they are
+  simulation inputs PhysX never writes back, so on a DirectGPU scene one read can return
+  `kDLCUDA` pose alongside `kDLCPU` mass — branch on `tensors[i].device.device_type`; and they
+  have **no point-instancer array form**, so a read asking for one warns and omits instanced
+  bodies from that column. `centerOfMass*` is in the body's local frame, unlike
+  `position`/`orientation`.
+- **Output-read per-shape properties.** `ovphysx_read()` serves `staticFriction`,
+  `dynamicFriction`, `restitution`, `contactOffset`, `restOffset` and `shapeCount` for
+  `OVPHYSX_OBJECT_RIGID_BODY` and `OVPHYSX_OBJECT_ARTICULATION_LINK`, completing rigid-body
+  parity with the tensor binding apart from the write-only force/wrench pair. A body has a
+  variable shape count, so these are a **padded fixed group**: one stacked tensor whose
+  `dtype.lanes` is the widest body *in that read* — it varies between reads of the same
+  attribute, so do not cache it. Row *i* holds `shapeCount[i]` real values then zeros; read
+  `shapeCount` (int32) to find the end, since 0.0 is a legal offset and is not a terminator.
+  Padding is zero-filled, unlike the tensor API's, which is uninitialised. Only a shape's
+  **first** material is reported, matching the binding. Host-resident like the other properties.
+  Note each material attribute costs its own `getMaterials()` pass over every shape, so reading all
+  three walks them three times.
+
+  Three things to check in your reader:
+
+  - Take `dtype.lanes` from each **group**, not once per attribute. The inverse dynamics matrices are
+    sized by each articulation's topology, so a scene with two robot types returns two groups per
+    attribute; a uniform fleet returns one, as before.
+  - A joint-state read returns one group per attribute, not one per joint prim. Deformable and
+    particle reads changed the same way: a scene of N sets now yields **one** array group of N
+    tensors where it used to yield N groups of one. Walk `tensor_count` and pair each tensor with
+    the prim at the same index in the group's prim list.
+  - One read can mix devices — a CUDA pose column beside a CPU property column. Branch on
+    `device_type` per tensor. Deformable and particle `points` / `positions` / `velocities` are
+    now `kDLCUDA` where they used to be host, with a `data.cuda_sync.wait_event` to wait on
+    (`ReadGroup.cuda_wait_event` in Python). Point-instancer arrays are `kDLCUDA` on a GPU scene
+    at either scope and for every attribute, including acceleration; they used to fall back to
+    host for all but the simplest read. `PhysX.read` already handles this.
+
+  Not served: `kinematicTarget`, which is simulation input rather than output. Omitted where it
+  does not apply: `centroidalMomentum` on fixed-base articulations, `collisionElementIndices` on
+  surface deformables, and `bendingStiffness` / `thickness` / `bendingDamping` on volume
+  materials. A group can therefore cover a subset of its type's prims — pair values with the
+  group's own prim list.
+
+  Reads are also faster, at 8,192 environments: joint state ~0.31 ms (was ~728 ms), links ~0.28
+  ms (was ~1.09 ms), and a four-attribute read over 163,860 rigid bodies ~0.65 ms on GPU, ~33
+  ms on CPU (was ~52 ms). The same read over 163,840 point-instancer instances is ~0.7 ms on
+  GPU (was ~5.5 ms) and ~19 ms on CPU (was ~21 ms). The particle read gained two orders of
+  magnitude separately, by using the world-to-local matrix the runtime already maintains
+  instead of resolving one out of USD per set on every read. A read that cannot produce a
+  column now reports failure instead of returning short or zero-filled data.
+
+- **Benchmark timing diagnostics.** `--timing-diagnostics=<path>` writes one
+  schema-version-1 JSONL object per emitted row with the count, mean,
+  population standard deviation, minimum, and maximum across every actual
+  timed step; the existing trimmed report value is unchanged. A separate
+  hidden DirectGPU row measures the first creation and spec lookup of the five
+  bindings used by the 4,096-Cartpole control row. Stage loading, cloning,
+  warmup, and caller CUDA tensor-buffer allocation are outside that timer.
+- **OmniPVD TCP startup transport.** Four typed C and Python config fields select
+  TCP, address, port, and millisecond send timeout at instance creation. FILE
+  remains the default; TCP connects synchronously to an already-ready trusted
+  plaintext listener.
+- **Named native timeout contract.** Added the ABI-identical
+  `ovphysx_timeout_t` alias plus `OVPHYSX_TIMEOUT_POLL` and
+  `OVPHYSX_TIMEOUT_INFINITE`. Timeout-bearing C and experimental C++ APIs now
+  use the named type and values; existing binaries and `uint64_t` source
+  callers remain compatible. Python keeps its idiomatic `0` (poll), positive
+  integer (finite nanoseconds), and `None` (infinite) spellings.
+- **Logging and returned-string contracts.** Added single-callback replacement,
+  longest-prefix channel filtering, serialized delivery, reentrancy guards, and
+  a bounded barrier for callback deliveries already accepted by the ovphysx
+  dispatcher. Every `ovphysx_string_t` successfully produced or
+  delivered by ovphysx, including populated outputs and callback values,
+  now has a non-NULL pointer and trailing NUL at `ptr[length]`; input strings
+  remain length-prefixed views.
+- **OmniPVD capture compatibility docs.** The
+  OmniPVD recording tutorial now states the OVD format, OmniPVD stream version
+  (0.4.0), the independent PhysX OVD integration version (3.1), Kit
+  `omni.physx.pvd` as the canonical reader, and both reader compatibility
+  checks.
+- **NVTX profiling for Nsight Systems.** ovphysx can emit NVTX ranges for its API
+  calls (`ovphysx` domain) and for the PhysX SDK profile zones, CPU and GPU
+  (`PhysX` domain). Enable with `OVPHYSX_NVTX=1` in the environment or
+  `PhysXConfig(nvtx_enabled=True)` / `ovphysx_config_entry_nvtx_enabled(true)`
+  before instance creation; read the effective state with
+  `ovphysx_get_global_config_bool(OVPHYSX_CONFIG_NVTX_ENABLED, ...)` or
+  `PhysX.get_config_bool(ConfigBool.NVTX_ENABLED)`. Instrumentation is compiled
+  into release builds and the wheel, so profiling needs no rebuild, and is off by
+  default. NVTX 3 is header-only: nothing extra is linked or shipped. See
+  [NVTX Profiling With Nsight Systems](developer_guide.md#nvtx-profiling-with-nsight-systems).
+- **Checked Python instance destruction.** `PhysX.destroy()` is now the
+  canonical deterministic lifecycle operation. It is idempotent after the
+  instance reaches terminal state and raises when native destruction or final
+  process shutdown reports a failure.
+- **Process-wide hard CPU-only mode is observable.** Added
+  `ovphysx_get_cpu_mode` / `PhysX.get_cpu_mode()` / experimental `PhysX::getCpuMode()`
+  to report the effective hard CPU-only policy (`ovphysx_set_cpu_mode(true)` or
+  `OVPHYSX_DISABLE_GPU`). Successful `ovphysx_create_instance()` now emits an
+  INFO line with `process_cpu_only=`, `cuda_available=`, and `active_cuda_gpus=`
+  (`no_override` for empty create-args; explicit `"-1"` logs as `-1`).
+  `OVPHYSX_DISABLE_GPU` is latched at `ovphysx_initialize` (live before that).
+  This is hard-policy / create-intent observability only -- not attach-time
+  resolved scene dynamics or ordinal.
+- **`ovphysx_scene_query_get_paths_from_ids()` resolves scene-query hit
+  identities to paths.** New C API (Python:
+  `PhysX.get_scene_query_paths_from_ids()`) resolves the opaque
+  `ObjectKey.handle` values in a raycast/sweep/overlap hit's `collision`,
+  `rigid_body`, and `material` fields back to physics-object paths, mirroring
+  `ovphysx_contact_binding_get_other_actor_paths_from_ids()` for contact
+  bindings. Unlike that resolver, returned strings are not a per-call cache:
+  each is owned by the currently attached physics source and stays valid
+  until the next detach/re-attach, so a later call to this function (against
+  the same attach) does not invalidate a pointer an earlier call returned.
+  Unresolvable ids (the zero sentinel, an id from an object removed since the
+  query, or no active attach) yield an empty path rather than an error. See
+  `developer_guide.md`'s "Path Encoding" section under Scene Queries.
+  **Open question, disclosed rather than silently decided:** this resolver is
+  a compatibility bridge that restores the path-resolvability the
+  object-identity migration above took away from the raycast/sweep/overlap
+  family, not a statement about that family's long-term home. Whether that
+  family is kept, removed, or relocated to a successor scene-query library is
+  not yet decided.
+- **`ovphysx_cuda_stream_wait_event(stream, event)` orders your stream after a
+  read's work.** A device read column is handed over
+  before the work producing it has necessarily finished; call this to order your own CUDA
+  stream after the group's event, without taking a CUDA dependency of your own. An `event` of
+  `0` is a no-op success.
+- **`ovphysx_debug_render_set_scope_tokens()` filters debug visualization by
+  exact OVStage path handles.** The scope API has no string-prefix or path-
   interning variant: callers expand a hierarchy to its exact object set and use
   the Stage's `path_dictionary_instance_t` to create `ovx_primpath_t` handles.
   Matching uses the runtime object's canonical source key, so it does not require
   exposed PhysX actor names. Handles require no individual release, remain valid
   only for their originating Stage dictionary, and the scope is cleared on detach.
-- **Disabled debug rendering avoids per-step overhead.** While disabled (the
-  default), debug visualization performs no per-step CPU or GPU visualization
-  work, GPU-to-host visualization copies, or scratch-allocation growth. Scratch
-  capacity acquired while enabled may remain reserved until scene teardown.
-- **`OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL` tensor type.** New read/write `[N]` uint8/bool tensor that toggles `PxActorFlag::eDISABLE_GRAVITY` on the underlying `PxRigidActor` at runtime. Wired to `IRigidBodyView::set/getDisableGravities` (+ indexed and masked writes). Python: `TensorType.RIGID_BODY_DISABLE_GRAVITY`. Reads and writes reflect live PhysX actor flags only (no USD I/O). Runtime gravity suppression validated on CPU and GPU DirectGPU (`GpuRigidBodyDisableGravitySuppressesFall`).
-- **`OVPHYSX_TENSOR_ARTICULATION_BODY_DISABLE_GRAVITY_BOOL` tensor type.** New read/write `[N, L]` uint8/bool tensor that toggles `PxActorFlag::eDISABLE_GRAVITY` per articulation link at runtime. Wired to `IArticulationView::set/getDisableGravities` (+ indexed and masked writes). Python: `TensorType.ARTICULATION_BODY_DISABLE_GRAVITY`. Zero-padded link columns beyond `numLinks` are ignored on write. Runtime gravity suppression validated on CPU and GPU DirectGPU (`GpuArticulationDisableGravitySuppressesFall`).
-- **`OVPHYSX_TENSOR_ARTICULATION_DOF_DRIVE_TYPE_U8` tensor type.** New read-only `[N, D]` uint8 tensor reporting the drive type per articulation DOF (`0`=none, `1`=force, `2`=acceleration). Wired to `IArticulationView::getDriveTypes`. Python: `TensorType.ARTICULATION_DOF_DRIVE_TYPE`. Reads reflect the live `PxArticulationDrive::driveType` rather than authored USD. Padded DOF columns beyond `numDofs` now read as `0`; `BaseArticulationView::getDriveTypes` previously left them at whatever the caller's buffer held.
+- **Python type stubs (``.pyi``) and ``py.typed`` marker for IDE support.**
+  The wheel and editable source tree now ship PEP 561 stubs for ``PhysX``,
+  ``TensorBinding``, ``ContactBinding``, scene-query result types, DLPack
+  structures, and module-level exports so VS Code, PyCharm, and Cursor can
+  provide autocompletion and static type checking without loading native code.
+  CI and ``validate_all`` run ``pyright`` on the stub tree via
+  ``scripts/test_pyright.cmake``.
+- **Kinematic support-geometry guidance and samples.** New C and Python samples
+  demonstrate a translating support driven by ovstage transform updates, a
+  stationary `PhysxSurfaceVelocityAPI` conveyor, and their additive combination
+  with dynamic riders. The accompanying guide explains how kinematic transform
+  changes become PhysX targets, distinguishes them from teleporting legacy
+  tensor pose writes, and documents friction, sleeping, reset/readback, control
+  ordinals, authored-scale preservation, local versus resolved world matrices,
+  descendant world updates, and the DirectGPU limitations.
+- **`ovphysx.utils.step_and_write_to_ovstage(physx, *, dt, output_ordinal,
+  outputs=None)` utility.** Runs one `step_sync`, the matching `PhysX.read`
+  output selections, and the OVStage write-back without expanding the core
+  `PhysX` API. Each group's emitted attribute name is written to a shadow
+  `sim:<name>` attribute (avoiding a type collision with the authored column),
+  `prim_list` forwards directly, fixed-group tensors pass through as-is, and
+  array-group tensors are lane-folded into OVStage's `dtype.lanes` vector
+  representation; the whole write seals with one
+  `advance_write_floor(ordinal=output_ordinal)`. `output_ordinal` must never be
+  passed to `update_from_ovstage`, or physics would re-ingest its own output.
 
-### Changed
-- **The SDK package no longer ships ovstage.** The ovstage headers, library,
-  runtime plugin tree, and bundled `python/ovstage` package are gone from the
-  `.zip` / `.tar.gz`. Native SDK users download the matching OVStage archive
-  separately and add both package roots to `CMAKE_PREFIX_PATH`. Source builds
-  still fetch OVStage automatically, and the ovphysx wheel still depends on the
-  separate ovstage wheel.
-- **`ovphysx_debug_render_set_parameter()` takes a value.** 0 disables the
-  geometry type and a positive value enables it. For parameters whose PhysX
-  semantics define a magnitude, that value scales the geometry together with the
-  master scale. `CONTACT_POINT` and `FRICTION_POINT` use a positive value only as
-  an enable gate; their marker size follows the master scale. Geometry with an
-  inherent shape is drawn at that shape's dimensions. The getter returns the last
-  requested value. The C ABI migration is described in the release note above;
-  the interim `_set_parameter_value()` is gone.
-- **`PhysX.read()` / `PhysX.read_tokens()` now raise `TypeError` on an unsupported
-  output-column dtype** instead of silently reinterpreting it as `float32`. Every
-  dtype the runtime emits today decodes as before — float32/64, int8/32/64,
-  uint8/32/64, and `kDLBool` (bits=8) — so only a genuinely unmapped DLPack
-  `(code, bits)` raises, making a future native dtype-encoding drift fail loudly
-  rather than return corrupted values.
-- **Contact detail reads now report undersized flat buffers.**
-  `ovphysx_read_contact_data()`, `ovphysx_read_friction_data()`, and
-  `ovphysx_read_raw_contact_data()` return `OVPHYSX_API_BUFFER_TOO_SMALL`
-  instead of success when `max_contact_data_count` cannot hold all entries.
-  Count and start-index tensors contain the required layout for sizing a
-  recreated binding on subsequent simulation steps; the overflowing read's
-  payload tensors are not valid.
+- **Three physics fixtures are added to the shipped sample data payload.**
+  `empty_dynamic_boxes.usda`, `empty_dynamic_boxes_cpu.usda` and
+  `simple_physics_scene_cpu.usda` land under `tests/data/`, which
+  `install.cmake` and `build_wheel.cmake` copy into the SDK (`samples/data/`)
+  and the wheel (`ovphysx/samples/data/`). The two `_cpu` layers are sublayer
+  overlays declaring an explicit CPU solver and MBP broadphase over their base
+  scene, for consumers needing the CPU pipeline rather than the GPU-dynamics
+  default a `PhysicsScene` without `PhysxSceneAPI` selects. No existing fixture
+  changed.
 
-### Fixed
-- **`basic-workflow` C sample compiles again (NVBug 6557378).** The fenced sample
-  waited on enqueue results via `.op_id`, but the ovstage members are named
-  `.op_index`. The two wait calls now use `.op_index`.
-- **Shipped skills and docs now seal the ovstage write floor before attach
-  (NVBug 6557378).** `open_usd()` does not advance the write floor;
-  `attach_ovstage()` reads a sealed ordinal. Four skills
-  (`clone-environments`, `tensor-bindings-cpu`, `tensor-bindings-gpu`,
-  `ovphysx-usd-authoring`), the quickstart, developer-guide snippets,
-  overview/physics-scene prose, and top-level README examples omitted
-  `advance_write_floor()`, so following them as published attached
-  successfully but silently dropped every articulation and joint while
-  rigid bodies still loaded. The Python `attach_ovstage` docstring also
-  misdescribed that failure as an empty scene; it now states the real
-  partial-parse behaviour. Product samples and `basic-workflow` already
-  had the seal call.
-- **The documented `.usda` scene template now sets the mass unit (NVBug 6557394 /
-  OMPE-104387).** The template in `simulation_setup/physics_scene.md` authored
-  `kilogramsPerMass`, which is not a USD stage-metadata key: USD accepted the
-  layer and dropped the field without a warning, so a reader who copied the
-  template kept the default mass unit and every authored mass was off by the
-  intended scale factor. The key is `kilogramsPerUnit`, as the same page already
-  stated in prose. The reference scene the page links, `simple_physics_scene.usda`,
-  carried the same invalid key and is corrected too.
-- **`ovphysx_step_sync()` no longer hangs after repeated runtime prim additions
-  (OMPE-104209).** Scoped OVStage updates no longer create duplicate default
-  physics scenes.
-- **Windows `--devphysx` source builds now compile with MSVC.** Descriptor
-  deleter size and alignment constants use static storage duration, keeping the
-  required deleter lambdas captureless without triggering MSVC C3493. Runtime
-  values and behavior are unchanged.
-- **Wheel builds no longer depend on developer-local state (NVBug 6543059 /
-  OMPE-103947).** `cmake -P scripts/build_wheel.cmake` staged the whole
-  `tests/python_samples` tree, including a gitignored `.venv` whose
-  `bin/python` symlinks an interpreter outside the repository, so the wheel step
-  aborted on any machine that had run the python-samples tests. That state is
-  now excluded from the copy. The Linux prerequisites also name the `file`
-  utility and `binutils`, which the install step requires, and the errors raised
-  when they are missing name the packages to install.
-- **Contact-binding docs now state the `PhysxContactReportAPI` requirement (NVBug
-  6543101 / OMPE-103946).** The tutorial, the developer guide, the `ovphysx.h`
-  Doxygen block, and the `create_contact_binding()` docstring all claimed no USD
-  authoring was needed beyond the rigid bodies themselves. A contact binding
-  additionally requires `PhysxContactReportAPI` on each authored USD prim named by
-  `sensor_patterns` - on that exact prim, not a parent body or child collider - so
-  a scene authored as documented produced no binding at all. Filter prims need no
-  extra schema, and runtime-only clones inherit contact reporting from the source
-  actor. The creation error, previously `no matching sensors?`, now leads with a
-  neutral `no sensor entries were produced` and lists the common causes: an
-  authored sensor prim without the schema, a pattern matching no object, and
-  `filter_patterns` resolving to the wrong count.
-- **Documented the codeless schema registration ordering hazard (NVBug 6530141
-  / OMPE-103543).** `Plug.Registry().RegisterPlugins()` can only expose the
-  codeless PhysX USD schemas in a process that has not yet opened a stage or
-  queried USD's schema registry; that registry is built once, on first access,
-  and a late call fails silently — the plugin count and
-  `Tf.Type.FindByName` still report success while `ApplyAPI` raises. The "stock
-  `usd-core`" section of the physics-schemas guide now states this and documents
-  presetting `PXR_PLUGINPATH_NAME` before the host process launches as the
-  supported route for DCC hosts and other processes that have already
-  initialised USD. This is OpenUSD's registry lifecycle, not an ovphysx defect;
-  the behavior is unchanged. A new `schema_registry_ordering.py` regression
-  sample pins both the failing and the supported ordering.
-- **Windows `--devphysx` builds no longer fail when the MSVC toolchain path
-  contains spaces and 8.3 short names are available (NVBug 6543145 /
-  OMPE-103943).** Under the Ninja generator, CMake 8.3-shortens the `-ccbin` path
-  it passes to nvcc while `PATH` kept the long form, so nvcc rejected the
-  mismatch with `cl.exe in PATH ... is different than one specified with -ccbin`
-  and CUDA configuration failed. This hit source-drop builds using a local Visual
-  Studio under `C:\Program Files\...`. On a volume with 8.3 name generation
-  disabled the build now warns and asks you to move the toolchain to a path
-  without spaces. Build with `build.bat --rebuild` when moving onto this
-  version: CMake never re-detects the cached compiler, so an existing Windows
-  build directory keeps the old path spelling. `GENERATOR` is also
-  whitespace-tolerant.
-- **Tensor binding caches no longer retain foreign DLPack capsules.** Repeated
-  reads and writes now cache a Python-owned tensor descriptor for NumPy,
-  PyTorch, and Warp storage, while direct `DLTensor` inputs retain their
-  caller-owned descriptor and other DLPack providers are reacquired per call.
-  This prevents a retained capsule from invoking a producer callback after its
-  Python module has shut down.
-- **Synchronous contact-force reads now use the current timestep (NVBug
-  6519970 / OMPE-103224).** `ovphysx_step_sync()` and
-  `ovphysx_step_n_sync()` now cache their timestep after successful completion,
-  matching `ovphysx_step()` plus a wait. Contact binding reads therefore divide
-  contact and friction impulses by the timestep that produced them instead of
-  the initializer `1.0` or a stale earlier async-step value.
-- **Articulation velocity-dependent dynamics queries now use live state
-  (NVBug 6520292).** `ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE` and the bias
-  column of `ARTICULATION_CENTROIDAL_MOMENTUM` previously used joint velocities
-  retained in each CPU articulation view's creation-time cache. Reads through a
-  persistent binding could therefore remain zero or stale after velocities changed
-  through another binding or a simulation step. Both queries now refresh their
-  joint velocities before computing. This affected CPU simulation and GPU dynamics
-  with CPU tensor readback; the genuine DirectGPU tensor path already reads live
-  device state and is unchanged.
-- **Opaque object handles no longer alias across object kinds or instances
-  (NVBug 6504951 / OMPE-102857).** Instance, tensor-binding, contact-binding and
-  SDF-view handles previously each counted from 1 inside their own owner, so an
-  instance handle and that instance's first tensor binding were both the number
-  1, and a binding handle outlived by its instance matched the first binding of
-  the next instance. For a valid `ovphysx_handle_t instance` and an
-  `ovphysx_tensor_spec_t out_spec`,
-  `ovphysx_get_tensor_binding_spec(instance, instance, &out_spec)` therefore
-  returned an `ovphysx_result_t` with `.status == OVPHYSX_API_SUCCESS` and
-  populated `out_spec` from the wrongly resolved first tensor binding. All four
-  now come from one process-wide, never-reused nonzero sequence, so that
-  specific lookup with a valid instance misses the tensor-binding map and its
-  returned `ovphysx_result_t` has `.status == OVPHYSX_API_NOT_FOUND`. No public
-  API signature, public struct layout, C ABI,
-  or error-enum value changed; handles remain opaque and
-  `OVPHYSX_INVALID_HANDLE` (0) remains the invalid sentinel. Numeric allocation
-  is observably different: handle values are no longer allocated per object
-  kind, and a particular kind's first handle is no longer guaranteed to be 1.
-- **Python DLPack data type codes now support integer conversion (NVBug
-  6507889).** Calling `int(tensor.dtype.code)` returns the numeric
-  `DLDataTypeCode` value instead of trying to parse its raw `ctypes` bytes.
-- **Fixed-base Jacobian row count corrected in the Tensor Bindings tutorial
-  (NVBug 6504947 / OMPE-102860).** The tutorial now documents
-  `R=(L-1)*6, C=D`, matching the public C header and runtime; it previously
-  stated `R=L*6, C=D`.
-- **Documented that changing `--devphysx` / `--devschema` requires a clean
-  rebuild (NVBug 6542923 / OMPE-103941).** The flag combination selects a build
-  flavor, and incremental builds across a flavor change are not supported:
-  `--devphysx` caches `PHYSX_SDK_DIR` pointing at the local `physx/` source tree,
-  so a later build without it fails with a `PhysXGpu_64.dll` copy error, "No such
-  file or directory". The build options, `--help` output, and troubleshooting
-  docs now state that `--rebuild` is required.
-- **Population domains (`ALL` / `PHYSICS | RENDERING`) are now documented
-  (NVBug 6532997 / OMPE-103566).** `PopulationDomain` is an OR-combinable
-  bitmask; ovstage's `open_usd()` default is `RENDERING` (physics off). For
-  arbitrary USD — including headless ovphysx-only apps — populate `ALL`
-  (equivalently `PHYSICS | RENDERING`): under the currently pinned ovstage,
-  `PHYSICS` alone can silently omit colliders that sit under native USD
-  scene-graph instances. `PHYSICS` alone remains valid only for content known
-  not to use native instancing (such as the shipped samples). See
-  [Ovstage Integration](ovstage_integration.md#population-domains).
-- **Standalone startup no longer reports 11 false missing-plugin warnings
-  (NVBug 6504272).** Static Carbonite plugin registration now reuses the
-  already-collected registry state instead of probing expected-absent plugins
-  with the diagnostic `getPluginDesc()` API.
-- **OVStage-backed scans retain the source that minted descriptor handles.**
-  Token-valued descriptors now resolve correctly after ingestion, preventing
-  spatial-tendon crashes with same-link intermediate attachments.
-- **OVStage-backed joint frames now match native USD ingestion for scaled bodies.**
-  Joint anchors are converted from relationship targets into the resolved body
-  frame and body scale is baked into their translation, preventing attach-time
-  shifts in scaled articulations.
+- **Sequential OmniPVD recording.** `ovphysx_start_recording()`,
+  `ovphysx_stop_recording()` and `ovphysx_is_recording()` — `start_recording()`,
+  `stop_recording()` and `is_recording()` in Python — record to an exact `.ovd`
+  file or to a TCP listener that is already accepting, and can be started and
+  stopped repeatedly while the runtime is live. Every session, whether it starts
+  at startup or later, captures the current core PhysX state plus the full
+  PhysXExtensions and PhysXVehicle schemas and their live objects. Recording is
+  off unless it is asked for: the new creation-time `omnipvd_recording_capable`
+  setting is false by default, and a runtime created without it (and without
+  startup output) passes no `PxOmniPvd` to PhysX at all, so the default path
+  carries no sampler, writer or stream cost. Opting in creates the provider and
+  enables scene readback, which a DirectGPU scene pays for even before recording
+  starts. Only one recording is active per shared runtime; starting a second one
+  returns `INVALID_STATE` and leaves the first destination in place.
+
+- **`newton:velocityLimit` is honored on joints.** The Newton `NewtonJointAPI`
+  attribute maps onto `physxJoint:maxJointVelocity` with the same precedence as
+  the other Newton attributes: an authored PhysX value wins, then an authored
+  Newton value, then the PhysX default. Both are joint-level and share units —
+  degrees per second for angular DOFs, distance per second for linear ones — so
+  the value is used as authored. A per-axis `PhysxJointAxisAPI:maxJointVelocity`
+  still overrides it, at parse time and on a live edit.
 
 ### Performance
-- **Significantly faster stage-attach for OVStage-backed scenes.** Attaching
-  large, heavily-populated OVStage scenes is now substantially quicker, on par
-  with the equivalent USD load. No behavioral change.
-- **Render-only scene-graph prototypes no longer dominate OVStage attach time
-  in common leaf-collider scenes (NVBug 6532970 / OMPE-103564).** OVPhysX
-  queries instance-root mappings only for prototype roots proven to back
-  physics collision shapes, rather than querying every prototype in the stage.
-  Ambiguous non-leaf colliders conservatively retain complete expansion until
-  OVStage provides the general batched resolver tracked by OMPE-100947. Public
-  type and geometry reads for render-only instance proxies remain available
-  through a cached, post-attach reverse lookup. Physics behavior and public APIs
-  are unchanged.
+- **A stage with several physics scenes no longer rebuilds its backend cache on every
+  read.** The tensor backend's simulation data and its cached superset views were keyed
+  on the attach handle alone, so two `PhysicsScene` prims under one attach shared a
+  single entry: reading them in turn evicted one and rebuilt the other, re-running
+  `GpuSimulationData::init()` -- every device allocation -- plus the superset view
+  construction, on every read of every partition. Six alternating acquires produced six
+  rebuilds where two suffice. Cache entries are now keyed on the attach *and* the scene,
+  so each scene keeps its own. Single-scene stages are unaffected, and values were always
+  correct -- only the cost changes.
+- **Hidden persistent-contact step/read benchmarks.** Added separate CPU and
+  conventional-GPU rows that measure one 1/60-second synchronous step plus the
+  public raw contact-report pull over 512 isolated persistent reporter/static
+  pairs. Both rows validate exact pair/cardinality and borrowed report contents
+  outside the timer, fail on known GPU fallback or capacity warnings, and
+  reject DirectGPU. The existing seventeen-row Authoring/WriteScaling L1B
+  inventory is unchanged. Its six hidden requested-GPU Authoring diagnostics
+  already failed on recognized CPU-fallback warnings and now also fail on GPU
+  contact-capacity warnings observed during attachment or warm-up. This changes
+  their pass/fail gate, not their names or the CPU KPI contract.
+- **Vehicle wheel `position` and `orientation` share one transform composition.** Reading both now
+  composes each wheel's world transform once -- `getGlobalPose`, `getCMassLocalPose` and either the
+  shape's local pose or the vehicle SDK's -- instead of running the whole composition per column and
+  discarding the half it did not publish. On 1,024 vehicles a two-column read costs **~149 us against
+  ~278 us before (1.87x)**; a one-column read is unchanged. Values are identical -- only the cost
+  changes.
+- **Faster per-shape rigid-body reads.** A read asking for more than one of `staticFriction` /
+  `dynamicFriction` / `restitution` / `contactOffset` / `restOffset` now walks each body's shapes
+  ONCE for the whole set instead of once per column, and resolves the shape's material once per
+  shape rather than once per shape per column. On 8,192 bodies (655,440 shape visits) a five-column
+  read costs **~47.4 ms against ~76.1 ms before (1.60x)**; a one-column read is unchanged. Values are
+  identical -- only the cost changes.
 
----
+  Three of the five properties are read off the shape's material and two are not, so a
+  `contactOffset` + `restOffset` read now touches no material at all, where per-column dispatch
+  resolved one for every column that asked.
+- **Faster whole-articulation root-state reads on CPU.** A read asking for more than one of
+  `rootPosition` / `rootOrientation` / `rootLinearVelocity` / `rootAngularVelocity` now hands the
+  whole requested set to one backend gather instead of dispatching per column. On 8,192
+  articulations the four-column read costs **~1.01 ms against ~2.17 ms before (2.15x)**; a
+  one-column read is unchanged. Values are identical -- only the cost changes.
 
-## [0.5.9] - 2026-07-21
-
-### Fixed
-- **Linux wheel startup reuses already-loaded compatible OVStage/USD SONAMEs.**
-  This prevents duplicate static USD registration when OVRTX-first applications
-  later import ovphysx.
-
----
-
-## [0.5.8] - 2026-07-21
-
-### Fixed
-- **`ARTICULATION_JOINT` output read now returns every unlocked joint DOF, with or
-  without `JointStateAPI` (NvBugs 6481083 / OMPE-102219).** Previously the
-  `jointPosition` / `jointVelocity` read only emitted a group for joint axes carrying
-  an authored `JointStateAPI`, so a valid articulation whose joints had none returned
-  zero groups, and a joint with `JointStateAPI` on only a subset of its DOF dropped the
-  remaining unlocked DOF. The read now enumerates the joint's actual unlocked
-  reduced-coordinate DOF (angular axes in degrees, linear in base units), honoring an
-  authored per-axis `convertToDegrees` flag when present. Under `eENABLE_DIRECT_GPU_API`
-  the per-DOF state is sourced live from the direct-GPU API instead of the frozen
-  CPU-side accessor.
-- **Fixed-base articulations reject centroidal-momentum tensor bindings at
-  creation (NVBugs 6481094 / OMPE-102210).** `create_tensor_binding` for
-  `ARTICULATION_CENTROIDAL_MOMENTUM` now fails with `INVALID_ARGUMENT` (raises
-  `RuntimeError` in Python) when any matched articulation is fixed-base, instead
-  of accepting the binding and only surfacing the failure later at read time.
-  Centroidal momentum is defined for floating-base articulations only. The check
-  inspects every matched articulation, so a pattern that resolves to a mix of
-  fixed- and floating-base articulations is rejected too. Empty matches remain
-  valid empty bindings.
-- **Consumed operation indices now honor single-use wait semantics
-  (NVBugs 6473891, 6481089, 6481092).** Explicit waits are tracked separately
-  from internal synchronization, so a second blocking or polling `wait_op()`
-  reports `NOT_FOUND` (and raises `RuntimeError` in Python) as documented, even
-  after later stream operations synchronize pending work. The simulation wait
-  fast path also defensively permits only one competing waiter to consume an
-  index; callers must still serialize same-instance API use.
-- **Wheel-bundled `OVPHYSX_LIB` selection preserves the paired OVStage runtime
-  (NVBugs 6481086).** Setting the override to the installed wheel's own
-  `libovphysx.so` or `ovphysx.dll` now retains cross-wheel dependency setup.
-  Overrides that select an external SDK remain isolated from wheel dependencies.
-
----
-
-## [0.5.7] - 2026-07-21
-
-> **Versioned ABI break introduced in 0.5.4.** The 0.5 release line changes exported C ABI
-> (`ovphysx_clone` gains a sixth `env_ids` parameter — see the cloning entry), so the wheel/SDK
-> version was bumped to `0.5.4`. A binary built against a `0.5.3`-or-earlier header must be
-> recompiled, and can pin `<0.5.4` to stay on the old
-> five-argument surface. The internal `IPhysxReplicator::replicate` / `isReplicatorStage` /
-> `IPhysxSimulation::cloneEnvironments` function-table shapes also change, but ovruntime is linked
-> **statically** into ovphysx, so there is no independently-versioned ovruntime binary and this
-> single `0.5.4` bump covers the whole shipped surface.
-
+  The four columns come from fewer sources than there are columns. On the host all four are filled
+  by a single `copyInternalStateToCache` per articulation, the root-transform and root-velocity
+  flags OR'd into one call, where per-column dispatch made four. On a DirectGPU scene one
+  `eROOT_GLOBAL_POSE` copy now serves both pose columns, taking four device fetches to three;
+  linear and angular velocity are distinct read types and still need one each. The device read
+  measures the same as before, so its per-column cost is not the DirectGPU copy.
+- **Hidden in-process Authoring and WriteScaling benchmark contract.** Added
+  fail-closed C++ rows for population growth/churn, runtime writes,
+  transform/velocity updates, and the 4,096-body write-scaling pair. The frozen
+  contract is CPU-canonical (eleven CPU rows); six requested-GPU Authoring rows
+  remain unscheduled diagnostics. Initial lower-is-better absolute-latency KPIs
+  are `Authoring.population_add_drip_cpu` and
+  `WriteScaling.velocity_ovstage_4096_cpu`; every other retained row is a
+  diagnostic or comparator. A dedicated Linux CI job builds and installs the
+  opt-in suite and requires exactly eleven positive CPU rows without adding
+  benchmarks to the publish/security-critical SDK build path.
+- **Tensor-binding creation and OVStage attach and write throughput restored.**
+  A regression made tensor-binding creation and the OVStage population and
+  velocity-write paths several times slower on large stages. Parse contexts now
+  reuse their token set instead of rebuilding it per operation, object keys are
+  resolved from the runtime databases before falling back to a source query so
+  runtime-only clones cost no lookup, incremental OVStage updates reuse
+  source-native token ids, and wildcard matches are converted to keys once while
+  keeping their creation-order result ordering. In a local measurement,
+  tensor-binding creation went from 5.93 s to 0.61 s and OVStage velocity writes
+  from 306 ms to 110 ms.
 ### Changed
-- **Windows PE binaries codesigned before packaging.** The Windows build job now
-  runs `repo_codesign` against `_install/` after install and before SDK/wheel/packman
-  packaging, so all distributed `.dll` and `.pyd` files carry a production
-  Authenticode signature.  The packman `.7z` is signed during packaging via
-  `sign_binary_files` in `repo.toml`.  Linux `.so` files are not affected
-  (`repo_codesign` is a PE/Authenticode-only tool).
-- **`PhysX.overlap()` now raises `ValueError` for `SceneQueryMode.CLOSEST`.**
-  CLOSEST has no meaning for overlap queries (no ray or sweep direction). The
-  C API still treats CLOSEST as ALL; only the Python API rejects the mode.
-  Closes NVBugs 6172863.
-- **Contact report batched buffers are reclaimed on simulation reset/detach (NVBugs 6172770).**
-  `PhysXScene` now deletes its owned `ContactReport` during teardown (previously
-  leaked peak-capacity vectors). Documented in the developer guide.
-- **ovstage compatibility pin centralized at `0.1.0.346039`.** ovstage is fetched as
-  a single self-contained wheel (C++ SDK + python package) resolved from a PEP 503
-  index selected by `fetch_ovstage_release.py --source` (default `internal`; the
-  open-source drop uses the default public PyPI, pypi.org).
+- **ovphysx is built USD-free by default, and no longer ships a USD runtime.**
+  The build option that produced the USD-free library was experimental and off
+  by default; it is now on by default and is renamed to `OVPHYSX_NO_USD`,
+  dropping the `EXPERIMENTAL_` marker from its old name. `libovphysx` has no
+  link-time dependency on any USD library, and the shipped SDK and wheel no
+  longer contain the namespaced USD monolith at all — roughly 70 MB smaller.
+  USD comes entirely from the ovstage runtime the library already requires, and
+  ovphysx binds to that one copy.
 
-### Added
-- **Documented x86_64 AVX CPU requirement and fail-fast init check (NVBugs 6447187).**
-  Pre-built Linux and Windows x86_64 binaries require AVX; Linux aarch64 is
-  unaffected. README, overview, quickstart, PyPI metadata, and agent guidance
-  now state the requirement. `ovphysx_initialize()` (and Python `PhysX()`
-  construction) now returns a clear error when x86_64 hosts lack AVX hardware/OS
-  support instead of failing later with SIGILL at the first physics step. No
-  non-AVX fallback is provided.
-- **Simulation Setup, Physics Schemas, and Guides documentation.** New docs
-  sections covering the physics content ovphysx simulates and how to author it in
-  USD: `docs/simulation_setup/` (physics scene, colliders, rigid bodies, joints,
-  articulations, deformables, particles), `docs/physics_schemas.md` (schema
-  layers and codeless PhysX schema registration), and `docs/guides/`
-  (performance, collision tuning, articulation stability, gripper tuning, known
-  limitations). Adapted from the Omni PhysX developer guide and scoped to the
-  ovphysx public API (codeless PhysX schemas + `PhysXConfig`).
-- **`ovphysx-output-read` skill.** New agent skill under `skills/` for the
-  ovstage-native physics output query/read API, available since ovphysx 0.5.0,
-  covering Python and C reads,
-  borrowed group lifetime, `ALL` versus `ACTIVE` scope, and closed-loop ovstage
-  write-back with disjoint control/output ordinal lanes. Bundled Python, C, and
-  closed-loop references keep standalone agent installs self-contained. Ships in
-  the wheel and SDK with product-owned behavior and routing evals.
-- **`ovphysx-usd-authoring` skill.** New agent/human skill under `skills/` for
-  authoring USD physics content that ovphysx loads and simulates (physics scene,
-  rigid bodies, colliders, mass), covering both the hand-authored `.usda` route
-  and the Python route (stock `usd-core`; PhysX-specific attributes via the
-  codeless schemas). Ships in the wheel and SDK alongside the existing skills.
-- **TensorBindingsAPI deformable material extended properties.** Four additional
-  deformable material tensor types: `DEFORMABLE_MATERIAL_ELASTICITY_DAMPING_F32`
-  (133, volume + surface), `DEFORMABLE_MATERIAL_BENDING_STIFFNESS_F32` (134),
-  `DEFORMABLE_MATERIAL_THICKNESS_F32` (135), and
-  `DEFORMABLE_MATERIAL_BENDING_DAMPING_F32` (136). The bending/thickness
-  properties are surface-material-only -- reads return 0.0 for volume material
-  entries and writes are silently skipped. Requires `IDeformableMaterialView`
-  extension via new `getSurfaceProperty`/`setSurfaceProperty` helpers in
-  `BaseDeformableMaterialView`.
-- **SDF shape evaluation API.** New C `ovphysx_create_sdf_view()`,
-  `ovphysx_evaluate_sdf()`, `ovphysx_destroy_sdf_view()`, and Python
-  `PhysX.create_sdf_view()` / `SdfView.evaluate()`. Evaluates signed distance
-  fields of PhysX collision shapes at caller-supplied query points. Input shape
-  `[N, Q, 3]`, output shape `[N, Q, 4]` (gradient xyz + distance). GPU instances
-  only (CPU SDF evaluation is not yet implemented). Uses the existing
-  `ISdfShapeView` tensor backend.
-- **Environment cloning API is now replicator-backed (Fabric-free).** `ovphysx_clone(handle,
-  source_path_in_usd, target_paths[], num_target_paths, parent_transforms, env_ids)` (C) +
-  Python `PhysX.clone(source_path, target_paths, parent_transforms=None, env_ids=None)` +
-  experimental `PhysX::clone` keep the pre-0.5 clone *semantics* (the trailing optional `env_ids`
-  is a versioned C ABI addition -- see the env-ids entry below), but the implementation now drives the PhysX SDK replicator
-  (binary serialization) instead of the removed Fabric scenegraph copy -- so cloned articulations
-  are **real articulations** (what IsaacLab-style batched RL needs), with no Fabric involved. Each
-  copy is created at the caller's `target_paths[i]`; `parent_transforms[i]` (a flat
-  `[num_target_paths * 7]` array: position + imaginary-first quaternion) positions the copy's
-  parent, and every cloned body keeps its pose relative to the source's parent, so an at-origin
-  source lands each body exactly at `parent_transforms[i]` (NULL co-locates every copy on the
-  source pose). Behavior change vs the old Fabric clone: the clones exist as **runtime
-  physics only** -- no USD/scenegraph prims are authored (scenegraph duplication is now an ovstage
-  responsibility, `ovstage_clone` + instancing). env-id cross-environment collision filtering
-  follows the `/ovphysx/clone/useEnvIds` setting (default on); with explicit per-clone transforms
-  the copies are already spatially separated, so it is an optional add-on. Replication executes
-  inline and returns an already-complete `op_index`; `wait_op()` remains valid and returns
-  immediately (IsaacLab ClonePlan contract). Must be called before GPU
-  warmup / the first step. Path-string API (no USD type crosses the boundary). Restores the
-  `Lab.cartpole_*` / `Lab.anymal_*` GPU benchmarks. The clone's replicator registration is one-shot
-  (released as soon as the clone completes, even on failure), so a later `reset_stage()` -> reattach
-  -> clone works and no replicator state leaks; a clone that throws internally is reported as an error
-  instead of crossing the C boundary. Multiple `clone()` calls on one attach are env-id-safe: env-ids are
-  offset per batch, so distinct environments never alias to one id under GPU broadphase. When one
-  logical environment is assembled from **several** clone calls (a heterogeneous ClonePlan: one call
-  per source row), pass the new optional per-target `env_ids` (C `const uint32_t*`, Python
-  `env_ids=[...]`, C++ `envIds`) with the same ids in every call: the same logical id always maps to
-  the same runtime environment (`env_ids[i] + 1`; 0 stays the source's), so `/env1/Robot` and
-  `/env1/Object` cloned by different calls keep colliding with each other while staying isolated
-  from other environments — per-call automatic numbering would silently stop same-environment
-  contacts. A later `env_ids=NULL` call numbers past every explicitly-placed id, so mixed usage
-  cannot alias. `env_ids` values must be < `0x00FFFFFF` (PhysX supports at most 1<<24 environments
-  and the runtime id is `env_ids[i] + 1`); the runtime also checks `setEnvironmentID`'s result and
-  guards the automatic id base against exhaustion, warning rather than silently disabling isolation.
-  **Breaking (C ABI):** `ovphysx_clone` gains the trailing `env_ids` parameter — existing C callers
-  must add `NULL` and relink; the ovphysx wheel/SDK version is bumped to `0.5.4` for this (see the
-  release-header note above).
-  Python/C++ callers are unaffected (optional keyword/defaulted argument). Invalid
-  targets are rejected up front: empty, equal to the source, duplicated in one call, or already
-  cloned on the current attach. A rejected clone reports its error synchronously with no dangling
-  operation, so a later attach / reset / clone is unaffected. Targets carrying an embedded NUL are
-  also rejected (the C-string seam would otherwise truncate them to a different path, e.g. back to
-  the source). A target that is already populated with physics from the initial parse (a real USD
-  subtree carrying physics, not just a prior-clone target) is rejected by a runtime ObjectDb
-  subtree check before the replicator runs, so cloning onto it can no longer add duplicate actors.
-  The experimental C++ `PhysX::clone` completes the clone synchronously and now
-  surfaces the operation index through an optional `outOpIndex` out-param, matching the C/Python
-  forms. The Python wrapper also validates each
-  `parent_transforms` entry is exactly seven finite floats (short/long tuples are rejected rather
-  than causing an out-of-bounds native read or shifted poses). Co-located clones (null
-  `parent_transforms`) are fully env-id-isolated: `attach_ovstage` enables creation-time
-  environment-id assignment (`/physics/replicatorEnvIdsOnAttach`, following
-  `/ovphysx/clone/useEnvIds`), so on GPU-dynamics + GPU-broadphase scenes the source environment's
-  **dynamic** bodies and articulations are created holding environment id 0 (clones get 1..N) and
-  never collide with their co-located copies. Ids are assigned at body creation — live scene
-  objects are never removed and re-added, which corrupts DirectGPU scenes. **Static** bodies keep
-  the collide-with-all default (`PX_INVALID_U32`) — statics never collide with each other, so this
-  keeps a shared static ground plane colliding with every environment, so cloned envs keep resting
-  on it. (Known limitation: a co-located clone stack whose envs each carry their own static
-  obstacle is not isolated from those overlapping statics — use explicit transforms for that
-  layout; a shared *dynamic* object without a scene-partition primvar lands in env 0.)
+  This closes a class of hard aborts: a process that reached two monolith
+  images — ovstage's and ovphysx's — registered USD's process-wide singletons
+  twice and died with `multiple debug symbol definitions`, even when the two
+  files were identical. Packaging now verifies that the ovstage runtime
+  provides a monolith matching the one ovphysx was built against, and fails the
+  install rather than producing a payload with no USD behind it.
+
+  Scene replication and cloning, previously the one capability that did not
+  work in the USD-free configuration, now work. Set `-DOVPHYSX_NO_USD=OFF` to
+  build the USD-linked variant, which is still supported for consumers that
+  attach a native `UsdStage`.
+- **Updated the pinned USD and Carbonite runtimes** to USD `0.25.11.kit.5` and
+  Carbonite `214.0.0-pre`.
+- **The bundled PhysX engine moves from 5.10 to 5.11.** The simulation engine
+  inside the wheel and the SDK is a newer PhysX SDK release. Solver results can
+  differ in the last bits from 0.5, so a test that pins exact trajectories may
+  need rebaselining; no ovphysx API changes with it.
+- **Articulation Jacobians, mass matrices and centroidal momentum now use the
+  authored joint basis.** DOF state and generalized forces already followed each
+  USD joint's authored body relationship, but these dense quantities were
+  returned in PhysX's raw basis. For a joint whose `body1` is the articulation
+  parent, related quantities on the same view therefore pointed in opposite
+  directions. All of them now share one basis, in `ovphysx_read()` and in the
+  tensor bindings, on CPU and DirectGPU. Articulations whose joints are all
+  parent-first are unaffected. A caller that flipped signs itself for reversed
+  joints — on Jacobian columns, mass-matrix rows and columns, or centroidal
+  joint columns — must drop that correction. Floating-root coordinates, the
+  mass-matrix root block and the centroidal bias are unchanged; Coriolis and
+  gravity already carried the fold.
+- **`ARTICULATION_MASS_CENTER_WORLD` is now reported relative to the view's
+  subspace origin on the DirectGPU path.** The GPU tensor binding previously
+  returned PhysX's raw computed centre of mass, while the CPU path already
+  subtracted the subspace origin; the two disagreed for any view built with a
+  non-zero origin. The GPU path now matches the CPU one, so the value is
+  world-frame in the same sense on both devices.
+
+  **This changes a shipped value.** A view whose subspace origin is zero — the
+  default, and every view that does not opt into a subspace — is unaffected.
+  A consumer that was subtracting the origin itself to work around the GPU
+  behaviour will now double-subtract and must drop that correction. The
+  ovstage output read's centre-of-mass column is scene-world and is not
+  affected either way. The same read no longer depends on what the destination
+  buffer held before the call, and its DirectGPU result is complete when the
+  getter returns.
+- **CPU-only tensor property APIs no longer silently stage GPU tensors
+  Shape properties, disable-gravity/simulation flags, and
+  wake/sleep end in CPU PhysX calls. Gpu*View helpers that copied caller GPU
+  buffers to host (and the matching ovphysx write/read staging for those
+  types) are removed: pass host tensors or the call fails. On GPU simulation,
+  `eDISABLE_SIMULATION` removes DirectGPU rows — the parent simulation view
+  is invalidated (`getValid() == false`) and callers must recreate bindings
+  for the enabled set (no disabled-pose patch cache / escape hatch). DirectGPU
+  `createRigidBodyView` omits already-disabled rigid dynamics so a wildcard
+  pattern still yields a valid enabled-only view; re-enable is out of band,
+  then recreate. Bad index tensors (GPU, wrong dtype, oversized, or
+  out-of-range values) fail with no side effects on both CPU and GPU sims.
+  `BaseArticulationView::setCOMs` now clears the COM cache used by GPU
+  force-at-position (matching rigid bodies).
+- **String config buffer accounting.** `ovphysx_get_global_config_string()`
+  rejects NULL, zero-capacity, and capacities above `UINT32_MAX`. On
+  `OVPHYSX_API_BUFFER_TOO_SMALL`, `value_out->length` remains the caller's
+  writable capacity so the same descriptor can be reused after growing its
+  buffer; `out_required_size` reports the required size including the NUL.
+- **Build dependencies no longer come from the kit-kernel package.** Carbonite and
+  Omni framework headers now come from `carb_sdk_static` (`carb_sdk_plugins`), python
+  3.12 from the same package, and the namespaced USD monolith and gsl from
+  `ovphysx/ovruntime`.  The USD version is taken from the `ovruntime_deps` package that
+  ovruntime uses, so the build USD and the py312 USD used by the python tests cannot
+  drift apart.  This removes the kit-kernel download from the ovphysx build; there is
+  no change to the shipped SDK or wheel contents.
+- **Clone target poses are now named `anchor_transforms`.** The C parameter,
+  experimental C++ parameter, and Python keyword were renamed from
+  `parent_transforms` (`parentTransforms` in C++) because every entry anchors the
+  exact target subtree root at its final absolute world pose; it is not a parent
+  pose. Python keyword callers must update to `anchor_transforms`. The C binary
+  ABI and runtime placement behavior are unchanged.
+
+- **`ovphysx_warmup_gpu` renamed to `ovphysx_warmup` and extended to CPU mode.**
+  The warmup step (a 1ns simulate+fetchResults pass that initializes PhysX lazy
+  structures and disables per-step Fabric sync overhead) now runs in CPU mode as
+  well as GPU mode. The old function name is removed; callers must update to
+  `ovphysx_warmup` (C) / `warmup()` (Python).
+- **Statically linked the OmniPVD runtime.** SDK and wheel artifacts no longer contain PVDRuntime_64.dll or libPVDRuntime_64.so; recording APIs and behavior are unchanged.
+
+### Fixed
+- **`LogLevel.NONE` now silences the remaining PhysX runtime warnings.**
+  `set_log_level(NONE)` no longer lets GPU-broadphase
+  fallback or deformable CUDA-context warnings through. The GPU-broadphase
+  fallback warning is emitted at most once, and rigid-only scenes no longer
+  warn about a missing deformable CUDA context. Source-level updates also
+  leave a host-globally disabled Carbonite log channel disabled, so
+  `set_log_level(WARNING)` cannot reopen it.
+- **OmniPVD recording works on Linux AArch64.** FILE and TCP recording were
+  compiled out on that platform, left over from the days when PVDRuntime shipped
+  as a separate shared library. They are now built and tested there, and no
+  shared-library dependency is added.
+- **OVStage change events are delivered once.**
+  `update_from_ovstage()` now honors the consumed-ordinal cursor that attachment
+  positions at its `read_ordinal`: ordinals at or below it are skipped, so a
+  fully consumed range is a successful no-op and an overlapping range applies
+  only its unread suffix. Object-created notifications for population authored
+  after attachment are preserved. `ovphysx_attach_ovstage()` rejects
+  `read_ordinal == 0` (`OVPHYSX_API_INVALID_ARGUMENT`); 0 is the runtime's
+  internal skip-cursor sentinel and would leave attach replay unguarded.
+- **Mimic joints on a D6 joint now act on the authored rotational axis.** The parse
+  library encoded the resolved axis as a positional index (0/1/2) rather than the
+  `JointAxis` enumerator (`eRotX` is 4), so the engine's axis lookup fell through and
+  bound every D6 mimic joint to `PxArticulationAxis::eSWING2` regardless of the
+  `PhysxMimicJointAPI:<axis>` instance applied. Nothing was logged on either CPU or
+  GPU -- the scene simply simulated the wrong degree of freedom. Revolute and
+  prismatic mimic joints, which carry no axis, were unaffected.
+- **Fitted child mesh colliders now preserve authored mass frames.**
+  `boundingSphere` and `boundingCube` fit offsets still place
+  the collision shape, but no longer translate or rotate collider-local center
+  of mass or inertia frames a second time during parent-body aggregation. USD
+  and ovstage use the same corrected path.
+- **The process-private cooked-collider cache cleanup at shutdown now retries
+  briefly before giving up.** With `cooked_collider_cache_dir` unset, a cook
+  completing immediately before process exit could race the cache
+  directory's teardown: `wait_all()` only drains the cook compute queue, not
+  the underlying datastore's on-disk write-back, so the last bytes could
+  still be trickling out when the process-private temp directory was
+  removed, leaving it (or part of it) behind. Cleanup now retries for up to
+  ~80 ms, which narrows the window in practice for short write-backs; it
+  remains best-effort, and a leftover directory after retries exhaust is now
+  logged instead of silently abandoned. No effect on the common case where
+  cleanup already succeeds on the first attempt.
+- **Simulation-operation polling no longer blocks for completion.** A zero or
+  finite `ovphysx_wait_op()` timeout now checks simulation readiness before
+  calling the blocking result-finalization path. If the operation is not ready
+  before the requested budget, the wait reports `OVPHYSX_API_TIMEOUT`, returns
+  the lowest pending operation, and leaves it available for a later wait.
+  Poll and finite waits use the generic tracked-operation path; the direct
+  single-operation sync fast path remains available only to infinite waits.
+  Once the final boundary check observes readiness, result finalization and its
+  actual terminal result win even if finalization extends total call duration.
+- **Unsealed articulation attachment now fails closed.**
+  Unreadable initial articulation/joint schema data returns an error; seal and
+  retry. Attribute-scoped seals remain valid.
+- **Repeated native destroy rejection is side-effect-free.** A handle that is
+  already absent now returns `OVPHYSX_API_ERROR` before teardown, so Python can
+  retry after an ambiguous ctypes exception without clearing pending-operation
+  state owned by a surviving instance.
+- **Getting-started prerequisites now match the shipped packages.**
+  Quickstart and Hello World point to the bundled
+  `samples/data/` stages and distinguish prebuilt GPU runtime requirements from
+  source-build requirements. GPU simulation with a prebuilt wheel or SDK needs
+  a driver compatible with CUDA 12.8, not a CUDA Toolkit installation; the
+  Toolkit remains a GPU-enabled source-build prerequisite.
+- **Optional Python USD authoring now documents its `usd-core` prerequisite.**
+  The public Physics Schemas page and shipped
+  `ovphysx-usd-authoring` skill now direct external authoring and validation
+  tools to install stock `usd-core` before importing `pxr`. It remains a
+  tool-owned optional package, not an ovphysx dependency or simulator runtime;
+  ovstage populates the authored USD before ovphysx attaches and simulates the
+  resulting stage. The Linux aarch64 PyPI limitation and non-Python authoring
+  alternatives are also documented.
+- **The advertised `OVPHYSX_PHYSX_TYPE_PHYSICS` lookup is now reachable.**
+  `ovphysx_get_physx_ptr()` accepts either zero-length
+  string representation (`{ NULL, 0 }` or `{ "", 0 }`) for the pathless,
+  process-global `PxPhysics` object. A non-empty `PHYSICS` selector now returns
+  `OVPHYSX_API_INVALID_ARGUMENT` instead of falling through to
+  `OVPHYSX_API_NOT_FOUND`; empty selectors for path-bound types remain invalid.
+- **Tensor views are now invalidated when the stage is detached.** Detach releases every PhysX
+  object for the stage but told the views nothing: `UsdLoad::detach` disables object-change
+  notifications before the release, and `physXDetach` emits `eStopped` only once the simulation
+  has been started -- which the `IPhysxSimulation` stepping path never sets. The view kept
+  reporting valid while holding raw `PxRigidBody` pointers, so the next `get_transforms()`
+  dispatched a virtual call through a freed actor (NvBugs 6583612). The tensors simulation-event
+  listener now also handles `ePhysicsObjectsReleased`, which every bulk release emits, covering
+  detach, `release_physics_objects()` and `force_load_physics_from_usd()`.
+- **GPU tensor reads no longer rebuild the rigid-body GPU-index map on every read.** The map is
+  rebuilt by calling `getGPUIndex()` on every body, and a dirty flag exists to skip that when no
+  body has been enabled or disabled since the last rebuild. The flag was cleared only after an
+  early return taken whenever no index had actually moved — which is the steady-state case — so it
+  was cleared only on reads where something *had* changed, and stayed dirty otherwise. The rebuild
+  therefore ran on every read of every GPU scene, disable-free or not, and was the single largest
+  cost in a read: reading pose and velocity for 163,860 rigid bodies through a tensor binding went
+  from ~11.2 ms to ~1.0 ms. Behavior is unchanged — while any body is disabled the flag still stays
+  dirty so the map keeps refreshing until every index lands.
+- **CPU tensor views no longer leak a `PxArticulationCache` per articulation.**
+  `PxArticulationReducedCoordinate::release()` explicitly does not free caches created from it, so
+  the view that called `createCache()` owns them, but `~CpuArticulationView` and
+  `~CpuRigidBodyView` were empty. Every CPU articulation view leaked one cache per articulation,
+  and every CPU rigid-body view one per articulation root, for the lifetime of the process. Both
+  destructors now release them, guarded on the PhysX plugin still being loaded since `release()`
+  frees through the foundation allocator.
+- **Point instancers with `inactiveIds` no longer read out of bounds, and `inactiveIds` is now
+  interpreted per the USD spec.** With `inactiveIds` authored, only the prototypes still referenced
+  by an active instance were parsed, and their descriptors were appended rather than stored at their
+  prototype index — so the instance loop, which indexes by `protoIndices`, read past the end of the
+  list and dereferenced a garbage descriptor (NvBugs 6455958). Additionally, `inactiveIds` entries
+  were treated as positional instance indices; they are ids into the optional `ids` attribute when
+  it is authored, and positional only when it is not. An instancer with `ids = [100, 200]` and
+  `inactiveIds = [200]` now deactivates instance 1 instead of writing out of range. Out-of-range
+  `inactiveIds` entries and out-of-range `protoIndices` are skipped with a warning.
+- **Tensor views are now invalidated when their physics scene is deleted.**
+  Destroying the scene notifies subscribers as `ePTScene`, which the simulation
+  view ignored -- it kept reporting valid while the GPU path held the freed
+  `PxScene` as a raw pointer, so the next read jumped through a stale vtable
+  (observed from an on-step callback via `GpuRigidBodyView::getVelocities`;
+  NvBugs 6521047). The view now records the scene it is bound to and invalidates
+  on its destruction, the same way it already did for bodies, links and shapes.
+
+  Replacing a stage's physics scene is fixed along with it. The scene's cached
+  simulation data is now dropped when the scene is destroyed, so a view created
+  afterwards is built against the live scene rather than handed buffers, actor
+  maps and a CUDA context belonging to the freed one.
+- **Ragged articulation views no longer read past an articulation's own DOFs.** A view
+  spanning articulations of different sizes reports `getMaxDofs()`/`getMaxLinks()` as the
+  maximum over its entries and pads every row out to that width, but the per-articulation
+  accessors are bounded by each articulation's own count. Several call sites walked to the
+  maximum: the GPU articulation-view constructor queried the metatype for padding columns
+  (logging an error per column), and the CPU Coriolis and gravity-compensation readers indexed
+  the PhysX articulation cache past its end, producing out-of-bounds reads and sign-flipped
+  values. Padding columns now read as `0`, matching the convention used elsewhere in the
+  tensor API. `IArticulationView::getUsdDofPath`/`getUsdLinkPath` also returned a pointer into
+  a path destroyed on return; the path is now held for the call's lifetime. The padding-null
+  contract and the returned buffer's lifetime are documented on the view interfaces.
+  Separately, a view mixing fixed- and floating-base articulations is now refused by the
+  accessors whose row layout is derived from base type — `getCoriolisAndCentrifugal-
+  CompensationForces`, `getGravityCompensationForces` and `getArticulationCentroidalMomentum`.
+  They took that layout from the first entry and applied it to all of them, reading a
+  fixed-base articulation's cache six values past its end when the first entry was
+  floating-base. They now fail with an error naming the remedy: build one view per base type.
+  Raggedness in DOF or link count alone is unaffected.
+- **Index tensors are now bounded by the view's entry count.** The loop over an index tensor was
+  driven entirely by the descriptor's declared shape; nothing cross-checked it against the view,
+  and the real allocation size is not knowable from a descriptor. A shape larger than the view's
+  entry count therefore walked off the end of the caller's buffer, which is how NvBugs 6504465
+  ended up faulting inside the CUDA driver's reserved address range. Every index-taking entry
+  point now rejects an oversized index tensor with a logged error, matching how the data tensor
+  was already size-checked -- the articulation, rigid-body, GPU deformable-body and
+  deformable-material views, the
+  property setters implemented on the shared base classes, and the GPU staged setters, whose
+  device-to-host copy is sized from the descriptor and so read past the caller's allocation
+  before any bound applied.
+
+  **Contract change.** An index tensor may now hold at most as many indices as the view has
+  entries. Previously a CPU view silently accepted an oversized one, processing the in-range
+  indices and skipping the rest, so a caller passing more indices than entities -- duplicates, or
+  a deliberately padded index array -- worked and will now fail with an error. That set can never
+  be legitimate: it is exactly the set these functions build for themselves when no index tensor
+  is supplied. Out-of-range index *values* within a correctly sized tensor are unaffected and
+  continue to be skipped.
+- **Character controllers now load and update on an OVStage-backed stage.** A prim
+  carrying `PhysxCharacterControllerAPI` had never produced a controller on any
+  non-USD parse source: the OVStage walker had no `emitCct`, and its scan result's
+  `ccts` list was not forwarded onto the scanned stage. An empty list is
+  indistinguishable from a stage that authors no controller, so nothing reported the
+  loss. Post-attach `physxCharacterController:*` property edits were dropped for the
+  same reason on the change-feed side - `PhysxCharacterControllerAPI` was missing from
+  the known-physics family lists that decide whether a path's changes are delivered at
+  all, in the initial seed, the structural refresh, and the cached read path alike.
+  A controller on a capsule with no authored `radius` now also falls back to the
+  `UsdGeomCapsule` schema value of `0.5` rather than `1.0`, which had made an
+  unauthored controller twice as wide as the USD path wherever the source has no
+  backing USD stage to resolve the fallback through.
+- **No spurious default physics scene on a scoped OVStage scan.** "This stage authors
+  no `PhysicsScene`" is a whole-stage fact, but the OVStage walker concluded it from any
+  scan whose result held no scene - including an incremental re-scan rooted at a single
+  newly added prim. Each such scan published an extra synthetic
+  `/__defaultPhysicsScene__`, reported as an additional object-created notification where
+  the USD path reports none. Synthesis is now gated on a genuinely unscoped scan; a
+  scoped initial load still gets the loader's own default-scene fallback. A scan scoped
+  purely by excluded subtrees counts as scoped for the same reason, which closes the same
+  hole on the direct scan entry point (stage loading itself always scans from the
+  pseudo-root, so it was never reachable that way).
+- **`UsdGeomPoints` prims answer OVStage type-identity questions consistently.**
+  `Points` was listed under `Xformable` and `PointBased` but not under `Gprim`, so the
+  same prim answered true to two of its base types and false to the third. A points
+  cloud therefore satisfied the deformable-body root gate (`Xformable` and not
+  `Gprim`) and was admitted as a deformable root. Note this does not give a points
+  cloud a collision shape on OVStage - that dispatch does not exist yet.
+- **Stale SDF views are rejected before any GPU work.**
+  `evaluate()` on an `SdfView` whose stage was torn down by `reset_stage()` or
+  `detach_ovstage()` already raised `RuntimeError` instead of crashing,
+  but the validity check ran after the implicit warmup, so a stale
+  handle could still trigger a simulation step against the newly attached stage
+  before the error was returned. The handle is now resolved and validated first,
+  and the stale call has no side effects.
+- **Deformable skinning synchronization no longer crashes when the CUDA context
+  is unavailable.** It now warns once and skips.
+- **Clone transform documentation now matches the existing target-root placement
+  behavior.** Each `anchor_transforms` entry is the final
+  absolute world pose of the exact target subtree root. Descendants keep their
+  poses relative to the source subtree root.
+- **OmniPVD C-API recording config is independent of config-entry order.**
+  `ovphysx_create_instance()` now applies the recording
+  directory before either the typed or raw Carbonite output-enable trigger when
+  reusing the process-wide runtime, so `[OUTPUT_ENABLED, OVD_RECORDING_DIRECTORY]`
+  produces the requested `.ovd` capture just like the reverse order.
+- **Bounding-sphere and bounding-cube colliders now honor the prim's world
+  scale.** Both approximations copied unscaled mesh points into the merged mesh
+  description, and unlike the cooked-mesh path there is no later scale to apply,
+  so the resulting sphere or box was sized in mesh-local units. A gprim scaled by
+  0.01 produced a collider 100 times too large — correctly placed and rotated,
+  but overlapping everything around it from the first step.
+- **Live transform edits reach colliders inside an instanceable prim.** Editing
+  the transform of an instanceable prim's own root never reached the PhysX
+  collider for its referenced subtree once the scene had cooked, so the collider
+  stayed at its first-cook pose. The descendant walk now descends into instance
+  proxies, and a static actor's pose is no longer re-derived from a source prim
+  that resolves inside the shared prototype, which discarded the
+  instance-specific pose. Affects assets whose instance root carries the
+  collision API while the geometry lives on nested prims in the prototype.
+- **Object-deletion callbacks now run while a simulation is shutting down.**
+  Tensor simulation views subscribed with the default notification gate, which
+  is deliberately closed as a simulation ends, so the handler that invalidates a
+  view when its scene is released never ran on that path. Views could survive
+  their scene until the next explicit detach.
+- **Crash when a GPU scene was created while another was being torn down.** The
+  scene-release path moved its scene map aside before deleting the scenes, so a
+  GPU setup re-entering during that loop saw no live scenes and was free to
+  release and recreate the CUDA context manager that the scenes still held. The
+  round-robin cursor that picks a context manager was also used without being
+  reduced, so it could index past the end of its vector and return a non-null
+  garbage pointer that passed every null check.
+- **Crash from a mass update on an unresolved object.** A rigid-body mass update
+  carrying the invalid object id indexed the internal record array with it,
+  reading far past the end of the array. The invalid id is now skipped, the
+  object-creation result is checked before it is recorded, and entry ids are
+  bounds-checked before they become record references.
+- **Crash from an actor released during an active-actor callback.** Actors
+  released while active-actor results were being processed left stale references
+  behind. Released actors are now tracked and skipped.
+- **Crash when a body's simulation owner changed and the body was then
+  removed.** Changing the owner reassigned the actor's scene pointer without
+  moving it between the scenes' actor lists, so the removal searched the wrong
+  list, found nothing, and freed the actor anyway — leaving a dangling pointer
+  that the next simulation reset dereferenced.
+- **Crash when OmniPVD output was toggled with a scene attached.** Changing the
+  recording setting recreated the PhysX SDK object even though live scenes still
+  belonged to it. The recreation is now deferred while any scene is attached,
+  and the requested setting takes effect at the next attach.
+- **Crash from concurrent profile-statistics collection during replication.**
+  Replication opened a profile scope in two lambdas that run concurrently, and
+  both appended to the same unsynchronized statistics vector. Profiling is on by
+  default, so this affected every session that cloned.
+- **Removing the default-simulator setting no longer crashes.** A null value for
+  that setting is handled instead of dereferenced.
+- **Getting-started examples now step synchronously.** The Python quickstart,
+  the READMEs and the shipped Hello World sample used the asynchronous
+  `step()` for a single-step workflow, so Hello World could report success
+  before the step finished and cleanup could lose the detailed operation error.
+  They now use `step_sync()`. The advanced async samples are unchanged.
+- **The Python tensor-bindings sample now shows a link that actually moves.**
+  It applied articulation velocity targets but printed link 0, which the bundled
+  fixture fixes to the world, so the output looked static while all 14 driven
+  links moved. It now reports the chain tip, like the C sample, and checks that
+  the displayed pose really changed before reporting success. The misleading
+  X-Euler line is gone — the fixture's revolute joints turn about Y.
+
+### Removed
+- **pkg-config support (`ovphysx.pc`).** The generated `.pc` file could not
+  describe the whole dependency chain: the public headers include ovstage
+  headers, and ovstage publishes no pkg-config metadata, so a consumer still had
+  to inject ovstage's include and library paths by hand. `find_package(ovphysx)`
+  resolves the chain through `find_dependency(ovstage)` and is the supported
+  integration path.
+- **`ovphysx.dlpack.ManagedDLTensor` and its DLPack capsule provider.** The Python
+  output read returns `warp.array`, so the hand-written wrapper and its
+  `__dlpack__()` capsule export are gone rather than kept as a second result type
+  The ctypes mirror of the DLPack structs remains for the
+  compatibility APIs that still type their Python arguments as DLPack.
 
 ### Known limitations
 - **Point-instancer rigid bodies are not available to TensorBindingsAPI.**
@@ -452,520 +1466,4 @@ All notable changes to `ovphysx` are documented in this file.
   rigid-body tensor-binding rows. With the default empty-binding behavior, a
   binding that targets only the point instancer has count zero. Read instance
   state through output read; control it by authoring the point-instancer arrays
-  through ovstage. (NVBugs 6481085 / OMPE-102217.)
-- **ovstage-authored clones are not available to TensorBindingsAPI in 0.5.**
-  Draining an `ovstage.Stage.clone()` / `ovstage_clone()` delta with
-  `update_from_ovstage()` creates the corresponding physics objects, but
-  TensorBindingsAPI does not discover them. After the source Stage is populated
-  and attached, and after any later committed source edits are drained,
-  tensor-based multi-environment workloads must use `PhysX.clone()` /
-  `ovphysx_clone()` and complete direct cloning before `warmup_gpu()` or the
-  first simulation step. Direct cloning invalidates existing tensor and contact
-  bindings; destroy and recreate them before use. Do not also drain a duplicate
-  ovstage clone delta for the same targets. Complete support for ovstage-authored
-  clones in TensorBindingsAPI is scheduled for ovstage after 0.5.
-
-### Fixed
-- **Object-change callbacks no longer fire for the initial stage population
-  (NVBugs 6473870 / OMPE-102206).** A subscriber registered before an
-  `attach_ovstage()` / `update_from_ovstage()` populated its scene received a
-  spurious `on_object_created` callback for every actor and shape of the initial
-  population, contradicting the documented contract that the initial population is
-  not notified (the caller already has that state from setup). ovphysx subscribes
-  with `stopCallbackWhenSimStopped=false` so it also observes reset/clone events
-  while stopped; that flag used to bypass the runtime's initial-population
-  suppression as well. The runtime now suppresses the initial population for every
-  subscriber by default, independent of the simulation-stopped gate.
-- **SDF mesh colliders no longer hang attach under CPU-only mode (NVBugs 6480595).**
-  Authoring a dynamic rigid body with an SDF mesh collider
-  (`PhysxSDFMeshCollisionAPI`, `physics:approximation="sdf"`) and attaching while
-  in CPU-only mode (`PhysX.set_cpu_mode(True)`) previously hung `attach` forever:
-  the synchronous attach-time SDF cook requested GPU cooking on the ujitso agent,
-  which could not create a CUDA context, and attach then blocked on an infinite
-  cook wait that the canceled build never signaled. SDF cooking now falls back to
-  the CPU builder whenever no CUDA device is available, so the body cooks and
-  simulates on CPU. GPU cooking is unchanged when a device is present.
-- **`ovphysx_create_instance()` rejects a null config-entry array with a
-  nonzero count (NVBug 6481076 / OMPE-102221).** With an active lifecycle, the
-  C API now returns `OVPHYSX_API_INVALID_ARGUMENT` without changing the output
-  handle or starting the runtime, instead of silently ignoring the pair and
-  returning a live instance.
-- **Malformed DLPack metadata is rejected before traversal
-  (NVBug 6394727).** The Python `__dlpack__` ingestion path now raises
-  `ValueError` when a producer reports a rank outside the supported range of
-  1 through 8 or a null shape, before indexing its shape or stride metadata.
-- **`ManagedDLTensor` cleanup waits for all DLPack borrowers
-  (NVBug 6473877 / OMPE-102207).** The Python wrapper and every capsule exported
-  from it now share the wrapper's lifetime. A capsule retains its producer until
-  the capsule or its consumer releases the managed tensor, while the producer
-  remains the sole owner of the user cleanup callback. The callback therefore
-  runs exactly once after the wrapper and all borrowers are gone, preventing
-  both premature cleanup and the previous double callback.
-- **Large `clone()` batches retain every runtime target path (NVBugs 6471168).**
-  The replicator rename callback previously received integer path handles encoded
-  from temporary `SdfPath` objects that had already been destroyed. At large
-  batch sizes, allocator reuse made some clones unavailable under their requested
-  runtime paths and from tensor bindings even though all PhysX actors were created.
-  The clone call now owns every target `SdfPath` until synchronous
-  replication completes, so wildcard and explicit tensor bindings resolve the
-  full batch deterministically.
-- **Ovstage output reads now return live DirectGPU rigid-body and articulation-link
-  state.** Position, orientation, linear velocity, and angular velocity are gathered
-  from PhysX DirectGPU state, using the scene-wide articulation-link stride.
-- **Live deformable output reads under DirectGPU.** The ovstage-native output
-  read now refreshes volume and surface sim-mesh positions and velocities from
-  the device when per-frame USD write-back is disabled. In scenes where
-  sleeping is enabled, `ALL` scope also refreshes sleeping deformables instead
-  of returning last-awake data. (NVBugs 6464833 / OMPE-101753.)
-- **Tensor path matcher: same-name over-match, unanchored alternation, and `**` duplicates fixed.** Three corrections to the leaf-recursive pattern matching that shipped in 0.4.1 for `create_articulation_view()` / `create_rigid_body_view()` / `create_rigid_contact_view()`. (1) A leaf that recurs nested inside its own match (e.g. `Robot/Disc001/robot/Disc001` under pattern `/envs/*/robot/Disc001`) is now suppressed -- shallowest wins -- so a match is counted once; this fixes the IsaacLab 3.0 contact-sensor "expected 1, found 2" filter-count error. (2) An alternation leaf like `base_link|link_0` is anchored as `^(base_link|link_0)$`, so it no longer also matches `base_link_extra` / `prefix_link_0` and silently enlarges views. (3) After an explicit `**` the final leaf is direct-matched rather than re-recursed from every root, so contact `filterPaths` and SDF views (which do not pointer-dedup) no longer receive duplicate paths.
-- **The resolver and OmniClient runtime now come from the exact OVStage package
-  selected by the build.** The direct `omniusdresolver_ov_openusd_0.25.11_nopy`
-  and `omni_client_library` Packman dependencies are removed. Native packaging
-  stages the matched OVStage resolver, registry, OmniClient, and
-  `omniverse_connection` set, while wheel packaging continues to leave the USD
-  and resolver singleton to the paired OVStage wheel. OVStage-provided notices
-  are preserved in the SDK and wheel license payloads. Windows wheel startup
-  registers both OVStage runtime directories before loading `ovphysx.dll`, so
-  the external USD monolith resolves without relying on `PATH`. Startup also verifies
-  the loaded OmniClient version against the staged OVStage provider and fails
-  closed instead of reusing a foreign Kit client.
-- **Debug compilation now consistently uses Release runtime dependencies.**
-  The published OVStage package provides a Release-only resolver, OmniClient,
-  and `omniverse_connection` set. Internal and public builds therefore default
-  to Release runtime dependencies, and an explicit true-Debug runtime request
-  fails at configuration time instead of mixing incompatible runtime variants.
-- **Wildcard tensor bindings over a top-level runtime clone now resolve the
-  cloned bodies.** After `clone()`-ing a source subtree onto a brand-new
-  top-level target (e.g. `/World` -> `/World_clone0`), a pattern binding such as
-  `create_tensor_binding(pattern="/World_clone0/*")` resolved 0 bodies even
-  though the clone materialized real bodies (explicit prim paths found them). The
-  replicator registered the clone root under the absolute root `/` instead of the
-  (empty) pseudo-root, so the internal-DB path matcher -- which selects roots by
-  an empty parent -- never enumerated it. Nested clone targets under an existing
-  parent (e.g. `/World/envs/env0` -> `/World/envs/env1`) were unaffected.
-  (NVBugs 6421194 / OMPE-100487.)
-- **Embedded NUL bytes in prim paths and patterns are rejected consistently
-  across the whole API.** `get_object_type()`, `create_tensor_binding()`,
-  `create_sdf_view()`, `get_physx_ptr()`, `clone()`, `create_contact_binding()`,
-  and the scene-query SHAPE geometry (`sweep()` / `overlap()`) no longer silently
-  mis-resolve paths carrying an
-  embedded NUL byte (truncation, glob broadening, or wrong-object matches); they
-  now return `OVPHYSX_API_INVALID_ARGUMENT`. To make this safe once, the
-  remaining `const char*` path inputs at the C ABI were converted to the
-  length-prefixed `ovphysx_string_t`: `ovphysx_get_object_type()`,
-  `ovphysx_get_physx_ptr()`, and the `prim_path` field of
-  `ovphysx_scene_query_geometry_desc_t.shape`. **Migration (C):** wrap literals
-  with `OVPHYSX_LITERAL("/path")` or runtime strings with `ovphysx_cstr(str)`.
-  The experimental C++ `PhysX::getPhysXPtr()` and Python `get_object_type()` /
-  `sweep()` / `overlap()` signatures are unchanged. Closes NVBugs 6433621.
-- **`clone()` now invalidates the tensor backend's cached per-stage simulation data (NVBug 6428316).**
-  The DirectGPU tensor backend builds its `GpuSimulationData` lazily on the first
-  `createSimulationView()` and snapshots the rigid-dynamic population at that instant --
-  the actor->row map and the shared DirectGPU staging buffers (`mRdPoseDev`,
-  `mRdLinearVelAccDev`, ...) are sized by the then-current rigid-dynamic count. A
-  `create_tensor_binding()` issued *before* `clone()` locked that count in at the pre-clone
-  value; `clone()` then added bodies without rebuilding the cache. Every binding created
-  afterward logged `Internal error: Unresolved rigid dynamic index!` for the cloned actors
-  and overflowed the undersized buffers, producing silent, non-deterministic partial writes
-  (only a subset of environments received a batched `RIGID_BODY_VELOCITY` write, while
-  `write()` still returned success) and an intermittent CUDA illegal memory access
-  (`cuda_status=700`) on the `RIGID_BODY_POSE` read path. `clone()` now calls
-  `resetStage()` so the next `createSimulationView()` rebuilds the cache against the
-  post-clone population. Existing tensor and contact bindings are invalidated by
-  `clone()` and must be recreated before use. Best practice remains
-  `attach -> clone -> warmup_gpu -> create bindings`.
-- **`clone()` after the first `step()` is now rejected on CPU as well as GPU, and duplicate `target_paths` are rejected.**
-  Previously the after-step precondition only fired on GPU (`gpu_warmup_done` was
-  never set in CPU mode), so code validated on CPU could clone after stepping
-  with no error and then fail with a `RuntimeError` the first time it ran on
-  GPU. `clone()` also silently collapsed a batch of duplicate `target_paths`
-  into a single clone with no diagnostic. Both are now rejected with
-  `OVPHYSX_API_INVALID_ARGUMENT` / `RuntimeError` in either mode. Closes NVBug
-  6433668.
-- **ovstage-backed loads now preserve child-collider poses and disabled state.**
-  Collision shapes below a rigid-body prim retain their body-relative
-  translation, rotation, and scale, and `physics:collisionEnabled=false` is
-  honored. Previously, child colliders could be created at an identity pose and
-  authored-disabled shapes could remain active, producing incorrect contact
-  geometry and destabilizing constrained bodies.
-- **Hard CPU-only mode rejects CUDA TensorBinding buffers before CUDA access.**
-  When `ovphysx_set_cpu_mode(true)` is active or `OVPHYSX_DISABLE_GPU` is set,
-  tensor reads and writes return `OVPHYSX_API_DEVICE_MISMATCH` for `kDLCUDA`
-  and `kDLCUDAManaged` buffers without loading the optional CUDA interface or
-  attempting a copy. Normal CPU/CUDA cross-device staging remains supported
-  outside hard CPU-only mode.
-- **ovstage attach/detach now preserves reusable runtime state.** Runtime
-  attach failures are reported instead of being returned as success, and
-  partial attachment state retains no pointer to the caller-owned Stage.
-  Ovstage-only and nonresident-backing attachments keyed internally by zero
-  now detach cleanly and can be reattached. Backing-stage query errors fail
-  instead of silently becoming stageless attachments.
-- **`ovphysx_reset_stage()` now releases TensorAPI per-stage simulation data.**
-  Stage reset and ovstage detach now invalidate the stage's tensor views and release
-  cached CPU/GPU simulation buffers. Previously this cleanup happened only when
-  destroying the whole `PhysX` instance, so repeated reset-and-reload cycles
-  could exhaust GPU memory.
-- **Closed-loop output-read samples now verify ovstage control writes.** The
-  Python sample now seals control and output ordinals before consuming or
-  publishing them, and the C sample updates the existing
-  `physics:velocity` attribute without replacing its semantic metadata. Both
-  samples alternate the requested x velocity, fail if the simulation does not
-  observe the change, and print the resulting velocity and displacement.
-- **ovstage compatibility is pinned to `0.1.0.342061` (C++ build
-  `0.1.0.342061.191b00ed`).** The integration uses the renamed
-  `ovstage_api_status_t` and enqueue `op_index` fields, declares fixed versus
-  array writes explicitly, and uses population-owned USD files instead of the
-  removed caller-owned StageCache entry point. The artifact fetch rejects a
-  wheel whose embedded build version does not match the C++ package, avoiding
-  a silent mismatch at the moving `0.1.0` release URL. The SDK preserves the
-  release's curated third-party notices as
-  `ovstage-THIRD-PARTY-NOTICES.txt` at the package root.
-- **ovstage consumers must rebuild against the pinned `342061` headers.** This
-  release replaces `cuda_event` in the data and write payloads with
-  `cuda_sync { stream, wait_event }`, changing the public read-group layout.
-- **Repeated ovstage wholesale reloads no longer corrupt Fabric change
-  tracking.** Build `342061` clears stale dirty-bucket IDs when wholesale
-  population resets and recycles its buckets, so an `ALL -> reset -> ALL`
-  sequence produces a valid change snapshot instead of crashing hierarchy
-  consumers. Ovstage owns and loads the matching Fabric implementation from its
-  released package.
-- **Initial ovstage snapshots are no longer replayed after attach.**
-  `ovphysx_attach_ovstage(..., read_ordinal)` already parses that ordinal, so
-  the shipped helpers, samples, tests, and docs now call
-  `ovphysx_update_from_ovstage()` only for later application-authored writes.
-  This avoids treating the population's `usd-prim-type` columns as a second
-  structural resync before the first DirectGPU step.
-- **Whole-prim removals from ovstage now remove their runtime physics
-  objects.** Build `342061` emits ranged-read tombstones for deleted
-  `usd-prim-type` and `usd-schemas` metadata even when their write floors do not
-  advance. The change feed uses those tombstones to trigger a final structural
-  snapshot, so `ovphysx_update_from_ovstage()` destroys only paths that remain
-  absent and preserves a prim deleted and recreated within the same range. The
-  previous latest-state liveness probe is gone.
-- **Runtime clones preserve contact-report registration after ovstage loads.**
-  Replication now finalizes deferred source setup even when the source objects
-  were already parsed by an ovstage update. This resolves pending contact-report
-  actor pairs before cloning, so a clone created before the first simulation
-  step reports contacts like its source body.
-- **The namespaced USD runtime follows the ovrtx 0.4 / ovstage 0.1 release pin.**
-  Source builds and Python runtime tests use `0.25.11.kit.4-gl.21081`, kept
-  together to preserve ABI alignment.
-- **ovstage's nested Cubric plugin is excluded from CPU-safe ovphysx
-  packages.** Build `0.1.0.342061` keeps the plugin under
-  `bin/plugins/omni.cubric/`; installation now removes that directory alongside
-  the older layout so unused CUDA startup code is not exposed on CPU-only hosts.
-- **`ovphysx_write_tensor_binding` now accepts int64 index tensors.** Previously
-  only int32 was accepted; int64 indices are now staged down to int32 before the
-  write. Fixes silent no-op on tendon and other indexed writes when callers
-  (e.g. the IsaacSim umbrella adapter) supply int64 indices.
-- **Windows CPU-only ovstage Stage creation is restored.** Build `342061`
-  retains the GPU-optional bootstrap fix from Kit (MR 47029), so the Windows
-  no-GPU CI again exercises both C++ `cpu_usd` ingestion and the Python Stage
-  smoke instead of skipping them. On a GPU-capable host, ovstage Stage creation
-  still activates a CUDA primary context before ovphysx attach; the separate
-  hard CPU-only no-driver-touch test remains skipped at that upstream boundary.
-- **Windows ovruntime teardown is a blocking gate again.** Build `342061`
-  retains the corrected Cubric/usdrt plugin load order. The temporary
-  `339558`-specific allow-failure and pin guard are removed; the complete
-  Windows unit suite must now exit cleanly after its assertions pass.
-
-### Removed
-- **Fabric-based cloning implementation removed** (the `ovphysx_clone` / `PhysX.clone()` API is
-  retained, reimplemented on the PhysX replicator -- see Added). Deleted the Fabric scenegraph-
-  duplication path behind the old clone: the sidecar clone entry points, `ovphysxReplicator.cpp`,
-  the `ovphysx_set_clone_env_root()` remnants, and the Fabric prim duplication itself. Part of the
-  Fabric retirement (ADR-0009): this was the last consumer of Fabric-based runtime prim duplication
-  in ovphysx. Data-plane duplication of the *scenegraph* is now an ovstage responsibility
-  (`ovstage_clone` + instancing); ovphysx's `clone()` handles the *physics* instantiation via the
-  replicator. **Behavior change:** the old Fabric path authored per-clone scenegraph prims; the new
-  path does not -- clones exist as runtime physics only.
-- **Vestigial Fabric data-movement layer (internal).** Deleted the orphaned
-  `DataMovementImpl` Fabric stage-lifecycle / DLPack holder -- dead code superseded by the
-  ovstage read/write API (0.5.1, ADR-0007); no public API or behavior change. Part of the
-  Fabric retirement (ADR-0009).
-- **Obsolete Fabric config knobs.** Dropped the internally-forced `/physics/fabricEnabled`
-  setting and removed `/physics/fabricUpdateVelocities` from the config docs/examples/tests.
-  Both had zero readers after the runtime Fabric removal (no-ops); they may still be passed
-  via `carbonite_overrides` but no longer do anything.
-- **Host Fabric/USDRT bootstrap payload removed.** Standalone Physics tests and
-  packaged ovphysx artifacts no longer preload or flatten a second Fabric,
-  scenegraph, hierarchy, or population stack from `ovruntime_deps`. ovstage owns
-  and loads its matching population runtime from its module-relative plugin tree.
-  ovphysx retains `ovruntime_deps` for unrelated services such as datastore,
-  UJITSO, blobkey, Cubric, GPU compute, and USD support.
-
----
-
-## [0.5.1] - Date TBD
-
-### Added
-- **Physics output read API (ovstage), ADR-0007.** New C surface to read simulation output the ovstage way and feed it straight back into the attached Stage with no repack: `ovphysx_query(type, scope)` → `ovphysx_fetch_query_result` (attribute / total-prim discovery) → `ovphysx_read(attrs…)` → loop `ovphysx_fetch_read_next(&group_ptr)` → `ovphysx_release_group` → `ovphysx_release_read` / `ovphysx_release_query`. Generic over simulated type (`ovphysx_sim_object_type_t`: rigid body incl. point-instancer arrays, articulation link, joint state, vehicle wheel, deformable volume/surface, particle set) and scope (`ovphysx_object_scope_t` all/active).
-  - **ovstage-native types (no ovphysx mirror).** The public headers `#include` the ovstage/ovx headers and use ovstage's own types directly — a read group is `ovstage_read_group_t`, discovery is `ovstage_query_result_t`, attribute names are `ovx_string_or_token_t` (string name OR interned token, in one call), the attached Stage is an `ovstage_instance_t*`, and `ovphysx_update_from_ovstage` takes an `ovstage_ordinal_range_t`. This replaces the earlier ovphysx mirror structs (`ovphysx_read_group_t` / `ovphysx_query_result_t` / `ovphysx_attribute_semantic_t`) and the separate `ovphysx_read_tokens`. ovphysx ships the ovstage headers in its SDK/wheel alongside `ovphysx.h`.
-  - **Producer-owned group.** `ovphysx_fetch_read_next` hands back a borrowed `const ovstage_read_group_t*` (producer-owned) instead of filling a caller struct; ovstage owns its allocation and lifetime. Consumers must compile against the exact pinned ovstage headers when the public struct layout changes. The group's borrowed `data.tensors` (tuple width in `dtype.lanes`), `prims.list` interned prim set, `attribute` token, and `data.index_map`/`mask` feed the ovstage write path verbatim.
-  - **Distinct EOF vs. error end to end.** The lower ovstage-native `ovxFetchReadNext` returns a 3-valued `OvxReadStatus` (ok / end-of-iteration / error) instead of a bool, so the public `OVPHYSX_API_END_OF_ITERATION` is forwarded faithfully and a genuine fetch error is no longer reported as EOF.
-  - **Empty match is a valid query.** A successful query with no matches returns a nonzero handle whose read reaches end-of-iteration immediately (`total_prim_count == 0`); a zero `out_query` means FAILURE only.
-  - **Stable group lifetime.** A fetched group's borrowed storage (struct + tensors / index_map / prims.list) is valid until its `read_group_id` is released via `ovphysx_release_group` — fetching further groups, or an intervening `ovphysx_step`, does NOT invalidate earlier ones (the data path gathers into session-owned storage; the sidecar retains each live group and forwards `ovxReleaseGroup`).
-  - **Point-instancer output forwards verbatim.** Rigid-body point-instancer output always emits the instancer's FULL instance array (by-index, no element-axis scatter) for both ALL and ACTIVE scope, so the group is directly assignable into the ovstage write path; ACTIVE scope only selects which instancers are emitted, not a sparse subset of instances.
-  - Routes through the internal sidecar (which links the ovstage + runtime read symbols) via `g_sidecar*` function pointers — it now passes the ovstage types straight through (no translation). Requires an attached ovstage Stage (ovstage-only). Documented in the **ovstage Integration** docs section (ordinal-coupling principle: app→physics edits flow through `ovphysx_update_from_ovstage`; physics→app output is written at ordinals drain ranges never cover). Python: context-managed `PhysX.read(...)` / `PhysX.read_tokens(...)` → `ReadResult.groups` (`ReadGroup` exposes `tensors`/`index_map`/`semantic`/`ordinal`/`layout_generation` + the interned `prim_list`/`attribute`), valid for the `with` block.
-- **Closed-loop ovstage output-read samples (`output_read.py`, `output_read_c/`).** New Python and C samples driving the full ADR-0007 round trip on the falling-boxes scene: each frame authors a `physics:velocity` control edit on every rigid body into ovstage (reusing the read group's interned `prim_list` directly — no path rebuild), drains only the control ordinal via `ovphysx_update_from_ovstage`, steps, then reads every `ovphysx_sim_object_type_t` back and writes each group into ovstage under `sim:<attribute>` at a separate output ordinal that is never drained. The C sample reuses the group's borrowed `tensors` verbatim as the write payload (true no-repack); both demonstrate the two-lane (control/output) ordinal scheme end to end.
-- **Codeless PhysX USD schemas exposed for external authoring/validation (OMPE-86833).** ovphysx now ships the PhysX USD schemas as codeless schema artifacts (a `plugInfo.json` with `Type=resource` plus `generatedSchema.usda`, no compiled library) in both the wheel and the SDK package under a stable path: `<ovphysx>/schemas/physx/<module>/resources/`. The exposed set is derived at packaging time from the PhysX schema modules ovphysx actually ships (e.g. `PhysxSchema` and `OmniUsdPhysicsDeformableSchema`), so it always matches the packaged schema revision and tracks module additions/removals automatically. They are intended for external tooling that drives a stock `usd-core` from PyPI; ovphysx still has no dependency on any external schema package. New pure-Python helpers `ovphysx.codeless_schema_paths()` (per-module `resources/` directories, ready for `pxr.Plug.Registry().RegisterPlugins()`) and `ovphysx.codeless_schema_root()` discover them without triggering native loading. A reference example + regression test (`tests/python_samples_extra/codeless_schemas/`) registers the schemas into a stock `usd-core`, applies `PhysxRigidBodyAPI` by identifier, and asserts `prim.HasAPI(...)`. Codeless schemas carry no compiled C++/Python bindings; use USD's generic schema API and apply by schema identifier (e.g. `prim.ApplyAPI("PhysxRigidBodyAPI")`).
-- **PhysX debug-visualization C API (`ovphysx_debug_render_*`).** Drives the standard PhysX debug-visualization pipeline (`omni::physx::IPhysxVisualization`) from hosts that step PhysX through ovphysx: `ovphysx_debug_render_enable()` authors the `eVISUALIZATION` flags + applies the selected params; `ovphysx_debug_render_set_parameter()` / `_get_parameter()` toggle/read one `ovphysx_debug_render_parameter_t` (a public enum mirroring `omni::physx::PhysXVisualizationParameter`, validated against `NONE`/out-of-range); `ovphysx_debug_render_set_scale()` / `_get_scale()` set/read the master scale (rejects non-finite/negative); `ovphysx_debug_render_set_culling_box()` (rejects non-finite / `min > max`); and `ovphysx_debug_render_get_points()` / `_lines()` / `_triangles()` hand back read-only buffers of `ovphysx_debug_point_t` / `_line_t` / `_triangle_t` (layout `static_assert`-locked to the omni::physx structs), valid until the next step or any stage/scene change. `_get_parameter` / `_get_scale` return the values last set through ovphysx (cached on the ovphysx side; no interface change). No high-level Python wrapper yet. Pairs with an omni.physx fix so a non-positive viewport gizmo scale no longer zeroes `eSCALE` (debug viz works in headless / minimal hosts without seeding any persistent setting).
-- **`ovphysx_articulation_update_kinematic()` (OMPE-94459, _KINEMATIC_UPDATE_NOOP fix).** New C API that forces propagation of root + DOF state into every articulation link buffer in the binding by calling `PxArticulationReducedCoordinate::updateKinematic`. Flags map to `PxArticulationKinematicFlag::ePOSITION` / `eVELOCITY` via `OVPHYSX_ARTICULATION_KINEMATIC_POSITION` / `_VELOCITY` (bitmask). Closes the umbrella's `OvPhysxSimulationView.update_articulations_kinematic` no-op gap so dof-position / root-transform writes can be observed in link-pose reads without simulating. Routes through the internal sidecar (which links PhysX SDK headers); the main ovphysx target stays free of direct PhysX includes via a new `g_sidecarUpdateKinematic` function pointer. Python: callable directly via `_bindings._lib.ovphysx_articulation_update_kinematic(handle, binding_handle, flags)` with typed ctypes argtypes already registered; no high-level Python wrapper class method yet.
-- **`OVPHYSX_TENSOR_ARTICULATION_DOF_DRIVE_MODEL_F32` tensor type (OMPE-94459, JointPerformanceEnvelope fix).** New read/write `[N, D, 3]` tensor wiring `IArticulationView::set/getDofDriveModelProperties`. Per-DOF triple is (`speedEffortGradient`, `maxActuatorVelocity`, `velocityDependentResistance`). Writes are applied only to DOFs with `PhysxDrivePerformanceEnvelopeAPI` applied in USD; the engine silently drops writes on other DOFs and logs a warning. Python: `TensorType.ARTICULATION_DOF_DRIVE_MODEL`.
-- **`ovphysx_get_object_type()` (OMPE-94459 #13).** New C API + Python `PhysX.get_object_type(prim_path)` that classifies a USD prim by TensorAPI object type (`RIGID_BODY`, `ARTICULATION`, `ARTICULATION_LINK`, `ARTICULATION_ROOT_LINK`, `ARTICULATION_JOINT`, or `INVALID`). Mirrors `omni::physics::tensors::ObjectType`. Closes the umbrella adapter's missing `sim.get_object_type` surface.
-- **GPU-mode shape-property and uint8-flag tensor writes (OMPE-94459 §B9).** Fixed articulation and rigid-body tensor views rejecting GPU tensors for material, contact-offset, rest-offset, and uint8 flag writes. The GPU view implementations now stage GPU tensors to host via cudaMemcpy before delegating to the shared runtime logic, and matching reads copy host-side results back to GPU destination tensors. Both indexed and masked GPU writes on the three articulation shape-property bindings (`ARTICULATION_SHAPE_FRICTION_AND_RESTITUTION`, `ARTICULATION_CONTACT_OFFSET`, `ARTICULATION_REST_OFFSET`) and the rigid-body uint8 bindings now succeed instead of returning "Incompatible device".
-- **`OVPHYSX_TENSOR_RIGID_BODY_DISABLE_SIMULATION_BOOL` tensor type (OMPE-94459 §B5).** New read/write `[N]` uint8/bool tensor that toggles `PxActorFlag::eDISABLE_SIMULATION` on the underlying `PxRigidActor` so disabled bodies stop participating in the next solver step. Writes apply at runtime (no stage detach required) -- the underlying TensorAPI `IRigidBodyView::set/getDisableSimulations` was already wired engine-side, this just exposes it through the ovphysx binding. Both indexed and masked-write paths are supported. Python: `TensorType.RIGID_BODY_DISABLE_SIMULATION`. The umbrella adapter's `RigidBodyView.set_disable_simulations()` can now drive the engine directly instead of writing USD `physics:rigidBodyEnabled`. The C ABI dtype validator (`validateTensorShape`) gained a per-type dtype expectation so `DISABLE_SIMULATION` accepts uint8/bool while every other binding continues to require float32; `ovphysx_get_tensor_binding_spec()` reports the matching dtype.
-- **Python `TensorBinding.dtype` and `TensorBinding.spec`.** The high-level Python `TensorBinding` now preserves the native `ovphysx_get_tensor_binding_spec()` dtype in addition to `shape` and `ndim`. `binding.dtype` returns a Python-owned `DLDataType` copy, and `binding.spec` returns `TensorBindingSpec(dtype, ndim, shape)`. Downstream view builders can allocate buffers from the native DLPack spec and no longer need to assume every `TensorType` is float32.
-- **`ovphysx_read_raw_contact_data()` and `ovphysx_contact_binding_get_other_actor_paths_from_ids()` (OMPE-94459 #21).** Filter-less variant of `ovphysx_read_contact_data` -- returns every contact involving each sensor body plus a per-contact opaque actor id resolvable to a USD prim path. Shapes (C = max_contact_data_count, S = sensor_count): force/separation `[C, 1]`, point/normal `[C, 3]`, count/start_indices `[S]` (1D, no filter dim), other_actor_ids `[C]` int64/uint64. Pair with `ovphysx_contact_binding_get_other_actor_paths_from_ids(ids_tensor, out_paths, max, &count)` to translate ids to USD prim paths in bulk. Filter pattern length may be 0 when creating the binding (raw reads don't use a filter dim). Python: `ContactBinding.read_raw_contact_data(force, point, normal, separation, count, start_indices, ids)` + `get_other_actor_paths_from_ids(ids_array) -> list[str]`. Also extends the DLPack->TensorDesc converter (`DLPackConvert.h`) to accept int64/uint64 in addition to the previous float32/int32/uint32/uint8/bool set, required by the actor-id tensors.
-- **Three new articulation tensor types for centroidal dynamics (OMPE-94459, §B0):** `OVPHYSX_TENSOR_ARTICULATION_MASS_CENTER_WORLD_F32` (12), `OVPHYSX_TENSOR_ARTICULATION_MASS_CENTER_LOCAL_F32` (13), and `OVPHYSX_TENSOR_ARTICULATION_CENTROIDAL_MOMENTUM_F32` (14). Both mass-center variants return `[N, 3]` (per-articulation COM in world or root-local frame); the centroidal-momentum tensor returns `[N, 6, D+7]` packing the 6x(D+6) centroidal-momentum matrix plus a 6x1 bias column (D = `getMaxDofs()`). All three are read-only -- writes return `OVPHYSX_API_INVALID_ARGUMENT`. Centroidal momentum requires floating-base articulations; the tensor backend returns an error on fixed-base. Python mirror: `TensorType.ARTICULATION_MASS_CENTER_WORLD`, `..._MASS_CENTER_LOCAL`, `..._CENTROIDAL_MOMENTUM`.
-- **`ovphysx_rigid_body_view_wake_up()` / `ovphysx_rigid_body_view_sleep()` (OMPE-94459 follow-up).** New C APIs + Python `TensorBinding.wake_up(indices=None)` / `TensorBinding.sleep(indices=None)` that wake or put to sleep rigid bodies in a binding, mirroring `PxRigidDynamic::wakeUp` / `putToSleep`. Optional int32 indices tensor for a subset; pass NULL/None to act on every body in the binding. Bodies with `RIGID_BODY_DISABLE_SIMULATION` set are silently skipped. `GpuRigidBodyView` overrides added so both calls work on the GPU pipeline (stages GPU indices to host then delegates to base impl).
-- **`ovphysx_destroy_instance` resets the tensor SimulationBackend (OMPE-94459 follow-up).** The backend caches `mGpuSimData` / `mCpuSimData` as plugin-scope singletons and clears them only on stop events that ovphysx does not emit. With plugins resident across destroy/create cycles, the next instance + stage attach would inherit stale GPU data causing "Internal error: Unresolved rigid dynamic index!" and heap corruption. Fix: the destroy path now resets the tensor backend after per-binding cleanup so the next instance starts with fresh backend state.
-- **GPU `link-incoming-joint-force` / `dof-projected-joint-forces` return zeros pre-simulate, matching CPU.** `GpuArticulationView::{getDofProjectedJointForces, getLinkIncomingJointForce}` now zero the destination tensor when `SimulationBackend::getStepCount() == 0`, mirroring CPU's existing `PxMemZero` on `dt == 0.0f`. Previously the GPU readback streamed uninitialised PhysX SDK buffer bytes to the projection kernel.
-- **Disable/enable is now correct across multiple GPU rigid-body views over the same scene (OMPE-94459).** `GpuRigidBodyView`'s rd-GPU-index refresh was gated on a per-view dirty flag set only by that view's own `setDisableSimulations`. With two or more views covering the same body, a disable/enable issued through one view freed/reallocated the shared GPU island index without dirtying the sibling views, so those siblings kept reading the stale/invalid index. Fix: `setDisableSimulations` now bumps a scene-wide `mRdDisableEpoch` on the shared `GpuSimulationData`; `refreshRdGpuIndices()` compares it against a per-view last-seen value and rebuilds when a sibling toggled a body. The fast path stays a true no-op for the common single-view, disable-free case.
-- **`ovphysx_set_cpu_mode(bool)` process-level CPU-only API.** Call before creating any instances to force the entire process into CPU-only mode: no CUDA driver is touched, all PhysX scenes use CPU dynamics regardless of their USD `physxScene:enableGPUDynamics` setting, and Fabric stages use CPU compute. Returns `OVPHYSX_API_ERROR` if any instances are currently active, or if attempting to revert after CPU mode has been applied (sticky for the process lifetime). C++: `PhysX::setCpuMode(bool)` (static). Python: `PhysX.set_cpu_mode(bool)` (static). For per-scene CPU control without this flag, author scenes explicitly with `physxScene:enableGPUDynamics = false` and `physxScene:broadphaseType = "MBP"`.
-
-### Changed
-- **`omni.physics.tensors` plugin removed; `TensorApi` now ships in the static PhysX runtime (OMPE-96492).** The standalone `omni.physics.tensors.plugin` (`TensorApi` + `BackendRegistry`) is deleted. Because PhysX is the only simulation backend and it already lives inside `OvruntimePhysX`, the backend registry was pure indirection: the static PhysX runtime now owns the `TensorApi` function table directly and `createSimulationView` / `reset` / `resetStage` call the in-runtime backend directly. `BackendRegistry` and `ISimulationBackend` are removed, and the now-meaningless per-call `backendName` selector is dropped from `createSimulationView` / `reset` / `resetStage`. Behavior-neutral for tensor API consumers; the `ISimulationView` / typed-view contract is unchanged. The Python `omni.physics.tensors` module and frontends were already retired upstream; this completes the removal.
-- **`omni.physx.tensors` backend folded into the static PhysX runtime (OMPE-96492).** The standalone `omni.physx.tensors` Carbonite plugin is no longer built or packaged; the PhysX tensor backend now ships in the static `OvruntimePhysX` runtime linked into `libovphysx`.
-- **Non-Fabric ovruntime interfaces no longer use Carbonite plugin metadata or publication.** Their existing function-table shapes are preserved, while ovphysx links the core `OvruntimePhysX` runtime statically and starts it directly after Carbonite has loaded the remaining dependency plugins. This removes the old Carbonite interface-acquisition and lifecycle path without changing public ovphysx C, C++, or Python APIs. `IPhysxFabric` is excluded because Fabric is being removed separately.
-- **Tensor API path matcher no longer depends on Fabric/usdrt (OMPE-96492).** The tensor wildcard matcher no longer attaches a usdrt/Fabric stage. On fabric-replicated stages it resolves against the Omni PhysX internal path<->object database and restores numeric clone order via `ObjectId`; on USD-authored stages it uses the plain-USD matcher unchanged. The tensor backend is now Fabric-include-free, so the tensor API works in headless ovphysx without a populated Fabric stage. Behavior-preserving -- tensor-view row/env ordering is unchanged on both paths (validated bit-identical against trunk on the IsaacLab parity matrix).
-- **Empty tensor bindings are quieter and better documented.** Rigid-body and articulation tensor bindings created from optional broad patterns that match zero prims remain valid zero-count bindings, but no longer emit error/warning-level native logs through ovphysx. Explicit `prim_paths` still surface no-match diagnostics for typos. Python `create_tensor_binding(..., raise_if_empty=True)` now keeps its opt-in `ValueError` while explaining that optional or broad readback should use the default `raise_if_empty=False` and check `binding.count`. The tensor-binding tutorial now calls out empty optional bindings explicitly.
-- **Remaining top-level thread-safety docs now match the singleton runtime contract.** The C header, module-level Python docs, and overview no longer claim that multiple `PhysX` instances are fully thread-safe; they now match the developer guide's process-global runtime guidance.
-- **`active_cuda_gpus` GPU ordinal selection applied when simulation first binds to a stage.** The ordinal specified in `ovphysx_create_args::active_cuda_gpus` is applied lazily, not at `create_instance` time. All stage bindings serialize through an internal mutex so concurrent instances with different ordinals do not stomp each other's setting.
-- **Tensor backend per-stage view invalidation.** `SimulationBackend::resetStage(stageId)` now finds and invalidates all `ISimulationView` objects for that stage before releasing sim data, preventing stale-view use-after-free. `ovphysx_destroy_instance` calls `resetStage` automatically on teardown.
-
-### Removed
-- **Dead pre-ovstage USD-from-URI loader removed (internal).** The unused internal `omni_sdk_physx_load_usd` and its sidecar open path (`ovphysx_open_usd_stage` + `ovphysx_open_usd_stage_wrapper` + `g_sidecarOpenUsdStage`) — a leftover from when ovphysx opened USD itself — had no caller or public entrypoint and are gone. ovphysx never resolves a remote/local USD asset itself in the ovstage model (the application populates the Stage and attaches it). The sidecar's `ovphysx_close_usd_stage` is retained (the instance-destroy/unload path still erases the attached USD stage from `UsdUtilsStageCache`). No public-API change.
-- **`ovphysx_configure_s3()` / `ovphysx_configure_azure_sas()` removed from the public interface.** Also gone: the C++ `PhysX::configureS3` / `PhysX::configureAzureSas` and the Python `configure_s3` / `configure_azure_sas`. They were thin forwarders to OmniClient's process-global `omniClientSetS3Configuration2` / `omniClientSetAzureSASToken` — a pre-ovstage vestige from when ovphysx loaded USD itself. In the ovstage model the **application** owns population (`ovstage.population.open_usd(...)`) and ovphysx only consumes an already-populated Stage, so remote-asset credentials belong on the asset layer (OmniClient), configured by the app before population — not on ovphysx. **Migration:** configure credentials directly on OmniClient (`omni.client` S3/Azure config in Python, or `omniClientSetS3Configuration2` / `omniClientSetAzureSASToken` in C/C++) before calling `open_usd`. See the **Remote USD Loading** developer-guide section.
-- **`ovphysx_get_stage_id()` removed from the public interface.** The C API `ovphysx_get_stage_id`, the C++ wrapper `PhysX::getStageId`, and the Python `PhysX.get_stage_id()` are gone. The attached USD stage id was an internal correlation detail that leaked the runtime's stage-cache identity into the public surface; applications own their ovstage Stage and ordinals directly and have no need for it. **Migration:** there is no replacement — drop the call. Internal callers that still need the attached stage id read it from instance state directly.
-- **Init-time joint-limit snap removed (OMPE-94459).** Articulation joints authored resting outside their limits are no longer snapped back into range at load (`addArticulationToScene`). The runtime no longer silently corrects authoring errors -- an out-of-limit joint now follows normal solver behavior. Assets must author joint state within limits; authoring-time validation will flag violations (tracked in a follow-up validation ticket).
-- **`cpu_only` field removed from `ovphysx_create_args`.** Replaced by the process-level `ovphysx_set_cpu_mode()` API. The previous per-instance flag had process-wide effect on PhysX dynamics mode and was removed to make that scope explicit. **Migration:** replace `args.cpu_only = true` / `PhysX(cpu_only=True)` with a call to `ovphysx_set_cpu_mode(true)` / `PhysX.set_cpu_mode(True)` before creating any instances.
-- **`DeviceType` Python enum and `PhysXDeviceError` exception removed.** Neither was raised or checked by any current code path.
-
-### Fixed
-- **Use-after-free in `BaseDeformableMaterialView::release()`.** `release()` nulled `mSim` before `delete this`, so the destructor skipped `mSim->_onChildRelease(this)` and the freed view was never removed from the parent `BaseSimulationView::mDeformableMaterialViews`. The dangling pointer was later dereferenced by `~BaseSimulationView`'s `_onParentRelease()` sweep, `check()`, and `release(recursive)`, corrupting the heap (intermittent SIGABRT, `unlink_chunk` hang, or segfault) after repeated deformable-material-view create/release cycles over a persistent per-stage_id `SimulationView`. Fix: drop `mSim = nullptr;` so `release()` matches the six sibling views and lets the destructor deregister normally.
-
-## [0.5.0] - Date TBD
-
-### Changed or Fixed
-- **Breaking: stepping no longer takes an explicit simulation-time argument; the
-  scene-teardown `reset()` is renamed to `reset_stage()` (mirrors ovrtx).**
-  `step()`, `step_sync()`, and `step_n_sync()` (Python) and `ovphysx_step()`,
-  `ovphysx_step_sync()`, `ovphysx_step_n_sync()` (C, plus the experimental
-  `PhysX::step()` C++ wrapper) drop their `current_time` / `sim_time`
-  parameter. Simulation time is now a private implementation detail: the library
-  tracks it internally (starting at `0.0`, advancing by `dt` per step, by `n*dt`
-  for `step_n_sync`) purely to feed engine/Fabric timestamps. This removes the
-  per-call `sim_time += n*dt` boilerplate from RL training loops. The clock is
-  owned by the application/ovstage, so it is not exposed through the ovphysx
-  public API.
-  - **The previous scene-teardown `reset()` is renamed to `reset_stage()` /
-    `ovphysx_reset_stage()`** (mirrors `ovrtx_reset_stage()`); it clears the
-    stage.
-
-  **Migration:** callers of the old `reset()` (scene teardown) must switch to
-  `reset_stage()`. The C++ wrapper's `reset(handle)` (RAII handle reset) is
-  unchanged.
-
-### Added
-- **UJITSO cooked-collider cache is now enabled (local, in-process).** The kitless
-  loader previously never loaded the UJITSO plugins, so collision cooking always ran
-  uncached — every convex / triangle-mesh / SDF / convex-decomposition collider was
-  re-cooked on every launch (the dominant cost in IsaacLab's repeated-launch
-  workflow). ovphysx now loads `omni.blobkey`, `carb.datastore`,
-  `carb.ujitsoagent`, and `carb.ujitso.default` before the runtime cooking service and persists
-  cooked colliders to a content-addressed cache, so they are reused on the next launch.
-  The cache key includes the mesh geometry, cooking parameters, cooking type, and a
-  cooker version token, so a changed mesh/param or a different PhysX build is never
-  served a stale collider.
-  **Cache location is application-provided:** set
-  `PhysXConfig(cooked_collider_cache_dir="<dir>")` (C:
-  `OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY`) to the directory where cooked
-  colliders should persist. ovphysx does not read environment variables and does not
-  choose a location on the app's behalf; if no directory is configured, cooking still
-  works but does not persist across runs. The cache grows without automatic eviction —
-  delete the configured directory to reclaim space.
-  **Scope:** strictly local and in-process — no Omni Hub, Nucleus, or GRPC backends
-  (those datastore backends default to off; an app may opt in via
-  `carbonite_overrides`). Disable cooking with
-  `/physics/cooking/ujitsoCollisionCooking=false`. If collision cooking is enabled but
-  the UJITSO plugins fail to load, initialization fails fast with a clear error rather
-  than silently cooking uncached; a non-writable configured cache dir logs a warning
-  and continues (no persistence). Addresses NVBugs 6262606.
-- **Process-global lifecycle API.** New C entrypoints
-  `ovphysx_initialize()` and `ovphysx_shutdown()` manage one active process
-  lifecycle state. A second initialize before shutdown returns
-  `OVPHYSX_API_ERROR`. C callers must initialize before
-  `ovphysx_create_instance()`. `ovphysx_shutdown()` clears this lifecycle state
-  but does not unload Carbonite, OmniClient, or the static PhysX runtime; those
-  remain resident until process exit. CPU/GPU selection remains on
-  `ovphysx_create_instance()`.
-- **Release runtime-dependency selection for public Debug builds.** New CMake
-  option `OVPHYSX_USE_RELEASE_RUNTIME_DEPS` selects release Packman runtime
-  dependencies while preserving the requested compile build type. Internal
-  checkouts default this option to `OFF`, so Debug builds keep matching Debug
-  runtime dependencies unless explicitly opted in. Generated public source
-  packages default it to `ON`, because public debug dependency packages are
-  not shipped. The selected runtime-deps config is propagated through fetch,
-  configure, install, and package steps; `cmake -P scripts/test_runtime_deps_config.cmake`
-  validates the default matrix.
-- **PhysX object-change notifications via `ovphysx_subscribe_object_changes()` / `ovphysx_unsubscribe_object_changes()` (C) and `ovphysx::subscribeObjectChanges()` returning an RAII `ObjectChangeSubscription` (experimental C++).** Subscribers receive optional `on_object_created`, `on_object_destroyed`, and `on_all_objects_destroyed` callbacks; the per-object callbacks deliver the prim path and `ovphysx_physx_type_t`, while `on_all_objects_destroyed` is a no-payload bulk-invalidation signal. Pair with `ovphysx_get_physx_ptr()` to refresh or invalidate cached pointers. Subscriptions are process-global; callbacks fire for events on every ovphysx instance in the process. **Limitations:** `ovphysx_clone()` does not currently emit creation notifications. After clone returns, refresh pointer caches explicitly. `ovphysx_reset_stage()` reliably emits `on_all_objects_destroyed` for bulk teardown. Not exposed in Python (the Python layer no longer surfaces raw PhysX pointers).
-- **`PhysX.get_contact_report(copy=True)` returns Python-owned data safe to retain across steps.** The default `copy=False` keeps existing zero-copy ctypes-array semantics for back-compat. `copy=True` materializes `headers`, `points`, and `anchors` into `list[dict]` so callers (RL training loops, anything that holds contact data across a step) are no longer exposed to the silent-corruption hazard when internal C buffers are reallocated by the next `step()` / `step_sync()`. Docstring now carries a prominent lifetime warning. Closes NVBug 6172700.
-- **`ResourceWarning` for forgotten `PhysX()` releases (Python).** Use `with PhysX():` or an explicit `release()` for deterministic cleanup. For instances that are garbage-collected mid-run, `__del__` emits a `ResourceWarning` (silent by default, surfaced under `python -W default::ResourceWarning` or in pytest) and then calls `release()` itself. The Python API no longer registers a process-exit `atexit` cleanup hook, so applications must not rely on interpreter shutdown to release live instances. `PhysX.release()` is unchanged (still idempotent). Closes NVBug 6172756.
-- **Opt-in benchmark suite** under `tests/benchmarks/` (C++ harness, framework files copied near-verbatim from `omni.physx/tests/test.benchmarks/` so future updates merge cleanly) and `tests/python_benchmarks/` (`pytest-benchmark`-based). Both surfaces are off by default. Build the C++ binary with `cmake -DOVPHYSX_BUILD_BENCHMARKS=ON -P scripts/build.cmake` (or `./build.sh --benchmarks`); run the suite via `cmake -P scripts/test_benchmarks_cpp.cmake` (or `..._python.cmake`). Coverage: USD scene load, per-step simulation cost (CPU + GPU), `clone()` scaling at N = 64/256/1024, and tensor-binding read/write throughput. The C++ binary supports `--regenerate` to refresh baselines and `--slop=<pct>` for the regression bound. The CTest label is `benchmarks` and is excluded from `validate_all`. Heavy fixtures are generated and stored next to their generator scripts under `tests/benchmarks/data/`: `kapla_tower_sphere_collapse.usda` (1728 starting-asleep Kapla blocks + a sphere that fires in to collapse them) replaces the prior `boxes_falling`-based step benchmarks; `articulation_pileup.usda` (16 free-falling articulations of increasing link count over a dense scatter of dynamic obstacles, adapted from `omni.physxdemos.scenes.ArticulationDemo`) replaces the prior `links_chain` step benchmark. All benchmark fixtures now author `physxScene:timeStepsPerSecond = 240` so step-timing comparisons across fixtures are consistent.
-
-### Changed or Fixed
-- **ovphysx SDK and wheel builds now use static Carbonite as the only supported
-  Carbonite mode.** The package no longer ships the core `libcarb` /
-  `carb.dll` runtime library; `libovphysx` owns the single static Carbonite
-  framework and packages only the remaining no-libcarb Carbonite bootstrap
-  shims needed at runtime. Build and install RPATH handling was tightened so
-  shipped binaries resolve bundled plugins without depending on a dynamic
-  Carbonite SDK layout. TensorBindingsAPI Python acquisition now routes through
-  the ovphysx-owned static framework instead of a module-local `CARB_BINDINGS`
-  Carbonite entrypoint. The package verifier now hard-fails install and wheel
-  builds if core Carbonite leaks back in as `libcarb.so`, `libcarb.so.*`,
-  `carb.dll`, ELF `DT_NEEDED`/`DT_SONAME`, or a PE import; the per-plugin
-  no-libcarb shims (`libcarb.<name>.plugin.so` / `carb.<name>.plugin.dll`) remain
-  allowed. No caller migration is required for normal wheel or dynamically linked
-  C/C++ SDK usage.
-- **`clone()` after `warmup_gpu()` / first step now raises `RuntimeError` instead of silently corrupting state.** Previously `clone()` after GPU warmup logged a native `CARB_LOG_WARN` and proceeded, reallocating DirectGPU buffers and silently corrupting solver state — a documented hazard with no safe-fallback semantics. The C runtime (`ovphysx_clone`) now returns `OVPHYSX_API_INVALID_ARGUMENT` when `gpu_warmup_done` is set, with the message *"clone() must be called before warmup_gpu() and before the first step()…"*; Python `PhysX.clone()` propagates this as `RuntimeError`. Call `reset_stage()` first if you need to clone after warmup. Closes NVBug 6172717.
-- **`ovphysx_subscribe_object_changes()` no longer retries per-call when invoked before instance creation; it returns `OVPHYSX_API_ERROR` immediately if the internal sidecar isn't loaded yet.** Previously the call retried symbol resolution on every attempt to accommodate subscribers that beat instance creation. The sidecar is now resolved eagerly during `ovphysx_create_instance`, so subscribe must be called *after* at least one instance exists. **Migration:** reorder callers to `ovphysx_create_instance` before any `ovphysx_subscribe_object_changes`; the error message names the missing sidecar load as the cause.
-- **Multi-instance and threading documentation corrected to reflect the process-global runtime.** The developer guide previously implied that multiple `ovphysx` instances are safe to use concurrently across threads. They are not: every instance shares one attached scene process-wide. Callers must serialize across instances and treat the per-instance handle as bookkeeping only. The implementation has not changed; this is a spec correction. See [docs/developer_guide.md](../docs/developer_guide.md) Multi-Instance Support + Threading sections for the corrected guarantees.
-
-### Removed
-- **The legacy USD-handle load/unload API is removed**, superseded by the ovstage attach/update flow. `ovphysx_add_usd()` / `ovphysx_remove_usd()` (C), `PhysX::removeUsd()` (experimental C++), and `PhysX.remove_usd()` (Python) are gone, along with the per-instance `ovphysx_usd_handle_t`-keyed tracking. Load USD by populating an ovstage Stage and attaching it with `ovphysx_attach_ovstage()`; use `ovphysx_update_from_ovstage()` for later edits and clear the stage with `ovphysx_reset_stage()`. **Migration:** replace `add_usd` / `remove_usd` with the ovstage attach/update/reset flow.
-- **Raw PhysX SDK pointers are no longer exposed through the Python API.** `PhysX.get_physx_ptr()` and the `ovphysx.PhysXType` enum are removed. The Python wrapper returned the pointer as a plain `int` address, so the only realistic use was passing it to a C/C++ extension and casting it back to a PhysX SDK type — a heavy migration for a Python-stable API to keep guaranteeing, with no in-Python use case that warranted it. The C (`ovphysx_get_physx_ptr()`, `ovphysx_physx_type_t`) and experimental C++ (`PhysX::getPhysXPtr()`) entrypoints are unchanged. **Migration:** this use case is no longer supported in Python. Callers that need raw PhysX SDK objects should call `ovphysx_get_physx_ptr()` from a native (C/C++) extension; the C and C++ surfaces continue to ship and remain the canonical interop path.
-
-## [0.4.1] - 2026-05-12
-
-### Breaking Changes
-- **`gpu_index` replaced by `active_cuda_gpus` on `ovphysx_create_args`.** The `int32_t gpu_index` field is removed. Use `ovphysx_string_t active_cuda_gpus` instead: a comma-separated string of CUDA device ordinals. Single-GPU usage: `args.active_cuda_gpus = ovphysx_cstr("2")` (C), `PhysX(active_cuda_gpus="2")` (Python), `createArgs.setActiveCudaGpus("2")` (C++). Default (empty) selects GPU 0, matching the old `gpu_index=0` default. Multi-GPU patterns `"0,1,...,N-1"` (all GPUs, round-robin) and `"1,2,...,N-1"` (all except first) are now supported. The C++ `CreateArgs::setGpuIndex(int32_t)` is replaced by `setActiveCudaGpus(const std::string&)`.
-- **Pre-loaded Carbonite PhysX stacks are rejected.** ovphysx can share a process with other OV libraries through namespaced USD reuse, but it no longer reuses a pre-existing Carbonite-published PhysX runtime stack. If another Carbonite user already registered incompatible PhysX plugins before `ovphysx_create_instance()`, creation fails with a clear error. Conflicting pre-set `/physics/cudaDevice` or `/physics/suppressReadback` values now fail instead of being silently accepted.
-- **DirectGPU mode is now opt-in instead of auto-enabled for GPU instances.** Previously, `ovphysx_create_instance(device=GPU)` unconditionally set `/physics/suppressReadback=true` and `/physics/suppressFabricUpdate=true` (via two paths: a startup-time `CarboniteLoader::setStartupSuppressReadback` write before PhysX plugins loaded, and a per-instance write at GPU bootstrap), which routes PhysX into `eENABLE_DIRECT_GPU_API` mode. DirectGPU is incompatible with contact modification (per PhysX SDK guidance: contact-modify requires a CPU roundtrip), so any scene relying on `eMODIFY_CONTACTS` -- including the surface-velocity / conveyor pattern, custom contact callbacks, and contact-shaping filter rules -- silently failed to form kinematic-vs-dynamic broadphase pairs in GPU mode. **Both** write paths are removed: ovphysx no longer touches `/physics/suppressReadback` or `/physics/suppressFabricUpdate` at any point in its lifecycle. The previously-public `CarboniteLoader::setStartupSuppressReadback` static method is removed (internal API; no public callers). Hosts that want DirectGPU's tensor-pipeline performance (e.g. Isaac Lab) opt in by either (a) setting `/physics/suppressReadback=true` via Carbonite settings *before* `ovphysx_create_instance` if they have direct ISettings access, or (b) passing `ovphysx_config_entry_carbonite("/physics/suppressReadback", "true")` in `create_args.config_entries` (Python: `PhysXConfig(carbonite_overrides={"/physics/suppressReadback": True})`). At startup ovphysx now logs a `[CarboniteLoader] /physics/suppressReadback=...` INFO line so misconfigurations are visible. See `ovphysx_create_args` in [`include/ovphysx/ovphysx_types.h`](../include/ovphysx/ovphysx_types.h) for the full trade-off documentation. **Migration:** GPU users who relied on suppressReadback being auto-enabled must set it explicitly via one of the routes above. **Perf note:** DirectGPU is the faster simulation path for tensor-pipeline workloads, so existing GPU consumers will see slower per-step times until they opt in -- the change here is correctness (contact-modify scenes now work in GPU mode), not a perf regression of the new default. Users who need contact-modify in GPU mode now get correct behavior with no code change.
-- **`ovphysx`'s Python `import` now auto-registers ovphysx's namespaced USD schema/plugin path** by appending it to `OV_PXR_PLUGINPATH_2511` once at module load. Eliminates a class of silent-schema-drop bugs in mixed-process apps (`import ovphysx; import ovrtx` or vice versa) where USD's `PlugRegistry` is populated lazily on first stage open and never re-scans, so any subsystem that didn't get its plugin path published *before that moment* has its applied schemas silently dropped. The implicit registration in `CarboniteLoader` continues to cover the ovphysx-only-in-process case; this Python-side change is purely additive. The auto-call is pure-Python (env-var append only) and does not trigger native loading -- USD and `_bindings` remain deferred to first native-attribute access (`PhysX`, `ContactBinding`, ...). Failures (e.g. partially-installed checkout with no `plugins/usd` directory) are surfaced as a logged warning rather than raised so `import ovphysx` does not hard-fail. The existing public `register_schema_paths()` is unchanged and remains idempotent (already-called guard); apps that called it explicitly continue to work and the explicit call becomes a cheap no-op on success. C/C++ apps are unaffected -- still use `ovphysx_register_schema_paths()` explicitly. **Migration:** none required. Apps that need an env-var-pure import can `os.environ.pop("OV_PXR_PLUGINPATH_2511")` after `import ovphysx`.
-
-### Added
-- **`add_subdirectory()` support for source-link builds.** Users can now include ovphysx in their own CMake project via `add_subdirectory()` instead of `find_package()`, enabling an edit-rebuild workflow where changing ovphysx sources automatically recompiles them. Dependencies are auto-fetched at configure time (`OVPHYSX_FETCH_DEPS=ON`). See the [source-link tutorial](tutorials/source_link_build.md) and `tests/c_samples/hello_world_source_link/` for a complete example.
-- **`ovphysx_attach_ovstage()` / `ovphysx_update_from_ovstage()` / `ovphysx_detach_ovstage()` for ovstage consumer integration.** Pair an `ovstage_instance_t*` with an ovphysx instance at the initial read ordinal, then explicitly drain subsequent committed edits by passing the producer-owned ordinal range to `ovphysx_update_from_ovstage(handle, from_ordinal, to_ordinal)`. Init-only attach rejects re-attach with `OVPHYSX_API_ERROR`; detach is idempotent. Python: `PhysX.attach_ovstage(stage)` accepts an `ovstage.Stage` or raw handle, `PhysX.update_from_ovstage(from_ordinal, to_ordinal)` drains later changes, and `PhysX.detach_ovstage()` detaches the caller-owned stage.
-- **Cross-device staged reads AND writes in `ovphysx_read_tensor_binding` / `ovphysx_write_tensor_binding` / `ovphysx_write_tensor_binding_masked`.** A CPU-declared `src`/`dst`/`mask`/`index` tensor now works against a GPU-bound binding, and a GPU-declared tensor works against a CPU-bound binding: the call transparently allocates a staging buffer on the binding's device (or host) and routes through `IOptionalCuda::memcpyDtoH` / `memcpyHtoD`. Reads stage-and-copy after the simView read; writes copy-and-stage before the simView write. Same-device combinations are unchanged. Cross-GPU (different ordinals) still returns `OVPHYSX_API_DEVICE_MISMATCH`.
-- **Schema path pre-registration API for multi-subsystem USD processes.** New C API `ovphysx_register_schema_paths()` and Python helper `ovphysx.register_schema_paths()` append ovphysx's namespaced USD schema/plugin root to `OV_PXR_PLUGINPATH_2511` before ovphysx initialization. Use this with peer subsystem equivalents such as `ovrtx_register_schema_paths()` before the first USD stage open or schema-registry access.
-- **Safer behavior when loading into a process with another Carbonite-owning library.** Previously, ovphysx would blindly load its own USD-dependent plugin stack on top of any framework already bootstrapped in the process. The USD-population availability guard is now narrowed to fire only in full-host mode rather than any-usdrt-user, so partial hosts that provide population utilities but not the physics-schema plugins now trigger ovphysx's own physics-schema plugin load instead of silently skipping it. In-process coexistence remains subject to ABI compatibility of the shared deps that both libraries link against (Fabric interface version, Carbonite version, USD build-package); when those don't line up, the new drift diagnostics (see `OVPHYSX_COEXIST_DIAGNOSTICS` and `config.toml build_package` below, plus the refuse-branch in `CarboniteLoader::initialize()` under *Changed or Fixed*) convert the failure into a named, actionable error instead of a silent plugin-resolution cascade.
-- **`OVPHYSX_COEXIST_DIAGNOSTICS=1` diagnostic env var.** Set to enable stderr-only diagnostic logging of the plugin-load and Fabric-acquire paths inside `ovphysx_create_instance` -- useful when triaging a "Dependency: [omni::physics::schema::IUsdPhysics v1.1] failed to be resolved" cascade or "Fabric interfaces unavailable" error in a coexistence context. Logs the Framework pointer, plugin-registry contents, `omni.physicsschema.plugin` registration state, and the Fabric interface-version list as seen by ovphysx. Unset: no behavior change.
-- **`OVPHYSX_COEXIST_REFUSE=1` opt-out env var.** Restores the legacy fail-fast-at-load behavior for users who would rather not attempt coexistence with another Carbonite-owning library. With the default coexistence flip (see *Changed or Fixed* below), `OVPHYSX_COEXIST_REFUSE=1` is the explicit off-ramp: ovphysx detects a foreign Carbonite framework and refuses to initialize with a sharp error message instead of proceeding. Default unset: ovphysx proceeds with coexistence and lets per-phase interface probes name any version skew at the failing plugin.
-- **Per-phase plugin-interface probes after static registration / `loadPlugins()`.** `CarboniteLoader::initialize()` now runs `tryAcquireInterface<>` against the primary interface of each core plugin loaded during static registration (`carb.dictionary`, `carb.settings`, `carb.tokens`, `carb.tasking`, `carb.filesystem`). If any returns null -- because a foreign-host plugin advertises an incompatible major/minor or because the plugin failed to load -- ovphysx fails fast with a single error line that names every plugin that did not satisfy ovphysx's expected interface version. Standalone ovphysx is unaffected. The probe converts what was previously an opaque `nullptr` cascade two layers down into a named, actionable error at load time, mirroring the existing `UsdVersionCheck` pattern for USD.
-- **USD build-package drift diagnostic in `config.toml`.** `config.toml` now records the exact USD packman package identifier ovphysx was linked against (e.g. `build_package = "0.25.11.kit.2-gl.19811"`, auto-populated at build time from the resolved `_build/target-deps/usd/release` symlink). At runtime, `UsdVersionCheck` resolves the loaded USD's canonical path, extracts its packman id, and compares. If the two differ -- e.g. ovphysx built against `0.25.11.kit.2` but another library preloaded `0.25.11.kit.1` -- a single warning line names both ids and points at Carbonite-plugin-resolution failure as the probable downstream symptom. Same-build case is silent.
-- **New `--devschema` flag** forwards to ovruntime for local physics schema builds.
-- **Multi-GPU scene distribution.** Pass `active_cuda_gpus="0,1,2"` (all N GPUs) or `active_cuda_gpus="1,2"` (all except GPU 0) to distribute scenes round-robin across the specified devices. Internally maps to `/physics/sceneMultiGPUMode = eAll` or `eSkipFirst`. Other patterns (e.g. `"0,2"` on a 4-GPU machine) return `OVPHYSX_API_INVALID_ARGUMENT` with a descriptive error; arbitrary subset support can be added in a future release without API changes.
-- **TensorBindingsAPI: standalone rigid body read-only queries** - `RIGID_BODY_ACCELERATION` (`[N,6]`), `RIGID_BODY_INV_MASS` (`[N]`), and `RIGID_BODY_INV_INERTIA` (`[N,9]`). The enum values use previously unused slots after `RIGID_BODY_WRENCH`; existing tensor enum values were not reordered.
-- **Articulation kinematic update API.** New C `ovphysx_update_articulations_kinematic()`, Python `PhysX.update_articulations_kinematic()`, and experimental C++ `PhysX::updateArticulationsKinematic()` recompute articulation link poses from current DOF positions. In GPU mode the first call may perform the standard DirectGPU warmup step; after warmup, the FK refresh does not run a normal simulation step or collision/contact work.
-- **TensorBinding row metadata for tensor bindings.** Python `TensorBinding.prim_paths` and C `ovphysx_tensor_binding_get_prim_paths()` return the resolved USD prim path for each rigid-body tensor row and the articulation root prim path for each articulation row.
-- **TensorBindingsAPI deformable support.** Added volume and surface deformable
-  body tensors (simulation positions, velocities, rest positions, simulation
-  element indices) plus volume collision element indices
-  (`DEFORMABLE_COLLISION_ELEMENT_INDICES_S32`, `[N,F,4]`, int32, read-only;
-  K=4 matches the tetrahedral element connectivity exposed by
-  `GpuVolumeDeformableBodyView`). Surface deformable tensors use
-  `createSurfaceDeformableBodyView` at bind time and share the same
-  read/write/masked-write paths as volume.
-  All body tensors bind to runtime deformable body views and require DirectGPU
-  mode. Added deformable material tensors for dynamic
-  friction, Young's modulus, and Poisson's ratio; material tensors are
-  CPU-backed. Fixed masked write for deformable material tensors
-  (`setDynamicFrictionMasked`, `setYoungsModulusMasked`,
-  `setPoissonsRatioMasked`). Simulation and collision element index tensors
-  report signed int32 DLPack metadata.
-- **Python tensor-binding empty-match guard.** `PhysX.create_tensor_binding(..., raise_if_empty=True)` now raises `ValueError` when the binding would match zero prims. The default remains `False`, preserving zero-count bindings for optional scene elements.
-- **Python binding lifetime warnings.** `TensorBinding` and `ContactBinding` now emit `ResourceWarning` if garbage collection cleans them up without an explicit `destroy()` or context-manager exit. This does not affect normal read/write paths; create bindings once outside simulation loops and reuse or destroy them explicitly.
-- **ContactBinding detailed contact/friction reads.** Added `sensor_paths`, `filter_paths`, `max_contact_data_count`, C `ovphysx_contact_binding_get_sensor_paths()`, `ovphysx_contact_binding_get_filter_paths()`, `ovphysx_get_contact_binding_capacity()`, `ovphysx_read_contact_data()`, `ovphysx_read_friction_data()`, and matching Python methods. The API uses flat `[C,*]` buffers with `[S,F]` count/start-index tensors. Detailed reads require filtered bindings (`filters_per_sensor > 0`); unfiltered bindings remain valid for aggregate net-force reads.
-- **Experimental C++ `CreateArgs` type and `PhysX::create(out, CreateArgs)`.** `CreateArgs` is a safe C++ wrapper for `ovphysx_create_args` that default-constructs to `OVPHYSX_CREATE_ARGS_DEFAULT` and exposes setters for `device`, `active_cuda_gpus`, `bundled_deps_path`, and config entries. Replaces the previous `create(PhysX&, config_entries, count)` overload.
-- **OmniPVD recording support via typed config.** Two new config entries enable `.ovd` recording: `omnipvd_output_enabled` (bool) and `omnipvd_ovd_recording_directory` (string). Both must be set at instance creation via `PhysXConfig` (Python) or `config_entries` on `ovphysx_create_args` (C/C++). These entries were previously available only via `carbonite_overrides`; they now have first-class typed fields. See [OmniPVD Recording tutorial](tutorials/omnipvd_recording.md).
-- **Source builds now use namespaced USD.** ovphysx builds against namespaced monolithic USD (`PXR_NS=ov`) so it can coexist with host applications that already load another USD runtime. **Migration for source builds:** update build scripts to fetch namespaced USD packages; classic modular USD is no longer supported.
-
-### Changed or Fixed
-- **ContactBinding device-mismatch errors now explain the DirectGPU opt-in.**
-  When a CPU-backed ContactBinding receives a CUDA output tensor, the error now
-  points out that `device="gpu"` enables GPU dynamics only and that
-  TensorAPI/ContactBinding CUDA views require `/physics/suppressReadback=true`
-  before instance creation. Behavior is unchanged.
-- **ovphysx startup now appends its namespaced USD schema path when `OV_PXR_PLUGINPATH_2511` is already set.** Previously `CarboniteLoader` only set the variable when it was empty, so pre-existing ovrtx or application paths could prevent ovphysx's own schema root from being published. Startup now shares the same append/dedupe logic as `ovphysx_register_schema_paths()` and does not modify `PXR_PLUGINPATH_NAME`. Startup and explicit pre-registration fail fast if ovphysx cannot find an existing `plugins/usd` directory, rather than publishing a missing path that USD silently ignores.
-- **Improved automatic GPU selection on multi-GPU systems.** When the physics device is not set explicitly, ovphysx now prefers the GPU already in use by the renderer, and otherwise picks the discrete GPU with the most memory. Previously device 0 was always chosen, which could result in physics running on a different GPU than the renderer on multi-GPU workstations. Users on single-GPU machines are unaffected; users on multi-GPU systems may see a different device selected than before.
-- **`ovphysx_clone()` now preserves `xformOp:scale` from source prims.** Previously, clones of prims with non-unit scale appeared at incorrect world-space size. The fix reads the source's scale (supporting both `double3` and `float3` attributes), writes it to each target, includes it in `xformOpOrder`, and incorporates it into the `localMatrix`.
-- **Contact binding now matches runtime-cloned sensor bodies.** Runtime clones created with `ovphysx_clone()` can exist only in Fabric/usdrt, where copied USD API-schema metadata may not be visible. Contact binding now keeps the strict `PhysxContactReportAPI` requirement for real USD prims while allowing clone-only runtime paths to validate through their PhysX actor pointer, so cloned environments produce the same contact-binding rows as rigid-body tensor bindings.
-- **`ovphysx_step_sync()` now calls `ensure_physics_attached()` before stepping**, matching the async `ovphysx_step()` path. Previously, the first `step_sync` after stage ingestion could run against an unattached stage, so features like OmniPVD recording finalization silently failed.
-- **Config entries are now applied before PhysX plugin loading** so that settings read during `createPhysics()` (e.g., OmniPVD recording) are in place at initialization time.
-- **TensorBindingsAPI shape property tensors now accept CPU buffers in GPU simulations.** Rigid-body and articulation material/contact/rest-offset tensors are PhysX parameter tensors and remain CPU-resident even when state tensors use CUDA buffers.
-- **ovphysx wheel bootstrap no longer sets `PYTHONHOME`.** Fixes mis-resolution of `sys.prefix` in child processes that spawn venv interpreters (Windows; e.g. rerun.io).
-- **Unified build flags.** `build.sh` / `build.bat` now accept the same flags as ovruntime: `-c`/`--clean`, `-x`/`--rebuild`, `-d`/`--debug`, `-r`/`--release` (default), `-t`/`--target <name>`, `-g`/`--generate`. **Note:** default is now release-only (was debug+release); `-t` is now `--target <name>` (use `--test-venv` for the old test-venv behavior).
-- **`create_articulation_view()` and `create_rigid_body_view()` pattern matching extended to reach nested bodies.** Patterns now support `**` for recursive descent and -- by default -- match a named final component against descendants at any depth so patterns like `/World/envs/env_*/Robot/<name>` keep working on deeper hierarchies. Views dedup by backing PhysX pointer. Set `/physics/tensors/recursiveLeafPatternMatch` to `false` to restore strict per-level matching. **Migration:** existing patterns may pick up additional prims at deeper levels. If that changes behavior, either set the Carbonite flag to `false` or switch to explicit absolute paths.
-- **`/ovphysx/latest/` on GitHub Pages now serves the docs directly** instead of redirecting to `/ovphysx/<version>/`. This fixes deep links such as the PyPI Changelog URL (`/latest/changelog.html`) which previously 404'd. Bookmarks to `/latest/` continue to work; bookmarks to versioned URLs are unchanged.
-
-### Removed
-- **Environment variables `OVPHYSX_ROOT`, `OVPHYSX_BIN_DIR`, `OVPHYSX_PLUGINS_DIR` removed.** All runtime paths are now derived from `OVPHYSX_LIB` (the single dev-mode override for the shared library path). **Migration:** replace any of the removed env vars with `OVPHYSX_LIB` pointing at the shared library.
-- **`ovphysx_set_shutting_down()` removed.** Full teardown now happens automatically when the last instance is destroyed via `ovphysx_destroy_instance()` (C/C++) or `release()` (Python). **Migration:** remove any `ovphysx_set_shutting_down()` calls.
-- **Legacy Python TensorAPI compatibility removed.** `ovphysx.tensors` is no longer shipped or exported. **Migration:** replace `ovphysx.tensors` imports with TensorBindingsAPI: use `physx.create_tensor_binding()` to create bindings, then `binding.read()` / `binding.write()` for data access.
-
-## [0.3] - 2026-03-31
-
-### Breaking Changes
-- **Settings API replaced with typed config system.** The old string-based settings (`settings_keys`/`settings_values`/`settings_count` on `ovphysx_create_args`; `ovphysx_set_global_setting()`/`ovphysx_get_global_setting()`; Python `PhysX(settings=...)`, `set_setting()`, `get_setting()`; C++ `PhysX::setSetting()`/`getSetting()`) are all removed. **Migration:** C — use `ovphysx_config_entry_t` array on `config_entries`/`config_entry_count` with builders from `ovphysx_config.h`, runtime `ovphysx_set_global_config()` and typed getters `ovphysx_get_global_config_bool/int32/float/string()`. Python — use `PhysX(config=PhysXConfig(num_threads=4))`, runtime `set_config_bool()`/`set_config_int32()` and matching getters. Arbitrary Carbonite paths remain accessible via `ovphysx_config_entry_carbonite()` (C/C++) or `PhysXConfig(carbonite_overrides={...})` (Python).
-- **`OVPHYSX_CONFIG_CUDA_DEVICE` removed** from `ovphysx_config_int32_t`. **Migration:** use `active_cuda_gpus` on `ovphysx_create_args` (C) or `PhysX(active_cuda_gpus=...)` (Python). Setting `/physics/cudaDevice` via `carbonite_overrides` now raises an error.
-- **Removed typed config entries** for settings not in Physics Preferences: `OVPHYSX_CONFIG_PHYSX_DISPATCHER`, `OVPHYSX_CONFIG_OMNI_PVD_OUTPUT_ENABLED`, `OVPHYSX_CONFIG_UJITSO_COLLISION_COOKING` (bool); `OVPHYSX_CONFIG_PVD_RECORDING_DIRECTORY` (string). **Migration:** these settings remain accessible via `carbonite_overrides`.
-- **Log level enum reordered to ascending severity** (matches ovrtx and industry convention). New values: `OVPHYSX_LOG_VERBOSE=0`, `OVPHYSX_LOG_INFO=1`, `OVPHYSX_LOG_WARNING=2` (unchanged), `OVPHYSX_LOG_ERROR=3`, `OVPHYSX_LOG_NONE=4`. **Migration:** code using symbolic names is unaffected; code using raw integer values must update.
-- **Error handling switched from inline error strings to thread-local `get_last_error()` query.** `ovphysx_result_t` and `ovphysx_enqueue_result_t` no longer have an `error` field. **Migration:** on failure, call `ovphysx_get_last_error()` on the same thread to retrieve the error message (valid until the next ovphysx API call on that thread). For `wait_op`, iterate `error_op_indices` and call `ovphysx_get_last_op_error()` per failed index, then `ovphysx_destroy_wait_result(&result)`. Removed: `ovphysx_destroy_error()`, `ovphysx_destroy_errors()`. Python API is unaffected (errors are raised as exceptions).
-- **`ContactEventHeader.stageId` type changed from `long` to `int64_t`** for cross-platform ABI stability. This changes the struct layout on Windows.
-- **`ovphysx_get_contact_report()` C signature changed**: now returns typed pointers (`const ovphysx_contact_event_header_t**`, `const ovphysx_contact_point_t**`) instead of `const void**`, and gained 2 new parameters (`out_friction_anchors`, `out_num_friction_anchors`). **Migration:** update pointer types and append `, NULL, NULL` for friction anchor parameters. C++ callers are unaffected (new params default to `nullptr`).
-- **Removed** `ovphysx_articulation_get_dof_count`, `_body_count`, `_joint_count`, `_is_fixed_base`, `_fixed_tendon_count`, `_spatial_tendon_count`. **Migration:** use `ovphysx_get_articulation_metadata(handle, binding, &meta)`. Python `TensorBinding` properties are unchanged.
-- **`ovphysx_clone()` parameter `parent_positions_xyz` replaced with `parent_transforms`** (7 floats per target: px, py, pz, qx, qy, qz, qw). **Migration:** replace `parent_positions_xyz=[x, y, z]` with `parent_transforms=[px, py, pz, 0, 0, 0, 1]` (append identity quaternion).
-- **Removed** `ovphysx_set_clone_env_root()` (C) and `set_clone_env_root()` (Python). **Migration:** no replacement needed — the first `clone()`, `simulate()`, or `warmup_gpu()` call triggers stage attach lazily.
-- **`ovphysx_device_t` enum reordered:** `OVPHYSX_DEVICE_AUTO = 0` (was 2) so zero-initialized args default to AUTO. **Migration:** code using symbolic names is unaffected; code using raw integers must update (`0=AUTO, 1=GPU, 2=CPU`).
-- **`OVPHYSX_TENSOR_ARTICULATION_CORIOLIS_FORCE_F32` renamed** to `ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE` (enum value 72 unchanged). **Migration:** update references to the old name.
-- Scene query enum constants disambiguated: `OVPHYSX_SCENE_QUERY_CLOSEST` → `OVPHYSX_SCENE_QUERY_MODE_CLOSEST` (and `_ANY`, `_ALL`); `OVPHYSX_SCENE_QUERY_SPHERE` → `OVPHYSX_SCENE_QUERY_GEOMETRY_SPHERE` (and `_BOX`, `_SHAPE`). **Migration:** update to the new constant names.
-- **Python enum cleanup.** All `OVPHYSX_TENSOR_*_F32` bare-int constants removed (use `TensorType.*` members); `OVPHYSX_API_*`, `OVPHYSX_LOG_*`, `OVPHYSX_DEVICE_*` constants removed (use `ApiStatus.*`, `LogLevel.*`, `DeviceType.*`); `OVPHYSX_OP_INDEX_ALL` renamed to `OP_INDEX_ALL`; `kDLCPU`, `kDLCUDA`, `kDLInt`, `kDLUInt`, `kDLFloat` removed (use `DLDeviceType.kDLCPU` / `DLDataTypeCode.kDLFloat`).
-- **Removed `ovphysx_finalize()`**. Use `ovphysx_shutdown()` for process lifecycle shutdown and `ovphysx_destroy_instance()` for handles. **Migration:** remove any `ovphysx_finalize()` calls.
-
-### Added
-- `ovphysx_articulation_metadata_t` struct and `ovphysx_get_articulation_metadata()` — fills 6 scalar topology fields in one call, one lock acquire, one stream fence.
-- `OVPHYSX_CONFIG_SCENE_MULTI_GPU_MODE` (int32) config entry for `/physics/sceneMultiGPUMode`.
-- `ConfigBool`, `ConfigInt32`, `ConfigFloat`, `ConfigString` IntEnums in Python for typed config key access.
-- `PhysXConfig` dataclass in Python for typed initialization config.
-- Remote USD loading through ovstage population accepts remote URIs (`omniverse://`, S3, Azure Blob). Use HTTPS virtual-hosted S3 URLs. Use `ovphysx_configure_s3()` / `configure_s3()` and `ovphysx_configure_azure_sas()` / `configure_azure_sas()` for credential setup before population.
-- TensorBindingsAPI: DOF property tensors — stiffness, damping, limits, max velocity, max force, armature, friction properties (read/write, indexed, masked).
-- TensorBindingsAPI: body property tensors — mass, center-of-mass pose, inertia tensor (read/write, indexed, masked).
-- TensorBindingsAPI: link acceleration tensor (`[N, L, 6]`, read-only).
-- TensorBindingsAPI: dynamics query tensors (read-only) — Jacobian, generalized mass matrix, Coriolis + centrifugal forces, gravity compensation, link incoming joint force, DOF projected joint forces.
-- TensorBindingsAPI: standalone rigid body properties — mass, inertia, COM pose (read/write with indexed/masked write support). Articulation body inverse mass and inverse inertia (read-only).
-- TensorBindingsAPI: fixed tendon properties — stiffness, damping, limit stiffness, limits, rest length, offset (read/write, indexed, masked).
-- TensorBindingsAPI: spatial tendon properties — stiffness, damping, limit stiffness, offset (read/write, indexed, masked).
-- TensorBindingsAPI: shape-level tensors — `RIGID_BODY_SHAPE_FRICTION_AND_RESTITUTION` (`[N,S,3]`), `RIGID_BODY_CONTACT_OFFSET` (`[N,S]`), `RIGID_BODY_REST_OFFSET` (`[N,S]`), and articulation equivalents. All support read, indexed write, and masked write.
-- Articulation metadata name queries: `ovphysx_articulation_get_dof_names`, `get_body_names`, `get_joint_names`.
-- Contact binding API: `ovphysx_create_contact_binding` / `destroy` / `get_spec` / `read_net_forces` / `read_force_matrix`. Python `ContactBinding` class for reading contact forces via DLPack tensors.
-- PhysX object interop: `ovphysx_get_physx_ptr()` returns raw PhysX SDK pointers by USD prim path and type enum. SDK ships PhysX headers under `include/physx/`. See [PhysX Interop tutorial](tutorials/physx_interop.md).
-- Contact report API: `ovphysx_get_contact_report()` exposes per-step contact data as typed C struct pointers. Python `PhysX.get_contact_report()` returns a dict with ctypes arrays.
-- Scene query API: `ovphysx_raycast()`, `ovphysx_sweep()`, `ovphysx_overlap()` — raycast, geometry sweep, and overlap queries. Supports CLOSEST/ANY/ALL hit modes with sphere, box, and arbitrary-shape geometry.
-- Synchronous stepping: `ovphysx_step_sync()` / `step_sync()` combines step + wait into one call. `ovphysx_step_n_sync()` / `step_n_sync()` batches N steps.
-- `OVPHYSX_API_BUFFER_TOO_SMALL = 6` status code.
-- CMake package config: `find_package(ovphysx)` provides `ovphysx::ovphysx` target and Windows `ovphysx_copy_runtime_dlls()` helper.
-- Visual sample using [Rerun](https://rerun.io) for rigid body visualization ([Rendering Handoff](tutorials/render_handoff.md)).
-- Linux aarch64 support.
-
-### Changed or Fixed
-- Physics scene parsing is deferred until the first simulation attach path. This avoids GPU buffer corruption when `clone()` adds environments after the initial scene update. Correct sequence: ovstage population + `attach_ovstage()` -> `clone()` -> `warmup_gpu()`/`step()`; call `update_from_ovstage()` only for later authored edits.
-- A GPU and CUDA installation is no longer required for CPU-only simulation.
-- Fixed a fatal TF_DEBUG crash when ovphysx and OVRTX co-loaded in Python due to a collision with USD libraries.
-- Fixed various memory leaks across C, C++, and Python error-handling and cleanup paths.
-- Contact binding read functions now validate dtype is float32 before dispatching.
-- `ContactBinding.destroy()` now checks status and raises on failure; validates parent SDK is alive.
-- `create_contact_binding` now validates `sensor_patterns` is non-empty and `filter_patterns` length.
-- Wheel metadata corrected: `Root-Is-Purelib: false`, OS classifiers set to Linux and Windows.
-- Fixed shutdown crash where stepper tasks could access freed CUDA context.
-- Fixed process-exit crashes caused by non-deterministic DLL/SO unload ordering. `ovphysx_destroy_instance()` now performs full teardown when the last instance is destroyed.
-- `ovphysx_remove_usd()` now validates `usd_handle` and returns `OVPHYSX_API_NOT_FOUND` for unknown handles.
-
-### Removed
-- `ovphysx.pc` (pkg-config file) removed; CMake is the supported integration path.
-- `hdStorm` (Hydra Storm renderer) removed from SDK; not needed for headless physics simulation.
-
-## [0.2] - 2026-03-03
-
-First released version. No changelog was maintained prior to v0.3.
+  through ovstage.

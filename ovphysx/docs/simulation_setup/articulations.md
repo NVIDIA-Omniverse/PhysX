@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Articulations
 
@@ -17,12 +17,23 @@ This page builds on [Rigid Bodies](rigid_bodies.md) and [Joints](joints.md). For
 stability tuning, refer to the [Articulation Stability](../guides/articulation_stability.md)
 guide.
 
+The Python examples on this page are fragments, not complete files. Each one
+extends a script that already created a `stage` and registered the codeless PhysX
+schemas, as shown in
+[Setting Up a USD Stage and a Physics Scene](physics_scene.md#setting-up-a-usd-stage-and-a-physics-scene);
+before using a fragment that refers to `joint_prim` or `fixed_joint`, define that
+joint prim in the surrounding script.
+
 ## Tree Structure
 
 An articulation must form a tree of links and joints. The tree is defined solely
 by the joints' `body0`/`body1` relationships — the USD hierarchy has no effect on
-the articulation structure (only on parsing, refer to the section below), so you may organize
-prims however you like.
+the articulation structure (only on parsing, refer to
+[Articulation Root](#articulation-root)), so you can organize prims however you
+like.
+
+The following figures show two articulation trees, a ragdoll and a robotic arm,
+with their links and the joints that connect them:
 
 ![Articulation examples: a ragdoll and a robotic arm](images/articulation_examples.png)
 
@@ -30,7 +41,7 @@ prims however you like.
 > velocities on non-root links is not supported** and triggers a warning. Read
 > link poses/velocities through the `ARTICULATION_LINK_*` tensor types instead.
 
-## Floating vs Fixed Base
+## Floating Compared to Fixed Base
 
 - **Floating-base**: the root link (and the whole mechanism) can move freely in
   space — for example a ragdoll.
@@ -54,7 +65,7 @@ otherwise it is floating-base (rooted at the link with minimal eccentricity).
 With automatic determination you cannot know the root beforehand, so applying
 poses/velocities to the root is only feasible after parsing.
 
-### Fixed-base example
+### Fixed-Base Example
 
 ```python
 from pxr import UsdGeom, UsdPhysics, Gf
@@ -77,13 +88,13 @@ UsdPhysics.ArticulationRootAPI.Apply(fixed.GetPrim())
 ```
 
 For a floating-base articulation, apply `ArticulationRootAPI` directly to the
-root link instead; initial pose and velocity may be set on the root link only.
+root link instead; initial pose and velocity can be set on the root link only.
 
 The `links_chain_sample.usda` scene used by [Hello World](../tutorials/hello_world.md)
-and [Tensor Bindings](../tutorials/tensor_bindings.md) is a ready articulation to
+and [Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md) is a ready articulation to
 experiment with.
 
-## Joint State (Initial Position and Velocity)
+## Initial Joint State
 
 Each degree of freedom of an articulation joint has position and velocity. Author
 initial values with the codeless `PhysicsJointStateAPI` (multiple-apply, instance
@@ -101,7 +112,7 @@ At runtime, read and write joint state in bulk through the
 `ARTICULATION_DOF_POSITION` / `ARTICULATION_DOF_VELOCITY` tensor types (and root
 state through `ARTICULATION_ROOT_POSE` / `ARTICULATION_ROOT_VELOCITY`) — the
 preferred path for RL and control workloads. Refer to
-[Tensor Bindings](../tutorials/tensor_bindings.md).
+[Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md).
 
 ## Articulation Joint Drive and Performance Envelope
 
@@ -169,7 +180,8 @@ bulk at runtime through the `ARTICULATION_DOF_ARMATURE`,
 
 Articulation joints alone cannot form a closed loop (for example A-B, B-C, and C-A). To
 close a loop, mark the loop-closing joint as **excluded** from the articulation
-so it is simulated as a regular joint:
+so it is simulated as a regular joint. The following figure shows a three-link
+loop with the loop-closing joint marked:
 
 ![Articulation closed loop](images/closed_loops_sketch.png)
 
@@ -188,8 +200,14 @@ Mimic joints couple the positions of two degrees of freedom of the same
 articulation with a linear relationship, `q_A + G * q_B + gamma = 0` (gear ratio
 `G`, offset `gamma`). They implement gear and rack-and-pinion behavior specialized
 for articulations, with native GPU acceleration (prefer them over the CPU-only
-[meta joints](joints.md#meta-joints)). Mimic joints support only revolute joints
-with limits applied.
+[meta joints](joints.md#meta-joints)). Supported joint types:
+
+- **Revolute joints** — one rotational DOF; limits must be applied.
+- **Prismatic joints** — one translational DOF; limits must be applied.
+- **Generic (D6) joints** — all three translational DOFs must be locked and exactly
+  one rotational DOF must be free (no limit, or limits with lower < upper); that
+  free DOF becomes the mimic axis. The instance name of `PhysxMimicJointAPI` selects
+  which rotational axis (`rotX`, `rotY`, or `rotZ`) to couple.
 
 Apply the codeless `PhysxMimicJointAPI` (multiple-apply, instance name = axis) to
 the driven joint and target the reference joint. Mimic joints support
@@ -219,16 +237,16 @@ Tendons create constraints within an articulation. There are two kinds:
 
 Tendon properties (stiffness, damping, limit stiffness, limits, rest
 length/offset) are exposed at runtime through the fixed- and spatial-tendon
-tensor types — refer to [Tensor Bindings](../tutorials/tensor_bindings.md).
+tensor types — refer to [Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md).
 
-## Dynamics Queries
+## Inverse Dynamics Queries
 
-For control algorithms, ovphysx exposes read-only articulation dynamics through
+For control algorithms, ovphysx exposes read-only articulation inverse dynamics through
 tensor bindings: the `ARTICULATION_JACOBIAN`, `ARTICULATION_MASS_MATRIX`,
 `ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE`, `ARTICULATION_GRAVITY_FORCE`, and
 `ARTICULATION_LINK_INCOMING_JOINT_FORCE` tensor types (plus
 `ARTICULATION_CENTROIDAL_MOMENTUM` for floating-base articulations). Refer to
-[Tensor Bindings](../tutorials/tensor_bindings.md).
+[Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md).
 
 ## Limitations and Differences
 
@@ -242,7 +260,7 @@ tensor bindings: the `ARTICULATION_JACOBIAN`, `ARTICULATION_MASS_MATRIX`,
   damping/restitution unless the joint is excluded from the articulation).
 - The `breakForce`/`breakTorque` attributes are ignored; articulation joints
   cannot be removed at runtime, and cannot gain limits after the stage is
-  attached (initialize with unreachable limits if you may need them later).
+  attached (initialize with unreachable limits if you need them later).
 - Articulation joints cannot be instanced.
 - For a one-to-one relationship between USD and PhysX joint parameters (limits,
   drive targets) when using the tensor API, set up articulations so their USD and

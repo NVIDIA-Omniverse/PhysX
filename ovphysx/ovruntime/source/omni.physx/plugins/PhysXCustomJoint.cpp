@@ -1,15 +1,22 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-27
+ */
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-9 AC-11 AC-12 AC-13
+ */
 
 #include <carb/logging/Log.h>
 
 #include "PhysXCustomJoint.h"
 #include "OmniPhysX.h"
-#include "usdLoad/LoadUsd.h"
+#include "usdLoad/AttachedStage.h"
 
-#include <omni/physics/usd/CustomTokens.h>
+#include <omni/physics/parse/CustomTokens.h>
 
 using namespace ::physx;
 
@@ -18,7 +25,7 @@ namespace omni
 namespace physx
 {
 
-CustomPhysXJoint::CustomPhysXJoint(const PXR_NS::SdfPath& path, const usdparser::CustomPhysxJointDesc& jointDesc,::physx::PxPhysics& physics, const CustomJointInfo& jointInfo, PxConstraintFlag::Enum flags,
+CustomPhysXJoint::CustomPhysXJoint(omni::physics::parse::ObjectKey key, const usdparser::CustomPhysxJointDesc& jointDesc,::physx::PxPhysics& physics, const CustomJointInfo& jointInfo, PxConstraintFlag::Enum flags,
     ::physx::PxRigidActor* actor0, ::physx::PxRigidActor* actor1)
 {
     uint16_t constraintFlags = flags;
@@ -34,7 +41,7 @@ CustomPhysXJoint::CustomPhysXJoint(const PXR_NS::SdfPath& path, const usdparser:
         isfinite(jointDesc.breakTorque) ? jointDesc.breakTorque : FLT_MAX);
 
     mCustomJointInfo = jointInfo;
-    mJointPath = path;
+    mJointKey = key;
 }
 
 void CustomPhysXJoint::release()
@@ -44,24 +51,24 @@ void CustomPhysXJoint::release()
 
 void* CustomPhysXJoint::prepareData()
 {
-    return mCustomJointInfo.customJointCb.prepareJointDataFn(mJointPath, mCustomJointInfo.customJointCb.userData);
+    return mCustomJointInfo.customJointCb.prepareJointDataFn(mJointKey, mCustomJointInfo.customJointCb.userData);
 }
 
 void  CustomPhysXJoint::onConstraintRelease()
 {
-    mCustomJointInfo.customJointCb.releaseJointFn(mJointPath, mCustomJointInfo.customJointCb.userData);
-    OmniPhysX::getInstance().getCustomJointManager().removeCustomJoint(mJointPath);
+    mCustomJointInfo.customJointCb.releaseJointFn(mJointKey, mCustomJointInfo.customJointCb.userData);
+    OmniPhysX::getInstance().getCustomJointManager().removeCustomJoint(mJointKey);
     delete this;
 }
 
 void  CustomPhysXJoint::onComShift(::physx::PxU32 actor)
 {
-    mCustomJointInfo.customJointCb.onComShiftFn(mJointPath, actor, mCustomJointInfo.customJointCb.userData);
+    mCustomJointInfo.customJointCb.onComShiftFn(mJointKey, actor, mCustomJointInfo.customJointCb.userData);
 }
 
 void  CustomPhysXJoint::onOriginShift(const ::physx::PxVec3& shift)
 {
-    mCustomJointInfo.customJointCb.onOriginShift(mJointPath, shift, mCustomJointInfo.customJointCb.userData);
+    mCustomJointInfo.customJointCb.onOriginShift(mJointKey, shift, mCustomJointInfo.customJointCb.userData);
 }
 
 void* CustomPhysXJoint::getExternalReference(::physx::PxU32& typeID)
@@ -77,7 +84,7 @@ void* CustomPhysXJoint::getExternalReference(::physx::PxU32& typeID)
 
 const void* CustomPhysXJoint::getConstantBlock() const
 {
-    return mCustomJointInfo.customJointCb.getConstantBlockFn(mJointPath, mCustomJointInfo.customJointCb.userData);
+    return mCustomJointInfo.customJointCb.getConstantBlockFn(mJointKey, mCustomJointInfo.customJointCb.userData);
 }
 
 PxConstraintFlag::Enum convertJointFlags(CustomJointFlag::Enum inFlags)
@@ -122,16 +129,32 @@ PhysXCustomJointManager::~PhysXCustomJointManager()
 {
 }
 
-CustomPhysXJoint* PhysXCustomJointManager::createCustomJoint(const PXR_NS::SdfPath& primKey, const usdparser::CustomPhysxJointDesc& jointDesc,::physx::PxRigidActor* actor0, const ::physx::PxTransform& localFrame0,
+CustomPhysXJoint* PhysXCustomJointManager::createCustomJoint(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey primKey, const usdparser::CustomPhysxJointDesc& jointDesc,::physx::PxRigidActor* actor0, const ::physx::PxTransform& localFrame0,
     ::physx::PxRigidActor* actor1, const ::physx::PxTransform& localFrame1)
 {
     CustomPhysXJoint* customJoint = nullptr;
-    CustomJointTypeMap::const_iterator fit = mCustomJointTypeMap.find(jointDesc.customJointToken);
+    // jointDesc.customJointToken is a source-interned TokenId (ADR-0019
+    // increment 7); mCustomJointTypeMap stays plain-string-keyed (registerCustomJoint
+    // takes a bare `const char*`, with no source to intern against), so bridge
+    // through attachedStage's own source (ADR-0019) rather than the process-wide
+    // "active attach", which is null whenever 2+ attaches are simultaneously live.
+    const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+    const std::string customJointTypeStr =
+        source ? std::string(source->tokenToString(jointDesc.customJointToken)) : std::string();
+    if (customJointTypeStr.empty() && jointDesc.customJointToken.valid())
+    {
+        CARB_LOG_ERROR(
+            "Custom Joint: failed to resolve type token (id %u) for prim (key %llu), joint will not be created.",
+            jointDesc.customJointToken.id, static_cast<unsigned long long>(primKey.handle));
+    }
+    CustomJointTypeMap::const_iterator fit = mCustomJointTypeMap.find(customJointTypeStr);
     if (fit != mCustomJointTypeMap.end())
     {
-        const CustomJointInfo& jointInfo = fit->second;        
+        const CustomJointInfo& jointInfo = fit->second;
         CustomJointFlag::Enum inFlags = CustomJointFlag::Enum(0);
-        if (jointInfo.customJointCb.createJointFn(primKey, omni::physx::usdparser::UsdLoad::getUsdLoad()->getActiveStageId(), actor0, localFrame0, actor1, localFrame1, inFlags, jointInfo.customJointCb.userData))
+        // The consumer callback receives the attach the joint belongs to, not a stage id (ADR-0016).
+        const AttachHandle attachHandle = attachedStage.getAttachHandle();
+        if (jointInfo.customJointCb.createJointFn(primKey, attachHandle, actor0, localFrame0, actor1, localFrame1, inFlags, jointInfo.customJointCb.userData))
         {
             PxConstraintFlag::Enum flags = convertJointFlags(inFlags);
             customJoint = ICE_NEW(CustomPhysXJoint)(primKey, jointDesc, *OmniPhysX::getInstance().getPhysXSetup().getPhysics(), jointInfo, flags, actor0, actor1);
@@ -141,7 +164,7 @@ CustomPhysXJoint* PhysXCustomJointManager::createCustomJoint(const PXR_NS::SdfPa
     return customJoint;
 }
 
-void PhysXCustomJointManager::removeCustomJoint(const PXR_NS::SdfPath& primKey)
+void PhysXCustomJointManager::removeCustomJoint(omni::physics::parse::ObjectKey primKey)
 {
     CustomJointMap::iterator fit = mCustomJointMap.find(primKey);
     if (fit != mCustomJointMap.end())
@@ -150,36 +173,38 @@ void PhysXCustomJointManager::removeCustomJoint(const PXR_NS::SdfPath& primKey)
     }
 }
 
-size_t PhysXCustomJointManager::registerCustomJoint(const PXR_NS::TfToken& jointPrimType, ICustomJointCallback& jointCallback, ::physx::PxConstraintSolverPrep jointPrepFn, size_t jointDataSize)
+size_t PhysXCustomJointManager::registerCustomJoint(const char* jointPrimType, ICustomJointCallback& jointCallback, ::physx::PxConstraintSolverPrep jointPrepFn, size_t jointDataSize)
 {
-    if (mCustomJointTypeMap.find(jointPrimType) != mCustomJointTypeMap.end())
+    const std::string jointPrimTypeStr(jointPrimType);
+    if (mCustomJointTypeMap.find(jointPrimTypeStr) != mCustomJointTypeMap.end())
     {
-        CARB_LOG_ERROR("Custom Joint Type (%s) already registered.", jointPrimType.GetText());
+        CARB_LOG_ERROR("Custom Joint Type (%s) already registered.", jointPrimType);
         return kInvalidCustomJointRegId;
     }
 
     if (!jointCallback.createJointFn || !jointCallback.getConstantBlockFn || !jointCallback.onComShiftFn
         || !jointCallback.onOriginShift || !jointCallback.prepareJointDataFn || !jointCallback.releaseJointFn)
     {
-        CARB_LOG_ERROR("Custom Joint Type (%s) has invalid joint callback, please provide all functions.", jointPrimType.GetText());
+        CARB_LOG_ERROR("Custom Joint Type (%s) has invalid joint callback, please provide all functions.", jointPrimType);
         return kInvalidCustomJointRegId;
     }
 
     if (!jointPrepFn)
     {
-        CARB_LOG_ERROR("Custom Joint Type (%s) has invalid joint prep function, please provide it.", jointPrimType.GetText());
+        CARB_LOG_ERROR("Custom Joint Type (%s) has invalid joint prep function, please provide it.", jointPrimType);
         return kInvalidCustomJointRegId;
     }
 
     const size_t currentRegistryCounter = mJointRegistryCounter;
     const ::physx::PxU32 typeId = OmniPhysX::getInstance().getFreeTypeId();
-    CustomJointInfo info = { jointPrimType, jointCallback, jointPrepFn, jointDataSize, typeId };
+    CustomJointInfo info = { jointPrimTypeStr, jointCallback, jointPrepFn, jointDataSize, typeId };
     mCustomJointRegistryMap[currentRegistryCounter] = info;
-    mCustomJointTypeMap[jointPrimType] = info;
+    mCustomJointTypeMap[jointPrimTypeStr] = info;
     mJointRegistryCounter++;
 
-    // Register with the parse-lib's native USD walker so it recognizes this custom joint prim type.
-    omni::physics::usd::registerCustomJointToken(jointPrimType);
+    // Register with the USD-free parse-core registry so both the native USD walker
+    // and the ovstage walker recognize this custom joint prim type (REQ-PARSE-CORE-005).
+    omni::physics::parse::registerCustomToken(omni::physics::parse::CustomTokenKind::eJoint, jointPrimType);
 
     return currentRegistryCounter;
 }
@@ -189,37 +214,37 @@ void PhysXCustomJointManager::unregisterCustomJoint(size_t id)
     CustomJointRegistryMap::const_iterator fit = mCustomJointRegistryMap.find(id);
     if (fit != mCustomJointRegistryMap.end())
     {
-        const PXR_NS::TfToken& jt = fit->second.jointPrimType;
+        const std::string& jt = fit->second.jointPrimType;
         mCustomJointTypeMap.erase(jt);
-        omni::physics::usd::unregisterCustomJointToken(jt);
+        omni::physics::parse::unregisterCustomToken(omni::physics::parse::CustomTokenKind::eJoint, jt);
         mCustomJointRegistryMap.erase(fit);
 
     }
 }
 
-void PhysXCustomJointManager::markJointDirty(const PXR_NS::SdfPath& primKey)
+void PhysXCustomJointManager::markJointDirty(omni::physics::parse::ObjectKey key)
 {
-    CustomJointMap::iterator fit = mCustomJointMap.find(primKey);
+    CustomJointMap::iterator fit = mCustomJointMap.find(key);
     if (fit != mCustomJointMap.end())
     {
         fit->second->getConstraint()->markDirty();
     }
 }
 
-void PhysXCustomJointManager::setJointFlags(const PXR_NS::SdfPath& primKey, CustomJointFlag::Enum inFlags)
+void PhysXCustomJointManager::setJointFlags(omni::physics::parse::ObjectKey key, CustomJointFlag::Enum inFlags)
 {
-    CustomJointMap::iterator fit = mCustomJointMap.find(primKey);
+    CustomJointMap::iterator fit = mCustomJointMap.find(key);
     if (fit != mCustomJointMap.end())
-    {        
+    {
         PxConstraintFlags currentFlags = fit->second->getConstraint()->getFlags();
         modifyJointFlags(inFlags, currentFlags);
         fit->second->getConstraint()->setFlags(currentFlags);
     }
 }
 
-CustomJointFlag::Enum PhysXCustomJointManager::getJointFlags(const PXR_NS::SdfPath& primKey)
+CustomJointFlag::Enum PhysXCustomJointManager::getJointFlags(omni::physics::parse::ObjectKey key)
 {
-    CustomJointMap::iterator fit = mCustomJointMap.find(primKey);
+    CustomJointMap::iterator fit = mCustomJointMap.find(key);
     if (fit != mCustomJointMap.end())
     {
         return convertJointFlags(fit->second->getConstraint()->getFlags());
@@ -227,7 +252,7 @@ CustomJointFlag::Enum PhysXCustomJointManager::getJointFlags(const PXR_NS::SdfPa
     return CustomJointFlag::Enum(0);
 }
 
-size_t registerCustomJoint(const PXR_NS::TfToken& jointPrimType, ICustomJointCallback& jointCallback, ::physx::PxConstraintSolverPrep jointPrepFn, size_t jointDataSize)
+size_t registerCustomJoint(const char* jointPrimType, ICustomJointCallback& jointCallback, ::physx::PxConstraintSolverPrep jointPrepFn, size_t jointDataSize)
 {
     return OmniPhysX::getInstance().getCustomJointManager().registerCustomJoint(jointPrimType, jointCallback, jointPrepFn, jointDataSize);
 }
@@ -237,19 +262,19 @@ void unregisterCustomJoint(size_t id)
     OmniPhysX::getInstance().getCustomJointManager().unregisterCustomJoint(id);
 }
 
-void markJointDirty(const PXR_NS::SdfPath& primKey)
+void markJointDirty(omni::physics::parse::ObjectKey key)
 {
-    OmniPhysX::getInstance().getCustomJointManager().markJointDirty(primKey);
+    OmniPhysX::getInstance().getCustomJointManager().markJointDirty(key);
 }
 
-void setJointFlags(const PXR_NS::SdfPath& primKey, CustomJointFlag::Enum flags)
+void setJointFlags(omni::physics::parse::ObjectKey key, CustomJointFlag::Enum flags)
 {
-    OmniPhysX::getInstance().getCustomJointManager().setJointFlags(primKey, flags);
+    OmniPhysX::getInstance().getCustomJointManager().setJointFlags(key, flags);
 }
 
-CustomJointFlag::Enum getJointFlags(const PXR_NS::SdfPath& primKey)
+CustomJointFlag::Enum getJointFlags(omni::physics::parse::ObjectKey key)
 {
-    return OmniPhysX::getInstance().getCustomJointManager().getJointFlags(primKey);
+    return OmniPhysX::getInstance().getCustomJointManager().getJointFlags(key);
 }
 
 }

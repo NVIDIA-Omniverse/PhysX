@@ -1,6 +1,5 @@
 // This include must come first
 // clang-format off
-#include "UsdPCH.h"
 // clang-format on
 
 /* Copyright (c) 2011 Khaled Mamou (kmamou at gmail dot com)

@@ -1,15 +1,24 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-SIM-ACTIVEACTOR-001
+ * @covers AC-1
+ *
+ * @implements REQ-SIM-SCENEQUERY-001
+ * @covers AC-1 AC-2
+ */
 
 #include "Raycast.h"
 #include <omni/physx/IPhysxSettings.h>
 #include <PhysXTools.h>
 #include <usdLoad/LoadUsd.h>
 #include <omni/physics/parse/IPhysicsSource.h>
+#include <omni/physics/parse/KnownTokens.h>
 
 #include <common/utilities/MemoryMacros.h>
+
+#include <atomic>
 
 #if USE_PHYSX_GPU
 #include "extensions/PxParticleExt.h"
@@ -38,23 +47,47 @@ const float kDeformableTargetShapeRadius = 10.0f;
 
 namespace
 {
-bool isInvisible(const usdparser::AttachedStage* attachedStage, omni::physics::parse::ObjectKey key)
+// `tok` must already be interned against `source` -- this runs once per
+// broad-phase candidate shape (preFilter) or once per deformable body
+// (raycastSingle's loops below), so it must not re-intern the KnownTokens
+// batch itself. Callers intern once, up front, and pass the same batch in.
+bool isInvisible(const omni::physics::parse::IPhysicsSource* source,
+                 const omni::physics::parse::KnownTokens& tok,
+                 omni::physics::parse::ObjectKey key)
 {
-    const omni::physics::parse::IPhysicsSource* source = attachedStage ? attachedStage->getSource() : nullptr;
     if (!source || !key.valid())
         return false;
 
-    const omni::physics::parse::TokenId visibilityTok = source->internToken(PXR_NS::UsdGeomTokens->visibility.GetString());
-    const std::string_view invisible = PXR_NS::UsdGeomTokens->invisible.GetString();
     for (omni::physics::parse::ObjectKey cur = key; cur.valid(); cur = source->getParent(cur))
     {
         omni::physics::parse::TokenId value;
-        if (source->getAttribute(cur, visibilityTok, value) && source->tokenToString(value) == invisible)
+        if (source->getAttribute(cur, tok.visibility, value) && value == tok.invisible)
             return true;
     }
     return false;
 }
+
+// Backing counters for Raycast.h's test-only accessors (REQ-SIM-SCENEQUERY-001). Atomic since
+// scene queries can run off the main thread; relaxed ordering is enough for a call count.
+std::atomic<uint32_t> gPreFilterCallCount{ 0 };
+std::atomic<uint32_t> gRaycastQueryInternCount{ 0 };
 } // namespace
+
+void omni::physx::resetRaycastQueryTestCounters()
+{
+    gPreFilterCallCount.store(0, std::memory_order_relaxed);
+    gRaycastQueryInternCount.store(0, std::memory_order_relaxed);
+}
+
+uint32_t omni::physx::getRaycastPreFilterCallCount()
+{
+    return gPreFilterCallCount.load(std::memory_order_relaxed);
+}
+
+uint32_t omni::physx::getRaycastQueryInternCount()
+{
+    return gRaycastQueryInternCount.load(std::memory_order_relaxed);
+}
 
 static bool intersectRayTriangle(const PxVec3& orig,
                                  const PxVec3& dir,
@@ -126,14 +159,15 @@ void RaycastManager::clearCommandBuffer()
                                                          const ::physx::PxRigidActor* actor,
                                                          ::physx::PxHitFlags& flag)
 {
+    gPreFilterCallCount.fetch_add(1, std::memory_order_relaxed);
+
     const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
     const usdparser::ObjectId shapeIndex = (usdparser::ObjectId)shape->userData;
 
     PhysXType type;
     const internal::InternalDatabase::Record* objectRecord = db.getFullRecord(type, shapeIndex);
 
-    const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    if (objectRecord && (type == ePTShape || type == ePTCompoundShape) && isInvisible(attachedStage, objectRecord->mKey))
+    if (objectRecord && (type == ePTShape || type == ePTCompoundShape) && isInvisible(mSource, mTokens, objectRecord->mKey))
     {
         return PxQueryHitType::eNONE;
     }
@@ -160,10 +194,19 @@ static bool raycastSingle(const PxVec3& orig,
     DeformableId deformableId;
 
     const PhysXScenesMap& physXScenes = OmniPhysX::getInstance().getPhysXSetup().getPhysXScenes();
-    PXR_NS::UsdStageWeakPtr stage = usdparser::UsdLoad::getUsdLoad()->getActiveStage();
     const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
     const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    const omni::physx::raycastFilterExcludeInvisible filter = raycastFilterExcludeInvisible(stage);
+    // Interned once for the whole query, not per candidate shape / deformable
+    // body -- shared by the prefilter callback below and the deformable-body
+    // isInvisible() checks further down.
+    const omni::physics::parse::IPhysicsSource* source = attachedStage ? attachedStage->getSource() : nullptr;
+    omni::physics::parse::KnownTokens tok;
+    if (source)
+    {
+        tok.intern(*source);
+        gRaycastQueryInternCount.fetch_add(1, std::memory_order_relaxed);
+    }
+    const omni::physx::raycastFilterExcludeInvisible filter = raycastFilterExcludeInvisible(source, tok);
     carb::settings::ISettings* settings = carb::getCachedInterface<carb::settings::ISettings>();
 
     for (PhysXScenesMap::const_reference ref : physXScenes)
@@ -199,7 +242,7 @@ static bool raycastSingle(const PxVec3& orig,
         {
             internal::InternalVolumeDeformableBody* body = intScene->mVolumeDeformableBodies[i];
 
-            if (isInvisible(attachedStage, body->mBodyKey))
+            if (isInvisible(source, tok, body->mBodyKey))
                 continue;
 
             const PxBounds3 bounds = body->mDeformableVolume->getWorldBounds();
@@ -244,7 +287,7 @@ static bool raycastSingle(const PxVec3& orig,
         {
             internal::InternalSurfaceDeformableBody* body = intScene->mSurfaceDeformableBodies[i];
 
-            if (isInvisible(attachedStage, body->mBodyKey))
+            if (isInvisible(source, tok, body->mBodyKey))
                 continue;
 
             const PxBounds3 bounds = body->mDeformableSurface->getWorldBounds();
@@ -521,6 +564,7 @@ static void releasePickingDeformable()
     {
         if (intScene->getScene())
         {
+            intScene->trackReleasedActiveActor(picker.targetActor);
             intScene->getScene()->removeActor(*picker.targetActor);
         }
         SAFE_RELEASE(picker.targetActor);
@@ -849,6 +893,7 @@ static void applyManipCmd(const ManipCmd& cmd, float delta_time)
                 if (picker.targetActor != nullptr)
                 {
                     CARB_ASSERT(picker.physXScene->getScene());
+                    picker.physXScene->getInternalScene()->trackReleasedActiveActor(picker.targetActor);
                     picker.physXScene->getScene()->removeActor(*picker.targetActor);
                     SAFE_RELEASE(picker.targetActor);
                 }

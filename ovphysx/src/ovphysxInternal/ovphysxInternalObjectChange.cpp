@@ -1,5 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-CAPI-OBJECTKEY-001
+ * @covers AC-3 AC-4
+ *
+ * @implements REQ-CAPI-STRING-001
+ * @covers AC-4
+ */
 
 // Sidecar object-change subscription bridge.
 //
@@ -11,11 +19,8 @@
 // don't need to outlive the function.
 
 #include "internal/sidecar/ovphysxInternalObjectChange.h"
-#include "internal/sidecar/ovphysxInternalUtil.hpp"
 #include "ovphysx/ovphysx.h"
 #include "ovphysxInternalPhysXAccess.hpp"
-
-#include <pxr/usd/sdf/path.h>  // must precede IPhysx.h: defines PXR_NS used by callback fn signatures
 
 #include <carb/logging/Log.h>
 #include <omni/physx/IPhysx.h>
@@ -31,9 +36,9 @@ OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_subscribe_object_changes(
     void* user_data)
 {
     // Failure sentinel matches OVPHYSX_INVALID_SUBSCRIPTION_ID in the public
-    // ABI (UINT64_MAX). NOT omni::physx::kInvalidSubscriptionId (0xFFffFFffFF) --
-    // that's only 40 bits and could be confused with a real IPhysx ID by the
-    // ovphysx-side check.
+    // ABI (UINT64_MAX), not omni::physx::kInvalidSubscriptionId (0xFFffFFffFF).
+    // The latter is only 40 bits and could be confused with a real IPhysx ID by
+    // the ovphysx-side check.
     constexpr uint64_t kInvalid = UINT64_MAX;
 
     try
@@ -47,28 +52,28 @@ OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_subscribe_object_changes(
 
         omni::physx::IPhysicsObjectChangeCallback callback;
         callback.userData = user_data;
-        // ovphysx has no Kit-style "simulation stopped" mode. omni.physx
-        // gates notifications behind mObjectChangeNotificationsEnabled
-        // UNLESS this flag is false; opt out of the gate so subscribers
-        // receive events for every clone()/release()/reset() regardless of
-        // omni.physx's internal simulation-state machine.
+        // ovphysx has no Kit-style "simulation stopped" mode. omni.physx gates
+        // notifications behind mObjectChangeNotificationsEnabled unless this
+        // flag is false, so the gate is opted out and subscribers receive events
+        // for every clone()/release()/reset() regardless of omni.physx's internal
+        // simulation state.
         callback.stopCallbackWhenSimStopped = false;
 
         if (on_created)
         {
             callback.objectCreationNotifyFn =
-                [on_created](const PXR_NS::SdfPath& sdfPath, omni::physx::usdparser::ObjectId /*objectId*/,
-                             omni::physx::PhysXType type, void* userData) {
-                    const std::string& s = sdfPath.GetString();
+                [physx, on_created](omni::physics::parse::ObjectKey key, omni::physx::usdparser::ObjectId /*objectId*/,
+                                     omni::physx::PhysXType type, void* userData) {
+                    const std::string s(physx->objectKeyToPath(key));
                     on_created(s.data(), s.size(), static_cast<int>(type), userData);
                 };
         }
         if (on_destroyed)
         {
             callback.objectDestructionNotifyFn =
-                [on_destroyed](const PXR_NS::SdfPath& sdfPath, omni::physx::usdparser::ObjectId /*objectId*/,
-                               omni::physx::PhysXType type, void* userData) {
-                    const std::string& s = sdfPath.GetString();
+                [physx, on_destroyed](omni::physics::parse::ObjectKey key, omni::physx::usdparser::ObjectId /*objectId*/,
+                                       omni::physx::PhysXType type, void* userData) {
+                    const std::string s(physx->objectKeyToPath(key));
                     on_destroyed(s.data(), s.size(), static_cast<int>(type), userData);
                 };
         }
@@ -78,12 +83,10 @@ OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_subscribe_object_changes(
                 [on_all_destroyed](void* userData) { on_all_destroyed(userData); };
         }
 
-        // Defensively translate the upstream sentinel: omni::physx today
-        // never returns kInvalidSubscriptionId from a successful registry add,
-        // but if it ever did (or if a future implementation uses it as a
-        // failure signal), passing that 40-bit value through would let the
-        // ovphysx side mistake it for a live subscription ID. Map it to our
-        // kInvalid (UINT64_MAX) at the boundary.
+        // omni::physx does not return kInvalidSubscriptionId from a successful
+        // registry add, but passing that 40-bit value through would let the
+        // ovphysx side mistake it for a live subscription ID. Map it to kInvalid
+        // (UINT64_MAX) at the boundary.
         const omni::physx::SubscriptionId id = physx->subscribeObjectChangeNotifications(callback);
         if (id == omni::physx::kInvalidSubscriptionId)
             return kInvalid;

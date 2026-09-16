@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 
-// Shared DLL export/import macro for ovphysx
-// This header is included by all public API headers to ensure consistent symbol visibility
+// Shared DLL export/import macro for ovphysx.
+// Included by all public API headers so that symbol visibility is consistent.
 
 #ifndef OVPHYSX_EXPORT_H
 #define OVPHYSX_EXPORT_H
 
-// Define export/import macros for Windows DLL and GCC visibility
+// Export/import macros for Windows DLL and GCC visibility.
 #if defined(_WIN32) || defined(_WIN64)
     #ifdef OVPHYSX_EXPORTS
         #define OVPHYSX_API __declspec(dllexport)
@@ -25,16 +25,25 @@
 // Usage:
 //   OVPHYSX_API OVPHYSX_DEPRECATED return_t func(...);
 //   OVPHYSX_API OVPHYSX_DEPRECATED_MSG("use new_func()") return_t old_func(...);
-#if defined(__cplusplus) && (__cplusplus >= 201402L)
-    // C++14 standard attribute - best diagnostics for modern C++ consumers
-    #define OVPHYSX_DEPRECATED [[deprecated]]
-    #define OVPHYSX_DEPRECATED_MSG(msg) [[deprecated(msg)]]
-#elif defined(_MSC_VER)
+//
+// GCC/Clang deliberately use the GNU __attribute__ form, NOT C++ [[deprecated]]:
+// OVPHYSX_API expands to __attribute__((visibility("default"))), and a standard
+// [[deprecated]] following it in the decl-specifier-seq appertains to the *return
+// type*, which Clang rejects ("'deprecated' attribute cannot be applied to types")
+// while GCC only tolerates it. The GNU attribute is position-tolerant and binds to
+// the function on both. Keep _MSC_VER and __clang__/__GNUC__ ahead of the standard
+// [[deprecated]] fallback. Do not move the C++14 branch to the top.
+#if defined(_MSC_VER)
     #define OVPHYSX_DEPRECATED __declspec(deprecated)
     #define OVPHYSX_DEPRECATED_MSG(msg) __declspec(deprecated(msg))
 #elif defined(__clang__) || defined(__GNUC__)
     #define OVPHYSX_DEPRECATED __attribute__((deprecated))
     #define OVPHYSX_DEPRECATED_MSG(msg) __attribute__((deprecated(msg)))
+#elif defined(__cplusplus) && (__cplusplus >= 201402L)
+    // Any other conforming C++14 compiler: OVPHYSX_API is empty there, so the
+    // standard attribute leads the declaration and correctly binds to the function.
+    #define OVPHYSX_DEPRECATED [[deprecated]]
+    #define OVPHYSX_DEPRECATED_MSG(msg) [[deprecated(msg)]]
 #else
     #define OVPHYSX_DEPRECATED
     #define OVPHYSX_DEPRECATED_MSG(msg)

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-BACKEND-001
@@ -33,6 +33,11 @@ void setParseBackend(std::unique_ptr<IParseBackend> backend)
 IParseBackend* parseBackend()
 {
     return activeSlot().get();
+}
+
+std::unique_ptr<IParseBackend> takeParseBackend()
+{
+    return std::move(activeSlot());
 }
 
 } // namespace parse

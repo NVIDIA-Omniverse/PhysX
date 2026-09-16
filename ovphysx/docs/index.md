@@ -1,17 +1,17 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # ovphysx
 
 ovphysx is a self-contained library package offering PhysX simulation through a C API and corresponding Python bindings for inclusion in user applications.
-It consumes caller-owned ovstage data, runs simulation, and allows reading and writing simulation data with DLPack interoperability.
+It consumes caller-owned ovstage data, runs simulation, returns Warp arrays from the Python output-read API, and retains DLTensor-based native interoperability.
 
 To get started, refer to the [Quickstart](tutorials/quickstart.md).
 
 > **Note**
 >
 > - **Maturity**: ovphysx is pre-release software and not yet mature.
-> - **USD coexistence**: ovphysx ships an OV namespaced monolithic OpenUSD runtime. It can reuse an already-loaded compatible OV namespaced USD runtime from another OV library, but it does not treat a classic `usd-core` or host USD import as its runtime. In mixed OV processes, register each subsystem's schema paths before the first USD stage open or schema-registry access.
+> - **USD coexistence**: ovphysx ships no OpenUSD runtime and never loads, links, or version-checks one. ovstage, the mandatory exact-version dependency, ingests USD scenes through its own internal namespaced OpenUSD runtime; the application owns whatever USD it authors with (for example stock `usd-core`). ovphysx ships its PhysX USD schemas as codeless plugins: register them with the USD runtime you own before the first ovstage population call or schema-registry access, or the ovstage attach is refused. Refer to [Physics Schemas](physics_schemas.md).
 > - **API stability**: Parts of the API are still being completed and may change before 1.0.
 
 ovphysx packages a USD-aware PhysX simulation runtime with tensorized data access. Applications populate scenes through ovstage, attach the stage to ovphysx, and drain committed ordinal ranges into simulation.
@@ -30,6 +30,7 @@ External references of contained functionality:
 
 ovphysx_overview
 developer_guide
+ov_libraries_v2_annex
 local_development
 changelog
 ```
@@ -48,6 +49,7 @@ ovstage_integration
 simulation_setup/physics_scene
 simulation_setup/collision
 simulation_setup/rigid_bodies
+simulation_setup/kinematic_support
 simulation_setup/joints
 simulation_setup/articulations
 simulation_setup/deformables
@@ -59,6 +61,19 @@ simulation_setup/particles
 :caption: Physics Schemas
 
 physics_schemas
+population/index
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: Read/Write Data Contract
+
+read_write/index
+read_write/data_model
+read_write/device
+read_write/readable
+read_write/writable
+read_write/limitations
 ```
 
 ```{toctree}
@@ -67,12 +82,13 @@ physics_schemas
 
 tutorials/quickstart
 tutorials/hello_world
-tutorials/tensor_bindings
+Tensor Bindings (deprecated) <tutorials/tensor_bindings>
 tutorials/contact_binding
 tutorials/cloning
 tutorials/render_handoff
 tutorials/physx_interop
 tutorials/omnipvd_recording
+tutorials/nvtx_profiling
 tutorials/source_link_build
 ```
 

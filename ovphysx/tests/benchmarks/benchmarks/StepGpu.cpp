@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // Per-step simulation cost on GPU device. Only runs when --forceGpu was set.
 
@@ -38,7 +38,7 @@ public:
 
     void startRun() override
     {
-        // Cache PhysX* once; see StepCpuBase for rationale.
+        // Cache the PhysX* once. See StepCpuBase for the rationale.
         mPhysX = BmGlobals::getInstance().getPhysX();
         if (!mPhysX) return;
 
@@ -86,7 +86,7 @@ public:
         : StepGpuBase("../benchmarks/data/articulation_pileup.usda") {}
 };
 
-// Minimal stepping fixture, GPU. See StepCpu.cpp::StepCpu_Cubes20 for rationale.
+// Minimal stepping fixture, GPU. See StepCpu.cpp::StepCpu_Cubes20 for the rationale.
 class StepGpu_Cubes20 : public StepGpuBase
 {
 public:

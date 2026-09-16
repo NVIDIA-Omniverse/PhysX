@@ -1,10 +1,19 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-PARSE-CORE-003
+ * @covers AC-2
+ */
 
+// The gear/rack-joint hinge relationship reads below route through
+// PhysXTools.h's ObjectKey/TokenId-keyed hasRelationship() / getRelationshipValue()
+// / getJointAndLocalPose() siblings (ADR-0018/ADR-0019), so this file no longer
+// needs SdfPath/TfToken directly. setArticulationDrivePositionTarget's diagnostic-
+// logging jointKey argument (InternalScene.h) is now ObjectKey-typed and
+// unconditional too, resolved to text via AttachedStage::textFor at the log site.
 #include "PhysXPropertiesUpdate.h"
-#include <physxSchema/tokens.h>
+#include <omni/physics/parse/KnownTokens.h>
 #include <PhysXTools.h>
 #include <Setup.h>
 #include <OmniPhysX.h>
@@ -17,16 +26,27 @@
 
 #include <carb/logging/Log.h>
 
+#include <common/foundation/MatrixTools.h>
+
 #include <PxPhysicsAPI.h>
 
 OMNI_LOG_DECLARE_CHANNEL(kRoboticsLogChannel)
 
 using namespace ::physx;
 using namespace carb;
-using namespace PXR_NS;
 using namespace omni::physx;
 using namespace omni::physx::usdparser;
 using namespace omni::physx::internal;
+
+// Resolves a dispatch-time TokenId back to its attribute-name string, for the
+// substring/exact-match property dispatch a handful of these update* bodies
+// still do on the raw name (D6 axis suffixes, limit field names, ...). Empty
+// when the stage has no attached source.
+static std::string tokenName(const AttachedStage& attachedStage, omni::physics::parse::TokenId property)
+{
+    const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+    return source ? std::string(source->tokenToString(property)) : std::string();
+}
 
 // Source-routed equivalent of
 //   prim.IsA<UsdPhysicsJoint>() && prim.HasAPI(schemaName, instance)
@@ -34,19 +54,26 @@ using namespace omni::physx::internal;
 // registered applied-schema base name; the PhysxSchemaTokens schema-identifier
 // tokens already carry that exact value, so they pass to forEachMultiApplyInstance
 // unchanged (no schema-type-name normalisation needed).
+//
+// The plain typed-prim isA("PhysicsJoint") check uses KnownTokens'
+// prim-type-name vocabulary (ADR-0018); tok.physicsJoint interns to
+// "PhysicsJoint", the same schema-identifier string
+// UsdSchemaRegistry::GetSchemaTypeName(TfType::Find<UsdPhysicsJoint>())
+// used to produce.
 static bool jointHasApiInstance(const AttachedStage& attachedStage,
                                 omni::physics::parse::ObjectKey key,
-                                const TfToken& schemaName,
-                                const TfToken& instance)
+                                omni::physics::parse::TokenId schemaName,
+                                omni::physics::parse::TokenId instance)
 {
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return false;
-    static const std::string jointType =
-        UsdSchemaRegistry::GetSchemaTypeName(TfType::Find<UsdPhysicsJoint>()).GetString();
-    if (!src->isA(key, src->internToken(jointType)))
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    if (!src->isA(key, tok.physicsJoint))
         return false;
-    const std::string appliedSchema = schemaName.GetString() + ":" + instance.GetString();
+    const std::string appliedSchema =
+        std::string(src->tokenToString(schemaName)) + ":" + std::string(src->tokenToString(instance));
     return src->hasSchema(key, src->internToken(appliedSchema));
 }
 
@@ -175,16 +202,16 @@ bool getD6ArticulationAxisFromDrive(const std::string& nameString, PxArticulatio
     return false;
 }
 
-bool mapAxisToToken(PxArticulationAxis::Enum& axis, TfToken& token) 
+bool mapAxisToToken(const AttachedStage&, const omni::physics::parse::KnownTokens& tok, PxArticulationAxis::Enum& axis, omni::physics::parse::TokenId& token)
 {
     if (axis == PxArticulationAxis::eTWIST) {
-        token = UsdPhysicsTokens->rotX;
+        token = tok.rotX;
         return true;
     } else if (axis == PxArticulationAxis::eSWING1) {
-        token = UsdPhysicsTokens->rotY;
+        token = tok.rotY;
         return true;
     } else if (axis == PxArticulationAxis::eSWING2) {
-        token = UsdPhysicsTokens->rotZ;
+        token = tok.rotZ;
         return true;
     }
         return false;
@@ -280,7 +307,7 @@ void getAxisAndDrive(const std::string& nameString, int& index, PxD6Drive::Enum&
     }
 }
 
-bool updateDriveTargetInternal(const AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode, bool position)
+bool updateDriveTargetInternal(const AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode, bool position)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -312,7 +339,7 @@ bool updateDriveTargetInternal(const AttachedStage& attachedStage, ObjectId obje
                 data = degToRad(data);
                 if (position)
                 {
-                    intJoint->setArticulationDrivePositionTarget(joint, ::physx::PxArticulationAxis::eTWIST, data, attachedStage.pathFor(objectRecord->mKey));
+                    intJoint->setArticulationDrivePositionTarget(joint, ::physx::PxArticulationAxis::eTWIST, data, objectRecord->mKey);
                 }
                 else
                 {
@@ -338,7 +365,7 @@ bool updateDriveTargetInternal(const AttachedStage& attachedStage, ObjectId obje
                 if (intJoint->mJointType == usdparser::eJointD6)
                 {
                     PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                    const bool validAxis = getD6ArticulationAxisFromDrive(property.GetString(), axis);
+                    const bool validAxis = getD6ArticulationAxisFromDrive(tokenName(attachedStage, property), axis);
                     if (validAxis)
                     {
                         data = degToRad(data);
@@ -402,7 +429,7 @@ bool updateDriveTargetInternal(const AttachedStage& attachedStage, ObjectId obje
             case eJointD6:
             {
                 PxD6Joint* d6Joint = (PxD6Joint*)joint;
-                const std::string& nameString = property.GetString();
+                const std::string nameString = tokenName(attachedStage, property);
                 bool updatePos = false;
                 int index = 0;
                 PxD6Drive::Enum drive = PxD6Drive::eX;
@@ -432,19 +459,19 @@ bool updateDriveTargetInternal(const AttachedStage& attachedStage, ObjectId obje
     return true;
 }
 
-bool omni::physx::updateDriveTargetPosition(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDriveTargetPosition(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     attachedStage.getPhysXPhysicsInterface()->finishSetup(attachedStage);
     return updateDriveTargetInternal(attachedStage, objectId, property, timeCode, true);
 }
 
-bool omni::physx::updateDriveTargetVelocity(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDriveTargetVelocity(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     attachedStage.getPhysXPhysicsInterface()->finishSetup(attachedStage);
     return updateDriveTargetInternal(attachedStage, objectId, property, timeCode, false);
 }
 
-bool omni::physx::updateDriveMaxForce(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDriveMaxForce(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -462,6 +489,11 @@ bool omni::physx::updateDriveMaxForce(AttachedStage& attachedStage, omni::physx:
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        omni::physics::parse::KnownTokens tok;
+        if (source)
+            tok.intern(*source);
+
         PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint && intJoint)
@@ -471,7 +503,7 @@ bool omni::physx::updateDriveMaxForce(AttachedStage& attachedStage, omni::physx:
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxDrivePerformanceEnvelopeAPI, UsdPhysicsTokens->angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.angular))
                     intJoint->mJointDrive.isEnvelopeUsed = true;
                 intJoint->mJointDrive.forceLimit = isfinite(data) ? data : FLT_MAX;
                 updateArticulationJointDrive(intJoint->mJointDrive, joint, ::physx::PxArticulationAxis::eTWIST);
@@ -479,7 +511,7 @@ bool omni::physx::updateDriveMaxForce(AttachedStage& attachedStage, omni::physx:
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxDrivePerformanceEnvelopeAPI, UsdPhysicsTokens->linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.linear))
                     intJoint->mJointDrive.isEnvelopeUsed = true;
                 intJoint->mJointDrive.forceLimit = isfinite(data) ? data : FLT_MAX;
                 updateArticulationJointDrive(intJoint->mJointDrive, joint, ::physx::PxArticulationAxis::eX);
@@ -490,12 +522,12 @@ bool omni::physx::updateDriveMaxForce(AttachedStage& attachedStage, omni::physx:
                 if (intJoint->mJointType == usdparser::eJointD6)
                 {
                     PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                    const bool validAxis = getD6ArticulationAxisFromDrive(property.GetString(), axis);
-                    TfToken token = UsdPhysicsTokens->rotX;
+                    const bool validAxis = getD6ArticulationAxisFromDrive(tokenName(attachedStage, property), axis);
+                    omni::physics::parse::TokenId token = tok.rotX;
                     if (validAxis)
                     {
-                        mapAxisToToken(axis, token);
-                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxDrivePerformanceEnvelopeAPI, token))
+                        mapAxisToToken(attachedStage, tok, axis, token);
+                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, token))
                             intJoint->mJointDrive.isEnvelopeUsed = true;
                         intJoint->mJointDrives[axis].forceLimit = isfinite(data) ? data : FLT_MAX;
                         updateArticulationJointDrive(intJoint->mJointDrives[axis], joint, axis);
@@ -543,7 +575,7 @@ bool omni::physx::updateDriveMaxForce(AttachedStage& attachedStage, omni::physx:
             case eJointD6:
             {
                 PxD6Joint* d6Joint = (PxD6Joint*)joint;
-                const std::string& nameString = property.GetString();
+                const std::string nameString = tokenName(attachedStage, property);
                 int index = 0;
                 PxD6Drive::Enum drive = PxD6Drive::eX;
                 getAxisAndDrive(nameString, index, drive);
@@ -565,7 +597,7 @@ bool omni::physx::updateDriveMaxForce(AttachedStage& attachedStage, omni::physx:
     return true;
 }
 
-bool omni::physx::updateDriveMaxActuatorVelocity(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDriveMaxActuatorVelocity(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -582,6 +614,12 @@ bool omni::physx::updateDriveMaxActuatorVelocity(AttachedStage& attachedStage, o
         float data;
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
+
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        omni::physics::parse::KnownTokens tok;
+        if (source)
+            tok.intern(*source);
+
         PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint && intJoint)
@@ -591,8 +629,8 @@ bool omni::physx::updateDriveMaxActuatorVelocity(AttachedStage& attachedStage, o
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxDrivePerformanceEnvelopeAPI, UsdPhysicsTokens->angular))
-                {       
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.angular))
+                {
                     intJoint->mJointDrive.isEnvelopeUsed = true;
                     intJoint->mJointDrive.maxActuatorVelocity = isfinite(data) ? degToRad(data) : FLT_MAX;
                     updateArticulationJointDrive(intJoint->mJointDrive, joint, ::physx::PxArticulationAxis::eTWIST);
@@ -601,7 +639,7 @@ bool omni::physx::updateDriveMaxActuatorVelocity(AttachedStage& attachedStage, o
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxDrivePerformanceEnvelopeAPI, UsdPhysicsTokens->linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.linear))
                 {       
                     intJoint->mJointDrive.isEnvelopeUsed = true;
                     intJoint->mJointDrive.maxActuatorVelocity = isfinite(data) ? data : FLT_MAX;
@@ -614,12 +652,12 @@ bool omni::physx::updateDriveMaxActuatorVelocity(AttachedStage& attachedStage, o
                 if (intJoint->mJointType == usdparser::eJointD6)
                 {
                     PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                    const bool validAxis = getD6ArticulationAxisFromEnvelope(property.GetString(), axis);
-                    TfToken token = UsdPhysicsTokens->rotX;
+                    const bool validAxis = getD6ArticulationAxisFromEnvelope(tokenName(attachedStage, property), axis);
+                    omni::physics::parse::TokenId token = tok.rotX;
                     if (validAxis)
                     {
-                        mapAxisToToken(axis, token);
-                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxDrivePerformanceEnvelopeAPI, token))
+                        mapAxisToToken(attachedStage, tok, axis, token);
+                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, token))
                         {
                             intJoint->mJointDrives[axis].isEnvelopeUsed = true;
                             intJoint->mJointDrives[axis].maxActuatorVelocity = isfinite(data) ? degToRad(data) : FLT_MAX;
@@ -634,7 +672,7 @@ bool omni::physx::updateDriveMaxActuatorVelocity(AttachedStage& attachedStage, o
     return true;
 }
 
-bool omni::physx::updateDriveVelocityDependentResistance(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDriveVelocityDependentResistance(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -652,6 +690,11 @@ bool omni::physx::updateDriveVelocityDependentResistance(AttachedStage& attached
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        omni::physics::parse::KnownTokens tok;
+        if (source)
+            tok.intern(*source);
+
         PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint && intJoint)
@@ -661,17 +704,17 @@ bool omni::physx::updateDriveVelocityDependentResistance(AttachedStage& attached
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxDrivePerformanceEnvelopeAPI, UsdPhysicsTokens->angular))
-                {       
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.angular))
+                {
                     intJoint->mJointDrive.isEnvelopeUsed = true;
-                    intJoint->mJointDrive.velocityDependentResistance = isfinite(data) ? radToDeg(data) : FLT_MAX; //torque * second / degrees                       
+                    intJoint->mJointDrive.velocityDependentResistance = isfinite(data) ? radToDeg(data) : FLT_MAX; //torque * second / degrees
                     updateArticulationJointDrive(intJoint->mJointDrive, joint, ::physx::PxArticulationAxis::eTWIST);
                 }
             }
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxDrivePerformanceEnvelopeAPI, UsdPhysicsTokens->linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.linear))
                 {       
                     intJoint->mJointDrive.isEnvelopeUsed = true;
                     intJoint->mJointDrive.velocityDependentResistance = isfinite(data) ? data : FLT_MAX;
@@ -684,12 +727,12 @@ bool omni::physx::updateDriveVelocityDependentResistance(AttachedStage& attached
                 if (intJoint->mJointType == usdparser::eJointD6)
                 {
                     PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                    const bool validAxis = getD6ArticulationAxisFromEnvelope(property.GetString(), axis);
-                    TfToken token = UsdPhysicsTokens->rotX;
+                    const bool validAxis = getD6ArticulationAxisFromEnvelope(tokenName(attachedStage, property), axis);
+                    omni::physics::parse::TokenId token = tok.rotX;
                     if (validAxis)
                     {
-                        mapAxisToToken(axis, token);
-                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxDrivePerformanceEnvelopeAPI, token))
+                        mapAxisToToken(attachedStage, tok, axis, token);
+                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, token))
                         {
                             intJoint->mJointDrives[axis].isEnvelopeUsed = true;
                             intJoint->mJointDrives[axis].velocityDependentResistance = isfinite(data) ? radToDeg(data) : FLT_MAX; //torque * second / degrees
@@ -704,7 +747,7 @@ bool omni::physx::updateDriveVelocityDependentResistance(AttachedStage& attached
     return true;
 }
 
-bool omni::physx::updateDriveSpeedEffortGradient(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDriveSpeedEffortGradient(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -722,6 +765,11 @@ bool omni::physx::updateDriveSpeedEffortGradient(AttachedStage& attachedStage, o
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        omni::physics::parse::KnownTokens tok;
+        if (source)
+            tok.intern(*source);
+
         PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint && intJoint)
@@ -731,8 +779,8 @@ bool omni::physx::updateDriveSpeedEffortGradient(AttachedStage& attachedStage, o
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxDrivePerformanceEnvelopeAPI, UsdPhysicsTokens->angular))
-                {       
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.angular))
+                {
                     intJoint->mJointDrive.isEnvelopeUsed = true;
                     intJoint->mJointDrive.speedEffortGradient = isfinite(data) ? degToRad(data) : FLT_MAX;
                     updateArticulationJointDrive(intJoint->mJointDrive, joint, ::physx::PxArticulationAxis::eTWIST);
@@ -741,7 +789,7 @@ bool omni::physx::updateDriveSpeedEffortGradient(AttachedStage& attachedStage, o
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxDrivePerformanceEnvelopeAPI, UsdPhysicsTokens->linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, tok.linear))
                 {       
                     intJoint->mJointDrive.isEnvelopeUsed = true;
                     intJoint->mJointDrive.speedEffortGradient = isfinite(data) ? data : FLT_MAX;
@@ -754,12 +802,12 @@ bool omni::physx::updateDriveSpeedEffortGradient(AttachedStage& attachedStage, o
                 if (intJoint->mJointType == usdparser::eJointD6)
                 {
                     PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                    const bool validAxis = getD6ArticulationAxisFromEnvelope(property.GetString(), axis);
-                    TfToken token = UsdPhysicsTokens->rotX;
+                    const bool validAxis = getD6ArticulationAxisFromEnvelope(tokenName(attachedStage, property), axis);
+                    omni::physics::parse::TokenId token = tok.rotX;
                     if (validAxis)
                     {
-                        mapAxisToToken(axis, token);
-                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxDrivePerformanceEnvelopeAPI, token))
+                        mapAxisToToken(attachedStage, tok, axis, token);
+                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxDrivePerformanceEnvelopeAPI, token))
                         {
                             intJoint->mJointDrives[axis].isEnvelopeUsed = true;
                             intJoint->mJointDrives[axis].speedEffortGradient = isfinite(data) ? degToRad(data) : FLT_MAX;
@@ -774,7 +822,7 @@ bool omni::physx::updateDriveSpeedEffortGradient(AttachedStage& attachedStage, o
     return true;
 }
 
-bool omni::physx::updateDriveDamping(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDriveDamping(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -818,7 +866,7 @@ bool omni::physx::updateDriveDamping(AttachedStage& attachedStage, omni::physx::
                 if (intJoint->mJointType == usdparser::eJointD6)
                 {
                     PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                    const bool validAxis = getD6ArticulationAxisFromDrive(property.GetString(), axis);
+                    const bool validAxis = getD6ArticulationAxisFromDrive(tokenName(attachedStage, property), axis);
                     if (validAxis)
                     {
                         // for rot dof stiffness and damping are in 1/deg in usd,
@@ -871,7 +919,7 @@ bool omni::physx::updateDriveDamping(AttachedStage& attachedStage, omni::physx::
             case eJointD6:
             {
                 PxD6Joint* d6Joint = (PxD6Joint*)joint;
-                const std::string& nameString = property.GetString();
+                const std::string nameString = tokenName(attachedStage, property);
                 int index = 0;
                 PxD6Drive::Enum drive = PxD6Drive::eX;
                 getAxisAndDrive(nameString, index, drive);
@@ -895,7 +943,7 @@ bool omni::physx::updateDriveDamping(AttachedStage& attachedStage, omni::physx::
     return true;
 }
 
-bool omni::physx::updateDriveStiffness(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDriveStiffness(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -937,7 +985,7 @@ bool omni::physx::updateDriveStiffness(AttachedStage& attachedStage, omni::physx
                 if (intJoint->mJointType == usdparser::eJointD6)
                 {
                     PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                    const bool validAxis = getD6ArticulationAxisFromDrive(property.GetString(), axis);
+                    const bool validAxis = getD6ArticulationAxisFromDrive(tokenName(attachedStage, property), axis);
                     if (validAxis)
                     {
                         intJoint->mJointDrives[axis].stiffness = isfinite(data) ? radToDeg(data) : FLT_MAX;
@@ -986,7 +1034,7 @@ bool omni::physx::updateDriveStiffness(AttachedStage& attachedStage, omni::physx
             case eJointD6:
             {
                 PxD6Joint* d6Joint = (PxD6Joint*)joint;
-                const std::string& nameString = property.GetString();
+                const std::string nameString = tokenName(attachedStage, property);
                 int index = 0;
                 PxD6Drive::Enum drive = PxD6Drive::eX;
                 getAxisAndDrive(nameString, index, drive);
@@ -1010,7 +1058,7 @@ bool omni::physx::updateDriveStiffness(AttachedStage& attachedStage, omni::physx
     return true;
 }
 
-bool omni::physx::updateDriveType(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDriveType(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1024,9 +1072,15 @@ bool omni::physx::updateDriveType(AttachedStage& attachedStage, omni::physx::usd
 
     if (internalType == ePTLinkJoint)
     {
-        TfToken data;
-        if (!getValue<TfToken>(attachedStage, objectRecord->mKey, property, timeCode, data))
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        if (!source)
             return true;
+        omni::physics::parse::TokenId data;
+        if (!getValue<omni::physics::parse::TokenId>(attachedStage, objectRecord->mKey, property, timeCode, data))
+            return true;
+
+        omni::physics::parse::KnownTokens tok;
+        tok.intern(*source);
 
         PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
@@ -1037,13 +1091,13 @@ bool omni::physx::updateDriveType(AttachedStage& attachedStage, omni::physx::usd
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                intJoint->mJointDrive.acceleration = (data == UsdPhysicsTokens.Get()->acceleration) ? true : false;
+                intJoint->mJointDrive.acceleration = (data == tok.acceleration) ? true : false;
                 updateArticulationJointDrive(intJoint->mJointDrive, joint, ::physx::PxArticulationAxis::eTWIST);
             }
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                intJoint->mJointDrive.acceleration = (data == UsdPhysicsTokens.Get()->acceleration) ? true : false;
+                intJoint->mJointDrive.acceleration = (data == tok.acceleration) ? true : false;
                 updateArticulationJointDrive(intJoint->mJointDrive, joint, ::physx::PxArticulationAxis::eX);
             }
             break;
@@ -1052,10 +1106,10 @@ bool omni::physx::updateDriveType(AttachedStage& attachedStage, omni::physx::usd
                 if (intJoint->mJointType == usdparser::eJointD6)
                 {
                     PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                    const bool validAxis = getD6ArticulationAxisFromDrive(property.GetString(), axis);
+                    const bool validAxis = getD6ArticulationAxisFromDrive(tokenName(attachedStage, property), axis);
                     if (validAxis)
                     {
-                        intJoint->mJointDrives[axis].acceleration = (data == UsdPhysicsTokens.Get()->acceleration) ? true : false;
+                        intJoint->mJointDrives[axis].acceleration = (data == tok.acceleration) ? true : false;
                         updateArticulationJointDrive(intJoint->mJointDrives[axis], joint, axis);
                     }
                 }
@@ -1065,13 +1119,19 @@ bool omni::physx::updateDriveType(AttachedStage& attachedStage, omni::physx::usd
     }
     else if (internalType == ePTJoint)
     {
-        TfToken data;
-        if (!getValue<TfToken>(attachedStage, objectRecord->mKey, property, timeCode, data))
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        if (!source)
             return true;
+        omni::physics::parse::TokenId data;
+        if (!getValue<omni::physics::parse::TokenId>(attachedStage, objectRecord->mKey, property, timeCode, data))
+            return true;
+
+        omni::physics::parse::KnownTokens tok;
+        tok.intern(*source);
 
         PxJoint* joint = (PxJoint*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
-        intJoint->mJointDrive.acceleration = (data == UsdPhysicsTokens.Get()->acceleration) ? true : false;
+        intJoint->mJointDrive.acceleration = (data == tok.acceleration) ? true : false;
         if (joint)
         {
             switch (intJoint->mJointType)
@@ -1101,12 +1161,12 @@ bool omni::physx::updateDriveType(AttachedStage& attachedStage, omni::physx::usd
             case eJointD6:
             {
                 PxD6Joint* d6Joint = (PxD6Joint*)joint;
-                const std::string& nameString = property.GetString();
+                const std::string nameString = tokenName(attachedStage, property);
                 int index = 0;
                 PxD6Drive::Enum drive = PxD6Drive::eX;
                 getAxisAndDrive(nameString, index, drive);
                 intJoint->mJointDrives[index].acceleration =
-                    (data == UsdPhysicsTokens.Get()->acceleration) ? true : false;
+                    (data == tok.acceleration) ? true : false;
                 PxD6JointDrive jointDrive(intJoint->mJointDrives[index].stiffness, intJoint->mJointDrives[index].damping,
                     intJoint->mJointDrives[index].forceLimit,
                     intJoint->mJointDrives[index].acceleration);
@@ -1125,7 +1185,7 @@ bool omni::physx::updateDriveType(AttachedStage& attachedStage, omni::physx::usd
 }
 
 
-bool updateJointStateInternal(const AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode, bool position)
+bool updateJointStateInternal(const AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode, bool position)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1191,7 +1251,7 @@ bool updateJointStateInternal(const AttachedStage& attachedStage, ObjectId objec
                 if (intJoint->mJointType == usdparser::eJointD6)
                 {
                     PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                    const bool validAxis = getD6ArticulationAxisFromJointState(property.GetString(), axis);
+                    const bool validAxis = getD6ArticulationAxisFromJointState(tokenName(attachedStage, property), axis);
                     if (validAxis)
                     {
                         data = degToRad(data);
@@ -1220,13 +1280,13 @@ bool updateJointStateInternal(const AttachedStage& attachedStage, ObjectId objec
     return true;
 }
 
-bool omni::physx::updateJointStatePosition(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateJointStatePosition(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     attachedStage.getPhysXPhysicsInterface()->finishSetup(attachedStage);
     return updateJointStateInternal(attachedStage, objectId, property, timeCode, true);
 }
 
-bool omni::physx::updateJointStateVelocity(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateJointStateVelocity(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     attachedStage.getPhysXPhysicsInterface()->finishSetup(attachedStage);
     return updateJointStateInternal(attachedStage, objectId, property, timeCode, false);
@@ -1361,7 +1421,7 @@ bool emitArticulationJointLimitWarnings(const PxArticulationJointReducedCoordina
     return false;
 }
 
-bool omni::physx::updateLimitHigh(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateLimitHigh(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1395,7 +1455,7 @@ bool omni::physx::updateLimitHigh(AttachedStage& attachedStage, ObjectId objectI
             // Work out which axis is addressed by the limit change and convert to radians as required.
             PxArticulationAxis::Enum axis = PxArticulationAxis::eCOUNT;
             float limitToSet = data;
-            computeArticulationJointLimitValueAndAxis<true>(*joint, *intJoint, data, property.GetString(), axis, limitToSet);
+            computeArticulationJointLimitValueAndAxis<true>(*joint, *intJoint, data, tokenName(attachedStage, property), axis, limitToSet);
 
             // Skip the update if a warning was emitted.
             if(emitArticulationJointLimitWarnings<true>(*joint, attachedStage.textFor(objectRecord->mKey), axis))
@@ -1467,7 +1527,7 @@ bool omni::physx::updateLimitHigh(AttachedStage& attachedStage, ObjectId objectI
             case eJointD6:
             {
                 PxD6Joint* d6Joint = (PxD6Joint*)joint;
-                const std::string& nameString = property.GetString();
+                const std::string nameString = tokenName(attachedStage, property);
                 if (nameString == "limit:transX:physics:high")
                 {
                     PxJointLinearLimitPair limitPair = d6Joint->getLinearLimit(PxD6Axis::eX);
@@ -1523,7 +1583,7 @@ bool omni::physx::updateLimitHigh(AttachedStage& attachedStage, ObjectId objectI
     return true;
 }
 
-bool omni::physx::updateLimitLow(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateLimitLow(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1557,7 +1617,7 @@ bool omni::physx::updateLimitLow(AttachedStage& attachedStage, ObjectId objectId
             // Work out which axis is addressed by the limit change and convert to radians as required.
             PxArticulationAxis::Enum axis;
             float limitToSet = data;
-            computeArticulationJointLimitValueAndAxis<false>(*joint, *intJoint, data, property.GetString(), axis, limitToSet);
+            computeArticulationJointLimitValueAndAxis<false>(*joint, *intJoint, data, tokenName(attachedStage, property), axis, limitToSet);
 
             // Skip the update if a warning was emitted.
             if(emitArticulationJointLimitWarnings<false>(*joint, attachedStage.textFor(objectRecord->mKey), axis))
@@ -1630,7 +1690,7 @@ bool omni::physx::updateLimitLow(AttachedStage& attachedStage, ObjectId objectId
             case eJointD6:
             {
                 PxD6Joint* d6Joint = (PxD6Joint*)joint;
-                const std::string& nameString = property.GetString();
+                const std::string nameString = tokenName(attachedStage, property);
                 if (nameString == "limit:transX:physics:low")
                 {
                     PxJointLinearLimitPair limitPair = d6Joint->getLinearLimit(PxD6Axis::eX);
@@ -1681,7 +1741,7 @@ bool omni::physx::updateLimitLow(AttachedStage& attachedStage, ObjectId objectId
     return true;
 }
 
-bool omni::physx::updateEnableCollision(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateEnableCollision(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1715,7 +1775,7 @@ bool omni::physx::updateEnableCollision(AttachedStage& attachedStage, omni::phys
     return true;
 }
 
-bool omni::physx::updateBreakForce(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateBreakForce(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1761,7 +1821,7 @@ bool omni::physx::updateBreakForce(AttachedStage& attachedStage, omni::physx::us
     return true;
 }
 
-bool omni::physx::updateBreakTorque(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateBreakTorque(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1841,7 +1901,7 @@ void wakeUpJointRigidsOrArticulations(PxRigidActor* actor0, PxRigidActor* actor1
     }
 }
 
-bool updateLocalPosInternal(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode, bool pose0)
+bool updateLocalPosInternal(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode, bool pose0)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1853,8 +1913,8 @@ bool updateLocalPosInternal(AttachedStage& attachedStage, omni::physx::usdparser
 
     if (internalType == ePTJoint)
     {
-        GfVec3f data;
-        if (!getValue<GfVec3f>(attachedStage, objectRecord->mKey, property, timeCode, data))
+        carb::Float3 data;
+        if (!getValue<carb::Float3>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
         PxJoint* joint = (PxJoint*)objectRecord->mPtr;
@@ -1884,11 +1944,9 @@ bool updateLocalPosInternal(AttachedStage& attachedStage, omni::physx::usdparser
             if(actorObjectID != kInvalidObjectId)
             {
                 const InternalDatabase::Record& actorRecord = db.getRecords()[actorObjectID];
-                const GfTransform tr(getWorldTransform(attachedStage, actorRecord.mKey, timeCode));
-                const GfVec3f scale = GfVec3f(tr.GetScale());
-                localPose.p.x *= scale[0];
-                localPose.p.y *= scale[1];
-                localPose.p.z *= scale[2];
+                const PxVec3 scale =
+                    omni::physx::getScale(getWorldTransform(attachedStage, actorRecord.mKey, timeCode));
+                localPose.p = localPose.p.multiply(scale);
             }
             joint->setLocalPose(actorIndex, localPose);
             wakeUpJointRigidsOrArticulations(actor0, actor1);
@@ -1903,17 +1961,17 @@ bool updateLocalPosInternal(AttachedStage& attachedStage, omni::physx::usdparser
     return true;
 }
 
-bool omni::physx::updateLocalPos0(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateLocalPos0(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     return updateLocalPosInternal(attachedStage, objectId, property, timeCode, true);
 }
 
-bool omni::physx::updateLocalPos1(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateLocalPos1(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     return updateLocalPosInternal(attachedStage, objectId, property, timeCode, false);
 }
 
-bool updateLocalRotInternal(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode, bool pose0)
+bool updateLocalRotInternal(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode, bool pose0)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1925,8 +1983,8 @@ bool updateLocalRotInternal(AttachedStage& attachedStage, omni::physx::usdparser
 
     if (internalType == ePTJoint)
     {
-        GfQuatf data;
-        if (!getValue<GfQuatf>(attachedStage, objectRecord->mKey, property, timeCode, data))
+        carb::Float4 data;
+        if (!getValue<carb::Float4>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
         PxJoint* joint = (PxJoint*)objectRecord->mPtr;
@@ -1935,7 +1993,7 @@ bool updateLocalRotInternal(AttachedStage& attachedStage, omni::physx::usdparser
         {
             const PxJointActorIndex::Enum actorIndex = pose0 ? PxJointActorIndex::eACTOR0 : PxJointActorIndex::eACTOR1;
             PxTransform localPose = joint->getLocalPose(actorIndex);
-            localPose.q = toPhysX(data);
+            localPose.q = toPhysXQuat(data);
             intJoint->fixupLocalPose(localPose);
             joint->setLocalPose(actorIndex, localPose);
             PxRigidActor* actor0 = nullptr;
@@ -1980,17 +2038,17 @@ bool updateLocalRotInternal(AttachedStage& attachedStage, omni::physx::usdparser
     return true;
 }
 
-bool omni::physx::updateLocalRot0(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateLocalRot0(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     return updateLocalRotInternal(attachedStage, objectId, property, timeCode, true);
 }
 
-bool omni::physx::updateLocalRot1(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateLocalRot1(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     return updateLocalRotInternal(attachedStage, objectId, property, timeCode, false);
 }
 
-bool omni::physx::updateGearRatio(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateGearRatio(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2020,7 +2078,7 @@ bool omni::physx::updateGearRatio(AttachedStage& attachedStage, omni::physx::usd
     return true;
 }
 
-bool updateGearHinge(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode, bool hinge0)
+bool updateGearHinge(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode, bool hinge0)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2051,7 +2109,7 @@ bool updateGearHinge(AttachedStage& attachedStage, omni::physx::usdparser::Objec
                     const PxBase* h1 = nullptr;
                     gearJoint->getHinges(h0, h1);
 
-                    SdfPathVector hinges;
+                    std::vector<omni::physics::parse::ObjectKey> hinges;
                     getRelationshipValue(attachedStage, objectRecord->mKey, property, hinges);
 
                     if (hinge0)
@@ -2066,7 +2124,7 @@ bool updateGearHinge(AttachedStage& attachedStage, omni::physx::usdparser::Objec
                             {
                                 CARB_LOG_ERROR(
                                     "Invalid configuration for gear joint(%s) - neither parent nor child link of hinge 0 (%s) refer to body 0.",
-                                    attachedStage.textFor(objectRecord->mKey), hinges[0].GetText());
+                                    attachedStage.textFor(objectRecord->mKey), attachedStage.textFor(hinges[0]));
                                 return true;
                             }
                             gearJoint->setHinges(hinge, h1);
@@ -2085,7 +2143,7 @@ bool updateGearHinge(AttachedStage& attachedStage, omni::physx::usdparser::Objec
                             {
                                 CARB_LOG_ERROR(
                                     "Invalid configuration for gear joint(%s) - neither parent nor child link of hinge 0 (%s) refer to body 0.",
-                                    attachedStage.textFor(objectRecord->mKey), hinges[0].GetText());
+                                    attachedStage.textFor(objectRecord->mKey), attachedStage.textFor(hinges[0]));
                                 return true;
                             }
                             gearJoint->setHinges(h0, hinge);
@@ -2100,17 +2158,17 @@ bool updateGearHinge(AttachedStage& attachedStage, omni::physx::usdparser::Objec
     return true;
 }
 
-bool omni::physx::updateGearHinge0(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateGearHinge0(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     return updateGearHinge(attachedStage, objectId, property, timeCode, true);
 }
 
-bool omni::physx::updateGearHinge1(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateGearHinge1(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
 return updateGearHinge(attachedStage, objectId, property, timeCode, false);
 }
 
-bool updateRackHingePrismatic(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode, bool hingeJointUpdate)
+bool updateRackHingePrismatic(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode, bool hingeJointUpdate)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2141,7 +2199,7 @@ bool updateRackHingePrismatic(AttachedStage& attachedStage, omni::physx::usdpars
                     const PxBase* j1 = nullptr;
                     rackJoint->getJoints(j0, j1);
 
-                    SdfPathVector hinges;
+                    std::vector<omni::physics::parse::ObjectKey> hinges;
                     getRelationshipValue(attachedStage, objectRecord->mKey, property, hinges);
                     if (hingeJointUpdate)
                     {
@@ -2155,7 +2213,7 @@ bool updateRackHingePrismatic(AttachedStage& attachedStage, omni::physx::usdpars
                             {
                                 CARB_LOG_ERROR(
                                     "Invalid configuration for gear joint(%s) - neither parent nor child link of hinge 0 (%s) refer to body 0.",
-                                    attachedStage.textFor(objectRecord->mKey), hinges[0].GetText());
+                                    attachedStage.textFor(objectRecord->mKey), attachedStage.textFor(hinges[0]));
                                 return true;
                             }
                             rackJoint->setJoints(hinge, j1);
@@ -2174,7 +2232,7 @@ bool updateRackHingePrismatic(AttachedStage& attachedStage, omni::physx::usdpars
                             {
                                 CARB_LOG_ERROR(
                                     "Invalid configuration for gear joint(%s) - neither parent nor child link of hinge 0 (%s) refer to body 0.",
-                                    attachedStage.textFor(objectRecord->mKey), hinges[0].GetText());
+                                    attachedStage.textFor(objectRecord->mKey), attachedStage.textFor(hinges[0]));
                                 return true;
                             }
                             rackJoint->setJoints(j0, hinge);
@@ -2189,20 +2247,20 @@ bool updateRackHingePrismatic(AttachedStage& attachedStage, omni::physx::usdpars
     return true;
 }
 
-bool omni::physx::updateRackHinge(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateRackHinge(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     return updateRackHingePrismatic(attachedStage, objectId, property, timeCode, true);
 }
 
-bool omni::physx::updateRackPrismatic(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateRackPrismatic(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
 return updateRackHingePrismatic(attachedStage, objectId, property, timeCode, false);
 }
 
 
 bool omni::physx::updateRackPinionRatio(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-                                  const PXR_NS::TfToken& property,
-                                  const PXR_NS::UsdTimeCode& timeCode)
+                                  omni::physics::parse::TokenId property,
+                                  omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2235,7 +2293,7 @@ bool omni::physx::updateRackPinionRatio(AttachedStage& attachedStage, omni::phys
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // articulation
 bool omni::physx::updateArticulationFixBase(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2262,7 +2320,7 @@ bool omni::physx::updateArticulationFixBase(AttachedStage& attachedStage, omni::
 }
 
 bool omni::physx::updateArticulationSolverPositionIterationCount(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2294,7 +2352,7 @@ bool omni::physx::updateArticulationSolverPositionIterationCount(AttachedStage& 
 }
 
 bool omni::physx::updateArticulationSolverVelocityIterationCount(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2326,7 +2384,7 @@ bool omni::physx::updateArticulationSolverVelocityIterationCount(AttachedStage& 
 }
 
 bool omni::physx::updateArticulationSleepThreshold(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2353,7 +2411,7 @@ bool omni::physx::updateArticulationSleepThreshold(AttachedStage& attachedStage,
 }
 
 bool omni::physx::updateArticulationStabilizationThreshold(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2382,7 +2440,7 @@ bool omni::physx::updateArticulationStabilizationThreshold(AttachedStage& attach
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // articulation link
 bool omni::physx::updateArticulationMaxJointVelocity(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2420,7 +2478,7 @@ bool omni::physx::updateArticulationMaxJointVelocity(AttachedStage& attachedStag
 }
 
 bool omni::physx::updateArticulationMaxJointVelocityPerAxis(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2436,6 +2494,11 @@ bool omni::physx::updateArticulationMaxJointVelocityPerAxis(AttachedStage& attac
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        omni::physics::parse::KnownTokens tok;
+        if (source)
+            tok.intern(*source);
+
         PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
         if (joint)
         {
@@ -2444,7 +2507,7 @@ bool omni::physx::updateArticulationMaxJointVelocityPerAxis(AttachedStage& attac
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, UsdPhysicsTokens->angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.angular))
                 {
                     data =  isfinite(data) ? degToRad(data) : FLT_MAX;
                     joint->setMaxJointVelocity(PxArticulationAxis::eTWIST, data);
@@ -2453,7 +2516,7 @@ bool omni::physx::updateArticulationMaxJointVelocityPerAxis(AttachedStage& attac
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, UsdPhysicsTokens->linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.linear))
                 {
                     data = isfinite(data) ? data : FLT_MAX;
                     joint->setMaxJointVelocity(PxArticulationAxis::eX, data);
@@ -2463,12 +2526,12 @@ bool omni::physx::updateArticulationMaxJointVelocityPerAxis(AttachedStage& attac
             case PxArticulationJointType::eSPHERICAL:
             {
                 PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                const bool validAxis = getD6ArticulationAxisFromProperties(property.GetString(), axis);
-                TfToken token = UsdPhysicsTokens->rotX;
+                const bool validAxis = getD6ArticulationAxisFromProperties(tokenName(attachedStage, property), axis);
+                omni::physics::parse::TokenId token = tok.rotX;
                 if (validAxis)
                 {
-                    mapAxisToToken(axis, token);
-                    if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, token))
+                    mapAxisToToken(attachedStage, tok, axis, token);
+                    if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, token))
                     {
                         data = isfinite(data) ? degToRad(data) : FLT_MAX;
                         joint->setMaxJointVelocity(axis, data);
@@ -2484,8 +2547,104 @@ bool omni::physx::updateArticulationMaxJointVelocityPerAxis(AttachedStage& attac
     return true;
 }
 
+// Newton fallback: newton:velocityLimit -> physxJoint:maxJointVelocity. Both are
+// joint-level and share units, so the runtime handler is the PhysX one plus the
+// PhysX-wins guard and Newton's [0, inf] range clamp.
+bool omni::physx::updateNewtonJointVelocityLimit(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
+{
+    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
+    const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+
+    PhysXType internalType = ePTRemoved;
+    const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
+    if (!objectRecord)
+        return true;
+
+    if (internalType != ePTLinkJoint)
+        return true;
+
+    // PhysX wins: skip when physxJoint:maxJointVelocity is authored. Authored-ness comes
+    // from the "unlimited" sentinel in the resolved value, shared with the parse-time
+    // fallback (isPhysxMaxJointVelocityAuthored) — this used to ask hasAuthoredAttribute,
+    // which a resolved-value backend answers `true` for everything it publishes
+    // (ADR-0020), so on ovstage this handler returned here every time and no Newton
+    // velocityLimit edit ever reached PhysX.
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    const omni::physics::parse::ObjectKey key = objectRecord->mKey;
+    if (!src || !src->exists(key))
+        return true;
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(*src);
+    if (omni::physics::parse::isPhysxMaxJointVelocityAuthored(*src, key, tok.physxJointMaxJointVelocity))
+        return true;
+
+    float data;
+    if (!getValue<float>(attachedStage, key, property, timeCode, data))
+        return true;
+
+    // Newton declares the range as (0, inf]; clamp the way the parse-time fallback does.
+    if (!(data >= 0.0f))
+        data = 0.0f;
+
+    PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
+    if (joint)
+    {
+        // A per-axis PhysxJointAxisAPI:maxJointVelocity outranks the joint-level Newton value, the
+        // same way it does at parse time: readPhysxJointAxisApi seeds each axis from the joint-level
+        // source, then the per-axis block overrides it. So set the axes the user has not opined on
+        // per-axis individually instead of broadcasting with the joint-level setter, which would
+        // clobber that authoring until the next reparse.
+        auto perAxisOverrides = [&](omni::physics::parse::TokenId instanceName) {
+            if (!jointHasApiInstance(attachedStage, key, tok.PhysxJointAxisAPI, instanceName))
+                return false;
+            // Applied but left unlimited is no PhysX opinion, the same way parse time
+            // reads it — otherwise merely applying the per-axis API would freeze the
+            // axis at its attach-time value while parse-time still let Newton through.
+            return omni::physics::parse::isPhysxMaxJointVelocityAuthored(
+                *src, key,
+                src->internToken("physxJointAxis:" + std::string(src->tokenToString(instanceName)) + ":maxJointVelocity"));
+        };
+
+        switch (joint->getJointType())
+        {
+            case PxArticulationJointType::eREVOLUTE:
+            case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
+            {
+                if (!perAxisOverrides(tok.angular))
+                    joint->setMaxJointVelocity(PxArticulationAxis::eTWIST, isfinite(data) ? degToRad(data) : FLT_MAX);
+            }
+            break;
+            case PxArticulationJointType::eSPHERICAL:
+            {
+                const float value = isfinite(data) ? degToRad(data) : FLT_MAX;
+                const PxArticulationAxis::Enum sphericalAxes[] = { PxArticulationAxis::eTWIST,
+                                                                   PxArticulationAxis::eSWING1,
+                                                                   PxArticulationAxis::eSWING2 };
+                for (PxArticulationAxis::Enum axis : sphericalAxes)
+                {
+                    omni::physics::parse::TokenId token;
+                    if (mapAxisToToken(attachedStage, tok, axis, token) && !perAxisOverrides(token))
+                        joint->setMaxJointVelocity(axis, value);
+                }
+            }
+            break;
+            case PxArticulationJointType::ePRISMATIC:
+            {
+                if (!perAxisOverrides(tok.linear))
+                    joint->setMaxJointVelocity(PxArticulationAxis::eX, isfinite(data) ? data : FLT_MAX);
+            }
+            break;
+            default:
+                joint->setMaxJointVelocity(isfinite(data) ? data : FLT_MAX);
+                break;
+        }
+    }
+    return true;
+}
+
 bool omni::physx::updateArticulationFrictionCoefficient(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2510,7 +2669,7 @@ bool omni::physx::updateArticulationFrictionCoefficient(AttachedStage& attachedS
     return true;
 }
 
-bool omni::physx::updateArmature(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateArmature(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2563,7 +2722,7 @@ bool omni::physx::updateArmature(AttachedStage& attachedStage, ObjectId objectId
     return true;
 }
 
-bool omni::physx::updateArmaturePerAxis(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateArmaturePerAxis(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2579,6 +2738,11 @@ bool omni::physx::updateArmaturePerAxis(AttachedStage& attachedStage, ObjectId o
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        omni::physics::parse::KnownTokens tok;
+        if (source)
+            tok.intern(*source);
+
         PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint && intJoint)
@@ -2592,7 +2756,7 @@ bool omni::physx::updateArmaturePerAxis(AttachedStage& attachedStage, ObjectId o
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, UsdPhysicsTokens->angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.angular))
                 {
                     data = isfinite(data) ? data : FLT_MAX;
                     joint->setArmature(PxArticulationAxis::eTWIST, data);
@@ -2601,7 +2765,7 @@ bool omni::physx::updateArmaturePerAxis(AttachedStage& attachedStage, ObjectId o
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, UsdPhysicsTokens->linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.linear))
                 {
                     data = isfinite(data) ? data : FLT_MAX;
                     joint->setArmature(PxArticulationAxis::eX, data);
@@ -2611,12 +2775,12 @@ bool omni::physx::updateArmaturePerAxis(AttachedStage& attachedStage, ObjectId o
             case PxArticulationJointType::eSPHERICAL:
             {
                 PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                const bool validAxis = getD6ArticulationAxisFromProperties(property.GetString(), axis);
-                TfToken token = UsdPhysicsTokens->rotX;
+                const bool validAxis = getD6ArticulationAxisFromProperties(tokenName(attachedStage, property), axis);
+                omni::physics::parse::TokenId token = tok.rotX;
                 if (validAxis)
                 {
-                    mapAxisToToken(axis, token);
-                    if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, token))
+                    mapAxisToToken(attachedStage, tok, axis, token);
+                    if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, token))
                     {
                         data = isfinite(data) ? data : FLT_MAX;
                         joint->setArmature(axis, data);
@@ -2633,7 +2797,7 @@ bool omni::physx::updateArmaturePerAxis(AttachedStage& attachedStage, ObjectId o
     return true;
 }
 
-bool omni::physx::updateArticulationStaticFrictionEffort(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateArticulationStaticFrictionEffort(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2649,6 +2813,11 @@ bool omni::physx::updateArticulationStaticFrictionEffort(AttachedStage& attached
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        omni::physics::parse::KnownTokens tok;
+        if (source)
+            tok.intern(*source);
+
         PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint && intJoint)
@@ -2662,7 +2831,7 @@ bool omni::physx::updateArticulationStaticFrictionEffort(AttachedStage& attached
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, UsdPhysicsTokens->angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.angular))
                 {
                     PxJointFrictionParams params = joint->getFrictionParams(PxArticulationAxis::eTWIST);
                     params.staticFrictionEffort = isfinite(data) ? data : FLT_MAX;
@@ -2672,7 +2841,7 @@ bool omni::physx::updateArticulationStaticFrictionEffort(AttachedStage& attached
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, UsdPhysicsTokens->linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.linear))
                 {
                     PxJointFrictionParams params = joint->getFrictionParams(PxArticulationAxis::eX);
                     params.staticFrictionEffort = isfinite(data) ? data : FLT_MAX;
@@ -2683,12 +2852,12 @@ bool omni::physx::updateArticulationStaticFrictionEffort(AttachedStage& attached
             case PxArticulationJointType::eSPHERICAL:
             {
                 PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                const bool validAxis = getD6ArticulationAxisFromProperties(property.GetString(), axis);
-                TfToken token = UsdPhysicsTokens->rotX;
+                const bool validAxis = getD6ArticulationAxisFromProperties(tokenName(attachedStage, property), axis);
+                omni::physics::parse::TokenId token = tok.rotX;
                 if (validAxis)
                     {
-                        mapAxisToToken(axis, token);
-                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, token))
+                        mapAxisToToken(attachedStage, tok, axis, token);
+                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, token))
                         {
                             PxJointFrictionParams params = joint->getFrictionParams(axis);
                             params.staticFrictionEffort = isfinite(data) ? data : FLT_MAX;
@@ -2707,7 +2876,7 @@ bool omni::physx::updateArticulationStaticFrictionEffort(AttachedStage& attached
     return true;
 }
 
-bool omni::physx::updateArticulationDynamicFrictionEffort(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateArticulationDynamicFrictionEffort(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2723,6 +2892,11 @@ bool omni::physx::updateArticulationDynamicFrictionEffort(AttachedStage& attache
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        omni::physics::parse::KnownTokens tok;
+        if (source)
+            tok.intern(*source);
+
         PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint && intJoint)
@@ -2736,7 +2910,7 @@ bool omni::physx::updateArticulationDynamicFrictionEffort(AttachedStage& attache
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, UsdPhysicsTokens->angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.angular))
                 {
                     PxJointFrictionParams params = joint->getFrictionParams(PxArticulationAxis::eTWIST);
                     params.dynamicFrictionEffort = isfinite(data) ? data : FLT_MAX;
@@ -2746,7 +2920,7 @@ bool omni::physx::updateArticulationDynamicFrictionEffort(AttachedStage& attache
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, UsdPhysicsTokens->linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.linear))
                 {
                     PxJointFrictionParams params = joint->getFrictionParams(PxArticulationAxis::eX);
                     params.dynamicFrictionEffort = isfinite(data) ? data : FLT_MAX;
@@ -2757,12 +2931,12 @@ bool omni::physx::updateArticulationDynamicFrictionEffort(AttachedStage& attache
             case PxArticulationJointType::eSPHERICAL:
             {
                 PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                const bool validAxis = getD6ArticulationAxisFromProperties(property.GetString(), axis);
-                TfToken token = UsdPhysicsTokens->rotX;
+                const bool validAxis = getD6ArticulationAxisFromProperties(tokenName(attachedStage, property), axis);
+                omni::physics::parse::TokenId token = tok.rotX;
                 if (validAxis)
                     {
-                        mapAxisToToken(axis, token);
-                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, token))
+                        mapAxisToToken(attachedStage, tok, axis, token);
+                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, token))
                         {
                             PxJointFrictionParams params = joint->getFrictionParams(axis);
                             params.dynamicFrictionEffort = isfinite(data) ? data : FLT_MAX;
@@ -2781,7 +2955,7 @@ bool omni::physx::updateArticulationDynamicFrictionEffort(AttachedStage& attache
     return true;
 }
 
-bool omni::physx::updateArticulationViscousFrictionCoefficient(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateArticulationViscousFrictionCoefficient(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2797,6 +2971,11 @@ bool omni::physx::updateArticulationViscousFrictionCoefficient(AttachedStage& at
         if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
 
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        omni::physics::parse::KnownTokens tok;
+        if (source)
+            tok.intern(*source);
+
         PxArticulationJointReducedCoordinate* joint = (PxArticulationJointReducedCoordinate*)objectRecord->mPtr;
         InternalJoint* intJoint = (InternalJoint*)objectRecord->mInternalPtr;
         if (joint && intJoint)
@@ -2810,7 +2989,7 @@ bool omni::physx::updateArticulationViscousFrictionCoefficient(AttachedStage& at
             case PxArticulationJointType::eREVOLUTE:
             case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, UsdPhysicsTokens->angular))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.angular))
                 {
                     PxJointFrictionParams params = joint->getFrictionParams(PxArticulationAxis::eTWIST);
                     params.viscousFrictionCoefficient = isfinite(data) ? radToDeg(data) : FLT_MAX; // torque * second / degrees
@@ -2820,7 +2999,7 @@ bool omni::physx::updateArticulationViscousFrictionCoefficient(AttachedStage& at
             break;
             case PxArticulationJointType::ePRISMATIC:
             {
-                if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, UsdPhysicsTokens->linear))
+                if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, tok.linear))
                 {
                     PxJointFrictionParams params = joint->getFrictionParams(PxArticulationAxis::eX);
                     params.viscousFrictionCoefficient = isfinite(data) ? data : FLT_MAX;;
@@ -2831,12 +3010,12 @@ bool omni::physx::updateArticulationViscousFrictionCoefficient(AttachedStage& at
             case PxArticulationJointType::eSPHERICAL:
             {
                 PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;
-                const bool validAxis = getD6ArticulationAxisFromProperties(property.GetString(), axis);
-                TfToken token = UsdPhysicsTokens->rotX;
+                const bool validAxis = getD6ArticulationAxisFromProperties(tokenName(attachedStage, property), axis);
+                omni::physics::parse::TokenId token = tok.rotX;
                 if (validAxis)
                     {
-                        mapAxisToToken(axis, token);
-                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, PhysxSchemaTokens->PhysxJointAxisAPI, token))
+                        mapAxisToToken(attachedStage, tok, axis, token);
+                        if (jointHasApiInstance(attachedStage, objectRecord->mKey, tok.PhysxJointAxisAPI, token))
                         {
                             PxJointFrictionParams params = joint->getFrictionParams(axis);
                             params.viscousFrictionCoefficient = isfinite(data) ? radToDeg(data) : FLT_MAX; // torque * second / degrees
@@ -2857,14 +3036,14 @@ bool omni::physx::updateArticulationViscousFrictionCoefficient(AttachedStage& at
 
 
 bool updateLimitField(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-                      const PXR_NS::TfToken& property,
-                      const PXR_NS::UsdTimeCode& timeCode,
+                      omni::physics::parse::TokenId property,
+                      omni::physics::parse::ReadTime timeCode,
                       PxReal PxJointAngularLimitPair::*angularField,
                       PxReal PxJointLinearLimitPair::*linearField,
                       PxReal PxJointLimitCone::*coneField,
                       PxReal PxJointLimitPyramid::*pyramidField,
                       void (PxDistanceJoint::*distanceFunc)(PxReal),
-                      const PXR_NS::TfToken d6Tokens[6])
+                      const char* const d6Tokens[6])
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -2918,37 +3097,39 @@ bool updateLimitField(AttachedStage& attachedStage, omni::physx::usdparser::Obje
             break;
             case eJointD6: {
                 PxD6Joint* d6Joint = (PxD6Joint*)joint;
-                if (property == d6Tokens[0])
+                const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+                const std::string nameString = source ? std::string(source->tokenToString(property)) : std::string();
+                if (nameString == d6Tokens[0])
                 {
                     PxJointLinearLimitPair limitPair = d6Joint->getLinearLimit(PxD6Axis::eX);
                     limitPair.*linearField = data;
                     d6Joint->setLinearLimit(PxD6Axis::eX, limitPair);
                 }
-                else if (property == d6Tokens[1])
+                else if (nameString == d6Tokens[1])
                 {
                     PxJointLinearLimitPair limitPair = d6Joint->getLinearLimit(PxD6Axis::eY);
                     limitPair.*linearField = data;
                     d6Joint->setLinearLimit(PxD6Axis::eY, limitPair);
                 }
-                else if (property == d6Tokens[2])
+                else if (nameString == d6Tokens[2])
                 {
                     PxJointLinearLimitPair limitPair = d6Joint->getLinearLimit(PxD6Axis::eZ);
                     limitPair.*linearField = data;
                     d6Joint->setLinearLimit(PxD6Axis::eZ, limitPair);
                 }
-                else if (property == d6Tokens[3])
+                else if (nameString == d6Tokens[3])
                 {
                     PxJointAngularLimitPair limitPair = d6Joint->getTwistLimit();
                     limitPair.*angularField = data;
                     d6Joint->setTwistLimit(limitPair);
                 }
-                else if (property == d6Tokens[4])
+                else if (nameString == d6Tokens[4])
                 {
                     PxJointLimitPyramid limitPair = d6Joint->getPyramidSwingLimit();
                     limitPair.*pyramidField = data;
                     d6Joint->setPyramidSwingLimit(limitPair);
                 }
-                else if (property == d6Tokens[5])
+                else if (nameString == d6Tokens[5])
                 {
                     PxJointLimitPyramid limitPair = d6Joint->getPyramidSwingLimit();
                     limitPair.*pyramidField = data;
@@ -2964,16 +3145,16 @@ bool updateLimitField(AttachedStage& attachedStage, omni::physx::usdparser::Obje
     return true;
 }
 
-bool omni::physx::updateLimitBounceThreshold(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateLimitBounceThreshold(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    static const TfToken d6Tokens[] = 
+    static const char* const d6Tokens[] =
     {
-        TfToken("physxLimit:transX:bounceThreshold"),
-        TfToken("physxLimit:transY:bounceThreshold"),
-        TfToken("physxLimit:transZ:bounceThreshold"),
-        TfToken("physxLimit:rotX:bounceThreshold"),
-        TfToken("physxLimit:rotY:bounceThreshold"),
-        TfToken("physxLimit:rotZ:bounceThreshold")
+        "physxLimit:transX:bounceThreshold",
+        "physxLimit:transY:bounceThreshold",
+        "physxLimit:transZ:bounceThreshold",
+        "physxLimit:rotX:bounceThreshold",
+        "physxLimit:rotY:bounceThreshold",
+        "physxLimit:rotZ:bounceThreshold"
     };
     return updateLimitField(attachedStage, objectId, property, timeCode,
                             &PxJointAngularLimitPair::bounceThreshold,
@@ -2984,16 +3165,16 @@ bool omni::physx::updateLimitBounceThreshold(AttachedStage& attachedStage, omni:
                             d6Tokens);
 }
 
-bool omni::physx::updateLimitDamping(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateLimitDamping(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    static const TfToken d6Tokens[] = 
+    static const char* const d6Tokens[] =
     {
-        TfToken("physxLimit:transX:damping"),
-        TfToken("physxLimit:transY:damping"),
-        TfToken("physxLimit:transZ:damping"),
-        TfToken("physxLimit:rotX:damping"),
-        TfToken("physxLimit:rotY:damping"),
-        TfToken("physxLimit:rotZ:damping")
+        "physxLimit:transX:damping",
+        "physxLimit:transY:damping",
+        "physxLimit:transZ:damping",
+        "physxLimit:rotX:damping",
+        "physxLimit:rotY:damping",
+        "physxLimit:rotZ:damping"
     };
     return updateLimitField(attachedStage, objectId, property, timeCode,
                             &PxJointAngularLimitPair::damping,
@@ -3004,16 +3185,16 @@ bool omni::physx::updateLimitDamping(AttachedStage& attachedStage, omni::physx::
                             d6Tokens);
 }
 
-bool omni::physx::updateLimitRestitution(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateLimitRestitution(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    static const TfToken d6Tokens[] = 
+    static const char* const d6Tokens[] =
     {
-        TfToken("physxLimit:transX:restitution"),
-        TfToken("physxLimit:transY:restitution"),
-        TfToken("physxLimit:transZ:restitution"),
-        TfToken("physxLimit:rotX:restitution"),
-        TfToken("physxLimit:rotY:restitution"),
-        TfToken("physxLimit:rotZ:restitution")
+        "physxLimit:transX:restitution",
+        "physxLimit:transY:restitution",
+        "physxLimit:transZ:restitution",
+        "physxLimit:rotX:restitution",
+        "physxLimit:rotY:restitution",
+        "physxLimit:rotZ:restitution"
     };
     return updateLimitField(attachedStage, objectId, property, timeCode,
                             &PxJointAngularLimitPair::restitution,
@@ -3024,16 +3205,16 @@ bool omni::physx::updateLimitRestitution(AttachedStage& attachedStage, omni::phy
                             d6Tokens);
 }
 
-bool omni::physx::updateLimitStiffness(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateLimitStiffness(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    static const TfToken d6Tokens[] = 
+    static const char* const d6Tokens[] =
     {
-        TfToken("physxLimit:transX:stiffness"),
-        TfToken("physxLimit:transY:stiffness"),
-        TfToken("physxLimit:transZ:stiffness"),
-        TfToken("physxLimit:rotX:stiffness"),
-        TfToken("physxLimit:rotY:stiffness"),
-        TfToken("physxLimit:rotZ:stiffness")
+        "physxLimit:transX:stiffness",
+        "physxLimit:transY:stiffness",
+        "physxLimit:transZ:stiffness",
+        "physxLimit:rotX:stiffness",
+        "physxLimit:rotY:stiffness",
+        "physxLimit:rotZ:stiffness"
     };
     return updateLimitField(attachedStage, objectId, property, timeCode,
                             &PxJointAngularLimitPair::stiffness,
@@ -3044,7 +3225,7 @@ bool omni::physx::updateLimitStiffness(AttachedStage& attachedStage, omni::physx
                             d6Tokens);
 }
 
-bool omni::physx::updateDistanceJointSpringDamping(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDistanceJointSpringDamping(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -3072,7 +3253,7 @@ bool omni::physx::updateDistanceJointSpringDamping(AttachedStage& attachedStage,
     return true;
 }
 
-bool omni::physx::updateDistanceJointSpringStiffness(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDistanceJointSpringStiffness(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -3100,7 +3281,7 @@ bool omni::physx::updateDistanceJointSpringStiffness(AttachedStage& attachedStag
     return true;
 }
 
-bool omni::physx::updateDistanceJointSpringEnabled(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateDistanceJointSpringEnabled(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();

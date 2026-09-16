@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+// DEPRECATED (tensor-binding-deprecation): tensor-binding test, removed with the binding.
 
 // C-ABI coverage for the extended tensor type set.
 //
@@ -7,7 +9,7 @@
 // read-only and write-only enforcement for most types, and metadata
 // consistency are all tested more thoroughly by the Python suite:
 //   tests/python_tests/cpu_tests/test_tensor_bindings_api.py
-//   (TestDofProperties, TestBodyProperties, TestDynamicsTensors,
+//   (TestDofProperties, TestBodyProperties, TestInverseDynamicsTensors,
 //    TestFixedTendon, TestSpatialTendon, TestLinkWrench, TestRigidBodyProperties)
 //
 // This file keeps focused C-ABI tests:
@@ -51,8 +53,8 @@ static bool load_scene(ovphysx_handle_t handle, const char* path)
     return attach_usd_with_ovstage(handle, path);
 }
 
-// Try to create a binding + get its spec.  Returns the binding handle (caller
-// must destroy), or 0 on failure (test emits a non-fatal failure).
+// Creates a binding and fetches its spec. Returns the binding handle, which the
+// caller destroys, or 0 after emitting a non-fatal failure.
 static ovphysx_tensor_binding_handle_t try_create(
     ovphysx_handle_t handle,
     const char* pattern,
@@ -81,14 +83,14 @@ static ovphysx_tensor_binding_handle_t try_create(
     return binding;
 }
 
-// Attempt a write-zero into a binding; return the status (caller asserts).
+// Writes zeros into a binding and returns the status for the caller to assert on.
 static ovphysx_api_status_t try_write(ovphysx_handle_t handle,
                                       ovphysx_tensor_binding_handle_t binding,
                                       const ovphysx_tensor_spec_t& spec)
 {
     int64_t total = 1;
     for (int d = 0; d < spec.ndim; ++d) total *= spec.shape[d];
-    if (total == 0) return OVPHYSX_API_SUCCESS; // vacuously fine
+    if (total == 0) return OVPHYSX_API_SUCCESS; // an empty tensor has nothing to reject
 
     std::vector<float> zeros(total, 0.0f);
     int64_t shape[4] = {spec.shape[0], spec.shape[1], spec.shape[2], spec.shape[3]};
@@ -237,7 +239,7 @@ TEST_F(TensorTypesExtCpuTest, CreateBindingInvalidTensorType)
 
 // ============================================================================
 // ACCESS-MODE ENFORCEMENT
-// Python explicitly tests LINK_ACCELERATION, LINK_WRENCH, and all dynamics
+// Python explicitly tests LINK_ACCELERATION, LINK_WRENCH, and all inverse dynamics
 // types. The types below are read-only but not explicitly tested for write
 // rejection in the Python suite.
 // ============================================================================

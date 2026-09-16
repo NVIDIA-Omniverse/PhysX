@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 ########################################################################################################################
 # Repo tool base settings
@@ -20,7 +20,7 @@ version_file = "${root}/VERSION"
 use_current_year_as_end_year = true
 license_preamble = '''
 SPDX-FileCopyrightText: Copyright (c) {years} NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-SPDX-License-Identifier: BSD-3-Clause
+SPDX-License-Identifier: Apache-2.0
 '''
 license_text = "" # we use two-line SPDX licenses
 
@@ -36,6 +36,13 @@ files.extensions = [".h", ".h.in", ".hpp", ".inl", ".cpp", ".c"]
 files.exclude = [
    "include/ovphysx/dlpack/**"  # vendored third-party header (upstream copyright)
 ]
+
+# enabled_format_types is a WHITELIST: format_text_files() skips any sub-table
+# whose name is not listed, so declaring a new type below is not enough to run
+# it -- and it fails silently, formatting nothing rather than erroring.
+# repo_format ships ["sh", "bat", "ps1", "lua", "toml", "yaml", "rst", "md"].
+[repo_format.text_files]
+enabled_format_types."++" = ["cmake", "cpp_extra", "pyi"]
 
 # ovruntime is a nested repo with its own repo.toml and its own legal-format CI
 # job (lint-ovruntime), and it deliberately skips its vendored packman tooling.
@@ -59,6 +66,38 @@ files.exclude."++" = ["ovruntime/**"]
 [repo_format.text_files.md]
 files.exclude."++" = ["ovruntime/**"]
 
+# repo_format ships no text_files type for cmake.
+# Matching is by include glob, not files.extensions: splitext("CMakeLists.txt")
+# is ".txt", so an extension list would also sweep LICENSE.txt.
+[repo_format.text_files.cmake]
+comment_chars = "#"
+files.include = [
+    "**/*.cmake",
+    "**/*.cmake.in",
+    "**/*.cmake.default",
+    "**/CMakeLists.txt",
+]
+files.exclude = ["_build/**", "_repo/**", "**/_repo/**", "ovruntime/**", "tools/packman/**"]
+
+# CUDA is absent from [repo_format.cpp]'s extension list, and configure-time
+# templates never match it either: splitext("version.h.in") is ".in", so the
+# ".h.in" entry there is dead config and version.h.in was never stamped.
+[repo_format.text_files.cpp_extra]
+comment_chars = "//"
+files.include = [
+    "**/*.cu",
+    "**/*.cuh",
+    "**/*.h.in",
+    "**/*.rc.in",
+]
+files.exclude = ["_build/**", "_repo/**", "**/_repo/**", "ovruntime/**"]
+
+# .pyi is not in [repo_format.python]'s extension list (".py" only).
+[repo_format.text_files.pyi]
+comment_chars = "#"
+files.include = ["**/*.pyi"]
+files.exclude = ["_build/**", "_repo/**", "**/_repo/**", "ovruntime/**"]
+
 [repo_format.python]
 maintain_legal_blurbs = true
 # oss settings
@@ -66,8 +105,16 @@ files.include = [
     "python/**",
     "tensorapi/**",
     "tests/**",
+    "docs/**",
+    "scripts/**",
+    "tools/**",
     "build.sh",
     "repo.sh",
     "scripts/*.sh",
+]
+files.exclude = [
+    # Vendored bootstrap tooling - upstream copyright, not ours to stamp.
+    "tools/packman/**",
+    "tools/repoman/**",
 ]
 

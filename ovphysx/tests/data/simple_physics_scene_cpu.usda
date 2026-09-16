@@ -1,0 +1,19 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "simple_physics_scene with an explicit CPU solver/broadphase configuration. The PhysicsScene authoring selects the CPU pipeline; ovphysx_set_cpu_mode(true) is not required. The shared simple_physics_scene.usda leaves PhysxSceneAPI unset, which defaults to GPU dynamics + GPU broadphase; without a CUDA context PhysX silently falls back to ePABP. Declaring the CPU configuration here keeps that scene usable by the GPU tests while CPU consumers get the pipeline they actually asked for."
+    subLayers = [
+        @./simple_physics_scene.usda@
+    ]
+)
+
+over "World"
+{
+    over "PhysicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        bool physxScene:enableGPUDynamics = false
+        uniform token physxScene:broadphaseType = "MBP"
+    }
+}

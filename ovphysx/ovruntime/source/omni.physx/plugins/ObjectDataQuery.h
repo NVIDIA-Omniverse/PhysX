@@ -1,10 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
 #include "Setup.h"
 #include "usdLoad/LoadUsd.h"
+
+#include <omni/physics/parse/Handles.h>
 
 namespace omni
 {
@@ -21,15 +23,18 @@ struct ObjectDataQueryType
     };
 };
 
+// ObjectKey-keyed lookup (ADR-0019). All former SdfPath-typed callers have been retyped
+// to pass ObjectKey directly (see PhysXPropertyQuery.cpp's processArticulation and
+// executeQueryRigidBody), so the SdfPath overload this once had is gone.
 template <ObjectDataQueryType::Enum queryType>
-size_t getObjectDataOrID(const PXR_NS::SdfPath& path,
+size_t getObjectDataOrID(omni::physics::parse::ObjectKey key,
                          PhysXType type,
                          const internal::InternalPhysXDatabase& internalDatabase,
                          const omni::physx::usdparser::AttachedStage& attachedStage)
 {
-    if (!path.IsEmpty())
+    if (key.valid())
     {
-        const usdparser::ObjectIdMap* entries = attachedStage.getObjectIds(path);
+        const usdparser::ObjectIdMap* entries = attachedStage.getObjectIds(key);
         if (entries && !entries->empty())
         {
             auto it = entries->begin();

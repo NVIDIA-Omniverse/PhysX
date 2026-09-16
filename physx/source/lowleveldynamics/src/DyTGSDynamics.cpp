@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "DyTGSDynamics.h"
 
@@ -36,7 +13,6 @@
 #include "CmFlushPool.h"
 #include "PxsSimpleIslandManager.h"
 #include "DyContactPrepShared.h"
-#include "DySolverContext.h"
 #include "DyTGSContactPrep.h"
 #include "DySleep.h"
 #include "DyTGS.h"
@@ -71,16 +47,16 @@ constexpr bool tIsLastPosIter = true;
 
 	static inline void waitForArticulationProgress(Dy::FeatherstoneArticulation& artic, PxU32 desiredProgress, PxU32 iteration)
 	{
-		const PxI32 target = PxI32(desiredProgress + artic.maxSolverFrictionProgress * iteration);
+		const PxI32 target = PxI32(desiredProgress + artic.mMaxSolverFrictionProgress * iteration);
 
-		volatile PxI32* progress = reinterpret_cast<PxI32*>(&artic.solverProgress);
+		volatile PxI32* progress = reinterpret_cast<PxI32*>(&artic.mSolverProgress);
 
 		WAIT_FOR_PROGRESS(progress, target);
 	}
 
 	static inline void incrementArticulationProgress(Dy::FeatherstoneArticulation& artic)
 	{
-		(*reinterpret_cast<volatile PxU32*>(&artic.solverProgress))++;
+		(*reinterpret_cast<volatile PxU32*>(&artic.mSolverProgress))++;
 	}
 
 	static inline void waitForProgresses(const PxSolverConstraintDesc& desc, PxU32 iteration)
@@ -1092,21 +1068,20 @@ TGSSolveConcludeMethod g_SolveConcludeTGSMethods[] =
 };
 
 static void solveConstraintsIteration(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders,
-	PxReal invStepDt, const PxTGSSolverBodyTxInertia* const solverTxInertia, PxReal elapsedTime, PxReal minPenetration, SolverContext& cache)
+	PxReal invStepDt, const PxTGSSolverBodyTxInertia* const solverTxInertia, PxReal elapsedTime, PxReal minPenetration)
 {
 	PX_UNUSED(invStepDt);
 
 	for (PxU32 h = 0; h < nbHeaders; ++h)
 	{
 		const PxConstraintBatchHeader& hdr = batchHeaders[h];
-		g_SolveTGSMethods[hdr.constraintType](hdr, contactDescPtr, solverTxInertia, minPenetration, elapsedTime, cache);
+		g_SolveTGSMethods[hdr.constraintType](hdr, contactDescPtr, solverTxInertia, minPenetration, elapsedTime);
 	}
 }
 
 template <bool TSync>
 static void parallelSolveConstraints(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders,
-	PxTGSSolverBodyTxInertia* solverTxInertia, PxReal elapsedTime, PxReal minPenetration,
-	SolverContext& cache, PxU32 iterCount)
+	PxTGSSolverBodyTxInertia* solverTxInertia, PxReal elapsedTime, PxReal minPenetration, PxU32 iterCount)
 {
 	for (PxU32 h = 0; h < nbHeaders; ++h)
 	{
@@ -1120,7 +1095,7 @@ static void parallelSolveConstraints(const PxSolverConstraintDesc* const contact
 			waitForProgresses(desc, iterCount);
 		}
 
-		g_SolveTGSMethods[hdr.constraintType](hdr, contactDescPtr, solverTxInertia, minPenetration, elapsedTime, cache);
+		g_SolveTGSMethods[hdr.constraintType](hdr, contactDescPtr, solverTxInertia, minPenetration, elapsedTime);
 
 		if (TSync)
 		{
@@ -1130,7 +1105,7 @@ static void parallelSolveConstraints(const PxSolverConstraintDesc* const contact
 	}
 }
 
-void DynamicsTGSContext::writebackConstraintsIteration(const PxConstraintBatchHeader* const hdrs, const PxSolverConstraintDesc* const contactDescPtr, PxU32 nbHeaders, SolverContext& cache)
+void DynamicsTGSContext::writebackConstraintsIteration(const PxConstraintBatchHeader* const hdrs, const PxSolverConstraintDesc* const contactDescPtr, PxU32 nbHeaders)
 {
 	PX_PROFILE_ZONE("Writeback", mContextID);
 
@@ -1138,24 +1113,24 @@ void DynamicsTGSContext::writebackConstraintsIteration(const PxConstraintBatchHe
 	{
 		const PxConstraintBatchHeader& hdr = hdrs[h];
 
-		g_WritebackTGSMethods[hdr.constraintType](hdr, contactDescPtr, &cache);	
+		g_WritebackTGSMethods[hdr.constraintType](hdr, contactDescPtr);	
 	}
 }
 
-void DynamicsTGSContext::parallelWritebackConstraintsIteration(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders, SolverContext& cache)
+void DynamicsTGSContext::parallelWritebackConstraintsIteration(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders)
 {
 	for (PxU32 h = 0; h < nbHeaders; ++h)
 	{
 		const PxConstraintBatchHeader& hdr = batchHeaders[h];
 
-		g_WritebackTGSMethods[hdr.constraintType](hdr, contactDescPtr, &cache);
+		g_WritebackTGSMethods[hdr.constraintType](hdr, contactDescPtr);
 	}
 }
 
 template <bool TSync>
 static void solveConcludeConstraintsIteration(const PxSolverConstraintDesc* const contactDescPtr,
 	const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders, PxTGSSolverBodyTxInertia* solverTxInertia, 
-	PxReal elapsedTime, SolverContext& cache, PxU32 iterCount)
+	PxReal elapsedTime, PxU32 iterCount)
 {
 	for (PxU32 h = 0; h < nbHeaders; ++h)
 	{
@@ -1165,7 +1140,7 @@ static void solveConcludeConstraintsIteration(const PxSolverConstraintDesc* cons
 		if (TSync)
 			waitForProgresses(desc, iterCount);
 
-		g_SolveConcludeTGSMethods[hdr.constraintType](hdr, contactDescPtr, solverTxInertia, elapsedTime, cache);
+		g_SolveConcludeTGSMethods[hdr.constraintType](hdr, contactDescPtr, solverTxInertia, elapsedTime);
 
 		if (TSync)
 		{
@@ -2152,9 +2127,6 @@ public:
 		threadContext.mZVector.reserve(maxLinks);
 		threadContext.mZVector.forceSize_Unsafe(maxLinks);
 
-		SolverContext cache;
-		cache.deltaV = threadContext.mDeltaV.begin();
-		
 		if (threadContext.mConstraintsPerPartition.size())
 		{
 			const PxU32 threadCount = getTaskManager()->getCpuDispatcher()->getWorkerCount();
@@ -2181,7 +2153,7 @@ public:
 
 			if (threadCount < 2 || nbIdealThreads < 2) // not great if we have many articulations but no contact constraints => PX-4708
 				mContext.iterativeSolveIsland(mObjects, mCounts, threadContext, mIslandContext.mStepDt, mIslandContext.mInvStepDt, mTotalDt,
-					mIslandContext.mPosIters, mIslandContext.mVelIters, mIslandContext.mBiasCoefficients.articulation, cache);
+					mIslandContext.mPosIters, mIslandContext.mVelIters, mIslandContext.mBiasCoefficients.articulation);
 			else
 			{
 				mIslandContext.mSharedSolverIndex = 0;
@@ -2209,7 +2181,7 @@ public:
 		{
 			mContext.iterativeSolveIsland(mObjects, mCounts, threadContext, mIslandContext.mStepDt,
 				mIslandContext.mInvStepDt, mTotalDt, mIslandContext.mPosIters, mIslandContext.mVelIters, 
-				mIslandContext.mBiasCoefficients.articulation, cache);
+				mIslandContext.mBiasCoefficients.articulation);
 		}
 	}
 };
@@ -2273,7 +2245,7 @@ static void processIterationIsland
 //solve rbodies:
  const PxSolverConstraintDesc* const contactDescPtr,
  const PxConstraintBatchHeader* const batchHeaders, const PxU32 nbHeaders, PxTGSSolverBodyTxInertia* solverTxInertia, 
- const PxReal minPenetration, SolverContext& cache)
+ const PxReal minPenetration)
 {
 	if(solveArticulationContactLast)
 	{
@@ -2296,12 +2268,12 @@ static void processIterationIsland
 		if(isLastPosIter)
 		{
 			solveConcludeConstraintsIteration<false>(contactDescPtr, batchHeaders, nbHeaders,
-				solverTxInertia, elapsedTime, cache, 0);
+				solverTxInertia, elapsedTime, 0);
 		}
 		else
 		{
 			solveConstraintsIteration(contactDescPtr, batchHeaders, nbHeaders, recipStepDt,
-				solverTxInertia, elapsedTime, minPenetration, cache);
+				solverTxInertia, elapsedTime, minPenetration);
 		}
 
 		for (PxU32 i = 0; i < nbArticulations; ++i)
@@ -2325,10 +2297,10 @@ static void processIterationIsland
 
 		if(isLastPosIter)
 			solveConcludeConstraintsIteration<false>(contactDescPtr, batchHeaders, nbHeaders,
-				solverTxInertia, elapsedTime, cache, 0);
+				solverTxInertia, elapsedTime, 0);
 		else
 			solveConstraintsIteration(contactDescPtr, batchHeaders, nbHeaders, recipStepDt,
-				solverTxInertia, elapsedTime, minPenetration, cache);
+				solverTxInertia, elapsedTime, minPenetration);
 
 		for (PxU32 i = 0; i < nbArticulations; ++i)
 		{
@@ -2349,7 +2321,7 @@ static void processIterationIsland
 }
 
 void DynamicsTGSContext::iterativeSolveIsland(const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, ThreadContext& threadContext,
-	PxReal stepDt, PxReal invStepDt, PxReal totalDt, PxU32 posIters, PxU32 velIters, PxReal articulationBiasCoefficient, SolverContext& cache)
+	PxReal stepDt, PxReal invStepDt, PxReal totalDt, PxU32 posIters, PxU32 velIters, PxReal articulationBiasCoefficient)
 {
 	PX_UNUSED(invStepDt);
 	PX_PROFILE_ZONE("Dynamics:solveIsland", mContextID);
@@ -2428,7 +2400,7 @@ void DynamicsTGSContext::iterativeSolveIsland(const SolverIslandObjectsStep& obj
 			 //solve rbodies:
 			 objects.orderedConstraintDescs, objects.constraintBatchHeaders,
 			 threadContext.numContactConstraintBatches, mSolverBodyTxInertiaPool.begin(),
-			 -PX_MAX_F32, cache);
+			 -PX_MAX_F32);
 
 		integrateBodies(counts.bodies, mSolverBodyVelPool.begin() + bodyOffset, mSolverBodyTxInertiaPool.begin() + bodyOffset, stepDt);
 		stepArticulations(threadContext, counts, stepDt);
@@ -2452,7 +2424,7 @@ void DynamicsTGSContext::iterativeSolveIsland(const SolverIslandObjectsStep& obj
 			 //solve rbodies:
 			 objects.orderedConstraintDescs, objects.constraintBatchHeaders,
 			 threadContext.numContactConstraintBatches, mSolverBodyTxInertiaPool.begin(),
-			 -PX_MAX_F32, cache);
+			 -PX_MAX_F32);
 
 		elapsedTime += stepDt;
 			
@@ -2479,11 +2451,11 @@ void DynamicsTGSContext::iterativeSolveIsland(const SolverIslandObjectsStep& obj
 			 //solve rbodies:
 			 objects.orderedConstraintDescs, objects.constraintBatchHeaders,
 			 threadContext.numContactConstraintBatches, mSolverBodyTxInertiaPool.begin(),
-			 0.0f, cache);
+			 0.0f);
 
 	}
 
-	writebackConstraintsIteration(objects.constraintBatchHeaders, objects.orderedConstraintDescs, threadContext.numContactConstraintBatches, cache);
+	writebackConstraintsIteration(objects.constraintBatchHeaders, objects.orderedConstraintDescs, threadContext.numContactConstraintBatches);
 	for (PxU32 i = 0; i < counts.articulations; ++i)
 		threadContext.mArticulationArray[i]->writebackInternalConstraints(true);
 }
@@ -2550,7 +2522,6 @@ static void solveParallelPartition
  const bool isLastPositionIteration,
  const PxU32* constraintsPerPartitions, 
  PxSolverConstraintDesc* contactDescs, PxConstraintBatchHeader* batchHeaders, PxTGSSolverBodyTxInertia* solverTxInertias,
- SolverContext& cache,
  PxU32& targetSolverProgressCount, PxU32& startSolveIdx, PxU32& nbSolveRemaining, PxU32& offset,
  PxI32* solverProgressCount, PxI32* solverCounts)
 {
@@ -2569,19 +2540,19 @@ static void solveParallelPartition
 		{
 			if (b == 0 && overflow)
 				parallelSolveConstraints<true>(contactDescs, batchHeaders + startIdx + offset, nbToSolve,
-					solverTxInertias, elapsedTime, minPenetration, cache, iterCount);
+					solverTxInertias, elapsedTime, minPenetration, iterCount);
 			else
 				parallelSolveConstraints<false>(contactDescs, batchHeaders + startIdx + offset, nbToSolve,
-					solverTxInertias, elapsedTime, minPenetration, cache, iterCount);
+					solverTxInertias, elapsedTime, minPenetration, iterCount);
 		}
 		else
 		{
 			if (b == 0 && overflow)
 				 solveConcludeConstraintsIteration<true>(contactDescs, batchHeaders + startIdx + offset, nbToSolve,
-						solverTxInertias, elapsedTime, cache, iterCount);
+						solverTxInertias, elapsedTime, iterCount);
 			else
 				solveConcludeConstraintsIteration<false>(contactDescs, batchHeaders + startIdx + offset, nbToSolve,
-						solverTxInertias, elapsedTime, cache, iterCount);
+						solverTxInertias, elapsedTime, iterCount);
 		}
 
 		nbSolveRemaining -= nbToSolve;
@@ -2610,7 +2581,6 @@ static void solveParallelPartitionsAndWaitForCompletion
 (const PxU32 nbPartitions, const PxU32 solverUnrollSize, const PxReal elapsedTime, const bool overflow, const PxU32 iterCount, const PxReal minPenetration,
  const PxU32* constraintsPerPartitions, 
  PxSolverConstraintDesc* contactDescs, PxConstraintBatchHeader* batchHeaders, PxTGSSolverBodyTxInertia* solverTxInertias,
- SolverContext& cache,
  PxU32& targetSolverProgressCount, PxU32& startSolveIdx, PxU32& nbSolveRemaining,
  PxI32* solverProgressCount, PxI32* solverCounts)
 {
@@ -2621,7 +2591,6 @@ static void solveParallelPartitionsAndWaitForCompletion
 			(b, solverUnrollSize, elapsedTime, overflow, iterCount, minPenetration, isLastPositionIteration,
 			 constraintsPerPartitions, 
 			 contactDescs, batchHeaders, solverTxInertias,
-			 cache,
 			 targetSolverProgressCount, startSolveIdx, nbSolveRemaining, offset,
 			 solverProgressCount, solverCounts);
 
@@ -2676,7 +2645,7 @@ struct SolverDt
 
 template<bool isVelocityIteration, bool updateDeltaMotion, bool saveVelocity>
 static void parallelSolveInternalConstraintsAndWaitForCompletion
-(SolverContext& cache, ThreadContext& threadContext,
+(Cm::SpatialVectorF* deltaV, ThreadContext& threadContext,
  const PxU32 nbArticulations,
  const bool isExternalForcesEveryTgsIterationEnabled,
  const SolverDt& solverDt, const PxReal elapsedTime, 
@@ -2701,7 +2670,7 @@ static void parallelSolveInternalConstraintsAndWaitForCompletion
 			isExternalForcesEveryTgsIterationEnabled);
 
 		if(updateDeltaMotion)
-			FeatherstoneArticulation::recordDeltaMotionTGS(articulation, solverDt.stepDt, cache.deltaV);
+			FeatherstoneArticulation::recordDeltaMotionTGS(articulation, solverDt.stepDt, deltaV);
 		
 		if(saveVelocity)
 			FeatherstoneArticulation::saveVelocityTGS(articulation, solverDt.invTotalDt);
@@ -2724,7 +2693,7 @@ template<bool updateDeltaMotion, bool saveVelocity, bool isVelocityIteration, bo
 static void processSolverIterationParallel
 (const bool solveArticulationContactLast, const bool isExternalForcesEveryTgsIterationEnabled,
  PxU32& iterCount, const SolverDt& solverDt, const PxReal elapsedTime, 
- SolverContext& cache, ThreadContext& threadContext,
+ Cm::SpatialVectorF* deltaV, ThreadContext& threadContext,
  //artic solve:
  const PxU32 nbArticulations,
  const PxReal articulationBiasCoefficient,
@@ -2748,7 +2717,7 @@ static void processSolverIterationParallel
 		const ArticulationConstraintProcessingConfigCPU secondPassArticulationConstraintProcessingConfig = ArticulationConstraintProcessingConfigCPU::getSecondPassConfig();
 
 		parallelSolveInternalConstraintsAndWaitForCompletion<isVelocityIteration, false, false>
-			(cache, threadContext,
+			(deltaV, threadContext,
 				nbArticulations,
 				isExternalForcesEveryTgsIterationEnabled,
 				solverDt, elapsedTime,
@@ -2761,7 +2730,6 @@ static void processSolverIterationParallel
 			(nbPartitions, solverUnrollSize, elapsedTime, overflow, iterCount, minPenetration, 
 				constraintsPerPartitions, 
 				contactDescs, batchHeaders, solverTxInertias,
-				cache,
 				targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
 				solverProgressCount, solverCounts);
 
@@ -2780,7 +2748,7 @@ static void processSolverIterationParallel
 		// Note: Articulation internal constraints do not need to wait for rigid bodies integration because they don't need the
 		// rigid velocities anymore.
  		parallelSolveInternalConstraintsAndWaitForCompletion<isVelocityIteration, updateDeltaMotion, saveVelocity>
-			(cache, threadContext,
+			(deltaV, threadContext,
 			 nbArticulations,
 			 isExternalForcesEveryTgsIterationEnabled,
 			 solverDt, elapsedTime,
@@ -2797,7 +2765,6 @@ static void processSolverIterationParallel
 			(nbPartitions, solverUnrollSize, elapsedTime, overflow, iterCount, minPenetration,
 			 constraintsPerPartitions, 
 			 contactDescs, batchHeaders, solverTxInertias,
-			 cache,
 			 targetSolverProgressCount, startSolveIdx, nbSolveRemaining,
 			 solverProgressCount, solverCounts);
 
@@ -2816,7 +2783,7 @@ static void processSolverIterationParallel
 		// Note: Articulation internal constraints do not need to wait for rigid bodies integration because they don't need the
 		// rigid velocities anymore.
 		parallelSolveInternalConstraintsAndWaitForCompletion<isVelocityIteration, updateDeltaMotion, saveVelocity>
-			(cache, threadContext,
+			(deltaV, threadContext,
 			 nbArticulations,
 			 isExternalForcesEveryTgsIterationEnabled,
 			 solverDt, elapsedTime,
@@ -2866,8 +2833,7 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 	threadContextLocal.mDeltaV.reserve(threadContext.mDeltaV.size());
 	threadContextLocal.mZVector.resizeUninitialized(threadContext.mZVector.size());
 	
-	SolverContext cache;
-	cache.deltaV = threadContextLocal.mDeltaV.begin();
+	Cm::SpatialVectorF* deltaV = threadContextLocal.mDeltaV.begin();
 
 	PxReal elapsedTime = 0.0f;
 
@@ -2905,7 +2871,7 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 		processSolverIterationParallel<tUpdateDeltaMotion, !tSaveVelocity, !tIsVelIter, !tIsLastPosIter>
 			(solveArticulationContactLast, mIsExternalForcesEveryTgsIterationEnabled,
 			 iterCount, solverDt, elapsedTime, 
-			 cache, threadContext,
+			 deltaV, threadContext,
 			 //artic solve:
 			 nbArticulations,
 			 articulationBiasCoefficient,
@@ -2950,7 +2916,7 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 		processSolverIterationParallel<tUpdateDeltaMotion, tSaveVelocity, !tIsVelIter, tIsLastPosIter>
 			(solveArticulationContactLast, mIsExternalForcesEveryTgsIterationEnabled,
 			 iterCount, solverDt, elapsedTime, 
-			 cache, threadContext,
+			 deltaV, threadContext,
 			 //artic solve:
 			 nbArticulations,			
 			 articulationBiasCoefficient,
@@ -2983,7 +2949,7 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 		processSolverIterationParallel<!tUpdateDeltaMotion, !tSaveVelocity, tIsVelIter, !tIsLastPosIter>
 			(solveArticulationContactLast, mIsExternalForcesEveryTgsIterationEnabled,
 			 iterCount, solverDt, elapsedTime, 
-			 cache, threadContext,
+			 deltaV, threadContext,
 			 //artic solve:
 			 nbArticulations,
 			 articulationBiasCoefficient,
@@ -3008,7 +2974,7 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 		processSolverIterationParallel<!tUpdateDeltaMotion, !tSaveVelocity, tIsVelIter, !tIsLastPosIter>
 			(solveArticulationContactLast, mIsExternalForcesEveryTgsIterationEnabled,
 			 iterCount, solverDt, elapsedTime, 
-			 cache, threadContext,
+			 deltaV, threadContext,
 			 //artic solve:
 			 nbArticulations,
 			 articulationBiasCoefficient,
@@ -3039,7 +3005,7 @@ void DynamicsTGSContext::iterativeSolveIslandParallel(const SolverIslandObjectsS
 			while (startIdx < nbBatches)
 			{
 				PxU32 nbToSolve = PxMin(nbBatches - startIdx, nbSolveRemaining);
-				parallelWritebackConstraintsIteration(contactDescs, batchHeaders + startIdx, nbToSolve, cache);
+				parallelWritebackConstraintsIteration(contactDescs, batchHeaders + startIdx, nbToSolve);
 				nbSolveRemaining -= nbToSolve;
 				startSolveIdx += nbToSolve;
 				startIdx += nbToSolve;

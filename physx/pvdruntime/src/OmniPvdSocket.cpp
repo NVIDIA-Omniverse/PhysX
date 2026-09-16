@@ -1,33 +1,11 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "OmniPvdSocket.h"
 
+#include <chrono>
 #include <stdio.h>
 #include <string.h>
 
@@ -42,6 +20,8 @@
 	// SOCKET is an opaque kernel handle that can legitimately exceed INT_MAX.
 	typedef SOCKET OmniPvdNativeSocket;
 #else
+	#include <fcntl.h>
+	#include <poll.h>
 	#include <sys/types.h>
 	#include <sys/socket.h>
 	#include <netinet/in.h>
@@ -60,6 +40,12 @@
 #define MSG_NOSIGNAL 0
 #endif
 
+// Connect budget used when no send timeout is configured (mSendTimeoutMs == 0); matches the ctor default.
+static const uint32_t OMNI_PVD_DEFAULT_SOCKET_TIMEOUT_MS = 3000;
+
+// Poll granularity for the connect deadline; caps both the writability wait and the backoff sleep.
+static const uint32_t OMNI_PVD_CONNECT_POLL_INTERVAL_MS = 50;
+
 static void omniPvdSleepMs(unsigned ms)
 {
 #if defined(OMNI_PVD_WIN)
@@ -69,15 +55,87 @@ static void omniPvdSleepMs(unsigned ms)
 #endif
 }
 
+static void omniPvdCloseNativeSocket(OmniPvdNativeSocket socket)
+{
+	if (socket == OMNI_PVD_INVALID_SOCKET)
+		return;
+#if defined(OMNI_PVD_WIN)
+	closesocket(socket);
+#else
+	::close(socket);
+#endif
+}
+
+// Toggle blocking mode. connect() drives each attempt nonblocking to honor the shared deadline, then
+// restores blocking before the socket is handed to send()/recv().
+static bool omniPvdSetNonBlocking(OmniPvdNativeSocket socket, bool nonBlocking)
+{
+#if defined(OMNI_PVD_WIN)
+	u_long mode = nonBlocking ? 1 : 0;
+	return ::ioctlsocket(socket, FIONBIO, &mode) == 0;
+#else
+	const int flags = ::fcntl(socket, F_GETFL, 0);
+	if (flags < 0)
+		return false;
+	const int requestedFlags = nonBlocking ? (flags | O_NONBLOCK) : (flags & ~O_NONBLOCK);
+	return ::fcntl(socket, F_SETFL, requestedFlags) == 0;
+#endif
+}
+
+// True while a nonblocking ::connect() is still in progress (not failed): EINPROGRESS/EALREADY on
+// POSIX, WSAEWOULDBLOCK/WSAEINPROGRESS/WSAEALREADY on Windows.
+static bool omniPvdConnectIsPending()
+{
+#if defined(OMNI_PVD_WIN)
+	const int error = WSAGetLastError();
+	return error == WSAEWOULDBLOCK || error == WSAEINPROGRESS || error == WSAEALREADY;
+#else
+	return errno == EINPROGRESS || errno == EALREADY;
+#endif
+}
+
+static bool omniPvdWaitWasInterrupted()
+{
+#if defined(OMNI_PVD_WIN)
+	return WSAGetLastError() == WSAEINTR;
+#else
+	return errno == EINTR;
+#endif
+}
+
+// Wait up to waitMilliseconds for a pending connect to resolve. Returns >0 when the socket is ready
+// to probe via SO_ERROR, 0 on timeout, <0 on error.
+static int omniPvdWaitForConnect(OmniPvdNativeSocket socket, int waitMilliseconds)
+{
+#if defined(OMNI_PVD_WIN)
+	fd_set writable;
+	fd_set failed;
+	FD_ZERO(&writable);
+	FD_ZERO(&failed);
+	FD_SET(socket, &writable);
+	FD_SET(socket, &failed);
+	timeval timeout;
+	timeout.tv_sec = waitMilliseconds / 1000;
+	timeout.tv_usec = (waitMilliseconds % 1000) * 1000;
+	return ::select(0, NULL, &writable, &failed, &timeout);
+#else
+	pollfd descriptor;
+	descriptor.fd = socket;
+	descriptor.events = POLLOUT;
+	descriptor.revents = 0;
+	return ::poll(&descriptor, 1, waitMilliseconds);
+#endif
+}
+
 #if defined(OMNI_PVD_WIN)
 // Winsock is process-wide. A per-socket WSACleanup would tear it down underneath other live
 // sockets in the same process (and can cancel another thread's in-flight blocking calls), so
-// Winsock is started exactly once via the guard below. The guard's destructor runs at static
-// teardown -- including DLL_PROCESS_DETACH, i.e. when PVDRuntime is unloaded while the host
-// process keeps running (e.g. a Kit extension disable) -- and pairs the single WSAStartup with
-// one WSACleanup, so a load/use/unload cycle does not leak a Winsock reference, yet no per-stream
-// cleanup can cancel another stream's pending calls. The C++11 thread-safe function-local static
-// makes the one-time startup race-free even if two threads create their first socket at once.
+// each linked copy of the runtime starts Winsock exactly once via the guard below. The guard's
+// destructor runs when that copy's owning module is unloaded and pairs that copy's single
+// WSAStartup with one WSACleanup. Winsock's process-wide reference counting makes multiple runtime
+// copies safe, while no per-stream cleanup can cancel another stream's pending calls. The C++11
+// thread-safe function-local static makes each copy's one-time startup race-free even if two
+// threads create their first socket at once.
 namespace
 {
 class OmniPvdWinsockGuard
@@ -110,7 +168,7 @@ static bool omniPvdEnsureWinsock()
 
 OmniPvdSocket::OmniPvdSocket()
 {
-	mSendTimeoutMs = 3000;
+	mSendTimeoutMs = OMNI_PVD_DEFAULT_SOCKET_TIMEOUT_MS;
 	mListenSocket = OMNI_PVD_INVALID_SOCKET;
 	mDataSocket = OMNI_PVD_INVALID_SOCKET;
 }
@@ -162,16 +220,13 @@ bool OmniPvdSocket::acceptOne()
 {
 	if (mListenSocket == OMNI_PVD_INVALID_SOCKET)
 		return false;
-	// Blocks the CALLING thread until a client connects, or returns false when the
-	// listen socket is closed by close() (the way a background acceptor is woken to exit).
+	// Blocks the calling thread until a client connects or the native accept fails.
 	for (;;)
 	{
 		mDataSocket = ::accept((OmniPvdNativeSocket)mListenSocket, NULL, NULL);
 #if !defined(OMNI_PVD_WIN)
 		// A signal delivered to the accepting thread interrupts the blocking accept with EINTR;
-		// that is not a real failure, so retry (matching the send/recv EINTR loops). A close()
-		// from another thread closes the listen socket and yields a different error (EBADF/
-		// EINVAL), which falls through to return false -- the intended wake-to-exit path.
+		// that is not a real failure, so retry (matching the send/recv EINTR loops).
 		if (mDataSocket == OMNI_PVD_INVALID_SOCKET && errno == EINTR)
 			continue;
 #endif
@@ -235,33 +290,80 @@ bool OmniPvdSocket::connect(const char* address, uint16_t port)
 	if (getaddrinfo(address ? address : "127.0.0.1", portStr, &hints, &result) != 0 || result == NULL)
 		return false;
 
-	// Retry so either side tolerates starting before the other is listening. The 40 x 50ms sleeps
-	// bound only the backoff to ~2s; this assumes each ::connect() returns fast (e.g. ECONNREFUSED
-	// against a local listener that is not up yet). Against a filtered/unroutable host where connect()
-	// itself blocks for the OS connect timeout, a single attempt can dominate and the total runs longer.
-	const int maxAttempts = 40;
+	// Retry so either side tolerates starting before the other is listening, but bound the whole
+	// connect by a single deadline derived from the send timeout. Each attempt is nonblocking
+	// (::connect() then a short select()/poll() slice for writability), so an unreachable or
+	// SYN-dropping host can not multiply the OS connect timeout by the retry count; a refused attempt
+	// still retries within the remaining budget. The connect should then return near the timeout budget.
+	typedef std::chrono::steady_clock ConnectClock;
+	const uint32_t connectTimeoutMs = mSendTimeoutMs ? mSendTimeoutMs : OMNI_PVD_DEFAULT_SOCKET_TIMEOUT_MS;
+	const ConnectClock::time_point connectDeadline =
+		ConnectClock::now() + std::chrono::milliseconds(connectTimeoutMs);
 	bool connected = false;
-	for (int attempt = 0; attempt < maxAttempts && !connected; ++attempt)
+	OmniPvdNativeSocket connectedSocket = OMNI_PVD_INVALID_SOCKET;
+	while (!connected && ConnectClock::now() < connectDeadline)
 	{
 		for (addrinfo* ai = result; ai != NULL; ai = ai->ai_next)
 		{
-			mDataSocket = ::socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-			if (mDataSocket == OMNI_PVD_INVALID_SOCKET)
+			OmniPvdNativeSocket dataSocket = ::socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+			if (dataSocket == OMNI_PVD_INVALID_SOCKET)
 				continue;
-			if (::connect((OmniPvdNativeSocket)mDataSocket, ai->ai_addr, (OmniPvdSockLen)ai->ai_addrlen) == 0)
+			if (!omniPvdSetNonBlocking(dataSocket, true))
 			{
-				connected = true;
+				omniPvdCloseNativeSocket(dataSocket);
+				continue;
+			}
+
+			const int connectResult =
+				::connect(dataSocket, ai->ai_addr, (OmniPvdSockLen)ai->ai_addrlen);
+			bool connectPending = connectResult != 0 && omniPvdConnectIsPending();
+			connected = connectResult == 0;
+			while (connectPending && ConnectClock::now() < connectDeadline)
+			{
+				const double remainingMs = std::chrono::duration<double, std::milli>(
+					connectDeadline - ConnectClock::now()).count();
+				if (remainingMs <= 0)
+					break;
+				const int waitMs = remainingMs < static_cast<double>(OMNI_PVD_CONNECT_POLL_INTERVAL_MS)
+						? static_cast<int>(remainingMs) : static_cast<int>(OMNI_PVD_CONNECT_POLL_INTERVAL_MS);
+				const int selected = omniPvdWaitForConnect(dataSocket, waitMs);
+				if (selected > 0)
+				{
+					// Writable != success: a failed nonblocking connect also selects writable,
+					// so read the real result from SO_ERROR.
+					int completionCode = 0;
+					OmniPvdSockLen completionCodeLength = sizeof(completionCode);
+					connected = ::getsockopt(dataSocket, SOL_SOCKET, SO_ERROR,
+						reinterpret_cast<char*>(&completionCode), &completionCodeLength) == 0 &&
+						completionCode == 0;
+					connectPending = false;
+				}
+				else if (selected < 0 && !omniPvdWaitWasInterrupted())
+				{
+					connectPending = false; // genuine select()/poll() error: fail this attempt
+				}
+				// selected == 0 (timeout) or EINTR: re-arm within the remaining budget.
+			}
+
+			// Restore blocking before the socket is used for send()/recv().
+			if (connected && omniPvdSetNonBlocking(dataSocket, false))
+			{
+				connectedSocket = dataSocket;
 				break;
 			}
-#if defined(OMNI_PVD_WIN)
-			closesocket(mDataSocket);
-#else
-			::close(mDataSocket);
-#endif
-			mDataSocket = OMNI_PVD_INVALID_SOCKET;
+			connected = false;
+			omniPvdCloseNativeSocket(dataSocket);
+			if (ConnectClock::now() >= connectDeadline)
+				break;
 		}
-		if (!connected)
-			omniPvdSleepMs(50);
+		if (!connected && ConnectClock::now() < connectDeadline)
+		{
+			const double remainingMs = std::chrono::duration<double, std::milli>(
+				connectDeadline - ConnectClock::now()).count();
+			if (remainingMs > 0)
+				omniPvdSleepMs(remainingMs < static_cast<double>(OMNI_PVD_CONNECT_POLL_INTERVAL_MS)
+					? static_cast<unsigned>(remainingMs) : static_cast<unsigned>(OMNI_PVD_CONNECT_POLL_INTERVAL_MS));
+		}
 	}
 	freeaddrinfo(result);
 	if (!connected)
@@ -269,6 +371,7 @@ bool OmniPvdSocket::connect(const char* address, uint16_t port)
 		close();
 		return false;
 	}
+	mDataSocket = connectedSocket;
 	applySendTimeout();
 	return true;
 }

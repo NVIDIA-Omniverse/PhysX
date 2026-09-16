@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# DEPRECATED (tensor-binding-deprecation): a deprecated tensor-binding test. Removed with the binding.
 
 """Parametrized read/write access-mode enforcement and DLPack error tests.
 
@@ -50,7 +52,7 @@ def _load_artic(sdk, n_steps=3):
 
 
 # ---------------------------------------------------------------------------
-# Read-only types — write must raise
+# Read-only types: write must raise
 # ---------------------------------------------------------------------------
 
 # (tensor_type, pattern, scene_loader)
@@ -66,7 +68,7 @@ _READ_ONLY_PARAMS = [
     # Articulation body inverse (values 63-64)
     (TensorType.ARTICULATION_BODY_INV_MASS, _ARTI_PATTERN, "artic"),
     (TensorType.ARTICULATION_BODY_INV_INERTIA, _ARTI_PATTERN, "artic"),
-    # Dynamics queries (values 70-75)
+    # Inverse dynamics queries (values 70-75)
     (TensorType.ARTICULATION_JACOBIAN, _ARTI_PATTERN, "artic"),
     (TensorType.ARTICULATION_MASS_MATRIX, _ARTI_PATTERN, "artic"),
     (TensorType.ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE, _ARTI_PATTERN, "artic"),
@@ -98,7 +100,7 @@ def test_read_only_type_write_raises(physx_sdk, tensor_type, pattern, scene):
 
 
 # ---------------------------------------------------------------------------
-# Write-only types — read must raise
+# Write-only types: read must raise
 # ---------------------------------------------------------------------------
 
 _WRITE_ONLY_PARAMS = [
@@ -203,7 +205,7 @@ def test_write_non_contiguous_raises(physx_sdk):
         if binding.count == 0:
             pytest.skip("No rigid body prims found")
         N, C = binding.shape
-        # Create a 2× buffer and slice every other row → non-contiguous
+        # Slicing every other row of a 2x buffer gives a non-contiguous view.
         big = np.zeros((N * 2, C), dtype=np.float32)
         non_contig = big[::2, :]
         assert not non_contig.flags["C_CONTIGUOUS"]
@@ -259,11 +261,10 @@ def test_write_with_empty_indices_is_noop(physx_sdk):
             pytest.skip("No rigid body prims found")
         N, C = binding.shape
 
-        # Read baseline
         before = np.zeros((N, C), dtype=np.float32)
         binding.read(before)
 
-        # Write with empty index list — should touch nothing
+        # An empty index list must touch nothing.
         src = np.full((N, C), 999.0, dtype=np.float32)
         empty_idx = np.array([], dtype=np.int32)
         binding.write(src, indices=empty_idx)
@@ -276,7 +277,7 @@ def test_write_with_empty_indices_is_noop(physx_sdk):
 
 
 def test_write_with_int64_indices_behavior(physx_sdk):
-    """write(buf, indices=int64_array) — document behavior (error or coercion)."""
+    """write(buf, indices=int64_array): document behavior (error or coercion)."""
     _load_rb(physx_sdk)
     binding = _rb_pose_binding(physx_sdk)
     try:
@@ -285,8 +286,8 @@ def test_write_with_int64_indices_behavior(physx_sdk):
         N, C = binding.shape
         src = np.zeros((N, C), dtype=np.float32)
         int64_idx = np.array([0], dtype=np.int64)
-        # The API requires int32 indices; int64 may raise or be silently accepted.
-        # Either outcome is documented by this test; we just ensure no crash if accepted.
+        # The API requires int32 indices. int64 may raise or be silently accepted, and
+        # either outcome is allowed here as long as nothing crashes.
         try:
             binding.write(src, indices=int64_idx)
         except (RuntimeError, TypeError, ValueError):
@@ -326,7 +327,7 @@ def test_write_with_both_indices_and_mask_warns_and_uses_mask(physx_sdk):
         # Mask takes precedence: row 0 should be updated, row 1 should not
         result = np.zeros((N, D), dtype=np.float32)
         binding.read(result)
-        # Row 0 should reflect the write; exact value depends on physics state
-        # (sufficient to verify no crash and warning was issued)
+        # Row 0 reflects the write, but the exact value depends on physics state.
+        # No crash and the emitted warning are the checks here.
     finally:
         binding.destroy()

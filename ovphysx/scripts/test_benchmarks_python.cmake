@@ -1,7 +1,13 @@
-# ovphysx Python benchmark driver
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# @implements REQ-PACKAGING-TESTDEPS-001
+# @covers AC-1 AC-2 AC-3
+#
+# ovphysx Python benchmark driver.
 # Mirrors scripts/test_python_runtime.cmake but runs the pytest-benchmark suite
-# under tests/python_benchmarks/ in two passes (CPU and GPU) because the
-# ovphysx process device-mode is locked by the first PhysX() call.
+# under tests/python_benchmarks/ in two passes (CPU and GPU), because the
+# ovphysx process device mode is locked by the first PhysX() call.
 #
 # Usage:
 #   cmake -P scripts/test_benchmarks_python.cmake
@@ -44,7 +50,7 @@ if(NOT OVPHYSX_UV_COMMAND)
     message(FATAL_ERROR "uv not found (needed for running pytest-benchmark)")
 endif()
 
-# Create venv with packman Python -- same recipe as test_python_runtime.cmake.
+# Create the venv with packman Python, the same recipe as test_python_runtime.cmake.
 set(VENV_DIR "${BENCHMARK_DIR}/.venv")
 if(EXISTS "${VENV_DIR}")
     file(REMOVE_RECURSE "${VENV_DIR}")
@@ -77,20 +83,28 @@ file(GLOB OVSTAGE_WHEELS "${OVSTAGE_WHEEL_DIR}/ovstage-*.whl")
 if(NOT OVSTAGE_WHEELS)
     message(FATAL_ERROR "ovstage wheel not found in ${OVSTAGE_WHEEL_DIR}. Run the ovphysx build first.")
 endif()
+# UV_NO_CONFIG=1 discards uv's configuration settings, pyproject.toml's find-links
+# among them, so the staged wheel dir is passed here. It is spelled relative to uv's
+# working directory, which is also the string uv.lock records as the ovstage registry.
+# On uv 0.12.8 a relative find-links resolving to that directory is accepted, while an
+# absolute path to the same directory makes uv discard the lock and re-resolve. This
+# project declares no required-environments, so that re-resolution succeeds and quietly
+# narrows the lock's ovstage entry to the one staged wheel. Accepting the lock is what
+# keeps the other two platforms' entries.
+file(RELATIVE_PATH OVSTAGE_WHEEL_FIND_LINKS "${BENCHMARK_DIR}" "${OVSTAGE_WHEEL_DIR}")
 set(BASE_UV_ENV
     "UV_CACHE_DIR=${UV_CACHE_DIR_PATH}"
     "UV_NO_CONFIG=1"
-    "UV_FIND_LINKS=${OVSTAGE_WHEEL_DIR}"
+    "UV_FIND_LINKS=${OVSTAGE_WHEEL_FIND_LINKS}"
     "UV_HTTP_TIMEOUT=300"
     "UV_SKIP_WHEEL_FILENAME_CHECK=1"
-    # PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 was set here originally but it
-    # prevents pytest-benchmark from registering even when explicitly
-    # passed via -p, so --benchmark-* args get rejected. Removed: the
-    # venv only pins pytest + pytest-benchmark + numpy + (optionally
-    # torch via the [gpu] extra), so there are no surprise plugins to
-    # guard against.
+    # PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 is deliberately absent. It prevents
+    # pytest-benchmark from registering even when passed via -p, so the
+    # --benchmark-* args get rejected. The venv only pins pytest,
+    # pytest-benchmark, numpy and optionally torch via the [gpu] extra, so
+    # there are no surprise plugins to guard against.
 )
-# ovstage is not installed; consume the configured external package.
+# ovstage is not installed, so the configured external package is used.
 ovphysx_resolve_ovstage_paths()
 set(OVSTAGE_PYTHON_DIR "${OVPHYSX_OVSTAGE_PYTHON_DIR}")
 if(NOT OVSTAGE_PYTHON_DIR OR NOT EXISTS "${OVSTAGE_PYTHON_DIR}/ovstage/__init__.py")
@@ -106,6 +120,11 @@ if(WIN32)
         "${INSTALL_DIR}/bin"
         "${INSTALL_DIR}/plugins"
         "${OVSTAGE_RUNTIME_DIR}"
+        # ovstage.dll statically imports the USD monolith, which lives in
+        # OVStage's plugins/ dir and which the SDK does not ship
+        # (REQ-PACKAGING-USDFREE-001 AC-4). Linux resolves it via ovstage's
+        # RUNPATH ($ORIGIN/plugins). Windows needs it on PATH.
+        "${OVSTAGE_RUNTIME_DIR}/plugins"
         "${OVSTAGE_PYTHON_DIR}/ovstage/bin"
         "$ENV{PATH}"
     )
@@ -143,18 +162,17 @@ function(run_python_bench_pass _LABEL _DEVICE)
         list(APPEND _PYTEST_ARGS -k "${BENCHMARK_FILTER}")
     endif()
     if(REGENERATE)
-        # Save a new baseline; do not fail on regression.
+        # Save a new baseline without failing on regression.
         list(APPEND _PYTEST_ARGS --benchmark-save=${PLATFORM_NAME}-${_LABEL})
     else()
-        # Compare against the most recent saved baseline; fail on >10% regression in mean.
+        # Compare against the most recent saved baseline and fail on a >10% regression in mean.
         list(APPEND _PYTEST_ARGS
             --benchmark-compare
             --benchmark-compare-fail=mean:10%
         )
     endif()
 
-    # Device knob now flows via pytest CLI option (--bench-device, above).
-    # The env var was switched out per review.
+    # The device is selected by the --bench-device pytest option above, not by an env var.
     set(_PASS_ENV ${BASE_UV_ENV})
 
     message(STATUS "")
@@ -174,9 +192,9 @@ function(run_python_bench_pass _LABEL _DEVICE)
     message(STATUS "Exit code (python ${_LABEL}): ${_RC}")
 
     if(NOT _RC STREQUAL "0")
-        # Treat the GPU pass as a soft-skip when the device is unavailable.
-        # pytest exits 1 on test failure -- we cannot distinguish a fixture skip
-        # from an assertion failure here, so devs must rely on stderr for now.
+        # The GPU pass is a soft skip when the device is unavailable. pytest exits 1
+        # on any test failure, so a fixture skip cannot be distinguished from an
+        # assertion failure here and stderr is matched instead.
         if(_LABEL STREQUAL "gpu" AND _STDERR MATCHES "GPU not available|cuda not available|no CUDA")
             message(STATUS "GPU not available; skipping GPU python benchmark pass.")
             return()

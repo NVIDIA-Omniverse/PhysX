@@ -1,8 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
+#include <cstddef>
 #include <stdint.h>
 #include <vector>
 #include <unordered_set>

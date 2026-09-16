@@ -1,7 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-COOK-CRC-001
+ * @covers AC-1 AC-2
+ */
+
 
 #include "UjitsoCookingComputeService.h"
 #include "UjitsoMeshCookingContext.inl"
@@ -54,9 +58,9 @@ struct UjitsoCookingComputeService : public ICookingComputeService
      * \return pointer to a new UjitsoCookingComputeService if successful, nullptr otherwise.
      */
     static UjitsoCookingComputeService* create(::physx::PxFoundation& foundation,
-                                               SharedCudaContextManagerFn sharedCudaContextManagerFn)
+                                               AcquireSharedCudaContextManagerFn acquireSharedCudaContextManagerFn)
     {
-        UjitsoCookingComputeService* service = new UjitsoCookingComputeService(foundation, sharedCudaContextManagerFn);
+        UjitsoCookingComputeService* service = new UjitsoCookingComputeService(foundation, acquireSharedCudaContextManagerFn);
         if (service && !service->isValid())
         {
             CARB_LOG_WARN("Failed to create a valid UJITSO Cooking Compute Service");
@@ -139,7 +143,7 @@ struct UjitsoCookingComputeService : public ICookingComputeService
             {
                 MeshCookingContext* cooking =
                     MeshCookingContext::create(m_resourceManager, cacheBehavior(request), result,
-                        cookingDataVersion, PhysxSchemaTokens->triangleMesh);
+                        cookingDataVersion, "triangleMesh");
 
                 addParamsToRequest(cooking->getRequestBuilder(), triangleMeshCookingParams);
                 addParamsToRequest(cooking->getRequestBuilder(), sdfMeshCookingParams);
@@ -170,7 +174,7 @@ struct UjitsoCookingComputeService : public ICookingComputeService
             [&](PhysxCookingComputeResult& result) {
                 MeshCookingContext* cooking =
                     MeshCookingContext::create(m_resourceManager, cacheBehavior(request), result,
-                        PhysxCookingDataVersion_ConvexMesh, PhysxSchemaTokens->convexHull);
+                        PhysxCookingDataVersion_ConvexMesh, "convexHull");
                 addParamsToRequest(cooking->getRequestBuilder(), desc);
                 return cooking;
             });
@@ -200,7 +204,7 @@ struct UjitsoCookingComputeService : public ICookingComputeService
             [&](PhysxCookingComputeResult& result) {
                 MeshCookingContext* cooking =
                     MeshCookingContext::create(m_resourceManager, cacheBehavior(request), result,
-                        PhysxCookingDataVersion_ConvexDecomposition, PhysxSchemaTokens->convexDecomposition, true);
+                        PhysxCookingDataVersion_ConvexDecomposition, "convexDecomposition", true);
                 addParamsToRequest(cooking->getRequestBuilder(), desc);
                 return cooking;
             });
@@ -230,7 +234,7 @@ struct UjitsoCookingComputeService : public ICookingComputeService
             [&](PhysxCookingComputeResult& result) {
                 MeshCookingContext* cooking =
                     MeshCookingContext::create(m_resourceManager, cacheBehavior(request), result,
-                        PhysxCookingDataVersion_SphereFill, PhysxSchemaTokens->sphereFill);
+                        PhysxCookingDataVersion_SphereFill, "sphereFill");
                 addParamsToRequest(cooking->getRequestBuilder(), desc);
                 return cooking;
             });
@@ -261,7 +265,7 @@ struct UjitsoCookingComputeService : public ICookingComputeService
             [&](PhysxCookingComputeResult& result) {
             MeshCookingContext* cooking =
                 MeshCookingContext::create(m_resourceManager, cacheBehavior(request), result,
-                    PhysxCookingDataVersion_DeformableVolumeMesh, PhysxSchemaTokens->PhysxBaseDeformableBodyAPI);
+                    PhysxCookingDataVersion_DeformableVolumeMesh, "PhysxBaseDeformableBodyAPI");
             addParamsToRequest(cooking->getRequestBuilder(), params);
             return cooking;
         });
@@ -292,7 +296,7 @@ struct UjitsoCookingComputeService : public ICookingComputeService
             [&](PhysxCookingComputeResult& result) {
             MeshCookingContext* cooking =
                 MeshCookingContext::create(m_resourceManager, cacheBehavior(request), result,
-                    PhysxCookingDataVersion_VolumeDeformableBody, PhysxSchemaTokens->PhysxBaseDeformableBodyAPI);
+                    PhysxCookingDataVersion_VolumeDeformableBody, "PhysxBaseDeformableBodyAPI");
             addParamsToRequest(cooking->getRequestBuilder(), params);
             return cooking;
         });
@@ -323,7 +327,7 @@ struct UjitsoCookingComputeService : public ICookingComputeService
             [&](PhysxCookingComputeResult& result) {
             MeshCookingContext* cooking =
                 MeshCookingContext::create(m_resourceManager, cacheBehavior(request), result,
-                    PhysxCookingDataVersion_SurfaceDeformableBody, PhysxSchemaTokens->PhysxBaseDeformableBodyAPI);
+                    PhysxCookingDataVersion_SurfaceDeformableBody, "PhysxBaseDeformableBodyAPI");
             addParamsToRequest(cooking->getRequestBuilder(), params);
             return cooking;
         });
@@ -537,13 +541,18 @@ struct UjitsoCookingComputeService : public ICookingComputeService
         }
     }
 
-    virtual bool lazyGetCudaContextManager(PhysxCookingDataType::Enum dataType,
+    /**
+     * @implements REQ-COOK-CUDACTX-001
+     * @covers AC-2
+     */
+    virtual bool acquireCudaContextManager(PhysxCookingDataType::Enum dataType,
                                            const PhysxCookingComputeRequest& request,
                                            PxCudaContextManager*& cudaContextManager,
                                            PxPhysicsGpu*& physicsGPU) override final
     {
-        // Use the fallback service to manage the cuda context
-        return m_fallback->lazyGetCudaContextManager(dataType, request, cudaContextManager, physicsGPU);
+        // Use the fallback service to manage the cuda context. The reference it acquires is passed
+        // straight through to our caller, who owes the matching release().
+        return m_fallback->acquireCudaContextManager(dataType, request, cudaContextManager, physicsGPU);
     }
 
 private:
@@ -551,10 +560,10 @@ private:
      * Private constructor ensures that only the (safe) static create() function can produce a new object.
      */
     explicit UjitsoCookingComputeService(::physx::PxFoundation& foundation,
-                                         SharedCudaContextManagerFn sharedCudaContextManagerFn) : m_resourceManager(nullptr), m_cookingProcessor(nullptr),
+                                         AcquireSharedCudaContextManagerFn acquireSharedCudaContextManagerFn) : m_resourceManager(nullptr), m_cookingProcessor(nullptr),
         m_triangulationProcessor(nullptr), m_allowCaching(true), m_allowRemoteCaching(false)
     {
-        m_fallback = createCookingComputingService(foundation, sharedCudaContextManagerFn);
+        m_fallback = createCookingComputingService(foundation, acquireSharedCudaContextManagerFn);
         CHECK_RETURN_ON_FAIL(m_fallback);
 
         m_settings = carb::getCachedInterface<carb::settings::ISettings>();
@@ -756,99 +765,6 @@ private:
         return m_allowRemoteCaching ? CacheBehaviorType::Default : CacheBehaviorType::Local;
     }
 
-    template <typename FinishRequestFunction>
-    bool finishRequestWithUSDLoadedData(
-        PhysxCookingAsyncContext context,
-        PhysxCookingComputeRequest& request,
-        PhysxCookingComputeResult& result,
-        CookingStageAndPrim& stageAndPrim,
-        FinishRequestFunction finishRequestFunction)
-    {
-        CARB_PROFILE_ZONE(0, "UjitsoCookingComputeService::finishRequestWithUSDLoadedData");
-
-        bool success = true;
-
-        std::vector<std::vector<uint8_t>> triangulationResultDataBlocks;
- 
-        // check if triangulation data is needed for this request
-        if (request.triangulation.isNeeded())
-        {
-            if (request.primMeshView.isEmpty())
-            {
-                // If the mesh view is empty we require valid prim data
-                if (request.dataInputMode != PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID)
-                {
-                    result.result = PhysxCookingResult::eERROR_INVALID_PRIM;
-                    return false;
-                }
-
-                if (!ICookingComputeService::fillMeshView(result, request, stageAndPrim))
-                {
-                    result.result = PhysxCookingResult::eERROR_INVALID_PRIM;
-                    return false;
-                }
-            }
-
-            success = false;    // Until proven otherwise
-
-            // build a container for the triangulation data and register it
-            PhysicsTriangulationInputContainer* triangulationContainer =
-                new PhysicsTriangulationInputContainer(result, request);
-            if (triangulationContainer)
-            {
-                IRegistry* registry = carb::getCachedInterface<carb::ujitso::IRegistry>();
-                if (registry)
-                {
-                    // create ujitso request for the data
-                    UjitsoProcessContext triangulation(m_resourceManager, cacheBehavior(request));
-
-                    ContainerHandle containerHandle = registry->registerContainer(*triangulationContainer);
-
-                    addExtDep(triangulation.getRequestBuilder());
-                    triangulation.getRequestBuilder().add(PHYSX_TRIANGULATE_MESH_STR);
-                    triangulation.getRequestBuilder().add(TRIANGULATION_VERSION_STR,
-                                                            (uint32_t)PhysxCookingDataVersion_MeshTriangulation);
-                    triangulation.getRequestBuilder().add(PHYSICS_TRIANGULATION_INPUT_CONTAINER_NAME, containerHandle);
-
-                    triangulation.requestBuild();
-                    triangulation.waitRequest();
-
-                    // We need to save the triangulation buffers in the upper ujitso context otherwise the
-                    // triangulation view will point to memory that goes out of scope at the end this if statement
-                    triangulationResultDataBlocks = std::move(triangulation.getResultDataBlocks());
-
-                    success = triangulationResultDataBlocks.size() == 1 &&
-                        buildTriangulationViewFromData(result.triangulationView,
-                            result.triangulationMaxMaterialIndex, triangulationResultDataBlocks[0]);
-
-                    // tear the container back down regardless of the success of the triangulation task
-                    constexpr uint32_t timeout = 60000;
-                    OperationResult unregisterResult = registry->unregisterContainer(containerHandle, timeout);
-                    switch (unregisterResult)
-                    {
-                    case OperationResult::SUCCESS:
-                        break;
-                    case OperationResult::TIMEOUT_ERROR:
-                        CARB_LOG_ERROR("UjitsoCookingComputeService::finishRequestWithUSDLoadedData: Unable to "
-                                       "unregister triangulation container in %ds.", timeout / 1000);
-                        break;
-                    default:
-                        CARB_LOG_ERROR("UjitsoCookingComputeService::finishRequestWithUSDLoadedData: "
-                                       "unregisterContainer returned error value %d.", (uint32_t)unregisterResult);
-                        break;
-                    }
-                }
-
-                delete triangulationContainer;
-            }
-        }
-
-        if (success)
-            finishRequestFunction(request, result);
-
-        return success;
-    }
-
     // Does not lock, but requires a lock to exist
     UjitsoAsyncContext* safeCastContext(lock_guard& guard, PhysxCookingAsyncContext context)
     {
@@ -911,11 +827,15 @@ private:
         }
  
         // Compute Mesh Key and CRC
-        CookingStageAndPrim stageAndPrim;
-        if (!computeMeshKeyIfNeeded(result, requestCopy, stageAndPrim))
+        if (!computeMeshKeyIfNeeded(result, requestCopy))
             return nullptr;
 
         result.cookedDataCRC = deriveCRCFunction(result);
+
+        // Must match CookingComputeService::requestCookedData: the CRC is persisted (into USD, and
+        // into the shared mesh cache) and compared across backends, so the two derivations have to
+        // fold the same fields in the same order. See MeshCRCComputation::foldMetersPerUnit.
+        MeshCRCComputation::foldMetersPerUnit(result.cookedDataCRC, requestCopy.primMeshMetersPerUnit);
 
         if (!result.request->options.hasFlag(PhysxCookingComputeRequest::Options::kComputeGPUCookingData))
             result.cookedDataCRC.setComputeGPUData(false);
@@ -1036,9 +956,9 @@ private:
 // Public functions
 
 ICookingComputeService* createUjitsoCookingComputingService(::physx::PxFoundation& foundation,
-                                                           SharedCudaContextManagerFn sharedCudaContextManagerFn)
+                                                           AcquireSharedCudaContextManagerFn acquireSharedCudaContextManagerFn)
 {
-    return UjitsoCookingComputeService::create(foundation, sharedCudaContextManagerFn);
+    return UjitsoCookingComputeService::create(foundation, acquireSharedCudaContextManagerFn);
 }
 
 } // namespace physx

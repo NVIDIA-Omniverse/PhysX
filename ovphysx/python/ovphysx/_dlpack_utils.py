@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """
 DLPack utility functions for tensor interoperability.
@@ -35,10 +35,9 @@ def _validate_c_contiguous_layout(dl_tensor: DLTensor) -> None:
     if not dl_tensor.strides:
         return
 
-    # Any zero-sized dim makes the tensor empty; contiguity is trivially
-    # satisfied (no data to lay out). NumPy reports stride 0 for the dims
-    # outside a zero-sized one, which would otherwise fail the per-dim
-    # stride check below.
+    # Any zero-sized dim makes the tensor empty, so contiguity holds trivially.
+    # NumPy reports stride 0 for the dims outside a zero-sized one, which would
+    # otherwise fail the per-dim stride check below.
     if any(dl_tensor.shape[i] == 0 for i in range(ndim)):
         return
 
@@ -78,7 +77,7 @@ def acquire_dltensor(obj) -> tuple[DLTensor, object | None]:
     """Extract DLTensor and a keepalive reference (if needed).
 
     For objects implementing __dlpack__(), the returned DLTensor points into a
-    DLManagedTensor owned by a Python capsule. We must keep the capsule alive
+    DLManagedTensor owned by a Python capsule. The capsule must stay alive
     until the native call completes.
 
     Args:
@@ -142,20 +141,18 @@ def numpy_to_dltensor(arr) -> DLTensor:
     dl_tensor.data = arr.ctypes.data_as(c_void_p)
     dl_tensor.ndim = arr.ndim
 
-    # Set up shape - must be kept alive for duration of C call
+    # The shape array must stay alive for the duration of the C call.
     shape_array = (c_int64 * arr.ndim)(*arr.shape)
     dl_tensor.shape = ctypes.cast(shape_array, POINTER(c_int64))
 
-    # Strides (in bytes -> elements) - must be kept alive for duration of C call
+    # Strides converted from bytes to elements. The array must stay alive for the duration of the C call.
     strides_array = (c_int64 * arr.ndim)(*[s // arr.itemsize for s in arr.strides])
     dl_tensor.strides = ctypes.cast(strides_array, POINTER(c_int64))
 
-    # Device
     dl_tensor.device = DLDevice()
     dl_tensor.device.device_type = DLDeviceType.kDLCPU
     dl_tensor.device.device_id = 0
 
-    # Data type
     dl_tensor.dtype = DLDataType()
     if arr.dtype == np.float32:
         dl_tensor.dtype.code = DLDataTypeCode.kDLFloat
@@ -172,6 +169,15 @@ def numpy_to_dltensor(arr) -> DLTensor:
     elif arr.dtype == np.uint8:
         dl_tensor.dtype.code = DLDataTypeCode.kDLUInt
         dl_tensor.dtype.bits = 8
+    elif arr.dtype == np.int64:
+        dl_tensor.dtype.code = DLDataTypeCode.kDLInt
+        dl_tensor.dtype.bits = 64
+    elif arr.dtype == np.uint64:
+        dl_tensor.dtype.code = DLDataTypeCode.kDLUInt
+        dl_tensor.dtype.bits = 64
+    elif arr.dtype == np.uint32:
+        dl_tensor.dtype.code = DLDataTypeCode.kDLUInt
+        dl_tensor.dtype.bits = 32
     else:
         raise ValueError(f"Unsupported dtype: {arr.dtype}")
     dl_tensor.dtype.lanes = 1

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-MAT-001
@@ -46,8 +46,7 @@ T readScalar(const IPhysicsSource& source, ObjectKey key, TokenId attr, T defaul
 DescPtr<PhysxMaterialDesc> parseMaterial(ParseContext& ctx, ObjectKey key)
 {
     IPhysicsSource& source = ctx.source();
-    KnownTokens tok;
-    tok.intern(source);
+    const KnownTokens& tok = ctx.knownTokens();
 
     DescPtr<PhysxMaterialDesc> desc = allocateDesc<PhysxMaterialDesc>(ctx.descriptorAllocator());
 
