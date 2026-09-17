@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-SIM-OVSTAGE-READ-REUSE-001
+ * @covers AC-1 AC-4 AC-6
+ *
  * @implements REQ-PARSE-FEED-001
  * @covers AC-1 AC-2 AC-3 AC-4
  *
@@ -30,6 +33,7 @@
 #include "OvstageChangeFeed.h"
 
 #include "OvstageSource.h"
+#include "ReadGroupUtils.h"
 
 
 #include <carb/profiler/Profile.h>
@@ -1911,7 +1915,7 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
     // A consumer returning false (partial commit) fails the drain closed so the cursor holds.
     bool ok = true;
 
-    // The change-range read selects exactly the changed keys, one group per key. A latest-
+    // The change-range read selects exactly the changed keys. A latest-
     // snapshot read would be dense, but its groups carry the attribute's latest ordinal, not
     // each row's, so it cannot tell changed rows from unchanged ones and would re-publish
     // stale values to prims not written in the range.
@@ -1930,11 +1934,12 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
             return false;
         waitAndRelease(mInstance, re);
 
-        // A change-range read returns one group per changed key, so a bulk write over N prims
-        // arrives as N one-row groups. Consumers pay per batch (the write backend plans and
+        // A change-range read may split one attribute across many groups. Consumers pay
+        // per batch (the write backend plans and
         // scatters each ChangeBatch), so the fixed-width host groups of one attribute are
         // gathered into a single contiguous column and dispatched once per attribute after the
-        // loop; ragged, sparse, masked and device groups keep the per-group path below.
+        // loop. Gathered fixed-width rows follow their data index map; ragged, masked
+        // and device groups keep the per-group path below.
         struct CoalescedColumn
         {
             ovx_token_t attr = OVX_INVALID_TOKEN;
@@ -1951,19 +1956,35 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
 
         auto tryCoalesce = [&](const ovstage_read_group_t& grp, TokenId property) -> bool
         {
-            if (grp.data.tensor_count == 0 || !grp.data.tensors || !grp.data.tensors[0].data || grp.is_array ||
-                grp.data.index_map != nullptr || grp.data.mask != nullptr || grp.prims.count == 0 ||
+            if (grp.data.tensor_count != 1 || !grp.data.tensors || !grp.data.tensors[0].data || grp.is_array ||
+                grp.data.mask != nullptr || grp.prims.count == 0 ||
                 mGroupKeys.size() != grp.prims.count || !mGroupListPaths)
                 return false;
             const DLTensor& t = grp.data.tensors[0];
             if (t.device.device_type != kDLCPU)
                 return false;
             const uint32_t rows = grp.prims.count;
-            const int64_t comps = totalElements(t) / static_cast<int64_t>(rows);
+            // A gathered group can reference only part of a larger transported
+            // tensor, or share a data row. Tuple width comes from stored rows,
+            // never the number of selected prims in that case.
+            const int64_t storedRows = grp.data.index_map ?
+                ((t.ndim > 0 && t.shape) ? t.shape[0] : 0) : static_cast<int64_t>(rows);
+            if (storedRows <= 0 || !detail::isCompactReadTensor(t))
+                return false;
+            const int64_t total = totalElements(t);
+            if (total <= 0 || total % storedRows != 0)
+                return false;
+            const int64_t comps = total / storedRows;
             const ColumnType ct = columnTypeOf(t.dtype, comps);
             const size_t rowBytes = comps > 0 ? static_cast<size_t>(comps) * (t.dtype.bits / 8) : 0;
             if (ct == ColumnType::eNone || comps < 1 || comps > 4 || rowBytes == 0)
                 return false;
+            // Validate the entire group before appending anything to a column:
+            // a rejected group must leave no partial values to dispatch later.
+            if (grp.data.index_map)
+                for (uint32_t i = 0; i < rows; ++i)
+                    if (static_cast<int64_t>(grp.data.index_map[i]) >= storedRows)
+                        return false;
 
             CoalescedColumn* col = nullptr;
             for (CoalescedColumn& c : coalesced)
@@ -1993,7 +2014,17 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
                 col->raws.push_back(idx < mGroupListCount ? mGroupListPaths[idx] : 0);
             }
             const uint8_t* src = static_cast<const uint8_t*>(t.data) + t.byte_offset;
-            col->bytes.insert(col->bytes.end(), src, src + static_cast<size_t>(rows) * rowBytes);
+            if (grp.data.index_map)
+            {
+                const size_t previousSize = col->bytes.size();
+                col->bytes.resize(previousSize + static_cast<size_t>(rows) * rowBytes);
+                uint8_t* dst = col->bytes.data() + previousSize;
+                for (uint32_t i = 0; i < rows; ++i)
+                    std::memcpy(dst + static_cast<size_t>(i) * rowBytes,
+                                src + static_cast<size_t>(grp.data.index_map[i]) * rowBytes, rowBytes);
+            }
+            else
+                col->bytes.insert(col->bytes.end(), src, src + static_cast<size_t>(rows) * rowBytes);
             return true;
         };
 
@@ -2109,11 +2140,11 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
                         // lanes: a double3[] row otherwise passes and has half its 8-byte payload copied and
                         // read as float32, silent corruption the correct CSR offset would not flag. Array /
                         // ragged tensors are outside OVStage's fixed-size canonical-layout guarantee, so a
-                        // strided (non-null strides) or shape-malformed row could be non-compact -- reading it
-                        // as packed would corrupt the values too. DLPack: strides == nullptr means compact.
+                        // non-compact or shape-malformed row cannot be copied as packed. Explicit compact
+                        // strides are valid and required by newer DLPack read producers.
                         if (!t.data || t.dtype.code != kDLFloat || t.dtype.bits != 32 ||
                             t.dtype.lanes != lanes || t.device.device_type != kDLCPU ||
-                            t.strides || t.ndim < 0 || (t.ndim > 0 && !t.shape))
+                            !detail::isCompactReadTensor(t))
                         {
                             ragOk = false;
                             break;

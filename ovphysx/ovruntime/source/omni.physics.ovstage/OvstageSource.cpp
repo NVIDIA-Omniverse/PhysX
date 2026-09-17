@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-SIM-OVSTAGE-READ-REUSE-001
+ * @covers AC-2 AC-3 AC-4
+ *
  * @implements REQ-PARSE-CORE-003
  * @covers AC-6 AC-7 AC-8 AC-9 AC-10 AC-11 AC-12 AC-13 AC-15 AC-16
  *
@@ -43,6 +46,7 @@
  */
 
 #include "OvstageSource.h"
+#include "ReadGroupUtils.h"
 
 
 #include "OvstageChangeFeed.h"
@@ -5003,12 +5007,15 @@ void OvstageSource::seedBucketFromReadGroup(TokenId attr,
         return;
 
     mBucketActive = true;
-    const bool usable =
-        group.data.tensor_count > 0 && group.data.tensors && group.data.tensors[0].data;
-    const bool dense = usable && !group.is_array && group.data.index_map == nullptr && group.data.mask == nullptr;
-    if (!dense)
+    const bool transform = isWorldTransform || isLocalTransform || isResetXformStack;
+    const bool usable = !group.is_array && group.data.tensor_count == 1 && group.data.tensors &&
+        group.data.tensors[0].data && group.data.tensors[0].device.device_type == kDLCPU &&
+        !(group.data.index_map && group.data.mask);
+    // Transform buckets have separate eager/append lifetime rules. Preserve
+    // their dense-only contract; scalar rows can borrow mapped or masked data.
+    if (!usable || (transform && (group.data.index_map || group.data.mask)))
     {
-        if (isWorldTransform || isLocalTransform || isResetXformStack)
+        if (transform)
             mBucketTransformsComplete = false;
         else
             mBucketScalarsComplete = false;
@@ -5016,7 +5023,51 @@ void OvstageSource::seedBucketFromReadGroup(TokenId attr,
     }
 
     const DLTensor& t = group.data.tensors[0];
-    const int64_t comps = componentsPerPrim(t, group.prims.count);
+    const int64_t storedRows = group.data.index_map ?
+        ((t.ndim > 0 && t.shape) ? t.shape[0] : 0) : static_cast<int64_t>(group.prims.count);
+    if (storedRows <= 0 || !detail::isCompactReadTensor(t))
+    {
+        if (transform)
+            mBucketTransformsComplete = false;
+        else
+            mBucketScalarsComplete = false;
+        return;
+    }
+    const int64_t total = totalElements(t);
+    if (total <= 0 || total % storedRows != 0)
+    {
+        if (transform)
+            mBucketTransformsComplete = false;
+        else
+            mBucketScalarsComplete = false;
+        return;
+    }
+    const int64_t comps = total / storedRows;
+    if (group.data.index_map)
+    {
+        for (uint32_t i = 0; i < group.prims.count; ++i)
+        {
+            if (static_cast<int64_t>(group.data.index_map[i]) >= storedRows)
+            {
+                mBucketScalarsComplete = false;
+                return;
+            }
+        }
+        for (std::pair<uint64_t, uint32_t>& row : groupRows)
+        {
+            row.second = group.data.index_map[row.second];
+            mBucketRows[row.first] = row.second;
+        }
+    }
+    else if (group.data.mask)
+    {
+        // Keep missing prims in mBucketKeys: absence is known for this column,
+        // but there is no tensor row to decode. Getters return a covered miss
+        // instead of issuing another read for the same missing value.
+        for (const std::pair<uint64_t, uint32_t>& row : groupRows)
+            if ((group.data.mask[row.second / 64] & (uint64_t{ 1 } << (row.second % 64))) == 0)
+                mBucketRows.erase(row.first);
+    }
     if (isWorldTransform)
     {
         if (comps < 16)

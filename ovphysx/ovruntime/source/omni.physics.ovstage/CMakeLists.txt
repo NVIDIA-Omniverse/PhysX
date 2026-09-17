@@ -9,6 +9,7 @@
 # setParseBackend(makeOvstageParseBackend()) + setScanBackend(makeOvstageScanBackend()).
 
 set(PARSE_OVSTAGE_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/ReadGroupUtils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/OvstageSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/OvstageChangeFeed.h
     ${CMAKE_CURRENT_SOURCE_DIR}/OvstageWalker.h

@@ -277,6 +277,47 @@ if(NOT WIN32)
     )
 endif()
 
+# Exercise source-cache row selection directly with controlled OVStage read
+# groups. This remains separate from the installed-SDK tests: the source and
+# its test counters live in a build-tree static library.
+add_executable(ovstage_source_bucket_unittests
+    ${PROJECT_SOURCE_DIR}/tests/internal_unittests/test_ovstage_source_bucket.cpp
+)
+target_link_libraries(ovstage_source_bucket_unittests
+    PRIVATE gtest_main OvruntimePhysicsOvstage ovphysx::ovstage
+)
+get_target_property(_OVPHYSX_BUCKET_SYSTEM_INCLUDES OvruntimePhysicsOvstage INCLUDE_DIRECTORIES)
+target_include_directories(ovstage_source_bucket_unittests SYSTEM PRIVATE
+    ${_OVPHYSX_BUCKET_SYSTEM_INCLUDES}
+)
+ovphysx_apply_compiler_defaults(ovstage_source_bucket_unittests)
+set_target_properties(ovstage_source_bucket_unittests PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+)
+if(NOT WIN32)
+    target_link_options(ovstage_source_bucket_unittests PRIVATE
+        -Wl,--allow-shlib-undefined
+        "LINKER:--disable-new-dtags"
+    )
+    set_target_properties(ovstage_source_bucket_unittests PROPERTIES
+        BUILD_RPATH "${TEST_RPATH}"
+        INSTALL_RPATH "\$ORIGIN"
+        SKIP_BUILD_RPATH FALSE
+    )
+endif()
+add_test(NAME ovstage-source-bucket COMMAND ovstage_source_bucket_unittests)
+set_tests_properties(ovstage-source-bucket PROPERTIES
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    LABELS "unit"
+)
+if(WIN32)
+    set_tests_properties(ovstage-source-bucket PROPERTIES
+        ENVIRONMENT_MODIFICATION
+            "PATH=path_list_prepend:${_OVPHYSX_OVSTAGE_PYTHON_RUNTIME_DIR}/plugins;PATH=path_list_prepend:${_OVPHYSX_OVSTAGE_PYTHON_RUNTIME_DIR}"
+    )
+endif()
+
 # ============================================================================
 # C API Compatibility Test
 # ============================================================================

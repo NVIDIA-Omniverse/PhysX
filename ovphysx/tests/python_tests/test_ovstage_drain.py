@@ -254,3 +254,81 @@ def test_drain_deformable_pose_does_not_touch_live_state(physx_sdk):
     after = _read(physx_sdk, SimObjectType.DEFORMABLE_VOLUME, "points", 3)
     # Drain did not teleport the live vertices to the authored bind pose (no step -> resync not yet applied).
     assert np.allclose(after, before, atol=1e-4)
+
+def _read_velocities_by_path(physx, stage):
+    """Resolve each borrowed output row's key before the read session closes."""
+    pd = ovstage.PathDictionary(stage)
+    result = {}
+    with physx.read(SimObjectType.RIGID_BODY, ["linearVelocity"], scope=ObjectScope.ALL) as read:
+        for group in read.groups:
+            assert not group.is_array and group.index_map is None
+            paths = pd.get_path_strings(group.prim_list)
+            values = group.tensors[0].numpy().reshape(-1, 3)
+            prim_indices = (
+                group.prim_index_map.numpy()
+                if group.prim_index_map is not None
+                else range(group.prim_offset, group.prim_offset + group.prim_count)
+            )
+            for row, index in enumerate(prim_indices):
+                path = paths[int(index)]
+                assert path not in result
+                result[path] = values[row].copy()
+    return result
+
+
+def test_drain_rigid_velocity_reordered_subsets_remain_fresh(physx_sdk, tmp_path):
+    """Distinct velocities preserve key association across partial, reordered drains."""
+    # @implements REQ-SIM-OVSTAGE-READ-REUSE-001
+    # @maps_to TEST-SIM-OVSTAGE-READ-REUSE-001
+    scene = tmp_path / "drain_rigid_subsets.usda"
+    lines = [
+        '#usda 1.0', '(', '    defaultPrim = "World"', '    metersPerUnit = 1',
+        '    upAxis = "Z"', ')', 'def Xform "World"', '{',
+        '    def PhysicsScene "physicsScene"', '    {',
+        '        float physics:gravityMagnitude = 0', '    }',
+    ]
+    for index, name in enumerate("ABCDE"):
+        lines.extend([
+            f'    def Cube "{name}" ( prepend apiSchemas = '
+            '["PhysicsRigidBodyAPI","PhysicsCollisionAPI","PhysicsMassAPI"] )',
+            '    {', '        double size = 0.25', '        float physics:mass = 1',
+            f'        double3 xformOp:translate = ({index * 2}, 0, 0)',
+            '        uniform token[] xformOpOrder = ["xformOp:translate"]',
+            '        vector3f physics:velocity = (0, 0, 0)', '    }',
+        ])
+    lines.append('}')
+    scene.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    stage = attach_usd_with_ovstage(physx_sdk, str(scene))
+    for _ in range(2):
+        physx_sdk.step(1.0 / 60.0)
+    physx_sdk.wait_all()
+
+    expected = {f"/World/{name}": np.zeros(3, np.float32) for name in "ABCDE"}
+    pd = ovstage.PathDictionary(stage)
+    batches = [
+        [("C", [3, 13, 23]), ("A", [1, 11, 21]), ("E", [5, 15, 25])],
+        [("E", [-5, 35, 45]), ("B", [-2, 32, 42]), ("C", [-3, 33, 43])],
+    ]
+    for ordinal, batch in enumerate(batches, start=2):
+        paths = [f"/World/{name}" for name, _ in batch]
+        values = np.asarray([value for _, value in batch], dtype=np.float32)
+        query = stage.query_from_path_list(pd.create_path_list_from_strings(paths))
+        try:
+            stage.write_attribute(
+                query, "physics:velocity", ordinal, values,
+                is_array=False, prim_mode=ovstage.PrimMode.UPSERT,
+            ).wait()
+        finally:
+            query.release()
+        stage.advance_write_floor(ordinal=ordinal).wait()
+        physx_sdk.update_from_ovstage(ordinal, ordinal)
+        physx_sdk.wait_all()
+        expected.update(zip(paths, values))
+
+        actual = _read_velocities_by_path(physx_sdk, stage)
+        assert actual.keys() == expected.keys()
+        for path, value in expected.items():
+            np.testing.assert_allclose(
+                actual[path], value, atol=1e-3,
+                err_msg=f"{path} after ordinal {ordinal}: row mapping or untouched value changed",
+            )
