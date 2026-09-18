@@ -99,9 +99,6 @@ public:
                                    std::unordered_set<const ::physx::PxArticulationReducedCoordinate*>& seenArtis);
 
     void processRigidBodyEntries(const std::vector<std::string>& patterns, std::vector<RigidBodyEntry>& entries);
-    void findMatchingRigidBodies(const std::string& pattern,
-                                 std::vector<RigidBodyEntry>& entriesRet,
-                                 std::unordered_set<const ::physx::PxRigidBody*>& seenBodies);
 
     void setNoMatchLoggingQuiet(bool quiet) override;
     bool isNoMatchLoggingQuiet() const override;

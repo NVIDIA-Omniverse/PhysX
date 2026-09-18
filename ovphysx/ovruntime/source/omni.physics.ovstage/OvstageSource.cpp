@@ -2421,112 +2421,100 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
     if (!mInstance || !mDict)
         return false;
 
-    // One `usd-path IN [p1..pN]` query covers every cold path in a single round
-    // trip -- the same predicate shape exists() uses for a single key, just with
-    // value_count == the distinct cold-path count instead of 1.
+    // A path-list query selects only the requested handles, without a stage-wide
+    // string predicate. Its count includes absent paths; only live usd-path read
+    // rows establish existence. Keep string back-mapping so canonical/raw aliases
+    // and duplicate input keys receive the same answer.
+    // @implements REQ-SIM-OVSTAGE-BINDING-RESOLVE-001
     std::vector<ovx_string_t> pathVals;
     pathVals.reserve(coldPathIndices.size());
     for (const std::pair<const std::string, std::vector<size_t>>& kv : coldPathIndices)
         pathVals.push_back(ovx_string_t{ kv.first.data(), kv.first.size() });
 
-    ovstage_predicate_t pred{};
-    pred.attribute.token = 0;
-    pred.attribute.string = ovx_string_t{ conv::kUsdPath, std::string_view(conv::kUsdPath).size() };
-    pred.op = OVSTAGE_FILTER_OP_IN;
-    pred.values = pathVals.data();
-    pred.value_count = pathVals.size();
-
-    ovstage_filter_t filter{};
-    filter.predicates = &pred;
-    filter.count = 1;
+    ovx_primpath_list_t list = OVX_INVALID_PRIMPATH_LIST;
+    if (ovx_path_dictionary_create_path_list_from_strings(
+            mDict, pathVals.data(), pathVals.size(), &list) != OVX_OK)
+        return false;
 
     existsQueryCounter().fetch_add(1, std::memory_order_relaxed);
     ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
-    const ovstage_enqueue_result_t e = ovstage_query(mInstance, &filter, nullptr, 0, &q);
-    if (e.status != OVSTAGE_OK)
-    {
+    const ovstage_api_status_t queryStatus = ovstage_query_from_path_list(mInstance, list, &q);
+    // The query retains its own reference to the path list.
+    (void)ovx_path_dictionary_destroy_path_list(mDict, list);
+    if (queryStatus != OVSTAGE_OK || q == OVSTAGE_INVALID_QUERY_HANDLE)
         return false;
-    }
-    waitAndRelease(mInstance, e);
-
-    // total_prim_count alone would say HOW MANY of the cold paths matched, not
-    // WHICH -- a partial match is the common case for this caller (pattern
-    // matching over a mixed literal-path candidate list), so read the matched
-    // set's usd-path column back (same technique buildChildCache's live fallback
-    // uses to resolve a read group's prims to path handles) and mark exactly the
-    // requested indices whose path came back.
-    ovstage_query_handle_t use = q;
-    size_t totalMatched = 0;
-    bool fetched = false;
-    ovstage_query_result_t qr{};
-    if (ovstage_fetch_query_result(mInstance, q, OVSTAGE_TIMEOUT_INFINITE, &qr) == OVSTAGE_OK)
-    {
-        fetched = true;
-        if (qr.all_handle != OVSTAGE_INVALID_QUERY_HANDLE)
-            use = qr.all_handle;
-        totalMatched = qr.total_prim_count;
-        ovstage_release_query_result(mInstance, &qr);
-    }
-
-    if (!fetched)
-    {
-        waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
-        return false;
-    }
-    if (totalMatched == 0)
-    {
-        waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
-        memoizeResults();
-        return true;
-    }
 
     bool resolved = false;
+    std::vector<size_t> liveIndices;
+    liveIndices.reserve(coldIndices.size());
     ovx_token_t usdPathProbe = OVX_INVALID_TOKEN;
-    ovx_path_dictionary_intern_token(
+    const ovx_api_status_t tokenStatus = ovx_path_dictionary_intern_token(
         mDict, ovx_string_t{ conv::kUsdPath, std::string_view(conv::kUsdPath).size() }, &usdPathProbe);
-    if (usdPathProbe != OVX_INVALID_TOKEN)
+    if (tokenStatus == OVX_OK && usdPathProbe != OVX_INVALID_TOKEN)
     {
         ovstage_ordinal_range_t range{};
-        range.end_ordinal = ~ovstage_ordinal_t(0); // latest
+        range.end_ordinal = ~ovstage_ordinal_t(0); // latest, including current liveness
         range.has_start_ordinal = false;
 
         ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
-        const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, use, &usdPathProbe, 1, range, &rh);
+        const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, q, &usdPathProbe, 1, range, &rh);
         if (re.status == OVSTAGE_OK)
         {
-            waitAndRelease(mInstance, re);
-            ReadListMemo listMemo(mDict);
-            ovstage_read_group_t g{};
-            ovstage_api_status_t fetchErr;
-            while ((fetchErr = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+            const bool readOk = waitAndRelease(mInstance, re);
+            if (readOk)
             {
-                const ovx_primpath_t* paths = nullptr;
-                size_t count = 0;
-                if (listMemo.paths(g.prims.list, &paths, &count))
+                ReadListMemo listMemo(mDict);
+                bool validGroups = true;
+                ovstage_read_group_t g{};
+                ovstage_api_status_t fetchErr;
+                while ((fetchErr = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
                 {
-                    for (uint32_t i = 0; i < g.prims.count; ++i)
+                    if (g.attribute == usdPathProbe && !g.is_delete && g.prims.count != 0)
                     {
-                        const uint32_t idx = g.prims.index_map ? g.prims.index_map[i] : (g.prims.offset + i);
-                        if (idx >= count)
-                            continue;
-                        const std::string matchedPath = pathOfRaw(paths[idx]);
-                        const auto it = coldPathIndices.find(matchedPath);
-                        if (it != coldPathIndices.end())
+                        const ovx_primpath_t* paths = nullptr;
+                        size_t count = 0;
+                        if (!listMemo.paths(g.prims.list, &paths, &count) || !paths)
                         {
-                            for (const size_t idxOut : it->second)
-                                outExists[idxOut] = true;
+                            validGroups = false;
+                        }
+                        else
+                        {
+                            for (uint32_t i = 0; i < g.prims.count; ++i)
+                            {
+                                const size_t idx = g.prims.index_map ? g.prims.index_map[i] :
+                                                                      (static_cast<size_t>(g.prims.offset) + i);
+                                if (idx >= count || !paths[idx])
+                                {
+                                    validGroups = false;
+                                    continue;
+                                }
+                                const std::string matchedPath = pathOfRaw(paths[idx]);
+                                const auto it = coldPathIndices.find(matchedPath);
+                                if (it != coldPathIndices.end())
+                                    liveIndices.insert(liveIndices.end(), it->second.begin(), it->second.end());
+                                else
+                                    validGroups = false;
+                            }
                         }
                     }
+                    ovstage_release_group(mInstance, &g);
                 }
-                ovstage_release_group(mInstance, &g);
+                resolved = validGroups && fetchErr == OVSTAGE_ERROR_END_OF_ITERATION;
             }
-            resolved = fetchErr == OVSTAGE_ERROR_END_OF_ITERATION;
-            waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
+            const bool released = waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
+            resolved = resolved && released;
         }
     }
-    waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
+    const bool released = waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
+    resolved = resolved && released;
+    // A failed or truncated read must not cache absence or publish partial live
+    // answers. A clean empty read is valid: every cold requested path is absent.
     if (resolved)
+    {
+        for (const size_t index : liveIndices)
+            outExists[index] = true;
         memoizeResults();
+    }
     return resolved;
 }
 

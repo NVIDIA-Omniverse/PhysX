@@ -12,6 +12,7 @@
 #include <omni/core/Omni.h>
 
 #include <array>
+#include <cstring>
 #include <memory>
 #include <limits>
 #include <vector>
@@ -21,6 +22,8 @@ CARB_GLOBALS("ovstage_source_bucket_unittests")
 
 namespace omni::physics::ovstage
 {
+void resetOvstageExistsQueryCountForTest();
+size_t getOvstageExistsQueryCountForTest();
 void resetOvstageLiveAttributeReadCountForTest();
 size_t getOvstageLiveAttributeReadCountForTest();
 }
@@ -28,6 +31,8 @@ size_t getOvstageLiveAttributeReadCountForTest();
 namespace
 {
 using omni::physics::ovstage::OvstageSource;
+using omni::physics::ovstage::getOvstageExistsQueryCountForTest;
+using omni::physics::ovstage::resetOvstageExistsQueryCountForTest;
 using omni::physics::ovstage::getOvstageLiveAttributeReadCountForTest;
 using omni::physics::ovstage::resetOvstageLiveAttributeReadCountForTest;
 using omni::physics::parse::AttrValue;
@@ -114,6 +119,64 @@ protected:
         EXPECT_FLOAT_EQ(value.f3.z, z);
     }
 
+    bool waitOp(ovstage_enqueue_result_t enqueue)
+    {
+        if (enqueue.status != OVSTAGE_OK || enqueue.op_index == OVSTAGE_INVALID_OP_ID)
+            return false;
+        ovstage_op_wait_result_t result{};
+        const ovstage_api_status_t status =
+            ovstage_wait_op(mStage, enqueue.op_index, OVSTAGE_TIMEOUT_INFINITE, &result);
+        const bool ok = status == OVSTAGE_OK && result.error_op_id_count == 0;
+        return ovstage_release_op(mStage, enqueue.op_index) == OVSTAGE_OK && ok;
+    }
+
+    bool editPaths(const std::vector<std::string>& paths, ovstage_ordinal_t ordinal, bool remove = false)
+    {
+        std::vector<ovx_string_t> strings;
+        for (const std::string& path : paths)
+            strings.push_back({ path.data(), path.size() });
+        ovx_primpath_list_t list = OVX_INVALID_PRIMPATH_LIST;
+        if (ovx_path_dictionary_create_path_list_from_strings(
+                mDictionary, strings.data(), strings.size(), &list) != OVX_OK)
+            return false;
+        ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
+        const ovstage_api_status_t queryStatus = ovstage_query_from_path_list(mStage, list, &query);
+        (void)ovx_path_dictionary_destroy_path_list(mDictionary, list);
+        if (queryStatus != OVSTAGE_OK || query == OVSTAGE_INVALID_QUERY_HANDLE)
+            return false;
+
+        bool edited = false;
+        if (remove)
+        {
+            edited = waitOp(ovstage_delete_attributes(mStage, query, nullptr, 0, ordinal));
+        }
+        else
+        {
+            std::vector<float> values(paths.size(), 1.0f);
+            int64_t rows = static_cast<int64_t>(values.size());
+            DLTensor value{};
+            value.data = values.data();
+            value.device = { kDLCPU, 0 };
+            value.ndim = 1;
+            value.dtype = { kDLFloat, 32, 1 };
+            value.shape = &rows;
+            ovstage_write_data_t write{};
+            write.tensors = &value;
+            write.tensor_count = 1;
+            constexpr const char* attribute = "custom:existenceTest";
+            ovx_string_or_token_t name{};
+            name.string = { attribute, std::strlen(attribute) };
+            edited = waitOp(ovstage_write_attribute(mStage, query, name, ordinal, write, OVSTAGE_PRIM_MODE_UPSERT));
+        }
+        const bool released = waitOp(ovstage_release_query(mStage, query));
+        if (!edited || !released)
+            return false;
+        ovstage_write_floor_desc_t floor{};
+        floor.ordinal = ordinal;
+        floor.scope = OVSTAGE_SCOPE_ALL;
+        return waitOp(ovstage_advance_write_floor(mStage, &floor));
+    }
+
     ovstage_instance_t* mStage = nullptr;
     ovx_path_dictionary_t* mDictionary = nullptr;
     std::unique_ptr<OvstageSource> mSource;
@@ -121,6 +184,91 @@ protected:
     std::array<ObjectKey, 3> mKeys{};
     std::array<ovx_primpath_t, 3> mPaths{};
 };
+
+// @implements REQ-SIM-OVSTAGE-BINDING-RESOLVE-001
+// @maps_to TEST-SIM-OVSTAGE-BINDING-RESOLVE-001
+TEST_F(OvstageSourceBucket, BatchExistencePreservesOrderDuplicatesAndMissingPaths)
+{
+    ASSERT_TRUE(editPaths({ "/World/A", "/World/C" }, 2));
+    const ObjectKey missing = mSource->findByPath("/World/Missing");
+    const ObjectKey canonical = mSource->canonicalKey(mKeys[2]);
+    const std::vector<ObjectKey> keys = { mKeys[2], missing, mKeys[0], mKeys[1], canonical, ObjectKey{} };
+    const std::vector<bool> expected = { true, false, true, false, true, false };
+    std::vector<bool> found;
+    resetOvstageExistsQueryCountForTest();
+    ASSERT_TRUE(mSource->existsBatchChecked(keys, found));
+    EXPECT_EQ(found, expected);
+    EXPECT_EQ(getOvstageExistsQueryCountForTest(), 1u);
+
+    // Both positive and negative answers prime the scalar memo for this epoch.
+    for (size_t i = 0; i < keys.size(); ++i)
+        EXPECT_EQ(mSource->exists(keys[i]), expected[i]);
+    ASSERT_TRUE(mSource->existsBatchChecked(keys, found));
+    EXPECT_EQ(found, expected);
+    EXPECT_EQ(getOvstageExistsQueryCountForTest(), 1u);
+}
+
+TEST_F(OvstageSourceBucket, BatchExistenceDoesNotTreatInternedPathsAsLive)
+{
+    const std::vector<ObjectKey> keys(mKeys.begin(), mKeys.end());
+    std::vector<bool> found;
+    resetOvstageExistsQueryCountForTest();
+    ASSERT_TRUE(mSource->existsBatchChecked(keys, found));
+    EXPECT_EQ(found, std::vector<bool>(keys.size(), false));
+    EXPECT_EQ(getOvstageExistsQueryCountForTest(), 1u);
+
+    // A fully empty successful read is authoritative absence and is memoized.
+    ASSERT_TRUE(mSource->existsBatchChecked(keys, found));
+    EXPECT_EQ(found, std::vector<bool>(keys.size(), false));
+    EXPECT_EQ(getOvstageExistsQueryCountForTest(), 1u);
+}
+
+TEST_F(OvstageSourceBucket, BatchExistenceTracksDeletionAndRecreationAfterMemoInvalidation)
+{
+    const std::vector<ObjectKey> keys = { mKeys[0] };
+    std::vector<bool> found;
+    ASSERT_TRUE(editPaths({ "/World/A" }, 2));
+    ASSERT_TRUE(mSource->existsBatchChecked(keys, found));
+    ASSERT_EQ(found, std::vector<bool>{ true });
+
+    ASSERT_TRUE(editPaths({ "/World/A" }, 3, true));
+    mSource->clearExistsMemo(); // The change-feed drain starts a new existence epoch.
+    ASSERT_TRUE(mSource->existsBatchChecked(keys, found));
+    EXPECT_EQ(found, std::vector<bool>{ false });
+
+    ASSERT_TRUE(editPaths({ "/World/A" }, 4));
+    mSource->clearExistsMemo();
+    ASSERT_TRUE(mSource->existsBatchChecked(keys, found));
+    EXPECT_EQ(found, std::vector<bool>{ true });
+}
+
+TEST_F(OvstageSourceBucket, BatchExistenceUsesOneProbeForManyColdPaths)
+{
+    constexpr size_t count = 512;
+    std::vector<std::string> paths;
+    std::vector<ObjectKey> keys;
+    for (size_t i = 0; i < count; ++i)
+        paths.push_back("/World/Bulk" + std::to_string(i));
+    ASSERT_TRUE(editPaths(paths, 2));
+    for (const std::string& path : paths)
+        keys.push_back(mSource->findByPath(path));
+    std::vector<bool> found;
+    resetOvstageExistsQueryCountForTest();
+    ASSERT_TRUE(mSource->existsBatchChecked(keys, found));
+    EXPECT_EQ(found, std::vector<bool>(count, true));
+    EXPECT_EQ(getOvstageExistsQueryCountForTest(), 1u);
+}
+
+TEST_F(OvstageSourceBucket, BatchExistenceReportsUnavailableStageWithoutPositiveAnswers)
+{
+    OvstageSource unavailable(nullptr, mDictionary);
+    const ObjectKey key = unavailable.findByPath("/World/A");
+    ASSERT_TRUE(key.valid());
+    std::vector<bool> found = { true };
+    EXPECT_FALSE(unavailable.existsBatchChecked({ key }, found));
+    EXPECT_EQ(found, std::vector<bool>{ false });
+    EXPECT_FALSE(unavailable.existsBatchChecked({ key }, found));
+}
 
 TEST_F(OvstageSourceBucket, MappedRowsRespectPrimOrderRepeatedRowsAndByteOffset)
 {

@@ -2580,6 +2580,65 @@ TEST_F(TensorBindingErrorTest, ZeroMatchesDoesNotWarn) {
         ovphysx_destroy_tensor_binding(m_handle, binding);
 }
 
+// @implements REQ-SIM-OVSTAGE-BINDING-RESOLVE-001
+// @maps_to TEST-SIM-OVSTAGE-BINDING-RESOLVE-001
+TEST_F(TensorBindingCpuTest, BatchedRigidBodyPathsPreserveOrderAndDeduplicate)
+{
+    ovphysx_usd_handle_t usdHandle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane.usda", usdHandle));
+    const ovphysx_string_t paths[] = {
+        OVPHYSX_LITERAL("/World/Cube3"), OVPHYSX_LITERAL("/World/DoesNotExist"),
+        OVPHYSX_LITERAL("/World/Cube1"), OVPHYSX_LITERAL("/World/Cube3"),
+    };
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.prim_paths = paths;
+    desc.prim_paths_count = 4;
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
+    ovphysx_tensor_binding_handle_t binding = 0;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &binding).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_string_t result[4]{};
+    uint32_t count = 0;
+    EXPECT_EQ(ovphysx_tensor_binding_get_prim_paths(m_handle, binding, result, 4, &count).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(count, 2u);
+    if (count == 2)
+    {
+        EXPECT_EQ(std::string(result[0].ptr, result[0].length), "/World/Cube3");
+        EXPECT_EQ(std::string(result[1].ptr, result[1].length), "/World/Cube1");
+    }
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST_F(TensorBindingCpuTest, BatchedRigidBodyPatternsDeduplicateArticulationAliases)
+{
+    ovphysx_usd_handle_t usdHandle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/two_articulations.usda", usdHandle));
+    const ovphysx_string_t paths[] = {
+        OVPHYSX_LITERAL("/World/articulation2"),
+        OVPHYSX_LITERAL("/World/articulation2/articulationLink0"),
+        OVPHYSX_LITERAL("/World/articulation*/articulationLink0"),
+    };
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.prim_paths = paths;
+    desc.prim_paths_count = 3;
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
+    ovphysx_tensor_binding_handle_t binding = 0;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &binding).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_string_t result[3]{};
+    uint32_t count = 0;
+    EXPECT_EQ(ovphysx_tensor_binding_get_prim_paths(m_handle, binding, result, 3, &count).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(count, 2u);
+    if (count == 2)
+    {
+        EXPECT_EQ(std::string(result[0].ptr, result[0].length), "/World/articulation2");
+        EXPECT_EQ(std::string(result[1].ptr, result[1].length), "/World/articulation/articulationLink0");
+    }
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
+}
+
 TEST_F(TensorBindingErrorTest, ExplicitPrimPathPartialMissStillLogsError) {
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/basic_simulation.usda", usd_handle));

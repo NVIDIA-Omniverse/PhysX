@@ -232,7 +232,7 @@ public:
 
     ObjectKey getRootKey() const override;
     bool exists(ObjectKey key) const override;
-    // One `usd-path IN [...]` round trip for every cold key in `keys`, instead of
+    // One path-list query and latest usd-path read for all cold keys, instead of
     // exists()'s one round trip per cold key. See IPhysicsSource::existsBatch.
     void existsBatch(const std::vector<ObjectKey>& keys, std::vector<bool>& outExists) const override;
     // existsBatch() that reports whether every cold key was actually resolved (false: the live
