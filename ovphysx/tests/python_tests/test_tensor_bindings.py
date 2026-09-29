@@ -105,6 +105,9 @@ def test_tensor_binding_pattern_matching(physx_sdk):
             binding.destroy()
 
 
+# @implements REQ-CAPI-CLONE-001
+# @covers AC-1
+# @maps_to TEST-CAPI-CLONE-001
 def test_tensor_binding_explicit_paths(physx_sdk):
     """Test prim_paths parameter with explicit list.
 
@@ -120,14 +123,15 @@ def test_tensor_binding_explicit_paths(physx_sdk):
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
     physx_sdk.wait_all()
 
-    # Explicit paths (unordered list)
+    # Mixed present, absent and repeated paths must select each existing body once.
     binding = physx_sdk.create_tensor_binding(
-        prim_paths=["/World/Cube3", "/World/Cube1", "/World/Cube2"],
+        prim_paths=["/World/Cube3", "/World/Missing", "/World/Cube1", "/World/Cube2", "/World/Cube3"],
         tensor_type=TensorType.RIGID_BODY_POSE,
     )
 
     assert binding.count == 3
     assert binding.shape == (3, 7)
+    assert binding.prim_paths == ["/World/Cube3", "/World/Cube1", "/World/Cube2"]
 
     binding.destroy()
 

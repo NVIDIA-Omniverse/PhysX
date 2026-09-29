@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-CAPI-CLONE-001
+ * @covers AC-1
+ *
  * @implements REQ-PARSE-CORE-003
  * @covers AC-6 AC-7 AC-8 AC-9 AC-10 AC-11 AC-12 AC-13 AC-15 AC-16
  *
@@ -2417,63 +2420,26 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
     if (!mInstance || !mDict)
         return false;
 
-    // One `usd-path IN [p1..pN]` query covers every cold path in a single round
-    // trip -- the same predicate shape exists() uses for a single key, just with
-    // value_count == the distinct cold-path count instead of 1.
-    std::vector<ovx_string_t> pathVals;
-    pathVals.reserve(coldPathIndices.size());
+    // Read only the declared candidate handles instead of filtering the entire stage.
+    std::vector<ovx_primpath_t> paths;
+    paths.reserve(coldPathIndices.size());
     for (const std::pair<const std::string, std::vector<size_t>>& kv : coldPathIndices)
-        pathVals.push_back(ovx_string_t{ kv.first.data(), kv.first.size() });
+    {
+        const uint64_t raw = rawHandle(keys[kv.second.front()]);
+        const uint64_t canonical = canonicalHandleRaw(raw);
+        paths.push_back(canonical ? canonical : raw);
+    }
 
-    ovstage_predicate_t pred{};
-    pred.attribute.token = 0;
-    pred.attribute.string = ovx_string_t{ conv::kUsdPath, std::string_view(conv::kUsdPath).size() };
-    pred.op = OVSTAGE_FILTER_OP_IN;
-    pred.values = pathVals.data();
-    pred.value_count = pathVals.size();
-
-    ovstage_filter_t filter{};
-    filter.predicates = &pred;
-    filter.count = 1;
+    ovx_primpath_list_t list = OVX_INVALID_PRIMPATH_LIST;
+    if (ovx_path_dictionary_create_path_list(mDict, paths.data(), paths.size(), &list) != OVX_OK)
+        return false;
 
     existsQueryCounter().fetch_add(1, std::memory_order_relaxed);
     ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
-    const ovstage_enqueue_result_t e = ovstage_query(mInstance, &filter, nullptr, 0, &q);
-    if (e.status != OVSTAGE_OK)
+    if (ovstage_query_from_path_list(mInstance, list, &q) != OVSTAGE_OK || q == OVSTAGE_INVALID_QUERY_HANDLE)
     {
+        ovx_path_dictionary_destroy_path_list(mDict, list);
         return false;
-    }
-    waitAndRelease(mInstance, e);
-
-    // total_prim_count alone would say HOW MANY of the cold paths matched, not
-    // WHICH -- a partial match is the common case for this caller (pattern
-    // matching over a mixed literal-path candidate list), so read the matched
-    // set's usd-path column back (same technique buildChildCache's live fallback
-    // uses to resolve a read group's prims to path handles) and mark exactly the
-    // requested indices whose path came back.
-    ovstage_query_handle_t use = q;
-    size_t totalMatched = 0;
-    bool fetched = false;
-    ovstage_query_result_t qr{};
-    if (ovstage_fetch_query_result(mInstance, q, OVSTAGE_TIMEOUT_INFINITE, &qr) == OVSTAGE_OK)
-    {
-        fetched = true;
-        if (qr.all_handle != OVSTAGE_INVALID_QUERY_HANDLE)
-            use = qr.all_handle;
-        totalMatched = qr.total_prim_count;
-        ovstage_release_query_result(mInstance, &qr);
-    }
-
-    if (!fetched)
-    {
-        waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
-        return false;
-    }
-    if (totalMatched == 0)
-    {
-        waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
-        memoizeResults();
-        return true;
     }
 
     bool resolved = false;
@@ -2487,7 +2453,7 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
         range.has_start_ordinal = false;
 
         ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
-        const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, use, &usdPathProbe, 1, range, &rh);
+        const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, q, &usdPathProbe, 1, range, &rh);
         if (re.status == OVSTAGE_OK)
         {
             waitAndRelease(mInstance, re);
@@ -2498,10 +2464,12 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
             {
                 const ovx_primpath_t* paths = nullptr;
                 size_t count = 0;
-                if (listMemo.paths(g.prims.list, &paths, &count))
+                if (!g.is_delete && g.data.tensor_count > 0 && listMemo.paths(g.prims.list, &paths, &count))
                 {
                     for (uint32_t i = 0; i < g.prims.count; ++i)
                     {
+                        if (g.data.mask && !(g.data.mask[i / 64] & (uint64_t(1) << (i % 64))))
+                            continue;
                         const uint32_t idx = g.prims.index_map ? g.prims.index_map[i] : (g.prims.offset + i);
                         if (idx >= count)
                             continue;
@@ -2521,6 +2489,7 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
         }
     }
     waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
+    ovx_path_dictionary_destroy_path_list(mDict, list);
     if (resolved)
         memoizeResults();
     return resolved;

@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-CAPI-CLONE-001
+ * @covers AC-3
+ *
  * @implements REQ-REPLICATE-001
  * @covers AC-7
  *
@@ -44,6 +47,8 @@
 
 #include "tensors/GlobalsAreBad.h"
 #include "tensors/SimulationBackend.h"
+#include "tensors/cpu/CpuSimulationView.h"
+#include "tensors/gpu/GpuSimulationView.h"
 
 #include "usdLoad/LoadUsd.h"
 #include "usdLoad/AttachedStage.h"
@@ -1512,10 +1517,29 @@ bool BaseSimulationView::getArticulationAtPath(omni::physics::parse::ObjectKey k
         return false;
     }
 
-    // The entry-building body is source-agnostic (it derives link/joint names, poses and DOF layout
-    // from `arti` via the g_physx object DB), so it is shared with the stageless ovstage read path
-    // that has only a PxArticulation*. `key` is passed as the entryRet.path fallback.
-    return buildArticulationEntry(arti, key, entryRet);
+    // The scene already owns this metadata. Rebind only the receiving view's metatype and subspace.
+    const std::unordered_map<const PxArticulationReducedCoordinate*, PxU32>* rows = nullptr;
+    const std::vector<ArticulationEntry>* entries = nullptr;
+    PxScene* scene = arti->getScene();
+    SimulationBackend* backend = GetSimulationBackend();
+    if (scene && scene->getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API))
+    {
+        GpuSimulationView* view = backend->acquireSceneView(scene);
+        if (!view || !view->supersetArticulationView(&rows, &entries))
+            return false;
+    }
+    else
+    {
+        CpuSimulationView* view = backend->acquireCpuSceneView(scene);
+        if (!view || !view->supersetArticulationView(&rows, &entries))
+            return false;
+    }
+    entryRet = entries->at(rows->at(arti));
+    entryRet.metatype = getUniqueArticulationMetatype(*entryRet.metatype);
+    if (entryRet.path.empty())
+        entryRet.path = mAttachedStage->textFor(key);
+    entryRet.subspace = findSubspaceForPath(entryRet.path);
+    return true;
 }
 
 bool BaseSimulationView::buildArticulationEntry(PxArticulationReducedCoordinate* arti,
