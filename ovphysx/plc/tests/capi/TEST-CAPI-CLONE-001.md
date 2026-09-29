@@ -20,6 +20,13 @@ type: integration
 - `test_clone_prebinding_gpu.py` and the lifecycle tests for cache staleness,
   destruction during reads, and binding-handle isolation cover invalidation and
   teardown (AC-3). CPU-mode tests run in a separate process from GPU tests.
+- `TensorBindingCpuTest.MultipleSamePatternBindings` counts native allocations
+  for three attributes of one articulation: one view, three distinct handles.
+  `DuplicateBindingSameType` reads through a surviving binding after destroying
+  its peer. `CpuArticulationCentroidalMomentumFixedBaseRejected` retains a position
+  binding while rejecting unsupported centroidal momentum on its shared view
+  (AC-4). The existing stale-metadata and pre-clone-binding tests cover reuse
+  across attach changes and clone invalidation.
 
 ## Performance Verification
 
@@ -30,3 +37,4 @@ separately from runtime; discard 20 warmup steps before timing 100 steps.
 Report the native build and Isaac Lab commit with both measurements. Profiling
 should attribute the startup reduction to candidate-path reads, destination-key
 reuse, and fewer articulation-entry constructions, not reduced scene content.
+Attribute binding time should fall when native selections are shared (AC-4).

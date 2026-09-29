@@ -27,6 +27,11 @@ selection, placement, simulation settings, or resource lifetime.
   read sessions. Each receiving view owns its metatype and subspace references.
   Existing scene-cache invalidation remains authoritative; GPU and CPU binding
   values, ordering, metadata, and teardown behavior stay unchanged.
+- AC-4: Attributes with identical ordered path patterns and the same native view
+  family share valid nonempty selections within one attach. Handles and scratch
+  buffers remain independent; destroying one handle leaves the others usable.
+  Clone/reset invalidation and detach/reattach prevent stale-view reuse, and
+  attribute-specific validation still applies to shared selections.
 
 ## Test References
 
@@ -37,3 +42,4 @@ selection, placement, simulation settings, or resource lifetime.
 - `ovruntime/source/omni.physics.ovstage/OvstageSource.cpp`
 - `ovruntime/source/omni.physx/plugins/PhysXReplicator.cpp`
 - `ovruntime/source/omni.physx/plugins/tensors/base/BaseSimulationView.cpp`
+- `src/ovphysx/ovphysxTensorBinding.cpp`

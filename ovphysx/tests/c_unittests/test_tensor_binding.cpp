@@ -101,32 +101,39 @@ static bool load_usd_and_wait(ovphysx_handle_t handle, const char* usd_path, ovp
 namespace
 {
 
-// Intercepts TensorApi::resetStage to count per-stage tensor-backend resets during a test.
-class ScopedTensorResetStageProbe
+// Count native view allocation and per-stage resets without changing the public binding API.
+class ScopedTensorApiProbe
 {
 public:
-    explicit ScopedTensorResetStageProbe(omni::physics::tensors::TensorApi& tensorApi)
-        : mTensorApi(tensorApi), mOriginal(tensorApi.resetStage)
+    explicit ScopedTensorApiProbe(omni::physics::tensors::TensorApi& tensorApi)
+        : mTensorApi(tensorApi), mOriginal(tensorApi.resetStage), mOriginalCreate(tensorApi.createSimulationView)
     {
         sOriginal = mOriginal;
+        sOriginalCreate = mOriginalCreate;
         sCallCount = 0;
+        sCreateCount = 0;
         sLastStageId = 0;
         mTensorApi.resetStage = &intercept;
+        mTensorApi.createSimulationView = &create;
     }
 
-    ~ScopedTensorResetStageProbe()
+    ~ScopedTensorApiProbe()
     {
         mTensorApi.resetStage = mOriginal;
+        mTensorApi.createSimulationView = mOriginalCreate;
         sOriginal = nullptr;
+        sOriginalCreate = nullptr;
     }
 
-    ScopedTensorResetStageProbe(const ScopedTensorResetStageProbe&) = delete;
-    ScopedTensorResetStageProbe& operator=(const ScopedTensorResetStageProbe&) = delete;
+    ScopedTensorApiProbe(const ScopedTensorApiProbe&) = delete;
+    ScopedTensorApiProbe& operator=(const ScopedTensorApiProbe&) = delete;
 
-    int callCount() const
+    int resetCount() const
     {
         return sCallCount;
     }
+
+    int createCount() const { return sCreateCount; }
 
     omni::physics::AttachHandle lastStageId() const
     {
@@ -134,6 +141,12 @@ public:
     }
 
 private:
+    static omni::physics::tensors::ISimulationView* CARB_ABI create(omni::physics::AttachHandle stageId)
+    {
+        ++sCreateCount;
+        return sOriginalCreate(stageId);
+    }
+
     static void CARB_ABI intercept(omni::physics::AttachHandle stageId)
     {
         ++sCallCount;
@@ -144,9 +157,12 @@ private:
 
     omni::physics::tensors::TensorApi& mTensorApi;
     void(CARB_ABI* mOriginal)(omni::physics::AttachHandle) = nullptr;
+    omni::physics::tensors::ISimulationView*(CARB_ABI* mOriginalCreate)(omni::physics::AttachHandle) = nullptr;
 
     static inline void(CARB_ABI* sOriginal)(omni::physics::AttachHandle) = nullptr;
+    static inline omni::physics::tensors::ISimulationView*(CARB_ABI* sOriginalCreate)(omni::physics::AttachHandle) = nullptr;
     static inline int sCallCount = 0;
+    static inline int sCreateCount = 0;
     static inline omni::physics::AttachHandle sLastStageId = 0;
 };
 
@@ -225,13 +241,13 @@ TEST_F(TensorBindingCpuTest, ResetStageReleasesTensorBackendStage)
     auto* tensorApi = static_cast<omni::physics::tensors::TensorApi*>(ovphysx_get_tensor_api_internal());
     ASSERT_NE(tensorApi, nullptr);
     ASSERT_NE(tensorApi->resetStage, nullptr);
-    ScopedTensorResetStageProbe probe(*tensorApi);
+    ScopedTensorApiProbe probe(*tensorApi);
 
     ovphysx_enqueue_result_t resetResult = ovphysx_reset_stage(m_handle);
     ASSERT_EQ(resetResult.status, OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(wait_op_success(m_handle, resetResult.op_index));
 
-    EXPECT_EQ(probe.callCount(), 1);
+    EXPECT_EQ(probe.resetCount(), 1);
     EXPECT_GT(probe.lastStageId(), 0);
     EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
 }
@@ -295,12 +311,17 @@ TEST_F(TensorBindingCpuTest, CpuArticulationCentroidalMomentumFixedBaseRejected)
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation");
+    desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_F32;
+    ovphysx_tensor_binding_handle_t position = 0;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &position).status, OVPHYSX_API_SUCCESS);
     desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_CENTROIDAL_MOMENTUM_F32;
 
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding);
     EXPECT_EQ(result.status, OVPHYSX_API_INVALID_ARGUMENT)
         << "fixed-base articulation must reject a centroidal-momentum binding at creation";
-    // No binding was created on the rejection path, so there is nothing to destroy.
+    ovphysx_tensor_spec_t spec{};
+    EXPECT_EQ(ovphysx_get_tensor_binding_spec(m_handle, position, &spec).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, position).status, OVPHYSX_API_SUCCESS);
 }
 
 // Companion to the fixed-base rejection above: a floating-base articulation
@@ -2707,58 +2728,47 @@ TEST_F(TensorBindingCpuTest, IndexedWrite) {
 // MULTIPLE BINDINGS TEST
 // ============================================================================
 
+// @implements REQ-CAPI-CLONE-001
+// @covers AC-4
 TEST_F(TensorBindingCpuTest, MultipleSamePatternBindings) {
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample.usda", usd_handle));
 
-    // Several bindings on the same pattern with different tensor types.
-    ovphysx_tensor_binding_handle_t pos_binding = 0;
-    ovphysx_tensor_binding_handle_t vel_binding = 0;
-    ovphysx_tensor_binding_handle_t target_binding = 0;
+    omni::physics::tensors::TensorApi* tensorApi =
+        static_cast<omni::physics::tensors::TensorApi*>(ovphysx_get_tensor_api_internal());
+    ASSERT_NE(tensorApi, nullptr);
+    ScopedTensorApiProbe probe(*tensorApi);
 
-    ovphysx_tensor_binding_desc_t pos_desc{};
-    pos_desc.pattern = OVPHYSX_LITERAL("/World/articulation");
-    pos_desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_F32;
-
-    ovphysx_tensor_binding_desc_t vel_desc{};
-    vel_desc.pattern = OVPHYSX_LITERAL("/World/articulation");
-    vel_desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_VELOCITY_F32;
-
-    ovphysx_tensor_binding_desc_t target_desc{};
-    target_desc.pattern = OVPHYSX_LITERAL("/World/articulation");
-    target_desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_TARGET_F32;
-
-    ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &pos_desc, &pos_binding);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    result = ovphysx_create_tensor_binding(m_handle, &vel_desc, &vel_binding);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    result = ovphysx_create_tensor_binding(m_handle, &target_desc, &target_binding);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    // The same pattern yields the same shape for every binding.
-    ovphysx_tensor_spec_t pos_spec, vel_spec, target_spec;
-
-    result = ovphysx_get_tensor_binding_spec(m_handle, pos_binding, &pos_spec);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    result = ovphysx_get_tensor_binding_spec(m_handle, vel_binding, &vel_spec);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    result = ovphysx_get_tensor_binding_spec(m_handle, target_binding, &target_spec);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    EXPECT_EQ(pos_spec.shape[0], vel_spec.shape[0]);
-    EXPECT_EQ(pos_spec.shape[0], target_spec.shape[0]);
-    EXPECT_EQ(pos_spec.shape[1], vel_spec.shape[1]);
-    EXPECT_EQ(pos_spec.shape[1], target_spec.shape[1]);
-
-    ovphysx_destroy_tensor_binding(m_handle, pos_binding);
-    ovphysx_destroy_tensor_binding(m_handle, vel_binding);
-    ovphysx_destroy_tensor_binding(m_handle, target_binding);
+    // Distinct attributes share one selection but retain separate handles and specs.
+    const ovphysx_tensor_type_t types[] = {
+        OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_F32,
+        OVPHYSX_TENSOR_ARTICULATION_DOF_VELOCITY_F32,
+        OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_TARGET_F32,
+    };
+    ovphysx_tensor_binding_handle_t bindings[3]{};
+    ovphysx_tensor_spec_t specs[3]{};
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/articulation");
+    for (uint32_t i = 0; i < 3; ++i)
+    {
+        desc.tensor_type = types[i];
+        ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &bindings[i]).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, bindings[i], &specs[i]).status, OVPHYSX_API_SUCCESS);
+    }
+    EXPECT_EQ(probe.createCount(), 1);
+    for (uint32_t i = 1; i < 3; ++i)
+    {
+        EXPECT_NE(bindings[0], bindings[i]);
+        EXPECT_NE(bindings[i - 1], bindings[i]);
+        EXPECT_EQ(specs[0].shape[0], specs[i].shape[0]);
+        EXPECT_EQ(specs[0].shape[1], specs[i].shape[1]);
+    }
+    for (ovphysx_tensor_binding_handle_t binding : bindings)
+        EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
 }
 
+// @implements REQ-CAPI-CLONE-001
+// @covers AC-4
 TEST_F(TensorBindingCpuTest, DuplicateBindingSameType) {
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample.usda", usd_handle));
@@ -2819,7 +2829,8 @@ TEST_F(TensorBindingCpuTest, DuplicateBindingSameType) {
         EXPECT_FLOAT_EQ(data1[i], data2[i]);
     }
 
-    ovphysx_destroy_tensor_binding(m_handle, binding1);
+    ASSERT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding1).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_read_tensor_binding(m_handle, binding2, &tensor2).status, OVPHYSX_API_SUCCESS);
     ovphysx_destroy_tensor_binding(m_handle, binding2);
 }
 

@@ -32,8 +32,9 @@ struct TensorBindingState
     // live binding from one whose attach had been torn down and replaced.
     omni::physics::tensors::AttachHandle attachHandle = omni::physics::tensors::kNoAttach;
     ovphysx_tensor_type_t tensorType = OVPHYSX_TENSOR_INVALID;
-    std::string pattern;
-    omni::physics::tensors::ISimulationView* simView = nullptr;
+    std::shared_ptr<const std::vector<std::string>> patterns;
+    // Attributes share a simulation view, which owns the borrowed child view below.
+    std::shared_ptr<omni::physics::tensors::ISimulationView> simView;
     omni::physics::tensors::IRigidBodyView* rbView = nullptr;
     omni::physics::tensors::IArticulationView* artiView = nullptr;
     omni::physics::tensors::IDeformableBodyView* defBodyView = nullptr;

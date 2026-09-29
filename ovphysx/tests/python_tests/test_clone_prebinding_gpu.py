@@ -35,6 +35,9 @@ def _read_positions(physx):
         return np.concatenate([_to_host(g.tensors[0]).reshape(g.prim_count, -1) for g in result.groups])
 
 
+# @implements REQ-CAPI-CLONE-001
+# @covers AC-4
+# @maps_to TEST-CAPI-CLONE-001
 def test_preclone_binding_velocity_reaches_all_envs(physx_sdk):
     """DirectGPU binding before clone must not leave stale GPU sim data."""
     N = 32
@@ -61,6 +64,13 @@ def test_preclone_binding_velocity_reaches_all_envs(physx_sdk):
     )
     physx_sdk.wait_all()
     physx_sdk.warmup()
+
+    # The same pattern must create a fresh selection after clone invalidation.
+    postclone_binding = physx_sdk.create_tensor_binding(
+        pattern="/World/envs/*/table", tensor_type=TT.RIGID_BODY_VELOCITY
+    )
+    assert postclone_binding.count == N
+    postclone_binding.destroy()
 
     # After cloning basic_simulation's single table into N envs, the tables are the scene's only
     # rigid bodies, so the whole-set session read/write reaches exactly them.

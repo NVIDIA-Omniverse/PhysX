@@ -106,7 +106,7 @@ def test_tensor_binding_pattern_matching(physx_sdk):
 
 
 # @implements REQ-CAPI-CLONE-001
-# @covers AC-1
+# @covers AC-1 AC-4
 # @maps_to TEST-CAPI-CLONE-001
 def test_tensor_binding_explicit_paths(physx_sdk):
     """Test prim_paths parameter with explicit list.
@@ -133,6 +133,12 @@ def test_tensor_binding_explicit_paths(physx_sdk):
     assert binding.shape == (3, 7)
     assert binding.prim_paths == ["/World/Cube3", "/World/Cube1", "/World/Cube2"]
 
+    reordered = physx_sdk.create_tensor_binding(
+        prim_paths=["/World/Cube2", "/World/Cube3", "/World/Missing", "/World/Cube1", "/World/Cube3"],
+        tensor_type=TensorType.RIGID_BODY_VELOCITY,
+    )
+    assert reordered.prim_paths == ["/World/Cube2", "/World/Cube3", "/World/Cube1"]
+    reordered.destroy()
     binding.destroy()
 
 
