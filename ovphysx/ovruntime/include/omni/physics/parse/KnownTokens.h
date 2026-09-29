@@ -207,6 +207,11 @@ struct KnownTokens
     TokenId physxJointMaxJointVelocity;
     // NewtonJointAPI fallback for physxJoint:maxJointVelocity.
     TokenId newtonVelocityLimit;
+    // NewtonJointAPI fallbacks for the PhysxJointAxisAPI armature, friction
+    // efforts and viscous friction coefficient.
+    TokenId newtonArmature;
+    TokenId newtonFriction;
+    TokenId newtonDamping;
 
     // PhysxCollisionAPI extensions (subset routed through parse library)
     TokenId physxCollisionAPI;

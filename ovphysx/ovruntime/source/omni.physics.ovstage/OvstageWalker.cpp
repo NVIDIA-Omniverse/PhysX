@@ -496,6 +496,10 @@ void appendPhysxJointAxisAttrs(Bucket& bucket, const char* axis)
         // Seeds maxJointVelocity before the PhysX reads (ParseJoint.cpp's
         // readPhysxJointAxisApi), so it is read once per joint per axis.
         "newton:velocityLimit",
+        // Likewise seed armature, the friction efforts and viscousFrictionCoefficient.
+        "newton:armature",
+        "newton:friction",
+        "newton:damping",
     });
 }
 

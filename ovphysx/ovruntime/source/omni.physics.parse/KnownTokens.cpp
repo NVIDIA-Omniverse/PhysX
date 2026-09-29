@@ -151,6 +151,9 @@ void KnownTokens::intern(const IPhysicsSource& source)
     physxJointArmature = source.internToken("physxJoint:armature");
     physxJointMaxJointVelocity = source.internToken("physxJoint:maxJointVelocity");
     newtonVelocityLimit = source.internToken("newton:velocityLimit");
+    newtonArmature = source.internToken("newton:armature");
+    newtonFriction = source.internToken("newton:friction");
+    newtonDamping = source.internToken("newton:damping");
 
     // PhysxCollisionAPI extensions (subset routed through parse library)
     physxCollisionAPI = source.internToken("PhysxCollisionAPI");
