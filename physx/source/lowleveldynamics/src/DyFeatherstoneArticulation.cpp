@@ -3677,24 +3677,6 @@ static PX_FORCE_INLINE void fillArticConstraint(ArticulationInternalConstraint* 
 			linkCoriolisVectorsW[0] = Cm::SpatialVectorF::Zero();
 		}
 
-		//Is it really necessary? It is already resolved as an internal constraint.
-		PxReal ratio = 1.f;
-		if (jointDofVelocities)
-		{
-			for (PxU32 linkID = 1; linkID < linkCount; ++linkID)
-			{
-				const ArticulationLink& link = links[linkID];
-				const ArticulationJointCoreData& jointDatum = jointCoreData[linkID];
-				const PxReal* jVelocity = &jointDofVelocities[jointDatum.jointOffset];
-				for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
-				{
-					const PxReal maxJVelocity = link.inboundJoint->maxJointVelocity[ind];
-					const PxReal jVel = jVelocity[ind];
-					ratio = (jVel != 0.0f) ? PxMin(ratio, maxJVelocity / PxAbs(jVel)) : ratio;
-				}
-			}
-		}
-
 		PxReal sumMass = 0.f;
 		PxVec3 COM(0.f);
 		for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
@@ -3752,9 +3734,12 @@ static PX_FORCE_INLINE void fillArticConstraint(ArticulationInternalConstraint* 
 						//Compute the effect of the joint velocities on the link.
 						PxReal* jVelocity = &jointDofVelocities[jointDatum.jointOffset];
 						Cm::UnAlignedSpatialVector deltaV = Cm::UnAlignedSpatialVector::Zero();
+						const Dy::ArticulationJointCore& joint = *links[linkID].inboundJoint;
 						for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 						{
-							const PxReal jVel = jVelocity[ind] * ratio;
+							// clamp each DOF to its own per-axis limit
+							const PxReal maxJVelocity = joint.maxJointVelocity[joint.dofIds[ind]];
+							const PxReal jVel = PxClamp(jVelocity[ind], -maxJVelocity, maxJVelocity);
 							deltaV += jointDofMotionMatricesW[jointDatum.jointOffset + ind] * jVel;
 							jVelocity[ind] = jVel;
 						}
@@ -3889,25 +3874,6 @@ static PX_FORCE_INLINE void fillArticConstraint(ArticulationInternalConstraint* 
 
 		coriolisVectors[0] = Cm::SpatialVectorF::Zero();
 
-		//Is it really necessary? It is already resolved as an internal constraint.
-		//const PxU32 dofCount = data.mDofs;
-		PxReal ratio = 1.f;
-		if (jointVelocities)
-		{
-			for (PxU32 linkID = 1; linkID < linkCount; ++linkID)
-			{
-				const ArticulationLink& link = links[linkID];
-				ArticulationJointCoreData& jointDatum = data.getJointData(linkID);
-				PxReal* jVelocity = &jointVelocities[jointDatum.jointOffset];
-				for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
-				{
-					const PxReal maxJVelocity = link.inboundJoint->maxJointVelocity[ind];
-					PxReal absJvel = PxAbs(jVelocity[ind]);
-					ratio = ratio * absJvel > maxJVelocity ? (maxJVelocity / absJvel) : ratio;
-				}
-			}
-		}
-
 		const PxVec3* PX_RESTRICT rw = data.getRw();
 
 		for (PxU32 linkID = 1; linkID < linkCount; ++linkID)
@@ -3931,9 +3897,12 @@ static PX_FORCE_INLINE void fillArticConstraint(ArticulationInternalConstraint* 
 					const Cm::UnAlignedSpatialVector* PX_RESTRICT motionMatrix = data.getMotionMatrix();
 
 					Cm::UnAlignedSpatialVector deltaV = Cm::UnAlignedSpatialVector::Zero();
+					const Dy::ArticulationJointCore& joint = *link.inboundJoint;
 					for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 					{
-						const PxReal jVel = jVelocity[ind] * ratio;
+						// clamp each DOF to its own per-axis limit
+						const PxReal maxJVelocity = joint.maxJointVelocity[joint.dofIds[ind]];
+						const PxReal jVel = PxClamp(jVelocity[ind], -maxJVelocity, maxJVelocity);
 						//deltaV += data.mWorldMotionMatrix[jointDatum.jointOffset + ind] * jVel;
 						deltaV += motionMatrix[jointDatum.jointOffset+ind].rotate(body2World) * jVel;
 						jVelocity[ind] = jVel;

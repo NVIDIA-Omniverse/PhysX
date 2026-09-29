@@ -972,29 +972,8 @@ static __device__ void computeUnconstrainedVelocitiesInternal1T(const PxgBodySim
 		articulationLinkBlocks[0].mPreTransform.p[threadIndexInWarp] = articulationLinkBlocks[0].mAccumulatedPose.p[threadIndexInWarp];
 		articulationLinkBlocks[0].mPreTransform.q[threadIndexInWarp] = articulationLinkBlocks[0].mAccumulatedPose.q[threadIndexInWarp];
 
-		//Is it really necessary? It is already resolved as an internal constraint.
-		PxgArticulationBlockDofData* PX_RESTRICT dofs = articulationDofBlocks;
-		PxReal ratio = 1.0f;
-		for (PxU32 linkID = 1; linkID < numLinks; ++linkID)
-		{
-			PxgArticulationBlockLinkData& linkBlock = articulationLinkBlocks[linkID];
-			const PxU32 dof = linkBlock.mDofs[threadIndexInWarp];
-			assert(dof<=3);
-			for (PxU32 ind = 0; ind < 3; ++ind)
-			{
-				if(ind<dof)
-				{
-					const PxReal maxJVelocity = dofs->mConstraintData.mMaxJointVelocity[threadIndexInWarp];
-					const PxReal jVel = dofs->mJointVelocities[threadIndexInWarp];
-					if (jVel != 0.0f)
-						ratio = PxMin(ratio, maxJVelocity / PxAbs(jVel));
-					dofs++;
-				}
-			}
-		}
-
 		//velocities contributed by joint velocities
-		dofs = articulationDofBlocks;
+		PxgArticulationBlockDofData* PX_RESTRICT dofs = articulationDofBlocks;
 
 		// PT: preload next link data
 		PxU32 nextParent = articulationLinkBlocks[1].mParents[threadIndexInWarp];
@@ -1051,7 +1030,9 @@ static __device__ void computeUnconstrainedVelocitiesInternal1T(const PxgBodySim
 					PxgArticulationBlockDofData& dofData = *dofs++;
 
 					const Cm::UnAlignedSpatialVector worldCol = loadSpatialVector(dofData.mLocalMotionMatrix, threadIndexInWarp).rotate(body2World);
-					const PxReal jVel = dofData.mJointVelocities[threadIndexInWarp] * ratio;
+					// clamp each DOF to its own per-axis limit
+					const PxReal maxJVelocity = dofData.mConstraintData.mMaxJointVelocity[threadIndexInWarp];
+					const PxReal jVel = PxClamp(dofData.mJointVelocities[threadIndexInWarp], -maxJVelocity, maxJVelocity);
 					linkVelocity += worldCol * jVel;
 					dofData.mJointVelocities[threadIndexInWarp] = jVel;
 					storeSpatialVector(dofData.mWorldMotionMatrix, worldCol, threadIndexInWarp);
