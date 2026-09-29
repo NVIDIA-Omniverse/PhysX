@@ -3512,7 +3512,7 @@ extern "C" __global__ void artiComputeDependencies(PxgArticulationCoreDesc* scDe
 			//Output for this partition. This part is where to propagate up for this link
 			if (nextPartition < nbPartitions)
 			{
-				const PxU32 offset = globalWarpIndex + nextPartition * nbArticulationBatchPerPartition * wordSize;
+				const PxU32 offset = globalWarpIndex * wordSize + nextPartition * nbArticulationBatchPerPartition * wordSize;
 				PxgArticulationBitFieldStackData* pathToRootPerPartition = &scDesc->mPathToRootsPerPartition[offset];
 
 				for (PxU32 j = 0; j < wordSize; ++j)
@@ -3664,7 +3664,7 @@ __device__ void artiPropagateImpulses2(PxgArticulationCoreDesc* scDesc,
 					const PxU32 nbArticulationBatchPerPartition = (nbArticulations + 31) / 32;
 					const PxU32 wordSize = (maxLinks + 63) / 64;
 
-					const PxU32 offset2 = globalWarpIndex + partitionId * nbArticulationBatchPerPartition * wordSize;
+					const PxU32 offset2 = globalWarpIndex * wordSize + partitionId * nbArticulationBatchPerPartition * wordSize;
 
 					// Counting the number of active slabs used in contacts and joints.
 					// The split mass used in contacts and joints is tied back here.
