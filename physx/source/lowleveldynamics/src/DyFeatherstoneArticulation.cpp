@@ -1073,12 +1073,12 @@ namespace Dy
 			const PxU32 numElems1 = link1.mPathToRootCount;
 
 			PxU32 offset = 0;
-			while (pathToRoot0[offset] == pathToRoot1[offset])
+			// Propagate along the common part of both paths. The bounds are tested before an element is taken, so when one link
+			// is an ancestor of the other, the last common element (the ancestor itself) is still propagated, as pxcFsGetVelocity() does.
+			while (offset < numElems0 && offset < numElems1 && pathToRoot0[offset] == pathToRoot1[offset])
 			{
 				const PxU32 index = pathToRoot0[offset++];
 				PX_ASSERT(links[index].parent < index);
-				if (offset >= numElems0 || offset >= numElems1)
-					break;
 
 				const PxU32 jointOffset = jointData[index].jointOffset;
 				const PxU32 dofCount = jointData[index].nbDof;
