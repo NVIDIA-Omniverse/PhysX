@@ -297,7 +297,7 @@ static __device__ void markActiveSlab_articulationPGS(
 				// bitwise/slab-wise activation information.
 				if (igNodeIndexA.isArticulation()) // articulation
 				{
-					const PxU32 articulationBodyIdA = batch.remappedBodyAIndex[threadIndexInWarp];
+					const PxU32 articulationBodyIdA = batch.bodyAIndex[threadIndexInWarp];
 
 					// Articulation IDs are at the back of rigid body IDs.
 					const PxU32 globalBodyIdA = articulationBodyIdA + numDynamicBodies + bodyOffset;
@@ -311,7 +311,7 @@ static __device__ void markActiveSlab_articulationPGS(
 
 				if (igNodeIndexB.isArticulation()) // articulation
 				{
-					const PxU32 articulationBodyIdB = batch.remappedBodyBIndex[threadIndexInWarp];
+					const PxU32 articulationBodyIdB = batch.bodyBIndex[threadIndexInWarp];
 
 					// Articulation IDs are at the back of rigid body IDs.
 					const PxU32 globalBodyIdB = articulationBodyIdB + numDynamicBodies + bodyOffset;
