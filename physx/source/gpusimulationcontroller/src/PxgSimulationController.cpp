@@ -1470,6 +1470,7 @@ namespace physx
 				link.angularDamping = core.angularDamping;
 				link.linearDamping = core.linearDamping;
 				link.offsetSlop = core.offsetSlop;
+				link.maxContactImpulse = core.maxContactImpulse;
 
 				link.pathToRootOffset = cpuLink.mPathToRootStartIndex;
 				link.numPathToRoot = cpuLink.mPathToRootCount;
@@ -2003,6 +2004,7 @@ namespace physx
 						link.maxLinearVelocitySq = core.maxLinearVelocitySq;
 						link.angularDamping = core.angularDamping;
 						link.linearDamping = core.linearDamping;
+						link.maxContactImpulse = core.maxContactImpulse;
 						link.disableGravity = !!core.disableGravity;
 						link.retainsAccelerations = core.mFlags & PxRigidBodyFlag::eRETAIN_ACCELERATIONS;
 						
@@ -2062,6 +2064,7 @@ namespace physx
 					link.maxLinearVelocitySq = core.maxLinearVelocitySq;
 					link.angularDamping = core.angularDamping;
 					link.linearDamping = core.linearDamping;
+					link.maxContactImpulse = core.maxContactImpulse;
 					link.disableGravity = !!core.disableGravity;
 					link.retainsAccelerations = core.mFlags & PxRigidBodyFlag::eRETAIN_ACCELERATIONS;
 

@@ -46,7 +46,7 @@ static __device__ void createPxgSolverExtBody(const PxNodeIndex& nodeIndex, cons
 		b.isKinematic = false;
 		b.islandNodeIndex = nodeIndex;
 		b.penBiasClamp = artic.links[linkID].initialAngVelXYZ_penBiasClamp.w;
-		b.maxImpulse = PX_MAX_F32; //KS - TODO - hook up!
+		b.maxImpulse = artic.links[linkID].maxContactImpulse;
 		b.velocity = artic.motionVelocities[linkID]; //KS - TODO - verify this is set up
 		b.cfm = artic.cfms[linkID];
 		b.offsetSlop = artic.links[linkID].offsetSlop;
