@@ -3551,10 +3551,11 @@ extern "C" __global__ void artiApplyTgsSubstepForces(PxgArticulationCoreDesc* sc
 
 	if(globalThreadIndex < nbArticulations)
 	{
-		const PxgArticulation& articulation = scDesc->articulations[globalThreadIndex];
+		PxgArticulationBlockData& articulationBlock = scDesc->mArticulationBlocks[globalWarpIndex];
+		const PxU32 articulationIndex = articulationBlock.mArticulationIndex[threadIndexInWarp];
+		const PxgArticulation& articulation = scDesc->articulations[articulationIndex];
 		const Cm::UnAlignedSpatialVector* PX_RESTRICT zExt = articulation.zAForces;
 		const PxReal* PX_RESTRICT jointForces = articulation.jointForce;
-		PxgArticulationBlockData& articulationBlock = scDesc->mArticulationBlocks[globalWarpIndex];
 		PxgArticulationBlockLinkData* artiLinks = &scDesc->mArticulationLinkBlocks[globalWarpIndex * maxLinks];
 		PxgArticulationBlockDofData* artiDofs = &scDesc->mArticulationDofBlocks[globalWarpIndex * maxDofs];
 		const PxU32 numLinks = articulationBlock.mNumLinks[threadIndexInWarp];
