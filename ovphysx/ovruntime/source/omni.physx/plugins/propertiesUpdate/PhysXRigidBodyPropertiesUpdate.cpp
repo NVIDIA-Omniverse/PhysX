@@ -412,8 +412,8 @@ bool omni::physx::updateBodyLinearDamping(AttachedStage& attachedStage, ObjectId
             return true;
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>())
-            actor->is<PxRigidDynamic>()->setLinearDamping(data);
+        if (actor->is<PxRigidBody>())
+            actor->is<PxRigidBody>()->setLinearDamping(data);
     }
     return true;
 }
@@ -436,8 +436,8 @@ bool omni::physx::updateBodyAngularDamping(AttachedStage& attachedStage, omni::p
             return true;
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>())
-            actor->is<PxRigidDynamic>()->setAngularDamping(data);
+        if (actor->is<PxRigidBody>())
+            actor->is<PxRigidBody>()->setAngularDamping(data);
     }
     return true;
 }
@@ -460,8 +460,8 @@ bool omni::physx::updateBodyMaxLinearVelocity(AttachedStage& attachedStage, omni
             return true;
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>() && data >= 0.0f && data <= SQRT_FLT_MAX)
-            actor->is<PxRigidDynamic>()->setMaxLinearVelocity(data);
+        if (actor->is<PxRigidBody>() && data >= 0.0f && data <= SQRT_FLT_MAX)
+            actor->is<PxRigidBody>()->setMaxLinearVelocity(data);
     }
     return true;
 }
@@ -485,8 +485,8 @@ bool omni::physx::updateBodyMaxAngularVelocity(AttachedStage& attachedStage, omn
 
         data = degToRad(data);
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>() && data >= 0.0f && data <= SQRT_FLT_MAX)
-            actor->is<PxRigidDynamic>()->setMaxAngularVelocity(data);
+        if (actor->is<PxRigidBody>() && data >= 0.0f && data <= SQRT_FLT_MAX)
+            actor->is<PxRigidBody>()->setMaxAngularVelocity(data);
     }
     return true;
 }
@@ -509,8 +509,8 @@ bool omni::physx::updateBodyMaxContactImpulse(AttachedStage& attachedStage, omni
             return true;
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>())
-            actor->is<PxRigidDynamic>()->setMaxContactImpulse(data);
+        if (actor->is<PxRigidBody>())
+            actor->is<PxRigidBody>()->setMaxContactImpulse(data);
     }
     return true;
 }
@@ -585,8 +585,8 @@ bool omni::physx::updateBodyMaxDepenetrationVelocity(AttachedStage& attachedStag
             return true;
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>())
-            actor->is<PxRigidDynamic>()->setMaxDepenetrationVelocity(data);
+        if (actor->is<PxRigidBody>())
+            actor->is<PxRigidBody>()->setMaxDepenetrationVelocity(data);
     }
     return true;
 }
@@ -609,8 +609,8 @@ bool omni::physx::updateBodyContactSlopCoefficient(AttachedStage& attachedStage,
             return true;
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>())
-            actor->is<PxRigidDynamic>()->setContactSlopCoefficient(data);
+        if (actor->is<PxRigidBody>())
+            actor->is<PxRigidBody>()->setContactSlopCoefficient(data);
     }
     return true;
 }
