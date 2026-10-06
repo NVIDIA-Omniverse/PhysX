@@ -1234,8 +1234,10 @@ namespace
 	#ifdef USE_SIMD
 		const float Half = 0.5f * maxDist;
 		const __m128 HalfV = _mm_load1_ps(&Half);
-		const __m128 DataV = _mm_mul_ps(_mm_loadu_ps(&rayDir.x), HalfV);
-		const __m128 Data2V = _mm_add_ps(_mm_loadu_ps(&rayOrig.x), DataV);
+		const __m128 rayDirV = _mm_set_ps(0.0f, rayDir.z, rayDir.y, rayDir.x);
+		const __m128 rayOrigV = _mm_set_ps(0.0f, rayOrig.z, rayOrig.y, rayOrig.x);
+		const __m128 DataV = _mm_mul_ps(rayDirV, HalfV);
+		const __m128 Data2V = _mm_add_ps(rayOrigV, DataV);
 		const PxU32 MaskI = 0x7fffffff;
 		const __m128 FDirV = _mm_and_ps(_mm_load1_ps(reinterpret_cast<const float*>(&MaskI)), DataV);
 		_mm_store_ps(&rayParams->mData.x, DataV);
